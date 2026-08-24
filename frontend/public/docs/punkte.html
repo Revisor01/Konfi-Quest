@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -52,27 +62,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -121,16 +135,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">6</span>Punkte, Level und Ziele</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html" aria-current="page" class="ist-hier"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#047857">
       <header class="kapitel-kopf">
@@ -139,25 +176,25 @@ tbody tr:last-child td { border-bottom:none; }
         <p class="kapitel-meta">Wie Punkte entstehen, zählen und wieder verschwinden</p>
       </header>
       <p>Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und ein Teil der Abzeichen ergeben.</p>
-      <h2>Die zwei Punktarten</h2>
+      <h2 id="die-zwei-punktarten">Die zwei Punktarten</h2>
       <p>Es gibt genau zwei Arten, mehr lassen sich nicht anlegen:</p>
       <ul><li><strong>Gottesdienst-Punkte</strong> — für alles rund um Gottesdienste</li><li><strong>Gemeinde-Punkte</strong> — für alles andere in der Gemeinde</li></ul>
       <p>Jeder Konfi hat für beide Arten einen eigenen Zähler. Diese beiden Zähler sind der einzige Ort, an dem der Punktestand steht — alles andere in der App ist eine Ansicht darauf.</p>
       <p>Jeder <strong>Jahrgang</strong> legt für beide Arten getrennt fest, wie viele Punkte das Ziel sind und ob die Art überhaupt genutzt wird. Das steht im Kapitel <em>Jahrgänge und Kategorien</em>.</p>
       <p>Welche Art eine Punktevergabe füllt, entscheidest <strong>nicht du im Moment der Vergabe</strong>, sondern es hängt an der Sache selbst:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Woher die Punkte kommen</th><th>Wer die Art festlegt</th></tr></thead><tbody><tr><td>Aktivität</td><td>die Aktivität selbst (beim Anlegen eingestellt)</td></tr><tr><td>Termin</td><td>der Termin (ohne Angabe: Gemeinde)</td></tr><tr><td>Bonuspunkte</td><td>du, direkt bei der Vergabe</td></tr></tbody></table></div>
-      <h2>Die drei Wege, auf denen Punkte entstehen</h2>
-      <h3>Weg 1: Aktivitäten</h3>
+      <h2 id="die-drei-wege-auf-denen-punkte-entstehen">Die drei Wege, auf denen Punkte entstehen</h2>
+      <h3 id="weg-1-aktivitaeten">Weg 1: Aktivitäten</h3>
       <p>Aktivitäten sind das, was Konfis <strong>selbst melden</strong> — oder was ihr ihnen direkt zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.</p>
-      <h3>Weg 2: Termine</h3>
+      <h3 id="weg-2-termine">Weg 2: Termine</h3>
       <p>Wer bei einem Termin als <strong>anwesend</strong> eingetragen wird, bekommt die beim Termin hinterlegten Punkte. Das passiert beim Eintragen der Anwesenheit, nicht beim Buchen.</p>
       <p>Zwei Einschränkungen, die oft überraschen:</p>
       <ul><li>Ein Termin mit <strong>0 Punkten</strong> gibt nichts. Nicht jeder Termin muss Punkte geben.</li><li><strong>Pflichttermine und Konfirmationen geben grundsätzlich keine Punkte.</strong> Trägst du beim Anlegen trotzdem eine Punktzahl ein, wird sie auf 0 gesetzt. Der Gedanke: Wozu man ohnehin verpflichtet ist, wird nicht zusätzlich belohnt.</li></ul>
-      <h3>Weg 3: Bonuspunkte</h3>
+      <h3 id="weg-3-bonuspunkte">Weg 3: Bonuspunkte</h3>
       <p>Bonuspunkte vergibst du frei von Hand — für alles, was in kein Raster passt. Du wählst die Punktzahl, die Punktart und schreibst eine <strong>Beschreibung</strong>.</p>
       <blockquote><strong>Die Beschreibung ist hier Pflicht.</strong> Ohne sie lässt sich der Bonus nicht speichern. Das ist Absicht: Bonuspunkte sind der einzige Weg, bei dem sich später sonst niemand mehr erklären kann, wofür sie waren.</blockquote>
       <p>Bonuspunkte dürfen <strong>auch Teamer:innen</strong> vergeben, nicht nur die Leitung.</p>
-      <h2>Der Weg einer Aktivitäts-Meldung</h2>
+      <h2 id="der-weg-einer-aktivitaets-meldung">Der Weg einer Aktivitäts-Meldung</h2>
       <p>Das ist der häufigste Ablauf im Alltag, deshalb hier Schritt für Schritt.</p>
       <p><strong>1. Der Konfi meldet.</strong> Er wählt eine Aktivität, ein Datum und kann eine Beschreibung sowie ein <strong>Nachweisfoto</strong> anhängen. Der Antrag ist ab jetzt <em>ausstehend</em>.</p>
       <p>Der Konfi bekommt sofort die Rückmeldung „Antrag eingereicht“ mit dem Hinweis, dass der Antrag geprüft wird. Punkte gibt es noch keine.</p>
@@ -167,44 +204,44 @@ tbody tr:last-child td { border-bottom:none; }
       <ul><li><strong>Genehmigt:</strong> Die Aktivität wird gutgeschrieben, die Punkte landen auf dem Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt „Antrag genehmigt!“ mit der Punktzahl.</li><li><strong>Abgelehnt:</strong> Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt“, und falls du einen Kommentar geschrieben hast, hängt dieser als „Grund: …“ daran.</li></ul>
       <blockquote><strong>Achtung, hier weicht die Wirklichkeit von der Erwartung ab:</strong> Eine <strong>Begründung ist beim Ablehnen technisch NICHT verpflichtend</strong>. Du kannst ohne Kommentar ablehnen, und der Konfi erhält dann nur „Dein Antrag wurde leider abgelehnt“ ohne jeden Hinweis, warum. Das ist keine gute Erfahrung. Schreib die Begründung, auch wenn die App sie nicht erzwingt.</blockquote>
       <p>Ein bereits entschiedener Antrag lässt sich nicht noch einmal entscheiden. Der Versuch endet mit „Nur ausstehende Anträge können genehmigt oder abgelehnt werden“.</p>
-      <h3>Zurücksetzen: der Weg zurück</h3>
+      <h3 id="zuruecksetzen-der-weg-zurueck">Zurücksetzen: der Weg zurück</h3>
       <p>Hast du dich vertan, setzt du den Antrag auf <em>ausstehend</em> zurück. Das ist die einzige Korrekturmöglichkeit für eine Entscheidung.</p>
       <p>Beim Zurücksetzen passiert dreierlei:</p>
       <ul><li>War der Antrag genehmigt, werden die <strong>Punkte wieder abgezogen</strong> und die Gutschrift entfernt.</li><li>Dein <strong>Kommentar wird gelöscht</strong> — der Antrag steht wieder da wie neu.</li><li>Der Antrag ist wieder offen und kann neu entschieden werden.</li></ul>
       <blockquote><strong>Der Konfi wird darüber nicht benachrichtigt.</strong> Beim Zurücksetzen geht keine Mitteilung und kein Push raus. Wer gerade „Antrag genehmigt, +3 Punkte“ gelesen hat, sieht die Punkte danach kommentarlos wieder verschwinden. Sag vorher Bescheid, wenn du so etwas korrigierst.</blockquote>
-      <h3>Anträge löschen</h3>
+      <h3 id="antraege-loeschen">Anträge löschen</h3>
       <p>Löschen lassen sich nur <strong>abgelehnte</strong> Anträge. Die anderen sind geschützt:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Zustand</th><th>Löschen möglich?</th><th>Meldung</th></tr></thead><tbody><tr><td>Ausstehend</td><td>nein</td><td>„Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.“</td></tr><tr><td>Genehmigt</td><td>nein</td><td>„Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“</td></tr><tr><td>Abgelehnt</td><td>ja</td><td>—</td></tr></tbody></table></div>
-      <h2>Direktvergabe durch Leitung und Teamer:innen</h2>
+      <h2 id="direktvergabe-durch-leitung-und-teamer-innen">Direktvergabe durch Leitung und Teamer:innen</h2>
       <p>Nicht alles muss den Antragsweg gehen. Ihr könnt eine Aktivität auch direkt zuschreiben — praktisch, wenn ihr ohnehin dabei wart.</p>
       <p>Es gibt dafür zwei Stellen in der App, und sie verhalten sich leider unterschiedlich:</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Über die Konfi-Verwaltung</th><th>Über die Aktivitäten-Seite</th></tr></thead><tbody><tr><td>Wer darf</td><td>nur Leitung</td><td>Leitung und Teamer:innen</td></tr><tr><td>Kommentar möglich</td><td><strong>ja</strong>, optional</td><td>nein</td></tr><tr><td>Push an den Konfi</td><td><strong>nein</strong></td><td>ja („+X Punkte!“)</td></tr><tr><td>Level sofort neu berechnet</td><td><strong>nein</strong></td><td>ja</td></tr><tr><td>Abzeichen sofort geprüft</td><td>ja</td><td>ja</td></tr></tbody></table></div>
       <blockquote><strong>Das ist eine echte Unstimmigkeit im System, keine Absicht.</strong> Vergibst du über die Konfi-Verwaltung, merkt der Konfi es nicht sofort — es kommt kein Push, und ein dadurch erreichtes neues Level wird erst beim nächsten Öffnen des Dashboards sichtbar. Wenn dir wichtig ist, dass jemand die Punkte mitbekommt, nimm den Weg über die Aktivitäten-Seite.</blockquote>
-      <h2>Wie Punkte wieder verschwinden</h2>
+      <h2 id="wie-punkte-wieder-verschwinden">Wie Punkte wieder verschwinden</h2>
       <p><strong>Es gibt keinen „Punkte abziehen“-Knopf.</strong> Du kannst niemandem einfach so drei Punkte wegnehmen, und du kannst auch keine negative Punktzahl eintragen — das System lässt es nicht zu.</p>
       <p>Punkte verschwinden <strong>ausschließlich</strong>, indem die Buchung zurückgenommen wird, die sie erzeugt hat. Das sind alle Wege:</p>
       <ul><li>Einen <strong>genehmigten Antrag zurücksetzen</strong></li><li>Eine <strong>direkt vergebene Aktivität löschen</strong></li><li><strong>Bonuspunkte löschen</strong></li><li>Bei einem Termin die <strong>Anwesenheit auf „abwesend“</strong> ändern</li><li>Eine <strong>Buchung stornieren</strong>, obwohl die Person schon als anwesend galt</li><li>Eine Person <strong>aus einem Termin entfernen</strong></li><li>Eine bestätigte Buchung <strong>zurück auf die Warteliste</strong> setzen</li></ul>
       <blockquote><strong>Der Punktestand fällt nie unter 0.</strong> Jede dieser Rücknahmen ist so gebaut, dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen. Das heißt aber auch: Zieht das System zweimal dieselben 3 Punkte ab, während nur 2 übrig sind, ist die Differenz stillschweigend weg.</blockquote>
       <p>Zwei Dinge, die <strong>keine</strong> Punkte zurücknehmen:</p>
       <ul><li>Einen <strong>Konfi in einen anderen Jahrgang verschieben.</strong> Punkte und Level wandern unverändert mit.</li><li>Einen <strong>ganzen Termin löschen.</strong> Wer dafür schon Punkte bekommen hat, behält sie.</li></ul>
-      <h2>Level</h2>
+      <h2 id="level">Level</h2>
       <p>Level sind die Stufen, die sich aus dem Punktestand ergeben. Du legst sie einmal für die ganze Gemeinde an — nicht pro Jahrgang.</p>
       <p>Ein Level besteht aus:</p>
       <ul><li><strong>Titel</strong> — was angezeigt wird, etwa „Bronze“ oder „Meister“</li><li><strong>Benötigte Punkte</strong> — ab wann es gilt</li><li><strong>Beschreibung, Symbol, Farbe</strong> — wie es aussieht</li></ul>
       <p>Die benötigten Punkte stellst du über einen Schieberegler von <strong>1 bis 40</strong> ein. Zwei Level dürfen nicht dieselbe Punktzahl haben; der Versuch endet mit „Ein Level mit dieser Punktzahl existiert bereits“.</p>
-      <h3>Es zählen die Gesamtpunkte — aber nur die aktivierten Arten</h3>
+      <h3 id="es-zaehlen-die-gesamtpunkte-aber-nur-die-aktivierten-arten">Es zählen die Gesamtpunkte — aber nur die aktivierten Arten</h3>
       <p>Für das Level werden <strong>Gottesdienst- und Gemeindepunkte zusammengezählt</strong>.</p>
       <p>Entscheidend und leicht zu übersehen: Gezählt werden <strong>nur die Punktarten, die im Jahrgang eingeschaltet sind</strong>. Ist im Jahrgang „Gemeinde“ abgeschaltet, zählen für das Level ausschließlich die Gottesdienstpunkte — auch wenn auf dem Gemeinde-Zähler noch alte Punkte stehen.</p>
       <p><em>Beispiel:</em> Ein Konfi hat 8 Gottesdienst- und 5 Gemeindepunkte. Sind beide Arten aktiv, zählt er mit 13 Punkten. Wird „Gemeinde“ im Jahrgang abgeschaltet, zählt er ab sofort mit 8 — und rutscht damit unter Umständen ein Level zurück.</p>
       <p>Deaktivierte Level werden bei der Berechnung übersprungen.</p>
-      <h3>Aufstieg und Abstieg</h3>
+      <h3 id="aufstieg-und-abstieg">Aufstieg und Abstieg</h3>
       <p><strong>Beim Aufstieg</strong> bekommt der Konfi eine Mitteilung und einen Push: „Level Up! Herzlichen Glückwunsch! Du hast Level ‚…‘ erreicht!“</p>
       <p><strong>Beim Abstieg passiert nichts hörbar.</strong> Sinken die Punkte unter die Schwelle, wird das Level still nach unten korrigiert — keine Mitteilung, kein Push, kein Hinweis. Das ist bewusst so: Niemand soll eine Nachricht bekommen, dass er etwas verloren hat.</p>
       <blockquote><strong>Nebeneffekt, den du kennen solltest:</strong> Nach dem Löschen einer Aktivität oder von Bonuspunkten wird das Level <strong>nicht sofort</strong> nachgerechnet. Es bleibt kurzzeitig zu hoch stehen und wird erst korrigiert, wenn der Konfi das nächste Mal sein Dashboard öffnet. Dort passiert es dann ebenfalls still.</blockquote>
-      <h3>Ein belegtes Level lässt sich nicht löschen</h3>
+      <h3 id="ein-belegtes-level-laesst-sich-nicht-loeschen">Ein belegtes Level lässt sich nicht löschen</h3>
       <p>Steht auch nur ein Konfi aktuell auf einem Level, wird das Löschen abgelehnt: <strong>„Level kann nicht gelöscht werden, da es von Konfis verwendet wird“</strong>.</p>
       <p>Die App nennt dir dabei leider <strong>nicht</strong>, wie viele oder welche Konfis das sind. Willst du das Level trotzdem loswerden, gibt es zwei Wege: die Punktzahl so ändern, dass niemand mehr darauf steht, oder das Level deaktivieren statt es zu löschen. Ein deaktiviertes Level zählt für die Berechnung nicht mehr mit.</p>
-      <h2>Wann wird nachgerechnet?</h2>
+      <h2 id="wann-wird-nachgerechnet">Wann wird nachgerechnet?</h2>
       <p>Abzeichen und Level werden sofort geprüft bei:</p>
       <ul><li>einem genehmigten Antrag</li><li>einer über die Aktivitäten-Seite direkt vergebenen Aktivität</li><li>vergebenen Bonuspunkten</li></ul>
       <p>Nur die Abzeichen — nicht das Level — werden geprüft bei einer über die Konfi-Verwaltung vergebenen oder gelöschten Aktivität.</p>

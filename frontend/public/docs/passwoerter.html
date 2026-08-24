@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -52,27 +62,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -121,16 +135,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html" aria-current="page" class="ist-hier"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">5</span>Passwörter und Zugänge</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html" aria-current="page" class="ist-hier"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#667eea">
       <header class="kapitel-kopf">
@@ -139,60 +176,60 @@ tbody tr:last-child td { border-bottom:none; }
         <p class="kapitel-meta">Wie jede Rolle zu einem neuen Passwort kommt</p>
       </header>
       <p>Der häufigste Anruf im Gemeindebüro: „Ich komme nicht rein.&quot; Hier steht, was dann zu tun ist — für jede Rolle.</p>
-      <h2>Die kurze Antwort</h2>
+      <h2 id="die-kurze-antwort">Die kurze Antwort</h2>
       <div class="tabelle-huelle"><table><thead><tr><th>Wer</th><th>Was tun</th></tr></thead><tbody><tr><td><strong>Konfi ohne E-Mail</strong></td><td>Leitung setzt in der Konfi-Übersicht ein neues Passwort</td></tr><tr><td><strong>Konfi mit E-Mail</strong></td><td>selbst über „Passwort vergessen&quot; — oder Leitung setzt neu</td></tr><tr><td><strong>Teamer:in</strong></td><td>selbst über „Passwort vergessen&quot;; sonst setzt die Leitung neu</td></tr><tr><td><strong>Leitung / Admin</strong></td><td>selbst über „Passwort vergessen&quot;</td></tr><tr><td><strong>Niemand kommt mehr rein</strong></td><td>siehe „Wenn gar nichts geht&quot; unten</td></tr></tbody></table></div>
       <p>---</p>
-      <h2>Weg 1: Die Leitung setzt ein neues Passwort</h2>
+      <h2 id="weg-1-die-leitung-setzt-ein-neues-passwort">Weg 1: Die Leitung setzt ein neues Passwort</h2>
       <p><strong>Das ist der Normalfall bei Konfis.</strong> Die meisten haben keine E-Mail-Adresse hinterlegt und können sich deshalb nicht selbst helfen.</p>
       <p>So geht es:</p>
       <p>1. Reiter <strong>Konfis</strong> öffnen 2. Die Person antippen 3. Oben rechts auf das <strong>Schlüssel-Symbol</strong> 4. Bestätigen</p>
       <p>Die App zeigt dann ein <strong>Einmalpasswort</strong>, das du direkt kopieren kannst. Gib es weiter — es steht danach nirgends mehr, auch du kannst es nicht noch einmal abrufen. Ist es verloren, erzeugst du einfach ein neues.</p>
       <p>Dasselbe funktioniert bei Teamer:innen.</p>
-      <h3>Wie die Einmalpasswörter aussehen</h3>
+      <h3 id="wie-die-einmalpasswoerter-aussehen">Wie die Einmalpasswörter aussehen</h3>
       <p>Die App erzeugt Passwörter nach dem Muster <strong>Bibelbuch + Kapitel + Vers</strong>, zum Beispiel <code>Jesaja41,10</code> oder <code>Matthaeus5,9</code>. Das ist leicht vorzulesen und leicht abzutippen — der eigentliche Zweck.</p>
       <blockquote><strong>Wichtig beim Weitergeben:</strong> Keine Leerzeichen, und das Zeichen zwischen Kapitel und Vers ist ein <strong>Komma</strong>, kein Punkt. iPhone-Tastaturen machen aus <code>Offenbarung23,8</code> beim Abtippen gern <code>Offenbarung 23.8</code> — dann klappt die Anmeldung nicht. Am besten kopieren statt vorlesen.</blockquote>
       <p>Das Passwort gilt unbegrenzt. Es heißt „Einmalpasswort&quot;, weil es zum ersten Anmelden gedacht ist — die Person sollte es danach im Profil ändern.</p>
       <p>---</p>
-      <h2>Weg 2: „Passwort vergessen&quot; per E-Mail</h2>
+      <h2 id="weg-2-passwort-vergessen-per-e-mail">Weg 2: „Passwort vergessen&quot; per E-Mail</h2>
       <p>Funktioniert für <strong>alle Rollen</strong>, aber nur, wenn eine E-Mail-Adresse hinterlegt ist.</p>
       <p>1. Auf der Anmeldeseite auf <strong>„Passwort vergessen&quot;</strong> 2. E-Mail-Adresse eingeben 3. Die Mail enthält einen Link, der zu einem Formular für das neue Passwort führt</p>
-      <h3>Was du wissen solltest</h3>
+      <h3 id="was-du-wissen-solltest">Was du wissen solltest</h3>
       <p><strong>Die Antwort ist immer gleich.</strong> Egal ob die Adresse bekannt ist oder nicht — die App sagt immer dasselbe. Das ist Absicht: Sonst könnte man ausprobieren, welche Adressen ein Konto haben. Wenn also keine Mail ankommt, kann es auch heißen, dass die Adresse gar nicht hinterlegt ist.</p>
       <p><strong>Der Link gilt 24 Stunden</strong> und lässt sich nur einmal verwenden. Kommt jemand zu spät, fordert er einfach einen neuen an.</p>
       <p><strong>Es gibt eine Sperre gegen zu häufiges Anfordern.</strong> Wer es mehrfach hintereinander versucht, muss kurz warten. Das ist kein Fehler.</p>
       <p><strong>Prüfe den Spam-Ordner.</strong> Die Mails kommen von <code>moin@konfi-quest.de</code>.</p>
       <p>---</p>
-      <h2>Weg 3: Selbst ändern, wenn man angemeldet ist</h2>
+      <h2 id="weg-3-selbst-aendern-wenn-man-angemeldet-ist">Weg 3: Selbst ändern, wenn man angemeldet ist</h2>
       <p>Im <strong>Profil</strong> unter „Passwort ändern&quot;. Dafür braucht es das aktuelle Passwort.</p>
       <p>Das gilt für alle Rollen und ist der saubere Weg, nachdem jemand ein Einmalpasswort bekommen hat.</p>
-      <h3>Was beim Passwortwechsel passiert</h3>
+      <h3 id="was-beim-passwortwechsel-passiert">Was beim Passwortwechsel passiert</h3>
       <p><strong>Alle anderen Anmeldungen fliegen raus.</strong> Wer sich auf dem Handy und am Rechner angemeldet hatte, muss sich nach einem Passwortwechsel überall neu anmelden. Das ist Absicht — falls jemand Fremdes Zugriff hatte, ist er damit sofort draußen.</p>
       <p>---</p>
-      <h2>Anforderungen an ein neues Passwort</h2>
+      <h2 id="anforderungen-an-ein-neues-passwort">Anforderungen an ein neues Passwort</h2>
       <p>Wer selbst ein Passwort setzt, muss diese Regeln einhalten:</p>
       <ul><li>mindestens <strong>8 Zeichen</strong></li><li>ein <strong>Großbuchstabe</strong></li><li>ein <strong>Kleinbuchstabe</strong></li><li>eine <strong>Zahl</strong></li><li>ein <strong>Sonderzeichen</strong></li><li><strong>keine Leerzeichen</strong></li></ul>
       <p>Die App zeigt beim Eintippen an, was noch fehlt.</p>
       <blockquote>Die von der App erzeugten Einmalpasswörter (<code>Jesaja41,10</code>) erfüllen diese Regeln übrigens nicht vollständig — sie sind ein Sonderfall fürs erste Anmelden.</blockquote>
       <p>---</p>
-      <h2>Konfis kommen neu dazu: der Einladungscode</h2>
+      <h2 id="konfis-kommen-neu-dazu-der-einladungscode">Konfis kommen neu dazu: der Einladungscode</h2>
       <p>Neue Konfis legen ihr Passwort <strong>selbst</strong> fest. Sie brauchen dafür einen Einladungscode.</p>
       <p>1. <strong>Mehr → Konfis einladen</strong> (nur Org-Admins) 2. Jahrgang wählen 3. Der QR-Code und der Code darunter sind die Einladung — ausdrucken, zeigen oder teilen</p>
       <p>Die Konfis scannen den Code, geben Name, Benutzernamen, E-Mail und ihr Passwort ein und sind fertig. Du musst niemanden von Hand anlegen.</p>
       <p>Der Code gilt <strong>7 Tage</strong>. Du kannst ihn in derselben Ansicht verlängern oder löschen. Ein Code lässt sich beliebig oft verwenden — er ist für eine ganze Gruppe gedacht, nicht für eine Person.</p>
       <p>---</p>
-      <h2>Benutzernamen</h2>
+      <h2 id="benutzernamen">Benutzernamen</h2>
       <p>Der Benutzername wird beim Anlegen <strong>automatisch aus dem Namen gebildet</strong>: <code>Noémi Burau</code> wird zu <code>noemi.burau</code>. Akzente und Umlaute werden dabei umgeschrieben.</p>
       <p>Beim Anmelden ist <strong>Groß- und Kleinschreibung egal</strong>. <code>Noemi.Burau</code> funktioniert genauso wie <code>noemi.burau</code>.</p>
       <p>Ist ein Benutzername schon vergeben, hängt die App eine Zahl an.</p>
       <p>---</p>
-      <h2>Wenn gar nichts geht</h2>
+      <h2 id="wenn-gar-nichts-geht">Wenn gar nichts geht</h2>
       <p><strong>Fall 1: Konfi hat keine E-Mail und die Leitung ist nicht erreichbar.</strong> Dann hilft nur warten. Es gibt keinen anderen Weg — das ist gewollt, sonst könnte sich jemand Fremdes als Konfi ausgeben.</p>
       <p><strong>Fall 2: Die einzige Person mit Org-Admin-Rechten kommt nicht rein.</strong> Hier wird es ernst: Org-Admins verwalten die Benutzer, und wenn niemand mehr hineinkommt, kann auch niemand mehr etwas zurücksetzen. Hat die Person eine E-Mail hinterlegt, geht „Passwort vergessen&quot;. Sonst muss der Betreiber der App helfen (Kontakt über die Website).</p>
       <blockquote><strong>Vorbeugen:</strong> Sorge dafür, dass es <strong>mindestens zwei Org-Admins</strong> gibt und dass bei beiden eine funktionierende E-Mail-Adresse hinterlegt ist. Das ist die einzige wirksame Absicherung.</blockquote>
       <p><strong>Fall 3: Das Konto ist deaktiviert.</strong> Dann ist die Anmeldung gesperrt, unabhängig vom Passwort. Ein Org-Admin aktiviert es unter <strong>Mehr → Benutzer:innen</strong> wieder. Sich selbst kann niemand deaktivieren.</p>
       <p><strong>Fall 4: Jemand wurde aus der Gemeinde entfernt.</strong> Der Zugang endet sofort, auch auf bereits geöffneten Geräten.</p>
       <p>---</p>
-      <h2>E-Mail-Adresse ändern</h2>
+      <h2 id="e-mail-adresse-aendern">E-Mail-Adresse ändern</h2>
       <p>Im Profil unter <strong>„E-Mail-Adresse ändern&quot;</strong>. Zur Bestätigung wird eine Mail an die <strong>neue</strong> Adresse geschickt — erst nach dem Klick darin gilt sie.</p>
       <p>Solange das nicht bestätigt ist, funktioniert „Passwort vergessen&quot; noch mit der alten Adresse.</p>
     </article>

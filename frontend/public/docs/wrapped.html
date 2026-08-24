@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -52,27 +62,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -121,16 +135,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html" aria-current="page" class="ist-hier"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">12</span>Jahresrückblick (Wrapped)</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html" aria-current="page" class="ist-hier"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#b45309">
       <header class="kapitel-kopf">
@@ -140,28 +177,28 @@ tbody tr:last-child td { border-bottom:none; }
       </header>
       <p>Der Jahresrückblick — im System „Wrapped“ — ist eine Folge von Bildschirmseiten, durch die man wischt: Punkte, Termine, Abzeichen, der aktivste Monat, ein Blick auf die Konfirmation. Gedacht als Abschluss und als etwas, das man gern weiterschickt.</p>
       <p>Es gibt ihn in zwei Fassungen: eine für <strong>Konfis</strong> und eine für <strong>Teamer:innen</strong>. Welche jemand sieht, hängt an der Rolle.</p>
-      <h2>Der Rückblick ist eine Momentaufnahme</h2>
+      <h2 id="der-rueckblick-ist-eine-momentaufnahme">Der Rückblick ist eine Momentaufnahme</h2>
       <p>Das ist das Wichtigste an diesem Kapitel.</p>
       <p>Wenn du den Rückblick freigibst, werden <strong>alle Zahlen einmal berechnet und festgeschrieben</strong>. Ab dann ändert sich nichts mehr daran. Der Rückblick liest die Daten nicht jedes Mal neu, sondern zeigt den Stand vom Moment der Freigabe.</p>
       <p><em>Beispiel:</em> Du gibst am 1. Mai frei. Ein Konfi bekommt am 3. Mai noch fünf Bonuspunkte. Sein Rückblick zeigt weiterhin den Stand vom 1. Mai — die fünf Punkte tauchen dort nicht auf.</p>
       <blockquote><strong>Deshalb gilt:</strong> Erst alles nachtragen, was noch fehlt, dann freigeben. Wer zuerst freigibt und dann noch Punkte einträgt, hat einen Rückblick, der nicht zu den Zahlen in der App passt.</blockquote>
       <p>Korrigieren lässt sich das, indem du den Rückblick <strong>erneut freigibst</strong> — dann wird er neu berechnet.</p>
-      <h2>Freigabe pro Jahrgang</h2>
+      <h2 id="freigabe-pro-jahrgang">Freigabe pro Jahrgang</h2>
       <p>Der Konfi-Rückblick wird <strong>pro Jahrgang</strong> freigegeben, im Jahrgang unter „Konfispruch &amp; Wrapped“. Er läuft nie automatisch an — du entscheidest, wann.</p>
       <p><strong>Beim Einschalten</strong> fragt die App: „Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“</p>
       <p>Bestätigst du, passiert zweierlei:</p>
       <p>1. Für jeden aktiven Konfi des Jahrgangs wird der Rückblick berechnet und gespeichert. Gelöschte Konfis werden übersprungen. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
       <p>In der Jahrgangsliste steht danach „Wrapped gestartet am …“ statt „Wrapped nicht freigegeben“.</p>
       <blockquote>Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da, nur hat niemand eine Benachrichtigung bekommen.</blockquote>
-      <h3>Der Teamer-Rückblick läuft anders</h3>
+      <h3 id="der-teamer-rueckblick-laeuft-anders">Der Teamer-Rückblick läuft anders</h3>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Konfis</th><th>Teamer:innen</th></tr></thead><tbody><tr><td>Freigabe</td><td>pro Jahrgang, von Hand</td><td>für die ganze Gemeinde</td></tr><tr><td>Wer darf</td><td>Leitung</td><td>nur die Organisations-Administration</td></tr><tr><td>Automatisch</td><td>nein</td><td><strong>ja, jedes Jahr am 6. Januar</strong></td></tr><tr><td>Push</td><td>„Dein Konfi-Jahr ist da!“</td><td>„Dein Teamer-Jahr ist da!“</td></tr><tr><td>Wieder löschbar</td><td>ja</td><td><strong>nein</strong></td></tr></tbody></table></div>
       <p>Der Teamer-Rückblick entsteht also von selbst, einmal im Jahr. Existiert er für das Jahr schon, wird er dabei <strong>nicht</strong> überschrieben.</p>
-      <h2>Erneut freigeben und wieder ausschalten</h2>
+      <h2 id="erneut-freigeben-und-wieder-ausschalten">Erneut freigeben und wieder ausschalten</h2>
       <p><strong>Erneut freigeben = neu berechnen.</strong> Schaltest du die Freigabe aus und wieder ein, wird der Rückblick vollständig neu gerechnet und überschreibt den alten.</p>
       <blockquote><strong>Achtung:</strong> Innerhalb desselben Jahres gibt es immer nur <strong>einen</strong> Rückblick pro Person. Der vorherige Stand ist nach dem Neuberechnen unwiderruflich weg — auch aus „Meine Wrappeds“. Über Jahresgrenzen hinweg bleiben die Rückblicke dagegen getrennt erhalten.</blockquote>
       <p><strong>Ausschalten = löschen.</strong> Die Rückfrage lautet „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ Die gespeicherten Rückblicke werden dabei <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet. Nur ein erneutes Freigeben stellt sie wieder her — dann mit neu berechneten Zahlen.</p>
       <p>Teamer-Rückblicke sind davon nicht betroffen; für sie gibt es keine Löschmöglichkeit.</p>
-      <h2>Die Seiten des Konfi-Rückblicks</h2>
+      <h2 id="die-seiten-des-konfi-rueckblicks">Die Seiten des Konfi-Rückblicks</h2>
       <p>Je nach Datenlage sind es sieben bis zehn Seiten. Vier davon erscheinen nur unter bestimmten Bedingungen.</p>
       <p><strong>1. Begrüßung</strong> — „Willkommen zu deinem Konfi-Jahr“, mit Name und Jahrgang. Erscheint immer.</p>
       <p><strong>2. Deine Momente</strong> — <em>nur, wenn es Challenge-Beiträge gibt.</em> Zeigt bis zu sechs Beiträge aus dem Zeitraum: Challenge-Titel, ein Symbol für die Art des Beitrags und bei Fotos das Bild. Ausgeblendete Beiträge kommen nicht vor.</p>
@@ -178,10 +215,10 @@ tbody tr:last-child td { border-bottom:none; }
       <p><strong>9. Deine Konfirmation</strong> — das Konfirmationsdatum. <em>Nur, wenn ein Konfirmationstermin hinterlegt ist</em> — praktisch also fast immer, weil sonst ein Ersatzdatum greift. Ist die Konfirmation noch nicht gewesen, steht darunter „N Tage noch“.</p>
       <blockquote>Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite <strong>immer</strong> — auch wenn die Konfirmation längst vorbei ist.</blockquote>
       <p><strong>10. Auf einen Blick</strong> — Punkte, Termine und Abzeichen nebeneinander, dazu die Einladung „Werde Teamer:in — gestalte die nächste Generation mit“. Immer die letzte Seite.</p>
-      <h3>Woher die Zahlen kommen</h3>
+      <h3 id="woher-die-zahlen-kommen">Woher die Zahlen kommen</h3>
       <div class="tabelle-huelle"><table><thead><tr><th>Seite</th><th>Datenquelle</th></tr></thead><tbody><tr><td>Punkte</td><td>der gespeicherte Punktestand des Konfis, plus Bonuspunkte-Summe</td></tr><tr><td>Events</td><td>bestätigte Buchungen mit Anwesenheit „anwesend“</td></tr><tr><td>Schwerpunkt</td><td>erledigte Aktivitäten, nach Kategorie gruppiert</td></tr><tr><td>Aktivster Monat</td><td>Aktivitäten und besuchte Termine zusammen</td></tr><tr><td>Badges</td><td>die verliehenen Abzeichen</td></tr><tr><td>Endspurt</td><td>die Punkteziele des Jahrgangs, nur die aktiven Arten</td></tr><tr><td>Konfirmation</td><td>der als Konfirmation gekennzeichnete Termin</td></tr><tr><td>Momente</td><td>Challenge-Beiträge aus dem Zeitraum</td></tr></tbody></table></div>
       <p>Der <strong>Zeitraum</strong> reicht vom 1. September des Vorjahres bis zur Konfirmation. Fehlt ein Konfirmationstermin, wird der 31. Juli als Ende angenommen.</p>
-      <h2>Die Seiten des Teamer-Rückblicks</h2>
+      <h2 id="die-seiten-des-teamer-rueckblicks">Die Seiten des Teamer-Rückblicks</h2>
       <p>Hier sind es <strong>immer genau sieben Seiten</strong>, ohne Bedingungen.</p>
       <p><strong>1. Begrüßung</strong> — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei den Konfis ohne Jahrgangsangabe.</p>
       <p><strong>2. Deine Events</strong> — Anzahl der Termine, an denen die Teamer:in als anwesend eingetragen war, überschrieben mit „Events geleitet“. <em>Nur, wenn vorhanden</em>, darunter das größte Event mit Teilnehmerzahl.</p>
@@ -191,14 +228,14 @@ tbody tr:last-child td { border-bottom:none; }
       <p><strong>6. Dein Engagement</strong> — Jahre als Teamer:in, dazu „Dabei seit …“. Gerechnet wird ab dem Eintrittsdatum.</p>
       <blockquote><strong>Achtung:</strong> Ist kein Eintrittsdatum hinterlegt, steht dort „0 Jahre als Teamer:in“ und <strong>„Dabei seit 01. Januar 1970“</strong>. Wenn dir das auffällt, fehlt bei der Person das Feld „Teamer:in seit“.</blockquote>
       <p><strong>7. Auf einen Blick</strong> — Events, Konfis, Badges nebeneinander, dazu „Danke fuer deinen Einsatz!“ und „Du machst den Unterschied“.</p>
-      <h2>Wo man den Rückblick wiederfindet</h2>
+      <h2 id="wo-man-den-rueckblick-wiederfindet">Wo man den Rückblick wiederfindet</h2>
       <p>Solange er freigegeben ist, liegt er als auffällige Karte oben auf dem Dashboard: bei Konfis violett („Dein Wrapped ist da!“), bei Teamer:innen pink („Dein Teamer-Jahr ist da!“).</p>
       <p>Ältere Rückblicke stehen im <strong>Profil</strong> unter <strong>„Meine Wrappeds“</strong>:</p>
       <ul><li><strong>Konfis:</strong> Tab <em>Profil</em>, nach unten scrollen.</li><li><strong>Teamer:innen:</strong> <em>Profil</em>, unterhalb von „App-Tour ansehen“.</li></ul>
       <p>Dort ist pro Eintrag das Jahr genannt, etwa „Konfi-Wrapped 2026“. Ein Tippen öffnet <strong>genau den gespeicherten Stand</strong> von damals.</p>
       <blockquote>Der Abschnitt „Meine Wrappeds“ erscheint <strong>nur</strong>, wenn es mindestens einen Rückblick gibt. Ist keiner da, fehlt er ganz — das ist kein Fehler.</blockquote>
       <p>Wer den Rückblick eines Konfis von außen ansehen will, findet ihn in dessen Detailansicht. Das klappt allerdings nur für die <strong>Leitung</strong>: Bei Teamer:innen bleibt die Karte leer, weil die Berechtigung dafür fehlt.</p>
-      <h2>Teilen</h2>
+      <h2 id="teilen">Teilen</h2>
       <p>Über den Teilen-Knopf oben im Rückblick lässt sich die <strong>gerade sichtbare Seite</strong> weitergeben.</p>
       <p>Geteilt wird kein Bildschirmfoto, sondern ein eigens dafür erzeugtes <strong>Bild im Hochformat</strong> (1080 × 1920, also Story-Format), unten mit dem Schriftzug „Konfi Quest“. In der App öffnet sich das übliche Teilen-Menü des Geräts, im Browser wird das Bild heruntergeladen.</p>
       <p>Klappt der Bildexport nicht, wird ersatzweise ein kurzer Text geteilt, etwa „Mein Konfi-Jahr 2026: 24 Punkte gesammelt! #KonfiQuest“.</p>

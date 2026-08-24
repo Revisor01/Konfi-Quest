@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -52,27 +62,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -121,16 +135,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html" aria-current="page" class="ist-hier"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">4</span>Für die Leitung</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html" aria-current="page" class="ist-hier"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#047857">
       <header class="kapitel-kopf">
@@ -139,41 +176,41 @@ tbody tr:last-child td { border-bottom:none; }
         <p class="kapitel-meta">Konfis · Chat · Events · Challenges · Mehr</p>
       </header>
       <p>Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: <strong>Admins</strong> können fast alles, <strong>Org-Admins</strong> zusätzlich die Benutzerverwaltung, die Einladungen und die Dashboard-Einstellungen.</p>
-      <h2>Konfis</h2>
+      <h2 id="konfis">Konfis</h2>
       <p>Die zentrale Liste, umschaltbar zwischen <strong>Konfis</strong> und <strong>Teamer:innen</strong>. Zu jeder Person siehst du Punkte nach <strong>Godi</strong>, <strong>Gemeinde</strong> und <strong>Gesamt</strong>.</p>
       <p>Über das Plus legst du an, was gerade geöffnet ist — einen Konfi oder eine Teamer:in. Beim Anlegen erzeugt die App ein <strong>Einmalpasswort</strong>, das du direkt kopieren kannst.</p>
       <p>Oben findest du die <strong>Anwesenheits-Matrix</strong>: eine Tabelle über alle Konfis mit Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken lassen kannst.</p>
-      <h3>In der Detailansicht einer Person</h3>
+      <h3 id="in-der-detailansicht-einer-person">In der Detailansicht einer Person</h3>
       <ul><li><strong>Punkte vergeben</strong> — als Bonuspunkte, frei begründet</li><li><strong>Aktivitäten</strong> hinzufügen oder entfernen</li><li><strong>Abzeichen</strong> ansehen</li><li><strong>Konfirmation</strong> — Termin und Konfispruch</li><li><strong>Passwort zurücksetzen</strong> — erzeugt ein neues Einmalpasswort</li><li><strong>Zur Teamer:in befördern</strong> — Punkte und Abzeichen bleiben als Konfi-Historie erhalten</li></ul>
       <p>Bei Teamer:innen kommen <strong>Zertifikate</strong> dazu (etwa JuLeiCa) und die Angabe, seit wann sie dabei sind.</p>
       <p>Teamer:innen löschen darf nur ein Org-Admin.</p>
-      <h2>Chat</h2>
+      <h2 id="chat">Chat</h2>
       <p>Du erreichst <strong>jeden</strong> in deiner Gemeinde — alle Konfis, alle Teamer:innen, die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft dich nicht.</p>
       <p>Nur die Leitung kann:</p>
       <ul><li><strong>Mitglieder</strong> zu Gruppen hinzufügen und daraus entfernen</li><li><strong>Chats löschen</strong></li><li><strong>fremde Nachrichten löschen</strong></li><li>den <strong>Verlauf exportieren</strong> — als Textdatei, etwa um Beiträge für einen Gottesdienst zu sammeln</li><li><strong>Umfragen anlegen</strong></li></ul>
       <p>Beim Öffnen eines einzelnen Chats gilt für dich eine Ausnahme: Du kannst jeden Chat deiner Gemeinde öffnen und lesen — auch ein privates Gespräch zwischen zwei anderen Personen. In deiner eigenen Chatliste erscheinen allerdings nur die Chats, in denen du selbst bist.</p>
       <p>Eine Grenze gibt es doch: Bei <strong>anonymen Umfragen</strong> siehst auch du nicht, wer was gewählt hat.</p>
-      <h2>Events</h2>
+      <h2 id="events">Events</h2>
       <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
-      <h3>Events</h3>
+      <h3 id="events-2">Events</h3>
       <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Verbuchen</strong> und <strong>Vergangen</strong>. „Verbuchen&quot; sammelt die Termine, bei denen noch Anwesenheiten einzutragen sind.</p>
       <p>Beim <strong>Anlegen</strong> eines Termins legst du fest:</p>
       <ul><li><strong>Für wen</strong> — nur Konfis, Konfis mit gesuchten Teamer:innen, oder nur Team</li><li><strong>Datum und Anmeldezeitraum</strong>, wahlweise sofort geöffnet</li><li><strong>Zeitfenster</strong>, wenn sich die Gruppe aufteilen soll</li><li><strong>Plätze und Warteliste</strong>, getrennt für Konfis und Team</li><li><strong>Punkte</strong> und ob sie auf Gottesdienst oder Gemeinde zählen</li><li><strong>Pflicht-Event</strong> — dann sind alle automatisch angemeldet</li><li><strong>Serie</strong> — täglich, wöchentlich, zweiwöchentlich oder monatlich</li></ul>
       <p>In der Detailansicht trägst du <strong>Anwesenheit</strong> ein, bestätigst die <strong>Warteliste</strong>, fügst Teilnehmende von Hand hinzu und siehst die <strong>Abmeldungen</strong> samt Begründung. Über das QR-Symbol zeigst du den Code zum Selbst-Einchecken — auch zum Ausdrucken.</p>
       <p>Ein Termin lässt sich <strong>absagen</strong> statt löschen. Dann bekommen alle Angemeldeten eine Nachricht mit deinem Text.</p>
-      <h3>Aktivitäten</h3>
+      <h3 id="aktivitaeten">Aktivitäten</h3>
       <p>Die Meldungen der Konfis und Teamer:innen: <strong>Offen</strong>, <strong>Genehmigt</strong>, <strong>Abgelehnt</strong>. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen musst du einen Grund angeben — den bekommt die Person zu sehen.</p>
-      <h2>Challenges</h2>
+      <h2 id="challenges">Challenges</h2>
       <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Geplant</strong>, <strong>Archiv</strong>.</p>
       <p>Beim Anlegen legst du fest, <strong>wer mitmacht</strong> (ein Jahrgang mit dem Team oder nur das Team), <strong>welche Medienarten</strong> erlaubt sind und <strong>wie sichtbar</strong> die Beiträge sind. Dazu das Abzeichen, das es fürs Mitmachen gibt.</p>
       <p>Nach dem Start sind <strong>Sichtbarkeit, Freigabepflicht, Startzeitpunkt und Medienarten gesperrt</strong>. Das ist Absicht: Was den Konfis zugesagt wurde, gilt.</p>
       <p>Beim Begleiten kannst du Beiträge <strong>freigeben</strong>, <strong>anonymisieren</strong> oder <strong>ausblenden</strong>. Anonymisieren geht nicht zurück.</p>
-      <h2>Mehr</h2>
-      <h3>Inhalt</h3>
+      <h2 id="mehr">Mehr</h2>
+      <h3 id="inhalt">Inhalt</h3>
       <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Wofür</th></tr></thead><tbody><tr><td><strong>Aktivitäten</strong></td><td>Der Katalog dessen, was gemeldet werden kann, mit Punkten</td></tr><tr><td><strong>Challenges</strong></td><td>Aufgaben stellen und begleiten</td></tr><tr><td><strong>Badges</strong></td><td>Abzeichen definieren, mit Bedingungen</td></tr><tr><td><strong>Jahrgänge</strong></td><td>Punkteziele, Konfispruch-Freigabe, Wrapped-Freigabe</td></tr><tr><td><strong>Kategorien</strong></td><td>Für Aktivitäten und Termine</td></tr><tr><td><strong>Level</strong></td><td>Punkteschwellen und ihre Titel</td></tr><tr><td><strong>Material</strong></td><td>Dokumente für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle</td></tr><tr><td><strong>Zertifikate</strong></td><td>Nachweise für Teamer:innen, mit Gültigkeit</td></tr></tbody></table></div>
-      <h3>Verwaltung (nur Org-Admin)</h3>
+      <h3 id="verwaltung-nur-org-admin">Verwaltung (nur Org-Admin)</h3>
       <ul><li><strong>Benutzer:innen</strong> — Rollen vergeben, Jahrgänge zuweisen. Die Zuweisung entscheidet, welche Konfis eine Teamer:in erreicht und sieht.</li><li><strong>Dashboard</strong> — welche Bereiche Konfis und Teamer:innen auf ihrer Startseite sehen, und in welcher Reihenfolge</li><li><strong>Konfis einladen</strong> — QR-Code und Einladungscode zur Selbstregistrierung</li></ul>
-      <h3>Jahrgänge im Detail</h3>
+      <h3 id="jahrgaenge-im-detail">Jahrgänge im Detail</h3>
       <p>Pro Jahrgang stellst du ein:</p>
       <ul><li><strong>Punkteziele</strong> für Gottesdienst und Gemeinde, jeweils einzeln abschaltbar — mindestens eine Art muss aktiv bleiben</li><li><strong>Konfispruch-Auswahl</strong> freigeben</li><li><strong>Wrapped freigeben</strong> — erzeugt den Jahresrückblick und benachrichtigt die Konfis</li></ul>
       <p>Ein Jahrgang lässt sich nicht löschen, solange ihm aktive Konfis zugeordnet sind. Beförderte Teamer:innen bleiben mit Punkten und Abzeichen erhalten.</p>

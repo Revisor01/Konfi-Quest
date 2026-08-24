@@ -49,6 +49,19 @@ function e(text) {
  */
 const PLATZ = String.fromCharCode(0);
 
+/**
+ * Verweis-Ziele: In den Quellen wird auf die Markdown-Datei verlinkt
+ * ("[Abzeichen](60-badges.md#geheime-abzeichen)"), damit die Links auch beim
+ * Lesen der Quellen stimmen. Hier wird daraus der erzeugte Dateiname
+ * (badges.html#geheime-abzeichen). Alles andere (https, /docs/api/, #anker)
+ * bleibt unangetastet.
+ */
+function zielZuHref(ziel) {
+  const m = ziel.match(/^(?:\.\/)?(?:\d+-)?([A-Za-z0-9-]+)\.md(#[A-Za-z0-9-]*)?$/);
+  if (m) return `./${m[1]}.html${m[2] ?? ''}`;
+  return ziel;
+}
+
 function inline(text) {
   const codes = [];
   let s = String(text).replace(/`([^`]+)`/g, (_, c) => {
@@ -58,13 +71,34 @@ function inline(text) {
   s = e(s);
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+  // Verweise [Text](ziel) — nach strong/em, damit Auszeichnung im Linktext
+  // schon aufgeloest ist. Das Ziel ist zu diesem Zeitpunkt bereits durch e()
+  // gelaufen (nur &amp; u.ae., in Dateinamen und Ankern kommt das nicht vor).
+  s = s.replace(/\[([^\]]+)\]\(([^()\s]+)\)/g,
+    (_, txt, ziel) => `<a href="${zielZuHref(ziel)}">${txt}</a>`);
   s = s.replace(new RegExp(PLATZ + String.raw`(\d+)` + PLATZ, "g"),
     (_, i) => `<code>${e(codes[Number(i)])}</code>`);
   return s;
 }
 
-/** Sehr kleiner Markdown-Renderer für die hier genutzten Konstrukte. */
-function markdown(quelle) {
+/**
+ * Anker fuer Ueberschriften, damit Querverweise auf Abschnitte zeigen koennen
+ * ("70-termine.md#qr-check-in"). Umlaute werden umgeschrieben, alles andere
+ * Nicht-Alphanumerische wird zu Bindestrichen.
+ */
+function slug(text) {
+  return String(text).toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Sehr kleiner Markdown-Renderer für die hier genutzten Konstrukte.
+ * `anker` (optional, Set) sammelt die vergebenen Ueberschriften-Anker der
+ * Seite ein — daraus prueft der Aufrufer am Ende alle internen Verweise.
+ */
+function markdown(quelle, anker = new Set()) {
   const zeilen = quelle.split('\n');
   const teile = [];
   let i = 0;
@@ -77,11 +111,17 @@ function markdown(quelle) {
 
     if (!z.trim()) { i++; continue; }
 
-    // Ueberschriften
+    // Ueberschriften — mit Anker, damit Querverweise auf Abschnitte zeigen
+    // koennen. Bei doppeltem Text ("Events" als h2 und h3) wird gezaehlt,
+    // sonst gaebe es zweimal dieselbe id.
     const h = z.match(/^(#{2,4})\s+(.*)$/);
     if (h) {
       const stufe = h[1].length;
-      teile.push(`<h${stufe}>${inline(h[2])}</h${stufe}>`);
+      let id = slug(h[2]);
+      let n = 2;
+      while (anker.has(id)) id = `${slug(h[2])}-${n++}`;
+      anker.add(id);
+      teile.push(`<h${stufe} id="${id}">${inline(h[2])}</h${stufe}>`);
       i++;
       continue;
     }
@@ -197,6 +237,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -223,27 +273,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -333,16 +387,41 @@ ${STIL}
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    ${navFuer(aktuell)}
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier">${aktuell
+          ? `<span class="nav-hier-nr">${aktuell.nr}</span>${e(aktuell.titel)}`
+          : 'Konfi Quest — Handbuch'}</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        ${navFuer(aktuell)}
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
 ${inhalt}
   </main>
@@ -352,6 +431,12 @@ ${inhalt}
 `;
 
   mkdirSync(ZIEL_VERZ, { recursive: true });
+
+  // Erst alles rendern, dann pruefen, dann schreiben: Die Kapitel verweisen
+  // aufeinander wie in einem Wiki, und ein toter Link ist schlimmer als kein
+  // Link. Deshalb bricht der Build ab, wenn ein interner Verweis ins Leere
+  // zeigt — Datei wie Anker.
+  const erzeugt = new Map(); // datei -> { html, anker:Set }
 
   // --- Kapitelseiten ---
   for (let i = 0; i < seiten.length; i++) {
@@ -375,22 +460,27 @@ ${inhalt}
         : '<span class="blatt blatt--leer"></span>'}
     </nav>`;
 
+    const anker = new Set();
+    const rumpfHtml = markdown(s.rumpf, anker);
     const inhalt = `    <article class="kapitel" style="--kapitel:${e(s.farbe)}">
       <header class="kapitel-kopf">
         <p class="kapitel-zaehler">Kapitel ${s.nr} von ${seiten.length}</p>
         <h1><span class="kapitel-nr">${s.nr}</span>${e(s.titel)}</h1>
         <p class="kapitel-meta">${e(s.untertitel)}</p>
       </header>
-      ${markdown(s.rumpf)}
+      ${rumpfHtml}
     </article>
 ${blaettern}`;
 
-    writeFileSync(join(ZIEL_VERZ, s.datei), huelle({
-      titel: `${s.nr}. ${s.titel} — Konfi Quest Handbuch`,
-      beschreibung: s.untertitel,
-      aktuell: s,
-      inhalt,
-    }), 'utf8');
+    erzeugt.set(s.datei, {
+      anker,
+      html: huelle({
+        titel: `${s.nr}. ${s.titel} — Konfi Quest Handbuch`,
+        beschreibung: s.untertitel,
+        aktuell: s,
+        inhalt,
+      }),
+    });
   }
 
   // --- Übersicht ---
@@ -414,14 +504,43 @@ ${blaettern}`;
 ${karten}
     </ol>`;
 
-  writeFileSync(join(ZIEL_VERZ, 'index.html'), huelle({
-    titel: 'Konfi Quest — Handbuch',
-    beschreibung: 'Handbuch für Konfi Quest: was Konfis, Teamer:innen und die Leitung in der App tun können.',
-    aktuell: null,
-    inhalt: uebersicht,
-  }), 'utf8');
+  erzeugt.set('index.html', {
+    anker: new Set(),
+    html: huelle({
+      titel: 'Konfi Quest — Handbuch',
+      beschreibung: 'Handbuch für Konfi Quest: was Konfis, Teamer:innen und die Leitung in der App tun können.',
+      aktuell: null,
+      inhalt: uebersicht,
+    }),
+  });
 
-  console.log(`Handbuch geschrieben: ${ZIEL_VERZ} (${seiten.length} Kapitel + Übersicht)`);
+  // --- Interne Verweise pruefen ---
+  const fehler = [];
+  for (const [datei, seite] of erzeugt) {
+    for (const m of seite.html.matchAll(/href="([^"]*)"/g)) {
+      const href = m[1];
+      // Extern (https, Startseite, API-Referenz, mailto): nicht unsere Baustelle.
+      if (/^(https?:)?\/\//.test(href) || href.startsWith('/') || href.startsWith('mailto:')) continue;
+      const raute = href.indexOf('#');
+      let ziel = (raute >= 0 ? href.slice(0, raute) : href).replace(/^\.\//, '');
+      const anker = raute >= 0 ? href.slice(raute + 1) : '';
+      // "" bleibt uebrig bei "./" (Uebersicht) und bei "#x" (dieselbe Seite).
+      if (ziel === '') ziel = raute >= 0 ? datei : 'index.html';
+      const zielSeite = erzeugt.get(ziel);
+      if (!zielSeite) { fehler.push(`${datei}: "${href}" — Zieldatei fehlt`); continue; }
+      if (anker && !zielSeite.anker.has(anker)) fehler.push(`${datei}: "${href}" — Anker fehlt`);
+    }
+  }
+  if (fehler.length) {
+    throw new Error(`Tote interne Verweise:\n  ${fehler.join('\n  ')}`);
+  }
+
+  // --- Schreiben ---
+  for (const [datei, seite] of erzeugt) {
+    writeFileSync(join(ZIEL_VERZ, datei), seite.html, 'utf8');
+  }
+
+  console.log(`Handbuch geschrieben: ${ZIEL_VERZ} (${seiten.length} Kapitel + Übersicht, Verweise geprüft)`);
 }
 
 main();

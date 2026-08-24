@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -52,27 +62,31 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
 
@@ -121,16 +135,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html" aria-current="page" class="ist-hier"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">7</span>Jahrgänge und Kategorien</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html" aria-current="page" class="ist-hier"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#5b21b6">
       <header class="kapitel-kopf">
@@ -140,32 +177,32 @@ tbody tr:last-child td { border-bottom:none; }
       </header>
       <p>Der Jahrgang ist die zentrale Schaltstelle. Fast alles, was für eine ganze Gruppe von Konfis gilt, wird hier eingestellt: die Punkteziele, ob es beide Punktarten gibt, ob der Konfispruch gewählt werden darf und ob der Jahresrückblick freigegeben ist.</p>
       <p>Kategorien sind davon unabhängig — sie gelten für die ganze Gemeinde und sortieren Aktivitäten und Termine.</p>
-      <h2>Punkteziele</h2>
+      <h2 id="punkteziele">Punkteziele</h2>
       <p>Für jede der beiden Punktarten stellst du getrennt ein Ziel ein. Der Schieberegler geht von <strong>1 bis 20</strong>. Voreingestellt sind 10 und 10.</p>
       <p>Das Ziel ist <strong>keine Grenze</strong> — niemand wird gebremst, wenn er es überschreitet. Es ist der Bezugswert für die Fortschrittsanzeige:</p>
       <ul><li>Die <strong>Ringe im Dashboard</strong> der Konfis füllen sich im Verhältnis zum Ziel.</li><li>In der <strong>Konfi-Liste der Leitung</strong> ergibt sich daraus die Fortschrittsfarbe.</li><li>Der <strong>Jahresrückblick</strong> rechnet den Zielwert mit ein.</li></ul>
       <p>Beim Gesamtfortschritt werden nur die Ziele der <strong>aktiven</strong> Punktarten addiert. Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das Gottesdienst-Ziel.</p>
       <blockquote><strong>Achtung:</strong> Der Bereich 1 bis 20 ist nur die Begrenzung des Schiebereglers in der App. Die Schnittstelle dahinter akzeptiert jeden Wert ab 0 und kennt kein Maximum. Über die App kannst du aber weder 0 noch mehr als 20 einstellen.</blockquote>
-      <h2>Wenn eine Punktart abgeschaltet ist</h2>
+      <h2 id="wenn-eine-punktart-abgeschaltet-ist">Wenn eine Punktart abgeschaltet ist</h2>
       <p>Für jede Punktart gibt es einen Schalter. Das ist der folgenreichste Schalter im ganzen Jahrgang, deshalb hier ausführlich, was daran hängt.</p>
-      <h3>Neue Punkte werden blockiert</h3>
+      <h3 id="neue-punkte-werden-blockiert">Neue Punkte werden blockiert</h3>
       <p>Jeder Versuch, Punkte der abgeschalteten Art zu vergeben, wird abgewiesen — mit der Meldung <strong>„Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert“</strong> (entsprechend für Gemeinde). Das gilt für alle Wege: Anträge genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit eintragen.</p>
       <p>Eine Ausnahme im Verhalten: Trägst du bei einem Termin über <strong>„alle anwesend“</strong> gesammelt Anwesenheit ein, werden betroffene Personen <strong>stillschweigend übersprungen</strong> statt mit einer Fehlermeldung. Du siehst also keinen Hinweis, dass jemand keine Punkte bekommen hat.</p>
-      <h3>Bestehende Punkte bleiben — zählen aber nicht mehr</h3>
+      <h3 id="bestehende-punkte-bleiben-zaehlen-aber-nicht-mehr">Bestehende Punkte bleiben — zählen aber nicht mehr</h3>
       <p>Die einmal vergebenen Punkte werden <strong>nicht gelöscht</strong>. Sie stehen weiter in der Datenbank, werden aber überall herausgerechnet:</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Verhalten bei abgeschalteter Art</th></tr></thead><tbody><tr><td>Gespeicherter Punktestand</td><td>bleibt unverändert erhalten</td></tr><tr><td>Gesamtpunkte und Rangliste</td><td>die Art wird als 0 gewertet</td></tr><tr><td>Level</td><td>zählt nur noch die aktive Art</td></tr><tr><td>Abzeichen auf diese Punktart</td><td>werden nicht mehr erreicht</td></tr><tr><td>Abzeichen auf Gesamtpunkte</td><td>rechnen nur mit der aktiven Art</td></tr><tr><td>Jahresrückblick</td><td>nur das aktive Ziel fließt ein</td></tr></tbody></table></div>
-      <h3>Was ausgeblendet und was ausgegraut wird</h3>
+      <h3 id="was-ausgeblendet-und-was-ausgegraut-wird">Was ausgeblendet und was ausgegraut wird</h3>
       <p><strong>Ausgeblendet</strong> (ganz weg):</p>
       <ul><li>Der <strong>Ziel-Schieberegler</strong> der Art verschwindet aus dem Bearbeiten-Formular.</li><li>In der Jahrgangsliste fehlt die Zeile „GD-Ziel“ bzw. „Gem-Ziel“.</li><li><strong>Aktivitäten dieser Art verschwinden vollständig aus der Konfi-Ansicht.</strong> Ein Konfi kann sie nicht mehr sehen und nicht mehr melden. Das ist Absicht: Sonst könnte er etwas einreichen, das niemand genehmigen kann.</li></ul>
       <p><strong>Ausgegraut</strong> (sichtbar, aber blass) in der Konfi-Detailansicht der Leitung: Bonuspunkte, Terminpunkte und Aktivitäten der abgeschalteten Art. Ihr seht also weiter, was einmal vergeben wurde — es ist nur erkennbar außer Kraft.</p>
-      <h3>Beim Wiedereinschalten</h3>
+      <h3 id="beim-wiedereinschalten">Beim Wiedereinschalten</h3>
       <p><strong>Es muss nichts nachgerechnet werden.</strong> Alle Summen, Level und Fortschrittsanzeigen werden bei jedem Aufruf frisch berechnet. In dem Moment, in dem du die Art wieder einschaltest, sind sämtliche alten Punkte wieder da und zählen wieder — vollständig und sofort.</p>
       <p>Eine Einschränkung: <strong>Abzeichen werden nicht rückwirkend vergeben.</strong> Wer während der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht automatisch nachgereicht. Geprüft wird erst wieder bei der nächsten Punktevergabe oder beim Hintergrundlauf.</p>
-      <h3>Mindestens eine Art muss aktiv bleiben</h3>
+      <h3 id="mindestens-eine-art-muss-aktiv-bleiben">Mindestens eine Art muss aktiv bleiben</h3>
       <p>Schaltest du eine Art ab, lässt sich die andere nicht mehr abschalten — der Schalter ist gesperrt, mit dem Hinweis „Mindestens ein Punkt-Typ muss aktiv bleiben.“</p>
       <blockquote><strong>Achtung:</strong> Diese Regel wird <strong>nur in der Oberfläche</strong> durchgesetzt. Im System dahinter gibt es keine Sperre. Wer die Schnittstelle direkt anspricht, kann beide Arten abschalten — mit der Folge, dass keinerlei Punkte mehr vergeben werden können und alle Konfis auf 0 stehen. Verlass dich also auf die Regel, aber wisse, dass sie nicht unumstößlich ist.</blockquote>
       <p>Beim Abschalten prüft das System außerdem, wie viele Konfis bereits Punkte dieser Art haben, und meldet das zurück. <strong>Diese Warnung wird in der App derzeit nicht angezeigt</strong> — du bekommst sie also nicht zu sehen.</p>
-      <h2>Konfispruch-Freigabe</h2>
+      <h2 id="konfispruch-freigabe">Konfispruch-Freigabe</h2>
       <p>Der Schalter <strong>„Konfispruch-Auswahl“</strong> steht im Jahrgang unter „Konfispruch &amp; Wrapped“. Er ist standardmäßig <strong>an</strong>.</p>
       <p>Ist er an, erscheint im Konfi-Dashboard die Konfispruch-Karte, und der Konfi kann zwischen zwei Wegen wählen:</p>
       <p><strong>Weg 1 — aus der Liste.</strong> Er wählt einen Vers aus einer vorbereiteten Liste (Psalm 23,1; Jesaja 43,1; Jeremia 29,11; Josua 1,9 und weitere) und dazu eine <strong>Bibelübersetzung</strong>. Zur Auswahl stehen genau vier:</p>
@@ -174,40 +211,40 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Beides zugleich geht nicht: Wählt der Konfi aus der Liste, wird ein zuvor eingetippter Text gelöscht — und umgekehrt.</p>
       <blockquote><strong>Wichtig für die Praxis:</strong> Mitgeliefert werden nur die <strong>Vers-Stellen</strong>, nicht die Verstexte. Die Übersetzungstexte sind aus Lizenzgründen leer und müssten von der Gemeinde selbst eingetragen werden. Solange das nicht geschehen ist, zeigt die Liste Stellenangaben ohne Text — der Freitext-Weg ist dann der einzige, der einen vollständigen Spruch liefert.</blockquote>
       <p>Die gesammelten Sprüche eines Jahrgangs kannst du dir als Übersicht anzeigen und dir per E-Mail zuschicken lassen — praktisch für Urkunden und den Konfirmationsablauf.</p>
-      <h2>Wrapped-Freigabe</h2>
+      <h2 id="wrapped-freigabe">Wrapped-Freigabe</h2>
       <p>Der zweite Schalter im selben Abschnitt gibt den Jahresrückblick frei. Er erscheint erst, wenn du einen bestehenden Jahrgang <strong>bearbeitest</strong>.</p>
       <p><strong>Beim Einschalten</strong> fragt die App nach: „Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“</p>
       <p>Bestätigst du, passiert beides:</p>
       <p>1. Für <strong>jeden aktiven Konfi</strong> des Jahrgangs wird der Rückblick berechnet und als feste Momentaufnahme gespeichert. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
       <p><strong>Beim Ausschalten</strong> — Rückfrage „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten Rückblicke <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet.</p>
       <p>Mehr dazu im Kapitel <em>Jahresrückblick (Wrapped)</em>.</p>
-      <h2>Was die Jahrgangs-Zuweisung von Teamer:innen steuert</h2>
+      <h2 id="was-die-jahrgangs-zuweisung-von-teamer-innen-steuert">Was die Jahrgangs-Zuweisung von Teamer:innen steuert</h2>
       <p>Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese Zuweisung ist die <strong>wichtigste Berechtigungseinstellung im ganzen System</strong> — sie entscheidet in sehr vielen Bereichen mit.</p>
       <p>Für die <strong>Leitung</strong> gilt das alles nicht: Sie sieht immer die ganze Gemeinde.</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Ohne passende Zuweisung</th></tr></thead><tbody><tr><td>Konfi-Liste</td><td>die Liste bleibt <strong>komplett leer</strong></td></tr><tr><td>Punkte vergeben</td><td>abgewiesen mit „Kein Zugriff auf diesen Konfi“</td></tr><tr><td>Termine</td><td>jahrgangsgebundene Termine sind unsichtbar</td></tr><tr><td>Chat: Teamer:in schreibt Konfi an</td><td>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“</td></tr><tr><td>Chat: Konfi schreibt Teamer:in an</td><td>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig“</td></tr><tr><td>Chat: Kontaktliste</td><td>die Teamer:in taucht bei den Konfis gar nicht erst auf</td></tr><tr><td>Jahrgangs-Chatraum</td><td>keine Aufnahme in den Raum</td></tr><tr><td>Challenges</td><td>jahrgangsgebundene Challenges sind unsichtbar</td></tr><tr><td>Mitteilungen und Push</td><td>nur für die eigenen Jahrgänge</td></tr></tbody></table></div>
       <blockquote><strong>Der Chat sperrt in BEIDE Richtungen.</strong> Eine Teamer:in ohne Zuweisung ist für Konfis unsichtbar und erreicht ihrerseits keinen einzigen Konfi. Wenn sich jemand meldet, er sehe „gar keine Konfis“ oder werde von niemandem gefunden, ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.</blockquote>
       <p>Termine, die <strong>nur für Teamer:innen</strong> gedacht sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei jahrgangsgebundenen Terminen.</p>
       <p>Wird ein Konfi <strong>zur Teamer:in befördert</strong>, übernimmt das System seinen Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht.</p>
-      <h2>Kategorien</h2>
+      <h2 id="kategorien">Kategorien</h2>
       <p>Kategorien sortieren Aktivitäten und Termine. Es gibt <strong>eine einzige gemeinsame Liste</strong> für beides — keine getrennten Kategorien für Aktivitäten und Termine.</p>
       <p>Eine Kategorie hat nur <strong>Name</strong> und <strong>Beschreibung</strong>. Beide gelten für die ganze Gemeinde, nicht pro Jahrgang.</p>
       <p>Verwendet werden sie an drei Stellen:</p>
       <ul><li>zum Sortieren und Filtern von <strong>Aktivitäten</strong></li><li>zum Sortieren und Filtern von <strong>Terminen</strong></li><li>als Grundlage für <strong>Kategorie-Abzeichen</strong></li></ul>
-      <h3>Löschen ist blockiert, solange sie benutzt wird</h3>
+      <h3 id="loeschen-ist-blockiert-solange-sie-benutzt-wird">Löschen ist blockiert, solange sie benutzt wird</h3>
       <p>Wird eine Kategorie noch verwendet, lässt sie sich nicht löschen. Die Meldung nennt die genauen Zahlen, etwa: <strong>„Kategorie kann nicht gelöscht werden: 3 Aktivität(en) und 2 Event(s) zugeordnet.“</strong></p>
       <p>Es wird also nichts stillschweigend entkoppelt — entweder die Kategorie geht ganz weg, oder sie bleibt vollständig.</p>
       <blockquote>Die Nachfrage vor dem Löschen („Kategorie wirklich löschen?“) <strong>warnt nicht vorab</strong>, dass die Kategorie noch benutzt wird. Das erfährst du erst, nachdem du bestätigt hast — dann als Fehlermeldung.</blockquote>
       <p>Zwei Kategorien dürfen nicht denselben Namen haben („Kategoriename existiert bereits“).</p>
-      <h3>Die Falle mit den Kategorie-Abzeichen</h3>
+      <h3 id="die-falle-mit-den-kategorie-abzeichen">Die Falle mit den Kategorie-Abzeichen</h3>
       <blockquote><strong>Achtung, das ist die gefährlichste Stelle in diesem Kapitel:</strong> Ein Kategorie-Abzeichen merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du eine Kategorie um, findet das zugehörige Abzeichen nichts mehr — <strong>stillschweigend, ohne Fehlermeldung</strong>. Niemand bekommt es mehr, und niemand erfährt, warum. Bereits verliehene bleiben erhalten. <strong>Kategorien, auf die Abzeichen zeigen, also nicht umbenennen.</strong></blockquote>
-      <h2>Jahrgang löschen</h2>
+      <h2 id="jahrgang-loeschen">Jahrgang löschen</h2>
       <p>Das Löschen ist an zwei Stellen abgesichert.</p>
       <p><strong>Blockiert, solange aktive Konfis zugeordnet sind.</strong> Meldung: „Jahrgang kann nicht gelöscht werden: 12 Konfi(s) zugeordnet.“ Verschiebe die Konfis erst in einen anderen Jahrgang.</p>
       <p><strong>Blockiert, solange der Chatverlauf Nachrichten enthält.</strong> Meldung: „Jahrgang kann nicht gelöscht werden: Chat-Raum enthält 148 Nachricht(en).“ Hier gibt es allerdings einen Ausweg: Als Organisations-Administration bekommst du die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf <strong>„Dennoch löschen“</strong>. Dann werden <strong>alle Nachrichten, Umfragen und Anhänge unwiderruflich gelöscht</strong>.</p>
-      <h3>Was mit beförderten Teamer:innen passiert</h3>
+      <h3 id="was-mit-befoerderten-teamer-innen-passiert">Was mit beförderten Teamer:innen passiert</h3>
       <p>Ehemalige Konfis, die inzwischen Teamer:in sind, <strong>blockieren das Löschen nicht</strong>. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.</p>
       <p><strong>Ihre Daten bleiben vollständig erhalten</strong>: Punktestand, Level, Abzeichen und Konfispruch. Das ist bewusst so gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können.</p>
-      <h2>Das Konfirmationsdatum</h2>
+      <h2 id="das-konfirmationsdatum">Das Konfirmationsdatum</h2>
       <p>Am Jahrgang selbst wird <strong>kein</strong> Konfirmationsdatum mehr gepflegt. Das Feld gibt es technisch noch, wird aber nicht mehr beschrieben.</p>
       <p>Der Konfirmationstermin ergibt sich stattdessen <strong>pro Konfi</strong> aus dem Termin, der als Konfirmation gekennzeichnet ist und den der Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat also jeder sein eigenes, richtiges Datum.</p>
     </article>

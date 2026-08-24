@@ -51,6 +51,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Handbuch: Auf dem Handy steckt das Inhaltsverzeichnis jetzt hinter einer
+  schmalen Leiste, die beim Lesen oben mitläuft — mit Kapitelnummer, Titel und
+  einem Knopf zum Aufklappen. Der Kapitelinhalt beginnt damit direkt oben,
+  statt erst nach einem halben Bildschirm Navigation.
 - Challenges: Entwürfe stehen jetzt im Reiter "Geplant" statt unter "Aktuell" —
   dort steht nur noch, was wirklich läuft.
 - Challenges: In der geöffneten Challenge gibt es oben einen Bearbeiten-Knopf —
