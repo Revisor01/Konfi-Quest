@@ -300,7 +300,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         show_losung: dashboardMap.dashboard_show_losung !== undefined ? dashboardMap.dashboard_show_losung : true,
         show_badges: dashboardMap.dashboard_show_badges !== undefined ? dashboardMap.dashboard_show_badges : true,
         show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true,
-        section_order: sectionOrder || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking']
+        // Der Challenges-Schalter existierte in den Einstellungen längst —
+        // wurde hier aber nie durchgereicht, die Karte lud deshalb immer.
+        show_challenges: dashboardMap.dashboard_show_challenges !== undefined ? dashboardMap.dashboard_show_challenges : true,
+        section_order: sectionOrder || ['konfirmation', 'challenges', 'konfispruch', 'events', 'losung', 'badges', 'ranking']
       };
 
       // Wrapped-Verfuegbarkeit (über wrapped_released_at auf Jahrgang) — bereits

@@ -50,6 +50,7 @@ interface DashboardConfig {
 
 interface TeamerDashboardConfig {
   show_zertifikate: boolean;
+  show_challenges: boolean;
   show_events: boolean;
   show_badges: boolean;
   show_losung: boolean;
@@ -67,6 +68,7 @@ const KONFI_LABELS: Record<string, string> = {
 
 const TEAMER_LABELS: Record<string, string> = {
   zertifikate: 'Zertifikate',
+  challenges: 'Challenges',
   events: 'Events',
   badges: 'Badges',
   losung: 'Tageslosung'
@@ -93,6 +95,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
 
   const [teamerDashboardConfig, setTeamerDashboardConfig] = useState<TeamerDashboardConfig>({
     show_zertifikate: true,
+    show_challenges: true,
     show_events: true,
     show_badges: true,
     show_losung: true
@@ -137,6 +140,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         });
         setTeamerDashboardConfig({
           show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
+          show_challenges: data.teamer_dashboard_show_challenges ?? true,
           show_events: data.teamer_dashboard_show_events ?? true,
           show_badges: data.teamer_dashboard_show_badges ?? true,
           show_losung: data.teamer_dashboard_show_losung ?? true

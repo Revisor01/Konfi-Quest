@@ -16,7 +16,12 @@ import {
   calendar,
   sparkles,
   time,
+  timeOutline,
   flag,
+  flagOutline,
+  eyeOutline,
+  megaphoneOutline,
+  constructOutline,
   helpCircle,
   location,
   chevronForward,
@@ -132,11 +137,30 @@ interface Badge {
 
 interface DashboardConfig {
   show_zertifikate: boolean;
+  show_challenges?: boolean;
   show_events: boolean;
   show_badges: boolean;
   show_losung: boolean;
   section_order?: string[];
 }
+
+/** Teaser-Daten einer laufenden Challenge für die Dashboard-Karte. */
+interface ChallengeTeaser {
+  id: number;
+  title: string;
+  ends_at: string;
+  challenge_type?: string;
+}
+
+// Icon je Challenge-Typ — gleiches Mapping wie im Konfi-Dashboard.
+const CHALLENGE_TYPE_ICON: Record<string, string> = {
+  wahrnehmung: eyeOutline,
+  beitrag: megaphoneOutline,
+  praxis: constructOutline,
+  frei: flagOutline
+};
+const getChallengeTypeIcon = (type?: string): string =>
+  CHALLENGE_TYPE_ICON[type || ''] || flagOutline;
 
 const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
@@ -269,6 +293,42 @@ const TeamerDashboardPage: React.FC = () => {
     },
     { ttl: CACHE_TTL.TAGESLOSUNG, enabled: losungAktiv }
   );
+
+  // Laufende Challenges für die Dashboard-Karte — wie im Konfi-Dashboard ein
+  // eigener, schlanker Abruf. Erst NACH dem Dashboard laden (Config bekannt),
+  // und gar nicht, wenn die Leitung die Karte abgeschaltet hat.
+  const [activeChallenges, setActiveChallenges] = useState<ChallengeTeaser[]>([]);
+  useEffect(() => {
+    if (!dashboardData) return;
+    if (dashboardData.config?.show_challenges === false) {
+      setActiveChallenges([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/challenges/admin');
+        if (cancelled) return;
+        const liste = Array.isArray(res.data) ? res.data : [];
+        setActiveChallenges(
+          liste
+            .filter((c: any) => c.status === 'active' && c.ends_at)
+            .map((c: any) => ({
+              id: c.id,
+              title: c.title,
+              ends_at: c.ends_at,
+              challenge_type: c.challenge_type
+            }))
+            .sort((a: ChallengeTeaser, b: ChallengeTeaser) =>
+              new Date(a.ends_at).getTime() - new Date(b.ends_at).getTime())
+        );
+      } catch {
+        // Zusatzkarte — ein Fehler darf das Dashboard nicht stören.
+        if (!cancelled) setActiveChallenges([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [dashboardData, dashboardData?.config?.show_challenges]);
 
   // Bibeluebersetzung (Tageslosung) — Anzeige + Auswahl
   const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
@@ -606,6 +666,75 @@ const TeamerDashboardPage: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+              );
+            }
+            // Challenges — laufende Challenges als Teaser, wie im Konfi-Dashboard.
+            // Ohne laufende Challenge verschwindet die Karte ganz.
+            if (sectionKey === 'challenges') {
+              if (config?.show_challenges === false || activeChallenges.length === 0) return null;
+              const remainingFor = (endsAt: string) => {
+                const diff = new Date(endsAt).getTime() - Date.now();
+                if (isNaN(diff) || diff <= 0) return 'Zeit abgelaufen';
+                const days = Math.floor(diff / 86400000);
+                if (days >= 1) return days === 1 ? '1 Tag' : `${days} Tage`;
+                const hours = Math.floor(diff / 3600000);
+                if (hours >= 1) return hours === 1 ? '1 Stunde' : `${hours} Stunden`;
+                return 'endet heute';
+              };
+              const visibleChallenges = activeChallenges.slice(0, 3);
+              return (
+            <div key="challenges" className="app-dashboard-section app-dashboard-section--challenges">
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                <h2 className="app-dashboard-section__bg-label">CHALLENGE</h2>
+              </div>
+              <div className="app-dashboard-section__content app-dashboard-section__content--compact">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {visibleChallenges.map((challenge) => (
+                    <div
+                      key={challenge.id}
+                      className="app-dashboard-glass-card"
+                      onClick={() => router.push('/teamer/challenges')}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                    >
+                      <div style={{
+                        width: '40px', height: '40px', borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <IonIcon icon={getChallengeTypeIcon(challenge.challenge_type)} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="app-headline" style={{
+                          fontSize: '1rem', fontWeight: '700', color: 'white',
+                          marginBottom: '4px', lineHeight: 1.25
+                        }}>
+                          {challenge.title}
+                        </div>
+                        <div className="app-dashboard-meta">
+                          <IonIcon icon={timeOutline} style={{ fontSize: '0.9rem' }} />
+                          <span>{remainingFor(challenge.ends_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div
+                    className="app-dashboard-glass-chip"
+                    onClick={() => router.push('/teamer/challenges')}
+                    style={{
+                      alignSelf: 'center',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Alle Challenges anzeigen <IonIcon icon={chevronForward} />
+                  </div>
                 </div>
               </div>
             </div>

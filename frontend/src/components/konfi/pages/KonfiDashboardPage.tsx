@@ -48,6 +48,7 @@ interface DashboardConfig {
   show_losung: boolean;
   show_badges: boolean;
   show_ranking: boolean;
+  show_challenges?: boolean;
   section_order?: string[];
 }
 
@@ -329,6 +330,9 @@ const KonfiDashboardPage: React.FC = () => {
     show_losung: dashboardData.dashboard_config?.show_losung !== false,
     show_badges: dashboardData.dashboard_config?.show_badges !== false,
     show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
+    // Ohne dieses Durchreichen lief der Challenges-Abruf in der View immer —
+    // der Schalter der Leitung blieb wirkungslos.
+    show_challenges: dashboardData.dashboard_config?.show_challenges !== false,
   };
 
   // Gespeicherte Reihenfolge mit der Default-Reihenfolge MERGEN: Bestands-Orgs

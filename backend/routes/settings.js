@@ -17,6 +17,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     body('dashboard_show_ranking').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('dashboard_show_challenges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_zertifikate').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('teamer_dashboard_show_challenges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_events').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_badges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
@@ -115,6 +116,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         dashboard_show_ranking,
         dashboard_show_challenges,
         teamer_dashboard_show_zertifikate,
+        teamer_dashboard_show_challenges,
         teamer_dashboard_show_events,
         teamer_dashboard_show_badges,
         teamer_dashboard_show_losung,
@@ -131,6 +133,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         dashboard_show_ranking,
         dashboard_show_challenges,
         teamer_dashboard_show_zertifikate,
+        teamer_dashboard_show_challenges,
         teamer_dashboard_show_events,
         teamer_dashboard_show_badges,
         teamer_dashboard_show_losung

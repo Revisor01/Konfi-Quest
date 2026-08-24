@@ -747,6 +747,7 @@ paths:
                 dashboard_show_ranking: { type: boolean }
                 dashboard_show_challenges: { type: boolean }
                 teamer_dashboard_show_zertifikate: { type: boolean }
+                teamer_dashboard_show_challenges: { type: boolean }
                 teamer_dashboard_show_events: { type: boolean }
                 teamer_dashboard_show_badges: { type: boolean }
                 teamer_dashboard_show_losung: { type: boolean }

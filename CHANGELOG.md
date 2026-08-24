@@ -14,6 +14,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Teamer-Dashboard: Laufende Challenges erscheinen jetzt auch auf der
+  Startseite der Teamer:innen, mit Restzeit und Absprung in den
+  Challenges-Bereich. Die Leitung kann die Karte in den
+  Dashboard-Einstellungen abschalten.
 - Handbuch unter konfi-quest.de/docs: erklärt für Konfis, Teamer:innen und die
   Leitung getrennt, was sie in der App tun können. Auf der Startseite oben in
   der Navigation, bei den häufigen Fragen und im Fußbereich verlinkt. Dazu
@@ -125,6 +129,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Der Challenges-Schalter in den Dashboard-Einstellungen war für das
+  Konfi-Dashboard wirkungslos — die Challenges-Karte erschien auch
+  abgeschaltet. Jetzt greift er.
 - Auf der Startseite lief die obere Navigation auf üblichen Bildschirmbreiten
   über: Das Logo stieß an den ersten Menüpunkt, die Knöpfe brachen zweizeilig
   um. Die Navigation hält jetzt in jeder Breite eine Zeile; auf schmaleren

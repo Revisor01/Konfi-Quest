@@ -121,6 +121,31 @@ describe('Settings Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    it('Teamer-Dashboard-Schalter Challenges speichern und lesen', async () => {
+      const res = await request(app)
+        .put('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ teamer_dashboard_show_challenges: false });
+
+      expect(res.status).toBe(200);
+
+      const getRes = await request(app)
+        .get('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.teamer_dashboard_show_challenges).toBe(false);
+    });
+
+    it('teamer_dashboard_show_challenges muss Boolean sein -> 400', async () => {
+      const res = await request(app)
+        .put('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ teamer_dashboard_show_challenges: 'vielleicht' });
+
+      expect(res.status).toBe(400);
+    });
+
     it('Dashboard section_order als JSON speichern', async () => {
       const order = JSON.stringify(['events', 'badges', 'ranking', 'konfirmation', 'losung']);
       const res = await request(app)

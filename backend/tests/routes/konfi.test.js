@@ -108,6 +108,27 @@ describe('Konfi Routes', () => {
       expect(res.body.dashboard_config.section_order).toContain('konfispruch');
     });
 
+    it('dashboard_config reicht den Challenges-Schalter durch (Default an, gesetzt aus)', async () => {
+      const resDefault = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(resDefault.status).toBe(200);
+      expect(resDefault.body.dashboard_config.show_challenges).toBe(true);
+
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES (1, 'dashboard_show_challenges', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`
+      );
+
+      const resOff = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(resOff.status).toBe(200);
+      expect(resOff.body.dashboard_config.show_challenges).toBe(false);
+    });
+
     it('Admin bekommt 403 (type !== konfi)', async () => {
       const res = await request(app)
         .get('/api/konfi/dashboard')

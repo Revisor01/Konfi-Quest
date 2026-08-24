@@ -921,6 +921,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       let teamerSectionOrder = null;
       const config = {
         show_zertifikate: true,
+        show_challenges: true,
         show_events: true,
         show_badges: true,
         show_losung: true
@@ -933,7 +934,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
         }
       });
-      config.section_order = teamerSectionOrder || ['zertifikate', 'events', 'badges', 'losung'];
+      config.section_order = teamerSectionOrder || ['zertifikate', 'challenges', 'events', 'badges', 'losung'];
 
       // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
       const { rows: [wrappedResult] } = await db.query(

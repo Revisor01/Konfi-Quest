@@ -578,9 +578,11 @@ paths:
         fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in
         selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit
         Zaehlern sowie die Dashboard-Konfiguration der Organisation
-        (show_zertifikate, show_events, show_badges, show_losung und
-        section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt
-        wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt.
+        (show_zertifikate, show_challenges, show_events, show_badges,
+        show_losung und section_order aus den settings-Schluesseln
+        teamer_dashboard_*). Zuletzt wird geprüft, ob ein
+        Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser selbst laedt
+        das Frontend separat über GET /api/challenges/admin.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -602,7 +604,7 @@ paths:
                   certificates: { type: array, items: { type: object }, description: "id, name, icon, issued_date, expiry_date, status" }
                   events: { type: array, items: { type: object }, description: "id, title, event_date, location, teamer_only, teamer_needed, is_registered, booking_status" }
                   badges: { type: object, description: "recent[], earned_count, total_count" }
-                  config: { type: object, description: "show_zertifikate, show_events, show_badges, show_losung, section_order" }
+                  config: { type: object, description: "show_zertifikate, show_challenges, show_events, show_badges, show_losung, section_order" }
                   has_wrapped: { type: boolean }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }

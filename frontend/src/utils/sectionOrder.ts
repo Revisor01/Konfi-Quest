@@ -21,6 +21,7 @@ export const DEFAULT_KONFI_SECTION_ORDER = [
 /** Default-Reihenfolge der Teamer-Dashboard-Sektionen. */
 export const DEFAULT_TEAMER_SECTION_ORDER = [
   'zertifikate',
+  'challenges',
   'events',
   'badges',
   'losung'

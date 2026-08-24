@@ -10126,7 +10126,7 @@
     "/api/teamer/dashboard": {
       "get": {
         "summary": "Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)",
-        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt.\n",
+        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10172,7 +10172,7 @@
                     },
                     "config": {
                       "type": "object",
-                      "description": "show_zertifikate, show_events, show_badges, show_losung, section_order"
+                      "description": "show_zertifikate, show_challenges, show_events, show_badges, show_losung, section_order"
                     },
                     "has_wrapped": {
                       "type": "boolean"
@@ -12860,6 +12860,9 @@
                     "type": "boolean"
                   },
                   "teamer_dashboard_show_zertifikate": {
+                    "type": "boolean"
+                  },
+                  "teamer_dashboard_show_challenges": {
                     "type": "boolean"
                   },
                   "teamer_dashboard_show_events": {

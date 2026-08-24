@@ -723,6 +723,30 @@ describe('Teamer Routes', () => {
       expect(res.body.config).toBeDefined();
     });
 
+    it('Config kennt Challenges: Default an, Reihenfolge enthaelt den Key', async () => {
+      const res = await request(app)
+        .get('/api/teamer/dashboard')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.config.show_challenges).toBe(true);
+      expect(res.body.config.section_order).toContain('challenges');
+    });
+
+    it('Abgeschalteter Challenges-Schalter kommt als false an', async () => {
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES (1, 'teamer_dashboard_show_challenges', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/dashboard')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.config.show_challenges).toBe(false);
+    });
+
     it('Konfi bekommt 403', async () => {
       const res = await request(app)
         .get('/api/teamer/dashboard')
