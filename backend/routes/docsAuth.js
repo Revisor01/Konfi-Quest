@@ -102,6 +102,14 @@ module.exports = () => {
     // Zeitkonstanter Vergleich: Ein einfaches === verrät über die Laufzeit,
     // wie viele Zeichen stimmen. Bei einem einzelnen Passwort ohne Benutzernamen
     // ist das die einzige Hürde, die es gibt.
+    //
+    // SHA-256 dient hier NUR dazu, zwei gleich lange Puffer für
+    // timingSafeEqual zu bekommen — es wird nichts gespeichert, das man
+    // offline knacken könnte (das Passwort liegt ohnehin im Klartext in der
+    // Umgebungsvariable). Ein Verfahren mit Arbeitsfaktor (scrypt/bcrypt)
+    // brächte deshalb keinen Schutz, wohl aber CPU-Kosten pro anonymem
+    // Request. Die Bremse gegen Durchprobieren ist der docsLoginLimiter
+    // (server.js, 20 Fehlversuche/15min), den createApp vor diese Route legt.
     const a = crypto.createHash('sha256').update(eingabe).digest();
     const b = crypto.createHash('sha256').update(PASSWORT).digest();
     if (!crypto.timingSafeEqual(a, b)) {

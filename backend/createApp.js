@@ -383,6 +383,11 @@ function createApp(db, options = {}) {
   // Auth Routes
   // Anmeldung für die API-Doku. Bewusst ohne rbacVerifier: Die Doku hängt nicht
   // an einem Konto, sondern an einem gemeinsamen Passwort (DOCS_PASSWORD).
+  // Streng limitiert: ein einzelnes Passwort ohne Benutzernamen wäre sonst
+  // einfach durchprobierbar (CodeQL-Befund 101, 24.08.2026).
+  if (rateLimiters.docsLoginLimiter) {
+    app.post('/api/docs-auth/anmelden', rateLimiters.docsLoginLimiter);
+  }
   app.use('/api/docs-auth', require('./routes/docsAuth')());
 
   app.use('/api/auth', require('./routes/auth')(db, verifyToken, transporterOrDummy, smtpConfig, {

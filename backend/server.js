@@ -315,6 +315,21 @@ const registerLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+// Doku-Anmeldung (/api/docs-auth/anmelden): EIN gemeinsames Passwort ohne
+// Benutzernamen — der globale Limiter (2000/15min) ist als einzige Bremse
+// viel zu weit, damit liesse sich das Passwort schlicht durchprobieren
+// (CodeQL-Befund 101, 24.08.2026). Erfolgreiche Anmeldungen zählen nicht,
+// 20 Fehlversuche pro Viertelstunde reichen für Vertipper locker.
+const docsLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
+  message: { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true
+});
+
 const chatMessageLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
@@ -369,6 +384,7 @@ const app = createApp(db, {
     general: generalLimiter,
     authLimiter,
     registerLimiter,
+    docsLoginLimiter,
     chatMessageLimiter,
     eventBookingLimiter,
     uploadLimiter,

@@ -1,7 +1,7 @@
 # ============================================================================
 # Konfi Quest API — Block 3: Verwaltung & Auth
-# Dokumentiert: auth, teamer, organizations, material, users, jahrgaenge,
-# badges, wrapped, levels, categories, roles, settings (109 Routen)
+# Dokumentiert: auth, docs-auth, teamer, organizations, material, users,
+# jahrgaenge, badges, wrapped, levels, categories, roles, settings (112 Routen)
 # Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos)
 # ============================================================================
 #
@@ -539,6 +539,63 @@ paths:
           Revoziert nur das mitgesendete Token (Hash-Match). Der
           Push-Token-Cleanup ist auf user_id des Tokens gescopt — fremde
           Geraete und andere Nutzer auf demselben Geraet bleiben unberuehrt.
+
+  # ==========================================================================
+  # DOCS-AUTH (backend/routes/docsAuth.js — 3 Routen, Mount /api/docs-auth)
+  # Anmeldung für die API-Doku unter /docs/api: EIN gemeinsames Passwort
+  # (DOCS_PASSWORD), kein Benutzerkonto. Der Reverse-Proxy fragt per
+  # Forward-Auth bei /pruefen nach. Neu 2026-08-24.
+  # ==========================================================================
+  /docs-auth/pruefen:
+    get:
+      summary: Forward-Auth-Check des Reverse-Proxys für /docs/api/*
+      responses:
+        "200": { description: "Doku-Cookie (signiertes JWT, Zweck 'docs') ist gueltig" }
+        "302": { description: "Kein/ungueltiges Cookie UND X-Forwarded-Uri gesetzt (Traefik): Redirect auf die Anmeldeseite, Ziel aus X-Forwarded-Host (https fest)" }
+        "401": { description: "Kein/ungueltiges Cookie ohne X-Forwarded-Uri (Caddy baut den Redirect selbst)" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "JWT-Verify des kq_docs-Cookies; App-Anmeldetokens werden abgelehnt (Zweck-Claim)"
+        hinweis: "Wird vom Proxy bei JEDEM Doku-Aufruf gerufen — bewusst ohne eigenes Limit (nur generalLimiter)"
+
+  /docs-auth/anmelden:
+    post:
+      summary: Anmeldung mit dem gemeinsamen Doku-Passwort, setzt das Doku-Cookie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [passwort]
+              properties:
+                passwort: { type: string }
+      responses:
+        "200": { description: "Cookie kq_docs gesetzt (JWT 30 Tage, HttpOnly, Secure, SameSite=Lax)" }
+        "401": { description: "Passwort falsch (zeitkonstanter Vergleich)" }
+        "429": { description: "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht" }
+        "503": { description: "DOCS_PASSWORD nicht gesetzt — Doku bleibt gesperrt statt offen" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [docsLoginLimiter]
+        org-scope: false
+        objekt-pruefung: "timingSafeEqual gegen DOCS_PASSWORD (SHA-256 nur zur Puffer-Angleichung, nichts wird gespeichert)"
+        # NACHGEZOGEN 24.08.2026 (CodeQL-Befund 101): Route war nur durch den
+        # generalLimiter (2000/15min) gedeckt — bei einem einzelnen Passwort
+        # ohne Benutzernamen praktisch durchprobierbar. Jetzt strenges Limit.
+
+  /docs-auth/abmelden:
+    post:
+      summary: Doku-Cookie löschen
+      responses:
+        "200": { description: "Cookie geloescht (Max-Age=0)" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "Keine — loescht nur das eigene Cookie"
 
   # ==========================================================================
   # ORGANIZATIONS (backend/routes/organizations.js — 15 Routen,

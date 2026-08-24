@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n238 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n241 Operationen."
   },
   "servers": [
     {
@@ -904,6 +904,105 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Revoziert nur das mitgesendete Token (Hash-Match). Der Push-Token-Cleanup ist auf user_id des Tokens gescopt — fremde Geraete und andere Nutzer auf demselben Geraet bleiben unberuehrt.\n"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/docs-auth/pruefen": {
+      "get": {
+        "summary": "Forward-Auth-Check des Reverse-Proxys für /docs/api/*",
+        "responses": {
+          "200": {
+            "description": "Doku-Cookie (signiertes JWT, Zweck 'docs') ist gueltig"
+          },
+          "302": {
+            "description": "Kein/ungueltiges Cookie UND X-Forwarded-Uri gesetzt (Traefik): Redirect auf die Anmeldeseite, Ziel aus X-Forwarded-Host (https fest)"
+          },
+          "401": {
+            "description": "Kein/ungueltiges Cookie ohne X-Forwarded-Uri (Caddy baut den Redirect selbst)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [],
+          "org-scope": false,
+          "objekt-pruefung": "JWT-Verify des kq_docs-Cookies; App-Anmeldetokens werden abgelehnt (Zweck-Claim)",
+          "hinweis": "Wird vom Proxy bei JEDEM Doku-Aufruf gerufen — bewusst ohne eigenes Limit (nur generalLimiter)"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/docs-auth/anmelden": {
+      "post": {
+        "summary": "Anmeldung mit dem gemeinsamen Doku-Passwort, setzt das Doku-Cookie",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "passwort"
+                ],
+                "properties": {
+                  "passwort": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cookie kq_docs gesetzt (JWT 30 Tage, HttpOnly, Secure, SameSite=Lax)"
+          },
+          "401": {
+            "description": "Passwort falsch (zeitkonstanter Vergleich)"
+          },
+          "429": {
+            "description": "docsLoginLimiter: 20 Fehlversuche/15min pro Client-IP; Erfolge zaehlen nicht"
+          },
+          "503": {
+            "description": "DOCS_PASSWORD nicht gesetzt — Doku bleibt gesperrt statt offen"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [
+            "docsLoginLimiter"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "timingSafeEqual gegen DOCS_PASSWORD (SHA-256 nur zur Puffer-Angleichung, nichts wird gespeichert)"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/docs-auth/abmelden": {
+      "post": {
+        "summary": "Doku-Cookie löschen",
+        "responses": {
+          "200": {
+            "description": "Cookie geloescht (Max-Age=0)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [],
+          "org-scope": false,
+          "objekt-pruefung": "Keine — loescht nur das eigene Cookie"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -8951,7 +9050,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Challenge + submissions[] (mit user_id, display_name, jahrgang_name, is_public, is_anonymous)"
+            "description": "Challenge + submissions[] (mit user_id, display_name, jahrgang_name, moderation_note, is_public, is_anonymous)"
           },
           "403": {
             "description": "requireTeamer / leadershipMayAccess"
@@ -8984,7 +9083,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Beitrag moderieren (approve/hide/unhide/anonymize)",
-        "description": "approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab; hide setzt 'hidden' (schlägt jede Sichtbarkeit). anonymize ist eine Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice'; 'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege liefern 409.\n",
+        "description": "approve und unhide setzen 'approved' und raeumen hidden-Metadaten (inkl. moderation_note) ab; hide setzt 'hidden' (schlägt jede Sichtbarkeit) und speichert optional eine Begruendung (reason), die die einreichende Person bei ihrem Beitrag sieht — das Ausblenden scheitert NIE am fehlenden Grund. anonymize ist eine Einbahnstrasse (einmal anonym, immer anonym) und seit 2026-08-24 fuer alle Sichtbarkeiten erlaubt (vorher 409 ausserhalb von 'konfi_choice'); 'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege liefern weiterhin 409. Pushes nach der Antwort: bei hide an die einreichende Person (challenge_submission_hidden, nicht beim eigenen Beitrag), bei approve der Abzeichen-Push (challenge_badge_earned), wenn es der erste freigegebene Beitrag der Person ist.\n",
         "parameters": [
           {
             "name": "id",
@@ -9013,6 +9112,11 @@
                       "unhide",
                       "anonymize"
                     ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Optionale Begruendung beim Ausblenden (nur bei action=hide gespeichert)"
                   }
                 }
               }
@@ -9021,10 +9125,10 @@
         },
         "responses": {
           "200": {
-            "description": "Neuer Status (id, moderation_status, ggf. konfi_consent)"
+            "description": "Neuer Status (id, moderation_status, moderation_note bzw. konfi_consent)"
           },
           "400": {
-            "description": "Ungueltige Aktion (Validator)"
+            "description": "Ungueltige Aktion oder reason laenger als 500 Zeichen (Validator)"
           },
           "403": {
             "description": "requireTeamer / leadershipMayAccess"
@@ -9033,9 +9137,7 @@
             "description": "Beitrag nicht in eigener Org"
           },
           "409": {
-            "description": "anonymize unzulaessig (falsche visibility",
-            "private-Zusage": null,
-            "bereits anonym)": null
+            "description": "anonymize unzulaessig (private-Zusage, bereits anonym)"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -13524,10 +13626,11 @@
           },
           "has_badge": {
             "type": "boolean",
-            "description": "Abgeleitet aus EXISTS eigener Submission"
+            "description": "Abgeleitet aus EXISTS eigener Submission mit moderation_status='approved' — Abzeichen erst nach Freigabe (2026-08-24, gilt fuer alle Rollen)"
           },
           "has_submission": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Schon eingereicht (unabhaengig von der Freigabe)"
           },
           "own_submission_count": {
             "type": "integer"
@@ -13600,7 +13703,7 @@
               "anonymous",
               null
             ],
-            "description": "Nur bei visibility=konfi_choice gesetzt"
+            "description": "Beim Einreichen nur bei visibility=konfi_choice gesetzt; 'anonymous' kann seit 2026-08-24 durch nachtraegliches Anonymisieren der Leitung bei JEDER Sichtbarkeit stehen"
           },
           "moderation_status": {
             "type": "string",
@@ -13609,6 +13712,13 @@
               "approved",
               "hidden"
             ]
+          },
+          "moderation_note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optionale Begruendung der Leitung beim Ausblenden (Migration 126); wird beim Freigeben/Wieder-Einblenden geleert"
           },
           "created_at": {
             "type": "string",

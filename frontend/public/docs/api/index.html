@@ -79,7 +79,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
     <p class="marke-unter">API-Referenz</p>
     <p class="marke-unter" style="margin-bottom:20px"><a href="./swagger.html" style="color:var(--akzent)">Swagger-Ansicht</a> · <a href="/docs/" style="color:var(--akzent)">Handbuch</a></p>
     <p class="nav-titel">Bereiche</p>
-    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">72</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">57</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">39</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
+    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">72</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">60</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">39</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
     <div class="legende">
       <p class="nav-titel">Methoden</p>
       <dl>
@@ -97,7 +97,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       aufrufen dürfen. Wo Hinweise stehen, sind grün markierte Punkte behobene
       Befunde aus dem Berechtigungs-Audit, graue noch offene.</p>
       <div class="kennzahlen">
-        <div class="kennzahl"><b>238</b><span>Operationen</span></div>
+        <div class="kennzahl"><b>241</b><span>Operationen</span></div>
         <div class="kennzahl"><b>5</b><span>Bereiche</span></div>
         <div class="kennzahl"><b>5</b><span>Rollen</span></div>
       </div>
@@ -569,7 +569,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400)</div><div class="hinweis">Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL).</div>
       </article></div>
     </section><section id="verwaltung-auth" class="service" style="--service:#047857">
-      <header class="service-kopf"><h2>Verwaltung &amp; Anmeldung</h2><p class="service-meta">57 Operationen</p></header>
+      <header class="service-kopf"><h2>Verwaltung &amp; Anmeldung</h2><p class="service-meta">60 Operationen</p></header>
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/auth/login</code></div>
         <p class="summary">Login für alle Rollen (case-insensitiver Username)</p>
@@ -646,6 +646,18 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/auth/logout</code></div>
         <p class="summary">Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)</p>
         <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Revoziert nur das mitgesendete Token (Hash-Match). Der Push-Token-Cleanup ist auf user_id des Tokens gescopt — fremde Geraete und andere Nutzer auf demselben Geraet bleiben unberuehrt.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/docs-auth/pruefen</code></div>
+        <p class="summary">Forward-Auth-Check des Reverse-Proxys für /docs/api/*</p>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>JWT-Verify des kq_docs-Cookies; App-Anmeldetokens werden abgelehnt (Zweck-Claim)</div><div class="hinweis">Wird vom Proxy bei JEDEM Doku-Aufruf gerufen — bewusst ohne eigenes Limit (nur generalLimiter)</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/docs-auth/anmelden</code></div>
+        <p class="summary">Anmeldung mit dem gemeinsamen Doku-Passwort, setzt das Doku-Cookie</p>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="mw"><code>docsLoginLimiter</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>timingSafeEqual gegen DOCS_PASSWORD (SHA-256 nur zur Puffer-Angleichung, nichts wird gespeichert)</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/docs-auth/abmelden</code></div>
+        <p class="summary">Doku-Cookie löschen</p>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Keine — loescht nur das eigene Cookie</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/organizations</code></div>
         <p class="summary">Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)</p>

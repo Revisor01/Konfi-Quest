@@ -174,6 +174,89 @@ describe('Docs-Auth Routes', () => {
     });
   });
 
+  describe('Rate-Limit auf POST /api/docs-auth/anmelden', () => {
+    // Ein gemeinsames Passwort ohne Benutzernamen: Ohne strenges Limit liesse
+    // es sich schlicht durchprobieren. Der Limiter wird in server.js gebaut und
+    // in createApp auf genau diese Route gelegt — hier wird die Verdrahtung
+    // geprüft, mit einem echten express-rate-limit und kleinem Limit.
+    const rateLimit = require('express-rate-limit');
+    const { createApp } = require('../../createApp');
+    const os = require('os');
+    const path = require('path');
+
+    function appMitLimit(max) {
+      return createApp(db, {
+        uploadsDir: path.join(os.tmpdir(), 'konfi-test-uploads'),
+        rateLimiters: {
+          docsLoginLimiter: rateLimit({
+            windowMs: 60 * 1000,
+            max,
+            message: { error: 'Zu viele Anmeldeversuche. Bitte warte 15 Minuten.' },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skipSuccessfulRequests: true
+          })
+        }
+      });
+    }
+
+    it('nach zu vielen Fehlversuchen blockt die Route (429), auch mit richtigem Passwort', async () => {
+      const begrenzt = appMitLimit(3);
+
+      for (let i = 0; i < 3; i++) {
+        const res = await request(begrenzt)
+          .post('/api/docs-auth/anmelden')
+          .send({ passwort: 'definitiv-falsch' });
+        expect(res.status).toBe(401);
+      }
+
+      // Vierter Versuch: Das Limit greift VOR der Passwortprüfung —
+      // selbst das richtige Passwort kommt nicht mehr durch.
+      const res = await request(begrenzt)
+        .post('/api/docs-auth/anmelden')
+        .send({ passwort: PASSWORT });
+      expect(res.status).toBe(429);
+      expect(cookieAus(res)).toBeNull();
+    });
+
+    it('erfolgreiche Anmeldungen zählen nicht gegen das Limit', async () => {
+      const begrenzt = appMitLimit(2);
+
+      // Mehr erfolgreiche Anmeldungen als das Limit an Fehlversuchen erlaubt —
+      // alle muessen durchgehen (skipSuccessfulRequests wie in Produktion).
+      for (let i = 0; i < 3; i++) {
+        const res = await request(begrenzt)
+          .post('/api/docs-auth/anmelden')
+          .send({ passwort: PASSWORT });
+        expect(res.status).toBe(200);
+      }
+
+      // Und ein einzelner Fehlversuch danach ist ein normales 401, kein 429.
+      const res = await request(begrenzt)
+        .post('/api/docs-auth/anmelden')
+        .send({ passwort: 'definitiv-falsch' });
+      expect(res.status).toBe(401);
+    });
+
+    it('das Limit trifft nur die Anmeldung, nicht die Cookie-Prüfung', async () => {
+      const begrenzt = appMitLimit(1);
+
+      const erster = await request(begrenzt)
+        .post('/api/docs-auth/anmelden')
+        .send({ passwort: 'definitiv-falsch' });
+      expect(erster.status).toBe(401);
+
+      const zweiter = await request(begrenzt)
+        .post('/api/docs-auth/anmelden')
+        .send({ passwort: 'definitiv-falsch' });
+      expect(zweiter.status).toBe(429);
+
+      // /pruefen bleibt erreichbar (der Proxy fragt hier bei JEDEM Doku-Aufruf).
+      const pruefen = await request(begrenzt).get('/api/docs-auth/pruefen');
+      expect(pruefen.status).toBe(401);
+    });
+  });
+
   describe('POST /api/docs-auth/abmelden', () => {
     it('löscht das Cookie, danach greift die Sperre wieder', async () => {
       const res = await request(app).post('/api/docs-auth/abmelden');
