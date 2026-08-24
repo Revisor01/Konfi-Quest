@@ -78,6 +78,20 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   bisher ging Bearbeiten nur über das Wischen in der Liste.
 - Challenges: Ein Entwurf braucht kein Start- und Enddatum mehr; der Zeitraum
   wird erst beim Einplanen festgelegt.
+- Challenges: Klarere Beschriftungen — die Sichtbarkeit "Konfi entscheidet"
+  heißt jetzt "Selbst entscheiden" (sie gilt auch fürs Team), "Nur für euch
+  in der Leitung" kurz "Nur Leitung", und wartende Freigaben zeigen in der
+  Liste nur noch Zahl und Uhr statt "5 offen".
+- Challenges: In der geöffneten Challenge steht unter "Worum geht es" jetzt
+  auch, wer die Beiträge sieht und ob sie sofort oder erst nach Freigabe
+  erscheinen — der separate Hinweis-Kasten ist dafür entfallen.
+- Challenges: Beim Einreichen steht der Hinweis, wer den Beitrag sieht, jetzt
+  direkt in der Kopf-Überschrift statt in einem eigenen Kasten darüber.
+- Challenges: Die erklärenden Hinweise zu Abzeichen, Zeitraum und Sichtbarkeit
+  stehen nicht mehr im Anlegen-Formular, sondern im Handbuch-Kapitel
+  Challenges.
+- Challenges: Freigegebene Beiträge tragen jetzt denselben dunkleren Grünton
+  wie laufende Challenges — der bisherige helle Ton war schwer lesbar.
 - Das Handbuch ist auf der Website jetzt oben in der Navigation und im Text
   bei den häufigen Fragen verlinkt — bisher nur ganz unten im Fußbereich. Auf
   dem Handy steht es als Symbol neben den Store-Links.
@@ -150,6 +164,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Challenges: Zähler sprechen jetzt in korrekter Einzahl und Mehrzahl —
+  "1 Beitrag" statt "1 Beiträge".
 - Chat: Ungesendete Nachrichten sind nach einem App-Neustart nicht mehr
   unsichtbar — sie stehen wieder im Verlauf, als "wird gesendet" oder als
   fehlgeschlagen mit der Möglichkeit, sie erneut zu senden oder zu löschen.
