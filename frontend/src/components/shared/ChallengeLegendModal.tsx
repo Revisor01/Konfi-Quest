@@ -43,7 +43,7 @@ const STATUS_ENTRIES: LegendEntry[] = [
     color: '#8e8e93',
     icon: createOutline,
     label: 'Entwurf',
-    description: 'Die Challenge ist noch nicht veröffentlicht.',
+    description: 'Die Challenge ist noch nicht veröffentlicht — du findest sie im Reiter "Geplant".',
   },
   {
     color: '#6b7280',

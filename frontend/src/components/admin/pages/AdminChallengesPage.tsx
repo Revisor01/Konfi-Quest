@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -79,8 +79,12 @@ const AdminChallengesPage: React.FC = () => {
     }
   });
 
+  // Bearbeiten-Knopf oben im geöffneten Challenge-Modal (Nutzerwunsch
+  // 24.08.2026): öffnet dasselbe Formular wie der Wisch in der Liste — als
+  // gestapeltes Modal über der Beitrags-Ansicht.
   const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
     challenge: moderationChallenge,
+    onEdit: (challenge: AdminChallenge) => openEdit(challenge),
     // Für die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
     get presentingElement() { return pageRef.current || presentingElement; },
     onClose: () => { dismissModerationModal(); },
@@ -110,6 +114,17 @@ const AdminChallengesPage: React.FC = () => {
   };
 
   useLiveRefresh('challenges', refreshChallenges);
+
+  // Die geöffnete Beitrags-Ansicht hält ihre Challenge als eigenen State.
+  // Nach einem Bearbeiten (oder Live-Refresh) käme sonst weiter der alte
+  // Stand (Titel, Beschreibung, Sperr-Urteil) zur Anzeige — deshalb hier mit
+  // der frisch geladenen Liste abgleichen.
+  useEffect(() => {
+    if (!moderationChallenge || !Array.isArray(challenges)) return;
+    const fresh = challenges.find((c) => c.id === moderationChallenge.id);
+    if (fresh && fresh !== moderationChallenge) setModerationChallenge(fresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challenges]);
 
   const openCreate = () => {
     setEditChallenge(null);

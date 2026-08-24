@@ -100,6 +100,12 @@ import type {
   ChallengeMediaType
 } from '../../../types/challenges';
 import { getChallengeStatus } from '../views/ChallengesManageView';
+import {
+  baueChallengePayload,
+  istChallengeFormularGueltig,
+  istNurTeam,
+  zeitraumFehler
+} from '../../../utils/challengeForm';
 
 // Icon-Auswahl: identisches Pattern und identischer Vorrat wie BadgeManagementModal,
 // damit Challenge-Abzeichen und Badges dieselbe Bildsprache haben.
@@ -228,16 +234,6 @@ interface ChallengeManageModalProps {
 const toIonDatetimeISO = (date: Date) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-};
-
-// Für den Versand ans Backend: die lokale Wandzeit aus dem Picker in einen
-// echten UTC-Zeitstempel wandeln. Ohne diese Wandlung landet der naive String
-// in einer TIMESTAMPTZ-Spalte und wird in der Server-Zeitzone interpretiert —
-// auf einem Geraet außerhalb Europe/Berlin verschiebt sich die Challenge
-// dadurch bei jeder Bearbeitung. Gleiches Muster wie im EventModal.
-const toBackendTimestamp = (localTimeString: string) => {
-  if (!localTimeString) return null;
-  return new Date(localTimeString).toISOString();
 };
 
 const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
@@ -372,59 +368,24 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     }));
   };
 
-  // Bei 'nur_team' gibt es keine Jahrgangs-Auswahl (org-weit über die Rolle),
-  // deshalb ist die Jahrgangs-Pflicht dort aufgehoben.
-  const isTeamOnly = formData.audience === 'nur_team';
-
-  const isFormValid =
-    formData.title.trim().length > 0 &&
-    formData.description.trim().length > 0 &&
-    formData.badge_name.trim().length > 0 &&
-    formData.allowed_media.length > 0 &&
-    (isTeamOnly || formData.jahrgang_ids.length > 0) &&
-    !!formData.starts_at &&
-    !!formData.ends_at;
-
-  const buildPayload = () => {
-    const payload: Record<string, any> = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      allow_multiple: formData.allow_multiple,
-      badge_icon: formData.badge_icon,
-      badge_name: formData.badge_name.trim(),
-      // Urheber nur noch als optionaler Freitext (author_user_id entfaellt).
-      author_user_id: null,
-      author_freetext: formData.author_freetext.trim() || null,
-      jahrgang_ids: isTeamOnly ? [] : formData.jahrgang_ids,
-      ends_at: toBackendTimestamp(formData.ends_at),
-      // Nach dem Start ist is_draft fixiert (Backend erzwingt false).
-      is_draft: isStarted ? false : formData.is_draft
-    };
-
-    // Gesperrte Felder nach dem Start GAR NICHT mitsenden. Das Backend vergleicht
-    // sie auf Gleichheit — und weil das Formular die Zeitstempel über die lokale
-    // IonDatetime-Darstellung (ohne Sekunden/Zeitzone) fuehrt, könnte ein
-    // unveraendertes starts_at sonst als Änderung gelten und faelschlich 409 werfen.
-    if (!isStarted) {
-      payload.audience = formData.audience;
-      payload.visibility = formData.visibility;
-      payload.moderated = formData.moderated;
-      payload.allowed_media = formData.allowed_media;
-      payload.starts_at = toBackendTimestamp(formData.starts_at);
-    }
-
-    return payload;
-  };
+  // Pflichtfelder, Zeitraum-Regel und Payload liegen als pure Funktionen in
+  // utils/challengeForm (testbar ohne Ionic). Wichtig seit 24.08.2026:
+  // Bei Entwürfen ist der Zeitraum KEINE Pflicht mehr.
+  const isTeamOnly = istNurTeam(formData);
+  const isFormValid = istChallengeFormularGueltig(formData);
 
   const handleSave = async () => {
     if (!isFormValid) {
-      setError(isTeamOnly
-        ? 'Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten und den Zeitraum aus.'
-        : 'Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten, Jahrgänge und den Zeitraum aus.');
+      // Der Zeitraum ist nur außerhalb des Entwurfs Pflicht.
+      const felder = ['Titel', 'Beschreibung', 'Abzeichen-Name', 'Medienarten'];
+      if (!isTeamOnly) felder.push('Jahrgänge');
+      if (!formData.is_draft) felder.push('den Zeitraum');
+      setError(`Bitte fülle ${felder.slice(0, -1).join(', ')} und ${felder[felder.length - 1]} aus.`);
       return;
     }
-    if (new Date(formData.ends_at).getTime() <= new Date(formData.starts_at).getTime()) {
-      setError('Das Ende muss nach dem Start liegen.');
+    const zeitFehler = zeitraumFehler(formData);
+    if (zeitFehler) {
+      setError(zeitFehler);
       return;
     }
 
@@ -435,7 +396,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       await guard(async () => {
       setLoading(true);
       try {
-        const payload = buildPayload();
+        const payload = baueChallengePayload(formData, isStarted);
         if (isEditMode && challenge) {
           await api.put(`/challenges/admin/${challenge.id}`, payload);
         } else {
@@ -870,25 +831,37 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                 <div className="app-section-icon app-section-icon--challenges">
                   <IonIcon icon={calendarOutline} />
                 </div>
-                <IonLabel>Zeitraum</IonLabel>
+                {/* Beim Entwurf gibt es keinen Zeitraum zu sehen — dann
+                    trägt der Abschnitt den Namen dessen, was er zeigt. */}
+                <IonLabel>{formData.is_draft ? 'Entwurf' : 'Zeitraum'}</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonList>
-                    <IonItem lines="inset">
-                      <IonLabel>Start{isStarted ? ' (gesperrt)' : ' *'}</IonLabel>
-                      <IonDatetimeButton datetime="challenge-start-picker" disabled={loading || isStarted} slot="end" />
-                    </IonItem>
-                    <IonItem lines="none">
-                      <IonLabel>Ende *</IonLabel>
-                      <IonDatetimeButton datetime="challenge-end-picker" disabled={loading} slot="end" />
-                    </IonItem>
-                  </IonList>
-                  {isStarted && (
-                    <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                      Der Start liegt bereits in der Vergangenheit und lässt sich nicht mehr
-                      verschieben. Das Ende kannst du weiterhin anpassen.
-                    </div>
+                  {/* Entwurf ist Entwurf — kein Datum (Nutzerentscheid
+                      24.08.2026): solange der Entwurf-Schalter an ist, werden
+                      Start und Ende weder angezeigt noch verlangt. Bereits
+                      eingetragene Werte bleiben im Formular-State erhalten
+                      und tauchen beim Einplanen wieder auf — beim Hin- und
+                      Herschalten geht nichts verloren. */}
+                  {!formData.is_draft && (
+                    <>
+                      <IonList>
+                        <IonItem lines="inset">
+                          <IonLabel>Start{isStarted ? ' (gesperrt)' : ' *'}</IonLabel>
+                          <IonDatetimeButton datetime="challenge-start-picker" disabled={loading || isStarted} slot="end" />
+                        </IonItem>
+                        <IonItem lines="none">
+                          <IonLabel>Ende *</IonLabel>
+                          <IonDatetimeButton datetime="challenge-end-picker" disabled={loading} slot="end" />
+                        </IonItem>
+                      </IonList>
+                      {isStarted && (
+                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
+                          Der Start liegt bereits in der Vergangenheit und lässt sich nicht mehr
+                          verschieben. Das Ende kannst du weiterhin anpassen.
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Entwurf-Haken statt eigener Footer-Buttons: gespeichert wird
@@ -912,7 +885,13 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                           onIonChange={(e) => setFormData({ ...formData, is_draft: e.detail.checked })}
                         />
                       </IonItem>
-                      {!formData.is_draft && (
+                      {formData.is_draft ? (
+                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
+                          Ein Entwurf braucht noch keinen Zeitraum. Start und Ende legst du
+                          fest, sobald du den Entwurf einplanst — schalte dafür den Schalter
+                          wieder aus.
+                        </div>
+                      ) : (
                         <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
                           Die Challenge wird geplant und startet automatisch zum eingestellten
                           Zeitpunkt — dann bekommen die Konfis eine Benachrichtigung.

@@ -28,6 +28,7 @@ import {
 } from '@ionic/react';
 import {
   closeOutline,
+  createOutline,
   flag,
   shareOutline,
   addOutline,
@@ -56,6 +57,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { hostAus, istWebLink } from '../../../utils/linkDisplay';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
+import { getChallengeStatus } from '../views/ChallengesManageView';
 import type {
   AdminChallenge,
   KonfiChallenge,
@@ -236,6 +238,15 @@ export interface ChallengeLeitungModalProps {
   // sonst in der ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
   challenge?: AdminChallenge | null;
   onClose: () => void;
+  /**
+   * Öffnet das Bearbeiten-Formular für diese Challenge. In der Liste liegt
+   * Bearbeiten bewusst nur auf dem Wisch (Tippen = Moderation) — wer die
+   * Challenge schon geöffnet hat, soll dafür nicht zurück und wischen müssen
+   * (Nutzerwunsch 24.08.2026). Der Knopf erscheint IMMER: auch nach dem Start
+   * bleiben Titel, Beschreibung, Ende, Abzeichen und Jahrgänge änderbar; die
+   * eingefrorenen Felder zeigt das Formular selbst als gesperrt.
+   */
+  onEdit?: (challenge: AdminChallenge) => void;
   // Wird nach jeder Moderations-Aktion und nach eigenem Einreichen gerufen,
   // damit die Liste dahinter (Pending-Zähler) aktuell bleibt.
   onChanged?: () => void;
@@ -255,6 +266,7 @@ type StatusFilter = 'all' | 'pending' | 'hidden';
 const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   challenge,
   onClose,
+  onEdit,
   onChanged,
   presentingElement
 }) => {
@@ -360,14 +372,13 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     });
   }, [challenge?.moderated, counts, statusFilter]);
 
+  // Abgeleiteter Status — dieselbe Quelle wie die Liste. Vorher wurde hier nur
+  // aktiv/inaktiv unterschieden, wodurch Entwürfe und Geplante fälschlich
+  // als "Beendet" beschriftet waren; seit dem Bearbeiten-Knopf (24.08.2026)
+  // ist das Modal für Entwürfe ein normaler Arbeitsweg.
+  const status = challenge ? getChallengeStatus(challenge) : 'draft';
   // Laeuft die Challenge gerade? Nur dann darf man selbst einreichen.
-  const isActive = useMemo(() => {
-    if (!challenge) return false;
-    const start = new Date(challenge.starts_at).getTime();
-    const end = new Date(challenge.ends_at).getTime();
-    const now = Date.now();
-    return !challenge.is_draft && now >= start && now <= end;
-  }, [challenge]);
+  const isActive = status === 'active';
 
   // Eigene Beitraege aus derselben Liste ziehen — das Backend liefert user_id
   // in GET /challenges/admin/:id/submissions mit.
@@ -559,6 +570,17 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
+            {/* Stammdaten bearbeiten — oben in der Leiste, weil der Wisch in
+                der Liste schwer zu entdecken ist (Nutzerwunsch 24.08.2026). */}
+            {onEdit && (
+              <IonButton
+                onClick={() => onEdit(challenge)}
+                title="Challenge bearbeiten"
+                aria-label="Challenge bearbeiten"
+              >
+                <IonIcon icon={createOutline} slot="icon-only" />
+              </IonButton>
+            )}
             {/* Selbst mitmachen — nur solange die Challenge laeuft */}
             {canSubmitMore && (
               <IonButton
@@ -604,7 +626,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
               <div className="app-section-icon app-section-icon--challenges">
                 <IonIcon icon={documentTextOutline} />
               </div>
-              <IonLabel>{isActive ? 'Worum geht es?' : 'Worum ging es?'}</IonLabel>
+              <IonLabel>{status === 'ended' ? 'Worum ging es?' : 'Worum geht es?'}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '14px' }}>
@@ -619,7 +641,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
-                    {isActive ? 'Läuft gerade' : 'Beendet'}
+                    {status === 'draft' && 'Entwurf — noch nicht veröffentlicht'}
+                    {status === 'scheduled' && 'Startet erst noch'}
+                    {status === 'active' && 'Läuft gerade'}
+                    {status === 'ended' && 'Beendet'}
                   </span>
                   {(challenge.author_name || challenge.author_freetext) && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

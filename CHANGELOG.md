@@ -47,6 +47,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Challenges: Entwürfe stehen jetzt im Reiter "Geplant" statt unter "Aktuell" —
+  dort steht nur noch, was wirklich läuft.
+- Challenges: In der geöffneten Challenge gibt es oben einen Bearbeiten-Knopf —
+  bisher ging Bearbeiten nur über das Wischen in der Liste.
+- Challenges: Ein Entwurf braucht kein Start- und Enddatum mehr; der Zeitraum
+  wird erst beim Einplanen festgelegt.
 - Das Handbuch ist auf der Website jetzt oben in der Navigation und im Text
   bei den häufigen Fragen verlinkt — bisher nur ganz unten im Fußbereich. Auf
   dem Handy steht es als Symbol neben den Store-Links.

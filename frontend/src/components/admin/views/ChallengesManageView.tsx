@@ -59,14 +59,55 @@ interface ChallengesManageViewProps {
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
 // (siehe Datenmodell). Dieselbe Logik nutzt auch das Backend.
-export const getChallengeStatus = (challenge: AdminChallenge): ChallengeStatus => {
+// `now` ist nur für Tests injizierbar — im Betrieb gilt die echte Uhr.
+export const getChallengeStatus = (challenge: AdminChallenge, now: number = Date.now()): ChallengeStatus => {
   if (challenge.is_draft) return 'draft';
-  const now = Date.now();
   const start = new Date(challenge.starts_at).getTime();
   const end = new Date(challenge.ends_at).getTime();
   if (now < start) return 'scheduled';
   if (now > end) return 'ended';
   return 'active';
+};
+
+// Aufteilung auf die drei Reiter — als pure Funktion exportiert, damit die
+// Zuordnung testbar ist, ohne die Ionic-Ansicht zu rendern.
+export const teileChallengesAuf = (
+  challenges: AdminChallenge[],
+  now: number = Date.now()
+): { current: AdminChallenge[]; planned: AdminChallenge[]; archived: AdminChallenge[] } => {
+  // Geplant: Entwürfe ZUERST (daran wird noch gearbeitet, ein fester Termin
+  // steht noch nicht), danach die eingeplanten mit dem nächsten Start oben.
+  // Entwürfe untereinander nach Anlage (jüngste zuerst) — NICHT nach
+  // starts_at, denn ein Entwurf hat noch keinen verbindlichen Zeitraum,
+  // das Datum dahinter ist nur ein technischer Platzhalter.
+  const draftsFirstThenStart = (a: AdminChallenge, b: AdminChallenge) => {
+    const aDraft = getChallengeStatus(a, now) === 'draft';
+    const bDraft = getChallengeStatus(b, now) === 'draft';
+    if (aDraft !== bDraft) return aDraft ? -1 : 1;
+    if (aDraft && bDraft) {
+      const aCreated = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bCreated = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (aCreated !== bCreated) return bCreated - aCreated;
+      return b.id - a.id;
+    }
+    return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
+  };
+
+  return {
+    // Aktuell: NUR was gerade läuft. Entwürfe standen hier früher mit drin,
+    // das war verwirrend — sie gehören zu dem, was noch kommt
+    // (Nutzerentscheid 24.08.2026, ersetzt die Einteilung vom 23.08.).
+    current: challenges
+      .filter((c) => getChallengeStatus(c, now) === 'active')
+      .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()),
+    planned: challenges
+      .filter((c) => ['scheduled', 'draft'].includes(getChallengeStatus(c, now)))
+      .sort(draftsFirstThenStart),
+    // Archiv: zuletzt beendete zuerst — wie in der Konfi-Sicht.
+    archived: challenges
+      .filter((c) => getChallengeStatus(c, now) === 'ended')
+      .sort((a, b) => new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime())
+  };
 };
 
 const STATUS_LABEL: Record<ChallengeStatus, string> = {
@@ -148,38 +189,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     return byStatus;
   }, [challenges]);
 
-  // Aufbau 1:1 wie die Konfi-Sicht (User-Entscheid 11.08.): drei feste
-  // Abschnitte statt Segment-Filter — laufend, Abzeichen, Archiv. Aktiv,
-  // geplant und Entwurf stehen dabei in EINER Liste; welcher Status gilt,
-  // sagt das Badge am Eintrag. Konfis sehen dieselben drei Abschnitte, dort
-  // enthält der erste nur Aktive (geplant/Entwurf liefert das Backend nicht).
-  const { current, planned, archived } = useMemo(() => {
-    // Sortierung innerhalb der laufenden Liste: aktive zuerst, dann geplante,
-    // zuletzt Entwuerfe; bei gleichem Status das juengste Startdatum oben.
-    const order: Record<ChallengeStatus, number> = { active: 0, scheduled: 1, draft: 2, ended: 3 };
-    const byStatusThenStart = (a: AdminChallenge, b: AdminChallenge) => {
-      const diff = order[getChallengeStatus(a)] - order[getChallengeStatus(b)];
-      if (diff !== 0) return diff;
-      return new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
-    };
-    return {
-      // Aktuell: laufende Challenges und Entwuerfe — alles, woran gerade
-      // gearbeitet wird. Geplante haben einen eigenen Reiter, weil sie einen
-      // anderen Blick verlangen: nicht "was läuft", sondern "was kommt"
-      // (Nutzerwunsch 23.08.2026).
-      current: challenges
-        .filter((c) => ['active', 'draft'].includes(getChallengeStatus(c)))
-        .sort(byStatusThenStart),
-      // Geplant: das nächste Startdatum oben.
-      planned: challenges
-        .filter((c) => getChallengeStatus(c) === 'scheduled')
-        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),
-      // Archiv: zuletzt beendete zuerst — wie in der Konfi-Sicht.
-      archived: challenges
-        .filter((c) => getChallengeStatus(c) === 'ended')
-        .sort((a, b) => new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime())
-    };
-  }, [challenges]);
+  // Drei Reiter: Aktuell = was läuft, Geplant = was kommt (eingeplant UND
+  // Entwurf), Archiv = was vorbei ist. Die Zuordnung selbst liegt in
+  // teileChallengesAuf (pure Funktion, testbar).
+  const { current, planned, archived } = useMemo(() => teileChallengesAuf(challenges), [challenges]);
 
   // Ein Listeneintrag — identisch in "Aktuelle Challenges" und "Archiv",
   // deshalb einmal hier statt zweimal im JSX.
@@ -289,14 +302,28 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         </div>
 
                         <div className="app-list-item__meta">
-                          <span className="app-list-item__meta-item">
-                            <IonIcon icon={calendarOutline} className="app-icon-color--challenges" />
-                            {formatDate(challenge.starts_at)}
-                          </span>
-                          <span className="app-list-item__meta-item">
-                            <IonIcon icon={timeOutline} className="app-icon-color--muted" />
-                            bis {formatDate(challenge.ends_at)}
-                          </span>
+                          {/* Entwurf ist Entwurf: der Zeitraum wird erst beim
+                              Einplanen festgelegt, das gespeicherte Datum ist
+                              nur ein technischer Platzhalter — deshalb hier
+                              bewusst KEINE Daten anzeigen (Nutzerentscheid
+                              24.08.2026). */}
+                          {status === 'draft' ? (
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={calendarOutline} className="app-icon-color--muted" />
+                              Zeitraum noch offen
+                            </span>
+                          ) : (
+                            <>
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={calendarOutline} className="app-icon-color--challenges" />
+                                {formatDate(challenge.starts_at)}
+                              </span>
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={timeOutline} className="app-icon-color--muted" />
+                                bis {formatDate(challenge.ends_at)}
+                              </span>
+                            </>
+                          )}
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={albumsOutline} className="app-icon-color--challenges" />
                             {challenge.submission_count || 0} Beiträge
@@ -372,9 +399,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         icon={flag}
         preset="challenges"
         stats={[
-          // Aktiv/Geplant/Entwürfe beschreiben alle den Reiter "Aktuell" und
-          // springen dorthin; Archiv schaltet auf den zweiten Reiter.
-          // Jede Kachel fuehrt auf ihren eigenen Reiter.
+          // Jede Kachel zählt ihren Reiter und springt dorthin: Aktuell nur
+          // Laufende, Geplant auch die Entwürfe (Nutzerentscheid 24.08.2026).
           { value: current.length, label: 'Aktuell', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
           { value: planned.length, label: 'Geplant', onClick: () => setReiter('geplant'), active: reiter === 'geplant' },
           { value: archived.length, label: 'Archiv', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
@@ -403,8 +429,9 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {reiter === 'aktuell' && (
       <>
-      {/* --- 1. Aktuelle Challenges: aktiv, geplant und Entwurf in EINER
-              Liste — den Status sagt das Badge am Eintrag. --- */}
+      {/* --- 1. Aktuelle Challenges: NUR die laufenden. Entwürfe stehen seit
+              24.08.2026 im Reiter "Geplant" — sie gehören zu dem, was noch
+              kommt, nicht zu dem, was läuft. --- */}
       <ListSection
         icon={flag}
         title="Aktuelle Challenges"
@@ -412,7 +439,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={current.length === 0}
         emptyIcon={flag}
-        emptyTitle="Keine Challenges vorhanden"
+        emptyTitle="Gerade läuft keine Challenge"
         emptyMessage="Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können"
         emptyIconColor="#be185d"
       >
@@ -424,13 +451,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       {reiter === 'geplant' && (
       <ListSection
         icon={timeOutline}
-        title="Geplante Challenges"
+        title="Geplant und Entwürfe"
         count={planned.length}
         iconColorClass="challenges"
         isEmpty={planned.length === 0}
         emptyIcon={timeOutline}
-        emptyTitle="Nichts geplant"
-        emptyMessage="Challenges mit einem Startdatum in der Zukunft erscheinen hier"
+        emptyTitle="Nichts in Planung"
+        emptyMessage="Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier"
         emptyIconColor="#be185d"
       >
         {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
