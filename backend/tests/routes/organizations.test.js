@@ -222,6 +222,54 @@ describe('Organizations Routes', () => {
 
       expect(res.status).toBe(200);
     });
+
+    // Werte-Aequivalenz nach dem Umbau der Zaehler-Query (24.08.2026):
+    // Die fuenf unkorrelierten LEFT JOINs (Kreuzprodukt, in Produktion 77.376
+    // Zwischenzeilen und 198 ms) wurden durch korrelierte Subselects ersetzt
+    // (0,9 ms). Dieser Test nagelt die Zaehler auf die exakten Seed-Werte
+    // fest, damit ein kuenftiger Umbau die Semantik nicht verschiebt.
+    it('/current liefert exakte Zaehler fuer die eigene Org', async () => {
+      const res = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(ORGS.testGemeinde.id);
+      // Seed Org 1: konfi1 + konfi2
+      expect(res.body.konfi_count).toBe(2);
+      // Seed Org 1: jahrgang1
+      expect(res.body.jahrgang_count).toBe(1);
+      // Seed Org 1: Aktivitaeten 1-4
+      expect(res.body.activity_count).toBe(4);
+      // Seed Org 1: Events 1-3 (Event 4 gehoert Org 2 und darf NICHT zaehlen)
+      expect(res.body.event_count).toBe(3);
+      // Seed Org 1: Badges 1-4 (Badge 5 gehoert Org 2 und darf NICHT zaehlen)
+      expect(res.body.badge_count).toBe(4);
+      // Team Org 1 ohne Konfis: teamer1, admin1, orgAdmin1, superAdmin, orgAdminSuper
+      expect(res.body.user_count).toBe(5);
+    });
+
+    it('/current zaehlt Multi-Org-Teamer mit, Multi-Org-Konfis nicht', async () => {
+      // teamer2 (Primaer-Org 2) haengt zusaetzlich als Teamer in Org 1 -> zaehlt
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)`,
+        [USERS.teamer2.id, ORGS.testGemeinde.id, 2]
+      );
+      // konfi3 (Primaer-Org 2) haengt zusaetzlich als Konfi in Org 1 -> zaehlt NICHT
+      await db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi3.id, ORGS.testGemeinde.id, 1]
+      );
+
+      const res = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      // 5 Primaer-Teammitglieder + teamer2 via Mapping = 6; konfi3 bleibt draussen
+      expect(res.body.user_count).toBe(6);
+      expect(res.body.konfi_count).toBe(2);
+    });
   });
 
   // ================================================================
