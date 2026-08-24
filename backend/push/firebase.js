@@ -92,6 +92,15 @@ const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
       throw new Error('Firebase not initialized');
     }
 
+    // Auf iOS setzt aps.badge die Zahl am App-Icon direkt — Android kennt so
+    // etwas nicht. Dort muesste die App das Paket entgegennehmen und die Zahl
+    // selbst ans Badge-Plugin geben; einen Empfaenger fuer 'badge_update' gibt
+    // es im Frontend derzeit nicht (nachgesehen am 24.08.2026). Der
+    // android-Block mit hoher Prioritaet ist die Voraussetzung dafuer, dass
+    // ein solcher Empfaenger das Paket ueberhaupt erreichen wuerde; ohne ihn
+    // stuft FCM Datenpakete an schlafende Geraete zurueck. Solange der
+    // Empfaenger fehlt, bleibt der Android-Zaehler das, was die laufende App
+    // ueber BadgeContext setzt.
     const message = {
       token: deviceToken,
       apns: {
@@ -105,6 +114,11 @@ const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
           'apns-push-type': 'background',
           'apns-priority': '5',
         },
+      },
+      android: {
+        priority: 'high',
+        // Bewusst ohne notification-Block: Das hier soll nichts anzeigen,
+        // sondern nur die Zahl nachfuehren.
       },
       data: { type: 'badge_update', count: badgeCount.toString() },
     };

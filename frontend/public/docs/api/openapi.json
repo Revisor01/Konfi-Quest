@@ -9116,7 +9116,7 @@
           "Notifications"
         ],
         "summary": "Leichtgewichtige Badge-Zaehler fuer die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zaehler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zaehler: pendingRequests/pendingEvents nur fuer Admin-Typen; pendingChallenges fuer Admins org-weit, fuer Teamer auf zugewiesene Jahrgaenge begrenzt, fuer Konfis 0.\n",
+        "description": "Chat-Ungelesen-Zaehler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zaehler: pendingRequests/pendingEvents nur fuer Admin-Typen; pendingChallenges fuer Admins org-weit, fuer Teamer auf zugewiesene Jahrgaenge begrenzt, fuer Konfis 0. Seit 24.08.2026 zaehlen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zaehlungen sind damit gleich.\n",
         "responses": {
           "200": {
             "description": "Zaehler",

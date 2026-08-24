@@ -102,6 +102,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Auf Android waren der erste und der letzte Reiter unten teilweise
+  abgeschnitten, weil die Leiste den seitlichen Systembereich nicht
+  berücksichtigte. Lange Beschriftungen werden jetzt gekürzt statt überzulaufen.
+- Die eigene zuletzt geschriebene Nachricht zählte als ungelesen. Am Reiter
+  stand dadurch eine Eins, bis man den Chat noch einmal öffnete.
+- Die Zahl am App-Symbol wird jetzt auch auf null zurückgesetzt. Bisher nahm
+  der Server sie nie zurück — auf Android blieb sie deshalb oft stehen.
 - Ein verdientes Abzeichen bleibt jetzt sichtbar, auch wenn die Leitung es
   später abschaltet — etwa zum Saisonende. Bisher verschwand es aus der Liste,
   während die Zähler es weiter mitzählten.

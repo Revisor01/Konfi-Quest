@@ -45,6 +45,13 @@ module.exports = (db, verifyTokenRBAC) => {
                  WHERE m.room_id = r.id
                  AND m.deleted_at IS NULL
                  AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+                 -- Eigene Nachrichten zaehlen nicht als ungelesen. Ohne diese
+                 -- Zeile stand nach der eigenen letzten Nachricht eine Eins am
+                 -- Reiter, die erst beim Oeffnen des Raums verschwand — und wer
+                 -- ihn nicht mehr oeffnete, sah sie dauerhaft. Die Zaehlung im
+                 -- Hintergrunddienst schliesst sie seit jeher aus
+                 -- (backgroundService.js), diese hier nicht (Befund 24.08.2026).
+                 AND NOT (m.user_id = $1 AND m.user_type = $2)
                ) AS unread_count
         FROM chat_rooms r
         INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = $1 AND p.user_type = $2

@@ -720,6 +720,14 @@ ion-tab-bar.md {
   padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
   box-sizing: content-box !important;
+  /* Auch SEITLICH einruecken. Mit viewport-fit=cover (index.html) reicht die
+     Seite bis unter die Systembereiche; ohne diese beiden Zeilen ragten der
+     erste und der letzte Reiter dort hinein und waren nur halb sichtbar —
+     gemeldet von Android-Nutzer:innen, bestaetigt am 24.08.2026: Im Projekt
+     wurde safe-area-inset-left/right an keiner einzigen Stelle beruecksichtigt.
+     Betrifft vor allem Geraete mit seitlicher Aussparung und das Querformat. */
+  padding-left: env(safe-area-inset-left, 0px) !important;
+  padding-right: env(safe-area-inset-right, 0px) !important;
 }
 
 /* Aeussere Tab-Buttons leicht einruecken, damit lange Labels (Aktivitaeten)
@@ -733,7 +741,12 @@ ion-tab-bar.md ion-tab-button ion-label,
 ion-tab-bar.md ion-tab-button .tab-button-text {
   font-size: 0.6rem !important;
   white-space: nowrap !important;
-  overflow: visible !important;
+  /* Frueher overflow: visible — damit lief eine zu lange Beschriftung ueber
+     den Reiter hinaus, statt sich zu kuerzen, und schob die Nachbarn optisch
+     zusammen. Mit Auslassungspunkten bleibt die Leiste in jedem Fall heil. */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
 }
 
 /* iOS26-Library Content-Gradient komplett neutralisieren */

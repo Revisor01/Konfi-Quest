@@ -18,6 +18,11 @@ class BackgroundService {
   static apmSnapshotInterval = null;
   static challengeStartInterval = null;
   static wrappedRouter = null;
+  static badgeCheckInterval = null;
+  // Zuletzt an das jeweilige Geraet gesendeter Zaehlerstand. Verhindert, dass
+  // jeder Takt dieselbe Zahl erneut schickt, und erlaubt trotzdem das
+  // Zuruecknehmen auf null (siehe updateAllUserBadges).
+  static letzterZaehler = new Map();
 
   /**
    * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
@@ -27,14 +32,39 @@ class BackgroundService {
       return;
     }
 
-    const FIVE_MINUTES = 5 * 60 * 1000;
+    // Zwei Aufgaben mit sehr verschiedener Dringlichkeit, deshalb zwei Takte:
+    //
+    //   Der App-Icon-Zaehler soll zeitnah stimmen -> alle 5 Minuten.
+    //   Die Abzeichen-Pruefung haengt an Wochen und Jahren (streak,
+    //   time_based, teamer_year); alle anderen Kriterien werden ohnehin sofort
+    //   nach dem ausloesenden Ereignis geprueft. Ein Fuenf-Minuten-Takt fragte
+    //   288-mal taeglich etwas ab, das sich hoechstens einmal taeglich aendert.
+    //
+    // Das ist keine Feinheit, sondern eine Frage der Tragfaehigkeit: Gemessen
+    // am 24.08.2026 kostet eine Pruefung rund 24 Datenbankabfragen und 95 bis
+    // 292 ms pro Person. Bei den heutigen 82 Personen sind das 5 Sekunden, bei
+    // 1000 waeren es ueber 24.000 Abfragen und rund drei Minuten — in einem
+    // Fuenf-Minuten-Takt liefe der Dienst sich selbst hinterher. Stuendlich
+    // bleibt derselbe Aufwand tragbar, ohne dass ein Abzeichen spuerbar
+    // spaeter kommt.
+    const FUENF_MINUTEN = 5 * 60 * 1000;
+    const EINE_STUNDE = 60 * 60 * 1000;
+
     this.badgeUpdateInterval = setInterval(async () => {
       try {
-        await this.updateAllUserBadges(db);
+        await this.updateAllUserBadges(db, { nurZaehler: true });
       } catch (error) {
         console.error('Background badge update failed:', error);
       }
-    }, FIVE_MINUTES);
+    }, FUENF_MINUTEN);
+
+    this.badgeCheckInterval = setInterval(async () => {
+      try {
+        await this.updateAllUserBadges(db);
+      } catch (error) {
+        console.error('Background badge check failed:', error);
+      }
+    }, EINE_STUNDE);
   }
 
   /**
@@ -45,22 +75,49 @@ class BackgroundService {
       clearInterval(this.badgeUpdateInterval);
       this.badgeUpdateInterval = null;
     }
+    if (this.badgeCheckInterval) {
+      clearInterval(this.badgeCheckInterval);
+      this.badgeCheckInterval = null;
+    }
   }
 
   /**
    * Aktualisiert Badge Counts für alle User mit Push Tokens
    */
-  static async updateAllUserBadges(db) {
+  /**
+   * @param {object} db
+   * @param {{nurZaehler?: boolean}} optionen  nurZaehler = App-Icon-Zaehler
+   *        aktualisieren, die teure Abzeichen-Pruefung auslassen.
+   */
+  static async updateAllUserBadges(db, optionen = {}) {
+    const { nurZaehler = false } = optionen;
     try {
-      // Alle User mit Push Tokens laden (Admins ausschliessen)
+      // Alle Konfis und Teamer:innen laden — NICHT nur die mit Push-Token.
+      //
+      // Vorher kamen die Kandidaten aus push_tokens. Damit lief die
+      // Abzeichen-Pruefung nur fuer knapp die Haelfte: gemessen am 24.08.2026
+      // hatten 34 von 67 Konfis und 7 von 15 Teamer:innen kein Token (Push
+      // abgelehnt oder nur im Browser). Bei ihnen kamen zeitgesteuerte
+      // Abzeichen — vor allem teamer_year zum Jahreswechsel — erst mit der
+      // naechsten Aktivitaet an, im Zweifel nie.
+      //
+      // Das Setzen des App-Icon-Zaehlers braucht ein Token, die
+      // Abzeichen-Pruefung nicht. Beides ist unten getrennt.
       const usersQuery = `
-        SELECT DISTINCT pt.user_id, pt.user_type,
-          r.name as role_name
-        FROM push_tokens pt
-        JOIN users u ON pt.user_id = u.id
+        SELECT u.id AS user_id,
+               CASE WHEN r.name = 'konfi' THEN 'konfi'
+                    WHEN r.name = 'teamer' THEN 'teamer'
+                    ELSE 'admin' END AS user_type,
+               r.name as role_name,
+               EXISTS (
+                 SELECT 1 FROM push_tokens pt
+                 WHERE pt.user_id = u.id AND pt.token IS NOT NULL
+               ) AS hat_push
+        FROM users u
         JOIN roles r ON u.role_id = r.id
-        WHERE pt.token IS NOT NULL
-          AND r.name != 'admin'
+        WHERE r.name != 'admin'
+          AND u.deleted_at IS NULL
+          AND u.is_active = true
       `;
       const { rows: users } = await db.query(usersQuery, []);
 
@@ -70,6 +127,15 @@ class BackgroundService {
 
       let updatedCount = 0;
       const checkAndAwardBadges = require('../routes/badges').checkAndAwardBadges;
+
+      // Eintraege zu Konten, die es nicht mehr gibt, aus dem Merker werfen —
+      // sonst waechst er ueber die Laufzeit mit jedem geloeschten Konto.
+      if (this.letzterZaehler.size > users.length) {
+        const aktuell = new Set(users.map(u => `${u.user_id}_${u.user_type}`));
+        for (const schluessel of this.letzterZaehler.keys()) {
+          if (!aktuell.has(schluessel)) this.letzterZaehler.delete(schluessel);
+        }
+      }
 
       // BULK: Chat-Unread fuer ALLE User auf einmal berechnen (statt N einzelne Queries)
       const chatUnreadQuery = `
@@ -95,10 +161,26 @@ class BackgroundService {
           // Chat-Unread aus Bulk-Map lesen (kein DB-Query mehr pro User)
           const badgeCount = chatUnreadMap[`${user.user_id}_${user.user_type}`] || 0;
 
-          // Silent badge-count update (App-Icon Badge) wenn Count > 0
-          if (badgeCount > 0) {
-            await PushService.sendBadgeUpdate(db, user.user_id, badgeCount);
-            updatedCount++;
+          // App-Icon-Zaehler nachfuehren. Nur fuer Geraete mit Token — ohne
+          // Token gibt es kein App-Icon.
+          //
+          // Auch die NULL wird gesendet, und das ist der Kern: Vorher lief das
+          // unter `badgeCount > 0`, eine Zahl wurde also nie zurueckgenommen.
+          // Wer alles gelesen hatte, behielt seinen Zaehler, bis die App ihn
+          // beim naechsten Start selbst loeschte — auf Android blieb er
+          // dadurch oft einfach stehen (Befund 24.08.2026).
+          //
+          // Damit daraus kein Dauerfeuer wird, merken wir uns den zuletzt
+          // gesendeten Stand und schicken nur bei Aenderung. Im Regelfall
+          // bedeutet das genau EINEN zusaetzlichen Push, wenn der Zaehler auf
+          // null faellt.
+          if (user.hat_push) {
+            const schluessel = `${user.user_id}_${user.user_type}`;
+            if (this.letzterZaehler.get(schluessel) !== badgeCount) {
+              await PushService.sendBadgeUpdate(db, user.user_id, badgeCount);
+              this.letzterZaehler.set(schluessel, badgeCount);
+              updatedCount++;
+            }
           }
 
           // Badge-Check durchfuehren (Streak, zeitbasiert etc.).
@@ -106,7 +188,9 @@ class BackgroundService {
           // selbst die Push + In-App-Notification (via insertBadgesAndNotify ->
           // sendBadgeEarnedToKonfi). KEIN zweiter Push hier — sonst bekommt der
           // Konfi pro neuem Badge zwei Benachrichtigungen.
-          await checkAndAwardBadges(db, user.user_id);
+          if (!nurZaehler) {
+            await checkAndAwardBadges(db, user.user_id);
+          }
         } catch (error) {
           console.error(`Badge update failed for user ${user.user_id}:`, error);
         }
