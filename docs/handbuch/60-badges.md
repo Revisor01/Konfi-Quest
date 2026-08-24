@@ -12,8 +12,8 @@ Hand zu verleihen oder wieder abzuerkennen.
 ## Der Grundgedanke
 
 Du legst ein Abzeichen einmal an und beschreibst dabei, **wofür** es vergeben
-wird. Ab dann prüft das System selbst — bei jeder Punktevergabe und zusätzlich
-alle fünf Minuten im Hintergrund.
+wird. Ab dann prüft das System selbst — bei jeder
+[Punktevergabe](40-punkte.md) und zusätzlich alle fünf Minuten im Hintergrund.
 
 Ein Abzeichen besteht aus vier Dingen:
 
@@ -83,8 +83,9 @@ Gottesdienst- und Gemeindepunkte zusammen erreichen den Wert.
 
 *Beispiel:* Wert 20 → sobald jemand insgesamt 20 Punkte hat.
 
-Gezählt werden **nur die Punktarten, die im Jahrgang eingeschaltet sind**. Ist
-Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide aus, ist das
+Gezählt werden **nur die Punktarten, die
+[im Jahrgang eingeschaltet](45-jahrgaenge.md#wenn-eine-punktart-abgeschaltet-ist)
+sind**. Ist Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide aus, ist das
 Abzeichen unerreichbar und wird Konfis gar nicht erst angezeigt.
 
 #### Gottesdienst-Punkte · Gemeinde-Punkte
@@ -105,7 +106,7 @@ Gemeindepunkte.
 
 #### Bonuspunkte
 
-Die **Summe** aller vergebenen Bonuspunkte erreicht den Wert.
+Die **Summe** aller vergebenen [Bonuspunkte](40-punkte.md#weg-3-bonuspunkte) erreicht den Wert.
 
 *Beispiel:* Wert 2 → sobald du insgesamt 2 Bonuspunkte vergeben hast.
 
@@ -134,7 +135,7 @@ eine. Termine zählen hier **nicht** mit.
 
 #### Pflicht-Anwesenheit
 
-Besuchte **Pflicht-Termine**.
+Besuchte [**Pflicht-Termine**](70-termine.md#pflicht-event).
 
 *Beispiel:* Wert 12 → 12 besuchte Pflichttermine.
 
@@ -158,7 +159,8 @@ Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.
 
 #### Kategorie-Aktivitäten
 
-**Das ist die Bedingung, die deine selbst angelegten Kategorien nutzt.**
+**Das ist die Bedingung, die deine selbst angelegten
+[Kategorien](45-jahrgaenge.md#kategorien) nutzt.**
 
 Gezählt wird alles aus einer Kategorie — **Aktivitäten und Termine zusammen**.
 
@@ -244,7 +246,7 @@ Sofort bei:
 - einer genehmigten Aktivitäts-Meldung
 - einer direkt zugewiesenen Aktivität
 - vergebenen Bonuspunkten
-- eingetragener Anwesenheit bei einem Termin
+- [eingetragener Anwesenheit](70-termine.md#anwesenheit) bei einem Termin
 
 Zusätzlich alle fünf Minuten im Hintergrund.
 

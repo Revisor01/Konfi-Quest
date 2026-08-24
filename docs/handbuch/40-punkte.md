@@ -22,7 +22,7 @@ Ansicht darauf.
 
 Jeder **Jahrgang** legt für beide Arten getrennt fest, wie viele Punkte das Ziel
 sind und ob die Art überhaupt genutzt wird. Das steht im Kapitel
-*Jahrgänge und Kategorien*.
+[Jahrgänge und Kategorien](45-jahrgaenge.md#punkteziele).
 
 Welche Art eine Punktevergabe füllt, entscheidest **nicht du im Moment der
 Vergabe**, sondern es hängt an der Sache selbst:
@@ -43,13 +43,13 @@ zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.
 ### Weg 2: Termine
 
 Wer bei einem Termin als **anwesend** eingetragen wird, bekommt die beim Termin
-hinterlegten Punkte. Das passiert beim Eintragen der Anwesenheit, nicht beim
-Buchen.
+hinterlegten Punkte. Das passiert beim
+[Eintragen der Anwesenheit](70-termine.md#anwesenheit), nicht beim Buchen.
 
 Zwei Einschränkungen, die oft überraschen:
 
 - Ein Termin mit **0 Punkten** gibt nichts. Nicht jeder Termin muss Punkte geben.
-- **Pflichttermine und Konfirmationen geben grundsätzlich keine Punkte.** Trägst
+- **[Pflichttermine](70-termine.md#pflicht-event) und Konfirmationen geben grundsätzlich keine Punkte.** Trägst
   du beim Anlegen trotzdem eine Punktzahl ein, wird sie auf 0 gesetzt. Der
   Gedanke: Wozu man ohnehin verpflichtet ist, wird nicht zusätzlich belohnt.
 
@@ -86,16 +86,15 @@ dass der Antrag geprüft wird. Punkte gibt es noch keine.
 
 - **Genehmigt:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
   Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob
-  damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt
-  „Antrag genehmigt!“ mit der Punktzahl.
-- **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt“, und
-  falls du einen Kommentar geschrieben hast, hängt dieser als „Grund: …“ daran.
+  damit neue [Abzeichen](60-badges.md) oder ein neues Level erreicht sind. Der
+  Konfi bekommt „Antrag genehmigt!“ mit der Punktzahl.
+- **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt“
+  mit deiner Begründung als „Grund: …“ daran.
 
-> **Achtung, hier weicht die Wirklichkeit von der Erwartung ab:** Eine
-> **Begründung ist beim Ablehnen technisch NICHT verpflichtend**. Du kannst
-> ohne Kommentar ablehnen, und der Konfi erhält dann nur „Dein Antrag wurde
-> leider abgelehnt“ ohne jeden Hinweis, warum. Das ist keine gute Erfahrung.
-> Schreib die Begründung, auch wenn die App sie nicht erzwingt.
+> **Die Begründung ist beim Ablehnen Pflicht** — die App verlangt sie, und auch
+> das System dahinter lehnt ein Ablehnen ohne Begründung ab („Beim Ablehnen ist
+> eine Begründung erforderlich“). Der Konfi soll erfahren, warum etwas nicht
+> zählt.
 
 Ein bereits entschiedener Antrag lässt sich nicht noch einmal entscheiden. Der
 Versuch endet mit „Nur ausstehende Anträge können genehmigt oder abgelehnt
@@ -162,7 +161,7 @@ die sie erzeugt hat. Das sind alle Wege:
 - Einen **genehmigten Antrag zurücksetzen**
 - Eine **direkt vergebene Aktivität löschen**
 - **Bonuspunkte löschen**
-- Bei einem Termin die **Anwesenheit auf „abwesend“** ändern
+- Bei einem Termin die [**Anwesenheit auf „abwesend“**](70-termine.md#wann-punkte-zurueckgenommen-werden) ändern
 - Eine **Buchung stornieren**, obwohl die Person schon als anwesend galt
 - Eine Person **aus einem Termin entfernen**
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
@@ -200,7 +199,8 @@ Level mit dieser Punktzahl existiert bereits“.
 Für das Level werden **Gottesdienst- und Gemeindepunkte zusammengezählt**.
 
 Entscheidend und leicht zu übersehen: Gezählt werden **nur die Punktarten, die
-im Jahrgang eingeschaltet sind**. Ist im Jahrgang „Gemeinde“ abgeschaltet,
+[im Jahrgang eingeschaltet](45-jahrgaenge.md#wenn-eine-punktart-abgeschaltet-ist)
+sind**. Ist im Jahrgang „Gemeinde“ abgeschaltet,
 zählen für das Level ausschließlich die Gottesdienstpunkte — auch wenn auf dem
 Gemeinde-Zähler noch alte Punkte stehen.
 
@@ -246,6 +246,6 @@ Abzeichen und Level werden sofort geprüft bei:
 Nur die Abzeichen — nicht das Level — werden geprüft bei einer über die
 Konfi-Verwaltung vergebenen oder gelöschten Aktivität.
 
-Zusätzlich laufen die Abzeichen-Prüfungen alle fünf Minuten im Hintergrund, und
-das Level wird bei jedem Öffnen des Konfi-Dashboards überprüft und
-gegebenenfalls stillschweigend richtiggestellt.
+Zusätzlich laufen die [Abzeichen-Prüfungen](60-badges.md#wann-wird-geprueft)
+alle fünf Minuten im Hintergrund, und das Level wird bei jedem Öffnen des
+Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.

@@ -34,8 +34,8 @@ wird er neu berechnet.
 
 ## Freigabe pro Jahrgang
 
-Der Konfi-Rückblick wird **pro Jahrgang** freigegeben, im Jahrgang unter
-„Konfispruch & Wrapped“. Er läuft nie automatisch an — du entscheidest, wann.
+Der Konfi-Rückblick wird **pro Jahrgang** freigegeben,
+[im Jahrgang](45-jahrgaenge.md#wrapped-freigabe) unter „Konfispruch & Wrapped“. Er läuft nie automatisch an — du entscheidest, wann.
 
 **Beim Einschalten** fragt die App: „Wrapped wird für alle Konfis dieses
 Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“
@@ -152,10 +152,10 @@ letzte Seite.
 | Events | bestätigte Buchungen mit Anwesenheit „anwesend“ |
 | Schwerpunkt | erledigte Aktivitäten, nach Kategorie gruppiert |
 | Aktivster Monat | Aktivitäten und besuchte Termine zusammen |
-| Badges | die verliehenen Abzeichen |
-| Endspurt | die Punkteziele des Jahrgangs, nur die aktiven Arten |
-| Konfirmation | der als Konfirmation gekennzeichnete Termin |
-| Momente | Challenge-Beiträge aus dem Zeitraum |
+| Badges | die verliehenen [Abzeichen](60-badges.md) |
+| Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
+| Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
+| Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
 
 Der **Zeitraum** reicht vom 1. September des Vorjahres bis zur Konfirmation.
 Fehlt ein Konfirmationstermin, wird der 31. Juli als Ende angenommen.

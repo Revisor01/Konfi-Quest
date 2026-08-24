@@ -36,7 +36,6 @@ import {
   eyeOffOutline,
   lockClosedOutline,
   personCircleOutline,
-  informationCircleOutline,
   mic
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -45,6 +44,7 @@ import api from '../../../services/api';
 import { track } from '../../../services/analytics';
 import { compressImage } from '../../../services/mediaCompression';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
+import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
 import { AudioPlayer } from '../../shared';
 import type {
   KonfiChallenge,
@@ -72,37 +72,6 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
   { value: 'anonymous', label: 'Anonym', hint: 'ohne Namen', icon: eyeOffOutline },
   { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: lockClosedOutline }
 ];
-
-/** Behandlungs-Info als Satz für den Standard-Infokasten. Erscheint IMMER —
- *  auch wenn der Konfi nichts einstellen kann, muss die geltende Einstellung
- *  benannt werden (User-Vorgabe). */
-const getVisibilityInfo = (challenge: KonfiChallenge): string => {
-  if (challenge.visibility === 'private') {
-    return 'Deinen Beitrag sieht nur das Leitungsteam.';
-  }
-  if (challenge.visibility === 'public') {
-    return challenge.moderated
-      ? 'Dein Beitrag wird nach Freigabe durch das Leitungsteam für deine Gruppe veröffentlicht.'
-      : 'Beiträge sind für deine Gruppe sofort sichtbar.';
-  }
-  return challenge.moderated
-    ? 'Du entscheidest unten, wer deinen Beitrag sieht. Veröffentlichung erst nach Freigabe durch das Leitungsteam.'
-    : 'Du entscheidest unten, wer deinen Beitrag sieht.';
-};
-
-/** Erfolgsmeldung nach dem Absenden — spiegelt den tatsaechlichen Behandlungsweg. */
-const getSuccessMessage = (challenge: KonfiChallenge, consent: ChallengeConsent): string => {
-  const willBePublic =
-    challenge.visibility === 'public' ||
-    (challenge.visibility === 'konfi_choice' && consent !== 'private');
-  if (challenge.moderated && willBePublic) {
-    return 'Eingereicht — dein Beitrag wartet auf Freigabe.';
-  }
-  if (willBePublic) {
-    return 'Veröffentlicht!';
-  }
-  return 'Eingereicht — dein Beitrag ist nur für die Leitung sichtbar.';
-};
 
 // Serverlimit laut Spec: 50 MB pro Datei.
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -484,7 +453,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
       <IonContent className="app-gradient-background">
 
-        {/* Challenge-Kopf */}
+        {/* Challenge-Kopf. Der Behandlungs-Hinweis steht als Untertitel DIREKT
+            in der Überschrift (Muster: ChallengeDetailModal-Banner) statt in
+            einem eigenen Hinweis-Kasten darüber — er erscheint weiterhin in
+            JEDER Sichtbarkeits-Konstellation (Nutzerentscheid 24.08.2026). */}
         <div className="app-header-banner app-header-banner--challenges">
           <div className="app-header-banner__circle-top" />
           <div className="app-header-banner__circle-bottom" />
@@ -494,25 +466,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{challenge.title}</h2>
+              <p className="app-header-banner__subtitle">{visibilityInfo}</p>
             </div>
           </div>
         </div>
-
-        {/* Behandlungs-Hinweis im Standard-Infokasten (Muster: ChangeEmailModal),
-            erscheint in JEDER Sichtbarkeits-Konstellation. */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--challenges">
-              <IonIcon icon={informationCircleOutline} />
-            </div>
-            <IonLabel>Hinweis</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card app-info-box--challenges">
-            <IonCardContent className="app-info-box">
-              <p style={{ margin: 0 }}>{visibilityInfo}</p>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
 
         {/* Medienart */}
         {availableOptions.length > 1 && (

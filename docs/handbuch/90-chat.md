@@ -52,7 +52,8 @@ Mitglieder selbst:
   zugewiesen ist. Wird die Zuweisung entzogen, fliegen sie wieder heraus.
 
 Er lässt sich nicht verlassen: Wer im Jahrgang ist, ist im Chat. Und er lässt
-sich nicht einzeln löschen — das geht nur über den Jahrgang selbst
+sich nicht einzeln löschen — das geht nur
+[über den Jahrgang selbst](45-jahrgaenge.md#jahrgang-loeschen)
 (*„Bitte den Jahrgang löschen"*).
 
 ### Team-Chat
@@ -70,8 +71,9 @@ automatisch dabei; wer die Rolle verliert, ist wieder draußen.
 
 ### Termin-Chat
 
-Gehört zu einem Termin und muss vom Team beim Termin einmal freigeschaltet
-werden — es gibt nicht automatisch zu jedem Termin einen. Danach füllt er sich
+Gehört zu einem [Termin](70-termine.md#event-chat) und muss vom Team beim
+Termin einmal freigeschaltet werden — es gibt nicht automatisch zu jedem
+Termin einen. Danach füllt er sich
 über die Anmeldungen: Wer eine bestätigte Anmeldung hat, ist im Chat; wer sich
 abmeldet, fliegt wieder heraus.
 
@@ -116,8 +118,8 @@ Jahrgänge.
 > **Achtung, häufiger Anruf:** Eine Teamer:in **ohne zugewiesenen Jahrgang** ist
 > für Konfis unsichtbar — und erreicht ihrerseits keinen einzigen Konfi. Wenn
 > jemand meldet „ich sehe meine Konfis nicht im Chat", ist fast immer die
-> Jahrgangs-Zuweisung die Ursache, nicht der Chat. Prüf sie in der
-> Nutzerverwaltung.
+> [Jahrgangs-Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
+> die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.
 
 > **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für Leitung und Admins
 > erreichbar. Bis der Jahrgang gesetzt ist, kommt keine Teamer:in an ihn heran.

@@ -61,13 +61,17 @@ du das Feld leer, erscheint keine Urheber-Zeile.
 
 ### Zeitraum: Start und Ende
 
-Beides Pflicht, das Ende muss nach dem Start liegen. Einstellbar in
-Viertelstundenschritten.
+Für eine eingeplante Challenge sind beide Pflicht, das Ende muss nach dem
+Start liegen. Einstellbar in Viertelstundenschritten. Nur ein Entwurf kommt
+noch ohne Zeitraum aus — siehe unten.
 
 - **Vor dem Start** ist die Challenge „geplant" — sie taucht bei Konfis noch
-  nicht auf und startet dann von selbst.
+  nicht auf und startet dann von selbst zum eingestellten Zeitpunkt. In dem
+  Moment bekommen die Konfis der Jahrgänge eine Benachrichtigung.
 - **Zwischen Start und Ende** läuft sie: nur in dieser Zeit lassen sich
-  Beiträge einreichen.
+  Beiträge einreichen. Der Start lässt sich jetzt nicht mehr verschieben, das
+  Ende schon — eine laufende Challenge kannst du also verlängern oder früher
+  beenden.
 - **Nach dem Ende** wandert sie ins Archiv. Die Beiträge bleiben sichtbar,
   neue kommen nicht mehr dazu.
 
@@ -76,6 +80,11 @@ Viertelstundenschritten.
 Ist der Schalter an, sehen die Challenge **nur du und dein Team**. Konfis
 bekommen sie nicht zu Gesicht, auch wenn der Startzeitpunkt längst erreicht
 ist. Erst wenn du den Haken entfernst und speicherst, wird sie scharf.
+
+Ein Entwurf braucht **noch keinen Zeitraum**: Start und Ende legst du erst
+fest, wenn du ihn einplanst — schalte dafür den Entwurfs-Schalter wieder aus.
+Bereits eingetragene Zeiten gehen beim Hin- und Herschalten nicht verloren.
+In der Verwaltung stehen Entwürfe im Reiter „Geplant".
 
 > **Achtung:** Ein reiner Leitungs-Entwurf ohne zugeordnete Jahrgänge ist für
 > Teamer:innen unsichtbar — nur die Leitung sieht ihn. Ordne die Jahrgänge
@@ -136,7 +145,7 @@ weg, und jede:r im Team kann sie sehen und verwalten.
 
 Das ist die wichtigste Entscheidung beim Anlegen. Drei Möglichkeiten:
 
-| | Öffentlich | Konfi entscheidet | Nur für euch in der Leitung |
+| | Öffentlich | Selbst entscheiden | Nur Leitung |
 |---|---|---|---|
 | Es gibt eine Galerie | ja | ja | **nein** |
 | Wer sieht fremde Beiträge | alle Konfis der Jahrgänge | alle — soweit der Konfi zustimmt | nur die Leitung |
@@ -148,11 +157,12 @@ Das ist die wichtigste Entscheidung beim Anlegen. Drei Möglichkeiten:
 Galerie. Passend für Sammlungen, bei denen der Beitrag ohnehin öffentlich
 gedacht ist: Fotos von der Freizeit, Lieblingslieder, Bibelvers-Sammlung.
 
-**Konfi entscheidet** (Voreinstellung) — jede:r wählt beim Einreichen selbst
+**Selbst entscheiden** (Voreinstellung) — wer einreicht, wählt selbst
 zwischen drei Stufen. Das ist die richtige Wahl, wenn die Frage persönlich
-werden kann.
+werden kann. (Die Einstellung hieß früher „Konfi entscheidet" — sie gilt aber
+genauso für euch im Team, wenn ihr selbst mitmacht.)
 
-**Nur für euch in der Leitung** — es gibt gar keine Galerie. Die Konfis sehen
+**Nur Leitung** — es gibt gar keine Galerie. Die Konfis sehen
 ausschließlich ihren eigenen Beitrag, alle anderen bleiben bei euch. Passend
 für Fürbitten, Sorgen, Rückmeldungen, Gebetsanliegen.
 
@@ -165,7 +175,7 @@ Ist der Beitrag freigegeben?
 Sichtbarkeit der Challenge?
    Öffentlich          → in der Galerie, mit Namen
    Nur Leitung         → NICHT in der Galerie
-   Konfi entscheidet   ↓
+   Selbst entscheiden  ↓
       Konfi wählte "Öffentlich" → in der Galerie, mit Namen
       Konfi wählte "Anonym"     → in der Galerie, OHNE Namen
       Konfi wählte "Nur Leitung"→ NICHT in der Galerie
@@ -181,9 +191,9 @@ Zwei Dinge gelten dabei immer:
 
 ---
 
-## Konfi-Entscheidung: die drei Stufen
+## Selbst entscheiden: die drei Stufen
 
-Nur bei Sichtbarkeit „Konfi entscheidet". Beim Einreichen erscheint eine
+Nur bei Sichtbarkeit „Selbst entscheiden". Beim Einreichen erscheint eine
 Pflichtauswahl:
 
 | Auswahl | In der App | Was passiert |
@@ -376,7 +386,7 @@ Drei Fälle, in denen „Anonym stellen" gar nicht erst angeboten wird:
 
 | Fall | Meldung |
 |---|---|
-| Die Challenge ist **nicht** „Konfi entscheidet" | „Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet." |
+| Die Challenge ist **nicht** „Selbst entscheiden" | „Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet." |
 | Der Konfi hat selbst „Nur Leitung" gewählt | „Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern." |
 | Der Beitrag ist **schon** anonym | „Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen." |
 
@@ -434,7 +444,7 @@ Was **nicht** im Export landet:
 > nur euch gegeben hat, sind deshalb nicht dabei, auch wenn ihr sie in der App
 > lesen könnt.
 >
-> Die eine Ausnahme ist die Challenge „Nur für euch in der Leitung": Dort ist
+> Die eine Ausnahme ist die Challenge „Nur Leitung": Dort ist
 > der Export genau der Rückkanal, der in der Beschreibung angekündigt war — z. B.
 > Fürbitten, die anschließend vorgelesen werden. Sag das den Konfis in der
 > Beschreibung.

@@ -203,7 +203,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Sobald du „Pflicht-Event&quot; einschaltest, sind folgende Einstellungen wirkungslos — das System setzt sie beim Speichern hart auf null, egal was im Formular stand:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Einstellung</th><th>Was passiert</th></tr></thead><tbody><tr><td><strong>Punkte</strong></td><td>werden auf 0 gesetzt</td></tr><tr><td><strong>Max. Teilnehmer:innen</strong></td><td>auf 0 (= keine Begrenzung)</td></tr><tr><td><strong>Warteliste</strong></td><td>ausgeschaltet</td></tr><tr><td><strong>Zeitfenster</strong></td><td>ausgeschaltet, das Formular blendet den Abschnitt aus</td></tr><tr><td><strong>Anmeldung ab / Anmeldeschluss</strong></td><td>entfallen, der Abschnitt verschwindet</td></tr></tbody></table></div>
       <p>Der Grund ist bei allen derselbe: Wenn ohnehin der ganze Jahrgang angemeldet ist, gibt es nichts zu begrenzen, keine Reihenfolge zu verwalten und keinen Anmeldezeitraum zu öffnen.</p>
-      <blockquote><strong>Warum keine Punkte?</strong> Für etwas, wozu man verpflichtet ist, gibt es keine Belohnung. Das ist eine bewusste Entscheidung und lässt sich nicht umstellen. Die Anwesenheit wird trotzdem erfasst — sie zählt für das Abzeichen „Pflicht-Anwesenheit&quot; (siehe Kapitel Abzeichen).</blockquote>
+      <blockquote><strong>Warum keine Punkte?</strong> Für etwas, wozu man verpflichtet ist, gibt es keine Belohnung. Das ist eine bewusste Entscheidung und lässt sich nicht umstellen. Die Anwesenheit wird trotzdem erfasst — sie zählt für das Abzeichen <a href="./badges.html#pflicht-anwesenheit">„Pflicht-Anwesenheit&quot;</a>.</blockquote>
       <h3 id="abmelden-mit-begruendung">Abmelden mit Begründung</h3>
       <p>Konfis können sich von einem Pflicht-Event abmelden — aber nur <strong>mit Begründung</strong>, und die muss <strong>mindestens 5 Zeichen</strong> lang sein. Ein leeres Feld oder ein „ok&quot; wird abgelehnt.</p>
       <p><em>Beispiel:</em> „Bin krank&quot; oder „Familienfeier, war lange geplant&quot;.</p>
@@ -292,10 +292,10 @@ tbody tr:last-child td { border-bottom:none; }
       <h2 id="punkte">Punkte</h2>
       <h3 id="wann-es-punkte-gibt">Wann es Punkte gibt</h3>
       <p>Punkte werden vergeben, wenn <strong>alle fünf</strong> Bedingungen erfüllt sind:</p>
-      <p>1. Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand) 2. Der Termin hat eine <strong>Punktzahl größer 0</strong> 3. Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen) 4. Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte 5. Der gewählte <strong>Punkt-Typ ist im Jahrgang eingeschaltet</strong> (Gottesdienst oder Gemeinde)</p>
+      <p>1. Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand) 2. Der Termin hat eine <strong>Punktzahl größer 0</strong> 3. Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen) 4. Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte 5. Der gewählte <strong>Punkt-Typ ist <a href="./jahrgaenge.html#wenn-eine-punktart-abgeschaltet-ist">im Jahrgang eingeschaltet</a></strong> (Gottesdienst oder Gemeinde)</p>
       <p>Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.</p>
       <p>Pro Person und Termin gibt es die Punkte <strong>genau einmal</strong>. Doppelt einchecken oder zweimal verbuchen ändert nichts.</p>
-      <p>Nach der Punktevergabe wird geprüft, ob neue Abzeichen fällig sind, und ob jemand ein Level aufgestiegen ist. Beides läuft automatisch.</p>
+      <p>Nach der Punktevergabe wird geprüft, ob neue <a href="./badges.html">Abzeichen</a> fällig sind, und ob jemand ein <a href="./punkte.html#level">Level</a> aufgestiegen ist. Beides läuft automatisch.</p>
       <h3 id="punkt-typ">Punkt-Typ</h3>
       <p>Jeder Termin gibt entweder <strong>Gottesdienst-</strong> oder <strong>Gemeindepunkte</strong>; Voreinstellung ist Gemeinde. Ist der gewählte Typ im Jahrgang des Konfis abgeschaltet, gibt es keine Punkte.</p>
       <blockquote><strong>Unterschied, den du kennen solltest:</strong> Verbuchst du eine Person <strong>einzeln</strong> und der Punkt-Typ ist in ihrem Jahrgang abgeschaltet, bricht der Vorgang mit einer Fehlermeldung ab. Beim Sammel-Verbuchen („Alle bestätigen&quot;) wird die Person dagegen als anwesend verbucht und einfach übersprungen — sonst würde ein einziger Sonderfall die ganze Liste blockieren.</blockquote>
@@ -303,7 +303,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:</p>
       <ul><li>Du stellst die Anwesenheit von <strong>anwesend auf fehlend</strong></li><li>Die Person <strong>meldet sich ab</strong>, obwohl sie schon als anwesend verbucht war</li></ul>
       <p>Der Punktestand fällt dabei nie unter null.</p>
-      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> Abzeichen werden nie aberkannt (siehe Kapitel Abzeichen).</blockquote>
+      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> <a href="./badges.html#einmal-verliehen-immer-verliehen">Abzeichen werden nie aberkannt</a>.</blockquote>
       <p>---</p>
       <h2 id="anwesenheit">Anwesenheit</h2>
       <p>Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege.</p>
@@ -386,6 +386,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Wer sich vom Termin <strong>abmeldet</strong>, wird gleichzeitig aus dem Event-Chat entfernt. Das passiert automatisch — sonst bliebe man in einem Chat zu einem Termin, an dem man nicht teilnimmt.</p>
       <h3 id="was-beim-loeschen-passiert">Was beim Löschen passiert</h3>
       <p>Wird der Termin gelöscht, verschwindet der Chat mitsamt allen Nachrichten, Umfragen und Dateien. Beim <strong>Absagen</strong> bleibt er dagegen bestehen.</p>
+      <p>Was sonst im Termin-Chat gilt — schreiben, Umfragen, Dateien —, steht im Kapitel <a href="./chat.html#termin-chat">Chat</a>.</p>
       <p>---</p>
       <h2 id="teilnehmende-von-hand-hinzufuegen">Teilnehmende von Hand hinzufügen</h2>
       <p>In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, die keine App haben oder die Frist verpasst haben.</p>

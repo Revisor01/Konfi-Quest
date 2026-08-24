@@ -6,9 +6,13 @@ farbe: "#5b21b6"
 
 Unten in der App stehen fünf Reiter. Alles, was du brauchst, findest du dort.
 
+> Noch keinen Zugang? Deine Gemeinde gibt dir einen Einladungscode — wie die
+> Registrierung damit läuft, steht im Kapitel
+> [Passwörter und Zugänge](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode).
+
 ## Start
 
-Deine Übersicht. Ganz oben stehen deine Punkte als drei Ringe: **Gesamt**,
+Deine Übersicht. Ganz oben stehen deine [Punkte](40-punkte.md) als drei Ringe: **Gesamt**,
 **Gottesdienst** und **Gemeinde**. Tippe sie an, dann siehst du, woher jeder
 einzelne Punkt kommt.
 
@@ -17,7 +21,8 @@ erscheinen, stellt deine Gemeinde ein:
 
 - **Deine Konfirmation** — der Countdown bis zum Tag, mit Datum und Ort
 - **Deine Challenge** — was gerade läuft und wie lange noch
-- **Dein Konfispruch** — sobald deine Gemeinde die Auswahl freigegeben hat
+- **Dein Konfispruch** — sobald deine Gemeinde die
+  [Auswahl freigegeben](45-jahrgaenge.md#konfispruch-freigabe) hat
 - **Deine Events** — die nächsten Termine
 - **Tageslosung** — der Bibelvers des Tages, in deiner Übersetzung
 - **Deine Badges** — was du schon gesammelt hast
@@ -37,7 +42,8 @@ nicht anschreiben — auch nicht aus deinem Jahrgang.
 In Gruppen siehst du, wer sonst noch dabei ist. Du kannst antworten,
 reagieren, Bilder und Dateien schicken und an Umfragen teilnehmen. Ist eine
 Umfrage als anonym angelegt, sieht niemand, was du gewählt hast — auch die
-Leitung nicht.
+Leitung nicht. Alle Regeln, wer wen erreicht, stehen im Kapitel
+[Chat](90-chat.md#wer-wen-anschreiben-darf).
 
 ## Challenges
 
@@ -54,7 +60,8 @@ Bei manchen Challenges entscheidest du selbst, **wer deinen Beitrag sieht**:
 - **Nur Leitung** — er erscheint gar nicht in der Galerie
 
 Manche Beiträge werden erst nach Freigabe durch das Team sichtbar. Das steht
-dann bei der Challenge dabei.
+dann bei der Challenge dabei. Wie das alles im Einzelnen funktioniert, steht im
+Kapitel [Challenges](80-challenges.md).
 
 ## Events
 
@@ -69,13 +76,14 @@ du mitbringen sollst und wie viele Plätze frei sind.
 - **Warteliste** — wenn alles belegt ist und eine Warteliste eingerichtet ist
 - **Abmelden** — bis zwei Tage vorher; danach ist es gesperrt
 
-Bei **Pflicht-Events** bist du automatisch angemeldet. Abmelden geht trotzdem,
+Bei [**Pflicht-Events**](70-termine.md#pflicht-event) bist du automatisch angemeldet. Abmelden geht trotzdem,
 du wirst dabei nach einem Grund gefragt.
 
-Hat ein Termin **Zeitfenster**, wählst du beim Anmelden eines aus.
+Hat ein Termin [**Zeitfenster**](70-termine.md#zeitfenster-timeslots), wählst du beim Anmelden eines aus.
 
 Oben rechts findest du den **QR-Scanner**. Damit trägst du dich vor Ort selbst
-als anwesend ein — das geht nur im Zeitfenster rund um den Beginn.
+als anwesend ein — das geht nur im Zeitfenster rund um den Beginn. Wie das
+genau abläuft, steht im Kapitel [Termine](70-termine.md#qr-check-in).
 
 ### Aktivitäten
 
@@ -90,7 +98,8 @@ etwas abgelehnt, steht der Grund dabei.
 
 Deine Abzeichen. Manche bekommst du für Punkte, andere für bestimmte
 Aktivitäten, Termine oder Serien. **Geheime Badges** siehst du erst, wenn du
-sie hast — sonst wäre die Überraschung weg.
+sie hast — sonst wäre die Überraschung weg. Welche Bedingungen es gibt, steht
+im Kapitel [Abzeichen](60-badges.md).
 
 ## Dein Profil
 
@@ -101,7 +110,7 @@ sie hast — sonst wäre die Überraschung weg.
   Gemeinde das freigegeben hat
 - **Bibelübersetzung** — welche Übersetzung du bei der Tageslosung siehst
 - **E-Mail und Passwort ändern**
-- **Deine Wrappeds** — dein Jahresrückblick, sobald er freigegeben ist
+- **Deine Wrappeds** — dein [Jahresrückblick](95-wrapped.md), sobald er freigegeben ist
 - **App-Tour** — die Einführung noch einmal ansehen
 
 Ganz unten kannst du dich abmelden oder dein Konto löschen.

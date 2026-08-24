@@ -115,7 +115,7 @@ Anmeldezeitraum zu öffnen.
 > **Warum keine Punkte?** Für etwas, wozu man verpflichtet ist, gibt es keine
 > Belohnung. Das ist eine bewusste Entscheidung und lässt sich nicht
 > umstellen. Die Anwesenheit wird trotzdem erfasst — sie zählt für das
-> Abzeichen „Pflicht-Anwesenheit" (siehe Kapitel Abzeichen).
+> Abzeichen [„Pflicht-Anwesenheit"](60-badges.md#pflicht-anwesenheit).
 
 ### Abmelden mit Begründung
 
@@ -397,16 +397,18 @@ Punkte werden vergeben, wenn **alle fünf** Bedingungen erfüllt sind:
 2. Der Termin hat eine **Punktzahl größer 0**
 3. Es ist **kein Pflicht-Event** (dort sind die Punkte auf 0 erzwungen)
 4. Die Person ist ein **Konfi** — Teamer:innen bekommen für Termine keine Punkte
-5. Der gewählte **Punkt-Typ ist im Jahrgang eingeschaltet** (Gottesdienst oder
-   Gemeinde)
+5. Der gewählte **Punkt-Typ ist
+   [im Jahrgang eingeschaltet](45-jahrgaenge.md#wenn-eine-punktart-abgeschaltet-ist)**
+   (Gottesdienst oder Gemeinde)
 
 Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.
 
 Pro Person und Termin gibt es die Punkte **genau einmal**. Doppelt einchecken
 oder zweimal verbuchen ändert nichts.
 
-Nach der Punktevergabe wird geprüft, ob neue Abzeichen fällig sind, und ob
-jemand ein Level aufgestiegen ist. Beides läuft automatisch.
+Nach der Punktevergabe wird geprüft, ob neue [Abzeichen](60-badges.md) fällig
+sind, und ob jemand ein [Level](40-punkte.md#level) aufgestiegen ist. Beides
+läuft automatisch.
 
 ### Punkt-Typ
 
@@ -430,7 +432,7 @@ In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:
 Der Punktestand fällt dabei nie unter null.
 
 > **Achtung:** Ein Abzeichen, das durch diese Punkte ausgelöst wurde, **bleibt
-> bestehen.** Abzeichen werden nie aberkannt (siehe Kapitel Abzeichen).
+> bestehen.** [Abzeichen werden nie aberkannt](60-badges.md#einmal-verliehen-immer-verliehen).
 
 ---
 
@@ -684,6 +686,9 @@ Termin, an dem man nicht teilnimmt.
 
 Wird der Termin gelöscht, verschwindet der Chat mitsamt allen Nachrichten,
 Umfragen und Dateien. Beim **Absagen** bleibt er dagegen bestehen.
+
+Was sonst im Termin-Chat gilt — schreiben, Umfragen, Dateien —, steht im
+Kapitel [Chat](90-chat.md#termin-chat).
 
 ---
 

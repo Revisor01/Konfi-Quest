@@ -21,9 +21,10 @@ Schieberegler geht von **1 bis 20**. Voreingestellt sind 10 und 10.
 Das Ziel ist **keine Grenze** — niemand wird gebremst, wenn er es überschreitet.
 Es ist der Bezugswert für die Fortschrittsanzeige:
 
-- Die **Ringe im Dashboard** der Konfis füllen sich im Verhältnis zum Ziel.
+- Die **Ringe im Dashboard** der Konfis füllen sich im Verhältnis zum Ziel
+  ([wie Punkte entstehen](40-punkte.md)).
 - In der **Konfi-Liste der Leitung** ergibt sich daraus die Fortschrittsfarbe.
-- Der **Jahresrückblick** rechnet den Zielwert mit ein.
+- Der [**Jahresrückblick**](95-wrapped.md) rechnet den Zielwert mit ein.
 
 Beim Gesamtfortschritt werden nur die Ziele der **aktiven** Punktarten addiert.
 Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das Gottesdienst-Ziel.
@@ -41,8 +42,10 @@ ganzen Jahrgang, deshalb hier ausführlich, was daran hängt.
 
 Jeder Versuch, Punkte der abgeschalteten Art zu vergeben, wird abgewiesen — mit
 der Meldung **„Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert“**
-(entsprechend für Gemeinde). Das gilt für alle Wege: Anträge genehmigen,
-Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit eintragen.
+(entsprechend für Gemeinde). Das gilt für
+[alle Wege](40-punkte.md#die-drei-wege-auf-denen-punkte-entstehen): Anträge
+genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit
+eintragen.
 
 Eine Ausnahme im Verhalten: Trägst du bei einem Termin über **„alle anwesend“**
 gesammelt Anwesenheit ein, werden betroffene Personen **stillschweigend
@@ -86,8 +89,8 @@ und zählen wieder — vollständig und sofort.
 
 Eine Einschränkung: **Abzeichen werden nicht rückwirkend vergeben.** Wer während
 der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht
-automatisch nachgereicht. Geprüft wird erst wieder bei der nächsten
-Punktevergabe oder beim Hintergrundlauf.
+automatisch nachgereicht. Geprüft wird erst wieder bei der
+[nächsten Punktevergabe oder beim Hintergrundlauf](60-badges.md#wann-wird-geprueft).
 
 ### Mindestens eine Art muss aktiv bleiben
 
@@ -159,7 +162,7 @@ Bestätigst du, passiert beides:
 Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten
 Rückblicke **wirklich gelöscht**, nicht nur ausgeblendet.
 
-Mehr dazu im Kapitel *Jahresrückblick (Wrapped)*.
+Mehr dazu im Kapitel [Jahresrückblick (Wrapped)](95-wrapped.md).
 
 ## Was die Jahrgangs-Zuweisung von Teamer:innen steuert
 
@@ -168,6 +171,8 @@ Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese Zuweisung ist die
 sehr vielen Bereichen mit.
 
 Für die **Leitung** gilt das alles nicht: Sie sieht immer die ganze Gemeinde.
+Was das im Chat konkret bedeutet, steht im Kapitel
+[Chat](90-chat.md#wer-wen-anschreiben-darf).
 
 | Bereich | Ohne passende Zuweisung |
 |---|---|
@@ -186,8 +191,8 @@ Für die **Leitung** gilt das alles nicht: Sie sieht immer die ganze Gemeinde.
 > jemand meldet, er sehe „gar keine Konfis“ oder werde von niemandem gefunden,
 > ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.
 
-Termine, die **nur für Teamer:innen** gedacht sind, und Termine ohne
-Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei
+Termine, die [**nur für Teamer:innen**](70-termine.md#nur-teamer-innen) gedacht
+sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei
 jahrgangsgebundenen Terminen.
 
 Wird ein Konfi **zur Teamer:in befördert**, übernimmt das System seinen Jahrgang
@@ -205,7 +210,7 @@ Verwendet werden sie an drei Stellen:
 
 - zum Sortieren und Filtern von **Aktivitäten**
 - zum Sortieren und Filtern von **Terminen**
-- als Grundlage für **Kategorie-Abzeichen**
+- als Grundlage für [**Kategorie-Abzeichen**](60-badges.md#kategorie-aktivitaeten)
 
 ### Löschen ist blockiert, solange sie benutzt wird
 
@@ -261,6 +266,7 @@ Am Jahrgang selbst wird **kein** Konfirmationsdatum mehr gepflegt. Das Feld gibt
 es technisch noch, wird aber nicht mehr beschrieben.
 
 Der Konfirmationstermin ergibt sich stattdessen **pro Konfi** aus dem Termin, der
-als Konfirmation gekennzeichnet ist und den der Konfi gebucht hat. Bei mehreren
+[als Konfirmation gekennzeichnet](70-termine.md#konfirmation) ist und den der
+Konfi gebucht hat. Bei mehreren
 Konfirmationsterminen in einem Jahrgang hat also jeder sein eigenes, richtiges
 Datum.

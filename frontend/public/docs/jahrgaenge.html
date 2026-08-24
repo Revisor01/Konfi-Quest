@@ -180,13 +180,13 @@ tbody tr:last-child td { border-bottom:none; }
       <h2 id="punkteziele">Punkteziele</h2>
       <p>Für jede der beiden Punktarten stellst du getrennt ein Ziel ein. Der Schieberegler geht von <strong>1 bis 20</strong>. Voreingestellt sind 10 und 10.</p>
       <p>Das Ziel ist <strong>keine Grenze</strong> — niemand wird gebremst, wenn er es überschreitet. Es ist der Bezugswert für die Fortschrittsanzeige:</p>
-      <ul><li>Die <strong>Ringe im Dashboard</strong> der Konfis füllen sich im Verhältnis zum Ziel.</li><li>In der <strong>Konfi-Liste der Leitung</strong> ergibt sich daraus die Fortschrittsfarbe.</li><li>Der <strong>Jahresrückblick</strong> rechnet den Zielwert mit ein.</li></ul>
+      <ul><li>Die <strong>Ringe im Dashboard</strong> der Konfis füllen sich im Verhältnis zum Ziel (<a href="./punkte.html">wie Punkte entstehen</a>).</li><li>In der <strong>Konfi-Liste der Leitung</strong> ergibt sich daraus die Fortschrittsfarbe.</li><li>Der <a href="./wrapped.html"><strong>Jahresrückblick</strong></a> rechnet den Zielwert mit ein.</li></ul>
       <p>Beim Gesamtfortschritt werden nur die Ziele der <strong>aktiven</strong> Punktarten addiert. Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das Gottesdienst-Ziel.</p>
       <blockquote><strong>Achtung:</strong> Der Bereich 1 bis 20 ist nur die Begrenzung des Schiebereglers in der App. Die Schnittstelle dahinter akzeptiert jeden Wert ab 0 und kennt kein Maximum. Über die App kannst du aber weder 0 noch mehr als 20 einstellen.</blockquote>
       <h2 id="wenn-eine-punktart-abgeschaltet-ist">Wenn eine Punktart abgeschaltet ist</h2>
       <p>Für jede Punktart gibt es einen Schalter. Das ist der folgenreichste Schalter im ganzen Jahrgang, deshalb hier ausführlich, was daran hängt.</p>
       <h3 id="neue-punkte-werden-blockiert">Neue Punkte werden blockiert</h3>
-      <p>Jeder Versuch, Punkte der abgeschalteten Art zu vergeben, wird abgewiesen — mit der Meldung <strong>„Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert“</strong> (entsprechend für Gemeinde). Das gilt für alle Wege: Anträge genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit eintragen.</p>
+      <p>Jeder Versuch, Punkte der abgeschalteten Art zu vergeben, wird abgewiesen — mit der Meldung <strong>„Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert“</strong> (entsprechend für Gemeinde). Das gilt für <a href="./punkte.html#die-drei-wege-auf-denen-punkte-entstehen">alle Wege</a>: Anträge genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit eintragen.</p>
       <p>Eine Ausnahme im Verhalten: Trägst du bei einem Termin über <strong>„alle anwesend“</strong> gesammelt Anwesenheit ein, werden betroffene Personen <strong>stillschweigend übersprungen</strong> statt mit einer Fehlermeldung. Du siehst also keinen Hinweis, dass jemand keine Punkte bekommen hat.</p>
       <h3 id="bestehende-punkte-bleiben-zaehlen-aber-nicht-mehr">Bestehende Punkte bleiben — zählen aber nicht mehr</h3>
       <p>Die einmal vergebenen Punkte werden <strong>nicht gelöscht</strong>. Sie stehen weiter in der Datenbank, werden aber überall herausgerechnet:</p>
@@ -197,7 +197,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p><strong>Ausgegraut</strong> (sichtbar, aber blass) in der Konfi-Detailansicht der Leitung: Bonuspunkte, Terminpunkte und Aktivitäten der abgeschalteten Art. Ihr seht also weiter, was einmal vergeben wurde — es ist nur erkennbar außer Kraft.</p>
       <h3 id="beim-wiedereinschalten">Beim Wiedereinschalten</h3>
       <p><strong>Es muss nichts nachgerechnet werden.</strong> Alle Summen, Level und Fortschrittsanzeigen werden bei jedem Aufruf frisch berechnet. In dem Moment, in dem du die Art wieder einschaltest, sind sämtliche alten Punkte wieder da und zählen wieder — vollständig und sofort.</p>
-      <p>Eine Einschränkung: <strong>Abzeichen werden nicht rückwirkend vergeben.</strong> Wer während der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht automatisch nachgereicht. Geprüft wird erst wieder bei der nächsten Punktevergabe oder beim Hintergrundlauf.</p>
+      <p>Eine Einschränkung: <strong>Abzeichen werden nicht rückwirkend vergeben.</strong> Wer während der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht automatisch nachgereicht. Geprüft wird erst wieder bei der <a href="./badges.html#wann-wird-geprueft">nächsten Punktevergabe oder beim Hintergrundlauf</a>.</p>
       <h3 id="mindestens-eine-art-muss-aktiv-bleiben">Mindestens eine Art muss aktiv bleiben</h3>
       <p>Schaltest du eine Art ab, lässt sich die andere nicht mehr abschalten — der Schalter ist gesperrt, mit dem Hinweis „Mindestens ein Punkt-Typ muss aktiv bleiben.“</p>
       <blockquote><strong>Achtung:</strong> Diese Regel wird <strong>nur in der Oberfläche</strong> durchgesetzt. Im System dahinter gibt es keine Sperre. Wer die Schnittstelle direkt anspricht, kann beide Arten abschalten — mit der Folge, dass keinerlei Punkte mehr vergeben werden können und alle Konfis auf 0 stehen. Verlass dich also auf die Regel, aber wisse, dass sie nicht unumstößlich ist.</blockquote>
@@ -217,19 +217,19 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Bestätigst du, passiert beides:</p>
       <p>1. Für <strong>jeden aktiven Konfi</strong> des Jahrgangs wird der Rückblick berechnet und als feste Momentaufnahme gespeichert. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
       <p><strong>Beim Ausschalten</strong> — Rückfrage „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten Rückblicke <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet.</p>
-      <p>Mehr dazu im Kapitel <em>Jahresrückblick (Wrapped)</em>.</p>
+      <p>Mehr dazu im Kapitel <a href="./wrapped.html">Jahresrückblick (Wrapped)</a>.</p>
       <h2 id="was-die-jahrgangs-zuweisung-von-teamer-innen-steuert">Was die Jahrgangs-Zuweisung von Teamer:innen steuert</h2>
       <p>Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese Zuweisung ist die <strong>wichtigste Berechtigungseinstellung im ganzen System</strong> — sie entscheidet in sehr vielen Bereichen mit.</p>
-      <p>Für die <strong>Leitung</strong> gilt das alles nicht: Sie sieht immer die ganze Gemeinde.</p>
+      <p>Für die <strong>Leitung</strong> gilt das alles nicht: Sie sieht immer die ganze Gemeinde. Was das im Chat konkret bedeutet, steht im Kapitel <a href="./chat.html#wer-wen-anschreiben-darf">Chat</a>.</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Ohne passende Zuweisung</th></tr></thead><tbody><tr><td>Konfi-Liste</td><td>die Liste bleibt <strong>komplett leer</strong></td></tr><tr><td>Punkte vergeben</td><td>abgewiesen mit „Kein Zugriff auf diesen Konfi“</td></tr><tr><td>Termine</td><td>jahrgangsgebundene Termine sind unsichtbar</td></tr><tr><td>Chat: Teamer:in schreibt Konfi an</td><td>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“</td></tr><tr><td>Chat: Konfi schreibt Teamer:in an</td><td>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig“</td></tr><tr><td>Chat: Kontaktliste</td><td>die Teamer:in taucht bei den Konfis gar nicht erst auf</td></tr><tr><td>Jahrgangs-Chatraum</td><td>keine Aufnahme in den Raum</td></tr><tr><td>Challenges</td><td>jahrgangsgebundene Challenges sind unsichtbar</td></tr><tr><td>Mitteilungen und Push</td><td>nur für die eigenen Jahrgänge</td></tr></tbody></table></div>
       <blockquote><strong>Der Chat sperrt in BEIDE Richtungen.</strong> Eine Teamer:in ohne Zuweisung ist für Konfis unsichtbar und erreicht ihrerseits keinen einzigen Konfi. Wenn sich jemand meldet, er sehe „gar keine Konfis“ oder werde von niemandem gefunden, ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.</blockquote>
-      <p>Termine, die <strong>nur für Teamer:innen</strong> gedacht sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei jahrgangsgebundenen Terminen.</p>
+      <p>Termine, die <a href="./termine.html#nur-teamer-innen"><strong>nur für Teamer:innen</strong></a> gedacht sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei jahrgangsgebundenen Terminen.</p>
       <p>Wird ein Konfi <strong>zur Teamer:in befördert</strong>, übernimmt das System seinen Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht.</p>
       <h2 id="kategorien">Kategorien</h2>
       <p>Kategorien sortieren Aktivitäten und Termine. Es gibt <strong>eine einzige gemeinsame Liste</strong> für beides — keine getrennten Kategorien für Aktivitäten und Termine.</p>
       <p>Eine Kategorie hat nur <strong>Name</strong> und <strong>Beschreibung</strong>. Beide gelten für die ganze Gemeinde, nicht pro Jahrgang.</p>
       <p>Verwendet werden sie an drei Stellen:</p>
-      <ul><li>zum Sortieren und Filtern von <strong>Aktivitäten</strong></li><li>zum Sortieren und Filtern von <strong>Terminen</strong></li><li>als Grundlage für <strong>Kategorie-Abzeichen</strong></li></ul>
+      <ul><li>zum Sortieren und Filtern von <strong>Aktivitäten</strong></li><li>zum Sortieren und Filtern von <strong>Terminen</strong></li><li>als Grundlage für <a href="./badges.html#kategorie-aktivitaeten"><strong>Kategorie-Abzeichen</strong></a></li></ul>
       <h3 id="loeschen-ist-blockiert-solange-sie-benutzt-wird">Löschen ist blockiert, solange sie benutzt wird</h3>
       <p>Wird eine Kategorie noch verwendet, lässt sie sich nicht löschen. Die Meldung nennt die genauen Zahlen, etwa: <strong>„Kategorie kann nicht gelöscht werden: 3 Aktivität(en) und 2 Event(s) zugeordnet.“</strong></p>
       <p>Es wird also nichts stillschweigend entkoppelt — entweder die Kategorie geht ganz weg, oder sie bleibt vollständig.</p>
@@ -246,7 +246,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p><strong>Ihre Daten bleiben vollständig erhalten</strong>: Punktestand, Level, Abzeichen und Konfispruch. Das ist bewusst so gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können.</p>
       <h2 id="das-konfirmationsdatum">Das Konfirmationsdatum</h2>
       <p>Am Jahrgang selbst wird <strong>kein</strong> Konfirmationsdatum mehr gepflegt. Das Feld gibt es technisch noch, wird aber nicht mehr beschrieben.</p>
-      <p>Der Konfirmationstermin ergibt sich stattdessen <strong>pro Konfi</strong> aus dem Termin, der als Konfirmation gekennzeichnet ist und den der Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat also jeder sein eigenes, richtiges Datum.</p>
+      <p>Der Konfirmationstermin ergibt sich stattdessen <strong>pro Konfi</strong> aus dem Termin, der <a href="./termine.html#konfirmation">als Konfirmation gekennzeichnet</a> ist und den der Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat also jeder sein eigenes, richtiges Datum.</p>
     </article>
 
     <nav class="blaettern" aria-label="Weitere Kapitel">

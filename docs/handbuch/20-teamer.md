@@ -5,7 +5,8 @@ farbe: "#be185d"
 ---
 
 Als Teamer:in begleitest du die Jahrgänge, die dir zugewiesen sind. Diese
-Zuweisung entscheidet fast überall, was du siehst und wen du erreichst.
+[Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
+entscheidet fast überall, was du siehst und wen du erreichst.
 
 ## Start
 
@@ -29,7 +30,8 @@ Jahrgangszuweisung; die setzt die Leitung.
 Du kannst Gruppenchats anlegen. Mitglieder nachträglich hinzufügen oder
 entfernen kann nur die Leitung — auch in Gruppen, die du selbst angelegt hast.
 
-Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung.
+Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung. Alle
+Chat-Regeln im Detail stehen im Kapitel [Chat](90-chat.md).
 
 ## Events
 
@@ -39,8 +41,8 @@ Zwei Bereiche oben: **Events** und **Aktivitäten**.
 
 Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Bei Terminen,
 für die Teamer:innen gesucht werden, meldest du dich mit **„Ich bin dabei"**
-an. Es gibt ein eigenes Kontingent für das Team, getrennt von den Plätzen der
-Konfis, und bei Bedarf eine eigene Warteliste.
+an. Es gibt ein [eigenes Kontingent für das Team](70-termine.md#teamer-kontingent),
+getrennt von den Plätzen der Konfis, und bei Bedarf eine eigene Warteliste.
 
 Manche Termine sind reine Konfi-Termine. Die stehen dann nur zur Information
 da, ohne Anmeldung.
@@ -54,7 +56,9 @@ Zu jedem Termin siehst du die Details und das hinterlegte **Material**.
 ### Aktivitäten
 
 Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als
-Nachweis. Die Leitung bestätigt sie, dann zählen sie.
+Nachweis. Die Leitung bestätigt sie, dann zählen sie — der
+[Weg einer Meldung](40-punkte.md#der-weg-einer-aktivitaets-meldung) ist derselbe
+wie bei den Konfis.
 
 ## Challenges
 
@@ -69,10 +73,13 @@ Anonymisieren lässt sich nicht zurücknehmen. Ihr im Team seht weiterhin, von
 wem ein Beitrag stammt — die Anonymität gilt gegenüber der Gruppe.
 
 Es gibt auch Challenges **nur fürs Team**. Die sehen Konfis gar nicht.
+Alles Weitere steht im Kapitel [Challenges](80-challenges.md).
 
 ## Badges
 
 Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
+Welche [Bedingungen für Teamer:innen](60-badges.md#welche-bedingung-fuer-welche-zielgruppe)
+gelten, steht im Abzeichen-Kapitel.
 
 ## Dein Profil
 
@@ -87,4 +94,4 @@ Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
   Dokumente ohne Jahrgang sehen alle.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
-- **Deine Wrappeds** — dein Jahresrückblick als Teamer:in
+- **Deine Wrappeds** — dein [Jahresrückblick](95-wrapped.md#der-teamer-rueckblick-laeuft-anders) als Teamer:in

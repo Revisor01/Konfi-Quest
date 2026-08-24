@@ -97,6 +97,12 @@ export interface ChallengeSubmission {
   link_author?: string | null;
   konfi_consent?: ChallengeConsent | null;
   moderation_status: ChallengeModerationStatus;
+  /**
+   * Optionale Begründung der Leitung beim Ausblenden — sieht die einreichende
+   * Person bei ihrem eigenen Beitrag. Wird beim Freigeben/Wieder-Einblenden
+   * serverseitig geleert.
+   */
+  moderation_note?: string | null;
   created_at: string;
   /** Nur Leitungs-Sicht bzw. nicht-anonyme Galerie-Beitraege. */
   konfi_name?: string | null;

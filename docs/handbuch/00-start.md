@@ -4,8 +4,8 @@ untertitel: Wie Konfi Quest funktioniert
 farbe: "#667eea"
 ---
 
-Konfi Quest begleitet die Konfizeit: Termine, Punkte, Abzeichen, Challenges
-und ein geschützter Chat. Drei Rollen arbeiten darin, jede sieht ihre eigene
+Konfi Quest begleitet die Konfizeit: [Termine](70-termine.md), [Punkte](40-punkte.md),
+[Abzeichen](60-badges.md), [Challenges](80-challenges.md) und ein geschützter [Chat](90-chat.md). Drei Rollen arbeiten darin, jede sieht ihre eigene
 Ansicht.
 
 ## Für wen ist welcher Teil?
@@ -32,7 +32,9 @@ Punkte entstehen auf drei Wegen:
 - **Bonuspunkte** — vergibt die Leitung von Hand, für alles, was sonst in
   kein Raster passt.
 
-Aus den Punkten ergeben sich **Level** und ein Teil der **Abzeichen**.
+Aus den Punkten ergeben sich [**Level**](40-punkte.md#level) und ein Teil der
+**Abzeichen**. Wie Punkte im Einzelnen entstehen und wieder verschwinden,
+steht im Kapitel [Punkte, Level und Ziele](40-punkte.md).
 
 ## Was bewusst keine Punkte gibt
 

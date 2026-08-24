@@ -32,6 +32,7 @@ import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '..
 import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -120,7 +121,7 @@ const STATUS_LABEL: Record<ChallengeStatus, string> = {
 const STATUS_COLOR: Record<ChallengeStatus, string> = {
   draft: '#8e8e93',
   scheduled: '#007aff',
-  active: '#059669',
+  active: 'var(--app-color-success-strong)',
   ended: '#6b7280'
 };
 
@@ -135,10 +136,12 @@ const STATUS_ICON: Record<ChallengeStatus, string> = {
 
 const VISIBILITY_LABEL: Record<string, string> = {
   public: 'Öffentlich',
-  konfi_choice: 'Konfi entscheidet',
-  // Meta-Zeile der Liste: knapp halten, aber dieselbe Aussage wie in der
-  // Anlage ("Nur für euch in der Leitung") — nicht "nicht öffentlich", das
-  // sagte nur, was es NICHT ist (User-Hinweis 10.08.).
+  // "Konfi entscheidet" stimmte nicht, sobald das Team mitmacht — neutral
+  // benannt, identisch zur Anlage (Nutzerentscheid 24.08.2026).
+  konfi_choice: 'Selbst entscheiden',
+  // Meta-Zeile der Liste: knapp halten, dieselbe Aussage wie in der Anlage —
+  // nicht "nicht öffentlich", das sagte nur, was es NICHT ist
+  // (User-Hinweis 10.08.).
   private: 'Nur Leitung'
 };
 
@@ -233,14 +236,20 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   }}
                 >
                   <div className="app-corner-badges">
+                    {/* Nur Zahl plus Uhr statt "{n} offen" (Nutzerentscheid
+                        24.08.2026) — was gemeint ist, sagen title/aria-label
+                        weiterhin in ganzen Worten. */}
                     {pending > 0 && (
                       <>
                         <div
                           className="app-corner-badge"
-                          style={{ backgroundColor: '#ff9500' }}
-                          title="Beiträge warten auf Freigabe"
+                          style={{ backgroundColor: '#ff9500', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          title={wartenAufFreigabe(pending)}
+                          role="img"
+                          aria-label={wartenAufFreigabe(pending)}
                         >
-                          {pending} offen
+                          {pending}
+                          <IonIcon icon={timeOutline} aria-hidden="true" style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
                         </div>
                         <div className="app-corner-badges__separator" />
                       </>
@@ -283,7 +292,9 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           className="app-list-item__title"
                           style={{
                             color: isArchived ? '#999' : undefined,
-                            paddingRight: pending > 0 ? '130px' : '80px'
+                            // Das Zähler-Badge ist seit dem Umbau auf Zahl+Uhr
+                            // schmaler als das alte "{n} offen".
+                            paddingRight: pending > 0 ? '110px' : '80px'
                           }}
                         >
                           {challenge.title}
@@ -326,7 +337,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           )}
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={albumsOutline} className="app-icon-color--challenges" />
-                            {challenge.submission_count || 0} Beiträge
+                            {anzahlBeitraege(challenge.submission_count || 0)}
                           </span>
                           <span className="app-list-item__meta-item">
                             <IonIcon

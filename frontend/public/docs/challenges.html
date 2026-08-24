@@ -26,6 +26,16 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+/* Einklapp-Mechanik: Auf dem Desktop ist die Zusammenfassung unsichtbar und
+   das <details> traegt sein open-Attribut aus dem HTML — es sieht aus wie
+   eine gewoehnliche Seitenleiste. Die Mobil-Regeln stehen unten im
+   Media-Block. */
+.nav-klapp > summary { display:none; list-style:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nav-klapp > summary::-webkit-details-marker { display:none; }
+.nav-klapp > summary:focus-visible { outline:2px solid var(--akzent); outline-offset:-2px; }
+.nav-uebersicht { display:none; }
+.kapitel a, .kopf a { color:var(--akzent); text-decoration-color:color-mix(in srgb, var(--akzent) 45%, transparent); text-underline-offset:2px; }
+.kapitel a:hover, .kopf a:hover { text-decoration-color:var(--akzent); }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
@@ -40,7 +50,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -52,28 +62,34 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
-  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
-     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
-     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
-     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
-     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
-  .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
-  .marke-unter { margin-bottom:14px; }
-  .nav-titel { margin-bottom:7px; }
-  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
-     ohnehin in derselben Reihenfolge beieinander. */
-  .nav-gruppe { display:none; }
-  .seitenleiste ul + ul { margin-top:0; }
-  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
-  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
-  .seitenleiste .fuss p { margin:0; }
-  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
-     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
-  .seitenleiste .fuss-hinweis { display:none; }
-  .inhalt { padding:28px 20px 72px; }
+  /* Handy (seit 24.08.2026, zweiter Anlauf): Die Kapitelliste steckt
+     zusammengeklappt hinter einer schmalen, mitlaufenden Leiste — links
+     Kapitelnummer und Titel, rechts der "Inhalt"-Knopf. Vorher standen alle
+     zwoelf Punkte als Chips ueber dem Inhalt (449 px, gut die Haelfte des
+     ersten Bildschirms), und beim Weiterlesen war die Navigation weg.
+     Technik: <details> MIT open-Attribut im HTML. Ohne JavaScript ist damit
+     alles sichtbar und per Antippen nativ zuklappbar (nicht kaputt, nur
+     weniger komfortabel); ein Mini-Skript unter der Navigation nimmt das
+     open auf schmalen Bildschirmen weg, so startet das Menue zu. Auf dem
+     Desktop ist die Zusammenfassung ausgeblendet — dort aendert sich nichts. */
+  .huelle { display:block; }
+  .marken-zeile { display:none; }
+  .seitenleiste { position:sticky; top:0; z-index:30; height:auto; overflow:visible; padding:0; border-right:none; border-bottom:1px solid var(--rand); background:var(--ground); }
+  .nav-klapp > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; }
+  .nav-hier { font-weight:600; font-size:.92rem; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-hier-nr { color:var(--akzent); font-family:'Bebas Neue',Impact,sans-serif; font-size:1.05rem; letter-spacing:1px; margin-right:7px; }
+  .nav-schalter-wort { flex:none; display:flex; align-items:center; gap:7px; color:var(--akzent); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+  .nav-pfeil { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+  .nav-klapp[open] > summary .nav-pfeil { transform:rotate(225deg); margin-top:3px; }
+  /* Aufgeklappt: das Menue scrollt in sich, statt laenger als der Bildschirm
+     zu werden. 47px = Hoehe der Leiste. */
+  .nav-inhalt { border-top:1px solid var(--rand); padding:2px 16px 18px; max-height:calc(100vh - 47px); max-height:calc(100dvh - 47px); overflow-y:auto; }
+  .nav-uebersicht { display:block; margin:12px 0 0; font-size:.87rem; }
+  .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
+  .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */
@@ -121,16 +137,39 @@ tbody tr:last-child td { border-bottom:none; }
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke"><a href="./">Konfi Quest</a></p>
-    <p class="marke-unter">Handbuch</p>
-    <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html" aria-current="page" class="ist-hier"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
-    <div class="fuss">
-      <p><a href="/docs/api/">API-Referenz</a></p>
-      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
-      <p><a href="/">Zur Startseite</a></p>
+    <div class="marken-zeile">
+      <p class="marke"><a href="./">Konfi Quest</a></p>
+      <p class="marke-unter">Handbuch</p>
     </div>
+    <details class="nav-klapp" open>
+      <summary>
+        <span class="nav-hier"><span class="nav-hier-nr">10</span>Challenges</span>
+        <span class="nav-schalter-wort">Inhalt<span class="nav-pfeil" aria-hidden="true"></span></span>
+      </summary>
+      <div class="nav-inhalt">
+        <p class="nav-uebersicht"><a href="./">Zur Kapitelübersicht</a></p>
+        <p class="nav-titel">Inhalt</p>
+        <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html" aria-current="page" class="ist-hier"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+        <div class="fuss">
+          <p><a href="/docs/api/">API-Referenz</a></p>
+          <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
+          <p><a href="/">Zur Startseite</a></p>
+        </div>
+      </div>
+    </details>
   </nav>
+  <script>
+  /* Startzustand des Menues: auf schmalen Bildschirmen zu, sonst offen. Das
+     Auf- und Zuklappen selbst macht der Browser (details/summary) — ohne
+     dieses Skript ist das Menue nur anfangs offen statt zu. */
+  (function () {
+    var klapp = document.querySelector('.nav-klapp');
+    var schmal = window.matchMedia('(max-width:860px)');
+    var setzen = function () { klapp.toggleAttribute('open', !schmal.matches); };
+    setzen();
+    if (schmal.addEventListener) schmal.addEventListener('change', setzen);
+  })();
+  </script>
   <main class="inhalt">
     <article class="kapitel" style="--kapitel:#be185d">
       <header class="kapitel-kopf">
@@ -139,36 +178,37 @@ tbody tr:last-child td { border-bottom:none; }
         <p class="kapitel-meta">Aufgaben stellen, Beiträge begleiten, Abzeichen vergeben</p>
       </header>
       <p>Eine Challenge ist eine Aufgabe mit einem Zeitfenster, auf die Konfis mit einem eigenen Beitrag antworten: ein Text, ein Foto, eine Sprachaufnahme, ein kurzes Video oder ein Link. Alles, was zurückkommt, sammelt sich an einer Stelle — und du entscheidest vorher, wer es zu sehen bekommt.</p>
-      <h2>Warum es dafür keine Punkte gibt</h2>
+      <h2 id="warum-es-dafuer-keine-punkte-gibt">Warum es dafür keine Punkte gibt</h2>
       <p>Challenges sind der einzige Teil der App, der <strong>nichts zählt</strong>. Keine Punkte, keine Rangliste, kein Zähler in der Konfi-Ansicht, keine Auswirkung auf das Ziel des Jahrgangs.</p>
       <p>Das ist Absicht. Bei Aktivitäten und Terminen geht es um Teilnahme, und Teilnahme lässt sich zählen. Bei einer Challenge geht es um eine eigene Antwort — und ein Foto vom Sonnenaufgang ist nicht „drei Punkte wert&quot;. Sobald Punkte im Spiel wären, würden Beiträge nach Ertrag statt nach Ehrlichkeit entstehen.</p>
       <p>Was es stattdessen gibt: ein <strong>Abzeichen</strong> für alle, die mitgemacht haben (siehe unten) — für alle dasselbe, ohne Abstufung.</p>
       <blockquote><strong>Achtung:</strong> Weil nichts gezählt wird, taucht eine Challenge auch in keiner Auswertung, keinem Punktestand und keinem Zertifikat auf. Wer Teilnahme belegen will, braucht dafür eine Aktivität oder einen Termin.</blockquote>
       <p>---</p>
-      <h2>Eine Challenge anlegen — Feld für Feld</h2>
-      <h3>Titel</h3>
+      <h2 id="eine-challenge-anlegen-feld-fuer-feld">Eine Challenge anlegen — Feld für Feld</h2>
+      <h3 id="titel">Titel</h3>
       <p>Pflichtfeld, höchstens 200 Zeichen. Das ist die Überschrift, die Konfis in der Liste sehen.</p>
       <p><em>Beispiel:</em> „Wo hast du diese Woche Gott gesehen?&quot;</p>
-      <h3>Beschreibung</h3>
+      <h3 id="beschreibung">Beschreibung</h3>
       <p>Pflichtfeld, keine Längenbegrenzung. Hier steht die eigentliche Aufgabe.</p>
       <p>Schreib hier auch hinein, <strong>was mit den Beiträgen passiert</strong> — besonders bei Challenges, deren Ergebnis du weiterverwenden willst („Eure Sätze werden zu den Fürbitten im Gottesdienst am 12. Mai&quot;). Die App sagt nur, wer die Beiträge sehen kann, nicht, wozu sie gebraucht werden.</p>
-      <h3>Gestellt von (optional)</h3>
+      <h3 id="gestellt-von-optional">Gestellt von (optional)</h3>
       <p>Ein freies Textfeld, höchstens 200 Zeichen: wer die Aufgabe stellt.</p>
       <p><em>Beispiel:</em> „Pastor Simon&quot;, „Konfi-Team Hennstedt&quot;, „Lena aus Jahrgang 2026&quot;.</p>
       <p>Es ist ausdrücklich ein Freitext und keine Personenauswahl — eine Challenge darf auch von einem Konfi kommen, ohne dass dafür jemand verknüpft wird. Lässt du das Feld leer, erscheint keine Urheber-Zeile.</p>
-      <h3>Zeitraum: Start und Ende</h3>
-      <p>Beides Pflicht, das Ende muss nach dem Start liegen. Einstellbar in Viertelstundenschritten.</p>
-      <ul><li><strong>Vor dem Start</strong> ist die Challenge „geplant&quot; — sie taucht bei Konfis noch nicht auf und startet dann von selbst.</li><li><strong>Zwischen Start und Ende</strong> läuft sie: nur in dieser Zeit lassen sich Beiträge einreichen.</li><li><strong>Nach dem Ende</strong> wandert sie ins Archiv. Die Beiträge bleiben sichtbar, neue kommen nicht mehr dazu.</li></ul>
-      <h3>Als Entwurf speichern</h3>
+      <h3 id="zeitraum-start-und-ende">Zeitraum: Start und Ende</h3>
+      <p>Für eine eingeplante Challenge sind beide Pflicht, das Ende muss nach dem Start liegen. Einstellbar in Viertelstundenschritten. Nur ein Entwurf kommt noch ohne Zeitraum aus — siehe unten.</p>
+      <ul><li><strong>Vor dem Start</strong> ist die Challenge „geplant&quot; — sie taucht bei Konfis noch nicht auf und startet dann von selbst zum eingestellten Zeitpunkt. In dem Moment bekommen die Konfis der Jahrgänge eine Benachrichtigung.</li><li><strong>Zwischen Start und Ende</strong> läuft sie: nur in dieser Zeit lassen sich Beiträge einreichen. Der Start lässt sich jetzt nicht mehr verschieben, das Ende schon — eine laufende Challenge kannst du also verlängern oder früher beenden.</li><li><strong>Nach dem Ende</strong> wandert sie ins Archiv. Die Beiträge bleiben sichtbar, neue kommen nicht mehr dazu.</li></ul>
+      <h3 id="als-entwurf-speichern">Als Entwurf speichern</h3>
       <p>Ist der Schalter an, sehen die Challenge <strong>nur du und dein Team</strong>. Konfis bekommen sie nicht zu Gesicht, auch wenn der Startzeitpunkt längst erreicht ist. Erst wenn du den Haken entfernst und speicherst, wird sie scharf.</p>
+      <p>Ein Entwurf braucht <strong>noch keinen Zeitraum</strong>: Start und Ende legst du erst fest, wenn du ihn einplanst — schalte dafür den Entwurfs-Schalter wieder aus. Bereits eingetragene Zeiten gehen beim Hin- und Herschalten nicht verloren. In der Verwaltung stehen Entwürfe im Reiter „Geplant&quot;.</p>
       <blockquote><strong>Achtung:</strong> Ein reiner Leitungs-Entwurf ohne zugeordnete Jahrgänge ist für Teamer:innen unsichtbar — nur die Leitung sieht ihn. Ordne die Jahrgänge also schon im Entwurf zu, wenn Teamer:innen mitplanen sollen.</blockquote>
-      <h3>Zielgruppe (Jahrgänge)</h3>
+      <h3 id="zielgruppe-jahrgaenge">Zielgruppe (Jahrgänge)</h3>
       <p>Welche Jahrgänge die Challenge bekommen. Mehrere sind möglich; die Konfis sehen dann auch die Beiträge aus dem jeweils anderen Jahrgang — in der Galerie steht der Jahrgangsname dabei, damit klar ist, woher ein Beitrag kommt.</p>
       <p>Teamer:innen können nur ihre eigenen zugewiesenen Jahrgänge auswählen.</p>
-      <h3>Mehrere Beiträge erlauben</h3>
+      <h3 id="mehrere-beitraege-erlauben">Mehrere Beiträge erlauben</h3>
       <p>Ist der Schalter an (Voreinstellung), darf jede Person beliebig oft einreichen. Ist er aus, gibt es genau einen Beitrag pro Person — der zweite Versuch wird mit „Du hast für diese Challenge bereits einen Beitrag abgegeben&quot; abgewiesen.</p>
       <p>---</p>
-      <h2>Teilnahme-Kreis: wer mitmachen darf</h2>
+      <h2 id="teilnahme-kreis-wer-mitmachen-darf">Teilnahme-Kreis: wer mitmachen darf</h2>
       <p>Zwei Möglichkeiten, im Formular unter „Wer macht mit?&quot;:</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Jahrgang und Team</th><th>Nur das Team</th></tr></thead><tbody><tr><td>Konfis dürfen einreichen</td><td>ja</td><td>nein</td></tr><tr><td>Team (Leitung, Teamer:innen) darf einreichen</td><td>ja</td><td>ja</td></tr><tr><td>Jahrgänge auswählbar</td><td>ja, Pflicht</td><td>nein, entfällt</td></tr><tr><td>Konfis sehen die Challenge</td><td>ja</td><td><strong>nein, gar nicht</strong></td></tr><tr><td>Wer verwaltet sie</td><td>Leitung und die Teamer:innen der Jahrgänge</td><td>jede:r im Team der Organisation</td></tr></tbody></table></div>
       <p><strong>Jahrgang und Team</strong> ist die Voreinstellung. Das Team schreibt dabei gleichberechtigt mit — es gibt bewusst keine Einstellung „nur Konfis&quot;. Wer eine Aufgabe stellt, soll sie auch selbst beantworten.</p>
@@ -176,12 +216,12 @@ tbody tr:last-child td { border-bottom:none; }
       <blockquote><strong>Warum Konfis eine Team-Challenge nicht einmal ahnen:</strong> Sie taucht in ihrer Liste nicht auf. Ruft ein Konfi die Adresse trotzdem direkt auf, antwortet das System „nicht gefunden&quot; statt „kein Zugriff&quot; — auch die bloße Existenz soll nicht durchsickern. Selbst die hochgeladenen Dateien sind für Konfis gesperrt.</blockquote>
       <blockquote><strong>Achtung:</strong> Wechselst du eine noch nicht gestartete Challenge auf „Nur das Team&quot;, werden die bereits gesetzten Jahrgangs-Zuordnungen gelöscht. Das ist gewollt (eine verwaiste Zuordnung würde eine Einschränkung vortäuschen, die nicht greift) — beim Zurückwechseln musst du sie neu setzen.</blockquote>
       <p>---</p>
-      <h2>Sichtbarkeit: wer welchen Beitrag sieht</h2>
+      <h2 id="sichtbarkeit-wer-welchen-beitrag-sieht">Sichtbarkeit: wer welchen Beitrag sieht</h2>
       <p>Das ist die wichtigste Entscheidung beim Anlegen. Drei Möglichkeiten:</p>
-      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Öffentlich</th><th>Konfi entscheidet</th><th>Nur für euch in der Leitung</th></tr></thead><tbody><tr><td>Es gibt eine Galerie</td><td>ja</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Wer sieht fremde Beiträge</td><td>alle Konfis der Jahrgänge</td><td>alle — soweit der Konfi zustimmt</td><td>nur die Leitung</td></tr><tr><td>Konfi wählt beim Einreichen</td><td>nein</td><td><strong>ja, Pflicht</strong></td><td>nein</td></tr><tr><td>Anonyme Beiträge möglich</td><td>nein</td><td>ja</td><td>entfällt</td></tr><tr><td>Beiträge im Export</td><td>ja (nach Freigabe)</td><td>nur die freigegebenen mit Zustimmung</td><td>ja, alle nicht ausgeblendeten</td></tr></tbody></table></div>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Öffentlich</th><th>Selbst entscheiden</th><th>Nur Leitung</th></tr></thead><tbody><tr><td>Es gibt eine Galerie</td><td>ja</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Wer sieht fremde Beiträge</td><td>alle Konfis der Jahrgänge</td><td>alle — soweit der Konfi zustimmt</td><td>nur die Leitung</td></tr><tr><td>Konfi wählt beim Einreichen</td><td>nein</td><td><strong>ja, Pflicht</strong></td><td>nein</td></tr><tr><td>Anonyme Beiträge möglich</td><td>nein</td><td>ja</td><td>entfällt</td></tr><tr><td>Beiträge im Export</td><td>ja (nach Freigabe)</td><td>nur die freigegebenen mit Zustimmung</td><td>ja, alle nicht ausgeblendeten</td></tr></tbody></table></div>
       <p><strong>Öffentlich</strong> — alles, was freigegeben ist, erscheint mit Namen in der Galerie. Passend für Sammlungen, bei denen der Beitrag ohnehin öffentlich gedacht ist: Fotos von der Freizeit, Lieblingslieder, Bibelvers-Sammlung.</p>
-      <p><strong>Konfi entscheidet</strong> (Voreinstellung) — jede:r wählt beim Einreichen selbst zwischen drei Stufen. Das ist die richtige Wahl, wenn die Frage persönlich werden kann.</p>
-      <p><strong>Nur für euch in der Leitung</strong> — es gibt gar keine Galerie. Die Konfis sehen ausschließlich ihren eigenen Beitrag, alle anderen bleiben bei euch. Passend für Fürbitten, Sorgen, Rückmeldungen, Gebetsanliegen.</p>
+      <p><strong>Selbst entscheiden</strong> (Voreinstellung) — wer einreicht, wählt selbst zwischen drei Stufen. Das ist die richtige Wahl, wenn die Frage persönlich werden kann. (Die Einstellung hieß früher „Konfi entscheidet&quot; — sie gilt aber genauso für euch im Team, wenn ihr selbst mitmacht.)</p>
+      <p><strong>Nur Leitung</strong> — es gibt gar keine Galerie. Die Konfis sehen ausschließlich ihren eigenen Beitrag, alle anderen bleiben bei euch. Passend für Fürbitten, Sorgen, Rückmeldungen, Gebetsanliegen.</p>
       <p>So entscheidet sich, ob ein einzelner Beitrag in der Galerie landet:</p>
       <pre><code>Ist der Beitrag freigegeben?
    nein  → niemand außer der Leitung und dem Konfi selbst sieht ihn
@@ -189,20 +229,20 @@ tbody tr:last-child td { border-bottom:none; }
 Sichtbarkeit der Challenge?
    Öffentlich          → in der Galerie, mit Namen
    Nur Leitung         → NICHT in der Galerie
-   Konfi entscheidet   ↓
+   Selbst entscheiden  ↓
       Konfi wählte &quot;Öffentlich&quot; → in der Galerie, mit Namen
       Konfi wählte &quot;Anonym&quot;     → in der Galerie, OHNE Namen
       Konfi wählte &quot;Nur Leitung&quot;→ NICHT in der Galerie</code></pre>
       <p>Zwei Dinge gelten dabei immer:</p>
       <ul><li><strong>Ausgeblendet schlägt alles.</strong> Ein ausgeblendeter Beitrag erscheint nirgends, auch bei „Öffentlich&quot; nicht.</li><li><strong>Die Leitung sieht in ihrer Ansicht immer alles</strong> — auch anonyme Beiträge mit Namen. Anonymität gilt gegenüber der Gruppe, nicht gegenüber euch. Nur so könnt ihr nachfragen, wenn ein Beitrag Sorgen macht.</li></ul>
       <p>---</p>
-      <h2>Konfi-Entscheidung: die drei Stufen</h2>
-      <p>Nur bei Sichtbarkeit „Konfi entscheidet&quot;. Beim Einreichen erscheint eine Pflichtauswahl:</p>
+      <h2 id="selbst-entscheiden-die-drei-stufen">Selbst entscheiden: die drei Stufen</h2>
+      <p>Nur bei Sichtbarkeit „Selbst entscheiden&quot;. Beim Einreichen erscheint eine Pflichtauswahl:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Auswahl</th><th>In der App</th><th>Was passiert</th></tr></thead><tbody><tr><td><strong>Öffentlich</strong></td><td>„mit deinem Namen&quot;</td><td>Nach Freigabe in der Galerie, Name steht dabei</td></tr><tr><td><strong>Anonym</strong></td><td>„ohne Namen&quot;</td><td>Nach Freigabe in der Galerie, <strong>ohne</strong> Name, Rolle und Jahrgang</td></tr><tr><td><strong>Nur Leitung</strong></td><td>„nicht in der Galerie&quot;</td><td>Kommt nie in die Galerie und <strong>nie in den Export</strong></td></tr></tbody></table></div>
       <p>„Anonym&quot; ist ernst gemeint: Der Name verlässt den Server gar nicht erst. Es ist nicht so, dass die App ihn nur ausblendet — die Anfrage der anderen Konfis bekommt an dieser Stelle schlicht nichts geliefert.</p>
       <blockquote><strong>Achtung:</strong> „Nur Leitung&quot; ist die stärkste Zusage, die ein Konfi geben kann. Solche Beiträge landen auch dann nicht im Export, wenn ihr sie freigebt. Wer sie im Gottesdienst verwenden will, muss die Person fragen.</blockquote>
       <p>---</p>
-      <h2>Moderation: Beiträge erst nach Freigabe zeigen</h2>
+      <h2 id="moderation-beitraege-erst-nach-freigabe-zeigen">Moderation: Beiträge erst nach Freigabe zeigen</h2>
       <p>Ein Schalter im Formular. Ist er <strong>an</strong> (Voreinstellung), wartet jeder neue Beitrag auf euer Ja. Ist er <strong>aus</strong>, erscheint jeder Beitrag sofort in der Galerie.</p>
       <p>Jeder Beitrag hat genau einen von drei Zuständen:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Zustand</th><th>Bedeutung</th><th>In der Galerie</th></tr></thead><tbody><tr><td><strong>Wartet auf Freigabe</strong></td><td>Neu eingereicht, Moderation ist an</td><td>nein</td></tr><tr><td><strong>Freigegeben</strong></td><td>Durchgewinkt, oder Moderation war aus</td><td>ja — sofern die Sichtbarkeit es zulässt</td></tr><tr><td><strong>Ausgeblendet</strong></td><td>Von der Leitung zurückgezogen</td><td>nein</td></tr></tbody></table></div>
@@ -211,7 +251,7 @@ Sichtbarkeit der Challenge?
       <blockquote><strong>Achtung:</strong> „Freigegeben&quot; heißt nicht automatisch „sichtbar&quot;. Hat ein Konfi „Nur Leitung&quot; gewählt, zeigt das Abzeichen am Beitrag ein Schloss statt eines Hakens — freigegeben, aber trotzdem nirgends zu sehen. Das ist so richtig.</blockquote>
       <p>Bei Challenges ohne Freigabe-Pflicht gibt es in der Leitungs-Ansicht kein „Wartet&quot;-Register, weil dort nie etwas wartet.</p>
       <p>---</p>
-      <h2>Was nach dem Start gesperrt ist</h2>
+      <h2 id="was-nach-dem-start-gesperrt-ist">Was nach dem Start gesperrt ist</h2>
       <p>Sobald eine Challenge kein Entwurf mehr ist <strong>und</strong> der Startzeitpunkt erreicht wurde, sind fünf Dinge eingefroren:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Nach dem Start</th></tr></thead><tbody><tr><td>Teilnahme-Kreis</td><td><strong>gesperrt</strong></td></tr><tr><td>Sichtbarkeit</td><td><strong>gesperrt</strong></td></tr><tr><td>Beiträge erst nach Freigabe zeigen</td><td><strong>gesperrt</strong></td></tr><tr><td>Erlaubte Medienarten</td><td><strong>gesperrt</strong></td></tr><tr><td>Startzeitpunkt</td><td><strong>gesperrt</strong></td></tr><tr><td>Titel, Beschreibung</td><td>änderbar</td></tr><tr><td>Ende</td><td>änderbar</td></tr><tr><td>Name und Symbol des Abzeichens</td><td>änderbar</td></tr><tr><td>Gestellt von</td><td>änderbar</td></tr><tr><td>Jahrgänge</td><td><strong>wirkungslos</strong> — siehe unten</td></tr></tbody></table></div>
       <p>Der Grund steht in der Fehlermeldung, die du bekommst, wenn du es versuchst: <em>„Die Konfis haben unter diesen Bedingungen eingereicht.&quot;</em></p>
@@ -220,18 +260,18 @@ Sichtbarkeit der Challenge?
       <blockquote><strong>Achtung, Stolperstein:</strong> Die Jahrgangs-Auswahl bleibt im Formular anklickbar, auch nach dem Start — sie hat dann aber <strong>keine Wirkung mehr</strong>. Du kannst Haken setzen und entfernen, speichern, und danach steht wieder das Alte da. Eine Fehlermeldung gibt es nicht. Verlass dich also nicht darauf, einen Jahrgang nachträglich dazuzunehmen.</blockquote>
       <p>Ein Sonderfall: Wenn du bei einer bereits gestarteten Challenge speicherst, wird der Entwurfs-Haken automatisch entfernt. Eine laufende Challenge lässt sich nicht nachträglich zum Entwurf machen.</p>
       <p>---</p>
-      <h2>Medienarten</h2>
+      <h2 id="medienarten">Medienarten</h2>
       <p>Beim Anlegen legst du fest, womit geantwortet werden darf — mindestens eine Art muss ausgewählt sein. Voreinstellung ist Text und Foto.</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Was Konfis tun</th><th>Grenze</th></tr></thead><tbody><tr><td><strong>Text</strong></td><td>Frei schreiben, keine Längenbegrenzung</td><td>darf nicht leer sein</td></tr><tr><td><strong>Foto</strong></td><td>Aufnehmen oder aus der Galerie wählen</td><td>50 MB</td></tr><tr><td><strong>Audio</strong></td><td>Direkt in der App aufnehmen oder Datei wählen</td><td>50 MB</td></tr><tr><td><strong>Video</strong></td><td>Aufnehmen oder aus der Galerie wählen</td><td>50 MB</td></tr><tr><td><strong>Link</strong></td><td>Adresse eintippen</td><td>muss mit <code>http://</code> oder <code>https://</code> beginnen</td></tr></tbody></table></div>
       <p>Zu Foto, Audio und Video darf zusätzlich ein Text geschrieben werden — eine Bildunterschrift sozusagen.</p>
-      <h3>Warum eine falsch benannte Datei nicht durchkommt</h3>
+      <h3 id="warum-eine-falsch-benannte-datei-nicht-durchkommt">Warum eine falsch benannte Datei nicht durchkommt</h3>
       <p>Beim Hochladen prüft das System <strong>nicht</strong>, wie die Datei heißt oder was das Gerät behauptet, sondern liest die ersten Bytes und stellt fest, was es wirklich ist. Ein umbenanntes PDF, das als <code>foto.jpg</code> hochgeladen wird, fliegt mit „Dateityp konnte nicht verifiziert werden&quot; raus.</p>
       <p>Eine Ausnahme gibt es: Sprachaufnahmen liegen oft in Containern (m4a, mp4, mov), die technisch als Video gelten, obwohl nur eine Tonspur drin ist. Solche Dateien werden bei „Audio&quot; akzeptiert.</p>
-      <h3>Wo die Dateien liegen</h3>
+      <h3 id="wo-die-dateien-liegen">Wo die Dateien liegen</h3>
       <p>Alle hochgeladenen Dateien liegen <strong>verschlüsselt</strong> auf dem Server und tragen zufällige Namen ohne Bezug zum Inhalt. Sie lassen sich nur über die App abrufen, nie über eine offene Adresse, und nur von Personen, die den Beitrag ohnehin sehen dürfen:</p>
       <ul><li>die Person, die ihn eingereicht hat — immer</li><li>die Leitung — für alles in ihrer Organisation</li><li>Teamer:innen — nur für die Jahrgänge, die ihnen zugewiesen sind (bei Team-Challenges für alles im Team)</li><li>Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen</li></ul>
       <p>---</p>
-      <h2>Das Abzeichen</h2>
+      <h2 id="das-abzeichen">Das Abzeichen</h2>
       <p>Jede Challenge trägt ein eigenes Abzeichen: ein Name (Pflicht, höchstens 100 Zeichen) und ein Symbol aus einer Auswahl. Voreinstellung ist die Flagge.</p>
       <p><strong>Es funktioniert grundsätzlich anders als die normalen Abzeichen:</strong></p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Normale Abzeichen</th><th>Challenge-Abzeichen</th></tr></thead><tbody><tr><td>Wofür</td><td>eine Bedingung erfüllen (Punkte, Anzahl, Serie …)</td><td><strong>einen Beitrag einreichen</strong></td></tr><tr><td>Wann</td><td>bei der nächsten Prüfung</td><td><strong>sofort beim Absenden</strong></td></tr><tr><td>Zählen</td><td>ja, Bedingungen mit Werten</td><td>nein, es gibt nichts zu zählen</td></tr><tr><td>Abstufungen</td><td>ja, verschiedene Abzeichen</td><td>nein, für alle dasselbe</td></tr><tr><td>Wo es steht</td><td>in der Abzeichen-Liste</td><td>bei der Challenge, in der eigenen Sammlung</td></tr></tbody></table></div>
@@ -239,17 +279,17 @@ Sichtbarkeit der Challenge?
       <p>Beim ersten eigenen Beitrag zu einer Challenge kommt zusätzlich eine Benachrichtigung aufs Gerät.</p>
       <blockquote><strong>Achtung:</strong> Änderst du Name oder Symbol des Abzeichens nachträglich, ändert sich das auch für alle, die es schon haben — es hängt an der Challenge, nicht an der Person. Das ist der einzige Weg, ein einmal vergebenes Challenge-Abzeichen noch zu beeinflussen; entziehen lässt es sich nicht.</blockquote>
       <p>---</p>
-      <h2>Anonymisieren: einen Beitrag nachträglich schützen</h2>
+      <h2 id="anonymisieren-einen-beitrag-nachtraeglich-schuetzen">Anonymisieren: einen Beitrag nachträglich schützen</h2>
       <p>Manchmal merkt man erst beim Lesen, dass ein Beitrag zwar mit Namen freigegeben wurde, aber besser ohne Namen in der Gruppe stünde. Dafür gibt es in den Aktionen „Anonym stellen&quot;.</p>
       <p>Was passiert:</p>
       <ul><li>Der Beitrag bleibt in der Galerie, aber <strong>Name, Rolle und Jahrgang verschwinden</strong> — für alle Konfis steht dort ab sofort nur noch „Anonym&quot;.</li><li>Der Freigabe-Zustand ändert sich <strong>nicht</strong>. Ein wartender Beitrag wartet weiter, ein freigegebener bleibt freigegeben.</li><li><strong>Ihr in der Leitung seht weiterhin den echten Namen.</strong> Für Rückfragen ist das nötig — die Gruppe erfährt ihn nicht mehr.</li></ul>
       <p><strong>Es gibt keinen Weg zurück.</strong> Wer einmal anonym ist, bleibt anonym. Die App fragt vorher nach, weil das endgültig ist.</p>
       <p>Der Grund ist derselbe wie bei den gesperrten Feldern: Rückgängig zu machen hieße, jemanden nachträglich mit Namen in die Gruppe zu stellen, der dort gerade nicht mehr stehen sollte. Das darf nicht versehentlich passieren.</p>
       <p>Drei Fälle, in denen „Anonym stellen&quot; gar nicht erst angeboten wird:</p>
-      <div class="tabelle-huelle"><table><thead><tr><th>Fall</th><th>Meldung</th></tr></thead><tbody><tr><td>Die Challenge ist <strong>nicht</strong> „Konfi entscheidet&quot;</td><td>„Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.&quot;</td></tr><tr><td>Der Konfi hat selbst „Nur Leitung&quot; gewählt</td><td>„Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.&quot;</td></tr><tr><td>Der Beitrag ist <strong>schon</strong> anonym</td><td>„Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen.&quot;</td></tr></tbody></table></div>
+      <div class="tabelle-huelle"><table><thead><tr><th>Fall</th><th>Meldung</th></tr></thead><tbody><tr><td>Die Challenge ist <strong>nicht</strong> „Selbst entscheiden&quot;</td><td>„Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.&quot;</td></tr><tr><td>Der Konfi hat selbst „Nur Leitung&quot; gewählt</td><td>„Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.&quot;</td></tr><tr><td>Der Beitrag ist <strong>schon</strong> anonym</td><td>„Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen.&quot;</td></tr></tbody></table></div>
       <p>Der zweite Fall ist wichtig: „Nur Leitung&quot; ist eine stärkere Zusage als „anonym&quot;. Sie zu „anonym&quot; zu machen, würde den Beitrag in die Galerie holen — das wäre eine Verschlechterung, keine Verbesserung, und ist deshalb gesperrt.</p>
       <p>---</p>
-      <h2>Export: die Beiträge weiterverwenden</h2>
+      <h2 id="export-die-beitraege-weiterverwenden">Export: die Beiträge weiterverwenden</h2>
       <p>In der Leitungs-Ansicht einer Challenge gibt es oben ein Export-Symbol. Es lädt eine <strong>einfache Textdatei</strong> herunter — daraus lässt sich eine Liturgie, ein Liedzettel, eine Playlist oder eine Wand bauen.</p>
       <p>Drin steht:</p>
       <pre><code>Wo hast du diese Woche Gott gesehen?
@@ -272,15 +312,15 @@ https://open.spotify.com/track/...</code></pre>
       <p>Bei Fotos, Audio und Video steht statt des Inhalts nur eine Zeile mit Art und Dateiname — die Dateien selbst sind <strong>nicht</strong> im Export. Die holst du dir einzeln aus der App.</p>
       <p>Was <strong>nicht</strong> im Export landet:</p>
       <div class="tabelle-huelle"><table><thead><tr><th></th><th>Kommt in den Export</th></tr></thead><tbody><tr><td>Beiträge, die auf Freigabe warten</td><td>nein (außer bei „Nur Leitung&quot;-Challenges)</td></tr><tr><td>Ausgeblendete Beiträge</td><td><strong>nie</strong></td></tr><tr><td>Beiträge mit Konfi-Wahl „Nur Leitung&quot;</td><td><strong>nie</strong></td></tr><tr><td>Anonyme Beiträge</td><td>ja, aber als „Anonym&quot; statt mit Namen</td></tr><tr><td>Alles bei einer „Nur Leitung&quot;-Challenge</td><td>ja, alles außer Ausgeblendetem</td></tr></tbody></table></div>
-      <blockquote><strong>Achtung:</strong> Der Export ist strenger als eure eigene Sammelansicht — mit Absicht. Was ihr exportiert, verlässt in aller Regel den Leitungskreis (ein Liturgieblatt liegt in der Kirchenbank). Beiträge, die ein Konfi ausdrücklich nur euch gegeben hat, sind deshalb nicht dabei, auch wenn ihr sie in der App lesen könnt.  Die eine Ausnahme ist die Challenge „Nur für euch in der Leitung&quot;: Dort ist der Export genau der Rückkanal, der in der Beschreibung angekündigt war — z. B. Fürbitten, die anschließend vorgelesen werden. Sag das den Konfis in der Beschreibung.</blockquote>
+      <blockquote><strong>Achtung:</strong> Der Export ist strenger als eure eigene Sammelansicht — mit Absicht. Was ihr exportiert, verlässt in aller Regel den Leitungskreis (ein Liturgieblatt liegt in der Kirchenbank). Beiträge, die ein Konfi ausdrücklich nur euch gegeben hat, sind deshalb nicht dabei, auch wenn ihr sie in der App lesen könnt.  Die eine Ausnahme ist die Challenge „Nur Leitung&quot;: Dort ist der Export genau der Rückkanal, der in der Beschreibung angekündigt war — z. B. Fürbitten, die anschließend vorgelesen werden. Sag das den Konfis in der Beschreibung.</blockquote>
       <p>Gibt es nichts zu exportieren, meldet die App „Es gibt noch keine Texte oder Links zum Exportieren.&quot;</p>
       <p>---</p>
-      <h2>Eine Challenge löschen</h2>
+      <h2 id="eine-challenge-loeschen">Eine Challenge löschen</h2>
       <ul><li><strong>Entwürfe und noch nicht gestartete Challenges</strong> lassen sich direkt löschen.</li><li><strong>Laufende und beendete Challenges</strong> brauchen eine ausdrückliche Bestätigung. Die App warnt vorher: <em>„Beim Löschen gehen alle Beiträge der Konfis verloren.&quot;</em></li></ul>
       <p>Beim Löschen verschwindet alles: die Challenge, sämtliche Beiträge, sämtliche hochgeladenen Dateien vom Server und damit auch das Abzeichen bei allen, die es hatten. Das lässt sich nicht rückgängig machen und es gibt keinen Papierkorb.</p>
       <blockquote><strong>Achtung:</strong> Wenn du eine Challenge nur aus dem Weg räumen willst, ohne jemandem etwas wegzunehmen: Lass sie einfach auslaufen. Beendete Challenges wandern von selbst ins Archiv und stören dort niemanden.</blockquote>
       <p>---</p>
-      <h2>Was Konfis können — und was nicht</h2>
+      <h2 id="was-konfis-koennen-und-was-nicht">Was Konfis können — und was nicht</h2>
       <p><strong>Können:</strong></p>
       <ul><li>laufende Challenges ihrer Jahrgänge sehen und einreichen</li><li>ihre eigenen Beiträge jederzeit ansehen, mit Zustand („Wartet auf Freigabe&quot;, „Freigegeben&quot;, „Ausgeblendet&quot;)</li><li>die Galerie ansehen, soweit die Sichtbarkeit es zulässt</li><li>beendete Challenges im Archiv nachlesen</li><li>ihre Abzeichen sammeln</li></ul>
       <p><strong>Können nicht:</strong></p>
@@ -288,7 +328,7 @@ https://open.spotify.com/track/...</code></pre>
       <p>Das Zurückziehen ist bewusst gesperrt. Ein Konfi, der es versucht, bekommt: <em>„Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an deine Leitung, falls ein Beitrag entfernt werden soll.&quot;</em></p>
       <blockquote><strong>Achtung:</strong> Damit landet diese Bitte bei euch. Rechnet damit, dass jemand nach einem Gruppenabend fragt, ob sein Beitrag wieder weg kann — „Ausblenden&quot; ist dann die richtige Antwort, nicht „geht nicht&quot;.</blockquote>
       <p>---</p>
-      <h2>Wer bekommt was mit?</h2>
+      <h2 id="wer-bekommt-was-mit">Wer bekommt was mit?</h2>
       <ul><li><strong>Die Konfis der Jahrgänge</strong> bekommen eine Benachrichtigung, sobald eine geplante Challenge tatsächlich startet — nicht schon beim Anlegen.</li><li><strong>Die Leitung</strong> bekommt eine Benachrichtigung bei <strong>jedem</strong> neuen Beitrag — auch wenn er ohne Moderation sofort öffentlich ist.</li><li><strong>Der Konfi</strong> bekommt eine Benachrichtigung beim ersten eigenen Beitrag zu einer Challenge („Abzeichen erhalten&quot;).</li><li><strong>Alle Konfis der Jahrgänge</strong> bekommen mit, wenn eine Challenge startet, sich ändert oder ein Beitrag in der Galerie erscheint — die Listen aktualisieren sich von selbst, ohne Neuladen.</li></ul>
     </article>
 

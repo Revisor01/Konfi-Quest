@@ -28,7 +28,7 @@ interface LegendEntry {
 // STATUS_COLOR/STATUS_ICON in ChallengesManageView (jeder Status eigenes Icon).
 const STATUS_ENTRIES: LegendEntry[] = [
   {
-    color: '#059669',
+    color: 'var(--app-color-success-strong)',
     icon: flag,
     label: 'Aktiv',
     description: 'Die Challenge läuft, Konfis können Beiträge einreichen.',
@@ -53,11 +53,12 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zähler-Badge in der Liste (pending_count).
+// Oranges Zähler-Badge in der Liste (pending_count) — Zahl plus Uhr,
+// ohne Wort (Nutzerentscheid 24.08.2026).
 const COUNTER_ENTRY: LegendEntry = {
   color: '#ff9500',
   icon: timeOutline,
-  label: 'N offen',
+  label: 'Zahl mit Uhr',
   description: 'So viele Beiträge warten noch auf Freigabe.',
 };
 
@@ -70,7 +71,7 @@ const MODERATION_ENTRIES: LegendEntry[] = [
     description: 'Der Beitrag wurde eingereicht und muss noch geprüft werden.',
   },
   {
-    color: 'var(--app-color-success)',
+    color: 'var(--app-color-success-strong)',
     icon: checkmarkOutline,
     label: 'Freigegeben',
     description: 'Der Beitrag wurde geprüft und freigegeben.',
@@ -82,7 +83,7 @@ const MODERATION_ENTRIES: LegendEntry[] = [
     description: 'Der Beitrag wurde ausgeblendet und ist nicht sichtbar.',
   },
   {
-    color: 'var(--app-color-success)',
+    color: 'var(--app-color-success-strong)',
     icon: eyeOutline,
     label: 'Mit Namen sichtbar',
     description: 'Der Beitrag erscheint in der Galerie mit dem Namen. Du kannst ihn anonym stellen — das gilt dann dauerhaft.',

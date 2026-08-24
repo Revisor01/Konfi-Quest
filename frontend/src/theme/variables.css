@@ -99,6 +99,11 @@ ion-list-header ion-label {
   /* Status */
   --app-color-success: #34c759;
   --app-color-success-rgb: 52, 199, 89;
+  /* Dunkleres Grün für Status-Badges (aktive Challenges, freigegebene
+     Beiträge) — das helle Success-Grün war dort zu grell
+     (Nutzerentscheid 24.08.2026). */
+  --app-color-success-strong: #059669;
+  --app-color-success-strong-rgb: 5, 150, 105;
   --app-color-warning: #ff9500;
   --app-color-warning-rgb: 255, 149, 0;
   --app-color-danger: #dc3545;

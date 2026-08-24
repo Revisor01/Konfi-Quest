@@ -30,10 +30,11 @@ import {
   addOutline,
   openOutline,
   checkmarkOutline,
+  eyeOutline,
   eyeOffOutline,
   lockClosedOutline,
   removeCircleOutline,
-  informationCircleOutline
+  chatbubbleEllipsesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -81,16 +82,20 @@ const getOwnStatus = (
   if (challenge.visibility === 'private') {
     return { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' };
   }
-  if (challenge.visibility === 'public') {
-    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success)' };
-  }
-  // konfi_choice -> eigene Entscheidung entscheidet
+  // Anonym VOR der Sichtbarkeits-Unterscheidung: Die Leitung kann seit
+  // 24.08.2026 auch Beitraege in public-Challenges nachtraeglich anonym
+  // stellen — der Konsens allein entscheidet dann ueber die Namens-Anzeige.
   if (submission.konfi_consent === 'anonymous') {
     return { label: 'Anonym', icon: eyeOffOutline, color: '#7c3aed' };
-
   }
+  if (challenge.visibility === 'public') {
+    // Dunkleres Grün wie bei den aktiven Challenges — das helle Success-Grün
+    // war hier zu grell (Nutzerentscheid 24.08.2026).
+    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success-strong)' };
+  }
+  // konfi_choice -> eigene Entscheidung entscheidet
   if (submission.konfi_consent === 'publish') {
-    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success)' };
+    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success-strong)' };
   }
   return { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' };
 };
@@ -238,6 +243,22 @@ const SubmissionCard: React.FC<{
             {formatDateTime(submission.created_at)}
           </div>
 
+          {/* Wurde der eigene Beitrag ausgeblendet, steht hier die optionale
+              Begruendung der Leitung (moderation_note kommt nur bei eigenen
+              Beitraegen mit — Galerie-Beitraege sind nie 'hidden'). */}
+          {submission.moderation_status === 'hidden' && submission.moderation_note && (
+            <div
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: '6px', marginTop: '2px',
+                marginBottom: '4px', fontSize: '0.82rem',
+                color: 'var(--app-color-danger)', lineHeight: 1.4
+              }}
+            >
+              <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span>Begründung der Leitung: {submission.moderation_note}</span>
+            </div>
+          )}
+
           {submission.text_content && (
             <div
               style={{
@@ -363,13 +384,10 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // fällt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
   const showOwnSection = isActive || ownSubmissions.length > 0;
 
-  // Sichtbarkeits-/Moderationshinweis als Standard-Infokasten-Text (Muster:
-  // ChangeEmailModal "Hinweis"-Box). Je nach Sichtbarkeitsmodus und Moderation
-  // ein kurzer, konkreter Satz.
   // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
-  // bekommt (User-Hinweis 10.08.). Der ausfuehrliche Satz steht weiterhin
-  // unten im Hinweis-Kasten.
+  // bekommt (User-Hinweis 10.08.). Dieselbe Angabe steht zusätzlich in der
+  // Meta-Zeile unter "Worum geht es".
   // Rollenneutral formulieren: Dieses Modal gehört seit der Zusammenlegung
   // (11.08.) allein den Konfis — Teamer und Leitung nutzen
   // ChallengeLeitungModal. Der Text bleibt trotzdem neutral, weil hier früher
@@ -380,19 +398,12 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
     return 'Du entscheidest je Beitrag';
   }, [current.visibility]);
 
-  const visibilityHint = useMemo(() => {
-    if (current.visibility === 'private') {
-      return 'Beiträge sieht nur das Leitungsteam.';
-    }
-    if (current.visibility === 'public') {
-      return current.moderated
-        ? 'Beiträge werden nach Freigabe für die Gruppe veröffentlicht.'
-        : 'Beiträge sind für deine Gruppe sichtbar.';
-    }
-    // konfi_choice
-    return current.moderated
-      ? 'Du wählst beim Einreichen, wer deinen Beitrag sieht. Veröffentlichung erst nach Freigabe.'
-      : 'Du wählst beim Einreichen, wer deinen Beitrag sieht.';
+  // Der Modus steht seit 24.08.2026 direkt unter "Worum geht es" in der
+  // Meta-Zeile (Sichtbarkeit plus sofort/Freigabe) — der frühere eigene
+  // "Hinweis"-Kasten ist dafür entfallen (Nutzerentscheid).
+  const moderationShort = useMemo(() => {
+    if (current.visibility === 'private') return null; // sagt visibilityShort schon alles
+    return current.moderated ? 'Sichtbar nach Freigabe' : 'Sofort sichtbar';
   }, [current.visibility, current.moderated]);
 
   return (
@@ -476,32 +487,26 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                     Gestellt von {author}
                   </span>
                 )}
+                {/* Der Modus der Challenge, direkt bei der Aufgabe: wer die
+                    Beiträge sieht und ob sie sofort oder erst nach Freigabe
+                    erscheinen (Nutzerentscheid 24.08.2026). */}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <IonIcon
+                    icon={current.visibility === 'private' ? lockClosedOutline : eyeOutline}
+                    className="app-icon-color--challenges"
+                  />
+                  {visibilityShort}
+                </span>
+                {moderationShort && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <IonIcon icon={checkmarkOutline} className="app-icon-color--challenges" />
+                    {moderationShort}
+                  </span>
+                )}
               </div>
             </IonCardContent>
           </IonCard>
         </IonList>
-
-        {/* Sichtbarkeits-/Moderationshinweis — Standard-Infokasten-Pattern
-            (siehe ActivityRequestModal, graue Hinweis-Box), nur solange die
-            Challenge noch laeuft: bei beendeten Challenges ist die Zusage,
-            wer den Beitrag sieht, ohnehin nicht mehr aenderbar/relevant. */}
-        {isActive && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--challenges">
-                <IonIcon icon={informationCircleOutline} />
-              </div>
-              <IonLabel>Hinweis</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card app-info-box--challenges">
-              <IonCardContent className="app-info-box">
-                <p style={{ margin: 0 }}>
-                  {visibilityHint}
-                </p>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>

@@ -34,7 +34,6 @@ import {
   peopleOutline,
   calendarOutline,
   chevronDownOutline,
-  lockClosedOutline,
   ribbonOutline,
   schoolOutline,
   // Icon-Auswahl (identische Auswahl wie im Badge-Modal)
@@ -199,13 +198,15 @@ const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hint: str
     hint: 'Freigegebene Beiträge sind für alle Konfis der zugewiesenen Jahrgänge sichtbar.'
   },
   {
+    // Neutral statt "Konfi entscheidet": auch das Team reicht ein und
+    // entscheidet dann selbst (Nutzerentscheid 24.08.2026).
     value: 'konfi_choice',
-    label: 'Konfi entscheidet',
-    hint: 'Jeder Konfi wählt beim Einreichen selbst: nur für die Leitung, mit Namen oder anonym.'
+    label: 'Selbst entscheiden',
+    hint: 'Wer einreicht, wählt selbst: nur für die Leitung, mit Namen oder anonym.'
   },
   {
     value: 'private',
-    label: 'Nur für euch in der Leitung',
+    label: 'Nur Leitung',
     hint: 'Beiträge sehen nur die Leitung und der Konfi selbst — es gibt keine Galerie.'
   }
 ];
@@ -611,17 +612,10 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  {isStarted && (
-                    <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                      <IonIcon icon={lockClosedOutline} style={{ fontSize: '1.1rem', marginTop: '2px', flexShrink: 0 }} />
-                      <span>
-                        Sichtbarkeit, Freigabe-Pflicht, Startzeitpunkt und Medienarten sind nach
-                        dem Start gesperrt. Die Konfis haben ihre Beiträge auf diese Zusage hin
-                        eingereicht — sie lässt sich nachträglich nicht mehr ändern.
-                      </span>
-                    </div>
-                  )}
-
+                  {/* Die Erklärung, warum diese Felder nach dem Start gesperrt
+                      sind, steht im Handbuch (Kapitel Challenges, "Was nach dem
+                      Start gesperrt ist") — nicht mehr als Hinweis-Kasten hier
+                      (Nutzerentscheid 24.08.2026). */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {VISIBILITY_OPTIONS.map((option) => (
                       <div
@@ -764,11 +758,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       </IonAccordion>
                     </IonAccordionGroup>
                   </div>
-
-                  <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '12px' }}>
-                    Das Abzeichen bekommt jeder Konfi, der mindestens einen Beitrag einreicht.
-                    Es wird bewusst nicht gezählt und fließt in keine Punkte oder Ranglisten ein.
-                  </div>
+                  {/* Wie das Abzeichen funktioniert, erklärt das Handbuch
+                      (Kapitel Challenges, "Das Abzeichen") — der Hinweis-Kasten
+                      hier ist ersatzlos gestrichen (Nutzerentscheid 24.08.2026). */}
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -843,61 +835,43 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       eingetragene Werte bleiben im Formular-State erhalten
                       und tauchen beim Einplanen wieder auf — beim Hin- und
                       Herschalten geht nichts verloren. */}
+                  {/* Erklärende Hinweise zum Zeitraum stehen im Handbuch
+                      (Kapitel Challenges) — hier nur noch die Felder selbst;
+                      "(gesperrt)" am Label sagt das Nötigste
+                      (Nutzerentscheid 24.08.2026). */}
                   {!formData.is_draft && (
-                    <>
-                      <IonList>
-                        <IonItem lines="inset">
-                          <IonLabel>Start{isStarted ? ' (gesperrt)' : ' *'}</IonLabel>
-                          <IonDatetimeButton datetime="challenge-start-picker" disabled={loading || isStarted} slot="end" />
-                        </IonItem>
-                        <IonItem lines="none">
-                          <IonLabel>Ende *</IonLabel>
-                          <IonDatetimeButton datetime="challenge-end-picker" disabled={loading} slot="end" />
-                        </IonItem>
-                      </IonList>
-                      {isStarted && (
-                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                          Der Start liegt bereits in der Vergangenheit und lässt sich nicht mehr
-                          verschieben. Das Ende kannst du weiterhin anpassen.
-                        </div>
-                      )}
-                    </>
+                    <IonList>
+                      <IonItem lines="inset">
+                        <IonLabel>Start{isStarted ? ' (gesperrt)' : ' *'}</IonLabel>
+                        <IonDatetimeButton datetime="challenge-start-picker" disabled={loading || isStarted} slot="end" />
+                      </IonItem>
+                      <IonItem lines="none">
+                        <IonLabel>Ende *</IonLabel>
+                        <IonDatetimeButton datetime="challenge-end-picker" disabled={loading} slot="end" />
+                      </IonItem>
+                    </IonList>
                   )}
 
                   {/* Entwurf-Haken statt eigener Footer-Buttons: gespeichert wird
                       ausschliesslich ueber den Bestätigen-Button oben rechts. */}
                   {!isStarted && (
-                    <>
-                      <IonItem lines="none" style={{ marginTop: '8px' }}>
-                        <IonLabel>
-                          <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
-                            Als Entwurf speichern
-                          </h3>
-                          <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
-                            Entwürfe sehen nur du und dein Team.
-                          </p>
-                        </IonLabel>
-                        <IonToggle
-                          slot="end"
-                          className="app-toggle--challenges"
-                          checked={formData.is_draft}
-                          disabled={loading}
-                          onIonChange={(e) => setFormData({ ...formData, is_draft: e.detail.checked })}
-                        />
-                      </IonItem>
-                      {formData.is_draft ? (
-                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                          Ein Entwurf braucht noch keinen Zeitraum. Start und Ende legst du
-                          fest, sobald du den Entwurf einplanst — schalte dafür den Schalter
-                          wieder aus.
-                        </div>
-                      ) : (
-                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                          Die Challenge wird geplant und startet automatisch zum eingestellten
-                          Zeitpunkt — dann bekommen die Konfis eine Benachrichtigung.
-                        </div>
-                      )}
-                    </>
+                    <IonItem lines="none" style={{ marginTop: '8px' }}>
+                      <IonLabel>
+                        <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                          Als Entwurf speichern
+                        </h3>
+                        <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                          Entwürfe sehen nur du und dein Team.
+                        </p>
+                      </IonLabel>
+                      <IonToggle
+                        slot="end"
+                        className="app-toggle--challenges"
+                        checked={formData.is_draft}
+                        disabled={loading}
+                        onIonChange={(e) => setFormData({ ...formData, is_draft: e.detail.checked })}
+                      />
+                    </IonItem>
                   )}
                 </IonCardContent>
               </IonCard>
