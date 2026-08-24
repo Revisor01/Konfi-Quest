@@ -15,6 +15,7 @@ import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
 import { setAnalyticsRole, trackFehler, trackSitzungsstart } from '../services/analytics';
+import { buildPushTargetUrl, resolveOrgForPush, PushUserType } from '../utils/pushNavigation';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -115,7 +116,8 @@ interface AppContextType {
   organizations: UserOrganization[];
   activeOrgId: number | null;
   orgVersion: number;
-  switchOrg: (orgId: number) => Promise<void>;
+  // Liefert ok + den User-Typ in der ZIEL-Org (Rolle kann pro Org anders sein).
+  switchOrg: (orgId: number) => Promise<{ ok: boolean; type?: PushUserType }>;
   signOut: () => Promise<void>;
   setUser: (user: BaseUser | null) => void;
   refreshUser: () => Promise<void>;
@@ -297,7 +299,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Router) — KEIN window.location-Reload (der zerschiesst im nativen Capacitor-
   // WebView die App: Token/aktive Org sind async in Preferences und der Reload
   // schneidet den Write ab -> "alles 0 + Switcher weg", siehe App.tsx-Kommentar).
-  const switchOrg = useCallback(async (orgId: number) => {
+  const switchOrg = useCallback(async (orgId: number): Promise<{ ok: boolean; type?: PushUserType }> => {
+    let switchedType: PushUserType | undefined;
     try {
       const res = await api.post('/auth/switch-org', { organization_id: orgId });
       if (!res?.data?.token) {
@@ -313,14 +316,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveOrgIdState(isPrimary ? null : orgId);
 
       // 3. User-State auf die neue Org/Rolle umschreiben (Rolle steuert Routing!).
+      // Fallback auf die switch-org-Antwort: beim Kaltstart über einen Push-Tap
+      // ist die organizations-Liste oft noch nicht geladen — die Antwort trägt
+      // Typ, Rolle und Org-Namen der Ziel-Org.
+      switchedType = res.data.type as PushUserType | undefined;
       const target = organizations.find(o => o.id === orgId);
       const cached = getUser();
-      if (target && cached) {
+      if (cached) {
         const merged = {
           ...cached,
-          organization: target.display_name || target.name,
-          organization_id: target.id,
-          role_name: target.role_name
+          organization: target?.display_name || target?.name || res.data.organization?.name || cached.organization,
+          organization_id: orgId,
+          role_name: target?.role_name || res.data.role_name || cached.role_name,
+          // Typ steuert den Komponentenbaum (admin/teamer/konfi) — aus der
+          // Antwort übernehmen, die Rolle kann sich zwischen Orgs unterscheiden.
+          ...(switchedType && switchedType !== 'user' ? { type: switchedType } : {})
         };
         await persistUser(merged);
         setUser(merged);
@@ -341,7 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
-      return;
+      return { ok: false };
     }
 
     // 4b. Socket mit dem NEUEN Token neu aufbauen. Ohne diesen Schritt lief der
@@ -381,7 +391,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.warn('Org-Liste nach Wechsel nicht neu geladen (unkritisch):', err);
     }
+
+    return { ok: true, type: switchedType };
   }, [organizations, loadOrganizations]);
+
+  // Immer-aktueller Zugriff auf switchOrg für den Push-Tap-Handler: dessen
+  // Effect hat nur [user] als Dependency — ein direkt eingeschlossenes
+  // switchOrg wäre eine stale Closure (veraltete organizations-Liste).
+  const switchOrgRef = useRef(switchOrg);
+  useEffect(() => {
+    switchOrgRef.current = switchOrg;
+  }, [switchOrg]);
 
   // Sauberes Abmelden — GARANTIERT zurück zum Login, egal wie verkorkst der
   // Zustand ist. Kein window.location-Reload (zerschiesst den nativen WebView).
@@ -678,101 +698,26 @@ useEffect(() => {
           // (bewusst geoeffnet -> wie bei den meisten Apps verschwindet sie).
           removeDeliveredById(action.notification.id);
 
+          const notificationData = action.notification.data as Record<string, unknown> | undefined;
           const notificationType = action.notification.data?.type;
-          const userType = user?.type || 'konfi';
-          const routePrefix = userType === 'admin' ? '/admin' : userType === 'teamer' ? '/teamer' : '/konfi';
 
           // Use timeout to ensure navigation happens after app is fully loaded
-          setTimeout(() => {
-            let targetUrl = '';
-
-            switch (notificationType) {
-              case 'chat':
-                // Direkt in den Raum: Die Route ist /chat/room/:roomId — der
-                // fruehere Query-Parameter (?room=) wurde von keiner Seite
-                // konsumiert, der Tap landete nur auf der Chat-Übersicht.
-                if (action.notification.data?.roomId) {
-                  targetUrl = `${routePrefix}/chat/room/${action.notification.data.roomId}`;
-                } else {
-                  targetUrl = `${routePrefix}/chat`;
-                }
-                break;
-
-              case 'activity_request_status':
-              case 'new_activity_request':
-                // Navigate to requests page (Teamer hat keine Requests-Page, Dashboard stattdessen)
-                targetUrl = userType === 'admin' ? '/admin/requests' : userType === 'teamer' ? '/teamer/dashboard' : '/konfi/requests';
-                break;
-
-              case 'badge_earned':
-                // Navigate to badges page (Teamer hat keine Badges-Page, Profil stattdessen)
-                targetUrl = userType === 'admin' ? '/admin/badges' : userType === 'teamer' ? '/teamer/profile' : '/konfi/badges';
-                break;
-
-              case 'new_event': {
-                // "Anmeldung möglich"-Push: direkt zum Event-Detail, wenn die ID
-                // mitkommt (Konfi hat eine Detail-Route). Sonst zur Events-Liste.
-                const evId = action.notification.data?.event_id || action.notification.data?.eventId;
-                if (evId && userType === 'konfi') {
-                  targetUrl = `/konfi/events/${evId}`;
-                } else {
-                  targetUrl = `${routePrefix}/events`;
-                }
-                break;
-              }
-
-              case 'event_registered':
-              case 'event_unregistered':
-              case 'waitlist_promotion':
-              case 'event_attendance':
-              case 'event_reminder':
-              case 'event_cancelled':
-                // Navigate to events page
-                targetUrl = `${routePrefix}/events`;
-                break;
-
-              case 'level_up':
-              case 'activity_assigned':
-              case 'bonus_points':
-                // Navigate to dashboard (points/level related)
-                targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
-                break;
-
-              case 'event_unregistration':
-              case 'events_pending_approval':
-                // Navigate to events page (Admin: Event-Abmeldungen / ausstehende Verbuchungen)
-                targetUrl = userType === 'admin' ? '/admin/events' : `${routePrefix}/events`;
-                break;
-
-              case 'new_konfi_registration':
-                // Navigate to konfis page (Admin: neue Registrierung)
-                targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
-                break;
-
-              case 'challenge_started':
-                // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
-                // bekommt diesen Push nicht, fällt aber sauber auf ihre
-                // Challenge-Verwaltung zurück).
-                targetUrl = `${routePrefix}/challenges`;
-                break;
-
-              case 'challenge_submission':
-                // Neuer Beitrag -> Moderation in der Leitungs-Ansicht.
-                targetUrl = userType === 'konfi'
-                  ? '/konfi/challenges'
-                  : `${routePrefix}/challenges`;
-                break;
-
-              case 'wrapped':
-                // Bestandsluecke: Das Wrapped-Modal liegt auf dem Dashboard —
-                // ohne diesen Fall lief der Tap ins Leere (default-Zweig).
-                targetUrl = `${routePrefix}/dashboard`;
-                break;
-
-              default:
-                console.warn('Unbekannter Notification-Typ:', notificationType);
-                break;
-            }
+          setTimeout(async () => {
+            // Multi-Org: Der Push trägt die Organisation seines Inhalts. Weicht
+            // sie von der gerade aktiven Org ab, ERST über den bestehenden
+            // switchOrg-Flow wechseln und den Abschluss abwarten — der harte
+            // Reload unten würde die asynchronen Preferences-Writes sonst
+            // abschneiden. Frische Werte über die tokenStore-Getter, nicht aus
+            // dem Effect-Closure ([user]-Dependency -> stale). Fehlt die Org im
+            // Payload oder schlägt der Wechsel fehl, bleibt alles beim heutigen
+            // Verhalten (direkt navigieren).
+            const currentType = (getUser()?.type || user?.type || 'konfi') as PushUserType;
+            const effectiveType = await resolveOrgForPush(notificationData, currentType, {
+              getActiveOrgId,
+              getUserOrgId: () => getUser()?.organization_id ?? null,
+              switchOrg: (orgId) => switchOrgRef.current(orgId)
+            });
+            const targetUrl = buildPushTargetUrl(notificationType, notificationData, effectiveType);
 
             if (targetUrl) {
               // Hard navigation (intentional): App kommt aus Background/Killed-State,

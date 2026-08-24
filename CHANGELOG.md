@@ -108,6 +108,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Wer in mehreren Gemeinden zur Leitung gehört, landete beim Antippen einer
+  Push-Nachricht aus der anderen Gemeinde in der falschen — im Chat stand dann
+  nur eine Fehlermeldung. Die App wechselt jetzt automatisch in die richtige
+  Gemeinde und öffnet erst dann das Ziel.
 - Auf Android waren der erste und der letzte Reiter unten teilweise
   abgeschnitten, weil die Leiste den seitlichen Systembereich nicht
   berücksichtigte. Lange Beschriftungen werden jetzt gekürzt statt überzulaufen.
