@@ -791,7 +791,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await PushService.sendToUser(db, req.params.userId, {
           title: 'Neues Zertifikat',
           body: `Du hast das Zertifikat "${certType.name}" erhalten.`,
-          data: { type: 'certificate' }
+          data: { type: 'certificate', organization_id: String(req.user.organization_id) }
         });
       } catch (pushErr) {
         console.error('Error sending certificate push:', pushErr);

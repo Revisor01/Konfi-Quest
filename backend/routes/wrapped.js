@@ -515,7 +515,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           await PushService.sendToMultipleUsers(db, konfiIds, {
             title: 'Dein Konfi-Jahr ist da!',
             body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-            data: { type: 'wrapped', wrappedType: 'konfi' }
+            data: { type: 'wrapped', wrappedType: 'konfi', organization_id: String(req.user.organization_id) }
           });
         } catch (pushErr) {
           console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
@@ -586,7 +586,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           await PushService.sendToMultipleUsers(db, teamerIds, {
             title: 'Dein Teamer-Jahr ist da!',
             body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-            data: { type: 'wrapped', wrappedType: 'teamer' }
+            data: { type: 'wrapped', wrappedType: 'teamer', organization_id: String(req.user.organization_id) }
           });
         } catch (pushErr) {
           console.error('Push-Notification für Teamer-Wrapped fehlgeschlagen:', pushErr);
@@ -733,7 +733,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await PushService.sendToMultipleUsers(dbRef, konfiIds, {
           title: 'Dein Konfi-Jahr ist da!',
           body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-          data: { type: 'wrapped', wrappedType: 'konfi' }
+          data: { type: 'wrapped', wrappedType: 'konfi', organization_id: String(orgId) }
         });
       } catch (pushErr) {
         console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
@@ -792,7 +792,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await PushService.sendToMultipleUsers(dbRef, teamerIds, {
           title: 'Dein Teamer-Jahr ist da!',
           body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-          data: { type: 'wrapped', wrappedType: 'teamer' }
+          data: { type: 'wrapped', wrappedType: 'teamer', organization_id: String(orgId) }
         });
       } catch (pushErr) {
         console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);

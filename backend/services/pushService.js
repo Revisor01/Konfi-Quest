@@ -39,6 +39,13 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * - getTokensForUser(db, userId)
  * - sendToUser(db, userId, notification)
  * - sendToMultipleUsers(db, userIds, notification)
+ * - resolveRecipientOrgId(db, userId)
+ *
+ * Multi-Org: JEDER Payload trägt data.organization_id (als String, FCM-data
+ * ist immer String) — die Organisation des INHALTS. Der Client wechselt beim
+ * Antippen automatisch in diese Organisation, bevor er navigiert. Fehlt die
+ * Content-Org an der Aufrufstelle, setzt sendToUser die Primär-Org des
+ * Empfängers ein (für Single-Org-Empfänger identisch).
  */
 
 class PushService {
@@ -68,6 +75,28 @@ class PushService {
   }
 
   /**
+   * Helper: Primär-Org eines Empfängers als String auflösen.
+   *
+   * Fallback für Payloads OHNE explizite Content-Org: Für Konfis (immer
+   * Single-Org) ist die Primär-Org automatisch die richtige Organisation.
+   * Aufrufstellen, deren Empfänger Multi-Org sein können (Admins,
+   * Teamer:innen), setzen die Content-Org explizit im data-Objekt — dieser
+   * Fallback greift dann nicht.
+   */
+  static async resolveRecipientOrgId(db, userId) {
+    try {
+      const { rows: [row] } = await db.query(
+        'SELECT organization_id FROM users WHERE id = $1',
+        [userId]
+      );
+      return row && row.organization_id != null ? String(row.organization_id) : null;
+    } catch (err) {
+      console.error('resolveRecipientOrgId error:', err);
+      return null;
+    }
+  }
+
+  /**
    * Helper: Sendet Push an einen User
    */
   static async sendToUser(db, userId, notification) {
@@ -77,6 +106,21 @@ class PushService {
       if (tokens.length === 0) {
  console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
         return { success: false, message: 'No tokens found' };
+      }
+
+      // organization_id gehört in JEDEN Push-Payload: Multi-Org-Empfänger
+      // wechseln beim Antippen automatisch in die Organisation des Inhalts.
+      // Fehlt die Content-Org, wird die Primär-Org des Empfängers eingesetzt
+      // (für Single-Org-Empfänger identisch). FCM-data ist IMMER String —
+      // deshalb String() und der Vergleich im Client ebenfalls per String().
+      // Kopie statt Mutation: notification wird bei sendToMultipleUsers über
+      // mehrere Empfänger geteilt.
+      const data = { ...(notification.data || {}) };
+      if (data.organization_id != null && data.organization_id !== '') {
+        data.organization_id = String(data.organization_id);
+      } else {
+        const recipientOrgId = await this.resolveRecipientOrgId(db, userId);
+        if (recipientOrgId) data.organization_id = recipientOrgId;
       }
 
       // Tokens PARALLEL abarbeiten (Performance-Audit 10.08.): vorher lief je
@@ -89,7 +133,7 @@ class PushService {
           body: notification.body,
           badge: notification.badge || 1,
           sound: 'default',
-          data: notification.data || {}
+          data: data
         });
 
         if (result.success) {
@@ -153,6 +197,25 @@ class PushService {
   static async sendChatNotification(db, userId, notificationData) {
     try {
 
+      // Content-Org des Chat-Raums (Multi-Org: der Tap wechselt in die
+      // Organisation des Raums, NICHT in die Primär-Org des Empfängers).
+      let chatOrgId = notificationData.data?.organization_id != null
+        ? String(notificationData.data.organization_id)
+        : '';
+      if (!chatOrgId && notificationData.roomId) {
+        try {
+          const { rows: [roomRow] } = await db.query(
+            'SELECT organization_id FROM chat_rooms WHERE id = $1',
+            [notificationData.roomId]
+          );
+          if (roomRow && roomRow.organization_id != null) {
+            chatOrgId = String(roomRow.organization_id);
+          }
+        } catch (orgErr) {
+          console.error('Chat-Push: Raum-Org konnte nicht aufgelöst werden:', orgErr);
+        }
+      }
+
       // Hole zuerst die Tokens des Senders um sie auszuschließen
       const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
       const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
@@ -206,7 +269,8 @@ class PushService {
             messageId: notificationData.messageId?.toString() || '',
             sender_id: notificationData.data?.sender_id?.toString() || '',
             sender_name: notificationData.data?.sender_name || '',
-            room_name: notificationData.data?.room_name || ''
+            room_name: notificationData.data?.room_name || '',
+            organization_id: chatOrgId
           }
         });
 
@@ -330,7 +394,16 @@ class PushService {
         return { success: false, message: 'No admins found' };
       }
       const adminIds = admins.map(a => a.id);
-      return await this.sendToMultipleUsers(db, adminIds, notification);
+      // Content-Org in den Payload: Admins können Multi-Org sein, der Tap
+      // muss in DIESE Organisation wechseln (nicht in ihre Primär-Org).
+      const enriched = {
+        ...notification,
+        data: {
+          ...(notification.data || {}),
+          organization_id: String(notification.data?.organization_id ?? organizationId)
+        }
+      };
+      return await this.sendToMultipleUsers(db, adminIds, enriched);
     } catch (error) {
       console.error('sendToOrgAdmins error:', error);
       return { success: false, error: error.message };
@@ -487,7 +560,7 @@ class PushService {
    * Event-Anmeldung bestätigt - Push an Konfi
    * @param {Object} timeslot - Optional: {start_time, end_time} des gebuchten Timeslots
    */
-  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null) {
+  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null, organizationId = null) {
     try {
 
       const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
@@ -519,7 +592,9 @@ class PushService {
           type: 'event_registered',
           event_name: eventName,
           status: status,
-          event_id: eventId?.toString() || ''
+          event_id: eventId?.toString() || '',
+          // Event-Org explizit: Teamer:innen können Multi-Org sein.
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -539,8 +614,8 @@ class PushService {
    * User-ID) — daher wird sie hier bewusst wiederverwendet.
    * @param {string} status - 'confirmed' oder 'waitlist'
    */
-  static async sendEventRegisteredToTeamer(db, teamerId, eventName, eventDate, status, eventId = null) {
-    return await this.sendEventRegisteredToKonfi(db, teamerId, eventName, eventDate, status, eventId, null);
+  static async sendEventRegisteredToTeamer(db, teamerId, eventName, eventDate, status, eventId = null, organizationId = null) {
+    return await this.sendEventRegisteredToKonfi(db, teamerId, eventName, eventDate, status, eventId, null, organizationId);
   }
 
   /**
@@ -593,7 +668,8 @@ class PushService {
         data: {
           type: 'event_unregistration',
           event_name: eventName,
-          konfi_name: konfiName
+          konfi_name: konfiName,
+          organization_id: String(organizationId)
         }
       };
 
@@ -703,7 +779,7 @@ class PushService {
   /**
    * Event-Erinnerung - Push an Konfi (1 Tag oder 1 Stunde vorher)
    */
-  static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType) {
+  static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType, organizationId = null) {
     try {
 
       const isOneDay = reminderType === '1_day';
@@ -715,7 +791,8 @@ class PushService {
         data: {
           type: 'event_reminder',
           reminder_type: reminderType,
-          event_name: eventName
+          event_name: eventName,
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -729,7 +806,7 @@ class PushService {
   /**
    * Von Warteliste aufgerückt - Push an Konfi
    */
-  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null) {
+  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null, organizationId = null) {
     try {
 
       let dateInfo = '';
@@ -744,7 +821,8 @@ class PushService {
         data: {
           type: 'waitlist_promotion',
           event_name: eventName,
-          event_id: eventId?.toString() || ''
+          event_id: eventId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -762,14 +840,14 @@ class PushService {
    * rollenagnostisch), eigener Einstiegspunkt für die Lesbarkeit der
    * Aufrufstellen und der Registry oben.
    */
-  static async sendWaitlistPromotionToTeamer(db, teamerId, eventName, eventDate = null, eventId = null) {
-    return await this.sendWaitlistPromotionToKonfi(db, teamerId, eventName, eventDate, eventId);
+  static async sendWaitlistPromotionToTeamer(db, teamerId, eventName, eventDate = null, eventId = null, organizationId = null) {
+    return await this.sendWaitlistPromotionToKonfi(db, teamerId, eventName, eventDate, eventId, organizationId);
   }
 
   /**
    * Event abgesagt - Push an alle angemeldeten Konfis
    */
-  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate) {
+  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate, organizationId = null) {
     try {
 
       let dateInfo = eventDate;
@@ -783,7 +861,10 @@ class PushService {
         body: `Leider abgesagt: "${eventName}" am ${dateInfo}`,
         data: {
           type: 'event_cancelled',
-          event_name: eventName
+          event_name: eventName,
+          // Event-Org explizit: unter den Gebuchten können Teamer:innen mit
+          // anderer Primär-Org sein.
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -798,7 +879,7 @@ class PushService {
    * Event geändert (Termin/Uhrzeit/Ort) - Push an alle gebuchten Teilnehmer
    * @param {Object} changes - { newDate, newEndTime, newLocation } - nur gesetzte Felder haben sich geändert
    */
-  static async sendEventChangedToKonfis(db, userIds, eventName, changes = {}, eventId = null) {
+  static async sendEventChangedToKonfis(db, userIds, eventName, changes = {}, eventId = null, organizationId = null) {
     try {
       const parts = [];
 
@@ -827,7 +908,8 @@ class PushService {
         data: {
           type: 'event_changed',
           event_name: eventName,
-          event_id: eventId?.toString() || ''
+          event_id: eventId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -870,7 +952,8 @@ class PushService {
         data: {
           type: 'new_event',
           event_name: eventName,
-          event_id: eventId?.toString() || ''
+          event_id: eventId?.toString() || '',
+          organization_id: String(organizationId)
         }
       };
 
@@ -914,12 +997,22 @@ class PushService {
         return { success: true, sent: 0 };
       }
 
+      // Content-Org der Challenge (nicht der Empfänger) für den Org-Wechsel
+      // beim Antippen.
+      const { rows: [challengeRow] } = await db.query(
+        'SELECT organization_id FROM challenges WHERE id = $1',
+        [challengeId]
+      );
+
       const notification = {
         title: 'Neue Challenge',
         body: `"${challengeTitle}" ist gestartet — schau rein und mach mit!`,
         data: {
           type: 'challenge_started',
-          challengeId: challengeId.toString()
+          challengeId: challengeId.toString(),
+          ...(challengeRow && challengeRow.organization_id != null
+            ? { organization_id: String(challengeRow.organization_id) }
+            : {})
         }
       };
 
@@ -983,7 +1076,8 @@ class PushService {
           : `${konfiName} hat bei "${challengeTitle}" etwas eingereicht.`,
         data: {
           type: 'challenge_submission',
-          challengeId: challengeId.toString()
+          challengeId: challengeId.toString(),
+          organization_id: String(organizationId)
         }
       };
 
@@ -1018,7 +1112,7 @@ class PushService {
   /**
    * Event-Anwesenheit verbucht - Push an Konfi
    */
-  static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0, eventId = null) {
+  static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0, eventId = null, organizationId = null) {
     try {
 
       const isPresent = status === 'present';
@@ -1032,7 +1126,8 @@ class PushService {
           status: status,
           event_name: eventName,
           points: points.toString(),
-          event_id: eventId?.toString() || ''
+          event_id: eventId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -1066,7 +1161,8 @@ class PushService {
         body: `${eventCount} Event${eventCount > 1 ? 's' : ''} warten auf Anwesenheitsverbuchung`,
         data: {
           type: 'events_pending_approval',
-          count: eventCount.toString()
+          count: eventCount.toString(),
+          organization_id: String(organizationId)
         }
       };
 
@@ -1102,7 +1198,8 @@ class PushService {
         data: {
           type: 'jahrgang_deletion_warning',
           jahrgang_name: jahrgangName,
-          days_left: String(daysLeft)
+          days_left: String(daysLeft),
+          organization_id: String(organizationId)
         }
       };
 
@@ -1189,7 +1286,8 @@ class PushService {
           type: 'event_opt_out',
           event_name: eventName,
           konfi_name: konfiName,
-          reason: reason
+          reason: reason,
+          organization_id: String(organizationId)
         }
       };
 
@@ -1224,7 +1322,8 @@ class PushService {
         data: {
           type: 'event_opt_in',
           event_name: eventName,
-          konfi_name: konfiName
+          konfi_name: konfiName,
+          organization_id: String(organizationId)
         }
       };
 

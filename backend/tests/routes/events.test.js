@@ -1136,7 +1136,9 @@ describe('Events Routes', () => {
         .delete(`/api/events/${eventId}/bookings/${bId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(spyTeamer).toHaveBeenCalledWith(expect.anything(), EXTRA_TEAMERS[0].id, expect.any(String));
+      // Multi-Org: Die Event-Org wird explizit mitgegeben (Teamer:innen
+      // können Multi-Org sein — der Push-Tap wechselt in die Event-Org).
+      expect(spyTeamer).toHaveBeenCalledWith(expect.anything(), EXTRA_TEAMERS[0].id, expect.any(String), null, String(eventId), USERS.admin1.org_id);
       expect(spyKonfi).not.toHaveBeenCalled();
 
       spyTeamer.mockRestore();

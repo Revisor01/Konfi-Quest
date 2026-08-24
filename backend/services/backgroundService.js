@@ -393,7 +393,7 @@ class BackgroundService {
       const oneDayWindowEnd = new Date(oneDayFromNow.getTime() + 15 * 60 * 1000);
 
       const oneDayQuery = `
-        SELECT DISTINCT e.id, e.name, e.event_date, eb.user_id
+        SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
@@ -419,7 +419,8 @@ class BackgroundService {
             event.name,
             event.event_date,
             eventTime,
-            '1_day'
+            '1_day',
+            event.organization_id
           );
 
           // Erinnerung als gesendet markieren
@@ -438,7 +439,7 @@ class BackgroundService {
       const oneHourWindowEnd = new Date(oneHourFromNow.getTime() + 15 * 60 * 1000);
 
       const oneHourQuery = `
-        SELECT DISTINCT e.id, e.name, e.event_date, eb.user_id
+        SELECT DISTINCT e.id, e.name, e.event_date, e.organization_id, eb.user_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
@@ -462,7 +463,8 @@ class BackgroundService {
             event.name,
             event.event_date,
             eventTime,
-            '1_hour'
+            '1_hour',
+            event.organization_id
           );
 
           await db.query(

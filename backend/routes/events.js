@@ -498,10 +498,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const userType = req.user.type === 'teamer' ? 'teamer' : 'konfi';
         if (pointsAwarded) {
           try { await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
-          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points); } catch (e) { console.error('Push notification failed:', e); }
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
           liveUpdate.sendToUser('konfi', userId, 'dashboard', 'update', { points: event.points });
         } else {
-          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0); } catch (e) { console.error('Push notification failed:', e); }
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
         }
         liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'checkin' });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
@@ -951,7 +951,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             await PushService.sendToMultipleUsers(db, userIds, {
               title: 'Neues Pflicht-Event',
               body: `${name} am ${new Date(event_date).toLocaleDateString('de-DE')}`,
-              data: { type: 'mandatory_event_created', eventId: String(eventId) }
+              data: { type: 'mandatory_event_created', eventId: String(eventId), organization_id: String(req.user.organization_id) }
             });
           }
         }
@@ -1279,7 +1279,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
         for (const userId of promotedUsers) {
           try {
-            await PushService.sendWaitlistPromotionToKonfi(db, userId, eventInfo ? eventInfo.name : name);
+            await PushService.sendWaitlistPromotionToKonfi(db, userId, eventInfo ? eventInfo.name : name, null, id, req.user.organization_id);
           } catch (pushErr) {
  console.error('Push notification failed for waitlist promotion:', pushErr);
           }
@@ -1292,7 +1292,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
         for (const userId of promotedTeamers) {
           try {
-            await PushService.sendWaitlistPromotionToTeamer(db, userId, eventInfo ? eventInfo.name : name);
+            await PushService.sendWaitlistPromotionToTeamer(db, userId, eventInfo ? eventInfo.name : name, null, id, req.user.organization_id);
           } catch (pushErr) {
             console.error('Push notification failed for teamer waitlist promotion:', pushErr);
           }
@@ -1368,7 +1368,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             if (locationChanged) {
               changes.newLocation = location;
             }
-            await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id);
+            await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id, req.user.organization_id);
           }
         }
       } catch (pushErr) {
@@ -1523,7 +1523,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
       if (bookedKonfiUserIds.length > 0) {
         const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
-        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted); } catch (e) { console.error('Push notification failed:', e); }
+        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
 
       // Live Update: Notify all konfis and admins about the event deletion
@@ -1645,7 +1645,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
         // Bestaetigung an die Teamer:in selbst (analog Konfi-Anmeldung)
         try {
-          await PushService.sendEventRegisteredToTeamer(db, userId, event.name, event.event_date, teamerBookingStatus, eventId);
+          await PushService.sendEventRegisteredToTeamer(db, userId, event.name, event.event_date, teamerBookingStatus, eventId, req.user.organization_id);
         } catch (pushErr) {
           console.error('Push notification failed for teamer booking confirmation:', pushErr);
         }
@@ -1953,9 +1953,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (promotedUserId && promotedEventName) {
         try {
           if (isTeamer) {
-            await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, promotedEventName);
+            await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, promotedEventName, null, eventId, req.user.organization_id);
           } else {
-            await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName);
+            await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName, null, eventId, req.user.organization_id);
           }
         } catch (pushErr) {
           console.error('Error sending waitlist promotion push:', pushErr);
@@ -2287,9 +2287,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
               if (eventName) {
                 if (removedIsTeamer) {
-                  await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, eventName);
+                  await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, eventName, null, eventId, req.user.organization_id);
                 } else {
-                  await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventName);
+                  await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventName, null, eventId, req.user.organization_id);
                 }
               }
               // Live Update: Notify promoted user about their status change
@@ -2676,7 +2676,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Seiteneffekt NACH res, in try/catch — Push-Fehler darf nichts kippen.
       if (status === 'confirmed' && wasWaitlist) {
         try {
-          await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId);
+          await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId, req.user.organization_id);
         } catch (pushErr) {
           console.error('Error sending waitlist promotion push:', pushErr);
         }
@@ -2787,7 +2787,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           if (gotPoints) {
             await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id);
           }
-          await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0);
+          await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, null, req.user.organization_id);
         } catch (pushErr) {
           console.error('Push notification failed (bulk attendance):', pushErr);
         }
@@ -2925,15 +2925,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         if (attendance_status === 'present') {
           if (isKonfiParticipant && pointsAwarded) {
             try { await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
             liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
           } else if (isKonfiParticipant) {
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         } else if (attendance_status === 'absent') {
           if (isKonfiParticipant) {
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
             if (pointsRemoved) {
               liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
             }
@@ -3056,7 +3056,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const userIds = participants.map(p => p.user_id);
       const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
       if (userIds.length > 0) {
-        try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted); } catch (e) { console.error('Push notification failed:', e); }
+        try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
 
       res.json({

@@ -1652,7 +1652,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Push-Notification an Konfi senden (nach COMMIT)
       try {
-        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot);
+        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot, req.user.organization_id);
       } catch (pushErr) {
         console.error('Error sending event registration push:', pushErr);
       }
@@ -1785,7 +1785,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             if (promotedUserId) {
               // Push-Notification an nachgerückten Konfi
               try {
-                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId);
+                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId, req.user.organization_id);
               } catch (pushErr) {
                 console.error('Error sending waitlist promotion push:', pushErr);
               }
