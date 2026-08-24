@@ -301,6 +301,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // schneidet den Write ab -> "alles 0 + Switcher weg", siehe App.tsx-Kommentar).
   const switchOrg = useCallback(async (orgId: number): Promise<{ ok: boolean; type?: PushUserType }> => {
     let switchedType: PushUserType | undefined;
+    // Ungesendetes der ALTEN Organisation JETZT noch zustellen — mit deren
+    // Token/Header. Nach dem Wechsel wird die Queue geleert (Schritt 4 unten);
+    // ohne diesen Flush verschwanden dabei ungesendete Chat-Nachrichten
+    // kommentarlos. Ein Versand NACH dem Wechsel waere falsch (falsche Org).
+    try {
+      await writeQueue.flush();
+    } catch { /* best-effort */ }
+    let verbleibendeChatNachrichten = 0;
+    try {
+      verbleibendeChatNachrichten = (await writeQueue.getAll())
+        .filter(item => item.metadata.type === 'chat').length;
+    } catch { /* best-effort */ }
     try {
       const res = await api.post('/auth/switch-org', { organization_id: orgId });
       if (!res?.data?.token) {
@@ -339,6 +351,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Daten der alten Org)
       await offlineCache.clearAll();
       await writeQueue.clear();
+
+      // Konnte der Flush oben nicht alles zustellen, ist das Verwerfen hier
+      // ein Datenverlust — den sagen wir ehrlich, statt still zu leeren.
+      if (verbleibendeChatNachrichten > 0) {
+        setError(verbleibendeChatNachrichten === 1
+          ? 'Eine ungesendete Chat-Nachricht konnte vor dem Wechsel nicht mehr zugestellt werden'
+          : `${verbleibendeChatNachrichten} ungesendete Chat-Nachrichten konnten vor dem Wechsel nicht mehr zugestellt werden`);
+      }
 
       // AB HIER ist der Wechsel ERFOLGREICH abgeschlossen (Token + aktive Org +
       // User-State stehen). Die folgenden Schritte sind nur noch Revalidierung
@@ -518,7 +538,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // NetworkMonitor initialisieren und isOnline State synchronisieren
   useEffect(() => {
-    networkMonitor.init();
+    Promise.resolve(networkMonitor.init()).then(() => {
+      setIsOnline(networkMonitor.isOnline);
+      // Beim Kaltstart liegengebliebene Queue-Items direkt anstossen: die
+      // uebrigen Ausloeser (Online-Wechsel, Socket-Reconnect, App-Resume)
+      // feuern beim normalen App-Start nicht — eine offline geschriebene
+      // Nachricht blieb sonst bis zum naechsten Zufallsausloeser liegen.
+      if (networkMonitor.isOnline) {
+        writeQueue.flush();
+      }
+    });
     const unsubscribe = networkMonitor.subscribe((online) => {
       setIsOnline(online);
       // Beim Wiedererlangen der Verbindung (z.B. nach Netzwerkwechsel WLAN<->LTE)

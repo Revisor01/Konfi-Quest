@@ -38,6 +38,7 @@ import { Keyboard } from '@capacitor/keyboard';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue, onItemFailed } from '../../services/writeQueue';
+import { ergaenzeLokaleBubbles, chatNachrichtEinreihen } from './chatOutbox';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { compressImage } from '../../services/mediaCompression';
@@ -121,6 +122,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Merge statt Ersetzen: sonst löscht der Cache-/API-Stand die noch nicht
       // zugestellten lokalen Nachrichten aus der Liste.
       setMessages(prev => mergeMitLokalen(initialMessages, prev));
+      // Ist die Server-Kopie da, ist der "endgueltig fehlgeschlagen"-Merker
+      // fuer diese client_ids hinfaellig (best-effort).
+      writeQueue.forgetFailedChatMany(initialMessages.map(m => (m as any).client_id));
     }
   }, [initialMessages]);
 
@@ -136,6 +140,29 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         m.localId === clientId ? { ...m, queueStatus: 'error' as const } : m
       ));
     });
+  }, [room?.id]);
+
+  // Beim Oeffnen des Raums noch nicht zugestellte Nachrichten wieder anzeigen:
+  // wartende Queue-Items als "wird gesendet", endgueltig fehlgeschlagene aus
+  // dem Merker als "fehlgeschlagen" mit Retry-Knopf. Ohne das war eine
+  // ungesendete Nachricht nach App-Neustart unsichtbar — und ein endgueltiger
+  // Fehlschlag bei geschlossenem Chat spurlos (verschwundene Nachricht).
+  useEffect(() => {
+    if (!room?.id || !user) return;
+    let aktiv = true;
+    (async () => {
+      const [queueItems, fehlgeschlagene] = await Promise.all([
+        writeQueue.getByMetadata({ roomId: room.id, type: 'chat' }),
+        writeQueue.getFailedChat(room.id),
+      ]);
+      if (!aktiv || (queueItems.length === 0 && fehlgeschlagene.length === 0)) return;
+      setMessages(prev => ergaenzeLokaleBubbles(prev, queueItems, fehlgeschlagene, {
+        id: user.id,
+        name: user.display_name || '',
+        type: (user.type || 'konfi') as 'admin' | 'teamer' | 'konfi',
+      }));
+    })();
+    return () => { aktiv = false; };
   }, [room?.id]);
 
   const [messageText, setMessageText] = useState('');
@@ -197,34 +224,66 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
                 hasFileUpload: retryItem.hasFileUpload,
                 metadata: retryItem.metadata,
               });
-            } else if (room && message.localId && message.content && !message.file_path) {
+            } else if (room && message.localId) {
               // KEIN Queue-Item mehr da: nach Erreichen von maxRetries entfernt die
               // Queue das Item, die Nachricht bleibt aber als "fehlgeschlagen" in der
               // Liste stehen. Frueher passierte hier gar nichts — die Nachricht blieb
               // auf 'pending' hängen und war verloren (Fund Hennstedt 22.08.2026).
-              // Jetzt aus dem Nachrichteninhalt neu einreihen.
-              await writeQueue.enqueue({
-                method: 'POST',
-                url: `/chat/rooms/${room.id}/messages`,
-                body: {
-                  content: message.content,
-                  client_id: message.localId,
-                  ...(message.reply_to ? { reply_to: String(message.reply_to) } : {})
-                },
-                headers: { 'Content-Type': 'application/json' },
-                maxRetries: 5,
-                hasFileUpload: false,
-                metadata: {
-                  type: 'chat',
-                  clientId: message.localId,
-                  roomId: room.id,
-                  label: 'Chat-Nachricht',
-                },
-              });
+              // Jetzt neu einreihen: eine Datei-Nachricht aus dem Fehl-Merker (der
+              // die lokale Dateikopie kennt), Text aus dem Nachrichteninhalt.
+              const merker = (await writeQueue.getFailedChat(room.id))
+                .find(f => f.clientId === message.localId);
+              if (merker?.localFilePath) {
+                await writeQueue.enqueue({
+                  method: 'POST',
+                  url: `/chat/rooms/${room.id}/messages`,
+                  body: {
+                    content: merker.content || '',
+                    client_id: message.localId,
+                    _localFilePath: merker.localFilePath,
+                    _fileName: merker.fileName,
+                    _fileType: merker.fileType,
+                  },
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                  maxRetries: 5,
+                  hasFileUpload: true,
+                  metadata: {
+                    type: 'chat',
+                    clientId: message.localId,
+                    roomId: room.id,
+                    label: 'Chat-Nachricht',
+                  },
+                });
+              } else if (message.content && !message.file_path) {
+                await writeQueue.enqueue({
+                  method: 'POST',
+                  url: `/chat/rooms/${room.id}/messages`,
+                  body: {
+                    content: message.content,
+                    client_id: message.localId,
+                    ...(message.reply_to ? { reply_to: String(message.reply_to) } : {})
+                  },
+                  headers: { 'Content-Type': 'application/json' },
+                  maxRetries: 5,
+                  hasFileUpload: false,
+                  metadata: {
+                    type: 'chat',
+                    clientId: message.localId,
+                    roomId: room.id,
+                    label: 'Chat-Nachricht',
+                  },
+                });
+              } else {
+                // Datei-Nachricht ohne Queue-Item und ohne lokale Kopie im
+                // Merker: ein Neuversand ist nicht möglich. Ehrlich melden
+                // statt still nichts zu tun.
+                setMessages(prev => prev.map(m =>
+                  m.localId === message.localId ? { ...m, queueStatus: 'error' as const } : m
+                ));
+                setError('Diese Nachricht lässt sich nicht mehr senden. Bitte neu schreiben.');
+                return;
+              }
             } else {
-              // Datei-Nachricht ohne Queue-Item: die lokale Datei ist mit dem
-              // Queue-Item weg, ein Neuversand ist nicht möglich. Ehrlich melden
-              // statt still nichts zu tun.
               setMessages(prev => prev.map(m =>
                 m.localId === message.localId ? { ...m, queueStatus: 'error' as const } : m
               ));
@@ -238,7 +297,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           }
         },
         {
-          text: 'Nachricht l\u00f6schen',
+          text: 'Nachricht löschen',
           role: 'destructive',
           handler: async () => {
             // Aus UI entfernen
@@ -248,13 +307,22 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             const item = queueItems.find(qi => qi.metadata.clientId === message.localId || qi.id === message.localId);
             if (item) {
               await writeQueue.remove(item.id);
-              // Lokale Datei l\u00f6schen falls vorhanden
+              // Lokale Datei löschen falls vorhanden
               if (item.body?._localFilePath) {
                 try {
                   await Filesystem.deleteFile({ path: item.body._localFilePath, directory: Directory.Data });
                 } catch { /* ignore */ }
               }
             }
+            // Auch den "endgueltig fehlgeschlagen"-Merker samt lokaler
+            // Dateikopie aufraeumen (Loeschen ist eine bewusste Entscheidung).
+            const merker = (await writeQueue.getFailedChat(room?.id)).find(f => f.clientId === message.localId);
+            if (merker?.localFilePath) {
+              try {
+                await Filesystem.deleteFile({ path: merker.localFilePath, directory: Directory.Data });
+              } catch { /* ignore */ }
+            }
+            await writeQueue.forgetFailedChat(message.localId);
           }
         },
         {
@@ -273,13 +341,21 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     const item = queueItems.find(qi => qi.metadata.clientId === message.localId || qi.id === message.localId);
     if (item) {
       await writeQueue.remove(item.id);
-      // Lokale Datei l\u00f6schen falls vorhanden
+      // Lokale Datei löschen falls vorhanden
       if (item.body?._localFilePath) {
         try {
           await Filesystem.deleteFile({ path: item.body._localFilePath, directory: Directory.Data });
         } catch { /* ignore */ }
       }
     }
+    // Auch den "endgueltig fehlgeschlagen"-Merker samt lokaler Dateikopie aufraeumen
+    const merker = (await writeQueue.getFailedChat(room?.id)).find(f => f.clientId === message.localId);
+    if (merker?.localFilePath) {
+      try {
+        await Filesystem.deleteFile({ path: merker.localFilePath, directory: Directory.Data });
+      } catch { /* ignore */ }
+    }
+    await writeQueue.forgetFailedChat(message.localId);
   };
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
@@ -363,6 +439,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         if (data.roomId === room.id) {
           if (data.message?.client_id) {
             pendingSendsRef.current.delete(data.message.client_id);
+            // Server-Kopie ist da -> "endgueltig fehlgeschlagen"-Merker hinfaellig
+            writeQueue.forgetFailedChat(data.message.client_id);
           }
           setMessages(prev => {
             // Avoid duplicates
@@ -778,62 +856,34 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         setShouldAutoScroll(true);
       } catch (err) {
         pendingSendsRef.current.delete(clientId);
-        // Bei Fehler: optimistic msg als error markieren
-        setMessages(prev => prev.map(m =>
-          m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
-        ));
+        // Fehlgeschlagener Online-Versand: Die Nachricht lebte bisher NUR im
+        // React-State — Raum verlassen oder App neu gestartet, und sie war
+        // weg (verschwundene Nachricht). Jetzt wird sie in die Queue
+        // persistiert und automatisch neu versucht; die client_id macht den
+        // Neuversand serverseitig idempotent, falls nur die Antwort verloren
+        // ging (kein Doppelversand).
+        try {
+          await chatNachrichtEinreihen(room.id, { clientId, content, file, replyToId });
+          if (networkMonitor.isOnline) writeQueue.flush();
+        } catch (queueErr) {
+          console.error('Nachricht konnte nicht in die Queue gesichert werden:', queueErr);
+          setMessages(prev => prev.map(m =>
+            m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
+          ));
+        }
       } finally {
         setUploading(false);
       }
     } else {
-      // Offline: In Queue schreiben
-      let hasFileUpload = false;
-      const queueBody: Record<string, any> = { content, client_id: clientId };
-
-      if (file) {
-        // Bild lokal speichern
-        hasFileUpload = true;
-        try {
-          const reader = new FileReader();
-          const base64 = await new Promise<string>((resolve, reject) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const fileName = `queue_${clientId}_${file.name}`;
-          await Filesystem.writeFile({
-            path: `queue-uploads/${fileName}`,
-            data: base64,
-            directory: Directory.Data,
-          });
-          queueBody._localFilePath = `queue-uploads/${fileName}`;
-          queueBody._fileName = file.name;
-          queueBody._fileType = file.type;
-        } catch (fileErr) {
-          console.error('Fehler beim lokalen Speichern der Datei:', fileErr);
-          setMessages(prev => prev.map(m =>
-            m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
-          ));
-          return;
-        }
+      // Offline: In Queue schreiben (Datei wird dabei lokal gesichert)
+      try {
+        await chatNachrichtEinreihen(room.id, { clientId, content, file, replyToId });
+      } catch (fileErr) {
+        console.error('Fehler beim Einreihen der Nachricht:', fileErr);
+        setMessages(prev => prev.map(m =>
+          m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
+        ));
       }
-
-      if (replyToId) queueBody.reply_to = replyToId.toString();
-
-      await writeQueue.enqueue({
-        method: 'POST',
-        url: `/chat/rooms/${room.id}/messages`,
-        body: queueBody,
-        headers: { 'Content-Type': file ? 'multipart/form-data' : 'application/json' },
-        maxRetries: 5,
-        hasFileUpload,
-        metadata: {
-          type: 'chat',
-          clientId,
-          roomId: room.id,
-          label: 'Chat-Nachricht',
-        },
-      });
     }
   };
 

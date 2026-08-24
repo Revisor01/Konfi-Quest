@@ -56,8 +56,90 @@ function notifyFailed(item: FailedQueueItem): void {
 // --- Persistenz-Layer ---
 
 const QUEUE_KEY = 'queue:items';
+const FAILED_CHAT_KEY = 'queue:failedChat';
+const FAILED_CHAT_MAX = 50;
 let _items: QueueItem[] | null = null; // In-Memory-Cache, lazy geladen
 let _flushing = false;
+// Zaehlt clear()-Aufrufe. Ein laufender flush() vergleicht dagegen: Wurde die
+// Queue zwischenzeitlich geleert (Org-Wechsel/Logout), darf er seinen alten
+// Arbeitsstand NICHT zurueckschreiben — sonst stehen geleerte Items wieder auf.
+let _generation = 0;
+
+// Merker für endgueltig fehlgeschlagene Chat-Nachrichten. Gibt die Queue ein
+// Chat-Item nach maxRetries (oder bei 4xx) auf, waere die Nachricht ohne
+// geoeffneten Chat spurlos weg: kein Queue-Item mehr, kein Toast (bewusst,
+// siehe handleFlushResult), keine Bubble. Der Merker haelt Inhalt und client_id
+// fest, damit der Chat sie beim naechsten Oeffnen als fehlgeschlagene Bubble
+// mit Retry-Knopf wieder anzeigen kann.
+export interface FailedChatMessage {
+  clientId: string;
+  roomId?: number;
+  content: string;
+  fileName?: string;
+  fileType?: string;
+  localFilePath?: string;
+  createdAt: number;
+  failedAt: number;
+  error: { status: number; message: string };
+}
+
+let _failedChat: FailedChatMessage[] | null = null;
+
+async function _loadFailedChat(): Promise<FailedChatMessage[]> {
+  if (_failedChat !== null) return _failedChat;
+  try {
+    const result = await Preferences.get({ key: FAILED_CHAT_KEY });
+    _failedChat = result.value ? (JSON.parse(result.value) as FailedChatMessage[]) : [];
+  } catch {
+    await Preferences.remove({ key: FAILED_CHAT_KEY });
+    _failedChat = [];
+  }
+  return _failedChat;
+}
+
+async function _saveFailedChat(list: FailedChatMessage[]): Promise<void> {
+  _failedChat = list;
+  await Preferences.set({ key: FAILED_CHAT_KEY, value: JSON.stringify(list) });
+}
+
+async function rememberFailedChat(item: QueueItem, error: { status: number; message: string }): Promise<void> {
+  if (item.metadata.type !== 'chat') return;
+  const list = await _loadFailedChat();
+  const ohneAlten = list.filter(f => f.clientId !== item.metadata.clientId);
+  ohneAlten.push({
+    clientId: item.metadata.clientId,
+    roomId: item.metadata.roomId,
+    content: item.body?.content || '',
+    fileName: item.body?._fileName,
+    fileType: item.body?._fileType,
+    localFilePath: item.body?._localFilePath,
+    createdAt: item.createdAt,
+    failedAt: Date.now(),
+    error,
+  });
+  while (ohneAlten.length > FAILED_CHAT_MAX) ohneAlten.shift();
+  await _saveFailedChat(ohneAlten);
+}
+
+async function forgetFailedChat(clientId?: string | null): Promise<void> {
+  if (!clientId) return;
+  const list = await _loadFailedChat();
+  if (!list.some(f => f.clientId === clientId)) return;
+  await _saveFailedChat(list.filter(f => f.clientId !== clientId));
+}
+
+async function forgetFailedChatMany(clientIds: Array<string | undefined | null>): Promise<void> {
+  const ids = new Set(clientIds.filter((id): id is string => !!id));
+  if (ids.size === 0) return;
+  const list = await _loadFailedChat();
+  const rest = list.filter(f => !ids.has(f.clientId));
+  if (rest.length !== list.length) await _saveFailedChat(rest);
+}
+
+async function getFailedChat(roomId?: number): Promise<FailedChatMessage[]> {
+  const list = await _loadFailedChat();
+  return roomId ? list.filter(f => f.roomId === roomId) : [...list];
+}
 
 async function _load(): Promise<QueueItem[]> {
   if (_items !== null) return _items;
@@ -248,9 +330,16 @@ async function enqueue(
 
 async function flush(): Promise<FlushResult> {
   if (_flushing) return { succeeded: [], failed: [] };
+  // Offline gar nicht erst versuchen: jeder aussichtslose Versuch erhoeht
+  // retryCount — nach genug Offline-Anlaeufen (z.B. wiederholte Kaltstarts im
+  // Funkloch) war das Retry-Budget verbrannt, bevor je ein echter Versand
+  // moeglich war, und die Nachricht wurde aufgegeben.
+  if (!networkMonitor.isOnline) return { succeeded: [], failed: [] };
   _flushing = true;
 
   const result: FlushResult = { succeeded: [], failed: [] };
+  const gen = _generation;
+  const zwischenzeitlichGeleert = () => gen !== _generation;
 
   try {
     const items = await _load();
@@ -292,18 +381,25 @@ async function flush(): Promise<FlushResult> {
           await api.post(item.url, requestBody, config);
         }
 
+        // Wurde die Queue waehrend des Requests geleert (Org-Wechsel/Logout),
+        // den alten Arbeitsstand NICHT zurueckschreiben.
+        if (zwischenzeitlichGeleert()) break;
+
         // Erfolg: lokale Datei aufräumen, dann Item entfernen
         await cleanupLocalFile(item);
+        if (item.metadata.type === 'chat') await forgetFailedChat(item.metadata.clientId);
         result.succeeded.push(item);
         items.shift();
         await _save(items);
       } catch (err: any) {
+        if (zwischenzeitlichGeleert()) break;
         const status = err?.response?.status || 0;
         const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
 
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           // 4xx (außer 408/429): Item entfernen, als failed markieren
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+          await rememberFailedChat(item, failedItem.error);
           result.failed.push(failedItem);
           notifyFailed(failedItem);
           items.shift();
@@ -313,6 +409,7 @@ async function flush(): Promise<FlushResult> {
           item.retryCount++;
           if (item.retryCount >= item.maxRetries) {
             const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+            await rememberFailedChat(item, failedItem.error);
             result.failed.push(failedItem);
             notifyFailed(failedItem);
             items.shift();
@@ -335,9 +432,12 @@ async function flush(): Promise<FlushResult> {
 
 async function flushTextOnly(): Promise<FlushResult> {
   if (_flushing) return { succeeded: [], failed: [] };
+  if (!networkMonitor.isOnline) return { succeeded: [], failed: [] };
   _flushing = true;
 
   const result: FlushResult = { succeeded: [], failed: [] };
+  const gen = _generation;
+  const zwischenzeitlichGeleert = () => gen !== _generation;
 
   try {
     const items = await _load();
@@ -364,15 +464,19 @@ async function flushTextOnly(): Promise<FlushResult> {
           await api.post(item.url, item.body, config);
         }
 
+        if (zwischenzeitlichGeleert()) break;
+        if (item.metadata.type === 'chat') await forgetFailedChat(item.metadata.clientId);
         result.succeeded.push(item);
         items.splice(i, 1);
         await _save(items);
       } catch (err: any) {
+        if (zwischenzeitlichGeleert()) break;
         const status = err?.response?.status || 0;
         const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
 
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+          await rememberFailedChat(item, failedItem.error);
           result.failed.push(failedItem);
           notifyFailed(failedItem);
           items.splice(i, 1);
@@ -381,6 +485,7 @@ async function flushTextOnly(): Promise<FlushResult> {
           item.retryCount++;
           if (item.retryCount >= item.maxRetries) {
             const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+            await rememberFailedChat(item, failedItem.error);
             result.failed.push(failedItem);
             notifyFailed(failedItem);
             items.splice(i, 1);
@@ -422,7 +527,25 @@ async function getByMetadata(filter: Partial<QueueItem['metadata']>): Promise<Qu
 }
 
 async function clear(): Promise<void> {
+  // Laufende flush()-Durchgaenge abbrechen lassen (siehe _generation oben).
+  _generation++;
+  const items = await _load();
+  // Lokal zwischengespeicherte Dateien der Items nicht verwaisen lassen.
+  const pfade = new Set<string>();
+  for (const item of items) {
+    if (item.body?._localFilePath) pfade.add(item.body._localFilePath);
+    if (item.body?._localPhotoPath) pfade.add(item.body._localPhotoPath);
+  }
+  for (const f of await _loadFailedChat()) {
+    if (f.localFilePath) pfade.add(f.localFilePath);
+  }
+  for (const pfad of pfade) {
+    try {
+      await Filesystem.deleteFile({ path: pfad, directory: Directory.Data });
+    } catch { /* best-effort */ }
+  }
   await _save([]);
+  await _saveFailedChat([]);
 }
 
 // --- Auto-Flush bei Online-Wechsel ---
@@ -442,5 +565,8 @@ export const writeQueue = {
   remove,
   getAll,
   getByMetadata,
+  getFailedChat,
+  forgetFailedChat,
+  forgetFailedChatMany,
   clear,
 };

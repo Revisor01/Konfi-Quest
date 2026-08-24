@@ -74,6 +74,19 @@ export const logout = async (): Promise<void> => {
   const withTimeout = <T>(p: Promise<T>, ms = 4000): Promise<T | undefined> =>
     Promise.race([p, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), ms))]);
 
+  // Ungesendete Queue-Items (z.B. Chat-Nachrichten) JETZT noch zustellen,
+  // solange das Token gilt. Items, die den Logout ueberleben wuerden, gingen
+  // beim naechsten Login unter dem DANN angemeldeten Konto raus — also unter
+  // falscher Identitaet, wenn sich jemand anderes anmeldet. Deshalb unten
+  // nach clearAuth auch writeQueue.clear().
+  try {
+    if (networkMonitor.isOnline) {
+      await withTimeout(writeQueue.flush(), 8000);
+    }
+  } catch (error) {
+    console.warn('Queue-Flush beim Logout fehlgeschlagen (unkritisch):', error);
+  }
+
   // Push-Token serverseitig löschen (best-effort, mit Timeout, NOCH authentifiziert)
   let deviceId: string | undefined;
   try {
@@ -120,6 +133,14 @@ export const logout = async (): Promise<void> => {
 
   // GARANTIERT: lokale Auth-Daten löschen. Ab hier ist der User ausgeloggt.
   await clearAuth();
+
+  // Queue leeren: was jetzt noch drin ist, darf nach dem naechsten Login
+  // nicht unter fremdem Konto gesendet werden (siehe Flush oben).
+  try {
+    await writeQueue.clear();
+  } catch (error) {
+    console.warn('Queue-Clear beim Logout fehlgeschlagen:', error);
+  }
 
   // Socket trennen: ohne das ueberlebt die Verbindung den Logout und der
   // nächste angemeldete Nutzer sitzt weiter in den Räumen des vorherigen

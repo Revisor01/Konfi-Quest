@@ -75,10 +75,16 @@ vi.mock('../../services/networkMonitor', () => ({
   },
 }));
 
+const mockQueueFlush = vi.fn().mockResolvedValue({ succeeded: [], failed: [] });
+const mockQueueClear = vi.fn().mockResolvedValue(undefined);
+const mockQueueGetAll = vi.fn().mockResolvedValue([]);
+
 vi.mock('../../services/writeQueue', () => ({
   writeQueue: {
-    flush: vi.fn().mockResolvedValue({ succeeded: [], failed: [] }),
-    flushTextOnly: vi.fn().mockResolvedValue(undefined),
+    flush: (...args: any[]) => mockQueueFlush(...args),
+    flushTextOnly: vi.fn().mockResolvedValue({ succeeded: [], failed: [] }),
+    clear: (...args: any[]) => mockQueueClear(...args),
+    getAll: (...args: any[]) => mockQueueGetAll(...args),
   },
 }));
 
@@ -88,6 +94,7 @@ vi.mock('../../services/offlineCache', () => ({
     set: vi.fn().mockResolvedValue(undefined),
     isStale: vi.fn().mockReturnValue(false),
     invalidateAll: vi.fn().mockResolvedValue(undefined),
+    clearAll: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -102,6 +109,7 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
+import api from '../../services/api';
 import { AppProvider, useApp } from '../../contexts/AppContext';
 import { BaseUser } from '../../types/user';
 
@@ -268,5 +276,68 @@ describe('AppContext', () => {
     );
 
     expect(screen.getByTestId('isOnline')).toHaveTextContent('true');
+  });
+
+  it('stoesst beim Start die Schreib-Queue an (Kaltstart-Flush)', async () => {
+    // Kaltstart: keiner der uebrigen Ausloeser (Online-Wechsel, Reconnect,
+    // Resume) feuert — ohne den Start-Flush blieben Queue-Items liegen.
+    await act(async () => {
+      render(
+        <AppProvider>
+          <TestConsumer />
+        </AppProvider>
+      );
+    });
+
+    expect(mockQueueFlush).toHaveBeenCalled();
+  });
+
+  describe('switchOrg und die Schreib-Queue', () => {
+    const renderMitContext = async () => {
+      let ctx: ReturnType<typeof useApp> | undefined;
+      await act(async () => {
+        render(
+          <AppProvider>
+            <TestConsumer onContext={(c) => { ctx = c; }} />
+          </AppProvider>
+        );
+      });
+      return () => ctx!;
+    };
+
+    it('flusht die Queue der alten Organisation BEVOR sie geleert wird', async () => {
+      const getCtx = await renderMitContext();
+      // Start-Flush aus der Zaehlung nehmen — geprueft wird der switchOrg-Flush
+      mockQueueFlush.mockClear();
+      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+
+      await act(async () => {
+        await getCtx().switchOrg(2);
+      });
+
+      expect(mockQueueFlush).toHaveBeenCalled();
+      expect(mockQueueClear).toHaveBeenCalledTimes(1);
+      const ersterFlush = Math.min(...mockQueueFlush.mock.invocationCallOrder);
+      const clearAufruf = mockQueueClear.mock.invocationCallOrder[0];
+      expect(ersterFlush).toBeLessThan(clearAufruf);
+    });
+
+    it('meldet ehrlich, wenn eine ungesendete Chat-Nachricht verworfen wird', async () => {
+      const getCtx = await renderMitContext();
+      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+      // Nach dem (erfolglosen) Flush liegt noch eine Chat-Nachricht in der Queue
+      mockQueueGetAll.mockResolvedValueOnce([
+        { id: 'q1', metadata: { type: 'chat', clientId: 'c1', roomId: 1 } },
+        { id: 'q2', metadata: { type: 'fire-and-forget', clientId: 'f1' } },
+      ]);
+
+      await act(async () => {
+        await getCtx().switchOrg(2);
+      });
+
+      expect(screen.getByTestId('error')).toHaveTextContent(
+        'Eine ungesendete Chat-Nachricht konnte vor dem Wechsel nicht mehr zugestellt werden'
+      );
+    });
   });
 });

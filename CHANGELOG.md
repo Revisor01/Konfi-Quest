@@ -150,6 +150,22 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Chat: Ungesendete Nachrichten sind nach einem App-Neustart nicht mehr
+  unsichtbar — sie stehen wieder im Verlauf, als "wird gesendet" oder als
+  fehlgeschlagen mit der Möglichkeit, sie erneut zu senden oder zu löschen.
+  Auch endgültig gescheiterte Nachrichten verschwinden nicht mehr spurlos.
+- Chat: Schlägt das Senden trotz bestehender Verbindung fehl (Funkloch,
+  Zeitüberschreitung), wird die Nachricht gesichert und automatisch erneut
+  versucht, statt beim Verlassen des Chats verloren zu gehen. Ein doppelter
+  Versand ist dabei ausgeschlossen.
+- Chat: Offline geschriebene Nachrichten gehen direkt beim nächsten App-Start
+  raus, nicht erst beim nächsten Verbindungswechsel — und solange die App
+  offline ist, verbrauchen aussichtslose Sendeversuche keine Wiederholungen
+  mehr.
+- Beim Wechsel der Organisation und beim Abmelden werden ungesendete
+  Nachrichten vorher noch zugestellt; geht das nicht, meldet die App den
+  Verlust beim Organisationswechsel, statt still zu verwerfen. Nach dem
+  Abmelden wird nichts mehr unter einem anderen Konto gesendet.
 - Handbuch: Zwei überholte Aussagen richtiggestellt — die Leitung kann fremde
   Einzelgespräche nicht mehr mitlesen, und beim Ablehnen eines Antrags ist die
   Begründung inzwischen Pflicht.
