@@ -65,6 +65,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Dokument. Beim Anlegen steht jetzt dabei, wer es dadurch zu sehen bekommt.
 - Der Tab "Events" heißt jetzt "Mitmachen" — er trägt Termine und Aktivitäten
   gemeinsam und hieß bisher wie einer seiner eigenen Bereiche.
+- App-Tour und "Was ist neu" stellen für alle drei Rollen den Mitmachen-Tab
+  mit seinen beiden Reitern vor — samt dem Unterschied: zu Events meldet man
+  sich vorher an, Aktivitäten meldet man hinterher und sie werden bestätigt.
+  Bisher sprachen die Touren dort noch vom "Events-Tab".
 - Chat: Private Zweiergespräche kann nur noch lesen und exportieren, wer selbst
   daran beteiligt ist. Gruppen-, Jahrgangs- und Team-Chats bleiben für die
   Leitung wie bisher zugänglich.

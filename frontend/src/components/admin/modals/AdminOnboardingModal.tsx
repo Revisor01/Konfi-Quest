@@ -11,15 +11,16 @@ interface AdminOnboardingModalProps {
   displayName?: string;
 }
 
-// Admin-Tour: erst die 5 Tabs (Konfis · Chat · Events · Challenges · Mehr), dann
-// die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Badges, Wrapped, Material).
-// Die Aktivitäten haben einen EIGENEN Slide DIREKT hinter den Events
-// (User-Entscheid 10.08.): sie wohnen als Segment im Events-Tab, und nur
-// nebenbei erwähnt ging unter, was sie von Events unterscheidet (kein
-// Anmelden, sondern Meldung hinterher). Das Anlegen selbst bleibt im Mehr-Tab
-// und wird dort genannt. Beispiele stammen aus echten Aktivitäten der
-// Produktivdaten.
-const SLIDES: OnboardingSlide[] = [
+// Admin-Tour: erst die 5 Tabs (Konfis · Chat · Mitmachen · Challenges · Mehr),
+// dann die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Badges, Wrapped,
+// Material). Der Mitmachen-Tab bündelt Events und Aktivitäten als zwei
+// Reiter; die Aktivitäten haben einen EIGENEN Slide DIREKT hinter den Events
+// (User-Entscheid 10.08., Umbenennung auf "Mitmachen" 24.08.): nur nebenbei
+// erwähnt ging unter, was sie von Events unterscheidet (kein Anmelden,
+// sondern Meldung hinterher). Das Anlegen selbst bleibt im Mehr-Tab und wird
+// dort genannt. Beispiele stammen aus echten Aktivitäten der Produktivdaten.
+// SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
+export const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
     color: 'var(--app-color-konfis)',
@@ -45,15 +46,15 @@ const SLIDES: OnboardingSlide[] = [
     icon: calendarOutline,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Events',
-    text: 'Lege Termine an — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich direkt an, und du behältst An- und Abwesenheit im Griff. Du kannst auch festlegen, dass Teamer:innen gesucht werden oder ein Termin nur fürs Team ist.',
+    title: 'Mitmachen: Events',
+    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Events sind Termine, die du anlegst — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich vorher an, und du behältst An- und Abwesenheit im Griff. Du kannst auch festlegen, dass Teamer:innen gesucht werden oder ein Termin nur fürs Team ist.',
   },
   {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Aktivitäten',
-    text: 'Aktivitäten findest du oben im Events-Tab. Es sind wiederkehrende Dinge, für die es Punkte gibt: Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht an — sie melden die Aktivität hinterher, du prüfst sie und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
+    title: 'Mitmachen: Aktivitäten',
+    text: 'Der zweite Reiter im Mitmachen-Tab: wiederkehrende Dinge, für die es Punkte gibt — Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht vorher an — sie melden die Aktivität hinterher, du prüfst sie und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
   },
   {
     icon: flagOutline,

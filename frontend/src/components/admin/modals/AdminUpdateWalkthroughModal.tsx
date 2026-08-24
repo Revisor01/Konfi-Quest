@@ -8,7 +8,8 @@ interface AdminUpdateWalkthroughModalProps {
 
 // Kurzvariante des Update-Walkthroughs 2.0 für Admins/Org-Admins.
 // Gleicher Stil wie die normale Admin-Tour.
-const SLIDES: OnboardingSlide[] = [
+// SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
+export const SLIDES: OnboardingSlide[] = [
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
@@ -27,8 +28,8 @@ const SLIDES: OnboardingSlide[] = [
     icon: swapHorizontalOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Auch deine Tabs sind neu',
-    text: 'Deine Tab-Leiste ist jetzt Konfis · Chat · Events · Challenges · Mehr. Die Aktivitäten sind kein eigener Tab mehr, sondern ein Segment oben im Events-Tab. Genauso bei den Konfis: Ihre Aktivitäten liegen jetzt im Events-Tab, dafür haben sie den Challenges-Tab.',
+    title: 'Neu: der Mitmachen-Tab',
+    text: 'Deine Tab-Leiste ist jetzt Konfis · Chat · Mitmachen · Challenges · Mehr. Der Mitmachen-Tab bündelt Events und Aktivitäten in zwei Reitern: Zu Events melden sich Konfis vorher an, Aktivitäten melden sie hinterher und du bestätigst sie mit einem Tipp. Auch bei Konfis und Teamer:innen heißt der Tab "Mitmachen" — dafür ist der eigene Aktivitäten-Tab weg.',
   },
 ];
 

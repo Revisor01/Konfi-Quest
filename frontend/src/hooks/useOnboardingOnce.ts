@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useIonViewDidEnter } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 
-// Flag-Praefix des Update-Walkthroughs 2.0 (Challenges + Umzug der Anträge in
-// den Events-Tab). Rollenuebergreifend derselbe Praefix, der Account-Suffix
-// trennt die Nutzer.
+// Flag-Praefix des Update-Walkthroughs 2.0 (Challenges + der neue
+// Mitmachen-Tab, der Events und Aktivitäten bündelt). Rollenuebergreifend
+// derselbe Praefix, der Account-Suffix trennt die Nutzer.
 export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
 
 // Zeigt eine Onboarding-Tour EINMAL pro Account (geraetelokal via Preferences).

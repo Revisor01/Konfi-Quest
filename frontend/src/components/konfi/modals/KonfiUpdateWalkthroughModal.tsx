@@ -11,9 +11,10 @@ interface KonfiUpdateWalkthroughModalProps {
 // dem Update geändert hat. Gleicher Stil/Technik wie die normale Tour
 // (OnboardingTour = Vollbild-Overlay, KEIN Modal).
 // Reihenfolge bewusst: erst das Neue (Challenges), dann der wichtigste
-// Umlern-Punkt (Anträge heißen jetzt Aktivitäten und sind umgezogen),
-// zum Schluss kurz das Wrapped.
-const SLIDES: OnboardingSlide[] = [
+// Umlern-Punkt (der Mitmachen-Tab bündelt Events und Aktivitäten, die früher
+// "Anträge" hießen), zum Schluss kurz das Wrapped.
+// SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
+export const SLIDES: OnboardingSlide[] = [
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
@@ -32,8 +33,8 @@ const SLIDES: OnboardingSlide[] = [
     icon: swapHorizontalOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Aus Anträgen werden Aktivitäten',
-    text: 'Was bisher "Anträge" hieß, heißt jetzt "Aktivitäten" — und der eigene Tab dafür ist weg. Du findest alles im Events-Tab: oben auf "Aktivitäten" tippen. Dort meldest du wie gewohnt neue und siehst, was schon bestätigt ist.',
+    title: 'Neu: der Mitmachen-Tab',
+    text: 'Events und deine bisherigen "Anträge" wohnen jetzt zusammen im Tab "Mitmachen" — mit zwei Reitern oben. Bei Events meldest du dich wie gewohnt vorher an. Aus den Anträgen sind die Aktivitäten geworden: Da meldest du hinterher, dass du dabei warst, und dein Team bestätigt. Einen eigenen Antrags-Tab gibt es nicht mehr.',
   },
   {
     icon: sparklesOutline,

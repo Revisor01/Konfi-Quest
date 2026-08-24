@@ -1106,7 +1106,7 @@ const TeamerEventsPage: React.FC = () => {
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Deine Anträge heißen jetzt Aktivitäten und stehen hier im Events-Tab.
+                        Neu: Deine Anträge heißen jetzt Aktivitäten und stehen hier im Mitmachen-Tab.
                       </div>
                     </div>
                   </div>

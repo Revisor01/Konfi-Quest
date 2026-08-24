@@ -17,14 +17,18 @@ interface KonfiOnboardingModalProps {
 }
 
 // Inhalt der Tab-Tour. Reihenfolge nach Nutzerfeedback:
-// Willkommen · Dein Start (Dashboard) · Deine Chats · Deine Events · Deine
-// Anträge (Segment IM Events-Tab, seit 2.0 kein eigener Tab mehr) · Deine
-// Badges · Deine Challenges. Die Anträge folgen bewusst direkt auf die Events,
-// weil sie dort wohnen; die Challenges stehen als Neuheit am Schluss.
+// Willkommen · Dein Start (Dashboard) · Deine Chats · Mitmachen (zwei Slides:
+// Events + Aktivitäten, beide Reiter EINES Tabs — seit 2.0 kein eigener
+// Antrags-Tab mehr) · Deine Badges · Deine Challenges. Die Aktivitäten folgen
+// bewusst direkt auf die Events, weil beide im Mitmachen-Tab wohnen; der
+// Kernunterschied (vorher anmelden vs. hinterher melden) steht in beiden
+// Slides. Die Challenges stehen als Neuheit am Schluss.
 // rgb = Name der -rgb-CSS-Variable (z.B. "konfis" -> --app-color-konfis-rgb),
 // nötig für rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
 // funktioniert NICHT mit var() -> ungueltiges CSS -> kein Hintergrund.
-const SLIDES: { icon: string; color: string; rgb: string; title: string; text: string }[] = [
+// Exportiert für den Textbaustein-Test (onboardingSlides.test.ts), der die
+// Benennung des Mitmachen-Tabs über alle Rollen hinweg absichert.
+export const SLIDES: { icon: string; color: string; rgb: string; title: string; text: string }[] = [
   {
     icon: sparklesOutline,
     color: 'var(--app-color-konfis)',
@@ -50,15 +54,15 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     icon: calendarOutline,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Deine Events',
-    text: 'Hier findest du alle Termine und meldest dich direkt an — bis hin zu deiner Konfirmation. Bei manchen Events wählst du einen Platz oder ein Zeitfenster: einfach tippen und buchen.',
+    title: 'Mitmachen: Events',
+    text: 'Unten in der Tab-Leiste findest du "Mitmachen" — mit zwei Reitern: Events und Aktivitäten. Events sind Termine, zu denen du dich vorher anmeldest — bis hin zu deiner Konfirmation. Bei manchen wählst du einen Platz oder ein Zeitfenster: einfach tippen und buchen.',
   },
   {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Deine Aktivitäten',
-    text: 'Neben Events gibt es Aktivitäten: Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Da meldest du dich nicht an, sondern erzählst hinterher davon: im Events-Tab oben auf "Aktivitäten" tippen. Dein Team bestätigt und du bekommst deine Punkte.',
+    title: 'Mitmachen: Aktivitäten',
+    text: 'Der zweite Reiter im Mitmachen-Tab: Aktivitäten sind Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Hier meldest du dich nicht vorher an, sondern erzählst hinterher davon. Dein Team bestätigt und du bekommst deine Punkte.',
   },
   {
     icon: starOutline,

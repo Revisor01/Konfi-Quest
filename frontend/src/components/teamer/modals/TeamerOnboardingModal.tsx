@@ -10,14 +10,17 @@ interface TeamerOnboardingModalProps {
   displayName?: string;
 }
 
-// Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Events · Challenges ·
-// Badges). Die Aktivitäten sind seit dem Tab-Umbau ein Segment IM Events-Tab
-// (kein eigener Tab mehr) und bekommen einen EIGENEN Slide direkt hinter den
-// Events (User-Entscheid 10.08.) — im Events-Slide nur nebenbei erwähnt ging
-// unter, was Aktivitäten überhaupt sind. Die Beispiele stammen aus den
-// echten Teamer-Anträgen (Gottesdienst mitgestalten, Andacht, Schulung) —
-// "Gottesdienstbesuch" wäre die Konfi-Welt, nicht die des Teams.
-const SLIDES: OnboardingSlide[] = [
+// Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Mitmachen · Challenges ·
+// Badges). Der Mitmachen-Tab bündelt Events und Aktivitäten als zwei Reiter;
+// beide bekommen einen EIGENEN Slide (User-Entscheid 10.08., Umbenennung auf
+// "Mitmachen" 24.08.) — im Events-Slide nur nebenbei erwähnt ging unter, was
+// Aktivitäten überhaupt sind. Kernunterschied in beiden Slides: zu Events
+// meldet man sich VORHER an, Aktivitäten reicht man HINTERHER ein. Die
+// Beispiele stammen aus den echten Teamer-Anträgen (Gottesdienst
+// mitgestalten, Andacht, Schulung) — "Gottesdienstbesuch" wäre die
+// Konfi-Welt, nicht die des Teams.
+// SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
+export const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
     color: 'var(--app-color-teamer)',
@@ -43,15 +46,15 @@ const SLIDES: OnboardingSlide[] = [
     icon: calendarOutline,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Deine Events',
-    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Angelegt werden Termine von der Leitung.',
+    title: 'Mitmachen: Events',
+    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Bei den Events findest du alle Termine und meldest dich vorher dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Angelegt werden Termine von der Leitung.',
   },
   {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Aktivitäten',
-    text: 'Aktivitäten findest du oben im Events-Tab. Hast du einen Gottesdienst mitgestaltet, eine Andacht gehalten oder warst bei einer Teamer-Schulung? Dann reichst du das dort ein — so bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
+    title: 'Mitmachen: Aktivitäten',
+    text: 'Der zweite Reiter im Mitmachen-Tab. Anmelden musst du dich hier nicht: Hast du einen Gottesdienst mitgestaltet, eine Andacht gehalten oder warst bei einer Teamer-Schulung? Dann reichst du das hinterher dort ein, die Leitung bestätigt — so bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
   },
   {
     icon: flagOutline,

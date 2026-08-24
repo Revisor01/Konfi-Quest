@@ -8,7 +8,8 @@ interface TeamerUpdateWalkthroughModalProps {
 
 // Kurzvariante des Update-Walkthroughs 2.0 für Teamer:innen — was neu ist und
 // wo es liegt. Gleicher Stil wie die normale Teamer-Tour.
-const SLIDES: OnboardingSlide[] = [
+// SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
+export const SLIDES: OnboardingSlide[] = [
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
@@ -27,8 +28,8 @@ const SLIDES: OnboardingSlide[] = [
     icon: swapHorizontalOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Auch deine Tabs sind neu',
-    text: 'Deine Tab-Leiste ist jetzt Start · Chat · Events · Challenges · Badges. Den eigenen Aktivitäten-Tab gibt es nicht mehr: Deine Aktivitäten liegen jetzt oben im Events-Tab als eigenes Segment. Bei den Konfis ist es genauso — dafür haben sie den Challenges-Tab.',
+    title: 'Neu: der Mitmachen-Tab',
+    text: 'Deine Tab-Leiste ist jetzt Start · Chat · Mitmachen · Challenges · Badges. Der Mitmachen-Tab bündelt Events und Aktivitäten in zwei Reitern: Zu Events meldest du dich wie gewohnt vorher an, deine Aktivitäten (bisher ein eigener Tab) reichst du hinterher ein und die Leitung bestätigt. Bei den Konfis ist es genauso — dafür haben sie den Challenges-Tab.',
   },
 ];
 
