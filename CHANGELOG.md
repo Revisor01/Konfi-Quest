@@ -59,6 +59,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Umfrage im Chat: Die Einstellungs-Schalter sehen jetzt aus wie beim
+  Challenge-Erstellen, und die Erklärungstexte brechen mehrzeilig um, statt
+  auf schmalen Bildschirmen abgeschnitten zu werden.
 - Handbuch: Auf dem Handy steckt das Inhaltsverzeichnis jetzt hinter einer
   schmalen Leiste, die beim Lesen oben mitläuft — mit Kapitelnummer, Titel und
   einem Knopf zum Aufklappen. Der Kapitelinhalt beginnt damit direkt oben,

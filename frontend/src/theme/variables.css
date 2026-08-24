@@ -1105,6 +1105,24 @@ ion-item {
   margin: 2px 0 0 0;
 }
 
+/* === Schalter mit Erklärungstext (Muster aus "Challenge erstellen") ===
+   Ionic schneidet Texte in ion-label standardmäßig einzeilig mit "…" ab.
+   Diese Klassen lassen Titel und Erklärung mehrzeilig umbrechen — für alle
+   Einstellungs-Schalter verwenden, statt white-space inline zu setzen. */
+.app-toggle-item__title {
+  color: #333;
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  white-space: normal;
+}
+.app-toggle-item__hint {
+  color: #666;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  white-space: normal;
+}
+
 /* === Segment Tabs === */
 .app-segment-wrapper {
   margin: 16px;
