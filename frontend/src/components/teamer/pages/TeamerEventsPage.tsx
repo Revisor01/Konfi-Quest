@@ -85,7 +85,6 @@ import { safeUUID } from '../../../utils/uuid';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
-const UMZUG_HINWEIS_KEY = 'teamer_antraege_umzug_hinweis_gesehen';
 
 interface ActivityRequest {
   id: number;
@@ -132,23 +131,6 @@ const TeamerEventsPage: React.FC = () => {
     }
   }, [routerLocation.search]);
 
-  // Einmaliger Umzugs-Hinweis, bis er weggeklickt wurde.
-  const [showUmzugHinweis, setShowUmzugHinweis] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(UMZUG_HINWEIS_KEY) !== 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const dismissUmzugHinweis = () => {
-    try {
-      localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
-    } catch {
-      // Speicher nicht verfuegbar — Hinweis erscheint dann beim nächsten Mal erneut.
-    }
-    setShowUmzugHinweis(false);
-  };
 
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
@@ -1065,7 +1047,7 @@ const TeamerEventsPage: React.FC = () => {
   // Der Titel folgt dem Segment — analog zu KonfiEventsPage/AdminEventsPage.
   const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
 
-  // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
+  // Oberste Segment-Ebene (Events | Aktivitäten). Wird
   // DIREKT UNTER dem Grafik-/Stats-Header gerendert (gleiches Muster wie bei
   // Konfi/Admin).
   const mainSegmentSlot = (
@@ -1084,38 +1066,6 @@ const TeamerEventsPage: React.FC = () => {
         </IonSegment>
       </div>
 
-      {/* Einmaliger Hinweis auf den Umzug der Aktivitäten in diesen Tab */}
-      {showUmzugHinweis && (
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
-                <IonButton
-                  fill="clear"
-                  size="small"
-                  onClick={dismissUmzugHinweis}
-                  aria-label="Hinweis ausblenden"
-                  style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
-                >
-                  <IonIcon icon={closeOutline} slot="icon-only" />
-                </IonButton>
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--activities">
-                      <IonIcon icon={informationCircleOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Deine Anträge heißen jetzt Aktivitäten und stehen hier im Mitmachen-Tab.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      )}
     </>
   );
 

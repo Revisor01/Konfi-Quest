@@ -53,7 +53,6 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert.
-const UMZUG_HINWEIS_KEY = 'antraege_umzug_hinweis_gesehen';
 
 interface ActivityRequest {
   id: number;
@@ -137,23 +136,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [pendingQueueItems, setPendingQueueItems] = useState<QueueItem[]>([]);
 
-  // Einmaliger Umzugs-Hinweis, bis er weggeklickt wurde.
-  const [showUmzugHinweis, setShowUmzugHinweis] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(UMZUG_HINWEIS_KEY) !== 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const dismissUmzugHinweis = () => {
-    try {
-      localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
-    } catch {
-      // Speicher nicht verfuegbar — Hinweis erscheint dann beim nächsten Mal erneut.
-    }
-    setShowUmzugHinweis(false);
-  };
 
   const loadPendingFromQueue = useCallback(async () => {
     const queueItems = await writeQueue.getByMetadata({ type: 'request' });
@@ -367,7 +349,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   // Condense-Header (52 px) bleiben beim Umschalten unveraendert.
   const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
 
-  // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
+  // Oberste Segment-Ebene (Events | Aktivitäten). Wird
   // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER
   // dem Grafik-/Stats-Header gerendert (Reihenfolge wie bei Badges/Challenges:
   // Header, dann Segment, dann Inhalt) - kein eigener Header auf Page-Ebene,
@@ -388,38 +370,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
         </IonSegment>
       </div>
 
-      {/* Einmaliger Hinweis auf den Umzug der Aktivitäten in diesen Tab */}
-      {showUmzugHinweis && (
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
-                <IonButton
-                  fill="clear"
-                  size="small"
-                  onClick={dismissUmzugHinweis}
-                  aria-label="Hinweis ausblenden"
-                  style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
-                >
-                  <IonIcon icon={closeOutline} slot="icon-only" />
-                </IonButton>
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--activities">
-                      <IonIcon icon={informationCircleOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Deine Anträge heißen jetzt Aktivitäten und stehen hier im Mitmachen-Tab.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      )}
     </>
   );
 
@@ -461,7 +411,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Oberste Segment-Ebene (Events | Aktivitäten) + Umzugs-Hinweis werden als
+        {/* Oberste Segment-Ebene (Events | Aktivitäten) wird als
             headerSlot an die jeweilige View gereicht und dort DIREKT UNTER dem
             Grafik-/Stats-Header gerendert - passend zur Seitenstruktur der
             anderen Tabs (Badges, Challenges: Header, dann Segment, dann Inhalt). */}
