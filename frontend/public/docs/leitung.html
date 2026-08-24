@@ -28,6 +28,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
+.seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
 .inhalt { padding:40px 44px 96px; min-width:0; }
 .kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
 .kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
@@ -68,6 +69,9 @@ tbody tr:last-child td { border-bottom:none; }
   .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
   .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
   .seitenleiste .fuss p { margin:0; }
+  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
+     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
+  .seitenleiste .fuss-hinweis { display:none; }
   .inhalt { padding:28px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
@@ -122,6 +126,8 @@ tbody tr:last-child td { border-bottom:none; }
     <p class="nav-titel">Inhalt</p>
     <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html" aria-current="page" class="ist-hier"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
     <div class="fuss">
+      <p><a href="/docs/api/">API-Referenz</a></p>
+      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
       <p><a href="/">Zur Startseite</a></p>
     </div>
   </nav>

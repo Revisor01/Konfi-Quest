@@ -47,7 +47,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 ### Geändert
 
 - Das Handbuch ist auf der Website jetzt oben in der Navigation und im Text
-  bei den häufigen Fragen verlinkt — bisher nur ganz unten im Fußbereich.
+  bei den häufigen Fragen verlinkt — bisher nur ganz unten im Fußbereich. Auf
+  dem Handy steht es als Symbol neben den Store-Links.
+- Aus dem Handbuch führt jetzt ein Verweis zur Schnittstellen-Referenz.
 - Im Bereich Mitmachen wechselt die Überschrift jetzt mit: Beim Umschalten auf
   Aktivitäten steht dort auch "Aktivitäten" statt weiterhin "Events".
 - Beim Anlegen eines Konfis wird der Jahrgang jetzt aus einer Liste ausgewählt

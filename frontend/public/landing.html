@@ -208,6 +208,11 @@ nav{position:fixed;inset:0 0 auto 0;z-index:100;background:rgba(255,255,255,.8);
 .nav-actions{display:flex;align-items:center;gap:.55rem}
 .nav-store{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;border:1px solid rgba(15,23,42,.12);color:var(--ink-soft);transition:color .2s,border-color .2s,transform .2s}
 .nav-store:hover{color:var(--purple);border-color:var(--purple);transform:translateY(-1px)}
+/* Handbuch-Symbol: Auf breiten Schirmen steht "Handbuch" im Textmenue, dort
+   waere das Symbol doppelt. Unter 980px blendet die Seite .nav-links aus —
+   dann uebernimmt das Symbol, damit das Handbuch auch mobil sofort da ist. */
+.nav-docs{display:none}
+@media(max-width:980px){.nav-docs{display:flex}}
 .nav-app{display:flex;align-items:center;gap:.45rem;border:1.5px solid var(--purple);color:var(--purple)!important;padding:.5rem 1.05rem;border-radius:999px;font-weight:600;transition:background .2s,color .2s,transform .2s}
 .nav-app:hover{background:var(--purple);color:#fff!important;transform:translateY(-1px)}
 @media(max-width:480px){.nav-app span{display:none}.nav-app{width:36px;height:36px;padding:0;justify-content:center;border-radius:11px}}
@@ -520,6 +525,9 @@ footer a:hover{color:#fff}
     </a>
     <a href="https://play.google.com/store/apps/details?id=de.godsapp.konfiquest" target="_blank" rel="noopener" class="nav-store" title="Bei Google Play laden" aria-label="Bei Google Play laden">
      <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/></svg>
+    </a>
+    <a href="/docs" class="nav-store nav-docs" title="Handbuch: Anleitung für Konfis, Teamer:innen und die Leitung" aria-label="Handbuch öffnen">
+     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     </a>
     <a href="/login" class="nav-app" title="Konfi Quest im Browser öffnen">
      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>

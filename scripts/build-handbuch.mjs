@@ -199,6 +199,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
+.seitenleiste .fuss-hinweis { margin:2px 0 10px; font-size:.7rem; opacity:.75; }
 .inhalt { padding:40px 44px 96px; min-width:0; }
 .kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
 .kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
@@ -239,6 +240,9 @@ tbody tr:last-child td { border-bottom:none; }
   .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
   .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
   .seitenleiste .fuss p { margin:0; }
+  /* Der Fuss steht hier waagerecht — der erklaerende Satz passt nicht
+     daneben und wuerde die Zeile sprengen. Die beiden Links reichen. */
+  .seitenleiste .fuss-hinweis { display:none; }
   .inhalt { padding:28px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
@@ -334,6 +338,8 @@ ${STIL}
     <p class="nav-titel">Inhalt</p>
     ${navFuer(aktuell)}
     <div class="fuss">
+      <p><a href="/docs/api/">API-Referenz</a></p>
+      <p class="fuss-hinweis">Für Entwicklung und Betrieb. Passwortgeschützt.</p>
       <p><a href="/">Zur Startseite</a></p>
     </div>
   </nav>
