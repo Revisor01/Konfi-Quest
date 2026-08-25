@@ -40,7 +40,8 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { istWebLink, linkBeschriftung } from '../../../utils/linkDisplay';
+import { istWebLink } from '../../../utils/linkDisplay';
+import MusikLink from '../../shared/MusikLink';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
   KonfiChallenge,
@@ -275,22 +276,7 @@ const SubmissionCard: React.FC<{
               Mitkonfis landen. Beschriftet wird mit der Domain statt der vollen
               Adresse — die lief sonst ueber mehrere Zeilen. */}
           {submission.media_type === 'link' && istWebLink(submission.link_url) && (
-            <a
-              href={submission.link_url!}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={submission.link_url!}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px',
-                fontSize: '0.86rem', color: 'var(--app-color-challenges)',
-                fontWeight: 600, maxWidth: '100%'
-              }}
-            >
-              <IonIcon icon={openOutline} style={{ flexShrink: 0 }} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {linkBeschriftung(submission)} — Link öffnen
-              </span>
-            </a>
+            <MusikLink submission={submission} />
           )}
 
           {submission.file_path && submission.media_type !== 'link' && submission.media_type !== 'text' && (

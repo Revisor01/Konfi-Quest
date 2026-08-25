@@ -180,6 +180,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Eingereichte Musik-Links sehen besser aus: Titel, Interpret und Album stehen
+  jetzt untereinander statt in einer Zeile, die auf dem Handy abgeschnitten
+  wurde. Bei Apple Music kommt das Album dazu, und bei YouTube Music steht
+  endlich der Interpret dort statt des Kanalnamens.
 - Bei Pflichtterminen stimmt die Teilnehmerzahl wieder. Sie zeigte die
   Anwesenden statt der Angemeldeten und stand deshalb auf "0", solange niemand
   als anwesend erfasst war — obwohl Anmeldungen vorlagen. Abgemeldete zählen

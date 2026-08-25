@@ -5,7 +5,7 @@
 // die Anzeige mit UND ohne Metadaten (Alt-Beitraege) das Richtige zeigt.
 import { describe, it, expect } from 'vitest';
 import { pruefeMusikLink, dienstNameAus } from '../../utils/musikLinks';
-import { linkBeschriftung, istWebLink } from '../../utils/linkDisplay';
+import { linkBeschriftung, istWebLink, linkTeile } from '../../utils/linkDisplay';
 
 describe('pruefeMusikLink (Frontend)', () => {
   it('laesst die vier Musikdienste durch', () => {
@@ -91,5 +91,53 @@ describe('istWebLink bleibt der href-Waechter', () => {
     // der Liste waren regelkonform und muessen anklickbar bleiben.
     expect(istWebLink('https://example.org/song')).toBe(true);
     expect(istWebLink('javascript:alert(1)')).toBe(false);
+  });
+});
+
+// User-Hinweis 25.08.2026: Titel, Interpret und Album standen in EINER Zeile
+// mit Mittelpunkten und wurden auf dem Telefon abgeschnitten — bei einem
+// langen Titel war der Interpret gar nicht mehr zu sehen. linkTeile() liefert
+// die Bestandteile getrennt, damit die Anzeige sie untereinander setzen kann.
+describe('linkTeile', () => {
+  it('liefert Titel, Interpret und Album getrennt', () => {
+    const t = linkTeile({
+      link_url: 'https://music.apple.com/de/album/1-2015/1441133100?i=1441133277',
+      link_title: 'Hey Jude',
+      link_author: 'The Beatles',
+      link_album: '1 (2015)'
+    });
+    expect(t.titel).toBe('Hey Jude');
+    expect(t.interpret).toBe('The Beatles');
+    expect(t.album).toBe('1 (2015)');
+    expect(t.hatMetadaten).toBe(true);
+  });
+
+  it('laesst Album leer, wenn keins bekannt ist', () => {
+    const t = linkTeile({
+      link_url: 'https://open.spotify.com/track/abc',
+      link_title: 'Yellow',
+      link_author: 'Coldplay'
+    });
+    expect(t.album).toBeNull();
+    expect(t.interpret).toBe('Coldplay');
+  });
+
+  it('faellt ohne Metadaten auf die Domain zurueck (Alt-Beitraege)', () => {
+    const t = linkTeile({ link_url: 'https://www.deezer.com/de/track/123' });
+    expect(t.titel).toBe('deezer.com');
+    expect(t.interpret).toBeNull();
+    expect(t.hatMetadaten).toBe(false);
+  });
+
+  it('behandelt Leerstrings wie fehlende Werte', () => {
+    const t = linkTeile({
+      link_url: 'https://open.spotify.com/track/abc',
+      link_title: 'Nur Titel',
+      link_author: '   ',
+      link_album: ''
+    });
+    expect(t.interpret).toBeNull();
+    expect(t.album).toBeNull();
+    expect(t.hatMetadaten).toBe(true);
   });
 });

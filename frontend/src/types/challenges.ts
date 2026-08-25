@@ -95,6 +95,7 @@ export interface ChallengeSubmission {
       Alt-Beitraege haben null — die Anzeige faellt dann auf die Domain zurueck. */
   link_title?: string | null;
   link_author?: string | null;
+  link_album?: string | null;
   konfi_consent?: ChallengeConsent | null;
   moderation_status: ChallengeModerationStatus;
   /**

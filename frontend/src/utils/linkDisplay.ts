@@ -34,8 +34,9 @@ export const linkBeschriftung = (link: {
   link_url?: string | null;
   link_title?: string | null;
   link_author?: string | null;
+  link_album?: string | null;
 }): string => {
-  const teile = [link.link_title, link.link_author].filter(
+  const teile = [link.link_title, link.link_author, link.link_album].filter(
     (t): t is string => !!t && !!t.trim()
   );
   if (teile.length > 0) {
@@ -44,4 +45,46 @@ export const linkBeschriftung = (link: {
     return teile.join(' · ');
   }
   return link.link_url ? hostAus(link.link_url) : '';
+};
+
+export interface LinkTeile {
+  /** Songtitel, oder als Rueckfall die Domain. */
+  titel: string;
+  /** Interpret, wenn bekannt. */
+  interpret: string | null;
+  /** Album, wenn bekannt (heute nur bei Apple Music). */
+  album: string | null;
+  /** Anzeigename des Musikdienstes, wenn erkannt. */
+  dienst: string | null;
+  /** true, wenn ueberhaupt Metadaten vorliegen (sonst nur die Domain). */
+  hatMetadaten: boolean;
+}
+
+/**
+ * Zerlegt einen Link-Beitrag in seine Bestandteile, damit die Anzeige sie
+ * getrennt setzen kann — Titel gross, Interpret und Album darunter.
+ *
+ * Vorher lief alles durch linkBeschriftung() in EINE Zeile mit Mittelpunkten
+ * ("Titel · Interpret · Dienst"), die auf dem Telefon abgeschnitten wurde:
+ * Bei einem langen Titel war der Interpret gar nicht mehr zu sehen
+ * (User-Hinweis 25.08.2026). linkBeschriftung bleibt fuer einzeilige
+ * Zusammenhaenge (Wrapped-Folie, Vorschauzeilen) erhalten.
+ */
+export const linkTeile = (link: {
+  link_url?: string | null;
+  link_title?: string | null;
+  link_author?: string | null;
+  link_album?: string | null;
+}): LinkTeile => {
+  const sauber = (t?: string | null) => (t && t.trim() ? t.trim() : null);
+  const titel = sauber(link.link_title);
+  const interpret = sauber(link.link_author);
+  const album = sauber(link.link_album);
+  return {
+    titel: titel || (link.link_url ? hostAus(link.link_url) : ''),
+    interpret,
+    album,
+    dienst: dienstNameAus(link.link_url),
+    hatMetadaten: !!(titel || interpret)
+  };
 };

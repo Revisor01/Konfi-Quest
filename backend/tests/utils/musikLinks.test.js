@@ -92,7 +92,7 @@ describe('holeLinkMetadaten', () => {
   it('Spotify: fragt den oEmbed-Endpunkt an und liefert Titel', async () => {
     const fetchImpl = vi.fn(async () => okAntwort({ title: 'Never Gonna Give You Up', provider_name: 'Spotify' }));
     const meta = await holeLinkMetadaten('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC', { fetchImpl });
-    expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: null });
+    expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: null, album: null });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(fetchImpl.mock.calls[0][0]).toBe(
       'https://open.spotify.com/oembed?url=' + encodeURIComponent('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC')
@@ -102,7 +102,7 @@ describe('holeLinkMetadaten', () => {
   it('Deezer: liefert Titel UND Interpret (author_name)', async () => {
     const fetchImpl = vi.fn(async () => okAntwort({ title: 'Harder, Better, Faster, Stronger', author_name: 'Daft Punk' }));
     const meta = await holeLinkMetadaten('https://www.deezer.com/de/track/3135556', { fetchImpl });
-    expect(meta).toEqual({ title: 'Harder, Better, Faster, Stronger', author: 'Daft Punk' });
+    expect(meta).toEqual({ title: 'Harder, Better, Faster, Stronger', author: 'Daft Punk', album: null });
     expect(fetchImpl.mock.calls[0][0]).toBe(
       'https://api.deezer.com/oembed?url=' + encodeURIComponent('https://www.deezer.com/de/track/3135556') + '&format=json'
     );
@@ -111,7 +111,8 @@ describe('holeLinkMetadaten', () => {
   it('YouTube Music: fragt das YouTube-oEmbed mit umgeschriebenem Host an', async () => {
     const fetchImpl = vi.fn(async () => okAntwort({ title: 'Song Title', author_name: 'Artist - Topic' }));
     const meta = await holeLinkMetadaten('https://music.youtube.com/watch?v=dQw4w9WgXcQ', { fetchImpl });
-    expect(meta).toEqual({ title: 'Song Title', author: 'Artist - Topic' });
+    // "- Topic" ist ein Auto-Kanal von YouTube, kein Interpretenname.
+    expect(meta).toEqual({ title: 'Song Title', author: 'Artist', album: null });
     expect(fetchImpl.mock.calls[0][0]).toBe(
       'https://www.youtube.com/oembed?url=' + encodeURIComponent('https://www.youtube.com/watch?v=dQw4w9WgXcQ') + '&format=json'
     );
@@ -123,7 +124,7 @@ describe('holeLinkMetadaten', () => {
       results: [{ trackName: 'Hey Jude', artistName: 'The Beatles', collectionName: '1 (2015)' }]
     }));
     const meta = await holeLinkMetadaten('https://music.apple.com/de/album/1-2015/1441133100?i=1441133277', { fetchImpl });
-    expect(meta).toEqual({ title: 'Hey Jude', author: 'The Beatles' });
+    expect(meta).toEqual({ title: 'Hey Jude', author: 'The Beatles', album: '1 (2015)' });
     expect(fetchImpl.mock.calls[0][0]).toBe('https://itunes.apple.com/lookup?id=1441133277&country=de');
   });
 
@@ -133,8 +134,32 @@ describe('holeLinkMetadaten', () => {
       results: [{ collectionName: 'Abbey Road', artistName: 'The Beatles' }]
     }));
     const meta = await holeLinkMetadaten('https://music.apple.com/de/album/abbey-road/1441164426', { fetchImpl });
-    expect(meta).toEqual({ title: 'Abbey Road', author: 'The Beatles' });
+    // Album-Link: der Album-Titel IST der Titel und darf nicht doppelt stehen.
+    expect(meta).toEqual({ title: 'Abbey Road', author: 'The Beatles', album: null });
     expect(fetchImpl.mock.calls[0][0]).toBe('https://itunes.apple.com/lookup?id=1441164426&country=de');
+  });
+
+  it('YouTube: "Interpret - Titel" wird aufgeteilt, Kanalname weicht', async () => {
+    const fetchImpl = vi.fn(async () => okAntwort({ title: 'Coldplay - Yellow', author_name: 'ColdplayVEVO' }));
+    const meta = await holeLinkMetadaten('https://music.youtube.com/watch?v=abc12345678', { fetchImpl });
+    expect(meta).toEqual({ title: 'Yellow', author: 'Coldplay', album: null });
+  });
+
+  it('YouTube: Titel mit mehreren Bindestrichen wird NICHT zerlegt', async () => {
+    // Verbotener Fall: "Ich - Du - Wir" darf nicht zu author "Ich" werden.
+    const fetchImpl = vi.fn(async () => okAntwort({ title: 'Ich - Du - Wir', author_name: 'Chor - Topic' }));
+    const meta = await holeLinkMetadaten('https://music.youtube.com/watch?v=abc12345678', { fetchImpl });
+    expect(meta).toEqual({ title: 'Ich - Du - Wir', author: 'Chor', album: null });
+  });
+
+  it('Apple Music: Track ohne eigenes Album bekommt kein Album-Feld', async () => {
+    const fetchImpl = vi.fn(async () => okAntwort({
+      resultCount: 1,
+      results: [{ trackName: 'Single', artistName: 'Wer', collectionName: 'Single' }]
+    }));
+    const meta = await holeLinkMetadaten('https://music.apple.com/de/album/x/1?i=2', { fetchImpl });
+    // Gleicher Text -> kein doppeltes Album.
+    expect(meta).toEqual({ title: 'Single', author: 'Wer', album: null });
   });
 
   it('Apple Music: Playlist (pl.u-...) hat keine numerische ID -> null, kein Request', async () => {

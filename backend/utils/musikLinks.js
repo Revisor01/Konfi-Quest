@@ -130,6 +130,31 @@ function appleLookupUrl(url) {
   return null;
 }
 
+// YouTube-Kanalnamen tragen Zusaetze, die niemand lesen will:
+// "Coldplay - Topic" (Auto-Kanaele) und "ColdplayVEVO".
+function kanalBereinigen(name) {
+  if (!name) return null;
+  const ohne = name
+    .replace(/\s*-\s*Topic$/i, '')
+    .replace(/VEVO$/i, '')
+    .trim();
+  return ohne || name;
+}
+
+// "Interpret - Titel" aufteilen, wie es YouTube-Musikvideos fast immer
+// schreiben. Bewusst streng: nur bei GENAU EINEM Trenner und wenn beide
+// Seiten plausibel gefuellt sind — sonst zerlegen wir Titel, die selbst einen
+// Bindestrich tragen ("Sing-Sing", "Ich - Du - Wir").
+function titelAufteilen(titel) {
+  if (!titel) return null;
+  const teile = titel.split(/\s+[-–—]\s+/);
+  if (teile.length !== 2) return null;
+  const [links, rechts] = teile.map((t) => t.trim());
+  if (!links || !rechts) return null;
+  if (links.length > 60 || rechts.length > 90) return null;
+  return { author: links, title: rechts };
+}
+
 /**
  * Holt Titel und Interpret zu einem erlaubten Musik-Link — einmalig, beim
  * Einreichen. Wirft NIE und blockiert maximal timeoutMs: Schlaegt der Abruf
@@ -148,7 +173,7 @@ function appleLookupUrl(url) {
  * bleibt ohne Metadaten. Aufloesen per Redirect-Folgen waere ein Request zu
  * einem Tracking-Endpunkt mehr, den wir bewusst nicht machen.
  *
- * @returns {Promise<{title: string|null, author: string|null} | null>}
+ * @returns {Promise<{title: string|null, author: string|null, album: string|null} | null>}
  */
 async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
   const pruefung = pruefeMusikLink(rawUrl);
@@ -167,7 +192,7 @@ async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
           `https://open.spotify.com/oembed?url=${encodeURIComponent(url.toString())}`,
           timeoutMs
         );
-        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name) };
+        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name), album: null };
         break;
       }
       case 'deezer': {
@@ -177,7 +202,7 @@ async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
           `https://api.deezer.com/oembed?url=${encodeURIComponent(url.toString())}&format=json`,
           timeoutMs
         );
-        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name) };
+        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name), album: null };
         break;
       }
       case 'youtube_music': {
@@ -188,7 +213,18 @@ async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
           `https://www.youtube.com/oembed?url=${encodeURIComponent(abfrage.toString())}&format=json`,
           timeoutMs
         );
-        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name) };
+        if (json) {
+          // YouTube liefert als author_name den KANAL ("Coldplay - Topic",
+          // "ColdplayVEVO"), nicht den Interpreten. Der steckt meist im Titel
+          // ("Coldplay - Yellow"). Wenn sich der Titel so aufteilen laesst,
+          // nehmen wir das; sonst bleibt der bereinigte Kanalname.
+          const rohTitel = sauber(json.title);
+          const kanal = kanalBereinigen(sauber(json.author_name));
+          const geteilt = titelAufteilen(rohTitel);
+          daten = geteilt
+            ? { title: geteilt.title, author: geteilt.author, album: null }
+            : { title: rohTitel, author: kanal, album: null };
+        }
         break;
       }
       case 'apple_music': {
@@ -197,9 +233,15 @@ async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
         const json = await jsonMitTimeout(doFetch, lookupUrl, timeoutMs);
         const treffer = json && Array.isArray(json.results) ? json.results[0] : null;
         if (treffer) {
+          // trackName = einzelner Song, collectionName = Album. Bei einem
+          // Album-Link gibt es keinen trackName — dann IST das Album der Titel
+          // und darf nicht zusaetzlich als Album danebenstehen.
+          const track = sauber(treffer.trackName);
+          const album = sauber(treffer.collectionName);
           daten = {
-            title: sauber(treffer.trackName || treffer.collectionName),
-            author: sauber(treffer.artistName)
+            title: track || album,
+            author: sauber(treffer.artistName),
+            album: track && album && track !== album ? album : null
           };
         }
         break;

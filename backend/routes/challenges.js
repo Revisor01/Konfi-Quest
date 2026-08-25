@@ -561,7 +561,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // (User-Entscheid 08.08.) — bei anonymen Beitraegen bleibt beides NULL.
         const { rows: gallery } = await db.query(
           `SELECT cs.id, cs.media_type, cs.text_content, cs.file_path, cs.file_name,
-                  cs.link_url, cs.link_title, cs.link_author, cs.created_at,
+                  cs.link_url, cs.link_title, cs.link_author, cs.link_album, cs.created_at,
                   CASE WHEN cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE u.display_name END AS display_name,
                   CASE WHEN cs.konfi_consent = 'anonymous'
@@ -584,7 +584,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: own } = await db.query(
           `SELECT id, media_type, text_content, file_path, file_name, link_url,
-                  link_title, link_author, konfi_consent, moderation_status,
+                  link_title, link_author, link_album, konfi_consent, moderation_status,
                   moderation_note, created_at
            FROM challenge_submissions
            WHERE challenge_id = $1 AND user_id = $2
@@ -739,11 +739,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         const { rows: [created] } = await db.query(
           `INSERT INTO challenge_submissions
              (challenge_id, user_id, organization_id, media_type, text_content,
-              file_path, file_name, link_url, link_title, link_author,
+              file_path, file_name, link_url, link_title, link_author, link_album,
               konfi_consent, moderation_status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
            RETURNING id, media_type, text_content, file_path, file_name, link_url,
-                     link_title, link_author, konfi_consent, moderation_status, created_at`,
+                     link_title, link_author, link_album, konfi_consent, moderation_status, created_at`,
           [
             challengeId,
             req.user.id,
@@ -755,6 +755,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             media_type === 'link' ? link_url : null,
             linkMeta ? linkMeta.title : null,
             linkMeta ? linkMeta.author : null,
+            linkMeta ? linkMeta.album : null,
             consent,
             moderationStatus
           ]
@@ -1482,7 +1483,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows } = await db.query(
           `SELECT cs.id, cs.user_id, cs.media_type, cs.text_content, cs.file_path,
-                  cs.file_name, cs.link_url, cs.link_title, cs.link_author,
+                  cs.file_name, cs.link_url, cs.link_title, cs.link_author, cs.link_album,
                   cs.konfi_consent, cs.moderation_status,
                   cs.hidden_at, cs.moderation_note, cs.created_at,
                   u.display_name,
@@ -1680,7 +1681,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // - private Challenge: alle nicht-ausgeblendeten — hier IST der Export
         //   der in der Beschreibung angekuendigte Rueckkanal (z.B. Fuerbitten).
         const { rows } = await db.query(
-          `SELECT cs.media_type, cs.text_content, cs.link_url, cs.link_title,
+          `SELECT cs.media_type, cs.text_content, cs.link_url, cs.link_title, cs.link_album,
                   cs.link_author, cs.konfi_consent, cs.moderation_status, cs.created_at,
                   u.display_name
            FROM challenge_submissions cs
@@ -1718,9 +1719,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             lines.push(row.text_content);
           }
           if (row.link_url) {
-            // Titel/Interpret machen die Playlist-Datei lesbar — die URL
-            // bleibt trotzdem drin, sie ist der eigentliche Inhalt.
-            const meta = [row.link_title, row.link_author].filter(Boolean).join(' – ');
+            // Interpret – Titel (Album): so liest sich eine Playlist, und so
+            // steht es auch in der App. Die URL bleibt trotzdem drin, sie ist
+            // der eigentliche Inhalt.
+            const kopf = [row.link_author, row.link_title].filter(Boolean).join(' – ');
+            const meta = row.link_album ? `${kopf} (${row.link_album})` : kopf;
             if (meta) {
               lines.push(meta);
             }

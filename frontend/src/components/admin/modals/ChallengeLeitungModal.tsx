@@ -56,7 +56,8 @@ import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { istWebLink, linkBeschriftung } from '../../../utils/linkDisplay';
+import { istWebLink } from '../../../utils/linkDisplay';
+import MusikLink from '../../shared/MusikLink';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import { getChallengeStatus } from '../views/ChallengesManageView';
 import { anzahlBeitraege } from '../../../utils/challengeTexte';
@@ -805,24 +806,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                           )}
 
                           {submission.media_type === 'link' && istWebLink(submission.link_url) && (
-                            <a
-                              href={submission.link_url!}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              // Volle Adresse im title: für die Freigabe muss
-                              // pruefbar bleiben, wohin der Link fuehrt.
-                              title={submission.link_url!}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
-                                maxWidth: '100%'
-                              }}
-                            >
-                              <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {linkBeschriftung(submission)}
-                              </span>
-                            </a>
+                            <MusikLink submission={submission} />
                           )}
 
                           {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
@@ -993,28 +977,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                               )}
 
                               {submission.media_type === 'link' && istWebLink(submission.link_url) && (
-                                <a
-                                  href={submission.link_url!}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  // Der Link gehört dem Link — sonst faengt das
-                                  // umgebende IonItem den Tap ab und oeffnet statt
-                                  // der Seite das Aktions-Menue.
-                                  onClick={(e) => e.stopPropagation()}
-                                  // Volle Adresse im title: für die Freigabe muss
-                                  // pruefbar bleiben, wohin der Link fuehrt.
-                                  title={submission.link_url!}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
-                                    maxWidth: '100%'
-                                  }}
-                                >
-                                  <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
-                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {linkBeschriftung(submission)}
-                                  </span>
-                                </a>
+                                <MusikLink submission={submission} />
                               )}
 
                               {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
