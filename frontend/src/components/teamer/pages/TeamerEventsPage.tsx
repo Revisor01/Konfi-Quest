@@ -368,9 +368,11 @@ const TeamerEventsPage: React.FC = () => {
     sortEvents(safeEvents.filter(e => e.is_registered)),
   [safeEvents]);
 
-  const alleEvents = useMemo(() =>
-    sortEvents(safeEvents.filter(e => !e.teamer_only)),
-  [safeEvents]);
+  // "Alle" heisst alle — auch reine Team-Termine. Vorher filterte
+  // `!e.teamer_only` sie heraus: Ein Termin nur fuers Team tauchte in KEINEM
+  // Reiter ausser "Team" auf und fehlte in der Gesamtuebersicht
+  // (User-Hinweis 25.08.2026).
+  const alleEvents = useMemo(() => sortEvents(safeEvents), [safeEvents]);
 
   const teamEvents = useMemo(() =>
     sortEvents(safeEvents.filter(e => e.teamer_needed || e.teamer_only)),
@@ -660,7 +662,13 @@ const TeamerEventsPage: React.FC = () => {
 
           {/* SectionHeader mit Status-Farben */}
           {(() => {
-            const konfiCount = (selectedEvent.registered_count || 0);
+            // Math.max(0, ...): registered_count ist bereits die Konfi-Zahl
+            // (Backend filtert Teamer heraus). Ein negativer Wert kann fachlich
+            // nicht vorkommen — die Anzeige soll aber auch bei einer
+            // unerwarteten Antwort nie "-1 Konfis" zeigen (User-Hinweis
+            // 25.08.2026).
+            const konfiCount = Math.max(0, selectedEvent.registered_count || 0);
+            const nurTeam = !!selectedEvent.teamer_only;
             // Punkte-Kachel nur, wenn es überhaupt Punkte gibt — dieselbe
             // Bedingung wie die Punkte-Zeile weiter unten. Bei Terminen nur
             // fuers Team, Pflichtterminen und Konfirmationen stand hier sonst
@@ -673,11 +681,18 @@ const TeamerEventsPage: React.FC = () => {
                 subtitle={getStatusText(selectedEvent)}
                 icon={calendar}
                 colors={getStatusColors(selectedEvent)}
-                stats={[
-                  { value: konfiCount, label: 'Konfis' },
-                  { value: selectedEvent.teamer_count || 0, label: 'Team' },
-                  ...(showPoints ? [{ value: selectedEvent.points, label: 'Punkte' }] : [])
-                ]}
+                stats={nurTeam
+                  ? [
+                      // Nur-Team-Termin: eine Konfi-Kachel waere immer 0 und
+                      // sagt nichts. Stattdessen erzaehlen die Kacheln vom Team.
+                      { value: Math.max(0, selectedEvent.teamer_count || 0), label: 'Team' },
+                      { value: Math.max(0, selectedEvent.teamer_waitlist_count || 0), label: 'Warteliste' }
+                    ]
+                  : [
+                      { value: konfiCount, label: 'Konfis' },
+                      { value: Math.max(0, selectedEvent.teamer_count || 0), label: 'Team' },
+                      ...(showPoints ? [{ value: selectedEvent.points, label: 'Punkte' }] : [])
+                    ]}
               />
             );
           })()}
@@ -1309,23 +1324,38 @@ const TeamerEventsPage: React.FC = () => {
                                 </div>
                               )}
 
-                              {/* Buchungen + Team + Punkte */}
+                              {/* Buchungen + Team + Punkte.
+                                  Bei "Nur Team" erzaehlt die Zeile vom Team: Konfi-Zahl
+                                  und Punkte waeren dort immer 0 bzw. bedeutungslos
+                                  (User-Hinweis 25.08.2026). */}
                               <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                                  {(event.registered_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>}
-                                </span>
-                                {(event.teamer_count !== undefined && event.teamer_count > 0) && (
+                                {event.teamer_only ? (
                                   <span className="app-list-item__meta-item">
                                     <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
-                                    {event.teamer_count} Team
+                                    {Math.max(0, event.teamer_count || 0)}
+                                    {(event.teamer_max_participants || 0) > 0
+                                      ? `/${event.teamer_max_participants}`
+                                      : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>} Team
                                   </span>
-                                )}
-                                {event.points > 0 && (
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
-                                    {event.points}P
-                                  </span>
+                                ) : (
+                                  <>
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
+                                      {Math.max(0, event.registered_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>}
+                                    </span>
+                                    {(event.teamer_count !== undefined && event.teamer_count > 0) && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
+                                        {event.teamer_count} Team
+                                      </span>
+                                    )}
+                                    {event.points > 0 && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
+                                        {event.points}P
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                               </div>
 
