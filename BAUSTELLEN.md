@@ -4,8 +4,8 @@ Stand: 24.08.2026, abends. Eine Liste, damit nichts doppelt läuft und nichts
 untergeht. **Erledigtes wird nicht gelöscht, sondern abgehakt** — sonst weiß
 später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 
-Live: `90592c5` (ausgerollt 25.08. abends) · Version 2.0.0 (unveröffentlicht) ·
-iOS-Build 143 gebaut, 142 und 140 im TestFlight
+Live: `d3d6976` (ausgerollt 26.08. nachts) · Version 2.0.0 (unveröffentlicht) ·
+iOS-Build 145 gebaut
 
 ## Wie hier gearbeitet wird
 
@@ -294,7 +294,22 @@ Erledigten.
 
 ## Bekannte Fehler, Ursache belegt, Fix offen
 
-- [ ] **Testläufe brechen sporadisch ab** (etwa jeder vierte). Ursache belegt
+- [x] **Testläufe brechen sporadisch ab** — BEHOBEN am 26.08. (`201b6ee2`).
+      Die zweite Spur war die eigentliche: Etliche Routen senden bewusst erst
+      die Antwort und erledigen danach Push, Badges und Live-Updates. supertest
+      schliesst aber, sobald die Antwort da ist — wurde derselbe Socket dann
+      fuer den naechsten Request wiederverwendet, waehrend der vorige Handler
+      noch schrieb, landete dessen Rest im naechsten Request. Deshalb traf es
+      nie einen bestimmten Test, sondern den, der zufaellig den
+      wiederverwendeten Socket erwischte (auch in challenges.js und konfi.js,
+      nicht nur events.js — 28 solche Stellen in neun Routendateien).
+      *Zwei Massnahmen:* Im Testlauf ist Keep-Alive aus (`tests/setupTests.js`),
+      und die fuenf Termin-Handler mit dem laengsten Nachlauf haengen ihre
+      Seiteneffekte an `utils/nachAntwort`, der Fehler abfaengt und den Lauf
+      abwartbar macht. **Nachgemessen: elf Laeufe hintereinander gruen, je
+      1220 Tests** — vorher fiel etwa jeder zweite. Produktionsverhalten
+      unveraendert.
+      ALT: (etwa jeder vierte). Ursache belegt
       und am 25.08. präzisiert: `backend/database.js` feuert beim MODUL-LADEN
       einen unbeaufsichtigten Selbsttest ab, der im Fehlerfall `process.exit(1)`
       ruft — das killt den ganzen vitest-Worker. `utils/liveUpdate.js` lädt das
@@ -332,23 +347,35 @@ Erledigten.
 
 ## Notiert, nicht angefasst
 
-- [ ] `sitemap.xml` kennt das Handbuch nicht; `lastmod` überall 04.08.
-- [ ] FAQ dupliziert die Preisliste — zwei Pflegestellen.
-- [ ] "Das geht 2026 wirklich besser" auf der Startseite altert zum Jahreswechsel.
-- [ ] "kein Tracking" steht dreimal auf der Startseite, während Umami lädt
-      (cookiefrei, self-gehostet, gemeint ist die App — trotzdem angreifbar).
+- [x] `sitemap.xml` — entsteht jetzt im Handbuch-Generator mit und kennt die
+      13 Kapitel (17 Adressen statt 4). Das Datum je Seite kommt aus der
+      Quelldatei, nicht aus "heute" (`d3d69767`).
+- [x] FAQ dupliziert die Preisliste — die Antwort verweist jetzt auf die
+      Tabelle darunter, statt alle Preise ein zweites Mal zu nennen.
+- [x] "Das geht 2026 wirklich besser" — jetzt "heute", altert nicht mehr.
+- [x] "kein Tracking" — praezisiert auf "kein Tracking in der App", dazu ein
+      Satz, dass die Website Aufrufe anonym und cookiefrei zaehlt. Ehrlicher
+      als die pauschale Aussage.
 
 ---
 
 ## Sicherheitsmeldungen von GitHub (24.08. geprüft)
 
 - Dependabot: **0 offene Meldungen**.
-- CodeQL: **6 offene**, alle "high" — jede wird einzeln geprüft, nicht blind
+- CodeQL: **0 offene** (Stand 26.08.2026). Fuenf Meldungen wurden im Lauf des
+  25.08. behoben; die letzte (101) ist als Fehlalarm geschlossen, siehe unten.
+  ALT: **6 offene**, alle "high" — jede wird einzeln geprüft, nicht blind
   gefixt. Fehlalarme werden begründet geschlossen, nicht stillgelegt.
   *(In Arbeit.)*
-  - [ ] 101 `js/missing-rate-limiting` — `docsAuth.js:82`. Die Doku-Anmeldung
-        hat kein Rate-Limit; ein einzelnes Passwort ohne Benutzernamen ist
-        damit durchprobierbar. **Berechtigt, der ernstere der beiden.**
+  - [x] 101 `js/missing-rate-limiting` — `docsAuth.js:82`. **FEHLALARM**,
+        am 26.08. als solcher geschlossen. Der `docsLoginLimiter` (20
+        Fehlversuche/15min, `skipSuccessfulRequests`) wird in `createApp.js`
+        vor der Route registriert — CodeQL sieht die Route, nicht die
+        vorgelagerte Middleware. *In Produktion gemessen:* ab erschoepftem
+        Kontingent antwortet die Route mit 429, `ratelimit-remaining` faellt
+        auf 0. Dass es laenger dauerte als erwartet, liegt an zwei
+        Backend-Containern mit je eigenem Zaehler — kein Fehler, aber eine
+        Falle beim Messen.
   - [ ] 100 `js/insufficient-password-hash` — `docsAuth.js:106`. SHA-256 dient
         dort nur dem zeitkonstanten Vergleich, nicht dem Speichern; CodeQLs
         Lesart greift daneben. Ohne Rate-Limit ist die geringe Rechenzeit
