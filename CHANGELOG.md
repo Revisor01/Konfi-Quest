@@ -175,6 +175,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
 
+### Hinzugefügt
+
+- Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
+  und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
+  Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
+  der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
+  und die Zusage lässt sich jederzeit ändern.
+
 ### Behoben
 
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
@@ -196,6 +204,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   jetzt untereinander statt in einer Zeile, die auf dem Handy abgeschnitten
   wurde. Bei Apple Music kommt das Album dazu, und bei YouTube Music steht
   endlich der Interpret dort statt des Kanalnamens.
+- Beim Abmelden von einem Pflichttermin steht jetzt dabei, dass die Eltern die
+  Abmeldung noch bestätigen müssen.
 - Bei Pflichtterminen stimmt die Teilnehmerzahl wieder. Sie zeigte die
   Anwesenden statt der Angemeldeten und stand deshalb auf "0", solange niemand
   als anwesend erfasst war — obwohl Anmeldungen vorlagen. Abgemeldete zählen

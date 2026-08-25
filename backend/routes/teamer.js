@@ -6,6 +6,7 @@ const { fetchTageslosung } = require('../services/losungService');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1271,6 +1272,110 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /teamer/requests — neuen Antrag stellen
+  // ====================================================================
+  // Zusage / Absage zu einem Termin ("Ich bin dabei" / "Ich bin nicht dabei")
+  // ====================================================================
+  //
+  // Warum es das gibt: Bisher konnten Teamer:innen sich nur an- und wieder
+  // abmelden. Wer absagte, verschwand aus der Liste — fuer die Leitung sah das
+  // genauso aus wie "hat noch nicht reagiert", und es musste nachgefragt
+  // werden. Jetzt ist eine Absage eine eigene, sichtbare Aussage
+  // (Nutzerwunsch 25.08.2026: "wir wollen nur nicht nachfragen muessen").
+  //
+  // BEWUSST OHNE Begruendungszwang — anders als bei Konfis auf Pflichtterminen
+  // (konfi.js POST /events/:id/opt-out, dort mind. 5 Zeichen plus Eltern-
+  // Hinweis). Teamer:innen arbeiten selbststaendig; es geht nur darum, dass
+  // die Rueckmeldung ueberhaupt da ist. Ein freiwilliger Grund wird gespeichert,
+  // wenn einer mitgeschickt wird.
+  router.post('/events/:id/zusage', rbacVerifier, requireTeamer,
+    [param('id').isInt({ min: 1 }), handleValidationErrors],
+    async (req, res) => {
+      const eventId = parseInt(req.params.id, 10);
+      const { dabei, reason } = req.body;
+
+      if (typeof dabei !== 'boolean') {
+        return res.status(400).json({ error: 'Bitte "dabei" als true oder false angeben' });
+      }
+
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+
+        const { rows: [event] } = await client.query(
+          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled
+             FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
+          [eventId, req.user.organization_id]
+        );
+        if (!event) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Termin nicht gefunden' });
+        }
+        if (event.cancelled) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        }
+        // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
+        // Konfi-Terminen gibt es nichts zuzusagen.
+        if (!event.teamer_needed && !event.teamer_only) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Für diesen Termin werden keine Teamer:innen gesucht' });
+        }
+        if (new Date(event.event_date) <= new Date()) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Der Termin liegt bereits in der Vergangenheit' });
+        }
+
+        const status = dabei ? 'confirmed' : 'opted_out';
+        const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
+
+        // Vorhandene Buchung aktualisieren oder neu anlegen. Die Meinung darf
+        // jederzeit geaendert werden — auch von 'nicht dabei' zurueck auf
+        // 'dabei' (wie im Konfi-Zweig, konfi.js:1943).
+        const { rowCount } = await client.query(
+          `UPDATE event_bookings
+              SET status = $3,
+                  opt_out_reason = CASE WHEN $3 = 'opted_out' THEN $4 ELSE NULL END,
+                  opt_out_date   = CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END
+            WHERE user_id = $1 AND event_id = $2 AND organization_id = $5`,
+          [req.user.id, eventId, status, grund, req.user.organization_id]
+        );
+        if (rowCount === 0) {
+          await client.query(
+            `INSERT INTO event_bookings
+               (user_id, event_id, status, organization_id, opt_out_reason, opt_out_date)
+             VALUES ($1, $2, $3, $4, $5, CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END)`,
+            [req.user.id, eventId, status, req.user.organization_id, grund]
+          );
+        }
+
+        await client.query('COMMIT');
+        res.json({
+          status,
+          message: dabei ? 'Zusage gespeichert' : 'Absage gespeichert'
+        });
+
+        // Chat-Mitgliedschaft dem Stand anpassen und die Leitung informieren.
+        // NACH COMMIT und fehlertolerant: daran darf die Zusage nie scheitern.
+        try {
+          if (dabei) {
+            await addToEventChat(db, eventId, req.user.id, req.user.organization_id);
+          } else {
+            await removeFromEventChat(db, eventId, req.user.id, req.user.organization_id);
+          }
+        } catch (chatErr) {
+          console.error('Event-Chat nach Teamer-Zusage:', chatErr.message);
+        }
+        liveUpdate.sendToUserByRole(req.user.id, 'events', 'update', { eventId });
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_zusage' });
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
+        console.error('Database error in POST /teamer/events/:id/zusage:', eventId, err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      } finally {
+        client.release();
+      }
+    });
+
   router.post('/requests', rbacVerifier, requireTeamer, validateCreateTeamerRequest, async (req, res) => {
     try {
       const userId = req.user.id;

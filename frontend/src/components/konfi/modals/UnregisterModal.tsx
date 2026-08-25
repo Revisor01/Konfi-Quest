@@ -111,6 +111,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
               {mandatory && (
                 <p style={{ color: 'var(--ion-color-medium)', fontSize: '0.85rem', margin: '0 0 8px 0', padding: '0 4px' }}>
                   Dies ist ein Pflicht-Event. Bitte gib einen Grund für deine Abmeldung an.
+                  {' '}<strong>Deine Eltern müssen die Abmeldung noch bei uns bestätigen.</strong>
                 </p>
               )}
               <IonList style={{ background: 'transparent', padding: '0' }}>

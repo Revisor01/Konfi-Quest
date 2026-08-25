@@ -430,6 +430,42 @@ const TeamerEventsPage: React.FC = () => {
     ];
   }, [activeTab, safeEvents, meineEvents, alleEvents, teamEvents]);
 
+  // Zusage/Absage: "Ich bin dabei" / "Ich bin nicht dabei".
+  // Eine Absage ist eine eigene, sichtbare Aussage — vorher verschwand man
+  // einfach aus der Liste und die Leitung musste nachfragen, ob die
+  // Rueckmeldung noch kommt (Nutzerwunsch 25.08.2026). BEWUSST ohne
+  // Begruendungszwang: Teamer:innen arbeiten selbststaendig.
+  const handleZusage = async (event: Event, dabei: boolean) => {
+    setBookingLoading(true);
+    try {
+      if (networkMonitor.isOnline) {
+        await api.post(`/teamer/events/${event.id}/zusage`, { dabei });
+        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
+        if (updated) setSelectedEvent(updated);
+        setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
+      } else {
+        await writeQueue.enqueue({
+          method: 'POST',
+          url: `/teamer/events/${event.id}/zusage`,
+          body: { dabei },
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'teamer',
+            clientId: safeUUID(),
+            label: dabei ? 'Zusage' : 'Absage',
+          },
+        });
+        setSuccess('Wird gesendet, sobald du wieder online bist');
+      }
+      refreshLive();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Speichern');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
     const isPastEvent = new Date(event.event_date) < new Date();
@@ -988,16 +1024,34 @@ const TeamerEventsPage: React.FC = () => {
                   if (!teamerFull) {
                     // Kontingent frei (oder unbegrenzt) -> normaler Buchen-Button.
                     return (
-                      <IonButton
-                        className="app-action-button"
-                        expand="block"
-                        color="success"
-                        onClick={() => handleBook(selectedEvent)}
-                        disabled={bookingLoading}
-                      >
-                        <IonIcon icon={checkmarkCircle} slot="start" />
-                        {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
-                      </IonButton>
+                      <>
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          onClick={() => handleBook(selectedEvent)}
+                          disabled={bookingLoading}
+                        >
+                          <IonIcon icon={checkmarkCircle} slot="start" />
+                          {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
+                        </IonButton>
+                        {/* Gegenknopf: Ohne ihn war eine Absage nicht von
+                            "hat noch nicht reagiert" zu unterscheiden. Bei
+                            bereits abgesagten Terminen entfaellt er. */}
+                        {selectedEvent.booking_status !== 'opted_out' && (
+                          <IonButton
+                            className="app-action-button"
+                            expand="block"
+                            fill="outline"
+                            color="medium"
+                            onClick={() => handleZusage(selectedEvent, false)}
+                            disabled={bookingLoading}
+                          >
+                            <IonIcon icon={closeCircle} slot="start" />
+                            Ich bin nicht dabei
+                          </IonButton>
+                        )}
+                      </>
                     );
                   }
 

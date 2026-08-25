@@ -811,7 +811,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
           const teamerConfirmed = teamerParticipants.filter(p => p.status === 'confirmed');
           const teamerWaitlist = teamerParticipants.filter(p => p.status === 'waitlist');
-          const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}${teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : ''})`;
+          // Absagen mitzaehlen: Seit Teamer:innen ausdruecklich "Ich bin nicht
+          // dabei" sagen koennen, ist eine Absage eine Rueckmeldung — und muss
+          // von "hat noch nicht reagiert" unterscheidbar sein, sonst muss die
+          // Leitung weiter nachfragen (Nutzerwunsch 25.08.2026).
+          const teamerAbgesagt = teamerParticipants.filter(p => p.status === 'opted_out');
+          const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}`
+            + (teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : '')
+            + (teamerAbgesagt.length > 0 ? `, ${teamerAbgesagt.length} abgesagt` : '')
+            + ')';
 
           // Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme — dann darf
           // weder die Konfi-Liste noch ein "Konfi hinzufügen" erscheinen.
