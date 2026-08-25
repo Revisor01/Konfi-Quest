@@ -399,7 +399,7 @@ function main() {
   // Durchnummerieren in Dateireihenfolge. Die Nummer ist das, worauf sich
   // Lesende untereinander beziehen ("steht in Kapitel 7") — sie steht deshalb
   // in der Navigation, in der Überschrift und im Seitentitel.
-  const seiten = dateien.map((d, i) => ({ ...lesen(d), nr: i + 1, datei: `${lesen(d).id}.html` }));
+  const seiten = dateien.map((d, i) => ({ ...lesen(d), nr: i + 1, datei: `${lesen(d).id}.html`, quelldatei: d }));
 
   const gruppen = [];
   for (const s of seiten) {
@@ -621,6 +621,63 @@ ${karten}
   // --- Schreiben ---
   for (const [datei, seite] of erzeugt) {
     writeFileSync(join(ZIEL_VERZ, datei), seite.html, 'utf8');
+  }
+
+  // Datum im Format JJJJ-MM-TT. Fuer die Sitemap.
+  const alsDatum = (d) => d.toISOString().slice(0, 10);
+  const heute = () => alsDatum(new Date());
+  // Aenderungsdatum der Quelldatei — nicht "heute", sonst meldete jeder Build
+  // allen Seiten eine Aenderung, die es gar nicht gab.
+  const quellDatum = (quelldatei) => {
+    if (!quelldatei) return heute();
+    try {
+      return alsDatum(statSync(join(QUELLE, quelldatei)).mtime);
+    } catch {
+      return heute();
+    }
+  };
+
+  // --- Sitemap ---
+  // Wird hier mitgeschrieben statt von Hand gepflegt: Die alte Fassung kannte
+  // das Handbuch gar nicht und trug ueberall dasselbe alte Datum. Was der
+  // Generator erzeugt, weiss er auch — also traegt er es ein.
+  // Das Datum kommt aus der jeweiligen Quelldatei, nicht aus "heute": Sonst
+  // meldete jeder Build allen Seiten eine Aenderung, die es nicht gab.
+  const sitemapDatei = join(WURZEL, 'frontend', 'public', 'sitemap.xml');
+  if (existsSync(sitemapDatei)) {
+    const feste = [
+      { pfad: '/', freq: 'monthly', prio: '1.0' },
+      { pfad: '/impressum', freq: 'yearly', prio: '0.3' },
+      { pfad: '/datenschutz', freq: 'yearly', prio: '0.3' },
+      { pfad: '/konto-loeschen', freq: 'yearly', prio: '0.2' },
+    ];
+    const alt = readFileSync(sitemapDatei, 'utf8');
+    const datumVon = (pfad) => {
+      const treffer = alt.match(
+        new RegExp(`<loc>https://konfi-quest\\.de${pfad.replace(/\//g, '\\/')}</loc>\\s*<lastmod>([^<]+)`)
+      );
+      return treffer ? treffer[1] : heute();
+    };
+
+    const eintrag = (loc, mod, freq, prio) =>
+      `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${mod}</lastmod>\n` +
+      `    <changefreq>${freq}</changefreq>\n    <priority>${prio}</priority>\n  </url>`;
+
+    const zeilen = [
+      ...feste.map((f) => eintrag(`https://konfi-quest.de${f.pfad}`, datumVon(f.pfad), f.freq, f.prio)),
+      eintrag('https://konfi-quest.de/docs/', heute(), 'monthly', '0.8'),
+      ...seiten.map((s) =>
+        eintrag(`https://konfi-quest.de/docs/${s.datei}`, quellDatum(s.quelldatei), 'monthly', '0.6')
+      ),
+    ];
+
+    writeFileSync(
+      sitemapDatei,
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${zeilen.join('\n')}\n</urlset>\n`,
+      'utf8'
+    );
+    console.log(`Sitemap geschrieben: ${zeilen.length} Adressen (inkl. Handbuch)`);
   }
 
   console.log(`Handbuch geschrieben: ${ZIEL_VERZ} (${seiten.length} Kapitel + Übersicht, Verweise geprüft)`);

@@ -321,8 +321,14 @@ Erledigten.
       Dritter Fund am 25.08., gleiches Muster wie `database.js`:
       `routes/events.js` rief beim Modul-Laden `process.exit(1)`, wenn
       `QR_SECRET` fehlte — behoben, greift nur noch außerhalb von Tests.
-- [ ] **`notifications.test.js` macht echte FCM-Netzwerkaufrufe** aus der
-      Testsuite, mit der echten Firebase-Datei. Langsam und fragwürdig.
+- [x] **WIDERLEGT: `notifications.test.js` macht echte FCM-Netzwerkaufrufe.**
+      Am 26.08.2026 gemessen statt geglaubt: Ein Zähler auf
+      `net.Socket.prototype.connect` protokollierte während des GESAMTEN
+      Testlaufs (1220 Tests) jede ausgehende Verbindung, die nicht auf
+      localhost zeigt — Ergebnis: **keine**. Firebase initialisiert erst beim
+      ersten echten Versand (lazy), und den löst kein Test aus. Die
+      Schlüsseldatei liegt zwar lokal, ist aber in `.gitignore` und wird im
+      Testlauf nie gelesen.
 
 ## Notiert, nicht angefasst
 
