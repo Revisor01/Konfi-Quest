@@ -13,6 +13,7 @@ export default defineConfig({
     minWorkers: 1,
     globals: true,
     globalSetup: ['./tests/globalSetup.js'],
+    setupFiles: ['./tests/setupTests.js'],
     include: ['tests/**/*.test.{js,ts}'],
     env: {
       // UTC wie in CI und in den Prod-/Staging-Containern: event_date ist eine

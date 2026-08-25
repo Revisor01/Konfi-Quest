@@ -15,10 +15,29 @@ const path = require('path');
 function getTestApp(db) {
   const uploadsDir = path.join(os.tmpdir(), 'konfi-test-uploads');
 
-  return createApp(db, {
+  const app = createApp(db, {
     uploadsDir,
     // transporter, io, rateLimiters: nicht uebergeben -> createApp nutzt Dummies
   });
+
+  return app;
 }
 
-module.exports = { getTestApp };
+/**
+ * Wartet, bis die Seiteneffekte durch sind, die eine Route NACH ihrer Antwort
+ * erledigt (Push, Badges, Live-Updates — siehe utils/nachAntwort.js).
+ *
+ * Warum das noetig ist: supertest schliesst die Verbindung, sobald die Antwort
+ * da ist. Laeuft der Handler dann noch, riss der Abbruch sporadisch den
+ * naechsten Test mit ("Parse Error: Expected HTTP/, RTSP/ or ICE/",
+ * 1 von rund 1200, wechselnd welcher).
+ *
+ * In einem Test nach dem letzten Request aufrufen:
+ *   await request(app).delete(`/api/events/${id}`)...;
+ *   await warteAufNachwehen(app);
+ *
+ * @param {import('express').Application} app
+ */
+const { warteAufNachwehen } = require('../../utils/nachAntwort');
+
+module.exports = { getTestApp, warteAufNachwehen };

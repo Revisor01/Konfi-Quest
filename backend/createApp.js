@@ -37,6 +37,26 @@ function createApp(db, options = {}) {
   const app = express();
   app.set('trust proxy', 1); // Traefik Reverse Proxy
 
+  // NUR im Test: Jede Antwort schliesst ihre Verbindung.
+  //
+  // Etliche Routen senden bewusst erst die Antwort und erledigen danach Push,
+  // Badges und Live-Updates (siehe utils/nachAntwort.js). supertest schliesst
+  // aber, sobald die Antwort da ist. Wird derselbe Socket dann fuer den
+  // naechsten Test wiederverwendet, waehrend der vorige Handler noch schreibt,
+  // landet dessen Rest im naechsten Request — der HTTP-Parser bricht mit
+  // "Parse Error: Expected HTTP/, RTSP/ or ICE/" bzw. "socket hang up" ab.
+  // Rund 1 von 1200 Tests, wechselnd welcher und in wechselnden Dateien
+  // (challenges, events, konfi — belegt am 25./26.08.2026).
+  //
+  // Ohne Keep-Alive kann kein Nachlauf einen fremden Request treffen. Im Test
+  // kostet das nichts; Produktion bleibt unberuehrt (Bedingung NODE_ENV).
+  if (process.env.NODE_ENV === 'test') {
+    app.use((req, res, next) => {
+      res.set('Connection', 'close');
+      next();
+    });
+  }
+
   // ====================================================================
   // SECURITY HEADERS
   // ====================================================================

@@ -9,6 +9,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { removeFromEventChat, addToEventChat, syncEventChat } = require('../utils/eventChat');
+const { nachAntwort } = require('../utils/nachAntwort');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -1344,74 +1345,76 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         promoted_teamer_count: promotedTeamers.length
       });
 
-      // Live Update: Notify all konfis and admins about the event update
-      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
+      nachAntwort(req, async () => {
+        // Live Update: Notify all konfis and admins about the event update
+        liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
 
-      // "Anmeldung möglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
-      // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
-      // keine Doppel-Pushes.
-      // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
-      //   Flag auf false zuruecksetzen, damit beim nächsten Oeffnen erneut
-      //   gepusht wird.
-      // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
-      //   greift der Cron automatisch.
-      // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
-      if (!mandatory) {
+        // "Anmeldung möglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
+        // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
+        // keine Doppel-Pushes.
+        // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
+        //   Flag auf false zuruecksetzen, damit beim nächsten Oeffnen erneut
+        //   gepusht wird.
+        // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
+        //   greift der Cron automatisch.
+        // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
+        if (!mandatory) {
+          try {
+            const openNow = isRegistrationOpenForKonfis({
+              registration_opens_at, registration_closes_at,
+              cancelled: false, teamer_only
+            });
+            if (!openNow && oldEvent?.registration_open_notified) {
+              await db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [id]);
+            }
+          } catch (pushErr) {
+            console.error('Flag-Reset for event update (registration open) failed:', pushErr);
+          }
+        }
+
+        // Push an gebuchte Teilnehmer bei relevanter Änderung (Termin/Uhrzeit/Ort).
+        // Normalisierung nötig: DB liefert Date-Objekte (event_date/event_end_time),
+        // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
+        // JEDEM Speichern (auch ohne inhaltliche Änderung) als "geändert" durchgehen.
         try {
-          const openNow = isRegistrationOpenForKonfis({
-            registration_opens_at, registration_closes_at,
-            cancelled: false, teamer_only
-          });
-          if (!openNow && oldEvent?.registration_open_notified) {
-            await db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [id]);
+          const normalizeDate = (value) => {
+            if (!value) return null;
+            const d = new Date(value);
+            return Number.isNaN(d.getTime()) ? null : d.getTime();
+          };
+          const normalizeLocation = (value) => (value === undefined || value === null || value === '') ? null : String(value);
+
+          const dateChanged = normalizeDate(oldEvent?.event_date) !== normalizeDate(event_date);
+          const endTimeChanged = normalizeDate(oldEvent?.event_end_time) !== normalizeDate(event_end_time);
+          const locationChanged = normalizeLocation(oldEvent?.location) !== normalizeLocation(location);
+
+          const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
+
+          if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
+            const { rows: bookedParticipants } = await db.query(
+              `SELECT eb.user_id FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
+              [id]
+            );
+            const bookedUserIds = bookedParticipants.map(p => p.user_id);
+
+            if (bookedUserIds.length > 0) {
+              const changes = {};
+              if (dateChanged || endTimeChanged) {
+                changes.newDate = event_date;
+                changes.newEndTime = event_end_time;
+              }
+              if (locationChanged) {
+                changes.newLocation = location;
+              }
+              await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id, req.user.organization_id);
+            }
           }
         } catch (pushErr) {
-          console.error('Flag-Reset for event update (registration open) failed:', pushErr);
+          console.error('Push notification failed for event change:', pushErr);
         }
-      }
-
-      // Push an gebuchte Teilnehmer bei relevanter Änderung (Termin/Uhrzeit/Ort).
-      // Normalisierung nötig: DB liefert Date-Objekte (event_date/event_end_time),
-      // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
-      // JEDEM Speichern (auch ohne inhaltliche Änderung) als "geändert" durchgehen.
-      try {
-        const normalizeDate = (value) => {
-          if (!value) return null;
-          const d = new Date(value);
-          return Number.isNaN(d.getTime()) ? null : d.getTime();
-        };
-        const normalizeLocation = (value) => (value === undefined || value === null || value === '') ? null : String(value);
-
-        const dateChanged = normalizeDate(oldEvent?.event_date) !== normalizeDate(event_date);
-        const endTimeChanged = normalizeDate(oldEvent?.event_end_time) !== normalizeDate(event_end_time);
-        const locationChanged = normalizeLocation(oldEvent?.location) !== normalizeLocation(location);
-
-        const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
-
-        if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
-          const { rows: bookedParticipants } = await db.query(
-            `SELECT eb.user_id FROM event_bookings eb
-             JOIN users u ON eb.user_id = u.id
-             WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
-            [id]
-          );
-          const bookedUserIds = bookedParticipants.map(p => p.user_id);
-
-          if (bookedUserIds.length > 0) {
-            const changes = {};
-            if (dateChanged || endTimeChanged) {
-              changes.newDate = event_date;
-              changes.newEndTime = event_end_time;
-            }
-            if (locationChanged) {
-              changes.newLocation = location;
-            }
-            await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id, req.user.organization_id);
-          }
-        }
-      } catch (pushErr) {
-        console.error('Push notification failed for event change:', pushErr);
-      }
+      }, 'PUT /events/:id');
 
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
@@ -1558,14 +1561,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       res.json({ message: 'Event erfolgreich gelöscht' });
 
-      // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
-      if (bookedKonfiUserIds.length > 0) {
-        const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
-        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
-      }
+      nachAntwort(req, async () => {
+        // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
+        if (bookedKonfiUserIds.length > 0) {
+          const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
+          try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+        }
 
-      // Live Update: Notify all konfis and admins about the event deletion
-      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
+        // Live Update: Notify all konfis and admins about the event deletion
+        liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
+      }, 'DELETE /events/:id');
 
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
@@ -1998,23 +2003,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       res.json({ message: 'Buchung erfolgreich storniert' });
 
-      // Live Update
-      const userType = isTeamer ? 'teamer' : 'konfi';
-      liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'canceled' });
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
+      nachAntwort(req, async () => {
+        // Live Update
+        const userType = isTeamer ? 'teamer' : 'konfi';
+        liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'canceled' });
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
 
-      // Push an Admins bei Teamer-Storno
-      if (isTeamer) {
-        try {
-          const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-          await PushService.sendTeamerEventCancellationToAdmins(
-            db, req.user.organization_id, req.user.display_name,
-            eventInfo ? eventInfo.name : 'Event', eventId
-          );
-        } catch (pushErr) {
-          console.error('Push notification failed for teamer cancellation:', pushErr);
+        // Push an Admins bei Teamer-Storno
+        if (isTeamer) {
+          try {
+            const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
+            await PushService.sendTeamerEventCancellationToAdmins(
+              db, req.user.organization_id, req.user.display_name,
+              eventInfo ? eventInfo.name : 'Event', eventId
+            );
+          } catch (pushErr) {
+            console.error('Push notification failed for teamer cancellation:', pushErr);
+          }
         }
-      }
+      }, 'DELETE /events/:eventId/book');
 
     } catch (err) {
       console.error('Database error in DELETE /events/:eventId/book:', eventId, err);
@@ -2709,23 +2716,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json({ message: action, status });
 
       // Push bei Befoerderung von der Warteliste (analog events.js:1010/1513/1731).
-      // Seiteneffekt NACH res, in try/catch — Push-Fehler darf nichts kippen.
-      if (status === 'confirmed' && wasWaitlist) {
-        try {
-          await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId, req.user.organization_id);
-        } catch (pushErr) {
-          console.error('Error sending waitlist promotion push:', pushErr);
+      // Seiteneffekt NACH res — Push-Fehler darf nichts kippen.
+      nachAntwort(req, async () => {
+        if (status === 'confirmed' && wasWaitlist) {
+          try {
+            await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId, req.user.organization_id);
+          } catch (pushErr) {
+            console.error('Error sending waitlist promotion push:', pushErr);
+          }
         }
-      }
 
-      // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
-      liveUpdate.sendToUserByRole(booking.user_id, 'events', 'update', { eventId });
-      // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
-      if (pointsRemoved) {
-        liveUpdate.sendToUserByRole(booking.user_id, 'dashboard', 'update');
-      }
-      // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
+        // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
+        liveUpdate.sendToUserByRole(booking.user_id, 'events', 'update', { eventId });
+        // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
+        if (pointsRemoved) {
+          liveUpdate.sendToUserByRole(booking.user_id, 'dashboard', 'update');
+        }
+        // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
+      }, 'PUT /events/:eventId/participants/:participantId/status');
 
     } catch (err) {
  console.error('Database error in PUT /events/:eventId/participants/:participantId/status:', eventId, participantId, err);
@@ -2823,34 +2832,36 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Seiteneffekte NACH COMMIT (Muster Einzel-Handler): Badges, Level-Up,
       // Push und LiveUpdates pro Person fehlertolerant.
-      for (const userId of marked) {
-        try {
-          await checkAndAwardBadges(db, userId);
-        } catch (badgeErr) {
-          console.error('Error checking badges after bulk attendance:', badgeErr);
-        }
-      }
-      for (const userId of marked) {
-        const gotPoints = awarded.includes(userId);
-        try {
-          if (gotPoints) {
-            await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id);
+      nachAntwort(req, async () => {
+        for (const userId of marked) {
+          try {
+            await checkAndAwardBadges(db, userId);
+          } catch (badgeErr) {
+            console.error('Error checking badges after bulk attendance:', badgeErr);
           }
-          await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, null, req.user.organization_id);
-        } catch (pushErr) {
-          console.error('Push notification failed (bulk attendance):', pushErr);
         }
-        if (gotPoints) {
-          // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
-          // Teilnehmenden eines Termins — darunter Teamer:innen, die in
-          // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
-          liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: event.points });
+        for (const userId of marked) {
+          const gotPoints = awarded.includes(userId);
+          try {
+            if (gotPoints) {
+              await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id);
+            }
+            await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, null, req.user.organization_id);
+          } catch (pushErr) {
+            console.error('Push notification failed (bulk attendance):', pushErr);
+          }
+          if (gotPoints) {
+            // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
+            // Teilnehmenden eines Termins — darunter Teamer:innen, die in
+            // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
+            liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: event.points });
+          }
+          liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId });
         }
-        liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId });
-      }
-      if (marked.length > 0) {
-        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
-      }
+        if (marked.length > 0) {
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+        }
+      }, 'PUT /events/:eventId/participants/attendance-all');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in PUT /events/:eventId/participants/attendance-all:', eventId, err);
