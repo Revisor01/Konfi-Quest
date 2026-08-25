@@ -27,5 +27,7 @@ herauskam (Nutzerhinweis 25.08.2026).
 | 25.08.2026 | [Live-Aktualisierung (Socket.io)](2026-08-25-live-aktualisierung.md) | Regression im In-flight-Dedupe, fehlende Empfänger in allen drei Bäumen | ERLEDIGT (`8fc097ce`, `23ee763a`) |
 | 25.08.2026 | [Abzeichen-Bedingungen](2026-08-25-abzeichen-bedingungen.md) | Logik in Ordnung; Befunde lagen in den Daten und im Regler | ERLEDIGT (`4d7f520b`, Datenpflege in Prod) |
 | 25.08.2026 | [Drei Registerpunkte](2026-08-25-drei-registerpunkte.md) | Alle drei längst erledigt, nur nicht vermerkt | ERLEDIGT (`ccf09d5f`) |
+| 25.08.2026 | [Termin-Zählungen](2026-08-25-termin-zaehlungen.md) | Fünf SQL-Stellen, drei Semantiken; Anmeldung konnte still schließen | TEILWEISE (`bdc04fad`) — Befund 3 und Vereinfachung offen |
+| 25.08.2026 | [Offline-Fähigkeit](2026-08-25-offline-faehigkeit.md) | Listen gecacht, Details nicht; über 30 stille Abbrüche | ERLEDIGT (`c8348375`, `c2b40ad6`) |
 | 25.08.2026 | [Termin-Zählungen](2026-08-25-termin-zaehlungen.md) | Detail- und Konfi-Queries zählen anders als die Liste; 1 aktiver Prod-Fall, mehrere latente; Statuslogik in 7 Kopien | OFFEN |
 | 25.08.2026 | [Offline-Fähigkeit](2026-08-25-offline-faehigkeit.md) | Basis solide, aber Aktivität melden, Anwesenheit und Tageslosung scheitern an je einer kleinen Lücke | OFFEN |

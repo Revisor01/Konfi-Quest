@@ -1,3 +1,22 @@
+> **ERLEDIGT** am 25.08.2026. Umgesetzt wurden alle vier Punkte der
+> Priorität "vor 2.0.0" plus ein Fund, der erst beim Reparieren auffiel:
+>
+> - `c8348375` — **Termin-Detail offline leer** (im Bericht nicht enthalten):
+>   Liste und Detail luden dieselben Daten unter verschiedenen Cache-Schlüsseln.
+>   Das war der Fall, den der Nutzer am deutlichsten merkte.
+> - `c2b40ad6` — Aktivitätenliste gecacht, Tageslosung für Konfis gecacht,
+>   über 30 stille `if (!isOnline) return` durch Meldungen ersetzt.
+>
+> **Nicht umgesetzt und bewusst so:** Anwesenheit erfassen wandert NICHT in die
+> Warteschlange. Löschen, Einladungscodes und Chat-Anlegen sind destruktiv oder
+> brauchen eine sofortige Server-Antwort — ein Nachversand Stunden später wäre
+> riskant. Sie zeigen jetzt eine Meldung statt stillem Nichtstun.
+>
+> **Anmerkung zum Ablauf:** Der beauftragte Agent starb an einem
+> Infrastrukturproblem mitten in seiner Gegenprobe und hinterließ die Fixes
+> ZURÜCKGENOMMEN bei grünen Tests daneben. Punkte 1 und 2 sowie eine übersehene
+> Stelle wurden von Hand nachgebaut, die Gegenprobe nachgeholt.
+
 # Offline-Fähigkeit: Was geht ohne Verbindung, was nicht
 
 **Auftrag:** Bestandsaufnahme Lesen/Schreiben ohne Verbindung, Lücken benennen,

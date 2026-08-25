@@ -1,3 +1,20 @@
+> **TEILWEISE ERLEDIGT** am 25.08.2026 durch `bdc04fad`.
+>
+> Behoben: Befund 1 (Anmeldung fälschlich geschlossen — Prod-Event 150,
+> nachgemessen), Befund 2 (Detail zählte Teamer mit — Event 105: 23 statt 19),
+> Befund 4 (`opted_out` galt als "ausstehend").
+>
+> **Offen:** Befund 3 (`unprocessed_count` zählt Teamer mit) braucht eine
+> fachliche Entscheidung. Die sechs kleineren Befunde sind nicht angefasst.
+> Der Vereinfachungsvorschlag (gemeinsame SQL-View statt fünf Stellen mit drei
+> Semantiken) steht weiterhin — er ist der eigentliche Hebel gegen die
+> Fehlerklasse und gehört nach 2.0.0.
+>
+> **Nebenwirkung, die im Blick bleiben muss:** Seit Befund 2 rechnet
+> `hasUnprocessedBookings` konfi-rein. Bei reinen Team-Terminen (0 Konfis)
+> zeigt der Detail-Kopf nach dem Termin dadurch kein "Verbuchen" mehr — das
+> hängt an Befund 3.
+
 # Termin-Zählungen: Prüfung aller Zähl- und Statistikfunktionen
 
 **Auftrag:** Systematische Prüfung aller Zähl- und Statistikfunktionen rund um
