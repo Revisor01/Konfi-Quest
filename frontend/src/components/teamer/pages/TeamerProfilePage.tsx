@@ -62,7 +62,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { networkMonitor } from '../../../services/networkMonitor';
-import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
 interface TeamerProfile {
@@ -332,39 +332,12 @@ const TeamerProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* "Was ist neu?" — bewusst KEIN Listeneintrag, sondern ein eigener
-          Banner: Es ist keine Einstellung, die man zwischen anderen sucht,
-          sondern ein einmaliger Hinweis (Nutzerhinweis 23.08.2026). Vorher
-          nutzte der Block Listen-Klassen und sah dadurch aus wie eine Option
-          in einer Liste, obwohl er keine ist. */}
-      <div
-        className="app-whatsnew"
-        style={{ margin: '16px' }}
-        onClick={() => setShowUpdateWalkthrough(true)}
-        role="button"
-        tabIndex={0}
-        aria-label="Was ist neu? Die Neuerungen dieser Version ansehen"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setShowUpdateWalkthrough(true);
-          }
-        }}
-      >
-        <IonIcon icon={sparklesOutline} className="app-whatsnew__icon" />
-        <div className="app-whatsnew__text">
-          <span className="app-whatsnew__title">Was ist neu?</span>
-          <span className="app-whatsnew__sub">Die Neuerungen dieser Version ansehen</span>
-        </div>
-        <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
-      </div>
-
-      {/* Zweiter Banner: Mitmachen-Tab. Dauerhaft erreichbar (kein X) — der
-          Hinweis stand frueher IM Mitmachen-Tab und wurde dort entfernt
-          (589802b8), mit dem Vermerk, dass er hier zurueckkehrt. */}
-      <MitmachenHinweisKarte
-        style={{ margin: '16px' }}
-        onOpen={() => setShowMitmachenErklaerung(true)}
+        {/* Die beiden Neuerungs-Banner, dauerhaft und ohne X. Bewusst KEINE
+          Listeneintraege: Es sind keine Einstellungen, die man zwischen
+          anderen sucht (Nutzerhinweis 23.08.2026). */}
+      <NeuerungenBanner
+        onUpdateOeffnen={() => setShowUpdateWalkthrough(true)}
+        onMitmachenOeffnen={() => setShowMitmachenErklaerung(true)}
       />
 
         {/* B. Konto-Einstellungen */}

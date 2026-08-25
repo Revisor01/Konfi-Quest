@@ -6,14 +6,25 @@ import { Preferences } from '@capacitor/preferences';
 // Mitmachen-Tab, der Events und Aktivitäten bündelt). Rollenuebergreifend
 // derselbe Praefix, der Account-Suffix trennt die Nutzer. Dasselbe Flag
 // steuert Karte UND Walkthrough — es gibt bewusst nur EIN Erinnerungssystem.
-export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
+// Version, auf die sich die aktuellen Neuerungs-Banner beziehen. Sie steckt
+// im Schluesselnamen: Wird sie hochgezaehlt, entstehen neue Schluessel, und
+// die Banner erscheinen bei allen wieder — auch bei denen, die die alten
+// weggeklickt hatten. Die alten Flags bleiben liegen und stoeren nicht.
+//
+// So werden kuenftige Neuerungen eingetragen (Nutzerwunsch 25.08.2026):
+// 1. Hier die Version hochsetzen (z.B. '2_1').
+// 2. Texte der Banner und den Walkthrough der jeweiligen Rolle anpassen.
+// Mehr ist nicht noetig — die Banner haengen ueberall an denselben Flags.
+export const NEUERUNGEN_VERSION = '2_0';
+
+export const UPDATE_WALKTHROUGH_KEY = `update_walkthrough_${NEUERUNGEN_VERSION}_gesehen`;
 
 // Flag des Mitmachen-Hinweises. EIGENES Flag, nicht an den Update-Hinweis
 // gekoppelt: Beide Karten stehen nebeneinander auf der Startseite und werden
 // einzeln weggeklickt (Nutzerwunsch 25.08.2026). Der Hinweis selbst stand
 // frueher als gruener Kasten IM Mitmachen-Tab und wurde dort entfernt
 // (589802b8) — er gehoert auf die Startseite und dauerhaft ins Profil.
-export const MITMACHEN_HINWEIS_KEY = 'mitmachen_hinweis_2_0_gesehen';
+export const MITMACHEN_HINWEIS_KEY = `mitmachen_hinweis_${NEUERUNGEN_VERSION}_gesehen`;
 
 // Zeigt eine Onboarding-Tour EINMAL pro Account (geraetelokal via Preferences).
 // `keyPrefix` trennt die Rollen (z.B. 'admin_onboarding_seen'), `userId` macht

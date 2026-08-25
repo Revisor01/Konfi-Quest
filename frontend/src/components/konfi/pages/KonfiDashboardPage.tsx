@@ -17,8 +17,7 @@ import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
-import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
-import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -365,24 +364,18 @@ const KonfiDashboardPage: React.FC = () => {
 
         <TrialBanner style={{ marginTop: '8px' }} />
 
-        {/* Neuigkeiten-Karte: einmalig nach dem Update, X blendet dauerhaft aus */}
-        {showUpdateHinweis && (
-          <UpdateHinweisKarte
-            style={{ margin: '8px 16px 16px' }}
-            onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
-            onDismiss={markUpdateHinweisGesehen}
-          />
-        )}
-
-        {/* Zweite Karte: Hinweis auf den Mitmachen-Tab. Unabhaengig von der
-            ersten, eigenes X, eigenes Flag (Nutzerwunsch 25.08.2026). */}
-        {showMitmachenHinweis && (
-          <MitmachenHinweisKarte
-            style={{ margin: '8px 16px 16px' }}
-            onOpen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
-            onDismiss={markMitmachenHinweisGesehen}
-          />
-        )}
+        {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
+            jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft
+            erreichbar bleiben sie im Profil (Nutzerwunsch 25.08.2026). */}
+        <NeuerungenBanner
+          style={{ margin: '8px 16px 0' }}
+          updateSichtbar={showUpdateHinweis}
+          mitmachenSichtbar={showMitmachenHinweis}
+          onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+          onUpdateAusblenden={markUpdateHinweisGesehen}
+          onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+          onMitmachenAusblenden={markMitmachenHinweisGesehen}
+        />
 
         {dashboardData.has_wrapped && (
           <div onClick={openWrapped} style={{

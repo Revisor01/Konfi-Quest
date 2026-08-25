@@ -47,7 +47,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
-import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
@@ -211,34 +211,11 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* "Was ist neu?" — eigener Banner, KEIN Listeneintrag (siehe
-            .app-whatsnew im Theme). Nutzerhinweis 23.08.2026. */}
-        <div
-          className="app-whatsnew"
-          style={{ margin: '16px' }}
-          onClick={() => setShowUpdateWalkthrough(true)}
-          role="button"
-          tabIndex={0}
-          aria-label="Was ist neu? Die Neuerungen dieser Version ansehen"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setShowUpdateWalkthrough(true);
-            }
-          }}
-        >
-          <IonIcon icon={sparklesOutline} className="app-whatsnew__icon" />
-          <div className="app-whatsnew__text">
-            <span className="app-whatsnew__title">Was ist neu?</span>
-            <span className="app-whatsnew__sub">Die Neuerungen dieser Version ansehen</span>
-          </div>
-          <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
-        </div>
-
-        {/* Zweiter Banner: Mitmachen-Tab. Dauerhaft erreichbar (kein X). */}
-        <MitmachenHinweisKarte
-          style={{ margin: '16px' }}
-          onOpen={() => setShowMitmachenErklaerung(true)}
+        {/* Die beiden Neuerungs-Banner. Hier dauerhaft, ohne X — sie sind der
+            feste Weg zu den Erklaerungen (Nutzerhinweis 23.08.2026). */}
+        <NeuerungenBanner
+          onUpdateOeffnen={() => setShowUpdateWalkthrough(true)}
+          onMitmachenOeffnen={() => setShowMitmachenErklaerung(true)}
         />
 
         {/* Konto */}

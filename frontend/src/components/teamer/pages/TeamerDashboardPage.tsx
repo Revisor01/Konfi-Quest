@@ -17,6 +17,7 @@ import {
   sparkles,
   time,
   timeOutline,
+  flag,
   flagOutline,
   eyeOutline,
   megaphoneOutline,
@@ -43,9 +44,7 @@ import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
-import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
-import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
-import ChallengesHinweisKarte from '../../shared/ChallengesHinweisKarte';
+import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
@@ -528,24 +527,18 @@ const TeamerDashboardPage: React.FC = () => {
 
         <TrialBanner style={{ marginTop: '8px' }} />
 
-        {/* Neuigkeiten-Karte: einmalig nach dem Update, X blendet dauerhaft aus */}
-        {showUpdateHinweis && (
-          <UpdateHinweisKarte
-            style={{ margin: '8px 16px 0' }}
-            onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
-            onDismiss={markUpdateHinweisGesehen}
-          />
-        )}
-
-        {/* Zweite Karte: Hinweis auf den Mitmachen-Tab. Unabhaengig von der
-            ersten, eigenes X, eigenes Flag (Nutzerwunsch 25.08.2026). */}
-        {showMitmachenHinweis && (
-          <MitmachenHinweisKarte
-            style={{ margin: '8px 16px 16px' }}
-            onOpen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
-            onDismiss={markMitmachenHinweisGesehen}
-          />
-        )}
+        {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
+            jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft
+            erreichbar bleiben sie im Profil (Nutzerwunsch 25.08.2026). */}
+        <NeuerungenBanner
+          style={{ margin: '8px 16px 0' }}
+          updateSichtbar={showUpdateHinweis}
+          mitmachenSichtbar={showMitmachenHinweis}
+          onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+          onUpdateAusblenden={markUpdateHinweisGesehen}
+          onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+          onMitmachenAusblenden={markMitmachenHinweisGesehen}
+        />
 
         <div style={{ padding: '16px' }}>
           {/* Begruessung */}
@@ -600,12 +593,31 @@ const TeamerDashboardPage: React.FC = () => {
           )}
 
           {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege.
-              Gleiche Form wie "Was ist neu?" und der Mitmachen-Hinweis. */}
-          <ChallengesHinweisKarte
-            style={{ margin: '0 16px 16px' }}
-            untertitel="Aufgaben stellen und Beiträge der Konfis begleiten"
-            onOpen={() => router.push('/teamer/challenges')}
-          />
+              Bewusst KEIN Neuerungs-Banner, sondern ein dauerhafter
+              Navigationseinstieg: er bleibt auch, wenn die Neuerungen
+              laengst weggeklickt sind. */}
+          <div
+            onClick={() => router.push('/teamer/challenges')}
+            className="app-list-item app-list-item--challenges"
+            style={{
+              marginBottom: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}
+          >
+            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+              <IonIcon icon={flag} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="app-list-item__title">Challenges</div>
+              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                Aufgaben stellen und Beiträge der Konfis begleiten
+              </div>
+            </div>
+            <IonIcon icon={chevronForward} style={{ fontSize: '1.1rem', color: 'var(--app-color-challenges)' }} />
+          </div>
 
           {/* Dynamische Sektionen basierend auf section_order */}
           {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {

@@ -191,9 +191,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Teamer:innen kommen im Termin an den QR-Code zum Einchecken. Bisher zeigte
   ihn nur die Leitung — waren bei einem Termin allein Teamer:innen vor Ort,
   konnte sich niemand einchecken.
-- Die Challenges-Karte auf der Teamer-Startseite sieht aus wie die übrigen
-  Hinweise daneben. Vorher war sie eine schlichte weiße Zeile in einem
-  anderen Look.
+- Die beiden Hinweise auf Neuerungen — "Was ist neu?" und "Events und
+  Aktivitäten" — sehen jetzt für alle Rollen gleich aus und stehen an
+  denselben Stellen: dauerhaft im Profil, und auf der Startseite von
+  Konfis und Teamer:innen, wo man sie einzeln wegklicken kann.
 - Ein Termin bleibt als "zu verbuchen" gekennzeichnet, solange noch
   Teamer:innen offen sind — auch wenn alle Konfis schon verbucht sind. Vorher
   verschwand er aus der Liste und das Team rutschte durch.
