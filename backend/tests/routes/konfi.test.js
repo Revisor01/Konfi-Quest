@@ -1034,6 +1034,119 @@ describe('Konfi Routes', () => {
     });
   });
 
+  // ================================================================
+  // registration_status in den Konfi-Queries (Befund 1, 25.08.2026)
+  // ================================================================
+  // Prod-Fall Event 150 "Gemeindeversammlung": max_participants=0 (unbegrenzt),
+  // Warteliste aus, Anmeldefenster offen, keine Pflicht. Der Admin-Liste-CASE
+  // prüft Ausgebucht nur bei echter Kapazität (`> 0`-Guard); den Konfi-Queries
+  // fehlte der Guard, dadurch war `0 >= 0` immer wahr und das Event 'closed' —
+  // der Anmelden-Knopf verschwand, obwohl die Buchung angenommen würde.
+  describe('registration_status Konfi-Queries (Befund 1, 25.08.2026)', () => {
+    // Event-150-Konstellation: unbegrenzt, Warteliste aus, Fenster offen
+    async function seedUnbegrenztOhneWarteliste() {
+      const { rows } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             waitlist_enabled, point_type, points,
+                             registration_opens_at, registration_closes_at)
+         VALUES ('Gemeindeversammlung-Test', NOW() + interval '14 days', $1, false, 0,
+                 false, 'gemeinde', 1,
+                 NOW() - interval '1 day', NOW() + interval '7 days')
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const eventId = rows[0].id;
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [eventId, JAHRGAENGE.jahrgang1.id]
+      );
+      return eventId;
+    }
+
+    it('GET /konfi/events: unbegrenztes Event ohne Warteliste ist open, nicht closed', async () => {
+      const eventId = await seedUnbegrenztOhneWarteliste();
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const evt = res.body.find(e => e.id === eventId);
+      expect(evt).toBeDefined();
+      expect(evt.registration_status).toBe('open');
+    });
+
+    it('GET /konfi/events: Pflicht-Event meldet mandatory wie die Admin-Liste', async () => {
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [EVENTS.pflichtEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const pflicht = res.body.find(e => e.id === EVENTS.pflichtEvent.id);
+      expect(pflicht).toBeDefined();
+      expect(pflicht.registration_status).toBe('mandatory');
+    });
+
+    it('GET /konfi/events/:id/status: unbegrenztes Event ohne Warteliste ist open', async () => {
+      const eventId = await seedUnbegrenztOhneWarteliste();
+
+      const res = await request(app)
+        .get(`/api/konfi/events/${eventId}/status`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.event_status).toBe('open');
+      expect(res.body.can_register).toBe(true);
+    });
+
+    it('GET /konfi/events/:id/status: Pflicht-Event meldet mandatory', async () => {
+      const res = await request(app)
+        .get(`/api/konfi/events/${EVENTS.pflichtEvent.id}/status`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.event_status).toBe('mandatory');
+    });
+
+    // Der /status-Endpunkt zählte außerdem ohne Rollenfilter: ein gebuchter
+    // Teamer belegte rechnerisch den letzten Konfi-Platz und schloss das Event.
+    it('GET /konfi/events/:id/status: Teamer-Buchung belegt keinen Konfi-Platz', async () => {
+      const { rows } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             waitlist_enabled, teamer_needed, teamer_max_participants,
+                             point_type, points, registration_opens_at, registration_closes_at)
+         VALUES ('Teamer-Kontingent-Status', NOW() + interval '14 days', $1, false, 1,
+                 false, true, 5, 'gemeinde', 1,
+                 NOW() - interval '1 day', NOW() + interval '7 days')
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const eventId = rows[0].id;
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [eventId, JAHRGAENGE.jahrgang1.id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3)`,
+        [eventId, USERS.teamer1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/konfi/events/${eventId}/status`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmed_count).toBe(0);
+      expect(res.body.event_status).toBe('open');
+    });
+  });
+
   // Abgeschaltete Losung wird gar nicht abgerufen (Nutzerwunsch 23.08.2026).
   describe('GET /api/konfi/tageslosung — Schalter', () => {
     it('abgeschaltete Losung wird nicht abgerufen -> 204', async () => {

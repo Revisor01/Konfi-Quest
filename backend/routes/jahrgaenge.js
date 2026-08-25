@@ -525,7 +525,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         const eventIds = events.map(e => e.id);
 
         const { rows: bookings } = eventIds.length > 0 ? await db.query(`
-          SELECT eb.user_id, eb.attendance_status
+          SELECT eb.user_id, eb.status, eb.attendance_status
           FROM event_bookings eb
           WHERE eb.event_id = ANY($1::int[])
             AND eb.user_id = ANY($2::int[])
@@ -535,10 +535,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         rows = konfis.map(k => {
           const own = bookings.filter(b => b.user_id === k.user_id);
           const present = own.filter(b => b.attendance_status === 'present').length;
+          // Abgemeldete ('opted_out') zählen nicht in den Nenner (Befund 4,
+          // 25.08.2026): Eine Abmeldung ist eine abgeschlossene Rückmeldung,
+          // kein ausstehender Pflichttermin — sonst las sich "1 von 2", obwohl
+          // der zweite Termin sauber abgemeldet war. Konsistent zum
+          // Kachel-Fix 0db13f09 im Event-Detail und zur Anwesenheitsmatrix.
+          const optedOut = own.filter(b => b.status === 'opted_out').length;
           return {
             display_name: k.display_name,
             present_count: present,
-            total_count: totalEvents
+            total_count: totalEvents - optedOut
           };
         });
       }

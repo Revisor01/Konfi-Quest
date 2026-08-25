@@ -529,6 +529,67 @@ describe('Events Routes', () => {
     });
   });
 
+  // ================================================================
+  // GET /api/events/:id — Zähl-Semantik wie die Liste (Befund 2, 25.08.2026)
+  // ================================================================
+  // Der Detail-Endpunkt zählte registered_count/pending_count INKLUSIVE
+  // Teamer, die Liste ohne (konfi-rein, Migration 120: eigenes Teamer-
+  // Kontingent). Bei einem teamer_needed-Event mit Kapazitaet meldete das
+  // Detail dadurch "Ausgebucht", während die Liste "Offen" zeigte.
+  describe('GET /api/events/:id — Zählung konfi-rein (Befund 2, 25.08.2026)', () => {
+    async function seedTeamerNeededEvent() {
+      const { rows } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             waitlist_enabled, teamer_needed, teamer_max_participants,
+                             point_type, points, created_by)
+         VALUES ('Detail-Zaehl-Test', NOW() + interval '7 days', $1, false, 2,
+                 true, true, 5, 'gemeinde', 1, $2)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      return rows[0].id;
+    }
+
+    it('registered_count zählt Teamer NICHT mit (wie die Liste)', async () => {
+      const eventId = await seedTeamerNeededEvent();
+      // 2 Konfis + 1 Teamer bestätigt
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $5), ($1, $3, 'confirmed', $5), ($1, $4, 'confirmed', $5)`,
+        [eventId, USERS.konfi1.id, USERS.konfi2.id, USERS.teamer1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registered_count).toBe(2);
+      expect(res.body.teamer_count).toBe(1);
+      // Konfi-Kapazität 2, 2 Konfis gebucht -> kein freier Konfi-Platz;
+      // der Teamer darf die Rechnung nicht auf -1 drücken
+      expect(res.body.available_spots).toBe(0);
+    });
+
+    it('pending_count (Warteliste) zählt Teamer NICHT mit', async () => {
+      const eventId = await seedTeamerNeededEvent();
+      // 1 Konfi auf der Warteliste, 1 Teamer auf der Teamer-Warteliste
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, 'waitlist', $4), ($1, $3, 'waitlist', $4)`,
+        [eventId, USERS.konfi1.id, USERS.teamer1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.pending_count).toBe(1);
+      expect(res.body.teamer_waitlist_count).toBe(1);
+    });
+  });
+
   describe('POST /api/events/:id/book', () => {
     it('Konfi bucht freiwilliges Event -> 201 confirmed', async () => {
       const res = await request(app)

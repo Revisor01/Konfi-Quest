@@ -1131,9 +1131,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                cats.category_names,
                CASE
                  WHEN e.cancelled = true THEN 'cancelled'
+                 -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026):
+                 -- Pflichttermine haben immer max=0 + Warteliste aus und fielen
+                 -- ohne diesen Zweig in den Ausgebucht-Fall ('closed').
+                 WHEN e.mandatory THEN 'mandatory'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                  WHEN NOW() > e.registration_closes_at THEN 'closed'
-                 WHEN bstats.registered_count >=
+                 -- max_participants = 0 heißt unbegrenzt. Der > 0-Guard der
+                 -- Admin-Liste fehlte hier (Befund 1, 25.08.2026, Prod-Event
+                 -- 150): 0 >= 0 war immer wahr, unbegrenzte Events ohne
+                 -- Warteliste galten fälschlich als 'closed' und der
+                 -- Anmelden-Knopf verschwand.
+                 WHEN (
+                   CASE
+                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                     ELSE e.max_participants
+                   END
+                 ) > 0 AND bstats.registered_count >=
                    CASE
                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                      ELSE e.max_participants
@@ -1260,26 +1274,40 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Get event details with same logic as events API
       const { rows: [event] } = await db.query(`
-        SELECT e.*, 
-               COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-               COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
+        SELECT e.*,
+               -- Konfi-rein wie in der Liste (Befund 1, 25.08.2026): Teamer
+               -- haben ein eigenes Kontingent (Migration 120); ohne den
+               -- Rollenfilter belegte ein gebuchter Teamer rechnerisch einen
+               -- Konfi-Platz und schloss das Event.
+               COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer' THEN eb.id END) as registered_count,
+               COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer' THEN eb.id END) as waitlist_count,
                CASE 
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
                END as max_participants,
-               CASE 
+               CASE
+                 -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026)
+                 WHEN e.mandatory THEN 'mandatory'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                  WHEN NOW() > e.registration_closes_at THEN 'closed'
-                 WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= 
+                 -- > 0-Guard: max=0 heißt unbegrenzt (Befund 1, 25.08.2026)
+                 WHEN (
+                   CASE
+                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                     ELSE e.max_participants
+                   END
+                 ) > 0 AND COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer' THEN eb.id END) >=
                    CASE 
                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                      ELSE e.max_participants
                    END AND 
-                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                  ELSE 'open'
                END as registration_status
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id
+        LEFT JOIN users u_book ON eb.user_id = u_book.id
+        LEFT JOIN roles r_book ON u_book.role_id = r_book.id
         LEFT JOIN (
           SELECT event_id, SUM(max_participants) as total_capacity
           FROM event_timeslots

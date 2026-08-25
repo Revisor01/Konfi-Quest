@@ -540,6 +540,9 @@ paths:
         letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene
         Buchung (booking_status, attendance_status, Timeslot,
         waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).
+        BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die
+        Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht
+        'closed') und den Wert 'mandatory' für Pflichttermine.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -562,6 +565,11 @@ paths:
     get:
       tags: ["Termine (Konfis)"]
       summary: Eigener Anmeldestatus für ein Event
+      description: >
+        BEHOBEN 25.08.2026 (Befund 1): event_status mit > 0-Guard
+        (max_participants=0 = unbegrenzt) und 'mandatory'-Wert wie die
+        Admin-Liste; confirmed_count/waitlist_count zählen jetzt konfi-rein
+        (Teamer-Kontingent getrennt, vorher ohne Rollenfilter).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -994,6 +1002,10 @@ paths:
         entfernt sowie participants und unregistrations geleert
         (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route
         /api/konfi/events/:id/participants.
+        BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen
+        jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte
+        "Ausgebucht" melden, die Liste "Offen"); Teamer stehen getrennt in
+        teamer_count/teamer_waitlist_count.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]

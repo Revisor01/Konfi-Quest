@@ -572,6 +572,57 @@ describe('Jahrgaenge Routes', () => {
       expect(args[3]).toBe('anwesenheit');
     });
 
+    // Befund 4 (25.08.2026): Abgemeldete ('opted_out') sind KEINE ausstehenden
+    // Fälle — die Abmeldung ist eine abgeschlossene Rückmeldung. Der Nenner
+    // der Anwesenheitsliste zählte sie trotzdem mit ("1 von 2", obwohl der
+    // zweite Termin abgemeldet war). Konsistent zum Kachel-Fix 0db13f09.
+    it('type=anwesenheit: Abgemeldete zählen nicht in den Pflicht-Nenner (Befund 4)', async () => {
+      // Zwei Pflicht-Events für Jahrgang 1
+      await db.query(
+        `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [EVENTS.pflichtEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const { rows: [zweitesPflicht] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ('Zweiter Pflichttermin', NOW() - interval '3 days', $1, true, 0, 'gemeinde', 1)
+         RETURNING id`,
+        [USERS.admin1.org_id]
+      );
+      await db.query(
+        `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)`,
+        [zweitesPflicht.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // Konfi1: am ersten Pflichttermin abgemeldet, am zweiten anwesend
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, 'opted_out', $3)`,
+        [EVENTS.pflichtEvent.id, USERS.konfi1.id, USERS.konfi1.org_id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+         VALUES ($1, $2, 'confirmed', 'present', $3)`,
+        [zweitesPflicht.id, USERS.konfi1.id, USERS.konfi1.org_id]
+      );
+
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'anwesenheit' });
+
+      expect(res.status).toBe(200);
+      const rows = emailService.sendKonfiMatrixEmail.mock.calls[0][4];
+      const konfi1Row = rows.find(r => r.display_name === USERS.konfi1.display_name);
+      expect(konfi1Row).toBeDefined();
+      // 1 anwesend von 1 zählendem Pflichttermin (der abgemeldete zählt nicht)
+      expect(konfi1Row.present_count).toBe(1);
+      expect(konfi1Row.total_count).toBe(1);
+      // Konfi2 hat keine Abmeldung -> voller Nenner 2
+      const konfi2Row = rows.find(r => r.display_name === USERS.konfi2.display_name);
+      expect(konfi2Row).toBeDefined();
+      expect(konfi2Row.present_count).toBe(0);
+      expect(konfi2Row.total_count).toBe(2);
+    });
+
     it('type=sprueche -> 200 + Zeilen enthalten Name, Termin und Spruch', async () => {
       const res = await request(app)
         .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)

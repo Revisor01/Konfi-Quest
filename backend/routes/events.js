@@ -737,9 +737,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         [eventId]
       );
 
-      // Calculate correct registered_count for timeslot events
-      const registeredCount = participants.filter(p => p.status === 'confirmed').length;
-      const pendingCount = participants.filter(p => p.status === 'waitlist').length;
+      // registered_count/pending_count sind KONFI-Zahlen — dieselbe Semantik
+      // wie die Liste (events.js, bstats-LATERAL). Ohne den Rollenfilter
+      // zählte das Detail Teamer mit (Befund 2, 25.08.2026): bei einem
+      // teamer_needed-Event mit Kapazität meldete das Detail "Ausgebucht",
+      // während die Liste "Offen" zeigte. Teamer stehen getrennt in
+      // teamer_count/teamer_waitlist_count (eigenes Kontingent, Migration 120).
+      const registeredCount = participants.filter(p => p.status === 'confirmed' && p.role_name !== 'teamer').length;
+      const pendingCount = participants.filter(p => p.status === 'waitlist' && p.role_name !== 'teamer').length;
 
       // Teamer-Kontingent: eigene Zähler, getrennt vom Konfi-Kontingent
       const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'teamer').length;

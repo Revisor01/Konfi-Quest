@@ -3593,7 +3593,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3641,6 +3641,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Eigener Anmeldestatus für ein Event",
+        "description": "BEHOBEN 25.08.2026 (Befund 1): event_status mit > 0-Guard (max_participants=0 = unbegrenzt) und 'mandatory'-Wert wie die Admin-Liste; confirmed_count/waitlist_count zählen jetzt konfi-rein (Teamer-Kontingent getrennt, vorher ohne Rollenfilter).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4565,7 +4566,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
