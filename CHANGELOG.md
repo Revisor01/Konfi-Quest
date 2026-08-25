@@ -185,6 +185,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen werden jetzt getrennt von den Konfis verbucht — "Alle
+  bestätigen" fragt, für wen. Das Team bekommt dadurch seine Abzeichen für die
+  Teilnahme, aber keine Konfi-Punkte.
 - Termine, an denen nur das Team teilnimmt, blieben nach dem Termin dauerhaft
   im Reiter "Verbuchen" hängen, während die Kachel sie als abgeschlossen
   zeigte. Beide sagen jetzt dasselbe.

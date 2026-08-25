@@ -2728,8 +2728,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Hintergrund: Der fruehere "confirm-all"-Bulk befoerderte die komplette
   // Warteliste (Kapazität uebersteuert) — fachlich war mit "Alle bestaetigen"
   // aber immer das VERBUCHEN der Angemeldeten gemeint (Betreiber-Entscheid 03.07.).
+  // Sammelverbuchung. rolle = 'konfi' (Standard) oder 'teamer' — GETRENNT,
+  // nie beide auf einmal (Nutzerentscheid 25.08.2026): Teamer bekommen an
+  // Terminen Abzeichen (z.B. Freizeit-Teilnahme) und muessen deshalb verbucht
+  // werden, aber sie bekommen KEINE Konfi-Punkte. Ein gemeinsamer Durchlauf
+  // wuerde entweder Punkte falsch vergeben oder die Trennung verwischen.
+  //
+  // Abgemeldete (status <> 'confirmed') und bereits Verbuchte
+  // (attendance_status IS NOT NULL) bleiben in BEIDEN Faellen unangetastet:
+  // "Alle verbuchen" darf keine getroffene Entscheidung ueberschreiben.
   router.put('/:id/participants/attendance-all', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId } = req.params;
+    const rolle = req.body?.rolle === 'teamer' ? 'teamer' : 'konfi';
     const client = await db.getClient();
     try {
       const { rows: [event] } = await client.query(
@@ -2749,9 +2759,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
          JOIN users u ON eb.user_id = u.id
          JOIN roles r ON u.role_id = r.id
          WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-           AND eb.attendance_status IS NULL AND r.name = 'konfi'
+           AND eb.attendance_status IS NULL
+           AND (CASE WHEN $2 = 'teamer' THEN r.name = 'teamer' ELSE COALESCE(r.name, '') <> 'teamer' END)
          ORDER BY eb.created_at ASC`,
-        [eventId]
+        [eventId, rolle]
       );
 
       const awarded = []; // Konfis, die Punkte bekommen haben
@@ -2766,7 +2777,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // mit Punkten. Deaktivierter Punkt-Typ bricht den Bulk NICHT ab —
         // die Person wird verbucht, nur ohne Punkte (anders als der 400 des
         // Einzel-Handlers, der bei einem Bulk alle uebrigen blockieren wuerde).
-        if (event.points > 0 && !event.mandatory) {
+        // Punkte nur fuer Konfis. Teamer werden verbucht (fuer Abzeichen und
+        // Anwesenheit), bekommen aber keine Konfi-Punkte.
+        if (rolle === 'konfi' && event.points > 0 && !event.mandatory) {
           const { enabled: ptEnabled } = await checkPointTypeEnabled(client, b.user_id, pointType);
           if (!ptEnabled) continue;
 

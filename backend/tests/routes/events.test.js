@@ -1431,6 +1431,130 @@ describe('Events Routes', () => {
       return eventId;
     }
 
+    // Nutzerfrage 25.08.2026: "Was passiert in einem Pflichtevent mit denen,
+    // die abgemeldet sind oder schon als abwesend markiert sind? Die duerfen
+    // dann nicht auf anwesend geaendert werden, wenn 'Alle verbuchen'
+    // geklickt wird."
+    // Nutzerentscheid 25.08.2026: "Teamer bei Events werden verbucht. Gibt ja
+    // auch Badges fuer Freizeithopper. Aber Konfis und Teamer separat
+    // verbuchen, auch bei 'Alle bestaetigen'."
+    it('verbucht standardmaessig NUR Konfis, Teamer bleiben offen', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE events SET teamer_needed = true, teamer_max_participants = 5 WHERE id = $1",
+        [eventId]
+      );
+      await db.query(
+        "INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, $2, 'confirmed', 1)",
+        [USERS.teamer1.id, eventId]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const { rows } = await db.query(
+        `SELECT r.name AS rolle, eb.attendance_status
+           FROM event_bookings eb JOIN users u ON eb.user_id=u.id JOIN roles r ON u.role_id=r.id
+          WHERE eb.event_id = $1 AND eb.status = 'confirmed' ORDER BY r.name`,
+        [eventId]
+      );
+      const konfi = rows.find(r => r.rolle === 'konfi');
+      const teamer = rows.find(r => r.rolle === 'teamer');
+      expect(konfi.attendance_status).toBe('present');
+      // Verbotener Fall: Teamer im selben Durchlauf mitverbucht.
+      expect(teamer.attendance_status).toBeNull();
+    });
+
+    it('verbucht mit rolle=teamer NUR Teamer, Konfis bleiben offen', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE events SET teamer_needed = true, teamer_max_participants = 5 WHERE id = $1",
+        [eventId]
+      );
+      await db.query(
+        "INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, $2, 'confirmed', 1)",
+        [USERS.teamer1.id, eventId]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ rolle: 'teamer' });
+
+      const { rows } = await db.query(
+        `SELECT r.name AS rolle, eb.attendance_status
+           FROM event_bookings eb JOIN users u ON eb.user_id=u.id JOIN roles r ON u.role_id=r.id
+          WHERE eb.event_id = $1 AND eb.status = 'confirmed' ORDER BY r.name`,
+        [eventId]
+      );
+      expect(rows.find(r => r.rolle === 'teamer').attendance_status).toBe('present');
+      expect(rows.find(r => r.rolle === 'konfi').attendance_status).toBeNull();
+    });
+
+    it('vergibt bei rolle=teamer KEINE Konfi-Punkte', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE events SET teamer_needed = true, teamer_max_participants = 5 WHERE id = $1",
+        [eventId]
+      );
+      await db.query(
+        "INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, $2, 'confirmed', 1)",
+        [USERS.teamer1.id, eventId]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ rolle: 'teamer' });
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM event_points WHERE event_id = $1',
+        [eventId]
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('"Alle verbuchen" laesst Abgemeldete unangetastet', async () => {
+      const eventId = await setupEventWithWaitlist();
+      // konfi1 meldet sich ab (Pflichtevent-Weg setzt opted_out).
+      await db.query(
+        "UPDATE event_bookings SET status = 'opted_out', opt_out_reason = 'krank' WHERE event_id = $1 AND user_id = $2",
+        [eventId, USERS.konfi1.id]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const { rows } = await db.query(
+        'SELECT status, attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      // Verbotener Fall: aus einer Abmeldung wird "anwesend".
+      expect(rows[0].status).toBe('opted_out');
+      expect(rows[0].attendance_status).toBeNull();
+    });
+
+    it('"Alle verbuchen" ueberschreibt ein bereits gesetztes "abwesend" NICHT', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE event_bookings SET attendance_status = 'absent' WHERE event_id = $1 AND user_id = $2",
+        [eventId, USERS.konfi1.id]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const { rows } = await db.query(
+        'SELECT attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      // Verbotener Fall: eine bewusste Entscheidung wird ueberschrieben.
+      expect(rows[0].attendance_status).toBe('absent');
+    });
+
     it('verbucht Angemeldete als anwesend + vergibt Punkte, Warteliste bleibt unberuehrt', async () => {
       const eventId = await setupEventWithWaitlist();
 
