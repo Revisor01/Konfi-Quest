@@ -37,6 +37,7 @@ import {
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -263,7 +264,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   };
 
   const createDirectMessage = async (targetUser: ChatUser) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     // Check if chat already exists
     if (checkDirectChatExists(targetUser)) {
       presentDuplicateAlert({

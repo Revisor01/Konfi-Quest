@@ -18,6 +18,7 @@ import {
   chevronDown
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
+import { offlineBlockiert } from '../../utils/offlineAktion';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useOfflineQuery } from '../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../services/offlineCache';
@@ -947,7 +948,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   };
 
   const deleteMessage = (messageId: number) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Nachricht löschen?',
       message: 'Diese Nachricht unwiderruflich löschen?',
@@ -1443,7 +1444,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   };
 
   const handleLeaveChat = () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Chat verlassen',
       message: 'Chat wirklich verlassen? Du erhältst keine Nachrichten mehr aus diesem Chat.',

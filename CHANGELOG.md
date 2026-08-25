@@ -185,6 +185,25 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ohne Verbindung zeigt ein geöffneter Termin wieder seine Daten. Bisher stand
+  dort alles auf null, sobald man einen Termin antippte, den man vorher noch
+  nicht einzeln geöffnet hatte.
+- Aktivitäten melden geht jetzt auch ohne Verbindung: Die Auswahlliste kommt
+  aus dem Zwischenspeicher, die Meldung wird nachgesendet.
+- Die Tageslosung ist für Konfis auch ohne Verbindung da — wie bei
+  Teamer:innen schon vorher.
+- Aktionen, die wirklich eine Verbindung brauchen, sagen das jetzt. Bisher
+  passierte beim Antippen einfach nichts.
+
+- Termine ohne Teilnehmergrenze und ohne Warteliste galten für Konfis
+  fälschlich als geschlossen — der Anmelden-Knopf fehlte, obwohl die Anmeldung
+  offen war.
+- Die Termin-Detailansicht zählte angemeldete Teamer:innen zu den
+  Konfi-Plätzen; dadurch konnte sie "Ausgebucht" melden, während die Liste
+  denselben Termin als offen zeigte.
+- Anwesenheitsmatrix und Anwesenheitsliste zeigen Abgemeldete jetzt mit einem
+  eigenen Zeichen statt als "ausstehend", und abgemeldete Termine zählen nicht
+  mehr in die Pflicht-Summe.
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.

@@ -45,6 +45,8 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 
 interface Activity {
   id: number;
@@ -68,11 +70,9 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError, isOnline, user } = useApp();
   const [presentAlert] = useIonAlert();
 
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
   const { isSubmitting, guard } = useActionGuard();
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -85,22 +85,17 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
 
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
-  const loadActivities = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/teamer/activities');
-      setActivities(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Aktivitäten');
- console.error('Error loading activities:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Aktivitaeten aus dem Cache statt per Direkt-Abruf: Der VERSAND einer
+  // Meldung ist laengst queue-faehig, aber die Auswahlliste lud per
+  // api.get — offline blieb sie leer und das Formular damit nutzlos
+  // (Offline-Audit 25.08.2026). Aktivitaeten sind Stammdaten und aendern
+  // sich selten, daher STAMMDATEN-TTL.
+  const { data: activitiesData, loading } = useOfflineQuery<Activity[]>(
+    'teamer:activities:' + user?.organization_id,
+    () => api.get('/teamer/activities').then(r => r.data),
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+  const activities = activitiesData || [];
 
   const handlePhotoSelect = () => {
     const input = document.createElement('input');

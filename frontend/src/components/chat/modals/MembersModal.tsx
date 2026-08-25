@@ -38,6 +38,7 @@ import {
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { ChatUser } from '../../../types/user';
@@ -228,7 +229,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const confirmRemoveUser = (participant: Participant) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentRemoveAlert({
       header: 'Mitglied entfernen',
       message: `${participant.name} wirklich aus dem Chat entfernen?`,

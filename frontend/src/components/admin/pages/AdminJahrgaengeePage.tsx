@@ -43,6 +43,7 @@ import {
   people
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -479,7 +480,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   };
 
   const handleDeleteWithSlideClose = async (jahrgang: Jahrgang, forceDelete = false) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     const performDelete = async () => {
       const slidingElement = slidingRefs.current.get(jahrgang.id);
       try {

@@ -2802,6 +2802,12 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .attendance-matrix__dot--open {
   color: #9ca3af;
 }
+/* Abgemeldet (Befund 4, 25.08.2026): eigener Status statt "ausstehend".
+   Dunkles Grau + gefuelltes Icon, damit die Zelle klar von "Offen"
+   (helles Outline-Grau) und "Fehlt" (rot) unterscheidbar ist. */
+.attendance-matrix__dot--opted_out {
+  color: #6b7280;
+}
 .attendance-matrix__legend {
   display: flex;
   flex-wrap: wrap;

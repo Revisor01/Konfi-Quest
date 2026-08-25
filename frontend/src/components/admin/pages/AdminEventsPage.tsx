@@ -26,6 +26,7 @@ import { useLocation } from 'react-router-dom';
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -253,7 +254,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleDeleteEvent = async (event: Event) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     // Check if this is part of a series
     if (event.is_series && event.series_id) {
       // Get other events in the series
@@ -400,7 +401,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleCancelEvent = async (event: Event) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     const eventDate = new Date(event.event_date).toLocaleDateString('de-DE', {
       weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
     });

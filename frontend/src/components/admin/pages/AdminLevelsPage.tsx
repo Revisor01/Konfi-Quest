@@ -24,6 +24,7 @@ import {
   arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -92,7 +93,7 @@ const AdminLevelsPage: React.FC = () => {
   };
 
   const handleDelete = (level: Level) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Level löschen',
       message: `Level "${level.title}" wirklich löschen?`,

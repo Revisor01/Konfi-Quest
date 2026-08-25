@@ -90,6 +90,7 @@ import {
   chevronDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -402,7 +403,7 @@ const AdminCertificatesPage: React.FC = () => {
   };
 
   const handleDelete = async (certType: CertificateType) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Zertifikat löschen',
       message: `"${certType.name}" wirklich löschen?`,

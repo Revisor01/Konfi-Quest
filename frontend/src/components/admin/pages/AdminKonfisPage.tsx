@@ -17,6 +17,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { add, checkboxOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -161,7 +162,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   useLiveRefresh('konfis', refreshAll);
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Konfi wirklich löschen?',
       message: `"${konfi.name}" wird unwiderruflich gelöscht.\n\nDabei gehen alle Punkte, Abzeichen, Aktivitäten und Chat-Nachrichten dieses Konfis dauerhaft verloren. Das lässt sich nicht rückgängig machen.`,
@@ -186,7 +187,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Gibt ein Promise zurück, das erst nach abgeschlossenem Delete (oder Abbruch)
   // resolved — so kann KonfisView danach die lokale Teamer-Liste neu laden.
   const handleDeleteTeamer = (teamer: any): Promise<void> => {
-    if (!isOnline) return Promise.resolve();
+    if (offlineBlockiert(isOnline, setError)) return Promise.resolve();
     return new Promise<void>((resolve) => {
       presentAlert({
         header: 'Teamer:in löschen',

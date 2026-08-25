@@ -37,6 +37,7 @@ import {
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -127,7 +128,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   }, [jahrgaenge, existingInvites, initialQrShown, selectedJahrgang]);
 
   const generateInviteCode = async () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     if (!selectedJahrgang) {
       setError('Bitte wähle einen Jahrgang aus');
       return;
@@ -163,7 +164,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const extendInvite = async (inviteId: number) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     try {
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
@@ -176,7 +177,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const deleteInvite = (invite: ExistingInvite) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Code löschen',
       message: `Einladungscode "${invite.invite_code}" wirklich löschen?`,

@@ -20,6 +20,7 @@ import {
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
@@ -328,7 +329,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handlePasswordAction = () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Einmalpasswort generieren',
       message: 'Es wird ein neues temporäres Passwort erstellt. Das aktuelle Passwort wird überschrieben.',
@@ -345,7 +346,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Aktivität löschen',
       message: `Aktivität "${activity.name}" wirklich löschen?`,
@@ -369,7 +370,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handleDeleteBonus = async (bonus: any) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Bonuspunkte löschen',
       message: `Bonuspunkte "${bonus.description}" wirklich löschen?`,
@@ -442,7 +443,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handleAssignCertificate = () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
 
     if (availableTypes.length === 0) {
       setError('Keine verfügbaren Zertifikat-Typen mehr');
@@ -453,7 +454,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handleDeleteCertificate = (cert: { id: number; name: string }) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Zertifikat entfernen',
       message: `"${cert.name}" wirklich entfernen?`,
@@ -476,7 +477,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   const handlePromoteToTeamer = async () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     if (!currentKonfi) return;
     presentAlert({
       header: 'Zur Teamer:in befördern',

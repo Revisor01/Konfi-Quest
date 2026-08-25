@@ -43,6 +43,8 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 
 interface DashboardData {
   konfi: {
@@ -294,42 +296,46 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     dataRef: badgePopoverRef
   });
 
-  // Load Tageslosung directly from backend
+  // Tageslosung aus dem Cache statt per Direkt-Abruf: Sie wechselt einmal am
+  // Tag, war offline aber gar nicht da — die Teamer-Startseite cachte sie
+  // laengst mit 24-Std-TTL, die Konfi-Seite nicht (Offline-Audit 25.08.2026).
+  //
+  // enabled folgt dem Schalter: Ist die Losung abgeschaltet, wird sie gar
+  // nicht erst abgerufen (Nutzerwunsch 23.08.2026) — der Server lehnt sie
+  // zusaetzlich mit 204 ab.
+  const losungAktiv = dashboardConfig?.show_losung !== false;
+  const { data: gecachteLosung, loading: losungLaedt } = useOfflineQuery<DailyVerse | null>(
+    'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
+    async () => {
+      const response = await api.get('/konfi/tageslosung');
+      if (response.data && response.data.success) {
+        const { losung, lehrtext } = response.data.data;
+        return {
+          losungstext: losung?.text,
+          losungsvers: losung?.reference,
+          lehrtext: lehrtext?.text,
+          lehrtextvers: lehrtext?.reference,
+          translation: response.data.translation
+        };
+      }
+      return null;
+    },
+    { ttl: CACHE_TTL.TAGESLOSUNG, enabled: losungAktiv }
+  );
+
   useEffect(() => {
-    if (dashboardConfig?.show_losung === false) {
+    if (!losungAktiv) {
       setLoadingVerse(false);
       setActualDailyVerse(null);
       return;
     }
     setShowLosung(Math.random() > 0.5);
-
-    const loadTageslosung = async () => {
-      try {
-        const response = await api.get('/konfi/tageslosung');
-        if (response.data && response.data.success) {
-          const { losung, lehrtext } = response.data.data;
-          const translation = response.data.translation;
-          setActualDailyVerse({
-            losungstext: losung?.text,
-            losungsvers: losung?.reference,
-            lehrtext: lehrtext?.text,
-            lehrtextvers: lehrtext?.reference,
-            translation
-          });
-          if (translation) setSelectedTranslation(translation);
-        } else {
- console.error('Invalid response from backend:', response.data);
-          setActualDailyVerse(null);
-        }
-      } catch (error: unknown) {
- console.error('Failed to load Tageslosung from backend:', error);
-        setActualDailyVerse(null);
-      } finally {
-        setLoadingVerse(false);
-      }
-    };
-    loadTageslosung();
-  }, [dashboardConfig?.show_losung]);
+    setLoadingVerse(losungLaedt);
+    if (gecachteLosung !== null && gecachteLosung !== undefined) {
+      setActualDailyVerse(gecachteLosung);
+      if (gecachteLosung.translation) setSelectedTranslation(gecachteLosung.translation);
+    }
+  }, [losungAktiv, gecachteLosung, losungLaedt]);
 
   const gottesdienstPoints = dashboardData.konfi.gottesdienst_points || 0;
   const gemeindePoints = dashboardData.konfi.gemeinde_points || 0;

@@ -36,6 +36,7 @@ import {
   pricetagOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -252,7 +253,7 @@ const AdminCategoriesPage: React.FC = () => {
   };
 
   const handleDelete = async (category: Category) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Kategorie löschen',
       message: `Kategorie "${category.name}" wirklich löschen?`,
