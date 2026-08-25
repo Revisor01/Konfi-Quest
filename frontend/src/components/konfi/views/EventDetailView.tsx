@@ -83,14 +83,23 @@ interface Participant {
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError, isOnline, user } = useApp();
   const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
   // Event-Daten über useOfflineQuery mit 10min TTL Cache
+  // DERSELBE Cache-Schluessel wie die Terminliste (KonfiEventsPage.tsx:92) —
+  // beide laden dieselbe vollstaendige Liste von /konfi/events.
+  //
+  // Vorher stand hier `konfi:event-detail:${eventId}`, also ein eigener Eintrag
+  // PRO TERMIN. Offline fand die Detailseite deshalb nichts, sobald man einen
+  // Termin oeffnete, den man nicht vorher schon einmal einzeln angetippt hatte:
+  // allEvents blieb leer, eventData wurde null, und die Seite zeigte ueberall
+  // Nullen (Nutzerhinweis 25.08.2026: "ich sehe die Liste der Events, aber
+  // wenn ich in ein Event klicke ist alles 0 und rot").
   const { data: allEvents, loading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
-    `konfi:event-detail:${eventId}`,
+    'konfi:events:' + user?.id,
     () => api.get('/konfi/events').then(r => r.data),
     { ttl: 10 * 60 * 1000 }
   );
@@ -225,6 +234,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   useEffect(() => {
     if (!eventData) return;
     const loadDetails = async () => {
+      // Ohne Verbindung gar nicht erst anfragen: Der Abruf schluege fehl und
+      // wuerde die vorhandenen Werte auf leer setzen. Zeitfenster und
+      // Teilnehmerliste behalten stattdessen ihren letzten Stand
+      // (Nutzerhinweis 25.08.2026).
+      if (!networkMonitor.isOnline) return;
       setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
