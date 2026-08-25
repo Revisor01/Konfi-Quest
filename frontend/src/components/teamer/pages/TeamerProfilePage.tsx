@@ -62,6 +62,8 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { networkMonitor } from '../../../services/networkMonitor';
+import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
 interface TeamerProfile {
   user: {
@@ -181,6 +183,7 @@ const TeamerProfilePage: React.FC = () => {
   // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays).
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
 
   React.useEffect(() => {
     if (!user?.id) return;
@@ -355,6 +358,14 @@ const TeamerProfilePage: React.FC = () => {
         </div>
         <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
       </div>
+
+      {/* Zweiter Banner: Mitmachen-Tab. Dauerhaft erreichbar (kein X) — der
+          Hinweis stand frueher IM Mitmachen-Tab und wurde dort entfernt
+          (589802b8), mit dem Vermerk, dass er hier zurueckkehrt. */}
+      <MitmachenHinweisKarte
+        style={{ margin: '16px' }}
+        onOpen={() => setShowMitmachenErklaerung(true)}
+      />
 
         {/* B. Konto-Einstellungen */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -665,6 +676,13 @@ const TeamerProfilePage: React.FC = () => {
 
       {showUpdateWalkthrough && (
         <TeamerUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="teamer"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
       )}
     </IonPage>
   );

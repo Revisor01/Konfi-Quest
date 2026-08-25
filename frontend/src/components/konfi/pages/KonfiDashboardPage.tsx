@@ -18,6 +18,8 @@ import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
+import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -249,9 +251,11 @@ const KonfiDashboardPage: React.FC = () => {
   // die Karte oder dauerhaft über "Was ist neu?" im Profil.
   const {
     showOnboarding, closeOnboarding,
-    showUpdateHinweis, markUpdateHinweisGesehen
+    showUpdateHinweis, markUpdateHinweisGesehen,
+    showMitmachenHinweis, markMitmachenHinweisGesehen
   } = useOnboardingWithUpdateOnce('konfi_onboarding_seen', user?.id);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
 
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
@@ -370,6 +374,16 @@ const KonfiDashboardPage: React.FC = () => {
           />
         )}
 
+        {/* Zweite Karte: Hinweis auf den Mitmachen-Tab. Unabhaengig von der
+            ersten, eigenes X, eigenes Flag (Nutzerwunsch 25.08.2026). */}
+        {showMitmachenHinweis && (
+          <MitmachenHinweisKarte
+            style={{ margin: '8px 16px 16px' }}
+            onOpen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+            onDismiss={markMitmachenHinweisGesehen}
+          />
+        )}
+
         {dashboardData.has_wrapped && (
           <div onClick={openWrapped} style={{
             margin: '0 16px 16px',
@@ -420,6 +434,13 @@ const KonfiDashboardPage: React.FC = () => {
       {showUpdateWalkthrough && (
         <KonfiUpdateWalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
+        />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="konfi"
+          onClose={() => setShowMitmachenErklaerung(false)}
         />
       )}
     </IonPage>

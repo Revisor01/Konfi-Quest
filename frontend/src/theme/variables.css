@@ -2941,6 +2941,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   box-shadow: 0 4px 14px rgba(var(--app-color-challenges-rgb), 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+/* Gruene Variante desselben Banners: Hinweis auf den Mitmachen-Tab
+   (Events und Aktivitaeten). Gleiche Form, andere Farbe — damit die beiden
+   Hinweise nebeneinander unterscheidbar bleiben (Nutzerwunsch 25.08.2026).
+   Farbe aus dem Bereichs-Token --app-color-activities (#047857). */
+.app-whatsnew--mitmachen {
+  background: linear-gradient(135deg, #10b981 0%, var(--app-color-activities) 60%, #065f46 100%);
+}
+
 .app-whatsnew:active {
   transform: scale(0.985);
   box-shadow: 0 2px 8px rgba(var(--app-color-challenges-rgb), 0.22);

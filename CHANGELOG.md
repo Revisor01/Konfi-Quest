@@ -180,6 +180,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- In der Terminliste stimmt die Zahl der angemeldeten Konfis wieder. Angemeldete
+  Teamer:innen wurden versehentlich doppelt abgezogen — aus 19 Konfis wurden so
+  15. Betraf alle drei Ansichten.
+- Der Hinweis auf den Mitmachen-Tab ist zurück: Auf der Startseite steht er als
+  zweite Karte neben "Was ist neu" und lässt sich einzeln wegklicken, unter
+  "Mehr" bleibt er dauerhaft stehen. Ein Tipp darauf erklärt in drei Schritten,
+  wie Events und Aktivitäten zusammenspielen.
 - Eingereichte Musik-Links sehen besser aus: Titel, Interpret und Album stehen
   jetzt untereinander statt in einer Zeile, die auf dem Handy abgeschnitten
   wurde. Bei Apple Music kommt das Album dazu, und bei YouTube Music steht

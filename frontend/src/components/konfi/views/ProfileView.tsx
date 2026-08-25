@@ -55,6 +55,8 @@ import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
+import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
 interface KonfiProfile {
   id: number;
@@ -350,6 +352,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   // "Was ist neu?" — derselbe Update-Walkthrough, den Bestandsnutzer einmalig
   // nach dem Update sehen. Hier jederzeit erneut aufrufbar.
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
 
   // Modal with useIonModal Hook for Bible Translation
   const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
@@ -691,6 +694,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
       </div>
 
+      {/* Zweiter Banner: Mitmachen-Tab. Dauerhaft erreichbar (kein X) — der
+          Hinweis stand frueher IM Mitmachen-Tab und wurde dort entfernt
+          (589802b8), mit dem Vermerk, dass er hier zurueckkehrt. */}
+      <MitmachenHinweisKarte
+        style={{ margin: '16px' }}
+        onOpen={() => setShowMitmachenErklaerung(true)}
+      />
+
       {/* Konto-Einstellungen - iOS26 Pattern wie Admin */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -901,6 +912,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <KonfiUpdateWalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
           displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="konfi"
+          onClose={() => setShowMitmachenErklaerung(false)}
         />
       )}
     </div>

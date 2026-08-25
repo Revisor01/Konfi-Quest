@@ -45,6 +45,8 @@ import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
+import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
 
@@ -244,9 +246,11 @@ const TeamerDashboardPage: React.FC = () => {
   // über die Karte oder dauerhaft über "Was ist neu?" im Profil.
   const {
     showOnboarding, closeOnboarding,
-    showUpdateHinweis, markUpdateHinweisGesehen
+    showUpdateHinweis, markUpdateHinweisGesehen,
+    showMitmachenHinweis, markMitmachenHinweisGesehen
   } = useOnboardingWithUpdateOnce('teamer_onboarding_seen', user?.id);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
@@ -530,6 +534,16 @@ const TeamerDashboardPage: React.FC = () => {
             style={{ margin: '8px 16px 0' }}
             onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
             onDismiss={markUpdateHinweisGesehen}
+          />
+        )}
+
+        {/* Zweite Karte: Hinweis auf den Mitmachen-Tab. Unabhaengig von der
+            ersten, eigenes X, eigenes Flag (Nutzerwunsch 25.08.2026). */}
+        {showMitmachenHinweis && (
+          <MitmachenHinweisKarte
+            style={{ margin: '8px 16px 16px' }}
+            onOpen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+            onDismiss={markMitmachenHinweisGesehen}
           />
         )}
 
@@ -1177,6 +1191,13 @@ const TeamerDashboardPage: React.FC = () => {
       {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
         <TeamerUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="teamer"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
       )}
     </IonPage>
   );

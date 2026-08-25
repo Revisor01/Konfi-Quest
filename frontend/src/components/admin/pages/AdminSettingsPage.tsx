@@ -47,6 +47,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
+import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -59,6 +61,7 @@ const AdminSettingsPage: React.FC = () => {
   // keine Modals — identisch zum automatischen Ablauf beim ersten Start).
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -231,6 +234,12 @@ const AdminSettingsPage: React.FC = () => {
           </div>
           <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
         </div>
+
+        {/* Zweiter Banner: Mitmachen-Tab. Dauerhaft erreichbar (kein X). */}
+        <MitmachenHinweisKarte
+          style={{ margin: '16px' }}
+          onOpen={() => setShowMitmachenErklaerung(true)}
+        />
 
         {/* Konto */}
         <IonList inset={true} className="app-segment-wrapper">
@@ -535,6 +544,13 @@ const AdminSettingsPage: React.FC = () => {
 
       {showUpdateWalkthrough && (
         <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="admin"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
       )}
     </IonPage>
   );

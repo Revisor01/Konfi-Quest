@@ -8,6 +8,13 @@ import { Preferences } from '@capacitor/preferences';
 // steuert Karte UND Walkthrough — es gibt bewusst nur EIN Erinnerungssystem.
 export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
 
+// Flag des Mitmachen-Hinweises. EIGENES Flag, nicht an den Update-Hinweis
+// gekoppelt: Beide Karten stehen nebeneinander auf der Startseite und werden
+// einzeln weggeklickt (Nutzerwunsch 25.08.2026). Der Hinweis selbst stand
+// frueher als gruener Kasten IM Mitmachen-Tab und wurde dort entfernt
+// (589802b8) — er gehoert auf die Startseite und dauerhaft ins Profil.
+export const MITMACHEN_HINWEIS_KEY = 'mitmachen_hinweis_2_0_gesehen';
+
 // Zeigt eine Onboarding-Tour EINMAL pro Account (geraetelokal via Preferences).
 // `keyPrefix` trennt die Rollen (z.B. 'admin_onboarding_seen'), `userId` macht
 // den Marker accountspezifisch. Rueckgabe: [show, close] — `show` rendert das
@@ -40,6 +47,10 @@ export interface OnboardingWithUpdate {
   // Markiert den Hinweis dauerhaft als gesehen (X gedrückt ODER Walkthrough
   // über die Karte geöffnet) und blendet die Karte aus.
   markUpdateHinweisGesehen: () => void;
+  // Zweite Karte: Hinweis auf den Mitmachen-Tab (Events + Aktivitäten).
+  // Unabhaengig vom Update-Hinweis, eigenes Flag, eigenes X.
+  showMitmachenHinweis: boolean;
+  markMitmachenHinweisGesehen: () => void;
 }
 
 // Entscheidet in EINEM Ablauf, ob die normale Onboarding-Tour oder die
@@ -66,26 +77,31 @@ export function useOnboardingWithUpdateOnce(
 ): OnboardingWithUpdate {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showUpdateHinweis, setShowUpdateHinweis] = useState(false);
+  const [showMitmachenHinweis, setShowMitmachenHinweis] = useState(false);
   const onboardingKey = `${onboardingKeyPrefix}_${userId ?? 'x'}`;
   const updateKey = `${UPDATE_WALKTHROUGH_KEY}_${userId ?? 'x'}`;
+  const mitmachenKey = `${MITMACHEN_HINWEIS_KEY}_${userId ?? 'x'}`;
 
   useIonViewDidEnter(() => {
     if (userId === undefined || userId === null) return;
     Promise.all([
       Preferences.get({ key: onboardingKey }),
-      Preferences.get({ key: updateKey })
-    ]).then(([onboarding, update]) => {
+      Preferences.get({ key: updateKey }),
+      Preferences.get({ key: mitmachenKey })
+    ]).then(([onboarding, update, mitmachen]) => {
       if (!onboarding.value) {
+        // Frischer Account: die Tour erklaert beides, keine Karten noetig.
         Preferences.set({ key: onboardingKey, value: '1' });
         Preferences.set({ key: updateKey, value: '1' });
+        Preferences.set({ key: mitmachenKey, value: '1' });
         setTimeout(() => setShowOnboarding(true), 400);
         return;
       }
-      if (!update.value) {
-        // Karte zeigen, Flag NICHT setzen — erst eine bewusste Aktion
-        // (X oder Öffnen) markiert den Hinweis als gesehen.
-        setShowUpdateHinweis(true);
-      }
+      // Bestandsnutzer: beide Karten unabhaengig voneinander zeigen. Flags
+      // werden NICHT gesetzt — erst eine bewusste Aktion (X oder Öffnen)
+      // markiert den jeweiligen Hinweis als gesehen.
+      if (!update.value) setShowUpdateHinweis(true);
+      if (!mitmachen.value) setShowMitmachenHinweis(true);
     }).catch(() => { /* Preferences nicht verfuegbar -> Hinweise ueberspringen */ });
   });
 
@@ -96,6 +112,12 @@ export function useOnboardingWithUpdateOnce(
     markUpdateHinweisGesehen: () => {
       setShowUpdateHinweis(false);
       Preferences.set({ key: updateKey, value: '1' })
+        .catch(() => { /* Preferences nicht verfuegbar -> beim naechsten Start erneut */ });
+    },
+    showMitmachenHinweis,
+    markMitmachenHinweisGesehen: () => {
+      setShowMitmachenHinweis(false);
+      Preferences.set({ key: mitmachenKey, value: '1' })
         .catch(() => { /* Preferences nicht verfuegbar -> beim naechsten Start erneut */ });
     }
   };
