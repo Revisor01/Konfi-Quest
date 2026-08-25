@@ -211,9 +211,14 @@ Erledigten.
       - *3 `mandatory_event_count`-Abzeichen mit Schwellen, die die Daten nicht
         hergeben (Org 4: Schwelle 5 bei 3 Pflichtterminen).*
       - *Verwaiste Zeilen: keine (drei Gegenproben, alle null).*
-      *Offen: die sechs kaputten Datensätze geradeziehen — braucht Simons
-      Entscheidung, welcher Name jeweils richtig ist. Der Umbau von Namen auf
-      IDs ist ein größerer Eingriff und gehört nach 2.0.0.)*
+      *Datensätze am 25.08. in Produktion geradegezogen (eine Transaktion,
+      Org 1): Abzeichen 36 auf "Seniorinnen" umgestellt; Kategorie "Jugend"
+      (Typ both, id 36) angelegt und Abzeichen 35 bleibt aktiv; 40/41/43/50
+      deaktiviert. Gegengeprüft: niemand erfüllt Abzeichen 36 bereits, es
+      wurde also nichts rückwirkend vergeben.*
+      **Noch offen:** Kategorie "Jugend" hat 0 Aktivitäten und 0 Termine —
+      Abzeichen 35 bleibt unerreichbar, bis in der App Aktivitäten zugeordnet
+      sind. Der Umbau von Namen auf IDs gehört nach 2.0.0.)*
 - [x] **API-Doku** — 98 Pfade zeigten auf falsche Adressen (fehlendes
       `/api`-Praefix), behoben und gegen die echte API geprueft. Alle 238
       Routen dokumentiert, keine tote, 243 Berechtigungen maschinell gegen
