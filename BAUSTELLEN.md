@@ -401,9 +401,11 @@ committet und muss noch deployt werden — erst danach abhaken.
       das war die Wurzel der drei Fehler des Tages.
 - [x] **Getrennte Sammelverbuchung** Konfis/Teamer (`eaac09e5`). Abgemeldete
       und bereits Verbuchte bleiben unangetastet (getestet, Gegenprobe).
-- [ ] **Verbuchen-Kennzeichen bleibt bei offenen Teamern** — gebaut, Tests
-      grün, aber beim Sitzungsende noch NICHT committet. Erste Handlung der
-      Folgesitzung: `git status` prüfen, Testlauf wiederholen, committen.
+- [x] **Verbuchen-Kennzeichen bleibt bei offenen Teamern** (`90592c5b`).
+      Korrigiert einen eigenen Fehler: Beim Beheben von Befund 3 war
+      `unprocessed_count` konfi-rein gemacht worden — dadurch verschwand ein
+      Termin aus dem Verbuchen-Reiter, sobald alle Konfis verbucht waren.
+      Jetzt: verbucht wird nach Rolle, gezählt wird gemeinsam.
 
 ## Zielgerade 2.0.0 (Reihenfolge)
 

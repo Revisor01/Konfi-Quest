@@ -16,11 +16,8 @@ vermerkt).
 
 ## ZUERST: zwei Dinge prüfen
 
-1. **`git status`** — beim Sitzungsende war die Arbeit am Verbuchen-Kennzeichen
-   (`backend/routes/events.js`, `backend/services/backgroundService.js`,
-   `backend/tests/routes/events.test.js`) fertig und getestet, aber NICHT
-   committet. Der Testlauf hing beim Abbruch. Also: Testlauf wiederholen
-   (`cd backend && npm run test:ci`), dann committen.
+1. ~~Uncommittete Arbeit~~ — erledigt: Verbuchen-Kennzeichen committet
+   (`90592c5b`), Arbeitsverzeichnis sauber, alles gepusht.
 2. **Produktion lief auf `6721eec`** — alles seit heute Mittag ist NICHT
    ausgerollt. Der Auto-Deploy ist seit 21.08. absichtlich pausiert
    (`if: false` in ci.yml). Von Hand deployen, mit Backup vorher.
@@ -111,5 +108,4 @@ Vollständig in `BAUSTELLEN.md` unter "Erledigt am 25.08.".
 - **Demo-Gemeinde (Org 4):** Passwort überall `KonfiDemo2026!`.
   **Nicht anfassen:** `review-*` und `google-test-*`.
 - **Org 1 ist Simons ECHTE Gemeinde** — dort nichts zum Testen anlegen.
-  Ausnahme: Test-Challenge id 17 ("TEST – Wo entdeckst du Gott?") liegt dort
-  ohne Jahrgang-Zuweisung, sieht also kein Konfi. Auf Zuruf löschen.
+  (Die Test-Challenge id 17 wurde am 25.08. gelöscht, 0 Beiträge.)
