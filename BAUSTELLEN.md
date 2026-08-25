@@ -228,7 +228,13 @@ Erledigten.
       wurde also nichts rückwirkend vergeben.*
       **Noch offen:** Kategorie "Jugend" hat 0 Aktivitäten und 0 Termine —
       Abzeichen 35 bleibt unerreichbar, bis in der App Aktivitäten zugeordnet
-      sind. Der Umbau von Namen auf IDs gehört nach 2.0.0.)*
+      sind. Der Umbau von Namen auf IDs gehört nach 2.0.0.
+      **Erledigt am 26.08.:** Abzeichen 35 ist deaktiviert — die Kategorie
+      "Jugend" hat weiterhin 0 Aktivitäten und 0 Termine, das Ziel war also
+      unerreichbar. Gegengeprüft: 0 Vergaben in `user_badges`, es wurde
+      niemandem etwas weggenommen. Welche Aktivitäten zu "Jugend" gehören,
+      ist eine inhaltliche Entscheidung — sobald sie zugeordnet sind, kann
+      das Abzeichen in der App wieder aktiviert werden.)*
 - [x] **API-Doku** — 98 Pfade zeigten auf falsche Adressen (fehlendes
       `/api`-Praefix), behoben und gegen die echte API geprueft. Alle 238
       Routen dokumentiert, keine tote, 243 Berechtigungen maschinell gegen
