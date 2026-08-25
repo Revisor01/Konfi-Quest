@@ -11874,11 +11874,12 @@
                   },
                   "criteria_value": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1,
+                    "description": "Seit 24.08.2026 min. 1 — Wert 0 löste jedes Zähl-Kriterium sofort für alle aus"
                   },
                   "criteria_extra": {
                     "type": "object",
-                    "description": "Zusatzparameter je Kriterientyp, wird als JSON gespeichert"
+                    "description": "Zusatzparameter je Kriterientyp, wird als JSON gespeichert. Pflicht je nach Typ: specific_activity -> required_activity_name, activity_combination -> required_activities (nicht leer), category_activities -> required_category, time_based -> days oder weeks (seit 24.08.2026 validiert; vorher entstanden still unerreichbare Abzeichen)"
                   },
                   "is_hidden": {
                     "type": "boolean",
@@ -11906,7 +11907,7 @@
             "description": "{ id, message }; Live-Update an Org-Admins UND Org-Konfis"
           },
           "400": {
-            "description": "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 0)"
+            "description": "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 1, fehlende Auswahl in criteria_extra je nach criteria_type)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -12022,10 +12023,12 @@
                     "type": "string"
                   },
                   "criteria_value": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                   },
                   "criteria_extra": {
-                    "type": "object"
+                    "type": "object",
+                    "description": "Pflichtauswahl je nach criteria_type, wie beim POST"
                   },
                   "is_active": {
                     "type": "boolean",
@@ -12073,7 +12076,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE id = :id AND organization_id = req.user.organization_id",
-          "hinweis": "S4: target_role wird vom UPDATE nicht erfasst und bleibt beim Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt — ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still. criteria_value wird hier (anders als beim POST) nicht auf >= 0 geprüft.\n"
+          "hinweis": "S4: target_role wird vom UPDATE nicht erfasst und bleibt beim Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt — ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still. criteria_value wurde hier (anders als beim POST) lange gar nicht geprüft — ohne Wert wurde NULL gespeichert und das Abzeichen ging an alle. Behoben 24.08.2026: jetzt wie beim POST >= 1 plus Pflichtauswahl in criteria_extra.\n"
         }
       },
       "delete": {
