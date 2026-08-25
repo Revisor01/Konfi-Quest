@@ -4,7 +4,8 @@ Stand: 24.08.2026, abends. Eine Liste, damit nichts doppelt läuft und nichts
 untergeht. **Erledigtes wird nicht gelöscht, sondern abgehakt** — sonst weiß
 später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 
-Live: `7561d33` · Version 2.0.0 (unveröffentlicht) · iOS-Build 140 im TestFlight
+Live: `90592c5` (ausgerollt 25.08. abends) · Version 2.0.0 (unveröffentlicht) ·
+iOS-Build 143 gebaut, 142 und 140 im TestFlight
 
 ## Wie hier gearbeitet wird
 
@@ -365,10 +366,17 @@ Erledigten.
 
 ---
 
-## Erledigt am 25.08. (committet, NICHT ausgerollt)
+## Erledigt am 25.08. (ausgerollt am selben Abend)
 
-Produktion lief bei Redaktionsschluss auf `6721eec`. Alles Folgende ist
-committet und muss noch deployt werden — erst danach abhaken.
+Alles Folgende ist am 25.08. abends als `90592c5` ausgerollt worden, mit
+Sicherung vorher (`/opt/Konfi-Quest/dump/pre-90592c5-20260825-2151.sql`,
+2,2 MB). Migration 128 ist angewandt (`schema_migrations`, 21:51 Uhr), die
+View `event_booking_stats` existiert.
+
+**Nachgemessen in Produktion:** Die Konfi-Fahrt (Termin 105, Organisation 1)
+zeigt 19 Konfis, 4 Teamer:innen und 2 Abmeldungen — genau wie gefordert.
+Gegenprobe in der Demo-Gemeinde über sechs Termine: Liste, Detail und die
+View nennen überall dieselben Zahlen (2/5/7/7/12/7).
 
 - [x] **Live-Aktualisierung** — Dedupe-Regression behoben (`8fc097ce`),
       fehlende Empfänger in allen drei Bäumen nachgerüstet, vier hart auf
@@ -419,7 +427,33 @@ committet und muss noch deployt werden — erst danach abhaken.
 
 ## Vor dem Release 2.0.0
 
-- [ ] Bildschirmfotos aus Organisation 4 (als Skript, damit sie nicht veralten)
-- [ ] Store-Texte — 157 Changelog-Einträge sind für Nutzer:innen zu viel
-- [ ] Version setzen, Git-Tag, GitHub-Release (Tag ohne `v`-Präfix)
-- [ ] Neuer Build mit dem Multi-Org-Push (Build 140 hat ihn noch nicht)
+- [x] **Bildschirmfotos aus Organisation 4** — als Skript
+      (`scripts/screenshots.mjs`, `e27413a5`), 19 Aufnahmen über alle drei
+      Rollen. Aufruf `node scripts/screenshots.mjs`, wahlweise `--rolle`,
+      `--geraet`, `--url`. Läuft gegen die Produktion mit den Demo-Konten.
+- [x] **Store-Texte** — `docs/store-texte-2.0.0.md` (`e27413a5`): iOS 1828
+      Zeichen, Android 467 von 500. Nachgezählt, keine Emojis, echte Umlaute.
+- [x] **Handbuch mit Bildschirmfotos** — 16 Abbildungen in den drei
+      Rollenkapiteln (`4a31627c`). Der Generator kann jetzt Bilder; fehlt eine
+      Datei, bricht der Build ab (Gegenprobe: Exit 1 mit Dateinamen).
+- [x] **Handbuch: QR-Einladung und QR-Check-in** beschrieben, Querverweise
+      zwischen den Kapiteln ergänzt (`e6867f01`). Dabei zwei falsche Angaben
+      gegen den Code korrigiert.
+- [x] **iOS-Build 143** ausgelöst (`4d49a7c1`), CI und CodeQL vorher grün.
+- [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
+      Test, zusammen mit dem Datum im CHANGELOG.
+
+### Nebenbefunde vom 25.08. abends (nicht behoben, bewusst notiert)
+
+- [ ] **Teamer:innen sehen den Termin-QR-Code nicht.** `QRDisplayModal` ist
+      nur in `admin/views/EventDetailView.tsx` eingebunden; das Backend
+      erlaubt den Abruf per `requireTeamer` durchaus. Sind bei einem Termin
+      nur Teamer:innen vor Ort, kommen sie nicht an den Code. Im Handbuch
+      vorerst als Ist-Zustand vermerkt. Klassischer Drei-Ansichten-Fall.
+- [ ] **Dependabot-Meldung 123** (`uuid` < 11.1.1, mittel, in
+      `frontend/package-lock.json`). Geprüft am 25.08.: `uuid` hängt nur an
+      `@capacitor/cli`, und das ist eine devDependency — das Paket landet
+      nicht in der ausgelieferten App. Der App-Code nutzt den eigenen Helfer
+      `utils/uuid.ts` auf Basis der Web-Crypto-API, nicht das npm-Paket.
+      Also ein Werkzeug-Problem, kein Nutzerrisiko. Trotzdem beim nächsten
+      Capacitor-Update mitziehen.
