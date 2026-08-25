@@ -180,6 +180,16 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Die Terminseite aktualisiert sich jetzt live: Meldet sich jemand an oder ab,
+  oder checkt per QR-Code ein, sehen es alle sofort — bisher stand der Zähler
+  auf dem geöffneten QR-Code still.
+- Die Konfi-Ansicht der Leitung zeigt Punkte, Anträge und Abzeichen jetzt
+  sofort, auch wenn eine zweite Person sie vergibt.
+- Teamer:innen bekommen Aktualisierungen auf Startseite, Abzeichen, Profil und
+  Konfi-Statistik. Bisher blieben diese Seiten stehen, bis man sie neu öffnete.
+- Trägt die Leitung eine Teamerin zu einem Termin ein oder rückt sie von der
+  Warteliste nach, erfährt sie es jetzt sofort. Auch bei Anwesenheitslisten
+  und QR-Check-in erreichen die Aktualisierungen jetzt Teamer:innen.
 - Die Punkte-Regler zeigen jetzt links den kleinsten und rechts den größten
   wählbaren Wert in Grau; der eingestellte Wert steht farbig in der
   Überschrift. Bisher stand rechts der eingestellte Wert farbig — beim

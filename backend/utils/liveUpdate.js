@@ -2,9 +2,38 @@
 // Sendet WebSocket-Events an User für Echtzeit-Aktualisierungen
 
 let _io = null;
+let _db = null;
 
-function init(io) {
+/**
+ * @param {object} io - Socket.IO-Instanz
+ * @param {object} [db] - Datenbank-Pool. Wird er uebergeben, nutzen die
+ *   Rollen-Abfragen genau diesen Pool. Ohne ihn faellt das Modul auf das
+ *   Singleton aus ../database zurueck (Bestandsverhalten).
+ *
+ *   Warum uebergeben statt holen: `require('../database')` startet beim
+ *   Modul-Laden einen unbeaufsichtigten Selbsttest gegen DATABASE_URL und
+ *   oeffnet einen zweiten Pool. In Tests zeigt DATABASE_URL auf die
+ *   Produktions-Adresse (Port 5432 statt der Test-DB auf 5433) — die
+ *   Rollen-Abfragen liefen deshalb ins ECONNREFUSED, und der Selbsttest riss
+ *   ueber process.exit(1) etwa jeden vierten vitest-Lauf mit
+ *   (Handoff 25.08.2026).
+ */
+function init(io, db = null) {
   _io = io;
+  if (db) _db = db;
+}
+
+// Pool fuer die Rollen-Abfragen. Bevorzugt den per init() uebergebenen; nur
+// wenn keiner gesetzt ist, wird das Singleton lazy nachgeladen.
+function getDb() {
+  if (_db) return _db;
+  return require('../database');
+}
+
+// Nur fuer Tests: zurueck auf den Ausgangszustand.
+function _reset() {
+  _io = null;
+  _db = null;
 }
 
 /**
@@ -46,7 +75,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
   }
 
   try {
-    const db = require('../database');
+    const db = getDb();
     // Hole alle Admins, Org-Admins und Teamer:innen dieser Organisation.
     // Rollenname wird mitgeholt, weil Teamer-Sockets in einem EIGENEN Raum
     // (user_teamer_<id>) sitzen, während admin/org_admin im Raum
@@ -108,7 +137,7 @@ async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', d
   }
 
   try {
-    const db = require('../database');
+    const db = getDb();
     // Hole alle Konfis dieser Organisation. Wie bei sendToOrgAdmins beide
     // Quellen vereinen: users.organization_id (Primaer-Org) und
     // user_organizations (Zweit-Organisationen über den Umschalter).
@@ -161,7 +190,7 @@ async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data =
   }
 
   try {
-    const db = require('../database');
+    const db = getDb();
     const konfisResult = await db.query(`
       SELECT u.id FROM users u
       JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -230,7 +259,7 @@ async function sendToUserByRole(userId, updateType, action = 'refresh', data = n
   }
 
   try {
-    const db = require('../database');
+    const db = getDb();
     const { rows } = await db.query(`
       SELECT r.name AS role_name FROM users u
       JOIN roles r ON u.role_id = r.id
@@ -295,6 +324,7 @@ function disconnectUserSockets(userId) {
 
 module.exports = {
   init,
+  _reset,
   sendToUser,
   disconnectUserSockets,
   sendToKonfi,

@@ -216,7 +216,7 @@ io.on('connection', (socket) => {
 
 // liveUpdate mit io initialisieren (DI statt globaler Variable)
 const liveUpdate = require('./utils/liveUpdate');
-liveUpdate.init(io);
+liveUpdate.init(io, db);
 
 // ====================================================================
 // SMTP CONFIGURATION

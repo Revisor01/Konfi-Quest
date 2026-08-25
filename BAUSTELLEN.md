@@ -270,9 +270,22 @@ Erledigten.
       hintereinander grün, je 1167 Tests. Bei einer Rate von "jeder vierte"
       wäre das zu rund 24 % auch Zufall — gutes Indiz, kein Beweis. Bleibt
       offen, bis die CI weitere Läufe geliefert hat.*
-      Der saubere Fix bleibt offen: `liveUpdate` den Pool übergeben statt ihn
-      zu holen. Für die zweite Spur (Transportebene) fand sich beim Nachsehen
-      am 25.08. kein Beleg — erst messen, ob überhaupt noch etwas abbricht.
+      *`liveUpdate` bekommt den Pool jetzt übergeben (`init(io, db)`) statt ihn
+      zu holen — die vier lazy `require('../database')` sind weg.*
+      **Die zweite Spur ist belegt und NICHT behoben:** Im Gesamtlauf fällt
+      reproduzierbar 1 von 1171 Tests mit `Parse Error: Expected HTTP/, RTSP/
+      or ICE/` aus, wechselnd welcher. Gegenprobe am 25.08.: drei Läufe OHNE
+      die Änderungen des Tages zeigen denselben Fehler — er ist vorbestehend.
+      Ursache: Mehrere Termin-Routen senden `res.json()` und führen DANACH
+      weitere `await`-Operationen und nicht abgewartete Live-Updates aus
+      (z.B. `events.js:2682ff`). Schließt supertest die Verbindung, während
+      der Server noch schreibt, bricht der HTTP-Parser ab. Isoliert laufen
+      dieselben Dateien grün durch.
+      *Frühere Meldung "fünf saubere Läufe" war insoweit zu optimistisch: sie
+      liefen, bevor die neue Testdatei dazukam.*
+      Dritter Fund am 25.08., gleiches Muster wie `database.js`:
+      `routes/events.js` rief beim Modul-Laden `process.exit(1)`, wenn
+      `QR_SECRET` fehlte — behoben, greift nur noch außerhalb von Tests.
 - [ ] **`notifications.test.js` macht echte FCM-Netzwerkaufrufe** aus der
       Testsuite, mit der echten Firebase-Datei. Langsam und fragwürdig.
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -29,6 +29,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import PointsHistoryModal from '../../konfi/modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
@@ -219,11 +220,14 @@ const TeamerKonfiStatsPage: React.FC = () => {
   });
 
   // Offline-Query: Teamer-Profil (gleicher Cache-Key wie TeamerProfilePage — SWR-Deduplizierung)
-  const { data: profileData, loading, refresh } = useOfflineQuery<{ konfi_data: KonfiData }>(
+  const { data: profileData, loading, refresh, refreshLive } = useOfflineQuery<{ konfi_data: KonfiData }>(
     'teamer:profile:' + user?.id,
     async () => { const res = await api.get('/teamer/profile'); return res.data; },
     { ttl: CACHE_TTL.PROFILE }
   );
+
+  // Punkte, Abzeichen und Antraege aendern die angezeigte Statistik.
+  useLiveRefresh(['points', 'badges', 'requests', 'konfis'], useCallback(() => { refreshLive(); }, [refreshLive]));
   const konfiData = profileData?.konfi_data || null;
 
   // Konfi-Wrapped laden

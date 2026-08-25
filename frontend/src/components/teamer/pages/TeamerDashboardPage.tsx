@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -33,6 +33,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
@@ -262,14 +263,14 @@ const TeamerDashboardPage: React.FC = () => {
   });
 
   // Offline-Query: Dashboard
-  const { data: dashboardData, loading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
+  const { data: dashboardData, loading, refresh: refreshDashboard, refreshLive: refreshDashboardLive } = useOfflineQuery<DashboardData>(
     'teamer:dashboard:' + user?.id,
     async () => { const res = await api.get('/teamer/dashboard'); return res.data; },
     { ttl: CACHE_TTL.DASHBOARD }
   );
 
   // Offline-Query: Alle Teamer-Badges (für vollstaendige Badge-Sektion)
-  const { data: allTeamerBadges, refresh: refreshBadges } = useOfflineQuery<TeamerBadgeFull[]>(
+  const { data: allTeamerBadges, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<TeamerBadgeFull[]>(
     'teamer:all-badges:' + user?.id,
     async () => {
       const res = await api.get('/teamer/badges');
@@ -283,6 +284,15 @@ const TeamerDashboardPage: React.FC = () => {
     },
     { ttl: CACHE_TTL.BADGES }
   );
+
+  // Live-Ereignisse empfangen. Das Teamer-Dashboard hoerte auf nichts, obwohl
+  // das Backend 'badges' gezielt an Teamer:innen sendet (routes/teamer.js:796).
+  // Die Tageslosung bleibt bewusst aussen vor — sie wechselt taeglich, nicht
+  // durch Nutzeraktionen.
+  useLiveRefresh(['dashboard', 'points', 'badges', 'events', 'challenges'], useCallback(() => {
+    refreshDashboardLive();
+    refreshBadgesLive();
+  }, [refreshDashboardLive, refreshBadgesLive]));
 
   // Offline-Query: Tageslosung
   // Abgeschaltete Losung wird gar nicht erst abgerufen (Nutzerwunsch

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -24,7 +24,7 @@ import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
 import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
-import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import {
   KonfiHeaderCard, BonusSection, EventPointsSection,
   TeamerEventsSection, ActivitiesSection, CertificatesSection,
@@ -197,8 +197,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     setPresentingElement(pageRef.current);
   }, []);
 
-  const loadKonfiData = async () => {
-    setLoading(true);
+  // Live-Ereignisse empfangen. Diese Ansicht hatte bisher NUR triggerRefresh
+  // (Senden) und hoerte selbst auf nichts — ausgerechnet die Seite, auf der
+  // Punkte vergeben werden. Vergab eine zweite Person Punkte oder gab einen
+  // Antrag frei, blieb hier der alte Stand stehen (Befund 25.08.2026).
+  useLiveRefresh(['konfis', 'points', 'requests', 'badges'], useCallback(() => {
+    loadKonfiData(true);
+  }, [konfiId]));
+
+  const loadKonfiData = async (stillLaden = false) => {
+    // stillLaden: bei Live-Ereignissen NICHT den Ladebalken zeigen — die
+    // Ansicht wuerde bei jeder fremden Punktvergabe kurz leer flackern.
+    if (!stillLaden) setLoading(true);
     try {
       const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
 

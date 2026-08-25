@@ -13,7 +13,17 @@ const { removeFromEventChat, addToEventChat, syncEventChat } = require('../utils
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
   console.error('FATAL: QR_SECRET Umgebungsvariable fehlt!');
-  process.exit(1);
+  // In Tests NICHT den Prozess killen: Diese Pruefung laeuft beim MODUL-LADEN.
+  // Wird die Datei in einem vitest-Worker geladen, bevor dessen Umgebung steht,
+  // riss process.exit(1) den ganzen Worker mit — beobachtet am 25.08.2026 im
+  // Gesamtlauf: zwei nicht zusammenhaengende Suites (chat, users) brachen ab,
+  // isoliert liefen dieselben Dateien gruen durch. Zweite Spur zum bekannten
+  // Sporadik-Problem, gleiches Muster wie in database.js.
+  // In Produktion bleibt der harte Abbruch gewollt: ohne QR_SECRET waeren die
+  // Check-in-Codes nicht signiert.
+  if (process.env.NODE_ENV !== 'test') {
+    process.exit(1);
+  }
 }
 
 /**
@@ -499,7 +509,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         if (pointsAwarded) {
           try { await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
           try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
-          liveUpdate.sendToUser('konfi', userId, 'dashboard', 'update', { points: event.points });
+          // userType statt hart 'konfi': beim QR-Check-in koennen sich auch
+          // Teamer:innen einchecken. Zwei Zeilen weiter wurde userType
+          // bereits richtig verwendet, hier nicht.
+          liveUpdate.sendToUser(userType, userId, 'dashboard', 'update', { points: event.points });
         } else {
           try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
         }
@@ -1279,7 +1292,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           } catch (pushErr) {
  console.error('Push notification failed for waitlist promotion:', pushErr);
           }
-          liveUpdate.sendToUser('konfi', userId, 'events', 'update', { eventId: id, action: 'promoted' });
+          // sendToUserByRole: von der Warteliste ruecken auch Teamer:innen nach
+          // (eigene Teamer-Warteliste, teamer_waitlist_enabled).
+          liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: id, action: 'promoted' });
         }
       }
 
@@ -2133,8 +2148,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         message: responseMessage
       });
 
-      // Live Update: Notify the konfi and admins about the admin-booking
-      liveUpdate.sendToUser('konfi', user_id, 'events', 'update', { eventId, status: finalStatus });
+      // Live Update: Notify the booked person and admins about the admin-booking.
+      // sendToUserByRole statt hart 'konfi': die Leitung kann hier auch
+      // Teamer:innen eintragen (siehe addedIsTeamer oben) — die sitzen im Raum
+      // user_teamer_<id> und bekamen ihr eigenes Ereignis sonst nie.
+      liveUpdate.sendToUserByRole(user_id, 'events', 'update', { eventId, status: finalStatus });
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
 
     } catch (err) {
@@ -2783,9 +2801,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           console.error('Push notification failed (bulk attendance):', pushErr);
         }
         if (gotPoints) {
-          liveUpdate.sendToUser('konfi', userId, 'dashboard', 'update', { points: event.points });
+          // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
+          // Teilnehmenden eines Termins — darunter Teamer:innen, die in
+          // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
+          liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: event.points });
         }
-        liveUpdate.sendToUser('konfi', userId, 'events', 'update', { eventId });
+        liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId });
       }
       if (marked.length > 0) {
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });

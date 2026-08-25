@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonButtons, IonButton, IonIcon, IonCard, IonCardContent,
@@ -21,7 +21,7 @@ import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../modals/QRDisplayModal';
 import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
-import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import {
   EventInfoCard, DescriptionSection, SeriesEventsSection,
   UnregistrationsSection, EventMaterialSection, EventActionsSection,
@@ -206,8 +206,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setPresentingElement(pageRef.current);
   }, []);
 
-  const loadEventData = async () => {
-    setLoading(true);
+  // Live-Ereignisse empfangen. Die Termin-Detailseite hoerte bisher auf nichts,
+  // obwohl das Backend fuer Termine 32 Ereignisse sendet — darunter jeder
+  // QR-Check-in (events.js): Der Zaehler auf dem offenen QR-Code stand still
+  // (Befund 25.08.2026).
+  useLiveRefresh(['events', 'konfis'], useCallback(() => {
+    loadEventData(true);
+  }, [eventId]));
+
+  const loadEventData = async (stillLaden = false) => {
+    // stillLaden: bei Live-Ereignissen ohne Ladebalken nachladen, sonst
+    // flackert die Teilnehmerliste bei jedem QR-Scan.
+    if (!stillLaden) setLoading(true);
     try {
       const eventRes = await api.get(`/events/${eventId}`);
       setEventData(eventRes.data);

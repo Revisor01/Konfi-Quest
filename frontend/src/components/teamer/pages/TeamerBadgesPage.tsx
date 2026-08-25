@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -15,6 +15,7 @@ import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgesView from '../../konfi/views/BadgesView';
@@ -41,7 +42,7 @@ const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
-  const { data: badgesData, loading, refresh } = useOfflineQuery<TeamerBadgeAPI[]>(
+  const { data: badgesData, loading, refresh, refreshLive } = useOfflineQuery<TeamerBadgeAPI[]>(
     'teamer:badges:' + user?.id,
     async () => {
       const res = await api.get('/teamer/badges');
@@ -55,6 +56,10 @@ const TeamerBadgesPage: React.FC = () => {
     },
     { ttl: CACHE_TTL.BADGES }
   );
+
+  // Das Backend sendet 'badges' gezielt an Teamer:innen (routes/teamer.js:796),
+  // es fehlte nur der Empfaenger (Befund 25.08.2026).
+  useLiveRefresh(['badges'], useCallback(() => { refreshLive(); }, [refreshLive]));
 
   const badges = badgesData || [];
 

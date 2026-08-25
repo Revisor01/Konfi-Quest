@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -54,7 +54,7 @@ import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as fo
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
-import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 
@@ -89,7 +89,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [presentActionSheet] = useIonActionSheet();
 
   // Event-Daten über useOfflineQuery mit 10min TTL Cache
-  const { data: allEvents, loading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+  const { data: allEvents, loading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
     `konfi:event-detail:${eventId}`,
     () => api.get('/konfi/events').then(r => r.data),
     { ttl: 10 * 60 * 1000 }
@@ -207,6 +207,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   });
 
+  // Zaehler fuer das Nachladen der Detaildaten (Zeitfenster, Teilnehmerliste).
+  // Live-Ereignisse erhoehen ihn; der Effekt unten haengt daran. Ohne das blieb
+  // die Teilnehmerliste stehen, wenn sich jemand anderes an- oder abmeldete
+  // (Befund 25.08.2026).
+  const [detailEpoch, setDetailEpoch] = useState(0);
+
+  useLiveRefresh(['events'], useCallback(() => {
+    refreshEventsLive();
+    setDetailEpoch((n) => n + 1);
+  }, [refreshEventsLive]));
+
   // Timeslots, Participants und Konfirmations-Check separat laden (nicht gecacht).
   // Ein Fehler beim Laden der ZEITFENSTER wird gemerkt: ohne sie wäre
   // timeslots=[] und die Anmeldung wuerde unten am Zeitfenster-Dialog
@@ -242,7 +253,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
     };
     loadDetails();
-  }, [eventData?.id]);
+  }, [eventData?.id, detailEpoch]);
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;

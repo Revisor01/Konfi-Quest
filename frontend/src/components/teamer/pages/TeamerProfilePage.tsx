@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -45,6 +45,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
@@ -94,11 +95,14 @@ const TeamerProfilePage: React.FC = () => {
   const router = useIonRouter();
 
   // Offline-Query: Profil
-  const { data: profile, loading, refresh } = useOfflineQuery<TeamerProfile>(
+  const { data: profile, loading, refresh, refreshLive } = useOfflineQuery<TeamerProfile>(
     'teamer:profile:' + user?.id,
     async () => { const res = await api.get('/teamer/profile'); return res.data; },
     { ttl: CACHE_TTL.PROFILE }
   );
+
+  // Eigene Punkte und Abzeichen im Profil aktuell halten.
+  useLiveRefresh(['points', 'badges', 'dashboard'], useCallback(() => { refreshLive(); }, [refreshLive]));
 
   // Bibeluebersetzung (Tageslosung) — Auswahl + Speichern
   const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
