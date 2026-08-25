@@ -288,8 +288,15 @@ const EventsView: React.FC<EventsViewProps> = ({
               const isCancelled = event.registration_status === 'cancelled';
               // Konfirmations-Event über das is_konfirmation-Flag (Phase 117, Migration 091).
               const isKonfirmationEvent = event.is_konfirmation === true;
-              const hasUnprocessedBookings = isPastEvent && event.registered_count > 0 && event.pending_bookings_count && event.pending_bookings_count > 0;
-              const isFullyProcessed = isPastEvent && event.registered_count > 0 && (!event.pending_bookings_count || event.pending_bookings_count === 0);
+              // Befund 3 (25.08.2026): Karte und Verbuchen-Tab widersprachen sich.
+              // Der Tab haengt allein an pending_bookings_count, die Karte
+              // verlangte zusaetzlich registered_count > 0 (die KONFI-Zahl) —
+              // bei reinen Team-Terminen sagte der Tab "Verbuchen", die Karte
+              // "Geschlossen". Jetzt entscheidet beides dieselbe Frage:
+              // Gibt es hier ueberhaupt Buchungen, und ist davon etwas offen?
+              const hatBuchungen = (event.registered_count || 0) > 0 || (event.teamer_count || 0) > 0;
+              const hasUnprocessedBookings = isPastEvent && hatBuchungen && !!event.pending_bookings_count && event.pending_bookings_count > 0;
+              const isFullyProcessed = isPastEvent && hatBuchungen && (!event.pending_bookings_count || event.pending_bookings_count === 0);
               const shouldGrayOut = isPastEvent && !hasUnprocessedBookings;
 
               // Farbe basierend auf Status - Konfirmation in Lila!

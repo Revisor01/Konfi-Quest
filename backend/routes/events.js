@@ -144,7 +144,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             -- Plaetze frei waren.
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
             COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL) as unprocessed_count,
+            -- Befund 3 (25.08.2026): Diese Zahl hatte als EINZIGE keinen
+            -- Rollenfilter, obwohl "Alle bestaetigen" nur Konfis verbucht
+            -- (events.js PUT /:id/participants/attendance-all). Ein Termin,
+            -- dessen Konfis alle verbucht sind, dessen Teamer aber nicht,
+            -- blieb dadurch dauerhaft im Verbuchen-Tab haengen — waehrend die
+            -- Karte ihn nicht als "Verbuchen" zeigte. Tab und Karte
+            -- widersprachen sich.
+            -- Bedeutung jetzt wie konfi_offen in event_booking_stats.
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL AND COALESCE(r_book.name, '') <> 'teamer') as unprocessed_count,
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL AND r_book.name = 'teamer') as teamer_unprocessed_count,
             COUNT(*) as total_participants,
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count,
             COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND r_book.name = 'teamer') as teamer_waitlist_count

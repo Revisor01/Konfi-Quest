@@ -185,6 +185,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Termine, an denen nur das Team teilnimmt, blieben nach dem Termin dauerhaft
+  im Reiter "Verbuchen" hängen, während die Kachel sie als abgeschlossen
+  zeigte. Beide sagen jetzt dasselbe.
+
 - Ohne Verbindung zeigt ein geöffneter Termin wieder seine Daten. Bisher stand
   dort alles auf null, sobald man einen Termin antippte, den man vorher noch
   nicht einzeln geöffnet hatte.
