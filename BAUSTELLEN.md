@@ -138,11 +138,14 @@ Erledigten.
 
 ## Offen: Handbuch (24.08. abends)
 
-- [ ] **Mobile Navigation ist unbrauchbar.** Gemessen bei 390 px: Die
-      Seitenleiste ist 449 px hoch, also 53 Prozent des Bildschirms, der
-      Inhalt beginnt erst darunter. Sie ist `static`, beim Weiterlesen also
-      weg. Simon will ein einklappbares, mitlaufendes Menü statt aller Punkte
-      oben. *(In Arbeit.)*
+- [x] **Mobile Navigation** — erledigt durch `debc8af3` (24.08.), nachgeprueft
+      am 25.08.: einklappbar (`<details>` plus Mini-Skript) und mitlaufend
+      (`position:sticky; top:0; z-index:30`), der aufgeklappte Inhalt scrollt
+      in sich statt die Seite zu verlaengern. Alle 13 Doku-Seiten tragen die
+      neue Navigation. *Die 53 px habe ich im Code belegt, nicht im Browser
+      nachgemessen.*
+      ALT: Gemessen bei 390 px: Die Seitenleiste ist 449 px hoch, also
+      53 Prozent des Bildschirms, der Inhalt beginnt erst darunter.
 - [ ] **Querverweise zwischen den Kapiteln** wie in einem Wiki — heute steht
       jedes Kapitel für sich. *(In Arbeit.)*
 - [ ] **Konfis einladen per QR-Code und Code** fehlt als richtige Beschreibung
@@ -193,7 +196,13 @@ Erledigten.
       Kaltstart plus Retry-Budget-Verbrauch offline, kommentarloses Leeren
       bei Org-Wechsel und Logout. 26 neue Tests, Gegenprobe je Fix rot.
       Noch nicht ausgerollt — erst nach Deploy und Nachmessen abhaken.*
-- [ ] **Jahrgangswechsel** — was passiert mit Pflichtterminen?
+- [x] **Jahrgangswechsel und Pflichttermine** — erledigt durch `9d3eeeb3`
+      (der Commit-Titel nennt nur den Chat, der Code behandelt die Termine
+      mit). Nachgeprueft am 25.08.: `konfi-management.js:311-351` raeumt
+      kuenftige Pflichttermine des alten Jahrgangs ab — nur ohne erfasste
+      Anwesenheit und nur, wenn der Termin nicht auch zum neuen Jahrgang
+      gehoert —, `:352-375` bucht die des neuen nach, samt Event-Chats.
+      Fuenf Tests mit harten Assertions inklusive beider Grenzfaelle.
 - [x] **Event-Chats** — am 24.08. behoben (Eintritt bei Anmeldung, Austritt
       bei Abmeldung in allen drei Wegen).
       ALT: Eintritt bei Anmeldung, Austritt bei Abmeldung, aber
@@ -233,7 +242,16 @@ Erledigten.
 - [ ] **Handbuch mit Bildschirmfotos** — exakte Beschreibung aller Abläufe.
 - [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
       fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
-- [ ] **Socket.IO** — Pushes nach dem Abmelden.
+- [x] **Pushes nach dem Abmelden** — erledigt durch `f267a982` (23.08.),
+      nachgeprueft am 25.08.: `routes/auth.js:1207ff` loescht den Push-Token
+      des Geraets beim Logout, der Client ruft zusaetzlich
+      `DELETE /notifications/device-token`. Drei Tests in `auth.test.js`
+      (eigener Token weg, fremde Geraete und fremde Konten bleiben).
+      *Titel war falsch einsortiert: Push laeuft ueber Firebase/APNs, nicht
+      ueber Socket.IO.*
+      **Restluecke:** Beim SITZUNGSABLAUF (nicht beim bewussten Abmelden)
+      bleibt der Push-Token stehen — ein serverseitiges Loeschen waere dort
+      mangels gueltigem Token auch nicht mehr authentifizierbar.
 - [x] **Live-Aktualisierung: fehlende Empfänger** — behoben (`23ee763a`),
       Empfänger nachgerüstet in Konfi-Detail (Leitung), Termin-Detail (beide
       Bäume) und im Teamer-Baum (Dashboard, Abzeichen, Profil, Statistik);
@@ -241,7 +259,10 @@ Erledigten.
       echte Rolle umgestellt. Der als unsicher gemeldete Befund zu
       `events.js:1791` hat sich beim Nachprüfen NICHT bestätigt (eigener
       Teamer-Zweig sendet dort korrekt) und wurde nicht angefasst.
-      *Committet, NICHT ausgerollt — erst nach Deploy und Nachmessen abhaken.*
+      *Ausgerollt am 25.08. (Image `bc9d42b`) und in Produktion nachgemessen:
+      Demo-Konfi mit offenem Dashboard, Punktvergabe per API von aussen —
+      14 -> 15 ohne Neuladen, nach der Ruecknahme wieder 14. Beide Richtungen
+      kommen live an. Testpunkt entfernt, Datenstand unveraendert (8+6).*
       ALT: (geprüft 25.08.). Das Senden
       im Backend ist gut ausgebaut (rund 130 Sendepunkte, saubere Raum-
       Auflösung). Die Lücken sitzen bei den EMPFÄNGERN — von 17 Admin-Seiten
