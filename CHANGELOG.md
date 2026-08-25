@@ -180,6 +180,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Bei Pflichtterminen stimmt die Teilnehmerzahl wieder. Sie zeigte die
+  Anwesenden statt der Angemeldeten und stand deshalb auf "0", solange niemand
+  als anwesend erfasst war — obwohl Anmeldungen vorlagen. Abgemeldete zählen
+  nicht mehr in die Teilnehmerzahl hinein, und die Anwesenheit steht jetzt als
+  eigene Angabe daneben.
 - Im Kopf einer Challenge steht jetzt ausdrücklich "Sichtbarkeit: ..." und
   "Moderiert: ja/nein". Vorher stand dort eine Kurzform, bei der nicht zu
   erkennen war, welche Angabe wofür stand.

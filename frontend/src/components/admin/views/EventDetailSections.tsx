@@ -201,6 +201,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             : teamerOnly.filter(p => p.status === 'waitlist').length;
           const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
           const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+          const konfiOptedOut = konfiOnly.filter(p => p.status === 'opted_out').length;
           const teamerMax = eventData.teamer_max_participants || 0;
           // Anzeige hängt an der EINSTELLUNG des Events, nicht daran, ob sich
           // schon jemand angemeldet hat \u2014 sonst fehlen bei einem frischen Event
@@ -216,10 +217,28 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                   <div>
                     <div className="app-info-row__label">Teilnehmer:innen</div>
                     <div className="app-info-row__value">
+                      {/* Bei Pflichtterminen zaehlten hier die ANWESENDEN gegen
+                          alle Buchungen ("0 / 21", obwohl 19 gebucht hatten).
+                          Jetzt: Angemeldete gegen Angemeldete + Abgemeldete
+                          (User-Hinweis 25.08.2026). */}
                       {eventData.mandatory
-                        ? `${konfiPresent} / ${konfiOnly.length}`
+                        ? `${konfiConfirmed} / ${konfiConfirmed + konfiOptedOut}`
                         : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
                       }
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Anwesenheit als EIGENE Zeile: sie ist eine andere Angabe als
+                  die Anmeldung und darf sie nicht ueberschreiben. Erst sichtbar,
+                  wenn tatsaechlich jemand erfasst wurde. */}
+              {!nurTeamer && konfiPresent > 0 && (
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
+                  <div>
+                    <div className="app-info-row__label">Anwesend</div>
+                    <div className="app-info-row__value">
+                      {konfiPresent} / {konfiConfirmed}
                     </div>
                   </div>
                 </div>

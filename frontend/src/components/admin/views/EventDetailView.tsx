@@ -668,8 +668,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             const teamerMax = (eventData?.teamer_max_participants || 0) > 0
               ? eventData?.teamer_max_participants : '\u221E';
             const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
-            const absentCount = konfiOnly.filter(p => p.attendance_status === 'absent' || p.status === 'opted_out').length;
             const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+            const konfiOptedOut = konfiOnly.filter(p => p.status === 'opted_out').length;
 
             // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
             // Kacheln müssen komplett vom Team erzaehlen (vorher stand hier
@@ -685,12 +685,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
             const hasTeamer = !!eventData?.teamer_needed;
             if (eventData?.mandatory) {
+              // Erste Kachel zeigt die ANGEMELDETEN, nicht die Anwesenden
+              // (User-Hinweis 25.08.2026): Vorher stand bei einem Pflichttermin
+              // "0 / 21", solange niemand als anwesend erfasst war — obwohl
+              // 19 Personen gebucht hatten. Die Anwesenheit bekommt eine eigene
+              // Kachel; der Nenner zaehlt nur noch die tatsaechlich Gebuchten,
+              // Abgemeldete gehoeren nicht in die Teilnehmerzahl.
               return [
-                { value: presentCount, label: `von ${konfiOnly.length} TN` },
-                { value: absentCount, label: 'Abwesend' },
+                { value: konfiConfirmed, label: `von ${konfiConfirmed + konfiOptedOut} TN` },
+                { value: presentCount, label: 'Anwesend' },
                 hasTeamer
                   ? { value: teamerConfirmedCount, label: 'Team' }
-                  : { value: konfiOnly.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
+                  : { value: konfiOptedOut, label: 'Abgemeldet' }
               ];
             }
             const maxP = (eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E';
