@@ -1438,6 +1438,59 @@ describe('Events Routes', () => {
     // Nutzerentscheid 25.08.2026: "Teamer bei Events werden verbucht. Gibt ja
     // auch Badges fuer Freizeithopper. Aber Konfis und Teamer separat
     // verbuchen, auch bei 'Alle bestaetigen'."
+    // Nutzerhinweis 25.08.2026: "Die muessen unter Verbuchen stehen bleiben und
+    // in der Tabbar das Kennzeichen behalten, sonst rutschen Teamer durch.
+    // Etwa auch in einem Konfi-Event, in dem alle Konfis verbucht sind, aber
+    // die Teamer nicht."
+    it('Termin bleibt als "zu verbuchen" gekennzeichnet, wenn nur noch Teamer offen sind', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE events SET teamer_needed = true, teamer_max_participants = 5, event_date = NOW() - interval '1 day' WHERE id = $1",
+        [eventId]
+      );
+      await db.query(
+        "INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, $2, 'confirmed', 1)",
+        [USERS.teamer1.id, eventId]
+      );
+
+      // Alle Konfis verbuchen — die Teamer bleiben offen.
+      await request(app)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find((e) => e.id === eventId);
+
+      // Verbotener Fall: Termin verschwindet aus dem Verbuchen-Tab, obwohl
+      // das Team noch offen steht.
+      expect(ev.pending_bookings_count).toBe(1);
+    });
+
+    it('erst wenn BEIDE Rollen verbucht sind, faellt das Kennzeichen weg', async () => {
+      const eventId = await setupEventWithWaitlist();
+      await db.query(
+        "UPDATE events SET teamer_needed = true, teamer_max_participants = 5, event_date = NOW() - interval '1 day' WHERE id = $1",
+        [eventId]
+      );
+      await db.query(
+        "INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, $2, 'confirmed', 1)",
+        [USERS.teamer1.id, eventId]
+      );
+
+      await request(app).put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app).put(`/api/events/${eventId}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminToken}`).send({ rolle: 'teamer' });
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find((e) => e.id === eventId);
+      expect(ev.pending_bookings_count).toBe(undefined);
+    });
+
     it('verbucht standardmaessig NUR Konfis, Teamer bleiben offen', async () => {
       const eventId = await setupEventWithWaitlist();
       await db.query(

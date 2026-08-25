@@ -100,6 +100,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 bstats.registered_count,
                 bstats.waitlist_count,
                 bstats.unprocessed_count,
+                bstats.teamer_unprocessed_count,
                 bstats.total_participants,
                 bstats.teamer_count,
                 bstats.teamer_waitlist_count,
@@ -254,7 +255,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
         }
         
-        const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
+        // Verbuchen-Kennzeichen: BEIDE Rollen. Vorher zaehlte diese Zahl
+        // Teamer gar nicht mit (Befund 3) — dann rutschten sie durch, sobald
+        // alle Konfis verbucht waren: Der Termin verschwand aus dem
+        // Verbuchen-Tab, obwohl das Team noch offen stand
+        // (Nutzerhinweis 25.08.2026). Verbucht wird getrennt nach Rolle
+        // (PUT /:id/participants/attendance-all mit rolle), gezaehlt wird
+        // gemeinsam — sonst kennzeichnet der Tab den Termin nicht mehr.
+        const unprocessedCount =
+          (parseInt(row.unprocessed_count, 10) || 0)
+          + (parseInt(row.teamer_unprocessed_count, 10) || 0);
 
         // qr_token gehört NICHT in die Liste (Audit 22.08.2026): Die Query
         // holt e.*, damit lag der Check-in-Token jedes Events in der Antwort —
@@ -337,6 +347,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
         }
         
+        // Abgesagte Termine: unprocessed_count zaehlt hier bereits ueber ALLE
+        // Rollen (events.js:305, keine Rollen-Trennung) — nicht addieren,
+        // das wuerde Teamer doppelt zaehlen.
         const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
         return {
           ...row,

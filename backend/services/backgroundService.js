@@ -526,11 +526,20 @@ class BackgroundService {
    */
   static async checkPendingEvents(db) {
     try {
-      // Events die vorbei sind und noch nicht alle Teilnehmer verbucht haben
+      // Events die vorbei sind und noch nicht alle Teilnehmer verbucht haben.
+      //
+      // BEWUSST OHNE Rollenfilter (Nutzerhinweis 25.08.2026): Auch ein Termin,
+      // bei dem alle Konfis verbucht sind und nur noch Teamer:innen offen
+      // stehen, muss erinnert werden — sonst rutschen sie durch. Dasselbe gilt
+      // fuer reine Team-Termine.
+      //
+      // Geloeschte Konten zaehlen nicht mit: Sonst erinnerte die App ewig an
+      // eine Buchung, die niemand mehr verbuchen kann.
       const query = `
         SELECT e.organization_id, COUNT(DISTINCT e.id) as pending_count
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
+        JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
         WHERE e.event_date < CURRENT_DATE
           AND eb.status = 'confirmed'
           AND eb.attendance_status IS NULL

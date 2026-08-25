@@ -185,6 +185,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ein Termin bleibt als "zu verbuchen" gekennzeichnet, solange noch
+  Teamer:innen offen sind — auch wenn alle Konfis schon verbucht sind. Vorher
+  verschwand er aus der Liste und das Team rutschte durch.
 - Teamer:innen werden jetzt getrennt von den Konfis verbucht — "Alle
   bestätigen" fragt, für wen. Das Team bekommt dadurch seine Abzeichen für die
   Teilnahme, aber keine Konfi-Punkte.
