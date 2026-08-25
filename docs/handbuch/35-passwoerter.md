@@ -27,7 +27,7 @@ hinterlegt und können sich deshalb nicht selbst helfen.
 
 So geht es:
 
-1. Reiter **Konfis** öffnen
+1. Reiter **[Konfis](30-leitung.md#konfis)** öffnen
 2. Die Person antippen
 3. Oben rechts auf das **Schlüssel-Symbol**
 4. Bestätigen
@@ -122,22 +122,28 @@ selbst fest. Kein Einmalpasswort, kein Zettelchaos.
 
 ### Die Einladung erzeugen (Leitung)
 
-1. **Mehr → Konfis einladen** — das kann nur ein **Org-Admin**
+1. **[Mehr](30-leitung.md#verwaltung-nur-org-admin) → Konfis einladen** — das
+   kann nur ein **Org-Admin**
 2. **Jahrgang wählen.** Jede Einladung gehört zu genau einem Jahrgang; wer sich
    damit registriert, landet automatisch darin.
 3. **„Einladungslink generieren"** antippen
 
 Die App zeigt dann beides zusammen: einen **QR-Code** und darunter den
-**Einladungscode** — acht Zeichen aus Großbuchstaben und Ziffern, etwa
+**Einladungscode** — acht Zeichen aus Ziffern und den Buchstaben A bis F, etwa
 `A3F09C21`. Beide sind dieselbe Einladung: Der QR-Code enthält nur den Link
 `konfi-quest.de/register` mit dem Code darin.
 
 Zum Weitergeben gibt es drei Wege:
 
-- **QR-Code zeigen** — am Beamer, auf dem eigenen Handy oder ausgedruckt, etwa
-  beim Elternabend oder in der ersten Konfi-Stunde
+- **QR-Code zeigen** — am Beamer oder auf dem eigenen Handy, etwa beim
+  Elternabend oder in der ersten Konfi-Stunde
 - **Link kopieren** und in eine E-Mail oder einen Elternbrief setzen
-- **Teilen** über das Teilen-Menü des Geräts
+- **Teilen** über das Teilen-Menü des Geräts — weitergegeben wird dabei der
+  Link, nicht das Bild
+
+Einen Druckknopf gibt es hier **nicht** (anders als beim
+[QR-Code fürs Einchecken](70-termine.md#qr-check-in) am Termin). Wer den Code
+auf Papier braucht, macht eine Bildschirmaufnahme oder verschickt den Link.
 
 **Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.** Er lässt
 sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang. In
@@ -151,9 +157,15 @@ verlängern** — aber nur, solange er noch gültig ist. Ein abgelaufener Code
 verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene
 Codes können nicht verlängert werden"); dann erzeugst du einfach einen neuen.
 
-Löschen geht jederzeit. Beides ist gefahrlos für die, die schon drin sind: Die
-Einladung ist nur die Eintrittstür — wer sich registriert hat, behält sein
-Konto, egal was mit dem Code passiert.
+In der Liste der aktiven Einladungen steht zu jedem Code, zu welchem Jahrgang
+er gehört, wie lange er noch gilt („Noch 5 Tage gültig") und wie viele Konfis
+ihn schon benutzt haben. Tippst du einen Eintrag an, erscheint sein QR-Code
+wieder — du musst also keinen neuen erzeugen, nur weil du das Fenster
+geschlossen hast. Wischen bringt die beiden Aktionen: verlängern und löschen.
+
+Löschen geht jederzeit — die App fragt vorher nach. Für die, die schon drin
+sind, ist das gefahrlos: Die Einladung ist nur die Eintrittstür — wer sich
+registriert hat, behält sein Konto, egal was mit dem Code passiert.
 
 ### Was die Konfis dann tun
 
@@ -224,7 +236,8 @@ helfen (Kontakt über die Website).
 
 **Fall 3: Das Konto ist deaktiviert.**
 Dann ist die Anmeldung gesperrt, unabhängig vom Passwort. Ein Org-Admin
-aktiviert es unter **Mehr → Benutzer:innen** wieder. Sich selbst kann niemand
+aktiviert es unter **[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**
+wieder. Sich selbst kann niemand
 deaktivieren.
 
 **Fall 4: Jemand wurde aus der Gemeinde entfernt.**

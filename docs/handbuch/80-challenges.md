@@ -12,9 +12,9 @@ und du entscheidest vorher, wer es zu sehen bekommt.
 
 ## Warum es dafür keine Punkte gibt
 
-Challenges sind der einzige Teil der App, der **nichts zählt**. Keine Punkte,
-keine Rangliste, kein Zähler in der Konfi-Ansicht, keine Auswirkung auf das
-Ziel des Jahrgangs.
+Challenges sind der einzige Teil der App, der **nichts zählt**. Keine
+[Punkte](40-punkte.md), keine Rangliste, kein Zähler in der Konfi-Ansicht,
+keine Auswirkung auf das [Ziel des Jahrgangs](45-jahrgaenge.md#punkteziele).
 
 Das ist Absicht. Bei Aktivitäten und Terminen geht es um Teilnahme, und
 Teilnahme lässt sich zählen. Bei einer Challenge geht es um eine eigene
@@ -27,7 +27,8 @@ Was es stattdessen gibt: ein **Abzeichen** für alle, die mitgemacht haben
 
 > **Achtung:** Weil nichts gezählt wird, taucht eine Challenge auch in keiner
 > Auswertung, keinem Punktestand und keinem Zertifikat auf. Wer Teilnahme
-> belegen will, braucht dafür eine Aktivität oder einen Termin.
+> belegen will, braucht dafür eine [Aktivität](40-punkte.md#weg-1-aktivitaeten)
+> oder einen [Termin](70-termine.md).
 
 ---
 
@@ -96,7 +97,9 @@ Welche Jahrgänge die Challenge bekommen. Mehrere sind möglich; die Konfis
 sehen dann auch die Beiträge aus dem jeweils anderen Jahrgang — in der Galerie
 steht der Jahrgangsname dabei, damit klar ist, woher ein Beitrag kommt.
 
-Teamer:innen können nur ihre eigenen zugewiesenen Jahrgänge auswählen.
+Teamer:innen können nur ihre eigenen
+[zugewiesenen Jahrgänge](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
+auswählen.
 
 ### Mehrere Beiträge erlauben
 
@@ -335,7 +338,8 @@ ohnehin sehen dürfen:
 Jede Challenge trägt ein eigenes Abzeichen: ein Name (Pflicht, höchstens 100
 Zeichen) und ein Symbol aus einer Auswahl. Voreinstellung ist die Flagge.
 
-**Es funktioniert grundsätzlich anders als die normalen Abzeichen:**
+**Es funktioniert grundsätzlich anders als die
+[normalen Abzeichen](60-badges.md):**
 
 | | Normale Abzeichen | Challenge-Abzeichen |
 |---|---|---|
@@ -491,6 +495,9 @@ hatten. Das lässt sich nicht rückgängig machen und es gibt keinen Papierkorb.
 - einen Beitrag nachträglich bearbeiten
 - ihre Sichtbarkeits-Wahl nachträglich ändern
 - Entwürfe, geplante oder Team-Challenges sehen
+
+So sieht die Challenge aus Konfi-Sicht aus, steht kurz im Kapitel
+[Für Konfis](10-konfis.md#challenges).
 
 Das Zurückziehen ist bewusst gesperrt. Ein Konfi, der es versucht, bekommt:
 *„Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an

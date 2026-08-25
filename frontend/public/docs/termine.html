@@ -322,20 +322,34 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Die Leute checken sich selbst ein. Siehe nächster Abschnitt.</p>
       <p>---</p>
       <h2 id="qr-check-in-2">QR-Check-in</h2>
-      <p>Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis scannen ihn in der App und sind eingecheckt — inklusive Punkten.</p>
+      <p>Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis scannen ihn in der App und sind eingecheckt — inklusive <a href="#wann-es-punkte-gibt">Punkten</a>.</p>
+      <h3 id="wer-scannt-und-wo">Wer scannt, und wo</h3>
+      <p>Den Scanner findet man an drei Stellen, je nach Rolle:</p>
+      <ul><li><strong>Konfis</strong> — oben rechts in der <a href="./konfis.html#events">Terminliste</a>, oder im geöffneten Termin über den Knopf <strong>„Einchecken&quot;</strong>. Der Knopf erscheint nur, wenn die Anmeldung bestätigt und noch keine Anwesenheit eingetragen ist; danach steht dort <strong>„Anwesend&quot;</strong>.</li><li><strong>Teamer:innen</strong> — über den runden Knopf unten rechts in ihrer Terminliste.</li></ul>
+      <p>Gescannt wird mit der Kamera in der App, nicht mit der Kamera-App des Geräts. Beim ersten Mal fragt das Gerät nach der Kamera-Erlaubnis; wird sie abgelehnt, erklärt die App, wie man sie nachträglich erteilt. Ohne Netz geht es nicht — dann meldet die App „Du bist offline&quot;.</p>
+      <p>Nach jedem Scan zeigt die App kurz das Ergebnis und schaltet dann von selbst wieder scharf, sodass die nächste Person direkt scannen kann.</p>
       <h3 id="das-zeitfenster">Das Zeitfenster</h3>
       <p>Beim Anlegen stellst du das <strong>Check-in-Fenster</strong> ein: 5 bis 60 Minuten, Voreinstellung 30.</p>
       <p><strong>Die Zahl gilt in beide Richtungen — vor und nach dem Terminbeginn.</strong></p>
       <p><em>Beispiel:</em> Termin um 18:00 Uhr, Fenster 30 Minuten → Check-in ist von <strong>17:30 bis 18:30</strong> möglich. Das sind eine ganze Stunde, nicht dreißig Minuten.</p>
       <p>Davor: „Check-in ist noch nicht möglich&quot;. Danach: „Der Check-in-Zeitraum ist abgelaufen&quot;. Gerechnet wird immer ab dem <strong>Terminbeginn</strong>, nie ab der Endzeit.</p>
       <blockquote><strong>Achtung:</strong> Für einen dreistündigen Konfi-Tag ist ein 30-Minuten-Fenster knapp — wer eine Stunde später dazustößt, kommt nicht mehr rein. Plane das Fenster nach der erwarteten Ankunftszeit, nicht nach der Länge des Termins. Über die App sind maximal 60 Minuten einstellbar.</blockquote>
+      <h3 id="der-zaehler-unter-dem-code">Der Zähler unter dem Code</h3>
+      <p>Solange der Code offen ist, steht darunter <strong>„X / Y eingecheckt&quot;</strong>. Beide Zahlen beziehen sich nur auf <strong>bestätigte Anmeldungen</strong>: rechts, wie viele bestätigt angemeldet sind, links, wie viele davon schon als anwesend verbucht sind. Wer auf der Warteliste steht oder sich abgemeldet hat, ist in keiner der beiden Zahlen.</p>
+      <p>Der Zähler aktualisiert sich <strong>alle zehn Sekunden von selbst</strong> — du musst nichts nachladen. Er zählt auch Anwesenheiten mit, die ihr währenddessen <a href="#anwesenheit">von Hand verbucht</a> habt, nicht nur die Scans.</p>
+      <p>Über das Drucken-Symbol lässt sich die Seite mit dem Code ausdrucken oder als PDF sichern, etwa um ihn an die Tür zu hängen.</p>
       <h3 id="wer-sich-einchecken-kann">Wer sich einchecken kann</h3>
       <p>Der Scan funktioniert nur, wenn die Person <strong>bestätigt angemeldet</strong> ist. Andernfalls:</p>
       <div class="tabelle-huelle"><table><thead><tr><th>Situation</th><th>Meldung</th></tr></thead><tbody><tr><td>gar nicht angemeldet</td><td>„Du bist nicht für dieses Event angemeldet&quot;</td></tr><tr><td>auf der Warteliste</td><td>„Deine Anmeldung ist nicht bestätigt&quot;</td></tr><tr><td>von einem Pflicht-Event abgemeldet</td><td>„Du hast dich von diesem Event abgemeldet&quot;</td></tr><tr><td>schon eingecheckt</td><td>„Du bist bereits eingecheckt&quot; (kein Fehler, keine zweiten Punkte)</td></tr><tr><td>Code einer anderen Gemeinde</td><td>„Kein Zugriff auf dieses Event&quot;</td></tr></tbody></table></div>
       <p>Teamer:innen können sich ebenfalls einchecken — sie werden als anwesend verbucht, bekommen aber keine Punkte.</p>
+      <h3 id="was-der-scan-sofort-ausloest">Was der Scan sofort auslöst</h3>
+      <p>Ein erfolgreicher Scan wirkt <strong>sofort</strong>, nicht erst beim <a href="#anwesenheit">Verbuchen</a>:</p>
+      <ul><li>Die Anwesenheit steht, und die <a href="#wann-es-punkte-gibt">Punkte</a> sind gutgeschrieben.</li><li>Die Person bekommt eine Benachrichtigung aufs Gerät („Teilnahme bestätigt!&quot;), mit der Punktzahl, falls es welche gab.</li><li>Es wird geprüft, ob damit ein <a href="./badges.html">Abzeichen</a> oder ein neues <a href="./punkte.html#level">Level</a> fällig ist — beides kommt als eigene Nachricht.</li></ul>
+      <p>Ihr müsst danach nichts mehr nachtragen. Der Termin taucht nur dann noch unter „Verbuchen&quot; auf, wenn Personen offen sind, die nicht gescannt haben.</p>
       <h3 id="warum-konfis-den-code-nicht-sehen">Warum Konfis den Code nicht sehen</h3>
       <p>Der QR-Code ist ein Geheimnis. Würde er in der Konfi-App auftauchen, könnte sich jeder von zu Hause aus als anwesend eintragen und sich die Punkte selbst gutschreiben.</p>
-      <p>Deshalb wird der Code <strong>ausschließlich</strong> an Leitung und Teamer:innen ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.</p>
+      <p>Deshalb wird der Code <strong>ausschließlich</strong> an das Team ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.</p>
+      <p>In der App zeigen ihn derzeit nur <strong>Leitung und Admins</strong> an. In der Teamer-Ansicht gibt es kein QR-Symbol: Teamer:innen können scannen, aber den Code nicht selbst aufrufen. Wenn beim Termin nur Teamer:innen vor Ort sind, muss der Code also vorher besorgt oder ausgedruckt werden.</p>
       <p>Der Code wird beim ersten Anzeigen erzeugt und bleibt danach gleich. Er läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.</p>
       <p>---</p>
       <h2 id="serien">Serien</h2>

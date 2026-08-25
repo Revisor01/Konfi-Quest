@@ -46,7 +46,10 @@ Pro Jahrgang gibt es genau einen, und er entsteht **von selbst** — niemand leg
 ihn an, niemand lädt jemanden ein. Er heißt „Jahrgang 2026" und pflegt seine
 Mitglieder selbst:
 
-- **Alle Konfis des Jahrgangs** sind drin. Neue Konfis kommen automatisch dazu.
+- **Alle Konfis des Jahrgangs** sind drin. Neue Konfis kommen automatisch dazu
+  — auch die, die sich
+  [per Einladungscode registriert](35-passwoerter.md#konfis-kommen-neu-dazu-der-einladungscode)
+  haben.
 - **Die Leitung (Org-Admin)** ist immer in allen Jahrgangs-Chats der Gemeinde.
 - **Teamer:innen und weitere Admins** sind drin, solange ihnen der Jahrgang
   zugewiesen ist. Wird die Zuweisung entzogen, fliegen sie wieder heraus.

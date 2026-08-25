@@ -481,7 +481,26 @@ Die Leute checken sich selbst ein. Siehe nächster Abschnitt.
 ## QR-Check-in
 
 Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis
-scannen ihn in der App und sind eingecheckt — inklusive Punkten.
+scannen ihn in der App und sind eingecheckt — inklusive
+[Punkten](#wann-es-punkte-gibt).
+
+### Wer scannt, und wo
+
+Den Scanner findet man an drei Stellen, je nach Rolle:
+
+- **Konfis** — oben rechts in der [Terminliste](10-konfis.md#events), oder im
+  geöffneten Termin über den Knopf **„Einchecken"**. Der Knopf erscheint nur,
+  wenn die Anmeldung bestätigt und noch keine Anwesenheit eingetragen ist;
+  danach steht dort **„Anwesend"**.
+- **Teamer:innen** — über den runden Knopf unten rechts in ihrer Terminliste.
+
+Gescannt wird mit der Kamera in der App, nicht mit der Kamera-App des Geräts.
+Beim ersten Mal fragt das Gerät nach der Kamera-Erlaubnis; wird sie abgelehnt,
+erklärt die App, wie man sie nachträglich erteilt. Ohne Netz geht es nicht —
+dann meldet die App „Du bist offline".
+
+Nach jedem Scan zeigt die App kurz das Ergebnis und schaltet dann von selbst
+wieder scharf, sodass die nächste Person direkt scannen kann.
 
 ### Das Zeitfenster
 
@@ -502,6 +521,21 @@ abgelaufen". Gerechnet wird immer ab dem **Terminbeginn**, nie ab der Endzeit.
 > Fenster nach der erwarteten Ankunftszeit, nicht nach der Länge des Termins.
 > Über die App sind maximal 60 Minuten einstellbar.
 
+### Der Zähler unter dem Code
+
+Solange der Code offen ist, steht darunter **„X / Y eingecheckt"**. Beide
+Zahlen beziehen sich nur auf **bestätigte Anmeldungen**: rechts, wie viele
+bestätigt angemeldet sind, links, wie viele davon schon als anwesend verbucht
+sind. Wer auf der Warteliste steht oder sich abgemeldet hat, ist in keiner der
+beiden Zahlen.
+
+Der Zähler aktualisiert sich **alle zehn Sekunden von selbst** — du musst
+nichts nachladen. Er zählt auch Anwesenheiten mit, die ihr währenddessen
+[von Hand verbucht](#anwesenheit) habt, nicht nur die Scans.
+
+Über das Drucken-Symbol lässt sich die Seite mit dem Code ausdrucken oder als
+PDF sichern, etwa um ihn an die Tür zu hängen.
+
 ### Wer sich einchecken kann
 
 Der Scan funktioniert nur, wenn die Person **bestätigt angemeldet** ist.
@@ -518,15 +552,33 @@ Andernfalls:
 Teamer:innen können sich ebenfalls einchecken — sie werden als anwesend
 verbucht, bekommen aber keine Punkte.
 
+### Was der Scan sofort auslöst
+
+Ein erfolgreicher Scan wirkt **sofort**, nicht erst beim
+[Verbuchen](#anwesenheit):
+
+- Die Anwesenheit steht, und die [Punkte](#wann-es-punkte-gibt) sind gutgeschrieben.
+- Die Person bekommt eine Benachrichtigung aufs Gerät („Teilnahme bestätigt!"),
+  mit der Punktzahl, falls es welche gab.
+- Es wird geprüft, ob damit ein [Abzeichen](60-badges.md) oder ein neues
+  [Level](40-punkte.md#level) fällig ist — beides kommt als eigene Nachricht.
+
+Ihr müsst danach nichts mehr nachtragen. Der Termin taucht nur dann noch unter
+„Verbuchen" auf, wenn Personen offen sind, die nicht gescannt haben.
+
 ### Warum Konfis den Code nicht sehen
 
 Der QR-Code ist ein Geheimnis. Würde er in der Konfi-App auftauchen, könnte
 sich jeder von zu Hause aus als anwesend eintragen und sich die Punkte selbst
 gutschreiben.
 
-Deshalb wird der Code **ausschließlich** an Leitung und Teamer:innen
-ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins —
-nie in der Terminliste.
+Deshalb wird der Code **ausschließlich** an das Team ausgeliefert, und auch
+dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.
+
+In der App zeigen ihn derzeit nur **Leitung und Admins** an. In der
+Teamer-Ansicht gibt es kein QR-Symbol: Teamer:innen können scannen, aber den
+Code nicht selbst aufrufen. Wenn beim Termin nur Teamer:innen vor Ort sind,
+muss der Code also vorher besorgt oder ausgedruckt werden.
 
 Der Code wird beim ersten Anzeigen erzeugt und bleibt danach gleich. Er läuft
 nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.
