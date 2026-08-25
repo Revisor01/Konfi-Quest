@@ -17,7 +17,6 @@ import {
   sparkles,
   time,
   timeOutline,
-  flag,
   flagOutline,
   eyeOutline,
   megaphoneOutline,
@@ -592,33 +591,6 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege.
-              Bewusst KEIN Neuerungs-Banner, sondern ein dauerhafter
-              Navigationseinstieg: er bleibt auch, wenn die Neuerungen
-              laengst weggeklickt sind. */}
-          <div
-            onClick={() => router.push('/teamer/challenges')}
-            className="app-list-item app-list-item--challenges"
-            style={{
-              marginBottom: '16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}
-          >
-            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
-              <IonIcon icon={flag} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="app-list-item__title">Challenges</div>
-              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
-                Aufgaben stellen und Beiträge der Konfis begleiten
-              </div>
-            </div>
-            <IonIcon icon={chevronForward} style={{ fontSize: '1.1rem', color: 'var(--app-color-challenges)' }} />
-          </div>
-
           {/* Dynamische Sektionen basierend auf section_order */}
           {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {
             // Zertifikate
@@ -735,7 +707,12 @@ const TeamerDashboardPage: React.FC = () => {
             // Challenges — laufende Challenges als Teaser, wie im Konfi-Dashboard.
             // Ohne laufende Challenge verschwindet die Karte ganz.
             if (sectionKey === 'challenges') {
-              if (config?.show_challenges === false || activeChallenges.length === 0) return null;
+              // Bewusst NICHT mehr bei activeChallenges.length === 0 aussteigen:
+              // Der Einstieg in die Challenges-Verwaltung sass frueher als eigene
+              // weisse Zeile darueber. Die ist weg (Nutzerwunsch 25.08.2026) und
+              // der Weg fuehrt jetzt ueber diese Karte — sie muss deshalb auch
+              // stehen, wenn gerade keine Challenge laeuft.
+              if (config?.show_challenges === false) return null;
               const remainingFor = (endsAt: string) => {
                 const diff = new Date(endsAt).getTime() - Date.now();
                 if (isNaN(diff) || diff <= 0) return 'Zeit abgelaufen';
@@ -783,6 +760,33 @@ const TeamerDashboardPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {visibleChallenges.length === 0 && (
+                    <div
+                      className="app-dashboard-glass-card"
+                      onClick={() => router.push('/teamer/challenges')}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                    >
+                      <div style={{
+                        width: '40px', height: '40px', borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <IonIcon icon={flagOutline} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="app-headline" style={{
+                          fontSize: '1rem', fontWeight: '700', color: 'white',
+                          marginBottom: '4px', lineHeight: 1.25
+                        }}>
+                          Gerade läuft keine Challenge
+                        </div>
+                        <div className="app-dashboard-meta">
+                          <span>Aufgaben stellen und Beiträge begleiten</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div
                     className="app-dashboard-glass-chip"
                     onClick={() => router.push('/teamer/challenges')}
