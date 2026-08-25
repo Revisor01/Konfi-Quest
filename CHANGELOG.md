@@ -180,6 +180,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Abzeichen werden beim Bearbeiten nicht mehr versehentlich abgeschaltet.
+  Wurde nur ein Teil geändert, etwa die Beschreibung, verschwand das Abzeichen
+  bisher still aus der Anzeige.
 - Die Terminseite aktualisiert sich jetzt live: Meldet sich jemand an oder ab,
   oder checkt per QR-Code ein, sehen es alle sofort — bisher stand der Zähler
   auf dem geöffneten QR-Code still.

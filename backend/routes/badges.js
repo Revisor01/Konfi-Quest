@@ -816,11 +816,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     
     try {
       const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
-      const activeFlag = !!is_active;
-      const hiddenFlag = !!is_hidden;
-      
+      // is_active/is_hidden nur setzen, wenn sie AUSDRUECKLICH mitgeschickt
+      // wurden. Vorher stand hier `!!is_active`: Ein Teil-Update ohne das Feld
+      // (undefined) wurde damit zu false — ein aktives Abzeichen verschwand
+      // still aus der Anzeige, obwohl nur die Beschreibung geaendert werden
+      // sollte (Befund 25.08.2026). COALESCE laesst den Bestandswert stehen,
+      // wenn NULL uebergeben wird; ein ausdrueckliches false wirkt weiterhin.
+      const activeFlag = is_active === undefined ? null : !!is_active;
+      const hiddenFlag = is_hidden === undefined ? null : !!is_hidden;
+
       const query = `UPDATE custom_badges 
-                    SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = $7, is_hidden = $8, color = $9 
+                    SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = COALESCE($7, is_active), is_hidden = COALESCE($8, is_hidden), color = $9 
                     WHERE id = $10 AND organization_id = $11`;
       
       const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, color || '#667eea', req.params.id, req.user.organization_id];

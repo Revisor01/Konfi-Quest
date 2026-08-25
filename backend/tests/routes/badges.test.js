@@ -100,6 +100,71 @@ describe('Badges Routes', () => {
       expect(res.status).toBe(404);
     });
 
+    // Stiller Nebeneffekt (Befund 25.08.2026): is_active/is_hidden wurden per
+    // !!wert gesetzt. Ein Teil-Update ohne diese Felder machte aus einem
+    // aktiven Abzeichen ein deaktiviertes — ohne Hinweis, ohne dass jemand das
+    // wollte. Verbotener Fall: Feld fehlt -> Abzeichen wird still deaktiviert.
+    // Erlaubter Fall: Feld ist ausdruecklich false -> Abzeichen wird deaktiviert.
+    it('Teil-Update OHNE is_active laesst das Abzeichen aktiv', async () => {
+      const token = generateToken('admin1');
+      await db.query('UPDATE custom_badges SET is_active = true, is_hidden = false WHERE id = $1', [BADGES.streak.id]);
+
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Nur der Name geaendert',
+          icon: 'ribbon',
+          criteria_type: 'streak',
+          criteria_value: 5,
+        });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT is_active, is_hidden FROM custom_badges WHERE id = $1', [BADGES.streak.id]);
+      expect(rows[0].is_active).toBe(true);
+      expect(rows[0].is_hidden).toBe(false);
+    });
+
+    it('is_active: false deaktiviert das Abzeichen weiterhin', async () => {
+      const token = generateToken('admin1');
+      await db.query('UPDATE custom_badges SET is_active = true WHERE id = $1', [BADGES.streak.id]);
+
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Abgeschaltet',
+          icon: 'ribbon',
+          criteria_type: 'streak',
+          criteria_value: 5,
+          is_active: false,
+        });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT is_active FROM custom_badges WHERE id = $1', [BADGES.streak.id]);
+      expect(rows[0].is_active).toBe(false);
+    });
+
+    it('is_hidden bleibt erhalten, wenn nur is_active gesendet wird', async () => {
+      const token = generateToken('admin1');
+      await db.query('UPDATE custom_badges SET is_active = true, is_hidden = true WHERE id = $1', [BADGES.streak.id]);
+
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Geheim bleibt geheim',
+          icon: 'ribbon',
+          criteria_type: 'streak',
+          criteria_value: 5,
+          is_active: true,
+        });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT is_hidden FROM custom_badges WHERE id = $1', [BADGES.streak.id]);
+      expect(rows[0].is_hidden).toBe(true);
+    });
+
     it('Badge aus anderer Org gibt 404', async () => {
       const token = generateToken('admin1');
       // Badge streak2 gehört Org 2
