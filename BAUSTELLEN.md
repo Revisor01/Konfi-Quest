@@ -365,6 +365,46 @@ Erledigten.
 
 ---
 
+## Erledigt am 25.08. (committet, NICHT ausgerollt)
+
+Produktion lief bei Redaktionsschluss auf `6721eec`. Alles Folgende ist
+committet und muss noch deployt werden — erst danach abhaken.
+
+- [x] **Live-Aktualisierung** — Dedupe-Regression behoben (`8fc097ce`),
+      fehlende Empfänger in allen drei Bäumen nachgerüstet, vier hart auf
+      `'konfi'` verdrahtete Sendestellen auf die echte Rolle (`23ee763a`).
+      In Produktion nachgemessen: 14 auf 15 ohne Neuladen.
+- [x] **Regler** — Skalenenden grau, Wert farbig, Abzeichen-Maximum wächst mit
+      (`4d7f520b`). Acht Stellen.
+- [x] **Abzeichen** — stilles Deaktivieren beim Teil-Update behoben
+      (`6ef4c625`); sechs kaputte Datensätze in Produktion geradegezogen.
+- [x] **Challenges** — Kopf-Infos benannt ("Sichtbarkeit:", "Moderiert:"),
+      "Ausgeblendet" nur wo sinnvoll, Einzahl/Mehrzahl, Info-Kasten raus
+      (`5c7c4ab7`).
+- [x] **Musik-Links** — Titel/Interpret/Album getrennt dargestellt, Album neu
+      (Migration 127), YouTube-Kanalname korrigiert (`6721eecf`).
+- [x] **Pflichttermine** — Zähler zeigte Anwesende statt Angemeldete
+      (`0db13f09`); Teamer wurden zweimal abgezogen (`a0bea11e`).
+- [x] **Mitmachen-Hinweis** zurück auf Startseite und dauerhaft unter "Mehr"
+      (`9aee14d1`), mit eigenem Erklärtext.
+- [x] **Teamer-Ansicht** — "Alle" zeigt Team-Termine, Nur-Team ohne Konfi-Werte
+      (`b814e401`).
+- [x] **Teamer-Zusage** — "Ich bin dabei" / "Ich bin nicht dabei" (`ed5a6e2a`),
+      ohne Begründungszwang. Die Leitung sieht Absagen in der Teamer-Liste.
+- [x] **Offline** — Termin-Detail nutzt den Listen-Cache (`c8348375`, war der
+      Hauptärger: "alles 0 und rot"); Aktivitätenliste und Tageslosung gecacht,
+      über 30 stille Abbrüche melden sich jetzt (`c2b40ad6`).
+- [x] **Zähl-Fehler** — Anmeldung konnte still schließen, Detail zählte Teamer
+      mit, `opted_out` galt als "ausstehend" (`bdc04fad`).
+- [x] **Eine Quelle für alle Buchungszahlen** — View `event_booking_stats`
+      (Migration 128, `9cb4aa24`). Fünf Stellen zählten mit drei Bedeutungen;
+      das war die Wurzel der drei Fehler des Tages.
+- [x] **Getrennte Sammelverbuchung** Konfis/Teamer (`eaac09e5`). Abgemeldete
+      und bereits Verbuchte bleiben unangetastet (getestet, Gegenprobe).
+- [ ] **Verbuchen-Kennzeichen bleibt bei offenen Teamern** — gebaut, Tests
+      grün, aber beim Sitzungsende noch NICHT committet. Erste Handlung der
+      Folgesitzung: `git status` prüfen, Testlauf wiederholen, committen.
+
 ## Zielgerade 2.0.0 (Reihenfolge)
 
 1. Laufende Agenten abwarten, Ergebnisse prüfen (nicht glauben), ausrollen
