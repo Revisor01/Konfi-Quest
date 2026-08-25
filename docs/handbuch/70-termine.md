@@ -575,10 +575,9 @@ gutschreiben.
 Deshalb wird der Code **ausschließlich** an das Team ausgeliefert, und auch
 dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.
 
-In der App zeigen ihn derzeit nur **Leitung und Admins** an. In der
-Teamer-Ansicht gibt es kein QR-Symbol: Teamer:innen können scannen, aber den
-Code nicht selbst aufrufen. Wenn beim Termin nur Teamer:innen vor Ort sind,
-muss der Code also vorher besorgt oder ausgedruckt werden.
+**Leitung und Teamer:innen** kommen gleichermaßen an den Code: oben rechts im
+geöffneten Termin über das QR-Symbol. Sind bei einem Termin nur Teamer:innen
+vor Ort, reicht das also aus — niemand muss den Code vorher besorgen.
 
 Der Code wird beim ersten Anzeigen erzeugt und bleibt danach gleich. Er läuft
 nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.

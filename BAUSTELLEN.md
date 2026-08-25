@@ -443,17 +443,30 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
 - [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
       Test, zusammen mit dem Datum im CHANGELOG.
 
-### Nebenbefunde vom 25.08. abends (nicht behoben, bewusst notiert)
+### Nebenbefunde vom 25.08. abends — behoben (`bbf1e727`)
 
-- [ ] **Teamer:innen sehen den Termin-QR-Code nicht.** `QRDisplayModal` ist
-      nur in `admin/views/EventDetailView.tsx` eingebunden; das Backend
-      erlaubt den Abruf per `requireTeamer` durchaus. Sind bei einem Termin
-      nur Teamer:innen vor Ort, kommen sie nicht an den Code. Im Handbuch
-      vorerst als Ist-Zustand vermerkt. Klassischer Drei-Ansichten-Fall.
-- [ ] **Dependabot-Meldung 123** (`uuid` < 11.1.1, mittel, in
-      `frontend/package-lock.json`). Geprüft am 25.08.: `uuid` hängt nur an
-      `@capacitor/cli`, und das ist eine devDependency — das Paket landet
-      nicht in der ausgelieferten App. Der App-Code nutzt den eigenen Helfer
-      `utils/uuid.ts` auf Basis der Web-Crypto-API, nicht das npm-Paket.
-      Also ein Werkzeug-Problem, kein Nutzerrisiko. Trotzdem beim nächsten
-      Capacitor-Update mitziehen.
+- [x] **Teamer:innen sehen den Termin-QR-Code nicht.** `QRDisplayModal` hing
+      nur in `admin/views/EventDetailView.tsx`, obwohl das Backend den Abruf
+      per `requireTeamer` freigibt (`generate-qr`, `attendance-count`). Sind
+      bei einem Termin nur Teamer:innen vor Ort, kam niemand an den Code.
+      Das Modal liegt jetzt unter `shared/` und wird in beiden Bäumen genutzt,
+      statt es ein zweites Mal zu bauen.
+      *Im Browser nachgemessen (demo.teamer, lokal): Knopf da, Modal öffnet,
+      echtes QR-Bild, Zähler "0 / 9 eingecheckt", Drucken-Symbol vorhanden.*
+      Der Handbuch-Absatz, der den Ist-Zustand beschrieb, ist damit überholt
+      und wurde zurückgenommen.
+- [x] **Challenges-Karte im Teamer-Dashboard sah anders aus** als "Was ist
+      neu?" und der Mitmachen-Hinweis direkt daneben — sie war aus
+      `app-list-item` plus Inline-Styles gebaut statt aus dem Banner-Look.
+      Jetzt eine gemeinsame Komponente (`shared/ChallengesHinweisKarte`), die
+      alle drei Bäume nutzen können. Genau daran läuft so etwas
+      auseinander — jede Rolle hat einen eigenen Komponentenbaum.
+      Sechs Tests, Gegenprobe rot.
+- [x] **Dependabot-Meldung 123** (`uuid` < 11.1.1) — per npm-`overrides` auf
+      11.1.1 gezwungen. GitHub führt die Meldung seit 25.08. als *fixed*,
+      **0 offene Meldungen**. Das Paket hing nur an `@capacitor/cli` und damit
+      am Bauwerkzeug, nicht an der App; die Meldung ist trotzdem weg statt
+      begründet offen. Gegenprobe: `npm ls uuid` zeigt 11.1.1, `npx cap
+      --version` und `npm run build` laufen unverändert.
+      *Nebenbei belegt: Der ERESOLVE-Konflikt bei `npm install` (eslint)
+      besteht vorher wie nachher — deshalb `--legacy-peer-deps`, wie die CI.*
