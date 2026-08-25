@@ -19,7 +19,7 @@ import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as fo
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
-import QRDisplayModal from '../modals/QRDisplayModal';
+import QRDisplayModal from '../../shared/QRDisplayModal';
 import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import {

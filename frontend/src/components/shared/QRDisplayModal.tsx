@@ -12,8 +12,8 @@ import {
 } from '@ionic/react';
 import { closeOutline, printOutline, cloudOfflineOutline } from 'ionicons/icons';
 import QRCode from 'qrcode';
-import api from '../../../services/api';
-import { useApp } from '../../../contexts/AppContext';
+import api from '../../services/api';
+import { useApp } from '../../contexts/AppContext';
 
 interface QRDisplayModalProps {
   eventId: number;

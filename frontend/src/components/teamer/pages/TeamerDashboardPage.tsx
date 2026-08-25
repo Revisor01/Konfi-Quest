@@ -17,7 +17,6 @@ import {
   sparkles,
   time,
   timeOutline,
-  flag,
   flagOutline,
   eyeOutline,
   megaphoneOutline,
@@ -46,6 +45,7 @@ import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
 import MitmachenHinweisKarte from '../../shared/MitmachenHinweisKarte';
+import ChallengesHinweisKarte from '../../shared/ChallengesHinweisKarte';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
@@ -599,29 +599,13 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege */}
-          <div
-            onClick={() => router.push('/teamer/challenges')}
-            className="app-list-item app-list-item--challenges"
-            style={{
-              marginBottom: '16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}
-          >
-            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
-              <IonIcon icon={flag} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="app-list-item__title">Challenges</div>
-              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
-                Aufgaben stellen und Beiträge der Konfis begleiten
-              </div>
-            </div>
-            <IonIcon icon={chevronForward} style={{ fontSize: '1.1rem', color: 'var(--app-color-challenges)' }} />
-          </div>
+          {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege.
+              Gleiche Form wie "Was ist neu?" und der Mitmachen-Hinweis. */}
+          <ChallengesHinweisKarte
+            style={{ margin: '0 16px 16px' }}
+            untertitel="Aufgaben stellen und Beiträge der Konfis begleiten"
+            onOpen={() => router.push('/teamer/challenges')}
+          />
 
           {/* Dynamische Sektionen basierend auf section_order */}
           {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {

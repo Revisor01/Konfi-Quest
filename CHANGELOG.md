@@ -188,6 +188,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen kommen im Termin an den QR-Code zum Einchecken. Bisher zeigte
+  ihn nur die Leitung — waren bei einem Termin allein Teamer:innen vor Ort,
+  konnte sich niemand einchecken.
+- Die Challenges-Karte auf der Teamer-Startseite sieht aus wie die übrigen
+  Hinweise daneben. Vorher war sie eine schlichte weiße Zeile in einem
+  anderen Look.
 - Ein Termin bleibt als "zu verbuchen" gekennzeichnet, solange noch
   Teamer:innen offen sind — auch wenn alle Konfis schon verbucht sind. Vorher
   verschwand er aus der Liste und das Team rutschte durch.

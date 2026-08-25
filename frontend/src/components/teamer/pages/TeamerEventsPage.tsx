@@ -75,6 +75,7 @@ import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
+import QRDisplayModal from '../../shared/QRDisplayModal';
 import RequestsView from '../../konfi/views/RequestsView';
 import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
 import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
@@ -305,6 +306,17 @@ const TeamerEventsPage: React.FC = () => {
       setSuccess(`Eingecheckt bei: ${eventName}`);
       refresh();
     }
+  });
+
+  // QR-Code zum Einchecken anzeigen. Gab es bisher nur in der Leitungsansicht,
+  // obwohl das Backend den Abruf fuer Teamer:innen erlaubt (requireTeamer bei
+  // generate-qr und attendance-count). Sind bei einem Termin nur Teamer:innen
+  // vor Ort, kamen sie deshalb nicht an den Code (Nutzerhinweis 25.08.2026).
+  const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
+    eventId: selectedEvent?.id ?? 0,
+    eventName: selectedEvent?.name ?? '',
+    eventDate: selectedEvent?.event_date ?? '',
+    onClose: () => dismissQRDisplayModal(),
   });
 
   useLiveRefresh('events', refreshLive);
@@ -677,6 +689,16 @@ const TeamerEventsPage: React.FC = () => {
               </IonButtons>
             )}
             <IonTitle>{selectedEvent.name}</IonTitle>
+            <IonButtons slot="end">
+              <IonButton
+                aria-label="QR-Code zum Einchecken anzeigen"
+                onClick={() => presentQRDisplayModal({
+                  presentingElement: pageRef.current || presentingElement || undefined
+                })}
+              >
+                <IonIcon icon={qrCodeOutline} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
           </IonToolbar>
         </IonHeader>
 

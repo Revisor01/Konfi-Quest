@@ -2954,6 +2954,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-whatsnew--mitmachen {
   background: linear-gradient(135deg, #10b981 0%, var(--app-color-activities) 60%, #065f46 100%);
 }
+/* Einstieg in den Challenges-Bereich. Behaelt bewusst den Farbverlauf des
+   Grundbanners: Challenges ist der Bereich, dessen Farbe das ist. */
+.app-whatsnew--challenges {
+  background: linear-gradient(135deg, #ec4899 0%, var(--app-color-challenges) 60%, #9d174d 100%);
+}
 
 .app-whatsnew:active {
   transform: scale(0.985);

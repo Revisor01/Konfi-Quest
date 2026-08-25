@@ -78,5 +78,8 @@
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   },
-  "description": "An Ionic project"
+  "description": "An Ionic project",
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
 }
