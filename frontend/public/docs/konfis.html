@@ -56,6 +56,13 @@ blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); bord
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
 pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
 pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+/* Bildschirmfotos: schmal halten, damit ein Handybild nicht die halbe Seite
+   fuellt. Auf kleinen Schirmen darf es die volle Breite nutzen. */
+figure.bildschirmfoto { margin:0 0 22px; max-width:300px; }
+figure.bildschirmfoto img { display:block; width:100%; height:auto; border:1px solid var(--rand); border-radius:12px; background:var(--flaeche); }
+figure.bildschirmfoto figcaption { margin-top:8px; font-size:.84rem; color:var(--text-leise); line-height:1.5; }
+.kapitel img { max-width:100%; height:auto; }
+@media (max-width:640px) { figure.bildschirmfoto { max-width:100%; } }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
@@ -180,15 +187,18 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Unten in der App stehen fünf Reiter. Alles, was du brauchst, findest du dort.</p>
       <blockquote>Noch keinen Zugang? Deine Gemeinde gibt dir einen Einladungscode — wie die Registrierung damit läuft, steht im Kapitel <a href="./passwoerter.html#konfis-kommen-neu-dazu-der-einladungscode">Passwörter und Zugänge</a>.</blockquote>
       <h2 id="start">Start</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/konfi-startseite.png" alt="Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Abzeichen." loading="lazy"><figcaption>Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Abzeichen.</figcaption></figure>
       <p>Deine Übersicht. Ganz oben stehen deine <a href="./punkte.html">Punkte</a> als drei Ringe: <strong>Gesamt</strong>, <strong>Gottesdienst</strong> und <strong>Gemeinde</strong>. Tippe sie an, dann siehst du, woher jeder einzelne Punkt kommt.</p>
       <p>Darunter zeigt die Startseite, was gerade ansteht. Welche Bereiche erscheinen, stellt deine Gemeinde ein:</p>
       <ul><li><strong>Deine Konfirmation</strong> — der Countdown bis zum Tag, mit Datum und Ort</li><li><strong>Deine Challenge</strong> — was gerade läuft und wie lange noch</li><li><strong>Dein Konfispruch</strong> — sobald deine Gemeinde die <a href="./jahrgaenge.html#konfispruch-freigabe">Auswahl freigegeben</a> hat</li><li><strong>Deine Events</strong> — die nächsten Termine</li><li><strong>Tageslosung</strong> — der Bibelvers des Tages, in deiner Übersetzung</li><li><strong>Deine Badges</strong> — was du schon gesammelt hast</li><li><strong>Dein Ranking</strong> — dein Platz, ohne die Punkte der anderen zu zeigen</li></ul>
       <p>Oben rechts kommst du zu deinem Profil.</p>
       <h2 id="chat">Chat</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/konfi-chat.png" alt="Die Chat-Übersicht mit Gruppen und Einzelgesprächen." loading="lazy"><figcaption>Die Chat-Übersicht mit Gruppen und Einzelgesprächen.</figcaption></figure>
       <p>Hier schreibst du mit deinem Team. Es gibt Gruppen für deinen Jahrgang und für Termine, dazu Einzelgespräche.</p>
       <p><strong>Wen du anschreiben kannst:</strong> die Leitung deiner Gemeinde immer, und die Teamer:innen, die für deinen Jahrgang zuständig sind. Andere Konfis kannst du nicht anschreiben — auch nicht aus deinem Jahrgang.</p>
       <p>In Gruppen siehst du, wer sonst noch dabei ist. Du kannst antworten, reagieren, Bilder und Dateien schicken und an Umfragen teilnehmen. Ist eine Umfrage als anonym angelegt, sieht niemand, was du gewählt hast — auch die Leitung nicht. Alle Regeln, wer wen erreicht, stehen im Kapitel <a href="./chat.html#wer-wen-anschreiben-darf">Chat</a>.</p>
       <h2 id="challenges">Challenges</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/konfi-challenges.png" alt="Der Challenges-Bereich mit den Reitern Aktuell und Archiv." loading="lazy"><figcaption>Der Challenges-Bereich mit den Reitern Aktuell und Archiv.</figcaption></figure>
       <p>Aufgaben, auf die du über einen Zeitraum antwortest. Zwei Reiter: <strong>Aktuell</strong> und <strong>Archiv</strong>, dazwischen deine gesammelten Abzeichen.</p>
       <p>Beim Einreichen wählst du, wie du antwortest — je nachdem, was erlaubt ist: Text, Foto, Audio, Video oder ein Link.</p>
       <p>Bei manchen Challenges entscheidest du selbst, <strong>wer deinen Beitrag sieht</strong>:</p>
@@ -206,8 +216,10 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Was du selbst gemacht hast und angerechnet bekommen möchtest: Du wählst die Aktivität, das Datum und lädst am besten ein Foto als Nachweis hoch. Dann geht die Meldung an dein Team.</p>
       <p>Drei Reiter zeigen den Stand: <strong>Offen</strong>, <strong>Angerechnet</strong>, <strong>Abgelehnt</strong>. Wird etwas abgelehnt, steht der Grund dabei.</p>
       <h2 id="badges">Badges</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/konfi-abzeichen.png" alt="Die Badges-Seite: oben, wie viele erreicht sind, darunter die Gruppen; erreichte Badges tragen einen grünen Haken, offene bleiben blass." loading="lazy"><figcaption>Die Badges-Seite: oben, wie viele erreicht sind, darunter die Gruppen; erreichte Badges tragen einen grünen Haken, offene bleiben blass.</figcaption></figure>
       <p>Deine Abzeichen. Manche bekommst du für Punkte, andere für bestimmte Aktivitäten, Termine oder Serien. <strong>Geheime Badges</strong> siehst du erst, wenn du sie hast — sonst wäre die Überraschung weg. Welche Bedingungen es gibt, steht im Kapitel <a href="./badges.html">Abzeichen</a>.</p>
       <h2 id="dein-profil">Dein Profil</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/konfi-profil.png" alt="Das eigene Profil mit Konfispruch, Jahrgang und Zugangsdaten." loading="lazy"><figcaption>Das eigene Profil mit Konfispruch, Jahrgang und Zugangsdaten.</figcaption></figure>
       <p>Über das Symbol oben rechts auf der Startseite:</p>
       <ul><li><strong>Punkte-Übersicht</strong> — jeder Punkt einzeln aufgelistet</li><li><strong>Konfispruch wählen</strong> — aus einer Liste oder selbst eingeben, sobald deine Gemeinde das freigegeben hat</li><li><strong>Bibelübersetzung</strong> — welche Übersetzung du bei der Tageslosung siehst</li><li><strong>E-Mail und Passwort ändern</strong></li><li><strong>Deine Wrappeds</strong> — dein <a href="./wrapped.html">Jahresrückblick</a>, sobald er freigegeben ist</li><li><strong>App-Tour</strong> — die Einführung noch einmal ansehen</li></ul>
       <p>Ganz unten kannst du dich abmelden oder dein Konto löschen.</p>

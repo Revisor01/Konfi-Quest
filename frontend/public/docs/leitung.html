@@ -56,6 +56,13 @@ blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); bord
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
 pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
 pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+/* Bildschirmfotos: schmal halten, damit ein Handybild nicht die halbe Seite
+   fuellt. Auf kleinen Schirmen darf es die volle Breite nutzen. */
+figure.bildschirmfoto { margin:0 0 22px; max-width:300px; }
+figure.bildschirmfoto img { display:block; width:100%; height:auto; border:1px solid var(--rand); border-radius:12px; background:var(--flaeche); }
+figure.bildschirmfoto figcaption { margin-top:8px; font-size:.84rem; color:var(--text-leise); line-height:1.5; }
+.kapitel img { max-width:100%; height:auto; }
+@media (max-width:640px) { figure.bildschirmfoto { max-width:100%; } }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
@@ -179,6 +186,7 @@ tbody tr:last-child td { border-bottom:none; }
       </header>
       <p>Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: <strong>Admins</strong> können fast alles, <strong>Org-Admins</strong> zusätzlich die Benutzerverwaltung, die Einladungen und die Dashboard-Einstellungen.</p>
       <h2 id="konfis">Konfis</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/leitung-konfis.png" alt="Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen." loading="lazy"><figcaption>Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen.</figcaption></figure>
       <p>Die zentrale Liste, umschaltbar zwischen <strong>Konfis</strong> und <strong>Teamer:innen</strong>. Zu jeder Person siehst du Punkte nach <strong>Godi</strong>, <strong>Gemeinde</strong> und <strong>Gesamt</strong>.</p>
       <p>Über das Plus legst du an, was gerade geöffnet ist — einen Konfi oder eine Teamer:in. Beim Anlegen erzeugt die App ein <a href="./passwoerter.html#wie-die-einmalpasswoerter-aussehen"><strong>Einmalpasswort</strong></a>, das du direkt kopieren kannst. Ganze Gruppen lädst du besser <a href="./passwoerter.html#konfis-kommen-neu-dazu-der-einladungscode">per QR-Code ein</a>, statt jeden Konfi einzeln anzulegen.</p>
       <p>Oben findest du die <strong>Anwesenheits-Matrix</strong>: eine Tabelle über alle Konfis mit Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken lassen kannst.</p>
@@ -187,12 +195,14 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Bei Teamer:innen kommen <strong>Zertifikate</strong> dazu (etwa JuLeiCa) und die Angabe, seit wann sie dabei sind.</p>
       <p>Teamer:innen löschen darf nur ein Org-Admin.</p>
       <h2 id="chat">Chat</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/leitung-chat.png" alt="Die Chat-Übersicht der Leitung." loading="lazy"><figcaption>Die Chat-Übersicht der Leitung.</figcaption></figure>
       <p>Du erreichst <strong>jeden</strong> in deiner Gemeinde — alle Konfis, alle Teamer:innen, die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft dich nicht.</p>
       <p>Nur die Leitung kann:</p>
       <ul><li><strong>Mitglieder</strong> zu Gruppen hinzufügen und daraus entfernen</li><li><strong>Chats löschen</strong></li><li><strong>fremde Nachrichten löschen</strong></li><li>den <strong>Verlauf exportieren</strong> — als Textdatei, etwa um Beiträge für einen Gottesdienst zu sammeln</li><li><strong>Umfragen anlegen</strong></li></ul>
       <p>Beim Öffnen eines einzelnen Chats gilt für dich eine Ausnahme: Du kannst jeden <strong>gemeinschaftlichen</strong> Raum deiner Gemeinde öffnen und lesen — Gruppen, Jahrgangs-, Team- und Termin-Chats —, auch ohne selbst Mitglied zu sein. In deiner eigenen Chatliste erscheinen allerdings nur die Chats, in denen du selbst bist.</p>
       <p>Zwei Grenzen gibt es doch: <strong>Fremde Zweiergespräche</strong> kannst du weder öffnen noch lesen — ein Direktchat ist privat, auch für die Leitung (<a href="./chat.html#was-die-leitung-darf-und-was-seit-dem-23-08-2026-nicht-mehr">warum, steht im Chat-Kapitel</a>). Und bei <strong>anonymen Umfragen</strong> siehst auch du nicht, wer was gewählt hat.</p>
       <h2 id="events">Events</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/leitung-mitmachen.png" alt="Der Bereich Mitmachen in der Leitungsansicht." loading="lazy"><figcaption>Der Bereich Mitmachen in der Leitungsansicht.</figcaption></figure>
       <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
       <h3 id="events-2">Events</h3>
       <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Verbuchen</strong> und <strong>Vergangen</strong>. „Verbuchen&quot; sammelt die Termine, bei denen noch Anwesenheiten einzutragen sind.</p>
@@ -203,11 +213,13 @@ tbody tr:last-child td { border-bottom:none; }
       <h3 id="aktivitaeten">Aktivitäten</h3>
       <p>Die Meldungen der Konfis und Teamer:innen: <strong>Offen</strong>, <strong>Genehmigt</strong>, <strong>Abgelehnt</strong>. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen musst du einen Grund angeben — den bekommt die Person zu sehen. Der ganze <a href="./punkte.html#der-weg-einer-aktivitaets-meldung">Weg einer Meldung</a> steht im Punkte-Kapitel.</p>
       <h2 id="challenges">Challenges</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/leitung-challenges.png" alt="Die Challenges-Verwaltung der Leitung." loading="lazy"><figcaption>Die Challenges-Verwaltung der Leitung.</figcaption></figure>
       <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Geplant</strong>, <strong>Archiv</strong>.</p>
       <p>Beim Anlegen legst du fest, <strong>wer mitmacht</strong> (ein Jahrgang mit dem Team oder nur das Team), <strong>welche Medienarten</strong> erlaubt sind und <strong>wie sichtbar</strong> die Beiträge sind. Dazu das Abzeichen, das es fürs Mitmachen gibt.</p>
       <p>Nach dem Start sind <strong>Sichtbarkeit, Freigabepflicht, Startzeitpunkt und Medienarten gesperrt</strong>. Das ist Absicht: Was den Konfis zugesagt wurde, gilt.</p>
       <p>Beim Begleiten kannst du Beiträge <strong>freigeben</strong>, <strong>anonymisieren</strong> oder <strong>ausblenden</strong>. Anonymisieren geht nicht zurück. Alle Einstellungen im Detail stehen im Kapitel <a href="./challenges.html">Challenges</a>.</p>
       <h2 id="mehr">Mehr</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/leitung-einstellungen.png" alt="Der Bereich Mehr mit den Einstellungen der Gemeinde." loading="lazy"><figcaption>Der Bereich Mehr mit den Einstellungen der Gemeinde.</figcaption></figure>
       <h3 id="inhalt">Inhalt</h3>
       <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Wofür</th></tr></thead><tbody><tr><td><strong>Aktivitäten</strong></td><td>Der Katalog dessen, was gemeldet werden kann, mit Punkten</td></tr><tr><td><strong>Challenges</strong></td><td>Aufgaben stellen und begleiten</td></tr><tr><td><strong>Badges</strong></td><td><a href="./badges.html">Abzeichen</a> definieren, mit Bedingungen</td></tr><tr><td><strong>Jahrgänge</strong></td><td><a href="./jahrgaenge.html">Punkteziele, Konfispruch- und Wrapped-Freigabe</a></td></tr><tr><td><strong>Kategorien</strong></td><td>Für Aktivitäten und Termine</td></tr><tr><td><strong>Level</strong></td><td><a href="./punkte.html#level">Punkteschwellen</a> und ihre Titel</td></tr><tr><td><strong>Material</strong></td><td>Dokumente für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle</td></tr><tr><td><strong>Zertifikate</strong></td><td>Nachweise für Teamer:innen, mit Gültigkeit</td></tr></tbody></table></div>
       <h3 id="verwaltung-nur-org-admin">Verwaltung (nur Org-Admin)</h3>

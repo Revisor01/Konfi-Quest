@@ -19,7 +19,7 @@
  * Absatz, Liste, Tabelle, Zitat, Betonung, Code). Ein eigener kleiner Renderer
  * spart eine Abhaengigkeit, die sonst nur hier gebraucht wuerde.
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, copyFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -71,6 +71,12 @@ function inline(text) {
   s = e(s);
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+  // Bilder ![Beschreibung](pfad) — VOR den Verweisen, sonst frisst die
+  // Link-Regel die Klammern und uebrig bliebe ein Ausrufezeichen vor einem
+  // toten Verweis. Bildpfade zeigen auf /docs/bilder/... und gehen deshalb
+  // nicht durch zielZuHref (das rechnet Kapitel-Dateinamen um).
+  s = s.replace(/!\[([^\]]*)\]\(([^()\s]+)\)/g,
+    (_, alt, pfad) => `<img src="${pfad}" alt="${alt}" loading="lazy">`);
   // Verweise [Text](ziel) — nach strong/em, damit Auszeichnung im Linktext
   // schon aufgeloest ist. Das Ziel ist zu diesem Zeitpunkt bereits durch e()
   // gelaufen (nur &amp; u.ae., in Dateinamen und Ankern kommt das nicht vor).
@@ -201,9 +207,28 @@ function markdown(quelle, anker = new Set()) {
       continue;
     }
 
+    // Bild allein in einer Zeile — wird zur Abbildung mit Bildunterschrift.
+    // Steht es dagegen mitten im Text, bleibt es ein normales <img> (siehe
+    // inline()). Die Bildunterschrift ist der Alt-Text: einmal geschrieben,
+    // zweimal genutzt, damit beides nicht auseinanderlaeuft.
+    const nurBild = z.trim().match(/^!\[([^\]]*)\]\(([^()\s]+)\)$/);
+    if (nurBild) {
+      const [, alt, pfad] = nurBild;
+      teile.push(
+        `<figure class="bildschirmfoto">` +
+        `<img src="${pfad}" alt="${e(alt)}" loading="lazy">` +
+        (alt ? `<figcaption>${inline(alt)}</figcaption>` : '') +
+        `</figure>`
+      );
+      i++;
+      continue;
+    }
+
     // Absatz
     const absatz = [];
-    while (i < zeilen.length && zeilen[i].trim() && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())) {
+    while (i < zeilen.length && zeilen[i].trim()
+      && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())
+      && !/^!\[[^\]]*\]\([^()\s]+\)$/.test(zeilen[i].trim())) {
       absatz.push(zeilen[i].trim());
       i++;
     }
@@ -283,6 +308,13 @@ blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); bord
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
 pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
 pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+/* Bildschirmfotos: schmal halten, damit ein Handybild nicht die halbe Seite
+   fuellt. Auf kleinen Schirmen darf es die volle Breite nutzen. */
+figure.bildschirmfoto { margin:0 0 22px; max-width:300px; }
+figure.bildschirmfoto img { display:block; width:100%; height:auto; border:1px solid var(--rand); border-radius:12px; background:var(--flaeche); }
+figure.bildschirmfoto figcaption { margin-top:8px; font-size:.84rem; color:var(--text-leise); line-height:1.5; }
+.kapitel img { max-width:100%; height:auto; }
+@media (max-width:640px) { figure.bildschirmfoto { max-width:100%; } }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
@@ -450,6 +482,25 @@ ${inhalt}
 
   mkdirSync(ZIEL_VERZ, { recursive: true });
 
+  // Bildschirmfotos mitnehmen. Sie entstehen per scripts/screenshots.mjs und
+  // liegen in docs/screenshots/<geraet>/; hier landen sie unter
+  // /docs/bilder/<geraet>/, worauf die Kapitel verweisen.
+  const bilderQuelle = join(WURZEL, 'docs', 'screenshots');
+  const bilderZiel = join(ZIEL_VERZ, 'bilder');
+  const vorhandeneBilder = new Set();
+  if (existsSync(bilderQuelle)) {
+    for (const geraet of readdirSync(bilderQuelle)) {
+      const von = join(bilderQuelle, geraet);
+      if (!statSync(von).isDirectory()) continue;
+      mkdirSync(join(bilderZiel, geraet), { recursive: true });
+      for (const bild of readdirSync(von)) {
+        if (!bild.endsWith('.png')) continue;
+        copyFileSync(join(von, bild), join(bilderZiel, geraet, bild));
+        vorhandeneBilder.add(`/docs/bilder/${geraet}/${bild}`);
+      }
+    }
+  }
+
   // Erst alles rendern, dann pruefen, dann schreiben: Die Kapitel verweisen
   // aufeinander wie in einem Wiki, und ein toter Link ist schlimmer als kein
   // Link. Deshalb bricht der Build ab, wenn ein interner Verweis ins Leere
@@ -549,8 +600,22 @@ ${karten}
       if (anker && !zielSeite.anker.has(anker)) fehler.push(`${datei}: "${href}" — Anker fehlt`);
     }
   }
+  // --- Bilder pruefen ---
+  // Ein fehlendes Bildschirmfoto faellt im HTML sonst nur als kaputtes Symbol
+  // auf, und das sieht niemand vor dem Ausrollen. Gleiche Strenge wie bei den
+  // Verweisen: Der Build bricht ab.
+  for (const [datei, seite] of erzeugt) {
+    for (const m of seite.html.matchAll(/<img src="([^"]*)"/g)) {
+      const src = m[1];
+      if (/^(https?:)?\/\//.test(src)) continue;
+      if (src.startsWith('/docs/bilder/') && !vorhandeneBilder.has(src)) {
+        fehler.push(`${datei}: Bild "${src}" fehlt — erst "node scripts/screenshots.mjs" laufen lassen`);
+      }
+    }
+  }
+
   if (fehler.length) {
-    throw new Error(`Tote interne Verweise:\n  ${fehler.join('\n  ')}`);
+    throw new Error(`Tote interne Verweise oder fehlende Bilder:\n  ${fehler.join('\n  ')}`);
   }
 
   // --- Schreiben ---

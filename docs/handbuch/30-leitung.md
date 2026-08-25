@@ -10,6 +10,8 @@ Einladungen und die Dashboard-Einstellungen.
 
 ## Konfis
 
+![Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen.](/docs/bilder/iphone/leitung-konfis.png)
+
 Die zentrale Liste, umschaltbar zwischen **Konfis** und **Teamer:innen**. Zu
 jeder Person siehst du Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 
@@ -41,6 +43,8 @@ Teamer:innen löschen darf nur ein Org-Admin.
 
 ## Chat
 
+![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
+
 Du erreichst **jeden** in deiner Gemeinde — alle Konfis, alle Teamer:innen,
 die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft
 dich nicht.
@@ -66,6 +70,8 @@ noch lesen — ein Direktchat ist privat, auch für die Leitung
 Und bei **anonymen Umfragen** siehst auch du nicht, wer was gewählt hat.
 
 ## Events
+
+![Der Bereich Mitmachen in der Leitungsansicht.](/docs/bilder/iphone/leitung-mitmachen.png)
 
 Zwei Bereiche oben: **Events** und **Aktivitäten**.
 
@@ -103,6 +109,8 @@ Punkte-Kapitel.
 
 ## Challenges
 
+![Die Challenges-Verwaltung der Leitung.](/docs/bilder/iphone/leitung-challenges.png)
+
 Drei Reiter: **Aktuell**, **Geplant**, **Archiv**.
 
 Beim Anlegen legst du fest, **wer mitmacht** (ein Jahrgang mit dem Team oder
@@ -117,6 +125,8 @@ Beim Begleiten kannst du Beiträge **freigeben**, **anonymisieren** oder
 stehen im Kapitel [Challenges](80-challenges.md).
 
 ## Mehr
+
+![Der Bereich Mehr mit den Einstellungen der Gemeinde.](/docs/bilder/iphone/leitung-einstellungen.png)
 
 ### Inhalt
 

@@ -56,6 +56,13 @@ blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); bord
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
 pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
 pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+/* Bildschirmfotos: schmal halten, damit ein Handybild nicht die halbe Seite
+   fuellt. Auf kleinen Schirmen darf es die volle Breite nutzen. */
+figure.bildschirmfoto { margin:0 0 22px; max-width:300px; }
+figure.bildschirmfoto img { display:block; width:100%; height:auto; border:1px solid var(--rand); border-radius:12px; background:var(--flaeche); }
+figure.bildschirmfoto figcaption { margin-top:8px; font-size:.84rem; color:var(--text-leise); line-height:1.5; }
+.kapitel img { max-width:100%; height:auto; }
+@media (max-width:640px) { figure.bildschirmfoto { max-width:100%; } }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
@@ -179,14 +186,17 @@ tbody tr:last-child td { border-bottom:none; }
       </header>
       <p>Als Teamer:in begleitest du die Jahrgänge, die dir zugewiesen sind. Diese <a href="./jahrgaenge.html#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert">Zuweisung</a> entscheidet fast überall, was du siehst und wen du erreichst.</p>
       <h2 id="start">Start</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-startseite.png" alt="Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate." loading="lazy"><figcaption>Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.</figcaption></figure>
       <p>Deine Übersicht mit den Bereichen, die deine Gemeinde freigeschaltet hat: deine <strong>Zertifikate</strong>, deine <strong>Events</strong>, die <strong>Tageslosung</strong> und deine <strong>Badges</strong>. Läuft gerade eine Challenge, steht sie oben.</p>
       <p>Ist dein Jahresrückblick freigegeben, erscheint hier ein Banner dafür.</p>
       <h2 id="chat">Chat</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-chat.png" alt="Die Chat-Übersicht der Teamer:innen." loading="lazy"><figcaption>Die Chat-Übersicht der Teamer:innen.</figcaption></figure>
       <p>Du erreichst <strong>das ganze Team</strong> deiner Gemeinde — alle Teamer:innen und die gesamte Leitung, unabhängig vom Jahrgang.</p>
       <p>Bei <strong>Konfis</strong> gilt deine Jahrgangszuweisung: Du kannst nur die anschreiben, für deren Jahrgang du eingetragen bist. Hast du keine Zuweisung, erreichst du keine Konfis — und tauchst umgekehrt in deren Kontaktliste auch nicht auf. Wenn du Konfis erreichen können solltest und es nicht kannst, fehlt dir die Jahrgangszuweisung; die setzt die Leitung.</p>
       <p>Du kannst Gruppenchats anlegen. Mitglieder nachträglich hinzufügen oder entfernen kann nur die Leitung — auch in Gruppen, die du selbst angelegt hast.</p>
       <p>Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung. Alle Chat-Regeln im Detail stehen im Kapitel <a href="./chat.html">Chat</a>.</p>
       <h2 id="events">Events</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-mitmachen.png" alt="Der Bereich Mitmachen mit Terminen und Aktivitäten." loading="lazy"><figcaption>Der Bereich Mitmachen mit Terminen und Aktivitäten.</figcaption></figure>
       <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
       <h3 id="events-2">Events</h3>
       <p>Alle Termine, gefiltert über <strong>Alle</strong>, <strong>Meine</strong> und <strong>Team</strong>. Bei Terminen, für die Teamer:innen gesucht werden, meldest du dich mit <strong>„Ich bin dabei&quot;</strong> an. Es gibt ein <a href="./termine.html#teamer-kontingent">eigenes Kontingent für das Team</a>, getrennt von den Plätzen der Konfis, und bei Bedarf eine eigene Warteliste.</p>
@@ -196,13 +206,16 @@ tbody tr:last-child td { border-bottom:none; }
       <h3 id="aktivitaeten">Aktivitäten</h3>
       <p>Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als Nachweis. Die Leitung bestätigt sie, dann zählen sie — der <a href="./punkte.html#der-weg-einer-aktivitaets-meldung">Weg einer Meldung</a> ist derselbe wie bei den Konfis.</p>
       <h2 id="challenges">Challenges</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-challenges.png" alt="Der Challenges-Bereich in der Teamer-Ansicht." loading="lazy"><figcaption>Der Challenges-Bereich in der Teamer-Ansicht.</figcaption></figure>
       <p>Du arbeitest hier genauso wie die Leitung — begrenzt auf deine zugewiesenen Jahrgänge. Du kannst:</p>
       <ul><li>Challenges <strong>anlegen und bearbeiten</strong></li><li>Beiträge <strong>freigeben</strong>, nachträglich <strong>anonymisieren</strong> oder <strong>ausblenden</strong></li><li><strong>selbst mitmachen</strong> und einen eigenen Beitrag einreichen</li></ul>
       <p>Anonymisieren lässt sich nicht zurücknehmen. Ihr im Team seht weiterhin, von wem ein Beitrag stammt — die Anonymität gilt gegenüber der Gruppe.</p>
       <p>Es gibt auch Challenges <strong>nur fürs Team</strong>. Die sehen Konfis gar nicht. Alles Weitere steht im Kapitel <a href="./challenges.html">Challenges</a>.</p>
       <h2 id="badges">Badges</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-abzeichen.png" alt="Die Badges in der Teamer-Ansicht." loading="lazy"><figcaption>Die Badges in der Teamer-Ansicht.</figcaption></figure>
       <p>Deine eigenen Abzeichen, gefiltert nach <strong>Alle</strong>, <strong>Offen</strong> und <strong>In Arbeit</strong>. Welche <a href="./badges.html#welche-bedingung-fuer-welche-zielgruppe">Bedingungen für Teamer:innen</a> gelten, steht im Abzeichen-Kapitel.</p>
       <h2 id="dein-profil">Dein Profil</h2>
+      <figure class="bildschirmfoto"><img src="/docs/bilder/iphone/teamer-profil.png" alt="Das Profil einer Teamer:in." loading="lazy"><figcaption>Das Profil einer Teamer:in.</figcaption></figure>
       <p>Über den Profil-Bereich erreichst du:</p>
       <ul><li><strong>Funktionsbeschreibung</strong> — wie du in der App genannt wirst, etwa „Teamerin&quot; oder „Jugendmitarbeiter&quot;. Sie steht neben deinem Namen im Chat.</li><li><strong>E-Mail und Passwort ändern</strong></li><li><strong>Bibelübersetzung</strong> für die Tageslosung</li><li><strong>Material</strong> — die Dokumente, die für dich freigegeben sind. Hängt ein Dokument an einem Jahrgang, sehen es nur die Teamer:innen dieses Jahrgangs. Dokumente ohne Jahrgang sehen alle.</li><li><strong>Konfi-Historie</strong> — wenn du früher selbst Konfi warst: deine damaligen Punkte und Abzeichen</li><li><strong>Deine Wrappeds</strong> — dein <a href="./wrapped.html#der-teamer-rueckblick-laeuft-anders">Jahresrückblick</a> als Teamer:in</li></ul>
     </article>

@@ -10,6 +10,8 @@ entscheidet fast überall, was du siehst und wen du erreichst.
 
 ## Start
 
+![Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.](/docs/bilder/iphone/teamer-startseite.png)
+
 Deine Übersicht mit den Bereichen, die deine Gemeinde freigeschaltet hat:
 deine **Zertifikate**, deine **Events**, die **Tageslosung** und deine
 **Badges**. Läuft gerade eine Challenge, steht sie oben.
@@ -17,6 +19,8 @@ deine **Zertifikate**, deine **Events**, die **Tageslosung** und deine
 Ist dein Jahresrückblick freigegeben, erscheint hier ein Banner dafür.
 
 ## Chat
+
+![Die Chat-Übersicht der Teamer:innen.](/docs/bilder/iphone/teamer-chat.png)
 
 Du erreichst **das ganze Team** deiner Gemeinde — alle Teamer:innen und die
 gesamte Leitung, unabhängig vom Jahrgang.
@@ -34,6 +38,8 @@ Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung. Alle
 Chat-Regeln im Detail stehen im Kapitel [Chat](90-chat.md).
 
 ## Events
+
+![Der Bereich Mitmachen mit Terminen und Aktivitäten.](/docs/bilder/iphone/teamer-mitmachen.png)
 
 Zwei Bereiche oben: **Events** und **Aktivitäten**.
 
@@ -62,6 +68,8 @@ wie bei den Konfis.
 
 ## Challenges
 
+![Der Challenges-Bereich in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-challenges.png)
+
 Du arbeitest hier genauso wie die Leitung — begrenzt auf deine zugewiesenen
 Jahrgänge. Du kannst:
 
@@ -77,11 +85,15 @@ Alles Weitere steht im Kapitel [Challenges](80-challenges.md).
 
 ## Badges
 
+![Die Badges in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-abzeichen.png)
+
 Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
 Welche [Bedingungen für Teamer:innen](60-badges.md#welche-bedingung-fuer-welche-zielgruppe)
 gelten, steht im Abzeichen-Kapitel.
 
 ## Dein Profil
+
+![Das Profil einer Teamer:in.](/docs/bilder/iphone/teamer-profil.png)
 
 Über den Profil-Bereich erreichst du:
 

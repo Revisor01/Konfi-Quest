@@ -12,6 +12,8 @@ Unten in der App stehen fünf Reiter. Alles, was du brauchst, findest du dort.
 
 ## Start
 
+![Die Startseite eines Konfis: die drei Punkte-Ringe, darunter das nächste Level und die Abzeichen.](/docs/bilder/iphone/konfi-startseite.png)
+
 Deine Übersicht. Ganz oben stehen deine [Punkte](40-punkte.md) als drei Ringe: **Gesamt**,
 **Gottesdienst** und **Gemeinde**. Tippe sie an, dann siehst du, woher jeder
 einzelne Punkt kommt.
@@ -32,6 +34,8 @@ Oben rechts kommst du zu deinem Profil.
 
 ## Chat
 
+![Die Chat-Übersicht mit Gruppen und Einzelgesprächen.](/docs/bilder/iphone/konfi-chat.png)
+
 Hier schreibst du mit deinem Team. Es gibt Gruppen für deinen Jahrgang und
 für Termine, dazu Einzelgespräche.
 
@@ -46,6 +50,8 @@ Leitung nicht. Alle Regeln, wer wen erreicht, stehen im Kapitel
 [Chat](90-chat.md#wer-wen-anschreiben-darf).
 
 ## Challenges
+
+![Der Challenges-Bereich mit den Reitern Aktuell und Archiv.](/docs/bilder/iphone/konfi-challenges.png)
 
 Aufgaben, auf die du über einen Zeitraum antwortest. Zwei Reiter: **Aktuell**
 und **Archiv**, dazwischen deine gesammelten Abzeichen.
@@ -96,12 +102,16 @@ etwas abgelehnt, steht der Grund dabei.
 
 ## Badges
 
+![Die Badges-Seite: oben, wie viele erreicht sind, darunter die Gruppen; erreichte Badges tragen einen grünen Haken, offene bleiben blass.](/docs/bilder/iphone/konfi-abzeichen.png)
+
 Deine Abzeichen. Manche bekommst du für Punkte, andere für bestimmte
 Aktivitäten, Termine oder Serien. **Geheime Badges** siehst du erst, wenn du
 sie hast — sonst wäre die Überraschung weg. Welche Bedingungen es gibt, steht
 im Kapitel [Abzeichen](60-badges.md).
 
 ## Dein Profil
+
+![Das eigene Profil mit Konfispruch, Jahrgang und Zugangsdaten.](/docs/bilder/iphone/konfi-profil.png)
 
 Über das Symbol oben rechts auf der Startseite:
 

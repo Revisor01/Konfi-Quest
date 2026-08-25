@@ -33,7 +33,7 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   ihren Bedingungen. Das Einladen per QR-Code und der Check-in per QR-Code sind
   jetzt vollständig beschrieben — mit Zeitfenster, Zähler und dem, was ein Scan
   sofort auslöst. Die Kapitel verweisen untereinander, sodass man von einem
-  Thema zum nächsten springen kann.
+  Thema zum nächsten springen kann, und zeigen Bildschirmfotos aus der App.
 - Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
   Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
   Zu finden über das Menü oben rechts im Chat.
