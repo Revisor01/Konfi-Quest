@@ -229,7 +229,15 @@ Erledigten.
 - [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
       fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
 - [ ] **Socket.IO** — Pushes nach dem Abmelden.
-- [ ] **Live-Aktualisierung: fehlende Empfänger** (geprüft 25.08.). Das Senden
+- [x] **Live-Aktualisierung: fehlende Empfänger** — behoben (`23ee763a`),
+      Empfänger nachgerüstet in Konfi-Detail (Leitung), Termin-Detail (beide
+      Bäume) und im Teamer-Baum (Dashboard, Abzeichen, Profil, Statistik);
+      vier hart auf `'konfi'` verdrahtete Sendestellen in `events.js` auf die
+      echte Rolle umgestellt. Der als unsicher gemeldete Befund zu
+      `events.js:1791` hat sich beim Nachprüfen NICHT bestätigt (eigener
+      Teamer-Zweig sendet dort korrekt) und wurde nicht angefasst.
+      *Committet, NICHT ausgerollt — erst nach Deploy und Nachmessen abhaken.*
+      ALT: (geprüft 25.08.). Das Senden
       im Backend ist gut ausgebaut (rund 130 Sendepunkte, saubere Raum-
       Auflösung). Die Lücken sitzen bei den EMPFÄNGERN — von 17 Admin-Seiten
       hören 11, von 8 Teamer-Seiten nur 3, von 6 Konfi-Seiten 5:
