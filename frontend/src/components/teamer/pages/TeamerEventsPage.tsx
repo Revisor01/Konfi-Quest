@@ -660,7 +660,7 @@ const TeamerEventsPage: React.FC = () => {
 
           {/* SectionHeader mit Status-Farben */}
           {(() => {
-            const konfiCount = selectedEvent.registered_count - (selectedEvent.teamer_count || 0);
+            const konfiCount = (selectedEvent.registered_count || 0);
             // Punkte-Kachel nur, wenn es überhaupt Punkte gibt — dieselbe
             // Bedingung wie die Punkte-Zeile weiter unten. Bei Terminen nur
             // fuers Team, Pflichtterminen und Konfirmationen stand hier sonst
@@ -714,7 +714,7 @@ const TeamerEventsPage: React.FC = () => {
                     <div>
                       <div className="app-info-row__label">Teilnehmer:innen</div>
                       <div className="app-info-row__value">
-                        {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'}
+                        {(selectedEvent.registered_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'}
                       </div>
                     </div>
                   </div>
@@ -1313,7 +1313,7 @@ const TeamerEventsPage: React.FC = () => {
                               <div className="app-list-item__meta">
                                 <span className="app-list-item__meta-item">
                                   <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                                  {event.registered_count - (event.teamer_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>}
+                                  {(event.registered_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>}
                                 </span>
                                 {(event.teamer_count !== undefined && event.teamer_count > 0) && (
                                   <span className="app-list-item__meta-item">

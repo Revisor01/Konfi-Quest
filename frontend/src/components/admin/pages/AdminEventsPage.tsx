@@ -404,7 +404,11 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     const eventDate = new Date(event.event_date).toLocaleDateString('de-DE', {
       weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
     });
-    const konfiCount = (event.registered_count || 0) - (event.teamer_count || 0);
+    // registered_count IST bereits die Konfi-Zahl: Das Backend filtert
+    // Teamer heraus (events.js:145, seit Migration 120) und zaehlt sie in
+    // teamer_count getrennt. Ein Abzug zog sie ein zweites Mal ab und
+    // machte aus 19 Konfis 15 (Bugreport 25.08.2026).
+    const konfiCount = (event.registered_count || 0);
     presentActionSheet({
       header: `"${event.name}" absagen?`,
       subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,

@@ -493,7 +493,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Freie Plaetze aus KONFI-Sicht: Teamer haben ein eigenes Kontingent und
   // duerfen hier nicht mitzaehlen. max_participants = 0 heißt unbegrenzt —
   // dort ergab die Rechnung negative Werte und zeigte faelschlich "0 Frei".
-  const konfiRegistered = eventData.registered_count - (eventData.teamer_count || 0);
+  const konfiRegistered = (eventData.registered_count || 0);
   const isUnlimited = (eventData.max_participants || 0) === 0;
   const spotsLeft = isUnlimited ? null : eventData.max_participants - konfiRegistered;
 
@@ -647,7 +647,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div>
                   <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">{eventData.registered_count - (eventData.teamer_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : <IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} />}</div>
+                  <div className="app-info-row__value">{(eventData.registered_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : <IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} />}</div>
                 </div>
               </div>
 

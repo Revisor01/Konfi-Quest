@@ -410,8 +410,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
                                 {event.mandatory
-                                  ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
-                                  : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
+                                  ? `${(event.registered_count || 0)} Konfis`
+                                  : `${(event.registered_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
                                 }
                               </span>
                             )}
