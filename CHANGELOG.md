@@ -180,6 +180,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
   eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
   jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Im Kopf einer Challenge steht jetzt ausdrücklich "Sichtbarkeit: ..." und
+  "Moderiert: ja/nein". Vorher stand dort eine Kurzform, bei der nicht zu
+  erkennen war, welche Angabe wofür stand.
+- Bei Challenges, die nur die Leitung sieht, gibt es kein "Ausgeblendet" mehr —
+  dort gibt es keine Galerie, aus der etwas herausgenommen werden könnte.
+- Die eigenen Beiträge heißen jetzt "Dein Beitrag" oder "Deine Beiträge", je
+  nachdem wie viele es sind.
 - Abzeichen werden beim Bearbeiten nicht mehr versehentlich abgeschaltet.
   Wurde nur ein Teil geändert, etwa die Beschreibung, verschwand das Abzeichen
   bisher still aus der Anzeige.

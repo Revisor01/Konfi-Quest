@@ -210,18 +210,20 @@ const getStatusBadge = (
   return basis;
 };
 
-// Untertitel im Kopf: sagt in EINER Zeile, wer die Beiträge sieht und ob sie
-// eine Freigabe brauchen.
+// Untertitel im Kopf. Beide Angaben werden AUSDRUECKLICH benannt
+// ("Sichtbarkeit: ..." / "Moderiert: ..."), weil die frühere Kurzform
+// ("Für die Gruppe sichtbar · sofort") nicht erkennen liess, welcher Teil
+// wofür stand (User-Hinweis 25.08.2026).
 const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
   const sichtbarkeit = challenge.visibility === 'public'
-    ? 'Für die Gruppe sichtbar'
+    ? 'sofort sichtbar'
     : challenge.visibility === 'private'
-      ? 'Nur Leitung'
-      : 'Wer einreicht, entscheidet je Beitrag';
+      ? 'nur Leitung'
+      : 'Konfi entscheidet';
   // Bei 'private' ist die Freigabe für die Gruppe bedeutungslos — dort gibt es
   // keine Galerie, in der etwas erscheinen könnte.
-  if (challenge.visibility === 'private') return sichtbarkeit;
-  return `${sichtbarkeit} · ${challenge.moderated ? 'nach Freigabe' : 'sofort'}`;
+  if (challenge.visibility === 'private') return `Sichtbarkeit: ${sichtbarkeit}`;
+  return `Sichtbarkeit: ${sichtbarkeit} · Moderiert: ${challenge.moderated ? 'ja' : 'nein'}`;
 };
 
 const formatDateTime = (value?: string) => {
@@ -353,7 +355,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       { value: counts.approved, label: 'Sichtbar' }
     ];
     if (challenge?.moderated) stats.push({ value: counts.pending, label: 'Wartet' });
-    stats.push({ value: counts.hidden, label: 'Ausgebl.' });
+    // Bei "nur Leitung" gibt es keine Gruppen-Galerie und damit nichts
+    // auszublenden — Kachel und Reiter entfallen (User-Entscheid 25.08.2026).
+    if (challenge?.visibility !== 'private') {
+      stats.push({ value: counts.hidden, label: 'Ausgebl.' });
+    }
 
     // Ohne Freigabe-Pflicht bleiben nur zwei Kacheln — die Gesamtzahl fuellt
     // auf und beantwortet zugleich "wie viele Beitraege sind es insgesamt".
@@ -370,7 +376,9 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // effectiveFilter wird erst weiter unten deklariert — hier dieselbe
     // Ableitung, damit die aktive Kachel zum tatsaechlich wirksamen Reiter passt.
     const aktiverFilter: StatusFilter =
-      statusFilter === 'pending' && !challenge?.moderated ? 'feed' : statusFilter;
+      (statusFilter === 'pending' && !challenge?.moderated) ||
+      (statusFilter === 'hidden' && challenge?.visibility === 'private')
+        ? 'feed' : statusFilter;
 
     return stats.slice(0, 3).map((s) => {
       const ziel = filterZuLabel[s.label];
@@ -405,7 +413,9 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
   // zeigen, ohne dass man den Grund sieht.
   const effectiveFilter: StatusFilter =
-    statusFilter === 'pending' && !challenge?.moderated ? 'feed' : statusFilter;
+    (statusFilter === 'pending' && !challenge?.moderated) ||
+    (statusFilter === 'hidden' && challenge?.visibility === 'private')
+      ? 'feed' : statusFilter;
 
   const filtered = useMemo(() => {
     // "Feed" = nur Freigegebenes — derselbe Blick, den auch die Konfis auf die
@@ -517,8 +527,12 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // nicht ein oder stellt ihn anonym. "Wieder einblenden" bleibt — falls
     // jemand anderes aus der Leitung ihn ausgeblendet hat.
     const isOwn = submission.user_id != null && submission.user_id === user?.id;
+    // Bei "nur Leitung" gibt es nichts auszublenden — die Gruppe sieht die
+    // Beitraege ohnehin nicht (User-Entscheid 25.08.2026). "Wieder einblenden"
+    // bleibt erreichbar, falls ein Altbestand ausgeblendet ist.
+    const kannAusblenden = challenge?.visibility !== 'private';
     if (submission.moderation_status !== 'hidden') {
-      if (!isOwn) {
+      if (!isOwn && kannAusblenden) {
         actions.push({
           // NICHT eyeOffOutline: das gehört dem Anonymisieren (durchgestrichenes
           // Auge = "ohne Namen"). Ausblenden nimmt dasselbe Symbol wie sein
@@ -708,7 +722,9 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
               <div className="app-section-icon app-section-icon--challenges">
                 <IonIcon icon={personOutline} />
               </div>
-              <IonLabel>Dein Beitrag</IonLabel>
+              {/* Einzahl/Mehrzahl nach der tatsaechlichen Anzahl
+                  (User-Hinweis 25.08.2026). */}
+              <IonLabel>{ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge'}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
@@ -839,7 +855,13 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             {challenge.moderated && (
               <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
             )}
-            <IonSegmentButton value="hidden"><IonLabel>Ausgeblendet</IonLabel></IonSegmentButton>
+            {/* "Ausgeblendet" ergibt nur Sinn, wenn es eine Gruppen-Galerie gibt,
+                aus der etwas herausgenommen werden koennte. Bei "nur Leitung"
+                sieht die Gruppe ohnehin nichts — der Reiter entfaellt
+                (User-Entscheid 25.08.2026). */}
+            {challenge.visibility !== 'private' && (
+              <IonSegmentButton value="hidden"><IonLabel>Ausgeblendet</IonLabel></IonSegmentButton>
+            )}
           </IonSegment>
         </div>
 

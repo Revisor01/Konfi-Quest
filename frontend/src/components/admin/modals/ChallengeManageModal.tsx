@@ -510,14 +510,13 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         maxlength={200}
                       />
                     </IonItem>
-                    <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                      Beschreibe auch, was mit den Beiträgen passiert — ob sie im Gottesdienst
-                      vorkommen, in der Gruppe gezeigt werden oder nur bei euch bleiben.
-                    </div>
                   </IonList>
                 </IonCardContent>
               </IonCard>
             </IonList>
+
+            {/* Der Hinweis, was mit den Beitraegen passiert, steht im Handbuch
+                (Kapitel Challenges) — nicht mehr als Kasten im Formular. */}
 
             {/* SEKTION: Wer macht mit? (Teilnahme-Kreis) */}
             <IonList inset={true} className="app-modal-section">

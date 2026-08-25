@@ -522,7 +522,10 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                   <div className="app-section-icon app-section-icon--challenges">
                     <IonIcon icon={personOutline} />
                   </div>
-                  <IonLabel>Deine Beiträge</IonLabel>
+                  {/* Einzahl/Mehrzahl nach der tatsaechlichen Anzahl
+                      (User-Hinweis 25.08.2026). Bei null Beitraegen steht die
+                      Mehrzahl — der Abschnitt heisst dann allgemein. */}
+                  <IonLabel>{ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge'}</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
