@@ -629,6 +629,59 @@ describe('Organizations Routes', () => {
       expect(await wegBinnen(path.join(MATERIAL_DIR, materialFile))).toBe(true);
     });
 
+    // Zwei Fremdschluessel auf organizations standen ohne ON-DELETE-Regel da und
+    // wurden nur ueber eine BEZIEHUNG abgeraeumt (event_id bzw. user_id) statt
+    // ueber die Spalte, die den Fremdschluessel traegt. Zeilen, die die Beziehung
+    // nicht erfuellen, blieben stehen und liessen das Loeschen der Organisation
+    // am Fremdschluessel scheitern. Nachgemessen 26.08.2026.
+    it('Timeslot ohne Termin-Zuordnung blockiert das Loeschen der Organisation nicht', async () => {
+      // event_timeslots.organization_id ist nullable und traegt den FK. Ein
+      // Timeslot ohne event_id wurde vom Subquery ueber events nie erfasst.
+      await db.query(
+        `INSERT INTO event_timeslots (event_id, organization_id, start_time, end_time, max_participants)
+         VALUES (NULL, 2, '2026-09-01 10:00:00', '2026-09-01 12:00:00', 5)`
+      );
+
+      const res = await request(app)
+        .delete('/api/organizations/2')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows: [rest] } = await db.query(
+        'SELECT count(*)::int c FROM event_timeslots WHERE organization_id = 2'
+      );
+      expect(rest.c).toBe(0);
+    });
+
+    it('Benachrichtigung an einen Gast aus einer anderen Organisation blockiert das Loeschen nicht', async () => {
+      // Bei Multi-Org schreibt die App die AKTIVE Organisation in
+      // notifications.organization_id (rbac.js schreibt req.user.organization_id
+      // um), waehrend users.organization_id die Heimat-Organisation bleibt.
+      // admin1 gehoert zu Org 1, bekommt hier eine Benachrichtigung in Org 2.
+      await db.query(
+        `INSERT INTO notifications (user_id, title, message, type, organization_id)
+         VALUES ($1, 'Test', 'Nachricht in fremder Org', 'test', 2)`,
+        [USERS.admin1.id]
+      );
+
+      const res = await request(app)
+        .delete('/api/organizations/2')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows: [rest] } = await db.query(
+        'SELECT count(*)::int c FROM notifications WHERE organization_id = 2'
+      );
+      expect(rest.c).toBe(0);
+
+      // Der Gast selbst bleibt bestehen -- geloescht wird die Benachrichtigung,
+      // nicht die Person aus der anderen Organisation.
+      const { rows: [user] } = await db.query(
+        'SELECT count(*)::int c FROM users WHERE id = $1', [USERS.admin1.id]
+      );
+      expect(user.c).toBe(1);
+    });
+
     it('Multi-Org: Gast-User aus anderer Org bleibt erhalten, nur Mitgliedschaft weg', async () => {
       // admin1 (Org 1) als Gast in Org 2 aufnehmen
       const { invalidateUserCache } = require('../../middleware/rbac');

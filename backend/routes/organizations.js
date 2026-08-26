@@ -693,7 +693,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM event_bookings WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM event_categories WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM event_jahrgang_assignments WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
-      await client.query('DELETE FROM event_timeslots WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      // Ueber organization_id loeschen, NICHT nur ueber event_id: die Spalte
+      // event_timeslots.organization_id traegt den Fremdschluessel und ist
+      // nullable. Ein Timeslot ohne event_id wuerde vom Beziehungs-Subquery
+      // nie erfasst und liesse das Loeschen der Organisation am Fremdschluessel
+      // scheitern (nachgemessen 26.08.2026).
+      await client.query('DELETE FROM event_timeslots WHERE organization_id = $1 OR event_id IN (SELECT id FROM events WHERE organization_id = $2)', [id, id]);
       // Serien-Selbstreferenz (events.series_id NO ACTION) entkoppeln, dann löschen
       await client.query('UPDATE events SET series_id = NULL WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM events WHERE organization_id = $1', [id]);
@@ -721,7 +726,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM certificate_types WHERE organization_id = $1', [id]);
 
       // 6. Notifications, Tokens, Resets (hängen an org-Usern)
-      await client.query('DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+      // Auch hier ueber organization_id: bei Multi-Org schreibt die App
+      // Benachrichtigungen mit der AKTIVEN Organisation (rbac.js setzt
+      // req.user.organization_id um), waehrend users.organization_id die
+      // Heimat-Organisation bleibt. Eine Zeile mit organization_id = dieser Org
+      // und einem Nutzer aus einer anderen faende der Subquery nicht -- sie
+      // bliebe stehen und blockierte das Loeschen (nachgemessen 26.08.2026).
+      await client.query('DELETE FROM notifications WHERE organization_id = $1 OR user_id IN (SELECT id FROM users WHERE organization_id = $2)', [id, id]);
       await client.query('DELETE FROM push_tokens WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
