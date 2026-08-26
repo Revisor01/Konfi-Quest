@@ -854,6 +854,45 @@ describe('Chat Routes', () => {
       expect(down.status).toBe(403);
     });
 
+    // Befund 1 (26.08.2026): Die Datei-Auslieferung prüfte deleted_at nicht —
+    // der Anhang einer "gelöschten" Nachricht blieb für alle Raum-Mitglieder
+    // abrufbar. Die Datei selbst bleibt bewusst liegen (Soft-Delete: die
+    // Leitung kann rechtlich relevante Inhalte wiederherstellen).
+    it('Anhang einer gelöschten Nachricht: Abruf 404, Datei bleibt auf der Platte', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+      const up = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+      expect(up.status).toBe(200);
+      const storedName = up.body.file_path;
+
+      // Vor dem Löschen: Datei abrufbar
+      const before = await request(app)
+        .get(`/api/chat/files/${storedName}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(before.status).toBe(200);
+
+      // Eigene Nachricht löschen (Soft-Delete, deleted_at wird gesetzt)
+      const del = await request(app)
+        .delete(`/api/chat/messages/${up.body.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(del.status).toBe(200);
+
+      // Danach: kein Abruf mehr — weder für die Absenderin noch für die Leitung
+      const after = await request(app)
+        .get(`/api/chat/files/${storedName}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(after.status).toBe(404);
+      const afterAdmin = await request(app)
+        .get(`/api/chat/files/${storedName}`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(afterAdmin.status).toBe(404);
+
+      // Die Datei bleibt bewusst auf der Platte (Wiederherstellbarkeit)
+      expect(fs.existsSync(path.join(os.tmpdir(), 'konfi-test-uploads', 'chat', storedName))).toBe(true);
+    });
+
     it('Abruf via /files entschluesselt zum Originalinhalt (Roundtrip)', async () => {
       const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 

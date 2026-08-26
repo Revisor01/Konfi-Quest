@@ -1,4 +1,6 @@
 const request = require('supertest');
+const fs = require('fs');
+const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
@@ -702,6 +704,28 @@ describe('Teamer Routes', () => {
         "SELECT id FROM activity_requests WHERE id = $1", [requestId]
       );
       expect(rows).toHaveLength(0);
+    });
+
+    // Befund M5 (26.08.2026): Der Teamer-Pfad rief deletePhotoFile nicht auf —
+    // die Datei blieb ohne DB-Referenz auf der Platte liegen. Konfi- und
+    // Admin-Pfad machten es laengst richtig.
+    it('Nachweisfoto wird beim Löschen des Antrags von der Platte entfernt', async () => {
+      const REQUESTS_DIR = path.join(__dirname, '..', '..', 'uploads', 'requests');
+      fs.mkdirSync(REQUESTS_DIR, { recursive: true });
+      const fotoName = 'teamer-antrag-foto-test.enc';
+      fs.writeFileSync(path.join(REQUESTS_DIR, fotoName), 'testinhalt');
+      await db.query('UPDATE activity_requests SET photo_filename = $1 WHERE id = $2', [fotoName, requestId]);
+
+      expect(fs.existsSync(path.join(REQUESTS_DIR, fotoName))).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/teamer/requests/${requestId}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM activity_requests WHERE id = $1', [requestId]);
+      expect(rows).toHaveLength(0);
+      expect(fs.existsSync(path.join(REQUESTS_DIR, fotoName))).toBe(false);
     });
   });
 

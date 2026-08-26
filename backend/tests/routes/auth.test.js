@@ -691,6 +691,47 @@ describe('Auth Routes', () => {
       expect(rows.length).toBe(0);
     });
 
+    // Befund 26.08.2026: DELETE /users/:id schuetzte den letzten Org-Admin
+    // laengst, die Selbstloeschung nicht. Ohne Schutz bleibt die Organisation
+    // ohne jede Verwaltung zurueck und ist nur per DB-Eingriff zu retten.
+    it('Letzter Org-Admin kann sich NICHT selbst loeschen (409, bleibt in DB)', async () => {
+      // Der Seed hat in Org 1 ZWEI Konten mit der org_admin-Rolle (orgAdmin1
+      // und orgAdminSuper). Fuer den "letzter Admin"-Fall muss das zweite weg.
+      await db.query('DELETE FROM users WHERE id = $1', [USERS.orgAdminSuper.id]);
+      const token = generateToken('orgAdmin1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/letzte Person mit Verwaltungsrechten/i);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.orgAdmin1.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Org-Admin kann sich loeschen, wenn ein zweiter existiert (200)', async () => {
+      // Erlaubter Fall: Sobald jemand anders die Verwaltung uebernehmen kann,
+      // darf das eigene Konto weg -- Apple verlangt diesen Weg im Review.
+      await db.query(
+        'UPDATE users SET role_id = $1 WHERE id = $2',
+        [USERS.orgAdmin1.role_id, USERS.admin1.id]
+      );
+      const token = generateToken('orgAdmin1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.orgAdmin1.id]);
+      expect(rows.length).toBe(0);
+    });
+
     it('Falsches Passwort gibt 400 und loescht nicht', async () => {
       const token = generateToken('konfi1');
 

@@ -1645,12 +1645,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // Check if user has access to this file by checking chat membership
+      // Check if user has access to this file by checking chat membership.
+      // Soft-geloeschte Nachrichten (deleted_at gesetzt) liefern ihren Anhang
+      // NICHT mehr aus: Die Nachricht gilt als gelöscht, also darf auch die
+      // Datei nicht mehr abrufbar sein (Befund 26.08.2026). Die Datei selbst
+      // bleibt bewusst liegen — die Leitung kann die Nachricht
+      // wiederherstellen (Soft-Delete ist eine Designentscheidung).
       const { rows: [fileMessage] } = await db.query(
         `SELECT cm.room_id, cm.file_name
          FROM chat_messages cm
          JOIN chat_rooms cr ON cm.room_id = cr.id
-         WHERE cm.file_path = $1 AND cr.organization_id = $2`,
+         WHERE cm.file_path = $1 AND cr.organization_id = $2
+           AND cm.deleted_at IS NULL`,
         [filename, req.user.organization_id]
       );
 

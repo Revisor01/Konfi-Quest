@@ -920,7 +920,7 @@ paths:
         '400': { description: Ungueltiger Dateiname }
         '401': { description: Token fehlt oder ungueltig }
         '403': { description: Kein Teilnehmer des Raums }
-        '404': { description: Datei nicht gefunden (auch bei fremder Org) }
+        '404': { description: "Datei nicht gefunden (auch bei fremder Org oder wenn die Nachricht soft-gelöscht ist — seit 26.08.2026 werden Anhänge gelöschter Nachrichten nicht mehr ausgeliefert; die Datei bleibt für eine Wiederherstellung erhalten)" }
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]

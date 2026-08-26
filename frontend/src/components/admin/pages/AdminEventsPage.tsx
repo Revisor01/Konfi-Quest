@@ -313,16 +313,31 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     deleteSingleEvent(event);
   };
 
+  // Baut aus der 409-Antwort des Backends die konkrete Verlustliste
+  // (Anmeldungen, Chat-Nachrichten, vergebene Punkte).
+  const buildVerlustText = (data: any): string => {
+    const teile: string[] = [];
+    const bookings = data?.booking_count || 0;
+    const messages = data?.message_count || 0;
+    const punkte = data?.points_total || 0;
+    if (bookings > 0) teile.push(`${bookings} Anmeldung${bookings === 1 ? '' : 'en'} (alle Angemeldeten werden benachrichtigt)`);
+    if (messages > 0) teile.push(`${messages} Chat-Nachricht${messages === 1 ? '' : 'en'} samt Dateien`);
+    if (punkte > 0) teile.push(`${punkte} bereits vergebene${punkte === 1 ? 'r' : ''} Punkt${punkte === 1 ? '' : 'e'} (werden den Konfis wieder abgezogen)`);
+    return teile.join(', ');
+  };
+
   // Events mit Anmeldungen sind loeschbar — mit ausdruecklicher Rueckfrage und
   // Push an alle Angemeldeten (User-Entscheid 10.08.). Fachlich wäre "absagen"
   // sauberer, praktisch ist Löschen das, was gemeint ist.
+  // Ablauf (Befund M2/M3): erst OHNE force löschen. Hat der Termin
+  // Anmeldungen, Chat-Nachrichten oder vergebene Punkte, antwortet das
+  // Backend mit 409 und konkreten Zahlen — erst nach dieser zweiten,
+  // deutlichen Rueckfrage wird mit force=true gelöscht. Vorher wurde IMMER
+  // force gesendet, die Warnung erreichte also nie jemanden.
   const deleteSingleEvent = async (event: Event) => {
-    const anmeldungen = (event.registered_count || 0) + (event.waitlist_count || 0);
     presentAlert({
       header: 'Event löschen',
-      message: anmeldungen > 0
-        ? `"${event.name}" hat ${anmeldungen} Anmeldung${anmeldungen === 1 ? '' : 'en'}. Beim Löschen werden alle Angemeldeten benachrichtigt. Das lässt sich nicht rückgängig machen.`
-        : `Event "${event.name}" wirklich löschen?`,
+      message: `Event "${event.name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -330,7 +345,38 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           role: 'destructive',
           handler: async () => {
             try {
-              // force=true: der Nutzer hat die Anzahl gesehen und bestaetigt.
+              await api.delete(`/events/${event.id}`);
+              await refreshEvents();
+              await refreshCancelled();
+            } catch (error: any) {
+              if (error.response?.status === 409) {
+                confirmForceDelete(event, error.response.data);
+              } else {
+                setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+              }
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  // Zweite, deutliche Rueckfrage nach 409: nennt konkret, was verloren geht.
+  const confirmForceDelete = (event: Event, data: any) => {
+    const verluste = buildVerlustText(data);
+    presentAlert({
+      header: 'Wirklich löschen?',
+      message: verluste
+        ? `Beim Löschen von "${event.name}" geht verloren: ${verluste}. Das lässt sich nicht rückgängig machen.`
+        : (data?.error || `"${event.name}" endgültig löschen? Das lässt sich nicht rückgängig machen.`),
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Endgültig löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              // force=true: der Nutzer hat die konkreten Verluste gesehen und bestaetigt.
               await api.delete(`/events/${event.id}?force=true`);
               await refreshEvents();
               await refreshCancelled();
@@ -344,8 +390,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   // Löscht mehrere Serien-Termine (ganze Serie oder "diesen + alle folgenden").
-  // Einzelne Termine mit Anmeldungen/Verbuchung blockieren mit 409 — der Rest
-  // wird trotzdem gelöscht (Promise.allSettled), Fehler werden gesammelt gemeldet.
+  // Erst OHNE force: Termine mit Anmeldungen, Chat-Nachrichten oder vergebenen
+  // Punkten melden 409 und werden erst nach einer zweiten Rueckfrage mit den
+  // aufsummierten Zahlen endgültig gelöscht (Befund M2/M3). Andere Fehler
+  // werden gesammelt gemeldet (Promise.allSettled).
   const deleteSeriesEvents = async (seriesEvents: Event[], label: string) => {
     presentAlert({
       header: 'Serie löschen',
@@ -357,7 +405,59 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           role: 'destructive',
           handler: async () => {
             const results = await Promise.allSettled(
-              seriesEvents.map(event => api.delete(`/events/${event.id}?force=true`))
+              seriesEvents.map(event => api.delete(`/events/${event.id}`))
+            );
+            await refreshEvents();
+            await refreshCancelled();
+
+            const konflikte: { event: Event; data: any }[] = [];
+            const fehler: PromiseRejectedResult[] = [];
+            results.forEach((r, i) => {
+              if (r.status === 'rejected') {
+                if ((r as PromiseRejectedResult).reason?.response?.status === 409) {
+                  konflikte.push({ event: seriesEvents[i], data: (r as PromiseRejectedResult).reason.response.data });
+                } else {
+                  fehler.push(r as PromiseRejectedResult);
+                }
+              }
+            });
+
+            if (fehler.length > 0) {
+              const firstError = fehler[0].reason?.response?.data?.error;
+              setError(
+                `${fehler.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
+                (firstError ? `: ${firstError}` : '')
+              );
+            }
+            if (konflikte.length > 0) {
+              confirmForceDeleteSeries(konflikte);
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  // Zweite Rueckfrage für Serien-Termine, die mit 409 geblockt haben:
+  // aufsummierte Verluste über alle betroffenen Termine anzeigen.
+  const confirmForceDeleteSeries = (konflikte: { event: Event; data: any }[]) => {
+    const summe = (feld: string) => konflikte.reduce((s, k) => s + (k.data?.[feld] || 0), 0);
+    const verluste = buildVerlustText({
+      booking_count: summe('booking_count'),
+      message_count: summe('message_count'),
+      points_total: summe('points_total')
+    });
+    presentAlert({
+      header: 'Wirklich löschen?',
+      message: `${konflikte.length} Termin${konflikte.length === 1 ? '' : 'e'} der Serie ${konflikte.length === 1 ? 'ist' : 'sind'} nicht leer. Beim Löschen geht verloren: ${verluste}. Das lässt sich nicht rückgängig machen.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Endgültig löschen',
+          role: 'destructive',
+          handler: async () => {
+            const results = await Promise.allSettled(
+              konflikte.map(k => api.delete(`/events/${k.event.id}?force=true`))
             );
             await refreshEvents();
             await refreshCancelled();
@@ -365,7 +465,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             if (failed.length > 0) {
               const firstError = (failed[0] as PromiseRejectedResult).reason?.response?.data?.error;
               setError(
-                `${failed.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
+                `${failed.length} von ${konflikte.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
               );
             }

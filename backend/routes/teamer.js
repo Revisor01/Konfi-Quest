@@ -7,6 +7,7 @@ const { computeCurrentStreak } = require('../utils/streakCalculation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
+const { deletePhotoFile } = require('../utils/photoStorage');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1457,7 +1458,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // Nur pending eigene Anträge darf der Teamer selbst löschen
       const { rows: [existing] } = await db.query(
-        "SELECT id, status FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
+        "SELECT id, status, photo_filename FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
         [requestId, userId, req.user.organization_id]
       );
       if (!existing) return res.status(404).json({ error: 'Antrag nicht gefunden' });
@@ -1466,6 +1467,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
+
+      // Nachweisfoto vom Dateisystem entfernen — NACH dem DB-Delete und nicht
+      // blockierend, wie im Konfi-Pfad (konfi.js). Vorher blieb die Datei als
+      // Waise liegen (Befund M5, 26.08.2026).
+      if (existing.photo_filename) {
+        await deletePhotoFile(existing.photo_filename);
+      }
+
       res.json({ message: 'Antrag gelöscht' });
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (Antrag entfernt)
