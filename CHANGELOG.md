@@ -14,6 +14,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
+  löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
+  Aktionen (Freigeben, Anonym stellen, Ausblenden, Löschen) erreichbar durch
+  Antippen des Beitrags, zusätzlich zum Wischen; das Ausblenden bleibt als
+  umkehrbare Alternative bestehen.
+- Team-Chat leeren: Die Leitung kann über das Mülleimer-Symbol oben im
+  Team-Chat alle Nachrichten samt Dateien endgültig löschen — nach klarer
+  Rückfrage; der Chat selbst und seine Mitglieder bleiben bestehen.
 - Challenges: Beim Ausblenden eines Beitrags kann die Leitung eine Begründung
   eintragen — die einreichende Person sieht sie bei ihrem Beitrag und bekommt
   eine Mitteilung. Die Begründung ist freiwillig, Ausblenden geht auch ohne.
@@ -188,6 +196,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Level löschen meldet jetzt verständlich, wenn das Level noch vergeben ist —
+  auch wenn nur bereits archivierte Konfis es tragen. Vorher endete das in
+  einem allgemeinen Fehler. Tipp in der Meldung: Umbenennen geht immer, alle
+  sehen sofort den neuen Namen.
 - Challenges: Die eigenen Beiträge stehen jetzt in einem Reiter statt in einem
   eigenen Abschnitt darüber — Konfis wählen zwischen "Feed" und "Meins",
   Leitung und Teamer:innen zwischen "Feed", "Wartet", "Abgelehnt" und "Meins".

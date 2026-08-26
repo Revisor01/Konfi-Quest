@@ -471,6 +471,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         }
       });
 
+      // Team-Chat wurde von der Leitung geleert: alle Nachrichten sind weg,
+      // der Raum bleibt. Auch die Cache-Kopie auffrischen, sonst kommen die
+      // geleerten Nachrichten beim naechsten Oeffnen aus dem Cache zurueck.
+      socket.on('chatCleared', (data: { roomId: number }) => {
+        if (data.roomId === room.id) {
+          setMessages([]);
+          refreshMessagesCache();
+        }
+      });
+
       // Listen for typing indicators
       socket.on('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
         if (data.roomId === room.id && data.userId !== user?.id) {
@@ -574,6 +584,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         socket.off('connect');
         socket.off('newMessage');
         socket.off('messageDeleted');
+        socket.off('chatCleared');
         socket.off('userTyping');
         socket.off('reactionAdded');
         socket.off('reactionRemoved');
@@ -1443,6 +1454,33 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     presentActionSheet({ header: getDisplayRoomName(), buttons });
   };
 
+  // Team-Chat leeren (nur Leitung, nur im automatischen Team-Chat): löscht
+  // ALLE Nachrichten samt Dateianhaengen unwiderruflich, der Chat selbst und
+  // seine Mitglieder bleiben bestehen. Mit klarer Rückfrage.
+  const handleClearChat = () => {
+    if (offlineBlockiert(isOnline, setError)) return;
+    presentAlert({
+      header: 'Team-Chat leeren?',
+      message: 'Alle Nachrichten dieses Chats werden endgültig gelöscht — auch Dateien, Bilder und Umfragen. Das lässt sich nicht rückgängig machen. Der Chat selbst bleibt bestehen.',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Endgültig leeren',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/chat/rooms/${room?.id}/messages`);
+              setMessages([]);
+              refreshMessagesCache();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Leeren des Chats');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const handleLeaveChat = () => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
@@ -1480,6 +1518,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         onOpenMembers={openMembersModal}
         onOpenPoll={openPollModal}
         onLeaveChat={handleChatOptions}
+        // Mülleimer nur im automatischen Team-Chat und nur für die Leitung —
+        // der Server prüft beides ebenfalls.
+        onClearChat={istLeitung && room?.is_team_chat ? handleClearChat : null}
         eventId={room?.event_id ?? null}
         partnerType={
           room?.type === 'direct'

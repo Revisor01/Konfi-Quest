@@ -2272,7 +2272,75 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
-  
+
+  // DELETE /rooms/:roomId/messages — den Team-Chat LEEREN (Nutzerwunsch
+  // 26.08.2026): ALLE Nachrichten samt Dateianhaengen unwiderruflich
+  // entfernen, der Raum und seine Mitglieder bleiben bestehen. Vorher war
+  // der einzige Weg das Löschen des Raums, den der Sync leer neu anlegt —
+  // das hier macht daraus eine bewusste Funktion (Mülleimer im Chat-Header).
+  // Nur für den automatischen Team-Chat (is_team_chat), nur für die Leitung.
+  // Umfragen, Stimmen und Reaktionen räumen die ON-DELETE-CASCADE-Regeln
+  // der chat_messages-FKs mit ab; Dateien werden wie beim Raum-Löschen
+  // best effort nach dem DB-Delete entfernt.
+  router.delete('/rooms/:roomId/messages', verifyTokenRBAC, async (req, res) => {
+    const roomId = parseInt(req.params.roomId, 10);
+
+    if (req.user.type !== 'admin' || !['org_admin', 'admin'].includes(req.user.role_name)) {
+      return res.status(403).json({ error: 'Nur die Leitung kann den Team-Chat leeren' });
+    }
+
+    try {
+      const { rows: [room] } = await db.query(
+        'SELECT id, is_team_chat FROM chat_rooms WHERE id = $1 AND organization_id = $2',
+        [roomId, req.user.organization_id]
+      );
+      if (!room) {
+        return res.status(404).json({ error: 'Chat-Raum nicht gefunden' });
+      }
+      if (!room.is_team_chat) {
+        return res.status(409).json({ error: 'Nur der Team-Chat lässt sich leeren.' });
+      }
+
+      // Dateien VOR dem Löschen einsammeln (danach sind die Zeilen weg).
+      const { rows: filesForDeletion } = await db.query(
+        'SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL',
+        [roomId]
+      );
+
+      const { rowCount: deletedCount } = await db.query(
+        'DELETE FROM chat_messages WHERE room_id = $1',
+        [roomId]
+      );
+
+      // Anhaenge best effort entfernen — eine fehlende Datei kippt nichts.
+      for (const fileRecord of filesForDeletion) {
+        try {
+          await fs.promises.unlink(path.join(uploadsDir, 'chat', fileRecord.file_path));
+        } catch (fileErr) {
+          if (fileErr.code !== 'ENOENT') {
+            console.warn(`Team-Chat leeren: Datei ${fileRecord.file_path} nicht entfernbar:`, fileErr.message);
+          }
+        }
+      }
+
+      res.json({ message: 'Team-Chat geleert', deleted_count: deletedCount });
+
+      // Offene Chat-Ansichten leeren und die Raumlisten (letzte Nachricht,
+      // Ungelesen-Zaehler) aktualisieren.
+      if (io) {
+        io.to(`room_${roomId}`).emit('chatCleared', { roomId });
+      }
+      const { rows: participants } = await db.query(
+        'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+        [roomId]
+      );
+      emitRoomsChanged(participants);
+    } catch (err) {
+      console.error('Database error in DELETE /rooms/:roomId/messages:', roomId, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // === REACTIONS API ===
 
   // Add reaction to a message

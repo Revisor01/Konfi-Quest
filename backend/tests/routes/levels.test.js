@@ -219,6 +219,69 @@ describe('Levels Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    it('Aktiver Konfi traegt das Level -> 409 mit verstaendlicher Meldung', async () => {
+      await db.query(
+        'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+        [LEVELS.novize.id, USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/levels/${LEVELS.novize.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.');
+      expect(res.body.usage_count).toBe(1);
+    });
+
+    it('SOFT-GELOESCHTER Konfi traegt das Level -> 409 statt 500 (Befund M4)', async () => {
+      // Auto-Deletion (Tag 60-120) setzt deleted_at, das Profil samt
+      // current_level_id bleibt. Vorher filterte der Verwendungs-Check
+      // deleted_at IS NULL, das DELETE lief in den FK-Fehler -> 500er.
+      await db.query(
+        'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+        [LEVELS.novize.id, USERS.konfi1.id]
+      );
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .delete(`/api/levels/${LEVELS.novize.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.');
+      expect(res.body.usage_count).toBe(1);
+
+      // Das Level existiert weiterhin
+      const { rows } = await db.query('SELECT 1 FROM levels WHERE id = $1', [LEVELS.novize.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Umbenennen eines vergebenen Levels funktioniert: Konfi sieht sofort den neuen Namen (ID-Bindung)', async () => {
+      // Beleg fuer die 409-Empfehlung "benenne es um": vergebene Level
+      // haengen an konfi_profiles.current_level_id (Join per ID), nicht am
+      // Namen — nach dem PUT zeigt der Konfi-Endpoint den neuen Titel.
+      await db.query(
+        'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+        [LEVELS.novize.id, USERS.konfi1.id]
+      );
+
+      const put = await request(app)
+        .put(`/api/levels/${LEVELS.novize.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'anfaengerin', title: 'Anfängerin', points_required: 0, is_active: true });
+      expect(put.status).toBe(200);
+      expect(put.body.title).toBe('Anfängerin');
+
+      const res = await request(app)
+        .get(`/api/levels/konfi/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      // konfi1 hat 0 Punkte -> aktuelles Level ist das umbenannte Einstiegs-Level
+      expect(res.body.current_level.id).toBe(LEVELS.novize.id);
+      expect(res.body.current_level.title).toBe('Anfängerin');
+    });
   });
 
   // ================================================================

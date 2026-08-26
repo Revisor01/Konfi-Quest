@@ -181,16 +181,21 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
       return res.status(404).json({ error: 'Level nicht gefunden' });
     }
 
-    // Prüfe ob Level verwendet wird (Konfis haben dieses Level erreicht)
+    // Prüfe ob Level verwendet wird (Konfis haben dieses Level erreicht).
+    // BEWUSST OHNE deleted_at-Filter (Befund M4, 26.08.2026): auch
+    // soft-gelöschte Konfis (Auto-Deletion Tag 60-120) behalten ihr
+    // konfi_profiles.current_level_id, und der Fremdschlüssel hat keine
+    // Löschregel — mit Filter lief das DELETE in einen FK-Fehler und damit
+    // in einen 500er statt in diese verständliche 409-Meldung.
     const levelUsage = await db.query(`
       SELECT COUNT(*) as count FROM konfi_profiles kp
       JOIN users u ON kp.user_id = u.id
-      WHERE u.organization_id = $1 AND kp.current_level_id = $2 AND u.deleted_at IS NULL
+      WHERE u.organization_id = $1 AND kp.current_level_id = $2
     `, [organizationId, levelId]);
 
     if (parseInt(levelUsage.rows[0].count) > 0) {
       return res.status(409).json({
-        error: 'Level kann nicht gelöscht werden, da es von Konfis verwendet wird',
+        error: 'Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.',
         usage_count: parseInt(levelUsage.rows[0].count)
       });
     }
@@ -206,6 +211,14 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
     liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'delete');
   } catch (error) {
  console.error('Fehler beim Löschen des Levels:', error);
+    // Sicherheitsnetz: Sollte doch noch eine Referenz auftauchen, die der
+    // Verwendungs-Check nicht kennt, wird der FK-Fehler (23503) als 409
+    // gemeldet statt als anonymer 500er.
+    if (error.code === '23503') {
+      return res.status(409).json({
+        error: 'Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.'
+      });
+    }
     res.status(500).json({ error: 'Fehler beim Löschen des Levels' });
   }
 });

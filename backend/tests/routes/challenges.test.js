@@ -1995,4 +1995,140 @@ describe('Challenges Routes', () => {
       expect(list.body.submissions[0].moderation_status).toBe('approved');
     });
   });
+
+  // ================================================================
+  // DELETE /admin/submissions/:id — einzelnen Beitrag endgueltig loeschen
+  // (Datei UND Datenbank-Zeile; Nutzerwunsch 26.08.2026, Befund M8)
+  // ================================================================
+  describe('DELETE /admin/submissions/:id (endgueltig, mit Datei)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    // deleteChallengeFile loescht in photoStorage.CHALLENGES_DIR
+    // (backend/uploads/challenges) — dort muss die Testdatei liegen.
+    const { CHALLENGES_DIR } = require('../../utils/photoStorage');
+
+    async function setupWithFile(filename) {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'approved',
+      });
+      await fs.promises.mkdir(CHALLENGES_DIR, { recursive: true });
+      await fs.promises.writeFile(path.join(CHALLENGES_DIR, filename), PNG);
+      return { challenge, submission };
+    }
+
+    it('Leitung loescht Beitrag -> 200, DB-Zeile weg UND Datei weg', async () => {
+      const filename = 'f'.repeat(64);
+      const { submission } = await setupWithFile(filename);
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(0);
+      expect(fs.existsSync(path.join(CHALLENGES_DIR, filename))).toBe(false);
+    });
+
+    it('Fehlende Datei kippt nichts: Beitrag ohne existierende Datei -> 200, Zeile weg', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: '0'.repeat(64), // Datei liegt NICHT auf der Platte
+        file_name: 'weg.png',
+        moderation_status: 'approved',
+      });
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Teamer mit zugewiesenem Jahrgang darf loeschen -> 200', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        moderation_status: 'pending',
+      });
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Verbotener Fall: Konfi bekommt 403, Zeile und Datei bleiben', async () => {
+      const filename = 'd'.repeat(64);
+      const { submission } = await setupWithFile(filename);
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(1);
+      expect(fs.existsSync(path.join(CHALLENGES_DIR, filename))).toBe(true);
+
+      await fs.promises.rm(path.join(CHALLENGES_DIR, filename), { force: true });
+    });
+
+    it('Leitung einer ANDEREN Org bekommt 404, Zeile bleibt', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        moderation_status: 'approved',
+      });
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+      expect(res.status).toBe(404);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Teamer OHNE zugewiesenen Jahrgang der Challenge bekommt 403', async () => {
+      // teamer1 ist laut Seed nur jahrgang1 zugewiesen -> jahrgang2 nutzen
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang2.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi2.id,
+        moderation_status: 'approved',
+      });
+
+      const res = await request(app)
+        .delete(`/api/challenges/admin/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
+      expect(rows.length).toBe(1);
+    });
+  });
 });

@@ -1234,4 +1234,131 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  // ================================================================
+  // DELETE /api/chat/rooms/:roomId/messages — Team-Chat leeren
+  // (Nutzerwunsch 26.08.2026: Muelleimer im Header, Raum bleibt bestehen)
+  // ================================================================
+  describe('DELETE /api/chat/rooms/:roomId/messages (Team-Chat leeren)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+    const CHAT_DIR = path.join(os.tmpdir(), 'konfi-test-uploads', 'chat');
+    const TEAM_ROOM_ID = 50;
+
+    beforeEach(async () => {
+      // Automatischen Team-Chat samt Mitgliedern und Verlauf anlegen
+      await db.query(
+        `INSERT INTO chat_rooms (id, name, type, is_team_chat, organization_id, created_by)
+         VALUES ($1, 'Team', 'admin', true, 1, $2)`,
+        [TEAM_ROOM_ID, USERS.admin1.id]
+      );
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $2, 'admin'), ($1, $3, 'teamer')`,
+        [TEAM_ROOM_ID, USERS.admin1.id, USERS.teamer1.id]
+      );
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, 'admin', 'text', 'Hallo Team'),
+                ($1, $3, 'teamer', 'text', 'Moin')`,
+        [TEAM_ROOM_ID, USERS.admin1.id, USERS.teamer1.id]
+      );
+    });
+
+    async function messageMitDatei(filename) {
+      await fs.promises.mkdir(CHAT_DIR, { recursive: true });
+      await fs.promises.writeFile(path.join(CHAT_DIR, filename), Buffer.from('testdatei'));
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path, file_name)
+         VALUES ($1, $2, 'admin', 'file', 'Anhang', $3, 'anhang.txt')`,
+        [TEAM_ROOM_ID, USERS.admin1.id, filename]
+      );
+    }
+
+    it('Leitung leert den Team-Chat -> 200, Nachrichten und Dateien weg, Raum und Mitglieder bleiben', async () => {
+      const filename = 'teamchat-clear-test.bin';
+      await messageMitDatei(filename);
+
+      // Umfrage samt Stimme anhaengen — die CASCADE-Regeln muessen mitraeumen
+      const { rows: [pollMsg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, 'admin', 'poll', 'Umfrage') RETURNING id`,
+        [TEAM_ROOM_ID, USERS.admin1.id]
+      );
+      const { rows: [poll] } = await db.query(
+        `INSERT INTO chat_polls (message_id, question, options)
+         VALUES ($1, 'Wer kommt?', '["Ja","Nein"]') RETURNING id`,
+        [pollMsg.id]
+      );
+      await db.query(
+        `INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index)
+         VALUES ($1, $2, 'teamer', 0)`,
+        [poll.id, USERS.teamer1.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.deleted_count).toBe(4);
+
+      const { rows: [msgCount] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_messages WHERE room_id = $1', [TEAM_ROOM_ID]
+      );
+      expect(msgCount.count).toBe(0);
+      const { rows: [pollCount] } = await db.query('SELECT COUNT(*)::int AS count FROM chat_polls WHERE id = $1', [poll.id]);
+      expect(pollCount.count).toBe(0);
+      expect(fs.existsSync(path.join(CHAT_DIR, filename))).toBe(false);
+
+      // Raum und Mitglieder bleiben bestehen
+      const { rows: [room] } = await db.query('SELECT id FROM chat_rooms WHERE id = $1', [TEAM_ROOM_ID]);
+      expect(room).toBeDefined();
+      const { rows: [partCount] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_participants WHERE room_id = $1', [TEAM_ROOM_ID]
+      );
+      expect(partCount.count).toBe(2);
+    });
+
+    it('Verbotener Fall: Teamer bekommt 403, Nachrichten bleiben', async () => {
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+
+      const { rows: [msgCount] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_messages WHERE room_id = $1', [TEAM_ROOM_ID]
+      );
+      expect(msgCount.count).toBe(2);
+    });
+
+    it('Verbotener Fall: Konfi bekommt 403', async () => {
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('Normaler Chat (kein Team-Chat) laesst sich NICHT leeren -> 409', async () => {
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${CHAT_ROOMS.group.id}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('Nur der Team-Chat lässt sich leeren.');
+    });
+
+    it('Team-Chat einer ANDEREN Org -> 404', async () => {
+      // admin2 gehoert zu Org 2, der Team-Chat zu Org 1
+      const admin2Token = generateToken('admin2');
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+      expect(res.status).toBe(404);
+
+      const { rows: [msgCount] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_messages WHERE room_id = $1', [TEAM_ROOM_ID]
+      );
+      expect(msgCount.count).toBe(2);
+    });
+  });
 });

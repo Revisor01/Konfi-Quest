@@ -18,7 +18,8 @@ import {
   people,
   returnUpBack,
   closeCircle,
-  ellipsisVertical
+  ellipsisVertical,
+  trashOutline
 } from 'ionicons/icons';
 import { Message, ChatUserType } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
@@ -44,6 +45,9 @@ interface ChatHeaderProps {
   onOpenMembers: () => void;
   onOpenPoll: () => void;
   onLeaveChat: () => void;
+  // Team-Chat leeren (nur Leitung, nur im automatischen Team-Chat gesetzt):
+  // Mülleimer im Header, löscht alle Nachrichten, der Raum bleibt.
+  onClearChat?: (() => void) | null;
   eventId?: number | null;
   partnerType?: ChatUserType | null;
 }
@@ -56,7 +60,8 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onBack,
   onOpenMembers,
   onOpenPoll,
-  onLeaveChat
+  onLeaveChat,
+  onClearChat
 }) => {
   return (
     // translucent bewusst AUS: Der Chat-Content ist nicht fullscreen (Footer mit
@@ -80,6 +85,11 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
                 <IonIcon icon={barChart} />
               </IonButton>
             </>
+          )}
+          {onClearChat && (
+            <IonButton aria-label="Team-Chat leeren" disabled={!isOnline} onClick={onClearChat}>
+              <IonIcon icon={trashOutline} />
+            </IonButton>
           )}
           {canLeave && (
             <IonButton aria-label="Weitere Chat-Optionen" disabled={!isOnline} onClick={onLeaveChat}>
