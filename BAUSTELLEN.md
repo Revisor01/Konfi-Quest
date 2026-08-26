@@ -441,17 +441,103 @@ Erledigten.
       Die Schema-Hälfte bewacht jetzt nur noch, dass keine NEUE Spalte ohne
       Regel dazukommt.
 
-- [ ] **Teamer:innen und Termine: Entscheidung gegen Code geprüft, sie fehlt.**
-      Im Handoff steht als Designentscheidung: "Teamer:innen dürfen Termine
-      anlegen, bearbeiten UND löschen" ("eröffnet den Teamer:innen
-      Selbstständigkeit"). Am 26.08.2026 nachgesehen: **Die Entscheidung ist
-      nicht umgesetzt.** `TeamerEventsPage.tsx` hat keine Anlegen-Schaltfläche
-      für Termine (nur für Aktivitäts-Meldungen, Zeile 1170f.). Das Handbuch
-      sagt in `docs/handbuch/20-teamer.md:58-60` ausdrücklich das Gegenteil der
-      Entscheidung ("Termine legt die Leitung an") und ist damit korrekt für
-      den heutigen Stand.
-      Es ist also keine Doku-Lücke, sondern eine offene Entscheidung:
-      **umbauen oder Entscheidung zurücknehmen.** Braucht Simon.
+- [x] **Teamer:innen und Termine — ENTSCHIEDEN 26.08.2026: bleibt wie es ist.**
+      Die frühere Designentscheidung ("Teamer:innen dürfen Termine anlegen,
+      bearbeiten und löschen") ist damit **zurückgenommen**. Teamer:innen legen
+      keine Termine an; das macht die Leitung.
+      Das **Backend bleibt bewusst unverändert** — die Routen erlauben
+      Teamer:innen weiterhin das volle Event-Management
+      (`events.js:823/1014/1428` u.a., alle `requireTeamer`). Simons
+      Entscheidung: nicht anfassen. Die Oberfläche bietet es nicht an, damit ist
+      der Weg praktisch zu.
+      **Was daraus folgt, falls das je wieder aufkommt:** Wer die Absicht
+      später doch umsetzt, muss auch klären, ob Teamer:innen nur *ihre*
+      Jahrgänge bearbeiten dürfen — das Backend prüft bei Events heute nur die
+      Organisation, keinen Jahrgang.
+      Handbuch (`20-teamer.md:58-60`) und Onboarding beschreiben bereits den
+      jetzt gültigen Stand, brauchen also keine Änderung.
+
+---
+
+## Aus den Berichten vom 26.08. (Rollen, Drei Ansichten, Dashboard/Profil)
+
+Drei Prüfläufe, drei Berichte in `docs/agenten-berichte/`. Der schwerste
+Befund (fremde Chat-Nachrichten löschbar) ist erledigt, PR #81. Erledigt sind
+außerdem: Admins dürfen Teamer:innen und Zertifikate verwalten (PR #82), die
+falschen Teamer-Erklärtexte (PR #83).
+
+**Diese Berichte gelten als geschlossen, wenn die Liste hier leer ist.**
+
+### Offen, alle zulasten der Teamer-Ansicht
+
+- [ ] **H1 — Abzeichen werden Teamer:innen nie als "neu" gezeigt.** Das
+      Backend hat beides fertig (`teamer.js:526` unseen, `:544` mark-seen),
+      im Frontend ruft es NIEMAND auf. Der Zähler-Loader bricht für alle
+      außer Konfis ab (`MainTabs.tsx:176`), der Teamer-Badges-Tab hat kein
+      IonBadge (`:349-352`). Damit bleibt `seen` dauerhaft false.
+      Steht seit dem 25.08. als Befund 10 im Abzeichen-Bericht.
+
+- [ ] **H2 — Teamer-Dashboard zeigt "Teamer gesucht"-Termine nie.** Die Query
+      erzwingt `AND eb.id IS NOT NULL` (`teamer.js:880`) und macht damit aus
+      dem LEFT JOIN auf die eigene Buchung einen INNER JOIN — es erscheinen
+      nur Termine, für die man schon gebucht ist. Der Kommentar darüber
+      behauptet das Gegenteil. (Nebenbei: LIMIT 5, nicht 3 wie kommentiert.)
+
+- [ ] **H3 — Termin-Status ignoriert das Teamer-Kontingent, auf drei Ebenen.**
+      Backend: `registration_status` rechnet nur mit Konfi-Zahlen
+      (`events.js:119-134`), `teamer_max_participants` fließt nicht ein.
+      Frontend: `getEventStatusInfo` im Teamer-Baum kennt kein "voll"
+      (`TeamerEventsPage.tsx:482-538`) — ein volles Team-Kontingent steht als
+      "Offen". Karte: keine Wartelisten-Zahl, obwohl geliefert.
+      Folge: Man erfährt erst beim Absenden (400), dass kein Platz ist.
+
+- [ ] **H4 — Challenge-Freigabe-Zähler übersieht "nur Team"-Challenges.**
+      Der Teamer-Zweig zählt nur über Jahrgangszuordnungen
+      (`notifications.js:82-93`) und liefert ohne Jahrgänge konstant 0.
+      `audience='nur_team'` hat per Definition keine Jahrgangszuordnung.
+      Ein Teamer moderiert also eine Team-Runde, wird aber nie darauf
+      gestoßen. Der Admin-Zweig ist korrekt.
+
+- [ ] **H5 — "Alle bestätigen" fehlt für Teamer:innen.** Die Route nimmt
+      `rolle: 'teamer'` entgegen und verbucht dann gezielt ohne Punkte
+      (`events.js:2782`, Nutzerentscheid 25.08.). Das Frontend ruft sie ohne
+      Body auf und zeigt den Knopf nur über der Konfi-Sektion, bei
+      `teamer_only`-Terminen gar nicht. Die Leitung muss einzeln verbuchen,
+      und der Termin bleibt im "Verbuchen"-Reiter hängen.
+
+- [ ] **H6 — Abgesagter Termin: zwei Antworten für denselben Termin.** Die
+      Konfi-Liste liefert ihn mit `registration_status='cancelled'`
+      (`konfi.js:1224`), der Status-Endpunkt filtert abgesagte raus und
+      antwortet 404 (`konfi.js:1316-1322`).
+
+### Offen aus dem Rollen-Bericht
+
+- [ ] **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste.**
+      ENTSCHIEDEN 26.08.: Das Verhalten bleibt so. Offen bleibt aber, dass
+      ein frisch angelegter Admin ohne Zuweisung einen leeren Landing-Tab
+      sieht und die App für kaputt hält. Ein Hinweis auf der leeren Liste
+      würde reichen. `konfi-management.js:62-69`.
+
+- [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
+      Ansicht änderbar.** Die Backend-Route existiert
+      (`konfi-management.js:269`), hat aber keinen UI-Aufrufer.
+
+- [ ] **Neun weitere Befunde MITTEL/NIEDRIG** stehen in den Berichten
+      (Handbuch-Widersprüche, Material-Tags ohne Oberfläche, super_admin
+      fällt im Chat zwischen drei verschiedene "Leitung"-Definitionen,
+      KonfiOnboardingModal als 279-Zeilen-Vollkopie der geteilten Tour).
+      Nicht einzeln hierher kopiert — die Berichte sind die Quelle.
+
+### Die Klasse dahinter
+
+Beide Berichte kommen unabhängig zum selben Schluss: **Wo eine Komponente
+GETEILT wird, gibt es keine Lücken. Wo kopiert wurde, driftet es.**
+Challenges sind seit dem Umbau vom 22.08. sauber, weil dort geteilte
+Komponenten benutzt werden. Entwarnung dagegen bei den doppelten
+ChangeEmail-/ChangePassword-Modalen: kein funktionaler Drift, nur Styling.
+
+Beim Beheben der Befunde oben deshalb: erst prüfen, ob sich die Konfi-Variante
+teilen lässt, statt eine dritte Kopie anzulegen.
 
 ---
 
