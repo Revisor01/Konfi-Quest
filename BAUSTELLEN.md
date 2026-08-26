@@ -465,16 +465,55 @@ Erledigten.
       schlechtem Netz. Der Nutzen ist einmalig (danach Cache, nativ ohnehin
       im Paket), die Fehler waeren dauerhaft.
 
-- [ ] **Biometrische Anmeldung** (Face ID, Touch ID, das Android-Gegenstueck).
-      Wunsch vom 26.08.2026: Das staendige Ab- und Anmelden nervt im Alltag,
-      wenn man nur kurz nachsehen will, ob etwas Neues da ist.
+- [x] **Biometrische Anmeldung** — ERLEDIGT 27.08.2026. Face ID, Touch ID und
+      Android-Biometrie, Token biometrie-gebunden im Keychain/Keystore,
+      Schalter in allen drei Profil-Ansichten ueber EINE geteilte Komponente.
+      Wichtig fuer die Einordnung: Die App war auch vorher schon dauerhaft
+      angemeldet — der Refresh-Token lag im Klartext in den Preferences. Die
+      Funktion verlaengert die Sitzung also nicht, sie verlagert sie in den
+      sicheren Speicher und stellt Face ID davor.
+      NICHT auf echter Hardware getestet, nur mit gemocktem Plugin.
+      **Einordnung (Simon 27.08.2026): Face ID verlaengert die Anmeldedauer
+      NICHT — sie ist ein zusaetzlicher Schutz.** Die App war auch vorher
+      dauerhaft angemeldet, beide Wege halten 90 Tage. Der Gewinn liegt darin,
+      WO der Token liegt: biometrie-gebunden im Keychain/Keystore statt im
+      Klartext. Simons Begruendung, es trotzdem zu behalten: Konfis sollen
+      moeglichst lange angemeldet bleiben UND ihren Zugang vor dem Zugriff der
+      Eltern schuetzen koennen. Die 90 Tage bleiben.
+      Ausdrueckliches Abmelden loescht die gesicherte Sitzung weiterhin mit —
+      bewusst, sonst waere Abmelden auf einem geteilten Geraet wirkungslos.
 
-- [ ] **Rollenwechsel ohne Abmelden.** Zusammen mit der Biometrie gedacht: Wer
-      mehrere Rollen oder Gemeinden hat, soll umschalten koennen, statt sich
-      neu anzumelden. Simon am 26.08.2026: "waere mir noch charmant, aber auch
-      wenn ich es lasse, lassen wir das" -- also ein Wunsch, keine Zusage.
-      Zu bedenken: `switchOrg` im AppContext gibt es bereits fuer Organisationen;
-      ob daraus ein Rollenwechsel wird, ist eine eigene Entscheidung.
+      **Warum es sich so anfuehlte, als melde die App staendig ab** (geprueft
+      27.08.2026, nicht vermutet): Refresh-Tokens liegen in der Datenbank
+      (Tabelle `refresh_tokens`). Beim Serverumzug am 26.08. wurde der
+      Notbetriebs-Stand verworfen — wer sich in diesen zwei Stunden anmeldete,
+      dessen Token war danach weg. Dazu macht ein Wechsel des `JWT_SECRET`
+      alle Tokens auf einen Schlag ungueltig, und jede Passwortaenderung setzt
+      `token_invalidated_at` (sperrt alle aelteren Tokens der Person, auch auf
+      anderen Geraeten). Es war also die Folge von Umzug und Token-Umbauten,
+      kein Fehler im Anmeldeverhalten.
+
+- [ ] **Ionic 9 mit react-router-Umbau.** Kommt frueher oder spaeter zwingend;
+      Entscheidung 27.08.2026: nicht vor 2.0.0, aber fest eingeplant.
+      **Was uns NICHT trifft** (gegen den Code gemessen, nicht geschaetzt):
+      `ion-picker-legacy`, `ion-img`, `IonNav`-Routing, `handleBehavior` —
+      alle 0 Treffer. React 19, TypeScript 6.0.3 und Capacitor 8 erfuellen die
+      neuen Mindestanforderungen bereits.
+      **Was uns trifft:** react-router 5 -> 6. Ionic 9 verlangt
+      `react-router >=6.4 <7` — NICHT Version 7 oder 8. Der Dependabot-PR #70
+      (react-router 5 -> 8) fuehrt in eine von Ionic gar nicht unterstuetzte
+      Version und gehoert geschlossen, nicht gemergt.
+      Umfang, gezaehlt: 47x `component=`, 16x `render=`, 17x `<Redirect>`,
+      63x `exact`, 6x `RouteComponentProps` — verteilt auf 11 Dateien.
+      Alles mechanisch, aber es ist der Routing-Kern und trifft jede Nutzerin.
+      Dazu 7x `autocorrect` (wird boolean).
+      **Zusammen mit dem Bundle-Splitting machen** — beide fassen dasselbe
+      Routing an, das doppelt zu tun waere Verschwendung.
+
+- [x] **Rollenwechsel ohne Abmelden — VERWORFEN 27.08.2026.** Simons
+      Entscheidung: "Die Idee mit dem Rollenwechsler verwerfen. Dann sind es
+      halt drei Logins." Mit der biometrischen Anmeldung ist der eigentliche
+      Schmerz (staendiges Passwort-Tippen) ohnehin weg.
 
 ---
 
