@@ -551,7 +551,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
         {/* KONFIS — Plaetze, Warteliste und Punkte in einer Karte */}
         {!formData.mandatory && teamerAccess !== 'teamer_only' && (
-          <PointsParticipantsSection formData={formData} setFormData={setFormData} loading={loading} />
+          <PointsParticipantsSection formData={formData} setFormData={setFormData} loading={loading} jahrgaenge={jahrgaenge} />
         )}
 
         {/* TEAMER:INNEN — Plaetze/Warteliste, nur wenn Teamer:innen teilnehmen */}

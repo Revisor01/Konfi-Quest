@@ -619,6 +619,89 @@ describe('Konfi-Management Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    // Pro Jahrgang laesst sich eine Punkteart abschalten
+    // (jahrgaenge.gottesdienst_enabled / gemeinde_enabled). checkPointTypeEnabled
+    // blockt die Vergabe dann mit 400. Dieser Schutz war bis 26.08.2026 in
+    // keinem Test abgesichert -- und genau darauf verlaesst sich die Oberflaeche.
+    describe('abgeschaltete Punkteart', () => {
+      const schalteAus = async (feld) => {
+        const { rows: [profil] } = await db.query(
+          'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+          [USERS.konfi1.id]
+        );
+        expect(profil.jahrgang_id).toBeTruthy();
+        await db.query(
+          `UPDATE jahrgaenge SET ${feld} = false WHERE id = $1`,
+          [profil.jahrgang_id]
+        );
+      };
+
+      it('abgeschaltete Art wird abgelehnt -> 400, keine Punkte vergeben', async () => {
+        await schalteAus('gottesdienst_enabled');
+
+        // Der Seed legt bereits einen Bonus-Eintrag fuer konfi1 an -- deshalb
+        // den Stand VORHER messen statt 0 anzunehmen.
+        const { rows: [vorher] } = await db.query(
+          'SELECT count(*)::int c FROM bonus_points WHERE konfi_id = $1',
+          [USERS.konfi1.id]
+        );
+
+        const res = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 5, type: 'gottesdienst', description: 'Sollte scheitern' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe('Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert');
+
+        // Nichts gutgeschrieben und kein neuer Eintrag dazugekommen.
+        const { rows: [profil] } = await db.query(
+          'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
+          [USERS.konfi1.id]
+        );
+        expect(profil.gottesdienst_points).toBe(0);
+        const { rows: [nachher] } = await db.query(
+          'SELECT count(*)::int c FROM bonus_points WHERE konfi_id = $1',
+          [USERS.konfi1.id]
+        );
+        expect(nachher.c).toBe(vorher.c);
+      });
+
+      it('die weiterhin aktive Art geht durch -> 201', async () => {
+        // Gegenprobe: Der Guard darf nicht pauschal blocken.
+        await schalteAus('gottesdienst_enabled');
+
+        const res = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 3, type: 'gemeinde', description: 'Gemeindefest' });
+
+        expect(res.status).toBe(201);
+        const { rows: [profil] } = await db.query(
+          'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+          [USERS.konfi1.id]
+        );
+        expect(profil.gemeinde_points).toBe(3);
+      });
+
+      it('greift auch fuer die andere Richtung (Gemeinde aus)', async () => {
+        await schalteAus('gemeinde_enabled');
+
+        const abgelehnt = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 4, type: 'gemeinde', description: 'Sollte scheitern' });
+        expect(abgelehnt.status).toBe(400);
+        expect(abgelehnt.body.error).toBe('Gemeinde-Punkte sind für diesen Jahrgang deaktiviert');
+
+        const erlaubt = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 4, type: 'gottesdienst', description: 'Gottesdienst' });
+        expect(erlaubt.status).toBe(201);
+      });
+    });
   });
 
   // ================================================================

@@ -70,6 +70,12 @@ interface KonfiProfile {
   created_at: string;
   last_login_at?: string;
   bible_translation?: string;
+  // Punktearten-Schalter des Jahrgangs. Das Backend liefert sie mit
+  // (routes/konfi.js), das Interface kannte sie bis 26.08.2026 nicht -- die
+  // Punktehistorie fiel deshalb auf "beide aktiv" zurueck und zeigte auch die
+  // abgeschaltete Art an.
+  gottesdienst_enabled?: boolean;
+  gemeinde_enabled?: boolean;
   // Statistics
   total_points: number;
   gottesdienst_points?: number;
@@ -367,6 +373,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   // Modal with useIonModal Hook for Points History
   const [presentPointsModal, dismissPointsModal] = useIonModal(PointsHistoryModal, {
     onClose: () => dismissPointsModal(),
+    // Ohne pointConfig faellt das Modal auf "beide Arten aktiv" zurueck.
+    pointConfig: profile
+      ? {
+          gottesdienst_enabled: profile.gottesdienst_enabled !== false,
+          gemeinde_enabled: profile.gemeinde_enabled !== false,
+        }
+      : undefined,
     profileTotals: profile ? {
       total_points: profile.total_points || 0,
       gottesdienst_points: profile.gottesdienst_points || 0,

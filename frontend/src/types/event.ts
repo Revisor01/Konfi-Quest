@@ -19,6 +19,11 @@ export interface Timeslot {
 export interface Jahrgang {
   id: number;
   name: string;
+  // Punktearten-Schalter des Jahrgangs. Das Backend liefert sie ueber
+  // SELECT j.* mit; ohne sie boten die Termin-Formulare auch eine im Jahrgang
+  // abgeschaltete Punkteart an (Befund 26.08.2026).
+  gottesdienst_enabled?: boolean;
+  gemeinde_enabled?: boolean;
 }
 
 // Vollstaendiges Event-Interface (alle Felder aus allen 8 Definitionen vereint)

@@ -105,6 +105,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
     konfiId: konfiId,
     targetRole: targetRole,
+    // Wie beim BonusModal: ohne die Schalter stuenden auch Aktivitaeten einer
+    // abgeschalteten Punkteart zur Auswahl.
+    punkteartFlags: currentKonfi
+      ? {
+          gottesdienst_enabled: currentKonfi.gottesdienst_enabled,
+          gemeinde_enabled: currentKonfi.gemeinde_enabled,
+        }
+      : undefined,
     onClose: () => dismissActivityModalHook(),
     onSave: async () => {
       await loadKonfiData();
@@ -116,6 +124,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Bonus Modal mit useIonModal Hook
   const [presentBonusModalHook, dismissBonusModalHook] = useIonModal(BonusModal, {
     konfiId: konfiId,
+    // Punktearten-Schalter des Jahrgangs mitgeben: sonst bietet das Modal auch
+    // eine abgeschaltete Art an und das Speichern scheitert erst am Server.
+    punkteartFlags: currentKonfi
+      ? {
+          gottesdienst_enabled: currentKonfi.gottesdienst_enabled,
+          gemeinde_enabled: currentKonfi.gemeinde_enabled,
+        }
+      : undefined,
     onClose: () => dismissBonusModalHook(),
     onSave: async () => {
       await loadKonfiData();
