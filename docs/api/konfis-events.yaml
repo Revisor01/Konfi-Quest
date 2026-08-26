@@ -1054,10 +1054,16 @@ paths:
       summary: Event löschen (mit force-Bestaetigung)
       description: >
         Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs-
-        Zuweisungen und Event-Chat (inkl. Dateien). Ohne ?force=true blockt
-        die Route mit 409, wenn Anmeldungen (error_code event_has_bookings)
-        oder Chat-Nachrichten (event_has_chat) existieren. Gebuchte Konfis
-        werden per Push informiert.
+        Zuweisungen und Event-Chat (inkl. Dateien). Bereits vergebene
+        Event-Punkte werden dabei aus konfi_profiles zurueckgerechnet
+        (GREATEST(0, ...), Befund H1, behoben 26.08.2026). Ohne ?force=true
+        blockt die Route mit EINEM 409 (error_code event_delete_confirm),
+        wenn Anmeldungen, Chat-Nachrichten oder vergebene Punkte existieren —
+        mit booking_count, message_count, points_count und points_total fuer
+        die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher
+        zwei getrennte 409er event_has_bookings/event_has_chat, die das
+        Frontend per pauschalem force=true umging). Gebuchte Konfis werden
+        per Push informiert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateEventId]
@@ -1069,13 +1075,13 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ["true"] }
-          description: "true: nicht abgesagten Termin trotz Anmeldungen löschen (sonst 409 mit Anzahl)"
+          description: "true: Termin trotz Anmeldungen/Chat-Nachrichten/vergebener Punkte löschen (sonst 409 mit Zahlen)"
       responses:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
-        "409": { description: "error_code: event_has_bookings | event_has_chat (ohne force)" }
+        "409": { description: "error_code: event_delete_confirm mit booking_count, message_count, points_count, points_total (ohne force)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/events/{id}/book:

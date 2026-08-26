@@ -188,6 +188,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Termine: Beim Löschen eines Termins werden bereits vergebene Punkte den
+  Konfis jetzt wieder abgezogen — vorher behielten sie Punkte ohne Beleg.
+- Termine: Vor dem Löschen erscheint jetzt eine echte Rückfrage, die konkret
+  nennt, was verloren geht — Anmeldungen, Chat-Nachrichten und vergebene
+  Punkte. Vorher wurde die Warnung des Servers stillschweigend übergangen.
 - Wer eine Person löscht, löscht jetzt wirklich alles: Auch ihre Chat-Anhänge
   (Fotos, Dateien) werden vom Server entfernt — vorher blieben sie dauerhaft
   liegen. Dasselbe gilt beim Löschen einer ganzen Organisation, dort

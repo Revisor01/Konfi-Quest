@@ -159,14 +159,18 @@ Erledigten.
       nachgemessen.*
       ALT: Gemessen bei 390 px: Die Seitenleiste ist 449 px hoch, also
       53 Prozent des Bildschirms, der Inhalt beginnt erst darunter.
-- [ ] **Querverweise zwischen den Kapiteln** wie in einem Wiki — heute steht
+- [x] **Querverweise zwischen den Kapiteln** — erledigt (`e6867f01`), nachgeprueft
+      am 26.08.: allein `80-challenges.md` hat 7 Verweise. ALT: heute steht
       jedes Kapitel für sich. *(In Arbeit.)*
-- [ ] **Konfis einladen per QR-Code und Code** fehlt als richtige Beschreibung
+- [x] **Konfis einladen per QR-Code und Code** — erledigt (`e6867f01`), dabei
+      zwei falsche Angaben gegen den Code korrigiert. ALT: fehlt als Beschreibung
       (heute nur eine Zeile in `30-leitung.md:130` und ein kurzer Abschnitt in
       `35-passwoerter.md`). *(In Arbeit.)*
-- [ ] **Check-in per QR-Code bei Terminen** ebenfalls nur als Warnung erwähnt
+- [x] **Check-in per QR-Code bei Terminen** — erledigt (`e6867f01`): Ablauf,
+      Zeitfenster, Zaehler. ALT: nur als Warnung erwähnt
       (`70-termine.md:146`), nicht erklärt. *(In Arbeit.)*
-- [ ] Hinweise aus dem Challenge-Erstellen-Modal (Abzeichen, Zeitraum,
+- [x] Hinweise aus dem Challenge-Erstellen-Modal — standen bereits im Handbuch
+      (geprueft 26.08.). ALT: (Abzeichen, Zeitraum,
       Sichtbarkeit) sollen ins Handbuch. *(In Arbeit, anderer Agent.)*
 
 ---
@@ -258,7 +262,8 @@ Erledigten.
       Material (`b5d76109`).
       ALT:, aber kleinschrittiger dokumentieren.
       Wo sind Fehler, Doppelungen, Unnötiges?
-- [ ] **Handbuch mit Bildschirmfotos** — exakte Beschreibung aller Abläufe.
+- [x] **Handbuch mit Bildschirmfotos** — 16 Abbildungen in den drei
+      Rollenkapiteln (`4a31627c`), erzeugt per `scripts/screenshots.mjs`.
 - [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
       fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
 - [x] **Pushes nach dem Abmelden** — erledigt durch `f267a982` (23.08.),
@@ -402,6 +407,28 @@ Erledigten.
   - [ ] 98 `js/xss-through-dom` — `AudioPlayer.tsx:131`
   - [ ] 97 `js/xss-through-dom` — `ChallengeSubmitModal.tsx:690`
   - [ ] 96 `js/xss-through-dom` — `ChallengeSubmitModal.tsx:625`
+
+---
+
+## Aufträge aus der Löschlogik-Prüfung (26.08.), noch offen
+
+- [ ] **Waisen-Cleanup für Altbestand.** Die vier PRs verhindern NEUE verwaiste
+      Dateien. Was vorher liegengeblieben ist, räumt niemand auf: Chat-Anhänge
+      gelöschter Personen, Material gelöschter Organisationen, Nachweisfotos.
+      Gebraucht wird ein Skript, das `uploads/` gegen die Datenbank abgleicht
+      und verwaiste Dateien meldet — **erst melden, löschen nur auf Zuruf und
+      mit Sicherung**. Blinder Fleck bisher: `uploads/challenges/`.
+      *Nicht vor dem Merge der vier PRs, sonst misst man gegen alten Code.*
+
+- [ ] **Schema-Test gegen fehlende Löschregeln.** Der wirksamste Hebel gegen
+      Wiederholung: Ein Test prüft, dass JEDER Fremdschlüssel auf `users` oder
+      `organizations` entweder eine ON-DELETE-Regel hat oder ausdrücklich in
+      der Löschliste (`konfiDeletion.js` bzw. der Org-Purge) steht.
+      Hätte gefunden: den `invite_code_id`-Fall (PR #72), `chat_message_reactions`
+      und die im August reparierten `user_certificates`-Fälle — alle dieselbe
+      Fehlerklasse, dreimal einzeln entdeckt statt einmal maschinell.
+      Umsetzung: `pg_constraint` abfragen (`confdeltype = 'a'` heisst KEINE
+      Regel), Ausnahmen als benannte Liste im Test mit Begründung.
 
 ---
 
