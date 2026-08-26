@@ -206,6 +206,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
+  Ersatztext wie Konfis, statt einer Fehlermeldung.
+
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.

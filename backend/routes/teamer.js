@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { fetchTageslosung } = require('../services/losungService');
+const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
+const { determineBookingStatus } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
@@ -1201,7 +1202,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Fallback cache error:', fallbackErr.message);
       }
 
-      res.status(500).json({ success: false, error: 'Tageslosung konnte nicht geladen werden' });
+      // Statischer Fallback statt HTTP 500 -- dieselbe Stelle wie im Konfi-Weg
+      // (Befund M2, 27.08.2026: der Kommentar oben behauptete das schon, der
+      // Code loeste es aber nur zur Haelfte ein). Eine leere Startseite ist
+      // schlechter als ein bekannter Psalm.
+      res.json({
+        success: true,
+        data: tageslosungFallback(),
+        fallback: true,
+        error: 'Losungen API nicht erreichbar - Fallback verwendet'
+      });
     }
   });
 
@@ -1307,7 +1317,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await client.query('BEGIN');
 
         const { rows: [event] } = await client.query(
-          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled
+          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled,
+                  teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
              FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
           [eventId, req.user.organization_id]
         );
@@ -1330,7 +1341,46 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           return res.status(400).json({ error: 'Der Termin liegt bereits in der Vergangenheit' });
         }
 
-        const status = dabei ? 'confirmed' : 'opted_out';
+        // Bei einer ZUSAGE gilt das Teamer-Kontingent genauso wie auf dem
+        // regulaeren Buchungsweg (events.js:1667). Bis 27.08.2026 setzte diese
+        // Route hart 'confirmed' -- ohne jede Pruefung von
+        // teamer_max_participants, teamer_waitlist_enabled oder
+        // teamer_max_waitlist_size (Befund M1). Ueber die App war der Weg nicht
+        // erreichbar (das Frontend ruft nur dabei=false auf), die Route stand
+        // aber offen und die Funktion ist parametrisiert: Ein kuenftiger Griff
+        // zur naheliegenden Zusage-Route haette das Kontingent ueberbucht.
+        //
+        // determineBookingStatus statt eigener Logik -- dieselbe Funktion, die
+        // der regulaere Weg benutzt. Eine dritte Kopie der Kapazitaetsregeln
+        // waere genau die Fehlerklasse, die dieses Projekt schon oft getroffen
+        // hat.
+        let status;
+        if (dabei) {
+          // Eine BESTEHENDE eigene Buchung zaehlt nicht als neuer Platz --
+          // sonst koennte man sich durch Absage und erneute Zusage selbst
+          // aussperren, obwohl der Platz noch einem gehoert.
+          const { rows: [zahlen] } = await client.query(
+            `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.user_id <> $2)::int AS confirmed_count,
+                    COUNT(*) FILTER (WHERE eb.status = 'waitlist'  AND eb.user_id <> $2)::int AS waitlist_count
+               FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+            [eventId, req.user.id]
+          );
+          const ergebnis = determineBookingStatus(
+            event, zahlen.confirmed_count, zahlen.waitlist_count,
+            event.teamer_max_participants || 0,
+            { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
+          );
+          if (typeof ergebnis === 'object') {
+            await client.query('ROLLBACK');
+            return res.status(ergebnis.status).json({ error: ergebnis.error });
+          }
+          status = ergebnis; // 'confirmed' oder 'waitlist'
+        } else {
+          status = 'opted_out';
+        }
         const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
 
         // Vorhandene Buchung aktualisieren oder neu anlegen. Die Meinung darf
