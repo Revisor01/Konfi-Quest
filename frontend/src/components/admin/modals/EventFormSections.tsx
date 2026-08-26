@@ -20,6 +20,7 @@ import {
   create, people, scanOutline, copy, chevronDownOutline
 } from 'ionicons/icons';
 import { Category, Jahrgang } from '../../../types/event';
+import { istPunkteartAktiv, PUNKTEART_NAME, type Punkteart } from '../../../utils/punktearten';
 
 // ---- Shared form data type ----
 
@@ -233,13 +234,31 @@ interface PointsParticipantsSectionProps {
   formData: EventFormData;
   setFormData: (data: EventFormData) => void;
   loading: boolean;
+  /**
+   * Alle Jahrgaenge der Organisation. Gebraucht, um die Punkteart-Auswahl auf
+   * die Arten zu beschraenken, die in den ausgewaehlten Jahrgaengen ueberhaupt
+   * aktiv sind -- sonst laesst sich ein Termin anlegen, dessen Punkte spaeter
+   * pro Teilnehmer:in am Server scheitern.
+   */
+  jahrgaenge?: Jahrgang[];
 }
 
 // Eine Karte "Konfis" — Plätze, Warteliste und Punkte zusammen, damit die
 // Struktur der Teamer-Karte entspricht (einziger Unterschied: die Punkte).
 export const PointsParticipantsSection = React.memo<PointsParticipantsSectionProps>(({
-  formData, setFormData, loading
-}) => (
+  formData, setFormData, loading, jahrgaenge = []
+}) => {
+  // Ein Termin gehoert mehreren Jahrgaengen. Eine Punkteart bleibt waehlbar,
+  // solange sie in MINDESTENS EINEM der ausgewaehlten Jahrgaenge aktiv ist --
+  // fuer die uebrigen verbucht der Server sie ohnehin nicht.
+  // Ohne Jahrgangs-Auswahl (noch keiner gewaehlt) bleiben beide waehlbar,
+  // sonst haette man vor der ersten Auswahl gar keine Punkteart.
+  const gewaehlte = jahrgaenge.filter((j) => formData.jahrgang_ids.includes(j.id));
+  const verfuegbareArten: Punkteart[] = (['gottesdienst', 'gemeinde'] as Punkteart[]).filter(
+    (art) => gewaehlte.length === 0 || gewaehlte.some((j) => istPunkteartAktiv(j, art))
+  );
+
+  return (
   <IonList inset={true} className="app-modal-section">
     <IonListHeader>
       <div className="app-section-icon app-section-icon--events">
@@ -340,24 +359,18 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
               <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
             </IonItem>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div
-                className={`app-list-item app-list-item--gemeinde${formData.point_type === 'gemeinde' ? ' app-list-item--selected' : ''}`}
-                onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
-                style={{
-                  cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
-                }}>
-                <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-              </div>
-              <div
-                className={`app-list-item app-list-item--gottesdienst${formData.point_type === 'gottesdienst' ? ' app-list-item--selected' : ''}`}
-                onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
-                style={{
-                  cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
-                }}>
-                <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-              </div>
+              {verfuegbareArten.map((art) => (
+                <div
+                  key={art}
+                  className={`app-list-item app-list-item--${art}${formData.point_type === art ? ' app-list-item--selected' : ''}`}
+                  onClick={() => !loading && setFormData({ ...formData, point_type: art })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
+                  }}>
+                  <span style={{ fontWeight: '500', color: '#333' }}>{PUNKTEART_NAME[art]}</span>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -365,7 +378,8 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
     </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});
 
 // ---- CategoriesTargetSection ----
 

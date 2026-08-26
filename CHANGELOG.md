@@ -188,6 +188,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
+  jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,
+  beim Zuweisen einer Aktivität und beim Anlegen eines Termins. Vorher liess
+  sie sich anklicken, und erst das Speichern scheiterte mit einer Fehlermeldung.
+- Konfis sehen in ihrer Punktehistorie keine abgeschaltete Punkteart mehr.
 - Termine: Beim Löschen eines Termins werden bereits vergebene Punkte den
   Konfis jetzt wieder abgezogen — vorher behielten sie Punkte ohne Beleg.
 - Termine: Vor dem Löschen erscheint jetzt eine echte Rückfrage, die konkret

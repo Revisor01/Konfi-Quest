@@ -29,6 +29,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { istPunkteartAktiv, type PunkteartFlags } from '../../../utils/punktearten';
 
 interface Activity {
   id: number;
@@ -40,13 +41,20 @@ interface Activity {
 
 interface ActivityModalProps {
   konfiId: number;
+  /**
+   * Punktearten-Schalter des Jahrgangs. Ohne die Angabe gelten beide Arten als
+   * aktiv -- die Liste bot dann auch Aktivitaeten einer abgeschalteten Art an,
+   * und das Zuweisen scheiterte erst beim Speichern am Server (Befund 24.08.2026:
+   * damals wurde nur die Fehlermeldung ergaenzt, nicht die Ursache behoben).
+   */
+  punkteartFlags?: PunkteartFlags;
   onClose: () => void;
   onSave: () => Promise<void>;
   dismiss?: () => void;
   targetRole?: string;
 }
 
-const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole }) => {
+const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole, punkteartFlags }) => {
   const { isOnline, setError } = useApp();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
@@ -99,7 +107,14 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
     try {
       const url = targetRole ? `/admin/activities?target_role=${targetRole}` : '/admin/activities';
       const response = await api.get(url);
-      setActivities(response.data);
+      // Nur Aktivitaeten anbieten, deren Punkteart im Jahrgang aktiv ist.
+      // Teamer-Aktivitaeten haben type = NULL und keine Punkteart -- die
+      // bleiben unabhaengig davon in der Liste.
+      setActivities(
+        (response.data || []).filter((activity: Activity) =>
+          !activity.type || istPunkteartAktiv(punkteartFlags, activity.type as 'gottesdienst' | 'gemeinde')
+        )
+      );
     } catch (err) {
  console.error('Error loading activities:', err);
     }
