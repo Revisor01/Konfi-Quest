@@ -335,7 +335,7 @@ describe('rotationUebernehmen', () => {
     expect(abgelegt.refreshToken).toBe('refresh-neu');
   });
 
-  it('verlaengert die 14-Tage-Frist NICHT', async () => {
+  it('verlaengert die Frist NICHT (sie laeuft ab dem Anmeldevorgang)', async () => {
     const { biometrieAktivieren, rotationUebernehmen } = await laden();
     await biometrieAktivieren();
     const vorher = JSON.parse(sicher.get(SICHERER_SCHLUESSEL)!).gespeichertAm;

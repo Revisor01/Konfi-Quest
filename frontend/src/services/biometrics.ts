@@ -30,16 +30,18 @@ import { BaseUser } from '../types/user';
 //   a) Der Token liegt NUR biometrie-geschuetzt im Keystore/Keychain, nie
 //      zusaetzlich im Klartext. Beim Einschalten des Schalters wird die
 //      Preferences-Kopie geloescht (siehe biometrieAktivieren).
-//   b) Die gespeicherte Sitzung hat eine EIGENE, kuerzere Gueltigkeit als der
-//      Server-Token: GESPEICHERTE_SITZUNG_MAX_TAGE (14) statt der 90 Tage des
-//      Refresh-Tokens. Wer die App zwei Wochen nicht oeffnet, meldet sich
-//      wieder mit Passwort an. Begruendung fuer genau 14 Tage: der uebliche
-//      Konfi-Rhythmus ist woechentlich bis 14-taegig; wer regelmaessig dabei
-//      ist, tippt nie ein Passwort, ein vergessenes Geraet in einer Schublade
-//      entwertet sich aber von selbst. Die Frist wird beim Entsperren geprueft,
-//      NICHT nur beim Speichern — ein abgelaufener Eintrag wird sofort
-//      geloescht. Sie laeuft ab dem letzten ANMELDEVORGANG, nicht ab dem
-//      letzten Netzverkehr (siehe gespeichertenTokenAuffrischen).
+//   b) Die gespeicherte Sitzung laeuft mit dem Server-Token mit:
+//      GESPEICHERTE_SITZUNG_MAX_TAGE (90 Tage) — dieselbe Frist wie der
+//      Refresh-Token. Entscheidung Simon 27.08.2026: Eine kuerzere eigene
+//      Frist (zwischenzeitlich 14 Tage) wuerde Leute, die die App laenger
+//      nicht oeffnen, ohne Not zum Passwort-Tippen zwingen — und genau das
+//      sollte die Funktion abschaffen. Der Schutz liegt in der Biometrie und
+//      im sicheren Speicher, nicht in einer kurzen Frist: Ohne Face ID gibt
+//      das Betriebssystem den Token gar nicht erst heraus.
+//      Die Frist wird beim Entsperren geprueft, NICHT nur beim Speichern — ein
+//      abgelaufener Eintrag wird sofort geloescht. Sie laeuft ab dem letzten
+//      ANMELDEVORGANG, nicht ab dem letzten Netzverkehr (siehe
+//      gespeichertenTokenAuffrischen).
 //   c) Die gespeicherte Sitzung ist an EINE Nutzer-ID gebunden. Meldet sich auf
 //      demselben Geraet jemand anderes an, wird der alte Eintrag verworfen.
 //   d) Bei ausdruecklichem Abmelden wird alles geloescht (biometrieVergessen,
@@ -59,8 +61,9 @@ const KLARTEXT_REFRESH_SCHLUESSEL = 'konfi_refresh_token';
 // Auffrischung eine biometrische Abfrage, nur um den alten Wert zu lesen.
 const ZEITSTEMPEL_SCHLUESSEL = 'konfi_biometrie_gespeichert_am';
 
-// Siehe Sicherheitsabwaegung b) oben.
-export const GESPEICHERTE_SITZUNG_MAX_TAGE = 14;
+// Siehe Sicherheitsabwaegung b) oben. 90 Tage = dieselbe Gueltigkeit wie der
+// Refresh-Token des Servers; die gespeicherte Sitzung ueberlebt ihn also nicht.
+export const GESPEICHERTE_SITZUNG_MAX_TAGE = 90;
 
 // Nur Android: Zeitfenster, in dem der Keystore-Schluessel nach einer
 // erfolgreichen Pruefung ohne erneute Abfrage benutzbar ist.

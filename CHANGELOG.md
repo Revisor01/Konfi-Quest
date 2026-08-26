@@ -17,8 +17,7 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Anmelden mit Face ID, Touch ID oder Fingerabdruck: Wer möchte, schaltet die
   biometrische Anmeldung im eigenen Profil unter Konto-Einstellungen ein und
   kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
-  im geschützten Speicher des Geräts und gelten für 14 Tage; beim Abmelden
-  werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
+  im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
   Biometrie eingerichtet ist.
 - Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
   löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
