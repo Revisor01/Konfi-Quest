@@ -206,9 +206,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
-- Die spanische Bibelübersetzung Reina-Valera 1960 für die Tageslosung lässt
-  sich jetzt überall auswählen — bisher bot nur das Konfi-Profil sie an, auf
-  der Startseite und in den Teamer-Ansichten fehlte sie.
+- Die Auswahl der Bibelübersetzung für die Tageslosung ist überall dieselbe.
+  Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
+  die Teamer-Ansichten.
 - Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
   Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
   Kennzeichnung nur für Konfis.

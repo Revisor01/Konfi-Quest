@@ -24,8 +24,8 @@ const backendListe = (datei: string): string[] => {
 describe('Bibelübersetzungen: geteiltes Modal deckt die Backend-Liste ab', () => {
   const frontendCodes = BIBLE_TRANSLATIONS.map((t) => t.code);
 
-  it('bietet exakt die sieben erlaubten Übersetzungen an', () => {
-    expect(frontendCodes).toEqual(['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60']);
+  it('bietet exakt die sechs erlaubten Übersetzungen an', () => {
+    expect(frontendCodes).toEqual(['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG']);
   });
 
   it('stimmt mit den erlaubten Übersetzungen der Konfi-Route überein', () => {
@@ -40,8 +40,11 @@ describe('Bibelübersetzungen: geteiltes Modal deckt die Backend-Liste ab', () =
     );
   });
 
-  it('RVR60 wird mit vollem Namen angezeigt (vorher fehlte es im geteilten Modal)', () => {
-    expect(getTranslationName('RVR60')).toBe('Reina-Valera 1960');
+it('die entfernte Uebersetzung RVR60 taucht nirgends mehr auf', () => {
+    // Entscheidung Simon 27.08.2026: RVR60 (Reina-Valera) wird nicht angeboten.
+    expect(BIBLE_TRANSLATIONS.map((t) => t.code)).not.toContain('RVR60');
+    expect(backendListe('../backend/routes/konfi.js')).not.toContain('RVR60');
+    expect(backendListe('../backend/routes/teamer.js')).not.toContain('RVR60');
   });
 
   it('das Konfi-Profil hat keine private Modal-Kopie mehr', () => {
