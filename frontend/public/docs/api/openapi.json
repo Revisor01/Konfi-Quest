@@ -1860,11 +1860,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "keine weitere"
@@ -1931,11 +1932,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "checkUserHierarchy('create')",
             "validateCreateUser"
           ],
@@ -1974,11 +1976,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "checkUserHierarchy('view')"
           ],
           "org-scope": true,
@@ -2057,11 +2060,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "checkUserHierarchy('update')",
             "validateUpdateUser"
           ],
@@ -2105,11 +2109,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "checkUserHierarchy('delete')",
             "validateUserId"
           ],
@@ -2341,11 +2346,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "wie GET /users",
@@ -2371,11 +2377,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "userHierarchyMiddleware('create')",
             "validateCreateUser"
           ],
@@ -2416,11 +2423,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
@@ -2461,11 +2469,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "userHierarchyMiddleware('update')",
             "validateUpdateUser"
           ],
@@ -2504,11 +2513,12 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "userHierarchyMiddleware('delete')",
             "validateUserId"
           ],
@@ -10151,11 +10161,12 @@
         "description": "Icon-Vorgabe 'ribbon', wenn nichts angegeben wird. Der Name ist je Organisation eindeutig.",
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "validateCreateCertificateType"
           ],
           "org-scope": true,
@@ -10217,11 +10228,12 @@
         "description": "Teilaktualisierung von name, icon und is_active. Ohne aenderbares Feld kommt 400.",
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "validateUpdateCertificateType"
           ],
           "org-scope": true,
@@ -10288,11 +10300,12 @@
         "description": "Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen vergeben wurde; in dem Fall kommt 409.\n",
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "DELETE mit organization_id-Bedingung (404 sonst)",
@@ -10372,11 +10385,12 @@
         "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehört und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.\n",
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
             "validateCertificate"
           ],
           "org-scope": true,
@@ -10448,11 +10462,12 @@
         "summary": "Zertifikat einer Teamer:in entfernen",
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "DELETE mit id + user_id + organization_id (404 sonst)"

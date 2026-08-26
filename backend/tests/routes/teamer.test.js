@@ -440,11 +440,25 @@ describe('Teamer Routes', () => {
       expect(res.body.name).toBe('Erste-Hilfe-Kurs');
     });
 
-    it('Admin (nicht OrgAdmin) bekommt 403', async () => {
+    // Bis 26.08.2026 stand hier 403. Entscheidung: Zertifikate anlegen und
+    // vergeben gehoert zur Leitung, nicht nur zum Org-Admin -- die Oberflaeche
+    // bot es der Rolle 'admin' laengst an und lief in einen 403.
+    it('Admin erstellt Zertifikat-Typ -> 201', async () => {
       const res = await request(app)
         .post('/api/teamer/certificate-types')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Test-Zertifikat' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe('Test-Zertifikat');
+    });
+
+    it('Teamer:in darf weiterhin keinen Zertifikat-Typ anlegen -> 403', async () => {
+      // Gegenprobe: Die Oeffnung gilt nur bis zur Rolle 'admin'.
+      const res = await request(app)
+        .post('/api/teamer/certificate-types')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ name: 'Vom Teamer' });
 
       expect(res.status).toBe(403);
     });
@@ -563,6 +577,39 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.message).toContain('zugewiesen');
+    });
+
+    // Entscheidung 26.08.2026: Auch die Rolle 'admin' vergibt Zertifikate.
+    // KonfiDetailSections bot die Zuweisung ungegatet an -- die Aktion lief
+    // fuer Admins in einen 403.
+    it('Admin vergibt Zertifikat -> 201', async () => {
+      const res = await request(app)
+        .post(`/api/teamer/${USERS.teamer1.id}/certificates`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          certificate_type_id: certTypeId,
+          issued_date: '2026-01-15',
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows: [vergeben] } = await db.query(
+        'SELECT count(*)::int c FROM user_certificates WHERE user_id = $1 AND certificate_type_id = $2',
+        [USERS.teamer1.id, certTypeId]
+      );
+      expect(vergeben.c).toBe(1);
+    });
+
+    it('Teamer:in darf weiterhin kein Zertifikat vergeben -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/teamer/${USERS.teamer1.id}/certificates`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({
+          certificate_type_id: certTypeId,
+          issued_date: '2026-01-15',
+        });
+
+      expect(res.status).toBe(403);
     });
 
     it('Fehlende Pflichtfelder geben Validierungsfehler', async () => {

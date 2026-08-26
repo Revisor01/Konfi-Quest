@@ -2,6 +2,8 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId, setActiveOrgId } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
+// Kein Zirkelbezug: biometrics.ts importiert nur tokenStore/Preferences, nie api.
+import { rotationUebernehmen } from './biometrics';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
 
@@ -101,6 +103,18 @@ const performRefresh = async (refreshToken: string): Promise<string> => {
   // der nächste ensureFreshToken() über den (gesicherten) Refresh-Token neu.
   await setRefreshToken(newRefreshToken);
   await setToken(newToken);
+
+  // Ist die biometrische Anmeldung aktiv, muss die gesichert abgelegte Sitzung
+  // denselben rotierten Token bekommen — sonst ist sie beim naechsten Start
+  // tot (der Server macht den alten Token nach 5 Minuten ungueltig).
+  // Best-effort: ein Fehler hier darf den laufenden Refresh NICHT scheitern
+  // lassen, sonst zerlegt eine Kleinigkeit im sicheren Speicher die Sitzung.
+  try {
+    await rotationUebernehmen(newRefreshToken);
+  } catch (fehler) {
+    console.warn('Biometrisch gesicherte Sitzung nicht aktualisiert:', fehler);
+  }
+
   return newToken;
 };
 

@@ -623,7 +623,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /teamer/certificate-types - Neuen Typ erstellen
-  router.post('/certificate-types', rbacVerifier, requireOrgAdmin, validateCreateCertificateType, async (req, res) => {
+  // requireAdmin statt requireOrgAdmin (Entscheidung 26.08.2026): Zertifikate
+  // anlegen und vergeben gehoert zur Leitung, nicht nur zum Org-Admin. Die
+  // Oberflaeche bot es der Rolle 'admin' laengst an (AdminCertificatesPage,
+  // KonfiDetailSections ohne Gate) und lief in 403. Lesen war schon offen.
+  router.post('/certificate-types', rbacVerifier, requireAdmin, validateCreateCertificateType, async (req, res) => {
     try {
       const { name, icon } = req.body;
       if (!name || !name.trim()) {
@@ -647,7 +651,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // PUT /teamer/certificate-types/:id - Typ bearbeiten
-  router.put('/certificate-types/:id', rbacVerifier, requireOrgAdmin, validateUpdateCertificateType, async (req, res) => {
+  router.put('/certificate-types/:id', rbacVerifier, requireAdmin, validateUpdateCertificateType, async (req, res) => {
     try {
       const { name, icon, is_active } = req.body;
       const updates = [];
@@ -695,7 +699,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // DELETE /teamer/certificate-types/:id - Typ löschen (nur wenn nicht zugewiesen)
-  router.delete('/certificate-types/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.delete('/certificate-types/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       // Prüfen ob Zertifikate zugewiesen sind
       const { rows: [usage] } = await db.query(
@@ -748,7 +752,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /teamer/:userId/certificates - Zertifikat zuweisen
-  router.post('/:userId/certificates', rbacVerifier, requireOrgAdmin, validateCertificate, async (req, res) => {
+  router.post('/:userId/certificates', rbacVerifier, requireAdmin, validateCertificate, async (req, res) => {
     try {
       const { certificate_type_id, issued_date, expiry_date } = req.body;
 
@@ -806,7 +810,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // DELETE /teamer/:userId/certificates/:certId - Zertifikat entfernen
-  router.delete('/:userId/certificates/:certId', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.delete('/:userId/certificates/:certId', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const { rowCount } = await db.query(
         'DELETE FROM user_certificates WHERE id = $1 AND user_id = $2 AND organization_id = $3',
