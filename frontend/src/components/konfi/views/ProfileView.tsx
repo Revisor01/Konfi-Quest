@@ -45,8 +45,8 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
-import ChangePasswordModal from '../modals/ChangePasswordModal';
-import ChangeEmailModal from '../modals/ChangeEmailModal';
+import ChangePasswordModal from '../../shared/ChangePasswordModal';
+import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BiometrieSchalter from '../../shared/BiometrieSchalter';
 import SpiritFooter from '../../shared/SpiritFooter';
@@ -337,8 +337,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onSuccess: () => {
       dismissEmailModal();
       onReload();
-    }
+    },
     // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
+    variante: 'purple'
   });
 
   // Modal with useIonModal Hook for Password Change
@@ -346,7 +347,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onClose: () => dismissPasswordModal(),
     onSuccess: () => {
       dismissPasswordModal();
-    }
+    },
+    variante: 'purple'
   });
 
   // Modal with useIonModal Hook for Account Deletion (D-01)

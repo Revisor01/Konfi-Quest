@@ -704,6 +704,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
+- E-Mail- und Passwort-Ändern sind für alle drei Rollen jetzt dieselbe
+  Oberfläche in den jeweiligen Rollenfarben; künftige Korrekturen wirken
+  damit automatisch überall.
 - Aktualisierte Oberflächen-Themes für iOS und Android: zweizeilige
   Listeneinträge, neue Textlayouts und überarbeitete iOS-Eingabefelder.
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
