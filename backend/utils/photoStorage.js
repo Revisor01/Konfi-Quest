@@ -9,6 +9,8 @@ const path = require('path');
 
 const REQUESTS_DIR = path.join(__dirname, '../uploads/requests');
 const CHALLENGES_DIR = path.join(__dirname, '../uploads/challenges');
+const CHAT_DIR = path.join(__dirname, '../uploads/chat');
+const MATERIAL_DIR = path.join(__dirname, '../uploads/material');
 
 // Loescht eine Datei aus einem der Upload-Verzeichnisse anhand des in der DB
 // gespeicherten Dateinamens. Gibt true zurück, wenn gelöscht wurde, false
@@ -47,4 +49,20 @@ async function deleteChallengeFile(filename) {
   return deleteFileInDir(CHALLENGES_DIR, filename, 'deleteChallengeFile');
 }
 
-module.exports = { deletePhotoFile, deleteChallengeFile, REQUESTS_DIR, CHALLENGES_DIR };
+// Chat-Anhaenge (chat_messages.file_path) liegen verschlüsselt in
+// uploads/chat/ unter einem Hex-Namen. Genutzt von den Personen- und
+// Org-Löschpfaden — der Raum-Delete in routes/chat.js räumt selbst auf.
+async function deleteChatFile(filename) {
+  return deleteFileInDir(CHAT_DIR, filename, 'deleteChatFile');
+}
+
+// Material-Dateien (material_files.stored_name) in uploads/material/.
+// Genutzt vom Org-Löschpfad — die Material-Routen räumen selbst auf.
+async function deleteMaterialFile(filename) {
+  return deleteFileInDir(MATERIAL_DIR, filename, 'deleteMaterialFile');
+}
+
+module.exports = {
+  deletePhotoFile, deleteChallengeFile, deleteChatFile, deleteMaterialFile,
+  REQUESTS_DIR, CHALLENGES_DIR, CHAT_DIR, MATERIAL_DIR,
+};

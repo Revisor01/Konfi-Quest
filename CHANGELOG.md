@@ -193,6 +193,16 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Termine: Vor dem Löschen erscheint jetzt eine echte Rückfrage, die konkret
   nennt, was verloren geht — Anmeldungen, Chat-Nachrichten und vergebene
   Punkte. Vorher wurde die Warnung des Servers stillschweigend übergangen.
+- Wer eine Person löscht, löscht jetzt wirklich alles: Auch ihre Chat-Anhänge
+  (Fotos, Dateien) werden vom Server entfernt — vorher blieben sie dauerhaft
+  liegen. Dasselbe gilt beim Löschen einer ganzen Organisation, dort
+  zusätzlich für die Material-Dateien.
+- Löschen Teamer:innen einen eigenen Antrag, wird das Nachweisfoto jetzt mit
+  entfernt statt auf dem Server zu verbleiben. Auch bei der Beförderung eines
+  Konfis zum:zur Teamer:in werden die Fotos der dabei entfernten offenen
+  Anträge mit gelöscht.
+- Der Anhang einer gelöschten Chat-Nachricht lässt sich nicht mehr
+  herunterladen, solange die Nachricht gelöscht ist.
 - Challenges: Die eigenen Beiträge stehen jetzt in einem Reiter statt in einem
   eigenen Abschnitt darüber — Konfis wählen zwischen "Feed" und "Meins",
   Leitung und Teamer:innen zwischen "Feed", "Wartet", "Abgelehnt" und "Meins".
