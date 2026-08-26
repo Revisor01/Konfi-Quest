@@ -46,7 +46,8 @@ import {
   checkmarkOutline,
   lockClosedOutline,
   removeCircleOutline,
-  chatbubbleEllipsesOutline
+  chatbubbleEllipsesOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -470,6 +471,37 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     });
   };
 
+  // Löschen heißt wirklich löschen: Datenbank-Eintrag UND hochgeladene Datei
+  // (Nutzerwunsch 26.08.2026). Deshalb mit deutlicher Rückfrage — zum
+  // Aufheben im Zweifel gibt es weiterhin das Ausblenden.
+  const deleteSubmission = async (submission: ChallengeSubmission) => {
+    setBusyId(submission.id);
+    try {
+      await api.delete(`/challenges/admin/submissions/${submission.id}`);
+      await loadSubmissions();
+      onChanged?.();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Löschen des Beitrags');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const confirmDelete = (submission: ChallengeSubmission) => {
+    presentAlert({
+      header: 'Beitrag wirklich löschen?',
+      message: `Der Beitrag von ${submission.konfi_name || 'dieser Person'} wird endgültig gelöscht — eine hochgeladene Datei wird mit entfernt. Das lässt sich nicht rückgängig machen. Soll der Beitrag nur aus der Gruppe verschwinden, nutze stattdessen "Ausblenden".`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Endgültig löschen',
+          role: 'destructive',
+          handler: () => { deleteSubmission(submission); }
+        }
+      ]
+    });
+  };
+
   const confirmHide = (submission: ChallengeSubmission) => {
     presentAlert({
       header: 'Beitrag ausblenden',
@@ -501,7 +533,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // laufen. Reihenfolge = Reihenfolge im ActionSheet.
   const availableActions = (submission: ChallengeSubmission) => {
     const actions: Array<{
-      key: 'approve' | 'anonymize' | 'hide' | 'unhide';
+      key: 'approve' | 'anonymize' | 'hide' | 'unhide' | 'delete';
       text: string;
       icon: string;
       color: string;
@@ -557,6 +589,14 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         run: () => moderate(submission, 'unhide')
       });
     }
+    // Endgültig löschen (immer, als letzte Aktion): Datenbank-Eintrag UND
+    // Datei. Auch für den eigenen Beitrag — anders als beim Ausblenden gibt
+    // es hier nichts zu verheimlichen, es ist schlicht weg.
+    actions.push({
+      key: 'delete', text: 'Endgültig löschen', icon: trashOutline,
+      color: 'var(--app-color-danger)', role: 'destructive',
+      run: () => confirmDelete(submission)
+    });
     return actions;
   };
 

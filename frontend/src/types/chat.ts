@@ -79,6 +79,9 @@ export interface ChatRoomBase {
   type: 'group' | 'direct' | 'jahrgang' | 'admin';
   event_id?: number | null;
   participants?: ChatParticipant[];
+  // Automatischer Team-Chat der Organisation (Migration 104) — nur er
+  // laesst sich über den Mülleimer im Header leeren.
+  is_team_chat?: boolean;
 }
 
 export interface ChatRoomOverview extends ChatRoomBase {

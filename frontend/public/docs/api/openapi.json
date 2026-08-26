@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n241 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n243 Operationen."
   },
   "servers": [
     {
@@ -7531,6 +7531,52 @@
           "org-scope": true,
           "objekt-pruefung": "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
         }
+      },
+      "delete": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Team-Chat leeren: ALLE Nachrichten löschen, Raum bleibt (NEU 2026-08-26)",
+        "description": "Bewusste Leitungs-Funktion (Muelleimer im Chat-Header): loescht alle Nachrichten des automatischen Team-Chats hart — inklusive Dateianhaengen (best effort nach dem DB-Delete), Umfragen, Stimmen und Reaktionen (ON-DELETE-CASCADE der chat_messages-FKs). Der Raum und seine Mitglieder bleiben bestehen; vorher war der einzige Weg das Löschen des Raums, den der Team-Chat-Sync leer neu anlegt. Nur fuer den automatischen Team-Chat (is_team_chat=true) — alle anderen Raeume liefern 409. WebSocket: 'chatCleared' an den Raum, 'roomsChanged' an alle Teilnehmer.\n",
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID des Chatraums"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message, deleted_count }"
+          },
+          "403": {
+            "description": "Rolle nicht org_admin/admin"
+          },
+          "404": {
+            "description": "Raum nicht in eigener Org"
+          },
+          "409": {
+            "description": "Kein Team-Chat (is_team_chat=false)"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Raum org-gescopt geladen; nur is_team_chat=true wird geleert"
+        }
       }
     },
     "/api/chat/rooms/{roomId}/mark-read": {
@@ -9266,6 +9312,53 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge"
+        }
+      }
+    },
+    "/api/challenges/admin/submissions/{id}": {
+      "delete": {
+        "tags": [
+          "Challenges (Leitung)"
+        ],
+        "summary": "Beitrag endgueltig löschen: Datei UND Datenbank-Zeile (NEU 2026-08-26)",
+        "description": "Entfernt einen einzelnen Beitrag unwiderruflich — erst die DB-Zeile, dann die verschluesselte Datei aus uploads/challenges/ (deleteChallengeFile, fehlertolerant: eine fehlende Datei kippt nichts). Schliesst die Luecke aus Befund M8 (Loeschlogik-Audit 2026-08-26): vorher liess sich eine einzelne rechtswidrige Challenge-Datei nur ueber Challenge- oder User-Löschung tilgen, Verbergen liess die Datei liegen. Das Ausblenden (moderate/hide) bleibt daneben als reversible Alternative bestehen. War es der einzige freigegebene Beitrag der Person, entfaellt damit auch das abgeleitete Abzeichen (wie beim Ausblenden). Live-Updates 'submission_update' an Jahrgaenge und Leitung.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID des Beitrags"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message: 'Beitrag gelöscht' }"
+          },
+          "403": {
+            "description": "requireTeamer / leadershipMayAccess"
+          },
+          "404": {
+            "description": "Beitrag nicht in eigener Org"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "rbacVerifier",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge (wie moderate)"
         }
       }
     },
@@ -12357,7 +12450,7 @@
             "description": "Level nicht in dieser Organisation"
           },
           "409": {
-            "description": "Level wird verwendet: { error, usage_count }"
+            "description": "Level noch vergeben: { error: 'Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.', usage_count }. Umbenennen (PUT) ist gefahrlos: vergebene Level haengen per ID an konfi_profiles.current_level_id, der neue Name erscheint sofort ueberall."
           }
         },
         "x-berechtigung": {
@@ -12370,7 +12463,7 @@
             "validateLevelId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query mit organization_id; die Verwendungs-Prüfung zählt konfi_profiles.current_level_id über users.organization_id (org-gescopt, deleted_at IS NULL).\n"
+          "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query mit organization_id; die Verwendungs-Prüfung zählt konfi_profiles.current_level_id über users.organization_id (org-gescopt, seit 2026-08-26 BEWUSST inklusive soft-geloeschter Konfis — siehe Befund S2/M4 im Kopf).\n"
         }
       }
     },

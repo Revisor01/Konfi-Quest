@@ -422,6 +422,11 @@ function createApp(db, options = {}) {
   if (rateLimiters.chatMessageLimiter) {
     app.post('/api/chat/rooms/:roomId/messages', rateLimiters.chatMessageLimiter, rateLimiters.uploadLimiter);
   }
+  // Team-Chat leeren loescht alle Nachrichten samt Dateien -- eigener,
+  // enger Limiter statt des weiten generalLimiter.
+  if (rateLimiters.chatClearLimiter) {
+    app.delete('/api/chat/rooms/:roomId/messages', rateLimiters.chatClearLimiter);
+  }
   app.use('/api/chat', require('./routes/chat')(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload, ioOrDummy));
 
   // Notifications

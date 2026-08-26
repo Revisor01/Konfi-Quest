@@ -1653,6 +1653,58 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   );
 
+  // DELETE /admin/submissions/:id — einen einzelnen Beitrag ENDGUELTIG
+  // entfernen: Datenbank-Zeile UND hochgeladene Datei (Nutzerwunsch
+  // 26.08.2026, Befund M8: bis dahin gab es keinen Weg, eine einzelne
+  // rechtswidrige Challenge-Datei zu tilgen — Verbergen liess sie liegen).
+  // Ausblenden bleibt daneben bestehen, um Beitraege im Zweifel aufzuheben.
+  // Berechtigung wie bei den uebrigen Moderationsaktionen: requireTeamer +
+  // leadershipMayAccess (Teamer nur bei zugewiesenem Jahrgang / 'nur_team').
+  // Reihenfolge: erst file_path lesen, dann DB-Delete, dann Datei —
+  // deleteChallengeFile wirft nie, eine fehlende Datei kippt nichts.
+  router.delete('/admin/submissions/:id',
+    rbacVerifier,
+    requireTeamer,
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const submissionId = parseInt(req.params.id, 10);
+
+        const { rows: [submission] } = await db.query(
+          `SELECT cs.id, cs.challenge_id, cs.user_id, cs.file_path
+           FROM challenge_submissions cs
+           WHERE cs.id = $1 AND cs.organization_id = $2`,
+          [submissionId, req.user.organization_id]
+        );
+        if (!submission) {
+          return res.status(404).json({ error: 'Beitrag nicht gefunden' });
+        }
+        if (!(await leadershipMayAccess(req, submission.challenge_id))) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Beitrag' });
+        }
+
+        await db.query(
+          'DELETE FROM challenge_submissions WHERE id = $1 AND organization_id = $2',
+          [submissionId, req.user.organization_id]
+        );
+        // Nach dem DB-Delete, bewusst fehlertolerant (loggt nur).
+        await deleteChallengeFile(submission.file_path);
+
+        res.json({ message: 'Beitrag gelöscht' });
+
+        // Galerie der Konfis und Leitungs-Liste aktualisieren. War es der
+        // einzige freigegebene Beitrag der Person, verschwindet damit auch
+        // das daraus abgeleitete Abzeichen — wie beim Ausblenden.
+        notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
+        notifyLeadership(req.user.organization_id, 'submission_update', { challengeId: submission.challenge_id });
+      } catch (err) {
+        console.error('Database error in DELETE /challenges/admin/submissions/:id:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
+
   // GET /admin/:id/export — text/plain mit allen Texten und Links, damit die
   // Leitung daraus eine Liturgie, eine Playlist oder eine Wand bauen kann.
   // Anonyme Beitraege erscheinen ohne Namen.

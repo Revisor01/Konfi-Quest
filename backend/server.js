@@ -357,6 +357,20 @@ const uploadLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Team-Chat leeren: entfernt ALLE Nachrichten eines Raums samt Dateianhaengen
+// (Schleife ueber unlink). Der generalLimiter mit 2000/15min ist fuer eine so
+// teure Operation viel zu weit gefasst; CodeQL hat die Route deshalb als
+// "Missing rate limiting" gemeldet (26.08.2026). Zehn Leerungen pro Viertel-
+// stunde reichen fuer jeden echten Bedarf der Leitung.
+const chatClearLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: userOrIpKey,
+  message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 const orgLimiter = rateLimit({
   // Deckt ALLE /api/organizations-Routen ab. GET (Lesen: Liste, Detail, Admins)
   // wird per skip ausgenommen und fällt auf den generalLimiter. Nur Schreib-Ops
@@ -386,6 +400,7 @@ const app = createApp(db, {
     registerLimiter,
     docsLoginLimiter,
     chatMessageLimiter,
+    chatClearLimiter,
     eventBookingLimiter,
     uploadLimiter,
     orgLimiter,

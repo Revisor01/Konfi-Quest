@@ -59,6 +59,13 @@
 #      berücksichtigt nur konfi_profiles.current_level_id; das Level wird
 #      gelöscht, obwohl noch Konfis knapp darunter/darueber liegen. Fachlich
 #      gewollt, hier nur zur Klarstellung dokumentiert.
+#      BEHOBEN (2026-08-26, Befund M4 des Loeschlogik-Audits): die Prüfung
+#      filterte zusaetzlich deleted_at IS NULL — trug ein SOFT-geloeschter
+#      Konfi das Level, lief das DELETE in den FK-Fehler (kein ON DELETE am
+#      current_level_id-FK) und antwortete 500. Jetzt zaehlt die Prüfung
+#      ALLE Profile (auch soft-geloeschte) und liefert 409 mit Handlungs-
+#      empfehlung; ein 23503 wird als Sicherheitsnetz ebenfalls auf 409
+#      abgebildet.
 #  S3  DELETE /admin/categories/{id}: die Verwendungs-Prüfung
 #      (activity_categories/event_categories) filtert NICHT auf
 #      organization_id. Da category_id systemweit eindeutig ist und die
@@ -397,7 +404,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle nicht org_admin oder admin" }
         "404": { description: "Level nicht in dieser Organisation" }
-        "409": { description: "Level wird verwendet: { error, usage_count }" }
+        "409": { description: "Level noch vergeben: { error: 'Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen Konfis um.', usage_count }. Umbenennen (PUT) ist gefahrlos: vergebene Level haengen per ID an konfi_profiles.current_level_id, der neue Name erscheint sofort ueberall." }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, validateLevelId]
@@ -405,7 +412,8 @@ paths:
         objekt-pruefung: >
           Inline-Rollen-Check; Existenz-Query mit organization_id; die
           Verwendungs-Prüfung zählt konfi_profiles.current_level_id über
-          users.organization_id (org-gescopt, deleted_at IS NULL).
+          users.organization_id (org-gescopt, seit 2026-08-26 BEWUSST
+          inklusive soft-geloeschter Konfis — siehe Befund S2/M4 im Kopf).
 
   /api/levels/konfi/{userId}:
     get:
