@@ -209,6 +209,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
   Ersatztext wie Konfis, statt einer Fehlermeldung.
 
+- Die Zahl neuer Abzeichen verschwindet jetzt sofort, wenn man die
+  Abzeichen-Seite öffnet — bisher blieb sie bis zum nächsten App-Start stehen.
+  Das Symbol auf dem App-Icon zählt neue Abzeichen jetzt ebenfalls mit.
+
+- Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
+  Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
+  Kennzeichnung nur für Konfis.
+
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.

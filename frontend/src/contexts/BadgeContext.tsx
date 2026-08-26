@@ -23,6 +23,8 @@ interface BadgeContextType {
   pendingEventsCount: number;
   // Leitung (Admin + Teamer): offene Challenge-Freigaben
   pendingChallengesCount: number;
+  /** Ungesehene Abzeichen (Konfis und Teamer:innen). Die Leitung kann keine verdienen -> immer 0. */
+  newBadgesCount: number;
   // Gesamt (Role-abhaengig)
   totalBadgeCount: number;
   // Actions
@@ -50,6 +52,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
+  const [newBadgesCount, setNewBadgesCount] = useState(0);
 
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
   // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
@@ -58,15 +61,18 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // totalBadgeCount: Admin = chat + requests + events + challenges,
   // Teamer = chat + challenges, Konfi = nur chat
+  // Seit 27.08.2026 zaehlen die ungesehenen Abzeichen mit: Vorher fehlten sie
+  // im App-Icon, obwohl sie an einem Reiter als rote Zahl standen -- das Icon
+  // stimmte nie mit der Summe der Reiter ueberein (Befund B2a).
   const totalBadgeCount = useMemo(() => {
     if (isAdmin) {
       return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount;
     }
     if (isLeadership) {
-      return chatUnreadTotal + pendingChallengesCount;
+      return chatUnreadTotal + pendingChallengesCount + newBadgesCount;
     }
-    return chatUnreadTotal;
-  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, isAdmin, isLeadership]);
+    return chatUnreadTotal + newBadgesCount;
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount, isAdmin, isLeadership]);
 
   // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zähler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
@@ -110,6 +116,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       }
       if (isLeadership) {
         setPendingChallengesCount(Number(data?.pendingChallenges) || 0);
+        setNewBadgesCount(Number(data?.newBadges) || 0);
       }
     } catch (error) {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
@@ -224,6 +231,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       setPendingRequestsCount(0);
       setPendingEventsCount(0);
       setPendingChallengesCount(0);
+      setNewBadgesCount(0);
     }
   }, [user]);
 
@@ -234,6 +242,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       pendingRequestsCount,
       pendingEventsCount,
       pendingChallengesCount,
+      newBadgesCount,
       totalBadgeCount,
       refreshAllCounts,
       markRoomAsRead,

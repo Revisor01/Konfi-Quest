@@ -25,6 +25,13 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 1, type: 'konfi' }, setError: vi.fn() }),
 }));
 
+// Seit der Zaehler-Konsolidierung (27.08.2026) stoesst die Seite nach
+// mark-seen refreshAllCounts() an -- vorher fehlte jede Aktualisierung und der
+// Zaehler blieb die ganze Sitzung stehen (Befund B1, kaputt seit 03.07.2026).
+vi.mock('../../contexts/BadgeContext', () => ({
+  useBadge: () => ({ refreshAllCounts: vi.fn() }),
+}));
+
 vi.mock('../../contexts/ModalContext', () => ({
   useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }),
 }));
