@@ -98,24 +98,19 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  // ACHTUNG: Die fuenf Zahlen an den Reitern sehen gleich aus, haengen aber an
-  // ZWEI verschiedenen Mechanismen (Falle, gefunden 27.08.2026):
+  // Alle fuenf Zahlen an den Reitern kommen aus EINER Quelle: dem BadgeContext,
+  // gespeist aus GET /notifications/badge-counts. Aktualisiert werden sie
+  // gemeinsam mit refreshAllCounts().
   //
-  //   diese vier hier -> BadgeContext, gesammelt aus
-  //                      GET /notifications/badge-counts,
-  //                      aktualisiert mit refreshAllCounts()
-  //   newBadgesCount   -> eigener State weiter unten, laedt selbst,
-  //                      aktualisiert NUR ueber triggerRefresh('badges')
-  //                      (useLiveRefresh weiter unten)
-  //
-  // Wer nach einer Aktion den Abzeichen-Zaehler zuruecksetzen will und dafuer
-  // refreshAllCounts() ruft, bewirkt NICHTS -- die rote Zahl bleibt stehen,
-  // ohne Fehler und ohne Warnung. Der Abzeichen-Zaehler steckt nicht in
-  // badge-counts. Siehe BAUSTELLEN.md, Abschnitt "Falle: Die Reiter-Zaehler".
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount } = useBadge();
+  // Bis 27.08.2026 war newBadgesCount die Ausnahme: eigener State, eigener
+  // Abruf, nur ueber useLiveRefresh('badges') aktualisierbar. Wer nach einer
+  // Aktion refreshAllCounts() rief -- das Naheliegende --, bewirkte nichts.
+  // Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt
+  // (Befund B1): mark-seen setzte 'seen', aber niemand stiess eine
+  // Aktualisierung an, und die rote Zahl blieb die ganze Sitzung stehen.
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
-  const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
   // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
@@ -185,37 +180,10 @@ const MainTabs: React.FC = () => {
   // beim Vergeben eines Badges ein LiveUpdate ('badges'), das checkAndAwardBadges
   // an genau den Punktevergabe-Stellen (Aktivität/Bonus/Event) ausloest. Bei
   // Verbindungsabriss/Push feuert zusaetzlich der initiale Load beim Reconnect.
-  // Gilt fuer Konfis UND Teamer:innen. Bis 27.08.2026 brach die Funktion fuer
-  // alle ausser Konfis sofort ab -- dabei hat das Backend die Endpunkte fuer
-  // Teamer:innen laengst (teamer.js:526 unseen, :544 mark-seen), sie wurden im
-  // Frontend nur nirgends aufgerufen. Damit blieb 'seen' fuer Teamer:innen
-  // dauerhaft false und sie sahen ein neues Abzeichen nie als neu (Befund H1).
-  //
-  // Zwei Endpunkte statt einem: Der Konfi-Weg liest die volle Abzeichenliste
-  // und zaehlt selbst, der Teamer-Weg liefert die Zahl direkt. Bewusst nicht
-  // vereinheitlicht -- die Konfi-Liste wird an dieser Stelle ohnehin gebraucht,
-  // und der schlanke Teamer-Endpunkt spart die teure Fortschrittsberechnung.
-  const loadNewBadgesCount = useCallback(async () => {
-    try {
-      if (user?.type === 'konfi') {
-        const response = await api.get('/konfi/badges');
-        // earned array contains badges with the seen flag
-        const newCount = response.data.earned?.filter((badge: any) => !badge.seen)?.length || 0;
-        setNewBadgesCount(newCount);
-      } else if (user?.type === 'teamer') {
-        const response = await api.get('/teamer/badges/unseen');
-        setNewBadgesCount(response.data?.unseen || 0);
-      }
-    } catch (error) {
-      console.warn('Badges konnten nicht geladen werden:', error);
-    }
-  }, [user?.type]);
-
-  useEffect(() => {
-    loadNewBadgesCount();
-  }, [loadNewBadgesCount]);
-
-  useLiveRefresh('badges', loadNewBadgesCount);
+  // Der Abzeichen-Zaehler kommt jetzt aus dem BadgeContext (siehe oben) --
+  // hier stand frueher ein eigener Loader plus useEffect plus
+  // useLiveRefresh('badges'). Der Kanal 'badges' bleibt fuer die Listen-Seiten
+  // bestehen, der Zaehler haengt aber nicht mehr daran.
 
 
   if (!user) {

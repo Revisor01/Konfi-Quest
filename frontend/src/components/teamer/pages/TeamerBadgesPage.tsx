@@ -15,7 +15,8 @@ import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
-import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgesView from '../../konfi/views/BadgesView';
@@ -74,11 +75,11 @@ const TeamerBadgesPage: React.FC = () => {
   // mit -- markiert wird deshalb pauschal beim Oeffnen, genau dafuer ist der
   // schlanke Endpunkt gedacht. Der Ref verhindert, dass jedes Neuladen
   // (Live-Update, Pull-to-Refresh) einen weiteren Aufruf ausloest.
-  // triggerRefresh('badges') statt refreshAllCounts(): Der Zaehler am Reiter
-  // haengt in MainTabs an useLiveRefresh('badges') (MainTabs.tsx:204), nicht am
-  // BadgeContext. Ohne diesen Anstoss bliebe die rote Zahl nach dem Oeffnen der
-  // Seite stehen, obwohl der Server sie schon auf 0 gesetzt hat.
-  const { triggerRefresh } = useLiveUpdate();
+  // Seit der Zaehler-Konsolidierung (27.08.2026) kommt die Zahl aus dem
+  // BadgeContext -- refreshAllCounts() ist jetzt der richtige und einzige Weg.
+  // Vorher brauchte es hier triggerRefresh('badges'), weil der Zaehler als
+  // einziger an einem anderen Mechanismus hing.
+  const { refreshAllCounts } = useBadge();
   const bereitsMarkiert = useRef(false);
   useEffect(() => {
     if (bereitsMarkiert.current) return;
@@ -95,11 +96,11 @@ const TeamerBadgesPage: React.FC = () => {
       return;
     }
     api.put('/teamer/badges/mark-seen')
-      .then(() => { triggerRefresh('badges'); })
+      .then(() => { refreshAllCounts(); })
       .catch((markError) => {
         console.warn('Abzeichen konnten nicht als gesehen markiert werden:', markError);
       });
-  }, [triggerRefresh]);
+  }, [refreshAllCounts]);
 
   const badges = badgesData || [];
 
