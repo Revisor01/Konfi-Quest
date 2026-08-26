@@ -2324,6 +2324,20 @@ ion-button.app-modal-submit-btn--bonus {
   margin-top: 8px;
 }
 
+/* Knopf für die biometrische Anmeldung (Face ID / Touch ID / Fingerabdruck).
+   Bewusst als Zweitaktion gestaltet: das Passwort bleibt der Hauptweg. */
+.app-auth-biometrie-button {
+  --background: transparent;
+  --color: #7c3aed;
+  --border-color: rgba(124, 58, 237, 0.4);
+  --border-radius: 12px;
+  --border-width: 1px;
+  --border-style: solid;
+  height: 44px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 /* Lila Glass-Circle für Auth-Header-Icons (z.B. Mail/Lock) */
 .app-auth-hero__cosmic-circle {
   width: 84px;

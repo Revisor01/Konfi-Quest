@@ -14,6 +14,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Anmelden mit Face ID, Touch ID oder Fingerabdruck: Wer möchte, schaltet die
+  biometrische Anmeldung im eigenen Profil unter Konto-Einstellungen ein und
+  kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
+  im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
+  Biometrie eingerichtet ist.
 - Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
   löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
   Aktionen (Freigeben, Anonym stellen, Ausblenden, Löschen) erreichbar durch
@@ -691,6 +696,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
+- Aktualisierte Oberflächen-Themes für iOS und Android: zweizeilige
+  Listeneinträge, neue Textlayouts und überarbeitete iOS-Eingabefelder.
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
 - API-Referenz neu gegliedert: 21 Themen statt 5 Sammelblöcke, einheitliche
   Adressen, Parameter und Fehlerfälle genauer beschrieben.
