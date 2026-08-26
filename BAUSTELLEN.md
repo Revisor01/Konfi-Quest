@@ -412,23 +412,46 @@ Erledigten.
 
 ## Aufträge aus der Löschlogik-Prüfung (26.08.), noch offen
 
-- [ ] **Waisen-Cleanup für Altbestand.** Die vier PRs verhindern NEUE verwaiste
-      Dateien. Was vorher liegengeblieben ist, räumt niemand auf: Chat-Anhänge
-      gelöschter Personen, Material gelöschter Organisationen, Nachweisfotos.
-      Gebraucht wird ein Skript, das `uploads/` gegen die Datenbank abgleicht
-      und verwaiste Dateien meldet — **erst melden, löschen nur auf Zuruf und
-      mit Sicherung**. Blinder Fleck bisher: `uploads/challenges/`.
-      *Nicht vor dem Merge der vier PRs, sonst misst man gegen alten Code.*
+- [x] **Waisen-Cleanup für Altbestand.** ERLEDIGT 26.08.2026, PR #76.
+      `node scripts/verwaiste-dateien.mjs` gleicht `uploads/` gegen die
+      Datenbank ab — alle VIER Bereiche, nicht nur `challenges/`: requests,
+      chat, challenges, material. Prüft beide Richtungen: verwaiste Dateien
+      (löschbar) und Datensätze ohne Datei (wird nur gemeldet).
+      Ohne `--loeschen` wird nur berichtet; ohne `DATABASE_URL` bricht es ab;
+      Waisen unter 7 Tagen bleiben liegen. Die Abfragen filtern bewusst NICHT
+      auf `deleted_at` — sonst räumte das Skript genau die Dateien weg, die
+      der Soft-Delete für eine Wiederherstellung aufhebt.
+      Gegen eine echte Datenbank mit echten Dateien geprüft, Gegenprobe gemacht.
 
-- [ ] **Schema-Test gegen fehlende Löschregeln.** Der wirksamste Hebel gegen
-      Wiederholung: Ein Test prüft, dass JEDER Fremdschlüssel auf `users` oder
-      `organizations` entweder eine ON-DELETE-Regel hat oder ausdrücklich in
-      der Löschliste (`konfiDeletion.js` bzw. der Org-Purge) steht.
-      Hätte gefunden: den `invite_code_id`-Fall (PR #72), `chat_message_reactions`
-      und die im August reparierten `user_certificates`-Fälle — alle dieselbe
-      Fehlerklasse, dreimal einzeln entdeckt statt einmal maschinell.
-      Umsetzung: `pg_constraint` abfragen (`confdeltype = 'a'` heisst KEINE
-      Regel), Ausnahmen als benannte Liste im Test mit Begründung.
+- [x] **Schema-Test gegen fehlende Löschregeln.** ERLEDIGT 26.08.2026, PR #78
+      (Wächter) und PR #77 (die dabei gefundenen Lücken).
+      Die Prüfung fand **2 echte Lücken** unter 30 Kandidaten, beide bei der
+      Org-Löschung, beide brachen das Löschen KOMPLETT ab:
+      `event_timeslots.organization_id` (theoretisch) und
+      `notifications.organization_id` (über den Multi-Org-Gastfall real
+      erreichbar). Die Nutzer-Löschung hat keine Lücke.
+      Gemeinsame Ursache: abgeräumt wurde über eine BEZIEHUNG (`event_id`,
+      `user_id`) statt über die Spalte, die den Fremdschlüssel trägt.
+      **Lehre aus dem Umweg:** Der erste Testentwurf las die Löschroutinen per
+      Regex und blieb grün, obwohl beide Lücken offen waren — in
+      `... WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)`
+      kommt die Spalte vor, gehört aber zum Subquery. Ob ein DELETE die
+      richtige Spalte trifft, entscheidet die SQL-Semantik; das gehört in einen
+      Test, der die Routine wirklich aufruft (`organizations.test.js`).
+      Die Schema-Hälfte bewacht jetzt nur noch, dass keine NEUE Spalte ohne
+      Regel dazukommt.
+
+- [ ] **Teamer:innen und Termine: Entscheidung gegen Code geprüft, sie fehlt.**
+      Im Handoff steht als Designentscheidung: "Teamer:innen dürfen Termine
+      anlegen, bearbeiten UND löschen" ("eröffnet den Teamer:innen
+      Selbstständigkeit"). Am 26.08.2026 nachgesehen: **Die Entscheidung ist
+      nicht umgesetzt.** `TeamerEventsPage.tsx` hat keine Anlegen-Schaltfläche
+      für Termine (nur für Aktivitäts-Meldungen, Zeile 1170f.). Das Handbuch
+      sagt in `docs/handbuch/20-teamer.md:58-60` ausdrücklich das Gegenteil der
+      Entscheidung ("Termine legt die Leitung an") und ist damit korrekt für
+      den heutigen Stand.
+      Es ist also keine Doku-Lücke, sondern eine offene Entscheidung:
+      **umbauen oder Entscheidung zurücknehmen.** Braucht Simon.
 
 ---
 
@@ -441,6 +464,17 @@ Erledigten.
       und nachladbare Teile brechen typischerweise erst im echten Betrieb bei
       schlechtem Netz. Der Nutzen ist einmalig (danach Cache, nativ ohnehin
       im Paket), die Fehler waeren dauerhaft.
+
+- [ ] **Biometrische Anmeldung** (Face ID, Touch ID, das Android-Gegenstueck).
+      Wunsch vom 26.08.2026: Das staendige Ab- und Anmelden nervt im Alltag,
+      wenn man nur kurz nachsehen will, ob etwas Neues da ist.
+
+- [ ] **Rollenwechsel ohne Abmelden.** Zusammen mit der Biometrie gedacht: Wer
+      mehrere Rollen oder Gemeinden hat, soll umschalten koennen, statt sich
+      neu anzumelden. Simon am 26.08.2026: "waere mir noch charmant, aber auch
+      wenn ich es lasse, lassen wir das" -- also ein Wunsch, keine Zusage.
+      Zu bedenken: `switchOrg` im AppContext gibt es bereits fuer Organisationen;
+      ob daraus ein Rollenwechsel wird, ist eine eigene Entscheidung.
 
 ---
 

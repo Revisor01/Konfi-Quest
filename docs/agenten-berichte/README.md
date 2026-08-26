@@ -29,5 +29,7 @@ herauskam (Nutzerhinweis 25.08.2026).
 | 25.08.2026 | [Drei Registerpunkte](2026-08-25-drei-registerpunkte.md) | Alle drei längst erledigt, nur nicht vermerkt | ERLEDIGT (`ccf09d5f`) |
 | 25.08.2026 | [Termin-Zählungen](2026-08-25-termin-zaehlungen.md) | Fünf SQL-Stellen, drei Semantiken; Anmeldung konnte still schließen | TEILWEISE (`bdc04fad`) — Befund 3 und Vereinfachung offen |
 | 25.08.2026 | [Offline-Fähigkeit](2026-08-25-offline-faehigkeit.md) | Listen gecacht, Details nicht; über 30 stille Abbrüche | ERLEDIGT (`c8348375`, `c2b40ad6`) |
-| 25.08.2026 | [Termin-Zählungen](2026-08-25-termin-zaehlungen.md) | Detail- und Konfi-Queries zählen anders als die Liste; 1 aktiver Prod-Fall, mehrere latente; Statuslogik in 7 Kopien | OFFEN |
-| 25.08.2026 | [Offline-Fähigkeit](2026-08-25-offline-faehigkeit.md) | Basis solide, aber Aktivität melden, Anwesenheit und Tageslosung scheitern an je einer kleinen Lücke | OFFEN |
+| 26.08.2026 | [Chat-Löschlogiken](2026-08-26-chat-loeschlogiken.md) | Raum-Löschen sauber; Schwächen bei Anhängen und Kaskaden daneben | ERLEDIGT (PRs #73, #74, #75) |
+| 26.08.2026 | [Löschlogiken gesamt](2026-08-26-loeschlogiken-gesamt.md) | Pfade einzeln sorgfältig, aber blockierte Wege, verwaiste Dateien und Punkte ohne Beleg | ERLEDIGT (PRs #72–#75), zwei Punkte bewusst offen |
+| 26.08.2026 | Fremdschlüssel ohne Löschregel (in diesem Register, kein eigener Bericht) | 30 Kandidaten geprüft, 2 echte Lücken bei der Org-Löschung — beide brachen das Löschen ganz ab | ERLEDIGT (PR #77), Wächter in PR #78 |
+| 26.08.2026 | Punkteart ausblenden (in diesem Register, kein eigener Bericht) | Server und Konfi-Ansicht sauber, gesamter Leitungs-Baum ignorierte die Einstellung | ERLEDIGT (PR #79) |
