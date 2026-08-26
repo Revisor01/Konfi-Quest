@@ -652,11 +652,18 @@ ${karten}
       { pfad: '/konto-loeschen', freq: 'yearly', prio: '0.2' },
     ];
     const alt = readFileSync(sitemapDatei, 'utf8');
+    // Ohne Regex: Der Pfad wurde vorher nur an Schraegstrichen maskiert, andere
+    // Sonderzeichen haetten das Muster veraendert (CodeQL 102, 27.08.2026).
+    // Textsuche ist hier ohnehin genauer — die Adressen stehen woertlich drin.
     const datumVon = (pfad) => {
-      const treffer = alt.match(
-        new RegExp(`<loc>https://konfi-quest\\.de${pfad.replace(/\//g, '\\/')}</loc>\\s*<lastmod>([^<]+)`)
-      );
-      return treffer ? treffer[1] : heute();
+      const marke = `<loc>https://konfi-quest.de${pfad}</loc>`;
+      const start = alt.indexOf(marke);
+      if (start === -1) return heute();
+      const ab = alt.indexOf('<lastmod>', start);
+      if (ab === -1) return heute();
+      const bis = alt.indexOf('</lastmod>', ab);
+      if (bis === -1) return heute();
+      return alt.slice(ab + '<lastmod>'.length, bis).trim() || heute();
     };
 
     const eintrag = (loc, mod, freq, prio) =>
