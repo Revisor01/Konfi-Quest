@@ -539,6 +539,48 @@ ChangeEmail-/ChangePassword-Modalen: kein funktionaler Drift, nur Styling.
 Beim Beheben der Befunde oben deshalb: erst prüfen, ob sich die Konfi-Variante
 teilen lässt, statt eine dritte Kopie anzulegen.
 
+### Abgeschlossene Prüfläufe
+
+Vollständig abgearbeitet, es steht nichts mehr offen:
+
+- **Chat-Löschlogiken** (26.08.) — PRs #73, #74, #75. Die eine Fehlbewertung
+  darin ("Nachrichten-Löschen konsistent gelöst") wurde beim Gegenlesen
+  widerlegt und über PR #81 behoben.
+- **Löschlogiken gesamt** (26.08.) — PRs #72 bis #75, dazu Waisen-Skript
+  (#76) und Fremdschlüssel-Wächter (#77, #78). Zwei Punkte bewusst offen:
+  Abzeichen aberkennen und die nicht-atomare Löschreihenfolge.
+- **Punkteart ausblenden** (26.08.) — PR #79.
+- **Dashboard/Profil-Durchgang** (26./27.08.) — Chat-Lücke (#81) und die zwei
+  falschen Teamer-Texte (#83); der Rest waren Entwarnungen.
+- **Abhängigkeiten und Ionic** (27.08.) — Themes aktualisiert, Ionic 9 als
+  eigenes Vorhaben eingeplant (siehe "Nach 2.0.0"). Der beauftragte Bericht
+  wurde vom Agenten allerdings NIE geschrieben, obwohl er ihn gemeldet hat —
+  die Zahlen hier stammen aus eigener Messung. Merke: Bei Agenten prüfen, ob
+  die Datei wirklich existiert, statt der Meldung zu glauben.
+
+### Welche Prüfläufe sich als nächstes lohnen
+
+Vorschläge, nicht beauftragt — aus dem, was bei der Arbeit auffiel:
+
+- [ ] **Der Chat-Baum selbst.** Im Drei-Ansichten-Durchgang ausgenommen, im
+      Nachprüf-Durchgang nur angerissen (Befund dort: super_admin fällt
+      zwischen drei verschiedene "Leitung"-Definitionen, sieht den Mülleimer,
+      bekommt vom Backend 403). Dort lagen schon zwei echte Sicherheitsfunde.
+      **Der aussichtsreichste Kandidat.**
+- [ ] **Offline-Schreibvorgänge.** Der Bericht vom 25.08. deckte die
+      Lesepfade ab. Nicht geprüft: Was passiert, wenn ein Schreibvorgang aus
+      der Warteschlange später vom Server abgelehnt wird (409, 403, geänderte
+      Daten)? Erfährt jemand davon, oder verschwindet es still?
+- [ ] **Push-Zustellung Ende zu Ende.** An vielen Stellen verdrahtet; ob jede
+      Mitteilung ankommt und beim Antippen an der richtigen Stelle landet,
+      wurde nie systematisch geprüft.
+- [ ] **Zeitzonen und Datumsgrenzen.** Termine, Anmeldeschluss, Challenges mit
+      Restzeit, Tageslosung, Wrapped-Jahresgrenze — überall Datumslogik,
+      nirgends geprüft, ob sie an Tagesgrenzen und über die Sommerzeit stimmt.
+- [ ] **Wrapped.** Kommt in mehreren Berichten am Rand vor (Slide-Inhalte nie
+      geprüft, `has_wrapped` prüft nur die Freigabe statt der Snapshot-Existenz),
+      war aber nie eigener Gegenstand.
+
 ---
 
 ## Nach 2.0.0
