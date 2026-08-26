@@ -206,6 +206,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Termine: Teamer:innen sehen jetzt schon in der Liste, ob das Team-Kontingent
+  voll ist — bisher stand dort "Offen", und der Platzmangel zeigte sich erst
+  beim Anmelden. Auch die Zahl der Wartenden steht jetzt auf der Terminkarte.
+
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.

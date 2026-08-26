@@ -791,6 +791,115 @@ describe('Events Routes', () => {
       await seedExtraTeamers();
     });
 
+    // Befund H3 (26.08.2026): registration_status rechnet ausschliesslich mit
+    // Konfi-Zahlen -- teamer_max_participants floss nirgends ein. Ein voll
+    // belegtes Teamer-Kontingent stand in der Teamer-Ansicht weiter als
+    // "Offen", und man erfuhr erst beim Absenden (400), dass kein Platz ist.
+    // Deshalb ein EIGENER Status: Die beiden Kontingente sind unabhaengig
+    // (zehn Konfi-Plaetze und drei Teamer-Plaetze sind zehn und drei).
+    describe('teamer_registration_status', () => {
+      const statusVon = async (eventId) => {
+        const res = await request(app)
+          .get('/api/events')
+          .set('Authorization', `Bearer ${adminToken}`);
+        expect(res.status).toBe(200);
+        const ev = res.body.find((e) => e.id === eventId);
+        expect(ev).toBeTruthy();
+        return ev;
+      };
+
+      const teamerBuchen = async (userId, status = 'confirmed') => {
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, $3, $4)`,
+          [aktuellesEvent, userId, status, ORGS.testGemeinde.id]
+        );
+      };
+      let aktuellesEvent;
+
+      it('freies Kontingent meldet open', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 2 });
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('open');
+      });
+
+      it('volles Kontingent mit offener Warteliste meldet waitlist', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 1, teamerWaitlistEnabled: true, teamerMaxWaitlist: 3 });
+        await teamerBuchen(USERS.teamer1.id);
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('waitlist');
+        // Der Konfi-Status bleibt davon voellig unberuehrt.
+        expect(ev.registration_status).toBe('open');
+      });
+
+      it('volles Kontingent UND volle Warteliste meldet closed', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 1, teamerWaitlistEnabled: true, teamerMaxWaitlist: 1 });
+        await teamerBuchen(USERS.teamer1.id);
+        await teamerBuchen(EXTRA_TEAMERS[0].id, 'waitlist');
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('closed');
+      });
+
+      it('volles Kontingent ohne Warteliste meldet closed', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 1, teamerWaitlistEnabled: false });
+        await teamerBuchen(USERS.teamer1.id);
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('closed');
+      });
+
+      it('teamer_max_participants = 0 heisst unbegrenzt, bleibt open', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 0 });
+        await teamerBuchen(USERS.teamer1.id);
+        await teamerBuchen(EXTRA_TEAMERS[0].id);
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('open');
+      });
+
+      it('Termin ohne Teamer-Bedarf meldet none', async () => {
+        // Gegenprobe: An einem reinen Konfi-Termin gibt es kein
+        // Teamer-Kontingent -- der Status darf dort nicht 'open' behaupten.
+        const { rows: [ev] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                               point_type, points, waitlist_enabled, teamer_needed, teamer_only)
+           VALUES ('Reiner Konfi-Termin', NOW() + interval '7 days', $1, false, 10,
+                   'gemeinde', 1, true, false, false)
+           RETURNING id`,
+          [ORGS.testGemeinde.id]
+        );
+        const geladen = await statusVon(ev.id);
+        expect(geladen.teamer_registration_status).toBe('none');
+      });
+
+      it('abgesagter Termin meldet cancelled', async () => {
+        aktuellesEvent = await createTeamerEvent({ teamerMax: 2 });
+        await db.query('UPDATE events SET cancelled = true WHERE id = $1', [aktuellesEvent]);
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.teamer_registration_status).toBe('cancelled');
+      });
+
+      it('volles KONFI-Kontingent laesst den Teamer-Status unberuehrt', async () => {
+        // Die Kern-Invariante in beide Richtungen: Ein ausgebuchtes
+        // Konfi-Kontingent darf Teamer:innen nicht aussperren.
+        aktuellesEvent = await createTeamerEvent({
+          teamerMax: 5, maxParticipants: 1, waitlistEnabled: false
+        });
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, 'confirmed', $3)`,
+          [aktuellesEvent, USERS.konfi1.id, ORGS.testGemeinde.id]
+        );
+
+        const ev = await statusVon(aktuellesEvent);
+        expect(ev.registration_status).toBe('closed');
+        expect(ev.teamer_registration_status).toBe('open');
+      });
+    });
+
     it('Teamer bucht bei freiem Kontingent -> confirmed', async () => {
       const eventId = await createTeamerEvent({ teamerMax: 2 });
 

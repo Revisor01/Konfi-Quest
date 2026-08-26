@@ -132,6 +132,32 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                   ) AND (NOT e.waitlist_enabled OR bstats.waitlist_count >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status,
+                -- Eigener Status fuer das TEAMER-Kontingent (Migration 120).
+                -- registration_status daruber rechnet ausschliesslich mit
+                -- Konfi-Zahlen; ein voll belegtes Teamer-Kontingent stand in der
+                -- Teamer-Ansicht deshalb weiter als "Offen", und man erfuhr erst
+                -- beim Absenden (400), dass kein Platz mehr ist (Befund H3).
+                --
+                -- Bewusst ein ZWEITER Wert statt einer Aenderung am ersten: Die
+                -- beiden Kontingente sind unabhaengig (zehn Konfi-Plaetze und
+                -- drei Teamer-Plaetze sind zehn und drei, nicht dreizehn). Ein
+                -- gemeinsamer Status koennte nur einen von beiden abbilden.
+                CASE
+                  WHEN e.cancelled THEN 'cancelled'
+                  WHEN NOT (e.teamer_needed OR e.teamer_only) THEN 'none'
+                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
+                  WHEN NOW() > e.registration_closes_at THEN 'closed'
+                  -- 0 heisst unbegrenzt, wie beim Konfi-Kontingent auch.
+                  WHEN COALESCE(e.teamer_max_participants, 0) > 0
+                       AND bstats.teamer_count >= e.teamer_max_participants
+                       AND (NOT e.teamer_waitlist_enabled
+                            OR bstats.teamer_waitlist_count >= COALESCE(e.teamer_max_waitlist_size, 0))
+                    THEN 'closed'
+                  WHEN COALESCE(e.teamer_max_participants, 0) > 0
+                       AND bstats.teamer_count >= e.teamer_max_participants
+                    THEN 'waitlist'
+                  ELSE 'open'
+                END as teamer_registration_status,
                 CASE WHEN eb_user.status = 'confirmed' THEN true ELSE false END as is_registered,
                 eb_user.status as booking_status,
                 eb_user.attendance_status,
