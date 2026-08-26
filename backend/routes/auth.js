@@ -347,6 +347,30 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(400).json({ error: 'Aktuelles Passwort ist falsch' });
       }
 
+      // Der letzte Org-Admin darf sich nicht selbst entfernen — sonst bleibt
+      // die Organisation ohne jede Verwaltung zurueck und laesst sich nur noch
+      // per Datenbankeingriff retten. DELETE /users/:id kannte diesen Schutz
+      // laengst (users.js), die Selbstloeschung nicht (Befund 26.08.2026).
+      const { rows: [eigeneRolle] } = await db.query(
+        `SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`,
+        [userId]
+      );
+      if (eigeneRolle?.name === 'org_admin') {
+        const { rows: [andere] } = await db.query(
+          `SELECT COUNT(*)::int AS anzahl
+             FROM users u JOIN roles r ON u.role_id = r.id
+            WHERE r.name = 'org_admin' AND u.organization_id = $1
+              AND u.id != $2 AND u.deleted_at IS NULL`,
+          [user.organization_id, userId]
+        );
+        if ((andere?.anzahl ?? 0) === 0) {
+          return res.status(409).json({
+            error: 'Du bist die letzte Person mit Verwaltungsrechten in dieser Gemeinde. '
+                 + 'Bitte gib die Rechte zuerst an jemanden weiter, dann kannst du dein Konto löschen.'
+          });
+        }
+      }
+
       // Gesamte Kaskade in einer Transaktion (T-114-06): alles oder nichts.
       const client = await db.getClient();
       try {
