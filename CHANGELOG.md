@@ -656,6 +656,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Sicherheit
 
+- Nachrichten anderer Personen im Chat lassen sich jetzt wirklich nur noch von
+  der Leitung löschen. Die App hatte die Schaltfläche zwar nie angeboten, der
+  Server prüfte die Berechtigung aber nicht mit.
 - Läuft die Sitzung ab, trennt die App jetzt auch die Live-Verbindung. Vorher
   konnte auf einem geteilten Gerät die nächste angemeldete Person noch
   Live-Nachrichten des vorherigen Kontos empfangen.

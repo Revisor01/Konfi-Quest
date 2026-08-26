@@ -7741,7 +7741,8 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Eigene Nachricht (user_id+user_type) ODER type='admin' in derselben Org (fremde Nachrichten org-weit)",
-          "hinweis": "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org"
+          "hinweis": "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org",
+          "behoben": "26.08.2026 — Diese Regel stand hier korrekt, der Code hielt sie aber nicht ein: die Pruefung fiel auf darfRaumOeffnen zurueck, das fuer jede:n Teilnehmer:in true liefert. Damit konnte jede Konfi per API fremde Nachrichten im selben Raum loeschen (nicht ueber die App: die Oberflaeche bot die Schaltflaeche nie an). Rollen-Check ergaenzt, durch Tests abgesichert."
         }
       }
     },

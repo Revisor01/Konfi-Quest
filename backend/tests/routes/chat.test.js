@@ -1278,6 +1278,126 @@ describe('Chat Routes', () => {
   // DELETE /api/chat/rooms/:roomId/messages — Team-Chat leeren
   // (Nutzerwunsch 26.08.2026: Muelleimer im Header, Raum bleibt bestehen)
   // ================================================================
+  // ================================================================
+  // DELETE /api/chat/messages/:messageId — einzelne Nachricht loeschen
+  //
+  // Befund 26.08.2026: Der Kommentar an der Route sagt "Fremde Nachricht: nur
+  // Leitung/Admins", und die Oberflaeche haelt sich daran (MessageBubble zeigt
+  // den Papierkorb Teamer:innen nur bei eigenen Nachrichten, Konfis nie).
+  // Der Code prueft das aber nicht: darfRaumOeffnen liefert fuer JEDE:N
+  // Teilnehmer:in true. Damit konnte jede Konfi per API jede fremde Nachricht
+  // im selben Raum loeschen.
+  // ================================================================
+  describe('DELETE /api/chat/messages/:messageId', () => {
+    // Raum 1 (Jahrgang) hat konfi1, konfi2, teamer1 und admin1 als Teilnehmer.
+    const RAUM = CHAT_ROOMS.jahrgang.id;
+
+    const nachrichtVon = async (userId, userType, inhalt) => {
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, $3, 'text', $4) RETURNING id`,
+        [RAUM, userId, userType, inhalt]
+      );
+      return msg.id;
+    };
+
+    const istGeloescht = async (id) => {
+      const { rows: [msg] } = await db.query(
+        'SELECT deleted_at FROM chat_messages WHERE id = $1', [id]
+      );
+      return msg.deleted_at !== null;
+    };
+
+    it('Konfi darf die eigene Nachricht loeschen -> 200', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi', 'Meine Nachricht');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(await istGeloescht(id)).toBe(true);
+    });
+
+    it('Konfi darf die Nachricht einer ANDEREN Konfi NICHT loeschen -> 403', async () => {
+      const id = await nachrichtVon(USERS.konfi2.id, 'konfi', 'Fremde Nachricht');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(403);
+      expect(await istGeloescht(id)).toBe(false);
+    });
+
+    it('Konfi darf die Nachricht der Leitung NICHT loeschen -> 403', async () => {
+      const id = await nachrichtVon(USERS.admin1.id, 'admin', 'Ansage der Leitung');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(403);
+      expect(await istGeloescht(id)).toBe(false);
+    });
+
+    it('Teamer:in darf eine fremde Nachricht NICHT loeschen -> 403', async () => {
+      // Die Oberflaeche zeigt Teamer:innen den Papierkorb bewusst nur bei
+      // eigenen Nachrichten -- das Backend muss dasselbe durchsetzen.
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi', 'Konfi-Nachricht');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+
+      expect(res.status).toBe(403);
+      expect(await istGeloescht(id)).toBe(false);
+    });
+
+    it('Teamer:in darf die eigene Nachricht loeschen -> 200', async () => {
+      const id = await nachrichtVon(USERS.teamer1.id, 'teamer', 'Meine Nachricht');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(await istGeloescht(id)).toBe(true);
+    });
+
+    it('Leitung darf eine fremde Nachricht loeschen -> 200', async () => {
+      // Gegenprobe: Die Regel darf nicht pauschal blocken. Nur Admins duerfen
+      // fremde Nachrichten entfernen (Entscheidung 23.08.2026, rechtlich
+      // relevante Inhalte).
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi', 'Konfi-Nachricht');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${id}`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(await istGeloescht(id)).toBe(true);
+    });
+
+    it('Leitung darf in einem fremden Zweiergespraech NICHT loeschen -> 403', async () => {
+      // Raum 2 ist ein Direktchat zwischen konfi1 und admin1. admin2 gehoert
+      // nicht dazu und darf dort auch als Leitung nichts loeschen.
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, 'konfi', 'text', 'Privat') RETURNING id`,
+        [CHAT_ROOMS.direct.id, USERS.konfi1.id]
+      );
+      const admin2Token = generateToken('admin2');
+
+      const res = await request(app)
+        .delete(`/api/chat/messages/${msg.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(403);
+      expect(await istGeloescht(msg.id)).toBe(false);
+    });
+  });
+
   describe('DELETE /api/chat/rooms/:roomId/messages (Team-Chat leeren)', () => {
     const fs = require('fs');
     const path = require('path');

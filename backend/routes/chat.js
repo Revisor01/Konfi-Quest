@@ -2117,8 +2117,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Eigene Nachricht: immer. Fremde Nachricht: nur Leitung/Admins, und nur
       // in Räumen, die sie überhaupt oeffnen duerfen — in einem fremden
       // Zweiergespraech also nicht (Entscheidung 23.08.2026).
+      //
+      // Die Admin-Pruefung muss HIER stehen: darfRaumOeffnen gibt fuer jede:n
+      // Teilnehmer:in true zurueck (das ist dort richtig, es beantwortet die
+      // Frage "darf diesen Raum oeffnen"). Ohne den zusaetzlichen Rollen-Check
+      // durfte damit jede Konfi jede fremde Nachricht im selben Raum loeschen,
+      // auch die der Leitung -- entgegen dem Kommentar hier, entgegen der
+      // Oberflaeche (MessageBubble zeigt Teamer:innen den Papierkorb nur bei
+      // eigenen Nachrichten, Konfis nie) und entgegen dem Handbuch.
+      // Befund 26.08.2026, per API trivial ausnutzbar.
       const eigene = message.user_id == userId && message.user_type === userType;
-      const canDelete = eigene || await darfRaumOeffnen(message.room_id, req.user);
+      const istLeitung = userType === 'admin';
+      const canDelete = eigene || (istLeitung && await darfRaumOeffnen(message.room_id, req.user));
 
       if (!canDelete) {
         return res.status(403).json({ error: 'Du kannst nur eigene Nachrichten löschen' });
