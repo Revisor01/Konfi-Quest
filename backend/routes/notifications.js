@@ -94,7 +94,32 @@ module.exports = (db, verifyTokenRBAC) => {
         );
       }
 
-      const [chatRes, requestsRes, eventsRes, challengesRes] = await Promise.all([
+      // Ungesehene Abzeichen (Befund B1/Konsolidierung 27.08.2026).
+      // Vorher lud MainTabs diese Zahl selbst -- Konfis ueber die volle
+      // Abzeichenliste, Teamer:innen ueber einen eigenen Endpunkt -- und sie
+      // hing damit als EINZIGE nicht am BadgeContext, sondern an
+      // useLiveRefresh('badges'). Wer nach einer Aktion refreshAllCounts()
+      // rief (das Naheliegende), bewirkte nichts: die rote Zahl blieb stehen.
+      // Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt.
+      //
+      // Die Fortschrittsberechnung braucht es dafuer NICHT: user_badges.seen
+      // gilt fuer beide Rollen, custom_badges.target_role trennt sie. Eine
+      // COUNT-Abfrage genuegt.
+      // Die Leitung kann keine Abzeichen verdienen -> immer 0.
+      const badgesPromise = (userType === 'konfi' || userType === 'teamer')
+        ? db.query(
+            `SELECT COUNT(*)::int AS c
+             FROM user_badges ub
+             JOIN custom_badges cb ON ub.badge_id = cb.id
+             WHERE ub.user_id = $1
+               AND ub.organization_id = $2
+               AND ub.seen = false
+               AND COALESCE(cb.target_role, 'konfi') = $3`,
+            [userId, organizationId, userType]
+          )
+        : zero;
+
+      const [chatRes, requestsRes, eventsRes, challengesRes, badgesRes] = await Promise.all([
         db.query(chatQuery, [userId, userType, organizationId]),
         isAdminType
           ? db.query(
@@ -120,7 +145,8 @@ module.exports = (db, verifyTokenRBAC) => {
               [organizationId]
             )
           : zero,
-        challengesPromise
+        challengesPromise,
+        badgesPromise
       ]);
 
       const byRoom = {};
@@ -135,7 +161,8 @@ module.exports = (db, verifyTokenRBAC) => {
         chat: { total, byRoom },
         pendingRequests: requestsRes.rows[0]?.c || 0,
         pendingEvents: eventsRes.rows[0]?.c || 0,
-        pendingChallenges: challengesRes.rows[0]?.c || 0
+        pendingChallenges: challengesRes.rows[0]?.c || 0,
+        newBadges: badgesRes.rows[0]?.c || 0
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);

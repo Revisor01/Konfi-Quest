@@ -9,6 +9,7 @@ import {
   IonRefresherContent
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -50,6 +51,7 @@ interface BadgeData {
 
 const KonfiBadgesPage: React.FC = () => {
   const { user, setError } = useApp();
+  const { refreshAllCounts } = useBadge();
   const { pageRef, presentingElement } = useModalPage('konfi-badges');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
@@ -102,9 +104,17 @@ const KonfiBadgesPage: React.FC = () => {
             metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Badges gesehen' },
           });
         } else {
-          api.post('/konfi/badges/mark-seen').catch((markError) => {
-            console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
-          });
+          api.post('/konfi/badges/mark-seen')
+            .then(() => {
+              // Befund B1 (27.08.2026): Hier fehlte jede Aktualisierung. Der
+              // Zaehler am Reiter blieb die ganze Sitzung stehen, obwohl der
+              // Server 'seen' laengst gesetzt hatte -- kaputt seit dem
+              // 03.07.2026, als das 60-Sekunden-Polling wegfiel.
+              refreshAllCounts();
+            })
+            .catch((markError) => {
+              console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
+            });
         }
       }
     }

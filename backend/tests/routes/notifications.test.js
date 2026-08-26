@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS } = require('../helpers/seed');
+const { seed, USERS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Notifications Routes', () => {
@@ -10,6 +10,7 @@ describe('Notifications Routes', () => {
   let konfiToken;
   let adminToken;
   let orgAdminToken;
+  let teamerToken;
 
   beforeAll(async () => {
     db = getTestPool();
@@ -22,6 +23,7 @@ describe('Notifications Routes', () => {
     konfiToken = generateToken('konfi1');
     adminToken = generateToken('admin1');
     orgAdminToken = generateToken('orgAdmin1');
+    teamerToken = generateToken('teamer1');
   });
 
   afterAll(async () => {
@@ -293,6 +295,61 @@ describe('Notifications Routes', () => {
       // Konfi bekommt keine Admin-Zähler
       expect(res.body.pendingRequests).toBe(0);
       expect(res.body.pendingEvents).toBe(0);
+    });
+
+    // Konsolidierung 27.08.2026: Der Abzeichen-Zaehler kam vorher aus einem
+    // eigenen Abruf im Frontend und hing als einziger nicht am BadgeContext.
+    // Jetzt liefert badge-counts ihn als fuenftes Feld mit.
+    describe('newBadges', () => {
+      const abzeichenVergeben = async (userId, rolle, anzahl, gesehen = false) => {
+        for (let i = 0; i < anzahl; i++) {
+          const { rows: [b] } = await db.query(
+            `INSERT INTO custom_badges (name, icon, criteria_type, criteria_value,
+                                        organization_id, is_active, target_role)
+             VALUES ($1, 'star', 'total_points', 1, $2, true, $3) RETURNING id`,
+            [`Abzeichen ${rolle} ${i}`, ORGS.testGemeinde.id, rolle]
+          );
+          await db.query(
+            `INSERT INTO user_badges (user_id, badge_id, organization_id, seen)
+             VALUES ($1, $2, $3, $4)`,
+            [userId, b.id, ORGS.testGemeinde.id, gesehen]
+          );
+        }
+      };
+
+      const zaehler = async (token) => {
+        const res = await request(app)
+          .get('/api/notifications/badge-counts')
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        return res.body.newBadges;
+      };
+
+      it('zaehlt ungesehene Abzeichen einer Konfi', async () => {
+        await abzeichenVergeben(USERS.konfi1.id, 'konfi', 2);
+        expect(await zaehler(konfiToken)).toBe(2);
+      });
+
+      it('gesehene Abzeichen zaehlen nicht mit', async () => {
+        await abzeichenVergeben(USERS.konfi1.id, 'konfi', 2, true);
+        expect(await zaehler(konfiToken)).toBe(0);
+      });
+
+      it('zaehlt ungesehene Abzeichen einer Teamer:in', async () => {
+        await abzeichenVergeben(USERS.teamer1.id, 'teamer', 3);
+        expect(await zaehler(teamerToken)).toBe(3);
+      });
+
+      it('zaehlt nur die Abzeichen der eigenen Rolle', async () => {
+        // custom_badges.target_role trennt die Rollen -- ein Konfi-Abzeichen
+        // darf im Teamer-Zaehler nicht auftauchen.
+        await abzeichenVergeben(USERS.teamer1.id, 'konfi', 2);
+        expect(await zaehler(teamerToken)).toBe(0);
+      });
+
+      it('die Leitung bekommt immer 0 (kann keine Abzeichen verdienen)', async () => {
+        expect(await zaehler(adminToken)).toBe(0);
+      });
     });
 
     it('read_status wird respektiert (gelesener Raum zaehlt 0)', async () => {
