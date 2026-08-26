@@ -369,21 +369,38 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // ohne Anwesenheits-Status werden als anwesend verbucht (inkl. Punkte/Badges,
   // identisch zum Einzel-Verbuchen). Die Warteliste bleibt bewusst unberührt —
   // Nachrücken läuft automatisch (FIFO bei Absagen) bzw. einzeln per Swipe.
-  const handleConfirmAllAttendance = async (unprocessedCount: number, waitlistCount: number) => {
+  // rolle getrennt uebergeben (Nutzerentscheid 25.08.2026): Teamer:innen werden
+  // an Terminen verbucht -- sie bekommen Abzeichen, aber KEINE Konfi-Punkte.
+  // Ein gemeinsamer Durchlauf wuerde entweder Punkte falsch vergeben oder die
+  // Trennung verwischen. Das Backend unterstuetzt das seit dem 25.08.
+  // (events.js:2782), das Frontend rief die Route bis 27.08.2026 ohne Body auf
+  // und bot den Knopf nur ueber der Konfi-Sektion an -- Teamer:innen mussten
+  // einzeln verbucht werden, und der Termin blieb im "Verbuchen"-Reiter haengen.
+  const handleConfirmAllAttendance = async (
+    unprocessedCount: number,
+    waitlistCount: number,
+    rolle: 'konfi' | 'teamer' = 'konfi'
+  ) => {
     if (!isOnline) return;
     const waitlistHint = waitlistCount > 0
       ? ` Die Warteliste (${waitlistCount}) bleibt unberührt.`
       : '';
+    const wen = rolle === 'teamer' ? 'Teamer:in(nen)' : 'Teilnehmer:in(nen)';
+    // Punkte gibt es nur bei Konfis -- das gehoert in die Rueckfrage, sonst
+    // erwartet die Leitung bei Teamer:innen eine Punktevergabe, die ausbleibt.
+    const punkteHinweis = rolle === 'teamer'
+      ? ' Teamer:innen bekommen dabei keine Punkte.'
+      : ' (inkl. Punktevergabe)';
     presentAlert({
       header: 'Alle bestätigen?',
-      message: `${unprocessedCount} angemeldete Teilnehmer:in(nen) werden als anwesend verbucht (inkl. Punktevergabe). Bereits Verbuchte bleiben unverändert.${waitlistHint}`,
+      message: `${unprocessedCount} angemeldete ${wen} werden als anwesend verbucht${punkteHinweis}. Bereits Verbuchte bleiben unverändert.${waitlistHint}`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Alle bestätigen',
           handler: async () => {
             try {
-              const res = await api.put(`/events/${eventId}/participants/attendance-all`);
+              const res = await api.put(`/events/${eventId}/participants/attendance-all`, { rolle });
               await loadEventData();
               triggerRefresh('events');
               setSuccess(res.data?.message || 'Teilnahmen verbucht');
@@ -867,6 +884,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
                     <IonLabel>{teamerHeaderText}</IonLabel>
+                    {(() => {
+                      // Gleiches Muster wie bei den Konfis oben, aber mit
+                      // rolle='teamer': nur angemeldete Teamer:innen ohne
+                      // Anwesenheits-Status. Ohne diesen Knopf musste die
+                      // Leitung sie einzeln verbuchen, und der Termin blieb
+                      // im "Verbuchen"-Reiter stehen -- pending_bookings_count
+                      // zaehlt beide Rollen (events.js:270-274).
+                      const unprocessedTeamer = teamerConfirmed.filter(p => !p.attendance_status).length;
+                      if (unprocessedTeamer === 0) return null;
+                      return (
+                        <IonButton fill="clear" size="small" disabled={!isOnline}
+                          onClick={() => handleConfirmAllAttendance(unprocessedTeamer, teamerWaitlist.length, 'teamer')}>
+                          <IonIcon icon={checkmark} slot="start" />
+                          Alle bestätigen ({unprocessedTeamer})
+                        </IonButton>
+                      );
+                    })()}
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent style={{ padding: teamerParticipants.length === 0 ? '16px' : '12px' }}>

@@ -196,6 +196,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Termine: Auch Teamer:innen lassen sich jetzt über "Alle bestätigen" auf
+  einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
+  Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
+  Reiter "Verbuchen" stehen.
+
 - Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
   jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,
   beim Zuweisen einer Aktivität und beim Anlegen eines Termins. Vorher liess
