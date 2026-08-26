@@ -418,6 +418,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     (statusFilter === 'hidden' && challenge?.visibility === 'private')
       ? 'feed' : statusFilter;
 
+  // Gibt es mehr als einen Reiter? Nur dann lohnt die Leiste. "Feed" ist
+  // immer da; "Wartet" nur mit Freigabe-Pflicht, "Ausgeblendet" nur, wenn es
+  // eine Gruppen-Galerie gibt, aus der etwas herausgenommen werden koennte.
+  const zeigeFilterleiste = Boolean(challenge?.moderated) || challenge?.visibility !== 'private';
+
   const filtered = useMemo(() => {
     // "Feed" = nur Freigegebenes — derselbe Blick, den auch die Konfis auf die
     // Galerie haben. Wartendes und Ausgeblendetes steht ausschliesslich in den
@@ -715,118 +720,12 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           </IonList>
         )}
 
-        {/* Dein Beitrag — eigene Teilnahme, direkt hier statt in einem
-            getrennten "Mitmachen"-Bereich (Zusammenlegung 11.08.). */}
-        {showOwnSection && (
-          <IonList inset={true} style={{ margin: '16px 16px 0 16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--challenges">
-                <IonIcon icon={personOutline} />
-              </div>
-              {/* Einzahl/Mehrzahl nach der tatsaechlichen Anzahl
-                  (User-Hinweis 25.08.2026). */}
-              <IonLabel>{ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge'}</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
-                {loading ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}>
-                    <IonSpinner name="crescent" />
-                  </div>
-                ) : ownSubmissions.length === 0 ? (
-                  <EmptyState
-                    icon={documentTextOutline}
-                    title="Noch kein Beitrag von dir"
-                    message="Tippe oben auf das Plus, um selbst etwas einzureichen."
-                    iconColor="var(--app-color-challenges)"
-                  />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {ownSubmissions.map((submission) => {
-                      const status = getStatusBadge(submission, challenge);
-                      return (
-                        <div
-                          key={submission.id}
-                          className="app-list-item app-list-item--challenges"
-                          style={{
-                            width: '100%',
-                            borderLeftColor: status.color,
-                            marginBottom: '0',
-                            display: 'block',
-                            position: 'relative',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          <div className="app-corner-badges">
-                            <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: status.color, padding: '4px 6px' }}
-                              title={status.label}
-                            >
-                              <IonIcon
-                                icon={status.icon}
-                                style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }}
-                              />
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', paddingRight: '40px' }}>
-                            <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: status.color }}>
-                              <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">Dein Beitrag</div>
-                              <div className="app-list-item__subtitle">
-                                {formatDateTime(submission.created_at)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Wurde der eigene Beitrag (z.B. von jemand anderem
-                              aus der Leitung) ausgeblendet, steht die
-                              Begruendung hier — dieselbe Anzeige wie bei den
-                              Konfis. */}
-                          {submission.moderation_status === 'hidden' && submission.moderation_note && (
-                            <div
-                              style={{
-                                display: 'flex', alignItems: 'flex-start', gap: '6px',
-                                marginBottom: '6px', fontSize: '0.82rem',
-                                color: 'var(--app-color-danger)', lineHeight: 1.4
-                              }}
-                            >
-                              <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
-                              <span>Begründung: {submission.moderation_note}</span>
-                            </div>
-                          )}
-
-                          {submission.text_content && (
-                            <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
-                              {submission.text_content}
-                            </div>
-                          )}
-
-                          {submission.media_type === 'link' && istWebLink(submission.link_url) && (
-                            <MusikLink submission={submission} />
-                          )}
-
-                          {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
-                            <ChallengeMedia
-                              filePath={submission.file_path}
-                              fileName={submission.file_name}
-                              mediaType={submission.media_type}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
-        {/* Moderation: Filter + alle Beitraege */}
+        {/* Moderation: Filter + alle Beitraege.
+            Die Leiste erscheint nur, wenn es ueberhaupt etwas zu waehlen gibt.
+            Bei "nur Leitung" ohne Freigabe-Pflicht bliebe sonst eine Leiste
+            mit dem einzigen Knopf "Feed" stehen — ein Sortiermodus ohne
+            Auswahl (User-Hinweis 26.08.2026). */}
+        {zeigeFilterleiste && (
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={effectiveFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
             {/* "Feed" zeigt nur Freigegebenes — denselben Blick, den die
@@ -848,6 +747,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             )}
           </IonSegment>
         </div>
+        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
@@ -882,6 +782,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                       const status = getStatusBadge(submission, challenge);
                       const consent = submission.konfi_consent ? CONSENT_BADGE[submission.konfi_consent] : null;
                       const isBusy = busyId === submission.id;
+                      // Eigener Beitrag: frueher stand er zusaetzlich in einem
+                      // eigenen Block oben — also doppelt. Jetzt steht er nur
+                      // hier im Feed, dafuer deutlich hervorgehoben
+                      // (User-Hinweis 26.08.2026).
+                      const istEigener = Boolean(user?.id) && submission.user_id === user?.id;
 
                       const actions = availableActions(submission);
 
@@ -911,7 +816,14 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                 display: 'block',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                opacity: submission.moderation_status === 'hidden' ? 0.75 : 1
+                                opacity: submission.moderation_status === 'hidden' ? 0.75 : 1,
+                                // Eigener Beitrag: zarter Grund in der
+                                // Bereichsfarbe. Ein Rahmen war zu laut —
+                                // Farbe und die Zeile "Dein Beitrag" reichen
+                                // (User-Hinweis 26.08.2026).
+                                ...(istEigener ? {
+                                  background: 'rgba(var(--app-color-challenges-rgb), 0.06)'
+                                } : {})
                               }}
                             >
                               {/* Corner-Badges: Konsens + Status (max. 2) */}
@@ -946,6 +858,19 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                   <div className="app-list-item__title">
                                     {submission.konfi_name || 'Unbekannt'}
                                   </div>
+                                  {/* Eigener Beitrag: eigene Zeile statt an den
+                                      Namen gehaengt — bei langen Namen wurde
+                                      der Zusatz sonst abgeschnitten
+                                      ("Pastorin Kathrin Moeller · D..."). */}
+                                  {istEigener && (
+                                    <div style={{
+                                      fontSize: '0.78rem', fontWeight: 700,
+                                      color: 'var(--app-color-challenges)',
+                                      textTransform: 'uppercase', letterSpacing: '0.03em'
+                                    }}>
+                                      Dein Beitrag
+                                    </div>
+                                  )}
                                   <div className="app-list-item__subtitle">
                                     {submission.jahrgang_name ? `${submission.jahrgang_name} · ` : ''}
                                     {formatDateTime(submission.created_at)}

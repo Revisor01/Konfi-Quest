@@ -188,6 +188,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Challenges: In der Leitungsansicht stand der eigene Beitrag doppelt — einmal
+  in einem eigenen Abschnitt oben, einmal im Feed. Jetzt steht er nur noch im
+  Feed, dort farbig hinterlegt und mit "Dein Beitrag" gekennzeichnet. Bei
+  Challenges nur für die Leitung entfällt die Reiterleiste, weil es dort nichts
+  zu wählen gibt.
+- Musik-Links von Spotify zeigen wieder den Interpreten. Spotify liefert ihn
+  seit Kurzem nicht mehr mit; er wird jetzt aus einer zweiten Quelle geholt.
+  Deezer, YouTube Music und Apple Music zeigten ihn bereits.
 - Teamer:innen kommen im Termin an den QR-Code zum Einchecken. Bisher zeigte
   ihn nur die Leitung — waren bei einem Termin allein Teamer:innen vor Ort,
   konnte sich niemand einchecken.

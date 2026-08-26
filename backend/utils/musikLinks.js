@@ -109,6 +109,45 @@ async function jsonMitTimeout(doFetch, url, timeoutMs) {
   }
 }
 
+// Spotifys oEmbed liefert seit einiger Zeit NUR noch den Titel — das Feld
+// author_name fehlt, wo Deezer und YouTube es weiterhin senden (am 26.08.2026
+// gemessen). Damit stand bei Spotify-Links kein Interpret, obwohl die Anzeige
+// ihn getrennt darstellen kann.
+//
+// Die Embed-Seite traegt ihn im eingebetteten JSON ("artists":[{"name":...}]).
+// Bewusst als ERGAENZUNG, nicht als Ersatz: Der Titel kommt weiterhin aus dem
+// offiziellen oEmbed. Faellt dieser Weg weg (Spotify aendert die Seite), bleibt
+// alles wie bisher — nur ohne Interpret, kein Fehler.
+async function spotifyInterpret(doFetch, trackUrl, timeoutMs) {
+  const treffer = trackUrl.pathname.match(/\/(track|album|episode)\/([A-Za-z0-9]+)/);
+  if (!treffer) return null;
+  const [, art, id] = treffer;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await doFetch(`https://open.spotify.com/embed/${art}/${id}`, {
+      signal: controller.signal,
+      headers: { Accept: 'text/html' }
+    });
+    if (!res || !res.ok) return null;
+    const html = await res.text();
+    // Zwei Formen, je nach Art des Links (beide am 26.08.2026 gemessen):
+    // Bei Titeln steht der Interpret unter "artists", bei Alben unter
+    // "subtitle". Nur der erste Interpret: Bei Kollaborationen ist das der
+    // Haupt-Act, und eine lange Aufzaehlung passt nicht in die Zeile.
+    const m = html.match(/"artists":\s*\[\s*\{\s*"name"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+      || html.match(/"subtitle"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (!m || !m[1]) return null;
+    // JSON-Escapes aufloesen (\u00e9 usw.), damit "Beyonc\u00e9" richtig ankommt.
+    try { return sauber(JSON.parse(`"${m[1]}"`)); } catch { return sauber(m[1]); }
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Apple Music hat kein oeffentliches oEmbed. Der offene iTunes-Lookup
 // (itunes.apple.com/lookup) liefert Titel/Interpret ueber die numerische ID
 // aus der URL:
@@ -192,7 +231,13 @@ async function holeLinkMetadaten(rawUrl, { timeoutMs = 4000, fetchImpl } = {}) {
           `https://open.spotify.com/oembed?url=${encodeURIComponent(url.toString())}`,
           timeoutMs
         );
-        if (json) daten = { title: sauber(json.title), author: sauber(json.author_name), album: null };
+        if (json) {
+          let autor = sauber(json.author_name);
+          // Fehlt der Interpret (Regelfall seit 2026), aus der Embed-Seite
+          // nachholen.
+          if (!autor) autor = await spotifyInterpret(doFetch, url, timeoutMs);
+          daten = { title: sauber(json.title), author: autor, album: null };
+        }
         break;
       }
       case 'deezer': {

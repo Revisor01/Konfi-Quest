@@ -89,14 +89,76 @@ describe('pruefeMusikLink — verbotene Links und Umgehungsversuche', () => {
 describe('holeLinkMetadaten', () => {
   const okAntwort = (body) => ({ ok: true, json: async () => body });
 
+  const htmlAntwort = (body) => ({ ok: true, text: async () => body });
+  const SPOTIFY_TRACK = 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC';
+
   it('Spotify: fragt den oEmbed-Endpunkt an und liefert Titel', async () => {
-    const fetchImpl = vi.fn(async () => okAntwort({ title: 'Never Gonna Give You Up', provider_name: 'Spotify' }));
-    const meta = await holeLinkMetadaten('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC', { fetchImpl });
-    expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: null, album: null });
+    const fetchImpl = vi.fn(async () =>
+      okAntwort({ title: 'Never Gonna Give You Up', author_name: 'Rick Astley', provider_name: 'Spotify' }));
+    const meta = await holeLinkMetadaten(SPOTIFY_TRACK, { fetchImpl });
+    expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: 'Rick Astley', album: null });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(fetchImpl.mock.calls[0][0]).toBe(
-      'https://open.spotify.com/oembed?url=' + encodeURIComponent('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC')
+      'https://open.spotify.com/oembed?url=' + encodeURIComponent(SPOTIFY_TRACK)
     );
+  });
+
+  // Spotifys oEmbed liefert seit 2026 KEIN author_name mehr (am 26.08.2026
+  // gemessen). Dann wird der Interpret aus der Embed-Seite nachgeholt —
+  // sonst staende bei Spotify-Links kein Interpret, wo Deezer, YouTube und
+  // Apple einen zeigen (User-Hinweis 26.08.2026).
+  describe('Spotify ohne author_name im oEmbed', () => {
+    it('holt den Interpreten aus der Embed-Seite nach (Titel-Link)', async () => {
+      const fetchImpl = vi.fn(async (url) =>
+        String(url).includes('/oembed')
+          ? okAntwort({ title: 'Never Gonna Give You Up', provider_name: 'Spotify' })
+          : htmlAntwort('{"artists":[{"name":"Rick Astley","uri":"spotify:artist:0gx"}]}'));
+      const meta = await holeLinkMetadaten(SPOTIFY_TRACK, { fetchImpl });
+      expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: 'Rick Astley', album: null });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      expect(fetchImpl.mock.calls[1][0]).toBe(
+        'https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC'
+      );
+    });
+
+    it('Album-Links tragen den Interpreten unter "subtitle"', async () => {
+      const fetchImpl = vi.fn(async (url) =>
+        String(url).includes('/oembed')
+          ? okAntwort({ title: 'Whenever You Need Somebody', provider_name: 'Spotify' })
+          : htmlAntwort('{"subtitle":"Rick Astley"}'));
+      const meta = await holeLinkMetadaten(
+        'https://open.spotify.com/album/6N9PS4QXF1D0OWPk0Sxtb4', { fetchImpl });
+      expect(meta).toEqual({ title: 'Whenever You Need Somebody', author: 'Rick Astley', album: null });
+    });
+
+    it('loest JSON-Escapes im Namen auf', async () => {
+      const fetchImpl = vi.fn(async (url) =>
+        String(url).includes('/oembed')
+          ? okAntwort({ title: 'Halo', provider_name: 'Spotify' })
+          : htmlAntwort('{"artists":[{"name":"Beyonc\\u00e9"}]}'));
+      const meta = await holeLinkMetadaten(SPOTIFY_TRACK, { fetchImpl });
+      expect(meta.author).toBe('Beyoncé');
+    });
+
+    it('bleibt beim Titel, wenn die Embed-Seite nichts hergibt', async () => {
+      // Faellt der Weg weg (Spotify aendert die Seite), soll der Titel
+      // erhalten bleiben statt der ganze Link ohne Angaben dazustehen.
+      const fetchImpl = vi.fn(async (url) =>
+        String(url).includes('/oembed')
+          ? okAntwort({ title: 'Never Gonna Give You Up', provider_name: 'Spotify' })
+          : htmlAntwort('<html>nichts brauchbares</html>'));
+      const meta = await holeLinkMetadaten(SPOTIFY_TRACK, { fetchImpl });
+      expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: null, album: null });
+    });
+
+    it('bleibt beim Titel, wenn die Embed-Seite gar nicht antwortet', async () => {
+      const fetchImpl = vi.fn(async (url) =>
+        String(url).includes('/oembed')
+          ? okAntwort({ title: 'Never Gonna Give You Up', provider_name: 'Spotify' })
+          : { ok: false });
+      const meta = await holeLinkMetadaten(SPOTIFY_TRACK, { fetchImpl });
+      expect(meta).toEqual({ title: 'Never Gonna Give You Up', author: null, album: null });
+    });
   });
 
   it('Deezer: liefert Titel UND Interpret (author_name)', async () => {
