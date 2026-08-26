@@ -144,4 +144,127 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
     const fehlend = dateien.filter(f => !angewandt.has(f));
     expect(fehlend).toEqual([]);
   });
+
+  // ================================================================
+  // Fremdschluessel ohne Loeschregel
+  //
+  // Vorgeschichte: Dieselbe Fehlerklasse wurde mehrfach EINZELN entdeckt --
+  // der invite_code_id-Fall (PR #72), chat_message_reactions und die im
+  // August reparierten user_certificates-Faelle. Am 26.08.2026 kamen zwei
+  // weitere dazu (event_timeslots.organization_id,
+  // notifications.organization_id); beide brachen das Loeschen einer
+  // Organisation komplett ab.
+  //
+  // Beide hatten dieselbe Ursache: Die Loeschroutine raeumte ueber eine
+  // BEZIEHUNG ab (event_id, user_id) statt ueber die Spalte, die den
+  // Fremdschluessel traegt. Zeilen, die die Beziehung nicht erfuellen,
+  // bleiben stehen und blockieren.
+  //
+  // WARUM DIESER TEST NICHT DEN QUELLTEXT LIEST: Der erste Entwurf suchte
+  // per Regex nach "DELETE FROM <tabelle> ... <spalte>". Das schlug fehl --
+  // in `DELETE FROM notifications WHERE user_id IN (SELECT id FROM users
+  // WHERE organization_id = $1)` kommt "organization_id" vor, gehoert aber
+  // zum Subquery ueber users, nicht zur Zieltabelle. Der Test blieb gruen,
+  // obwohl beide bekannten Luecken offen waren. Ob ein DELETE die richtige
+  // Spalte trifft, entscheidet die SQL-Semantik -- das gehoert in einen
+  // Test, der die Routine wirklich aufruft (siehe unten).
+  // ================================================================
+  describe('Fremdschluessel auf users/organizations haben eine Loeschregel', () => {
+    /**
+     * Alle Fremdschluessel-Spalten auf users/organizations OHNE ON-DELETE-Regel.
+     * confdeltype: 'a' = NO ACTION (keine Regel), 'c' = CASCADE, 'n' = SET NULL,
+     * 'd' = SET DEFAULT, 'r' = RESTRICT. Eine Spalte kann mehrere Constraints
+     * tragen (SQLite-Altlast) -- eine einzige mit Regel genuegt, daher bool_or.
+     */
+    const ohneRegel = async () => {
+      const { rows } = await db.query(`
+        SELECT t.relname AS tabelle, a.attname AS spalte
+        FROM pg_constraint c
+        JOIN pg_class t ON t.oid = c.conrelid
+        JOIN pg_class ref ON ref.oid = c.confrelid
+        JOIN unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord) ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
+        WHERE c.contype = 'f' AND ref.relname IN ('users', 'organizations')
+        GROUP BY t.relname, a.attname
+        HAVING bool_or(c.confdeltype <> 'a') = false
+        ORDER BY t.relname, a.attname
+      `);
+      return rows.map((r) => `${r.tabelle}.${r.spalte}`);
+    };
+
+    /**
+     * Die Spalten, die heute ohne ON-DELETE-Regel dastehen und stattdessen von
+     * einer Loeschroutine abgeraeumt werden (users.js/konfiDeletion.js bzw. der
+     * Org-Purge in organizations.js).
+     *
+     * Zweck: Kommt eine NEUE Spalte ohne Regel dazu, faellt dieser Test auf und
+     * zwingt zu einer Entscheidung -- ON-DELETE-Regel setzen ODER die
+     * Loeschroutine erweitern, dort einen Test dafuer schreiben und hier
+     * eintragen. Genau dieser Zwang fehlte bei den historischen Faellen.
+     */
+    const OHNE_REGEL_ERWARTET = [
+      'activities.organization_id',
+      'activity_requests.approved_by',
+      'bonus_points.admin_id',
+      'bonus_points.organization_id',
+      'categories.organization_id',
+      'certificate_types.organization_id',
+      'chat_rooms.created_by',
+      'chat_rooms.organization_id',
+      'custom_badges.created_by',
+      'custom_badges.organization_id',
+      'event_points.admin_id',
+      'event_timeslots.organization_id',
+      'events.created_by',
+      'events.organization_id',
+      'invite_codes.created_by',
+      'jahrgaenge.organization_id',
+      'konfi_profiles.organization_id',
+      'levels.created_by',
+      'material_tags.organization_id',
+      'materials.created_by',
+      'materials.organization_id',
+      'notifications.organization_id',
+      'roles.organization_id',
+      'settings.organization_id',
+      'user_activities.admin_id',
+      'user_certificates.admin_id',
+      'user_certificates.organization_id',
+      'user_certificates.user_id',
+      'user_jahrgang_assignments.assigned_by',
+      'users.organization_id',
+    ];
+
+    it('keine NEUE Spalte ohne ON-DELETE-Regel (sonst Loeschregel oder Eintrag noetig)', async () => {
+      const ist = await ohneRegel();
+
+      const neu = ist.filter((sp) => !OHNE_REGEL_ERWARTET.includes(sp));
+      const verschwunden = OHNE_REGEL_ERWARTET.filter((sp) => !ist.includes(sp));
+
+      // Beide Richtungen: Neue Spalten brauchen eine Entscheidung, verschwundene
+      // gehoeren aus der Liste -- sonst wird sie zur Fiktion.
+      expect({ neu, verschwunden }).toEqual({ neu: [], verschwunden: [] });
+    });
+
+    /**
+     * Die zweite Haelfte der Regel -- "wird von der Loeschroutine ueber GENAU
+     * DIESE Spalte abgeraeumt" -- laesst sich auf Schema-Ebene nicht pruefen.
+     * Sie steht dort, wo die Routine wirklich laeuft: organizations.test.js
+     * legt Zeilen an, die nur ueber organization_id haengen, ruft
+     * DELETE /api/organizations/:id auf und erwartet 200 statt 500.
+     *
+     * Dieser Verweis wird abgesichert: Verschwinden jene Tests, faellt es hier
+     * auf, statt dass die Schema-Haelfte allein Sicherheit vortaeuscht.
+     */
+    it('die Loeschroutine wird in tests/routes/organizations.test.js geprueft', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const routenTest = fs.readFileSync(
+        path.join(__dirname, '..', 'routes', 'organizations.test.js'), 'utf8'
+      );
+
+      expect(routenTest).toContain('Timeslot ohne Termin-Zuordnung blockiert das Loeschen');
+      expect(routenTest).toContain('Benachrichtigung an einen Gast aus einer anderen Organisation');
+    });
+  });
 });
