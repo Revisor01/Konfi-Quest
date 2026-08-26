@@ -209,6 +209,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Die Auswahl der Bibelübersetzung für die Tageslosung ist überall dieselbe.
   Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
   die Teamer-Ansichten.
+
+- Die Zahl neuer Abzeichen verschwindet jetzt sofort, wenn man die
+  Abzeichen-Seite öffnet — bisher blieb sie bis zum nächsten App-Start stehen.
+  Das Symbol auf dem App-Icon zählt neue Abzeichen jetzt ebenfalls mit.
 - Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
   Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
   Kennzeichnung nur für Konfis.
