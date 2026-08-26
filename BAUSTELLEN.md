@@ -577,18 +577,23 @@ falschen Teamer-Erklärtexte (PR #83).
       `losungService`.
 - [ ] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
       Konfi-Liste prüft `has_submission`, andere Bäume etwas anderes.
-- [ ] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
-      Konfi-Profil-Kopie.** Das geteilte Modal (Konfi-Dashboard,
+- [x] **M4 — Bibelübersetzung vereinheitlicht.** ERLEDIGT (PR #93). Alle vier
+      Einbindungsstellen bieten dieselbe Liste. RVR60 auf Simons Entscheidung
+      vom 27.08. ganz entfernt, statt es überall zu ergänzen. Das geteilte Modal (Konfi-Dashboard,
       Teamer-Dashboard und -Profil) bietet RVR60 nicht an; das Backend
       akzeptiert es für beide Rollen. *Auftrag Simon: zusammenziehen.*
 - [ ] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
       stillschweigend**, das Konfi-Profil reiht sie in die Warteschlange ein.
-- [ ] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
-      Leitung, Teamer-Weg nur Push.**
-- [ ] **M7 — Wrapped: Freigabe-Gate nur im Dashboard, nicht am
-      Datenendpunkt.**
-- [ ] **M8 — Teamer-Dashboard-Challenges kommen vom Leitungs-Endpunkt ohne
-      Audience-Filter.**
+- [x] **M6 — Leitungs-Mitteilungen angeglichen.** ERLEDIGT (PR #94). Beide
+      Wege legen jetzt Mitteilungen für `admin` UND `org_admin` an — der
+      Konfi-Weg adressierte In-App bisher nur `admin`, der Push aber beide.
+- [x] **M7 — Wrapped-Freigabe gilt auch am Datenendpunkt.** ERLEDIGT (PR #94).
+      Gate bewusst NACH der Snapshot-Prüfung, damit "kein Snapshot" weiter 404
+      bleibt. NUR NOTIERT, nicht behoben: `GET /wrapped/history/:userId`
+      liefert eigene Snapshots ebenfalls ohne Gate.
+- [x] **M8 — Challenge-Teaser lädt den Teilnehmer-Endpunkt.** ERLEDIGT
+      (PR #94). PRÄZISIERUNG zum Bericht: Der Admin-Endpunkt filtert sehr wohl
+      korrekt — falsch war nur die Teaser-Karte.
 - [ ] **M9 — E-Mail-Änderung: Teamer und Leitung aktualisieren den
       User-Context, Konfi nicht.**
 
@@ -626,8 +631,9 @@ falschen Teamer-Erklärtexte (PR #83).
       (PR #83).
 - [x] **DM2 — Mitmachen-Erklärung zeigte Teamer:innen den Slide der
       Leitung.** ERLEDIGT (PR #83).
-- [ ] **KonfiOnboardingModal ist eine 279-Zeilen-Vollkopie der geteilten
-      OnboardingTour.** *Auftrag Simon: angleichen.*
+- [x] **KonfiOnboardingModal nutzt die geteilte OnboardingTour.** ERLEDIGT
+      (PR #93). War eine Render-Vollkopie; jetzt nur noch die sieben
+      Konfi-Slides, 85 statt 279 Zeilen.
 - [ ] **super_admin fällt im Chat zwischen drei verschieden definierte
       "Leitung"-Gates** — sieht den Mülleimer, bekommt vom Backend 403.
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
@@ -638,13 +644,12 @@ falschen Teamer-Erklärtexte (PR #83).
 
 ### Aus dem Abzeichen-Zähler-Bericht (27.08.)
 
-- [ ] **B1 — Der KONFI-Abzeichen-Zähler setzt sich in laufender Sitzung nie
-      zurück.** `KonfiBadgesPage.tsx:80-110` markiert per `mark-seen`, stößt
-      danach aber keine Aktualisierung an. Kaputt seit `33e3364`
-      (03.07.2026, Wegfall des 60s-Pollings). Der neue Teamer-Weg macht es
-      richtig — die alte Konfi-Seite wurde nicht nachgezogen.
-      **Wichtig:** Die Dokumentation der Falle (siehe oben) hat diesen Fehler
-      NICHT verhindert; er bestand schon vorher unbemerkt.
+- [x] **B1 — Der KONFI-Abzeichen-Zähler setzt sich zurück.** ERLEDIGT (PR #92,
+      zusammen mit der Konsolidierung). War seit dem 03.07.2026 kaputt.
+      **Lehre:** Die blosse Dokumentation der Falle hatte diesen Fehler NICHT
+      verhindert — er bestand schon vorher unbemerkt. Deshalb war der Umbau
+      richtig statt nur ein Kommentar.
+
 - [ ] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.** Client
       setzt `totalBadgeCount` ohne `newBadgesCount`, Chat-Pushes die exakte
       Chat-Zahl, alle anderen Pushes hart `1`, der 5-Minuten-Hintergrund-Sync
