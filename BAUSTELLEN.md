@@ -40,6 +40,49 @@ Erledigten.
 
 ---
 
+## Falle: Die Reiter-Zähler hängen an ZWEI verschiedenen Mechanismen
+
+Gefunden am 27.08.2026 beim Bauen von H1 — wäre um ein Haar ein neuer Fehler
+geworden.
+
+In `MainTabs.tsx` gibt es fünf Zahlen an den Reitern. Sie sehen gleich aus,
+werden aber völlig unterschiedlich aktualisiert:
+
+| Zähler | Quelle | Aktualisiert durch |
+|---|---|---|
+| `chatUnreadTotal` | `useBadge()` | `refreshAllCounts()` |
+| `pendingRequestsCount` | `useBadge()` | `refreshAllCounts()` |
+| `pendingEventsCount` | `useBadge()` | `refreshAllCounts()` |
+| `pendingChallengesCount` | `useBadge()` | `refreshAllCounts()` |
+| **`newBadgesCount`** | **eigener State** | **`useLiveRefresh('badges')`** |
+
+Die ersten vier kommen gesammelt aus `GET /notifications/badge-counts`
+(`BadgeContext.tsx:80`). Der Abzeichen-Zähler steht dort **nicht** drin — er
+lädt eigenständig (`MainTabs.tsx:184`) und hört auf
+`useLiveRefresh('badges')` (`MainTabs.tsx:204`).
+
+**Die Falle:** Wer nach einer Aktion einen Zähler aktualisieren will, greift
+intuitiv zu `refreshAllCounts()`. Für den Abzeichen-Zähler bewirkt das
+**nichts** — die rote Zahl bleibt stehen, obwohl der Server sie längst auf 0
+gesetzt hat. Kein Fehler, keine Warnung, es passiert einfach nichts.
+
+**Richtig ist:**
+- Abzeichen-Zähler zurücksetzen → `triggerRefresh('badges')` aus
+  `useLiveUpdate()`
+- alle anderen vier → `refreshAllCounts()` aus `useBadge()`
+
+Aufgefallen ist es nur beim Nachlesen der Verdrahtung, nicht durch einen
+fehlschlagenden Test — genau deshalb steht es hier. Ein Test in
+`abzeichenZaehlerTeamer.test.ts` sichert die richtige Wahl inzwischen ab.
+
+**Der eigentliche Hebel** wäre, den Abzeichen-Zähler in
+`GET /notifications/badge-counts` mit aufzunehmen und aus dem `BadgeContext`
+zu beziehen — dann gäbe es nur noch einen Weg. Nicht gemacht, weil der
+Konfi-Weg dabei die volle Abzeichenliste braucht (Fortschritt) und der
+Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
+
+---
+
 ## Erledigt und ausgerollt (24.08.)
 
 - [x] **Umzug auf server.godsapp.de** — Datenbank (57 Tabellen deckungsgleich

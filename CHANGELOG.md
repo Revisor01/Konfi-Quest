@@ -206,6 +206,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
+  Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
+  Kennzeichnung nur für Konfis.
+
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.

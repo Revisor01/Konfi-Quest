@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -15,11 +15,14 @@ import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
-import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgesView from '../../konfi/views/BadgesView';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface TeamerBadgeAPI {
   id: number;
@@ -60,6 +63,43 @@ const TeamerBadgesPage: React.FC = () => {
   // Das Backend sendet 'badges' gezielt an Teamer:innen (routes/teamer.js:796),
   // es fehlte nur der Empfaenger (Befund 25.08.2026).
   useLiveRefresh(['badges'], useCallback(() => { refreshLive(); }, [refreshLive]));
+
+  // Beim Oeffnen der Seite gelten die Abzeichen als gesehen -- damit
+  // verschwindet der Zaehler am Reiter. Bis 27.08.2026 rief das niemand auf,
+  // obwohl der Endpunkt seit jeher existiert (teamer.js:544): 'seen' blieb
+  // fuer Teamer:innen dauerhaft false, ein neues Abzeichen wurde nie als neu
+  // angezeigt (Befund H1).
+  //
+  // Anders als bei den Konfis liefert die Teamer-Liste kein 'seen' je Abzeichen
+  // mit -- markiert wird deshalb pauschal beim Oeffnen, genau dafuer ist der
+  // schlanke Endpunkt gedacht. Der Ref verhindert, dass jedes Neuladen
+  // (Live-Update, Pull-to-Refresh) einen weiteren Aufruf ausloest.
+  // triggerRefresh('badges') statt refreshAllCounts(): Der Zaehler am Reiter
+  // haengt in MainTabs an useLiveRefresh('badges') (MainTabs.tsx:204), nicht am
+  // BadgeContext. Ohne diesen Anstoss bliebe die rote Zahl nach dem Oeffnen der
+  // Seite stehen, obwohl der Server sie schon auf 0 gesetzt hat.
+  const { triggerRefresh } = useLiveUpdate();
+  const bereitsMarkiert = useRef(false);
+  useEffect(() => {
+    if (bereitsMarkiert.current) return;
+    bereitsMarkiert.current = true;
+
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/teamer/badges/mark-seen',
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Abzeichen gesehen' },
+      });
+      return;
+    }
+    api.put('/teamer/badges/mark-seen')
+      .then(() => { triggerRefresh('badges'); })
+      .catch((markError) => {
+        console.warn('Abzeichen konnten nicht als gesehen markiert werden:', markError);
+      });
+  }, [triggerRefresh]);
 
   const badges = badgesData || [];
 
