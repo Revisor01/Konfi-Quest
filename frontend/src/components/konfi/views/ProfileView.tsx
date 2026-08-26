@@ -23,17 +23,16 @@ import {
   calendarOutline,
   starOutline,
   trophy,
+  checkmark,
   flash,
   logOutOutline,
   trashOutline,
-  checkmark,
   rocket,
   keyOutline,
   bookOutline,
   locationOutline,
   mailOutline,
   timeOutline,
-  closeOutline,
   compassOutline,
   imagesOutline,
   sparklesOutline,
@@ -48,6 +47,7 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import BiometrieSchalter from '../../shared/BiometrieSchalter';
 import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
@@ -125,89 +125,6 @@ interface ProfileViewProps {
   presentingElement: HTMLElement | null;
   pageRef?: React.RefObject<HTMLElement | null>;
 }
-
-const BibleTranslationModal: React.FC<{
-  onClose: () => void;
-  currentTranslation: string;
-  onSelect: (code: string) => void;
-}> = ({ onClose, currentTranslation, onSelect }) => {
-  const translations = [
-    { code: 'LUT', name: 'Lutherbibel 2017', description: 'Die klassische deutsche Standardübersetzung, nah am Originaltext mit der Sprachkraft Martin Luthers. Weit verbreitet in evangelischen Gottesdiensten.' },
-    { code: 'ELB', name: 'Elberfelder Bibel', description: 'Besonders wörtliche Übersetzung, die sich eng an den hebräischen und griechischen Grundtext hält. Ideal zum genauen Bibelstudium.' },
-    { code: 'GNB', name: 'Gute Nachricht Bibel', description: 'Leicht verständliche Übersetzung in modernem Deutsch. Gut geeignet für Einsteiger:innen und den Konfi-Unterricht.' },
-    { code: 'BIGS', name: 'Bibel in gerechter Sprache', description: 'Übersetzung mit Fokus auf Gerechtigkeit, Inklusion und die Vielfalt biblischer Gottesbilder. Gendersensibel und theologisch reflektiert.' },
-    { code: 'NIV', name: 'New International Version', description: 'Die meistgelesene englische Bibelübersetzung. Gute Balance zwischen Wörtlichkeit und Verständlichkeit. Für alle die Englisch bevorzugen.' },
-    { code: 'LSG', name: 'Louis Segond 1910', description: 'Französische Standardübersetzung, vergleichbar mit der Lutherbibel im deutschen Sprachraum. Klassisch und weit verbreitet.' },
-    { code: 'RVR60', name: 'Reina-Valera 1960', description: 'Spanische Standardübersetzung mit großer Treue zum Grundtext. Die am häufigsten verwendete spanische Bibel.' }
-  ];
-
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Bibelübersetzung</IonTitle>
-          <IonButtons slot="start">
-            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
-              <IonIcon icon={closeOutline} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="app-gradient-background">
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
-              <IonIcon icon={bookOutline} />
-            </div>
-            <IonLabel>Übersetzung wählen</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {translations.map((t) => {
-                  const isSelected = currentTranslation === t.code;
-                  return (
-                    <div
-                      key={t.code}
-                      className={`app-list-item app-list-item--purple ${isSelected ? 'app-list-item--selected' : ''}`}
-                      onClick={() => onSelect(t.code)}
-                      style={{
-                        cursor: 'pointer',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        background: isSelected ? 'rgba(91, 33, 182, 0.08)' : undefined
-                      }}
-                    >
-                      {isSelected && (
-                        <div className="app-corner-badges">
-                          <div
-                            className="app-corner-badge"
-                            style={{ backgroundColor: '#5b21b6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                            title="Ausgewählt"
-                          >
-                            <IonIcon icon={checkmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                          </div>
-                        </div>
-                      )}
-                      <div className="app-list-item__row">
-                        <div className="app-list-item__main">
-                          <div className="app-list-item__content">
-                            <div className="app-list-item__title" style={{ paddingRight: isSelected ? '40px' : '0' }}>{t.name}</div>
-                            <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t.description}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      </IonContent>
-    </IonPage>
-  );
-};
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
   const { user, setError, signOut } = useApp();
@@ -297,19 +214,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
     }
-  };
-
-  const getTranslationName = (code: string) => {
-    const translations = {
-      'LUT': 'Lutherbibel 2017',
-      'ELB': 'Elberfelder Bibel',
-      'GNB': 'Gute Nachricht Bibel',
-      'BIGS': 'Bibel in gerechter Sprache',
-      'NIV': 'New International Version',
-      'LSG': 'Louis Segond 1910',
-      'RVR60': 'Reina-Valera 1960'
-    };
-    return translations[code as keyof typeof translations] || code;
   };
 
   const handleLogout = () => {
