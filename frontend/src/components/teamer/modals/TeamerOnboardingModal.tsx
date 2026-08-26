@@ -40,7 +40,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-chat)',
     rgb: '--app-color-chat-rgb',
     title: 'Dein Chat',
-    text: 'Bleib mit deinem Jahrgang und dem Team in Kontakt — dafür gibt es automatische Chats. Du kannst auch Direktchats und Gruppenchats nutzen, und zu Events gibt es eigene Chats. Bilder teilen und Umfragen erstellen geht ebenfalls.',
+    text: 'Bleib mit deinem Jahrgang und dem Team in Kontakt — dafür gibt es automatische Chats. Du kannst auch Direktchats und Gruppenchats nutzen, und zu Events gibt es eigene Chats. Bilder teilen geht ebenfalls. An Umfragen nimmst du teil; anlegen kann sie die Leitung.',
   },
   {
     icon: calendarOutline,
