@@ -79,16 +79,31 @@ module.exports = (db, verifyTokenRBAC) => {
            WHERE c.organization_id = $1 AND cs.moderation_status = 'pending'`,
           [organizationId]
         );
-      } else if (userType === 'teamer' && teamerJahrgangIds.length > 0) {
+      } else if (userType === 'teamer') {
+        // 'nur_team'-Challenges laufen org-weit ueber die Rolle (Migration 121):
+        // Jede:r Teamer:in der Organisation darf sie sehen und moderieren, auch
+        // ohne Jahrgangs-Zuordnung -- die es dort per Definition nicht gibt.
+        // Dieselbe Ausnahme steht in challenges.js (leadershipMayAccess und die
+        // Listen-Abfrage).
+        //
+        // Bis 27.08.2026 zaehlte dieser Zweig ausschliesslich ueber
+        // challenge_jahrgang_assignments und lief bei Teamer:innen ohne
+        // zugewiesene Jahrgaenge gar nicht erst an (Bedingung
+        // teamerJahrgangIds.length > 0). Ergebnis: Ein Teamer konnte eine
+        // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
+        // gestossen (Befund H4).
         challengesPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE c.organization_id = $1
              AND cs.moderation_status = 'pending'
-             AND EXISTS (
-               SELECT 1 FROM challenge_jahrgang_assignments cja
-               WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
+             AND (
+               c.audience = 'nur_team'
+               OR EXISTS (
+                 SELECT 1 FROM challenge_jahrgang_assignments cja
+                 WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
+               )
              )`,
           [organizationId, teamerJahrgangIds]
         );

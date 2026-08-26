@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS } = require('../helpers/seed');
+const { seed, USERS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Notifications Routes', () => {
@@ -10,6 +10,7 @@ describe('Notifications Routes', () => {
   let konfiToken;
   let adminToken;
   let orgAdminToken;
+  let teamerToken;
 
   beforeAll(async () => {
     db = getTestPool();
@@ -22,6 +23,7 @@ describe('Notifications Routes', () => {
     konfiToken = generateToken('konfi1');
     adminToken = generateToken('admin1');
     orgAdminToken = generateToken('orgAdmin1');
+    teamerToken = generateToken('teamer1');
   });
 
   afterAll(async () => {
@@ -293,6 +295,77 @@ describe('Notifications Routes', () => {
       // Konfi bekommt keine Admin-Zähler
       expect(res.body.pendingRequests).toBe(0);
       expect(res.body.pendingEvents).toBe(0);
+    });
+
+    // Befund H4 (26.08.2026): Der Teamer-Zweig des Challenge-Zaehlers zaehlte
+    // ausschliesslich ueber challenge_jahrgang_assignments und lief bei
+    // Teamer:innen ohne zugewiesene Jahrgaenge gar nicht erst an.
+    // 'nur_team'-Challenges haben per Definition KEINE Jahrgangszuordnung und
+    // sind fuer jede:n Teamer:in der Organisation moderierbar (Migration 121,
+    // challenges.js:184-205). Folge: Ein Teamer konnte eine Team-Runde
+    // moderieren, wurde aber nie per Reiter-Zaehler darauf gestossen.
+    describe('pendingChallenges fuer Teamer:innen', () => {
+      const challengeAnlegen = async (audience) => {
+        const { rows } = await db.query(
+          `INSERT INTO challenges (organization_id, title, description, badge_name,
+                                   starts_at, ends_at, is_draft, audience)
+           VALUES ($1, $2, 'Beschreibung', 'Abzeichen',
+                   NOW() - interval '1 day', NOW() + interval '7 days', false, $3)
+           RETURNING id`,
+          [ORGS.testGemeinde.id, `Challenge ${audience}`, audience]
+        );
+        return rows[0].id;
+      };
+
+      const einreichung = async (challengeId) => {
+        await db.query(
+          `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id,
+                                              media_type, moderation_status)
+           VALUES ($1, $2, $3, 'text', 'pending')`,
+          [challengeId, USERS.konfi1.id, ORGS.testGemeinde.id]
+        );
+      };
+
+      const zaehler = async (token) => {
+        const res = await request(app)
+          .get('/api/notifications/badge-counts')
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        return res.body.pendingChallenges;
+      };
+
+      it('zaehlt offene Beitraege einer nur-Team-Challenge', async () => {
+        const id = await challengeAnlegen('nur_team');
+        await einreichung(id);
+        expect(await zaehler(teamerToken)).toBe(1);
+      });
+
+      it('zaehlt eine Challenge ohne Jahrgangs-Zuordnung NICHT, wenn sie nicht nur-Team ist', async () => {
+        // Gegenprobe: Die Ausnahme gilt ausdruecklich nur fuer 'nur_team'.
+        // Eine konfis-Challenge ohne Zuordnung geht diese Teamer:in nichts an.
+        const id = await challengeAnlegen('konfis');
+        await einreichung(id);
+        expect(await zaehler(teamerToken)).toBe(0);
+      });
+
+      it('bereits moderierte Beitraege zaehlen nicht mehr', async () => {
+        const id = await challengeAnlegen('nur_team');
+        await einreichung(id);
+        await db.query(
+          "UPDATE challenge_submissions SET moderation_status = 'approved' WHERE challenge_id = $1",
+          [id]
+        );
+        expect(await zaehler(teamerToken)).toBe(0);
+      });
+
+      it('die Leitung zaehlt weiterhin org-weit', async () => {
+        // Gegenprobe: Der Admin-Zweig war korrekt und darf sich nicht aendern.
+        const team = await challengeAnlegen('nur_team');
+        const konfis = await challengeAnlegen('konfis');
+        await einreichung(team);
+        await einreichung(konfis);
+        expect(await zaehler(adminToken)).toBe(2);
+      });
     });
 
     it('read_status wird respektiert (gelesener Raum zaehlt 0)', async () => {

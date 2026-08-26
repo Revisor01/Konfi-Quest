@@ -866,7 +866,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: certificates } = await db.query(certificatesQuery, [userId, orgId]);
 
-      // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
+      // 3. Events: Naechste anstehende Termine, die Teamer:innen betreffen --
+      // eigene Buchungen UND Termine, fuer die Teamer:innen gesucht werden.
+      //
+      // Bis 27.08.2026 stand hier zusaetzlich `AND eb.id IS NOT NULL`. Das
+      // machte aus dem LEFT JOIN auf die eigene Buchung faktisch einen INNER
+      // JOIN: Es erschienen ausschliesslich Termine, fuer die man schon
+      // gebucht war. Genau die Termine mit "Teamer:innen gesucht", auf die
+      // jemand reagieren soll, kamen auf der Startseite nie an -- entgegen dem
+      // Kommentar, der hier immer schon etwas anderes behauptete (Befund H2).
+      //
+      // Der Filter auf teamer_only/teamer_needed fehlte ebenfalls ganz; ohne
+      // ihn stuenden auch reine Konfi-Termine auf der Teamer-Startseite.
       const eventsQuery = `
         SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
                e.teamer_only, e.teamer_needed, e.bring_items, e.cancelled,
@@ -877,7 +888,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
           AND (e.cancelled IS NOT TRUE)
-          AND eb.id IS NOT NULL
+          AND (
+            eb.id IS NOT NULL          -- eigene Buchung: immer zeigen
+            OR e.teamer_only = true    -- reiner Team-Termin
+            OR e.teamer_needed = true  -- "Teamer:innen gesucht"
+          )
         ORDER BY e.event_date ASC
         LIMIT 5
       `;

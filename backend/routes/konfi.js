@@ -1286,6 +1286,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                  ELSE e.max_participants
                END as max_participants,
                CASE
+                 -- 'cancelled' zuerst, wie in der Liste oben (Zeile ~1133):
+                 -- ein abgesagter Termin ist weder pflichtig noch offen noch
+                 -- ausgebucht. Fehlte hier bis 27.08.2026 -- der Endpunkt gab
+                 -- abgesagte Termine gar nicht erst heraus (Befund H6).
+                 WHEN e.cancelled = true THEN 'cancelled'
                  -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026)
                  WHEN e.mandatory THEN 'mandatory'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
@@ -1313,9 +1318,19 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           FROM event_timeslots
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
-        WHERE e.id = $1 AND e.organization_id = $2 AND (e.cancelled = FALSE OR e.cancelled IS NULL)
+        -- Abgesagte Termine bleiben abrufbar, WENN die Konfi angemeldet war
+        -- oder ist ($3). Genau dieselbe Regel wie in der Liste oben
+        -- (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL).
+        -- Bis 27.08.2026 filterte diese Abfrage abgesagte Termine hart weg und
+        -- antwortete dann 404 -- die Liste zeigte denselben Termin aber weiter
+        -- mit registration_status 'cancelled'. Zwei Antworten fuer denselben
+        -- Termin in derselben Rolle (Befund H6).
+        -- Entscheidung Simon 27.08.2026: Abgesagte Termine darf man sich
+        -- weiterhin ansehen.
+        WHERE e.id = $1 AND e.organization_id = $2
+          AND (e.cancelled IS NOT TRUE OR $3::boolean)
         GROUP BY e.id, timeslot_capacity.total_capacity
-      `, [eventId, req.user.organization_id]);
+      `, [eventId, req.user.organization_id, !!registration]);
       
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
