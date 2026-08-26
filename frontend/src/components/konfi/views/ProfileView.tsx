@@ -48,6 +48,7 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import BiometrieSchalter from '../../shared/BiometrieSchalter';
 import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
@@ -821,6 +822,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   </div>
                 </div>
               </div>
+
+              {/* Biometrische Anmeldung (blendet sich selbst aus, wenn das
+                  Geraet keine eingerichtete Biometrie hat) */}
+              <BiometrieSchalter variante="purple" />
 
               {/* Medien-Cache leeren */}
               <div

@@ -34,6 +34,7 @@
     "@capacitor/status-bar": "^8.0.3",
     "@capawesome/capacitor-background-task": "^8.0.2",
     "@capawesome/capacitor-badge": "^8.0.2",
+    "@capgo/capacitor-native-biometric": "^8.6.7",
     "@ionic/react": "^8.8.18",
     "@ionic/react-router": "^8.8.18",
     "@rdlabo/ionic-theme-ios26": "^2.3.2",

@@ -1,7 +1,14 @@
-import api from './api';
+import axios from 'axios';
+import api, { API_URL } from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId, setLoggingOut } from './tokenStore';
+import {
+  mitBiometrieEntsperren,
+  gespeichertenTokenAuffrischen,
+  biometrieVergessen,
+  istBiometrieAktiv
+} from './biometrics';
 import { offlineCache } from './offlineCache';
 import { writeQueue } from './writeQueue';
 import { disconnectWebSocket } from './websocket';
@@ -134,6 +141,15 @@ export const logout = async (): Promise<void> => {
   // GARANTIERT: lokale Auth-Daten löschen. Ab hier ist der User ausgeloggt.
   await clearAuth();
 
+  // Ausdrueckliches Abmelden loescht IMMER auch die biometrisch gesicherte
+  // Sitzung. Bliebe sie liegen, koennte man sich nach dem Abmelden per Face ID
+  // wieder in genau das Konto entsperren, aus dem man gerade herausgegangen ist.
+  try {
+    await biometrieVergessen();
+  } catch (error) {
+    console.warn('Biometrie-Aufraeumen beim Logout fehlgeschlagen:', error);
+  }
+
   // Queue leeren: was jetzt noch drin ist, darf nach dem naechsten Login
   // nicht unter fremdem Konto gesendet werden (siehe Flush oben).
   try {
@@ -171,3 +187,85 @@ export const checkAuthAsync = async (): Promise<BaseUser | null> => {
   return getUser();
 };
 
+
+// ---------------------------------------------------------------------------
+// Biometrische Anmeldung: Sitzung wiederherstellen
+// ---------------------------------------------------------------------------
+
+export type BiometrieAnmeldung =
+  | { status: 'ok'; user: BaseUser }
+  /** Abgebrochen oder nicht erkannt — normaler Anmeldeweg, keine Fehlermeldung. */
+  | { status: 'abgebrochen' }
+  /** Nichts gespeichert / Frist abgelaufen — normaler Anmeldeweg. */
+  | { status: 'nichts-gespeichert' }
+  /** Der gespeicherte Token gilt nicht mehr — normaler Anmeldeweg mit Hinweis. */
+  | { status: 'abgelaufen' }
+  /** Kein Netz — der gespeicherte Token laesst sich gerade nicht einloesen. */
+  | { status: 'offline' }
+  /** Unerwarteter Fehler — normaler Anmeldeweg mit Hinweis. */
+  | { status: 'fehler' };
+
+/**
+ * Stellt die Sitzung nach erfolgreicher Biometrie wieder her.
+ *
+ * Ablauf: Token biometrisch aus dem sicheren Speicher lesen -> beim Server
+ * gegen ein frisches Token-Paar tauschen -> das rotierte Token zurueck in den
+ * sicheren Speicher schreiben.
+ *
+ * Der Tausch laeuft bewusst ueber direktes axios statt ueber api.ts: der
+ * dortige 401-Interceptor wuerde bei einem abgelaufenen Token ein
+ * 'auth:relogin-required'-Event feuern und clearAuth() aufrufen. Wir sind hier
+ * aber noch GAR NICHT angemeldet — das Event traefe ins Leere und der
+ * Fehlerfall waere nicht mehr sauber unterscheidbar. Hier entscheidet allein
+ * der Rueckgabewert, was die Oberflaeche anzeigt.
+ */
+export const mitBiometrieAnmelden = async (): Promise<BiometrieAnmeldung> => {
+  const entsperrt = await mitBiometrieEntsperren();
+
+  if (entsperrt.status === 'abgebrochen') return { status: 'abgebrochen' };
+  if (entsperrt.status === 'nichts-gespeichert') return { status: 'nichts-gespeichert' };
+  if (entsperrt.status === 'fehler') return { status: 'fehler' };
+
+  // Ohne Netz laesst sich der gespeicherte Token nicht einloesen. Die Sitzung
+  // wird NICHT verworfen — beim naechsten Versuch mit Netz klappt es wieder.
+  if (!networkMonitor.isOnline) return { status: 'offline' };
+
+  try {
+    const antwort = await axios.post(`${API_URL}/auth/refresh`, {
+      refresh_token: entsperrt.refreshToken
+    });
+    const { token, refresh_token: neuerRefreshToken } = antwort.data || {};
+    if (!token || !neuerRefreshToken) return { status: 'fehler' };
+
+    // Reihenfolge wie in api.ts performRefresh: erst der langlebige Schluessel.
+    await setRefreshToken(neuerRefreshToken);
+    await setToken(token);
+    await setUser(entsperrt.user);
+
+    // Rotierten Token zurueckschreiben, solange auf Android das Zeitfenster der
+    // gerade erfolgten Pruefung noch traegt. Die urspruengliche Frist bleibt
+    // stehen (gespeichertAm wird durchgereicht, nicht erneuert).
+    await gespeichertenTokenAuffrischen(neuerRefreshToken, entsperrt.gespeichertAm);
+
+    return { status: 'ok', user: entsperrt.user };
+  } catch (fehler: unknown) {
+    const status = (fehler as { response?: { status?: number } })?.response?.status;
+    if (status === 401) {
+      // Der Server kennt den Token nicht mehr (abgelaufen, widerrufen, oder auf
+      // einem anderen Geraet abgemeldet). Aufraeumen, sonst fragt die App bei
+      // jedem Start nach Face ID und scheitert danach still — genau die
+      // Schleife, die es nicht geben darf.
+      await biometrieVergessen();
+      return { status: 'abgelaufen' };
+    }
+    console.warn('Anmeldung per Biometrie fehlgeschlagen:', fehler);
+    return { status: 'fehler' };
+  }
+};
+
+/**
+ * true, wenn die Anmeldemaske einen Knopf fuer die biometrische Anmeldung
+ * zeigen soll. Prueft NUR den Schalter, loest also keine Abfrage aus.
+ */
+export const biometrieAnmeldungMoeglich = async (): Promise<boolean> =>
+  istBiometrieAktiv();
