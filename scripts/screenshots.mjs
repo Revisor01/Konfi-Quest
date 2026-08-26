@@ -34,7 +34,13 @@ const argWert = (name, standard) => {
 const BASIS = argWert('url', 'https://konfi-quest.de').replace(/\/$/, '');
 const NUR_ROLLE = argWert('rolle', null);
 const GERAET = argWert('geraet', 'iphone');
-const PASSWORT = 'KonfiDemo2026!';
+// Passwort NICHT im Code: Dieses Repo ist oeffentlich. Vor dem Aufruf setzen:
+//   export KONFI_DEMO_PASSWORT='...'
+const PASSWORT = process.env.KONFI_DEMO_PASSWORT;
+if (!PASSWORT) {
+  console.error('KONFI_DEMO_PASSWORT ist nicht gesetzt — ohne Passwort keine Anmeldung.');
+  process.exit(1);
+}
 
 /** Bildschirmgrössen. Die iPhone-Grösse entspricht dem, was die Stores erwarten. */
 const GERAETE = {

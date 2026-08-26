@@ -4,8 +4,15 @@ Stand: 24.08.2026, abends. Eine Liste, damit nichts doppelt läuft und nichts
 untergeht. **Erledigtes wird nicht gelöscht, sondern abgehakt** — sonst weiß
 später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 
-Live: `d3d6976` (ausgerollt 26.08. nachts) · Version 2.0.0 (unveröffentlicht) ·
-iOS-Build 145 gebaut
+Live: Image `d3d6976` · Version 2.0.0 (unveröffentlicht) · iOS-Build 146 im
+TestFlight
+
+> **Seit 26.08.2026 im Notbetrieb auf der Rückfallebene** — der Hauptserver ist
+> wegen einer Abuse-Sperre des Anbieters offline (Nachzügler-Beschwerde zum
+> bereits abgeschlossenen Vorfall vom 19./20.08.). Datenstand: Nachtabgleich
+> vom 26.08., 03:30 Uhr. Was danach passiert ist, fehlt.
+> Ablauf und Zugänge stehen in der Notfall-Anleitung auf dem Server, bewusst
+> nicht hier — dieses Repo ist öffentlich.
 
 ## Wie hier gearbeitet wird
 

@@ -103,6 +103,7 @@ fehlt.
   (die Fassung vor dem Deploy liegt daneben als `.bak-6721eec`),
   Backups nach `/opt/Konfi-Quest/dump/`.
 - **Datenbank:** `docker exec konfi_quest-postgres-1 psql -U konfi_user -d konfi_db`
-- **Demo-Gemeinde (Org 4):** Passwort überall `KonfiDemo2026!`.
+- **Demo-Gemeinde (Org 4):** Passwort steht in `~/.claude/secrets.env`
+  (`KONFI_DEMO_PASSWORT`) — bewusst nicht hier, das Repo ist öffentlich.
   **Nicht anfassen:** `review-*` und `google-test-*`.
 - **Org 1 ist Simons ECHTE Gemeinde** — dort nichts zum Testen anlegen.
