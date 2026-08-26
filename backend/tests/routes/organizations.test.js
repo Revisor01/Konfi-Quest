@@ -1,4 +1,6 @@
 const request = require('supertest');
+const fs = require('fs');
+const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS } = require('../helpers/seed');
@@ -576,6 +578,55 @@ describe('Organizations Routes', () => {
         const { rows: [row] } = await db.query(sql);
         expect(`${label}=${row.c}`).toBe(`${label}=0`);
       }
+    });
+
+    // Befund H2 (26.08.2026): Der Org-Purge sammelte nur Antragsfotos und
+    // Challenge-Dateien ein — Chat-Anhaenge und Material-Dateien überlebten
+    // die Org-Löschung dauerhaft auf der Platte (DSGVO Art. 17).
+    it('Chat-Anhaenge und Material-Dateien der Org werden von der Platte entfernt', async () => {
+      const CHAT_DIR = path.join(__dirname, '..', '..', 'uploads', 'chat');
+      const MATERIAL_DIR = path.join(__dirname, '..', '..', 'uploads', 'material');
+      fs.mkdirSync(CHAT_DIR, { recursive: true });
+      fs.mkdirSync(MATERIAL_DIR, { recursive: true });
+      const chatFile = 'deadbeeforgdelete01';
+      const materialFile = 'org2-material-loeschtest.pdf';
+      fs.writeFileSync(path.join(CHAT_DIR, chatFile), 'testinhalt');
+      fs.writeFileSync(path.join(MATERIAL_DIR, materialFile), 'testinhalt');
+
+      // Chat-Nachricht mit Anhang in Raum 4 (Org 2) + Material mit Datei in Org 2
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, file_path, file_name)
+         VALUES (4, $1, 'konfi', 'Datei', $2, 'bild.png')`,
+        [USERS.konfi3.id, chatFile]
+      );
+      const { rows: [material] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by) VALUES ('Testmaterial', 2, $1) RETURNING id`,
+        [USERS.admin2.id]
+      );
+      await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name) VALUES ($1, 'material.pdf', $2)`,
+        [material.id, materialFile]
+      );
+
+      expect(fs.existsSync(path.join(CHAT_DIR, chatFile))).toBe(true);
+      expect(fs.existsSync(path.join(MATERIAL_DIR, materialFile))).toBe(true);
+
+      const res = await request(app)
+        .delete('/api/organizations/2')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(res.status).toBe(200);
+
+      // Die Dateiloeschung läuft NACH der Response (bewusst nicht blockierend)
+      // — deshalb hier mit kurzem Nachfassen statt sofortigem Zugriff.
+      const wegBinnen = async (fullPath) => {
+        for (let i = 0; i < 50; i++) {
+          if (!fs.existsSync(fullPath)) return true;
+          await new Promise((r) => setTimeout(r, 20));
+        }
+        return !fs.existsSync(fullPath);
+      };
+      expect(await wegBinnen(path.join(CHAT_DIR, chatFile))).toBe(true);
+      expect(await wegBinnen(path.join(MATERIAL_DIR, materialFile))).toBe(true);
     });
 
     it('Multi-Org: Gast-User aus anderer Org bleibt erhalten, nur Mitgliedschaft weg', async () => {

@@ -1,4 +1,6 @@
 const request = require('supertest');
+const fs = require('fs');
+const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, ROLES, JAHRGAENGE } = require('../helpers/seed');
@@ -341,6 +343,33 @@ describe('Users Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
+    });
+
+    // Befund 26.08.2026: Die users.js-Kaskade sammelte Nachweisfotos und
+    // Challenge-Dateien ein, Chat-Anhaenge aber nicht — die blieben nach der
+    // Löschung dauerhaft auf der Platte (DSGVO Art. 17).
+    it('Chat-Anhang des gelöschten Users wird von der Platte entfernt', async () => {
+      const CHAT_DIR = path.join(__dirname, '..', '..', 'uploads', 'chat');
+      fs.mkdirSync(CHAT_DIR, { recursive: true });
+      const fileName = 'deadbeefuserdelete01';
+      fs.writeFileSync(path.join(CHAT_DIR, fileName), 'testinhalt');
+      // teamer1 ist Teilnehmer in Raum 3 (Teamer-Gruppe)
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, file_path, file_name)
+         VALUES (3, $1, 'teamer', 'Datei', $2, 'bild.png')`,
+        [USERS.teamer1.id, fileName]
+      );
+
+      expect(fs.existsSync(path.join(CHAT_DIR, fileName))).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM chat_messages WHERE user_id = $1', [USERS.teamer1.id]);
+      expect(rows).toHaveLength(0);
+      expect(fs.existsSync(path.join(CHAT_DIR, fileName))).toBe(false);
     });
 
     it('Nicht-existierender User -> 404', async () => {

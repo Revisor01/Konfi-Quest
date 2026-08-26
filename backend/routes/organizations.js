@@ -6,7 +6,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { validatePassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
-const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
+const { deletePhotoFile, deleteChallengeFile, deleteChatFile, deleteMaterialFile } = require('../utils/photoStorage');
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
@@ -659,6 +659,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // User werden gelöscht, ihre Gast-Mitgliedschaften in ANDEREN Orgs
       // kaskadieren über den users-FK (user_organizations.user_id CASCADE).
 
+      // Chat-Anhaenge VOR den DB-Deletes einsammeln, damit die Dateien nach
+      // dem COMMIT vom Datenträger entfernt werden können (DSGVO Art. 17,
+      // Befund 26.08.2026 — vorher überlebten sie die Org-Löschung dauerhaft).
+      const { rows: orgChatFiles } = await client.query(
+        'SELECT file_path FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1) AND file_path IS NOT NULL', [id]);
+
       // 1. Chat-System (Blaetter zuerst). chat_polls hängt an message_id (NICHT
       // room_id) -> über chat_messages der Org-Rooms aufloesen.
       await client.query('DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)))', [id]);
@@ -669,7 +675,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       await client.query('DELETE FROM chat_participants WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM chat_rooms WHERE organization_id = $1', [id]);
 
-      // 2. Material-System (hängt an events/jahrgaenge/users der Org)
+      // 2. Material-System (hängt an events/jahrgaenge/users der Org).
+      // Auch hier: Dateinamen vor dem DB-Delete sichern (Befund 26.08.2026).
+      const { rows: orgMaterialFiles } = await client.query(
+        'SELECT mf.stored_name FROM material_files mf JOIN materials m ON mf.material_id = m.id WHERE m.organization_id = $1', [id]);
       await client.query('DELETE FROM material_file_tags WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM material_files WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM material_events WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
@@ -783,6 +792,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       }
       for (const row of orgChallengeFiles) {
         try { await deleteChallengeFile(row.file_path); } catch (e) { console.warn('Org-Delete: Challenge-Datei nicht entfernbar:', e.message); }
+      }
+      for (const row of orgChatFiles) {
+        try { await deleteChatFile(row.file_path); } catch (e) { console.warn('Org-Delete: Chat-Anhang nicht entfernbar:', e.message); }
+      }
+      for (const row of orgMaterialFiles) {
+        try { await deleteMaterialFile(row.stored_name); } catch (e) { console.warn('Org-Delete: Material-Datei nicht entfernbar:', e.message); }
       }
 
       // Live-Update NACH der Response an den ausfuehrenden Super-Admin selbst (Multi-Device).

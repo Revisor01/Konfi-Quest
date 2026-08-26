@@ -73,6 +73,24 @@ describe('Activity Request Photo', () => {
     return { requestId: create.body.id, filename };
   }
 
+  // Absicherung Punkt 4 (26.08.2026): Abgelehnte Konfi-Anträge löscht nur die
+  // Admin-Route — und die muss das Nachweisfoto von der Platte mitnehmen.
+  it('Admin löscht abgelehnten Antrag -> Nachweisfoto ist von der Platte entfernt', async () => {
+    const { requestId, filename } = await createRequestWithPhoto();
+    await db.query("UPDATE activity_requests SET status = 'rejected' WHERE id = $1", [requestId]);
+
+    expect(fs.existsSync(path.join(REQUESTS_DIR, filename))).toBe(true);
+
+    const res = await request(app)
+      .delete(`/api/admin/activities/requests/${requestId}`)
+      .set('Authorization', `Bearer ${admin1Token}`);
+    expect(res.status).toBe(200);
+
+    const { rows } = await db.query('SELECT id FROM activity_requests WHERE id = $1', [requestId]);
+    expect(rows).toHaveLength(0);
+    expect(fs.existsSync(path.join(REQUESTS_DIR, filename))).toBe(false);
+  });
+
   it('Upload schreibt die Datei VERSCHLUESSELT auf die Platte', async () => {
     const { filename } = await createRequestWithPhoto();
     const onDisk = fs.readFileSync(path.join(REQUESTS_DIR, filename));

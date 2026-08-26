@@ -6,6 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
@@ -1104,7 +1105,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // 4. Event-Buchungen löschen
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
 
-            // 5. Offene Anträge löschen
+            // 5. Offene Anträge löschen. Nachweisfotos vorher einsammeln,
+            // damit die Dateien nach dem COMMIT vom Dateisystem entfernt
+            // werden können — sonst blieben sie als Waisen liegen
+            // (gleiche Fehlerklasse wie Befund M5, 26.08.2026).
+            const { rows: pendingFotos } = await client.query(
+                "SELECT photo_filename FROM activity_requests WHERE user_id = $1 AND status = 'pending' AND photo_filename IS NOT NULL",
+                [konfiId]
+            );
             await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND status = 'pending'", [konfiId]);
 
             // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments übertragen
@@ -1131,6 +1139,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
 
             await client.query('COMMIT');
+
+            // Nachweisfotos der geloeschten Anträge vom Dateisystem entfernen
+            // (nach dem COMMIT, fehlertolerant — eine fehlende Datei darf die
+            // Beförderung nicht scheitern lassen).
+            for (const row of pendingFotos) {
+                await deletePhotoFile(row.photo_filename);
+            }
 
             res.json({
                 success: true,

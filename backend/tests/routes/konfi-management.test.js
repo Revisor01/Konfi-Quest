@@ -1,4 +1,6 @@
 const request = require('supertest');
+const fs = require('fs');
+const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES, ORGS } = require('../helpers/seed');
@@ -540,6 +542,32 @@ describe('Konfi-Management Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // Befund 26.08.2026: Die Kaskade sammelte Nachweisfotos und
+    // Challenge-Dateien ein, Chat-Anhaenge aber nicht — die blieben nach der
+    // Löschung dauerhaft auf der Platte (DSGVO Art. 17).
+    it('Chat-Anhang des Konfis wird beim Löschen von der Platte entfernt', async () => {
+      const CHAT_DIR = path.join(__dirname, '..', '..', 'uploads', 'chat');
+      fs.mkdirSync(CHAT_DIR, { recursive: true });
+      const fileName = 'deadbeefkonfidelete01';
+      fs.writeFileSync(path.join(CHAT_DIR, fileName), 'testinhalt');
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, file_path, file_name)
+         VALUES (1, $1, 'konfi', 'Datei', $2, 'bild.png')`,
+        [USERS.konfi2.id, fileName]
+      );
+
+      expect(fs.existsSync(path.join(CHAT_DIR, fileName))).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.konfi2.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM chat_messages WHERE user_id = $1', [USERS.konfi2.id]);
+      expect(rows).toHaveLength(0);
+      expect(fs.existsSync(path.join(CHAT_DIR, fileName))).toBe(false);
+    });
   });
 
   // ================================================================
@@ -892,6 +920,36 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`);
 
       expect(res.status).toBe(404);
+    });
+
+    // Befund 26.08.2026 (gleiche Fehlerklasse wie M5): Die Beförderung löscht
+    // die offenen Anträge des Konfis, sammelte deren Nachweisfotos aber nicht
+    // ein — die Dateien blieben als Waisen liegen.
+    it('Nachweisfotos der beim Befoerdern gelöschten Anträge werden von der Platte entfernt', async () => {
+      const REQUESTS_DIR = path.join(__dirname, '..', '..', 'uploads', 'requests');
+      fs.mkdirSync(REQUESTS_DIR, { recursive: true });
+      const fotoName = 'promote-antrag-foto-test.enc';
+      fs.writeFileSync(path.join(REQUESTS_DIR, fotoName), 'testinhalt');
+      await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, organization_id, status, photo_filename)
+         VALUES ($1, 1, 1, 'pending', $2)`,
+        [USERS.konfi2.id, fotoName]
+      );
+      // Chat-Teilnahme entfernen (user_type-Constraint, wie im Test oben)
+      await db.query('DELETE FROM chat_participants WHERE user_id = $1', [USERS.konfi2.id]);
+
+      expect(fs.existsSync(path.join(REQUESTS_DIR, fotoName))).toBe(true);
+
+      const res = await request(app)
+        .post(`/api/admin/konfis/${USERS.konfi2.id}/promote-teamer`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        "SELECT id FROM activity_requests WHERE user_id = $1 AND status = 'pending'", [USERS.konfi2.id]
+      );
+      expect(rows).toHaveLength(0);
+      expect(fs.existsSync(path.join(REQUESTS_DIR, fotoName))).toBe(false);
     });
   });
   // Befund 24.08.2026: Der Wechsel buchte die Pflichttermine des NEUEN

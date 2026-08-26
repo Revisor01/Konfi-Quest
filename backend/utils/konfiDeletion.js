@@ -4,7 +4,7 @@
 // und Auto-Delete (Plan 05) genutzt, damit die Loesch-Pfade nicht
 // auseinanderlaufen.
 
-const { deletePhotoFile, deleteChallengeFile } = require('./photoStorage');
+const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('./photoStorage');
 
 /**
  * Loescht einen Konfi und alle 16 abhaengigen Tabellen in der korrekten
@@ -56,6 +56,14 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   if (reactTbl?.t) {
     await client.query("DELETE FROM chat_message_reactions WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
   }
+  // Chat-Anhaenge: Dateipfade VOR dem Löschen der Nachrichten einsammeln —
+  // dieselbe Fehlerklasse wie bei den Challenge-Dateien direkt darüber: Die
+  // DB-Zeilen verschwinden, die verschluesselten Dateien auf der Platte sonst
+  // nicht (DSGVO Art. 17, Befund 26.08.2026).
+  const { rows: chatFileRows } = await client.query(
+    "SELECT file_path FROM chat_messages WHERE user_id = $1 AND file_path IS NOT NULL",
+    [userId]
+  );
   await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
@@ -114,6 +122,9 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   }
   for (const row of challengeFileRows) {
     await deleteChallengeFile(row.file_path);
+  }
+  for (const row of chatFileRows) {
+    await deleteChatFile(row.file_path);
   }
 }
 

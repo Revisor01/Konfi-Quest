@@ -10,7 +10,7 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
-const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
+const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
 
 // User management routes
@@ -459,6 +459,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       // Chat-Daten des Users (Teamer/Admin können Teilnehmer/Autoren sein)
       await client.query("DELETE FROM chat_participants WHERE user_id = $1", [id]);
       await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [id]);
+      // Chat-Anhaenge: Dateipfade VOR dem Löschen der Nachrichten einsammeln —
+      // die DB-Zeilen verschwinden gleich, die verschluesselten Dateien auf der
+      // Platte sonst nicht (DSGVO Art. 17, Befund 26.08.2026). Entfernt werden
+      // sie erst nach erfolgreichem COMMIT.
+      let chatFiles = [];
+      try {
+        const { rows } = await client.query(
+          "SELECT file_path FROM chat_messages WHERE user_id = $1 AND file_path IS NOT NULL",
+          [id]
+        );
+        chatFiles = rows.map(r => r.file_path);
+      } catch (chatErr) {
+        // Spalte/Tabelle evtl. nicht vorhanden (Schema-Varianz) — nicht kippen
+        if (chatErr.code !== '42703' && chatErr.code !== '42P01') throw chatErr;
+      }
       await client.query("DELETE FROM chat_messages WHERE user_id = $1", [id]);
       // Verwaiste Direct-Räume (kein Teilnehmer mehr uebrig) mitloeschen —
       // sonst bleiben Raum-Leichen zurück (Audit Achse 1, F3: Räume 50/51).
@@ -558,6 +573,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       }
       for (const filePath of challengeFiles) {
         await deleteChallengeFile(filePath);
+      }
+      for (const filePath of chatFiles) {
+        await deleteChatFile(filePath);
       }
 
       res.json({ message: 'Benutzer erfolgreich gelöscht' });
