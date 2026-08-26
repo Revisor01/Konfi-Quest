@@ -98,6 +98,20 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
+  // ACHTUNG: Die fuenf Zahlen an den Reitern sehen gleich aus, haengen aber an
+  // ZWEI verschiedenen Mechanismen (Falle, gefunden 27.08.2026):
+  //
+  //   diese vier hier -> BadgeContext, gesammelt aus
+  //                      GET /notifications/badge-counts,
+  //                      aktualisiert mit refreshAllCounts()
+  //   newBadgesCount   -> eigener State weiter unten, laedt selbst,
+  //                      aktualisiert NUR ueber triggerRefresh('badges')
+  //                      (useLiveRefresh weiter unten)
+  //
+  // Wer nach einer Aktion den Abzeichen-Zaehler zuruecksetzen will und dafuer
+  // refreshAllCounts() ruft, bewirkt NICHTS -- die rote Zahl bleibt stehen,
+  // ohne Fehler und ohne Warnung. Der Abzeichen-Zaehler steckt nicht in
+  // badge-counts. Siehe BAUSTELLEN.md, Abschnitt "Falle: Die Reiter-Zaehler".
   const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
