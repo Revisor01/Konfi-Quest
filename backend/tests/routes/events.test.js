@@ -2706,4 +2706,218 @@ describe('Events Routes', () => {
       expect(spy).not.toHaveBeenCalled();
     });
   });
+
+  // ================================================================
+  // DELETE /api/events/:id — Löschen mit Punkte-Rückrechnung, Chat-Abräumen
+  // und 409-Rückfrage (Befunde H1 + M2/M3, 26.08.2026)
+  // ================================================================
+  describe('DELETE /api/events/:id', () => {
+    const fsSync = require('fs');
+    const path = require('path');
+    const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'chat');
+
+    // Buchung + verbuchte Event-Punkte für einen Konfi anlegen — wie es die
+    // Verbuchen-Route tut: event_points-Beleg UND konfi_profiles erhöhen.
+    async function seedVerbuchtePunkte(eventId, konfiId, points, pointType) {
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [eventId, konfiId, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO event_points (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id)
+         VALUES ($1, $2, $3, $4, 'Testverbuchung', CURRENT_DATE, $5, $6)`,
+        [konfiId, eventId, points, pointType, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      const col = pointType === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+      await db.query(
+        `UPDATE konfi_profiles SET ${col} = ${col} + $1 WHERE user_id = $2`,
+        [points, konfiId]
+      );
+    }
+
+    // Event-Chat mit Nachrichten, Umfrage, Lesestatus und Datei anlegen.
+    async function seedEventChat(eventId, { withFile = null } = {}) {
+      const { rows: [room] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ('Event-Chat', 'event', $1, $2, $3) RETURNING id`,
+        [eventId, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [room.id, USERS.konfi1.id]
+      );
+      await db.query(
+        `INSERT INTO chat_read_status (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [room.id, USERS.konfi1.id]
+      );
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES ($1, $2, 'konfi', 'Hallo') RETURNING id`,
+        [room.id, USERS.konfi1.id]
+      );
+      const { rows: [poll] } = await db.query(
+        `INSERT INTO chat_polls (message_id, question, options) VALUES ($1, 'Pizza?', '["Ja","Nein"]') RETURNING id`,
+        [msg.id]
+      );
+      await db.query(
+        `INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index) VALUES ($1, $2, 'konfi', 0)`,
+        [poll.id, USERS.konfi1.id]
+      );
+      if (withFile) {
+        fsSync.mkdirSync(uploadDir, { recursive: true });
+        fsSync.writeFileSync(path.join(uploadDir, withFile), 'testinhalt');
+        await db.query(
+          `INSERT INTO chat_messages (room_id, user_id, user_type, content, file_path, file_name)
+           VALUES ($1, $2, 'konfi', 'Datei', $3, $3)`,
+          [room.id, USERS.konfi1.id, withFile]
+        );
+      }
+      return room.id;
+    }
+
+    it('Erlaubter Fall: leerer Termin wird ohne force gelöscht (200)', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT id FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Ohne force: 409 nennt Anmeldungen, Chat-Nachrichten und Punkte konkret', async () => {
+      await seedVerbuchtePunkte(EVENTS.gottesdienstEvent.id, USERS.konfi1.id, 2, 'gottesdienst');
+      await seedEventChat(EVENTS.gottesdienstEvent.id, { withFile: 'test-409.txt' });
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error_code).toBe('event_delete_confirm');
+      expect(res.body.booking_count).toBe(1);
+      expect(res.body.message_count).toBe(2);
+      expect(res.body.points_count).toBe(1);
+      expect(res.body.points_total).toBe(2);
+
+      // Nichts wurde gelöscht, Punkte unangetastet
+      const { rows: [event] } = await db.query('SELECT id FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(Number(event.id)).toBe(EVENTS.gottesdienstEvent.id);
+      const { rows: [profil] } = await db.query('SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
+      expect(Number(profil.gottesdienst_points)).toBe(2);
+    });
+
+    it('Ohne force: schon ein Chat mit Nachrichten reicht für den 409', async () => {
+      await seedEventChat(EVENTS.gottesdienstEvent.id);
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error_code).toBe('event_delete_confirm');
+      expect(res.body.booking_count).toBe(0);
+      expect(res.body.message_count).toBe(1);
+      expect(res.body.points_count).toBe(0);
+    });
+
+    it('H1: force-Löschen rechnet gottesdienst-Punkte zurück (5 -> 3)', async () => {
+      // 3 Punkte aus anderer Quelle + 2 aus diesem Event = 5
+      await db.query('UPDATE konfi_profiles SET gottesdienst_points = 3 WHERE user_id = $1', [USERS.konfi1.id]);
+      await seedVerbuchtePunkte(EVENTS.gottesdienstEvent.id, USERS.konfi1.id, 2, 'gottesdienst');
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}?force=true`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const { rows: [profil] } = await db.query('SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
+      expect(Number(profil.gottesdienst_points)).toBe(3);
+      expect(Number(profil.gemeinde_points)).toBe(0);
+      const { rows: punkte } = await db.query('SELECT id FROM event_points WHERE event_id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(punkte.length).toBe(0);
+    });
+
+    it('H1: force-Löschen rechnet gemeinde-Punkte in der richtigen Spalte zurück (4 -> 3)', async () => {
+      await db.query('UPDATE konfi_profiles SET gemeinde_points = 3, gottesdienst_points = 7 WHERE user_id = $1', [USERS.konfi1.id]);
+      await seedVerbuchtePunkte(EVENTS.pflichtEvent.id, USERS.konfi1.id, 1, 'gemeinde');
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.pflichtEvent.id}?force=true`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const { rows: [profil] } = await db.query('SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
+      expect(Number(profil.gemeinde_points)).toBe(3);
+      expect(Number(profil.gottesdienst_points)).toBe(7);
+    });
+
+    it('H1: GREATEST(0, ...) — der Saldo wird nie negativ (1 - 2 -> 0)', async () => {
+      await seedVerbuchtePunkte(EVENTS.gottesdienstEvent.id, USERS.konfi1.id, 2, 'gottesdienst');
+      // Saldo künstlich unter den Belegwert drücken
+      await db.query('UPDATE konfi_profiles SET gottesdienst_points = 1 WHERE user_id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}?force=true`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const { rows: [profil] } = await db.query('SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
+      expect(Number(profil.gottesdienst_points)).toBe(0);
+    });
+
+    it('Event-Chat wird komplett mitgelöscht — inklusive Datei auf der Platte', async () => {
+      const roomId = await seedEventChat(EVENTS.gottesdienstEvent.id, { withFile: 'test-delete-chatfile.txt' });
+      const filePath = path.join(uploadDir, 'test-delete-chatfile.txt');
+      expect(fsSync.existsSync(filePath)).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}?force=true`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      for (const [tabelle, spalte] of [
+        ['chat_rooms', 'id'],
+        ['chat_messages', 'room_id'],
+        ['chat_participants', 'room_id'],
+        ['chat_read_status', 'room_id']
+      ]) {
+        const { rows } = await db.query(`SELECT 1 FROM ${tabelle} WHERE ${spalte} = $1`, [roomId]);
+        expect(rows.length).toBe(0);
+      }
+      const { rows: pollRows } = await db.query('SELECT 1 FROM chat_polls');
+      expect(pollRows.length).toBe(0);
+      const { rows: voteRows } = await db.query('SELECT 1 FROM chat_poll_votes');
+      expect(voteRows.length).toBe(0);
+      expect(fsSync.existsSync(filePath)).toBe(false);
+    });
+
+    it('Teamer:in darf löschen (bewusste Designentscheidung, 26.08.2026)', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Verbotener Fall: Konfi darf nicht löschen', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query('SELECT id FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Verbotener Fall: Admin einer anderen Org bekommt 404', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}?force=true`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+      const { rows } = await db.query('SELECT id FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(rows.length).toBe(1);
+    });
+  });
 });

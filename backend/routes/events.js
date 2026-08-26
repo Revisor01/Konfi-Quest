@@ -1443,23 +1443,37 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
       // bestaetigt (?force=true). Fachlich wäre "absagen" der saubere Weg,
       // praktisch ist Löschen oft das, was gemeint ist (User-Entscheid
-      // 10.08.2026). Ohne force liefert die Route 409 samt Anzahl, damit das
-      // Frontend eine Rueckfrage mit konkreter Zahl stellen kann.
-      // Abgesagte Events waren schon vorher immer loeschbar.
+      // 10.08.2026). Ohne force liefert die Route EINEN 409 mit ALLEN Zahlen
+      // (Anmeldungen, Chat-Nachrichten, vergebene Punkte), damit das Frontend
+      // eine einzige, konkrete Rueckfrage stellen kann (Befund M2/M3).
+      // Anmeldungen blockieren nur bei nicht abgesagten Events — abgesagte
+      // waren schon immer direkt loeschbar. Chat-Nachrichten und vergebene
+      // Punkte blockieren immer.
       const forceDelete = req.query.force === 'true';
-      if (!event.cancelled && !forceDelete) {
-        const { rows: [bookingUsage] } = await client.query(
-          "SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status IN ('confirmed', 'waitlist')",
-          [id]
-        );
+      if (!forceDelete) {
+        const { rows: [usage] } = await client.query(`
+          SELECT
+            (SELECT COUNT(*)::int FROM event_bookings WHERE event_id = $1 AND status IN ('confirmed', 'waitlist')) AS booking_count,
+            (SELECT COUNT(*)::int FROM chat_messages cm JOIN chat_rooms cr ON cm.room_id = cr.id WHERE cr.event_id = $1) AS message_count,
+            (SELECT COUNT(*)::int FROM event_points WHERE event_id = $1) AS points_count,
+            (SELECT COALESCE(SUM(points), 0)::int FROM event_points WHERE event_id = $1) AS points_total
+        `, [id]);
 
-        if (bookingUsage.count > 0) {
+        const bookingsBlockieren = !event.cancelled && usage.booking_count > 0;
+        if (bookingsBlockieren || usage.message_count > 0 || usage.points_count > 0) {
           await client.query('ROLLBACK');
           client.release();
+          const verluste = [];
+          if (usage.booking_count > 0) verluste.push(`${usage.booking_count} Anmeldung(en)`);
+          if (usage.message_count > 0) verluste.push(`${usage.message_count} Chat-Nachricht(en)`);
+          if (usage.points_count > 0) verluste.push(`${usage.points_total} bereits vergebene Punkte`);
           return res.status(409).json({
-            error: `Für dieses Event gibt es ${bookingUsage.count} Anmeldung(en). Beim Löschen werden alle benachrichtigt.`,
-            error_code: 'event_has_bookings',
-            booking_count: bookingUsage.count
+            error: `Beim Löschen dieses Events geht verloren: ${verluste.join(', ')}.`,
+            error_code: 'event_delete_confirm',
+            booking_count: usage.booking_count,
+            message_count: usage.message_count,
+            points_count: usage.points_count,
+            points_total: usage.points_total
           });
         }
       }
@@ -1476,24 +1490,6 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         [id]
       );
       const bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
-
-      // Check for chat rooms with messages
-      const { rows: [chatUsage] } = await client.query(`
-        SELECT cr.id, (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
-        FROM chat_rooms cr
-        WHERE cr.event_id = $1
-      `, [id]);
-
-      // Auch der Event-Chat blockt nur ohne ausdrueckliche Bestaetigung.
-      if (chatUsage && chatUsage.message_count > 0 && !forceDelete) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(409).json({
-          error: `Der Event-Chat enthält ${chatUsage.message_count} Nachricht(en). Beim Löschen gehen sie verloren.`,
-          error_code: 'event_has_chat',
-          message_count: chatUsage.message_count
-        });
-      }
 
       // Get event chat rooms and their files before deletion
       const { rows: eventChatRooms } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
@@ -1528,13 +1524,30 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       await client.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]);
 
-      // 2. Delete event-specific data
+      // 2. Vergebene Event-Punkte zurücknehmen (Befund H1): das blosse
+      // Kaskaden-Löschen von event_points liess die Punkte in konfi_profiles
+      // stehen — ohne Beleg, nicht rekonstruierbar. Muster wie beim
+      // Einzel-Storno (PUT /:id/participants/:participantId/status): pro
+      // Punkt-Typ abziehen, GREATEST(0, ...) gegen negative Salden.
+      const { rows: awardedPoints } = await client.query(
+        "SELECT konfi_id, points, point_type FROM event_points WHERE event_id = $1",
+        [id]
+      );
+      for (const pts of awardedPoints) {
+        const updateProfileQuery = pts.point_type === 'gottesdienst'
+          ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
+          : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
+        await client.query(updateProfileQuery, [pts.points, pts.konfi_id]);
+      }
+      await client.query("DELETE FROM event_points WHERE event_id = $1", [id]);
+
+      // 3. Delete event-specific data
       await client.query("DELETE FROM event_bookings WHERE event_id = $1", [id]);
       await client.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
       await client.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
       await client.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
 
-      // 3. Clean up files from filesystem (best effort)
+      // 4. Clean up files from filesystem (best effort)
       const fs = require('fs').promises;
       const path = require('path');
 
@@ -1570,6 +1583,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
         // Live Update: Notify all konfis and admins about the event deletion
         liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
+
+        // Konfis, deren Punkte zurueckgenommen wurden: Dashboard aktualisieren
+        // (analog Einzel-Storno in PUT /:id/participants/:participantId/status).
+        for (const konfiId of new Set(awardedPoints.map(p => p.konfi_id))) {
+          liveUpdate.sendToUserByRole(konfiId, 'dashboard', 'update');
+        }
       }, 'DELETE /events/:id');
 
     } catch (err) {
