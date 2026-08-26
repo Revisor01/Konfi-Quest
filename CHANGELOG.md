@@ -70,6 +70,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Die Leitung kann Teamer:innen jetzt anlegen, bearbeiten und löschen — bisher
+  konnten das nur Org-Admins, obwohl die App den Weg allen anbot. Org-Admins
+  selbst lassen sich weiterhin nur von anderen Org-Admins verwalten.
+- Zertifikate anlegen, ändern und vergeben ist jetzt Sache der ganzen Leitung
+  statt nur der Org-Admins.
 - Nach dem Update begrüßt die Startseite mit einer Karte "Was ist neu in
   Version 2.0?": Antippen öffnet den Überblick über die Neuerungen, das X
   blendet sie dauerhaft aus. Der Überblick springt nicht mehr von selbst auf

@@ -39,7 +39,8 @@ schicken lassen kannst.
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind.
 
-Teamer:innen löschen darf nur ein Org-Admin.
+Teamer:innen anlegen, bearbeiten und löschen darf die ganze Leitung. Nur
+Org-Admins lassen sich ausschließlich von anderen Org-Admins verwalten.
 
 ## Chat
 
