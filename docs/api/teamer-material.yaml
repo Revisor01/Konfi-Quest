@@ -497,8 +497,8 @@ paths:
       summary: Zertifikat-Typ anlegen
       description: Icon-Vorgabe 'ribbon', wenn nichts angegeben wird. Der Name ist je Organisation eindeutig.
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateCreateCertificateType]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateCertificateType]
         org-scope: true
         objekt-pruefung: "organization_id wird serverseitig aus dem Token gesetzt"
       requestBody:
@@ -525,8 +525,8 @@ paths:
       summary: Zertifikat-Typ bearbeiten
       description: Teilaktualisierung von name, icon und is_active. Ohne aenderbares Feld kommt 400.
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateUpdateCertificateType]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateCertificateType]
         org-scope: true
         objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
@@ -555,8 +555,8 @@ paths:
         Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen
         vergeben wurde; in dem Fall kommt 409.
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst)"
         hinweis: >
@@ -603,8 +603,8 @@ paths:
         und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein
         Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateCertificate]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCertificate]
         org-scope: true
         objekt-pruefung: "Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
@@ -633,8 +633,8 @@ paths:
       tags: ["Teamer:innen"]
       summary: Zertifikat einer Teamer:in entfernen
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "DELETE mit id + user_id + organization_id (404 sonst)"
       parameters:

@@ -52,6 +52,15 @@
          Messaging-Service mit, nicht diese Berechtigung. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Biometrische Anmeldung (Fingerabdruck / Gesichtsentsperrung). Ohne
+         diese Deklaration meldet BiometricManager keine Verfuegbarkeit und der
+         Schalter im Profil erscheint auf keinem Geraet. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!-- Biometrie ist kein Muss: Geraete ohne Sensor sollen die App weiterhin
+         installieren koennen, sie sehen den Schalter dann einfach nicht. -->
+    <uses-feature android:name="android.hardware.biometrics" android:required="false" />
+
     <!-- Kamera fuer den QR-Scanner (Event-Checkin). Ohne diese Deklaration
          verweigert Android getUserMedia in der WebView, ohne dass der Nutzer
          ueberhaupt einen Berechtigungsdialog zu sehen bekommt. -->

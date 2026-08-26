@@ -14,6 +14,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Anmelden mit Face ID, Touch ID oder Fingerabdruck: Wer möchte, schaltet die
+  biometrische Anmeldung im eigenen Profil unter Konto-Einstellungen ein und
+  kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
+  im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
+  Biometrie eingerichtet ist.
 - Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
   löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
   Aktionen (Freigeben, Anonym stellen, Ausblenden, Löschen) erreichbar durch
@@ -70,6 +75,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Die Leitung kann Teamer:innen jetzt anlegen, bearbeiten und löschen — bisher
+  konnten das nur Org-Admins, obwohl die App den Weg allen anbot. Org-Admins
+  selbst lassen sich weiterhin nur von anderen Org-Admins verwalten.
+- Zertifikate anlegen, ändern und vergeben ist jetzt Sache der ganzen Leitung
+  statt nur der Org-Admins.
 - Nach dem Update begrüßt die Startseite mit einer Karte "Was ist neu in
   Version 2.0?": Antippen öffnet den Überblick über die Neuerungen, das X
   blendet sie dauerhaft aus. Der Überblick springt nicht mehr von selbst auf
@@ -196,6 +206,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
+  anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
+  vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.
 - Termine: Auch Teamer:innen lassen sich jetzt über "Alle bestätigen" auf
   einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
   Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
@@ -687,6 +700,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
+- Aktualisierte Oberflächen-Themes für iOS und Android: zweizeilige
+  Listeneinträge, neue Textlayouts und überarbeitete iOS-Eingabefelder.
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
 - API-Referenz neu gegliedert: 21 Themen statt 5 Sammelblöcke, einheitliche
   Adressen, Parameter und Fehlerfälle genauer beschrieben.

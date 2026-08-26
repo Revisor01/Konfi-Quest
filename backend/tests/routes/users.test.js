@@ -54,12 +54,14 @@ describe('Users Routes', () => {
       expect(roleNames).not.toContain('super_admin');
     });
 
-    it('Admin bekommt 403 (nur org_admin erlaubt)', async () => {
+    // Bis 26.08.2026 stand hier 403. Seit der Entscheidung, dass Admins
+    // Teamer:innen verwalten duerfen, brauchen sie auch die Liste.
+    it('Admin sieht die Liste -> 200', async () => {
       const res = await request(app)
         .get('/api/admin/users')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
     });
 
     it('Teamer bekommt 403', async () => {
@@ -205,7 +207,10 @@ describe('Users Routes', () => {
       expect(res.status).toBe(409);
     });
 
-    it('Admin bekommt 403', async () => {
+    // Bis 26.08.2026 stand hier 403 -- die Rolle 'admin' durfte gar niemanden
+    // anlegen. Seit der Entscheidung darf sie Teamer:innen anlegen; die
+    // Rollen-Hierarchie bleibt die Grenze (siehe eigener describe-Block unten).
+    it('Admin legt eine Teamerin an -> 201', async () => {
       const res = await request(app)
         .post('/api/admin/users')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -216,7 +221,7 @@ describe('Users Routes', () => {
           role_id: ROLES.teamer.id
         });
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(201);
     });
   });
 
@@ -226,6 +231,120 @@ describe('Users Routes', () => {
   // Benutzername aus dem Anzeigenamen erzeugen, wenn keiner mitkommt — wie
   // bei Konfis. Das Teamer-Anlegen-Modal fragt ihn deshalb nicht mehr ab
   // (Nutzerwunsch 23.08.2026).
+  // Entscheidung 26.08.2026: Die Rolle 'admin' soll Teamer:innen anlegen
+  // duerfen. Die Oberflaeche bot den Plus-Button laengst an
+  // (AdminKonfisPage), das Backend stand auf requireOrgAdmin und antwortete
+  // mit 403 -- nach ausgefuelltem Formular.
+  // Die Rollen-Hierarchie bleibt die Grenze: 'admin' darf laut
+  // roleHierarchy.js nur teamer und konfi verwalten, nie org_admin oder
+  // weitere Admins. Das gilt fuer Anlegen, Bearbeiten UND Loeschen
+  // (Entscheidung 26.08.2026: auch Admins duerfen Teamer:innen loeschen).
+  describe('POST /api/admin/users — Rolle admin darf Teamer:innen anlegen', () => {
+    it('Admin legt eine Teamerin an -> 201', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          username: 'vom.admin.angelegt',
+          display_name: 'Vom Admin Angelegt',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.username).toBe('vom.admin.angelegt');
+
+      const { rows: [angelegt] } = await db.query(
+        'SELECT role_id FROM users WHERE id = $1', [res.body.id]
+      );
+      expect(angelegt.role_id).toBe(ROLES.teamer.id);
+    });
+
+    it('Admin darf KEINEN weiteren Admin anlegen -> 403', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          username: 'zweiter.admin',
+          display_name: 'Zweiter Admin',
+          password: 'Sicher!123',
+          role_id: ROLES.admin.id
+        });
+
+      expect(res.status).toBe(403);
+
+      const { rows: [gezaehlt] } = await db.query(
+        "SELECT count(*)::int c FROM users WHERE username = 'zweiter.admin'"
+      );
+      expect(gezaehlt.c).toBe(0);
+    });
+
+    it('Admin darf KEINEN Org-Admin anlegen -> 403', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          username: 'neuer.orgadmin',
+          display_name: 'Neuer Org-Admin',
+          password: 'Sicher!123',
+          role_id: ROLES.orgAdmin.id
+        });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Teamer:in darf weiterhin niemanden anlegen -> 403', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({
+          username: 'vom.teamer',
+          display_name: 'Vom Teamer',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin loescht eine Teamerin -> 200', async () => {
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows: [weg] } = await db.query(
+        'SELECT count(*)::int c FROM users WHERE id = $1', [USERS.teamer1.id]
+      );
+      expect(weg.c).toBe(0);
+    });
+
+    it('Admin darf einen Org-Admin NICHT loeschen -> 403', async () => {
+      // Die Rollen-Hierarchie bleibt die Grenze, auch beim Loeschen.
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.orgAdmin1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+
+      const { rows: [nochDa] } = await db.query(
+        'SELECT count(*)::int c FROM users WHERE id = $1', [USERS.orgAdmin1.id]
+      );
+      expect(nochDa.c).toBe(1);
+    });
+
+    it('Admin sieht die Benutzerliste -> 200', async () => {
+      // Wer anlegen darf, muss die Liste sehen koennen.
+      const res = await request(app)
+        .get('/api/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+  });
+
   describe('POST /api/admin/users — Benutzername automatisch', () => {
     it('erzeugt den Benutzernamen aus dem Anzeigenamen', async () => {
       const res = await request(app)

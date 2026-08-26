@@ -17,7 +17,7 @@ const liveUpdate = require('../utils/liveUpdate');
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
 // Transaktionen verwenden einen dedizierten Client via db.getClient() (pool.connect()).
 // Users: Nur org_admin darf verwalten
-module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
+module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
   // Validierungsregeln
   const validateCreateUser = [
@@ -77,7 +77,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   };
 
   // Get users in current organization
-  router.get('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // Auch die Liste: Wer Teamer:innen anlegen darf, muss sie sehen koennen.
+  // can_edit pro Zeile kommt weiterhin aus der Hierarchie -- ein Admin sieht
+  // org_admins in der Liste, kann sie aber nicht bearbeiten.
+  router.get('/', rbacVerifier, requireAdmin, async (req, res) => {
     const organizationId = req.user.organization_id;
 
     const query = `
@@ -111,7 +114,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   });
 
   // Get single user with details
-  router.get('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('view'), async (req, res) => {
+  router.get('/:id', rbacVerifier, requireAdmin, userHierarchyMiddleware('view'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
@@ -155,7 +158,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   });
 
   // Create new user
-  router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), validateCreateUser, async (req, res) => {
+  // requireAdmin statt requireOrgAdmin (Entscheidung 26.08.2026): Die Rolle
+  // 'admin' soll Teamer:innen anlegen duerfen -- die Oberflaeche bot den
+  // Plus-Button laengst an, das Backend antwortete mit 403.
+  // Sicher, weil userHierarchyMiddleware danach prueft, WELCHE Rolle betroffen
+  // sein darf: canManageRole laesst 'admin' nur teamer und konfi zu, niemals
+  // org_admin oder weitere Admins (roleHierarchy.js:36-38). Dieselbe Grenze
+  // gilt fuer Anlegen, Bearbeiten und Loeschen.
+  router.post('/', rbacVerifier, requireAdmin, userHierarchyMiddleware('create'), validateCreateUser, async (req, res) => {
     const organizationId = req.user.organization_id;
     const { username: gewuenschterName, email, display_name, role_title, password, role_id } = req.body;
 
@@ -252,7 +262,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   });
 
   // Update user
-  router.put('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('update'), validateUpdateUser, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, userHierarchyMiddleware('update'), validateUpdateUser, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const { username, email, display_name, role_title, role_id, is_active, password } = req.body;
@@ -382,7 +392,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   });
 
   // Delete user
-  router.delete('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('delete'), validateUserId, async (req, res) => {
+  // Loeschen ebenfalls requireAdmin (Entscheidung 26.08.2026, ausdruecklich):
+  // Auch Admins duerfen Teamer:innen loeschen. Die Rollen-Hierarchie bleibt die
+  // Grenze -- ein Admin kann keine Org-Admins und keine weiteren Admins loeschen.
+  router.delete('/:id', rbacVerifier, requireAdmin, userHierarchyMiddleware('delete'), validateUserId, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 

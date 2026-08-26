@@ -183,11 +183,14 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
   });
 
   // ====================================================================
-  // RBAC-MATRIX: Admin-Routes (requireOrgAdmin)
+  // RBAC-MATRIX: Admin-Routes (requireAdmin)
   // ====================================================================
 
-  describe('RBAC-Matrix: Admin-Routes (requireOrgAdmin)', () => {
-    // GET /api/admin/users nutzt requireOrgAdmin
+  describe('RBAC-Matrix: Admin-Routes (requireAdmin)', () => {
+    // GET /api/admin/users nutzt seit 26.08.2026 requireAdmin statt
+    // requireOrgAdmin: Die Rolle 'admin' darf Teamer:innen verwalten und
+    // braucht dafuer die Liste. Die Rollen-Hierarchie
+    // (userHierarchyMiddleware) bleibt die eigentliche Grenze.
     it('Konfi auf GET /api/admin/users -> 403', async () => {
       const res = await request(app)
         .get('/api/admin/users')
@@ -202,11 +205,11 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Admin auf GET /api/admin/users -> 403', async () => {
+    it('Admin auf GET /api/admin/users -> 200', async () => {
       const res = await request(app)
         .get('/api/admin/users')
         .set('Authorization', `Bearer ${tokens.admin}`);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
     });
 
     it('OrgAdmin auf GET /api/admin/users -> 200', async () => {
@@ -216,7 +219,7 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
       expect(res.status).toBe(200);
     });
 
-    it('SuperAdmin auf GET /api/admin/users -> 403 (nicht org_admin)', async () => {
+    it('SuperAdmin auf GET /api/admin/users -> 403 (weder org_admin noch admin)', async () => {
       const res = await request(app)
         .get('/api/admin/users')
         .set('Authorization', `Bearer ${tokens.superAdmin}`);
