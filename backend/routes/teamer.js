@@ -1430,21 +1430,54 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Notification error (teamer request):', notifErr);
       }
 
-      // Push an alle Admins/Org-Admins der Organisation (analog konfi.js:776).
-      // In try/catch — ein Push-Fehler darf den Antrag nicht kippen.
-      try {
-        await PushService.sendNewActivityRequestToAdmins(
-          db,
-          req.user.organization_id,
-          req.user.display_name,
-          activity.name,
-          activity.points
-        );
-      } catch (pushErr) {
-        console.error('Error sending admin push (teamer request):', pushErr);
-      }
-
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
+
+      // Leitungs-Benachrichtigung NACH der Antwort (Muster wie in konfi.js):
+      // In-App-Mitteilung UND Push an admin/org_admin. Vorher gab es hier nur
+      // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
+      // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
+      // Fehler werden nur geloggt — die Antwort ist bereits raus.
+      (async () => {
+        try {
+          const { rows: admins } = await db.query(
+            `SELECT u.id FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+            [req.user.organization_id]
+          );
+
+          if (admins.length > 0) {
+            await db.query(
+              `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+               SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+              [
+                admins.map(a => a.id),
+                'Neuer Antrag eingegangen',
+                `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+                'new_activity_request',
+                JSON.stringify({
+                  request_id: newRequest.id,
+                  konfi_id: userId,
+                  konfi_name: req.user.display_name,
+                  activity_name: activity.name,
+                  points: activity.points
+                }),
+                req.user.organization_id
+              ]
+            );
+          }
+
+          await PushService.sendNewActivityRequestToAdmins(
+            db,
+            req.user.organization_id,
+            req.user.display_name,
+            activity.name,
+            activity.points
+          );
+        } catch (notifErr) {
+          console.error('Error sending admin notifications (teamer request):', notifErr);
+        }
+      })();
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

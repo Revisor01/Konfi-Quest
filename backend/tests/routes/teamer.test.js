@@ -799,6 +799,45 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // Drei-Ansichten-Befund M6 (26.08.2026): Der Teamer-Weg schickte der
+    // Leitung nur Push, keine In-App-Mitteilung — Teamer-Antraege fehlten im
+    // Mitteilungscenter, Konfi-Antraege standen drin.
+    it('Antrag erzeugt In-App-Mitteilung fuer die GESAMTE Leitung (admin UND org_admin), sonst niemanden', async () => {
+      const res = await request(app)
+        .post('/api/teamer/requests')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({
+          activity_id: teamerActivityId,
+          requested_date: '2026-02-01',
+          description: 'Teilnahme an Schulung'
+        });
+      expect(res.status).toBe(201);
+
+      // Der Leitungs-Versand laeuft NACH der Antwort (fire-and-forget) —
+      // deshalb kurz pollen, dann HART pruefen.
+      let rows = [];
+      for (let i = 0; i < 40; i++) {
+        ({ rows } = await db.query(
+          "SELECT user_id, title, message FROM notifications WHERE type = 'new_activity_request' ORDER BY user_id"
+        ));
+        if (rows.length > 0) break;
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Genau die Leitung der Org 1: admin1, orgAdmin1, orgAdminSuper.
+      // Verbotener Fall implizit mit drin: weder der Teamer selbst noch
+      // Konfis noch die Leitung der Org 2 tauchen auf.
+      expect(rows.map(r => r.user_id)).toEqual([
+        USERS.admin1.id,
+        USERS.orgAdmin1.id,
+        USERS.orgAdminSuper.id
+      ]);
+      expect(rows[0].title).toBe('Neuer Antrag eingegangen');
+      expect(rows[0].message).toBe(
+        'Test Teamer 1 hat einen Antrag für "Teamer-Schulung" (0 Punkte) eingereicht.'
+      );
+    });
   });
 
   describe('DELETE /api/teamer/requests/:id', () => {

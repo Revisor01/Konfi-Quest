@@ -759,11 +759,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // async-Funktion, Fehler nur loggen — die Antwort ist bereits raus.
       (async () => {
       try {
+        // In-App-Mitteilung an die GESAMTE Leitung (admin UND org_admin) —
+        // identisch zum Push-Versand in PushService.sendNewActivityRequestToAdmins.
+        // Vorher stand hier nur r.name='admin', org_admin ging leer aus (M6).
         const { rows: admins } = await db.query(
-          `SELECT u.id, u.display_name 
-           FROM users u 
-           JOIN roles r ON u.role_id = r.id 
-           WHERE r.name = 'admin' AND u.organization_id = $1`,
+          `SELECT u.id, u.display_name
+           FROM users u
+           JOIN roles r ON u.role_id = r.id
+           WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
           [req.user.organization_id]
         );
 
