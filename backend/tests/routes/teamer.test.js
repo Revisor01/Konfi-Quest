@@ -368,14 +368,93 @@ describe('Teamer Routes', () => {
   });
 
   describe('GET /api/teamer/badges/unseen', () => {
-    it('Teamer bekommt 200 + unseen Count', async () => {
+    // Abzeichen vergeben, das noch niemand gesehen hat.
+    const abzeichenVergeben = async (anzahl) => {
+      for (let i = 0; i < anzahl; i++) {
+        const { rows: [badge] } = await db.query(
+          `INSERT INTO custom_badges (name, icon, criteria_type, criteria_value,
+                                      organization_id, is_active)
+           VALUES ($1, 'star', 'total_points', 1, $2, true) RETURNING id`,
+          [`Teamer-Abzeichen ${i}`, ORGS.testGemeinde.id]
+        );
+        await db.query(
+          `INSERT INTO user_badges (user_id, badge_id, organization_id, seen)
+           VALUES ($1, $2, $3, false)`,
+          [USERS.teamer1.id, badge.id, ORGS.testGemeinde.id]
+        );
+      }
+    };
+
+    // Vorher stand hier nur toBeDefined() und typeof === 'number' -- das haette
+    // auch bei einem dauerhaft falschen Zaehler gehalten. Jetzt konkrete Werte.
+    it('zaehlt ungesehene Abzeichen konkret', async () => {
+      await abzeichenVergeben(2);
+
       const res = await request(app)
         .get('/api/teamer/badges/unseen')
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.unseen).toBeDefined();
-      expect(typeof res.body.unseen).toBe('number');
+      expect(res.body.unseen).toBe(2);
+    });
+
+    it('ohne ungesehene Abzeichen ist der Zaehler 0', async () => {
+      const res = await request(app)
+        .get('/api/teamer/badges/unseen')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.unseen).toBe(0);
+    });
+
+    // Das Zusammenspiel, auf das sich die Oberflaeche seit 27.08.2026 stuetzt:
+    // Zaehler lesen, Seite oeffnen (mark-seen), Zaehler ist 0. Bis dahin rief
+    // NIEMAND im Frontend diese Endpunkte auf -- 'seen' blieb dauerhaft false
+    // und ein neues Abzeichen wurde nie als neu angezeigt (Befund H1).
+    it('nach mark-seen faellt der Zaehler auf 0', async () => {
+      await abzeichenVergeben(3);
+
+      const vorher = await request(app)
+        .get('/api/teamer/badges/unseen')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(vorher.body.unseen).toBe(3);
+
+      const markiert = await request(app)
+        .put('/api/teamer/badges/mark-seen')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(markiert.status).toBe(200);
+
+      const nachher = await request(app)
+        .get('/api/teamer/badges/unseen')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(nachher.body.unseen).toBe(0);
+    });
+
+    it('mark-seen wirkt nur auf die eigenen Abzeichen', async () => {
+      // Gegenprobe: Ein Teamer darf nicht die Abzeichen anderer als gesehen
+      // markieren -- sonst verschwaende der Zaehler bei fremden Leuten.
+      await abzeichenVergeben(1);
+      const { rows: [fremdesBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, icon, criteria_type, criteria_value,
+                                    organization_id, is_active)
+         VALUES ('Fremdes Abzeichen', 'star', 'total_points', 1, $1, true) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, seen)
+         VALUES ($1, $2, $3, false)`,
+        [USERS.konfi1.id, fremdesBadge.id, ORGS.testGemeinde.id]
+      );
+
+      await request(app)
+        .put('/api/teamer/badges/mark-seen')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      const { rows: [fremd] } = await db.query(
+        'SELECT seen FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, fremdesBadge.id]
+      );
+      expect(fremd.seen).toBe(false);
     });
 
     it('Konfi bekommt 403', async () => {

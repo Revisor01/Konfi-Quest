@@ -98,10 +98,19 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount } = useBadge();
+  // Alle fuenf Zahlen an den Reitern kommen aus EINER Quelle: dem BadgeContext,
+  // gespeist aus GET /notifications/badge-counts. Aktualisiert werden sie
+  // gemeinsam mit refreshAllCounts().
+  //
+  // Bis 27.08.2026 war newBadgesCount die Ausnahme: eigener State, eigener
+  // Abruf, nur ueber useLiveRefresh('badges') aktualisierbar. Wer nach einer
+  // Aktion refreshAllCounts() rief -- das Naheliegende --, bewirkte nichts.
+  // Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt
+  // (Befund B1): mark-seen setzte 'seen', aber niemand stiess eine
+  // Aktualisierung an, und die rote Zahl blieb die ganze Sitzung stehen.
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
-  const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
   // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
@@ -171,23 +180,10 @@ const MainTabs: React.FC = () => {
   // beim Vergeben eines Badges ein LiveUpdate ('badges'), das checkAndAwardBadges
   // an genau den Punktevergabe-Stellen (Aktivität/Bonus/Event) ausloest. Bei
   // Verbindungsabriss/Push feuert zusaetzlich der initiale Load beim Reconnect.
-  const loadNewBadgesCount = useCallback(async () => {
-    if (user?.type !== 'konfi') return;
-    try {
-      const response = await api.get('/konfi/badges');
-      // earned array contains badges with the seen flag
-      const newCount = response.data.earned?.filter((badge: any) => !badge.seen)?.length || 0;
-      setNewBadgesCount(newCount);
-    } catch (error) {
-      console.warn('Badges konnten nicht geladen werden:', error);
-    }
-  }, [user?.type]);
-
-  useEffect(() => {
-    loadNewBadgesCount();
-  }, [loadNewBadgesCount]);
-
-  useLiveRefresh('badges', loadNewBadgesCount);
+  // Der Abzeichen-Zaehler kommt jetzt aus dem BadgeContext (siehe oben) --
+  // hier stand frueher ein eigener Loader plus useEffect plus
+  // useLiveRefresh('badges'). Der Kanal 'badges' bleibt fuer die Listen-Seiten
+  // bestehen, der Zaehler haengt aber nicht mehr daran.
 
 
   if (!user) {
@@ -349,6 +345,11 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="teamer-badges" href="/teamer/badges">
               <IonIcon icon={star} />
               <IonLabel>Badges</IonLabel>
+              {newBadgesCount > 0 && (
+                <IonBadge color="danger">
+                  {newBadgesCount > 9 ? '9+' : newBadgesCount}
+                </IonBadge>
+              )}
             </IonTabButton>
           </IonTabBar>
         )}

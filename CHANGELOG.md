@@ -210,9 +210,21 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   voll ist — bisher stand dort "Offen", und der Platzmangel zeigte sich erst
   beim Anmelden. Auch die Zahl der Wartenden steht jetzt auf der Terminkarte.
 
+- Die Zahl neuer Abzeichen verschwindet jetzt sofort, wenn man die
+  Abzeichen-Seite öffnet — bisher blieb sie bis zum nächsten App-Start stehen.
+  Das Symbol auf dem App-Icon zählt neue Abzeichen jetzt ebenfalls mit.
+
+- Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
+  Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
+  Kennzeichnung nur für Konfis.
+
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.
+- Termine: Auch Teamer:innen lassen sich jetzt über "Alle bestätigen" auf
+  einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
+  Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
+  Reiter "Verbuchen" stehen.
 
 - Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
   jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,
