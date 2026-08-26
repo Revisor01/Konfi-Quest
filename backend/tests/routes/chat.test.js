@@ -1360,5 +1360,64 @@ describe('Chat Routes', () => {
       );
       expect(msgCount.count).toBe(2);
     });
+
+    // Das Leeren entfernt ALLE Nachrichten samt Dateien in einer Schleife.
+    // Der weite generalLimiter (2000/15min) ist dafuer keine echte Bremse —
+    // CodeQL meldete die Route deshalb als "Missing rate limiting"
+    // (26.08.2026). Geprueft wird die Verdrahtung in createApp, mit einem
+    // echten express-rate-limit und kleinem Limit.
+    describe('Rate-Limit', () => {
+      const rateLimit = require('express-rate-limit');
+      const { createApp } = require('../../createApp');
+
+      function appMitLimit(max) {
+        return createApp(db, {
+          uploadsDir: path.join(os.tmpdir(), 'konfi-test-uploads'),
+          rateLimiters: {
+            chatClearLimiter: rateLimit({
+              windowMs: 60 * 1000,
+              max,
+              message: { error: 'Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.' },
+              standardHeaders: true,
+              legacyHeaders: false
+            })
+          }
+        });
+      }
+
+      it('erlaubte Aufrufe kommen durch, der Aufruf ueber dem Limit wird mit 429 geblockt', async () => {
+        const begrenzt = appMitLimit(2);
+
+        // Zwei Leerungen sind erlaubt und erreichen den Handler.
+        for (let i = 0; i < 2; i++) {
+          const res = await request(begrenzt)
+            .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+            .set('Authorization', `Bearer ${admin1Token}`);
+          expect(res.status).toBe(200);
+        }
+
+        // Der dritte Aufruf greift VOR dem Handler.
+        const res = await request(begrenzt)
+          .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+          .set('Authorization', `Bearer ${admin1Token}`);
+        expect(res.status).toBe(429);
+        expect(res.body.error).toBe('Zu viele Leerungen des Team-Chats. Bitte versuche es spaeter erneut.');
+      });
+
+      it('der Limiter haengt nur am Leeren, nicht am Lesen der Nachrichten', async () => {
+        const begrenzt = appMitLimit(1);
+
+        const geleert = await request(begrenzt)
+          .delete(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+          .set('Authorization', `Bearer ${admin1Token}`);
+        expect(geleert.status).toBe(200);
+
+        // GET auf denselben Pfad zaehlt nicht mit -> bleibt erreichbar.
+        const gelesen = await request(begrenzt)
+          .get(`/api/chat/rooms/${TEAM_ROOM_ID}/messages`)
+          .set('Authorization', `Bearer ${admin1Token}`);
+        expect(gelesen.status).toBe(200);
+      });
+    });
   });
 });
