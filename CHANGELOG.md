@@ -188,6 +188,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Challenges: Die eigenen Beiträge stehen jetzt in einem Reiter statt in einem
+  eigenen Abschnitt darüber — Konfis wählen zwischen "Feed" und "Meins",
+  Leitung und Teamer:innen zwischen "Feed", "Wartet", "Abgelehnt" und "Meins".
+  Vorher standen zwei Bereiche untereinander und die Seite wurde zu lang.
+- Challenges: Der Grund einer Ablehnung steht jetzt unter dem Beitrag, im
+  selben Kasten wie bei den Aktivitäten — mit der Überschrift "Grund der
+  Ablehnung" statt als roter Fließtext mittendrin.
 - Challenges: In der Leitungsansicht stand der eigene Beitrag doppelt — einmal
   in einem eigenen Abschnitt oben, einmal im Feed. Jetzt steht er nur noch im
   Feed, dort farbig hinterlegt und mit "Dein Beitrag" gekennzeichnet. Bei

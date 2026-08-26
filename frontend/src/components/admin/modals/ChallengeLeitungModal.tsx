@@ -269,7 +269,7 @@ export interface ChallengeLeitungModalProps {
 // "Ausgeblendet" das Weggeraeumte. Ein "Alle"-Reiter, der wartende und
 // ausgeblendete Beitraege in den normalen Feed mischt, existiert bewusst
 // nicht mehr.
-type StatusFilter = 'feed' | 'pending' | 'hidden';
+type StatusFilter = 'feed' | 'pending' | 'hidden' | 'meins';
 
 const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   challenge,
@@ -359,7 +359,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // Bei "nur Leitung" gibt es keine Gruppen-Galerie und damit nichts
     // auszublenden — Kachel und Reiter entfallen (User-Entscheid 25.08.2026).
     if (challenge?.visibility !== 'private') {
-      stats.push({ value: counts.hidden, label: 'Ausgebl.' });
+      stats.push({ value: counts.hidden, label: 'Abgelehnt' });
     }
 
     // Ohne Freigabe-Pflicht bleiben nur zwei Kacheln — die Gesamtzahl fuellt
@@ -371,7 +371,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     const filterZuLabel: Record<string, StatusFilter> = {
       'Sichtbar': 'feed',
       'Wartet': 'pending',
-      'Ausgebl.': 'hidden'
+      'Abgelehnt': 'hidden'
     };
 
     // effectiveFilter wird erst weiter unten deklariert — hier dieselbe
@@ -407,9 +407,6 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
   const canSubmitMore = isActive && (challenge?.allow_multiple || ownSubmissions.length === 0);
 
-  // Beendete Challenge ohne eigene Beitraege: der Abschnitt fällt komplett weg.
-  const showOwnSection = isActive || ownSubmissions.length > 0;
-
   // Ohne Freigabe-Pflicht gibt es das "Wartet"-Segment nicht — ein von einer
   // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
   // zeigen, ohne dass man den Grund sieht.
@@ -418,21 +415,25 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     (statusFilter === 'hidden' && challenge?.visibility === 'private')
       ? 'feed' : statusFilter;
 
-  // Gibt es mehr als einen Reiter? Nur dann lohnt die Leiste. "Feed" ist
-  // immer da; "Wartet" nur mit Freigabe-Pflicht, "Ausgeblendet" nur, wenn es
+  // Die Leiste steht immer: "Feed" und "Meins" gibt es in jeder Challenge.
+  // "Wartet" kommt nur mit Freigabe-Pflicht dazu, "Abgelehnt" nur, wenn es
   // eine Gruppen-Galerie gibt, aus der etwas herausgenommen werden koennte.
-  const zeigeFilterleiste = Boolean(challenge?.moderated) || challenge?.visibility !== 'private';
 
   const filtered = useMemo(() => {
     // "Feed" = nur Freigegebenes — derselbe Blick, den auch die Konfis auf die
-    // Galerie haben. Wartendes und Ausgeblendetes steht ausschliesslich in den
-    // eigenen Reitern; die Moderation bleibt darueber vollständig erreichbar.
+    // Galerie haben. Wartendes und Abgelehntes steht in eigenen Reitern; die
+    // Moderation bleibt darueber vollständig erreichbar.
+    // "Meins" = die eigenen Beitraege, unabhaengig vom Status. Sie standen
+    // frueher zusaetzlich in einem Block oben — das war doppelt und machte die
+    // Seite zu lang (User-Hinweis 26.08.2026).
     const active = effectiveFilter;
     const list = active === 'feed'
       ? submissions.filter((s) => s.moderation_status === 'approved')
-      : submissions.filter((s) => s.moderation_status === active);
+      : active === 'meins'
+        ? submissions.filter((s) => Boolean(user?.id) && s.user_id === user?.id)
+        : submissions.filter((s) => s.moderation_status === active);
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [submissions, effectiveFilter]);
+  }, [submissions, effectiveFilter, user?.id]);
 
   const moderate = async (
     submission: ChallengeSubmission,
@@ -725,7 +726,6 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             Bei "nur Leitung" ohne Freigabe-Pflicht bliebe sonst eine Leiste
             mit dem einzigen Knopf "Feed" stehen — ein Sortiermodus ohne
             Auswahl (User-Hinweis 26.08.2026). */}
-        {zeigeFilterleiste && (
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={effectiveFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
             {/* "Feed" zeigt nur Freigegebenes — denselben Blick, den die
@@ -743,11 +743,12 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                 sieht die Gruppe ohnehin nichts — der Reiter entfaellt
                 (User-Entscheid 25.08.2026). */}
             {challenge.visibility !== 'private' && (
-              <IonSegmentButton value="hidden"><IonLabel>Ausgeblendet</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="hidden"><IonLabel>Abgelehnt</IonLabel></IonSegmentButton>
             )}
+            {/* Eigene Beitraege: eigener Reiter statt eines Blocks darueber. */}
+            <IonSegmentButton value="meins"><IonLabel>Meins</IonLabel></IonSegmentButton>
           </IonSegment>
         </div>
-        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
@@ -878,22 +879,6 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                 </div>
                               </div>
 
-                              {/* Begruendung des Ausblendens — bleibt fuer die
-                                  Leitung nachvollziehbar, bis der Beitrag
-                                  wieder eingeblendet wird. */}
-                              {submission.moderation_status === 'hidden' && submission.moderation_note && (
-                                <div
-                                  style={{
-                                    display: 'flex', alignItems: 'flex-start', gap: '6px',
-                                    marginBottom: '6px', fontSize: '0.82rem',
-                                    color: 'var(--app-color-danger)', lineHeight: 1.4
-                                  }}
-                                >
-                                  <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
-                                  <span>Begründung: {submission.moderation_note}</span>
-                                </div>
-                              )}
-
                               {/* Inhalt */}
                               {submission.text_content && (
                                 <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
@@ -903,6 +888,22 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
                               {submission.media_type === 'link' && istWebLink(submission.link_url) && (
                                 <MusikLink submission={submission} />
+                              )}
+
+                              {/* Begruendung des Ausblendens UNTER dem Beitrag —
+                                  gleiche Form wie bei Aktivitaeten
+                                  (app-reason-box, User-Hinweis 26.08.2026).
+                                  Bleibt fuer die Leitung nachvollziehbar, bis
+                                  der Beitrag wieder eingeblendet wird. */}
+                              {submission.moderation_status === 'hidden' && submission.moderation_note && (
+                                <div className="app-reason-box app-reason-box--danger">
+                                  <span className="app-reason-box__label" style={{ fontSize: '0.7rem' }}>
+                                    Grund der Ablehnung
+                                  </span>
+                                  <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                                    {submission.moderation_note}
+                                  </p>
+                                </div>
                               )}
 
                               {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (

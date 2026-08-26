@@ -13,6 +13,8 @@ import {
   IonList,
   IonListHeader,
   IonLabel,
+  IonSegmentButton,
+  IonSegment,
   IonRefresher,
   IonRefresherContent,
   IonSpinner
@@ -37,6 +39,9 @@ import {
   chatbubbleEllipsesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+
+/** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
+type KonfiReiter = 'feed' | 'meins';
 import api from '../../../services/api';
 import { EmptyState, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -244,22 +249,6 @@ const SubmissionCard: React.FC<{
             {formatDateTime(submission.created_at)}
           </div>
 
-          {/* Wurde der eigene Beitrag ausgeblendet, steht hier die optionale
-              Begruendung der Leitung (moderation_note kommt nur bei eigenen
-              Beitraegen mit — Galerie-Beitraege sind nie 'hidden'). */}
-          {submission.moderation_status === 'hidden' && submission.moderation_note && (
-            <div
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: '6px', marginTop: '2px',
-                marginBottom: '4px', fontSize: '0.82rem',
-                color: 'var(--app-color-danger)', lineHeight: 1.4
-              }}
-            >
-              <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
-              <span>Begründung der Leitung: {submission.moderation_note}</span>
-            </div>
-          )}
-
           {submission.text_content && (
             <div
               style={{
@@ -277,6 +266,22 @@ const SubmissionCard: React.FC<{
               Adresse — die lief sonst ueber mehrere Zeilen. */}
           {submission.media_type === 'link' && istWebLink(submission.link_url) && (
             <MusikLink submission={submission} />
+          )}
+
+          {/* Wurde der eigene Beitrag ausgeblendet, steht die optionale
+              Begruendung der Leitung UNTER dem Beitrag — gleiche Form wie der
+              Ablehnungsgrund bei Aktivitaeten (app-reason-box, User-Hinweis
+              26.08.2026). moderation_note kommt nur bei eigenen Beitraegen mit;
+              Galerie-Beitraege sind nie 'hidden'. */}
+          {submission.moderation_status === 'hidden' && submission.moderation_note && (
+            <div className="app-reason-box app-reason-box--danger">
+              <span className="app-reason-box__label" style={{ fontSize: '0.7rem' }}>
+                Grund der Ablehnung
+              </span>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {submission.moderation_note}
+              </p>
+            </div>
           )}
 
           {submission.file_path && submission.media_type !== 'link' && submission.media_type !== 'text' && (
@@ -361,10 +366,16 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
     return !current.is_draft && now >= start && now <= end;
   }, [current]);
 
+  const [reiter, setReiter] = useState<KonfiReiter>('feed');
   const gallery = detail?.gallery || [];
   const ownSubmissions = detail?.own_submissions || [];
 
   const canSubmitMore = isActive && (current.allow_multiple || ownSubmissions.length === 0);
+
+  // Bei "nur Leitung" gibt es keine Gruppen-Galerie — dann steht immer der
+  // eigene Reiter, unabhaengig davon, was zuletzt gewaehlt war.
+  const effektiverReiter: KonfiReiter = current.visibility === 'private' ? 'meins' : reiter;
+  const sichtbareBeitraege = effektiverReiter === 'meins' ? ownSubmissions : gallery;
 
   // Beendete Challenge ohne eigene Beitraege: der Abschnitt "Deine Beitraege"
   // fällt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
@@ -500,22 +511,36 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           </div>
         ) : (
           <>
-            {/* Eigene Beitraege — bei beendeter Challenge ohne eigene Beitraege
-                komplett ausgeblendet, dann folgt direkt die Gruppen-Galerie. */}
-            {showOwnSection && (
-              <IonList inset={true} className="app-segment-wrapper">
-                <IonListHeader>
-                  <div className="app-section-icon app-section-icon--challenges">
-                    <IonIcon icon={personOutline} />
-                  </div>
-                  {/* Einzahl/Mehrzahl nach der tatsaechlichen Anzahl
-                      (User-Hinweis 25.08.2026). Bei null Beitraegen steht die
-                      Mehrzahl — der Abschnitt heisst dann allgemein. */}
-                  <IonLabel>{ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge'}</IonLabel>
-                </IonListHeader>
-                <IonCard className="app-card">
-                  <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
-                    {ownSubmissions.length === 0 ? (
+            {/* Reiter statt zweier gestapelter Bloecke: Der eigene Beitrag
+                stand frueher zusaetzlich in einem eigenen Abschnitt ueber der
+                Galerie — zusammen mit dem Feed wurde die Seite zu lang
+                (User-Hinweis 26.08.2026). Jetzt eine Leiste, ein Bereich.
+                Bei "nur Leitung" gibt es keine Gruppen-Galerie; dann entfaellt
+                die Leiste, weil nur "Meins" bleibt. */}
+            {current.visibility !== 'private' && (
+              <div style={{ margin: '16px 16px 8px 16px' }}>
+                <IonSegment value={reiter} onIonChange={(e) => setReiter(e.detail.value as KonfiReiter)}>
+                  <IonSegmentButton value="feed"><IonLabel>Feed</IonLabel></IonSegmentButton>
+                  <IonSegmentButton value="meins"><IonLabel>Meins</IonLabel></IonSegmentButton>
+                </IonSegment>
+              </div>
+            )}
+
+            <IonList inset={true} className="app-segment-wrapper">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--challenges">
+                  <IonIcon icon={effektiverReiter === 'meins' ? personOutline : peopleOutline} />
+                </div>
+                <IonLabel>
+                  {effektiverReiter === 'meins'
+                    ? (ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge')
+                    : 'Aus deiner Gruppe'}
+                </IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: sichtbareBeitraege.length === 0 ? '16px' : '12px' }}>
+                  {sichtbareBeitraege.length === 0 ? (
+                    effektiverReiter === 'meins' ? (
                       <EmptyState
                         icon={documentTextOutline}
                         title="Noch kein Beitrag von dir"
@@ -523,34 +548,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                         iconColor="var(--app-color-challenges)"
                       />
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        {ownSubmissions.map((submission) => (
-                          <SubmissionCard
-                            key={submission.id}
-                            submission={submission}
-                            authorLabel="Dein Beitrag"
-                            statusBadge={getOwnStatus(submission, current)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </IonCardContent>
-                </IonCard>
-              </IonList>
-            )}
-
-            {/* Galerie — nur wenn die Challenge ueberhaupt oeffentlich sein kann */}
-            {current.visibility !== 'private' && (
-              <IonList inset={true} className="app-segment-wrapper">
-                <IonListHeader>
-                  <div className="app-section-icon app-section-icon--challenges">
-                    <IonIcon icon={peopleOutline} />
-                  </div>
-                  <IonLabel>Aus deiner Gruppe</IonLabel>
-                </IonListHeader>
-                <IonCard className="app-card">
-                  <IonCardContent style={{ padding: gallery.length === 0 ? '16px' : '12px' }}>
-                    {gallery.length === 0 ? (
                       <EmptyState
                         icon={peopleOutline}
                         title="Noch keine geteilten Beiträge"
@@ -559,26 +556,28 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                           : 'Aus dieser Challenge hat niemand aus deiner Gruppe etwas veröffentlicht.'}
                         iconColor="var(--app-color-challenges)"
                       />
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        {gallery.map((submission) => (
-                          <SubmissionCard
-                            key={submission.id}
-                            submission={submission}
-                            // Anonyme Beitraege liefert das Backend ohne Namen —
-                            // fehlt der Name, wird bewusst "Anonym" gezeigt.
-                            // Sonst Name + Herkunft: Team-Beitraege als solche
-                            // erkennbar, bei mehreren Jahrgängen der Jahrgang
-                            // (User-Entscheid 08.08.).
-                            authorLabel={buildGalleryAuthorLabel(submission)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </IonCardContent>
-                </IonCard>
-              </IonList>
-            )}
+                    )
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {sichtbareBeitraege.map((submission) => (
+                        <SubmissionCard
+                          key={submission.id}
+                          submission={submission}
+                          // Im eigenen Reiter immer "Dein Beitrag"; in der
+                          // Galerie Name + Herkunft, anonyme ohne Namen.
+                          authorLabel={effektiverReiter === 'meins'
+                            ? 'Dein Beitrag'
+                            : buildGalleryAuthorLabel(submission)}
+                          statusBadge={effektiverReiter === 'meins'
+                            ? getOwnStatus(submission, current)
+                            : undefined}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </IonCardContent>
+              </IonCard>
+            </IonList>
           </>
         )}
 
