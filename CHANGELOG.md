@@ -660,6 +660,9 @@ Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 - Die Anmeldung zur Schnittstellen-Referenz funktioniert unabhängig davon,
   über welchen Weg die Seite ausgeliefert wird.
 - Die getrennte Testumgebung wurde abgebaut; sie wurde nicht mehr genutzt.
+- Neues Wartungswerkzeug, das hochgeladene Dateien ohne zugehörigen Eintrag
+  findet und auf Wunsch entfernt — für Altbestand, der vor den Löschkorrekturen
+  liegengeblieben ist.
 
 ## [1.5.3] - 2026-08-04
 
