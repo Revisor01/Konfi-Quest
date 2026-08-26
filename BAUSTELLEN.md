@@ -522,11 +522,98 @@ falschen Teamer-Erklärtexte (PR #83).
       Ansicht änderbar.** Die Backend-Route existiert
       (`konfi-management.js:269`), hat aber keinen UI-Aufrufer.
 
-- [ ] **Neun weitere Befunde MITTEL/NIEDRIG** stehen in den Berichten
-      (Handbuch-Widersprüche, Material-Tags ohne Oberfläche, super_admin
-      fällt im Chat zwischen drei verschiedene "Leitung"-Definitionen,
-      KonfiOnboardingModal als 279-Zeilen-Vollkopie der geteilten Tour).
-      Nicht einzeln hierher kopiert — die Berichte sind die Quelle.
+### MITTEL aus dem Drei-Ansichten-Bericht
+
+- [x] **M1 — Zusage-Route umging das Teamer-Kontingent.** ERLEDIGT (PR #90).
+      Setzte hart `confirmed`, ohne Prüfung von Kapazität oder Warteliste.
+      Über die App nicht erreichbar, Route aber offen. Behoben mit
+      `determineBookingStatus` — derselben Funktion wie der reguläre Weg.
+- [x] **M2 — Tageslosung-Fallback nur zur Hälfte übernommen.** ERLEDIGT
+      (PR #90). Konfi bekam Psalm 23, Teamer einen 500er — obwohl der
+      Kommentar Gleichheit behauptete. Fallback steht jetzt gemeinsam im
+      `losungService`.
+- [ ] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
+      Konfi-Liste prüft `has_submission`, andere Bäume etwas anderes.
+- [ ] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
+      Konfi-Profil-Kopie.** Das geteilte Modal (Konfi-Dashboard,
+      Teamer-Dashboard und -Profil) bietet RVR60 nicht an; das Backend
+      akzeptiert es für beide Rollen. *Auftrag Simon: zusammenziehen.*
+- [ ] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
+      stillschweigend**, das Konfi-Profil reiht sie in die Warteschlange ein.
+- [ ] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
+      Leitung, Teamer-Weg nur Push.**
+- [ ] **M7 — Wrapped: Freigabe-Gate nur im Dashboard, nicht am
+      Datenendpunkt.**
+- [ ] **M8 — Teamer-Dashboard-Challenges kommen vom Leitungs-Endpunkt ohne
+      Audience-Filter.**
+- [ ] **M9 — E-Mail-Änderung: Teamer und Leitung aktualisieren den
+      User-Context, Konfi nicht.**
+
+### NIEDRIG aus dem Drei-Ansichten-Bericht
+
+- [ ] **N1 — Zwei Buchungspfade mit unterschiedlichen Guards.**
+- [ ] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
+      250-Zeilen-Inline-Kopie für Teamer.**
+- [ ] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
+- [ ] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
+      Abzeichen-Ansicht.**
+- [ ] **N5 — Leitung kann das Konfi-Wrapped nicht ansehen, obwohl das Backend
+      es ihr erlaubt.** [belegt]
+- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.**
+- [ ] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
+      `AdminChallengesPage.tsx`.** Strukturbefund.
+- [ ] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
+
+### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)
+
+- [ ] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.**
+- [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
+- [ ] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
+- [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
+      verspricht sie Konfis.
+- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
+      in 403. *Teilweise entschärft durch PR #82.*
+- [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
+- [ ] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
+      das Handbuch beschreibt sie trotzdem im Detail.
+
+### Aus dem Dashboard/Profil-Durchgang
+
+- [x] **DM1 — Teamer-Onboarding versprach "Umfragen erstellen".** ERLEDIGT
+      (PR #83).
+- [x] **DM2 — Mitmachen-Erklärung zeigte Teamer:innen den Slide der
+      Leitung.** ERLEDIGT (PR #83).
+- [ ] **KonfiOnboardingModal ist eine 279-Zeilen-Vollkopie der geteilten
+      OnboardingTour.** *Auftrag Simon: angleichen.*
+- [ ] **super_admin fällt im Chat zwischen drei verschieden definierte
+      "Leitung"-Gates** — sieht den Mülleimer, bekommt vom Backend 403.
+- [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+- [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
+      Snapshot-Existenz.**
+- [ ] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
+      kaputtem JSON relevant).
+
+### Aus dem Abzeichen-Zähler-Bericht (27.08.)
+
+- [ ] **B1 — Der KONFI-Abzeichen-Zähler setzt sich in laufender Sitzung nie
+      zurück.** `KonfiBadgesPage.tsx:80-110` markiert per `mark-seen`, stößt
+      danach aber keine Aktualisierung an. Kaputt seit `33e3364`
+      (03.07.2026, Wegfall des 60s-Pollings). Der neue Teamer-Weg macht es
+      richtig — die alte Konfi-Seite wurde nicht nachgezogen.
+      **Wichtig:** Die Dokumentation der Falle (siehe oben) hat diesen Fehler
+      NICHT verhindert; er bestand schon vorher unbemerkt.
+- [ ] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.** Client
+      setzt `totalBadgeCount` ohne `newBadgesCount`, Chat-Pushes die exakte
+      Chat-Zahl, alle anderen Pushes hart `1`, der 5-Minuten-Hintergrund-Sync
+      nur Chat-Unread. Das Icon stimmt nie mit der Summe der Reiter überein.
+      Eigene Baustelle, nicht Teil der Zähler-Konsolidierung.
+- [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
+      existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
+      nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
+      Eine COUNT-Abfrage als fünftes Feld `newBadges` in `badge-counts` deckt
+      beides ab — gemessen 101–112 ms, im Rauschen des Endpunkts.
+      Löscht netto Code, macht den intuitiven `refreshAllCounts()`-Aufruf zum
+      richtigen und erledigt B1 gleich mit.
 
 ### Die Klasse dahinter
 
