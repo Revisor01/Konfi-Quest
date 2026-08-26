@@ -7,12 +7,17 @@ später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 Live: Image `d3d6976` · Version 2.0.0 (unveröffentlicht) · iOS-Build 146 im
 TestFlight
 
-> **Seit 26.08.2026 im Notbetrieb auf der Rückfallebene** — der Hauptserver ist
-> wegen einer Abuse-Sperre des Anbieters offline (Nachzügler-Beschwerde zum
-> bereits abgeschlossenen Vorfall vom 19./20.08.). Datenstand: Nachtabgleich
-> vom 26.08., 03:30 Uhr. Was danach passiert ist, fehlt.
-> Ablauf und Zugänge stehen in der Notfall-Anleitung auf dem Server, bewusst
-> nicht hier — dieses Repo ist öffentlich.
+> **26.08.2026: Abuse-Sperre und Rückumzug.** Der Hauptserver war wegen einer
+> Nachzügler-Beschwerde zum bereits abgeschlossenen Vorfall vom 19./20.08.
+> gesperrt; Konfi Quest lief rund zwei Stunden auf der Rückfallebene und ist
+> nach der Entsperrung zurückgezogen. **Kein Datenverlust:** Auf dem
+> Hauptserver lagen zwei Datensätze mehr (eine Chat-Nachricht, eine
+> Challenge-Einreichung von heute früh), im Notbetrieb war nichts Neues
+> entstanden — der Hauptserver war also der vollständigere Stand, ein
+> Rückspielen entfiel. Alle acht verglichenen Tabellen geprüft.
+> Das Demo-Passwort ist auf **beiden** Servern rotiert.
+> Ablauf und Zugänge stehen in der Notfall-Anleitung auf der Rückfallebene,
+> bewusst nicht hier — dieses Repo ist öffentlich.
 
 ## Wie hier gearbeitet wird
 
