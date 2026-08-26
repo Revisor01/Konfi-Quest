@@ -1324,4 +1324,45 @@ describe('Konfi Routes', () => {
     });
   });
 
+  // ================================================================
+  // POST /api/konfi/requests — In-App-Mitteilung an die Leitung
+  // ================================================================
+  // Drei-Ansichten-Befund M6 (26.08.2026): Die In-App-Mitteilung ging nur an
+  // r.name='admin' — org_admin bekam zwar Push, aber nichts ins
+  // Mitteilungscenter. Beide Wege (Konfi und Teamer) muessen die gesamte
+  // Leitung gleich informieren.
+  describe('POST /api/konfi/requests — Leitungs-Mitteilungen', () => {
+    it('Antrag erzeugt In-App-Mitteilung fuer admin UND org_admin, sonst niemanden', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-06-01'
+        });
+      expect(res.status).toBe(201);
+
+      // Der Leitungs-Versand laeuft NACH der Antwort (fire-and-forget) —
+      // deshalb kurz pollen, dann HART pruefen.
+      let rows = [];
+      for (let i = 0; i < 40; i++) {
+        ({ rows } = await db.query(
+          "SELECT user_id, title FROM notifications WHERE type = 'new_activity_request' ORDER BY user_id"
+        ));
+        if (rows.length > 0) break;
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Genau die Leitung der Org 1: admin1, orgAdmin1, orgAdminSuper.
+      // Verbotener Fall implizit mit drin: weder der Konfi selbst noch
+      // Teamer noch die Leitung der Org 2 tauchen auf.
+      expect(rows.map(r => r.user_id)).toEqual([
+        USERS.admin1.id,
+        USERS.orgAdmin1.id,
+        USERS.orgAdminSuper.id
+      ]);
+      expect(rows[0].title).toBe('Neuer Antrag eingegangen');
+    });
+  });
+
 });

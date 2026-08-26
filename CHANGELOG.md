@@ -210,6 +210,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
   Kennzeichnung nur für Konfis.
 
+- Anträge von Teamer:innen erscheinen jetzt auch im Mitteilungscenter der
+  Leitung — bisher gab es dafür nur eine Push-Nachricht. Zugleich bekommen
+  jetzt alle Leitungsrollen die Mitteilung, nicht nur ein Teil.
+- Der Jahresrückblick der Konfis ist erst nach der Freigabe durch die Leitung
+  abrufbar — bisher versteckte nur die Startseite den Einstieg, die Daten
+  selbst waren schon vorher zugänglich.
+- Auf der Teamer-Startseite erscheinen unter "Deine Challenge" nur noch
+  Challenges, an denen Teamer:innen auch teilnehmen dürfen — reine
+  Konfi-Challenges tauchen dort nicht mehr auf.
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.

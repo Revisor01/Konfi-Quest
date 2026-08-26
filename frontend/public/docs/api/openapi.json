@@ -3241,7 +3241,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Neuen Aktivitaets-Antrag einreichen",
-        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).\n",
+        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026 ging die In-App-Mitteilung nur an admin (Befund M6, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -10770,7 +10770,7 @@
           "Teamer:innen"
         ],
         "summary": "Neuen Teamer-Antrag einreichen",
-        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine Push-Nachricht an alle Admins der Organisation und ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht.\n",
+        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine In-App-Mitteilung UND eine Push-Nachricht an die gesamte Leitung (Rollen admin und org_admin) sowie ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis 26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung (Befund M6, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11657,7 +11657,7 @@
           "Wrapped"
         ],
         "summary": "Eigenen Jahresrueckblick abrufen",
-        "description": "Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich nach der Rolle: role_name 'teamer' erhält wrapped_type 'teamer', alle anderen 'konfi'. Ohne Snapshot kommt 404.\n",
+        "description": "Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich nach der Rolle: role_name 'teamer' erhält wrapped_type 'teamer', alle anderen 'konfi'. Ohne Snapshot kommt 404. Für die Rolle konfi greift seit 26.08.2026 das Freigabe-Gate (Befund M7, behoben): Ist der aktuelle Jahrgang nicht freigegeben (jahrgaenge.wrapped_released_at NULL oder in der Zukunft), kommt 403 — vorher lieferte der Endpunkt den Snapshot auch ohne Freigabe, nur das Dashboard prüfte den Schalter. Teamer-Wrapped kennt keine Freigabe.\n",
         "x-berechtigung": {
           "rollen": [
             "alle authentifizierten"
@@ -11675,6 +11675,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Konfi-Wrapped noch nicht freigegeben (Freigabe-Gate seit 26.08.2026)"
           },
           "404": {
             "description": "Kein Wrapped-Snapshot vorhanden"
