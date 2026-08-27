@@ -1550,6 +1550,11 @@ paths:
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie
         seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.
+        Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl
+        der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer
+        Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der
+        Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle
+        Reiter-Zahlen aus dieser einen Abfrage.
       responses:
         '200':
           description: Zähler
@@ -1568,6 +1573,7 @@ paths:
                   pendingRequests: { type: integer }
                   pendingEvents: { type: integer }
                   pendingChallenges: { type: integer }
+                  newBadges: { type: integer }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
