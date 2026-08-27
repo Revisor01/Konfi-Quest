@@ -822,8 +822,6 @@ falschen Teamer-Erklärtexte (PR #83).
       ging um Aktionen, die sichtbar sind und dann scheitern.
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
 
-- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
-      in 403. *Teilweise entschärft durch PR #82.*
 - [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
       27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
       konnte per API Bonuspunkte an eine Konfi eines **fremden Jahrgangs**
