@@ -825,8 +825,6 @@ falschen Teamer-Erklärtexte (PR #83).
       an — das Handbuch nannte es nicht. Ergänzt, samt dem Unterschied
       zwischen Entwurf (direkt weg) und laufender Challenge (Rückfrage, dann
       Beiträge und Dateien mit).
-- [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
-      verspricht sie Konfis.
 - [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.*
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
