@@ -1,4 +1,5 @@
 const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
+const { appIconSummeOderNull } = require('../utils/appIconBadge');
 
 /**
  * Push Notification Type Registry
@@ -98,6 +99,72 @@ class PushService {
   }
 
   /**
+   * Helper: Laedt alles, was die App-Icon-Summe braucht (Befund B2b).
+   *
+   * Der Push-Weg kennt nur die userId — fuer die Summe braucht es aber auch
+   * Rolle und (bei Teamer:innen) die zugewiesenen Jahrgaenge, weil sich die
+   * Zaehler je Rolle unterscheiden.
+   *
+   * Gibt null zurueck, wenn der User nicht auffindbar ist; der Aufrufer
+   * laesst den Badge dann weg.
+   */
+  static async ladeEmpfaengerFuerBadge(db, userId) {
+    try {
+      const { rows: [row] } = await db.query(
+        `SELECT u.id, u.organization_id, r.name AS role_name
+           FROM users u
+           JOIN roles r ON u.role_id = r.id
+          WHERE u.id = $1 AND u.deleted_at IS NULL`,
+        [userId]
+      );
+      if (!row) return null;
+
+      // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
+      // alle Leitungsrollen zaehlen als 'admin'.
+      const type = row.role_name === 'konfi'
+        ? 'konfi'
+        : (row.role_name === 'teamer' ? 'teamer' : 'admin');
+
+      let assigned_jahrgaenge = [];
+      if (type === 'teamer') {
+        const { rows } = await db.query(
+          'SELECT jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = $1',
+          [userId]
+        );
+        assigned_jahrgaenge = rows;
+      }
+
+      return {
+        id: row.id,
+        type,
+        role_name: row.role_name,
+        organization_id: row.organization_id,
+        assigned_jahrgaenge
+      };
+    } catch (err) {
+      console.error('ladeEmpfaengerFuerBadge error:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Helper: Die Zahl fuers App-Icon (Befund B2b).
+   *
+   * Bis 27.08.2026 setzte der Chat-Push die CHAT-Zahl allein aufs Icon und
+   * ueberschrieb damit Antraege, Termine und Abzeichen; alle anderen Pushes
+   * setzten hart 1. Jetzt rechnet der Server dieselbe Summe wie der Client.
+   *
+   * Fehlertolerant: Bei einem Fehler kommt null zurueck und der Badge wird
+   * weggelassen — eine Nachricht darf nicht daran scheitern, dass eine Zahl
+   * fehlt.
+   */
+  static async berechneBadge(db, userId) {
+    const empfaenger = await this.ladeEmpfaengerFuerBadge(db, userId);
+    if (!empfaenger) return null;
+    return appIconSummeOderNull(db, empfaenger);
+  }
+
+  /**
    * Helper: Sendet Push an einen User
    */
   static async sendToUser(db, userId, notification) {
@@ -124,6 +191,14 @@ class PushService {
         if (recipientOrgId) data.organization_id = recipientOrgId;
       }
 
+      // App-Icon-Zahl (Befund B2b): Der Server rechnet dieselbe Summe wie der
+      // Client. Vorher stand hier hart 1 -- egal, wie viel offen war. Ein
+      // ausdruecklich uebergebener Wert hat weiterhin Vorrang; kommt keiner
+      // und schlaegt die Zaehlung fehl, bleibt es beim bisherigen 1.
+      const berechneterBadge = notification.badge != null
+        ? notification.badge
+        : await this.berechneBadge(db, userId);
+
       // Tokens PARALLEL abarbeiten (Performance-Audit 10.08.): vorher lief je
       // Token ein FCM-Roundtrip nacheinander — bei mehreren Geraeten summierte
       // sich das auf. Die Tokens sind voneinander unabhaengig, ihre DB-Updates
@@ -132,7 +207,7 @@ class PushService {
         const result = await sendFirebasePushNotification(token.token, {
           title: notification.title,
           body: notification.body,
-          badge: notification.badge || 1,
+          badge: berechneterBadge != null ? berechneterBadge : 1,
           sound: 'default',
           data: data
         });
@@ -257,12 +332,26 @@ class PushService {
       let successCount = 0;
       let errorCount = 0;
 
+      // App-Icon-Zahl (Befund B2b): Hier stand bisher die CHAT-Unread-Zahl
+      // allein (der Aufrufer in chat.js reicht sie als notificationData.badge
+      // herein). Sie ueberschrieb damit Antraege, Termine, Freigaben und
+      // Abzeichen -- das Icon zeigte nach einer Chat-Nachricht nur noch die
+      // Chat-Zahl.
+      //
+      // Anders als in sendToUser wird der uebergebene Wert deshalb bewusst
+      // ERSETZT, nicht bevorzugt: Er ist per Definition zu niedrig. Nur wenn
+      // die Zaehlung fehlschlaegt, gilt er als Rueckfall.
+      const gesamtBadge = await this.berechneBadge(db, userId);
+      const badgeWert = gesamtBadge != null
+        ? gesamtBadge
+        : (notificationData.badge || 1);
+
       // An alle Devices senden
       for (const token of tokens) {
         const result = await sendFirebasePushNotification(token.token, {
           title: notificationData.title || 'Neue Nachricht',
           body: notificationData.body,
-          badge: notificationData.badge || 1,
+          badge: badgeWert,
           sound: 'default',
           data: {
             type: 'chat',
