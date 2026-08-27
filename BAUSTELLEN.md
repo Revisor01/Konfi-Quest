@@ -294,8 +294,21 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       ALT: Eintritt bei Anmeldung, Austritt bei Abmeldung, aber
       bei Pflichtterminen drin bleiben. *(Teilweise am 24.08. behoben —
       prüfen, was noch offen ist.)*
-- [ ] **Abzeichen: sind alle Bedingungen korrekt?** Was liegt überflüssig in
-      der Datenbank? *(Geprüft am 25.08.: alle 15 Bedingungstypen werten das,
+- [x] **Abzeichen: sind alle Bedingungen korrekt?** ERLEDIGT — am 27.08.2026
+      nachmittags **gegen Produktion gegengemessen**, Org 1:
+      - Alle 11 Kategorien existieren, auch `Jugend` und `Seniorinnen`. Die
+        oben beschriebenen Namensbrueche sind seit dem 25./26.08. behoben.
+      - Alle 6 von Abzeichen gesuchten Aktivitaetsnamen existieren.
+      - **Aktive unerreichbare Abzeichen: 0** (Gegenprobe ueber alle
+        `category_activities` und `specific_activity`, deren Ziel es nicht
+        gibt — null Zeilen).
+      - Die vier bedingungslosen (40, 41, 43, 50) sind alle **inaktiv** und
+        damit unsichtbar; keines wurde je vergeben.
+      **Lehre fuer das naechste Mal:** Der Befundtext oben stand noch da,
+      der Erledigt-Vermerk erst zwanzig Zeilen darunter. Ich habe daraufhin
+      eine Entscheidung eingeholt, die gar nicht mehr noetig war. **Erst bis
+      zum Ende des Eintrags lesen, dann messen, dann fragen.**
+      *(Ursprungsbefund, geprüft am 25.08.: alle 15 Bedingungstypen werten das,
       was ihr Hilfetext verspricht — keine Lücke in der Logik. Die Befunde
       liegen in den DATEN und wurden in Produktion belegt:*
       - *Namenskopplung wirkt tatsächlich: Abzeichen 36 sucht die Kategorie
