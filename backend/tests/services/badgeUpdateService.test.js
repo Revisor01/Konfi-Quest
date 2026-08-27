@@ -60,8 +60,22 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
 
     await BackgroundService.updateAllUserBadges(db, { nurZaehler: true });
 
-    // Die Abzeichen-Prüfung liest custom_badges — im Zähler-Lauf darf das
-    // nicht vorkommen.
-    expect(abfragen.some(q => /custom_badges/.test(q))).toBe(false);
+    // Die teure Vergabe-Pruefung (checkAndAwardBadges) gehoert in den
+    // Stundentakt, nicht in den 5-Minuten-Zaehlerlauf. Sie erkennt man an
+    // ihren Kriterien-Abfragen: Sie liest `criteria_type`/`criteria_value`
+    // aus `custom_badges`, um zu entscheiden, wer ein Abzeichen VERDIENT hat.
+    //
+    // Geprueft wird genau das — nicht der blosse Tabellenname. Seit dem
+    // 27.08.2026 zaehlt der Zaehlerlauf ungesehene Abzeichen ueber einen
+    // JOIN auf `custom_badges` (nur `target_role`, ein COUNT). Das ist die
+    // guenstige Zaehlung, nicht die Vergabe — ein Test auf den Tabellennamen
+    // wuerde sie faelschlich mitfangen.
+    const vergabePruefung = abfragen.some(q =>
+      /custom_badges/.test(q) && /criteria_type|criteria_value/.test(q));
+    expect(vergabePruefung).toBe(false);
+
+    // Gegenprobe, damit der Test nicht auch dann gruen bliebe, wenn die
+    // Zaehlung ganz ausfiele: Die Zaehl-Abfrage MUSS gelaufen sein.
+    expect(abfragen.some(q => /user_badges/.test(q) && /seen/.test(q))).toBe(true);
   });
 });
