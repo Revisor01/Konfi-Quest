@@ -618,7 +618,24 @@ falschen Teamer-Erklärtexte (PR #83).
 
 - [ ] **N1 — Zwei Buchungspfade mit unterschiedlichen Guards.**
 - [ ] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
-      250-Zeilen-Inline-Kopie für Teamer.**
+      250-Zeilen-Inline-Kopie für Teamer.** Der Befund hat ZWEI Teile:
+      - [x] **Der Zählfehler in `GET /konfi/badges/stats` ist behoben**
+            (27.08.2026). `total_badges` filterte auf `target_role='konfi'`,
+            `earned_badges` zählte ALLE Abzeichen der Person — derselbe
+            Fehler, der am 24.08. in `konfiBadgeProgress.js:117-126` behoben
+            wurde, in der Nachbar-Query aber nicht. Bei einer Beförderung
+            Konfi→Teamer bleiben die Abzeichen bestehen
+            (`konfi-management.js:1136`), wer danach Teamer-Abzeichen
+            verdiente, bekam mehr "verdiente" als überhaupt vorhandene.
+            **Der Endpunkt hatte keinen Test UND keinen Aufrufer** — deshalb
+            fiel es nie auf. Beides war Grund, ihn abzusichern statt ihn
+            liegenzulassen: Wer ihn als nächstes einbindet, hätte den Fehler
+            geerbt.
+      - [ ] **Die 250-Zeilen-Inline-Kopie bleibt offen.** `routes/teamer.js`
+            rechnet den Fortschritt selbst (eigene Antwortform: flaches Array
+            plus Zählwerte in HTTP-Headern statt `{available, earned, stats}`)
+            und ohne die "unerreichbar"-Ausblendung des Konfi-Pfads. Das ist
+            ein Umbau, kein Einzeiler — eigener Auftrag.
 - [ ] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
 - [ ] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
       Abzeichen-Ansicht.**

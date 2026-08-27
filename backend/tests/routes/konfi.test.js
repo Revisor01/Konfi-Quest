@@ -623,6 +623,109 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // GET /api/konfi/badges/stats
+  // Befund N2 (27.08.2026): Dieselbe Verwechslung wie am 24.08. in
+  // konfiBadgeProgress.js, nur in der Nachbar-Query -- und dort unbemerkt
+  // geblieben. total_badges filterte auf target_role='konfi',
+  // earned_badges zaehlte ALLE Abzeichen der Person.
+  //
+  // Der Fall ist selten, aber real: Bei einer Befoerderung Konfi->Teamer
+  // bleiben die Abzeichen bestehen (konfi-management.js:1136). Wer danach
+  // als Teamer:in weitere verdient und wieder eine Konfi-Ansicht sieht,
+  // bekam mehr "verdiente" als ueberhaupt vorhandene Abzeichen.
+  //
+  // Der Endpunkt hatte bis dahin KEINEN Test und keinen Aufrufer -- deshalb
+  // fiel es nicht auf. Beides ist ein Grund, ihn abzusichern und nicht ihn
+  // zu ignorieren: Wer ihn als naechstes einbindet, haette den Fehler geerbt.
+  // ================================================================
+  describe('GET /api/konfi/badges/stats', () => {
+    it('Konfi bekommt 200 + beide Zaehler', async () => {
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(typeof res.body.total_badges).toBe('number');
+      expect(typeof res.body.earned_badges).toBe('number');
+    });
+
+    it('Admin bekommt 403', async () => {
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('ein verdientes TEAMER-Abzeichen zaehlt nicht als verdient mit', async () => {
+      const vorher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.earned_badges;
+
+      const { rows: [teamerBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Nur fuer Teamer', 'teamer_year', 2, 'ribbon', '#5b21b6', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, teamerBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.body.earned_badges).toBe(zuvor);
+    });
+
+    it('ein verdientes KONFI-Abzeichen zaehlt sehr wohl mit', async () => {
+      // Gegenprobe: Der Filter darf nicht einfach alles wegschneiden.
+      const vorher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.earned_badges;
+
+      const { rows: [konfiBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Nur fuer Konfis', 'total_points', 1, 'star', '#047857', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, konfiBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.body.earned_badges).toBe(zuvor + 1);
+    });
+
+    it('verdient uebersteigt nie die Gesamtzahl', async () => {
+      // Die Zusicherung, um die es eigentlich geht: Beide Zaehler messen
+      // dieselbe Menge. Genau das war vorher nicht der Fall.
+      const { rows: [teamerBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Teamer-Abzeichen', 'teamer_year', 1, 'ribbon', '#be185d', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, teamerBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.body.earned_badges).toBeLessThanOrEqual(res.body.total_badges);
+    });
+  });
+
+  // ================================================================
   // GET /api/konfi/badges - Progress-Berechnung (Prozent-Bug-Fix, Phase 116-02)
   // ================================================================
   describe('GET /api/konfi/badges Progress-Berechnung', () => {
