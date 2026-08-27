@@ -4,8 +4,27 @@ Stand: 24.08.2026, abends. Eine Liste, damit nichts doppelt läuft und nichts
 untergeht. **Erledigtes wird nicht gelöscht, sondern abgehakt** — sonst weiß
 später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 
-Live: Image `d3d6976` · Version 2.0.0 (unveröffentlicht) · iOS-Build 146 im
+Live: Image `109d4e0` · Version 2.0.0 (unveröffentlicht) · iOS-Build 147 im
 TestFlight
+
+> **Der automatische Deploy ist seit dem 21.08.2026 pausiert** — bewusst:
+> `ci.yml:219` trägt ein `if: false &&`, damit Produktion die Migrationen von
+> 2.0.0 nicht nachzieht, solange die Version in TestFlight getestet wird. Der
+> `deploy`-Job erscheint deshalb bei jedem Lauf als **skipped**, obwohl alle
+> Tests grün sind. Das ist kein roter Test, der den Deploy verschluckt hat.
+>
+> **Folge, am Server nachgemessen (27.08.2026, abends):** Live laufen
+> `konfi_quest-backend-1`, `-backend2-1` und `-frontend-1` auf
+> `ghcr.io/revisor01/konfi-quest-backend:109d4e0` — **209 Commits hinter
+> `main`**. Vier Migrationen sind dort noch nicht gelaufen: 129
+> (`invite_code_id_on_delete`), 130 (`material_tags_entfernen`), 131
+> (`org_wartelisten_einstellungen_entfernen`) und 132
+> (`bibeluebersetzung_eine_spalte`). Mit PR #129 kommt 133
+> (`chat_reaktionen_teamer_erlauben`) dazu.
+>
+> **Beim Ausrollen von 2.0.0 daran denken:** das `false &&` in `ci.yml:219`
+> entfernen, und die 132er-Migration läuft mit einem `DROP COLUMN` — sie ist
+> nicht umkehrbar. Ihre Übernahmebedingung muss beim ERSTEN Mal stimmen.
 
 > **26.08.2026: Abuse-Sperre und Rückumzug.** Der Hauptserver war wegen einer
 > Nachzügler-Beschwerde zum bereits abgeschlossenen Vorfall vom 19./20.08.
@@ -22,9 +41,12 @@ TestFlight
 ## Was blockiert 2.0.0 noch?
 
 Stand 27.08.2026, spätabends. Alle offenen `- [ ]`-Punkte dieser Datei einzeln
-durchgegangen. **Ergebnis: genau einer betrifft den Release, und der ist der
-Release selbst.**
+durchgegangen. **Ergebnis: zwei betreffen den Release — das Ausrollen und der
+Release selbst.** Kein einziger offener Befund blockiert ihn.
 
+- [ ] **Produktion auf den Stand von `main` bringen** — der automatische
+      Deploy ist seit dem 21.08. bewusst pausiert (`ci.yml:219`), live läuft
+      `109d4e0`, 209 Commits zurück. Siehe Abschnitt "Vor dem Release 2.0.0".
 - [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
       Test, zusammen mit dem Datum im CHANGELOG. Siehe Abschnitt "Release
       2.0.0" weiter unten.
@@ -131,6 +153,10 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
 - [x] **Staging entfernt** — Stack, Verzeichnis, Domain, Build-Workflow.
 - [x] **Multi-Org-Push** — jeder Push trägt die Organisation des Inhalts, beim
       Antippen wechselt die App dorthin. *Nicht in Build 140 — erst im nächsten.*
+      **Einschränkung, nachgemessen am 27.08.2026 abends:** "jeder" stimmt
+      nicht ganz. Vier Sende-Methoden setzen keine Content-Org, obwohl sie
+      Teamer:innen erreichen können — siehe M4 weiter unten. Der Mechanismus
+      steht, die Lücke betrifft nur Multi-Org-Teamer:innen.
 - [x] **Push-Meldungen konsolidiert** — keine Texte mehr in den Routen.
 - [x] **Handbuch verlinkt** — Navigation, Fließtext, Mobil-Symbol; aus dem
       Handbuch führt ein Verweis zur API-Referenz.
@@ -533,8 +559,24 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
 
 ## Sicherheitsmeldungen von GitHub (24.08. geprüft)
 
-- Dependabot: **0 offene Meldungen**.
-- CodeQL: **0 offene** (Stand 26.08.2026). Fuenf Meldungen wurden im Lauf des
+- Dependabot: **0 offene Meldungen** (nachgemessen 27.08.2026, abends).
+- CodeQL: **0 offene** (nachgemessen 27.08.2026, abends).
+  **Korrektur:** Hier stand "0 offene (Stand 26.08.)" — das stimmte nicht
+  mehr. Am 26.08. um 19:57 Uhr, also nach dem Eintrag, kam Meldung **103**
+  dazu (`js/missing-rate-limiting`, high, `chat.js:2301`). Sie betraf den
+  Team-Chat-Mülleimer aus PR #110, der Dateien löscht.
+  **Als Fehlalarm geschlossen (27.08.2026)** — derselbe Typ wie 101: Der
+  `generalLimiter` (2000 Anfragen/15 min, `server.js:279-286`) wird in
+  `createApp.js:100-102` registriert, also **vor** der Chat-Route
+  (`createApp.js:430`); CodeQL sieht die vorgelagerte Middleware nicht.
+  *In Produktion gemessen:* `DELETE /api/chat/rooms/1/messages` antwortet mit
+  `ratelimit-limit: 2000`, `ratelimit-policy: 2000;w=900`,
+  `ratelimit-remaining: 1999`. Zusätzlich ist die Route auf die Leitung
+  beschränkt (`chat.js:2304`, 403 für alle anderen).
+  **Lehre:** Ein "0 offene"-Vermerk mit Datum altert schneller als der Rest
+  des Registers — neue Meldungen entstehen ohne Zutun. Vor dem Release neu
+  abfragen, nicht den Vermerk lesen.
+  Fuenf Meldungen wurden im Lauf des
   25.08. behoben; die letzte (101) ist als Fehlalarm geschlossen, siehe unten.
   ALT: **6 offene**, alle "high" — jede wird einzeln geprüft, nicht blind
   gefixt. Fehlalarme werden begründet geschlossen, nicht stillgelegt.
@@ -1568,13 +1610,30 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       bekommen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
       Gemeinde, aus der sie ausgeschieden sind.
       *Am Code gegengeprüft 27.08. abends: beide Stellen unverändert.*
-- [ ] **Zwei Push-Arten reichen die Organisation nicht durch** (M4
-      Push-Bericht, nicht einzeln gemessen). `sendBadgeEarnedToKonfi` und
-      `sendActivityRequestStatusToKonfi` setzen keine Content-Org, obwohl
-      beide auch Teamer:innen erreichen — und die können mehreren Gemeinden
-      angehören. Der Fallback nimmt dann die Primär-Org: Der Tap wechselt in
-      die falsche Gemeinde. Die eigene Regel dazu steht in
-      `pushService.js:83-86`; `sendCertificateToTeamer` macht es richtig vor.
+- [ ] **VIER Push-Arten reichen die Organisation nicht durch** (M4
+      Push-Bericht — der nannte zwei; **beim Nachzählen am 27.08. abends
+      wurden es vier**). Von 36 Sende-Methoden in `pushService.js` führen 23
+      ein `organizationId`, 13 nicht. Bei den meisten der 13 ist das richtig:
+      Ihre Empfänger sind Konfis, und die sind immer Single-Org — genau der
+      Fall, für den der Fallback (`pushService.js:80-87`) gebaut ist.
+      **Vier erreichen aber auch Teamer:innen, und die können mehreren
+      Gemeinden angehören:**
+      - `sendBadgeEarnedToKonfi` (`:600`) — Abzeichen gehen ausdrücklich auch
+        an Teamer:innen (`badges.js:648-651`)
+      - `sendActivityRequestStatusToKonfi` (`:568`) — Anträge stellen auch
+        Teamer:innen (`teamer.js:1520`)
+      - `sendChallengeBadgeEarnedToKonfi` — **im Bericht nicht genannt**
+      - `sendChallengeSubmissionHiddenToUser` — **im Bericht nicht genannt**
+
+      Die letzten beiden hängen daran, dass Teamer:innen Challenge-Beiträge
+      einreichen dürfen: `challenges.js:623` lässt `konfi` UND `TEAM_ROLES`
+      zu. Wer den Befund behebt, prüft alle vier — sonst bleibt die Hälfte.
+      Ohne Content-Org nimmt der Fallback die Primär-Org: Der Tap wechselt in
+      die falsche Gemeinde. `sendCertificateToTeamer` (`:1588`) macht es
+      richtig vor.
+      *Gegengeprüft: `sendBonusPointsToKonfi` und `sendActivityAssignedToKonfi`
+      haben ebenfalls kein `organizationId`, laufen aber über
+      `konfi-management` bzw. den Konfi-Pfad — dort ist der Fallback korrekt.*
 - [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
       gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
       `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
@@ -1600,14 +1659,26 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
 
 ## Nach 2.0.0
 
-- [ ] **Termin-Zählungen: eine gemeinsame SQL-View.** Aus dem Bericht vom
-      25.08. (`docs/agenten-berichte/2026-08-25-termin-zaehlungen.md`). Der
+- [ ] **Termin-Zählungen: die SQL-View EXISTIERT, aber niemand liest sie.**
+      Aus dem Bericht vom 25.08.
+      (`docs/agenten-berichte/2026-08-25-termin-zaehlungen.md`). Der
       inhaltliche Fehler ist behoben (Befund 3, `events.js:184-185` trennt
-      jetzt `unprocessed_count` und `teamer_unprocessed_count`), aber die
-      Zaehlungen stehen weiterhin an fuenf SQL-Stellen einzeln. Eine gemeinsame
-      View wuerde verhindern, dass sie erneut auseinanderlaufen.
-      **Bewusst nach 2.0.0** und bis zum 27.08. nirgends notiert — beim
-      Registerabgleich aufgefallen, sonst waere der Punkt verloren gegangen.
+      jetzt `unprocessed_count` und `teamer_unprocessed_count`).
+      **Korrektur vom 27.08.2026, abends — der Eintrag hier war ungenau.** Er
+      las sich, als müsse die View erst noch gebaut werden. Sie ist längst da:
+      `backend/migrations/128_event_booking_stats_view.sql` legt
+      `event_booking_stats` an, angelegt am 25.08. in `9cb4aa24`
+      ("refactor(termine): eine Quelle fuer alle Buchungszahlen"), samt
+      verbindlicher Bedeutung jeder Spalte im Dateikopf.
+      **Gemessen: KEIN Endpunkt fragt sie ab.** `grep -rn event_booking_stats
+      backend/routes/` liefert genau einen Treffer, und der ist ein *Kommentar*
+      (`events.js:183`: "Bedeutung jetzt wie konfi_offen in
+      event_booking_stats"). Der Ursprungscommit hat die Bedeutungen inline
+      angeglichen und auf die View nur verwiesen, statt aus ihr zu lesen.
+      Ihr eigener Kopf behauptet dagegen: "Ab hier lesen alle Endpunkte aus
+      dieser View."
+      Zu tun ist also weniger als gedacht: die fünf Stellen auf die vorhandene
+      View umstellen, nicht sie erst entwerfen. **Bewusst nach 2.0.0.**
 
 - [ ] **Das 3-MB-Bundle aufteilen** (697 kB gepackt, ein Monolith ohne
       Aufteilung nach Rollen). Groesster Hebel fuer den Kaltstart im Web,
@@ -1710,6 +1781,15 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
 - [x] **Eine Quelle für alle Buchungszahlen** — View `event_booking_stats`
       (Migration 128, `9cb4aa24`). Fünf Stellen zählten mit drei Bedeutungen;
       das war die Wurzel der drei Fehler des Tages.
+      **Einschränkung, nachgemessen 27.08.2026 abends:** Die View ist angelegt
+      und ihre Bedeutungen sind verbindlich dokumentiert — aber **kein
+      Endpunkt liest aus ihr**. Der Commit hat die Zählungen inline auf
+      dieselbe Bedeutung gebracht und auf die View nur verwiesen
+      (`events.js:183` ist ein Kommentar, der einzige Treffer im ganzen
+      `routes/`-Baum). Der Fehler ist damit behoben, die Wurzel nicht: Die
+      fünf Stellen können erneut auseinanderlaufen. Steht als offener Punkt
+      unter "Nach 2.0.0" — dieses Häkchen bezieht sich auf die Migration,
+      nicht auf die Umstellung.
 - [x] **Getrennte Sammelverbuchung** Konfis/Teamer (`eaac09e5`). Abgemeldete
       und bereits Verbuchte bleiben unangetastet (getestet, Gegenprobe).
 - [x] **Verbuchen-Kennzeichen bleibt bei offenen Teamern** (`90592c5b`).
@@ -1720,13 +1800,24 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
 
 ## Zielgerade 2.0.0 (Reihenfolge)
 
-1. Laufende Agenten abwarten, Ergebnisse prüfen (nicht glauben), ausrollen
-2. GitHub-Meldungen abschließen — CodeQL und Dependabot sauber
-3. Restliche Prüfaufträge starten (Abzeichen-Logik, API-Vollständigkeit,
-   Swagger, Socket.IO nach Logout, Dashboard-Schalter)
-4. **Deploy**
-5. **TestFlight-Build** — dann mit Multi-Org-Push, den Build 140 noch nicht hat
-6. Erst danach: Store-Texte, Bildschirmfotos, Tag, Release
+**Nachgeführt 27.08.2026, abends.** Die alte Fassung dieser Liste war
+überholt: Sie führte Store-Texte und Bildschirmfotos als letzten Schritt,
+obwohl beides seit dem 25.08. erledigt ist, und sprach von Build 140 — im
+TestFlight liegt Build 147.
+
+1. ~~Laufende Agenten abwarten, Ergebnisse prüfen, ausrollen~~ — erledigt
+2. ~~GitHub-Meldungen abschließen~~ — erledigt: **0 offene Dependabot-,
+   0 offene CodeQL-Meldungen** (27.08. abends nachgemessen; Meldung 103 kam
+   nach dem alten Vermerk dazu und ist als Fehlalarm geschlossen)
+3. ~~Restliche Prüfaufträge~~ — Abzeichen-Logik gegen Produktion gemessen;
+   Chat-Baum, Offline-Schreibvorgänge und Push-Zustellung sind gelaufen, ihre
+   Berichte liegen in `docs/agenten-berichte/`
+4. ~~Store-Texte und Bildschirmfotos~~ — erledigt (`e27413a5`)
+5. **Simons Test** ← hier stehen wir
+6. **Deploy** — der automatische ist pausiert (`ci.yml:219`), live läuft
+   `109d4e0`, 209 Commits zurück. Vier bis fünf Migrationen laufen dabei an,
+   132 mit einem nicht umkehrbaren `DROP COLUMN`.
+7. **Tag und GitHub-Release** (ohne `v`-Präfix), Datum im CHANGELOG
 
 ## Vor dem Release 2.0.0
 
@@ -1743,6 +1834,14 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
       zwischen den Kapiteln ergänzt (`e6867f01`). Dabei zwei falsche Angaben
       gegen den Code korrigiert.
 - [x] **iOS-Build 143** ausgelöst (`4d49a7c1`), CI und CodeQL vorher grün.
+- [ ] **Produktion auf den Stand von `main` bringen.** Der automatische
+      Deploy ist seit dem 21.08. bewusst pausiert (`ci.yml:219`, `if: false &&`).
+      Am 27.08. abends am Server nachgemessen: live läuft `109d4e0`, **209
+      Commits hinter `main`**. Vier Migrationen fehlen dort (129–132), mit
+      PR #129 kommt 133 dazu.
+      Zum Ausrollen das `false &&` entfernen. **Migration 132 macht ein
+      `DROP COLUMN`** — nicht umkehrbar, die Übernahmebedingung muss beim
+      ersten Mal stimmen (Details beim N8-Eintrag).
 - [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
       Test, zusammen mit dem Datum im CHANGELOG.
 
