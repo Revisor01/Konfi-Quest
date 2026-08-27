@@ -6,7 +6,7 @@
 //
 // Kernentscheidungen:
 // - Status wird ABGELEITET (is_draft / starts_at / ends_at), nie gespeichert.
-// - Abzeichen wird ABGELEITET (EXISTS eigene Submission mit
+// - Stempel wird ABGELEITET (EXISTS eigene Submission mit
 //   moderation_status='approved' — bei moderierten Challenges zählt ein
 //   Beitrag erst NACH der Freigabe, ohne Moderation sofort, weil er dann
 //   direkt approved gespeichert wird); badge_icon/badge_name hängen an der
@@ -304,7 +304,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       status: deriveStatus(row, now),
       // has_badge zählt seit 24.08.2026 nur FREIGEGEBENE eigene Beitraege
       // (moderation_status='approved'): Bei moderierten Challenges gibt es das
-      // Abzeichen erst, wenn wirklich etwas erschienen ist; ohne Moderation
+      // Stempel erst, wenn wirklich etwas erschienen ist; ohne Moderation
       // sofort (dort wird jeder Beitrag direkt approved gespeichert).
       has_badge: row.has_badge === true || row.has_badge === 't',
       // has_submission ist der Frontend-Vertrag (types/challenges.ts, KonfiChallenge)
@@ -367,8 +367,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     body('moderated').optional().isBoolean().withMessage('Moderation muss ein Boolean sein'),
     body('allowed_media').optional().isArray({ min: 1 }).withMessage('Mindestens eine Medienart ist erforderlich'),
     body('allow_multiple').optional().isBoolean().withMessage('Mehrfach-Einreichung muss ein Boolean sein'),
-    body('badge_icon').optional().trim().isLength({ max: 50 }).withMessage('Abzeichen-Icon max. 50 Zeichen'),
-    body('badge_name').trim().notEmpty().isLength({ max: 100 }).withMessage('Abzeichen-Name ist erforderlich (max. 100 Zeichen)'),
+    body('badge_icon').optional().trim().isLength({ max: 50 }).withMessage('Stempel-Icon max. 50 Zeichen'),
+    body('badge_name').trim().notEmpty().isLength({ max: 100 }).withMessage('Stempel-Name ist erforderlich (max. 100 Zeichen)'),
     body('author_user_id').optional({ nullable: true }).isInt({ min: 1 }).withMessage('Ungültige Urheber-ID'),
     body('author_freetext').optional({ nullable: true }).trim().isLength({ max: 200 }).withMessage('Urheber-Freitext max. 200 Zeichen'),
     body('starts_at').isISO8601().withMessage('Startzeitpunkt ist erforderlich'),
@@ -388,8 +388,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     body('moderated').optional().isBoolean().withMessage('Moderation muss ein Boolean sein'),
     body('allowed_media').optional().isArray({ min: 1 }).withMessage('Mindestens eine Medienart ist erforderlich'),
     body('allow_multiple').optional().isBoolean().withMessage('Mehrfach-Einreichung muss ein Boolean sein'),
-    body('badge_icon').optional().trim().isLength({ max: 50 }).withMessage('Abzeichen-Icon max. 50 Zeichen'),
-    body('badge_name').optional().trim().notEmpty().isLength({ max: 100 }).withMessage('Abzeichen-Name max. 100 Zeichen'),
+    body('badge_icon').optional().trim().isLength({ max: 50 }).withMessage('Stempel-Icon max. 50 Zeichen'),
+    body('badge_name').optional().trim().notEmpty().isLength({ max: 100 }).withMessage('Stempel-Name max. 100 Zeichen'),
     body('starts_at').optional().isISO8601().withMessage('Ungültiger Startzeitpunkt'),
     body('ends_at').optional().isISO8601().withMessage('Ungültiger Endzeitpunkt'),
     body('is_draft').optional().isBoolean().withMessage('Entwurfs-Flag muss ein Boolean sein'),
@@ -418,7 +418,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // KONFI-ENDPUNKTE
   // ====================================================================
 
-  // GET /konfi — aktive Challenges, Archiv und eigene Abzeichen.
+  // GET /konfi — aktive Challenges, Archiv und eigene Stempel.
   // Konfi sieht ausschliesslich Challenges seiner Jahrgänge, nie Entwuerfe.
   // Auch für Teamer/Admins: sie nehmen bei audience 'konfis_und_team' und
   // 'nur_team' selbst teil (User-Entscheid 08.08.). Der Pfad heißt weiterhin
@@ -595,7 +595,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         res.json({
           challenge: mapChallengeForKonfi({
             ...challenge,
-            // Abzeichen erst nach Freigabe — dieselbe Regel wie in der Liste
+            // Stempel erst nach Freigabe — dieselbe Regel wie in der Liste
             // (GET /konfi): nur ein approved-Beitrag zählt.
             has_badge: own.some(s => s.moderation_status === 'approved'),
             own_submission_count: own.length

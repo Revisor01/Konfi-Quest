@@ -163,8 +163,34 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       Freigabe-Regel (3443df5b) angepasst.
 
 ### Zurückgestellt (Simons Entscheidung)
-- [ ] **"Abzeichen" widerspricht "es gibt nichts dafür"** — vielleicht besser
-      "mitgemacht". Bewusst später.
+- [x] **"Abzeichen" widerspricht "es gibt nichts dafür"** ERLEDIGT
+      27.08.2026: Es heisst jetzt **Stempel**.
+      Der Widerspruch war groesser als notiert. Nicht nur der Hinweistext:
+      Die Konfi-Ansicht warb woertlich mit **"Mach mit und sammle
+      Abzeichen!"** — direkt ueber einem Abschnitt, der das Sammeln
+      ausdruecklich verneint ("mit Absicht keine Punkte und keine Rangliste,
+      hier geht es nicht ums Sammeln").
+      **Warum "Stempel" und nicht "mitgemacht"** (der urspruengliche
+      Vorschlag): Das Wort muss auch als Hauptwort tragen — "Name des
+      Mitgemacht" geht nicht, "Name des Stempels" schon. Und es trifft die
+      Sache: ein Beleg dafuer, dass man dabei war, kein Wettbewerb.
+      **Was das Ding technisch ist** (vorher nachgesehen): ein frei
+      benennbarer Eintrag mit Icon je Challenge (`badge_name`, `badge_icon`),
+      ohne Bedingung, ohne Fortschritt, ohne Punkte — also gerade NICHT das,
+      was "Abzeichen" im Rest der App bedeutet.
+      Geaendert wurden nur die sichtbaren Texte: App (alle drei Ansichten,
+      inklusive der sechs Onboarding- und Update-Folien), Push, Handbuch
+      (Kapitel 80, dazu 00 und 30) und **beide Store-Texte fuer 2.0.0** —
+      nachgezaehlt, Android jetzt 465 von 500 Zeichen statt 467.
+      **Die Datenbankspalten heissen weiter `badge_name`/`badge_icon`.** Eine
+      Migration haette hier keinen Nutzen fuer Nutzer:innen.
+      Die Abgrenzungstabelle im Handbuch ("Abzeichen sammelt man, ein Stempel
+      belegt, dass man dabei war") wird durch die Umbenennung erst lesbar —
+      vorher musste sie zwei gleichnamige Dinge auseinanderhalten.
+      Ein Waechtertest (`stempelStattAbzeichen.test.ts`, 16 Faelle) haelt
+      fest, dass das alte Wort nicht in einen der drei Baeume zurueckkriecht,
+      und dass es dort, wo es hingehoert (echtes Abzeichen-System, Folie
+      "Deine Badges"), stehen bleibt. Gegen Mutation geprueft.
 
 ---
 

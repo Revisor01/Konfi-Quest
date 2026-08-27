@@ -115,7 +115,7 @@ export interface ChallengeSubmission {
   role_name?: string | null;
 }
 
-/** Eigenes Challenge-Abzeichen (bewusst ohne Zähler/Fortschritt). */
+/** Eigener Challenge-Stempel (bewusst ohne Zähler/Fortschritt). */
 export interface ChallengeMark {
   challenge_id: number;
   badge_icon: string;

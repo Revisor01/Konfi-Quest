@@ -116,7 +116,7 @@ Drei Reiter: **Aktuell**, **Geplant**, **Archiv**.
 
 Beim Anlegen legst du fest, **wer mitmacht** (ein Jahrgang mit dem Team oder
 nur das Team), **welche Medienarten** erlaubt sind und **wie sichtbar** die
-Beiträge sind. Dazu das Abzeichen, das es fürs Mitmachen gibt.
+Beiträge sind. Dazu der Stempel, den es fürs Mitmachen gibt.
 
 Nach dem Start sind **Sichtbarkeit, Freigabepflicht, Startzeitpunkt und
 Medienarten gesperrt**. Das ist Absicht: Was den Konfis zugesagt wurde, gilt.

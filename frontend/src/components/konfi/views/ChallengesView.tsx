@@ -72,7 +72,7 @@ import {
 import { EmptyState, SectionHeader } from '../../shared';
 import type { KonfiChallenge, ChallengeMark } from '../../../types/challenges';
 
-// Icon-Vorrat der Challenge-Abzeichen. Bewusst als eigene, schlanke Map hier —
+// Icon-Vorrat der Challenge-Stempel. Bewusst als eigene, schlanke Map hier —
 // der Admin-Auswahldialog (ChallengeManageModal) haelt denselben Schlüssel-
 // Vorrat, aber ihn zu importieren wuerde das komplette Verwaltungs-Modal in das
 // Konfi-Bundle ziehen. Schlüssel müssen mit dem Admin-Vorrat uebereinstimmen.
@@ -94,7 +94,7 @@ export const getChallengeBadgeIcon = (iconName?: string | null): string =>
 
 // Konfi-Sicht der Challenges. Bewusst OHNE Zähler/Fortschritt/Rangliste — der
 // Kern des Features ist die eigene Deutung, nicht die Menge (siehe Konzept).
-// Aufbau immer: (1) aktive Challenges als grosse Karten, (2) eigene Abzeichen
+// Aufbau immer: (1) aktive Challenges als grosse Karten, (2) eigene Stempel
 // als Icon-Reihe, (3) Archiv.
 
 interface ChallengesViewProps {
@@ -186,7 +186,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
     [archive]
   );
 
-  // Aktuell oder Archiv. Die Abzeichen stehen unter beiden Reitern.
+  // Aktuell oder Archiv. Die Stempel stehen unter beiden Reitern.
   const [reiter, setReiter] = useState<'aktuell' | 'archiv'>('aktuell');
 
   return (
@@ -194,11 +194,11 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
 
       <SectionHeader
         title="Challenges"
-        subtitle="Mach mit und sammle Abzeichen!"
+        subtitle="Mach mit, sei dabei"
         icon={flagOutline}
         preset="challenges"
         stats={[
-          // Aktiv und Archiv springen zum jeweiligen Reiter; Abzeichen haben
+          // Aktiv und Archiv springen zum jeweiligen Reiter; Stempel haben
           // keinen eigenen Reiter und bleiben reine Anzeige.
           { value: active.length, label: 'AKTIV', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
           { value: marks.length, label: 'ABZEICHEN' },
@@ -210,7 +210,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
 
       {/* Reiter statt untereinander gestapelter Abschnitte: spart Platz und
           folgt dem Muster der uebrigen Listen (Nutzerwunsch 22.08.2026).
-          Die Abzeichen bleiben bewusst darunter stehen — sie gehoeren zu
+          Die Stempel bleiben bewusst darunter stehen — sie gehoeren zu
           beiden Reitern. */}
       <div className="app-segment-wrapper">
         <IonSegment
@@ -393,21 +393,21 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
       </>
       )}
 
-      {/* --- 2. Deine Abzeichen (bewusst OHNE Zaehler) --- */}
+      {/* --- 2. Deine Stempel (bewusst OHNE Zaehler) --- */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--challenges">
             <IonIcon icon={ribbonOutline} />
           </div>
-          <IonLabel>Deine Abzeichen</IonLabel>
+          <IonLabel>Deine Stempel</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
           <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
             {marks.length === 0 ? (
               <EmptyState
                 icon={ribbonOutline}
-                title="Noch keine Abzeichen"
-                message="Für jede Challenge, bei der du mitmachst, bekommst du ein eigenes Abzeichen."
+                title="Noch keine Stempel"
+                message="Für jede Challenge, bei der du mitmachst, bekommst du einen eigenen Stempel."
                 iconColor="var(--app-color-challenges)"
               />
             ) : (

@@ -107,7 +107,7 @@ import {
 } from '../../../utils/challengeForm';
 
 // Icon-Auswahl: identisches Pattern und identischer Vorrat wie BadgeManagementModal,
-// damit Challenge-Abzeichen und Badges dieselbe Bildsprache haben.
+// damit Challenge-Stempel und Abzeichen dieselbe Bildsprache haben.
 const CHALLENGE_ICONS: Record<string, { icon: string; name: string; category: string }> = {
   flag: { icon: flag, name: 'Flagge', category: 'Challenge' },
   sparkles: { icon: sparkles, name: 'Funken', category: 'Challenge' },
@@ -378,7 +378,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   const handleSave = async () => {
     if (!isFormValid) {
       // Der Zeitraum ist nur außerhalb des Entwurfs Pflicht.
-      const felder = ['Titel', 'Beschreibung', 'Abzeichen-Name', 'Medienarten'];
+      const felder = ['Titel', 'Beschreibung', 'Stempel-Name', 'Medienarten'];
       if (!isTeamOnly) felder.push('Jahrgänge');
       if (!formData.is_draft) felder.push('den Zeitraum');
       setError(`Bitte fülle ${felder.slice(0, -1).join(', ')} und ${felder[felder.length - 1]} aus.`);
@@ -677,19 +677,19 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               </IonCard>
             </IonList>
 
-            {/* SEKTION: Abzeichen */}
+            {/* SEKTION: Stempel */}
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
                   <IonIcon icon={ribbonOutline} />
                 </div>
-                <IonLabel>Abzeichen</IonLabel>
+                <IonLabel>Stempel</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
                   <IonList>
                     <IonItem lines="inset">
-                      <IonLabel position="stacked">Name des Abzeichens *</IonLabel>
+                      <IonLabel position="stacked">Name des Stempels *</IonLabel>
                       <IonInput
                         value={formData.badge_name}
                         onIonInput={(e) => setFormData({ ...formData, badge_name: e.detail.value! })}
@@ -757,8 +757,8 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       </IonAccordion>
                     </IonAccordionGroup>
                   </div>
-                  {/* Wie das Abzeichen funktioniert, erklärt das Handbuch
-                      (Kapitel Challenges, "Das Abzeichen") — der Hinweis-Kasten
+                  {/* Wie der Stempel funktioniert, erklärt das Handbuch
+                      (Kapitel Challenges, "Der Stempel") — der Hinweis-Kasten
                       hier ist ersatzlos gestrichen (Nutzerentscheid 24.08.2026). */}
                 </IonCardContent>
               </IonCard>

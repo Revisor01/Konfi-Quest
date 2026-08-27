@@ -13,7 +13,7 @@ Zeichen: 1828 (Limit 4000)
 Konfi Quest 2.0 ist das größte Update bisher.
 
 Challenges
-Neu sind Challenges: Aufgaben, auf die ihr über einen selbst gewählten Zeitraum mit Foto, Text, Aufnahme oder Link antwortet. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — fürs Mitmachen gibt es ein Abzeichen. Bei jedem Beitrag entscheidet ihr selbst, ob er mit Namen, anonym oder nur für die Leitung sichtbar ist. Teamer:innen und Leitung machen mit, es gibt auch Runden nur fürs Team. Challenges haben einen eigenen Platz unten in der Leiste.
+Neu sind Challenges: Aufgaben, auf die ihr über einen selbst gewählten Zeitraum mit Foto, Text, Aufnahme oder Link antwortet. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — fürs Mitmachen gibt es einen Stempel. Bei jedem Beitrag entscheidet ihr selbst, ob er mit Namen, anonym oder nur für die Leitung sichtbar ist. Teamer:innen und Leitung machen mit, es gibt auch Runden nur fürs Team. Challenges haben einen eigenen Platz unten in der Leiste.
 
 Mitmachen statt Events
 Der Tab "Events" heißt jetzt "Mitmachen" und trägt Termine und Aktivitäten gemeinsam. Aus "Anträgen" werden überall "Aktivitäten" — gemeldet wird, was schon passiert ist. Teamer:innen können bei Terminen jetzt ausdrücklich zu- oder absagen, mit freiwilliger Begründung. Für Teamer:innen gibt es eigene Plätze und eine eigene Warteliste.
@@ -37,10 +37,10 @@ Diese Version braucht iOS 16.4 oder neuer.
 
 ## Android — Google Play, "Was ist neu"
 
-Zeichen: 467 (Limit 500)
+Zeichen: 465 (Limit 500)
 
 ```
-Konfi Quest 2.0 bringt Challenges: Aufgaben, auf die ihr mit Foto, Text, Aufnahme oder Link antwortet — ohne Punkte und ohne Rangliste, mit Abzeichen fürs Mitmachen. Ihr entscheidet je Beitrag, ob mit Namen, anonym oder nur für die Leitung.
+Konfi Quest 2.0 bringt Challenges: Aufgaben, auf die ihr mit Foto, Text, Aufnahme oder Link antwortet — ohne Punkte und ohne Rangliste, mit Stempel fürs Mitmachen. Ihr entscheidet je Beitrag, ob mit Namen, anonym oder nur für die Leitung.
 
 Aus "Events" wird "Mitmachen" mit Terminen und Aktivitäten. Teamer:innen können zu- und absagen. Neu: ein Handbuch für alle Rollen.
 

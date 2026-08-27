@@ -51,7 +51,7 @@ interface ChallengesManageViewProps {
   // Design nicht zerreisst (User-Feedback 09.08.).
   headerSlot?: React.ReactNode;
   /**
-   * Eigene Abzeichen der angemeldeten Person. Seit der Zusammenlegung von
+   * Eigene Stempel der angemeldeten Person. Seit der Zusammenlegung von
    * "Verwalten" und "Mitmachen" (11.08.) zeigt diese Liste auch die eigene
    * Teilnahme — Leitung und Team machen selbst mit.
    */
@@ -503,10 +503,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       </ListSection>
       )}
 
-      {/* --- 2. Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
+      {/* --- 2. Eigene Stempel — dieselbe Reihe wie in der Konfi-Sicht. Seit der
           Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
           hier nicht mehr nur Verwaltung, sondern nimmt selbst teil.
-          IMMER anzeigen, auch leer: war der Abschnitt bei 0 Abzeichen
+          IMMER anzeigen, auch leer: war der Abschnitt bei 0 Stempeln
           ausgeblendet, sah man nie, dass es ihn ueberhaupt gibt — und damit
           auch nicht, dass Mitmachen vorgesehen ist (User-Hinweis 11.08.). */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -514,14 +514,14 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
             <div className="app-section-icon app-section-icon--challenges">
               <IonIcon icon={ribbonOutline} />
             </div>
-            <IonLabel>Deine Abzeichen</IonLabel>
+            <IonLabel>Deine Stempel</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
               {marks.length === 0 ? (
                 <EmptyState
                   icon={ribbonOutline}
-                  title="Noch keine Abzeichen"
+                  title="Noch keine Stempel"
                   message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
                   iconColor="var(--app-color-challenges)"
                 />

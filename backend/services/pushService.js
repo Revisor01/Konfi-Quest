@@ -1114,8 +1114,8 @@ class PushService {
   }
 
   /**
-   * Abzeichen einer Challenge erhalten - Push an die einreichende Person.
-   * Das Abzeichen ist abgeleitet (EXISTS eigene APPROVED-Submission, siehe
+   * Stempel einer Challenge erhalten - Push an die einreichende Person.
+   * Der Stempel ist abgeleitet (EXISTS eigene APPROVED-Submission, siehe
    * challenges.js) und zählt erst, wenn ein Beitrag wirklich freigegeben ist:
    * Ohne Moderation feuert der Push bei der ersten eigenen Submission (die ist
    * sofort approved), bei moderierten Challenges erst bei der Freigabe durch
@@ -1136,8 +1136,8 @@ class PushService {
       );
 
       const notification = {
-        title: 'Abzeichen erhalten',
-        body: `Du hast das Abzeichen für "${challengeTitle}" bekommen!`,
+        title: 'Stempel erhalten',
+        body: `Du hast den Stempel für "${challengeTitle}" bekommen!`,
         data: {
           type: 'challenge_badge_earned',
           challengeId: challengeId.toString(),
