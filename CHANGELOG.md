@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Der Papierkorb zum Leeren des Team-Chats erscheint nur noch dort, wo er
+  auch funktioniert. Bisher war er in einem Fall sichtbar und scheiterte beim
+  Antippen.
+
 - Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
   vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
   Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
