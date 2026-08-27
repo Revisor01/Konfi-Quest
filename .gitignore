@@ -147,3 +147,13 @@ frontend/ios/App/build_export*/
 # Produktions-Secrets
 deploy/.env
 .env.production
+
+# Interne Arbeitsdokumente — NICHT ins Repo, es ist oeffentlich.
+# Sie enthalten Betriebswissen (Hostnamen, Container- und Nutzernamen,
+# Serverpfade). Keine Zugangsdaten, aber eine Landkarte, die niemanden
+# ausserhalb etwas angeht. Liegen lokal unter ~/Documents/konfi-quest-intern/.
+BAUSTELLEN.md
+HANDOFF.md
+CLAUDE.md
+docs/agenten-berichte/
+.planning/
