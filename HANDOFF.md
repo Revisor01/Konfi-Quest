@@ -1,4 +1,4 @@
-# Handoff — Stand 27.08.2026, mittags
+# Handoff — Stand 27.08.2026, abends
 
 Das laufende Register steht in `BAUSTELLEN.md`, die Prüfberichte in
 `docs/agenten-berichte/` (mit eigenem Register in dessen `README.md`).
@@ -7,149 +7,157 @@ Das laufende Register steht in `BAUSTELLEN.md`, die Prüfberichte in
 
 ## Wo wir stehen
 
-Seit dem nächtlichen Handoff sind **21 PRs zusammengeführt**. Damit sind alle
-HOCH- und alle MITTEL-Befunde aus dem Drei-Ansichten-Bericht erledigt, dazu
-sieben der acht NIEDRIG-Befunde, die Handbuch-Punkte und der komplette
-Dashboard/Profil-Durchgang.
+**24 PRs sind heute zusammengeführt.** N2 und N6 — die beiden Punkte aus
+Simons Auftrag vom Mittag — sind vollständig erledigt.
 
-### Offene PRs — alle grün, nur noch mergen
+**Vor 2.0.0 blockiert nur noch eines: Simons Test, dann Tag und Release.**
+Das ist an allen offenen Registerpunkten einzeln nachgeprüft.
+
+### Offene PRs — alle grün oder in der CI
 
 | PR | Inhalt |
 |---|---|
-| **#109** | Benutzerverwaltung: Lösch-Wische nur für org_admin |
-| **#110** | Team-Chat leeren nur für admin und org_admin |
-| **#111** | Wrapped-Einstieg nur bei vorhandenem Snapshot |
-| **#113** | Material-Tags entfernt |
-| **#114** | Hinweis bei fehlender Jahrgangs-Zuweisung |
+| **#126** | Beide Hinweis-Karten auf der Leitungs-Startseite |
+| **#129** | Teamer:innen können im Chat reagieren (Migration 132) |
+| **#130** | Keine Erinnerungen für abgesagte Termine |
+| **#131** | App-Icon bei geschlossener App |
 
-Alle fünf waren zuletzt aufgefrischt und gepusht. **Vor dem Mergen die CI
-abwarten** — jeder Merge macht die übrigen konfliktbehaftet.
-
----
-
-## Was als Nächstes ansteht
-
-**Simons Auftrag vom 27.08. mittags, in dieser Reihenfolge:**
-
-1. **N2 Teil 2** — die 250-Zeilen-Inline-Kopie in `routes/teamer.js`.
-   Vorbereitet, siehe eigener Abschnitt unten.
-2. **N6** — **alle sieben Punkte sind am 27.08. mittags entschieden**, die
-   Entscheidungen stehen im Register bei N6. Kurzfassung:
-   - Anmeldezeitraum im Teamer-Detail: **ergänzen**
-   - Serien-Kennzeichnung: **ergänzen** (auch Teamer und Konfis)
-   - Event-Chat-Einstieg: **für alle** (Mitgliedschaft besteht ohnehin)
-   - `registration_status` im Admin-Detail: **angleichen** (Backend-Wert)
-   - Punktezeile "Punkte 0": **angleichen** (ausblenden wie anderswo)
-   - `checkin_window`: **in den Detailansichten anzeigen**
-   - Abmeldefrist: **bleibt hartcodiert** — ERLEDIGT, siehe unten
-
-   **Abmeldefrist ist abgeschlossen.** Simons Nachtrag: "muss dann auch ins
-   Handbuch und irgendwo klar genannt werden". Beides gemacht — eigener
-   Abschnitt in `70-termine.md` (im Anmelde-Kapitel, mit Abgrenzung gegen den
-   QR-Code) und ein Hinweis im Termin-Detail der Leitung. Die Regel war
-   vorher nur für Konfis sichtbar, und auch erst, wenn sie abgelaufen war.
-
-   **Die übrigen sechs sind entschieden, aber noch nicht gebaut.**
-
-Erledigt aus demselben Auftrag: Material-Tags entfernt (#113), Admin-Hinweis
-gebaut (#114, mit der vorhandenen `EmptyState`-Komponente).
+**#129, #130 und #131 wurden gerade aufgefrischt** und laufen neu durch die
+CI. Vor dem Mergen abwarten; jeder Merge macht die übrigen konfliktbehaftet.
 
 ---
 
-## N2 Teil 2 — vorbereitet, noch nicht angefasst
+## Was heute die eigentliche Arbeit war
 
-Der Umbau, den Simon als Nächstes will. **Kein Einzeiler:** Er ändert eine
-API-Antwortform, an der das Frontend hängt.
+**Drei Register waren veraltet, in beide Richtungen.** Das hat mehr Zeit
+gekostet als jeder einzelne Fix:
 
-### Was ist
+- `BAUSTELLEN.md`: **zehn von elf** geprüften Befunden standen als offen,
+  obwohl längst behoben (PR #117).
+- `docs/agenten-berichte/README.md`: **sechs von dreizehn** Zeilen falsch.
+  Die gravierendste — "Drei-Ansichten-Lücken: OFFEN" — obwohl alle sechs
+  HOCH-Befunde erledigt waren (PR #124).
+- Der Statistik-Kopf war zu drei Vierteln gebaut, nur nie abgehakt.
 
-- **Konfi:** `utils/konfiBadgeProgress.js` liefert `{ available, earned,
-  stats }` (Zeile 303-305).
-- **Teamer:** `routes/teamer.js:270` rechnet **271 Zeilen inline** nach, mit
-  eigener Antwortform — flaches Array plus Zählwerte in HTTP-Headern.
-
-### Die Falle, die den Umbau teuer macht
-
-**Zwei Frontend-Stellen lesen den Header aus:**
-
-- `teamer/pages/TeamerBadgesPage.tsx:57`
-- `teamer/pages/TeamerDashboardPage.tsx:283`
-
-Beide holen `res.headers['x-badges-secret-total']`. Wer die Antwortform
-umstellt, muss diese beiden mitziehen — sonst verschwindet die Zahl der
-geheimen Abzeichen stillschweigend.
-
-### Der dritte Unterschied
-
-Der Teamer-Pfad hat die **"unerreichbar"-Ausblendung** des Konfi-Pfads nicht
-(`konfiBadgeProgress.js:154-183`). Vor dem Zusammenlegen klären, ob sie für
-Teamer:innen überhaupt gelten soll — die Kriterien sind andere
-(`teamer_year`, gezählte Teamer-Aktivitäten).
-
-### Empfehlung
-
-Erst messen, was die beiden Pfade tatsächlich unterschiedlich ausgeben
-(gleiche Daten, beide Endpunkte, Ausgaben vergleichen), dann umbauen. Sonst
-gleicht man Verhalten an, das absichtlich verschieden war.
+**Die Lehre, die im Register steht:** Erst bis zum Ende des Eintrags lesen,
+dann messen, dann fragen. Ich habe einmal eine Entscheidung eingeholt, die
+gar nicht mehr nötig war, weil ich den Erledigt-Vermerk zwanzig Zeilen
+unter dem Befundtext übersehen hatte.
 
 ---
 
-## Was diesen Durchgang ausgemacht hat
+## VIER PHANTOM-BERICHTE — die wichtigste Falle des Tages
 
-**Fünf Befunde, die als "praktisch folgenlos", "kosmetisch" oder als bloße
-Anzeige-Divergenz notiert waren, waren beim Nachmessen offene API-Wege.**
-Jedes Mal derselbe Grund: Die Oberfläche filtert, die Route nicht.
+**Agenten melden Berichte, die sie nie geschrieben haben.** Heute dreimal
+passiert (Chat-Baum, Offline-Schreibvorgänge, Push-Zustellung), am 26.08.
+schon einmal (Abhängigkeiten/Ionic). Die Zusammenfassungen klingen
+plausibel, mit konkreten Befundzahlen — die Dateien existieren nicht.
 
-| Befund | Notiert als | Gemessen |
-|---|---|---|
-| N1 | "praktisch vermutlich folgenlos" | Anmeldung zu Teamer-Termin **200**, zu abgesagtem **200** |
-| N3 | Anzeige-Divergenz beim Lesen | Konfi-Antrag auf Teamer-Aktivität **201**, in der Liste sichtbar |
-| Bonuspunkte | MITTEL | Bonus an fremden Jahrgang **201**, Eintrag angelegt |
-| B2b | "eigene Baustelle" | Chat-Push überschrieb alle anderen Zähler im App-Icon |
-| has_wrapped | NIEDRIG | Einstieg sichtbar (`true`), Abruf **404** |
+**Neu in `docs/agenten-berichte/README.md`: Regel 6** — gemeldete Berichte
+vor der Übernahme auf Existenz prüfen (`ls`, nicht glauben).
 
-Beim sechsten (Benutzerseite Deep-Link) stimmte "kosmetisch" dagegen — dort
-hielt `requireOrgAdmin` serverseitig. **Der Unterschied lässt sich nicht raten,
-nur messen.**
+**Was daraus folgte:** Ich habe Simon zwei Befunde als "gemessen"
+weitergegeben, die unbelegt waren. Beide erwiesen sich beim Nachprüfen als
+echt — aber das war Glück, nicht Methode. Die Fix-Agenten bekamen deshalb
+ausdrücklich den Auftrag, den Befund ZUERST selbst am Code zu prüfen.
 
-### Zwei wiederkehrende Muster
-
-- **Zwei Rechte an einer Variable.** Bei der Chat-Mitgliederliste war das Gate
-  zu eng (`isAdmin` deckte Liste *und* Umfragen ab), beim Team-Chat-Mülleimer
-  zu weit (`istLeitung` war für den Export gebaut). Wer so etwas findet:
-  trennen, nicht verengen — und die jeweils andere Hälfte mit einer Gegenprobe
-  festhalten.
-- **Dieselbe Frage, zwei richtige Antworten.** Bei N5 brauchte es kein
-  Freigabe-Gate (Snapshot und Freigabe entstehen in einer Transaktion), bei
-  `has_wrapped` sehr wohl (`Promise.allSettled` setzt die Freigabe auch bei
-  Fehlern). Beide am Code belegt. Nicht von einem auf den anderen schließen.
+**Die drei Prüfaufträge sind damit NICHT erledigt.** Chat-Baum,
+Offline-Schreibvorgänge und Push-Zustellung stehen weiter offen im
+Register.
 
 ---
 
-## Fallen, die neu dazugekommen sind
+## PARALLELE AGENTEN IM SELBEN VERZEICHNIS — teuer
 
-- **`rbac.js:13` hält einen 30-Sekunden-User-Cache.** Ein `DELETE` auf
-  `user_jahrgang_assignments` ändert die Datenbank, nicht den Cache. Ein Test
-  dazu war **isoliert grün und im vollen Lauf rot** — gemessen: keine
-  Zuweisung in der DB, aber der Server sah weiter zwei Konfis. Lösung: einen
-  frisch angelegten User verwenden, den vorher niemand geladen hat.
-- **Gestapelte PRs nicht bauen.** PR #99 lief gegen einen `fix/`-Branch und
-  wurde beim Merge von dessen Basis **automatisch mitgeschlossen**, ohne
-  selbst gemergt zu werden. Wiedereröffnen ging nicht mehr; der Inhalt musste
-  als neuer PR gegen `main` gehen. Immer gegen `main` abzweigen.
-- **Additives Auflösen erzeugt Doppeleinträge.** Beim Auffrischen kollidieren
-  `BAUSTELLEN.md`-Zeilen so, dass derselbe Punkt einmal als `[ ]` und einmal
-  als `[x]` dasteht. **Nach jedem Auffrischen prüfen** — ein Skript dafür liegt
-  im Scratchpad (`auffrischen.sh`), es löst die Konflikte und meldet
-  Dopplungen.
-- **`git filter-branch` und `rebase --onto` sind hier die falschen Werkzeuge.**
-  Ein Versuch, eine WIP-Commit-Nachricht zu glätten, schrieb 28 Commits neu,
-  darunter bereits gemergte. Mit `git reset --hard <hash>` zurückgeholt.
-- **Die Generatoren ändern regelmäßig nur `lastmod` in `sitemap.xml`.** Kein
-  Drift — verwerfen statt mitcommitten.
-- **Test-DB und Docker laufen nicht über Sitzungen hinweg.** Nach einem
-  Neustart: `colima start`, dann
-  `docker compose -f docker-compose.test.yml up -d --wait` im `backend/`.
+Bis zu fünf Agenten liefen gleichzeitig im selben Arbeitsbaum. Folgen,
+alle real eingetreten:
+
+- **Branches wurden unter laufenden Agenten weggecheckt**, uncommittete
+  Stände verschwanden. Einmal musste ein Agent seine Arbeit im isolierten
+  Worktree neu aufbauen.
+- **Ein Branch-Zeiger zeigte plötzlich auf `main`** — die Commits existierten,
+  nur der Zeiger war überschrieben. Mit `git branch -f <sha>` zurückgeholt.
+- **Die Test-Datenbank wurde mitten im Lauf gedroppt** (`globalSetup` macht
+  `DROP DATABASE`). Ergebnis: bis zu 1265 rote Tests, die nichts mit dem
+  Code zu tun hatten.
+- Zwei Agenten schrieben in dieselbe Messdatei `zzz-messung.test.js`.
+
+**Konsequenz für die nächste Sitzung:** Jeder parallele Auftrag bekommt
+einen eigenen Worktree (`git worktree add`), oder sie laufen nacheinander.
+Und: `node_modules` in den Worktree symlinken, sonst fehlen die Globals.
+
+**Beim Testen:** Vor dem Urteil über rote Tests immer prüfen, ob die
+Datenbank frei war. Der belastbare Vergleich ist derselbe Lauf auf `main`
+— heute: `main` 1223 Fehler, Feature-Branch 75. Die CI urteilt
+verlässlicher, sie startet mit frischer Datenbank.
+
+---
+
+## Was heute gebaut wurde
+
+**Zwei Sicherheitsfunde, beide gemessen statt vermutet:**
+
+- **Mandantenlücke** (PR #119): `PUT /admin/konfis/:id` prüfte den
+  Ziel-Jahrgang nicht gegen die eigene Organisation. Gemessen: Konfi 1
+  (Org 1) mit Jahrgang 2 (Org 2) → **HTTP 200**, in der Datenbank stand
+  danach der fremde Jahrgang. Der POST prüfte es seit jeher, im PUT fehlten
+  genau diese vier Zeilen.
+- **500er-Risiko** (PR #118): Im Teamer-Abzeichen-Pfad stand das JSON-Parsen
+  ohne Auffangnetz. Ein einziger beschädigter Datensatz hätte die ganze
+  Seite unbenutzbar gemacht.
+
+**N2 Teil 2** (PR #118): Der Fortschritt kommt aus einer Quelle
+(`utils/badgeProgress.js`), netto 107 Zeilen weniger. Die Antwortform des
+Teamer-Pfads blieb bewusst unangetastet — daran hängen zwei Ansichten und
+vier Tests. **Die Vereinheitlichung steht als eigener Punkt im Register.**
+
+**N6** (PR #116): Termin-Detail in allen drei Ansichten angeglichen. Der
+wichtigste Fund: Die Registernotiz "reine Frontend-Änderung" war falsch —
+Konfi und Teamer lesen ihren Termin aus der LISTE, nicht aus
+`GET /events/:id`. **Wer eine Anzeige für diese beiden ergänzt, prüft
+zuerst, ob das Feld in der Liste steht.**
+
+**„Abzeichen" → „Stempel"** (PR #120) bei Challenges: App, Handbuch, Push
+und beide Store-Texte. Der Widerspruch war größer als notiert — die
+Konfi-Ansicht warb wörtlich mit "Mach mit und **sammle** Abzeichen!" über
+einem Abschnitt, der das Sammeln verneint.
+
+---
+
+## Entscheidungen, die nicht verloren gehen dürfen
+
+- **Alles Offene geht hinter 2.0.0**, außer dem Release selbst.
+- **Jahrgangswechsel: "Neuer Jahrgang, die Regeln des Jahrgangs gelten."**
+  Termine fallen weg, Rückblick verschwindet bis zur Freigabe des neuen
+  Jahrgangs, Punkte einer dort abgeschalteten Art werden nicht mehr
+  angezeigt. Simons Einordnung: Der typische Fall ist "falsch angelegt,
+  muss in den richtigen Jahrgang" — nicht ein Wechsel kurz vor der
+  Konfirmation. **Nichts am Wrapped bauen**, das Verhalten ist richtig.
+- **Warnen statt blockieren** bei Punktearten und fremdem Jahrgang.
+  **Harter Schnitt** bei Challenge-Beiträgen, keine Ausnahme.
+- **Wartelisten-Einstellungen entfernt** (PR #121) — gemessen: null
+  Datensätze in Produktion, es ging nichts verloren.
+- **Der Statistik-Kopf** war schon zu drei Vierteln gebaut; die dritte
+  Kachel heißt "Abgelehnt", nicht "Versteckt" wie im Register.
+
+---
+
+## N8 — durchgemessen, nach 2.0.0
+
+Sieben Stellen, nicht vier. Frontend: null Änderungen nötig.
+
+**Die Falle, die einen ersten Versuch kosten würde:** Die Defaults sind
+verschieden. `users.bible_translation` ist `NOT NULL DEFAULT 'LUT'`,
+`konfi_profiles.bible_translation` ist **nullable**. "Noch leer" heißt an
+`users` also `= 'LUT'`, NICHT `IS NULL`.
+
+- Mit `IS NULL` geprüft überträgt die Migration **gar nichts**.
+- Ohne die Bedingung **überschreibt** sie die neuere Wahl beförderter
+  Teamer:innen.
+- Richtig ist dreiteilig: Quelle gesetzt UND `<> 'LUT'` UND Ziel noch `'LUT'`.
+
+Ein bestehender Test prüft genau das Verhalten, das der Umbau abschafft —
+er muss **ersetzt** werden, nicht aufgeweicht. Details im Register.
 
 ---
 
@@ -157,54 +165,28 @@ nur messen.**
 
 - **Drei Ansichten**: `admin/`, `teamer/`, `konfi/`. Eine Änderung in nur
   einem Baum ist für zwei Drittel der Nutzer:innen nicht gemacht.
-- **Ein Bericht ist eine Behauptung — das Register auch.** Beim Abarbeiten
-  stimmten drei Registereinträge nicht mehr mit dem Code überein, und eine
-  eigene Korrektur von vor einer Stunde war ebenfalls falsch (sie beschrieb
-  den Stand vor einem Merge). Vor dem Eintragen von "erledigt" wie von "offen"
-  am Code nachsehen.
-- **Ein Wächtertest schützt nur vor der Schreibweise, die er kennt.** Der Test
-  gegen stilles Offline-Scheitern prüfte `if (!isOnline) return` und war für
-  `if (!networkMonitor.isOnline) return` blind — genau die Variante, die M5
-  ausmachte.
-- **Sporadischer Testabbruch**: Vor dem Reparieren eines roten Tests den Lauf
-  wiederholen.
-- **Volle Backend-Suite lokal laufen lassen**, nicht nur die berührte Datei.
+- **Ein Bericht ist eine Behauptung — das Register auch**, und heute war es
+  dreimal falsch. Vor "erledigt" wie vor "offen" am Code nachsehen.
+- **Ein Wächtertest schützt nur vor der Schreibweise, die er kennt.** Heute
+  wieder passiert: Ein Test prüfte auf den Tabellennamen `custom_badges` und
+  wurde rot, als der günstige Zähler dieselbe Tabelle joint. Der Test hatte
+  im Kern recht, traf aber das falsche Merkmal — geschärft auf
+  `criteria_type`/`criteria_value`, nicht aufgeweicht.
+- **Sporadischer Testabbruch**: Vor dem Reparieren den Lauf wiederholen.
 - **Containername:** `konfi_quest-postgres-1`. **Migrationstabelle:**
   `schema_migrations`. **Image-Tags:** sieben Zeichen.
 - **bcrypt-Hashes nie durch die Shell reichen** — über eine SQL-Datei.
 - **Keine Secrets ins Repo** — es ist öffentlich.
-
----
-
-## Entscheidungen, die nicht verloren gehen dürfen
-
-Zusätzlich zu denen im nächtlichen Handoff:
-
-- **Der Server rechnet die App-Icon-Zahl** (B2b). Begründung gegen die
-  Alternative "Badge aus Pushes raus": Bei geschlossener App gibt es keinen
-  Client, und genau dann ist das Icon das Einzige, was jemand vor dem Öffnen
-  sieht.
-- **`super_admin` darf den Team-Chat nicht leeren.** Das Backend hatte recht,
-  nicht das Frontend — die Rolle ist für Org-*Verwaltung* zuständig, nicht für
-  das Löschen fremder Inhalte.
-- **Die Mitgliederliste im Chat sehen alle**, Umfragen anlegen bleibt bei der
-  Leitung. Die Verwaltungsaktionen im Modal hängen an einem eigenen Gate.
-- **Material-Tags sind entfernt.** Vor dem Löschen gemessen: 1 Tag, 0
-  Zuordnungen.
-- **Der `LEFT JOIN` bei Konfi-Anträgen bleibt** (N3). Beim Teamer fällt ein
-  Antrag zu einer gelöschten Aktivität aus der Liste, beim Konfi bleibt er
-  stehen. Anzeigen ist besser als Verlieren. Wer angleicht, stellt den
-  **Teamer**-Weg um.
-- **N6: Simon will bei jedem Punkt gefragt werden.**
+- Test-DB nach Neustart: `colima start`, dann
+  `docker compose -f docker-compose.test.yml up -d --wait` im `backend/`.
 
 ---
 
 ## Werkzeuge
 
-- `node scripts/drei-ansichten.mjs` — Leitung, Teamer:in und Konfi
-  nebeneinander, angemeldet.
-- `node scripts/screenshots.mjs` — 19 Bildschirmfotos aus der Demo-Gemeinde.
-- `node scripts/verwaiste-dateien.mjs` — findet Upload-Dateien ohne Datensatz.
+- `node scripts/drei-ansichten.mjs` — alle drei Rollen nebeneinander
+- `node scripts/screenshots.mjs` — 19 Bildschirmfotos aus der Demo-Gemeinde
+- `node scripts/verwaiste-dateien.mjs` — Upload-Dateien ohne Datensatz
 
 Alle drei brauchen `source ~/.claude/secrets.env`.
 
@@ -214,15 +196,16 @@ Nach **jedem** Merge die drei Doku-Generatoren laufen lassen:
     node scripts/build-api-docs.mjs
     node scripts/build-openapi.mjs
 
+Sie ändern regelmäßig nur `lastmod` in `frontend/public/sitemap.xml` — kein
+Drift, verwerfen statt mitcommitten.
+
 ---
 
 ## Zugänge
 
-- **Server:** `ssh root@server.godsapp.de`, Stack unter
-  `/opt/stacks/portainer/compose/249/v220/docker-compose.yml`
+- **Server:** `ssh root@server.godsapp.de`
 - **Datenbank:** `docker exec konfi_quest-postgres-1 psql -U konfi_user -d konfi_db`
-- **Demo-Gemeinde (Org 4):** Passwort in `~/.claude/secrets.env`
-  (`KONFI_DEMO_PASSWORT`). **Nicht anfassen:** `review-*`, `google-test-*`.
+- **Demo-Gemeinde (Org 4):** Passwort in `~/.claude/secrets.env`.
+  **Nicht anfassen:** `review-*`, `google-test-*`.
 - **Org 1 ist Simons ECHTE Gemeinde** — dort nichts zum Testen anlegen.
-- Notfall-Anleitung: `/opt/konfi-quest/NOTFALL.md` auf dem Fahrtenbuch-Server,
-  bewusst nicht im Repo.
+- Notfall-Anleitung: `/opt/konfi-quest/NOTFALL.md` auf dem Fahrtenbuch-Server.
