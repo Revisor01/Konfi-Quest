@@ -48,8 +48,8 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
-import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
-import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
+import ChangeEmailModal from '../../shared/ChangeEmailModal';
+import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
@@ -168,16 +168,13 @@ const TeamerProfilePage: React.FC = () => {
         console.error('Error refreshing user:', err);
       }
     },
-    sectionIconClass: 'app-section-icon--teamer',
-    submitBtnClass: 'app-modal-submit-btn--teamer',
-    infoBoxClass: 'app-info-box--teamer'
+    variante: 'teamer'
   });
 
   const [presentPasswordModal, dismissPasswordModal] = useIonModal(ChangePasswordModal, {
     onClose: () => dismissPasswordModal(),
     onSuccess: () => dismissPasswordModal(),
-    sectionIconClass: 'app-section-icon--teamer',
-    submitBtnClass: 'app-modal-submit-btn--teamer'
+    variante: 'teamer'
   });
 
   const [presentRoleTitleModal, dismissRoleTitleModal] = useIonModal(ChangeRoleTitleModal, {

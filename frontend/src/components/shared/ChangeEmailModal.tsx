@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import { useActionGuard } from '../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -25,40 +25,50 @@ import {
   informationCircleOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
+import { useApp } from '../../contexts/AppContext';
+import api from '../../services/api';
+
+// Farbvariante der jeweiligen Rolle — dasselbe Muster wie BiometrieSchalter:
+// EINE gemeinsame Komponente fuer alle drei Profil-Ansichten, die Seiten geben
+// nur ihre Farbe mit. Vorher lag dieses Modal doppelt vor (admin/ und konfi/,
+// das Teamer-Profil importierte quer aus dem Konfi-Baum) — funktional
+// identisch, nur die CSS-Klassen unterschieden sich.
+export type KontoModalVariante = 'users' | 'teamer' | 'purple';
+
+export const KONTO_MODAL_STIL: Record<KontoModalVariante, { sectionIcon: string; submitBtn: string; infoBox: string }> = {
+  users: { sectionIcon: 'app-section-icon--users', submitBtn: 'app-modal-submit-btn--settings', infoBox: 'app-info-box--blue' },
+  teamer: { sectionIcon: 'app-section-icon--teamer', submitBtn: 'app-modal-submit-btn--teamer', infoBox: 'app-info-box--teamer' },
+  purple: { sectionIcon: 'app-section-icon--purple', submitBtn: 'app-modal-submit-btn--konfi', infoBox: 'app-info-box--purple' },
+};
 
 interface ChangeEmailModalProps {
   onClose: () => void;
   onSuccess: () => void;
   initialEmail?: string;
-  sectionIconClass?: string;
-  submitBtnClass?: string;
-  infoBoxClass?: string;
+  variante?: KontoModalVariante;
 }
 
 const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   onClose,
   onSuccess,
   initialEmail = '',
-  sectionIconClass = 'app-section-icon--purple',
-  submitBtnClass = 'app-modal-submit-btn--konfi',
-  infoBoxClass = 'app-info-box--purple'
+  variante = 'purple'
 }) => {
   const { setSuccess, setError, isOnline } = useApp();
   const [email, setEmail] = useState(initialEmail);
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(true);
+  const stil = KONTO_MODAL_STIL[variante];
 
-  // Load current email from server when modal opens
+  // Aktuelle E-Mail beim Oeffnen vom Server laden
   useEffect(() => {
     const loadCurrentEmail = async () => {
       try {
         const response = await api.get('/auth/me');
         setEmail(response.data.email || '');
       } catch (err) {
- console.error('Error loading email:', err);
-        // Fallback to initialEmail prop
+        console.error('Error loading email:', err);
+        // Fallback auf die initialEmail-Prop
         setEmail(initialEmail);
       } finally {
         setLoading(false);
@@ -106,7 +116,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label="E-Mail-Adresse speichern" className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || loading || !isOnline}>
+            <IonButton aria-label="E-Mail-Adresse speichern" className={`app-modal-submit-btn ${stil.submitBtn}`} onClick={handleSave} disabled={isSubmitting || loading || !isOnline}>
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -117,7 +127,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* E-Mail-Adresse Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className={`app-section-icon ${sectionIconClass}`}>
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>E-Mail-Adresse</IonLabel>
@@ -150,12 +160,12 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className={`app-section-icon ${sectionIconClass}`}>
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className={`app-card ${infoBoxClass}`}>
+          <IonCard className={`app-card ${stil.infoBox}`}>
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.

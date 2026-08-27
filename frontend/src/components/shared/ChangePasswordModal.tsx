@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import { setToken, setRefreshToken } from '../../../services/tokenStore';
+import { useActionGuard } from '../../hooks/useActionGuard';
+import { setToken, setRefreshToken } from '../../services/tokenStore';
 import {
   IonPage,
   IonHeader,
@@ -32,12 +32,18 @@ import {
   alertCircle,
   cloudOfflineOutline
 } from 'ionicons/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
+import { useApp } from '../../contexts/AppContext';
+import api from '../../services/api';
+import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
 
+// EINE gemeinsame Komponente fuer alle drei Profil-Ansichten (Muster:
+// BiometrieSchalter) — vorher lag dieses Modal funktional identisch doppelt
+// vor, nur die CSS-Klassen unterschieden sich. Die Seiten geben ueber
+// `variante` ihre Rollenfarbe mit.
 interface ChangePasswordModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  variante?: KontoModalVariante;
 }
 
 interface PasswordCheck {
@@ -48,7 +54,7 @@ interface PasswordCheck {
   hasSpecial: boolean;
 }
 
-// Password Check Item Component
+// Einzelner Eintrag der Passwort-Anforderungen
 const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
   <div style={{
     display: 'flex',
@@ -65,9 +71,14 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
   </div>
 );
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSuccess }) => {
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+  onClose,
+  onSuccess,
+  variante = 'purple'
+}) => {
   const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
+  const stil = KONTO_MODAL_STIL[variante];
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -87,7 +98,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     hasSpecial: false
   });
 
-  // Password validation effect
+  // Passwort-Anforderungen live pruefen
   useEffect(() => {
     const pw = passwordData.new_password;
     setPasswordChecks({
@@ -150,12 +161,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         <IonToolbar>
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label="Passwort speichern" onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+            <IonButton aria-label="Passwort speichern" className={`app-modal-submit-btn ${stil.submitBtn}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -166,7 +177,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Aktuelles Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
               <IonIcon icon={lockClosedOutline} />
             </div>
             <IonLabel>Aktuelles Passwort</IonLabel>
@@ -199,7 +210,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Neues Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
               <IonIcon icon={keyOutline} />
             </div>
             <IonLabel>Neues Passwort</IonLabel>
@@ -250,7 +261,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Passwort-Anforderungen Sektion */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
               <IonIcon icon={shieldCheckmarkOutline} />
             </div>
             <IonLabel>Passwort-Anforderungen</IonLabel>
@@ -268,7 +279,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
           </IonCard>
         </IonList>
 
-        {/* Validation Feedback - Passwörter stimmen nicht überein */}
+        {/* Validierungs-Hinweis - Passwörter stimmen nicht überein */}
         {passwordData.new_password && passwordData.confirm_password && !passwordsMatch && (
           <IonList inset={true} className="app-modal-section">
             <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

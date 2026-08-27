@@ -577,19 +577,16 @@ falschen Teamer-Erklärtexte (PR #83).
       `losungService`.
 - [ ] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
       Konfi-Liste prüft `has_submission`, andere Bäume etwas anderes.
-- [ ] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
-      Konfi-Profil-Kopie.** Das geteilte Modal (Konfi-Dashboard,
-      Teamer-Dashboard und -Profil) bietet RVR60 nicht an; das Backend
-      akzeptiert es für beide Rollen. *Auftrag Simon: zusammenziehen.*
-      **Am 27.08.2026 nachgemessen: NOCH OFFEN.** PR #93 hat die
-      Übersetzungsliste an anderer Stelle vereinheitlicht, aber
-      `konfi/views/ProfileView.tsx:130` definiert weiterhin ein **eigenes**
-      `BibleTranslationModal` samt RVR60 (Zeile 142), während
-      `teamer/pages/TeamerProfilePage.tsx:64` das geteilte importiert. Der
-      Handoff-Vermerk "RVR60 wird nicht angeboten, entfernt statt ergänzt"
-      gilt also für das geteilte Modal, nicht für die Konfi-Kopie —
-      `backend/routes/konfi.js:2029` und `teamer.js:1237` nehmen es beide
-      weiterhin an. Zusammenziehen heißt hier: die lokale Kopie löschen.
+- [x] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
+      Konfi-Profil-Kopie.** ERLEDIGT durch PR #93. Am 27.08.2026 nach dem
+      Merge nachgemessen: `konfi/views/ProfileView.tsx:51` importiert jetzt
+      das geteilte `shared/BibleTranslationModal`, die lokale Kopie ist weg,
+      RVR60 kommt im Frontend nirgends mehr vor.
+      **Merkposten:** `backend/routes/konfi.js` und `teamer.js` führen RVR60
+      weiterhin in `validTranslations`. Das ist folgenlos, solange keine
+      Oberfläche es anbietet — wer die Liste per API setzt, bekommt aber eine
+      Übersetzung, die die App nicht mehr benennen kann. Aufräumen wäre eine
+      Zeile je Datei, gehörte aber nicht zu M4.
 - [x] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
       stillschweigend**, das Konfi-Profil reiht sie in die Warteschlange ein.
       ERLEDIGT 27.08.2026. Jetzt beide über die `writeQueue`.

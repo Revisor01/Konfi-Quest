@@ -36,8 +36,8 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import ChangeEmailModal from '../modals/ChangeEmailModal';
-import ChangePasswordModal from '../modals/ChangePasswordModal';
+import ChangeEmailModal from '../../shared/ChangeEmailModal';
+import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
@@ -72,13 +72,15 @@ const AdminProfilePage: React.FC = () => {
       } catch (err) {
         // Profile bereits via refreshProfile aktualisiert
       }
-    }
+    },
+    variante: 'users'
   });
 
   // Password Modal mit useIonModal Hook
   const [presentPasswordModalHook, dismissPasswordModalHook] = useIonModal(ChangePasswordModal, {
     onClose: () => dismissPasswordModalHook(),
-    onSuccess: () => dismissPasswordModalHook()
+    onSuccess: () => dismissPasswordModalHook(),
+    variante: 'users'
   });
 
   // RoleTitle Modal mit useIonModal Hook
