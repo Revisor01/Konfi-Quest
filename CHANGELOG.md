@@ -230,6 +230,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
   Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
   Reiter "Verbuchen" stehen.
+- Teamer:innen sehen auf ihrer Startseite jetzt auch Termine, für die
+  Teamer:innen gesucht werden — bisher standen dort nur Termine, für die man
+  schon angemeldet war. Reine Konfi-Termine erscheinen dort nicht mehr.
+- Der Zähler am Challenges-Reiter berücksichtigt für Teamer:innen jetzt auch
+  Runden, die nur fürs Team gedacht sind. Bisher wurde niemand darauf
+  hingewiesen, dass dort Beiträge auf Freigabe warten.
+- Abgesagte Termine lassen sich wieder öffnen, wenn man angemeldet war. Bisher
+  stand der Termin zwar in der Liste, ließ sich aber nicht mehr aufrufen.
 
 - Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
   jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,

@@ -912,6 +912,70 @@ describe('Teamer Routes', () => {
       expect(res.body.config).toBeDefined();
     });
 
+    // Befund H2 (26.08.2026): Die Events-Abfrage hatte zusaetzlich
+    // `AND eb.id IS NOT NULL` und machte damit aus dem LEFT JOIN auf die
+    // eigene Buchung faktisch einen INNER JOIN -- es erschienen nur Termine,
+    // fuer die man schon gebucht war. Termine mit "Teamer:innen gesucht", auf
+    // die jemand reagieren soll, kamen auf der Startseite nie an.
+    describe('Events auf der Startseite', () => {
+      const terminAnlegen = async (spalten) => {
+        const { rows } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                               waitlist_enabled, point_type, points,
+                               registration_opens_at, registration_closes_at,
+                               teamer_needed, teamer_only, teamer_max_participants)
+           VALUES ($1, NOW() + interval '7 days', $2, false, 20, false, 'gemeinde', 1,
+                   NOW() - interval '1 day', NOW() + interval '5 days', $3, $4, 5)
+           RETURNING id`,
+          [spalten.name, ORGS.testGemeinde.id, !!spalten.teamer_needed, !!spalten.teamer_only]
+        );
+        return rows[0].id;
+      };
+
+      const titel = async () => {
+        const res = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(res.status).toBe(200);
+        return res.body.events.map((e) => e.title);
+      };
+
+      it('zeigt Termine mit "Teamer:innen gesucht" auch ohne eigene Buchung', async () => {
+        await terminAnlegen({ name: 'Teamer gesucht Termin', teamer_needed: true });
+        expect(await titel()).toContain('Teamer gesucht Termin');
+      });
+
+      it('zeigt reine Team-Termine auch ohne eigene Buchung', async () => {
+        await terminAnlegen({ name: 'Nur Team Termin', teamer_only: true });
+        expect(await titel()).toContain('Nur Team Termin');
+      });
+
+      it('zeigt eigene Buchungen weiterhin, auch bei reinen Konfi-Terminen', async () => {
+        // Gegenprobe: Der Umbau darf den bisher funktionierenden Fall nicht
+        // mitnehmen.
+        const eventId = await terminAnlegen({ name: 'Konfi-Termin mit Buchung' });
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, 'confirmed', $3)`,
+          [eventId, USERS.teamer1.id, ORGS.testGemeinde.id]
+        );
+        expect(await titel()).toContain('Konfi-Termin mit Buchung');
+      });
+
+      it('zeigt reine Konfi-Termine ohne eigene Buchung NICHT', async () => {
+        // Sonst stuenden auf der Teamer-Startseite Termine, die sie nichts
+        // angehen. Dieser Filter fehlte vorher ganz.
+        await terminAnlegen({ name: 'Reiner Konfi-Termin' });
+        expect(await titel()).not.toContain('Reiner Konfi-Termin');
+      });
+
+      it('zeigt abgesagte Termine nicht', async () => {
+        const eventId = await terminAnlegen({ name: 'Abgesagter Teamer-Termin', teamer_needed: true });
+        await db.query('UPDATE events SET cancelled = true WHERE id = $1', [eventId]);
+        expect(await titel()).not.toContain('Abgesagter Teamer-Termin');
+      });
+    });
+
     it('Config kennt Challenges: Default an, Reihenfolge enthaelt den Key', async () => {
       const res = await request(app)
         .get('/api/teamer/dashboard')
