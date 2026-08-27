@@ -9,11 +9,17 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.0.0
 
+**Neu ist vor allem eins: Challenges.** Alles andere in dieser Liste sind
+Verbesserungen und Fehlerbehebungen an dem, was es schon gab — viele davon
+unter der Haube: kürzere Ladezeiten, zusammengelegte Ansichten, deutlich
+weniger Abfragen. Zwei gemessene Beispiele: Die Tageslosung braucht statt
+7 Sekunden noch 4,5 Millisekunden, die Zähler der Organisationsübersicht
+statt 198 Millisekunden noch 0,9.
+
 Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 älteren Geräten bleibt die zuletzt installierte Version nutzbar.
 
 ### Hinzugefügt
-
 - Name und Jahrgang einer Konfi lassen sich jetzt nachträglich ändern — bisher
   ging das nach dem Anlegen gar nicht mehr, ein Tippfehler blieb stehen. Beim
   Jahrgangswechsel steht vorher, was er bewirkt: Anmeldungen zu künftigen
@@ -26,17 +32,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
   im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
   Biometrie eingerichtet ist.
-- Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
-  löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
-  Aktionen (Freigeben, Anonym stellen, Ausblenden, Löschen) erreichbar durch
-  Antippen des Beitrags, zusätzlich zum Wischen; das Ausblenden bleibt als
-  umkehrbare Alternative bestehen.
 - Team-Chat leeren: Die Leitung kann über das Mülleimer-Symbol oben im
   Team-Chat alle Nachrichten samt Dateien endgültig löschen — nach klarer
   Rückfrage; der Chat selbst und seine Mitglieder bleiben bestehen.
-- Challenges: Beim Ausblenden eines Beitrags kann die Leitung eine Begründung
-  eintragen — die einreichende Person sieht sie bei ihrem Beitrag und bekommt
-  eine Mitteilung. Die Begründung ist freiwillig, Ausblenden geht auch ohne.
 - Teamer-Dashboard: Laufende Challenges erscheinen jetzt auch auf der
   Startseite der Teamer:innen, mit Restzeit und Absprung in den
   Challenges-Bereich. Die Leitung kann die Karte in den
@@ -57,18 +55,28 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
   Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
   Zu finden über das Menü oben rechts im Chat.
-- Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
-  eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne
-  Punkte, ohne Zähler und ohne Rangliste; fürs Mitmachen gibt es ein Abzeichen.
-- Challenges: Beim Anlegen werden Jahrgänge, Zeitraum, erlaubte Medienarten,
-  Sichtbarkeit und Freigabe festgelegt. Nach dem Start bleiben Sichtbarkeit und
-  Freigabe unveränderlich — die Zusage an die Konfis gilt.
-- Challenges: Konfis entscheiden je Beitrag, ob er mit Namen, anonym oder nur
-  für die Leitung sichtbar ist.
-- Challenges: Teamer:innen und Leitung nehmen selbst teil; es gibt auch Runden
-  nur fürs Team.
-- Challenges: Die Leitung kann Beiträge freigeben, nachträglich anonymisieren
-  oder ausblenden. Anonymisieren lässt sich nicht zurücknehmen.
+- **Challenges** — der große neue Bereich dieser Version. Aufgaben, auf die
+  Konfis über einen frei gewählten Zeitraum mit eigenen Beiträgen antworten:
+  Foto, Text, Aufnahme oder Link. Bewusst **ohne Punkte, ohne Zähler und ohne
+  Rangliste** — fürs Mitmachen gibt es einen Stempel.
+  - **Anlegen:** Jahrgänge, Zeitraum, erlaubte Medienarten, Sichtbarkeit und
+    Freigabe werden beim Erstellen festgelegt. Nach dem Start bleiben
+    Sichtbarkeit und Freigabe unveränderlich — die Zusage an die Konfis gilt.
+    Entwürfe brauchen noch kein Datum und stehen im Reiter "Geplant".
+  - **Sichtbarkeit:** Konfis entscheiden je Beitrag, ob er mit Namen, anonym
+    oder nur für die Leitung sichtbar ist. Im Kopf der Challenge steht
+    ausdrücklich, was gilt.
+  - **Wer mitmacht:** Teamer:innen und Leitung nehmen selbst teil; es gibt
+    auch Runden nur fürs Team und Runden nur für Konfis.
+  - **Moderation:** Die Leitung kann Beiträge freigeben, anonym stellen,
+    ausblenden (umkehrbar, auf Wunsch mit Begründung an die einreichende
+    Person) oder endgültig löschen — samt Datei, nach deutlicher Rückfrage.
+  - **Aufbau:** Für alle gleich — Reiter für Aktuelles und Archiv, die
+    Leitung sieht zusätzlich "Geplant". Die Zahlen über der Liste springen
+    zum jeweiligen Reiter. Laufende Challenges erscheinen auch auf der
+    Startseite von Konfis und Teamer:innen.
+  - **Link-Beiträge** nehmen Musik-Links von Spotify, Apple Music und
+    YouTube Music an und zeigen nur die Seite statt der vollen Adresse.
 - Veranstaltungen: eigenes Kontingent für Teamer:innen mit eigener Warteliste,
   getrennt von den Plätzen der Konfis.
 - Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
@@ -79,6 +87,30 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Anonyme Nutzungsstatistik in der App: erfasst wird, welche Bereiche und
   Funktionen genutzt werden und wo Fehlermeldungen erscheinen — ohne Namen,
   Kennung, Gemeinde oder Inhalte. Näheres in der Datenschutzerklärung.
+
+- Die Leitung kann den Jahresrückblick einer Konfi jetzt auf deren Profilseite
+  ansehen — denselben, den die Konfi selbst sieht. Er erscheint erst, wenn der
+  Rückblick für den Jahrgang freigegeben wurde.
+
+- Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
+  und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
+  Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
+  der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
+  und die Zusage lässt sich jederzeit ändern.
+
+- Konfis und Teamer:innen kommen jetzt direkt aus dem Termin in den Termin-Chat,
+  statt ihn in der Chat-Übersicht suchen zu müssen. Der Einstieg erscheint nur,
+  wenn es einen Chat gibt und man darin ist.
+
+- Das Check-in-Fenster steht jetzt im Termin — bisher ließ es sich einstellen,
+  aber nirgends nachlesen. Alle drei Ansichten zeigen, wie lange vor und nach
+  Beginn der QR-Code gilt.
+
+- Termine aus einer Reihe sind jetzt auch für Konfis und Teamer:innen als solche
+  erkennbar.
+
+- Teamer:innen sehen im Termin jetzt den Anmeldezeitraum, wie Leitung und Konfis
+  schon vorher.
 
 ### Geändert
 
@@ -113,16 +145,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Challenges: Die Beitragsliste der Leitung zeigt im Reiter "Feed" nur noch,
   was auch die Konfis sehen — Wartendes und Ausgeblendetes steht in eigenen
   Reitern.
-- Challenges: Die Leitung kann jetzt jeden Beitrag nachträglich anonym
-  stellen, auch in Runden ohne eigene Sichtbarkeits-Wahl und bei Beiträgen
-  von Teamer:innen. Wie bisher gilt: Das lässt sich nicht rückgängig machen.
-- Challenges: Eigene Beiträge der Leitung haben keine "Ausblenden"-Aktion
-  mehr — sie war dort ohne Nutzen.
-- Challenges: Entwürfe stehen jetzt im Reiter "Geplant" statt unter "Aktuell" —
-  dort steht nur noch, was wirklich läuft.
 - Challenges: In der geöffneten Challenge gibt es oben einen Bearbeiten-Knopf —
   bisher ging Bearbeiten nur über das Wischen in der Liste.
-- Challenges: Ein Entwurf braucht kein Start- und Enddatum mehr; der Zeitraum
   wird erst beim Einplanen festgelegt.
 - Challenges: Klarere Beschriftungen — die Sichtbarkeit "Konfi entscheidet"
   heißt jetzt "Selbst entscheiden" (sie gilt auch fürs Team), "Nur für euch
@@ -172,10 +196,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   statt darin — bei Konfis, Teamer:innen und der Leitung an derselben Stelle.
 - Konfi-Übersicht: Der Plus-Button legt jetzt eine Teamer:in an, wenn die
   Teamer-Liste geöffnet ist.
-- Challenges: Aktuelle Challenges und Archiv liegen jetzt auf zwei Reitern
-  statt untereinander.
-- Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
-  "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
 - Die Einstellung "Chat-Berechtigungen" ist entfallen. Sie war nicht erreichbar
   und ohne Wirkung; es gilt unverändert: Konfis schreiben nur das Team an.
@@ -207,33 +227,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Bildschirmlesegeräte benennen jetzt alle Symbol-Schaltflächen und
   Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
-
-### Hinzugefügt
-
-- Die Leitung kann den Jahresrückblick einer Konfi jetzt auf deren Profilseite
-  ansehen — denselben, den die Konfi selbst sieht. Er erscheint erst, wenn der
-  Rückblick für den Jahrgang freigegeben wurde.
-
-- Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
-  und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
-  Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
-  der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
-  und die Zusage lässt sich jederzeit ändern.
-
-- Konfis und Teamer:innen kommen jetzt direkt aus dem Termin in den Termin-Chat,
-  statt ihn in der Chat-Übersicht suchen zu müssen. Der Einstieg erscheint nur,
-  wenn es einen Chat gibt und man darin ist.
-
-- Das Check-in-Fenster steht jetzt im Termin — bisher ließ es sich einstellen,
-  aber nirgends nachlesen. Alle drei Ansichten zeigen, wie lange vor und nach
-  Beginn der QR-Code gilt.
-
-- Termine aus einer Reihe sind jetzt auch für Konfis und Teamer:innen als solche
-  erkennbar.
-
-- Teamer:innen sehen im Termin jetzt den Anmeldezeitraum, wie Leitung und Konfis
-  schon vorher.
-
 ### Behoben
 
 - Benachrichtigungen führen beim Antippen jetzt überall an die richtige
@@ -241,8 +234,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Stempel und Zertifikate — öffnete sich die App bisher einfach dort, wo sie
   zuletzt stand. Teamer:innen landen bei Anträgen und Abzeichen jetzt direkt
   auf der jeweiligen Seite statt eine Ebene darüber.
-- Die Zahl am App-Icon wird jetzt auch für das Hauptamt im Hintergrund
-  nachgeführt. Bisher blieb sie dort stehen, bis jemand die App öffnete.
+- Die Zahl am App-Symbol stimmt jetzt. Sie zeigt alles Offene zusammen —
+  bisher überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine
+  und Abzeichen, andere Benachrichtigungen setzten sie auf eins, und wenig
+  später fiel sie wieder auf die reinen Chat-Nachrichten zurück. Sie wird
+  außerdem wieder auf null zurückgesetzt, wenn nichts mehr offen ist (auf
+  Android blieb sie sonst oft stehen), und auch für das Hauptamt im
+  Hintergrund nachgeführt statt erst beim Öffnen der App.
 - Wer aus einer Gemeinde ausgeschieden ist, bekommt von ihr keine Hinweise
   auf neue Termine mehr.
 - Für Teamer:innen in mehreren Gemeinden führen Abzeichen- und
@@ -258,10 +256,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
   eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr
   aufgefordert, die Teilnahme an einem abgesagten Termin nachzuverbuchen.
-- Die Zahl am App-Icon bleibt jetzt auch zwischen zwei Benachrichtigungen
-  richtig. Bisher zeigte sie kurz nach einer Nachricht alles Offene an, wurde
-  aber wenig später auf die reinen Chat-Nachrichten heruntergesetzt — offene
-  Anträge, unbearbeitete Termine und neue Abzeichen fielen dabei weg.
 - Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
   Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
   die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es
@@ -318,9 +312,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 - Bei Terminen ohne Punkte steht in der Leitungsansicht nicht mehr "Punkte 0".
 
-- Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
-  überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
-  Abzeichen, und andere Benachrichtigungen setzten die Zahl immer auf eins.
 
 - In Gruppenchats sehen jetzt alle Mitglieder, wer sonst noch dabei ist —
   bisher war die Mitgliederliste der Leitung vorbehalten, obwohl das Handbuch
@@ -580,8 +571,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   berücksichtigte. Lange Beschriftungen werden jetzt gekürzt statt überzulaufen.
 - Die eigene zuletzt geschriebene Nachricht zählte als ungelesen. Am Reiter
   stand dadurch eine Eins, bis man den Chat noch einmal öffnete.
-- Die Zahl am App-Symbol wird jetzt auch auf null zurückgesetzt. Bisher nahm
-  der Server sie nie zurück — auf Android blieb sie deshalb oft stehen.
 - Ein verdientes Abzeichen bleibt jetzt sichtbar, auch wenn die Leitung es
   später abschaltet — etwa zum Saisonende. Bisher verschwand es aus der Liste,
   während die Zähler es weiter mitzählten.
@@ -688,8 +677,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die
   Neuerungen stehen bereits in der Einführung.
-- Challenges: Die Leitungsansicht hat jetzt die Reiter Aktuell, Geplant und
-  Archiv; die Zahlen darüber springen zum jeweiligen Reiter.
 - Die Startseite der Konfis lädt die Tageslosung nur noch einmal statt zweimal.
 - Ist die Tageslosung in den Einstellungen abgeschaltet, wird sie auch nicht
   mehr im Hintergrund abgerufen. Startseiten öffnen dadurch ohne Wartezeit,
@@ -725,9 +712,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   kaum, dafür gibt es die Suche.
 - Chat: Die Zahlen über der Liste ("Chats", "Ungelesen") lassen sich antippen
   und schalten direkt auf den passenden Reiter.
-- Challenges: Die Leitungsansicht hat jetzt dieselben Reiter wie die
-  Konfi-Ansicht — Aktuell und Archiv statt zweier Listen untereinander. Die
-  Zahlen darüber springen zum jeweiligen Reiter.
 - Sicherheit: Der Link zum Zurücksetzen des Passworts wird nicht mehr im
   Klartext gespeichert.
 - Sicherheit: Beim Anfordern eines Passwort-Links lässt die Antwort nicht mehr
@@ -880,7 +864,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Die Anmeldung zur API-Dokumentation bremst wiederholte Fehlversuche jetzt
   aus — das gemeinsame Passwort lässt sich nicht mehr durchprobieren.
 - Challenges: Links aus Beiträgen öffnen nur noch reguläre Web-Adressen.
-- Challenges: Link-Beiträge nehmen nur noch Musik-Links von Spotify,
   Apple Music, YouTube Music und Deezer an; das Einreichen-Formular sagt das
   vorher an. Titel und Interpret werden automatisch dazugeschrieben — ein
   Cover wird bewusst nicht geladen, damit der Musikdienst beim Ansehen der
