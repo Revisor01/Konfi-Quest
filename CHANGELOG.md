@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
   stehen.
 
+- Wählen Teamer:innen im Profil ohne Netz eine andere Bibelübersetzung, wird
+  die Wahl jetzt nachgetragen, sobald die App wieder online ist. Bisher sah
+  sie übernommen aus und war beim nächsten Start wieder verschwunden.
+
 - Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
   Ersatztext wie Konfis, statt einer Fehlermeldung.
 

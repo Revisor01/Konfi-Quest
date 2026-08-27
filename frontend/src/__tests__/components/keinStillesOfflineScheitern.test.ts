@@ -41,4 +41,48 @@ describe('Kein stilles Offline-Scheitern in Komponenten', () => {
 
     expect(verstoesse).toEqual([]);
   });
+
+  // Befund M5 (27.08.2026): Dieselbe Sorte Fehler, nur mit der anderen
+  // Schreibweise — das Teamer-Profil hatte `if (!networkMonitor.isOnline)
+  // return;` beim Wechsel der Bibeluebersetzung. Die Auswahl wurde vorher
+  // optimistisch gesetzt, sah also uebernommen aus und war beim naechsten
+  // Start wieder weg. Der Test oben konnte das nicht sehen, weil er nur auf
+  // `!isOnline` prueft. Jetzt beide Schreibweisen.
+  it('auch `if (!networkMonitor.isOnline) return` kommt nicht mehr vor', () => {
+    const verstoesse: string[] = [];
+
+    for (const datei of alleDateien(componentsDir)) {
+      const rel = relative(componentsDir, datei);
+      if (erlaubt.has(rel)) continue;
+
+      const inhalt = readFileSync(datei, 'utf8');
+      if (/if\s*\(\s*!networkMonitor\.isOnline\s*\)\s*return\b/.test(inhalt)) {
+        verstoesse.push(rel);
+      }
+    }
+
+    expect(verstoesse).toEqual([]);
+  });
+
+  // Gegenprobe zu M5: Die Reparatur ist nicht "Meldung statt Warteschlange",
+  // sondern beide Profile reihen die Auswahl gleich ein. Faellt das zurueck
+  // auf eine blosse Fehlermeldung, ginge eine offline getroffene Wahl wieder
+  // verloren — der Test oben bliebe davon gruen.
+  it('beide Profile legen die Bibeluebersetzung offline in die Warteschlange', () => {
+    const profile = [
+      'konfi/views/ProfileView.tsx',
+      'teamer/pages/TeamerProfilePage.tsx',
+    ];
+
+    for (const rel of profile) {
+      const inhalt = readFileSync(join(componentsDir, rel), 'utf8');
+      const zweig = inhalt.slice(
+        inhalt.indexOf('const handleTranslationChange'),
+        inhalt.indexOf('const [presentBibleModal')
+      );
+      expect(zweig, rel).toContain('writeQueue.enqueue');
+      expect(zweig, rel).toContain('bible-translation');
+      expect(zweig, rel).toContain("type: 'fire-and-forget'");
+    }
+  });
 });

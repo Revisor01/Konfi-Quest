@@ -63,6 +63,8 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import BiometrieSchalter from '../../shared/BiometrieSchalter';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { writeQueue } from '../../../services/writeQueue';
+import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
@@ -114,8 +116,24 @@ const TeamerProfilePage: React.FC = () => {
   }, [profile?.user?.bible_translation]);
 
   const handleTranslationChange = async (translation: string) => {
+    // Befund M5: Offline stand hier nur ein `return` nach dem optimistischen
+    // Setzen — die Auswahl sah uebernommen aus, war beim naechsten Start aber
+    // wieder weg. Das Konfi-Profil reiht sie seit jeher in die Warteschlange
+    // ein; jetzt beide gleich.
+    if (!networkMonitor.isOnline) {
+      setSelectedTranslation(translation);
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/teamer/bible-translation',
+        body: { translation },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
+      });
+      return;
+    }
+
     setSelectedTranslation(translation); // optimistisch
-    if (!networkMonitor.isOnline) return;
     try {
       await api.put('/teamer/bible-translation', { translation });
       refresh();

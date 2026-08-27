@@ -590,8 +590,21 @@ falschen Teamer-Erklärtexte (PR #83).
       gilt also für das geteilte Modal, nicht für die Konfi-Kopie —
       `backend/routes/konfi.js:2029` und `teamer.js:1237` nehmen es beide
       weiterhin an. Zusammenziehen heißt hier: die lokale Kopie löschen.
-- [ ] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
+- [x] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
       stillschweigend**, das Konfi-Profil reiht sie in die Warteschlange ein.
+      ERLEDIGT 27.08.2026. Jetzt beide über die `writeQueue`.
+      **Beim Beheben nachgemessen — es sind VIER Stellen mit DREI
+      Verhaltensweisen**, nicht zwei: Konfi-Profil (Warteschlange),
+      Teamer-Profil (verwarf still, jetzt Warteschlange), Konfi-Dashboard
+      (`DashboardView.tsx:227`) und Teamer-Dashboard
+      (`TeamerDashboardPage.tsx:373`) melden beide einen Fehler. Die beiden
+      Dashboards sind damit untereinander gleich und scheitern nicht still —
+      aber eine offline getroffene Wahl geht dort weiterhin verloren. Falls
+      das auch vereinheitlicht werden soll: eigener Auftrag, war nicht Teil
+      von M5.
+      Der Wächtertest gegen stilles Offline-Scheitern kannte nur
+      `if (!isOnline) return` und war für `!networkMonitor.isOnline` blind —
+      diese Schreibweise prüft er jetzt mit.
 - [ ] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
       Leitung, Teamer-Weg nur Push.**
 - [ ] **M7 — Wrapped: Freigabe-Gate nur im Dashboard, nicht am
