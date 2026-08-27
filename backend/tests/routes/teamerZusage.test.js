@@ -12,7 +12,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, EVENTS } = require('../helpers/seed');
+const { seed, USERS, EVENTS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Teamer: Zusage und Absage', () => {
@@ -102,6 +102,103 @@ describe('Teamer: Zusage und Absage', () => {
       [USERS.teamer1.id, EVENTS.gottesdienstEvent.id]
     );
     expect(rows[0].anzahl).toBe(1);
+  });
+
+  // Befund M1 (26.08.2026): Diese Route setzte bei einer Zusage hart
+  // status='confirmed' -- ohne jede Pruefung von teamer_max_participants,
+  // teamer_waitlist_enabled oder teamer_max_waitlist_size. Der regulaere
+  // Buchungsweg (events.js) prueft all das. Ueber die App war der Weg nicht
+  // erreichbar (das Frontend ruft nur dabei=false), die Route stand aber offen
+  // und die Funktion ist parametrisiert.
+  describe('Teamer-Kontingent gilt auch bei der Zusage', () => {
+    // Der Seed hat nur eine Teamer:in -- fuer volle Kontingente braucht es mehr.
+    // ab-Parameter, damit zwei Aufrufe im selben Test nicht dieselben IDs
+    // vergeben (event_bookings hat ein UNIQUE auf user_id+event_id).
+    const belegen = async (anzahl, status = 'confirmed', ab = 200) => {
+      for (let i = 0; i < anzahl; i++) {
+        const id = ab + i;
+        await db.query(
+          `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+           VALUES ($1, $2, 'x', $3, 2, $4, true) ON CONFLICT (id) DO NOTHING`,
+          [id, `belegt${id}`, `Belegt ${id}`, ORGS.testGemeinde.id]
+        );
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, $3, $4)`,
+          [EVENTS.gottesdienstEvent.id, id, status, ORGS.testGemeinde.id]
+        );
+      }
+    };
+
+    const kontingent = async (max, wartelisteAn = true, maxWarteliste = 10) => {
+      await db.query(
+        `UPDATE events SET teamer_max_participants = $2, teamer_waitlist_enabled = $3,
+                teamer_max_waitlist_size = $4 WHERE id = $1`,
+        [EVENTS.gottesdienstEvent.id, max, wartelisteAn, maxWarteliste]
+      );
+    };
+
+    it('volles Kontingent mit offener Warteliste -> Warteliste statt bestaetigt', async () => {
+      await kontingent(1, true, 5);
+      await belegen(1);
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(200);
+
+      const gebucht = await status();
+      expect(gebucht.status).toBe('waitlist');
+    });
+
+    it('volles Kontingent OHNE Warteliste -> 400, keine Buchung', async () => {
+      await kontingent(1, false);
+      await belegen(1);
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Das Event ist leider bereits ausgebucht');
+      expect(await status()).toBeNull();
+    });
+
+    it('volles Kontingent UND volle Warteliste -> 400', async () => {
+      await kontingent(1, true, 1);
+      await belegen(1);
+      await belegen(1, 'waitlist', 300);
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Event ist voll und Warteliste ist auch voll');
+    });
+
+    it('freies Kontingent -> weiterhin bestaetigt', async () => {
+      // Gegenprobe: Die Pruefung darf den Normalfall nicht mitnehmen.
+      await kontingent(5);
+      await belegen(1);
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(200);
+      expect((await status()).status).toBe('confirmed');
+    });
+
+    it('teamer_max_participants = 0 heisst unbegrenzt', async () => {
+      await kontingent(0);
+      await belegen(3);
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(200);
+      expect((await status()).status).toBe('confirmed');
+    });
+
+    it('die eigene bestehende Buchung sperrt einen nicht selbst aus', async () => {
+      // Wer zusagt, absagt und erneut zusagt, darf nicht am eigenen Platz
+      // scheitern -- der Platz gehoert noch ihm.
+      await kontingent(1, false);
+      await zusage({ dabei: true });
+      await zusage({ dabei: false });
+
+      const res = await zusage({ dabei: true });
+      expect(res.status).toBe(200);
+      expect((await status()).status).toBe('confirmed');
+    });
   });
 
   it('lehnt Termine ab, fuer die keine Teamer:innen gesucht werden', async () => {

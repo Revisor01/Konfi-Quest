@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { fetchTageslosung } = require('../services/losungService');
+const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
+const { determineBookingStatus } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
@@ -870,7 +871,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: certificates } = await db.query(certificatesQuery, [userId, orgId]);
 
-      // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
+      // 3. Events: Naechste anstehende Termine, die Teamer:innen betreffen --
+      // eigene Buchungen UND Termine, fuer die Teamer:innen gesucht werden.
+      //
+      // Bis 27.08.2026 stand hier zusaetzlich `AND eb.id IS NOT NULL`. Das
+      // machte aus dem LEFT JOIN auf die eigene Buchung faktisch einen INNER
+      // JOIN: Es erschienen ausschliesslich Termine, fuer die man schon
+      // gebucht war. Genau die Termine mit "Teamer:innen gesucht", auf die
+      // jemand reagieren soll, kamen auf der Startseite nie an -- entgegen dem
+      // Kommentar, der hier immer schon etwas anderes behauptete (Befund H2).
+      //
+      // Der Filter auf teamer_only/teamer_needed fehlte ebenfalls ganz; ohne
+      // ihn stuenden auch reine Konfi-Termine auf der Teamer-Startseite.
       const eventsQuery = `
         SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
                e.teamer_only, e.teamer_needed, e.bring_items, e.cancelled,
@@ -881,7 +893,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
           AND (e.cancelled IS NOT TRUE)
-          AND eb.id IS NOT NULL
+          AND (
+            eb.id IS NOT NULL          -- eigene Buchung: immer zeigen
+            OR e.teamer_only = true    -- reiner Team-Termin
+            OR e.teamer_needed = true  -- "Teamer:innen gesucht"
+          )
         ORDER BY e.event_date ASC
         LIMIT 5
       `;
@@ -1201,7 +1217,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Fallback cache error:', fallbackErr.message);
       }
 
-      res.status(500).json({ success: false, error: 'Tageslosung konnte nicht geladen werden' });
+      // Statischer Fallback statt HTTP 500 -- dieselbe Stelle wie im Konfi-Weg
+      // (Befund M2, 27.08.2026: der Kommentar oben behauptete das schon, der
+      // Code loeste es aber nur zur Haelfte ein). Eine leere Startseite ist
+      // schlechter als ein bekannter Psalm.
+      res.json({
+        success: true,
+        data: tageslosungFallback(),
+        fallback: true,
+        error: 'Losungen API nicht erreichbar - Fallback verwendet'
+      });
     }
   });
 
@@ -1209,7 +1234,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { translation } = req.body;
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
+      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
+      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
+      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
+      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
+      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
       if (!validTranslations.includes(translation)) {
         return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: validTranslations });
       }
@@ -1307,7 +1336,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await client.query('BEGIN');
 
         const { rows: [event] } = await client.query(
-          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled
+          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled,
+                  teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
              FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
           [eventId, req.user.organization_id]
         );
@@ -1330,7 +1360,46 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           return res.status(400).json({ error: 'Der Termin liegt bereits in der Vergangenheit' });
         }
 
-        const status = dabei ? 'confirmed' : 'opted_out';
+        // Bei einer ZUSAGE gilt das Teamer-Kontingent genauso wie auf dem
+        // regulaeren Buchungsweg (events.js:1667). Bis 27.08.2026 setzte diese
+        // Route hart 'confirmed' -- ohne jede Pruefung von
+        // teamer_max_participants, teamer_waitlist_enabled oder
+        // teamer_max_waitlist_size (Befund M1). Ueber die App war der Weg nicht
+        // erreichbar (das Frontend ruft nur dabei=false auf), die Route stand
+        // aber offen und die Funktion ist parametrisiert: Ein kuenftiger Griff
+        // zur naheliegenden Zusage-Route haette das Kontingent ueberbucht.
+        //
+        // determineBookingStatus statt eigener Logik -- dieselbe Funktion, die
+        // der regulaere Weg benutzt. Eine dritte Kopie der Kapazitaetsregeln
+        // waere genau die Fehlerklasse, die dieses Projekt schon oft getroffen
+        // hat.
+        let status;
+        if (dabei) {
+          // Eine BESTEHENDE eigene Buchung zaehlt nicht als neuer Platz --
+          // sonst koennte man sich durch Absage und erneute Zusage selbst
+          // aussperren, obwohl der Platz noch einem gehoert.
+          const { rows: [zahlen] } = await client.query(
+            `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.user_id <> $2)::int AS confirmed_count,
+                    COUNT(*) FILTER (WHERE eb.status = 'waitlist'  AND eb.user_id <> $2)::int AS waitlist_count
+               FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+            [eventId, req.user.id]
+          );
+          const ergebnis = determineBookingStatus(
+            event, zahlen.confirmed_count, zahlen.waitlist_count,
+            event.teamer_max_participants || 0,
+            { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
+          );
+          if (typeof ergebnis === 'object') {
+            await client.query('ROLLBACK');
+            return res.status(ergebnis.status).json({ error: ergebnis.error });
+          }
+          status = ergebnis; // 'confirmed' oder 'waitlist'
+        } else {
+          status = 'opted_out';
+        }
         const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
 
         // Vorhandene Buchung aktualisieren oder neu anlegen. Die Meinung darf
@@ -1430,21 +1499,54 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Notification error (teamer request):', notifErr);
       }
 
-      // Push an alle Admins/Org-Admins der Organisation (analog konfi.js:776).
-      // In try/catch — ein Push-Fehler darf den Antrag nicht kippen.
-      try {
-        await PushService.sendNewActivityRequestToAdmins(
-          db,
-          req.user.organization_id,
-          req.user.display_name,
-          activity.name,
-          activity.points
-        );
-      } catch (pushErr) {
-        console.error('Error sending admin push (teamer request):', pushErr);
-      }
-
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
+
+      // Leitungs-Benachrichtigung NACH der Antwort (Muster wie in konfi.js):
+      // In-App-Mitteilung UND Push an admin/org_admin. Vorher gab es hier nur
+      // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
+      // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
+      // Fehler werden nur geloggt — die Antwort ist bereits raus.
+      (async () => {
+        try {
+          const { rows: admins } = await db.query(
+            `SELECT u.id FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+            [req.user.organization_id]
+          );
+
+          if (admins.length > 0) {
+            await db.query(
+              `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+               SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+              [
+                admins.map(a => a.id),
+                'Neuer Antrag eingegangen',
+                `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+                'new_activity_request',
+                JSON.stringify({
+                  request_id: newRequest.id,
+                  konfi_id: userId,
+                  konfi_name: req.user.display_name,
+                  activity_name: activity.name,
+                  points: activity.points
+                }),
+                req.user.organization_id
+              ]
+            );
+          }
+
+          await PushService.sendNewActivityRequestToAdmins(
+            db,
+            req.user.organization_id,
+            req.user.display_name,
+            activity.name,
+            activity.points
+          );
+        } catch (notifErr) {
+          console.error('Error sending admin notifications (teamer request):', notifErr);
+        }
+      })();
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

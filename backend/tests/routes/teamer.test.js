@@ -799,6 +799,45 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // Drei-Ansichten-Befund M6 (26.08.2026): Der Teamer-Weg schickte der
+    // Leitung nur Push, keine In-App-Mitteilung — Teamer-Antraege fehlten im
+    // Mitteilungscenter, Konfi-Antraege standen drin.
+    it('Antrag erzeugt In-App-Mitteilung fuer die GESAMTE Leitung (admin UND org_admin), sonst niemanden', async () => {
+      const res = await request(app)
+        .post('/api/teamer/requests')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({
+          activity_id: teamerActivityId,
+          requested_date: '2026-02-01',
+          description: 'Teilnahme an Schulung'
+        });
+      expect(res.status).toBe(201);
+
+      // Der Leitungs-Versand laeuft NACH der Antwort (fire-and-forget) —
+      // deshalb kurz pollen, dann HART pruefen.
+      let rows = [];
+      for (let i = 0; i < 40; i++) {
+        ({ rows } = await db.query(
+          "SELECT user_id, title, message FROM notifications WHERE type = 'new_activity_request' ORDER BY user_id"
+        ));
+        if (rows.length > 0) break;
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Genau die Leitung der Org 1: admin1, orgAdmin1, orgAdminSuper.
+      // Verbotener Fall implizit mit drin: weder der Teamer selbst noch
+      // Konfis noch die Leitung der Org 2 tauchen auf.
+      expect(rows.map(r => r.user_id)).toEqual([
+        USERS.admin1.id,
+        USERS.orgAdmin1.id,
+        USERS.orgAdminSuper.id
+      ]);
+      expect(rows[0].title).toBe('Neuer Antrag eingegangen');
+      expect(rows[0].message).toBe(
+        'Test Teamer 1 hat einen Antrag für "Teamer-Schulung" (0 Punkte) eingereicht.'
+      );
+    });
   });
 
   describe('DELETE /api/teamer/requests/:id', () => {
@@ -871,6 +910,70 @@ describe('Teamer Routes', () => {
       expect(res.body.events).toBeDefined();
       expect(res.body.badges).toBeDefined();
       expect(res.body.config).toBeDefined();
+    });
+
+    // Befund H2 (26.08.2026): Die Events-Abfrage hatte zusaetzlich
+    // `AND eb.id IS NOT NULL` und machte damit aus dem LEFT JOIN auf die
+    // eigene Buchung faktisch einen INNER JOIN -- es erschienen nur Termine,
+    // fuer die man schon gebucht war. Termine mit "Teamer:innen gesucht", auf
+    // die jemand reagieren soll, kamen auf der Startseite nie an.
+    describe('Events auf der Startseite', () => {
+      const terminAnlegen = async (spalten) => {
+        const { rows } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                               waitlist_enabled, point_type, points,
+                               registration_opens_at, registration_closes_at,
+                               teamer_needed, teamer_only, teamer_max_participants)
+           VALUES ($1, NOW() + interval '7 days', $2, false, 20, false, 'gemeinde', 1,
+                   NOW() - interval '1 day', NOW() + interval '5 days', $3, $4, 5)
+           RETURNING id`,
+          [spalten.name, ORGS.testGemeinde.id, !!spalten.teamer_needed, !!spalten.teamer_only]
+        );
+        return rows[0].id;
+      };
+
+      const titel = async () => {
+        const res = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(res.status).toBe(200);
+        return res.body.events.map((e) => e.title);
+      };
+
+      it('zeigt Termine mit "Teamer:innen gesucht" auch ohne eigene Buchung', async () => {
+        await terminAnlegen({ name: 'Teamer gesucht Termin', teamer_needed: true });
+        expect(await titel()).toContain('Teamer gesucht Termin');
+      });
+
+      it('zeigt reine Team-Termine auch ohne eigene Buchung', async () => {
+        await terminAnlegen({ name: 'Nur Team Termin', teamer_only: true });
+        expect(await titel()).toContain('Nur Team Termin');
+      });
+
+      it('zeigt eigene Buchungen weiterhin, auch bei reinen Konfi-Terminen', async () => {
+        // Gegenprobe: Der Umbau darf den bisher funktionierenden Fall nicht
+        // mitnehmen.
+        const eventId = await terminAnlegen({ name: 'Konfi-Termin mit Buchung' });
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, 'confirmed', $3)`,
+          [eventId, USERS.teamer1.id, ORGS.testGemeinde.id]
+        );
+        expect(await titel()).toContain('Konfi-Termin mit Buchung');
+      });
+
+      it('zeigt reine Konfi-Termine ohne eigene Buchung NICHT', async () => {
+        // Sonst stuenden auf der Teamer-Startseite Termine, die sie nichts
+        // angehen. Dieser Filter fehlte vorher ganz.
+        await terminAnlegen({ name: 'Reiner Konfi-Termin' });
+        expect(await titel()).not.toContain('Reiner Konfi-Termin');
+      });
+
+      it('zeigt abgesagte Termine nicht', async () => {
+        const eventId = await terminAnlegen({ name: 'Abgesagter Teamer-Termin', teamer_needed: true });
+        await db.query('UPDATE events SET cancelled = true WHERE id = $1', [eventId]);
+        expect(await titel()).not.toContain('Abgesagter Teamer-Termin');
+      });
     });
 
     it('Config kennt Challenges: Default an, Reihenfolge enthaelt den Key', async () => {
@@ -1132,6 +1235,39 @@ describe('Teamer Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toBeDefined();
+    });
+
+    // Befund M2 (26.08.2026): Bei nicht erreichbarer Losungs-API UND leerem
+    // Zwischenspeicher lieferte der Konfi-Weg Psalm 23 als statischen Fallback
+    // (HTTP 200), der Teamer-Weg endete mit HTTP 500 -- obwohl der Kommentar
+    // dort "Fallback wie in der Konfi-Route" behauptete. Ein Ein-Datei-Fix,
+    // zur Haelfte uebernommen. Seit 27.08.2026 steht der Fallback gemeinsam im
+    // losungService, damit er nicht wieder auseinanderlaufen kann.
+    it('ohne Cache und ohne API liefert der Teamer-Weg den statischen Fallback, keinen 500er', async () => {
+      // Kein Eintrag in daily_verses -> der DB-Fallback greift nicht.
+      await db.query('DELETE FROM daily_verses');
+
+      const res = await request(app)
+        .get('/api/teamer/tageslosung')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.fallback).toBe(true);
+      expect(res.body.data.losung.reference).toBe('Psalm 23,1');
+    });
+
+    it('der Konfi-Weg liefert im selben Fall dasselbe', async () => {
+      // Gegenprobe zur Gleichheit: Genau die war behauptet und nicht erfuellt.
+      await db.query('DELETE FROM daily_verses');
+
+      const res = await request(app)
+        .get('/api/konfi/tageslosung')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.fallback).toBe(true);
+      expect(res.body.data.losung.reference).toBe('Psalm 23,1');
     });
 
     // Ist die Losung abgeschaltet, darf sie GAR NICHT abgerufen werden — nicht

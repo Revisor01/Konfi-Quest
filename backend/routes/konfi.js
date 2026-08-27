@@ -6,7 +6,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { fetchTageslosung } = require('../services/losungService');
+const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
@@ -759,11 +759,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // async-Funktion, Fehler nur loggen — die Antwort ist bereits raus.
       (async () => {
       try {
+        // In-App-Mitteilung an die GESAMTE Leitung (admin UND org_admin) —
+        // identisch zum Push-Versand in PushService.sendNewActivityRequestToAdmins.
+        // Vorher stand hier nur r.name='admin', org_admin ging leer aus (M6).
         const { rows: admins } = await db.query(
-          `SELECT u.id, u.display_name 
-           FROM users u 
-           JOIN roles r ON u.role_id = r.id 
-           WHERE r.name = 'admin' AND u.organization_id = $1`,
+          `SELECT u.id, u.display_name
+           FROM users u
+           JOIN roles r ON u.role_id = r.id
+           WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
           [req.user.organization_id]
         );
 
@@ -1286,6 +1289,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                  ELSE e.max_participants
                END as max_participants,
                CASE
+                 -- 'cancelled' zuerst, wie in der Liste oben (Zeile ~1133):
+                 -- ein abgesagter Termin ist weder pflichtig noch offen noch
+                 -- ausgebucht. Fehlte hier bis 27.08.2026 -- der Endpunkt gab
+                 -- abgesagte Termine gar nicht erst heraus (Befund H6).
+                 WHEN e.cancelled = true THEN 'cancelled'
                  -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026)
                  WHEN e.mandatory THEN 'mandatory'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
@@ -1313,9 +1321,19 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           FROM event_timeslots
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
-        WHERE e.id = $1 AND e.organization_id = $2 AND (e.cancelled = FALSE OR e.cancelled IS NULL)
+        -- Abgesagte Termine bleiben abrufbar, WENN die Konfi angemeldet war
+        -- oder ist ($3). Genau dieselbe Regel wie in der Liste oben
+        -- (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL).
+        -- Bis 27.08.2026 filterte diese Abfrage abgesagte Termine hart weg und
+        -- antwortete dann 404 -- die Liste zeigte denselben Termin aber weiter
+        -- mit registration_status 'cancelled'. Zwei Antworten fuer denselben
+        -- Termin in derselben Rolle (Befund H6).
+        -- Entscheidung Simon 27.08.2026: Abgesagte Termine darf man sich
+        -- weiterhin ansehen.
+        WHERE e.id = $1 AND e.organization_id = $2
+          AND (e.cancelled IS NOT TRUE OR $3::boolean)
         GROUP BY e.id, timeslot_capacity.total_capacity
-      `, [eventId, req.user.organization_id]);
+      `, [eventId, req.user.organization_id, !!registration]);
       
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
@@ -1466,13 +1484,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Statischer Fallback
       res.json({
         success: true,
-        data: {
-          date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-          losung: { text: "Der HERR ist mein Hirte, mir wird nichts mangeln.", reference: "Psalm 23,1", testament: "AT" },
-          lehrtext: { text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.", reference: "Johannes 10,11", testament: "NT" },
-          translation: { code: "LUT", name: "Lutherbibel 2017", language: "German" },
-          source: "Fallback"
-        },
+        data: tageslosungFallback(),
         fallback: true,
         error: 'Losungen API nicht erreichbar - Fallback verwendet'
       });
@@ -2014,7 +2026,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const { translation } = req.body;
       
       // Validate translation
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
+      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
+      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
+      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
+      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
+      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
       if (!validTranslations.includes(translation)) {
         return res.status(400).json({ 
           error: 'Ungültige Bibelübersetzung',

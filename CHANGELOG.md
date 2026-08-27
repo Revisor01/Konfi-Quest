@@ -206,14 +206,33 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die Auswahl der Bibelübersetzung für die Tageslosung ist überall dieselbe.
+  Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
+  die Teamer-Ansichten.
+
+- Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
+  Ersatztext wie Konfis, statt einer Fehlermeldung.
+
+- Termine: Teamer:innen sehen jetzt schon in der Liste, ob das Team-Kontingent
+  voll ist — bisher stand dort "Offen", und der Platzmangel zeigte sich erst
+  beim Anmelden. Auch die Zahl der Wartenden steht jetzt auf der Terminkarte.
+
 - Die Zahl neuer Abzeichen verschwindet jetzt sofort, wenn man die
   Abzeichen-Seite öffnet — bisher blieb sie bis zum nächsten App-Start stehen.
   Das Symbol auf dem App-Icon zählt neue Abzeichen jetzt ebenfalls mit.
-
 - Teamer:innen sehen neue Abzeichen jetzt auch als neu: Der Reiter zeigt eine
   Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
   Kennzeichnung nur für Konfis.
 
+- Anträge von Teamer:innen erscheinen jetzt auch im Mitteilungscenter der
+  Leitung — bisher gab es dafür nur eine Push-Nachricht. Zugleich bekommen
+  jetzt alle Leitungsrollen die Mitteilung, nicht nur ein Teil.
+- Der Jahresrückblick der Konfis ist erst nach der Freigabe durch die Leitung
+  abrufbar — bisher versteckte nur die Startseite den Einstieg, die Daten
+  selbst waren schon vorher zugänglich.
+- Auf der Teamer-Startseite erscheinen unter "Deine Challenge" nur noch
+  Challenges, an denen Teamer:innen auch teilnehmen dürfen — reine
+  Konfi-Challenges tauchen dort nicht mehr auf.
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.
@@ -221,6 +240,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
   Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
   Reiter "Verbuchen" stehen.
+- Teamer:innen sehen auf ihrer Startseite jetzt auch Termine, für die
+  Teamer:innen gesucht werden — bisher standen dort nur Termine, für die man
+  schon angemeldet war. Reine Konfi-Termine erscheinen dort nicht mehr.
+- Der Zähler am Challenges-Reiter berücksichtigt für Teamer:innen jetzt auch
+  Runden, die nur fürs Team gedacht sind. Bisher wurde niemand darauf
+  hingewiesen, dass dort Beiträge auf Freigabe warten.
+- Abgesagte Termine lassen sich wieder öffnen, wenn man angemeldet war. Bisher
+  stand der Termin zwar in der Liste, ließ sich aber nicht mehr aufrufen.
 
 - Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
   jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,
@@ -708,6 +735,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
+- E-Mail- und Passwort-Ändern sind für alle drei Rollen jetzt dieselbe
+  Oberfläche in den jeweiligen Rollenfarben; künftige Korrekturen wirken
+  damit automatisch überall.
+- Die Willkommens-Tour der Konfis nutzt dieselbe Darstellung wie die der
+  anderen Rollen; nur die Texte sind weiterhin eigene.
 - Aktualisierte Oberflächen-Themes für iOS und Android: zweizeilige
   Listeneinträge, neue Textlayouts und überarbeitete iOS-Eingabefelder.
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
