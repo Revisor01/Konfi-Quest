@@ -1,0 +1,25 @@
+-- 131_org_wartelisten_einstellungen_entfernen.sql
+--
+-- Die org-weiten Wartelisten-Einstellungen werden ersatzlos entfernt
+-- (Simons Entscheidung 27.08.2026).
+--
+-- Befund N7 (27.08.2026): 'waitlist_enabled' und 'max_waitlist_size' wurden
+-- in settings.js als Organisations-Einstellung geschrieben und gelesen, aber
+-- von keiner Buchungslogik verwendet. determineBookingStatus in
+-- utils/bookingUtils.js liest die Wartelisten-Felder ausschliesslich vom
+-- uebergebenen Event-Objekt -- nie aus der settings-Tabelle. Eine Oberflaeche
+-- fuer die Org-Variante gab es ebenfalls nicht: Datenbank und API ohne jede
+-- Wirkung.
+--
+-- Anders als bei den Termin-Feldern sind das KEINE Spalten, sondern Zeilen in
+-- der key/value-Tabelle settings. Entfernt wird deshalb per DELETE.
+--
+-- Vor dem Entfernen in Produktion nachgemessen (27.08.2026):
+--   settings WHERE key IN ('waitlist_enabled','max_waitlist_size'): 0 Zeilen
+-- Es hat also nie jemand einen Wert gesetzt -- es geht nichts verloren.
+--
+-- WICHTIG: Die gleichnamigen Spalten an der Tabelle events
+-- (events.waitlist_enabled, events.max_waitlist_size sowie die
+-- teamer_-Varianten) bleiben unangetastet. An ihnen haengt die produktive
+-- Wartelisten-Logik.
+DELETE FROM settings WHERE key IN ('waitlist_enabled', 'max_waitlist_size');

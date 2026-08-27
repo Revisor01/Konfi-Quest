@@ -13009,7 +13009,7 @@
           "Stammdaten & Einstellungen"
         ],
         "summary": "Einstellungen der eigenen Organisation (typisiert aufbereitet)",
-        "description": "Liefert alle settings-Zeilen der Organisation als flaches Objekt. max_waitlist_size wird als Integer geparst, dashboard_section_order und teamer_dashboard_section_order als JSON (mit Fallback auf die Standard-Reihenfolgen), waitlist_enabled und alle Keys mit Praefix dashboard_show_ / teamer_dashboard_show_ als Boolean. Alles Uebrige bleibt String.\n",
+        "description": "Liefert alle settings-Zeilen der Organisation als flaches Objekt. dashboard_section_order und teamer_dashboard_section_order werden als JSON geparst (mit Fallback auf die Standard-Reihenfolgen), alle Keys mit Praefix dashboard_show_ / teamer_dashboard_show_ als Boolean. Alles Uebrige bleibt String. BEHOBEN 27.08.2026 (Befund N7): waitlist_enabled und max_waitlist_size wurden hier als Organisations-Einstellung ausgeliefert, aber von keiner Buchungslogik gelesen — die Wartelisten-Logik haengt ausschliesslich an den gleichnamigen Feldern des jeweiligen Termins (events.waitlist_enabled). Ersatzlos entfernt.\n",
         "responses": {
           "200": {
             "description": "Objekt key -> Wert (typisiert)"
@@ -13045,13 +13045,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "waitlist_enabled": {
-                    "type": "boolean"
-                  },
-                  "max_waitlist_size": {
-                    "type": "integer",
-                    "minimum": 0
-                  },
                   "dashboard_show_konfirmation": {
                     "type": "boolean"
                   },
@@ -13132,7 +13125,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "orgId ausschliesslich aus dem Token — der Body kann keine fremde Organisation adressieren",
-          "hinweis": "waitlist_enabled wird nicht validiert (steht in validateSettings nicht drin) und landet per String(wert) in der Spalte; ein Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgänge laufen als Einzel-Queries ohne Transaktion — ein Fehler in der Mitte hinterlaesst ein Teil-Update.\n"
+          "hinweis": "BEHOBEN 27.08.2026 (Befund N7): waitlist_enabled und max_waitlist_size wurden hier entgegengenommen und geschrieben, ohne dass sie irgendwo gewirkt haetten (waitlist_enabled zudem ungeprueft). Beide sind ersatzlos entfernt; die Warteliste wird weiterhin am einzelnen Termin eingestellt. Die Schreib-Vorgänge laufen als Einzel-Queries ohne Transaktion — ein Fehler in der Mitte hinterlaesst ein Teil-Update.\n"
         }
       }
     },

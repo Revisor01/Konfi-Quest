@@ -9,7 +9,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
   // Validierungsregeln
   const validateSettings = [
-    body('max_waitlist_size').optional().isInt({ min: 0 }).withMessage('Wartelistengröße muss eine nicht-negative Ganzzahl sein'),
     body('dashboard_show_konfirmation').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('dashboard_show_events').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
@@ -91,13 +90,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       const settings = {};
       rows.forEach(row => {
-        if (row.key === 'max_waitlist_size') {
-          settings[row.key] = parseInt(row.value, 10) || 0;
-        } else if (row.key === 'dashboard_section_order') {
+        if (row.key === 'dashboard_section_order') {
           try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = DEFAULT_KONFI_ORDER; }
         } else if (row.key === 'teamer_dashboard_section_order') {
           try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = DEFAULT_TEAMER_ORDER; }
-        } else if (row.key === 'waitlist_enabled' || row.key.startsWith('dashboard_show_') || row.key.startsWith('teamer_dashboard_show_')) {
+        } else if (row.key.startsWith('dashboard_show_') || row.key.startsWith('teamer_dashboard_show_')) {
           settings[row.key] = row.value === 'true' || row.value === '1';
         } else {
           settings[row.key] = row.value;
@@ -116,8 +113,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     try {
       const orgId = req.user.organization_id;
       const {
-        waitlist_enabled,
-        max_waitlist_size,
         dashboard_show_konfirmation,
         dashboard_show_events,
         dashboard_show_losung,
@@ -172,22 +167,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
             [orgId, key, value]
           );
         }
-      }
-
-      if (waitlist_enabled !== undefined) {
-        await db.query(
-          `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'waitlist_enabled', $2)
-           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
-          [orgId, String(waitlist_enabled)]
-        );
-      }
-
-      if (max_waitlist_size !== undefined) {
-        await db.query(
-          `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'max_waitlist_size', $2)
-           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
-          [orgId, max_waitlist_size]
-        );
       }
 
       res.json({ message: 'Einstellungen erfolgreich aktualisiert' });

@@ -930,16 +930,25 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       referenziert** und bewusst stehen gelassen, statt sie ungefragt zu
       löschen.
 
-- [ ] **Org-weite Wartelisten-Einstellungen sind tote Felder.** Aus N7
-      mitgeprüft und bestätigt: `waitlist_enabled` und `max_waitlist_size`
-      werden in `settings.js:87-93,170-183` geschrieben und gelesen, aber von
-      **keiner Buchungslogik** verwendet — die Wartelisten-Logik hängt
-      ausschließlich an den gleichnamigen Feldern des jeweiligen Termins
-      (`events.waitlist_enabled`). Nachgesehen: Es gibt dafür auch **keine
-      Oberfläche**. Also Datenbank und API ohne jede Wirkung.
-      Zwei Wege: anschließen (als Vorgabe für neue Termine) oder entfernen.
-      Beides ist eine Entscheidung, keine Reparatur — deshalb hier nur
-      festgehalten.
+- [x] **Org-weite Wartelisten-Einstellungen sind tote Felder.**
+      ENTFERNT (27.08.2026, Simons Entscheidung). Aus N7 mitgeprüft und
+      bestätigt: `waitlist_enabled` und `max_waitlist_size` wurden in
+      `settings.js` geschrieben und gelesen, aber von **keiner Buchungslogik**
+      verwendet — die Wartelisten-Logik hängt ausschließlich an den
+      gleichnamigen Feldern des jeweiligen Termins. Eine Oberfläche gab es
+      dafür ebenfalls nicht.
+      Entfernt wurden: die Validierung, der Lese-Zweig (Integer-/Boolean-
+      Aufbereitung) und die beiden Schreib-Zweige in `settings.js`, die Felder
+      im Request-Body der API-Doku sowie die vorhandenen Zeilen per Migration
+      131. Anders als bei den Termin-Feldern waren das keine Spalten, sondern
+      Zeilen in der key/value-Tabelle `settings` — vor dem Entfernen in
+      Produktion nachgemessen: **0 Zeilen**, es hatte also nie jemand einen
+      Wert gesetzt.
+      **Die gleichnamigen Felder an `events` blieben unangetastet**
+      (`events.waitlist_enabled`, `events.max_waitlist_size` und die
+      `teamer_`-Varianten). An ihnen hängt die produktive Wartelisten-Logik;
+      ein neuer Test belegt, dass eine volle Veranstaltung mit Warteliste
+      weiterhin auf die Warteliste setzt.
 - [ ] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
       Der Befund hat ZWEI Teile:
       - [x] **Die spürbare Folge ist behoben** (27.08.2026).

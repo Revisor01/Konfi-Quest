@@ -53,6 +53,25 @@ describe('Settings Routes', () => {
     it('Settings enthaelt gespeicherte Werte', async () => {
       // Setting speichern
       await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'dashboard_show_ranking', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.dashboard_show_ranking).toBe(false); // Wird als Boolean geparsed
+    });
+
+    it('Org-weite Wartelisten-Keys werden nicht mehr ausgeliefert', async () => {
+      // Gegenprobe zum Entfernen (27.08.2026): Selbst wenn jemand die alten
+      // Keys von Hand in die Tabelle schreibt, kennt die API sie nicht mehr
+      // als Wartelisten-Einstellung -- sie werden nicht mehr als Integer bzw.
+      // Boolean geparst, sondern bestenfalls als roher Text durchgereicht.
+      await db.query(
         `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'max_waitlist_size', '50')
          ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
         [ORGS.testGemeinde.id]
@@ -63,7 +82,7 @@ describe('Settings Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.max_waitlist_size).toBe(50); // Wird als Integer geparsed
+      expect(res.body.max_waitlist_size).toBe('50');
     });
   });
 
@@ -76,7 +95,6 @@ describe('Settings Routes', () => {
         .put('/api/settings')
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
-          max_waitlist_size: 25,
           dashboard_show_events: true,
           dashboard_show_badges: false
         });
@@ -89,7 +107,6 @@ describe('Settings Routes', () => {
         .get('/api/settings')
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
-      expect(getRes.body.max_waitlist_size).toBe(25);
       expect(getRes.body.dashboard_show_events).toBe(true);
       expect(getRes.body.dashboard_show_badges).toBe(false);
     });
@@ -98,7 +115,7 @@ describe('Settings Routes', () => {
       const res = await request(app)
         .put('/api/settings')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ max_waitlist_size: 10 });
+        .send({ dashboard_show_events: true });
 
       expect(res.status).toBe(403);
     });
@@ -107,7 +124,7 @@ describe('Settings Routes', () => {
       const res = await request(app)
         .put('/api/settings')
         .set('Authorization', `Bearer ${teamerToken}`)
-        .send({ max_waitlist_size: 10 });
+        .send({ dashboard_show_events: true });
 
       expect(res.status).toBe(403);
     });
@@ -116,7 +133,7 @@ describe('Settings Routes', () => {
       const res = await request(app)
         .put('/api/settings')
         .set('Authorization', `Bearer ${konfiToken}`)
-        .send({ max_waitlist_size: 10 });
+        .send({ dashboard_show_events: true });
 
       expect(res.status).toBe(403);
     });
@@ -179,6 +196,25 @@ describe('Settings Routes', () => {
       expect(Array.isArray(getRes.body.dashboard_section_order)).toBe(true);
       expect(getRes.body.dashboard_section_order[0]).toBe('events');
     });
+
+    it('Org-weite Wartelisten-Felder werden nicht mehr gespeichert', async () => {
+      // Gegenprobe zum Entfernen (27.08.2026): Der Endpunkt nimmt die alten
+      // Felder zwar noch entgegen (sie werden schlicht ignoriert), legt aber
+      // keine Zeile mehr dafuer an.
+      const res = await request(app)
+        .put('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ waitlist_enabled: false, max_waitlist_size: 25 });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT key FROM settings
+         WHERE organization_id = $1 AND key IN ('waitlist_enabled', 'max_waitlist_size')`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows).toHaveLength(0);
+    });
   });
 
   // ================================================================
@@ -190,13 +226,13 @@ describe('Settings Routes', () => {
       await request(app)
         .put('/api/settings')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ max_waitlist_size: 100 });
+        .send({ dashboard_show_ranking: true });
 
       // Org 2: Settings setzen
       await request(app)
         .put('/api/settings')
         .set('Authorization', `Bearer ${orgAdmin2Token}`)
-        .send({ max_waitlist_size: 50 });
+        .send({ dashboard_show_ranking: false });
 
       // Org 1 lesen
       const res1 = await request(app)
@@ -208,8 +244,8 @@ describe('Settings Routes', () => {
         .get('/api/settings')
         .set('Authorization', `Bearer ${orgAdmin2Token}`);
 
-      expect(res1.body.max_waitlist_size).toBe(100);
-      expect(res2.body.max_waitlist_size).toBe(50);
+      expect(res1.body.dashboard_show_ranking).toBe(true);
+      expect(res2.body.dashboard_show_ranking).toBe(false);
     });
   });
 });
