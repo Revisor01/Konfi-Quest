@@ -27,11 +27,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   dazu, der Jahrgangs-Chat wechselt mit. Erfasste Anwesenheiten und vergangene
   Termine bleiben unberührt.
 
-- Anmelden mit Face ID, Touch ID oder Fingerabdruck: Wer möchte, schaltet die
-  biometrische Anmeldung im eigenen Profil unter Konto-Einstellungen ein und
-  kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
-  im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
-  Biometrie eingerichtet ist.
 - Team-Chat leeren: Die Leitung kann über das Mülleimer-Symbol oben im
   Team-Chat alle Nachrichten samt Dateien endgültig löschen — nach klarer
   Rückfrage; der Chat selbst und seine Mitglieder bleiben bestehen.
@@ -229,6 +224,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die App bleibt jetzt stabil, wenn eine Live-Verbindung fehlschlägt. Bisher
+  konnte ein abgebrochener Verbindungsversuch den Server kurz aus dem Tritt
+  bringen — für alle gleichzeitig, mit einer kurzen Unterbrechung.
 - Benachrichtigungen führen beim Antippen jetzt überall an die richtige
   Stelle. Bei zehn Arten — darunter geänderte Termine, Pflichttermine,
   Stempel und Zertifikate — öffnete sich die App bisher einfach dort, wo sie
