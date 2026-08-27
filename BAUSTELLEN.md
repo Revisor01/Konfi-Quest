@@ -143,7 +143,12 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       `--app-color-success-strong` (#059669) in variables.css; Konfi-Detail
       und Legende umgestellt. *Rest: `ChallengeLeitungModal.tsx` Zeilen
       174/181/495 nutzen noch `--app-color-success` (hell).*
-- [ ] **Statistik-Kopf** — NICHT umgesetzt: liegt in `ChallengeLeitungModal.tsx`
+- [x] **Statistik-Kopf** — ERLEDIGT 27.08.2026, aber nur zu einem Viertel:
+      "Sichtbar" statt "Frei" und die Reihenfolge waren bereits gebaut
+      (`5c7c4ab7`, 25.08.), und die dritte Kachel heisst "Abgelehnt", nicht
+      "Versteckt" wie hier notiert. Offen war allein die Einzahl — bei genau
+      einem Beitrag stand "1 Beiträge". Laeuft jetzt ueber `anzahlBeitraege`.
+      ALT: liegt in `ChallengeLeitungModal.tsx`
       (gesperrt wegen Parallel-Arbeit). Vorschlag: "Sichtbar" statt "Frei"
       (kurz, Paar zu "Versteckt"), Reihenfolge Sichtbar/Wartet/Versteckt,
       Beitragszahl mit korrekter Einzahl (`anzahlBeitraege`) in den Kopf.
@@ -875,7 +880,8 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
             zaehlen aber nicht als offenes Ziel). Die eigene Statistik-Query
             entfaellt damit — eine Abfrage weniger pro Aufruf.
 
-- [ ] **Antwortform der Teamer-Abzeichen vereinheitlichen.** Aus N2
+- [ ] **Antwortform der Teamer-Abzeichen vereinheitlichen.** NACH 2.0.0
+      (Simons Entscheidung 27.08.2026). Aus N2
       abgetrennt. Der Teamer-Pfad liefert ein flaches Array plus
       `X-Badges-Secret-Total`/`X-Badges-Visible-Total` in Kopfzeilen, der
       Konfi-Pfad `{available, earned, stats}`. Daran haengen
@@ -1068,9 +1074,60 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       Das `konfi_profile` bleibt insgesamt bestehen, bei einer Rückstufung ist
       die Wahl damit noch da. Eigener Test dafür.
       **Offen bleibt die eigentliche Ursache:** zwei gleichnamige Spalten für
-      dieselbe Präferenz. Das Zusammenführen braucht eine Datenmigration und
-      Anpassungen an allen vier Lesestellen — eigener Auftrag, nicht nebenbei.
-      Bis dahin ist die Falle wenigstens dokumentiert und die Folge weg.
+      dieselbe Präferenz. **NACH 2.0.0** (Simons Entscheidung 27.08.2026).
+
+      **Am 27.08. abends vollstaendig durchgemessen**, damit der spaetere
+      Umbau nicht bei null anfaengt:
+
+      **Es sind SIEBEN Stellen, nicht vier.** Der Eintrag oben zaehlte nur die
+      `konfi_profiles`-Seite und nannte sie "Lesestellen", obwohl eine davon
+      schreibt.
+      - `konfi_profiles`: `konfi.js:397` (lesen, Profil), `konfi.js:1498`
+        (lesen, Tageslosung), `konfi.js:2118` (**schreiben**),
+        `konfi-management.js:1210` (lesen, Befoerderung)
+      - `users` (schon korrekt): `teamer.js:60`, `teamer.js:1175`,
+        `teamer.js:1226` (**schreiben**)
+      - Dazu drei Kommentar-/Doku-Erwaehnungen, die sonst auf eine geloeschte
+        Spalte zeigen: `jahrgaenge.js:377`, `konfi-management.js:638`,
+        `docs/api/stammdaten.yaml:702`
+
+      **Frontend: null Aenderungen noetig.** Alle Baeume gehen ueber
+      API-Felder, nie ueber Tabellennamen. Im `admin/`-Baum gibt es die
+      Auswahl gar nicht — die Leitung hat keine Tageslosungs-Praeferenz,
+      deshalb auch nur zwei `/tageslosung`-Endpunkte.
+
+      **DIE FALLE, an der es beim ersten Versuch scheitert:** Die Defaults
+      sind verschieden. `users.bible_translation` ist `NOT NULL DEFAULT 'LUT'`,
+      `konfi_profiles.bible_translation` ist **nullable** mit demselben
+      Default. "Noch leer" heisst an `users` also `= 'LUT'`, NICHT `IS NULL`.
+      - Wer mit `IS NULL` prueft, uebertraegt **gar nichts**.
+      - Wer ohne diese Bedingung uebertraegt, **ueberschreibt** die neuere
+        Wahl eines bereits befoerderten Teamers mit dessen altem Konfi-Wert.
+      - Richtig ist dreiteilig: Quelle gesetzt UND `<> 'LUT'` UND Ziel noch
+        `'LUT'`.
+
+      **Die Richtung ist erzwungen:** nur `konfi_profiles` -> `users`. Teamer
+      haben kein `konfi_profile`, das ist keine Designwahl.
+
+      **Ein bestehender Test muss ERSETZT werden, nicht aufgeweicht:** "N8: die
+      Wahl bleibt auch im Konfi-Profil stehen" prueft genau das Verhalten, das
+      der Umbau abschafft (die Rueckstufungs-Reserve). Sonst steht man vor der
+      Wahl zwischen rotem Test und abgesenkter Erwartung.
+      Die Uebertragungslogik bei der Befoerderung (`konfi-management.js`,
+      Schritt 10) entfaellt dann — die Wahl haengt an der `users`-Zeile, die
+      sich beim Rollenwechsel nicht aendert.
+
+      **Vor dem Umbau die eine sinnvolle Messung** (gehoert nach dem Muster von
+      Migration 131 in den Migrationskommentar):
+      `SELECT count(*) FROM konfi_profiles WHERE bible_translation IS NOT NULL AND bible_translation <> 'LUT'`
+      — nur diese Zeilen waeren ueberhaupt betroffen.
+
+      **Einschaetzung:** machbar in einem Zug (7 Stellen, alles Backend, kein
+      Frontend). Probeweise gebaut lief die volle Suite gruen (1438 Tests, 46
+      Dateien). Das Heikle ist nicht der Umfang, sondern das `DROP COLUMN`: Es
+      ist irreversibel, und die Uebernahmebedingung muss beim ERSTEN Mal
+      stimmen — ein zweiter Anlauf hat die Quelldaten nicht mehr. Genau
+      deshalb nicht zwischen zwei anderen Aufgaben mitnehmen.
 
 ### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)
 
