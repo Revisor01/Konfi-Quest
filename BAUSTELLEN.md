@@ -950,6 +950,22 @@ falschen Teamer-Erklärtexte (PR #83).
       `super_admin` (eigene Gegenprobe) — das Trennen war der Punkt, nicht das
       Verengen von beidem.
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+- [x] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
+      Snapshot-Existenz.** ERLEDIGT 27.08.2026.
+      Nachgemessen: Bei gesetzter Freigabe ohne Snapshot lieferte das
+      Dashboard `has_wrapped: true`, `GET /wrapped/me` aber **404** — die
+      Konfi sah den Einstieg zum Jahresrückblick und tippte ins Leere.
+      **Das kann wirklich passieren**, anders als bei N5: Die
+      Snapshot-Erzeugung läuft über `Promise.allSettled`
+      (`wrapped.js:735-739`), zählt Fehler mit (`errors`) und setzt die
+      Freigabe **trotzdem**. Scheitert sie für eine einzelne Konfi, hat genau
+      diese eine Freigabe ohne eigenen Snapshot.
+      Jetzt müssen beide Bedingungen gelten. Vier Gegenproben: Snapshot ohne
+      Freigabe zeigt weiterhin nichts, der Snapshot einer *anderen* Konfi
+      zählt nicht (sonst hätte der Join die Bedingung faktisch aufgehoben),
+      und ein eigener Test hält fest, dass Dashboard und `/wrapped/me`
+      dieselbe Antwort geben.
+
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
 - [x] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
