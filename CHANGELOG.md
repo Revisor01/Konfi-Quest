@@ -236,6 +236,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
+  Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
+  die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es
+  von Anfang an funktioniert.
+
 - Beim Jahrgangswechsel bleibt keine Anmeldung mehr für einen Termin liegen,
   den die Konfi gar nicht mehr sieht. Bisher belegte sie dort weiter einen
   Platz, auf den niemand nachrücken konnte.
