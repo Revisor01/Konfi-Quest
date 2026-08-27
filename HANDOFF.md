@@ -33,8 +33,23 @@ abwarten** — jeder Merge macht die übrigen konfliktbehaftet.
 
 1. **N2 Teil 2** — die 250-Zeilen-Inline-Kopie in `routes/teamer.js`.
    Vorbereitet, siehe eigener Abschnitt unten.
-2. **N6** — Simon will bei **jedem** der sieben offenen Punkte gefragt
-   werden. Nichts davon ohne Rückfrage bauen.
+2. **N6** — **alle sieben Punkte sind am 27.08. mittags entschieden**, die
+   Entscheidungen stehen im Register bei N6. Kurzfassung:
+   - Anmeldezeitraum im Teamer-Detail: **ergänzen**
+   - Serien-Kennzeichnung: **ergänzen** (auch Teamer und Konfis)
+   - Event-Chat-Einstieg: **für alle** (Mitgliedschaft besteht ohnehin)
+   - `registration_status` im Admin-Detail: **angleichen** (Backend-Wert)
+   - Punktezeile "Punkte 0": **angleichen** (ausblenden wie anderswo)
+   - `checkin_window`: **in den Detailansichten anzeigen**
+   - Abmeldefrist: **bleibt hartcodiert** — ERLEDIGT, siehe unten
+
+   **Abmeldefrist ist abgeschlossen.** Simons Nachtrag: "muss dann auch ins
+   Handbuch und irgendwo klar genannt werden". Beides gemacht — eigener
+   Abschnitt in `70-termine.md` (im Anmelde-Kapitel, mit Abgrenzung gegen den
+   QR-Code) und ein Hinweis im Termin-Detail der Leitung. Die Regel war
+   vorher nur für Konfis sichtbar, und auch erst, wenn sie abgelaufen war.
+
+   **Die übrigen sechs sind entschieden, aber noch nicht gebaut.**
 
 Erledigt aus demselben Auftrag: Material-Tags entfernt (#113), Admin-Hinweis
 gebaut (#114, mit der vorhandenen `EmptyState`-Komponente).
