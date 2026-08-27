@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Der Einstieg zum Jahresrückblick erscheint nur noch, wenn der Rückblick
+  wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
+  der Einstieg bisher ins Leere.
+
 - Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
   vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
   Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
