@@ -679,12 +679,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // Auch hier: Dateinamen vor dem DB-Delete sichern (Befund 26.08.2026).
       const { rows: orgMaterialFiles } = await client.query(
         'SELECT mf.stored_name FROM material_files mf JOIN materials m ON mf.material_id = m.id WHERE m.organization_id = $1', [id]);
-      await client.query('DELETE FROM material_file_tags WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM material_files WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM material_events WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM material_jahrgaenge WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM materials WHERE organization_id = $1', [id]);
-      await client.query('DELETE FROM material_tags WHERE organization_id = $1', [id]);
 
       // 3. Event-Daten
       await client.query('DELETE FROM event_points WHERE organization_id = $1', [id]);

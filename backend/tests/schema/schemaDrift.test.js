@@ -221,7 +221,6 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
       'jahrgaenge.organization_id',
       'konfi_profiles.organization_id',
       'levels.created_by',
-      'material_tags.organization_id',
       'materials.created_by',
       'materials.organization_id',
       'notifications.organization_id',
