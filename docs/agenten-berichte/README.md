@@ -19,6 +19,27 @@ herauskam (Nutzerhinweis 25.08.2026).
 5. **Ein Befund ist eine Behauptung.** Was hier steht, ist geprüft worden —
    aber wer es umsetzt, prüft gegen den Code nach. Widerlegte Befunde bleiben
    stehen, mit Vermerk `WIDERLEGT` und Begründung.
+6. **Erst nachsehen, ob die Datei existiert — und zwar richtig.** Ein Agent,
+   der einen Bericht meldet, hat ihn damit nicht geschrieben. Vor dem
+   Übernehmen in BAUSTELLEN.md also: Datei öffnen. Keine Datei, kein Befund.
+
+   **Die Regel gilt in beide Richtungen (Nachtrag 27.08.2026, abends).** Am
+   26.08. und 27.08. galten zusammen **vier** Berichte als "nie geschrieben",
+   samt plausibel klingender Befundzahlen. Nachgesehen: **alle vier
+   existieren**, zusammen 1078 Zeilen. Sie lagen nur nicht dort, wo gesucht
+   wurde — einer als Beifang in einem themenfremden Commit (`8d2217d6`), drei
+   in einem WIP-Commit auf einem Branch (`15c46930` auf
+   `fix/app-icon-hintergrund-sync`), nicht auf `main`.
+
+   Ein `ls` im Arbeitsbaum sieht so etwas nicht. Wer prüft, nimmt
+
+       git log --all --diff-filter=A --name-only -- docs/agenten-berichte/
+
+   Ein zu Unrecht abgeschriebener Bericht ist teurer als ein zu Unrecht
+   geglaubter: Der Prüfauftrag wandert zurück auf die Liste und wird ein
+   zweites Mal beauftragt, während seine Befunde ungelesen liegen bleiben.
+   Genau das ist passiert — zwei HOCH-Befunde wurden unabhängig neu gemessen
+   und behoben (PRs #129, #130), ohne dass jemand die Berichte kannte.
 
 ## Register
 
@@ -37,7 +58,7 @@ herauskam (Nutzerhinweis 25.08.2026).
 | 26.08.2026 | [Drei-Ansichten-Lücken](2026-08-26-drei-ansichten-luecken.md) | Fehlerklasse real, fast ausschliesslich zulasten der Teamer-Ansicht; 6 HOCH, 9 MITTEL, 8 NIEDRIG | **ERLEDIGT** (27.08.) — H1–H6, alle MITTEL und N2/N3/N6 behoben (PRs #87–#120). Offen nur N8 und die Antwortform der Teamer-Abzeichen |
 | 26.08.2026 | [Dashboard/Profil-Durchgang](2026-08-26-dashboard-profil-durchgang.md) | Nachgeholter Durchgang; bestaetigt die Chat-Lücke unabhängig, zwei falsche Teamer-Versprechen, sonst Entwarnung | **ERLEDIGT** (27.08.) — Chat (PR #81), Texte (PR #83), DN1 (`AdminKonfisPage.tsx:403` nutzt `NeuerungenBanner`) |
 | 26.08.2026 | [Abhängigkeiten und Ionic](2026-08-26-abhaengigkeiten-ionic.md) (**Korrektur 27.08. abends: der Bericht existiert doch** — 280 Zeilen, angelegt am 26.08. in `8d2217d6`, einem Commit zu einem ganz anderen Thema. Deshalb fand ihn später niemand, und er galt als Phantom-Bericht. Die Zahlen der eigenen Nachmessung decken sich mit ihm.) | Keine Sicherheitslücken; rote CI aller sechs Dependabot-PRs nur wegen veraltetem Basis-Commit; react-router 8 darf NICHT gemergt werden (Ionic 9 verlangt v6) | TEILWEISE — Themes aktualisiert (PR #85), Ionic 9 eingeplant |
-| 27.08.2026 | [Abzeichen-Zähler](2026-08-27-abzeichen-zaehler.md) | Zwei Aktualisierungswege statt einem; Konfi-Zähler seit 03.07. kaputt; Konsolidierung lohnt sich | **ERLEDIGT** (PRs #92, #108) — auch B2b (`utils/appIconBadge.js`) und die Konsolidierung (`notifications.js:180`). Offen bleibt allein der Hintergrund-Sync in `backgroundService.js` |
+| 27.08.2026 | [Abzeichen-Zähler](2026-08-27-abzeichen-zaehler.md) | Zwei Aktualisierungswege statt einem; Konfi-Zähler seit 03.07. kaputt; Konsolidierung lohnt sich | **ERLEDIGT** (PRs #92, #108, #131) — auch B2b (`utils/appIconBadge.js`), die Konsolidierung (`notifications.js:180`) und der Hintergrund-Sync (`backgroundService.js`). *Offen bleibt dort die Rollen-Asymmetrie: der Sync lässt das Hauptamt aus, siehe M3 im Push-Bericht.* |
 | 27.08.2026 | [Chat-Baum](2026-08-27-chat-baum.md) | Die gemeinsame Ansicht trennt die Rollen im Kern sauber und org-dicht — eine echte Lücke: Teamer-Reaktion lief in einen 500er, weil der DB-Constraint nur `admin`/`konfi` kannte | **ERLEDIGT** (PR #129, Migration 133). Der HOCH-Befund war unabhängig neu gemessen worden, bevor jemand den Bericht gelesen hatte. Offen: Reaktions-/Vote-Zugriff für Leitung ohne Teilnehmerschaft (MITTEL, 403 nur gemessen, nicht festgeschrieben) |
 | 27.08.2026 | [Offline-Schreibvorgänge](2026-08-27-offline-schreibvorgaenge.md) | Warteschlange solide (FIFO, Retry-Budget, kein Datenverlust im Transport), aber abgelehnte Nachreichungen verschwinden still; 2 HOCH, 3 MITTEL, 2 NIEDRIG | OFFEN — H1 (stiller Verlust der Ablehnung) und H2 (Teamer-Buchung verwirft die Server-Antwort) stehen in BAUSTELLEN.md, **nach 2.0.0** |
 | 27.08.2026 | [Push-Zustellung](2026-08-27-push-zustellung.md) | Alle 30 Push-Arten inventarisiert; 1 HOCH, 4 MITTEL, 4 NIEDRIG, drei davon gemessen | TEILWEISE — **H1 erledigt** (Erinnerungen an abgesagte Termine, PR #130; ebenfalls unabhängig neu gemessen). Offen: M2, 10 von 30 Push-Arten ohne Antipp-Ziel, **nach 2.0.0** |
