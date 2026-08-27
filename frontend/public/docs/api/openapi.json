@@ -132,7 +132,7 @@
         },
         "responses": {
           "200": {
-            "description": "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten)"
+            "description": "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
           },
           "401": {
             "description": "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)"
@@ -360,9 +360,10 @@
           "Anmeldung & Konto"
         ],
         "summary": "Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)",
+        "description": "NEU 27.08.2026: assigned_jahrgaenge kommt mit — die eigenen Jahrgangs-Zuweisungen (id, name, can_view, can_edit), ohne zusaetzliche Abfrage (rbacVerifier laedt sie ohnehin). Wofuer: Ein `admin` sieht nur Konfis seiner zugewiesenen Jahrgaenge; verschiebt er eine Konfi in einen fremden Jahrgang, verschwindet sie aus seiner Liste. Die Oberflaeche warnt davor, bevor gespeichert wird. Ohne Zuweisung ein leeres Array, nie undefined.\n",
         "responses": {
           "200": {
-            "description": "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial"
+            "description": "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -9433,7 +9434,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -9463,6 +9464,9 @@
                       "type": "integer"
                     },
                     "pendingChallenges": {
+                      "type": "integer"
+                    },
+                    "newBadges": {
                       "type": "integer"
                     }
                   }

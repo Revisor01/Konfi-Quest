@@ -1359,6 +1359,91 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: USERS.konfi1.display_name, jahrgang_id: jahrgangId });
 
+    // Befund 27.08.2026: Die Abmeldung galt nur fuer PFLICHT-Termine. Eine
+    // Buchung fuer einen freiwilligen Termin des alten Jahrgangs blieb liegen
+    // — die Konfi sah ihn nicht mehr (die Terminliste filtert per INNER JOIN
+    // auf den AKTUELLEN Jahrgang), belegte aber weiter einen Platz und blieb
+    // im Termin-Chat. Ein Geisterplatz, auf den niemand nachruecken konnte.
+    // Simons Entscheidung: abmelden wie bei Pflichtterminen.
+    const freiwilligerTermin = async (jahrgangId, tageVoraus = 14) => {
+      const datum = new Date();
+      datum.setDate(datum.getDate() + tageVoraus);
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants)
+         VALUES ($1, $2, $3, false, 10) RETURNING id`,
+        [`Freiwilliger Termin JG ${jahrgangId}`, datum.toISOString(), ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, jahrgangId]
+      );
+      return event.id;
+    };
+
+    it('Auch ein freiwilliger Termin des alten Jahrgangs faellt weg', async () => {
+      const alterTermin = await freiwilligerTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [alterTermin, USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await buchung(alterTermin, USERS.konfi1.id)).toBeNull();
+    });
+
+    it('Ein freiwilliger Termin wird NICHT automatisch neu gebucht', async () => {
+      // Gegenprobe zur Abmeldung: Pflichttermine des neuen Jahrgangs kommen
+      // dazu, freiwillige nicht — die sucht man sich selbst aus.
+      const neuerFreiwilliger = await freiwilligerTermin(zweiterJahrgang);
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await buchung(neuerFreiwilliger, USERS.konfi1.id)).toBeNull();
+    });
+
+    it('Bei einem freiwilligen Termin bleibt eine erfasste Anwesenheit stehen', async () => {
+      // Dieselbe Grenze wie bei Pflichtterminen: Historie wird nie angefasst.
+      const alterTermin = await freiwilligerTermin(JAHRGAENGE.jahrgang1.id, -7);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', 'present', NOW(), $3)`,
+        [alterTermin, USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const gebucht = await buchung(alterTermin, USERS.konfi1.id);
+      expect(gebucht).not.toBeNull();
+      expect(gebucht.attendance_status).toBe('present');
+    });
+
+    it('Ein freiwilliger Termin, der BEIDEN Jahrgaengen gehoert, bleibt gebucht', async () => {
+      // Dieselbe Ausnahme wie bei Pflichtterminen: Gehoert der Termin auch zum
+      // neuen Jahrgang, waere ein Abmelden und Wiederanmelden sinnlos.
+      const gemeinsam = await freiwilligerTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [gemeinsam, zweiterJahrgang]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [gemeinsam, USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const gebucht = await buchung(gemeinsam, USERS.konfi1.id);
+      expect(gebucht).not.toBeNull();
+      expect(gebucht.status).toBe('confirmed');
+    });
+
     it('Die kuenftigen Pflichttermine des alten Jahrgangs fallen weg', async () => {
       const alterTermin = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
       await db.query(

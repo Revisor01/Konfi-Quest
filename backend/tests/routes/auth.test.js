@@ -1,4 +1,5 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, PASSWORD, ORGS, JAHRGAENGE } = require('../helpers/seed');
@@ -297,6 +298,72 @@ describe('Auth Routes', () => {
       const res = await request(app).get('/api/auth/me');
 
       expect(res.status).toBe(401);
+    });
+
+    // Neu am 27.08.2026: Die eigenen Jahrgangs-Zuweisungen kommen mit.
+    // Wofuer: Ein `admin` sieht nur Konfis seiner Jahrgaenge. Verschiebt er
+    // eine Konfi in einen fremden, verschwindet sie aus seiner Liste — die
+    // Oberflaeche warnt davor, kann das ohne diese Angabe aber nicht wissen.
+    // Keine zusaetzliche Abfrage: rbacVerifier laedt sie ohnehin.
+    it('Die eigenen Jahrgangs-Zuweisungen kommen mit', async () => {
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2028/2029', $1, '2029-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+         VALUES ($1, $2, true, true)`,
+        [USERS.admin1.id, jg.id]
+      );
+
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${generateToken('admin1')}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.assigned_jahrgaenge)).toBe(true);
+      const ids = res.body.assigned_jahrgaenge.map((j) => j.id);
+      expect(ids).toContain(jg.id);
+    });
+
+    it('Ohne Zuweisung ist die Liste leer, nicht undefined', async () => {
+      // Die Oberflaeche unterscheidet "keine Zuweisung" von "Angabe fehlt" —
+      // bei undefined wuerde sie die Warnung stillschweigend weglassen.
+      //
+      // Bewusst ein FRISCH angelegter Admin: Die Seed-Nutzer haben alle eine
+      // Zuweisung, und `rbac.js` haelt einen 30-Sekunden-User-Cache — ein
+      // nachtraeglich entferntes Assignment saehe der Server unter Umstaenden
+      // noch (Falle aus dem Projekt-Handoff).
+      const { rows: [rolle] } = await db.query(
+        "SELECT id FROM roles WHERE name = 'admin' AND organization_id = $1",
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [frisch] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('admin.ohne.jahrgang', 'Admin ohne Jahrgang', 'x', $1, $2)
+         RETURNING id`,
+        [rolle.id, ORGS.testGemeinde.id]
+      );
+
+      const token = jwt.sign(
+        {
+          id: frisch.id,
+          type: 'admin',
+          display_name: 'Admin ohne Jahrgang',
+          organization_id: ORGS.testGemeinde.id,
+          role_id: rolle.id
+        },
+        process.env.JWT_SECRET || 'test-secret-key-for-vitest',
+        { expiresIn: '1h' }
+      );
+
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.assigned_jahrgaenge).toEqual([]);
     });
   });
 

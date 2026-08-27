@@ -187,7 +187,7 @@ paths:
                 password: { type: string }
       responses:
         "200":
-          description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten)"
+          description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
         "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
         "403": { description: "User deaktiviert (user_inactive), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin ausgenommen" }
         "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP" }
@@ -300,8 +300,16 @@ paths:
     get:
       tags: ["Anmeldung & Konto"]
       summary: Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)
+      description: >
+        NEU 27.08.2026: assigned_jahrgaenge kommt mit — die eigenen
+        Jahrgangs-Zuweisungen (id, name, can_view, can_edit), ohne zusaetzliche
+        Abfrage (rbacVerifier laedt sie ohnehin). Wofuer: Ein `admin` sieht nur
+        Konfis seiner zugewiesenen Jahrgaenge; verschiebt er eine Konfi in
+        einen fremden Jahrgang, verschwindet sie aus seiner Liste. Die
+        Oberflaeche warnt davor, bevor gespeichert wird. Ohne Zuweisung ein
+        leeres Array, nie undefined.
       responses:
-        "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial" }
+        "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]

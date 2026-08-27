@@ -14,6 +14,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Name und Jahrgang einer Konfi lassen sich jetzt nachträglich ändern — bisher
+  ging das nach dem Anlegen gar nicht mehr, ein Tippfehler blieb stehen. Beim
+  Jahrgangswechsel steht vorher, was er bewirkt: Anmeldungen zu künftigen
+  Terminen des alten Jahrgangs fallen weg, Pflichttermine des neuen kommen
+  dazu, der Jahrgangs-Chat wechselt mit. Erfasste Anwesenheiten und vergangene
+  Termine bleiben unberührt.
+
 - Anmelden mit Face ID, Touch ID oder Fingerabdruck: Wer möchte, schaltet die
   biometrische Anmeldung im eigenen Profil unter Konto-Einstellungen ein und
   kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
@@ -235,6 +242,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   unter "Mehr".
 - Challenges: Die Kachel über der Beitragsliste zeigt bei genau einem Beitrag
   wieder "Beitrag" statt "Beiträge".
+
+- Beim Jahrgangswechsel bleibt keine Anmeldung mehr für einen Termin liegen,
+  den die Konfi gar nicht mehr sieht. Bisher belegte sie dort weiter einen
+  Platz, auf den niemand nachrücken konnte.
 - Sicherheit: Beim Ändern eines Konfi-Datensatzes wird der Jahrgang jetzt
   gegen die eigene Gemeinde geprüft. Über die App war das nie möglich, der
   Weg dorthin stand aber offen.
