@@ -443,6 +443,11 @@ paths:
           Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer'
           einzuschraenken. Bei befoerderten Konfis können darin auch alte
           Konfi-Abzeichen stecken.
+          Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler
+          kommt aus newBadges in GET /api/notifications/badge-counts, das
+          korrekt auf target_role filtert. Der Endpunkt bleibt vorerst fuer
+          ausgelieferte App-Versionen bestehen; ueber seine Abschaffung ist
+          noch nicht entschieden.
       responses:
         "200": { description: "unseen (Anzahl)" }
         "401": { $ref: '#/components/responses/Unauthorized' }

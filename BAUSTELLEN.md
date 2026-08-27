@@ -1335,7 +1335,7 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `sendChatNotification` wird er ersetzt (er ist per Definition zu
       niedrig).
       Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
-      (`backgroundService.js`) setzt weiterhin nur Chat-Unread.
+      (`backgroundService.js`) setzte weiterhin nur Chat-Unread.
       **Korrigiert 27.08.2026 — die frühere Entwarnung war falsch.** Hier
       stand, der Sync "läuft nur bei geöffneter App, wo der Client ohnehin
       korrigiert". Das stimmt nicht: `backgroundService.js` ist ein
@@ -1348,18 +1348,39 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `apns-push-type: background`). Genau der stellt bei **geschlossener**
       App zu und setzt dort das iOS-Icon-Badge.
       Die Entwarnung stützte sich also auf einen Client, den es an dieser
-      Stelle nicht gibt. Folge: Der Zähler am App-Icon führt bei
+      Stelle nicht gibt. Folge war: Der Zähler am App-Icon führte bei
       geschlossener App **nur** Chat-Ungelesene mit — alle anderen Anteile
-      (Termine, Anfragen, Abzeichen) fehlen dort, bis die App geöffnet wird.
-      Zu tun: `updateAllUserBadges` dieselbe Gesamtsumme rechnen lassen, die
-      `utils/appIconBadge.js` für die übrigen Sendestellen liefert.
-- [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
-      existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
-      nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
-      Eine COUNT-Abfrage als fünftes Feld `newBadges` in `badge-counts` deckt
-      beides ab — gemessen 101–112 ms, im Rauschen des Endpunkts.
-      Löscht netto Code, macht den intuitiven `refreshAllCounts()`-Aufruf zum
-      richtigen und erledigt B1 gleich mit.
+      (Termine, Anfragen, Abzeichen) fehlten dort, bis die App geöffnet wurde.
+      **ERLEDIGT (PR #131):** `updateAllUserBadges` rechnet jetzt dieselbe
+      Gesamtsumme wie die übrigen Sendestellen. Der naheliegende Weg (die
+      Einzelrechnung je Person aufrufen) hätte sieben Abfragen pro Person
+      gekostet — bei 1000 Konfis 7000 je Fünf-Minuten-Takt. Stattdessen
+      liefert `appIconSummenFuerAlle` dieselbe Summe aus denselben
+      SQL-Bausteinen in sechs Abfragen insgesamt.
+- [x] **Konsolidierung der Zähler.** ERLEDIGT 27.08.2026 (Commit `9a692d95`,
+      "refactor(zaehler): alle Reiter-Zahlen kommen aus einer Quelle").
+      Der in der Falle-Notiz vermutete Haken existierte NICHT: Der Zähler
+      braucht die Fortschrittsberechnung gar nicht, `user_badges.seen` liegt
+      für beide Rollen in derselben Tabelle (`konfi_badges` ist dort nur noch
+      der alte Sequenz- und Constraint-Name), `custom_badges.target_role`
+      trennt sie. Eine COUNT-Abfrage als fünftes Feld `newBadges` in
+      `badge-counts` deckt beides ab — gemessen 101–112 ms, im Rauschen des
+      Endpunkts.
+      **Nachgemessen 27.08.2026 beim Nacharbeiten:** Backend
+      (`notifications.js:180`), `BadgeContext.newBadgesCount` und MainTabs
+      (ohne eigenen Loader) sind umgestellt, B1 und B2a mit erledigt —
+      `KonfiBadgesPage.tsx:113` ruft nach mark-seen jetzt
+      `refreshAllCounts()`, `TeamerBadgesPage.tsx:99` ebenso. Damit ist
+      `refreshAllCounts()` für ALLE fünf Zahlen der richtige Weg.
+      **Nachgetragen:** Die API-Doku kannte `newBadges` noch nicht — Feld und
+      Rollenfilter stehen jetzt in `chat-challenges.yaml`.
+      **Bewusst offen gelassen:** `GET /teamer/badges/unseen` ist seither vom
+      Web-Frontend unbenutzt (einziger Aufrufer war MainTabs) und zählt ohne
+      `target_role`-Filter, also bei beförderten Konfis zu hoch. Er bleibt für
+      ausgelieferte App-Versionen bestehen und ist in der Doku als unbenutzt
+      markiert; über die Abschaffung ist zu entscheiden. Ein Konfi-Gegenstück
+      `/konfi/badges/unseen` gab es nie — der Konfi-Weg lief über die volle
+      Abzeichenliste.
 
 ### Die Klasse dahinter
 
@@ -1407,6 +1428,20 @@ Vorschläge, nicht beauftragt — aus dem, was bei der Arbeit auffiel:
 - [ ] **Push-Zustellung Ende zu Ende.** An vielen Stellen verdrahtet; ob jede
       Mitteilung ankommt und beim Antippen an der richtigen Stelle landet,
       wurde nie systematisch geprüft.
+- [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
+      gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
+      `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
+      stehen. Ein Test mit abgesagtem Termin am Folgetag schrieb ohne Fix eine
+      Zeile in `event_reminders` (erwartet 0, gemessen 1) — die Erinnerung
+      feuerte also wirklich. Gleiche Luecke bei der Nachverbuch-Erinnerung an
+      die Leitung, mit erledigt. Alle drei Stellen filtern jetzt
+      `cancelled IS NOT TRUE` (nicht `= false`, sonst faellt Altbestand mit
+      NULL still aus).
+      *Geloeschte Termine sind nicht betroffen:* Events werden hart geloescht,
+      es gibt kein `deleted_at` an der Tabelle, und
+      `event_bookings_event_id_fkey` haengt mit `ON DELETE CASCADE` daran. Mit
+      dem Event verschwinden die Buchungen, der JOIN findet nichts — der Fall
+      existiert gar nicht.
 - [ ] **Zeitzonen und Datumsgrenzen.** Termine, Anmeldeschluss, Challenges mit
       Restzeit, Tageslosung, Wrapped-Jahresgrenze — überall Datumslogik,
       nirgends geprüft, ob sie an Tagesgrenzen und über die Sommerzeit stimmt.
@@ -1417,6 +1452,15 @@ Vorschläge, nicht beauftragt — aus dem, was bei der Arbeit auffiel:
 ---
 
 ## Nach 2.0.0
+
+- [ ] **Termin-Zählungen: eine gemeinsame SQL-View.** Aus dem Bericht vom
+      25.08. (`docs/agenten-berichte/2026-08-25-termin-zaehlungen.md`). Der
+      inhaltliche Fehler ist behoben (Befund 3, `events.js:184-185` trennt
+      jetzt `unprocessed_count` und `teamer_unprocessed_count`), aber die
+      Zaehlungen stehen weiterhin an fuenf SQL-Stellen einzeln. Eine gemeinsame
+      View wuerde verhindern, dass sie erneut auseinanderlaufen.
+      **Bewusst nach 2.0.0** und bis zum 27.08. nirgends notiert — beim
+      Registerabgleich aufgefallen, sonst waere der Punkt verloren gegangen.
 
 - [ ] **Das 3-MB-Bundle aufteilen** (697 kB gepackt, ein Monolith ohne
       Aufteilung nach Rollen). Groesster Hebel fuer den Kaltstart im Web,
