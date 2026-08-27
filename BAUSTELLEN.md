@@ -823,10 +823,7 @@ falschen Teamer-Erklärtexte (PR #83).
       Die Leitung bleibt org-weit berechtigt (eigene Gegenprobe).
       Nebenbei korrigiert: Die API-Doku nannte für diese Route **200**, der
       Code antwortet mit **201** (`konfi-management.js:861`).
-- [ ] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
-      das Handbuch beschreibt sie trotzdem im Detail.
 
-- [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
 - [x] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
       das Handbuch beschreibt sie trotzdem im Detail. ERLEDIGT 27.08.2026.
       Nachgeprüft: `assign-activity` hat **null Aufrufer** im Frontend; es
