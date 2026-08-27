@@ -40,7 +40,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime } from '../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -104,8 +104,9 @@ const EventsView: React.FC<EventsViewProps> = ({
   // Events werden bereits von der Page sortiert übergeben
   const filteredAndSortedEvents = events;
 
-  // Mehrtaegige Events gelten erst nach ihrem ENDE (event_end_time) als vergangen.
-  const eventEndDate = (event: Event) => new Date(event.event_end_time || event.event_date);
+  // Mehrtaegige Events gelten erst nach ihrem ENDE (event_end_time) als
+  // vergangen. Seit Befund N6 (27.08.2026) aus der geteilten Quelle.
+  const eventEndDate = eventEnde;
 
   const getUpcomingEvents = () => {
     const now = new Date();
@@ -284,7 +285,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         emptyIconColor="#dc2626"
       >
         {filteredAndSortedEvents.map((event, index) => {
-              const isPastEvent = new Date(event.event_date) < new Date();
+              const isPastEvent = istVergangen(event);
               const isCancelled = event.registration_status === 'cancelled';
               // Konfirmations-Event über das is_konfirmation-Flag (Phase 117, Migration 091).
               const isKonfirmationEvent = event.is_konfirmation === true;

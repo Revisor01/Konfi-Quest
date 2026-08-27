@@ -70,7 +70,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -480,7 +480,7 @@ const TeamerEventsPage: React.FC = () => {
 
   // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
-    const isPastEvent = new Date(event.event_date) < new Date();
+    const isPastEvent = istVergangen(event);
     // Darf sich der Teamer hier überhaupt anmelden? Nur bei teamer_needed/teamer_only.
     const canRegister = !!(event.teamer_needed || event.teamer_only);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
@@ -633,7 +633,7 @@ const TeamerEventsPage: React.FC = () => {
     const past = { primary: '#6c757d', secondary: '#6c757d' };
     const neutral = { primary: '#9ca3af', secondary: '#9ca3af' };
 
-    const isPastEvent = new Date(event.event_date) < new Date();
+    const isPastEvent = istVergangen(event);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
     // Logik 1:1 wie Konfi (EventDetailView) — EINZIGER Unterschied: ein "offenes"
@@ -655,7 +655,7 @@ const TeamerEventsPage: React.FC = () => {
 
   // Status-Text für Header (1:1 wie Konfi EventDetailView, plus Teamer-Sonderfall)
   const getStatusText = (event: Event): string => {
-    const isPastEvent = new Date(event.event_date) < new Date();
+    const isPastEvent = istVergangen(event);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
     if (event.registration_status === 'cancelled') return 'Abgesagt';
@@ -688,7 +688,7 @@ const TeamerEventsPage: React.FC = () => {
   // hideBackButton blendet den Zurück-Button im Split-View aus (Liste sichtbar).
   const renderDetail = (hideBackButton?: boolean) => {
     if (!selectedEvent) return null;
-    const isPast = new Date(selectedEvent.event_date) < new Date();
+    const isPast = istVergangen(selectedEvent);
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
 
     return (
