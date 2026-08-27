@@ -575,8 +575,19 @@ falschen Teamer-Erklärtexte (PR #83).
       (PR #90). Konfi bekam Psalm 23, Teamer einen 500er — obwohl der
       Kommentar Gleichheit behauptete. Fallback steht jetzt gemeinsam im
       `losungService`.
-- [ ] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
-      Konfi-Liste prüft `has_submission`, andere Bäume etwas anderes.
+- [x] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
+      ERLEDIGT 27.08.2026. Die Konfi-Liste prüft `has_submission` (eingereicht
+      ist eingereicht, auch unmoderiert); die geteilte Leitungs-/Teamer-Liste
+      prüfte `has_badge`, das seit dem 24.08. nur noch FREIGEGEBENE Beiträge
+      zählt. Bei einer moderierten Challenge sah eine Teamer:in nach dem
+      eigenen Einreichen deshalb kein Häkchen, eine Konfi schon — bei
+      wortgleichem Tooltip. Jetzt über `own_submission_count`, das der
+      Endpunkt seit jeher mitliefert und das im Frontend niemand verwendet
+      hat. Da `ChallengesManageView` von beiden Rollen genutzt wird, deckt die
+      eine Änderung Leitung und Teamer:innen ab.
+      Mitgeändert: Die Legende erklärte das Symbol ausschließlich als
+      "Konfi-Sicht" — jetzt rollenneutral, weil es in der eigenen Liste
+      genauso erscheint.
 - [x] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
       Konfi-Profil-Kopie.** ERLEDIGT durch PR #93. Am 27.08.2026 nach dem
       Merge nachgemessen: `konfi/views/ProfileView.tsx:51` importiert jetzt

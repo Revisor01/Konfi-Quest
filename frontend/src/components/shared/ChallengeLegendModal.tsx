@@ -102,12 +102,14 @@ const MODERATION_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Konfi-Sicht: Hinweis-Badge, dass bereits eine Einreichung vorliegt.
+// Hinweis-Badge, dass bereits eine eigene Einreichung vorliegt. Steht seit
+// Befund M3 (27.08.2026) in allen Listen fuer dieselbe Sache: eingereicht,
+// unabhaengig von der Freigabe.
 const KONFI_ENTRY: LegendEntry = {
   color: 'var(--app-color-challenges)',
   icon: paperPlaneOutline,
   label: 'Teilgenommen',
-  description: 'So sieht der Konfi, dass er bereits einen Beitrag eingereicht hat.',
+  description: 'Zeigt an, dass bereits ein eigener Beitrag eingereicht wurde — auch wenn er noch auf Freigabe wartet.',
 };
 
 const renderRow = (entry: LegendEntry, i: number) => (
@@ -186,10 +188,10 @@ const ChallengeLegendModal: React.FC<ChallengeLegendModalProps> = ({ onClose }) 
           </div>
 
           <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '28px 0 6px', textAlign: 'center', color: '#1a1a1a' }}>
-            Konfi-Sicht
+            Eigene Teilnahme
           </h2>
           <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#3a3a3a', margin: '0 0 16px', textAlign: 'center', maxWidth: '520px' }}>
-            Dieses Symbol sieht der Konfi bei Challenges, an denen er schon teilgenommen hat:
+            Dieses Symbol steht bei Challenges, bei denen bereits ein eigener Beitrag eingereicht wurde:
           </p>
           <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {renderRow(KONFI_ENTRY, 0)}
