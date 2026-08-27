@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
+const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -105,6 +106,7 @@ class BackgroundService {
       // Abzeichen-Prüfung nicht. Beides ist unten getrennt.
       const usersQuery = `
         SELECT u.id AS user_id,
+               u.organization_id,
                CASE WHEN r.name = 'konfi' THEN 'konfi'
                     WHEN r.name = 'teamer' THEN 'teamer'
                     ELSE 'admin' END AS user_type,
@@ -137,30 +139,43 @@ class BackgroundService {
         }
       }
 
-      // BULK: Chat-Unread für ALLE User auf einmal berechnen (statt N einzelne Queries)
-      const chatUnreadQuery = `
-        SELECT cp.user_id, cp.user_type, COUNT(DISTINCT cm.id)::int as chat_unread
-        FROM chat_participants cp
-        JOIN chat_messages cm ON cm.room_id = cp.room_id
-        LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id
-          AND crs.user_id = cp.user_id AND crs.user_type = cp.user_type
-        WHERE cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-          AND cm.deleted_at IS NULL
-          AND NOT (cm.user_id = cp.user_id AND cm.user_type = cp.user_type)
-        GROUP BY cp.user_id, cp.user_type
-        HAVING COUNT(DISTINCT cm.id) > 0
-      `;
-      const { rows: unreadRows } = await db.query(chatUnreadQuery);
-      const chatUnreadMap = {};
-      for (const row of unreadRows) {
-        chatUnreadMap[`${row.user_id}_${row.user_type}`] = row.chat_unread;
+      // BULK: Die App-Icon-Summe fuer ALLE auf einmal, nicht pro Person.
+      //
+      // Bis 27.08.2026 stand hier eine Bulk-Abfrage, die nur den CHAT zaehlte
+      // — und damit die Gesamtzahl ueberschrieb, die jeder Push setzt. Der
+      // naheliegende Fix (die Einzelrechnung pro Person aufrufen) kostete
+      // sieben Abfragen je Person: bei 1000 Konfis 7000 je Fuenf-Minuten-Takt.
+      // `appIconSummenFuerAlle` liefert dieselbe Summe aus denselben
+      // SQL-Bausteinen wie der Einzelweg, aber in sechs Abfragen insgesamt.
+      //
+      // Gerechnet wird fuer alle, gesendet nur an Geraete mit Token — die
+      // Abzeichen-Pruefung unten braucht ohnehin die volle Liste.
+      // Jahrgaenge nur fuer Teamer:innen, und in EINER Abfrage: Nur bei ihnen
+      // haengt die Zahl der offenen Freigaben an der Zuweisung.
+      const teamerIds = users.filter(u => u.user_type === 'teamer').map(u => u.user_id);
+      const jahrgaengeProTeamer = new Map();
+      if (teamerIds.length > 0) {
+        const { rows: zuweisungen } = await db.query(
+          'SELECT user_id, jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = ANY($1::int[])',
+          [teamerIds]
+        );
+        for (const z of zuweisungen) {
+          if (!jahrgaengeProTeamer.has(z.user_id)) jahrgaengeProTeamer.set(z.user_id, []);
+          jahrgaengeProTeamer.get(z.user_id).push({ id: z.id, can_view: z.can_view });
+        }
       }
+
+      const empfaenger = users.map(u => ({
+        id: u.user_id,
+        type: u.user_type,
+        role_name: u.role_name,
+        organization_id: u.organization_id,
+        assigned_jahrgaenge: jahrgaengeProTeamer.get(u.user_id) || []
+      }));
+      const summen = await appIconSummenFuerAlle(db, empfaenger);
 
       for (const user of users) {
         try {
-          // Chat-Unread aus Bulk-Map lesen (kein DB-Query mehr pro User)
-          const badgeCount = chatUnreadMap[`${user.user_id}_${user.user_type}`] || 0;
-
           // App-Icon-Zähler nachfuehren. Nur für Geraete mit Token — ohne
           // Token gibt es kein App-Icon.
           //
@@ -174,20 +189,11 @@ class BackgroundService {
           // gesendeten Stand und schicken nur bei Änderung. Im Regelfall
           // bedeutet das genau EINEN zusaetzlichen Push, wenn der Zähler auf
           // null fällt.
-          //
-          // Verglichen wird der zuletzt GESENDETE Stand, nicht der Chat-Zaehler
-          // von oben: Seit dem 27.08.2026 rechnet `sendBadgeUpdate` die Zahl
-          // selbst (Chat plus Antraege, Termine, Abzeichen — dieselbe Quelle
-          // wie jeder Push). `badgeCount` hier ist nur noch der Rueckfall, falls
-          // die Berechnung keinen Empfaenger ermitteln kann.
-          //
-          // Vorher ueberschrieb dieser Sync die korrekte Zahl mit dem reinen
-          // Chat-Zaehler: Ein Push setzte "7", fuenf Minuten spaeter stand "2".
           if (user.hat_push) {
             const schluessel = `${user.user_id}_${user.user_type}`;
-            // Erst rechnen, dann vergleichen, dann erst senden — sonst ginge
-            // bei JEDEM Lauf ein stiller Push raus und der Merker liefe leer.
-            const zuSenden = await PushService.berechneBadge(db, user.user_id);
+            // Erst vergleichen, dann senden — sonst ginge bei JEDEM Lauf ein
+            // stiller Push raus und der Merker liefe leer.
+            const zuSenden = summen.get(schluessel);
 
             if (zuSenden != null && this.letzterZaehler.get(schluessel) !== zuSenden) {
               await PushService.sendBadgeUpdate(db, user.user_id);
