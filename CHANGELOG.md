@@ -210,6 +210,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
   die Teamer-Ansichten.
 
+- Challenges: Das Häkchen "bereits eingereicht" erscheint jetzt in allen
+  Ansichten, sobald ein eigener Beitrag abgeschickt ist. Bei Challenges mit
+  Freigabe fehlte es Leitung und Teamer:innen bisher, bis der Beitrag geprüft
+  war — Konfis sahen es sofort.
+
 - Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
   Ersatztext wie Konfis, statt einer Fehlermeldung.
 
