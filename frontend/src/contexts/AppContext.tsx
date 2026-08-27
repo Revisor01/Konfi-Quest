@@ -659,7 +659,19 @@ useEffect(() => {
           // global aufräumen. Konfis/Teamer NICHT (dort gezielt pro Bereich/
           // beim Antippen, damit ungelesene Erinnerungen nicht verschwinden).
           if (user?.type === 'admin') {
-            removeAllDelivered();
+            // removeAllDeliveredNotifications() raeumt auf iOS nicht nur die
+            // Mitteilungszentrale auf, es setzt auch die Zahl am App-Icon auf
+            // null (Befund 28.08.2026, am Geraet nachgestellt: App zu -> Zahl
+            // da; App auf und wieder zu -> Zahl weg, waehrend die Reiter in der
+            // App weiter richtig zaehlten).
+            //
+            // Deshalb danach ausdruecklich neu setzen. Der Effekt in
+            // BadgeContext haengt an [totalBadgeCount] und feuert NICHT, wenn
+            // sich der Wert nicht geaendert hat -- das Icon bliebe sonst leer,
+            // bis zufaellig eine neue Zahl hereinkommt.
+            removeAllDelivered().finally(() => {
+              window.dispatchEvent(new CustomEvent('badge:resync'));
+            });
           }
           // Koordinierte Resume-Sequenz: flush -> invalidate -> badges
           writeQueue.flush().then(async (result) => {
