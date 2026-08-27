@@ -1395,6 +1395,19 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const istLeitung = user?.type === 'admin'
     && ['admin', 'org_admin', 'super_admin'].includes(user?.role_name || '');
 
+  // Befund aus dem Dashboard/Profil-Durchgang (26.08.2026): istLeitung wurde
+  // fuer den EXPORT gebaut (dort ist super_admin richtig) und dann fuer den
+  // Muelleimer mitbenutzt — zwei Rechte an einer Variable. Der Server laesst
+  // beim Leeren des Team-Chats nur admin und org_admin durch
+  // (chat.js:2304-2305), ein super_admin sah den Muelleimer also und bekam
+  // beim Antippen 403.
+  //
+  // Das Backend hat recht: super_admin ist organisationsuebergreifend und
+  // fuer die Org-VERWALTUNG zustaendig (rbac.js:57) — Inhalte einer fremden
+  // Gemeinde zu loeschen gehoert nicht dazu.
+  const darfTeamChatLeeren = user?.type === 'admin'
+    && ['admin', 'org_admin'].includes(user?.role_name || '');
+
   // Chat-Export (nur Leitung): laedt den kompletten Verlauf als Textdatei.
   // Anlass: Inhalte aus Konfi-Chats für die Gottesdienst-Vorbereitung
   // aufbereiten. Auf dem Geraet über das Teilen-Blatt, im Web als Download.
@@ -1520,7 +1533,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         onLeaveChat={handleChatOptions}
         // Mülleimer nur im automatischen Team-Chat und nur für die Leitung —
         // der Server prüft beides ebenfalls.
-        onClearChat={istLeitung && room?.is_team_chat ? handleClearChat : null}
+        onClearChat={darfTeamChatLeeren && room?.is_team_chat ? handleClearChat : null}
         eventId={room?.event_id ?? null}
         partnerType={
           room?.type === 'direct'
