@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
+const { berechneBadgeProgress, bedingungFehlt } = require('../utils/badgeProgress');
 const { determineBookingStatus } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -379,22 +380,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const activityCount = parseInt(actCountRes.rows[0].count);
       const eventCount = parseInt(evCountRes.rows[0].count);
       const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
-      // Map Kategorie-Name -> Anzahl (für category_activities-Progress).
-      const categoryCounts = {};
-      for (const row of categoryCountsRes.rows) {
-        categoryCounts[row.category] = parseInt(row.count);
-      }
-      // Map Aktivitaets-Name -> Anzahl (specific_activity / activity_combination).
-      const activityNameCounts = {};
-      for (const row of actNamesRes.rows) {
-        activityNameCounts[row.name] = parseInt(row.count);
-      }
-      const completedActivityNames = actNamesRes.rows.map(r => r.name);
-      const attendedEventTitles = eventTitlesRes.rows.map(r => r.title);
+      // Map statt Plain Object: schuetzt vor Prototype-Keys als Kategorie- oder
+      // Aktivitaetsname. Eine Kategorie namens "constructor" haette hier sonst
+      // eine Funktion statt einer Zahl geliefert. Der Konfi-Pfad war so schon
+      // gehaertet, dieser nicht (Befund N2, 27.08.2026).
+      const categoryCounts = new Map(
+        categoryCountsRes.rows.map(r => [r.category, parseInt(r.count)])
+      );
+      const activityNameCounts = new Map(
+        actNamesRes.rows.map(r => [r.name, parseInt(r.count)])
+      );
+      // Set statt Array: activity_combination fragt nur nach Enthaltensein.
+      const attendedEventTitles = new Set(eventTitlesRes.rows.map(r => r.title));
       // Datums-Liste (Strings/Dates) für streak / time_based.
       const allDates = allDatesRes.rows.map(r => r.date).filter(Boolean);
       // Array der aktiven Jahre (INTEGER) — für Startjahr-Filter im teamer_year-Case.
       const activeYearValues = activeYearsRes.rows.map(r => r.year);
+      // Einmal vorberechnen: Der Wert haengt allein an allDates, wurde aber
+      // bisher je Abzeichen neu gerechnet (Befund N2). Der Konfi-Pfad macht
+      // es seit jeher einmal.
+      const currentStreak = computeCurrentStreak(allDates);
 
       // Startjahr für teamer_year (konsistent zur Wertung badges.js):
       // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivität).
@@ -406,105 +411,71 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         teamerStartYear = Math.min(...activeYearValues);
       }
 
-      // Punkte-basierte Kriterien (irrelevant für Teamer)
-      const pointsCriteria = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
-
-      // Fortschritt für jede Badge berechnen
+      // Fortschritt aus dem gemeinsamen Kern (utils/badgeProgress.js), seit
+      // dem Zusammenlegen mit dem Konfi-Pfad (Befund N2 Teil 2). Die Zaehler
+      // oben bleiben teamer-spezifisch — der Kern rechnet nur.
+      //
+      // Der Kern liefert `percentage` ungerundet; die Antwortform hier ist
+      // bewusst unveraendert geblieben (flaches Array, `progress_points` /
+      // `progress_percentage`, Zaehler in Kopfzeilen), weil zwei Ansichten und
+      // vier Tests daran haengen. Deshalb der Adapter statt einer neuen Huelle.
       const enrichedBadges = badges.map(badge => {
         if (badge.earned) {
           return { ...badge, progress_points: badge.criteria_value, progress_percentage: 100 };
         }
 
-        let progressPoints = 0;
-        const criteriaValue = badge.criteria_value || 1;
+        const progress = berechneBadgeProgress(badge, {
+          // Teamer:innen haben kein Punktekonto — alle Punkte-Kriterien
+          // bleiben 0. `beideKategorien: null` sagt dem Kern ausdruecklich
+          // "gibt es hier nicht", statt eine 0 vorzutaeuschen.
+          beideKategorien: null,
+          // ACHTUNG, Namensfalle: `activityCount` enthaelt hier Aktivitaeten
+          // UND anwesende Events (die Query addiert beides), beim Konfi nicht.
+          // Deshalb heisst das Feld im Kern `aktivitaetenUndEvents`.
+          // Deckungsgleich mit der Wertung (`badges.js:395`).
+          aktivitaetenUndEvents: activityCount,
+          events: eventCount,
+          verschiedeneAktivitaeten: uniqueActivities,
+          // Nur Jahre ab dem Startjahr (teamer_since) zaehlen — identisch zur
+          // Wertung, sonst zeigte die Anzeige mehr Jahre als angerechnet werden.
+          teamerJahre: teamerStartYear === null
+            ? 0
+            : activeYearValues.filter(y => y >= teamerStartYear).length,
+          proKategorie: categoryCounts,
+          proAktivitaetsname: activityNameCounts,
+          // Der Teamer-Pfad zaehlt bei activity_combination auch
+          // required_events mit (wie die Wertung in `badges.js:391`); der
+          // Konfi-Pfad liefert dieses Feld bewusst nicht.
+          erfuellteEventTitel: attendedEventTitles,
+          streak: currentStreak,
+          alleDaten: allDates
+        });
 
-        if (pointsCriteria.includes(badge.criteria_type)) {
-          progressPoints = 0;
-        } else {
-          switch (badge.criteria_type) {
-            case 'activity_count':
-              progressPoints = activityCount;
-              break;
-            case 'event_count':
-              progressPoints = eventCount;
-              break;
-            case 'unique_activities':
-              progressPoints = uniqueActivities;
-              break;
-            case 'teamer_year':
-              // Nur Jahre ab Startjahr (teamer_since) zählen — identisch zur Wertung (kein Mismatch).
-              progressPoints = teamerStartYear === null
-                ? 0
-                : activeYearValues.filter(y => y >= teamerStartYear).length;
-              break;
-            case 'category_activities': {
-              // Echter Progress: Anzahl Teamer-Aktivitäten + anwesende Events der
-              // geforderten Kategorie (deckungsgleich mit der Wertung in badges.js).
-              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
-                ? badge.criteria_extra
-                : JSON.parse(badge.criteria_extra || '{}');
-              progressPoints = extra.required_category
-                ? (categoryCounts[extra.required_category] || 0)
-                : 0;
-              break;
-            }
-            case 'specific_activity': {
-              // Anzahl der geforderten Teamer-Aktivität (Name), wie Wertung badges.js:476.
-              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
-                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
-              progressPoints = extra.required_activity_name
-                ? (activityNameCounts[extra.required_activity_name] || 0)
-                : 0;
-              break;
-            }
-            case 'activity_combination': {
-              // Anzahl erfuellter Teilbedingungen (Aktivitäten + Events), wie Wertung
-              // badges.js:391. Ziel ist die Gesamtanzahl der geforderten Eintraege.
-              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
-                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
-              const reqActs = extra.required_activities || [];
-              const reqEvents = extra.required_events || [];
-              const actMatch = reqActs.filter(n => completedActivityNames.includes(n)).length;
-              const evMatch = reqEvents.filter(t => attendedEventTitles.includes(t)).length;
-              progressPoints = actMatch + evMatch;
-              break;
-            }
-            case 'streak':
-              // Aktueller Wochen-Streak (gleiche Util wie Wertung badges.js checkStreakCriteria).
-              progressPoints = computeCurrentStreak(allDates);
-              break;
-            case 'time_based': {
-              // Anzahl Aktivitäten/Events im Zeitfenster, wie Wertung badges.js:522.
-              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
-                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
-              const days = extra.days || (extra.weeks ? extra.weeks * 7 : null);
-              if (days) {
-                const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
-                progressPoints = allDates.filter(d => new Date(d).getTime() >= cutoff).length;
-              } else {
-                progressPoints = 0;
-              }
-              break;
-            }
-            case 'collection':
-            case 'yearly':
-              // Noch nicht in der Wertung implementiert -> 0.
-              progressPoints = 0;
-              break;
-            default:
-              progressPoints = 0;
-          }
-        }
-
-        const progressPercentage = Math.min(100, Math.round((progressPoints / criteriaValue) * 100));
-        return { ...badge, progress_points: progressPoints, progress_percentage: progressPercentage };
+        return {
+          ...badge,
+          progress_points: progress.current,
+          progress_percentage: Math.round(progress.percentage)
+        };
       });
 
       // Geheime Abzeichen erst zeigen, wenn sie verdient sind. Die Ansicht
       // verlässt sich darauf, dass sie gar nicht erst geliefert werden — beim
       // Konfi tut das Backend das (konfiBadgeProgress.js), hier fehlte es, und
       // Name, Beschreibung und Fortschritt standen offen da (Befund 24.08.2026).
-      const sichtbareBadges = enrichedBadges.filter(b => !b.is_hidden || b.earned);
+      //
+      // Dazu jetzt die "unerreichbar"-Ausblendung, die bisher nur Konfis
+      // hatten (Befund N2, Entscheidung 27.08.2026): Einem Abzeichen ohne
+      // hinterlegte Bedingung — etwa `specific_activity` ohne
+      // required_activity_name — kann niemand naeherkommen, die Wertung prueft
+      // genau dieses Feld. Es stand bisher mit 0 % in der Liste und liess
+      // Teamer:innen raetseln. Verdiente Abzeichen bleiben immer sichtbar.
+      //
+      // Die Punktearten-Haelfte der Konfi-Pruefung (gottesdienst_enabled /
+      // gemeinde_enabled am Jahrgang) gilt hier NICHT: Teamer:innen haben kein
+      // Punktekonto, die Punkte-Kriterien sind fuer sie ohnehin immer 0.
+      const sichtbareBadges = enrichedBadges.filter(
+        b => (!b.is_hidden || b.earned) && (b.earned || !bedingungFehlt(b))
+      );
 
       // Die Gesamtzahl der Geheimnisse gehört MIT in die Antwort: Die Ansicht
       // zählte sie bisher aus der Liste, und die enthält jetzt nur noch die
@@ -513,8 +484,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Bewusst als Kopfzeile und nicht im Rumpf: Die Antwort ist ein Array,
       // und zwei Ansichten lesen sie so (TeamerBadgesPage, TeamerDashboardPage).
       // Eine neue Huelle hätte beide gebrochen.
-      res.set('X-Badges-Secret-Total', String(enrichedBadges.filter(b => b.is_hidden).length));
-      res.set('X-Badges-Visible-Total', String(enrichedBadges.filter(b => !b.is_hidden).length));
+      //
+      // Gezaehlt werden NUR AKTIVE Abzeichen — angeglichen an den Konfi-Weg
+      // (Entscheidung 27.08.2026). Die Query oben holt auch inaktive, sofern
+      // verdient (`is_active = true OR ub.id IS NOT NULL`); die zaehlten
+      // vorher mit. Damit bedeutete "3 geheime Abzeichen" je nach Rolle etwas
+      // anderes. Jetzt sagt die Zahl ueberall dasselbe: so viele gibt es noch
+      // zu entdecken. Ein bereits verdientes, inzwischen abgeschaltetes
+      // Abzeichen bleibt in der Liste sichtbar, zaehlt aber nicht mehr als
+      // offenes Ziel.
+      const aktiv = enrichedBadges.filter(b => b.is_active);
+      res.set('X-Badges-Secret-Total', String(aktiv.filter(b => b.is_hidden).length));
+      res.set('X-Badges-Visible-Total', String(aktiv.filter(b => !b.is_hidden).length));
 
       res.json(sichtbareBadges);
     } catch (err) {

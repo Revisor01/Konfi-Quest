@@ -13,6 +13,7 @@
 
 const { computeCurrentStreak } = require('./streakCalculation');
 const { KONFI_BADGE_EVENT_CONDITION } = require('./badgeEventRule');
+const { berechneBadgeProgress, bedingungFehlt } = require('./badgeProgress');
 
 // Ermittelt Badges (earned + available + Fortschritt) für einen Konfi.
 // Erwartet: db (pg Pool), konfiId (users.id), organizationId.
@@ -60,8 +61,7 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
     bonusPointsRes,
     datesRes,
     categoryCountsRes,
-    activityNameCountsRes,
-    totalStatsRes
+    activityNameCountsRes
   ] = await Promise.all([
     db.query(query, [konfiId, organizationId]),
     db.query(
@@ -113,18 +113,14 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
        WHERE ua.user_id = $1 AND a.organization_id = $2
        GROUP BY a.name`,
       [konfiId, organizationId]
-    ),
-    db.query(
-      // target_role gehört dazu: Ohne den Filter zählten die Teamer-Abzeichen
-      // in der Konfi-Statistik mit. In Org 1 standen so 56 statt 50, der
-      // Fortschritt wirkte dauerhaft schlechter als er war (Befund 24.08.2026).
-      `SELECT
-        COUNT(*) FILTER (WHERE is_hidden = false) as total_visible,
-        COUNT(*) FILTER (WHERE is_hidden = true) as total_secret
-      FROM custom_badges
-      WHERE is_active = TRUE AND organization_id = $1 AND target_role = 'konfi'`,
-      [organizationId]
     )
+    // Die eigene Statistik-Query ist entfallen (27.08.2026): Sie zaehlte
+    // organisationsweit und wusste nichts von der Ausblendung unerreichbarer
+    // Abzeichen — das Dashboard nannte deshalb ein Ziel, das niemand
+    // vollmachen konnte. Gezaehlt wird jetzt unten aus der geladenen Liste,
+    // wo `unreachable` bekannt ist. Der `target_role`-Filter, den sie
+    // mitbrachte (Befund 24.08.2026: sonst zaehlten Teamer-Abzeichen mit,
+    // in Org 1 waren es 56 statt 50), steckt in der Hauptquery oben.
   ]);
 
   const badges = badgesRes.rows;
@@ -151,26 +147,8 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   // die passiert schlicht nichts. In Org 1 standen so zehn aktive Abzeichen,
   // von denen keines je vergeben wurde (Befund 24.08.2026). Sie tauchen jetzt
   // nicht mehr unter "erreichbar" auf, statt Konfis raetseln zu lassen.
-  const bedingungFehlt = (badge) => {
-    let extra = {};
-    try {
-      extra = typeof badge.criteria_extra === 'string'
-        ? JSON.parse(badge.criteria_extra || '{}')
-        : (badge.criteria_extra || {});
-    } catch { return true; }
-
-    switch (badge.criteria_type) {
-      case 'specific_activity':
-        return !extra.required_activity_name;
-      case 'activity_combination':
-        return !Array.isArray(extra.required_activities) || extra.required_activities.length === 0;
-      case 'category_activities':
-        return !extra.required_category;
-      default:
-        return false;
-    }
-  };
-
+  // Die Pruefung selbst ist rollenneutral und steht in utils/badgeProgress.js
+  // — der Teamer-Pfad nutzt jetzt dieselbe (Befund N2).
   const isUnreachable = (badge) => {
     if (bedingungFehlt(badge)) return true;
     switch (badge.criteria_type) {
@@ -190,106 +168,35 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
       continue;
     }
 
-    let progress = { current: 0, target: badge.criteria_value || 1, percentage: 0 };
-
-    try {
-      switch (badge.criteria_type) {
-        case 'total_points': {
-          progress.current = gdPoints + gmPoints;
-          break;
-        }
-        case 'gottesdienst_points': {
-          progress.current = gdPoints;
-          break;
-        }
-        case 'gemeinde_points': {
-          progress.current = gmPoints;
-          break;
-        }
-        case 'both_categories': {
-          progress.current = (!gdEnabled || !gmEnabled) ? 0 : Math.min(gdPoints, gmPoints);
-          break;
-        }
-        case 'activity_count': {
-          progress.current = activityCount + eventCount;
-          break;
-        }
-        case 'event_count': {
-          progress.current = eventCount;
-          break;
-        }
-        case 'mandatory_event_count': {
-          progress.current = mandatoryEventCount;
-          break;
-        }
-        case 'teamer_year': {
-          progress.current = 0;
-          break;
-        }
-        case 'unique_activities':
-          progress.current = uniqueActivityCount;
-          break;
-        case 'specific_activity': {
-          let requiredActivityName = null;
-          try {
-            const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-            requiredActivityName = extraData.required_activity_name;
-          } catch (e) {
-            console.error('Error parsing criteria_extra for specific_activity badge:', e);
-          }
-          progress.current = requiredActivityName ? (activityNameCounts.get(requiredActivityName) || 0) : 0;
-          break;
-        }
-        case 'category_activities': {
-          let requiredCategory = null;
-          try {
-            const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-            requiredCategory = extraData.required_category;
-          } catch (e) {
-            console.error('Error parsing criteria_extra for category_activities badge:', e);
-          }
-          progress.current = requiredCategory ? (categoryCounts.get(requiredCategory) || 0) : 0;
-          break;
-        }
-        case 'activity_combination': {
-          let requiredActivities = [];
-          try {
-            const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-            requiredActivities = extraData.required_activities || [];
-          } catch (e) {
-            console.error('Error parsing criteria_extra for activity_combination badge:', e);
-          }
-          progress.current = requiredActivities.filter(name => (activityNameCounts.get(name) || 0) > 0).length;
-          break;
-        }
-        case 'bonus_points':
-          progress.current = bonusPointsTotal;
-          break;
-        case 'streak': {
-          progress.current = currentStreak;
-          break;
-        }
-        case 'time_based': {
-          let tbDays = null;
-          try {
-            const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-            tbDays = extraData.days || (extraData.weeks ? extraData.weeks * 7 : null);
-          } catch (e) {
-            console.error('Error parsing criteria_extra for time_based badge:', e);
-          }
-          if (tbDays) {
-            const now = new Date();
-            const cutoff = new Date(now.getTime() - (tbDays * 24 * 60 * 60 * 1000));
-            progress.current = allDates.filter(d => new Date(d) >= cutoff).length;
-          }
-          break;
-        }
-      }
-
-      progress.percentage = Math.min((progress.current / progress.target) * 100, 100);
-    } catch (err) {
-      console.error(`Error calculating progress for badge ${badge.id}:`, err);
-    }
+    // Fortschritt aus dem gemeinsamen Kern (utils/badgeProgress.js).
+    // Die Zaehler bleiben hier, weil sie konfi-spezifisch sind — der Kern
+    // rechnet nur. `aktivitaetenUndEvents` heisst so, weil beide Pfade eine
+    // Variable `activityCount` hatten, die Verschiedenes bedeutete: hier sind
+    // Events NICHT enthalten und werden addiert, beim Teamer schon.
+    // Addition wie in der Wertung (`badges.js:282`).
+    const progress = berechneBadgeProgress(badge, {
+      punkteGesamt: gdPoints + gmPoints,
+      punkteGottesdienst: gdPoints,
+      punkteGemeinde: gmPoints,
+      // Abgeschaltete Punktearten zaehlen nicht: null statt einer 0, damit im
+      // Kern der Unterschied "keine Punkte" / "gibt es hier nicht" bleibt.
+      beideKategorien: (!gdEnabled || !gmEnabled) ? null : Math.min(gdPoints, gmPoints),
+      punkteBonus: bonusPointsTotal,
+      aktivitaetenUndEvents: activityCount + eventCount,
+      events: eventCount,
+      pflichtEvents: mandatoryEventCount,
+      verschiedeneAktivitaeten: uniqueActivityCount,
+      // Konfis sind keine Teamer:innen — der Wert bleibt bewusst 0, damit ein
+      // faelschlich auf 'konfi' gestelltes teamer_year-Abzeichen nicht
+      // plötzlich Fortschritt zeigt.
+      teamerJahre: 0,
+      proKategorie: categoryCounts,
+      proAktivitaetsname: activityNameCounts,
+      // erfuellteEventTitel bewusst NICHT gesetzt: Die Konfi-Wertung zaehlt
+      // bei activity_combination allein die Aktivitaeten.
+      streak: currentStreak,
+      alleDaten: allDates
+    });
 
     badge.progress = progress;
   }
@@ -297,14 +204,34 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   const earned = badges.filter(badge => badge.earned);
   const available = badges.filter(badge => !badge.earned && !badge.is_hidden && !badge.unreachable);
 
-  const totalStats = totalStatsRes.rows[0];
+  // Gesamtzahlen fuer die Anzeige "x von y". Sie ZAEHLEN NICHT MIT, was
+  // ausgeblendet wird: Ein unerreichbares Abzeichen (Bedingung fehlt, oder
+  // die Punkteart ist im Jahrgang abgeschaltet) steht in keiner Liste, wurde
+  // in der Gesamtzahl aber weiter mitgezaehlt. Im Dashboard stand dann etwa
+  // "3/10", obwohl nur 8 ueberhaupt erreichbar waren — eine Zahl, die man nie
+  // vollmachen kann. In Org 1 waren zehn solcher Abzeichen angelegt
+  // (Befund 24.08.2026, mitbehoben 27.08.2026 beim Zusammenlegen N2).
+  //
+  // Verdiente zaehlen immer mit, auch wenn die Bedingung inzwischen fehlt —
+  // sie sind ja erreicht worden. `unreachable` ist oben schon so gesetzt
+  // (`!badge.earned && isUnreachable(badge)`).
+  //
+  // Die frühere Query zaehlte organisationsweit und kannte weder Jahrgang
+  // noch Fortschritt. Gezaehlt wird deshalb hier, wo beides bekannt ist.
+  //
+  // `is_active` muss mitgefiltert werden: Die Hauptquery oben holt bewusst
+  // auch ABGESCHALTETE Abzeichen, sofern verdient (damit ein einmal
+  // erreichtes nicht aus der Liste faellt). Als offenes Ziel zaehlen sie
+  // nicht — sonst bedeutete "noch 3 zu entdecken" etwas anderes als die
+  // Liste zeigt. Beim Teamer-Pfad war genau das der Fall (Befund N2).
+  const zaehlbar = badges.filter(badge => badge.is_active && !badge.unreachable);
 
   return {
     available,
     earned,
     stats: {
-      totalVisible: parseInt(totalStats.total_visible) || 0,
-      totalSecret: parseInt(totalStats.total_secret) || 0
+      totalVisible: zaehlbar.filter(badge => !badge.is_hidden).length,
+      totalSecret: zaehlbar.filter(badge => badge.is_hidden).length
     }
   };
 }
