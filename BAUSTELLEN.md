@@ -4,8 +4,27 @@ Stand: 24.08.2026, abends. Eine Liste, damit nichts doppelt läuft und nichts
 untergeht. **Erledigtes wird nicht gelöscht, sondern abgehakt** — sonst weiß
 später niemand mehr, ob etwas gemacht wurde oder nur vergessen.
 
-Live: Image `d3d6976` · Version 2.0.0 (unveröffentlicht) · iOS-Build 146 im
+Live: Image `109d4e0` · Version 2.0.0 (unveröffentlicht) · iOS-Build 147 im
 TestFlight
+
+> **Der automatische Deploy ist seit dem 21.08.2026 pausiert** — bewusst:
+> `ci.yml:219` trägt ein `if: false &&`, damit Produktion die Migrationen von
+> 2.0.0 nicht nachzieht, solange die Version in TestFlight getestet wird. Der
+> `deploy`-Job erscheint deshalb bei jedem Lauf als **skipped**, obwohl alle
+> Tests grün sind. Das ist kein roter Test, der den Deploy verschluckt hat.
+>
+> **Folge, am Server nachgemessen (27.08.2026, abends):** Live laufen
+> `konfi_quest-backend-1`, `-backend2-1` und `-frontend-1` auf
+> `ghcr.io/revisor01/konfi-quest-backend:109d4e0` — **209 Commits hinter
+> `main`**. Vier Migrationen sind dort noch nicht gelaufen: 129
+> (`invite_code_id_on_delete`), 130 (`material_tags_entfernen`), 131
+> (`org_wartelisten_einstellungen_entfernen`) und 132
+> (`bibeluebersetzung_eine_spalte`). Mit PR #129 kommt 133
+> (`chat_reaktionen_teamer_erlauben`) dazu.
+>
+> **Beim Ausrollen von 2.0.0 daran denken:** das `false &&` in `ci.yml:219`
+> entfernen, und die 132er-Migration läuft mit einem `DROP COLUMN` — sie ist
+> nicht umkehrbar. Ihre Übernahmebedingung muss beim ERSTEN Mal stimmen.
 
 > **26.08.2026: Abuse-Sperre und Rückumzug.** Der Hauptserver war wegen einer
 > Nachzügler-Beschwerde zum bereits abgeschlossenen Vorfall vom 19./20.08.
@@ -25,6 +44,9 @@ Stand 27.08.2026, abends. Alle 12 offenen `- [ ]`-Punkte dieser Datei einzeln
 durchgegangen. **Ergebnis: genau einer betrifft den Release, und der ist der
 Release selbst.**
 
+- [ ] **Produktion auf den Stand von `main` bringen** — der automatische
+      Deploy ist seit dem 21.08. bewusst pausiert (`ci.yml:219`), live läuft
+      `109d4e0`, 209 Commits zurück. Siehe Abschnitt "Vor dem Release 2.0.0".
 - [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
       Test, zusammen mit dem Datum im CHANGELOG. Siehe Abschnitt "Release
       2.0.0" weiter unten.
@@ -1618,6 +1640,14 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
       zwischen den Kapiteln ergänzt (`e6867f01`). Dabei zwei falsche Angaben
       gegen den Code korrigiert.
 - [x] **iOS-Build 143** ausgelöst (`4d49a7c1`), CI und CodeQL vorher grün.
+- [ ] **Produktion auf den Stand von `main` bringen.** Der automatische
+      Deploy ist seit dem 21.08. bewusst pausiert (`ci.yml:219`, `if: false &&`).
+      Am 27.08. abends am Server nachgemessen: live läuft `109d4e0`, **209
+      Commits hinter `main`**. Vier Migrationen fehlen dort (129–132), mit
+      PR #129 kommt 133 dazu.
+      Zum Ausrollen das `false &&` entfernen. **Migration 132 macht ein
+      `DROP COLUMN`** — nicht umkehrbar, die Übernahmebedingung muss beim
+      ersten Mal stimmen (Details beim N8-Eintrag).
 - [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
       Test, zusammen mit dem Datum im CHANGELOG.
 
