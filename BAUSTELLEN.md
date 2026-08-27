@@ -893,11 +893,33 @@ falschen Teamer-Erklärtexte (PR #83).
       **Wichtig:** Die Dokumentation der Falle (siehe oben) hat diesen Fehler
       NICHT verhindert; er bestand schon vorher unbemerkt.
       Deshalb war der Umbau richtig statt nur ein Kommentar.
-- [ ] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.** Client
-      setzt `totalBadgeCount` ohne `newBadgesCount`, Chat-Pushes die exakte
-      Chat-Zahl, alle anderen Pushes hart `1`, der 5-Minuten-Hintergrund-Sync
-      nur Chat-Unread. Das Icon stimmt nie mit der Summe der Reiter überein.
-      Eigene Baustelle, nicht Teil der Zähler-Konsolidierung.
+- [x] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.**
+      ERLEDIGT 27.08.2026 (B2a mit PR #92, B2b jetzt).
+      **B2b, nachgemessen:** Der Chat-Push setzte die **Chat-Unread-Zahl
+      allein** aufs Icon (`chat.js:1105,1905`) und überschrieb damit Anträge,
+      Termine, Freigaben und Abzeichen — nach einer Chat-Nachricht zeigte das
+      Icon nur noch die Chat-Zahl. Alle anderen Pushes fielen auf `badge: 1`
+      zurück. Nur der Client kannte die echte Summe, konnte sie bei
+      geschlossener App aber nicht setzen.
+      **Simons Entscheidung: der Server rechnet.** Begründung: Bei
+      geschlossener App gibt es keinen Client — und genau dann ist das Icon
+      das Einzige, was jemand vor dem Öffnen sieht. Den Badge aus den Pushes
+      zu entfernen hätte es dort einfrieren lassen.
+      Die Summe steht jetzt einmal in `utils/appIconBadge.js`, mit derselben
+      Aufteilung je Rolle wie `BadgeContext.totalBadgeCount`. Ein
+      **Paritätstest** vergleicht sie gegen den `badge-counts`-Endpunkt, aus
+      dem der Client seine Zahlen bildet.
+      **Beim Gegenproben aufgefallen und nachgebessert:** Die Tests deckten
+      zuerst nur die *Berechnung* ab — die *Verdrahtung* im Push-Weg wäre
+      unbemerkt zurückgefallen. Genau dort saß der Fehler. Ein eigener Test
+      prüft jetzt beide Sendestellen, inklusive des Unterschieds: In
+      `sendToUser` gewinnt ein ausdrücklich übergebener Wert, in
+      `sendChatNotification` wird er ersetzt (er ist per Definition zu
+      niedrig).
+      Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
+      (`backgroundService.js`) setzt weiterhin nur Chat-Unread. Er läuft nur
+      bei geöffneter App, wo der Client ohnehin korrigiert — deshalb hier
+      nicht mit angefasst.
 - [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
       existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
       nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
