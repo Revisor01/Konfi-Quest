@@ -3211,6 +3211,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Eigene Aktivitaets-Anträge auflisten",
+        "description": "Liefert nur Anträge auf Aktivitäten mit target_role='konfi' — bis 27.08.2026 fehlte dieser Filter (Befund N3, behoben). Anträge zu einer inzwischen GELÖSCHTEN Aktivität bleiben bewusst in der Liste (LEFT JOIN, activity_name dann leer); der Teamer-Weg lässt sie über einen inneren JOIN wegfallen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3219,7 +3220,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur eigene Anträge (user_id = Token)"
+          "objekt-pruefung": "nur eigene Anträge (user_id = Token), nur Aktivitäten mit target_role='konfi'"
         },
         "responses": {
           "200": {
@@ -3241,7 +3242,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Neuen Aktivitaets-Antrag einreichen",
-        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026 ging die In-App-Mitteilung nur an admin (Befund M6, behoben).\n",
+        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026 ging die In-App-Mitteilung nur an admin (Befund M6, behoben).\n\nDie Aktivität muss target_role='konfi' haben; sonst 404. Bis 27.08.2026 fehlte diese Prüfung — ein Antrag auf eine Teamer-Aktivität wurde angenommen und war von der Leitung bestätigbar (Befund N3, behoben).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3251,7 +3252,7 @@
             "validateCreateRequest"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören (404 sonst)"
+          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören UND target_role='konfi' sein (404 sonst)"
         },
         "requestBody": {
           "required": true,
