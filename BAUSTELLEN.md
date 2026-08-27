@@ -53,20 +53,18 @@ Release selbst.** Kein einziger offener Befund blockiert ihn.
 
 Alles andere ist eingeordnet und blockiert nichts:
 
-| Offener Punkt | Warum kein Blocker |
-|---|---|
-| Antwortform der Teamer-Abzeichen vereinheitlichen | dort schon als "NACH 2.0.0" vermerkt |
-| Abgelehnte Offline-Nachreichungen verschwinden still (H1) | Befund aus dem Offline-Bericht, nach 2.0.0 |
-| Teamer-Offline-Buchung verwirft die Server-Antwort (H2) | ebenda |
-| 10 von 30 Push-Arten ohne Antipp-Ziel (M2) | Befund aus dem Push-Bericht, nach 2.0.0 |
-| Hintergrund-Sync lässt das Hauptamt aus (M3) | ebenda; betrifft nur das Icon, nicht die Daten |
-| `new_event` an ausgeschiedene Konfis (M5) | ebenda |
-| Zwei Push-Arten ohne Content-Org (M4) | ebenda; nur Multi-Org-Teamer:innen |
-| Zeitzonen und Datumsgrenzen | **Prüfauftrag**, kein Befund |
-| Wrapped | **Prüfauftrag**, kein Befund |
-| Termin-Zählungen: gemeinsame SQL-View | ausdrücklich "Nach 2.0.0" |
-| 3-MB-Bundle aufteilen | ausdrücklich "Nach 2.0.0" |
-| Ionic 9 mit react-router-Umbau | ausdrücklich "Nach 2.0.0" |
+| Offener Punkt | Art | Warum kein Blocker |
+|---|---|---|
+| Antwortform der Teamer-Abzeichen vereinheitlichen | Aufräumarbeit | dort schon als "NACH 2.0.0" vermerkt |
+| Termin-Zählungen auf die vorhandene View umstellen | Aufräumarbeit | Verhalten stimmt, die Wurzel bleibt |
+| 3-MB-Bundle aufteilen | Aufräumarbeit | ausdrücklich "Nach 2.0.0" |
+| Ionic 9 mit react-router-Umbau | Aufräumarbeit | ausdrücklich "Nach 2.0.0" |
+| Zeitzonen und Datumsgrenzen | **Prüfvorschlag** | kein Befund, unbeauftragt |
+| Wrapped | **Prüfvorschlag** | kein Befund, unbeauftragt |
+
+**Kein offener Befund.** Die sechs aus den drei Prüfberichten (H1, H2, M2
+mit N1, M3, M4, M5) sind am 27.08.2026 abends behoben — volle Suiten grün,
+1468 Backend- und 601 Frontend-Tests, jede Änderung mit Gegenprobe.
 
 > **Diese Übersicht war schon einmal falsch — zweimal sogar.** Ihre erste
 > Fassung führte N8, die Neuerungs-Karten und die Konsolidierung der Zähler
@@ -1698,11 +1696,13 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       `event_bookings_event_id_fkey` haengt mit `ON DELETE CASCADE` daran. Mit
       dem Event verschwinden die Buchungen, der JOIN findet nichts — der Fall
       existiert gar nicht.
-- [ ] **Zeitzonen und Datumsgrenzen.** Termine, Anmeldeschluss, Challenges mit
-      Restzeit, Tageslosung, Wrapped-Jahresgrenze — überall Datumslogik,
-      nirgends geprüft, ob sie an Tagesgrenzen und über die Sommerzeit stimmt.
-- [ ] **Wrapped.** Kommt in mehreren Berichten am Rand vor (Slide-Inhalte nie
-      geprüft, `has_wrapped` prüft nur die Freigabe statt der Snapshot-Existenz),
+- [ ] **Zeitzonen und Datumsgrenzen.** **NACH 2.0.0** (Prüfauftrag, kein
+      Befund). Termine, Anmeldeschluss, Challenges mit Restzeit, Tageslosung,
+      Wrapped-Jahresgrenze — überall Datumslogik, nirgends geprüft, ob sie an
+      Tagesgrenzen und über die Sommerzeit stimmt.
+- [ ] **Wrapped.** **NACH 2.0.0** (Prüfauftrag, kein Befund). Kommt in
+      mehreren Berichten am Rand vor (Slide-Inhalte nie geprüft, `has_wrapped`
+      prüfte nur die Freigabe statt der Snapshot-Existenz — das ist behoben),
       war aber nie eigener Gegenstand.
 
 ---
