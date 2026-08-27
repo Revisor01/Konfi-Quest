@@ -139,4 +139,59 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
       /SELECT u\.organization_id, u\.display_name as name, r\.name as role_name/.test(q));
     expect(rollenAbfrageDerVergabe).toBe(false);
   });
+  // ==================================================================
+  // Multi-Org (Befund 28.08.2026, am Geraet nachgestellt): Der
+  // Fuenf-Minuten-Sync rechnete nur mit der PRIMAER-Organisation.
+  //
+  // Gemessen an einem echten Konto: Org 1 = 6, Org 2 = 0, Org 4 = 29.
+  // Der Push sendete nach seinem Fix korrekt 35 -- der Sync ueberschrieb
+  // sie kurz darauf mit 6. Beobachtbar war genau das: Push zeigt 35,
+  // App oeffnen zeigt 6, wenig spaeter 0.
+  // ==================================================================
+  it('Multi-Org: fragt alle Organisationen ab, nicht nur die Primaer-Org', async () => {
+    const gefragteOrgs = [];
+    const db = {
+      query: async (sql, params) => {
+        if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
+          return { rows: [{ user_id: 41, user_type: 'admin', role_name: 'org_admin', organization_id: 1, hat_push: false }] };
+        }
+        if (/FROM user_organizations/.test(sql)) {
+          return { rows: [{ user_id: 41, organization_id: 4 }, { user_id: 41, organization_id: 2 }] };
+        }
+        if (Array.isArray(params)) {
+          for (const p of params.flat()) {
+            if ([1, 2, 4].includes(p) && !gefragteOrgs.includes(p)) gefragteOrgs.push(p);
+          }
+        }
+        return { rows: [] };
+      }
+    };
+
+    await BackgroundService.updateAllUserBadges(db, { nurZaehler: true });
+
+    // Verbotener Fall: nur die Primaer-Org -- so war es vor dem Fix.
+    expect(gefragteOrgs).not.toEqual([1]);
+    // Erlaubter Fall: alle drei, die Primaer-Org eingeschlossen.
+    expect(gefragteOrgs.sort()).toEqual([1, 2, 4]);
+  });
+
+  it('Single-Org bleibt bei einer Organisation', async () => {
+    const gefragteOrgs = [];
+    const db = {
+      query: async (sql, params) => {
+        if (/FROM users u/.test(sql) && /JOIN roles r/.test(sql)) {
+          return { rows: [{ user_id: 58, user_type: 'konfi', role_name: 'konfi', organization_id: 1, hat_push: false }] };
+        }
+        if (/FROM user_organizations/.test(sql)) return { rows: [] };
+        if (Array.isArray(params)) {
+          for (const p of params.flat()) {
+            if ([1, 2, 4].includes(p) && !gefragteOrgs.includes(p)) gefragteOrgs.push(p);
+          }
+        }
+        return { rows: [] };
+      }
+    };
+    await BackgroundService.updateAllUserBadges(db, { nurZaehler: true });
+    expect(gefragteOrgs).toEqual([1]);
+  });
 });
