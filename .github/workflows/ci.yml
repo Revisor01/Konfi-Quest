@@ -209,14 +209,21 @@ jobs:
     # Eigener Job NACH build-and-push: wartet bis BEIDE Images (backend+frontend)
     # auf ghcr sind, dann EIN Redeploy des Stacks.
     #
-    # PAUSIERT (21.08.2026): Der Merge von Challenges 2.0 bringt die Migrationen
-    # 118-122 mit. Produktion soll NICHT automatisch nachziehen, solange 2.0.0
-    # noch in TestFlight getestet wird.
+    # WAR PAUSIERT (21.08.2026 bis 27.08.2026): Der Merge von Challenges 2.0
+    # brachte die Migrationen 118-122 mit, Produktion sollte nicht
+    # automatisch nachziehen, solange 2.0.0 in TestFlight getestet wurde.
+    # In dieser Woche lief Produktion deshalb auf 109d4e0, 209 Commits hinter
+    # main -- der deploy-Job erschien bei jedem Lauf als "skipped", obwohl
+    # alles gruen war. Das sah aus wie ein Fehler und war keiner.
     #
-    # ZUM REAKTIVIEREN: in der if-Zeile unten das "false &&" entfernen.
-    # Danach deployt jeder Push auf main wieder automatisch.
+    # WIEDER AKTIV seit 27.08.2026: 2.0.0 geht in den Store-Review, Produktion
+    # zieht wieder mit jedem Push auf main nach.
+    #
+    # ZUM PAUSIEREN: in der if-Zeile unten ein "false &&" voranstellen -- und
+    # oben vermerken, seit wann und warum. Ein pausierter Deploy ohne Notiz
+    # kostet beim naechsten Mal eine halbe Stunde Fehlersuche.
     needs: [build-and-push]
-    if: false && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)
