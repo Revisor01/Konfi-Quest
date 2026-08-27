@@ -1239,6 +1239,90 @@ describe('Konfi-Management Routes', () => {
       expect(fs.existsSync(path.join(REQUESTS_DIR, fotoName))).toBe(false);
     });
   });
+  // Befund 27.08.2026 (beim Messen der Jahrgangswechsel-Folgen gefunden):
+  // Der PUT pruefte NICHT, ob der Ziel-Jahrgang zur eigenen Organisation
+  // gehoert — der POST tut das seit jeher (Zeile 171-178). Gemessen antwortete
+  // die Route mit 200 und schrieb die Konfi in den Jahrgang einer FREMDEN
+  // Gemeinde. Ueber die App war das nicht erreichbar (die Route hat keinen
+  // Aufrufer im Frontend), die Route stand aber offen.
+  describe('PUT /api/admin/konfis/:id — Ziel-Jahrgang und Organisation', () => {
+    it('ein Jahrgang aus einer FREMDEN Organisation wird abgewiesen', async () => {
+      // JAHRGAENGE.jahrgang2 gehoert zur zweiten Test-Organisation.
+      const fremd = JAHRGAENGE.jahrgang2;
+      expect(fremd.org_id).not.toBe(ORGS.testGemeinde.id);
+
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Emilia Beispiel', jahrgang_id: fremd.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('gehört nicht zu Ihrer Organisation');
+    });
+
+    it('und die Zuordnung bleibt dabei unveraendert', async () => {
+      // Gegenprobe zum Rollback: Ein abgewiesener Aufruf darf AUCH den Namen
+      // nicht aendern — das UPDATE auf users lief vor der Pruefung.
+      const { rows: [vorher] } = await db.query(
+        'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      const { rows: [nameVorher] } = await db.query(
+        'SELECT display_name FROM users WHERE id = $1',
+        [USERS.konfi1.id]
+      );
+
+      await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Neuer Name', jahrgang_id: JAHRGAENGE.jahrgang2.id });
+
+      const { rows: [nachher] } = await db.query(
+        'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      const { rows: [nameNachher] } = await db.query(
+        'SELECT display_name FROM users WHERE id = $1',
+        [USERS.konfi1.id]
+      );
+
+      expect(nachher.jahrgang_id).toBe(vorher.jahrgang_id);
+      expect(nameNachher.display_name).toBe(nameVorher.display_name);
+    });
+
+    it('ein Jahrgang der EIGENEN Organisation geht weiterhin durch', async () => {
+      // Der erlaubte Fall — ohne ihn wuerde ein zu strenger Guard nicht auffallen.
+      const { rows: [eigener] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2027/2028', $1, '2028-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Emilia Beispiel', jahrgang_id: eigener.id });
+
+      expect(res.status).toBe(200);
+
+      const { rows: [profil] } = await db.query(
+        'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(profil.jahrgang_id).toBe(eigener.id);
+    });
+
+    it('ein Jahrgang, den es gar nicht gibt, wird ebenso abgewiesen', async () => {
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Emilia Beispiel', jahrgang_id: 999999 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('gehört nicht zu Ihrer Organisation');
+    });
+  });
+
   // Befund 24.08.2026: Der Wechsel buchte die Pflichttermine des NEUEN
   // Jahrgangs dazu, raeumte die des alten aber nicht ab. Der Konfi stand
   // danach in den Pflichtterminen beider Jahrgänge.
