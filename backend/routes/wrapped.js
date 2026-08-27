@@ -453,6 +453,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(404).json({ error: 'Kein Wrapped-Snapshot vorhanden' });
       }
 
+      // Freigabe-Gate: Konfi-Wrapped gibt es erst, wenn der Jahrgang
+      // freigegeben ist (wrapped_released_at auf jahrgaenge). Bisher prüfte
+      // das nur das Dashboard (routes/konfi.js) — der Snapshot selbst war
+      // hier auch vor der Freigabe abrufbar (Drei-Ansichten-Befund M7).
+      // Gleiche Abfrage wie im Dashboard: der AKTUELLE Jahrgang des Konfis
+      // zaehlt. Nach der Snapshot-Pruefung, damit "kein Snapshot" weiterhin
+      // 404 bleibt. Teamer-Wrapped kennt keine Freigabe, dort bleibt alles offen.
+      if (roleName === 'konfi') {
+        const { rows: [gate] } = await db.query(
+          `SELECT EXISTS(
+             SELECT 1 FROM jahrgaenge j
+             JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+             WHERE kp.user_id = $1
+               AND j.wrapped_released_at IS NOT NULL
+               AND j.wrapped_released_at <= NOW()
+           ) AS released`,
+          [req.user.id]
+        );
+        if (!gate || !gate.released) {
+          return res.status(403).json({ error: 'Wrapped ist noch nicht freigegeben' });
+        }
+      }
+
       res.json({
         data: rows[0].data,
         computed_at: rows[0].computed_at,

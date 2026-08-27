@@ -73,6 +73,64 @@ describe('Wrapped Routes', () => {
       expect(res.body.data).toBeDefined();
       expect(res.body.wrapped_type).toBe('konfi');
     });
+
+    // Drei-Ansichten-Befund M7 (26.08.2026): Das Freigabe-Gate
+    // (wrapped_released_at auf jahrgaenge) prüfte nur das Konfi-Dashboard —
+    // der Datenendpunkt lieferte den Snapshot auch ohne Freigabe aus.
+    it('Ohne Freigabe (wrapped_released_at NULL) bekommt Konfi 403 statt Daten', async () => {
+      // Snapshots erzeugen (setzt wrapped_released_at auf NOW()) ...
+      const genRes = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(genRes.status).toBe(200);
+
+      // ... und die Freigabe zurueckziehen, der Snapshot bleibt liegen
+      // (entspricht z.B. einem Jahrgangswechsel des Konfis).
+      await db.query(
+        'UPDATE jahrgaenge SET wrapped_released_at = NULL WHERE id = $1',
+        [JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/wrapped/me')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Wrapped ist noch nicht freigegeben');
+      expect(res.body.data).toBe(undefined);
+    });
+
+    it('Freigabe in der Zukunft zaehlt nicht: 403', async () => {
+      const genRes = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(genRes.status).toBe(200);
+
+      await db.query(
+        "UPDATE jahrgaenge SET wrapped_released_at = NOW() + INTERVAL '1 day' WHERE id = $1",
+        [JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/wrapped/me')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Teamer-Wrapped kennt keine Freigabe: 200 auch ohne freigegebenen Jahrgang', async () => {
+      const genRes = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(genRes.status).toBe(200);
+
+      const res = await request(app)
+        .get('/api/wrapped/me')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.wrapped_type).toBe('teamer');
+    });
   });
 
   // ================================================================

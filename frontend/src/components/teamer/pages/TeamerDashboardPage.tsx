@@ -324,6 +324,12 @@ const TeamerDashboardPage: React.FC = () => {
   // Laufende Challenges für die Dashboard-Karte — wie im Konfi-Dashboard ein
   // eigener, schlanker Abruf. Erst NACH dem Dashboard laden (Config bekannt),
   // und gar nicht, wenn die Leitung die Karte abgeschaltet hat.
+  // WICHTIG: /challenges/konfi (Teilnehmer-Einstieg), NICHT /challenges/admin.
+  // Die Verwaltungsliste enthaelt auch reine Konfi-Challenges
+  // (audience='konfis'), an denen Teamer nicht teilnehmen duerfen — die
+  // standen frueher als "DEINE CHALLENGE" auf der Startkarte
+  // (Drei-Ansichten-Befund M8). Der Teilnehmer-Endpunkt filtert serverseitig
+  // korrekt nach audience ('nur_team' org-weit, 'konfis_und_team' je Jahrgang).
   const [activeChallenges, setActiveChallenges] = useState<ChallengeTeaser[]>([]);
   useEffect(() => {
     if (!dashboardData) return;
@@ -334,12 +340,12 @@ const TeamerDashboardPage: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await api.get('/challenges/admin');
+        const res = await api.get('/challenges/konfi');
         if (cancelled) return;
-        const liste = Array.isArray(res.data) ? res.data : [];
+        const liste = Array.isArray(res.data?.active) ? res.data.active : [];
         setActiveChallenges(
           liste
-            .filter((c: any) => c.status === 'active' && c.ends_at)
+            .filter((c: any) => c.ends_at)
             .map((c: any) => ({
               id: c.id,
               title: c.title,

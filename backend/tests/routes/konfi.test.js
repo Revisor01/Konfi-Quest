@@ -1113,6 +1113,75 @@ describe('Konfi Routes', () => {
       expect(res.body.event_status).toBe('mandatory');
     });
 
+    // Befund H6 (26.08.2026): Die Konfi-Liste lieferte einen abgesagten Termin
+    // weiter mit registration_status 'cancelled', der /status-Endpunkt filterte
+    // ihn hart weg und antwortete 404 -- zwei Antworten fuer denselben Termin
+    // in derselben Rolle. Entscheidung Simon 27.08.2026: Abgesagte Termine darf
+    // man sich weiterhin ansehen.
+    describe('GET /konfi/events/:id/status: abgesagte Termine', () => {
+      const abgesagterTerminMitAnmeldung = async () => {
+        const { rows } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                               waitlist_enabled, point_type, points,
+                               registration_opens_at, registration_closes_at, cancelled)
+           VALUES ('Abgesagter Termin', NOW() + interval '10 days', $1, false, 20,
+                   false, 'gemeinde', 1,
+                   NOW() - interval '1 day', NOW() + interval '5 days', true)
+           RETURNING id`,
+          [ORGS.testGemeinde.id]
+        );
+        const eventId = rows[0].id;
+        await db.query(
+          'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+          [eventId, JAHRGAENGE.jahrgang1.id]
+        );
+        return eventId;
+      };
+
+      it('wer angemeldet war, kann den abgesagten Termin weiterhin aufrufen -> 200', async () => {
+        const eventId = await abgesagterTerminMitAnmeldung();
+        await db.query(
+          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+           VALUES ($1, $2, 'confirmed', $3)`,
+          [eventId, USERS.konfi1.id, ORGS.testGemeinde.id]
+        );
+
+        const res = await request(app)
+          .get(`/api/konfi/events/${eventId}/status`)
+          .set('Authorization', `Bearer ${konfiToken}`);
+
+        expect(res.status).toBe(200);
+        // Gleiche Sprache wie die Liste: 'cancelled', nicht 'open'/'closed'.
+        expect(res.body.event_status).toBe('cancelled');
+        expect(res.body.is_registered).toBe(true);
+        // Anmelden geht natuerlich nicht mehr.
+        expect(res.body.can_register).toBe(false);
+      });
+
+      it('wer NICHT angemeldet war, bekommt den abgesagten Termin nicht -> 404', async () => {
+        // Gegenprobe und zugleich die Regel der Liste:
+        // (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL). Ein abgesagter
+        // Termin, mit dem man nie zu tun hatte, taucht auch nicht auf.
+        const eventId = await abgesagterTerminMitAnmeldung();
+
+        const res = await request(app)
+          .get(`/api/konfi/events/${eventId}/status`)
+          .set('Authorization', `Bearer ${konfiToken}`);
+
+        expect(res.status).toBe(404);
+      });
+
+      it('ein NICHT abgesagter Termin bleibt unveraendert erreichbar', async () => {
+        // Gegenprobe: Der Umbau darf den Normalfall nicht mitnehmen.
+        const res = await request(app)
+          .get(`/api/konfi/events/${EVENTS.pflichtEvent.id}/status`)
+          .set('Authorization', `Bearer ${konfiToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.event_status).toBe('mandatory');
+      });
+    });
+
     // Der /status-Endpunkt zählte außerdem ohne Rollenfilter: ein gebuchter
     // Teamer belegte rechnerisch den letzten Konfi-Platz und schloss das Event.
     it('GET /konfi/events/:id/status: Teamer-Buchung belegt keinen Konfi-Platz', async () => {
@@ -1321,6 +1390,47 @@ describe('Konfi Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(await imChat(zweiter.roomId, USERS.konfi1.id)).toBe(true);
+    });
+  });
+
+  // ================================================================
+  // POST /api/konfi/requests — In-App-Mitteilung an die Leitung
+  // ================================================================
+  // Drei-Ansichten-Befund M6 (26.08.2026): Die In-App-Mitteilung ging nur an
+  // r.name='admin' — org_admin bekam zwar Push, aber nichts ins
+  // Mitteilungscenter. Beide Wege (Konfi und Teamer) muessen die gesamte
+  // Leitung gleich informieren.
+  describe('POST /api/konfi/requests — Leitungs-Mitteilungen', () => {
+    it('Antrag erzeugt In-App-Mitteilung fuer admin UND org_admin, sonst niemanden', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-06-01'
+        });
+      expect(res.status).toBe(201);
+
+      // Der Leitungs-Versand laeuft NACH der Antwort (fire-and-forget) —
+      // deshalb kurz pollen, dann HART pruefen.
+      let rows = [];
+      for (let i = 0; i < 40; i++) {
+        ({ rows } = await db.query(
+          "SELECT user_id, title FROM notifications WHERE type = 'new_activity_request' ORDER BY user_id"
+        ));
+        if (rows.length > 0) break;
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Genau die Leitung der Org 1: admin1, orgAdmin1, orgAdminSuper.
+      // Verbotener Fall implizit mit drin: weder der Konfi selbst noch
+      // Teamer noch die Leitung der Org 2 tauchen auf.
+      expect(rows.map(r => r.user_id)).toEqual([
+        USERS.admin1.id,
+        USERS.orgAdmin1.id,
+        USERS.orgAdminSuper.id
+      ]);
+      expect(rows[0].title).toBe('Neuer Antrag eingegangen');
     });
   });
 
