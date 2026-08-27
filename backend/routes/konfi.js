@@ -164,9 +164,25 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       `;
       const dashboardSettingsSql =
         "SELECT key, value FROM settings WHERE organization_id = $1 AND (key LIKE 'dashboard_show_%' OR key = 'dashboard_section_order')";
+      // Befund aus dem Dashboard/Profil-Durchgang (26.08.2026): Hier wurde
+      // nur die FREIGABE geprueft, nicht ob ueberhaupt ein Snapshot vorliegt.
+      //
+      // Nachgemessen (27.08.2026): Bei gesetzter Freigabe ohne Snapshot
+      // lieferte das Dashboard has_wrapped=true, GET /wrapped/me aber 404 --
+      // die Konfi sah den Einstieg und tippte ins Leere.
+      //
+      // Das kann wirklich passieren: Die Snapshot-Erzeugung laeuft ueber
+      // Promise.allSettled (wrapped.js:735-739), zaehlt Fehler mit und setzt
+      // die Freigabe TROTZDEM. Scheitert sie fuer eine einzelne Konfi, hat
+      // genau diese eine Freigabe ohne eigenen Snapshot.
+      //
+      // Jetzt muessen beide Bedingungen gelten -- dieselbe Kombination, die
+      // auch GET /wrapped/me prueft.
       const wrappedSql = `SELECT EXISTS(
           SELECT 1 FROM jahrgaenge j
           JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+          JOIN wrapped_snapshots ws ON ws.user_id = kp.user_id
+                                   AND ws.wrapped_type = 'konfi'
           WHERE kp.user_id = $1
             AND j.wrapped_released_at IS NOT NULL
             AND j.wrapped_released_at <= NOW()

@@ -97,6 +97,78 @@ describe('Konfi Routes', () => {
       expect(res.body).toHaveProperty('konfspruch_visible');
     });
 
+    // Befund aus dem Dashboard/Profil-Durchgang (26.08.2026): has_wrapped
+    // prueft nur die FREIGABE, nicht ob ein Snapshot vorliegt.
+    //
+    // Nachgemessen (27.08.2026): Bei gesetzter Freigabe ohne Snapshot lieferte
+    // das Dashboard has_wrapped=true, GET /wrapped/me aber 404 -- die Konfi
+    // sah den Einstieg und tippte ins Leere.
+    //
+    // Das kann wirklich passieren: Die Snapshot-Erzeugung laeuft ueber
+    // Promise.allSettled (wrapped.js:735-739), zaehlt Fehler mit und setzt die
+    // Freigabe TROTZDEM. Scheitert sie fuer eine einzelne Konfi, hat genau
+    // diese eine Freigabe ohne eigenen Snapshot.
+    describe('has_wrapped braucht Freigabe UND Snapshot', () => {
+      const freigeben = () => db.query(
+        'UPDATE jahrgaenge SET wrapped_released_at = NOW() WHERE id = $1',
+        [JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snapshotAnlegen = (userId) => db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
+         VALUES ($1, $2, 'konfi', $3, 2026, '{}'::jsonb, NOW())`,
+        [userId, ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const hasWrapped = async () => {
+        const res = await request(app)
+          .get('/api/konfi/dashboard')
+          .set('Authorization', `Bearer ${konfiToken}`);
+        expect(res.status).toBe(200);
+        return res.body.has_wrapped;
+      };
+
+      it('VERBOTEN: Freigabe ohne Snapshot zeigt keinen Einstieg', async () => {
+        await freigeben();
+        expect(await hasWrapped()).toBe(false);
+      });
+
+      it('ERLAUBT: Freigabe UND Snapshot zeigen den Einstieg', async () => {
+        // Gegenprobe -- die zusaetzliche Bedingung darf den regulaeren Fall
+        // nicht mitnehmen.
+        await freigeben();
+        await snapshotAnlegen(USERS.konfi1.id);
+        expect(await hasWrapped()).toBe(true);
+      });
+
+      it('Snapshot ohne Freigabe zeigt ebenfalls nichts', async () => {
+        // Die andere Richtung: Das Freigabe-Gate bleibt bestehen.
+        await snapshotAnlegen(USERS.konfi1.id);
+        expect(await hasWrapped()).toBe(false);
+      });
+
+      it('der Snapshot einer ANDEREN Konfi zaehlt nicht', async () => {
+        // Sonst haette der Join die Bedingung faktisch aufgehoben, sobald
+        // irgendwer im Jahrgang einen Snapshot hat.
+        await freigeben();
+        await snapshotAnlegen(USERS.konfi2.id);
+        expect(await hasWrapped()).toBe(false);
+      });
+
+      it('deckt sich mit dem, was /wrapped/me liefert', async () => {
+        // Die eigentliche Zusicherung: Wo der Einstieg steht, muss auch etwas
+        // abrufbar sein.
+        await freigeben();
+        await snapshotAnlegen(USERS.konfi1.id);
+
+        expect(await hasWrapped()).toBe(true);
+        const me = await request(app)
+          .get('/api/wrapped/me')
+          .set('Authorization', `Bearer ${konfiToken}`);
+        expect(me.status).toBe(200);
+      });
+    });
+
     it('Default-section_order enthaelt konfispruch (Phase 118 Card sichtbar)', async () => {
       const res = await request(app)
         .get('/api/konfi/dashboard')
