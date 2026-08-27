@@ -19,6 +19,37 @@ TestFlight
 > Ablauf und Zugänge stehen in der Notfall-Anleitung auf der Rückfallebene,
 > bewusst nicht hier — dieses Repo ist öffentlich.
 
+## Was blockiert 2.0.0 noch?
+
+Stand 27.08.2026, abends. Alle 12 offenen `- [ ]`-Punkte dieser Datei einzeln
+durchgegangen. **Ergebnis: genau einer betrifft den Release, und der ist der
+Release selbst.**
+
+- [ ] **Git-Tag und GitHub-Release** (Tag ohne `v`-Präfix) — erst nach Simons
+      Test, zusammen mit dem Datum im CHANGELOG. Siehe Abschnitt "Release
+      2.0.0" weiter unten.
+
+Alles andere ist eingeordnet und blockiert nichts:
+
+| Offener Punkt | Wo | Warum kein Blocker |
+|---|---|---|
+| Antwortform der Teamer-Abzeichen vereinheitlichen | Z. 883 | dort schon als "NACH 2.0.0" vermerkt |
+| N8 — `bible_translation` je Rolle in anderer Tabelle | Z. 1062 | Datenmodell-Aufräumung, kein Fehlverhalten |
+| Admin-Startseite zeigt nur eine der Neuerungs-Karten | Z. 1240 | kosmetisch, wird parallel bearbeitet |
+| Konsolidierung der Zähler | Z. 1310 | Vereinfachung, Verhalten stimmt |
+| Zeitzonen und Datumsgrenzen | Z. ~1364 | **Prüfauftrag**, kein Befund |
+| Wrapped | Z. ~1367 | **Prüfauftrag**, kein Befund |
+| 3-MB-Bundle aufteilen | Z. ~1375 | ausdrücklich "Nach 2.0.0" |
+| Ionic 9 mit react-router-Umbau | Z. ~1411 | ausdrücklich "Nach 2.0.0" |
+
+**Vorsicht bei drei Einträgen unter "Welche Prüfläufe sich als nächstes
+lohnen"** (Chat-Baum, Offline-Schreibvorgänge, Push-Zustellung): Das sind
+**Vorschläge für Prüfaufträge, keine Befunde**. Sie stehen dort ausdrücklich
+als "Vorschläge, nicht beauftragt". Solange kein Bericht dazu vorliegt, ist
+daraus nichts abzuleiten — weder ein Blocker noch eine Entwarnung.
+
+---
+
 ## Wie hier gearbeitet wird
 
 Simons Vorgabe vom 24.08.2026: **"Keine offenen Enden."** Viele Prüfaufträge
@@ -1304,9 +1335,24 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `sendChatNotification` wird er ersetzt (er ist per Definition zu
       niedrig).
       Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
-      (`backgroundService.js`) setzt weiterhin nur Chat-Unread. Er läuft nur
-      bei geöffneter App, wo der Client ohnehin korrigiert — deshalb hier
-      nicht mit angefasst.
+      (`backgroundService.js`) setzt weiterhin nur Chat-Unread.
+      **Korrigiert 27.08.2026 — die frühere Entwarnung war falsch.** Hier
+      stand, der Sync "läuft nur bei geöffneter App, wo der Client ohnehin
+      korrigiert". Das stimmt nicht: `backgroundService.js` ist ein
+      **Server**-Dienst (`backend/services/backgroundService.js`), kein
+      Client-Code. Sein `setInterval` läuft im Backend unabhängig davon, ob
+      irgendeine App offen ist (`backgroundService.js:50-59`), und
+      `updateAllUserBadges` schickt über `PushService.sendBadgeUpdate`
+      (`pushService.js:413`) einen **Silent-Push** an alle Tokens
+      (`push/firebase.js:110`, `aps.content-available: 1`,
+      `apns-push-type: background`). Genau der stellt bei **geschlossener**
+      App zu und setzt dort das iOS-Icon-Badge.
+      Die Entwarnung stützte sich also auf einen Client, den es an dieser
+      Stelle nicht gibt. Folge: Der Zähler am App-Icon führt bei
+      geschlossener App **nur** Chat-Ungelesene mit — alle anderen Anteile
+      (Termine, Anfragen, Abzeichen) fehlen dort, bis die App geöffnet wird.
+      Zu tun: `updateAllUserBadges` dieselbe Gesamtsumme rechnen lassen, die
+      `utils/appIconBadge.js` für die übrigen Sendestellen liefert.
 - [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
       existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
       nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.

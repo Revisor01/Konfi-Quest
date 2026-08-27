@@ -19,6 +19,11 @@ herauskam (Nutzerhinweis 25.08.2026).
 5. **Ein Befund ist eine Behauptung.** Was hier steht, ist geprüft worden —
    aber wer es umsetzt, prüft gegen den Code nach. Widerlegte Befunde bleiben
    stehen, mit Vermerk `WIDERLEGT` und Begründung.
+6. **Erst nachsehen, ob die Datei existiert.** Ein Agent, der einen Bericht
+   meldet, hat ihn damit nicht geschrieben. Am 26.08. und am 27.08. wurden
+   zusammen **vier** Berichte als fertig gemeldet, die es nie gab — samt
+   plausibel klingender Befundzahlen. Vor dem Übernehmen in BAUSTELLEN.md
+   also: Datei öffnen. Keine Datei, kein Befund.
 
 ## Register
 
@@ -38,3 +43,4 @@ herauskam (Nutzerhinweis 25.08.2026).
 | 26.08.2026 | [Dashboard/Profil-Durchgang](2026-08-26-dashboard-profil-durchgang.md) | Nachgeholter Durchgang; bestaetigt die Chat-Lücke unabhängig, zwei falsche Teamer-Versprechen, sonst Entwarnung | TEILWEISE — Chat (PR #81) und Texte (PR #83) erledigt |
 | 26.08.2026 | Abhängigkeiten und Ionic (**Bericht NIE geschrieben** — der Agent meldete ihn, die Datei existierte nicht; Zahlen aus eigener Nachmessung) | Keine Sicherheitslücken; rote CI aller sechs Dependabot-PRs nur wegen veraltetem Basis-Commit; react-router 8 darf NICHT gemergt werden (Ionic 9 verlangt v6) | TEILWEISE — Themes aktualisiert (PR #85), Ionic 9 eingeplant |
 | 27.08.2026 | [Abzeichen-Zähler](2026-08-27-abzeichen-zaehler.md) | Zwei Aktualisierungswege statt einem; Konfi-Zähler seit 03.07. kaputt; Konsolidierung lohnt sich | ERLEDIGT (PR #92) — B2b (App-Icon-Semantik) bewusst offen |
+| 27.08.2026 | Chat-Baum, Offline-Schreibvorgänge, Push-Zustellung (**drei Berichte NIE geschrieben**) | Am 27.08. abends als vorliegend gemeldet (1/2/1 HOCH). Nachgesehen: keine der drei Dateien existiert — nicht im Arbeitsbaum, in keinem Branch, in keinem Worktree, nirgends auf der Platte. In BAUSTELLEN.md stehen die drei nach wie vor als **unbeauftragte Vorschläge** unter "Welche Prüfläufe sich als nächstes lohnen" | KEIN BERICHT — Aufträge weiterhin offen, nach 2.0.0 |
