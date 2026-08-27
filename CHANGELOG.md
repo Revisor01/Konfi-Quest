@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Auf der Benutzerverwaltung erscheinen Lösch-Aktionen nur noch dort, wo sie
+  auch erlaubt sind. Bisher waren sie in manchen Fällen sichtbar und
+  scheiterten dann beim Antippen.
+
 - Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
   vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
   Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht

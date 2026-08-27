@@ -149,6 +149,10 @@ const AdminUsersPage: React.FC = () => {
             onAddUserClick={presentUserModal}
             onSelectUser={handleSelectUser}
             onDeleteUser={handleDeleteUser}
+            // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf
+            // nur org_admin (users.js:385) — der Anlegen-Knopf oben prueft das
+            // seit jeher, die Loesch-Wische in der Liste nicht.
+            darfVerwalten={user?.role_name === 'org_admin'}
           />
         )}
       </IonContent>

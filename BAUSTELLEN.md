@@ -808,8 +808,18 @@ falschen Teamer-Erklärtexte (PR #83).
       Beiträge und Dateien mit).
 - [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
       verspricht sie Konfis.
-- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
-      in 403. *Teilweise entschärft durch PR #82.*
+- [x] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
+      in 403. *Teilweise entschärft durch PR #82.* ERLEDIGT 27.08.2026.
+      Die Route `/admin/users` ist ungegatet, der UI-Einstieg
+      org_admin-exklusiv. Wer die Adresse kannte, sah in der Liste
+      Lösch-Wische, die allein an `can_edit` hingen — angetippt liefen sie in
+      einen 403 (`users.js:385`, `requireOrgAdmin`).
+      **Die Absicherung war halb da:** Der Anlegen-Knopf prüfte die Rolle seit
+      jeher (`AdminUsersPage.tsx:121`), die Liste darunter nicht. Jetzt reicht
+      die Seite `darfVerwalten` durch; `can_edit` bleibt zusätzlich erhalten
+      (eigene Gegenprobe).
+      **Serverseitig war es nie eine Lücke** — `requireOrgAdmin` hielt. Es
+      ging um Aktionen, die sichtbar sind und dann scheitern.
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
 - [x] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
       das Handbuch beschreibt sie trotzdem im Detail. ERLEDIGT 27.08.2026.
