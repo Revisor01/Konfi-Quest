@@ -1,4 +1,5 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
@@ -92,6 +93,84 @@ describe('Konfi-Management Routes', () => {
       expect(res.status).toBe(200);
       // Org 2 hat 1 Konfi (konfi3)
       expect(res.body.length).toBe(1);
+    });
+  });
+
+  // Befund aus dem Rollen-Bericht (26.08.2026): Ein Admin ohne
+  // Jahrgangs-Zuweisung bekam eine leere Liste, die von "es gibt wirklich
+  // keine Konfis" nicht zu unterscheiden war. Die Oberflaeche sagte "Noch
+  // keine Konfis angelegt" -- falsch, es gibt welche.
+  //
+  // Das VERHALTEN bleibt (Simons Entscheidung), nur der Grund wird gemeldet.
+  describe('GET /api/admin/konfis — Hinweis ohne Jahrgangs-Zuweisung', () => {
+    it('ohne Zuweisung: leeres Array UND Header', async () => {
+      // WICHTIG: rbac.js haelt einen 30-Sekunden-User-Cache (rbac.js:13).
+      // Ein DELETE auf user_jahrgang_assignments aendert die Datenbank, nicht
+      // den Cache -- haben frueher gelaufene Tests admin1 schon geladen,
+      // sieht der Server dessen ALTE Zuweisungen weiter. Beim Schreiben
+      // dieses Tests genau darauf hereingefallen: isoliert gruen, im vollen
+      // Lauf rot.
+      //
+      // Deshalb ein FRISCHER Admin, den vorher niemand geladen hat.
+      const { rows: [neuerAdmin] } = await db.query(
+        `INSERT INTO users (display_name, username, password_hash, role_id, organization_id)
+         VALUES ('Admin ohne Jahrgang', 'admin-ohne-jg', 'x', $1, $2)
+         RETURNING id`,
+        [3, ORGS.testGemeinde.id]
+      );
+      const token = jwt.sign(
+        { id: neuerAdmin.id, type: 'admin', display_name: 'Admin ohne Jahrgang',
+          organization_id: ORGS.testGemeinde.id, role_id: 3 },
+        process.env.JWT_SECRET || 'test-secret-key-for-vitest',
+        { expiresIn: '1h' }
+      );
+
+      const res = await request(app)
+        .get('/api/admin/konfis')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBe('true');
+    });
+
+    it('MIT Zuweisung: kein Header', async () => {
+      // Gegenprobe -- der Header darf nur im echten Fall kommen, sonst
+      // stuende der Hinweis auch bei einer regulaer leeren Liste.
+      //
+      // Die Zuweisung hier ausdruecklich sicherstellen statt sich auf das
+      // beforeEach zu verlassen: Beim Schreiben dieser Tests zeigte sich,
+      // dass der Zustand zwischen ihnen leckt -- nach dem DELETE im Test
+      // davor stand admin1 sonst ohne Zuweisung da und die Gegenprobe
+      // pruefte gar nicht mehr, was sie sollte.
+      await db.query(
+        `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+         VALUES ($1, $2, true, true)
+         ON CONFLICT DO NOTHING`,
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('org_admin bekommt den Header nie', async () => {
+      // Gegenprobe: org_admin sieht ohnehin org-weit, fuer ihn gibt es den
+      // Fall nicht.
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.orgAdmin1.id]);
+
+      const res = await request(app)
+        .get('/api/admin/konfis')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+      expect(res.body.length).toBeGreaterThan(0);
     });
   });
 

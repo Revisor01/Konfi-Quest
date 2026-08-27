@@ -3604,7 +3604,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine.\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3632,7 +3632,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array von Events (e.*, registered_count, waitlist_count, teamer_count, registration_status, is_registered, can_register, waitlist_position, categories[])"
+            "description": "Array von Events (e.*, registered_count, waitlist_count, teamer_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4129,7 +4129,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
-        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events.\n",
+        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4160,7 +4160,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array von Events (e.* inkl. qr_token, Zaehler, categories[], jahrgaenge[], registration_status, is_registered, booking_status, attendance_status, material_count, pending_bookings_count)"
+            "description": "Array von Events (e.* ohne qr_token, Zaehler, categories[], jahrgaenge[], registration_status, is_registered, booking_status, attendance_status, material_count, pending_bookings_count, chat_room_id)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

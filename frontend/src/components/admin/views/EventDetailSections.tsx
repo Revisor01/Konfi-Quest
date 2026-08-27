@@ -32,7 +32,8 @@ import {
   document as documentIcon,
   attachOutline,
   cloudOfflineOutline,
-  lockOpen
+  lockOpen,
+  qrCodeOutline
 } from 'ionicons/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
@@ -74,6 +75,7 @@ export interface EventData {
   mandatory?: boolean;
   is_konfirmation?: boolean;
   bring_items?: string;
+  checkin_window?: number;
   teamer_needed?: boolean;
   teamer_only?: boolean;
   teamer_max_participants?: number;
@@ -297,8 +299,11 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
 
         {/* Punkte und Typ entfallen bei Pflicht-Events UND bei reinen
             Teamer-Events: dort gibt es keine Konfi-Punkte zu vergeben, die
-            Zeilen zeigten nur "0 / Gemeinde" (User-Hinweis 09.08.). */}
-        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
+            Zeilen zeigten nur "0 / Gemeinde" (User-Hinweis 09.08.).
+            Der Guard auf points > 0 fehlte hier als einziger der drei
+            Ansichten — nur die Leitung sah bei einem Termin ohne Punkte die
+            Zeile "Punkte 0". Konfi- und Teamer-Ansicht blenden sie aus. */}
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (eventData.points || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
             <div>
@@ -308,7 +313,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
-        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (eventData.points || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon
               icon={eventData.point_type === 'gottesdienst' ? home : people}
@@ -370,6 +375,23 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             <div>
               <div className="app-info-row__label">Teamer-Zugang</div>
               <div className="app-info-row__value">{eventData.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Check-in-Fenster — das Zeitfenster fuer den QR-Code. Es wird im
+            Formular gesetzt, war aber in keiner Detailansicht zu sehen: wer es
+            aendert, konnte nicht nachsehen, ob es wirkt. Formulierung wie im
+            Formular (`EventFormSections.tsx:223`). NICHT die Abmeldefrist —
+            die sind zwei Tage und stehen im Anmelde-Abschnitt. */}
+        {eventData.checkin_window && (
+          <div className="app-info-row app-info-row--top">
+            <IonIcon icon={qrCodeOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+            <div>
+              <div className="app-info-row__label">Check-in-Fenster</div>
+              <div className="app-info-row__value">
+                QR-Code {eventData.checkin_window} Min. vor bis {eventData.checkin_window} Min. nach Beginn
+              </div>
             </div>
           </div>
         )}

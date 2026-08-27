@@ -116,6 +116,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 cats.category_names,
                 jgs.jahrgang_ids,
                 jgs.jahrgang_names,
+                event_chat.id as chat_room_id,
                 CASE
                   -- Abgesagt schlägt alles: sonst meldete ein abgesagtes Event
                   -- weiterhin 'open'/'closed' und wurde in der Leitungssicht
@@ -220,12 +221,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           FROM event_timeslots
           WHERE event_id = e.id
         ) timeslot_capacity ON true
+        -- Event-Chat: nur, wenn die abrufende Person auch Mitglied des Raums
+        -- ist. Damit bildet der Einstieg in der Detailansicht genau die
+        -- Berechtigung ab, die darfRaumOeffnen (chat.js:273) durchsetzt —
+        -- ein Knopf, der ins 403 fuehrt, entsteht so gar nicht erst.
+        -- Teamer:innen und Konfis werden beim Buchen Mitglied (addToEventChat).
+        LEFT JOIN LATERAL (
+          SELECT cr.id
+          FROM chat_rooms cr
+          JOIN chat_participants cp
+            ON cp.room_id = cr.id AND cp.user_id = $2 AND cp.user_type = $3
+          WHERE cr.event_id = e.id AND cr.organization_id = $1
+          LIMIT 1
+        ) event_chat ON true
         WHERE e.organization_id = $1
           ${dateWindowClause}
         ORDER BY e.event_date ASC
       `;
 
-      const { rows } = await db.query(query, [req.user.organization_id, req.user.id]);
+      const { rows } = await db.query(query, [req.user.organization_id, req.user.id, req.user.type]);
 
       // Für Teamer: nur Events anzeigen die mindestens einem zugewiesenen Jahrgang zugeordnet sind
       // ODER die keinem Jahrgang zugeordnet sind (allgemeine Events)

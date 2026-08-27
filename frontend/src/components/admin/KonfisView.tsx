@@ -82,6 +82,13 @@ interface KonfisViewProps {
   // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
   // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
   onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
+  /**
+   * Der angemeldete Admin hat KEINEN Jahrgang zugewiesen (Header vom Server).
+   * Dann ist die leere Liste kein "es gibt keine Konfis", sondern "du darfst
+   * keine sehen" -- der Leerzustand sagt das jetzt (Rollen-Bericht 26.08.2026).
+   */
+  ohneJahrgang?: boolean;
+
 }
 
 const KonfisView: React.FC<KonfisViewProps> = ({
@@ -94,6 +101,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onDeleteKonfi,
   onDeleteTeamer,
   selectedKonfiId,
+  ohneJahrgang = false,
   onViewModeChange
 }) => {
   const { user, setError } = useApp();
@@ -413,8 +421,17 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         iconColorClass="primary"
         isEmpty={filteredAndSortedKonfis.length === 0}
         emptyIcon={peopleOutline}
-        emptyTitle="Keine Konfis gefunden"
-        emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Konfis angelegt'}
+        emptyTitle={ohneJahrgang && !searchTerm ? 'Kein Jahrgang zugewiesen' : 'Keine Konfis gefunden'}
+        emptyMessage={
+          searchTerm
+            ? 'Versuche andere Suchbegriffe'
+            : ohneJahrgang
+              // Befund Rollen-Bericht: Vorher stand hier "Noch keine Konfis
+              // angelegt" -- was schlicht falsch war. Es gibt Konfis, dieser
+              // Zugang darf sie nur nicht sehen.
+              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+              : 'Noch keine Konfis angelegt'
+        }
         emptyIconColor="#5b21b6"
       >
         {filteredAndSortedKonfis.map((konfi, index) => {

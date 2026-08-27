@@ -593,16 +593,21 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
 
 ### Offen aus dem Rollen-Bericht
 
-- [ ] **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste.**
-      ENTSCHIEDEN 26.08.: Das Verhalten bleibt so. Offen bleibt aber, dass
-      ein frisch angelegter Admin ohne Zuweisung einen leeren Landing-Tab
-      sieht und die App für kaputt hält. Ein Hinweis auf der leeren Liste
-      würde reichen. `konfi-management.js:62-69`.
-      **In Arbeit:** PR #114 baut genau diesen Hinweis (mit der vorhandenen
-      `EmptyState`-Komponente). Mit dem Merge erledigt sich der Punkt; bis
-      dahin steht er zu Recht offen — nachgemessen am 27.08. nachmittags gibt
-      `konfi-management.js:68` weiterhin ein leeres Array zurueck, und
-      `KonfisView.tsx:416-417` zeigt weiterhin "Noch keine Konfis angelegt".
+- [x] **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste.**
+      ENTSCHIEDEN 26.08.: Das Verhalten bleibt so. **Der Hinweis ist am
+      27.08.2026 nachgezogen** (Simons Entscheidung). Vorher stand dort "Noch
+      keine Konfis angelegt" — schlicht falsch, es gibt Konfis, dieser Zugang
+      darf sie nur nicht sehen.
+      Der Server meldet den Fall per **Header**
+      (`X-Kein-Jahrgang-Zugewiesen`), damit die Antwort ein Array bleibt und
+      kein Aufrufer bricht — dasselbe Muster wie bei den Abzeichen-Zählern
+      (`teamer.js:516`). Die vorhandene `EmptyState`-Komponente zeigt dann
+      einen anderen Text.
+      **Falle beim Testen, festgehalten:** `rbac.js:13` hält einen
+      30-Sekunden-User-Cache. Ein `DELETE` auf die Zuweisungen ändert die
+      Datenbank, nicht den Cache — der Test war isoliert grün und im vollen
+      Lauf rot. Gelöst mit einem frisch angelegten Admin, den vorher niemand
+      geladen hat.
 
 - [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
       Ansicht änderbar.** Die Backend-Route existiert
@@ -762,10 +767,16 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       fällt sie, wird aus der Ansicht eine Datenschutzlücke.
       Nebenbei gehärtet: Der History-Test hatte ein `if (res.body.length > 0)`
       und wäre bei kaputter Generierung still grün geblieben.
-- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.** Der Bericht
-      listet ACHT eigenständige Punkte. Der vierte war der einzige, der zu
-      **widersprüchlichen Angaben** führte — er ist behoben, die übrigen
-      sieben sind Sach- und Designfragen und bleiben offen.
+- [x] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.** ERLEDIGT
+      27.08.2026. Der Bericht listete ACHT eigenständige Punkte; alle acht
+      sind gebaut, jeder einzeln unten belegt.
+      **Was der Durchgang gezeigt hat:** Die Registernotiz "reine
+      Frontend-Änderung" beim Event-Chat war falsch. Konfi und Teamer öffnen
+      ihr Termin-Detail nicht über die Detail-Route, sondern greifen sich den
+      Termin aus der schon geladenen Liste — was die Liste nicht ausgibt,
+      haben sie nicht. **Wer eine Anzeige für diese beiden Ansichten ergänzt,
+      prüft zuerst, ob das Feld in der LISTE steht**, nicht nur in
+      `GET /events/:id`. Dasselbe begrenzte auch die Serien-Anzeige.
       - [x] **"Vergangen"-Berechnung** (27.08.2026). Nachgemessen: Ob ein
             Termin vorbei ist, wurde an **elf Stellen** einzeln gerechnet —
             und nur an **einer** davon richtig. Zehn nutzten allein
@@ -781,28 +792,54 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
             `eventEndDate`-Kopien (gleiche Logik, anderer Name) zeigen jetzt
             dorthin.
       **Simons Entscheidungen vom 27.08.2026 mittags zu allen sieben:**
-      - [ ] **Anmeldezeitraum fehlt nur im Teamer-Detail.** → ERGÄNZEN.
-            Leitung und Konfi haben ihn (`admin/views/EventDetailSections.tsx:171-192`,
-            `konfi/views/EventDetailView.tsx:636-657`), Teamer nicht.
-      - [ ] **Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.**
-            → ERGÄNZEN, auch für Teamer:innen und Konfis.
-      - [ ] **Einstieg in den Event-Chat hat nur die Leitung** → FÜR ALLE.
-            Konfis und Teamer:innen werden beim Buchen ohnehin Mitglied
-            (`events.js:1683`, `addToEventChat`) — sie finden den Raum bisher
-            nur über die Chat-Übersicht. Reine Frontend-Änderung, die
-            Mitgliedschaft besteht schon.
-      - [ ] **Admin-Detail berechnet `registration_status` lokal** und weicht
-            von Backend und eigener Liste ab → ANGLEICHEN, Wert vom Backend
-            nutzen (`admin/views/EventDetailView.tsx:244-256` vs.
-            `admin/EventsView.tsx:128-131`).
-      - [ ] **Punktezeile: drei verschiedene Bedingungen** — nur das
-            Admin-Detail zeigt "Punkte 0" → ANGLEICHEN, ausblenden wie in den
-            anderen beiden Ansichten (`EventDetailSections.tsx:290-311` fehlt
-            der `points > 0`-Guard).
-      - [ ] **`checkin_window` wird nur im Formular gesetzt**, nirgends
-            angezeigt → IN DEN DETAILANSICHTEN ANZEIGEN. Das ist das
-            Zeitfenster für den **QR-Code** (`events.js:428-462`); wer es
-            setzt, sieht sonst nie, ob es wirkt.
+      - [x] **Anmeldezeitraum fehlt nur im Teamer-Detail.** ERLEDIGT
+            27.08.2026. Derselbe Block wie bei Leitung und Konfi, gleiche
+            Formulierung ("Sofort möglich", wenn kein Beginn gesetzt ist).
+      - [x] **Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.**
+            ERLEDIGT 27.08.2026, in Konfi- und Teamer-Detail als eigene Zeile
+            "Terminreihe · Teil einer Serie".
+            **Bewusst NUR die Kennzeichnung, nicht die Terminübersicht:** Die
+            weiteren Termine der Reihe stehen in `series_events`, und das
+            liefert allein `GET /events/:id`. Konfi und Teamer lesen ihren
+            Termin aus der LISTE (siehe nächster Punkt) und haben das Feld
+            nicht. Wer die Übersicht auch dort will, braucht denselben
+            LATERAL-Weg wie beim Chat.
+      - [x] **Einstieg in den Event-Chat hat nur die Leitung** ERLEDIGT
+            27.08.2026 — aber **nicht als reine Frontend-Änderung**, wie hier
+            notiert war. Nachgemessen: Konfi und Teamer öffnen ihr "Detail"
+            gar nicht über `GET /events/:id`, sondern greifen sich den Termin
+            aus der schon geladenen LISTE (`TeamerEventsPage.tsx:455`
+            `(await api.get('/events')).data.find(...)`). Und `chat_room_id`
+            liefert **nur die Detail-Route** (`events.js:853`), keine der
+            beiden Listen.
+            Gebaut: ein `LEFT JOIN LATERAL` in beiden Listen (`events.js`,
+            `konfi.js`), das `chat_room_id` **nur bei bestehender
+            Mitgliedschaft** in `chat_participants` ausgibt. Damit bildet der
+            Knopf genau die Berechtigung ab, die `darfRaumOeffnen`
+            (`chat.js:273`) durchsetzt — ein Knopf ins 403 entsteht nicht.
+            **Der Knopf öffnet nur, er erstellt nie** (Simons Entscheidung):
+            `POST /events/:id/chat` verlangt `requireTeamer`, Erstellen bleibt
+            der Leitung. Ohne Raum erscheint kein Knopf.
+      - [x] **Admin-Detail berechnet `registration_status` lokal** ERLEDIGT
+            27.08.2026, nutzt jetzt den Backend-Wert wie die eigene Liste.
+            Beim Umstellen fielen **zwei Folgefehler** an, die die lokale
+            Rechnung verdeckt hatte:
+            `mandatory` kannte sie nicht (ein Pflichttermin wäre in den
+            Fallback "Geschlossen" gefallen — jetzt "Pflichttermin"), und die
+            Warteliste-Zweige fragten `regStatus === 'closed'`, obwohl das
+            Backend bei freier Warteliste weiter `'open'` meldet
+            (`events.js:129-131`) — der Zweig hätte nie mehr gegriffen. Beide
+            hängen jetzt an der Kapazität statt am Status.
+      - [x] **Punktezeile: drei verschiedene Bedingungen** ERLEDIGT
+            27.08.2026, `points > 0`-Guard ergänzt.
+            Mit erledigt (Simons Entscheidung beim Nachfragen): die
+            **Punkte-Kachel** oben im Leitungs-Detail
+            (`EventDetailView.tsx:728`) zeigte dieselbe "0". Sie weicht bei
+            punktlosen Terminen jetzt auf die Abgemeldeten aus — dieselbe
+            Ausweichlogik, die die Ansicht bei vergangenen Terminen schon hat.
+      - [x] **`checkin_window` wird nur im Formular gesetzt** ERLEDIGT
+            27.08.2026, Zeile in **allen drei** Detailansichten, Formulierung
+            wörtlich aus dem Formular (`EventFormSections.tsx:223`).
       - [x] **Abmeldefrist (2 Tage) hartcodiert** → BLEIBT HARTCODIERT
             (Simons Entscheidung). **Nicht zu verwechseln mit dem QR-Code** —
             das ist `checkin_window`, eine Zeile darüber. Hier geht es darum,

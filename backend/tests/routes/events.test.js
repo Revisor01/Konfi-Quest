@@ -208,6 +208,112 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // chat_room_id in GET /api/events (Termin-Detail, 27.08.2026)
+  // ================================================================
+  // Die Liste liefert den Event-Chatraum nur an Mitglieder des Raums. Damit
+  // bildet der Einstieg im Termin-Detail genau die Berechtigung ab, die
+  // `darfRaumOeffnen` in chat.js durchsetzt: Wer nicht Mitglied ist, bekommt
+  // gar keinen Knopf angeboten, der ins 403 laufen wuerde.
+  describe('chat_room_id in GET /api/events (Teamer-Sicht)', () => {
+    // Termin ohne Jahrgangs-Zuweisung ist fuer Teamer:innen immer sichtbar.
+    const terminAnlegen = async (name) => {
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, NOW() + interval '10 days', $2, false, 20, 'gemeinde', 1)
+         RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      return event.id;
+    };
+
+    const chatraumAnlegen = async (eventId, name) => {
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ($1, 'group', $2, $3, $4) RETURNING id`,
+        [name, eventId, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      return raum.id;
+    };
+
+    const holeTermin = async (token, eventId) => {
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body.find(e => e.id === eventId);
+    };
+
+    it('Teamer:in im Event-Chat bekommt die Raum-ID', async () => {
+      const eventId = await terminAnlegen('Termin mit Chat');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit Chat - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'teamer')`,
+        [roomId, USERS.teamer1.id]
+      );
+
+      const termin = await holeTermin(teamerToken, eventId);
+      expect(termin.chat_room_id).toBe(roomId);
+    });
+
+    it('Teamer:in ohne Mitgliedschaft bekommt trotz Chatraum null', async () => {
+      const eventId = await terminAnlegen('Termin mit fremdem Chat');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit fremdem Chat - Chat');
+      // Im Raum sitzen die Leitung und eine ANDERE Teamer:in — teamer1 selbst
+      // nicht. Die fremde Teamer-Zeile ist wichtig: Ohne den Vergleich auf die
+      // eigene user_id wuerde sie durchschlagen und teamer1 einen Raum melden,
+      // den sie gar nicht oeffnen darf.
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $2, 'admin'), ($1, $3, 'teamer')`,
+        [roomId, USERS.admin1.id, USERS.teamer2.id]
+      );
+
+      const termin = await holeTermin(teamerToken, eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Ohne Chatraum zum Termin ist chat_room_id null', async () => {
+      const eventId = await terminAnlegen('Termin ohne Chat');
+
+      const termin = await holeTermin(teamerToken, eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Mitgliedschaft mit falschem user_type zaehlt nicht', async () => {
+      // Dieselbe Person, aber als 'konfi' eingetragen: Die Abfrage vergleicht
+      // user_id UND user_type, sonst wuerde eine fremde Zeile durchschlagen.
+      const eventId = await terminAnlegen('Termin mit falschem Typ');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit falschem Typ - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [roomId, USERS.teamer1.id]
+      );
+
+      const termin = await holeTermin(teamerToken, eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Zwei Termine mit je eigenem Chat bekommen ihre eigene Raum-ID', async () => {
+      const eventA = await terminAnlegen('Termin A');
+      const eventB = await terminAnlegen('Termin B');
+      const raumA = await chatraumAnlegen(eventA, 'Termin A - Chat');
+      const raumB = await chatraumAnlegen(eventB, 'Termin B - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $3, 'teamer'), ($2, $3, 'teamer')`,
+        [raumA, raumB, USERS.teamer1.id]
+      );
+
+      const terminA = await holeTermin(teamerToken, eventA);
+      const terminB = await holeTermin(teamerToken, eventB);
+
+      expect(terminA.chat_room_id).toBe(raumA);
+      expect(terminB.chat_room_id).toBe(raumB);
+      expect(raumA).not.toBe(raumB);
+    });
+  });
+
+  // ================================================================
   // POST /api/events (requireTeamer)
   // ================================================================
   describe('POST /api/events', () => {
