@@ -1237,6 +1237,39 @@ describe('Teamer Routes', () => {
       expect(res.body.data).toBeDefined();
     });
 
+    // Befund M2 (26.08.2026): Bei nicht erreichbarer Losungs-API UND leerem
+    // Zwischenspeicher lieferte der Konfi-Weg Psalm 23 als statischen Fallback
+    // (HTTP 200), der Teamer-Weg endete mit HTTP 500 -- obwohl der Kommentar
+    // dort "Fallback wie in der Konfi-Route" behauptete. Ein Ein-Datei-Fix,
+    // zur Haelfte uebernommen. Seit 27.08.2026 steht der Fallback gemeinsam im
+    // losungService, damit er nicht wieder auseinanderlaufen kann.
+    it('ohne Cache und ohne API liefert der Teamer-Weg den statischen Fallback, keinen 500er', async () => {
+      // Kein Eintrag in daily_verses -> der DB-Fallback greift nicht.
+      await db.query('DELETE FROM daily_verses');
+
+      const res = await request(app)
+        .get('/api/teamer/tageslosung')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.fallback).toBe(true);
+      expect(res.body.data.losung.reference).toBe('Psalm 23,1');
+    });
+
+    it('der Konfi-Weg liefert im selben Fall dasselbe', async () => {
+      // Gegenprobe zur Gleichheit: Genau die war behauptet und nicht erfuellt.
+      await db.query('DELETE FROM daily_verses');
+
+      const res = await request(app)
+        .get('/api/konfi/tageslosung')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.fallback).toBe(true);
+      expect(res.body.data.losung.reference).toBe('Psalm 23,1');
+    });
+
     // Ist die Losung abgeschaltet, darf sie GAR NICHT abgerufen werden — nicht
     // nur ausgeblendet (Nutzerwunsch 23.08.2026). Vorher hing das allein am
     // Frontend, und nicht jeder Aufrufer prüfte den Schalter: Bei nicht
