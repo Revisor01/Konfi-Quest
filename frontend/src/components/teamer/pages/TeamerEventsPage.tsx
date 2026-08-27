@@ -27,6 +27,7 @@ import {
   useIonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
+import { useIonRouter } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
 import {
@@ -54,6 +55,9 @@ import {
   search,
   filterOutline,
   lockOpenOutline,
+  lockOpen,
+  copy,
+  chatbubbleOutline,
   personAdd,
   infinite,
   add,
@@ -106,6 +110,7 @@ const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
   const routerLocation = useLocation();
+  const router = useIonRouter();
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
   const [presentAlert] = useIonAlert();
 
@@ -704,6 +709,22 @@ const TeamerEventsPage: React.FC = () => {
             )}
             <IonTitle>{selectedEvent.name}</IonTitle>
             <IonButtons slot="end">
+              {/* Einstieg in den Event-Chat — bisher hatte ihn nur die Leitung
+                  (`admin/views/EventDetailView.tsx`), obwohl Teamer:innen beim
+                  Buchen ohnehin Mitglied des Raums werden (`addToEventChat`).
+                  Sie fanden ihn nur ueber die Chat-Uebersicht.
+                  Der Knopf erscheint nur, wenn es einen Raum gibt UND diese
+                  Person darin Mitglied ist: `chat_room_id` kommt aus
+                  `GET /events` und ist sonst null (events.js). Erstellen bleibt
+                  der Leitung vorbehalten. */}
+              {selectedEvent.chat_room_id && (
+                <IonButton
+                  aria-label="Event-Chat öffnen"
+                  onClick={() => router.push(`/teamer/chat/room/${selectedEvent.chat_room_id}`, 'root')}
+                >
+                  <IonIcon icon={chatbubbleOutline} slot="icon-only" />
+                </IonButton>
+              )}
               <IonButton
                 aria-label="QR-Code zum Einchecken anzeigen"
                 onClick={() => presentQRDisplayModal({
@@ -822,6 +843,33 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Anmeldezeitraum — wie Zeitfenster aufgebaut, nicht bei Pflicht-Events.
+                    Fehlte als einziger der drei Ansichten hier (Leitung:
+                    `admin/views/EventDetailSections.tsx`, Konfi:
+                    `konfi/views/EventDetailView.tsx`). */}
+                {!selectedEvent.mandatory && (
+                  <div className="app-info-row app-info-row--top">
+                    <IonIcon icon={lockOpen} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                    <div>
+                      <div className="app-info-row__label">Anmeldung</div>
+                      {selectedEvent.registration_opens_at ? (
+                        <>
+                          <div className="app-info-row__value">
+                            von {new Date(selectedEvent.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_opens_at)}
+                          </div>
+                          {selectedEvent.registration_closes_at && (
+                            <div className="app-info-row__value">
+                              bis {new Date(selectedEvent.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(selectedEvent.registration_closes_at)}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="app-info-row__value">Sofort möglich</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Team — haengt an der EINSTELLUNG des Events, nicht daran, ob
                     sich schon jemand angemeldet hat. Sonst fehlt bei einem
                     frischen "5 gesucht"-Event genau die Zeile "0 / 5". */}
@@ -928,6 +976,39 @@ const TeamerEventsPage: React.FC = () => {
                     <div>
                       <div className="app-info-row__label">Teamer-Zugang</div>
                       <div className="app-info-row__value">{selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Serien-Kennzeichnung — sah bisher nur die Leitung, und nur in ihrer
+                    Liste (`admin/EventsView.tsx:403`). Konfis und Teamer:innen konnten
+                    nicht erkennen, dass ein Termin Teil einer Reihe ist. Die WEITEREN
+                    Termine der Serie bleiben der Leitung vorbehalten: sie kommen aus
+                    `series_events` in `GET /events/:id`, und diese beiden Ansichten
+                    lesen ihren Termin aus der Liste. */}
+                {selectedEvent.is_series && (
+                  <div className="app-info-row">
+                    <IonIcon icon={copy} className="app-info-row__icon app-icon-color--events" />
+                    <div>
+                      <div className="app-info-row__label">Terminreihe</div>
+                      <div className="app-info-row__value">Teil einer Serie</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Check-in-Fenster — das Zeitfenster fuer den QR-Code. Es wird im
+                    Formular gesetzt, war aber in keiner Detailansicht zu sehen: wer es
+                    aendert, konnte nicht nachsehen, ob es wirkt. Formulierung wie im
+                    Formular (`EventFormSections.tsx:223`). NICHT die Abmeldefrist —
+                    die sind zwei Tage und stehen im Anmelde-Abschnitt. */}
+                {selectedEvent.checkin_window && (
+                  <div className="app-info-row app-info-row--top">
+                    <IonIcon icon={qrCodeOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                    <div>
+                      <div className="app-info-row__label">Check-in-Fenster</div>
+                      <div className="app-info-row__value">
+                        QR-Code {selectedEvent.checkin_window} Min. vor bis {selectedEvent.checkin_window} Min. nach Beginn
+                      </div>
                     </div>
                   </div>
                 )}

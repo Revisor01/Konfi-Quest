@@ -14,7 +14,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import { parseLocalTime, getLocalNow } from '../../../utils/dateUtils';
 import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
@@ -241,19 +240,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     (event.target as HTMLIonRefresherElement).complete();
   };
 
-  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
-    const now = getLocalNow();
-    if (event.registration_opens_at) {
-      const opensAt = parseLocalTime(event.registration_opens_at);
-      if (now < opensAt) return 'upcoming';
-    }
-    if (event.registration_closes_at) {
-      const closesAt = parseLocalTime(event.registration_closes_at);
-      if (now > closesAt) return 'closed';
-    }
-    if (event.max_participants > 0 && event.registered_count >= event.max_participants) return 'closed';
-    return 'open';
-  };
+  // Wert vom Backend, wie in der Leitungs-Liste (`admin/EventsView.tsx`).
+  // Vorher rechnete das Detail selbst und wich in drei Faellen von der Liste
+  // ab: ein Pflichttermin galt hier als 'open' statt 'mandatory', ein
+  // abgesagter ebenfalls als 'open' (nur die Zeilen darueber fingen
+  // 'cancelled' vorher ab), und ein ausgebuchter Termin MIT freier Warteliste
+  // galt als 'closed', obwohl die Anmeldung auf die Warteliste offen ist.
+  // Die Berechnung steht in `events.js:124-133`.
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' =>
+    event.registration_status as 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
 
   const handleEditSuccess = () => { onBack(); };
 
@@ -282,8 +277,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (isPastEvent) return past;
 
     const regStatus = calculateRegistrationStatus(eventData);
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return waitlist;
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return danger;
+    // Pflichttermine: Anmeldung entfaellt, die Farbe der Domain passt.
+    if (regStatus === 'mandatory') return events;
+    // Ausgebucht wird an der Kapazitaet erkannt, nicht am Status: das Backend
+    // meldet bei freier Warteliste weiterhin 'open' (`events.js:129-131`).
+    const istVoll = eventData.max_participants > 0
+      && eventData.registered_count >= eventData.max_participants;
+    if (istVoll && (eventData as any).waitlist_enabled) return waitlist;
+    if (istVoll) return danger;
     if (regStatus === 'open') return success;
     if (regStatus === 'upcoming') return upcoming;
     return events;
@@ -303,8 +304,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (isPastEvent && !hasUnprocessedBookings) return 'Verbucht';
 
     const regStatus = calculateRegistrationStatus(eventData);
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return 'Warteliste';
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return 'Ausgebucht';
+    if (regStatus === 'mandatory') return 'Pflichttermin';
+    const istVoll = eventData.max_participants > 0
+      && eventData.registered_count >= eventData.max_participants;
+    if (istVoll && (eventData as any).waitlist_enabled) return 'Warteliste';
+    if (istVoll) return 'Ausgebucht';
     if (regStatus === 'open') return 'Offen';
     if (regStatus === 'upcoming') return 'Bald';
     return 'Geschlossen';
@@ -719,9 +723,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             const maxP = (eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E';
             return [
               { value: konfiConfirmed, label: `von ${maxP} TN` },
+              // Ohne Team-Kontingent zeigt die mittlere Kachel die Punkte —
+              // aber nur, wenn es welche gibt. Bei Pflichtterminen und
+              // Konfirmationen stand hier sonst "Punkte 0"; Konfi- und
+              // Teamer-Ansicht blenden ihre Punkte-Kachel dort aus. Statt der
+              // Null die Abgemeldeten, wie bei vergangenen Terminen.
               hasTeamer
                 ? { value: teamerConfirmedCount, label: `von ${teamerMax} Team` }
-                : { value: eventData?.points || 0, label: 'Punkte' },
+                : ((eventData?.points || 0) > 0
+                    ? { value: eventData?.points || 0, label: 'Punkte' }
+                    : { value: konfiOptedOut, label: 'Abgemeldet' }),
               { value: konfiOnly.filter(p => p.status === 'waitlist').length, label: 'Warteliste' }
             ];
           })()}

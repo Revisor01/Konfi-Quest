@@ -91,6 +91,9 @@ export interface Event {
   // Serien
   is_series?: boolean;
   series_id?: number;
+  // Event-Chat: nur gesetzt, wenn die abrufende Person Mitglied des Raums ist
+  // (die Listen-Endpunkte liefern sonst null, siehe events.js / konfi.js).
+  chat_room_id?: number | null;
   // Admin-spezifisch
   pending_bookings_count?: number;
   jahrgang_ids?: string;

@@ -1138,6 +1138,114 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // chat_room_id in GET /api/konfi/events (Termin-Detail, 27.08.2026)
+  // ================================================================
+  // Die Liste liefert den Event-Chatraum nur an Mitglieder des Raums. Damit
+  // bildet der Einstieg im Termin-Detail genau die Berechtigung ab, die
+  // `darfRaumOeffnen` in chat.js durchsetzt: Eine Konfi, die nicht Mitglied
+  // ist, bekommt gar keinen Knopf angeboten, der ins 403 laufen wuerde.
+  describe('chat_room_id in GET /api/konfi/events', () => {
+    // Termin anlegen und dem Jahrgang der Konfi zuweisen, sonst taucht er in
+    // der Konfi-Liste gar nicht auf (INNER JOIN auf die Zuweisungen).
+    const terminAnlegen = async (name) => {
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, NOW() + interval '10 days', $2, false, 20, 'gemeinde', 1)
+         RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return event.id;
+    };
+
+    const chatraumAnlegen = async (eventId, name) => {
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ($1, 'group', $2, $3, $4) RETURNING id`,
+        [name, eventId, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      return raum.id;
+    };
+
+    const holeTermin = async (eventId) => {
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+      return res.body.find(e => e.id === eventId);
+    };
+
+    it('Konfi im Event-Chat bekommt die Raum-ID', async () => {
+      const eventId = await terminAnlegen('Termin mit Chat');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit Chat - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [roomId, USERS.konfi1.id]
+      );
+
+      const termin = await holeTermin(eventId);
+      expect(termin.chat_room_id).toBe(roomId);
+    });
+
+    it('Konfi ohne Mitgliedschaft bekommt trotz Chatraum null', async () => {
+      const eventId = await terminAnlegen('Termin mit fremdem Chat');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit fremdem Chat - Chat');
+      // Nur eine andere Konfi und die Leitung sind im Raum.
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $2, 'konfi'), ($1, $3, 'admin')`,
+        [roomId, USERS.konfi2.id, USERS.admin1.id]
+      );
+
+      const termin = await holeTermin(eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Ohne Chatraum zum Termin ist chat_room_id null', async () => {
+      const eventId = await terminAnlegen('Termin ohne Chat');
+
+      const termin = await holeTermin(eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Mitgliedschaft mit falschem user_type zaehlt nicht', async () => {
+      // Die Konfi-Abfrage vergleicht fest mit user_type 'konfi'. Eine Zeile
+      // mit derselben user_id, aber anderem Typ darf nicht durchschlagen.
+      const eventId = await terminAnlegen('Termin mit falschem Typ');
+      const roomId = await chatraumAnlegen(eventId, 'Termin mit falschem Typ - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'teamer')`,
+        [roomId, USERS.konfi1.id]
+      );
+
+      const termin = await holeTermin(eventId);
+      expect(termin.chat_room_id).toBeNull();
+    });
+
+    it('Zwei Termine mit je eigenem Chat bekommen ihre eigene Raum-ID', async () => {
+      const eventA = await terminAnlegen('Termin A');
+      const eventB = await terminAnlegen('Termin B');
+      const raumA = await chatraumAnlegen(eventA, 'Termin A - Chat');
+      const raumB = await chatraumAnlegen(eventB, 'Termin B - Chat');
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $3, 'konfi'), ($2, $3, 'konfi')`,
+        [raumA, raumB, USERS.konfi1.id]
+      );
+
+      const terminA = await holeTermin(eventA);
+      const terminB = await holeTermin(eventB);
+
+      expect(terminA.chat_room_id).toBe(raumA);
+      expect(terminB.chat_room_id).toBe(raumB);
+      expect(raumA).not.toBe(raumB);
+    });
+  });
+
+  // ================================================================
   // registration_status in den Konfi-Queries (Befund 1, 25.08.2026)
   // ================================================================
   // Prod-Fall Event 150 "Gemeindeversammlung": max_participants=0 (unbegrenzt),

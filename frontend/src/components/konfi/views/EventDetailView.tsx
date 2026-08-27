@@ -20,6 +20,7 @@ import {
   useIonActionSheet,
   IonNote
 } from '@ionic/react';
+import { useIonRouter } from '@ionic/react';
 import {
   arrowBack,
   calendar,
@@ -41,6 +42,8 @@ import {
   qrCodeOutline,
   cloudOfflineOutline,
   lockOpen,
+  copy,
+  chatbubbleOutline,
   infinite
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -82,6 +85,7 @@ interface Participant {
 }
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
+  const router = useIonRouter();
   const pageRef = useRef<HTMLElement>(null);
   const { setSuccess, setError, isOnline, user } = useApp();
   const { triggerRefresh } = useLiveUpdate();
@@ -523,6 +527,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </IonButtons>
           )}
           <IonTitle>{eventData.name}</IonTitle>
+          {/* Einstieg in den Event-Chat — bisher hatte ihn nur die Leitung
+              (`admin/views/EventDetailView.tsx`), obwohl Konfis beim Buchen
+              ohnehin Mitglied des Raums werden (`addToEventChat`). Sie fanden
+              ihn nur ueber die Chat-Uebersicht.
+              Der Knopf erscheint nur, wenn es einen Raum gibt UND diese Konfi
+              darin Mitglied ist: `chat_room_id` kommt aus `/konfi/events` und
+              ist sonst null (konfi.js). Erstellen bleibt der Leitung
+              vorbehalten (`POST /events/:id/chat` verlangt requireTeamer). */}
+          {eventData.chat_room_id && (
+            <IonButtons slot="end">
+              <IonButton
+                aria-label="Event-Chat öffnen"
+                onClick={() => router.push(`/konfi/chat/room/${eventData.chat_room_id}`, 'root')}
+              >
+                <IonIcon icon={chatbubbleOutline} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
@@ -743,6 +765,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <div>
                     <div className="app-info-row__label">Pflicht-Event</div>
                     <div className="app-info-row__value">Teilnahme erforderlich</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Serien-Kennzeichnung — sah bisher nur die Leitung, und nur in ihrer
+                  Liste (`admin/EventsView.tsx:403`). Konfis und Teamer:innen konnten
+                  nicht erkennen, dass ein Termin Teil einer Reihe ist. Die WEITEREN
+                  Termine der Serie bleiben der Leitung vorbehalten: sie kommen aus
+                  `series_events` in `GET /events/:id`, und diese beiden Ansichten
+                  lesen ihren Termin aus der Liste. */}
+              {eventData.is_series && (
+                <div className="app-info-row">
+                  <IonIcon icon={copy} className="app-info-row__icon app-icon-color--events" />
+                  <div>
+                    <div className="app-info-row__label">Terminreihe</div>
+                    <div className="app-info-row__value">Teil einer Serie</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Check-in-Fenster — das Zeitfenster fuer den QR-Code. Es wird im
+                  Formular gesetzt, war aber in keiner Detailansicht zu sehen: wer es
+                  aendert, konnte nicht nachsehen, ob es wirkt. Formulierung wie im
+                  Formular (`EventFormSections.tsx:223`). NICHT die Abmeldefrist —
+                  die sind zwei Tage und stehen im Anmelde-Abschnitt. */}
+              {eventData.checkin_window && (
+                <div className="app-info-row app-info-row--top">
+                  <IonIcon icon={qrCodeOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <div>
+                    <div className="app-info-row__label">Check-in-Fenster</div>
+                    <div className="app-info-row__value">
+                      QR-Code {eventData.checkin_window} Min. vor bis {eventData.checkin_window} Min. nach Beginn
+                    </div>
                   </div>
                 </div>
               )}
