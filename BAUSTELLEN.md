@@ -581,6 +581,15 @@ falschen Teamer-Erklärtexte (PR #83).
       Konfi-Profil-Kopie.** Das geteilte Modal (Konfi-Dashboard,
       Teamer-Dashboard und -Profil) bietet RVR60 nicht an; das Backend
       akzeptiert es für beide Rollen. *Auftrag Simon: zusammenziehen.*
+      **Am 27.08.2026 nachgemessen: NOCH OFFEN.** PR #93 hat die
+      Übersetzungsliste an anderer Stelle vereinheitlicht, aber
+      `konfi/views/ProfileView.tsx:130` definiert weiterhin ein **eigenes**
+      `BibleTranslationModal` samt RVR60 (Zeile 142), während
+      `teamer/pages/TeamerProfilePage.tsx:64` das geteilte importiert. Der
+      Handoff-Vermerk "RVR60 wird nicht angeboten, entfernt statt ergänzt"
+      gilt also für das geteilte Modal, nicht für die Konfi-Kopie —
+      `backend/routes/konfi.js:2029` und `teamer.js:1237` nehmen es beide
+      weiterhin an. Zusammenziehen heißt hier: die lokale Kopie löschen.
 - [ ] **M5 — Teamer-Profil verwirft die Übersetzungswahl offline
       stillschweigend**, das Konfi-Profil reiht sie in die Warteschlange ein.
 - [ ] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
@@ -589,8 +598,12 @@ falschen Teamer-Erklärtexte (PR #83).
       Datenendpunkt.**
 - [ ] **M8 — Teamer-Dashboard-Challenges kommen vom Leitungs-Endpunkt ohne
       Audience-Filter.**
-- [ ] **M9 — E-Mail-Änderung: Teamer und Leitung aktualisieren den
-      User-Context, Konfi nicht.**
+- [x] **M9 — E-Mail-Änderung: Teamer und Leitung aktualisieren den
+      User-Context, Konfi nicht.** ERLEDIGT 27.08.2026. Die Konfi-Ansicht rief
+      nur `onReload()` (lädt allein die Profildaten der Seite); Context und
+      TokenStore trugen die alte Adresse weiter, bis man sich neu anmeldete.
+      Jetzt derselbe Weg wie in den anderen beiden Bäumen, mit Gegenprobe für
+      Teamer und Leitung abgesichert.
 
 ### NIEDRIG aus dem Drei-Ansichten-Bericht
 
@@ -600,8 +613,16 @@ falschen Teamer-Erklärtexte (PR #83).
 - [ ] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
 - [ ] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
       Abzeichen-Ansicht.**
-- [ ] **N5 — Leitung kann das Konfi-Wrapped nicht ansehen, obwohl das Backend
-      es ihr erlaubt.** [belegt]
+- [x] **N5 — Leitung kann das Konfi-Wrapped nicht ansehen, obwohl das Backend
+      es ihr erlaubt.** ERLEDIGT 27.08.2026 (Simons Entscheidung: bauen, in
+      der Konfi-Detailseite). Die Karte erscheint dort nur, wenn ein Snapshot
+      vorliegt. **Kein zusätzliches Freigabe-Gate nötig**, weil
+      Snapshot-Erzeugung und `wrapped_released_at` in derselben Transaktion
+      laufen (`wrapped.js:513-537`) — ein Konfi-Snapshot existiert nie vor der
+      Freigabe. Diese Kopplung ist jetzt durch Backend-Tests festgehalten;
+      fällt sie, wird aus der Ansicht eine Datenschutzlücke.
+      Nebenbei gehärtet: Der History-Test hatte ein `if (res.body.length > 0)`
+      und wäre bei kaputter Generierung still grün geblieben.
 - [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.**
 - [ ] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
       `AdminChallengesPage.tsx`.** Strukturbefund.
@@ -638,11 +659,12 @@ falschen Teamer-Erklärtexte (PR #83).
 
 ### Aus dem Abzeichen-Zähler-Bericht (27.08.)
 
-- [ ] **B1 — Der KONFI-Abzeichen-Zähler setzt sich in laufender Sitzung nie
-      zurück.** `KonfiBadgesPage.tsx:80-110` markiert per `mark-seen`, stößt
-      danach aber keine Aktualisierung an. Kaputt seit `33e3364`
-      (03.07.2026, Wegfall des 60s-Pollings). Der neue Teamer-Weg macht es
-      richtig — die alte Konfi-Seite wurde nicht nachgezogen.
+- [x] **B1 — Der KONFI-Abzeichen-Zähler setzt sich in laufender Sitzung nie
+      zurück.** ERLEDIGT durch die Zähler-Konsolidierung (PR #92), am
+      27.08.2026 nachgeprüft: `KonfiBadgesPage.tsx:113` ruft nach `mark-seen`
+      jetzt `refreshAllCounts()`. War kaputt seit `33e3364` (03.07.2026,
+      Wegfall des 60s-Pollings); der Teamer-Weg machte es richtig, die alte
+      Konfi-Seite wurde nicht nachgezogen.
       **Wichtig:** Die Dokumentation der Falle (siehe oben) hat diesen Fehler
       NICHT verhindert; er bestand schon vorher unbemerkt.
 - [ ] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.** Client

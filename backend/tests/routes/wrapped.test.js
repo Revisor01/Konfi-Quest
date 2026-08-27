@@ -286,8 +286,11 @@ describe('Wrapped Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('Nach Generierung zeigt History Eintraege (wenn Snapshots erfolgreich)', async () => {
-      // Generieren — kann fehlschlagen wenn a.category-Spalte fehlt
+    it('Nach Generierung zeigt History Eintraege', async () => {
+      // Vorher stand hier ein `if (res.body.length > 0)` mit dem Vermerk
+      // "kann leer sein wenn Generierung fehlschlug". Damit war der Test
+      // still gruen, sobald die Generierung kaputt ging -- also genau dann,
+      // wenn er haette anschlagen muessen. Jetzt hart geprueft (27.08.2026).
       const genRes = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -299,12 +302,111 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      // Kann leer sein wenn Generierung fehlschlug (bekanntes Schema-Problem)
-      if (res.body.length > 0) {
-        expect(res.body[0].wrapped_type).toBe('konfi');
-        expect(res.body[0].data).toBeDefined();
-      }
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].wrapped_type).toBe('konfi');
+      expect(res.body[0].data).toBeDefined();
+    });
+
+    // Befund N5 (27.08.2026): Die Leitung bekommt in der Konfi-Detailseite
+    // eine Ansicht des Konfi-Wrapped. Der Endpunkt prueft selbst NICHT, ob
+    // der Jahrgang freigegeben ist -- das ist nur deshalb unbedenklich, weil
+    // Snapshot-Erzeugung und wrapped_released_at in derselben Transaktion
+    // laufen (wrapped.js:513-537). Ein Konfi-Snapshot existiert also nie vor
+    // der Freigabe.
+    //
+    // Faellt diese Kopplung, wird aus der neuen Ansicht eine
+    // Datenschutzluecke: Die Leitung saehe einen Rueckblick, den die Konfi
+    // selbst noch nicht sehen darf. Diese Tests halten die Kopplung fest.
+    describe('Freigabe-Kopplung (Grundlage von N5)', () => {
+      it('ohne Generierung gibt es weder Snapshot noch Freigabe', async () => {
+        const { rows: [jahrgang] } = await db.query(
+          'SELECT wrapped_released_at FROM jahrgaenge WHERE id = $1',
+          [JAHRGAENGE.jahrgang1.id]
+        );
+        expect(jahrgang.wrapped_released_at).toBeNull();
+
+        const res = await request(app)
+          .get(`/api/wrapped/history/${USERS.konfi1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(0);
+      });
+
+      it('die Generierung setzt die Freigabe im selben Zug', async () => {
+        await request(app)
+          .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        const { rows: [jahrgang] } = await db.query(
+          'SELECT wrapped_released_at FROM jahrgaenge WHERE id = $1',
+          [JAHRGAENGE.jahrgang1.id]
+        );
+        expect(jahrgang.wrapped_released_at).not.toBeNull();
+      });
+
+      it('kein Snapshot liegt jemals ohne Freigabe seines Jahrgangs vor', async () => {
+        // Der Kern der Zusicherung, unabhaengig vom Weg der Erzeugung.
+        await request(app)
+          .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        const { rows } = await db.query(
+          `SELECT COUNT(*)::int AS anzahl
+             FROM wrapped_snapshots ws
+             JOIN jahrgaenge j ON ws.jahrgang_id = j.id
+            WHERE ws.wrapped_type = 'konfi'
+              AND j.wrapped_released_at IS NULL`
+        );
+        expect(rows[0].anzahl).toBe(0);
+      });
+
+      it('das Zuruecknehmen der Freigabe loescht die Snapshots mit', async () => {
+        // Gegenprobe in die andere Richtung: Nach dem Zuruecknehmen darf
+        // auch die Leitung nichts mehr sehen.
+        await request(app)
+          .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        // Das Zuruecknehmen ist org_admin vorbehalten -- admin bekommt hier
+        // bewusst 403 (siehe DELETE-Tests oben).
+        await request(app)
+          .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(403);
+
+        await request(app)
+          .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .expect(200);
+
+        const res = await request(app)
+          .get(`/api/wrapped/history/${USERS.konfi1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(0);
+
+        const { rows: [jahrgang] } = await db.query(
+          'SELECT wrapped_released_at FROM jahrgaenge WHERE id = $1',
+          [JAHRGAENGE.jahrgang1.id]
+        );
+        expect(jahrgang.wrapped_released_at).toBeNull();
+      });
+
+      it('die Leitung einer FREMDEN Organisation bekommt weiterhin 403', async () => {
+        // Die neue Ansicht darf die Org-Grenze nicht aufweichen.
+        await request(app)
+          .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        const res = await request(app)
+          .get(`/api/wrapped/history/${USERS.konfi1.id}`)
+          .set('Authorization', `Bearer ${orgAdmin2Token}`);
+        expect(res.status).toBe(403);
+      });
     });
   });
 
