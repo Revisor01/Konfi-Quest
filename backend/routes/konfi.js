@@ -1052,12 +1052,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // to_regclass-Legacy-Check entfernt (Audit 10.08.) — siehe Begruendung
       // oben beim Dashboard: custom_badges existiert seit Migration 076/090
       // dauerhaft, der Check war ein reiner Zusatz-Roundtrip.
+      // Befund N2 (27.08.2026): total_badges filterte auf target_role='konfi',
+      // earned_badges zaehlte ALLE Abzeichen der Person. Wer als Konfi
+      // befoerdert wurde, behaelt seine Abzeichen (konfi-management.js:1136)
+      // und kann als Teamer:in weitere verdienen — dann standen hier mehr
+      // verdiente als ueberhaupt vorhandene. Derselbe Fehler wurde am
+      // 24.08.2026 in konfiBadgeProgress.js:117-126 behoben, in dieser
+      // Nachbar-Query aber nicht (dort: 56 statt 50 in Org 1).
       const statsQuery = `
         SELECT
           (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2 AND target_role = 'konfi' AND is_active = TRUE) as total_badges,
           COUNT(kb.badge_id) as earned_badges
         FROM user_badges kb
+        JOIN custom_badges cb ON kb.badge_id = cb.id
         WHERE kb.user_id = $1 AND kb.organization_id = $2
+          AND cb.target_role = 'konfi'
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       res.json({
