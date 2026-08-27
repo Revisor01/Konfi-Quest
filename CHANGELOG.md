@@ -236,6 +236,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Abgesagte Termine erinnern nicht mehr. Bisher kam nach der Nachricht
+  "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
+  eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr
+  aufgefordert, die Teilnahme an einem abgesagten Termin nachzuverbuchen.
+
 - Beim Jahrgangswechsel bleibt keine Anmeldung mehr für einen Termin liegen,
   den die Konfi gar nicht mehr sieht. Bisher belegte sie dort weiter einen
   Platz, auf den niemand nachrücken konnte.
