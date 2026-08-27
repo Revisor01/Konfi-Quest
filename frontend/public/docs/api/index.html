@@ -355,7 +355,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/konfis/{id}</code></div>
         <p class="summary">Konfi ändern (Name, Jahrgang)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateUpdateKonfi</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>UPDATE ... WHERE id = :id AND organization_id = Token-Org</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateUpdateKonfi</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>UPDATE ... WHERE id = :id AND organization_id = Token-Org; zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe Organisation (400 bei fremdem oder unbekanntem Jahrgang)&quot;</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/activities</code></div>
         <p class="summary">Aktivität nachtragen</p>

@@ -611,7 +611,47 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
 
 - [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
       Ansicht änderbar.** Die Backend-Route existiert
-      (`konfi-management.js:269`), hat aber keinen UI-Aufrufer.
+      (`konfi-management.js:282`, nicht `:269`), hat aber keinen UI-Aufrufer.
+      ENTSCHIEDEN 27.08.2026: Bearbeiten für die Leitung bauen, Name UND
+      Jahrgang.
+      **Die Route kann mehr als der Eintrag oben vermuten liess.** Vor dem Bau
+      nachgemessen: Sie wurde am 24.08. bereits um Chat-Synchronisierung und
+      Umbuchung der Pflichttermine erweitert und hat **11 gruene Tests**
+      (`konfi-management.test.js:1245-1450`). Wer hier "nur ein UPDATE" annimmt,
+      baut Vorhandenes doppelt.
+      **Dabei eine Mandantenluecke gefunden — behoben, siehe unten.**
+      **Was vor dem Bau noch fehlt** (aus derselben Messung):
+      - [x] Org-Pruefung des Ziel-Jahrgangs (Sicherheitsluecke, behoben)
+      - [ ] Freiwillige Termine des alten Jahrgangs abmelden (Simons
+            Entscheidung 27.08.: wie bei Pflichtterminen — nur kuenftige, nur
+            ohne erfasste Anwesenheit, mit Austritt aus dem Termin-Chat).
+            Heute bleibt die Buchung stehen: Die Konfi sieht den Termin nicht
+            mehr (`konfi.js:1224` filtert per INNER JOIN auf den AKTUELLEN
+            Jahrgang), belegt aber weiter einen Platz und bleibt im Chat.
+      - [ ] **Vier Sachfragen offen** (Wrapped-Snapshot am alten Jahrgang,
+            abgeschaltete Punkteart im Ziel-Jahrgang, Challenge-Beitraege,
+            Jahrgang ausserhalb der eigenen Zuweisung als `admin`) — stehen
+            im Handoff.
+
+- [x] **Mandantenluecke: `PUT /admin/konfis/:id` prueft den Ziel-Jahrgang
+      nicht gegen die eigene Organisation.** GEFUNDEN UND BEHOBEN 27.08.2026,
+      beim Messen der Jahrgangswechsel-Folgen.
+      **Gemessen, nicht vermutet:** Konfi 1 (Org 1) mit Jahrgang 2 (Org 2) ->
+      HTTP **200**, `jahrgang_id` in der Datenbank danach **2**. Die Konfi lag
+      also im Jahrgang einer fremden Gemeinde.
+      Der POST prueft das seit jeher (`konfi-management.js:171-178`), im PUT
+      fehlten genau diese vier Zeilen. Ueber die App war es nicht erreichbar
+      (die Route hat keinen Aufrufer im Frontend) — die Route stand trotzdem
+      offen. **Dasselbe Muster wie fuenfmal zuvor an diesem Tag:** "praktisch
+      folgenlos" war jedes Mal ein offener API-Weg.
+      Vier Tests (verbotener Fall, Rollback-Gegenprobe, erlaubter Fall,
+      unbekannter Jahrgang), gegen Mutation geprueft: ohne den Guard werden
+      genau die drei Verbots-Tests rot.
+      **Beinahe-Fehler beim Bauen, festgehalten:** Der erste Entwurf rief im
+      Fehlerzweig `client.release()` auf — die Route hat aber ein
+      `finally { client.release(); }`. Das haette die Verbindung doppelt
+      freigegeben. Die Nachbar-Zweige zeigen das richtige Muster: nur
+      `ROLLBACK`, kein `release`.
 
 ### MITTEL aus dem Drei-Ansichten-Bericht
 

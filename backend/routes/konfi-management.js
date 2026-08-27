@@ -306,6 +306,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
+            // Der Ziel-Jahrgang muss zur EIGENEN Organisation gehoeren.
+            // Diese Pruefung stand nur im POST (Zeile 171-178), im PUT fehlte
+            // sie: Gemessen am 27.08.2026 antwortete die Route mit 200 und
+            // schrieb eine Konfi in den Jahrgang einer FREMDEN Gemeinde.
+            // Ueber die App war das nicht erreichbar (die Route hat keinen
+            // Aufrufer im Frontend) — die Route stand trotzdem offen.
+            // Dieselbe Meldung wie im POST, damit sich beide Wege gleich
+            // verhalten.
+            const zielJahrgangQuery = "SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
+            const { rows: [zielJahrgang] } = await client.query(
+                zielJahrgangQuery, [jahrgang_id, req.user.organization_id]
+            );
+            if (!zielJahrgang) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+            }
+
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
             await client.query(profileQuery, [jahrgang_id, req.params.id]);
 

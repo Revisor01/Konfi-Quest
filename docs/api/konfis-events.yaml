@@ -1860,11 +1860,19 @@ paths:
         ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin
         nicht auch zum neuen Jahrgang gehört. Vergangene Termine und erfasste
         Anwesenheiten bleiben unberuehrt.
+        BEHOBEN 27.08.2026 (Mandantenluecke): Der Ziel-Jahrgang wird jetzt
+        gegen die eigene Organisation geprueft. Vorher tat das nur der POST;
+        gemessen antwortete der PUT mit 200 und schrieb die Konfi in den
+        Jahrgang einer FREMDEN Organisation. Ueber die App war das nicht
+        erreichbar (kein Aufrufer im Frontend), die Route stand aber offen.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateKonfi]
         org-scope: true
-        objekt-pruefung: "UPDATE ... WHERE id = :id AND organization_id = Token-Org"
+        objekt-pruefung: >
+          UPDATE ... WHERE id = :id AND organization_id = Token-Org;
+          zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe
+          Organisation (400 bei fremdem oder unbekanntem Jahrgang)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
