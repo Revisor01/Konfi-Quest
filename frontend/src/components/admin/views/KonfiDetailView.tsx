@@ -20,7 +20,8 @@ import {
   arrowBack,
   key,
   close,
-  timeOutline
+  timeOutline,
+  createOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -35,6 +36,7 @@ import {
   TeamerEventsSection, ActivitiesSection, CertificatesSection,
   TeamerSinceSection, KonfiHistorySection, PromoteSection, KonfispruchSection
 } from './KonfiDetailSections';
+import KonfiModal from '../modals/KonfiModal';
 import type { Konfi, Activity } from './KonfiDetailSections';
 import KonfiBadgesSection from './KonfiBadgesSection';
 import WrappedModal from '../../wrapped/WrappedModal';
@@ -50,7 +52,7 @@ interface KonfiDetailViewProps {
 }
 
 const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hideBackButton }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError, isOnline, user } = useApp();
   const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
   const pageRef = React.useRef<HTMLElement>(null);
@@ -62,6 +64,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
+  // Fuer das Bearbeiten-Modal: alle Jahrgaenge der Organisation (mit ihren
+  // Punktearten, damit die Warnung stimmt) und die eigenen Zuweisungen.
+  const [alleJahrgaenge, setAlleJahrgaenge] = useState<Array<{
+    id: number; name: string; gottesdienst_enabled?: boolean; gemeinde_enabled?: boolean;
+  }>>([]);
   const isTeamer = targetRole === 'teamer';
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [teamerEvents, setTeamerEvents] = useState<Array<{
@@ -260,9 +267,49 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     onClose: () => dismissMatrixModal()
   });
 
+  // Bearbeiten-Modal. Dasselbe Modal wie beim Anlegen, nur mit `konfi`
+  // vorbelegt — zwei Dateien waeren genau die Kopie, die in diesem Projekt
+  // regelmaessig auseinanderlaeuft.
+  const [presentBearbeitenModal, dismissBearbeitenModal] = useIonModal(KonfiModal, {
+    jahrgaenge: alleJahrgaenge,
+    konfi: currentKonfi ? {
+      id: currentKonfi.id,
+      display_name: currentKonfi.display_name || currentKonfi.name,
+      jahrgang_id: currentKonfi.jahrgang_id ?? null,
+      gottesdienst_points: currentKonfi.gottesdienst_points ?? currentKonfi.points?.gottesdienst,
+      gemeinde_points: currentKonfi.gemeinde_points ?? currentKonfi.points?.gemeinde
+    } : undefined,
+    // Nur fuer `admin` von Bedeutung: org_admin sieht ohnehin alle Jahrgaenge,
+    // die Warnung waere dort schlicht falsch.
+    eigeneJahrgangIds: user?.role_name === 'admin'
+      ? (user.assigned_jahrgaenge || []).filter((j) => j.can_view !== false).map((j) => j.id)
+      : undefined,
+    onClose: () => dismissBearbeitenModal(),
+    dismiss: () => dismissBearbeitenModal(),
+    onSave: async (daten: { name: string; jahrgang_id: number }) => {
+      await api.put(`/admin/konfis/${konfiId}`, daten);
+      dismissBearbeitenModal();
+      setSuccess('Änderungen gespeichert');
+      await loadKonfiData();
+      triggerRefresh('konfis');
+    }
+  });
+
   useEffect(() => {
     loadKonfiData();
   }, [konfiId]);
+
+  // Jahrgaenge fuer das Bearbeiten-Modal. Einmal beim Oeffnen der Seite; die
+  // Liste enthaelt dank SELECT j.* auch die Punktearten, aus denen die Warnung
+  // beim Wechsel gebaut wird. Faellt der Abruf aus, bleibt die Liste leer und
+  // das Modal zeigt "Keine Jahrgänge verfügbar" — die Seite selbst stoert das
+  // nicht.
+  useEffect(() => {
+    if (isTeamer) return;
+    api.get('/jahrgaenge')
+      .then((res) => setAlleJahrgaenge(res.data || []))
+      .catch(() => setAlleJahrgaenge([]));
+  }, [isTeamer]);
 
   useEffect(() => {
     setPresentingElement(pageRef.current);
@@ -589,6 +636,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           )}
           <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
           <IonButtons slot="end">
+            {/* Bearbeiten nur bei Konfis: Teamer:innen haben keinen einzelnen
+                Jahrgang, ihre Stammdaten liegen in der Benutzerverwaltung. */}
+            {!isTeamer && (
+              <IonButton
+                aria-label="Konfi bearbeiten"
+                disabled={!isOnline || !currentKonfi}
+                onClick={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
+              >
+                <IonIcon icon={createOutline} />
+              </IonButton>
+            )}
             <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={key} />
             </IonButton>

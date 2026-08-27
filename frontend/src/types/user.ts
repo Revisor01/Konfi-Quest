@@ -15,6 +15,14 @@ export interface BaseUser {
   is_super_admin?: boolean;
   trial_ends_at?: string | null;
   is_trial?: boolean;
+  /**
+   * Eigene Jahrgangs-Zuweisungen, aus GET /auth/me.
+   *
+   * Nur fuer `admin` von Bedeutung: Die Rolle sieht ausschliesslich Konfis
+   * ihrer zugewiesenen Jahrgaenge. Bei `org_admin` ist die Liste leer oder
+   * bedeutungslos — diese Rolle sieht ohnehin alles.
+   */
+  assigned_jahrgaenge?: { id: number; name: string; can_view?: boolean; can_edit?: boolean }[];
 }
 
 // Admin-User-Verwaltung (UsersView, AdminUsersPage, UserManagementModal)

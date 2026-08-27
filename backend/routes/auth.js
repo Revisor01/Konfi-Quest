@@ -248,7 +248,28 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         responseUser.gottesdienst_points = user.gottesdienst_points || 0;
         responseUser.gemeinde_points = user.gemeinde_points || 0;
       }
-      
+
+      // Eigene Jahrgangs-Zuweisungen — nur fuer `admin`. Diese Rolle sieht
+      // ausschliesslich Konfis ihrer zugewiesenen Jahrgaenge; die Oberflaeche
+      // warnt beim Verschieben in einen fremden Jahrgang, weil die Konfi
+      // danach aus der eigenen Liste verschwindet (Entscheidung 27.08.2026).
+      //
+      // Bewusst nur hier und in GET /auth/me: `org_admin` und `super_admin`
+      // sehen ohnehin alle Jahrgaenge, `konfi` und `teamer` brauchen es nicht.
+      // Die Login-Route laeuft ohne rbacVerifier, deshalb die eigene Abfrage —
+      // in /auth/me wird stattdessen durchgereicht, was rbacVerifier ohnehin
+      // geladen hat.
+      if (user.role_name === 'admin') {
+        const { rows: zuweisungen } = await db.query(
+          `SELECT j.id, j.name, uja.can_view, uja.can_edit
+           FROM user_jahrgang_assignments uja
+           JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+           WHERE uja.user_id = $1 AND j.organization_id = $2`,
+          [user.id, user.organization_id]
+        );
+        responseUser.assigned_jahrgaenge = zuweisungen;
+      }
+
       res.json({ token, refresh_token: refreshToken, user: responseUser });
 
     } catch (err) {
@@ -473,7 +494,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
-      res.json(user);
+      // Eigene Jahrgangs-Zuweisungen mitliefern. KEINE zusaetzliche Abfrage:
+      // rbacVerifier laedt sie ohnehin bei jedem Request (rbac.js:183-193),
+      // hier werden sie nur durchgereicht.
+      //
+      // Wofuer: Ein `admin` sieht nur Konfis seiner zugewiesenen Jahrgaenge.
+      // Verschiebt er eine Konfi in einen fremden Jahrgang, verschwindet sie
+      // aus seiner Liste — die Oberflaeche warnt davor, bevor gespeichert wird
+      // (Entscheidung 27.08.2026). Ohne diese Angabe kann sie das nicht
+      // wissen. Fuer `org_admin` ist die Liste bedeutungslos: die Rolle sieht
+      // ohnehin alle Jahrgaenge der Organisation.
+      res.json({ ...user, assigned_jahrgaenge: req.user.assigned_jahrgaenge || [] });
 
     } catch (err) {
  console.error('Database error in GET /api/auth/me:', err);
