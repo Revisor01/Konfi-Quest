@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
+  überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
+  Abzeichen, und andere Benachrichtigungen setzten die Zahl immer auf eins.
+
 - Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
   vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
   Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
