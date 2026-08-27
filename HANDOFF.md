@@ -12,32 +12,42 @@ fünf Prüfläufe, aus denen 23 Befunde kamen — **alle sechs HOCH-Befunde sind
 behoben**, dazu ein Großteil der MITTEL. Was offen ist, steht einzeln in
 `BAUSTELLEN.md`; nichts mehr als Sammelzeile.
 
-### Noch offene PRs
+**Am 27.08. nachts sind #87, #89, #90, #93 und #94 alle zusammengeführt.**
+Damit sind H2, H3, H4, H6, M1, M2, M4, M6, M7 und M8 erledigt. Offen ist
+nur noch **#96** (M5, M9, N5) und dieser Doku-PR.
 
-| PR | Inhalt |
-|---|---|
-| **#87** | H2, H4, H6 — Teamer-Startseite, Challenge-Zähler, abgesagte Termine |
-| **#89** | H3 — Teamer-Kontingent auf drei Ebenen |
-| **#90** | M1, M2 — Kapazität bei der Zusage, Tageslosung-Fallback |
-| **#93** | Drei Doppelungen zusammengezogen (netto 442 Zeilen weniger) |
-| **#94** | M6, M7, M8 — Mitteilungen, Wrapped-Freigabe, Challenge-Teaser |
+### Was beim Zusammenführen anders lief als erwartet
 
-Merge-Reihenfolge egal, aber **nach jedem Merge** die drei Doku-Generatoren
-laufen lassen, sonst wird die CI rot:
+- **Der Konflikt lag nicht immer im CHANGELOG.** #87 kollidierte in
+  `backend/tests/routes/notifications.test.js`: Git hatte zwei
+  `describe`-Blöcke ineinandergeschoben, weil beide einen `zaehler`-Helper
+  haben. Beide Testgruppen mussten erhalten bleiben — blindes Auflösen
+  hätte vier oder fünf Tests verschluckt.
+- **Additiv heißt nicht immer "beide Seiten aneinanderhängen".** Bei #93
+  stand ein Eintrag der Gegenseite bereits *unterhalb* des Konfliktblocks;
+  stumpfes Zusammenkleben hätte ihn doppelt eingetragen.
+- **Jeder Merge macht den nächsten PR konfliktbehaftet.** Nach jedem Merge
+  wollen die verbliebenen Branches erneut `git merge origin/main`. Das ist
+  normal, kostet aber je einen CI-Durchlauf (~8 Min Backend-Test).
+  Auto-Merge ist im Repo **nicht** aktiviert und lässt sich per CLI auch
+  nicht einschalten (`enablePullRequestAutoMerge` schlägt fehl).
+- Die drei Doku-Generatoren nach jedem Merge laufen lassen, sonst wird die
+  CI rot:
 
-    node scripts/build-handbuch.mjs
-    node scripts/build-api-docs.mjs
-    node scripts/build-openapi.mjs
+      node scripts/build-handbuch.mjs
+      node scripts/build-api-docs.mjs
+      node scripts/build-openapi.mjs
 
-Konflikte gab es bisher **immer nur in `CHANGELOG.md`** und immer additiv:
-beide Seiten behalten, keinen Eintrag wegwerfen.
+  Sie ändern dabei regelmäßig nur die `lastmod`-Daten in
+  `frontend/public/sitemap.xml`. Das ist kein Drift — verwerfen statt
+  mitcommitten, sonst rauscht es durch jeden Merge-Commit.
 
 ---
 
 ## Was zuerst zu tun ist
 
-1. **Die fünf PRs mergen.**
-2. **Danach weiter im Register**: M3, M5, M9, N1–N8, die Handbuch-Punkte aus
+1. **#96 mergen** (M5, M9, N5), danach diesen Doku-PR.
+2. **Danach weiter im Register**: M3, N1–N4, N6–N8, die Handbuch-Punkte aus
    dem Rollen-Bericht, B2b (App-Icon-Semantik).
 3. **Der Store-Review-Block** wurde bewusst verschoben ("machen wir viel,
    viel später") — deployen, Build, Testinfos, Tag/Release, CHANGELOG-Datum.
@@ -88,6 +98,26 @@ beide Seiten behalten, keinen Eintrag wegwerfen.
 - **Bestehende Tests können überholt sein, nicht falsch.** Mehrfach
   vorgekommen: `'Admin bekommt 403'` schrieb eine Regel fest, die Simon
   geändert hat. Angepasst mit Vermerk, nicht aufgeweicht.
+- **Das Register ist selbst eine Behauptung.** Beim Abarbeiten am 27.08.
+  stimmten drei Einträge nicht mehr mit dem Code überein: B1 und M4 waren
+  längst erledigt, M5 betraf **vier** Stellen mit drei Verhaltensweisen statt
+  der beschriebenen zwei. Und meine eigene Korrektur zu M4 war ebenfalls
+  falsch — sie beschrieb den Stand vor dem #93-Merge. **Vor dem Eintragen
+  von "erledigt" wie von "offen" am Code nachsehen**, auch beim eigenen
+  Vermerk von vor einer Stunde.
+- **Ein Wächtertest schützt nur vor der Schreibweise, die er kennt.** Der
+  Test gegen stilles Offline-Scheitern prüfte `if (!isOnline) return` und war
+  für `if (!networkMonitor.isOnline) return` blind — genau die Variante, die
+  M5 ausmachte. Bei solchen Mustertests lohnt die Frage, welche zweite
+  Schreibweise dasselbe bewirkt.
+- **`git filter-branch` und `rebase --onto` sind hier die falschen
+  Werkzeuge.** Ein Versuch, eine WIP-Commit-Nachricht zu glätten, schrieb 28
+  Commits neu, darunter bereits gemergte aus `main`. Mit
+  `git reset --hard <hash>` zurückgeholt. Eine unschöne Commit-Nachricht in
+  der Historie ist billiger als das.
+- **Der Testabbruch tritt weiter auf.** Bei #90 fiel ein Test in
+  `teamer.test.js` um; beim Wiederholen 72/72 grün. Erst wiederholen, dann
+  suchen.
 
 ---
 
