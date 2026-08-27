@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Wird eine Konfi zur Teamer:in befördert, bleibt die gewählte
+  Bibelübersetzung für die Tageslosung erhalten. Bisher stand danach wieder
+  die Lutherbibel eingestellt.
+
 - Ändert eine Konfi ihre E-Mail-Adresse, wird die neue Adresse sofort überall
   in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
   stehen.
