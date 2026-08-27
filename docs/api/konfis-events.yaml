@@ -350,11 +350,17 @@ paths:
     get:
       tags: ["Aktivitäten & Anträge"]
       summary: Eigene Aktivitaets-Anträge auflisten
+      description: >
+        Liefert nur Anträge auf Aktivitäten mit target_role='konfi' — bis
+        27.08.2026 fehlte dieser Filter (Befund N3, behoben). Anträge zu einer
+        inzwischen GELÖSCHTEN Aktivität bleiben bewusst in der Liste (LEFT
+        JOIN, activity_name dann leer); der Teamer-Weg lässt sie über einen
+        inneren JOIN wegfallen.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur eigene Anträge (user_id = Token)"
+        objekt-pruefung: "nur eigene Anträge (user_id = Token), nur Aktivitäten mit target_role='konfi'"
       responses:
         "200": { description: "Array von Antraegen (ar.* + activity_name, activity_points, activity_type)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -369,11 +375,17 @@ paths:
         bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen
         admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026
         ging die In-App-Mitteilung nur an admin (Befund M6, behoben).
+
+
+        Die Aktivität muss target_role='konfi' haben; sonst 404. Bis
+        27.08.2026 fehlte diese Prüfung — ein Antrag auf eine
+        Teamer-Aktivität wurde angenommen und war von der Leitung
+        bestätigbar (Befund N3, behoben).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC, validateCreateRequest]
         org-scope: true
-        objekt-pruefung: "Aktivität muss zur eigenen Org gehören (404 sonst)"
+        objekt-pruefung: "Aktivität muss zur eigenen Org gehören UND target_role='konfi' sein (404 sonst)"
       requestBody:
         required: true
         content:

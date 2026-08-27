@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Anträge von Konfis sind jetzt auf Aktivitäten für Konfis beschränkt.
+  Aktivitäten, die nur für Teamer:innen gedacht sind, lassen sich nicht mehr
+  beantragen und tauchen in der Antragsliste nicht auf.
+
 - Ändert eine Konfi ihre E-Mail-Adresse, wird die neue Adresse sofort überall
   in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
   stehen.

@@ -666,11 +666,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
+      // Befund N3 (27.08.2026): Ohne den target_role-Filter tauchten hier auch
+      // Antraege auf TEAMER-Aktivitaeten auf (der Weg dorthin ist seit
+      // demselben Befund geschlossen, Altbestand kann es aber geben).
+      // Der LEFT JOIN bleibt bewusst ein LEFT JOIN: Bei einer geloeschten
+      // Aktivitaet soll der Antrag in der Historie stehenbleiben, mit leerem
+      // Namen. Der Teamer-Weg nutzt einen inneren JOIN und laesst solche
+      // Zeilen wegfallen — das ist die zweite Haelfte von N3 und bleibt hier
+      // absichtlich unangetastet, weil Verlieren schlechter ist als Anzeigen.
+      // Deshalb greift der Filter nur, WENN eine Aktivitaet vorliegt.
       const query = `
         SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
         FROM activity_requests ar
         LEFT JOIN activities a ON ar.activity_id = a.id
         WHERE ar.user_id = $1 AND ar.organization_id = $2
+          AND (a.id IS NULL OR a.target_role = 'konfi')
         ORDER BY ar.created_at DESC
       `;
       const { rows: requests } = await db.query(query, [konfiId, req.user.organization_id]);
@@ -708,8 +718,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const date = requested_date || new Date().toISOString().split('T')[0];
       
       // Get activity details for notification
+      // Befund N3 (27.08.2026): Hier fehlte der target_role-Filter. Gemessen:
+      // Eine Konfi konnte per API einen Antrag auf eine TEAMER-Aktivitaet
+      // stellen (POST -> 201), er erschien in ihrer Liste und die Leitung
+      // konnte ihn bestaetigen — Punkte aus einer Aktivitaet, die nicht fuer
+      // Konfis gedacht ist. Ueber die Oberflaeche nicht erreichbar (die Liste
+      // dort filtert), per API aber offen. Der Teamer-Weg filtert seit jeher
+      // (teamer.js:1287-1299).
       const { rows: [activity] } = await db.query(
-        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2",
+        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2 AND target_role = 'konfi'",
         [activity_id, req.user.organization_id]
       );
 

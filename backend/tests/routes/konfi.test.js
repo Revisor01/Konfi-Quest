@@ -1537,4 +1537,102 @@ describe('Konfi Routes', () => {
     });
   });
 
+  // ================================================================
+  // Befund N3 (27.08.2026): Antraege und target_role
+  //
+  // `GET /teamer/requests` filtert seit jeher `a.target_role='teamer'`
+  // (teamer.js:1287-1299), der Konfi-Weg filterte gar nicht — weder beim
+  // Lesen noch beim ANLEGEN.
+  //
+  // Nachgemessen, bevor es repariert wurde: Eine Konfi konnte per API einen
+  // Antrag auf eine TEAMER-Aktivitaet stellen (POST -> 201), er erschien in
+  // ihrer Liste, und die Leitung konnte ihn bestaetigen. Ergebnis waeren
+  // Punkte aus einer Aktivitaet, die nicht fuer Konfis gedacht ist. Ueber
+  // die Oberflaeche nicht erreichbar (die Auswahlliste dort filtert), per
+  // API aber offen.
+  // ================================================================
+  describe('N3: Konfi-Antraege nur auf Konfi-Aktivitaeten', () => {
+    let teamerAktivitaet;
+
+    beforeEach(async () => {
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Teamer-Schulung', 5, 'gemeinde', $1, 'teamer') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      teamerAktivitaet = akt.id;
+    });
+
+    it('VERBOTEN: Antrag auf eine Teamer-Aktivitaet wird abgelehnt', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ activity_id: teamerAktivitaet, requested_date: '2026-08-27' });
+
+      expect(res.status).toBe(404);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM activity_requests WHERE activity_id = $1',
+        [teamerAktivitaet]
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('ERLAUBT: Antrag auf eine Konfi-Aktivitaet geht weiterhin durch', async () => {
+      // Gegenprobe — der Filter darf den regulaeren Weg nicht mitnehmen.
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-08-27'
+        });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('die Liste zeigt keine Antraege auf Teamer-Aktivitaeten', async () => {
+      // Altbestand: vor dem Fix konnten solche Zeilen entstehen. Am
+      // Anlege-Weg vorbei direkt eingefuegt, damit der Lesepfad selbst
+      // geprueft wird und nicht nur der geschlossene Eingang.
+      await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, $2, '2026-08-27', 'pending', $3)`,
+        [USERS.konfi1.id, teamerAktivitaet, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.filter(r => r.activity_name === 'Teamer-Schulung')).toHaveLength(0);
+    });
+
+    it('ein Antrag zu einer GELOESCHTEN Aktivitaet bleibt in der Liste', async () => {
+      // Der LEFT JOIN bleibt bewusst ein LEFT JOIN (anders als im
+      // Teamer-Weg): Sonst verschwaende ein Antrag aus der Historie, sobald
+      // die Leitung die Aktivitaet loescht. Der target_role-Filter darf
+      // diese Zeilen deshalb nicht mitnehmen.
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Wird geloescht', 3, 'gemeinde', $1, 'konfi') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [antrag] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, $2, '2026-08-27', 'pending', $3) RETURNING id`,
+        [USERS.konfi1.id, akt.id, ORGS.testGemeinde.id]
+      );
+      await db.query('UPDATE activity_requests SET activity_id = NULL WHERE id = $1', [antrag.id]);
+
+      const res = await request(app)
+        .get('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(r => r.id)).toContain(antrag.id);
+    });
+  });
+
 });
