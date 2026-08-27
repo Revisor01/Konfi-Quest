@@ -104,6 +104,21 @@ class BackgroundService {
       //
       // Das Setzen des App-Icon-Zaehlers braucht ein Token, die
       // Abzeichen-Prüfung nicht. Beides ist unten getrennt.
+      //
+      // ROLLENFILTER (korrigiert 27.08.2026, Befund M3 aus dem
+      // Push-Bericht): Hier stand `r.name != 'admin'` unter dem Kommentar
+      // "Alle Konfis und Teamer:innen" — beides zusammen ergab weder das
+      // eine noch das andere. Jede Organisation hat ZWEI Leitungsrollen
+      // (`organizations.js`): `org_admin` ("Organisations-Admin") und
+      // `admin` ("Hauptamt"). Die Negation liess also org_admin MITLAUFEN
+      // und schloss nur das Hauptamt aus: dessen App-Icon wurde im
+      // Hintergrund nie nachgefuehrt, waehrend org_admin bedient wurde.
+      // Beide Leitungsrollen haben sehr wohl einen Zaehler
+      // (`BadgeContext.tsx`: Chat + Antraege + Termine + Freigaben), und
+      // `appIconSummenFuerAlle` rechnet ihn fuer sie. Jetzt ausdruecklich
+      // aufgezaehlt statt negiert — eine neue Rolle faellt damit auf,
+      // statt still mitzulaufen. `super_admin` bleibt aussen vor: die
+      // Rolle ist org-fremd und hat weder Chat noch Antraege.
       const usersQuery = `
         SELECT u.id AS user_id,
                u.organization_id,
@@ -117,7 +132,7 @@ class BackgroundService {
                ) AS hat_push
         FROM users u
         JOIN roles r ON u.role_id = r.id
-        WHERE r.name != 'admin'
+        WHERE r.name IN ('konfi', 'teamer', 'admin', 'org_admin')
           AND u.deleted_at IS NULL
           AND u.is_active = true
       `;
@@ -207,7 +222,12 @@ class BackgroundService {
           // selbst die Push + In-App-Notification (via insertBadgesAndNotify ->
           // sendBadgeEarnedToKonfi). KEIN zweiter Push hier — sonst bekommt der
           // Konfi pro neuem Badge zwei Benachrichtigungen.
-          if (!nurZaehler) {
+          // Nur Konfis und Teamer:innen koennen Abzeichen bekommen. Seit die
+          // Leitungsrollen fuer den Zaehler mitgeladen werden (Befund M3),
+          // wuerde `checkAndAwardBadges` sonst je Lauf und je Leitungskonto
+          // eine Rollen-Abfrage machen, um dann mit `{count: 0}`
+          // abzubrechen (`badges.js:107-131`). Hier gespart statt dort.
+          if (!nurZaehler && (user.user_type === 'konfi' || user.user_type === 'teamer')) {
             await checkAndAwardBadges(db, user.user_id);
           }
         } catch (error) {

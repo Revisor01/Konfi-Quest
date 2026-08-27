@@ -640,7 +640,14 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
     }
 
     for (const badge of earnedBadgeDetails) {
-      await PushService.sendBadgeEarnedToKonfi(db, userId, badge.name, badge.icon, badge.description);
+      // organizationId mitgeben: Abzeichen gehen auch an Teamer:innen
+      // (target_role = 'teamer'), und die koennen mehreren Gemeinden
+      // angehoeren. Ohne Content-Org nimmt der Push die Primaer-Org des
+      // Empfaengers -- beim Antippen landet man dann in der falschen
+      // Gemeinde (Befund M4, Push-Bericht 27.08.2026).
+      await PushService.sendBadgeEarnedToKonfi(
+        db, userId, badge.name, badge.icon, badge.description, badge.id ?? null, organizationId
+      );
     }
 
     // Live-Update an den Empfaenger selbst: Badge-Zähler sofort aktualisieren,

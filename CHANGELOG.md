@@ -236,6 +236,24 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Benachrichtigungen führen beim Antippen jetzt überall an die richtige
+  Stelle. Bei zehn Arten — darunter geänderte Termine, Pflichttermine,
+  Stempel und Zertifikate — öffnete sich die App bisher einfach dort, wo sie
+  zuletzt stand. Teamer:innen landen bei Anträgen und Abzeichen jetzt direkt
+  auf der jeweiligen Seite statt eine Ebene darüber.
+- Die Zahl am App-Icon wird jetzt auch für das Hauptamt im Hintergrund
+  nachgeführt. Bisher blieb sie dort stehen, bis jemand die App öffnete.
+- Wer aus einer Gemeinde ausgeschieden ist, bekommt von ihr keine Hinweise
+  auf neue Termine mehr.
+- Für Teamer:innen in mehreren Gemeinden führen Abzeichen- und
+  Antragsmeldungen jetzt in die Gemeinde, um die es geht — bisher konnte die
+  App dabei in die falsche wechseln.
+- Wenn eine offline gestartete Aktion später vom Server abgelehnt wird, geht
+  der Hinweis darauf nicht mehr verloren. Bisher gab es nur eine kurze
+  Meldung, die man verpasste, sobald die App im Hintergrund nachreichte.
+- Die Buchung eines Termins braucht für Teamer:innen jetzt eine Verbindung.
+  Offline ließ sie sich zwar auslösen, aber niemand erfuhr, ob daraus ein
+  Platz oder die Warteliste wurde. Zu- und Absagen gehen weiterhin offline.
 - Abgesagte Termine erinnern nicht mehr. Bisher kam nach der Nachricht
   "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
   eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr

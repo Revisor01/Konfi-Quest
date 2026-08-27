@@ -63,7 +63,8 @@ import {
   add,
   timeOutline,
   listOutline,
-  ribbon
+  ribbon,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -572,19 +573,20 @@ const TeamerEventsPage: React.FC = () => {
         const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
         if (updated) setSelectedEvent(updated);
       } else {
-        await writeQueue.enqueue({
-          method: 'POST',
-          url: `/events/${event.id}/book`,
-          body: {},
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'teamer',
-            clientId: safeUUID(),
-            label: 'Event buchen',
-          },
-        });
-        setSuccess('Buchung wird gesendet sobald du wieder online bist');
+        // Buchung braucht das Netz (Befund H2, Offline-Bericht 27.08.2026).
+        //
+        // Bis hierher wurde sie in die Warteschlange gelegt und die Antwort
+        // des Servers verworfen. Genau darin steckt aber, ob der Platz
+        // sicher ist oder nur die Warteliste: Der Online-Zweig oben liest
+        // `res.data.status === 'waitlist'` aus und sagt es. Nachgereicht
+        // erfuhr das niemand — die App bestaetigte "wird gesendet", und wer
+        // spaeter auf der Warteliste stand, merkte es nicht.
+        //
+        // Die Konfi-Anmeldung loest das seit jeher so: Der Knopf ist offline
+        // deaktiviert (`EventDetailView.tsx`, `disabled={!isOnline}`). Hier
+        // jetzt genauso, statt eine Zusage zu geben, die der Server erst
+        // spaeter einschraenken koennte.
+        setError('Für die Buchung brauchst du eine Verbindung — sonst wüsstest du nicht, ob du einen Platz oder die Warteliste bekommst.');
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Buchung');
@@ -1147,10 +1149,12 @@ const TeamerEventsPage: React.FC = () => {
                           expand="block"
                           color="success"
                           onClick={() => handleBook(selectedEvent)}
-                          disabled={bookingLoading}
+                          disabled={bookingLoading || !isOnline}
                         >
-                          <IonIcon icon={checkmarkCircle} slot="start" />
-                          {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
+                          <IonIcon icon={bookingLoading || isOnline ? checkmarkCircle : cloudOfflineOutline} slot="start" />
+                          {bookingLoading
+                            ? 'Wird verarbeitet...'
+                            : !isOnline ? 'Du bist offline' : 'Ich bin dabei'}
                         </IonButton>
                         {/* Gegenknopf: Ohne ihn war eine Absage nicht von
                             "hat noch nicht reagiert" zu unterscheiden. Bei
@@ -1185,12 +1189,14 @@ const TeamerEventsPage: React.FC = () => {
                         expand="block"
                         color="warning"
                         onClick={() => handleBook(selectedEvent)}
-                        disabled={bookingLoading}
+                        disabled={bookingLoading || !isOnline}
                       >
-                        <IonIcon icon={hourglass} slot="start" />
+                        <IonIcon icon={bookingLoading || isOnline ? hourglass : cloudOfflineOutline} slot="start" />
                         {bookingLoading
                           ? 'Wird verarbeitet...'
-                          : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
+                          : !isOnline
+                            ? 'Du bist offline'
+                            : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
                       </IonButton>
                     );
                   }

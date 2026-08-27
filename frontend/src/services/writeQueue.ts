@@ -58,6 +58,8 @@ function notifyFailed(item: FailedQueueItem): void {
 const QUEUE_KEY = 'queue:items';
 const FAILED_CHAT_KEY = 'queue:failedChat';
 const FAILED_CHAT_MAX = 50;
+const FAILED_ACTIONS_KEY = 'queue:failedActions';
+const FAILED_ACTIONS_MAX = 50;
 let _items: QueueItem[] | null = null; // In-Memory-Cache, lazy geladen
 let _flushing = false;
 // Zaehlt clear()-Aufrufe. Ein laufender flush() vergleicht dagegen: Wurde die
@@ -84,6 +86,81 @@ export interface FailedChatMessage {
 }
 
 let _failedChat: FailedChatMessage[] | null = null;
+
+// Merker fuer endgueltig fehlgeschlagene Vorgaenge, die KEIN Chat sind
+// (Befund H1 aus dem Offline-Bericht, 27.08.2026).
+//
+// Bis dahin gab es fuer sie nur `showFailedToast` — vier Sekunden, und weg.
+// Laeuft der Flush im Hintergrund (Reconnect, App-Start) oder startet die App
+// zwischendurch neu, sieht die Meldung niemand: Eine offline abgegebene
+// Abmeldung konnte verpuffen, waehrend die App "wird gesendet" bestaetigt
+// hatte. Chat-Nachrichten hatten diesen Schutz laengst (siehe oben) — hier
+// bekommt ihn der Rest, nach demselben Muster.
+//
+// Der Toast bleibt: Er ist der schnelle Hinweis, wenn jemand gerade hinsieht.
+// Der Merker ist das Gedaechtnis fuer alle anderen Faelle.
+export interface FailedAction {
+  id: string;
+  label: string;
+  type: string;
+  createdAt: number;
+  failedAt: number;
+  error: { status: number; message: string };
+}
+
+let _failedActions: FailedAction[] | null = null;
+
+async function _loadFailedActions(): Promise<FailedAction[]> {
+  if (_failedActions !== null) return _failedActions;
+  try {
+    const result = await Preferences.get({ key: FAILED_ACTIONS_KEY });
+    _failedActions = result.value ? (JSON.parse(result.value) as FailedAction[]) : [];
+  } catch {
+    await Preferences.remove({ key: FAILED_ACTIONS_KEY });
+    _failedActions = [];
+  }
+  return _failedActions;
+}
+
+async function _saveFailedActions(list: FailedAction[]): Promise<void> {
+  _failedActions = list;
+  await Preferences.set({ key: FAILED_ACTIONS_KEY, value: JSON.stringify(list) });
+}
+
+async function rememberFailedAction(
+  item: QueueItem,
+  error: { status: number; message: string }
+): Promise<void> {
+  const list = await _loadFailedActions();
+  const ohneAlten = list.filter(f => f.id !== item.id);
+  ohneAlten.push({
+    id: item.id,
+    label: item.metadata.label || 'Aktion',
+    type: item.metadata.type,
+    createdAt: item.createdAt,
+    failedAt: Date.now(),
+    error,
+  });
+  while (ohneAlten.length > FAILED_ACTIONS_MAX) ohneAlten.shift();
+  await _saveFailedActions(ohneAlten);
+}
+
+/** Alle gemerkten Fehlschlaege, neueste zuletzt. */
+async function getFailedActions(): Promise<FailedAction[]> {
+  return [...(await _loadFailedActions())];
+}
+
+/** Einen gemerkten Fehlschlag verwerfen (z.B. nachdem jemand ihn gesehen hat). */
+async function forgetFailedAction(id: string): Promise<void> {
+  const list = await _loadFailedActions();
+  if (!list.some(f => f.id === id)) return;
+  await _saveFailedActions(list.filter(f => f.id !== id));
+}
+
+/** Alle gemerkten Fehlschlaege verwerfen. */
+async function forgetAllFailedActions(): Promise<void> {
+  await _saveFailedActions([]);
+}
 
 async function _loadFailedChat(): Promise<FailedChatMessage[]> {
   if (_failedChat !== null) return _failedChat;
@@ -200,7 +277,10 @@ async function showFailedToast(label: string): Promise<void> {
   }
 }
 
-function handleFlushResult(result: FlushResult): void {
+// Wird von flush() abgewartet: Der Merker muss geschrieben sein, bevor der
+// Aufrufer weiterarbeitet -- sonst sieht ein direkt folgender Lesezugriff
+// (oder ein App-Wechsel im selben Moment) ihn noch nicht.
+async function handleFlushResult(result: FlushResult): Promise<void> {
   for (const item of result.failed) {
     // 'fire-and-forget' sind stille Hintergrund-Cleanups (z.B. Push-Token beim
     // Logout entfernen). Sie scheitern nach dem Logout zwangslaeufig (kein
@@ -214,7 +294,12 @@ function handleFlushResult(result: FlushResult): void {
     // (Reconnect/Online) eine alte Queue-Nachricht erneut nicht senden kann.
     if (item.metadata.type === 'chat') continue;
     const label = item.metadata.label || 'Aktion';
+    // Zwei Wege, bewusst beide (Befund H1): Der Toast erreicht, wer gerade
+    // hinsieht. Der Merker ueberlebt Hintergrund-Flush und App-Neustart —
+    // ohne ihn war eine abgelehnte Nachreichung nach vier Sekunden spurlos
+    // weg, obwohl die App den Versand bestaetigt hatte.
     showFailedToast(label);
+    await rememberFailedAction(item, item.error);
   }
 }
 
@@ -432,7 +517,7 @@ async function flush(): Promise<FlushResult> {
     _flushing = false;
   }
 
-  handleFlushResult(result);
+  await handleFlushResult(result);
   return result;
 }
 
@@ -507,7 +592,7 @@ async function flushTextOnly(): Promise<FlushResult> {
     _flushing = false;
   }
 
-  handleFlushResult(result);
+  await handleFlushResult(result);
   return result;
 }
 
@@ -574,5 +659,8 @@ export const writeQueue = {
   getFailedChat,
   forgetFailedChat,
   forgetFailedChatMany,
+  getFailedActions,
+  forgetFailedAction,
+  forgetAllFailedActions,
   clear,
 };
