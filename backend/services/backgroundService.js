@@ -174,11 +174,24 @@ class BackgroundService {
           // gesendeten Stand und schicken nur bei Änderung. Im Regelfall
           // bedeutet das genau EINEN zusaetzlichen Push, wenn der Zähler auf
           // null fällt.
+          //
+          // Verglichen wird der zuletzt GESENDETE Stand, nicht der Chat-Zaehler
+          // von oben: Seit dem 27.08.2026 rechnet `sendBadgeUpdate` die Zahl
+          // selbst (Chat plus Antraege, Termine, Abzeichen — dieselbe Quelle
+          // wie jeder Push). `badgeCount` hier ist nur noch der Rueckfall, falls
+          // die Berechnung keinen Empfaenger ermitteln kann.
+          //
+          // Vorher ueberschrieb dieser Sync die korrekte Zahl mit dem reinen
+          // Chat-Zaehler: Ein Push setzte "7", fuenf Minuten spaeter stand "2".
           if (user.hat_push) {
             const schluessel = `${user.user_id}_${user.user_type}`;
-            if (this.letzterZaehler.get(schluessel) !== badgeCount) {
-              await PushService.sendBadgeUpdate(db, user.user_id, badgeCount);
-              this.letzterZaehler.set(schluessel, badgeCount);
+            // Erst rechnen, dann vergleichen, dann erst senden — sonst ginge
+            // bei JEDEM Lauf ein stiller Push raus und der Merker liefe leer.
+            const zuSenden = await PushService.berechneBadge(db, user.user_id);
+
+            if (zuSenden != null && this.letzterZaehler.get(schluessel) !== zuSenden) {
+              await PushService.sendBadgeUpdate(db, user.user_id);
+              this.letzterZaehler.set(schluessel, zuSenden);
               updatedCount++;
             }
           }
