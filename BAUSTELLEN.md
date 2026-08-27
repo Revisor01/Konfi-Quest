@@ -1059,10 +1059,11 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `teamer_`-Varianten). An ihnen hängt die produktive Wartelisten-Logik;
       ein neuer Test belegt, dass eine volle Veranstaltung mit Warteliste
       weiterhin auf die Warteliste setzt.
-- [ ] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
-      Der Befund hat ZWEI Teile:
+- [x] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
+      **VOLLSTÄNDIG ERLEDIGT 27.08.2026.** Beide Teile:
       - [x] **Die spürbare Folge ist behoben** (27.08.2026).
-      - [ ] **Die Doppelspalte bleibt** (siehe unten).
+      - [x] **Die Doppelspalte ist weg** — Migration 132
+        (`132_bibeluebersetzung_eine_spalte.sql`, PR #127).
 
       Bestätigt: Konfis speichern in `konfi_profiles.bible_translation`
       (`konfi.js:2062`), Teamer in `users.bible_translation` (Migration 107,
@@ -1073,8 +1074,22 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       (`konfi-management.js`, Schritt 10). Die Quelle bleibt bewusst stehen:
       Das `konfi_profile` bleibt insgesamt bestehen, bei einer Rückstufung ist
       die Wahl damit noch da. Eigener Test dafür.
-      **Offen bleibt die eigentliche Ursache:** zwei gleichnamige Spalten für
-      dieselbe Präferenz. **NACH 2.0.0** (Simons Entscheidung 27.08.2026).
+      **Die eigentliche Ursache ist inzwischen behoben** — anders als hier
+      zunächst geplant ("nach 2.0.0"). Migration 132 führt beide Spalten auf
+      `users.bible_translation` zusammen und löscht `konfi_profiles.bible_translation`.
+      **Nachgemessen 27.08.2026 abends, alle sieben Stellen:** `konfi.js:397`,
+      `konfi.js:1498` und `konfi.js:2121` lesen bzw. schreiben an `users`;
+      `konfi-management.js` überträgt nichts mehr (der Schritt entfällt), die
+      drei `teamer.js`-Stellen waren schon korrekt. Die Übernahmebedingung ist
+      dreiteilig gebaut, genau wie unten gefordert — nicht `IS NULL`.
+      Der bestehende Test wurde **ersetzt, nicht aufgeweicht**
+      (`konfi-management.test.js:1128`): Er prüft weiter, dass die Übersetzung
+      die Beförderung überlebt, jetzt über die zusammengelegte Spalte.
+      **Nachgetragen 27.08. abends:** Zwei Kommentare zeigten noch auf die
+      gelöschte Spalte (`jahrgaenge.js:377`, `docs/api/stammdaten.yaml:702`) —
+      beide auf `users.bible_translation` umgestellt.
+
+      Die folgende Analyse bleibt als Beleg stehen:
 
       **Am 27.08. abends vollstaendig durchgemessen**, damit der spaetere
       Umbau nicht bei null anfaengt:
@@ -1237,7 +1252,17 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       Eigenes, engeres Gate für den Mülleimer. Der Export behält
       `super_admin` (eigene Gegenprobe) — das Trennen war der Punkt, nicht das
       Verengen von beidem.
-- [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+- [x] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+      ERLEDIGT 27.08.2026 (`5def32c2`, mitgekommen über PR #124).
+      Nachgemessen: `NeuerungenBanner` steht auf allen drei Startseiten
+      (`AdminKonfisPage.tsx:403`, `KonfiDashboardPage.tsx`,
+      `TeamerDashboardPage.tsx`), abgesichert durch
+      `neuerungenBannerStartseiten.test.ts`. Der eigens dafür geöffnete PR #126
+      war damit gegenstandslos und wurde geschlossen statt gemergt — sein
+      Branch stand auf einem alten Basis-Commit und hätte neuere Arbeit
+      zurückgerollt. Die zweite Hälfte des Punktes (Statistik-Kopf, Einzahl
+      "1 Beitrag") läuft über `anzahlBeitraege`
+      (`ChallengeLeitungModal.tsx:803`, `ChallengesManageView.tsx:352`).
 - [x] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.** ERLEDIGT 27.08.2026.
       Nachgemessen: Bei gesetzter Freigabe ohne Snapshot lieferte das
