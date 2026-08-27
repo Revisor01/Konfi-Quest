@@ -236,11 +236,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Abgesagte Termine erinnern nicht mehr. Bisher kam nach der Nachricht
+  "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
+  eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr
+  aufgefordert, die Teilnahme an einem abgesagten Termin nachzuverbuchen.
 - Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
   Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
   die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es
   von Anfang an funktioniert.
-
 - Die Leitung sieht auf ihrer Startseite jetzt beide Neuerungs-Karten — auch
   den Hinweis zum Mitmachen-Bereich, den bisher nur Konfis und Teamer:innen
   dort hatten. Beide lassen sich wie gewohnt wegklicken und stehen dauerhaft

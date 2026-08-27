@@ -1,4 +1,4 @@
--- 132_chat_reaktionen_teamer_erlauben.sql
+-- 133_chat_reaktionen_teamer_erlauben.sql
 --
 -- Teamer:innen konnten auf keine Chat-Nachricht reagieren: der Reaktionsknopf
 -- war fuer sie sichtbar, das Speichern schlug aber immer fehl.

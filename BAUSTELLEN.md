@@ -1460,6 +1460,20 @@ Vorschläge, nicht beauftragt — aus dem, was bei der Arbeit auffiel:
 - [ ] **Push-Zustellung Ende zu Ende.** An vielen Stellen verdrahtet; ob jede
       Mitteilung ankommt und beim Antippen an der richtigen Stelle landet,
       wurde nie systematisch geprüft.
+- [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
+      gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
+      `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
+      stehen. Ein Test mit abgesagtem Termin am Folgetag schrieb ohne Fix eine
+      Zeile in `event_reminders` (erwartet 0, gemessen 1) — die Erinnerung
+      feuerte also wirklich. Gleiche Luecke bei der Nachverbuch-Erinnerung an
+      die Leitung, mit erledigt. Alle drei Stellen filtern jetzt
+      `cancelled IS NOT TRUE` (nicht `= false`, sonst faellt Altbestand mit
+      NULL still aus).
+      *Geloeschte Termine sind nicht betroffen:* Events werden hart geloescht,
+      es gibt kein `deleted_at` an der Tabelle, und
+      `event_bookings_event_id_fkey` haengt mit `ON DELETE CASCADE` daran. Mit
+      dem Event verschwinden die Buchungen, der JOIN findet nichts — der Fall
+      existiert gar nicht.
 - [ ] **Zeitzonen und Datumsgrenzen.** Termine, Anmeldeschluss, Challenges mit
       Restzeit, Tageslosung, Wrapped-Jahresgrenze — überall Datumslogik,
       nirgends geprüft, ob sie an Tagesgrenzen und über die Sommerzeit stimmt.
