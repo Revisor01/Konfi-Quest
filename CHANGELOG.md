@@ -13,7 +13,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 älteren Geräten bleibt die zuletzt installierte Version nutzbar.
 
 ### Hinzugefügt
-
 - Name und Jahrgang einer Konfi lassen sich jetzt nachträglich ändern — bisher
   ging das nach dem Anlegen gar nicht mehr, ein Tippfehler blieb stehen. Beim
   Jahrgangswechsel steht vorher, was er bewirkt: Anmeldungen zu künftigen
@@ -79,6 +78,30 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Anonyme Nutzungsstatistik in der App: erfasst wird, welche Bereiche und
   Funktionen genutzt werden und wo Fehlermeldungen erscheinen — ohne Namen,
   Kennung, Gemeinde oder Inhalte. Näheres in der Datenschutzerklärung.
+
+- Die Leitung kann den Jahresrückblick einer Konfi jetzt auf deren Profilseite
+  ansehen — denselben, den die Konfi selbst sieht. Er erscheint erst, wenn der
+  Rückblick für den Jahrgang freigegeben wurde.
+
+- Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
+  und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
+  Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
+  der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
+  und die Zusage lässt sich jederzeit ändern.
+
+- Konfis und Teamer:innen kommen jetzt direkt aus dem Termin in den Termin-Chat,
+  statt ihn in der Chat-Übersicht suchen zu müssen. Der Einstieg erscheint nur,
+  wenn es einen Chat gibt und man darin ist.
+
+- Das Check-in-Fenster steht jetzt im Termin — bisher ließ es sich einstellen,
+  aber nirgends nachlesen. Alle drei Ansichten zeigen, wie lange vor und nach
+  Beginn der QR-Code gilt.
+
+- Termine aus einer Reihe sind jetzt auch für Konfis und Teamer:innen als solche
+  erkennbar.
+
+- Teamer:innen sehen im Termin jetzt den Anmeldezeitraum, wie Leitung und Konfis
+  schon vorher.
 
 ### Geändert
 
@@ -207,33 +230,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Bildschirmlesegeräte benennen jetzt alle Symbol-Schaltflächen und
   Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
-
-### Hinzugefügt
-
-- Die Leitung kann den Jahresrückblick einer Konfi jetzt auf deren Profilseite
-  ansehen — denselben, den die Konfi selbst sieht. Er erscheint erst, wenn der
-  Rückblick für den Jahrgang freigegeben wurde.
-
-- Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
-  und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
-  Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
-  der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
-  und die Zusage lässt sich jederzeit ändern.
-
-- Konfis und Teamer:innen kommen jetzt direkt aus dem Termin in den Termin-Chat,
-  statt ihn in der Chat-Übersicht suchen zu müssen. Der Einstieg erscheint nur,
-  wenn es einen Chat gibt und man darin ist.
-
-- Das Check-in-Fenster steht jetzt im Termin — bisher ließ es sich einstellen,
-  aber nirgends nachlesen. Alle drei Ansichten zeigen, wie lange vor und nach
-  Beginn der QR-Code gilt.
-
-- Termine aus einer Reihe sind jetzt auch für Konfis und Teamer:innen als solche
-  erkennbar.
-
-- Teamer:innen sehen im Termin jetzt den Anmeldezeitraum, wie Leitung und Konfis
-  schon vorher.
-
 ### Behoben
 
 - Benachrichtigungen führen beim Antippen jetzt überall an die richtige
@@ -241,8 +237,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Stempel und Zertifikate — öffnete sich die App bisher einfach dort, wo sie
   zuletzt stand. Teamer:innen landen bei Anträgen und Abzeichen jetzt direkt
   auf der jeweiligen Seite statt eine Ebene darüber.
-- Die Zahl am App-Icon wird jetzt auch für das Hauptamt im Hintergrund
-  nachgeführt. Bisher blieb sie dort stehen, bis jemand die App öffnete.
+- Die Zahl am App-Symbol stimmt jetzt. Sie zeigt alles Offene zusammen —
+  bisher überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine
+  und Abzeichen, andere Benachrichtigungen setzten sie auf eins, und wenig
+  später fiel sie wieder auf die reinen Chat-Nachrichten zurück. Sie wird
+  außerdem wieder auf null zurückgesetzt, wenn nichts mehr offen ist (auf
+  Android blieb sie sonst oft stehen), und auch für das Hauptamt im
+  Hintergrund nachgeführt statt erst beim Öffnen der App.
 - Wer aus einer Gemeinde ausgeschieden ist, bekommt von ihr keine Hinweise
   auf neue Termine mehr.
 - Für Teamer:innen in mehreren Gemeinden führen Abzeichen- und
@@ -258,10 +259,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
   eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr
   aufgefordert, die Teilnahme an einem abgesagten Termin nachzuverbuchen.
-- Die Zahl am App-Icon bleibt jetzt auch zwischen zwei Benachrichtigungen
-  richtig. Bisher zeigte sie kurz nach einer Nachricht alles Offene an, wurde
-  aber wenig später auf die reinen Chat-Nachrichten heruntergesetzt — offene
-  Anträge, unbearbeitete Termine und neue Abzeichen fielen dabei weg.
 - Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
   Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
   die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es
@@ -318,9 +315,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 - Bei Terminen ohne Punkte steht in der Leitungsansicht nicht mehr "Punkte 0".
 
-- Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
-  überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
-  Abzeichen, und andere Benachrichtigungen setzten die Zahl immer auf eins.
 
 - In Gruppenchats sehen jetzt alle Mitglieder, wer sonst noch dabei ist —
   bisher war die Mitgliederliste der Leitung vorbehalten, obwohl das Handbuch
@@ -580,8 +574,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   berücksichtigte. Lange Beschriftungen werden jetzt gekürzt statt überzulaufen.
 - Die eigene zuletzt geschriebene Nachricht zählte als ungelesen. Am Reiter
   stand dadurch eine Eins, bis man den Chat noch einmal öffnete.
-- Die Zahl am App-Symbol wird jetzt auch auf null zurückgesetzt. Bisher nahm
-  der Server sie nie zurück — auf Android blieb sie deshalb oft stehen.
 - Ein verdientes Abzeichen bleibt jetzt sichtbar, auch wenn die Leitung es
   später abschaltet — etwa zum Saisonende. Bisher verschwand es aus der Liste,
   während die Zähler es weiter mitzählten.
@@ -725,9 +717,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   kaum, dafür gibt es die Suche.
 - Chat: Die Zahlen über der Liste ("Chats", "Ungelesen") lassen sich antippen
   und schalten direkt auf den passenden Reiter.
-- Challenges: Die Leitungsansicht hat jetzt dieselben Reiter wie die
-  Konfi-Ansicht — Aktuell und Archiv statt zweier Listen untereinander. Die
-  Zahlen darüber springen zum jeweiligen Reiter.
 - Sicherheit: Der Link zum Zurücksetzen des Passworts wird nicht mehr im
   Klartext gespeichert.
 - Sicherheit: Beim Anfordern eines Passwort-Links lässt die Antwort nicht mehr
