@@ -143,10 +143,16 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       `--app-color-success-strong` (#059669) in variables.css; Konfi-Detail
       und Legende umgestellt. *Rest: `ChallengeLeitungModal.tsx` Zeilen
       174/181/495 nutzen noch `--app-color-success` (hell).*
-- [ ] **Statistik-Kopf** — NICHT umgesetzt: liegt in `ChallengeLeitungModal.tsx`
-      (gesperrt wegen Parallel-Arbeit). Vorschlag: "Sichtbar" statt "Frei"
-      (kurz, Paar zu "Versteckt"), Reihenfolge Sichtbar/Wartet/Versteckt,
-      Beitragszahl mit korrekter Einzahl (`anzahlBeitraege`) in den Kopf.
+- [x] **Statistik-Kopf** — ERLEDIGT 27.08.2026. Nachgemessen: Das meiste war
+      schon da. "Sichtbar" steht seit dem Reiter-Umbau statt "Frei", die
+      Reihenfolge ist Sichtbar/Wartet/Abgelehnt (die dritte Kachel heisst
+      "Abgelehnt", nicht "Versteckt"). Offen war nur die Einzahl: Die
+      Beitrags-Kachel trug fest "Beiträge" und las sich bei genau einem
+      Beitrag als "1 Beiträge". Jetzt über `anzahlBeitraege`. Die Kachel hat
+      bewusst keinen eigenen Reiter (`filterZuLabel` kennt sie nicht), das
+      wechselnde Label bricht die Reiter-Zuordnung also nicht. Bei Teamer:innen
+      und Konfis gibt es keinen entsprechenden Statistik-Kopf — nichts
+      mitzuziehen.
 - [x] **Hinweis über dem Beitragsfeld** → als Untertitel in die
       Banner-Überschrift des Einreich-Modals (Muster Detail-Modal).
 - [x] **Unter "Worum geht es"** stehen jetzt Sichtbarkeit und
@@ -1155,7 +1161,18 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       Eigenes, engeres Gate für den Mülleimer. Der Export behält
       `super_admin` (eigene Gegenprobe) — das Trennen war der Punkt, nicht das
       Verengen von beidem.
-- [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+- [x] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+      ERLEDIGT 27.08.2026. Der Befund stimmte. Startseite der Leitung ist
+      `/admin/konfis` (MainTabs leitet "/" und "/admin" dorthin um), nicht
+      eine Dashboard-Seite. Dort hing die "Was ist neu"-Karte einzeln als
+      `UpdateHinweisKarte`; die Mitmachen-Karte fehlte und war für die
+      Leitung nur unter "Mehr" erreichbar. Jetzt das gemeinsame Bauteil
+      `NeuerungenBanner` wie bei Konfis und Teamer:innen — wegklickbar, mit
+      denselben Flags aus `useOnboardingWithUpdateOnce`. Der Hook lieferte
+      `showMitmachenHinweis` längst, die Seite hat es nur nie genutzt.
+      Ein Wächtertest hält fest, dass das Banner auf allen drei Startseiten
+      steht und im Profil dauerhaft bleibt; Gegenprobe: ohne das Banner wird
+      genau dieser Test rot.
 - [x] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.** ERLEDIGT 27.08.2026.
       Nachgemessen: Bei gesetzter Freigabe ohne Snapshot lieferte das
