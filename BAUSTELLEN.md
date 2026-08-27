@@ -736,19 +736,38 @@ falschen Teamer-Erklärtexte (PR #83).
             alle elf Stellen darauf umgestellt. Auch die beiden lokalen
             `eventEndDate`-Kopien (gleiche Logik, anderer Name) zeigen jetzt
             dorthin.
-      - [ ] Anmeldezeitraum fehlt nur im Teamer-Detail.
-      - [ ] Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.
-      - [ ] Einstieg in den Event-Chat hat nur die Leitung, obwohl Konfis und
-            Teamer beim Buchen automatisch Mitglieder werden — sie finden den
-            Raum nur über die Chat-Übersicht. *Sachfrage: gewollt?*
-      - [ ] Admin-Detail berechnet `registration_status` lokal und weicht von
-            Backend und eigener Liste ab.
-      - [ ] Punktezeile: drei verschiedene Bedingungen — nur das Admin-Detail
-            zeigt "Punkte 0".
-      - [ ] Abmeldefrist (2 Tage) hartcodiert und nur im Konfi-Zweig, keine
-            Einstellung, für die Leitung unsichtbar.
-      - [ ] `checkin_window` wird nur im Formular gesetzt, in keiner der drei
-            Detailansichten angezeigt.
+      **Simons Entscheidungen vom 27.08.2026 mittags zu allen sieben:**
+      - [ ] **Anmeldezeitraum fehlt nur im Teamer-Detail.** → ERGÄNZEN.
+            Leitung und Konfi haben ihn (`admin/views/EventDetailSections.tsx:171-192`,
+            `konfi/views/EventDetailView.tsx:636-657`), Teamer nicht.
+      - [ ] **Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.**
+            → ERGÄNZEN, auch für Teamer:innen und Konfis.
+      - [ ] **Einstieg in den Event-Chat hat nur die Leitung** → FÜR ALLE.
+            Konfis und Teamer:innen werden beim Buchen ohnehin Mitglied
+            (`events.js:1683`, `addToEventChat`) — sie finden den Raum bisher
+            nur über die Chat-Übersicht. Reine Frontend-Änderung, die
+            Mitgliedschaft besteht schon.
+      - [ ] **Admin-Detail berechnet `registration_status` lokal** und weicht
+            von Backend und eigener Liste ab → ANGLEICHEN, Wert vom Backend
+            nutzen (`admin/views/EventDetailView.tsx:244-256` vs.
+            `admin/EventsView.tsx:128-131`).
+      - [ ] **Punktezeile: drei verschiedene Bedingungen** — nur das
+            Admin-Detail zeigt "Punkte 0" → ANGLEICHEN, ausblenden wie in den
+            anderen beiden Ansichten (`EventDetailSections.tsx:290-311` fehlt
+            der `points > 0`-Guard).
+      - [ ] **`checkin_window` wird nur im Formular gesetzt**, nirgends
+            angezeigt → IN DEN DETAILANSICHTEN ANZEIGEN. Das ist das
+            Zeitfenster für den **QR-Code** (`events.js:428-462`); wer es
+            setzt, sieht sonst nie, ob es wirkt.
+      - [x] **Abmeldefrist (2 Tage) hartcodiert** → BLEIBT HARTCODIERT
+            (Simons Entscheidung). **Nicht zu verwechseln mit dem QR-Code** —
+            das ist `checkin_window`, eine Zeile darüber. Hier geht es darum,
+            bis wann eine Konfi sich selbst wieder ABMELDEN kann; danach ist
+            der Knopf gesperrt ("Abmelden geht nur bis 2 Tage vorher").
+            Zwei Fundstellen, die zusammenpassen müssen:
+            `konfi/views/EventDetailView.tsx:276` und `konfi.js:1812`.
+            Offen bleibt nur: **im Handbuch erklären**, damit die Leitung weiß,
+            warum Konfis sich kurz vorher nicht mehr abmelden können.
 - [x] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
       `AdminChallengesPage.tsx`.** ERLEDIGT 27.08.2026 (Simons Entscheidung:
       zusammenführen). Gemessen wichen die beiden in **24 von rund 197
@@ -909,6 +928,22 @@ falschen Teamer-Erklärtexte (PR #83).
       `super_admin` (eigene Gegenprobe) — das Trennen war der Punkt, nicht das
       Verengen von beidem.
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
+- [x] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
+      Snapshot-Existenz.** ERLEDIGT 27.08.2026.
+      Nachgemessen: Bei gesetzter Freigabe ohne Snapshot lieferte das
+      Dashboard `has_wrapped: true`, `GET /wrapped/me` aber **404** — die
+      Konfi sah den Einstieg zum Jahresrückblick und tippte ins Leere.
+      **Das kann wirklich passieren**, anders als bei N5: Die
+      Snapshot-Erzeugung läuft über `Promise.allSettled`
+      (`wrapped.js:735-739`), zählt Fehler mit (`errors`) und setzt die
+      Freigabe **trotzdem**. Scheitert sie für eine einzelne Konfi, hat genau
+      diese eine Freigabe ohne eigenen Snapshot.
+      Jetzt müssen beide Bedingungen gelten. Vier Gegenproben: Snapshot ohne
+      Freigabe zeigt weiterhin nichts, der Snapshot einer *anderen* Konfi
+      zählt nicht (sonst hätte der Join die Bedingung faktisch aufgehoben),
+      und ein eigener Test hält fest, dass Dashboard und `/wrapped/me`
+      dieselbe Antwort geben.
+
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
 - [x] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei

@@ -187,6 +187,17 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
               ) : (
                 <div className="app-info-row__value">Sofort möglich</div>
               )}
+              {/* Die Abmeldefrist war bisher NUR fuer Konfis sichtbar -- und
+                  auch erst, wenn sie schon abgelaufen war ("Abmelden geht nur
+                  bis 2 Tage vorher", konfi/views/EventDetailView.tsx:915).
+                  Die Leitung erfuhr nie, dass es die Regel gibt, und wunderte
+                  sich, warum sich jemand nicht mehr austragen kann
+                  (Handbuch 70-termine.md fuehrt genau diese Frage auf).
+                  Der Wert ist fest verdrahtet (konfi.js:1812) -- er steht
+                  hier deshalb als Text, nicht als Einstellung. */}
+              <div className="app-info-row__value" style={{ color: '#666', marginTop: '4px' }}>
+                Konfis können sich bis 2 Tage vorher selbst abmelden
+              </div>
             </div>
           </div>
         )}

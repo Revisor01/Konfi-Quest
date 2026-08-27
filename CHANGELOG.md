@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Konfi-Liste das jetzt auch. Bisher stand dort "Noch keine Konfis angelegt",
   obwohl es Konfis gibt.
 
+- Der Einstieg zum Jahresrückblick erscheint nur noch, wenn der Rückblick
+  wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
+  der Einstieg bisher ins Leere.
+
 - Der Papierkorb zum Leeren des Team-Chats erscheint nur noch dort, wo er
   auch funktioniert. Bisher war er in einem Fall sichtbar und scheiterte beim
   Antippen.
