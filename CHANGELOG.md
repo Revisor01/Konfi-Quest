@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
   der Einstieg bisher ins Leere.
 
+- Teamer:innen können Bonuspunkte nur noch an Konfis ihrer eigenen Jahrgänge
+  vergeben. Bisher war das über die Schnittstelle auch bei fremden Jahrgängen
+  möglich, obwohl das Handbuch es ausschließt.
+
 - Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
   vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
   Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
