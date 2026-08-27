@@ -10,13 +10,17 @@ import {
   IonIcon,
   IonRefresher,
   IonRefresherContent,
+  IonList,
+  IonCard,
+  IonCardContent,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
 import {
   arrowBack,
   key,
-  close
+  close,
+  timeOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -33,6 +37,8 @@ import {
 } from './KonfiDetailSections';
 import type { Konfi, Activity } from './KonfiDetailSections';
 import KonfiBadgesSection from './KonfiBadgesSection';
+import WrappedModal from '../../wrapped/WrappedModal';
+import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface KonfiDetailViewProps {
