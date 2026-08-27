@@ -54,6 +54,7 @@ interface ChatHeaderProps {
 
 export const ChatHeader = React.memo<ChatHeaderProps>(({
   roomName,
+  roomType,
   isAdmin,
   canLeave,
   isOnline,
@@ -76,15 +77,24 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
         </IonButtons>
         <IonTitle>{roomName}</IonTitle>
         <IonButtons slot="end">
+          {/* Befund 12 aus dem Rollen-Bericht (26.08.2026): Mitgliederliste
+              und Umfragen hingen am SELBEN isAdmin-Gate — zwei verschiedene
+              Rechte an einem Schalter. Das Backend gibt die Teilnehmerliste
+              seit jeher jedem Raum-Mitglied frei (chat.js:1336, nur
+              darfRaumOeffnen), und das Handbuch verspricht sie den Konfis
+              ausdruecklich ("In Gruppen siehst du, wer sonst noch dabei ist",
+              10-konfis.md:46). Nur die Oberflaeche versteckte sie.
+              In Einzelchats bleibt sie weg — dort weiss man, wer dabei ist. */}
+          {roomType !== 'direct' && (
+            <IonButton aria-label="Mitglieder anzeigen" onClick={onOpenMembers}>
+              <IonIcon icon={people} />
+            </IonButton>
+          )}
+          {/* Umfragen anlegen bleibt der Leitung vorbehalten. */}
           {isAdmin && (
-            <>
-              <IonButton aria-label="Mitglieder anzeigen" onClick={onOpenMembers}>
-                <IonIcon icon={people} />
-              </IonButton>
-              <IonButton aria-label="Umfrage erstellen" onClick={onOpenPoll}>
-                <IonIcon icon={barChart} />
-              </IonButton>
-            </>
+            <IonButton aria-label="Umfrage erstellen" onClick={onOpenPoll}>
+              <IonIcon icon={barChart} />
+            </IonButton>
           )}
           {onClearChat && (
             <IonButton aria-label="Team-Chat leeren" disabled={!isOnline} onClick={onClearChat}>
