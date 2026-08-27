@@ -524,6 +524,20 @@ const TeamerEventsPage: React.FC = () => {
     } else if (isPastEvent) {
       statusColor = C.past;
       statusText = 'Vergangen';
+    } else if (canRegister && event.teamer_registration_status === 'closed') {
+      // Teamer-Kontingent voll UND keine Warteliste mehr. Bis 27.08.2026 fehlte
+      // dieser Zweig ganz: Ein volles Team-Kontingent stand hier als "Offen",
+      // und man erfuhr erst beim Absenden (400), dass kein Platz mehr ist
+      // (Befund H3). Konfi- und Leitungsansicht unterscheiden diese Faelle
+      // laengst.
+      statusColor = C.danger;
+      statusText = 'Ausgebucht';
+    } else if (canRegister && event.teamer_registration_status === 'waitlist') {
+      statusColor = C.bonus;
+      statusText = 'Warteliste offen';
+    } else if (canRegister && event.teamer_registration_status === 'upcoming') {
+      statusColor = C.neutral;
+      statusText = 'Noch nicht offen';
     } else if (canRegister) {
       // Anmeldbares Team-Event = rosa (Teamer-Farbe), nicht gruen/lila.
       statusColor = C.teamer;
@@ -1413,7 +1427,19 @@ const TeamerEventsPage: React.FC = () => {
                                       ? `/${event.teamer_max_participants}`
                                       : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>} Team
                                   </span>
-                                ) : (
+                                ) : null}
+                                {/* Warteliste des TEAMER-Kontingents. Die Zahl wird
+                                    laengst geliefert (events.js) und im Detail schon
+                                    angezeigt -- auf der Karte fehlte sie, waehrend
+                                    Konfi- und Leitungskarte sie zeigen (Befund H3). */}
+                                {event.teamer_only && (event.teamer_waitlist_count ?? 0) > 0 && (
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={listOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--waitlist'} />
+                                    {event.teamer_waitlist_count}
+                                    {(event.teamer_max_waitlist_size || 0) > 0 ? `/${event.teamer_max_waitlist_size}` : ''}
+                                  </span>
+                                )}
+                                {!event.teamer_only && (
                                   <>
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
@@ -1423,6 +1449,13 @@ const TeamerEventsPage: React.FC = () => {
                                       <span className="app-list-item__meta-item">
                                         <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
                                         {event.teamer_count} Team
+                                      </span>
+                                    )}
+                                    {(event.teamer_waitlist_count ?? 0) > 0 && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={listOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--waitlist'} />
+                                        {event.teamer_waitlist_count}
+                                        {(event.teamer_max_waitlist_size || 0) > 0 ? `/${event.teamer_max_waitlist_size}` : ''} wartet
                                       </span>
                                     )}
                                     {event.points > 0 && (
