@@ -880,8 +880,6 @@ falschen Teamer-Erklärtexte (PR #83).
       zählt nicht (sonst hätte der Join die Bedingung faktisch aufgehoben),
       und ein eigener Test hält fest, dass Dashboard und `/wrapped/me`
       dieselbe Antwort geben.
-- [ ] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
-      kaputtem JSON relevant).
 
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
