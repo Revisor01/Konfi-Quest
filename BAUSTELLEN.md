@@ -555,11 +555,21 @@ falschen Teamer-Erklärtexte (PR #83).
 
 ### Offen aus dem Rollen-Bericht
 
-- [ ] **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste.**
-      ENTSCHIEDEN 26.08.: Das Verhalten bleibt so. Offen bleibt aber, dass
-      ein frisch angelegter Admin ohne Zuweisung einen leeren Landing-Tab
-      sieht und die App für kaputt hält. Ein Hinweis auf der leeren Liste
-      würde reichen. `konfi-management.js:62-69`.
+- [x] **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste.**
+      ENTSCHIEDEN 26.08.: Das Verhalten bleibt so. **Der Hinweis ist am
+      27.08.2026 nachgezogen** (Simons Entscheidung). Vorher stand dort "Noch
+      keine Konfis angelegt" — schlicht falsch, es gibt Konfis, dieser Zugang
+      darf sie nur nicht sehen.
+      Der Server meldet den Fall per **Header**
+      (`X-Kein-Jahrgang-Zugewiesen`), damit die Antwort ein Array bleibt und
+      kein Aufrufer bricht — dasselbe Muster wie bei den Abzeichen-Zählern
+      (`teamer.js:516`). Die vorhandene `EmptyState`-Komponente zeigt dann
+      einen anderen Text.
+      **Falle beim Testen, festgehalten:** `rbac.js:13` hält einen
+      30-Sekunden-User-Cache. Ein `DELETE` auf die Zuweisungen ändert die
+      Datenbank, nicht den Cache — der Test war isoliert grün und im vollen
+      Lauf rot. Gelöst mit einem frisch angelegten Admin, den vorher niemand
+      geladen hat.
 
 - [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
       Ansicht änderbar.** Die Backend-Route existiert

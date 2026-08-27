@@ -65,7 +65,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                     .map(j => j.id);
 
                 if (viewableJahrgaenge.length === 0) {
-                    return res.json([]); // No access to any jahrgaenge
+                    // Befund aus dem Rollen-Bericht (26.08.2026): Die leere
+                    // Liste war von "es gibt wirklich keine Konfis" nicht zu
+                    // unterscheiden -- die Oberflaeche sagte "Noch keine
+                    // Konfis angelegt", obwohl es welche gibt und nur die
+                    // Zuweisung fehlt. Ein frisch angelegter Admin hielt die
+                    // App fuer kaputt.
+                    //
+                    // Das VERHALTEN bleibt (Simons Entscheidung 26.08.), nur
+                    // der Grund wird sichtbar. Als Header, damit der
+                    // Antworttyp ein Array bleibt und kein Aufrufer bricht --
+                    // dasselbe Muster wie bei den Abzeichen-Zaehlern
+                    // (teamer.js:516).
+                    res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+                    return res.json([]);
                 }
 
                 const placeholders = viewableJahrgaenge.map(() => `$${placeholderIndex++}`).join(',');
