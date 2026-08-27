@@ -1,4 +1,4 @@
-# Handoff — Stand 27.08.2026, nachts
+# Handoff — Stand 27.08.2026, mittags
 
 Das laufende Register steht in `BAUSTELLEN.md`, die Prüfberichte in
 `docs/agenten-berichte/` (mit eigenem Register in dessen `README.md`).
@@ -7,149 +7,197 @@ Das laufende Register steht in `BAUSTELLEN.md`, die Prüfberichte in
 
 ## Wo wir stehen
 
-Die vier PRs aus der Löschlogik-Prüfung sind zusammengeführt. Danach liefen
-fünf Prüfläufe, aus denen 23 Befunde kamen — **alle sechs HOCH-Befunde sind
-behoben**, dazu ein Großteil der MITTEL. Was offen ist, steht einzeln in
-`BAUSTELLEN.md`; nichts mehr als Sammelzeile.
+Seit dem nächtlichen Handoff sind **21 PRs zusammengeführt**. Damit sind alle
+HOCH- und alle MITTEL-Befunde aus dem Drei-Ansichten-Bericht erledigt, dazu
+sieben der acht NIEDRIG-Befunde, die Handbuch-Punkte und der komplette
+Dashboard/Profil-Durchgang.
 
-**Am 27.08. nachts sind #87, #89, #90, #93 und #94 alle zusammengeführt.**
-Damit sind H2, H3, H4, H6, M1, M2, M4, M6, M7 und M8 erledigt. Offen ist
-nur noch **#96** (M5, M9, N5) und dieser Doku-PR.
+### Offene PRs — alle grün, nur noch mergen
 
-### Was beim Zusammenführen anders lief als erwartet
+| PR | Inhalt |
+|---|---|
+| **#109** | Benutzerverwaltung: Lösch-Wische nur für org_admin |
+| **#110** | Team-Chat leeren nur für admin und org_admin |
+| **#111** | Wrapped-Einstieg nur bei vorhandenem Snapshot |
+| **#113** | Material-Tags entfernt |
+| **#114** | Hinweis bei fehlender Jahrgangs-Zuweisung |
 
-- **Der Konflikt lag nicht immer im CHANGELOG.** #87 kollidierte in
-  `backend/tests/routes/notifications.test.js`: Git hatte zwei
-  `describe`-Blöcke ineinandergeschoben, weil beide einen `zaehler`-Helper
-  haben. Beide Testgruppen mussten erhalten bleiben — blindes Auflösen
-  hätte vier oder fünf Tests verschluckt.
-- **Additiv heißt nicht immer "beide Seiten aneinanderhängen".** Bei #93
-  stand ein Eintrag der Gegenseite bereits *unterhalb* des Konfliktblocks;
-  stumpfes Zusammenkleben hätte ihn doppelt eingetragen.
-- **Jeder Merge macht den nächsten PR konfliktbehaftet.** Nach jedem Merge
-  wollen die verbliebenen Branches erneut `git merge origin/main`. Das ist
-  normal, kostet aber je einen CI-Durchlauf (~8 Min Backend-Test).
-  Auto-Merge ist im Repo **nicht** aktiviert und lässt sich per CLI auch
-  nicht einschalten (`enablePullRequestAutoMerge` schlägt fehl).
-- Die drei Doku-Generatoren nach jedem Merge laufen lassen, sonst wird die
-  CI rot:
-
-      node scripts/build-handbuch.mjs
-      node scripts/build-api-docs.mjs
-      node scripts/build-openapi.mjs
-
-  Sie ändern dabei regelmäßig nur die `lastmod`-Daten in
-  `frontend/public/sitemap.xml`. Das ist kein Drift — verwerfen statt
-  mitcommitten, sonst rauscht es durch jeden Merge-Commit.
+Alle fünf waren zuletzt aufgefrischt und gepusht. **Vor dem Mergen die CI
+abwarten** — jeder Merge macht die übrigen konfliktbehaftet.
 
 ---
 
-## Was zuerst zu tun ist
+## Was als Nächstes ansteht
 
-1. **#96 mergen** (M5, M9, N5), danach diesen Doku-PR.
-2. **Danach weiter im Register**: M3, N1–N4, N6–N8, die Handbuch-Punkte aus
-   dem Rollen-Bericht, B2b (App-Icon-Semantik).
-3. **Der Store-Review-Block** wurde bewusst verschoben ("machen wir viel,
-   viel später") — deployen, Build, Testinfos, Tag/Release, CHANGELOG-Datum.
+**Simons Auftrag vom 27.08. mittags, in dieser Reihenfolge:**
 
----
+1. **N2 Teil 2** — die 250-Zeilen-Inline-Kopie in `routes/teamer.js`.
+   Vorbereitet, siehe eigener Abschnitt unten.
+2. **N6** — Simon will bei **jedem** der sieben offenen Punkte gefragt
+   werden. Nichts davon ohne Rückfrage bauen.
 
-## Entscheidungen vom 26./27.08., die nicht verloren gehen dürfen
-
-- **Teamer:innen und Termine: bleibt wie es ist.** Die frühere
-  Designentscheidung ist zurückgenommen. Das Backend erlaubt Teamer:innen
-  weiterhin das volle Event-Management — **bewusst nicht angefasst**, die
-  Oberfläche bietet es schlicht nicht an.
-- **Admins dürfen Teamer:innen anlegen, bearbeiten UND löschen**, ebenso
-  Zertifikate verwalten. Die Rollen-Hierarchie bleibt die Grenze: `admin` kann
-  keine Org-Admins und keine weiteren Admins verwalten.
-- **Admin ohne Jahrgangs-Zuweisung sieht eine leere Konfi-Liste** — bleibt so.
-  Offen ist nur, das sichtbar zu machen.
-- **Abgesagte Termine bleiben aufrufbar**, wenn man angemeldet war.
-- **Biometrie bleibt, 90 Tage bleiben.** Face ID verlängert die Anmeldedauer
-  NICHT — die App war auch vorher dauerhaft angemeldet, der Token lag nur im
-  Klartext. Der Gewinn ist der Speicherort, nicht die Dauer. Simons
-  Begründung: Konfis sollen lange angemeldet bleiben UND ihren Zugang vor den
-  Eltern schützen können.
-- **Rollenwechsler verworfen.** "Dann sind es halt drei Logins."
-- **RVR60 (Reina-Valera) wird nicht angeboten.** Entfernt statt überall
-  ergänzt.
-- **Ionic 9 fest eingeplant, aber nicht vor 2.0.0.** Details mit gemessenen
-  Zahlen in `BAUSTELLEN.md` unter "Nach 2.0.0".
+Erledigt aus demselben Auftrag: Material-Tags entfernt (#113), Admin-Hinweis
+gebaut (#114, mit der vorhandenen `EmptyState`-Komponente).
 
 ---
 
-## Was beim Arbeiten aufgefallen ist
+## N2 Teil 2 — vorbereitet, noch nicht angefasst
 
-- **Ein Agentenbericht ist eine Behauptung.** Diesmal bestätigt: Der
-  Chat-Bericht vom 26.08. hatte das Nachrichten-Löschen als "konsistent
-  gelöst" bewertet — beim Gegenlesen war es eine echte Berechtigungslücke.
-  Umgekehrt hat ein Agent den M8-Befund präzisiert statt ihn blind zu
-  übernehmen: Der Admin-Endpunkt filtert sehr wohl korrekt.
-- **Prüfen, ob ein Agent seinen Bericht wirklich geschrieben hat.** Der
-  Abhängigkeiten-Agent meldete einen Bericht, der nie existierte. Die Zahlen
-  darin stammen aus eigener Nachmessung.
-- **Worktree-Agenten zweigen manchmal vom falschen Stand ab.** Der
-  Biometrie-Branch hätte die komplette Punkteart-Arbeit gelöscht (36 statt 12
-  Dateien). Vor dem Übernehmen `git diff --stat origin/main..HEAD` ansehen.
-- **Dokumentieren ersetzt Reparieren nicht.** Ich hatte die Zähler-Falle
-  ausführlich beschrieben — der eigentliche Fehler (B1) bestand seit dem
-  03.07. unbemerkt und wurde erst durch den Umbau behoben.
-- **Bestehende Tests können überholt sein, nicht falsch.** Mehrfach
-  vorgekommen: `'Admin bekommt 403'` schrieb eine Regel fest, die Simon
-  geändert hat. Angepasst mit Vermerk, nicht aufgeweicht.
-- **Das Register ist selbst eine Behauptung.** Beim Abarbeiten am 27.08.
-  stimmten drei Einträge nicht mehr mit dem Code überein: B1 und M4 waren
-  längst erledigt, M5 betraf **vier** Stellen mit drei Verhaltensweisen statt
-  der beschriebenen zwei. Und meine eigene Korrektur zu M4 war ebenfalls
-  falsch — sie beschrieb den Stand vor dem #93-Merge. **Vor dem Eintragen
-  von "erledigt" wie von "offen" am Code nachsehen**, auch beim eigenen
-  Vermerk von vor einer Stunde.
-- **Ein Wächtertest schützt nur vor der Schreibweise, die er kennt.** Der
-  Test gegen stilles Offline-Scheitern prüfte `if (!isOnline) return` und war
-  für `if (!networkMonitor.isOnline) return` blind — genau die Variante, die
-  M5 ausmachte. Bei solchen Mustertests lohnt die Frage, welche zweite
-  Schreibweise dasselbe bewirkt.
-- **`git filter-branch` und `rebase --onto` sind hier die falschen
-  Werkzeuge.** Ein Versuch, eine WIP-Commit-Nachricht zu glätten, schrieb 28
-  Commits neu, darunter bereits gemergte aus `main`. Mit
-  `git reset --hard <hash>` zurückgeholt. Eine unschöne Commit-Nachricht in
-  der Historie ist billiger als das.
-- **Der Testabbruch tritt weiter auf.** Bei #90 fiel ein Test in
-  `teamer.test.js` um; beim Wiederholen 72/72 grün. Erst wiederholen, dann
-  suchen.
+Der Umbau, den Simon als Nächstes will. **Kein Einzeiler:** Er ändert eine
+API-Antwortform, an der das Frontend hängt.
+
+### Was ist
+
+- **Konfi:** `utils/konfiBadgeProgress.js` liefert `{ available, earned,
+  stats }` (Zeile 303-305).
+- **Teamer:** `routes/teamer.js:270` rechnet **271 Zeilen inline** nach, mit
+  eigener Antwortform — flaches Array plus Zählwerte in HTTP-Headern.
+
+### Die Falle, die den Umbau teuer macht
+
+**Zwei Frontend-Stellen lesen den Header aus:**
+
+- `teamer/pages/TeamerBadgesPage.tsx:57`
+- `teamer/pages/TeamerDashboardPage.tsx:283`
+
+Beide holen `res.headers['x-badges-secret-total']`. Wer die Antwortform
+umstellt, muss diese beiden mitziehen — sonst verschwindet die Zahl der
+geheimen Abzeichen stillschweigend.
+
+### Der dritte Unterschied
+
+Der Teamer-Pfad hat die **"unerreichbar"-Ausblendung** des Konfi-Pfads nicht
+(`konfiBadgeProgress.js:154-183`). Vor dem Zusammenlegen klären, ob sie für
+Teamer:innen überhaupt gelten soll — die Kriterien sind andere
+(`teamer_year`, gezählte Teamer-Aktivitäten).
+
+### Empfehlung
+
+Erst messen, was die beiden Pfade tatsächlich unterschiedlich ausgeben
+(gleiche Daten, beide Endpunkte, Ausgaben vergleichen), dann umbauen. Sonst
+gleicht man Verhalten an, das absichtlich verschieden war.
+
+---
+
+## Was diesen Durchgang ausgemacht hat
+
+**Fünf Befunde, die als "praktisch folgenlos", "kosmetisch" oder als bloße
+Anzeige-Divergenz notiert waren, waren beim Nachmessen offene API-Wege.**
+Jedes Mal derselbe Grund: Die Oberfläche filtert, die Route nicht.
+
+| Befund | Notiert als | Gemessen |
+|---|---|---|
+| N1 | "praktisch vermutlich folgenlos" | Anmeldung zu Teamer-Termin **200**, zu abgesagtem **200** |
+| N3 | Anzeige-Divergenz beim Lesen | Konfi-Antrag auf Teamer-Aktivität **201**, in der Liste sichtbar |
+| Bonuspunkte | MITTEL | Bonus an fremden Jahrgang **201**, Eintrag angelegt |
+| B2b | "eigene Baustelle" | Chat-Push überschrieb alle anderen Zähler im App-Icon |
+| has_wrapped | NIEDRIG | Einstieg sichtbar (`true`), Abruf **404** |
+
+Beim sechsten (Benutzerseite Deep-Link) stimmte "kosmetisch" dagegen — dort
+hielt `requireOrgAdmin` serverseitig. **Der Unterschied lässt sich nicht raten,
+nur messen.**
+
+### Zwei wiederkehrende Muster
+
+- **Zwei Rechte an einer Variable.** Bei der Chat-Mitgliederliste war das Gate
+  zu eng (`isAdmin` deckte Liste *und* Umfragen ab), beim Team-Chat-Mülleimer
+  zu weit (`istLeitung` war für den Export gebaut). Wer so etwas findet:
+  trennen, nicht verengen — und die jeweils andere Hälfte mit einer Gegenprobe
+  festhalten.
+- **Dieselbe Frage, zwei richtige Antworten.** Bei N5 brauchte es kein
+  Freigabe-Gate (Snapshot und Freigabe entstehen in einer Transaktion), bei
+  `has_wrapped` sehr wohl (`Promise.allSettled` setzt die Freigabe auch bei
+  Fehlern). Beide am Code belegt. Nicht von einem auf den anderen schließen.
+
+---
+
+## Fallen, die neu dazugekommen sind
+
+- **`rbac.js:13` hält einen 30-Sekunden-User-Cache.** Ein `DELETE` auf
+  `user_jahrgang_assignments` ändert die Datenbank, nicht den Cache. Ein Test
+  dazu war **isoliert grün und im vollen Lauf rot** — gemessen: keine
+  Zuweisung in der DB, aber der Server sah weiter zwei Konfis. Lösung: einen
+  frisch angelegten User verwenden, den vorher niemand geladen hat.
+- **Gestapelte PRs nicht bauen.** PR #99 lief gegen einen `fix/`-Branch und
+  wurde beim Merge von dessen Basis **automatisch mitgeschlossen**, ohne
+  selbst gemergt zu werden. Wiedereröffnen ging nicht mehr; der Inhalt musste
+  als neuer PR gegen `main` gehen. Immer gegen `main` abzweigen.
+- **Additives Auflösen erzeugt Doppeleinträge.** Beim Auffrischen kollidieren
+  `BAUSTELLEN.md`-Zeilen so, dass derselbe Punkt einmal als `[ ]` und einmal
+  als `[x]` dasteht. **Nach jedem Auffrischen prüfen** — ein Skript dafür liegt
+  im Scratchpad (`auffrischen.sh`), es löst die Konflikte und meldet
+  Dopplungen.
+- **`git filter-branch` und `rebase --onto` sind hier die falschen Werkzeuge.**
+  Ein Versuch, eine WIP-Commit-Nachricht zu glätten, schrieb 28 Commits neu,
+  darunter bereits gemergte. Mit `git reset --hard <hash>` zurückgeholt.
+- **Die Generatoren ändern regelmäßig nur `lastmod` in `sitemap.xml`.** Kein
+  Drift — verwerfen statt mitcommitten.
+- **Test-DB und Docker laufen nicht über Sitzungen hinweg.** Nach einem
+  Neustart: `colima start`, dann
+  `docker compose -f docker-compose.test.yml up -d --wait` im `backend/`.
 
 ---
 
 ## Fallen, die weiter gelten
 
 - **Drei Ansichten**: `admin/`, `teamer/`, `konfi/`. Eine Änderung in nur
-  einem Baum ist für zwei Drittel der Nutzer:innen nicht gemacht. Die
-  belastbarste Erkenntnis aus zwei Berichten: **Wo Komponenten geteilt werden,
-  gibt es keine Lücken; wo kopiert wurde, driftet es.**
-- **Sporadischer Testabbruch** ("socket hang up", "Parse Error"). Vor dem
-  Reparieren eines roten Tests den Lauf **wiederholen**.
-- **Volle Backend-Suite lokal laufen lassen**, nicht nur die berührte Datei —
-  die RBAC-Matrix hat schon zweimal einen Guard-Wechsel mitbekommen, den ich
-  lokal nicht gesehen hatte.
-- **Containername:** `konfi_quest-postgres-1` (CLAUDE.md ist veraltet).
-- **Migrationstabelle:** `schema_migrations`, nicht `migrations`.
-- **Image-Tags sind SIEBEN Zeichen** (`git rev-parse --short=7`).
-- **bcrypt-Hashes nie durch die Shell reichen** — die `$`-Teile werden
-  gefressen, der Hash landet verstümmelt in der DB. Über eine SQL-Datei.
+  einem Baum ist für zwei Drittel der Nutzer:innen nicht gemacht.
+- **Ein Bericht ist eine Behauptung — das Register auch.** Beim Abarbeiten
+  stimmten drei Registereinträge nicht mehr mit dem Code überein, und eine
+  eigene Korrektur von vor einer Stunde war ebenfalls falsch (sie beschrieb
+  den Stand vor einem Merge). Vor dem Eintragen von "erledigt" wie von "offen"
+  am Code nachsehen.
+- **Ein Wächtertest schützt nur vor der Schreibweise, die er kennt.** Der Test
+  gegen stilles Offline-Scheitern prüfte `if (!isOnline) return` und war für
+  `if (!networkMonitor.isOnline) return` blind — genau die Variante, die M5
+  ausmachte.
+- **Sporadischer Testabbruch**: Vor dem Reparieren eines roten Tests den Lauf
+  wiederholen.
+- **Volle Backend-Suite lokal laufen lassen**, nicht nur die berührte Datei.
+- **Containername:** `konfi_quest-postgres-1`. **Migrationstabelle:**
+  `schema_migrations`. **Image-Tags:** sieben Zeichen.
+- **bcrypt-Hashes nie durch die Shell reichen** — über eine SQL-Datei.
 - **Keine Secrets ins Repo** — es ist öffentlich.
+
+---
+
+## Entscheidungen, die nicht verloren gehen dürfen
+
+Zusätzlich zu denen im nächtlichen Handoff:
+
+- **Der Server rechnet die App-Icon-Zahl** (B2b). Begründung gegen die
+  Alternative "Badge aus Pushes raus": Bei geschlossener App gibt es keinen
+  Client, und genau dann ist das Icon das Einzige, was jemand vor dem Öffnen
+  sieht.
+- **`super_admin` darf den Team-Chat nicht leeren.** Das Backend hatte recht,
+  nicht das Frontend — die Rolle ist für Org-*Verwaltung* zuständig, nicht für
+  das Löschen fremder Inhalte.
+- **Die Mitgliederliste im Chat sehen alle**, Umfragen anlegen bleibt bei der
+  Leitung. Die Verwaltungsaktionen im Modal hängen an einem eigenen Gate.
+- **Material-Tags sind entfernt.** Vor dem Löschen gemessen: 1 Tag, 0
+  Zuordnungen.
+- **Der `LEFT JOIN` bei Konfi-Anträgen bleibt** (N3). Beim Teamer fällt ein
+  Antrag zu einer gelöschten Aktivität aus der Liste, beim Konfi bleibt er
+  stehen. Anzeigen ist besser als Verlieren. Wer angleicht, stellt den
+  **Teamer**-Weg um.
+- **N6: Simon will bei jedem Punkt gefragt werden.**
 
 ---
 
 ## Werkzeuge
 
 - `node scripts/drei-ansichten.mjs` — Leitung, Teamer:in und Konfi
-  nebeneinander, angemeldet. `--url https://konfi-quest.de` für Produktion.
+  nebeneinander, angemeldet.
 - `node scripts/screenshots.mjs` — 19 Bildschirmfotos aus der Demo-Gemeinde.
 - `node scripts/verwaiste-dateien.mjs` — findet Upload-Dateien ohne Datensatz.
-  Ohne `--loeschen` wird nur berichtet; braucht `DATABASE_URL`.
 
 Alle drei brauchen `source ~/.claude/secrets.env`.
+
+Nach **jedem** Merge die drei Doku-Generatoren laufen lassen:
+
+    node scripts/build-handbuch.mjs
+    node scripts/build-api-docs.mjs
+    node scripts/build-openapi.mjs
 
 ---
 
