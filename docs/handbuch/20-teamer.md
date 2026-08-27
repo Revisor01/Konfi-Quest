@@ -74,8 +74,14 @@ Du arbeitest hier genauso wie die Leitung — begrenzt auf deine zugewiesenen
 Jahrgänge. Du kannst:
 
 - Challenges **anlegen und bearbeiten**
+- Challenges **löschen**
 - Beiträge **freigeben**, nachträglich **anonymisieren** oder **ausblenden**
 - **selbst mitmachen** und einen eigenen Beitrag einreichen
+
+Beim Löschen unterscheidet die App: Einen Entwurf, an dem noch niemand
+mitgemacht hat, entfernst du direkt. Läuft die Challenge schon und es gibt
+Beiträge, fragt die App noch einmal nach — und löscht dann alle Beiträge und
+hochgeladenen Dateien mit. Das lässt sich nicht rückgängig machen.
 
 Anonymisieren lässt sich nicht zurücknehmen. Ihr im Team seht weiterhin, von
 wem ein Beitrag stammt — die Anonymität gilt gegenüber der Gruppe.

@@ -708,7 +708,37 @@ falschen Teamer-Erklärtexte (PR #83).
       fällt sie, wird aus der Ansicht eine Datenschutzlücke.
       Nebenbei gehärtet: Der History-Test hatte ein `if (res.body.length > 0)`
       und wäre bei kaputter Generierung still grün geblieben.
-- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.**
+- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.** Der Bericht
+      listet ACHT eigenständige Punkte. Der vierte war der einzige, der zu
+      **widersprüchlichen Angaben** führte — er ist behoben, die übrigen
+      sieben sind Sach- und Designfragen und bleiben offen.
+      - [x] **"Vergangen"-Berechnung** (27.08.2026). Nachgemessen: Ob ein
+            Termin vorbei ist, wurde an **elf Stellen** einzeln gerechnet —
+            und nur an **einer** davon richtig. Zehn nutzten allein
+            `event_date` (den START), obwohl mehrtägige Termine erst nach
+            `event_end_time` vorbei sind. Bei einer Freizeit vom 10. bis 14.
+            sagte die Konfi-Liste am 11. noch "läuft", die Detailansicht
+            desselben Termins schon "vergangen".
+            Die Begründung stand bereits zweimal im Code
+            (`konfi/views/EventsView.tsx`, `admin/pages/AdminEventsPage.tsx`)
+            — nur eben nicht an den anderen neun Stellen. Jetzt einmal in
+            `shared/eventFormatting.ts` als `istVergangen()`/`eventEnde()`,
+            alle elf Stellen darauf umgestellt. Auch die beiden lokalen
+            `eventEndDate`-Kopien (gleiche Logik, anderer Name) zeigen jetzt
+            dorthin.
+      - [ ] Anmeldezeitraum fehlt nur im Teamer-Detail.
+      - [ ] Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.
+      - [ ] Einstieg in den Event-Chat hat nur die Leitung, obwohl Konfis und
+            Teamer beim Buchen automatisch Mitglieder werden — sie finden den
+            Raum nur über die Chat-Übersicht. *Sachfrage: gewollt?*
+      - [ ] Admin-Detail berechnet `registration_status` lokal und weicht von
+            Backend und eigener Liste ab.
+      - [ ] Punktezeile: drei verschiedene Bedingungen — nur das Admin-Detail
+            zeigt "Punkte 0".
+      - [ ] Abmeldefrist (2 Tage) hartcodiert und nur im Konfi-Zweig, keine
+            Einstellung, für die Leitung unsichtbar.
+      - [ ] `checkin_window` wird nur im Formular gesetzt, in keiner der drei
+            Detailansichten angezeigt.
 - [x] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
       `AdminChallengesPage.tsx`.** ERLEDIGT 27.08.2026 (Simons Entscheidung:
       zusammenführen). Gemessen wichen die beiden in **24 von rund 197
@@ -762,7 +792,13 @@ falschen Teamer-Erklärtexte (PR #83).
 
 ### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)
 
-- [ ] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.**
+- [x] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.** ERLEDIGT
+      27.08.2026. `90-chat.md:39` sagte "Nur die Leitung legt Gruppen an",
+      `20-teamer.md:34` "Du kannst Gruppenchats anlegen". Am Code geprüft:
+      Das Teamer-Kapitel hatte recht — `chat.js:442-450` beschränkt nur
+      **Konfis** auf Einzelchats. `90-chat.md` korrigiert; dabei gleich
+      ergänzt, dass Mitglieder nachtragen der Leitung vorbehalten bleibt und
+      die Mitgliederliste allen offensteht.
 - [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
 - [ ] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
 - [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
@@ -782,11 +818,30 @@ falschen Teamer-Erklärtexte (PR #83).
       Leitung — sonst hätte das Öffnen der Liste versehentlich die Verwaltung
       mit freigegeben. Der Endpunkt liefert Anzeigename, Rolle, Jahrgang und
       Beitrittsdatum, keine Kontaktdaten.
+
+- [x] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
+      ERLEDIGT 27.08.2026. Bestätigt: `DELETE /challenges/admin/:id` läuft
+      unter `requireTeamer` (`challenges.js:1408`), die Oberfläche bietet es
+      an — das Handbuch nannte es nicht. Ergänzt, samt dem Unterschied
+      zwischen Entwurf (direkt weg) und laufender Challenge (Rückfrage, dann
+      Beiträge und Dateien mit).
+- [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
+      verspricht sie Konfis.
 - [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.*
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
-- [ ] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
-      das Handbuch beschreibt sie trotzdem im Detail.
+- [x] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
+      das Handbuch beschreibt sie trotzdem im Detail. ERLEDIGT 27.08.2026.
+      Nachgeprüft: `assign-activity` hat **null Aufrufer** im Frontend; es
+      gibt nur den Weg über die Konfi-Verwaltung
+      (`ActivityModal.tsx:135`). Das Handbuch stellte beide Wege in einer
+      Tabelle gegenüber und **empfahl sogar den nicht existierenden**
+      ("nimm den Weg über die Aktivitäten-Seite"). Abschnitt auf den echten
+      Weg umgeschrieben; die Angaben dazu (Kommentar ja, Abzeichen ja, Push
+      nein, Level nein) am Code gegengeprüft und bestätigt.
+      **Hinweis:** Der Endpunkt bleibt bestehen. Bekommt die Teamer-Ansicht
+      je eine Punktevergabe, ist er der Weg dorthin — dann gilt auch der
+      Jahrgangs-Check, den er im Gegensatz zu den Bonuspunkten schon hat.
 
 ### Aus dem Dashboard/Profil-Durchgang
 

@@ -215,6 +215,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   sie allen versprach. Mitglieder entfernen oder hinzufügen kann weiterhin
   nur die Leitung.
 
+- Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
+  vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
+  Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
+  noch "läuft", in der Detailansicht schon "vergangen".
+
 - Wird eine Konfi zur Teamer:in befördert, bleibt die gewählte
   Bibelübersetzung für die Tageslosung erhalten. Bisher stand danach wieder
   die Lutherbibel eingestellt.
