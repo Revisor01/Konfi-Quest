@@ -614,7 +614,6 @@ falschen Teamer-Erklärtexte (PR #83).
       TokenStore trugen die alte Adresse weiter, bis man sich neu anmeldete.
       Jetzt derselbe Weg wie in den anderen beiden Bäumen, mit Gegenprobe für
       Teamer und Leitung abgesichert.
-
 ### NIEDRIG aus dem Drei-Ansichten-Bericht
 
 - [ ] **N1 — Zwei Buchungspfade mit unterschiedlichen Guards.**
@@ -657,8 +656,9 @@ falschen Teamer-Erklärtexte (PR #83).
       (PR #83).
 - [x] **DM2 — Mitmachen-Erklärung zeigte Teamer:innen den Slide der
       Leitung.** ERLEDIGT (PR #83).
-- [ ] **KonfiOnboardingModal ist eine 279-Zeilen-Vollkopie der geteilten
-      OnboardingTour.** *Auftrag Simon: angleichen.*
+- [x] **KonfiOnboardingModal nutzt die geteilte OnboardingTour.** ERLEDIGT
+      (PR #93). War eine Render-Vollkopie; jetzt nur noch die sieben
+      Konfi-Slides, 85 statt 279 Zeilen.
 - [ ] **super_admin fällt im Chat zwischen drei verschieden definierte
       "Leitung"-Gates** — sieht den Mülleimer, bekommt vom Backend 403.
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
@@ -677,6 +677,7 @@ falschen Teamer-Erklärtexte (PR #83).
       Konfi-Seite wurde nicht nachgezogen.
       **Wichtig:** Die Dokumentation der Falle (siehe oben) hat diesen Fehler
       NICHT verhindert; er bestand schon vorher unbemerkt.
+      Deshalb war der Umbau richtig statt nur ein Kommentar.
 - [ ] **B2 — Das App-Icon hat vier Schreiber mit drei Semantiken.** Client
       setzt `totalBadgeCount` ohne `newBadgesCount`, Chat-Pushes die exakte
       Chat-Zahl, alle anderen Pushes hart `1`, der 5-Minuten-Hintergrund-Sync
