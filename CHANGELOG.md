@@ -210,6 +210,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- In Gruppenchats sehen jetzt alle Mitglieder, wer sonst noch dabei ist —
+  bisher war die Mitgliederliste der Leitung vorbehalten, obwohl das Handbuch
+  sie allen versprach. Mitglieder entfernen oder hinzufügen kann weiterhin
+  nur die Leitung.
+
 - Wird eine Konfi zur Teamer:in befördert, bleibt die gewählte
   Bibelübersetzung für die Tageslosung erhalten. Bisher stand danach wieder
   die Lutherbibel eingestellt.

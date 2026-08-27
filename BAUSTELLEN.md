@@ -765,8 +765,23 @@ falschen Teamer-Erklärtexte (PR #83).
 - [ ] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.**
 - [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
 - [ ] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
-- [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
-      verspricht sie Konfis.
+- [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
+      verspricht sie Konfis. ERLEDIGT 27.08.2026 (Simons Entscheidung:
+      freigeben, Gates trennen). Alle drei Teile des Befunds bestätigt: Das
+      Backend gibt die Teilnehmerliste seit jeher jedem Raum-Mitglied frei
+      (`chat.js:1336`, geprüft wird nur `darfRaumOeffnen`), der Knopf hing am
+      `isAdmin`-Gate — **zusammen mit "Umfrage erstellen", also zwei
+      verschiedene Rechte an einem Schalter** — und das Handbuch verspricht
+      sie Konfis ausdrücklich (`10-konfis.md:46`).
+      Jetzt sehen alle Raum-Mitglieder die Liste, Umfragen anlegen bleibt bei
+      der Leitung. In Einzelchats bleibt der Knopf weg (dort weiß man, wer
+      dabei ist).
+      **Vor dem Freigeben geprüft:** Das Modal enthält auch Verwaltungsaktionen
+      (entfernen, hinzufügen). Die hängen an einem eigenen Gate
+      (`canManageMembers`, `MembersModal.tsx:271`) und bleiben bei der
+      Leitung — sonst hätte das Öffnen der Liste versehentlich die Verwaltung
+      mit freigegeben. Der Endpunkt liefert Anzeigename, Rolle, Jahrgang und
+      Beitrittsdatum, keine Kontaktdaten.
 - [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.*
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
