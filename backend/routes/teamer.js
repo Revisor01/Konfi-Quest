@@ -1234,7 +1234,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { translation } = req.body;
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
+      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
+      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
+      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
+      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
+      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
       if (!validTranslations.includes(translation)) {
         return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: validTranslations });
       }
