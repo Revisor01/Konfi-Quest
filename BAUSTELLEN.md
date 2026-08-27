@@ -709,8 +709,38 @@ falschen Teamer-Erklärtexte (PR #83).
       Nebenbei gehärtet: Der History-Test hatte ein `if (res.body.length > 0)`
       und wäre bei kaputter Generierung still grün geblieben.
 - [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.**
-- [ ] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
-      `AdminChallengesPage.tsx`.** Strukturbefund.
+- [x] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
+      `AdminChallengesPage.tsx`.** ERLEDIGT 27.08.2026 (Simons Entscheidung:
+      zusammenführen). Gemessen wichen die beiden in **24 von rund 197
+      Zeilen** ab, größtenteils Kommentare; echte Unterschiede waren nur
+      Cache-Key, Modal-ID, Importpfade und der Komponentenname. View und
+      Modals waren ohnehin schon geteilt.
+      Die Seite steht jetzt einmal in `shared/ChallengesPage.tsx`; die beiden
+      Dateien bleiben als dünne Hüllen, damit Routen und Importpfade
+      unverändert sind. Ein Test hält fest, dass sie dünn BLEIBEN — sonst
+      wächst die Kopie unbemerkt nach.
+      **Zwei Dinge mussten getrennt bleiben:** der Cache-Key (der
+      Teamer-Schlüssel hängt zusätzlich an der Person, weil das Backend nach
+      zugewiesenen Jahrgängen filtert — zwei Teamer:innen derselben
+      Organisation sehen NICHT dasselbe) und die Modal-Seiten-ID (sonst
+      vermischen sich die Modal-Stapel). Beides durch eigene Tests
+      abgesichert.
+      Aus demselben Befund mit erledigt: `PushNotificationSettings` wurde in
+      `MainTabs.tsx` importiert und nirgends gerendert — Import entfernt.
+      **Die Komponente selbst (238 Zeilen) ist damit nirgends mehr
+      referenziert** und bewusst stehen gelassen, statt sie ungefragt zu
+      löschen.
+
+- [ ] **Org-weite Wartelisten-Einstellungen sind tote Felder.** Aus N7
+      mitgeprüft und bestätigt: `waitlist_enabled` und `max_waitlist_size`
+      werden in `settings.js:87-93,170-183` geschrieben und gelesen, aber von
+      **keiner Buchungslogik** verwendet — die Wartelisten-Logik hängt
+      ausschließlich an den gleichnamigen Feldern des jeweiligen Termins
+      (`events.waitlist_enabled`). Nachgesehen: Es gibt dafür auch **keine
+      Oberfläche**. Also Datenbank und API ohne jede Wirkung.
+      Zwei Wege: anschließen (als Vorgabe für neue Termine) oder entfernen.
+      Beides ist eine Entscheidung, keine Reparatur — deshalb hier nur
+      festgehalten.
 - [ ] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
 
 ### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)

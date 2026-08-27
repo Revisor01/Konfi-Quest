@@ -52,7 +52,6 @@ import AdminInvitePage from '../admin/pages/AdminInvitePage';
 import AdminChallengesPage from '../admin/pages/AdminChallengesPage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
-import PushNotificationSettings from '../common/PushNotificationSettings';
 import KonfiDetailView from '../admin/views/KonfiDetailView';
 import EventDetailView from '../admin/views/EventDetailView';
 import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
