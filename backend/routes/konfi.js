@@ -6,7 +6,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { fetchTageslosung } = require('../services/losungService');
+const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
@@ -1484,13 +1484,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Statischer Fallback
       res.json({
         success: true,
-        data: {
-          date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-          losung: { text: "Der HERR ist mein Hirte, mir wird nichts mangeln.", reference: "Psalm 23,1", testament: "AT" },
-          lehrtext: { text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.", reference: "Johannes 10,11", testament: "NT" },
-          translation: { code: "LUT", name: "Lutherbibel 2017", language: "German" },
-          source: "Fallback"
-        },
+        data: tageslosungFallback(),
         fallback: true,
         error: 'Losungen API nicht erreichbar - Fallback verwendet'
       });

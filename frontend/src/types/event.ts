@@ -48,6 +48,11 @@ export interface Event {
   registration_closes_at?: string;
   registered_count: number;
   registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
+  // Eigener Status fuer das Teamer-Kontingent (Migration 120). registration_status
+  // rechnet ausschliesslich mit Konfi-Zahlen -- die beiden Kontingente sind
+  // unabhaengig voneinander. 'none' heisst: An diesem Termin werden gar keine
+  // Teamer:innen gesucht. Fehlt der Wert, ist die Antwort aelter als 27.08.2026.
+  teamer_registration_status?: 'none' | 'upcoming' | 'open' | 'waitlist' | 'closed' | 'cancelled';
   created_at?: string;
   is_registered?: boolean;
   registered?: boolean;

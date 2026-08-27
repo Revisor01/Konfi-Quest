@@ -210,6 +210,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
   die Teamer-Ansichten.
 
+- Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
+  Ersatztext wie Konfis, statt einer Fehlermeldung.
+
+- Termine: Teamer:innen sehen jetzt schon in der Liste, ob das Team-Kontingent
+  voll ist — bisher stand dort "Offen", und der Platzmangel zeigte sich erst
+  beim Anmelden. Auch die Zahl der Wartenden steht jetzt auf der Terminkarte.
+
 - Die Zahl neuer Abzeichen verschwindet jetzt sofort, wenn man die
   Abzeichen-Seite öffnet — bisher blieb sie bis zum nächsten App-Start stehen.
   Das Symbol auf dem App-Icon zählt neue Abzeichen jetzt ebenfalls mit.
