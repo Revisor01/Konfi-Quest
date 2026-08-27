@@ -867,8 +867,20 @@ falschen Teamer-Erklärtexte (PR #83).
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
-- [ ] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
-      kaputtem JSON relevant).
+- [x] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
+      kaputtem JSON relevant). ERLEDIGT 27.08.2026. Bestätigt: Es fehlten
+      `challenges` und `konfispruch` — beide längst Teil der Dashboards. Wer
+      in diesen Fall geriete, verlöre sie stillschweigend.
+      **Warum es überhaupt veralten konnte:** Die Listen greifen nur, wenn der
+      gespeicherte Wert kein gültiges JSON ist, also praktisch nie. Genau
+      deshalb fiel es nicht auf.
+      Jetzt an die Dashboard-Fallbacks angeglichen (`konfi.js:306`,
+      `teamer.js:960`) — gespiegelt, nicht neu erfunden. Ein Test hält die
+      Übereinstimmung fest und prüft dabei nur die *Menge* der Abschnitte,
+      nicht ihre Reihenfolge; die ist Geschmackssache. Gegenprobe: Konfis und
+      Teamer:innen behalten unterschiedliche Listen — angleichen heißt nicht
+      gleichmachen.
+      **Kein CHANGELOG-Eintrag:** Der Fall tritt praktisch nie ein.
 
 ### Aus dem Abzeichen-Zähler-Bericht (27.08.)
 
