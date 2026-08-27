@@ -401,6 +401,12 @@ class BackgroundService {
 
   /**
    * Sendet Event-Erinnerungen (1 Tag und 1 Stunde vorher)
+   *
+   * Befund H1, 27.08.2026: Beide Queries filtern abgesagte Termine aus. Eine
+   * Absage setzt nur events.cancelled und laesst die Buchungen auf 'confirmed'
+   * stehen — ohne den Filter kam nach "Leider abgesagt" am Vortag trotzdem
+   * "Morgen: Event!". `IS NOT TRUE` statt `= false`, damit Altbestand mit
+   * cancelled = NULL weiterhin erinnert wird und nicht still ausfaellt.
    */
   static async sendEventReminders(db) {
     try {
@@ -416,6 +422,7 @@ class BackgroundService {
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
+          AND e.cancelled IS NOT TRUE
           AND e.event_date::date = $1::date
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
@@ -462,6 +469,7 @@ class BackgroundService {
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
+          AND e.cancelled IS NOT TRUE
           AND e.event_date BETWEEN $1 AND $2
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
@@ -554,12 +562,17 @@ class BackgroundService {
       //
       // Geloeschte Konten zaehlen nicht mit: Sonst erinnerte die App ewig an
       // eine Buchung, die niemand mehr verbuchen kann.
+      //
+      // Befund H1, 27.08.2026: Abgesagte Termine ebenfalls nicht — bei einem
+      // abgesagten Termin gibt es nichts zu verbuchen, die Erinnerung an die
+      // Leitung waere reines Rauschen.
       const query = `
         SELECT e.organization_id, COUNT(DISTINCT e.id) as pending_count
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
         WHERE e.event_date < CURRENT_DATE
+          AND e.cancelled IS NOT TRUE
           AND eb.status = 'confirmed'
           AND eb.attendance_status IS NULL
         GROUP BY e.organization_id
