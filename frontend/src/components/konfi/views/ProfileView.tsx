@@ -40,6 +40,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
@@ -127,7 +128,7 @@ interface ProfileViewProps {
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
-  const { user, setError, signOut } = useApp();
+  const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
@@ -238,9 +239,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   // Modal with useIonModal Hook for Email Edit
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModal(),
-    onSuccess: () => {
+    onSuccess: async () => {
       dismissEmailModal();
       onReload();
+      // Befund M9: Ohne diese Aktualisierung blieb die alte Adresse im
+      // User-Context und im TokenStore stehen, bis man sich neu anmeldete.
+      // Teamer- und Leitungs-Profil machen es seit jeher so.
+      try {
+        const response = await api.get('/auth/me');
+        if (user) {
+          const updatedUser = { ...user, email: response.data.email };
+          await setTokenStoreUser(updatedUser);
+          setUser(updatedUser);
+        }
+      } catch (err) {
+        console.error('Error refreshing user:', err);
+      }
     },
     // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
     variante: 'purple'

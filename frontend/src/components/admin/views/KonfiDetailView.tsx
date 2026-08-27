@@ -10,13 +10,17 @@ import {
   IonIcon,
   IonRefresher,
   IonRefresherContent,
+  IonList,
+  IonCard,
+  IonCardContent,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
 import {
   arrowBack,
   key,
-  close
+  close,
+  timeOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -33,6 +37,8 @@ import {
 } from './KonfiDetailSections';
 import type { Konfi, Activity } from './KonfiDetailSections';
 import KonfiBadgesSection from './KonfiBadgesSection';
+import WrappedModal from '../../wrapped/WrappedModal';
+import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface KonfiDetailViewProps {
@@ -195,6 +201,54 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       loadKonfiData();
     }
   });
+
+  // Befund N5: Der Endpunkt /wrapped/history/:userId erlaubt admin und
+  // org_admin seit jeher den Zugriff auf die Snapshots der eigenen
+  // Organisation (wrapped.js:660-673), im Leitungs-Baum rief ihn aber
+  // niemand auf — halb genutzter Endpunkt.
+  // Kein zusaetzliches Freigabe-Gate noetig: Snapshot-Erzeugung und
+  // wrapped_released_at laufen in derselben Transaktion (wrapped.js:513-537),
+  // ein Konfi-Snapshot existiert also nie vor der Freigabe. Die Leitung sieht
+  // hier nichts, was die Konfi nicht selbst schon sehen kann.
+  const [konfiWrapped, setKonfiWrapped] = useState<WrappedHistoryEntry | null>(null);
+
+  useEffect(() => {
+    if (isTeamer) {
+      setKonfiWrapped(null);
+      return;
+    }
+    let abgebrochen = false;
+    api.get(`/wrapped/history/${konfiId}`)
+      .then(res => {
+        if (abgebrochen) return;
+        const entries: WrappedHistoryEntry[] = res.data || [];
+        const konfiEntry = entries.find(e => e.wrapped_type === 'konfi');
+        setKonfiWrapped(konfiEntry || null);
+      })
+      .catch(() => {
+        // Kein Wrapped vorhanden oder offline: Die Karte bleibt einfach weg.
+        if (!abgebrochen) setKonfiWrapped(null);
+      });
+    return () => { abgebrochen = true; };
+  }, [konfiId, isTeamer]);
+
+  const [wrappedModalData, setWrappedModalData] = useState<WrappedHistoryEntry | null>(null);
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => {
+      setWrappedModalData(null);
+      dismissWrappedModal();
+    },
+    displayName: currentKonfi?.display_name || currentKonfi?.name || '',
+    wrappedType: 'konfi' as const,
+    initialData: wrappedModalData?.data,
+    initialYear: wrappedModalData?.year
+  });
+
+  useEffect(() => {
+    if (wrappedModalData) {
+      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+    }
+  }, [wrappedModalData]);
 
   // Anwesenheitsmatrix-Modal (geoeffnet aus der Konfirmations-Karte, auf den Jahrgang des Konfis vorausgewaehlt)
   const konfiJahrgang = currentKonfi?.jahrgang_id
@@ -596,6 +650,40 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             eventPoints={eventPoints}
             currentKonfi={currentKonfi}
           />
+        )}
+
+        {/* Jahresrueckblick der Konfi (Befund N5). Erscheint nur, wenn ein
+            freigegebener Snapshot existiert — sonst bleibt die Karte weg. */}
+        {!isTeamer && konfiWrapped && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div
+                  className="app-list-item"
+                  style={{ width: '100%', cursor: 'pointer', borderLeftColor: 'var(--app-color-konfis)' }}
+                  onClick={() => setWrappedModalData(konfiWrapped)}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-konfis)' }}>
+                        <IonIcon icon={timeOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">
+                          Jahresrückblick {konfiWrapped.year}
+                        </div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">
+                            Der Rückblick, den diese Konfi sieht
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Badges der Konfis — bei Teamer:innen steht der Abschnitt weiter
