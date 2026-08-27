@@ -87,10 +87,24 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   } = useOnboardingWithUpdateOnce('admin_onboarding_seen', user?.id);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
   
+  // Befund aus dem Rollen-Bericht (26.08.2026): Ein Admin ohne
+  // Jahrgangs-Zuweisung sah eine leere Liste mit dem Text "Noch keine Konfis
+  // angelegt" -- obwohl es Konfis gibt und nur die Zuweisung fehlt. Wer frisch
+  // angelegt wurde, hielt die App fuer kaputt.
+  //
+  // Das Verhalten bleibt (Simons Entscheidung 26.08.), nur der Grund wird
+  // sichtbar. Der Server meldet ihn per Header
+  // (konfi-management.js), damit die Antwort ein Array bleibt.
+  const [ohneJahrgang, setOhneJahrgang] = useState(false);
+
   // Offline-Query: Konfis
   const { data: konfis, loading: konfisLoading, refresh: refreshKonfis, refreshLive: refreshKonfisLive } = useOfflineQuery<Konfi[]>(
     'admin:konfis:' + user?.organization_id,
-    async () => { const res = await api.get('/admin/konfis'); return res.data; },
+    async () => {
+      const res = await api.get('/admin/konfis');
+      setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
+      return res.data;
+    },
     { ttl: CACHE_TTL.KONFIS }
   );
 
@@ -403,6 +417,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             onDeleteKonfi={handleDeleteKonfi}
             onDeleteTeamer={handleDeleteTeamer}
             selectedKonfiId={selectedKonfiId}
+            ohneJahrgang={ohneJahrgang}
           />
         )}
       </IonContent>

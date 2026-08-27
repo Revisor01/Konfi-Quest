@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ist einer Leitungsperson noch kein Jahrgang zugewiesen, sagt die leere
+  Konfi-Liste das jetzt auch. Bisher stand dort "Noch keine Konfis angelegt",
+  obwohl es Konfis gibt.
+
 - Der Einstieg zum Jahresrückblick erscheint nur noch, wenn der Rückblick
   wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
   der Einstieg bisher ins Leere.
