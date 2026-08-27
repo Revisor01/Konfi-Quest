@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Konfis können sich nicht mehr zu Terminen anmelden, die nur für
+  Teamer:innen gedacht sind oder die abgesagt wurden. Wer bereits angemeldet
+  war, kann sich von einem abgesagten Termin weiterhin abmelden.
+
 - Ändert eine Konfi ihre E-Mail-Adresse, wird die neue Adresse sofort überall
   in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
   stehen.

@@ -1607,6 +1607,25 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
+      // Befund N1 (27.08.2026): Diese Route hatte weder den teamer_only- noch
+      // den cancelled-Guard, die der regulaere Weg seit jeher hat
+      // (events.js:1666 bzw. teamer.js:1314). Nachgemessen: Beide Anmeldungen
+      // lieferten 200 -- eine Konfi konnte sich per API zu einem reinen
+      // Teamer-Termin UND zu einem abgesagten Termin anmelden. Ueber die
+      // Oberflaeche nicht erreichbar (die Liste filtert teamer_only heraus,
+      // events.js:254-256), per API aber offen.
+      if (event.teamer_only) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Dieser Termin ist nur für Teamer:innen' });
+      }
+
+      if (event.cancelled) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+      }
+
       // Registrierungsfenster prüfen
       const regCheck = validateRegistrationWindow(event);
       if (!regCheck.valid) {

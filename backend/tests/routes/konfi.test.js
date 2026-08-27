@@ -1434,4 +1434,100 @@ describe('Konfi Routes', () => {
     });
   });
 
+  // ================================================================
+  // Befund N1 (27.08.2026): Guards der Konfi-Buchungsroute
+  //
+  // POST /konfi/events/:id/register hatte weder den teamer_only- noch den
+  // cancelled-Guard, die der regulaere Weg seit jeher hat (events.js:1666
+  // bzw. teamer.js:1314).
+  //
+  // Nachgemessen, bevor es repariert wurde: BEIDE Anmeldungen lieferten 200.
+  // Eine Konfi konnte sich per API zu einem reinen Teamer-Termin und zu
+  // einem abgesagten Termin anmelden. Der Bericht hielt das fuer "praktisch
+  // vermutlich folgenlos" -- das gilt nur, solange niemand die API direkt
+  // anspricht. Ueber die Oberflaeche ist es nicht erreichbar, weil die
+  // Terminliste teamer_only fuer Konfis herausfiltert (events.js:254-256).
+  // ================================================================
+  describe('N1: Guards der Konfi-Anmeldung', () => {
+    const terminAnlegen = async (zusatzSpalte, zusatzWert) => {
+      const extraSpalte = zusatzSpalte ? `, ${zusatzSpalte}` : '';
+      const extraWert = zusatzSpalte ? ', $4' : '';
+      const werte = ['Testtermin N1', 10, ORGS.testGemeinde.id];
+      if (zusatzSpalte) werte.push(zusatzWert);
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, max_participants, organization_id,
+                             registration_opens_at, registration_closes_at${extraSpalte})
+         VALUES ($1, NOW() + interval '7 days', $2, $3,
+                 NOW() - interval '1 day', NOW() + interval '5 days'${extraWert})
+         RETURNING id`,
+        werte
+      );
+      return event.id;
+    };
+
+    const anmelden = (eventId) =>
+      request(app)
+        .post(`/api/konfi/events/${eventId}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({});
+
+    it('VERBOTEN: Anmeldung zu einem reinen Teamer-Termin', async () => {
+      const id = await terminAnlegen('teamer_only', true);
+      const res = await anmelden(id);
+
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM event_bookings WHERE event_id = $1',
+        [id]
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('VERBOTEN: Anmeldung zu einem abgesagten Termin', async () => {
+      const id = await terminAnlegen('cancelled', true);
+      const res = await anmelden(id);
+
+      expect(res.status).toBe(400);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM event_bookings WHERE event_id = $1',
+        [id]
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('ERLAUBT: Anmeldung zu einem regulaeren Termin geht weiterhin', async () => {
+      // Gegenprobe -- die beiden Guards duerfen den normalen Weg nicht
+      // mitnehmen.
+      const id = await terminAnlegen(null, null);
+      const res = await anmelden(id);
+
+      // 200, nicht 201: Diese Route antwortet mit res.json() ohne
+      // Statuscode (konfi.js:1710) -- anders als POST /konfi/requests.
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [id, USERS.konfi1.id]
+      );
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    it('Abmelden von einem abgesagten Termin bleibt moeglich', async () => {
+      // Wichtig: Der cancelled-Guard sitzt nur im POST. Wer schon angemeldet
+      // war, als der Termin abgesagt wurde, muss sich noch austragen koennen
+      // -- sonst haette die Reparatur Angemeldete eingesperrt.
+      const id = await terminAnlegen(null, null);
+      await anmelden(id);
+      await db.query('UPDATE events SET cancelled = true WHERE id = $1', [id]);
+
+      const res = await request(app)
+        .delete(`/api/konfi/events/${id}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+    });
+  });
+
 });
