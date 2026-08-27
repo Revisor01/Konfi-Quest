@@ -894,8 +894,20 @@ falschen Teamer-Erklärtexte (PR #83).
 - [x] **KonfiOnboardingModal nutzt die geteilte OnboardingTour.** ERLEDIGT
       (PR #93). War eine Render-Vollkopie; jetzt nur noch die sieben
       Konfi-Slides, 85 statt 279 Zeilen.
-- [ ] **super_admin fällt im Chat zwischen drei verschieden definierte
+- [x] **super_admin fällt im Chat zwischen drei verschieden definierte
       "Leitung"-Gates** — sieht den Mülleimer, bekommt vom Backend 403.
+      ERLEDIGT 27.08.2026. Ursache am Code nachgesehen: `istLeitung` wurde für
+      den **Export** gebaut (dort ist `super_admin` richtig) und dann für den
+      Mülleimer mitbenutzt — **zwei Rechte an einer Variable**, dasselbe
+      Muster wie bei der Mitgliederliste im Chat.
+      **Das Backend hat recht**, nicht das Frontend: `chat.js:2304-2305` lässt
+      beim Leeren nur `admin` und `org_admin` durch, und das passt zur Rolle —
+      `super_admin` ist organisationsübergreifend und für die Org-*Verwaltung*
+      zuständig (`rbac.js:57`); Inhalte einer fremden Gemeinde zu löschen
+      gehört nicht dazu.
+      Eigenes, engeres Gate für den Mülleimer. Der Export behält
+      `super_admin` (eigene Gegenprobe) — das Trennen war der Punkt, nicht das
+      Verengen von beidem.
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
