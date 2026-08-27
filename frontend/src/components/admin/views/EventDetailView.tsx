@@ -15,7 +15,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { parseLocalTime, getLocalNow } from '../../../utils/dateUtils';
-import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime } from '../../shared';
+import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
@@ -270,7 +270,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const upcoming = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
 
     if (!eventData) return events;
-    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isPastEvent = istVergangen(eventData);
     const isKonfirmationEvent = eventData.is_konfirmation;
     const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
@@ -291,7 +291,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const getStatusText = () => {
     if (!eventData) return 'Event';
-    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isPastEvent = istVergangen(eventData);
     const isKonfirmationEvent = eventData.is_konfirmation;
     const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&

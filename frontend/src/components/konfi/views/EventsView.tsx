@@ -31,7 +31,7 @@ import {
   filterOutline,
   infinite
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
@@ -149,7 +149,9 @@ const EventsView: React.FC<EventsViewProps> = ({
   // Berechne Status-Infos für ein Event
   const getEventStatusInfo = (event: Event) => {
     // Mehrtaegige Events sind erst nach ihrem Ende (event_end_time) vorbei.
-    const isPastEvent = new Date(event.event_end_time || event.event_date) < new Date();
+    // Diese Stelle war bis zum 27.08.2026 die EINZIGE, die das richtig machte
+    // (Befund N6) — jetzt rechnen alle elf ueber istVergangen().
+    const isPastEvent = istVergangen(event);
     const isParticipated = isPastEvent && event.is_registered;
     const attendanceStatus = event.attendance_status;
     // Warteliste: booking_status kann 'waitlist' oder 'pending' sein (Backend sendet beides)

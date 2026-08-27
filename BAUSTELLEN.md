@@ -708,7 +708,37 @@ falschen Teamer-Erklärtexte (PR #83).
       fällt sie, wird aus der Ansicht eine Datenschutzlücke.
       Nebenbei gehärtet: Der History-Test hatte ein `if (res.body.length > 0)`
       und wäre bei kaputter Generierung still grün geblieben.
-- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.**
+- [ ] **N6 — Termin-Detail-Divergenzen quer durch die Bäume.** Der Bericht
+      listet ACHT eigenständige Punkte. Der vierte war der einzige, der zu
+      **widersprüchlichen Angaben** führte — er ist behoben, die übrigen
+      sieben sind Sach- und Designfragen und bleiben offen.
+      - [x] **"Vergangen"-Berechnung** (27.08.2026). Nachgemessen: Ob ein
+            Termin vorbei ist, wurde an **elf Stellen** einzeln gerechnet —
+            und nur an **einer** davon richtig. Zehn nutzten allein
+            `event_date` (den START), obwohl mehrtägige Termine erst nach
+            `event_end_time` vorbei sind. Bei einer Freizeit vom 10. bis 14.
+            sagte die Konfi-Liste am 11. noch "läuft", die Detailansicht
+            desselben Termins schon "vergangen".
+            Die Begründung stand bereits zweimal im Code
+            (`konfi/views/EventsView.tsx`, `admin/pages/AdminEventsPage.tsx`)
+            — nur eben nicht an den anderen neun Stellen. Jetzt einmal in
+            `shared/eventFormatting.ts` als `istVergangen()`/`eventEnde()`,
+            alle elf Stellen darauf umgestellt. Auch die beiden lokalen
+            `eventEndDate`-Kopien (gleiche Logik, anderer Name) zeigen jetzt
+            dorthin.
+      - [ ] Anmeldezeitraum fehlt nur im Teamer-Detail.
+      - [ ] Serien-Kennzeichnung (`is_series`) sieht nur die Leitung.
+      - [ ] Einstieg in den Event-Chat hat nur die Leitung, obwohl Konfis und
+            Teamer beim Buchen automatisch Mitglieder werden — sie finden den
+            Raum nur über die Chat-Übersicht. *Sachfrage: gewollt?*
+      - [ ] Admin-Detail berechnet `registration_status` lokal und weicht von
+            Backend und eigener Liste ab.
+      - [ ] Punktezeile: drei verschiedene Bedingungen — nur das Admin-Detail
+            zeigt "Punkte 0".
+      - [ ] Abmeldefrist (2 Tage) hartcodiert und nur im Konfi-Zweig, keine
+            Einstellung, für die Leitung unsichtbar.
+      - [ ] `checkin_window` wird nur im Formular gesetzt, in keiner der drei
+            Detailansichten angezeigt.
 - [x] **N7 — `TeamerChallengesPage.tsx` ist eine Zeilenkopie von
       `AdminChallengesPage.tsx`.** ERLEDIGT 27.08.2026 (Simons Entscheidung:
       zusammenführen). Gemessen wichen die beiden in **24 von rund 197

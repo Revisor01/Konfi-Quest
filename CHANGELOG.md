@@ -210,6 +210,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Mehrtägige Termine gelten jetzt überall erst nach ihrem letzten Tag als
+  vergangen. Bisher zeigten Liste und Detailansicht desselben Termins
+  Unterschiedliches an — bei einer laufenden Freizeit stand in der Übersicht
+  noch "läuft", in der Detailansicht schon "vergangen".
+
 - Konfis können sich nicht mehr zu Terminen anmelden, die nur für
   Teamer:innen gedacht sind oder die abgesagt wurden. Wer bereits angemeldet
   war, kann sich von einem abgesagten Termin weiterhin abmelden.
