@@ -871,7 +871,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: certificates } = await db.query(certificatesQuery, [userId, orgId]);
 
-      // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
+      // 3. Events: Naechste anstehende Termine, die Teamer:innen betreffen --
+      // eigene Buchungen UND Termine, fuer die Teamer:innen gesucht werden.
+      //
+      // Bis 27.08.2026 stand hier zusaetzlich `AND eb.id IS NOT NULL`. Das
+      // machte aus dem LEFT JOIN auf die eigene Buchung faktisch einen INNER
+      // JOIN: Es erschienen ausschliesslich Termine, fuer die man schon
+      // gebucht war. Genau die Termine mit "Teamer:innen gesucht", auf die
+      // jemand reagieren soll, kamen auf der Startseite nie an -- entgegen dem
+      // Kommentar, der hier immer schon etwas anderes behauptete (Befund H2).
+      //
+      // Der Filter auf teamer_only/teamer_needed fehlte ebenfalls ganz; ohne
+      // ihn stuenden auch reine Konfi-Termine auf der Teamer-Startseite.
       const eventsQuery = `
         SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
                e.teamer_only, e.teamer_needed, e.bring_items, e.cancelled,
@@ -882,7 +893,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
           AND (e.cancelled IS NOT TRUE)
-          AND eb.id IS NOT NULL
+          AND (
+            eb.id IS NOT NULL          -- eigene Buchung: immer zeigen
+            OR e.teamer_only = true    -- reiner Team-Termin
+            OR e.teamer_needed = true  -- "Teamer:innen gesucht"
+          )
         ORDER BY e.event_date ASC
         LIMIT 5
       `;
@@ -1480,21 +1495,54 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Notification error (teamer request):', notifErr);
       }
 
-      // Push an alle Admins/Org-Admins der Organisation (analog konfi.js:776).
-      // In try/catch — ein Push-Fehler darf den Antrag nicht kippen.
-      try {
-        await PushService.sendNewActivityRequestToAdmins(
-          db,
-          req.user.organization_id,
-          req.user.display_name,
-          activity.name,
-          activity.points
-        );
-      } catch (pushErr) {
-        console.error('Error sending admin push (teamer request):', pushErr);
-      }
-
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
+
+      // Leitungs-Benachrichtigung NACH der Antwort (Muster wie in konfi.js):
+      // In-App-Mitteilung UND Push an admin/org_admin. Vorher gab es hier nur
+      // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
+      // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
+      // Fehler werden nur geloggt — die Antwort ist bereits raus.
+      (async () => {
+        try {
+          const { rows: admins } = await db.query(
+            `SELECT u.id FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+            [req.user.organization_id]
+          );
+
+          if (admins.length > 0) {
+            await db.query(
+              `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+               SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+              [
+                admins.map(a => a.id),
+                'Neuer Antrag eingegangen',
+                `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+                'new_activity_request',
+                JSON.stringify({
+                  request_id: newRequest.id,
+                  konfi_id: userId,
+                  konfi_name: req.user.display_name,
+                  activity_name: activity.name,
+                  points: activity.points
+                }),
+                req.user.organization_id
+              ]
+            );
+          }
+
+          await PushService.sendNewActivityRequestToAdmins(
+            db,
+            req.user.organization_id,
+            req.user.display_name,
+            activity.name,
+            activity.points
+          );
+        } catch (notifErr) {
+          console.error('Error sending admin notifications (teamer request):', notifErr);
+        }
+      })();
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

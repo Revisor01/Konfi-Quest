@@ -217,6 +217,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Zahl, die beim Öffnen der Abzeichen-Seite verschwindet. Bisher gab es diese
   Kennzeichnung nur für Konfis.
 
+- Anträge von Teamer:innen erscheinen jetzt auch im Mitteilungscenter der
+  Leitung — bisher gab es dafür nur eine Push-Nachricht. Zugleich bekommen
+  jetzt alle Leitungsrollen die Mitteilung, nicht nur ein Teil.
+- Der Jahresrückblick der Konfis ist erst nach der Freigabe durch die Leitung
+  abrufbar — bisher versteckte nur die Startseite den Einstieg, die Daten
+  selbst waren schon vorher zugänglich.
+- Auf der Teamer-Startseite erscheinen unter "Deine Challenge" nur noch
+  Challenges, an denen Teamer:innen auch teilnehmen dürfen — reine
+  Konfi-Challenges tauchen dort nicht mehr auf.
 - Teamer:innen wird beim ersten Start nicht mehr versprochen, dass sie Umfragen
   anlegen und Konfi-Meldungen bestätigen können — beides ist der Leitung
   vorbehalten. Die Erklärtexte sagen jetzt, was Teamer:innen wirklich tun.
@@ -224,6 +233,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   einmal verbuchen, statt einzeln. Bei reinen Teamer-Terminen fehlte die
   Schaltfläche bisher ganz — solche Termine blieben deshalb dauerhaft im
   Reiter "Verbuchen" stehen.
+- Teamer:innen sehen auf ihrer Startseite jetzt auch Termine, für die
+  Teamer:innen gesucht werden — bisher standen dort nur Termine, für die man
+  schon angemeldet war. Reine Konfi-Termine erscheinen dort nicht mehr.
+- Der Zähler am Challenges-Reiter berücksichtigt für Teamer:innen jetzt auch
+  Runden, die nur fürs Team gedacht sind. Bisher wurde niemand darauf
+  hingewiesen, dass dort Beiträge auf Freigabe warten.
+- Abgesagte Termine lassen sich wieder öffnen, wenn man angemeldet war. Bisher
+  stand der Termin zwar in der Liste, ließ sich aber nicht mehr aufrufen.
 
 - Ist eine Punkteart für einen Jahrgang abgeschaltet, wird sie der Leitung
   jetzt auch nicht mehr zur Auswahl angeboten: beim Vergeben von Bonuspunkten,

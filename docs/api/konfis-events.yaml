@@ -366,7 +366,9 @@ paths:
       description: >
         Legt einen Antrag (status pending) an. Idempotent über optionale
         client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
-        bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).
+        bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen
+        admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026
+        ging die In-App-Mitteilung nur an admin (Befund M6, behoben).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC, validateCreateRequest]
