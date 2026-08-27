@@ -158,10 +158,55 @@ class PushService {
    * weggelassen — eine Nachricht darf nicht daran scheitern, dass eine Zahl
    * fehlt.
    */
+  // Die Zahl am App-Icon ueber ALLE Organisationen einer Person.
+  //
+  // Befund 28.08.2026, in Produktion gemessen: Hier stand vorher nur
+  // `appIconSummeOderNull(db, empfaenger)` mit der PRIMAER-Organisation aus
+  // users.organization_id. Fuer Multi-Org-Leitungen war das Ergebnis falsch:
+  // gemessen an einem echten Konto (id 41) rechnete Org 1 = 0, Org 2 = 0,
+  // Org 4 = 29 -- gesendet wurde 0, weil Org 1 die Primaer-Org ist. iOS
+  // versteht badge: 0 als "Zaehler entfernen": Der Push kam an, aber ohne
+  // Zahl am Icon, waehrend die Reiter in der App die 29 korrekt zeigten.
+  //
+  // Die aktive Organisation steht nur im Token des Clients, nicht in der
+  // Datenbank -- der Push kann sie also nicht kennen. Deshalb die Summe ueber
+  // alle: Das Icon beantwortet die Frage "wie viel liegt fuer mich an?",
+  // nicht "wie viel liegt in der gerade geoeffneten Ansicht an?".
+  //
+  // Fuer Konfis aendert sich nichts, sie sind immer Single-Org.
   static async berechneBadge(db, userId) {
     const empfaenger = await this.ladeEmpfaengerFuerBadge(db, userId);
     if (!empfaenger) return null;
-    return appIconSummeOderNull(db, empfaenger);
+
+    const orgIds = await this.ladeOrganisationenFuerBadge(db, userId, empfaenger.organization_id);
+    if (orgIds.length <= 1) {
+      return appIconSummeOderNull(db, empfaenger);
+    }
+
+    let summe = 0;
+    let hatWert = false;
+    for (const orgId of orgIds) {
+      const teil = await appIconSummeOderNull(db, { ...empfaenger, organization_id: orgId });
+      if (teil != null) { summe += teil; hatWert = true; }
+    }
+    return hatWert ? summe : null;
+  }
+
+  // Alle Organisationen, in denen die Person Mitglied ist. Die Primaer-Org ist
+  // immer dabei, auch wenn user_organizations sie (noch) nicht fuehrt.
+  static async ladeOrganisationenFuerBadge(db, userId, primaerOrgId) {
+    try {
+      const { rows } = await db.query(
+        'SELECT organization_id FROM user_organizations WHERE user_id = $1',
+        [userId]
+      );
+      const ids = new Set(rows.map(r => r.organization_id));
+      if (primaerOrgId != null) ids.add(primaerOrgId);
+      return [...ids];
+    } catch (err) {
+      console.error('ladeOrganisationenFuerBadge error:', err.message);
+      return primaerOrgId != null ? [primaerOrgId] : [];
+    }
   }
 
   /**
