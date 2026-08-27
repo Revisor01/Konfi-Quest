@@ -6490,8 +6490,8 @@
             "validateBonusPoints"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang",
-          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Ein Jahrgangs-Check auf die Ziel-ID findet nicht statt.\n"
+          "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang; fuer Teamer:innen zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi",
+          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre zugewiesenen Jahrgaenge begrenzt (403 \"Kein Zugriff auf diesen Konfi\") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt, was zu assign-activity und zum Handbuch inkonsistent war. Die Leitung (admin/org_admin) bleibt org-weit berechtigt.\n"
         },
         "parameters": [
           {
@@ -6529,8 +6529,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Bonuspunkte vergeben"
+          "201": {
+            "description": "Bonuspunkte vergeben (konfi-management.js:861 — die Doku nannte hier bis 27.08.2026 faelschlich 200)"
           },
           "400": {
             "description": "Pflichtfelder fehlen oder Punkte-Typ fuer den Jahrgang deaktiviert"
@@ -6539,7 +6539,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Keine Teamer-Rolle, oder Teamer:in ohne Zugriff auf den Jahrgang der Ziel-Konfi"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
