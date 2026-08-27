@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Konfis können sich nicht mehr zu Terminen anmelden, die nur für
+  Teamer:innen gedacht sind oder die abgesagt wurden. Wer bereits angemeldet
+  war, kann sich von einem abgesagten Termin weiterhin abmelden.
+
 - Anträge von Konfis sind jetzt auf Aktivitäten für Konfis beschränkt.
   Aktivitäten, die nur für Teamer:innen gedacht sind, lassen sich nicht mehr
   beantragen und tauchen in der Antragsliste nicht auf.

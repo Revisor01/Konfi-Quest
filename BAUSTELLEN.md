@@ -627,7 +627,23 @@ falschen Teamer-Erklärtexte (PR #83).
       Teamer und Leitung abgesichert.
 ### NIEDRIG aus dem Drei-Ansichten-Bericht
 
-- [ ] **N1 — Zwei Buchungspfade mit unterschiedlichen Guards.**
+- [x] **N1 — Zwei Buchungspfade mit unterschiedlichen Guards.**
+      ERLEDIGT 27.08.2026 (Simons Entscheidung: beide Prüfungen einbauen).
+      Der Bericht hielt das für "praktisch vermutlich folgenlos" —
+      **nachgemessen war es das nicht.** `POST /konfi/events/:id/register`
+      hatte weder den `teamer_only`- noch den `cancelled`-Guard: Eine Konfi
+      konnte sich per API zu einem reinen Teamer-Termin (**200**) und zu einem
+      abgesagten Termin (**200**) anmelden. Über die Oberfläche nicht
+      erreichbar, weil die Terminliste `teamer_only` für Konfis herausfiltert
+      (`events.js:254-256`). Jetzt 403 bzw. 400 wie im regulären Weg
+      (`events.js:1666`, `teamer.js:1314`).
+      **Der Guard sitzt bewusst nur im POST:** Wer schon angemeldet war, als
+      der Termin abgesagt wurde, muss sich noch austragen können — sonst hätte
+      die Reparatur Angemeldete eingesperrt. Eigener Test dafür.
+      Offen bleibt der dritte Teil des Befunds: Die Timeslot-Zählung im
+      Konfi-Pfad zählt ohne Rollenfilter (`konfi.js:1634-1641`), `events.js`
+      filtert Teamer heraus. Folgenlos, solange Teamer-Buchungen keine
+      `timeslot_id` bekommen — nicht mit angefasst.
 - [ ] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
       250-Zeilen-Inline-Kopie für Teamer.** Der Befund hat ZWEI Teile:
       - [x] **Der Zählfehler in `GET /konfi/badges/stats` ist behoben**
@@ -665,8 +681,23 @@ falschen Teamer-Erklärtexte (PR #83).
       überhaupt eine Aktivität vorliegt. Durch einen eigenen Test
       festgehalten. Wer die beiden Wege angleicht, sollte den Teamer-Weg auf
       LEFT JOIN umstellen, nicht umgekehrt.
-- [ ] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
-      Abzeichen-Ansicht.**
+- [x] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
+      Abzeichen-Ansicht.** GEPRÜFT UND BEWUSST GESCHLOSSEN 27.08.2026
+      (Simons Entscheidung). Der Bericht markierte ihn selbst als unsicher
+      ("Unsicher, ob bewusst"). Nachgesehen — **der Befund geht in die
+      falsche Richtung:**
+      - Challenge-Abzeichen sind KEINE `custom_badges`. `badge_name` und
+        `badge_icon` hängen an der Challenge selbst, es gibt kein
+        `INSERT INTO user_badges`. Sie erscheinen in den Challenge-Ansichten,
+        nicht auf den Abzeichen-Seiten. Die 403 bei `/teamer/badges` betrifft
+        sie also gar nicht.
+      - `custom_badges.target_role` kennt nur `konfi` und `teamer`
+        (`badges.js:150,347`). Die Teamer-Kriterien (`teamer_year`, gezählte
+        Aktivitäten mit `target_role='teamer'`) treffen auf Leitungsrollen
+        nicht zu.
+      Eine Abzeichen-Ansicht für `admin`/`org_admin` wäre heute also eine
+      leere Seite. Die 403 ist richtig. Wer das ändern will, braucht zuerst
+      Abzeichen-Kriterien für Leitungsrollen — eigener Auftrag.
 - [x] **N5 — Leitung kann das Konfi-Wrapped nicht ansehen, obwohl das Backend
       es ihr erlaubt.** ERLEDIGT 27.08.2026 (Simons Entscheidung: bauen, in
       der Konfi-Detailseite). Die Karte erscheint dort nur, wenn ein Snapshot
