@@ -1119,12 +1119,14 @@ describe('Konfi-Management Routes', () => {
       expect(res.body.user.role_name).toBe('teamer');
     });
 
-    // Befund N8 (27.08.2026): Dieselbe Praeferenz liegt je Rolle in einer
+    // Befund N8 (27.08.2026): Dieselbe Praeferenz lag je Rolle in einer
     // ANDEREN Spalte -- Konfis in konfi_profiles.bible_translation, Teamer in
-    // users.bible_translation (Migration 107, weil Teamer kein konfi_profile
-    // haben). Die Befoerderung nahm sie nicht mit: Die Teamer-Ansicht las die
-    // noch leere users-Spalte, und die Tageslosung sprang still auf LUT.
-    it('N8: die Bibeluebersetzung bleibt nach der Befoerderung erhalten', async () => {
+    // users.bible_translation. Die Befoerderung nahm sie deshalb nicht mit:
+    // Die Teamer-Ansicht las die noch leere users-Spalte, und die Tageslosung
+    // sprang still auf LUT. Seit Migration 132 gibt es nur noch
+    // users.bible_translation. Der Test bleibt: die spuerbare Folge darf
+    // nicht zurueckkommen, egal aus welchem Grund.
+    it('N8: die Bibeluebersetzung ueberlebt die Befoerderung zum Teamer', async () => {
       const createRes = await request(app)
         .post('/api/admin/konfis')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -1132,8 +1134,10 @@ describe('Konfi-Management Routes', () => {
       const konfiId = createRes.body.id;
       await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
 
+      // So, wie die App sie setzt: ueber PUT /konfi/bible-translation, das
+      // seit der Zusammenlegung an users schreibt.
       await db.query(
-        "UPDATE konfi_profiles SET bible_translation = 'ELB' WHERE user_id = $1",
+        "UPDATE users SET bible_translation = 'ELB' WHERE id = $1",
         [konfiId]
       );
 
@@ -1149,31 +1153,17 @@ describe('Konfi-Management Routes', () => {
       expect(user.bible_translation).toBe('ELB');
     });
 
-    it('N8: die Wahl bleibt auch im Konfi-Profil stehen', async () => {
-      // Gegenprobe: Das konfi_profile bleibt bei der Befoerderung insgesamt
-      // bestehen. Wird jemand zurueckgestuft, soll die Wahl noch da sein --
-      // die Uebernahme darf die Quelle also nicht leeren.
-      const createRes = await request(app)
-        .post('/api/admin/konfis')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Uebersetzung Quelle', jahrgang_id: JAHRGAENGE.jahrgang1.id });
-      const konfiId = createRes.body.id;
-      await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
-      await db.query(
-        "UPDATE konfi_profiles SET bible_translation = 'GNB' WHERE user_id = $1",
-        [konfiId]
+    it('N8: es gibt nur noch eine Spalte fuer die Bibeluebersetzung', async () => {
+      // Die eigentliche Ursache: zwei gleichnamige Spalten. Migration 132
+      // hat die an konfi_profiles entfernt. Kommt sie zurueck, faellt die
+      // Rollen-Falle sofort wieder auf -- deshalb festgenagelt.
+      const { rows } = await db.query(
+        `SELECT table_name FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND column_name = 'bible_translation'
+          ORDER BY table_name`
       );
-
-      await request(app)
-        .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      const { rows: [profil] } = await db.query(
-        'SELECT bible_translation FROM konfi_profiles WHERE user_id = $1',
-        [konfiId]
-      );
-      expect(profil.bible_translation).toBe('GNB');
+      expect(rows.map(r => r.table_name)).toEqual(['users']);
     });
 
     it('Bereits Teamer gibt 400', async () => {

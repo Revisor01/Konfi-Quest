@@ -1,5 +1,11 @@
 # Löschlogiken: Gesamtprüfung aller Bereiche (außer Chat)
 
+> **ERLEDIGT am 26.08.2026 durch die PRs #72–#78.** Der Kopfvermerk fehlte
+> bisher (Registerregel 4) und wurde am 27.08. nachgetragen. Im Register stand
+> zusätzlich „zwei Punkte bewusst offen" — welche das sein sollten, liess sich
+> weder hier noch in `BAUSTELLEN.md` belegen (dort stehen alle drei Aufträge
+> aus diesem Bericht als erledigt). Die Angabe ist deshalb gestrichen.
+
 **Auftrag:** Alle Löschlogiken der App evaluieren — Personen, Termine,
 Aktivitäten/Anträge, Challenges, Stammdaten (Abzeichen, Kategorien, Level,
 Jahrgänge, Material, Rollen), Organisationen, Dateien auf der Platte,

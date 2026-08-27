@@ -394,7 +394,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       const query = `
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points,
-               kp.jahrgang_id, kp.bible_translation, kp.konfspruch_translation,
+               kp.jahrgang_id, u.bible_translation, kp.konfspruch_translation,
                kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
                j.name as jahrgang_name,
                j.gottesdienst_enabled, j.gemeinde_enabled
@@ -1495,7 +1495,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Get konfi's preferred translation
       const { rows: [konfi] } = await db.query(
-        'SELECT kp.bible_translation FROM users u JOIN konfi_profiles kp ON u.id = kp.user_id WHERE u.id = $1',
+        'SELECT bible_translation FROM users WHERE id = $1',
         [konfiId]
       );
 
@@ -2113,9 +2113,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         });
       }
       
-      // Update konfi profile with new translation preference
+      // Die Wahl liegt seit Migration 132 fuer ALLE Rollen an users
+      // (Befund N8). Vorher hatte konfi_profiles eine eigene, gleichnamige
+      // Spalte -- was bei jeder Befoerderung Konfi -> Teamer die Wahl
+      // verlor, weil die Teamer-Ansicht die andere Spalte las.
       await db.query(
-        'UPDATE konfi_profiles SET bible_translation = $1 WHERE user_id = $2',
+        'UPDATE users SET bible_translation = $1 WHERE id = $2',
         [translation, konfiId]
       );
       

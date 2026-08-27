@@ -9434,7 +9434,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -9464,6 +9464,9 @@
                       "type": "integer"
                     },
                     "pendingChallenges": {
+                      "type": "integer"
+                    },
+                    "newBadges": {
                       "type": "integer"
                     }
                   }
@@ -10025,7 +10028,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene user_badges (user_id + organization_id)",
-          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis können darin auch alte Konfi-Abzeichen stecken.\n"
+          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis können darin auch alte Konfi-Abzeichen stecken. Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler kommt aus newBadges in GET /api/notifications/badge-counts, das korrekt auf target_role filtert. Der Endpunkt bleibt vorerst fuer ausgelieferte App-Versionen bestehen; ueber seine Abschaffung ist noch nicht entschieden.\n"
         },
         "responses": {
           "200": {

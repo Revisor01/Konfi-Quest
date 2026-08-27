@@ -33,7 +33,8 @@ import { OrgSwitcherButton } from '../../shared';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
-import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
+import NeuerungenBanner from '../../shared/NeuerungenBanner';
+import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
 interface Konfi {
   id: number;
@@ -83,9 +84,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // sich über die Karte oder dauerhaft über "Was ist neu?" in den Einstellungen.
   const {
     showOnboarding, closeOnboarding,
-    showUpdateHinweis, markUpdateHinweisGesehen
+    showUpdateHinweis, markUpdateHinweisGesehen,
+    showMitmachenHinweis, markMitmachenHinweisGesehen
   } = useOnboardingWithUpdateOnce('admin_onboarding_seen', user?.id);
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showMitmachenErklaerung, setShowMitmachenErklaerung] = useState(false);
   
   // Befund aus dem Rollen-Bericht (26.08.2026): Ein Admin ohne
   // Jahrgangs-Zuweisung sah eine leere Liste mit dem Text "Noch keine Konfis
@@ -394,14 +397,18 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Neuigkeiten-Karte: einmalig nach dem Update, X blendet dauerhaft aus */}
-        {showUpdateHinweis && (
-          <UpdateHinweisKarte
-            style={{ margin: '8px 16px 12px' }}
-            onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
-            onDismiss={markUpdateHinweisGesehen}
-          />
-        )}
+        {/* Beide Neuerungs-Karten: einmalig nach dem Update, X blendet dauerhaft
+            aus. Die Leitung hatte hier bislang nur die "Was ist neu"-Karte --
+            die Mitmachen-Karte gab es fuer sie nur unter "Mehr". */}
+        <NeuerungenBanner
+          style={{ margin: '8px 16px 12px' }}
+          updateSichtbar={showUpdateHinweis}
+          mitmachenSichtbar={showMitmachenHinweis}
+          onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+          onUpdateAusblenden={markUpdateHinweisGesehen}
+          onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+          onMitmachenAusblenden={markMitmachenHinweisGesehen}
+        />
 
         {loading ? (
           <LoadingSpinner message="Konfis werden geladen..." />
@@ -432,6 +439,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
         <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="admin"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
       )}
     </IonPage>
   );
