@@ -824,8 +824,20 @@ falschen Teamer-Erklärtexte (PR #83).
       an — das Handbuch nannte es nicht. Ergänzt, samt dem Unterschied
       zwischen Entwurf (direkt weg) und laufender Challenge (Rückfrage, dann
       Beiträge und Dateien mit).
-- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
-      in 403. *Teilweise entschärft durch PR #82.*
+- [x] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
+      in 403. *Teilweise entschärft durch PR #82.* ERLEDIGT 27.08.2026.
+      Die Route `/admin/users` ist ungegatet, der UI-Einstieg
+      org_admin-exklusiv. Wer die Adresse kannte, sah in der Liste
+      Lösch-Wische, die allein an `can_edit` hingen — angetippt liefen sie in
+      einen 403 (`users.js:385`, `requireOrgAdmin`).
+      **Die Absicherung war halb da:** Der Anlegen-Knopf prüfte die Rolle seit
+      jeher (`AdminUsersPage.tsx:121`), die Liste darunter nicht. Jetzt reicht
+      die Seite `darfVerwalten` durch; `can_edit` bleibt zusätzlich erhalten
+      (eigene Gegenprobe).
+      **Serverseitig war es nie eine Lücke** — `requireOrgAdmin` hielt. Es
+      ging um Aktionen, die sichtbar sind und dann scheitern.
+
+
 - [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
       27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
       konnte per API Bonuspunkte an eine Konfi eines **fremden Jahrgangs**
