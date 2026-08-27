@@ -460,6 +460,30 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       Leitungsansicht und die Sortierreihenfolge. Ist ein Bereich aus, sollen
       seine Routen gar nicht erst abgefragt werden.
 
+- [x] **Teamer:innen konnten auf keine Chat-Nachricht reagieren** — ERLEDIGT
+      27.08.2026 (`99cd7c6d`). Befund aus dem Chat-Prüfauftrag, selbst
+      nachgemessen statt übernommen: Der CHECK an
+      `chat_message_reactions.user_type` erlaubte nur `admin` und `konfi`,
+      die Route speichert aber `req.user.type` — für Teamer:innen `teamer`.
+      Gemessen mit einem Test vor dem Fix: Teamer **500**
+      (`violates check constraint "chat_message_reactions_user_type_check"`),
+      Admin und Konfi **200**. Der Reaktionsknopf war im Frontend für alle
+      Rollen sichtbar, nur das Speichern scheiterte.
+      Die Nachbartabellen `chat_participants` und `chat_read_status` führen
+      `teamer` seit den Migrationen 098/117 als eigenen Wert; dieser eine
+      CHECK war nie mitgezogen worden. **Nachbarschaft geprüft:** von den
+      sechs Tabellen mit `user_type` haben nur drei überhaupt einen CHECK —
+      die anderen beiden führen alle drei Werte, `chat_messages`,
+      `chat_poll_votes`, `password_resets` und `push_tokens` haben keinen.
+      Es blieb also keine zweite Lücke stehen.
+      Migration 133 löscht den CHECK über `pg_constraint` statt über den
+      erwarteten Namen und ist idempotent — sie läuft auch dann durch, wenn
+      er in Produktion anders heißt oder `teamer` schon erlaubt.
+      *Offen vor dem Ausrollen:* Der alte Wortlaut stammt aus dem Prod-Dump
+      (am 24.08. als deckungsgleich gemessen), nicht aus einer Live-Abfrage.
+      Der Prüfbefehl steht im Kopf der Migration.
+      Die API-Doku nannte `teamer` übrigens von Anfang an — dokumentiert war
+      es richtig, nur die Datenbank hielt sich nicht daran.
 ---
 
 ## Bekannte Fehler, Ursache belegt, Fix offen

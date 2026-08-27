@@ -1579,4 +1579,148 @@ describe('Chat Routes', () => {
       });
     });
   });
+
+  // ================================================================
+  // POST /api/chat/messages/:messageId/reactions
+  // ================================================================
+  describe('POST /api/chat/messages/:messageId/reactions', () => {
+    // Befund HOCH (Chat-Pruefauftrag 27.08.2026): Teamer:innen konnten auf
+    // keine Nachricht reagieren. Die Route speichert user_type aus
+    // req.user.type -- fuer Teamer:innen 'teamer' --, der CHECK an
+    // chat_message_reactions kannte aber nur 'admin' und 'konfi'. Ergebnis:
+    // 500 statt 200, waehrend Admin und Konfi funktionierten. Behoben mit
+    // Migration 132.
+    //
+    // Raum 1 (Jahrgang) hat konfi1, konfi2, teamer1 und admin1 als Teilnehmer.
+    const RAUM = CHAT_ROOMS.jahrgang.id;
+
+    const nachrichtVon = async (userId, userType) => {
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, $3, 'text', 'Nachricht zum Reagieren') RETURNING id`,
+        [RAUM, userId, userType]
+      );
+      return msg.id;
+    };
+
+    const reaktionenAus = async (messageId) => {
+      const { rows } = await db.query(
+        `SELECT user_id, user_type, emoji FROM chat_message_reactions
+          WHERE message_id = $1 ORDER BY user_type`,
+        [messageId]
+      );
+      return rows;
+    };
+
+    it('Teamer:in reagiert im eigenen Raum -> 200 und die Reaktion steht in der DB', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi');
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ emoji: 'heart' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.action).toBe('added');
+      expect(res.body.emoji).toBe('heart');
+
+      expect(await reaktionenAus(id)).toEqual([
+        { user_id: USERS.teamer1.id, user_type: 'teamer', emoji: 'heart' },
+      ]);
+    });
+
+    it('Teamer:in nimmt die eigene Reaktion wieder zurueck -> 200 und die DB ist leer', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi');
+
+      const gesetzt = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ emoji: 'pray' });
+      expect(gesetzt.status).toBe(200);
+      expect(gesetzt.body.action).toBe('added');
+
+      const zurueck = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ emoji: 'pray' });
+
+      expect(zurueck.status).toBe(200);
+      expect(zurueck.body.action).toBe('removed');
+      expect(await reaktionenAus(id)).toEqual([]);
+    });
+
+    it('Admin reagiert weiterhin -> 200 und die Reaktion steht in der DB', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi');
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.action).toBe('added');
+
+      expect(await reaktionenAus(id)).toEqual([
+        { user_id: USERS.admin1.id, user_type: 'admin', emoji: 'like' },
+      ]);
+    });
+
+    it('Konfi reagiert weiterhin -> 200 und die Reaktion steht in der DB', async () => {
+      const id = await nachrichtVon(USERS.teamer1.id, 'teamer');
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ emoji: 'laugh' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.action).toBe('added');
+
+      expect(await reaktionenAus(id)).toEqual([
+        { user_id: USERS.konfi1.id, user_type: 'konfi', emoji: 'laugh' },
+      ]);
+    });
+
+    it('Alle drei Rollen reagieren auf dieselbe Nachricht -> drei Zeilen', async () => {
+      // Gegenprobe zum zu engen CHECK: nur wenn alle drei user_type-Werte
+      // erlaubt sind, stehen hier auch drei Reaktionen.
+      const id = await nachrichtVon(USERS.konfi2.id, 'konfi');
+
+      for (const [token, emoji] of [
+        [admin1Token, 'like'],
+        [teamer1Token, 'heart'],
+        [konfi1Token, 'wow'],
+      ]) {
+        const res = await request(app)
+          .post(`/api/chat/messages/${id}/reactions`)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ emoji });
+        expect(res.status).toBe(200);
+      }
+
+      expect(await reaktionenAus(id)).toEqual([
+        { user_id: USERS.admin1.id,  user_type: 'admin',  emoji: 'like' },
+        { user_id: USERS.konfi1.id,  user_type: 'konfi',  emoji: 'wow' },
+        { user_id: USERS.teamer1.id, user_type: 'teamer', emoji: 'heart' },
+      ]);
+    });
+
+    it('Teamer:in reagiert in einem fremden Raum NICHT -> 403 und nichts in der DB', async () => {
+      // Verbotener Fall: Raum 2 ist der Direktchat konfi1 <-> admin1,
+      // teamer1 ist dort kein Teilnehmer.
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content)
+         VALUES ($1, $2, 'konfi', 'text', 'Fremder Direktchat') RETURNING id`,
+        [CHAT_ROOMS.direct.id, USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${msg.id}/reactions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ emoji: 'heart' });
+
+      expect(res.status).toBe(403);
+      expect(await reaktionenAus(msg.id)).toEqual([]);
+    });
+  });
 });

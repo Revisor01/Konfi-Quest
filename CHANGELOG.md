@@ -244,6 +244,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   richtig. Bisher zeigte sie kurz nach einer Nachricht alles Offene an, wurde
   aber wenig später auf die reinen Chat-Nachrichten heruntergesetzt — offene
   Anträge, unbearbeitete Termine und neue Abzeichen fielen dabei weg.
+- Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
+  Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
+  die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es
+  von Anfang an funktioniert.
 - Die Leitung sieht auf ihrer Startseite jetzt beide Neuerungs-Karten — auch
   den Hinweis zum Mitmachen-Bereich, den bisher nur Konfis und Teamer:innen
   dort hatten. Beide lassen sich wie gewohnt wegklicken und stehen dauerhaft
