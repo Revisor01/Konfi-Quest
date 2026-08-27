@@ -374,8 +374,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   // Loest für jeden Konfi eines Jahrgangs den gewaehlten Konfispruch auf
   // (Listen-Wahl ODER Freitext, genau wie der Builder in konfi.js:486-522).
   // WICHTIG (W1): Die Uebersetzung kommt aus der DEDIZIERTEN Spalte
-  // kp.konfspruch_translation (NICHT kp.bible_translation -- das ist die
-  // separate Tageslosungs-Praeferenz).
+  // kp.konfspruch_translation (NICHT users.bible_translation -- das ist die
+  // separate Tageslosungs-Praeferenz; sie lag bis Migration 132 als
+  // kp.bible_translation daneben, liegt seither nur noch an users).
   // Rueckgabe: Array { user_id, display_name, konfspruch } (konfspruch ggf. null).
   const buildSpruecheList = async (jahrgangId, organizationId) => {
     const { rows: konfis } = await db.query(`
