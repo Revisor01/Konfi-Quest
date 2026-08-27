@@ -2417,6 +2417,56 @@ describe('Events Routes', () => {
 
       expect(book2.status).toBe(400);
     });
+
+    it('Die Warteliste haengt am Termin, nicht an der Organisation', async () => {
+      // Gegenprobe zum Entfernen der org-weiten Wartelisten-Einstellungen
+      // (27.08.2026): Selbst wenn in der settings-Tabelle das Gegenteil
+      // steht, entscheidet allein der Termin. Frueher liess sich das nicht
+      // pruefen, weil die Org-Werte von keiner Buchungslogik gelesen wurden --
+      // genau deshalb wurden sie entfernt.
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'waitlist_enabled', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'max_waitlist_size', '0')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Termin mit eigener Warteliste',
+          event_date: futureDate.toISOString(),
+          max_participants: 1,
+          waitlist_enabled: true,
+          max_waitlist_size: 5,
+        });
+
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // Erster Platz geht reguleaer weg
+      const book1 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(book1.status).toBe(201);
+      expect(book1.body.status).toBe('confirmed');
+
+      // Der zweite landet auf der Warteliste -- der Org-Schalter 'false'
+      // aendert daran nichts.
+      const book2 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+      expect(book2.status).toBe(201);
+      expect(book2.body.status).toBe('waitlist');
+    });
   });
 
   // ================================================================
