@@ -1,4 +1,5 @@
-• Chat: Neuer Button, um direkt ans Ende der Nachrichten zu springen
-• Die Tageslosung lädt jetzt schneller
-• Behoben: Bei Teilnehmenden eines Zeitfensters wird die Anwesenheit wieder richtig angezeigt
-• Behoben: Der Wechsel zwischen Organisationen zeigte weiterhin die alten Daten
+Konfi Quest 2.0 bringt Challenges: Aufgaben, auf die ihr mit Foto, Text, Aufnahme oder Link antwortet — ohne Punkte und ohne Rangliste, mit Stempel fürs Mitmachen. Ihr entscheidet je Beitrag, ob mit Namen, anonym oder nur für die Leitung.
+
+Aus "Events" wird "Mitmachen" mit Terminen und Aktivitäten. Teamer:innen können zu- und absagen. Neu: ein Handbuch für alle Rollen.
+
+Vieles geht jetzt offline, Listen aktualisieren sich live, Push kommt wieder zuverlässig an.

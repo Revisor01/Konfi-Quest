@@ -37,6 +37,14 @@ Diese Version braucht iOS 16.4 oder neuer.
 
 ## Android — Google Play, "Was ist neu"
 
+> **Dieser Text muss nach `frontend/release-notes-de.txt` kopiert werden.**
+> Der Build-Workflow liest AUSSCHLIESSLICH diese Datei
+> (`android-release.yml` → `upload-play.py`), nicht diese Doku hier.
+> Am 27.08.2026 stand dort noch der Text von 1.5.3 vom 04.08. — zwei
+> Play-Uploads gingen deshalb mit falschen Release-Notes raus und mussten
+> von Hand nachkorrigiert werden. Wer den Text hier ändert, ändert die
+> Datei mit.
+
 Zeichen: 465 (Limit 500)
 
 ```
