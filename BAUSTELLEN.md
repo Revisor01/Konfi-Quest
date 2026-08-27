@@ -41,8 +41,8 @@ TestFlight
 ## Was blockiert 2.0.0 noch?
 
 Stand 27.08.2026, spätabends. Alle offenen `- [ ]`-Punkte dieser Datei einzeln
-durchgegangen. **Ergebnis: genau einer betrifft den Release, und der ist der
-Release selbst.**
+durchgegangen. **Ergebnis: zwei betreffen den Release — das Ausrollen und der
+Release selbst.** Kein einziger offener Befund blockiert ihn.
 
 - [ ] **Produktion auf den Stand von `main` bringen** — der automatische
       Deploy ist seit dem 21.08. bewusst pausiert (`ci.yml:219`), live läuft
