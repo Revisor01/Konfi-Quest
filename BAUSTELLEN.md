@@ -1382,27 +1382,71 @@ Vollständig abgearbeitet, es steht nichts mehr offen:
 - **Dashboard/Profil-Durchgang** (26./27.08.) — Chat-Lücke (#81) und die zwei
   falschen Teamer-Texte (#83); der Rest waren Entwarnungen.
 - **Abhängigkeiten und Ionic** (27.08.) — Themes aktualisiert, Ionic 9 als
-  eigenes Vorhaben eingeplant (siehe "Nach 2.0.0"). Der beauftragte Bericht
-  wurde vom Agenten allerdings NIE geschrieben, obwohl er ihn gemeldet hat —
-  die Zahlen hier stammen aus eigener Messung. Merke: Bei Agenten prüfen, ob
-  die Datei wirklich existiert, statt der Meldung zu glauben.
+  eigenes Vorhaben eingeplant (siehe "Nach 2.0.0"). Bericht:
+  `docs/agenten-berichte/2026-08-26-abhaengigkeiten-ionic.md`.
+  **Korrektur vom 27.08. abends:** Hier stand, der Bericht sei NIE geschrieben
+  worden. Das war falsch — er existiert, 280 Zeilen, und deckt sich mit der
+  eigenen Nachmessung. Angelegt wurde er am 26.08. als Beifang in `8d2217d6`,
+  einem Commit zu einem ganz anderen Thema ("Erklaertexte versprechen nichts,
+  was Teamer:innen nicht duerfen"). Deshalb fand ihn später niemand.
+  **Die Lehre gilt in BEIDE Richtungen:** Regel 6 verlangt, gemeldete Berichte
+  auf Existenz zu prüfen — aber auch, bevor man einen als Phantom abschreibt.
+  Ein `ls` über das Verzeichnis hätte hier gereicht.
 
 ### Welche Prüfläufe sich als nächstes lohnen
 
-Vorschläge, nicht beauftragt — aus dem, was bei der Arbeit auffiel:
+> **KORREKTUR 27.08.2026, abends — die drei folgenden Prüfläufe SIND gelaufen.**
+> Sie standen hier als unbeauftragte Vorschläge, und ihre Berichte galten als
+> "nie geschrieben" (Phantom-Berichte). Beides war falsch. Die drei Dateien
+> existieren, mit zusammen 798 Zeilen und belegten Befunden:
+>
+> | Bericht | Umfang | Befunde |
+> |---|---|---|
+> | `2026-08-27-chat-baum.md` | 226 Z. | 1 HOCH (Teamer-Reaktion 500er), 1 MITTEL |
+> | `2026-08-27-offline-schreibvorgaenge.md` | 243 Z. | 2 HOCH, 3 MITTEL, 2 NIEDRIG |
+> | `2026-08-27-push-zustellung.md` | 329 Z. | 1 HOCH, 4 MITTEL, 4 NIEDRIG |
+>
+> **Warum sie niemand fand:** Sie wurden am 27.08. im WIP-Commit `15c46930`
+> ("wip(app-icon): sendBadgeUpdate rechnet selbst") auf dem Branch
+> `fix/app-icon-hintergrund-sync` abgelegt — nicht auf `main`. Ein `ls` im
+> Arbeitsbaum sah sie deshalb nicht, ein `git log --all` hätte sie gefunden.
+> Mit PR #131 kommen sie nach `main`.
+>
+> **Zwei ihrer Befunde sind bereits behoben, ohne dass jemand die Berichte
+> gelesen hatte:** H1 aus dem Push-Bericht (Erinnerungen an abgesagte Termine)
+> über PR #130, der HOCH-Befund aus dem Chat-Bericht (Teamer-Reaktion läuft in
+> einen 500er, weil der DB-Constraint `teamer` nicht kennt) über PR #129.
+> Beide Male war der Befund unabhängig neu gemessen worden.
+>
+> **Die Lehre, in beide Richtungen:** Regel 6 verlangt, gemeldete Berichte auf
+> Existenz zu prüfen. Sie verlangt ebenso, das ordentlich zu tun, bevor man
+> einen Bericht als Phantom abschreibt — `git log --all --diff-filter=A`
+> statt nur `ls`. Vier angebliche Phantom-Berichte waren am Ende null.
+>
+> **Offen bleibt, was die Berichte an Befunden melden** (siehe unten), nicht
+> die Prüfläufe selbst.
 
-- [ ] **Der Chat-Baum selbst.** Im Drei-Ansichten-Durchgang ausgenommen, im
-      Nachprüf-Durchgang nur angerissen (Befund dort: super_admin fällt
-      zwischen drei verschiedene "Leitung"-Definitionen, sieht den Mülleimer,
-      bekommt vom Backend 403). Dort lagen schon zwei echte Sicherheitsfunde.
-      **Der aussichtsreichste Kandidat.**
-- [ ] **Offline-Schreibvorgänge.** Der Bericht vom 25.08. deckte die
-      Lesepfade ab. Nicht geprüft: Was passiert, wenn ein Schreibvorgang aus
-      der Warteschlange später vom Server abgelehnt wird (409, 403, geänderte
-      Daten)? Erfährt jemand davon, oder verschwindet es still?
-- [ ] **Push-Zustellung Ende zu Ende.** An vielen Stellen verdrahtet; ob jede
-      Mitteilung ankommt und beim Antippen an der richtigen Stelle landet,
-      wurde nie systematisch geprüft.
+Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
+
+- [ ] **Abgelehnte Offline-Nachreichungen verschwinden still** (H1
+      Offline-Bericht). Für alles außer Chat gibt es nur einen
+      4-Sekunden-Toast; im Hintergrund-Flush oder nach einem Neustart ist die
+      Meldung spurlos weg (`writeQueue.ts:106`, `189-219`). Eine offline
+      abgegebene Abmeldung kann verpuffen, während die App "wird gesendet"
+      bestätigt hat.
+- [ ] **Teamer-Offline-Buchung verwirft die Server-Antwort** (H2
+      Offline-Bericht). Landet die Buchung auf der Warteliste, erfährt die
+      Teamer:in das nie (`writeQueue.ts:387-399`,
+      `TeamerEventsPage.tsx:575-586`, `events.js:1719-1725`). Entweder
+      online-pflichtig machen wie beim Konfi oder die Antwort auswerten.
+- [ ] **10 von 30 Push-Arten haben beim Antippen kein Ziel** (M2
+      Push-Bericht). Die Weiche `buildPushTargetUrl`
+      (`frontend/src/utils/pushNavigation.ts:75-145`) kennt 20 Typen, der
+      `default`-Zweig liefert `''`. Betroffen u.a. Event-Änderung,
+      Pflicht-Event, Stempel, Zertifikat und alle Teamer-Buchungsmeldungen an
+      die Leitung — der Tap öffnet die App nur dort, wo sie zuletzt stand.
+      Ein Paritätstest Backend-Typen gegen Frontend-Weiche würde das dauerhaft
+      verhindern.
 - [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
       gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
       `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
