@@ -210,6 +210,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen können Bonuspunkte nur noch an Konfis ihrer eigenen Jahrgänge
+  vergeben. Bisher war das über die Schnittstelle auch bei fremden Jahrgängen
+  möglich, obwohl das Handbuch es ausschließt.
+
 - Konfis können sich nicht mehr zu Terminen anmelden, die nur für
   Teamer:innen gedacht sind oder die abgesagt wurden. Wer bereits angemeldet
   war, kann sich von einem abgesagten Termin weiterhin abmelden.

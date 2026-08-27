@@ -752,7 +752,19 @@ falschen Teamer-Erklärtexte (PR #83).
       verspricht sie Konfis.
 - [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.*
-- [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
+- [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
+      27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
+      konnte per API Bonuspunkte an eine Konfi eines **fremden Jahrgangs**
+      vergeben — POST → **201**, Eintrag angelegt. Das widersprach
+      `assign-activity` (prüft den Jahrgang) und dem Handbuch, das
+      ausdrücklich "Kein Zugriff auf diesen Konfi" verspricht
+      (`45-jahrgaenge.md:180`). Über die Oberfläche nicht erreichbar, weil die
+      Teamer-Ansicht keine Punktevergabe hat — bekommt sie eine, wäre die
+      Lücke sofort real gewesen.
+      Jetzt derselbe Check wie in `assign-activity`, mit demselben Wortlaut.
+      Die Leitung bleibt org-weit berechtigt (eigene Gegenprobe).
+      Nebenbei korrigiert: Die API-Doku nannte für diese Route **200**, der
+      Code antwortet mit **201** (`konfi-management.js:861`).
 - [ ] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
       das Handbuch beschreibt sie trotzdem im Detail.
 
