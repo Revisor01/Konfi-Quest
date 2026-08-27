@@ -575,8 +575,19 @@ falschen Teamer-Erklärtexte (PR #83).
       (PR #90). Konfi bekam Psalm 23, Teamer einen 500er — obwohl der
       Kommentar Gleichheit behauptete. Fallback steht jetzt gemeinsam im
       `losungService`.
-- [ ] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
-      Konfi-Liste prüft `has_submission`, andere Bäume etwas anderes.
+- [x] **M3 — "Du hast bereits eingereicht" bedeutet je Baum etwas anderes.**
+      ERLEDIGT 27.08.2026. Die Konfi-Liste prüft `has_submission` (eingereicht
+      ist eingereicht, auch unmoderiert); die geteilte Leitungs-/Teamer-Liste
+      prüfte `has_badge`, das seit dem 24.08. nur noch FREIGEGEBENE Beiträge
+      zählt. Bei einer moderierten Challenge sah eine Teamer:in nach dem
+      eigenen Einreichen deshalb kein Häkchen, eine Konfi schon — bei
+      wortgleichem Tooltip. Jetzt über `own_submission_count`, das der
+      Endpunkt seit jeher mitliefert und das im Frontend niemand verwendet
+      hat. Da `ChallengesManageView` von beiden Rollen genutzt wird, deckt die
+      eine Änderung Leitung und Teamer:innen ab.
+      Mitgeändert: Die Legende erklärte das Symbol ausschließlich als
+      "Konfi-Sicht" — jetzt rollenneutral, weil es in der eigenen Liste
+      genauso erscheint.
 - [x] **M4 — Bibelübersetzung: zwei Auswahllisten, RVR60 nur in der privaten
       Konfi-Profil-Kopie.** ERLEDIGT durch PR #93. Am 27.08.2026 nach dem
       Merge nachgemessen: `konfi/views/ProfileView.tsx:51` importiert jetzt
@@ -634,8 +645,42 @@ falschen Teamer-Erklärtexte (PR #83).
       filtert Teamer heraus. Folgenlos, solange Teamer-Buchungen keine
       `timeslot_id` bekommen — nicht mit angefasst.
 - [ ] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
-      250-Zeilen-Inline-Kopie für Teamer.**
-- [ ] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
+      250-Zeilen-Inline-Kopie für Teamer.** Der Befund hat ZWEI Teile:
+      - [x] **Der Zählfehler in `GET /konfi/badges/stats` ist behoben**
+            (27.08.2026). `total_badges` filterte auf `target_role='konfi'`,
+            `earned_badges` zählte ALLE Abzeichen der Person — derselbe
+            Fehler, der am 24.08. in `konfiBadgeProgress.js:117-126` behoben
+            wurde, in der Nachbar-Query aber nicht. Bei einer Beförderung
+            Konfi→Teamer bleiben die Abzeichen bestehen
+            (`konfi-management.js:1136`), wer danach Teamer-Abzeichen
+            verdiente, bekam mehr "verdiente" als überhaupt vorhandene.
+            **Der Endpunkt hatte keinen Test UND keinen Aufrufer** — deshalb
+            fiel es nie auf. Beides war Grund, ihn abzusichern statt ihn
+            liegenzulassen: Wer ihn als nächstes einbindet, hätte den Fehler
+            geerbt.
+      - [ ] **Die 250-Zeilen-Inline-Kopie bleibt offen.** `routes/teamer.js`
+            rechnet den Fortschritt selbst (eigene Antwortform: flaches Array
+            plus Zählwerte in HTTP-Headern statt `{available, earned, stats}`)
+            und ohne die "unerreichbar"-Ausblendung des Konfi-Pfads. Das ist
+            ein Umbau, kein Einzeiler — eigener Auftrag.
+- [x] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
+      ERLEDIGT 27.08.2026. **War mehr als eine Anzeige-Divergenz.** Vor dem
+      Beheben nachgemessen: Der Konfi-Weg filterte weder beim Lesen NOCH beim
+      Anlegen. Eine Konfi konnte per API einen Antrag auf eine
+      Teamer-Aktivität stellen (POST → **201**), er erschien in ihrer Liste
+      (**1 Treffer**) und die Leitung konnte ihn bestätigen — Punkte aus einer
+      Aktivität, die nicht für Konfis gedacht ist. Über die Oberfläche nicht
+      erreichbar, weil die Auswahlliste dort filtert; per API offen.
+      Der Bericht hatte nur den Lesepfad genannt; die eigentliche Lücke lag am
+      Anlege-Weg (`konfi.js:711`). Beide sind jetzt zu, mit Tests für den
+      verbotenen UND den erlaubten Fall.
+      **Der `LEFT JOIN` bleibt bewusst ein `LEFT JOIN`** (der Bericht führte
+      ihn als Divergenz auf): Beim Teamer fällt ein Antrag zu einer gelöschten
+      Aktivität aus der Liste, beim Konfi bleibt er mit leerem Namen stehen.
+      Anzeigen ist besser als Verlieren — der Filter greift deshalb nur, wenn
+      überhaupt eine Aktivität vorliegt. Durch einen eigenen Test
+      festgehalten. Wer die beiden Wege angleicht, sollte den Teamer-Weg auf
+      LEFT JOIN umstellen, nicht umgekehrt.
 - [x] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
       Abzeichen-Ansicht.** GEPRÜFT UND BEWUSST GESCHLOSSEN 27.08.2026
       (Simons Entscheidung). Der Bericht markierte ihn selbst als unsicher

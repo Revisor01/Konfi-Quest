@@ -255,8 +255,20 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                       </>
                     )}
                     {/* Eigener Beitrag vorhanden — dasselbe Papierflieger-Badge
-                        wie in der Konfi-Sicht (11.08.). */}
-                    {challenge.has_badge && (
+                        wie in der Konfi-Sicht (11.08.).
+                        Befund M3: Hier stand `has_badge`, das seit dem
+                        24.08.2026 nur noch FREIGEGEBENE Beitraege zaehlt
+                        (challenges.js:305-309). Bei einer moderierten
+                        Challenge sah eine Teamer:in nach dem eigenen
+                        Einreichen deshalb kein Haekchen, eine Konfi in
+                        derselben Lage schon — bei gleichlautendem Tooltip.
+                        Die Konfi-Liste nutzt `has_submission`: eingereicht
+                        ist eingereicht, auch unmoderiert
+                        (challenges.js:310-315). Dasselbe leistet hier
+                        `own_submission_count`, das der Endpunkt seit jeher
+                        mitliefert (challenges.js:1100-1101, 1125) und das im
+                        Frontend bisher niemand verwendet hat. */}
+                    {(challenge.own_submission_count ?? 0) > 0 && (
                       <>
                         <div
                           className="app-corner-badge app-corner-badge--queue"

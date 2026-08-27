@@ -666,11 +666,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
+      // Befund N3 (27.08.2026): Ohne den target_role-Filter tauchten hier auch
+      // Antraege auf TEAMER-Aktivitaeten auf (der Weg dorthin ist seit
+      // demselben Befund geschlossen, Altbestand kann es aber geben).
+      // Der LEFT JOIN bleibt bewusst ein LEFT JOIN: Bei einer geloeschten
+      // Aktivitaet soll der Antrag in der Historie stehenbleiben, mit leerem
+      // Namen. Der Teamer-Weg nutzt einen inneren JOIN und laesst solche
+      // Zeilen wegfallen — das ist die zweite Haelfte von N3 und bleibt hier
+      // absichtlich unangetastet, weil Verlieren schlechter ist als Anzeigen.
+      // Deshalb greift der Filter nur, WENN eine Aktivitaet vorliegt.
       const query = `
         SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
         FROM activity_requests ar
         LEFT JOIN activities a ON ar.activity_id = a.id
         WHERE ar.user_id = $1 AND ar.organization_id = $2
+          AND (a.id IS NULL OR a.target_role = 'konfi')
         ORDER BY ar.created_at DESC
       `;
       const { rows: requests } = await db.query(query, [konfiId, req.user.organization_id]);
@@ -708,8 +718,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const date = requested_date || new Date().toISOString().split('T')[0];
       
       // Get activity details for notification
+      // Befund N3 (27.08.2026): Hier fehlte der target_role-Filter. Gemessen:
+      // Eine Konfi konnte per API einen Antrag auf eine TEAMER-Aktivitaet
+      // stellen (POST -> 201), er erschien in ihrer Liste und die Leitung
+      // konnte ihn bestaetigen — Punkte aus einer Aktivitaet, die nicht fuer
+      // Konfis gedacht ist. Ueber die Oberflaeche nicht erreichbar (die Liste
+      // dort filtert), per API aber offen. Der Teamer-Weg filtert seit jeher
+      // (teamer.js:1287-1299).
       const { rows: [activity] } = await db.query(
-        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2",
+        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2 AND target_role = 'konfi'",
         [activity_id, req.user.organization_id]
       );
 
@@ -1052,12 +1069,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // to_regclass-Legacy-Check entfernt (Audit 10.08.) — siehe Begruendung
       // oben beim Dashboard: custom_badges existiert seit Migration 076/090
       // dauerhaft, der Check war ein reiner Zusatz-Roundtrip.
+      // Befund N2 (27.08.2026): total_badges filterte auf target_role='konfi',
+      // earned_badges zaehlte ALLE Abzeichen der Person. Wer als Konfi
+      // befoerdert wurde, behaelt seine Abzeichen (konfi-management.js:1136)
+      // und kann als Teamer:in weitere verdienen — dann standen hier mehr
+      // verdiente als ueberhaupt vorhandene. Derselbe Fehler wurde am
+      // 24.08.2026 in konfiBadgeProgress.js:117-126 behoben, in dieser
+      // Nachbar-Query aber nicht (dort: 56 statt 50 in Org 1).
       const statsQuery = `
         SELECT
           (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2 AND target_role = 'konfi' AND is_active = TRUE) as total_badges,
           COUNT(kb.badge_id) as earned_badges
         FROM user_badges kb
+        JOIN custom_badges cb ON kb.badge_id = cb.id
         WHERE kb.user_id = $1 AND kb.organization_id = $2
+          AND cb.target_role = 'konfi'
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       res.json({

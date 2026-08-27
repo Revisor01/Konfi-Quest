@@ -623,6 +623,109 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // GET /api/konfi/badges/stats
+  // Befund N2 (27.08.2026): Dieselbe Verwechslung wie am 24.08. in
+  // konfiBadgeProgress.js, nur in der Nachbar-Query -- und dort unbemerkt
+  // geblieben. total_badges filterte auf target_role='konfi',
+  // earned_badges zaehlte ALLE Abzeichen der Person.
+  //
+  // Der Fall ist selten, aber real: Bei einer Befoerderung Konfi->Teamer
+  // bleiben die Abzeichen bestehen (konfi-management.js:1136). Wer danach
+  // als Teamer:in weitere verdient und wieder eine Konfi-Ansicht sieht,
+  // bekam mehr "verdiente" als ueberhaupt vorhandene Abzeichen.
+  //
+  // Der Endpunkt hatte bis dahin KEINEN Test und keinen Aufrufer -- deshalb
+  // fiel es nicht auf. Beides ist ein Grund, ihn abzusichern und nicht ihn
+  // zu ignorieren: Wer ihn als naechstes einbindet, haette den Fehler geerbt.
+  // ================================================================
+  describe('GET /api/konfi/badges/stats', () => {
+    it('Konfi bekommt 200 + beide Zaehler', async () => {
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(typeof res.body.total_badges).toBe('number');
+      expect(typeof res.body.earned_badges).toBe('number');
+    });
+
+    it('Admin bekommt 403', async () => {
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('ein verdientes TEAMER-Abzeichen zaehlt nicht als verdient mit', async () => {
+      const vorher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.earned_badges;
+
+      const { rows: [teamerBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Nur fuer Teamer', 'teamer_year', 2, 'ribbon', '#5b21b6', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, teamerBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.body.earned_badges).toBe(zuvor);
+    });
+
+    it('ein verdientes KONFI-Abzeichen zaehlt sehr wohl mit', async () => {
+      // Gegenprobe: Der Filter darf nicht einfach alles wegschneiden.
+      const vorher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.earned_badges;
+
+      const { rows: [konfiBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Nur fuer Konfis', 'total_points', 1, 'star', '#047857', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, konfiBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.body.earned_badges).toBe(zuvor + 1);
+    });
+
+    it('verdient uebersteigt nie die Gesamtzahl', async () => {
+      // Die Zusicherung, um die es eigentlich geht: Beide Zaehler messen
+      // dieselbe Menge. Genau das war vorher nicht der Fall.
+      const { rows: [teamerBadge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Teamer-Abzeichen', 'teamer_year', 1, 'ribbon', '#be185d', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)`,
+        [USERS.konfi1.id, teamerBadge.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/badges/stats')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.body.earned_badges).toBeLessThanOrEqual(res.body.total_badges);
+    });
+  });
+
+  // ================================================================
   // GET /api/konfi/badges - Progress-Berechnung (Prozent-Bug-Fix, Phase 116-02)
   // ================================================================
   describe('GET /api/konfi/badges Progress-Berechnung', () => {
@@ -1484,6 +1587,7 @@ describe('Konfi Routes', () => {
       expect(rows[0].anzahl).toBe(0);
     });
 
+
     it('VERBOTEN: Anmeldung zu einem abgesagten Termin', async () => {
       const id = await terminAnlegen('cancelled', true);
       const res = await anmelden(id);
@@ -1528,6 +1632,104 @@ describe('Konfi Routes', () => {
 
       expect(res.status).toBe(200);
     });
+  });
+
+  // ================================================================
+  // Befund N3 (27.08.2026): Antraege und target_role
+  //
+  // `GET /teamer/requests` filtert seit jeher `a.target_role='teamer'`
+  // (teamer.js:1287-1299), der Konfi-Weg filterte gar nicht — weder beim
+  // Lesen noch beim ANLEGEN.
+  //
+  // Nachgemessen, bevor es repariert wurde: Eine Konfi konnte per API einen
+  // Antrag auf eine TEAMER-Aktivitaet stellen (POST -> 201), er erschien in
+  // ihrer Liste, und die Leitung konnte ihn bestaetigen. Ergebnis waeren
+  // Punkte aus einer Aktivitaet, die nicht fuer Konfis gedacht ist. Ueber
+  // die Oberflaeche nicht erreichbar (die Auswahlliste dort filtert), per
+  // API aber offen.
+  // ================================================================
+  describe('N3: Konfi-Antraege nur auf Konfi-Aktivitaeten', () => {
+    let teamerAktivitaet;
+
+    beforeEach(async () => {
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Teamer-Schulung', 5, 'gemeinde', $1, 'teamer') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      teamerAktivitaet = akt.id;
+    });
+
+    it('VERBOTEN: Antrag auf eine Teamer-Aktivitaet wird abgelehnt', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ activity_id: teamerAktivitaet, requested_date: '2026-08-27' });
+
+      expect(res.status).toBe(404);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM activity_requests WHERE activity_id = $1',
+        [teamerAktivitaet]
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+
+    it('ERLAUBT: Antrag auf eine Konfi-Aktivitaet geht weiterhin durch', async () => {
+      // Gegenprobe — der Filter darf den regulaeren Weg nicht mitnehmen.
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-08-27'
+        });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('die Liste zeigt keine Antraege auf Teamer-Aktivitaeten', async () => {
+      // Altbestand: vor dem Fix konnten solche Zeilen entstehen. Am
+      // Anlege-Weg vorbei direkt eingefuegt, damit der Lesepfad selbst
+      // geprueft wird und nicht nur der geschlossene Eingang.
+      await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, $2, '2026-08-27', 'pending', $3)`,
+        [USERS.konfi1.id, teamerAktivitaet, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.filter(r => r.activity_name === 'Teamer-Schulung')).toHaveLength(0);
+    });
+
+    it('ein Antrag zu einer GELOESCHTEN Aktivitaet bleibt in der Liste', async () => {
+      // Der LEFT JOIN bleibt bewusst ein LEFT JOIN (anders als im
+      // Teamer-Weg): Sonst verschwaende ein Antrag aus der Historie, sobald
+      // die Leitung die Aktivitaet loescht. Der target_role-Filter darf
+      // diese Zeilen deshalb nicht mitnehmen.
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Wird geloescht', 3, 'gemeinde', $1, 'konfi') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [antrag] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+         VALUES ($1, $2, '2026-08-27', 'pending', $3) RETURNING id`,
+        [USERS.konfi1.id, akt.id, ORGS.testGemeinde.id]
+      );
+      await db.query('UPDATE activity_requests SET activity_id = NULL WHERE id = $1', [antrag.id]);
+
+      const res = await request(app)
+        .get('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(r => r.id)).toContain(antrag.id);    });
   });
 
 });

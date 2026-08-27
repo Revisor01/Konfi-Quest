@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Teamer:innen gedacht sind oder die abgesagt wurden. Wer bereits angemeldet
   war, kann sich von einem abgesagten Termin weiterhin abmelden.
 
+- Anträge von Konfis sind jetzt auf Aktivitäten für Konfis beschränkt.
+  Aktivitäten, die nur für Teamer:innen gedacht sind, lassen sich nicht mehr
+  beantragen und tauchen in der Antragsliste nicht auf.
+
 - Ändert eine Konfi ihre E-Mail-Adresse, wird die neue Adresse sofort überall
   in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
   stehen.
@@ -225,6 +229,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Die Auswahl der Bibelübersetzung für die Tageslosung ist überall dieselbe.
   Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
   die Teamer-Ansichten.
+
+- Challenges: Das Häkchen "bereits eingereicht" erscheint jetzt in allen
+  Ansichten, sobald ein eigener Beitrag abgeschickt ist. Bei Challenges mit
+  Freigabe fehlte es Leitung und Teamer:innen bisher, bis der Beitrag geprüft
+  war — Konfis sahen es sofort.
 
 - Ist die Tageslosung gerade nicht abrufbar, sehen Teamer:innen jetzt denselben
   Ersatztext wie Konfis, statt einer Fehlermeldung.

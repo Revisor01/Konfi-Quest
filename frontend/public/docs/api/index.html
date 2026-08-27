@@ -489,11 +489,11 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/requests</code></div>
         <p class="summary">Eigene Aktivitaets-Anträge auflisten</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Anträge (user_id = Token)</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Anträge (user_id = Token), nur Aktivitäten mit target_role='konfi'</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/konfi/requests</code></div>
         <p class="summary">Neuen Aktivitaets-Antrag einreichen</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateCreateRequest</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Aktivität muss zur eigenen Org gehören (404 sonst)</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateCreateRequest</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Aktivität muss zur eigenen Org gehören UND target_role='konfi' sein (404 sonst)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/konfi/requests/{id}</code></div>
         <p class="summary">Eigenen offenen Antrag löschen</p>
