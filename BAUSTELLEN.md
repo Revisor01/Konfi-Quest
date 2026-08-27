@@ -445,7 +445,7 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       die anderen beiden führen alle drei Werte, `chat_messages`,
       `chat_poll_votes`, `password_resets` und `push_tokens` haben keinen.
       Es blieb also keine zweite Lücke stehen.
-      Migration 132 löscht den CHECK über `pg_constraint` statt über den
+      Migration 133 löscht den CHECK über `pg_constraint` statt über den
       erwarteten Namen und ist idempotent — sie läuft auch dann durch, wenn
       er in Produktion anders heißt oder `teamer` schon erlaubt.
       *Offen vor dem Ausrollen:* Der alte Wortlaut stammt aus dem Prod-Dump
@@ -453,7 +453,6 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       Der Prüfbefehl steht im Kopf der Migration.
       Die API-Doku nannte `teamer` übrigens von Anfang an — dokumentiert war
       es richtig, nur die Datenbank hielt sich nicht daran.
-
 ---
 
 ## Bekannte Fehler, Ursache belegt, Fix offen
@@ -1382,7 +1381,7 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       richtigen und erledigt B1 gleich mit.
 
       Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
-      (`backgroundService.js`) setzt weiterhin nur Chat-Unread.
+      (`backgroundService.js`) setzte weiterhin nur Chat-Unread.
       **Korrigiert 27.08.2026 — die frühere Entwarnung war falsch.** Hier
       stand, der Sync "läuft nur bei geöffneter App, wo der Client ohnehin
       korrigiert". Das stimmt nicht: `backgroundService.js` ist ein
@@ -1395,22 +1394,15 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `apns-push-type: background`). Genau der stellt bei **geschlossener**
       App zu und setzt dort das iOS-Icon-Badge.
       Die Entwarnung stützte sich also auf einen Client, den es an dieser
-      Stelle nicht gibt. Folge: Der Zähler am App-Icon führt bei
+      Stelle nicht gibt. Folge war: Der Zähler am App-Icon führte bei
       geschlossener App **nur** Chat-Ungelesene mit — alle anderen Anteile
-      (Termine, Anfragen, Abzeichen) fehlen dort, bis die App geöffnet wird.
-      Zu tun: `updateAllUserBadges` dieselbe Gesamtsumme rechnen lassen, die
-      `utils/appIconBadge.js` für die übrigen Sendestellen liefert.
-- [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
-      existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
-      nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
-      Eine COUNT-Abfrage als fünftes Feld `newBadges` in `badge-counts` deckt
-      beides ab — gemessen 101–112 ms, im Rauschen des Endpunkts.
-      Löscht netto Code, macht den intuitiven `refreshAllCounts()`-Aufruf zum
-      richtigen und erledigt B1 gleich mit.
-
-      (`backgroundService.js`) setzt weiterhin nur Chat-Unread. Er läuft nur
-      bei geöffneter App, wo der Client ohnehin korrigiert — deshalb hier
-      nicht mit angefasst.
+      (Termine, Anfragen, Abzeichen) fehlten dort, bis die App geöffnet wurde.
+      **ERLEDIGT (PR #131):** `updateAllUserBadges` rechnet jetzt dieselbe
+      Gesamtsumme wie die übrigen Sendestellen. Der naheliegende Weg (die
+      Einzelrechnung je Person aufrufen) hätte sieben Abfragen pro Person
+      gekostet — bei 1000 Konfis 7000 je Fünf-Minuten-Takt. Stattdessen
+      liefert `appIconSummenFuerAlle` dieselbe Summe aus denselben
+      SQL-Bausteinen in sechs Abfragen insgesamt.
 - [x] **Konsolidierung der Zähler.** ERLEDIGT 27.08.2026 (Commit `9a692d95`,
       "refactor(zaehler): alle Reiter-Zahlen kommen aus einer Quelle").
       Der in der Falle-Notiz vermutete Haken existierte NICHT: Der Zähler
