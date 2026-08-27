@@ -762,16 +762,37 @@ falschen Teamer-Erklärtexte (PR #83).
 
 ### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)
 
-- [ ] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.**
+- [x] **Handbuch widerspricht sich beim Gruppen-Anlegen selbst.** ERLEDIGT
+      27.08.2026. `90-chat.md:39` sagte "Nur die Leitung legt Gruppen an",
+      `20-teamer.md:34` "Du kannst Gruppenchats anlegen". Am Code geprüft:
+      Das Teamer-Kapitel hatte recht — `chat.js:442-450` beschränkt nur
+      **Konfis** auf Einzelchats. `90-chat.md` korrigiert; dabei gleich
+      ergänzt, dass Mitglieder nachtragen der Leitung vorbehalten bleibt und
+      die Mitgliederliste allen offensteht.
 - [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
-- [ ] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
+- [x] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
+      ERLEDIGT 27.08.2026. Bestätigt: `DELETE /challenges/admin/:id` läuft
+      unter `requireTeamer` (`challenges.js:1408`), die Oberfläche bietet es
+      an — das Handbuch nannte es nicht. Ergänzt, samt dem Unterschied
+      zwischen Entwurf (direkt weg) und laufender Challenge (Rückfrage, dann
+      Beiträge und Dateien mit).
 - [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
       verspricht sie Konfis.
 - [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.*
 - [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
-- [ ] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
-      das Handbuch beschreibt sie trotzdem im Detail.
+- [x] **"Direktvergabe über die Aktivitäten-Seite" hat keinen UI-Aufrufer**,
+      das Handbuch beschreibt sie trotzdem im Detail. ERLEDIGT 27.08.2026.
+      Nachgeprüft: `assign-activity` hat **null Aufrufer** im Frontend; es
+      gibt nur den Weg über die Konfi-Verwaltung
+      (`ActivityModal.tsx:135`). Das Handbuch stellte beide Wege in einer
+      Tabelle gegenüber und **empfahl sogar den nicht existierenden**
+      ("nimm den Weg über die Aktivitäten-Seite"). Abschnitt auf den echten
+      Weg umgeschrieben; die Angaben dazu (Kommentar ja, Abzeichen ja, Push
+      nein, Level nein) am Code gegengeprüft und bestätigt.
+      **Hinweis:** Der Endpunkt bleibt bestehen. Bekommt die Teamer-Ansicht
+      je eine Punktevergabe, ist er der Weg dorthin — dann gilt auch der
+      Jahrgangs-Check, den er im Gegensatz zu den Bonuspunkten schon hat.
 
 ### Aus dem Dashboard/Profil-Durchgang
 

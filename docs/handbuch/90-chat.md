@@ -36,9 +36,13 @@ aber nicht lesen (siehe unten).
 
 ### Gruppe
 
-Der einzige frei zusammenstellbare Raum. Nur die Leitung legt Gruppen an, gibt
-ihnen einen Namen und wählt die Personen aus. Nur hier lassen sich später
-Mitglieder hinzufügen und entfernen.
+Der einzige frei zusammenstellbare Raum. Leitung und Teamer:innen legen
+Gruppen an, geben ihnen einen Namen und wählen die Personen aus. Konfis
+können das nicht — sie schreiben nur einzeln.
+
+Mitglieder nachträglich hinzufügen oder entfernen kann allerdings nur die
+Leitung, auch in Gruppen, die eine Teamer:in selbst angelegt hat. Wer dabei
+ist, sehen alle Mitglieder der Gruppe.
 
 ### Jahrgangs-Chat
 
