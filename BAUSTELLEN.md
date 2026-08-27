@@ -824,8 +824,6 @@ falschen Teamer-Erklärtexte (PR #83).
       an — das Handbuch nannte es nicht. Ergänzt, samt dem Unterschied
       zwischen Entwurf (direkt weg) und laufender Challenge (Rückfrage, dann
       Beiträge und Dateien mit).
-- [ ] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
-      verspricht sie Konfis.
 - [x] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
       in 403. *Teilweise entschärft durch PR #82.* ERLEDIGT 27.08.2026.
       Die Route `/admin/users` ist ungegatet, der UI-Einstieg
@@ -840,8 +838,6 @@ falschen Teamer-Erklärtexte (PR #83).
       ging um Aktionen, die sichtbar sind und dann scheitern.
 
 
-- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
-      in 403. *Teilweise entschärft durch PR #82.*
 - [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
       27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
       konnte per API Bonuspunkte an eine Konfi eines **fremden Jahrgangs**
