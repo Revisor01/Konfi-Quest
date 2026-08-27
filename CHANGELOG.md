@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
   der Einstieg bisher ins Leere.
 
+- Der Papierkorb zum Leeren des Team-Chats erscheint nur noch dort, wo er
+  auch funktioniert. Bisher war er in einem Fall sichtbar und scheiterte beim
+  Antippen.
+
 - Auf der Benutzerverwaltung erscheinen Lösch-Aktionen nur noch dort, wo sie
   auch erlaubt sind. Bisher waren sie in manchen Fällen sichtbar und
   scheiterten dann beim Antippen.
