@@ -772,6 +772,23 @@ falschen Teamer-Erklärtexte (PR #83).
       Beides ist eine Entscheidung, keine Reparatur — deshalb hier nur
       festgehalten.
 - [ ] **N8 — `bible_translation` liegt je Rolle in einer anderen Tabelle.**
+      Der Befund hat ZWEI Teile:
+      - [x] **Die spürbare Folge ist behoben** (27.08.2026).
+      - [ ] **Die Doppelspalte bleibt** (siehe unten).
+
+      Bestätigt: Konfis speichern in `konfi_profiles.bible_translation`
+      (`konfi.js:2062`), Teamer in `users.bible_translation` (Migration 107,
+      weil Teamer kein `konfi_profile` haben). Bei einer Beförderung wurde die
+      Wahl nicht mitgenommen — die Teamer-Ansicht las die noch leere
+      users-Spalte, die Tageslosung sprang still auf LUT zurück.
+      Die Beförderung überträgt sie jetzt in derselben Transaktion
+      (`konfi-management.js`, Schritt 10). Die Quelle bleibt bewusst stehen:
+      Das `konfi_profile` bleibt insgesamt bestehen, bei einer Rückstufung ist
+      die Wahl damit noch da. Eigener Test dafür.
+      **Offen bleibt die eigentliche Ursache:** zwei gleichnamige Spalten für
+      dieselbe Präferenz. Das Zusammenführen braucht eine Datenmigration und
+      Anpassungen an allen vier Lesestellen — eigener Auftrag, nicht nebenbei.
+      Bis dahin ist die Falle wenigstens dokumentiert und die Folge weg.
 
 ### Offen aus dem Rollen-Bericht (MITTEL/NIEDRIG)
 

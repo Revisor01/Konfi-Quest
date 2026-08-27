@@ -972,6 +972,63 @@ describe('Konfi-Management Routes', () => {
       expect(res.body.user.role_name).toBe('teamer');
     });
 
+    // Befund N8 (27.08.2026): Dieselbe Praeferenz liegt je Rolle in einer
+    // ANDEREN Spalte -- Konfis in konfi_profiles.bible_translation, Teamer in
+    // users.bible_translation (Migration 107, weil Teamer kein konfi_profile
+    // haben). Die Befoerderung nahm sie nicht mit: Die Teamer-Ansicht las die
+    // noch leere users-Spalte, und die Tageslosung sprang still auf LUT.
+    it('N8: die Bibeluebersetzung bleibt nach der Befoerderung erhalten', async () => {
+      const createRes = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Uebersetzung Test', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      const konfiId = createRes.body.id;
+      await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
+
+      await db.query(
+        "UPDATE konfi_profiles SET bible_translation = 'ELB' WHERE user_id = $1",
+        [konfiId]
+      );
+
+      await request(app)
+        .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const { rows: [user] } = await db.query(
+        'SELECT bible_translation FROM users WHERE id = $1',
+        [konfiId]
+      );
+      expect(user.bible_translation).toBe('ELB');
+    });
+
+    it('N8: die Wahl bleibt auch im Konfi-Profil stehen', async () => {
+      // Gegenprobe: Das konfi_profile bleibt bei der Befoerderung insgesamt
+      // bestehen. Wird jemand zurueckgestuft, soll die Wahl noch da sein --
+      // die Uebernahme darf die Quelle also nicht leeren.
+      const createRes = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Uebersetzung Quelle', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      const konfiId = createRes.body.id;
+      await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
+      await db.query(
+        "UPDATE konfi_profiles SET bible_translation = 'GNB' WHERE user_id = $1",
+        [konfiId]
+      );
+
+      await request(app)
+        .post(`/api/admin/konfis/${konfiId}/promote-teamer`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const { rows: [profil] } = await db.query(
+        'SELECT bible_translation FROM konfi_profiles WHERE user_id = $1',
+        [konfiId]
+      );
+      expect(profil.bible_translation).toBe('GNB');
+    });
+
     it('Bereits Teamer gibt 400', async () => {
       // Teamer1 ist schon ein Teamer - Promote-Versuch sollte 400 geben
       const res = await request(app)
