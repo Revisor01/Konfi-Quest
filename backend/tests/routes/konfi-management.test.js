@@ -595,6 +595,74 @@ describe('Konfi-Management Routes', () => {
       expect(after.rows[0].gottesdienst_points).toBe(5);
     });
 
+    // Befund 11 aus dem Rollen-Bericht (26.08.2026): Hier wurde fuer
+    // Teamer:innen nur die Organisation geprueft, kein Jahrgang --
+    // inkonsistent zu assign-activity und zum Handbuch, das ausdruecklich
+    // "Kein Zugriff auf diesen Konfi" verspricht (45-jahrgaenge.md:180).
+    //
+    // Nachgemessen am 27.08.2026, bevor es repariert wurde: POST -> 201, der
+    // Eintrag wurde angelegt. Ueber die Oberflaeche nicht erreichbar, weil die
+    // Teamer-Ansicht keine Punktevergabe hat -- bekommt sie eine, waere die
+    // Luecke sofort real.
+    describe('Jahrgangs-Grenze fuer Teamer:innen', () => {
+      beforeEach(async () => {
+        // teamer1 NUR auf jahrgang1, konfi2 in jahrgang2 schieben.
+        await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+        await db.query(
+          'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+          [USERS.teamer1.id, JAHRGAENGE.jahrgang1.id]
+        );
+        await db.query(
+          'UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2',
+          [JAHRGAENGE.jahrgang2.id, USERS.konfi2.id]
+        );
+      });
+
+      it('VERBOTEN: Bonus an eine Konfi aus einem fremden Jahrgang', async () => {
+        const res = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi2.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 5, type: 'gemeinde', description: 'Fremder Jahrgang' });
+
+        expect(res.status).toBe(403);
+        // Der Wortlaut steht so im Handbuch.
+        expect(res.body.error).toBe('Kein Zugriff auf diesen Konfi');
+
+        const { rows } = await db.query(
+          'SELECT COUNT(*)::int AS anzahl FROM bonus_points WHERE konfi_id = $1',
+          [USERS.konfi2.id]
+        );
+        expect(rows[0].anzahl).toBe(0);
+      });
+
+      it('ERLAUBT: Bonus im eigenen Jahrgang geht weiterhin', async () => {
+        // Gegenprobe -- der Guard darf den regulaeren Weg nicht mitnehmen.
+        const res = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ points: 3, type: 'gemeinde', description: 'Eigener Jahrgang' });
+
+        expect(res.status).toBe(201);
+
+        const { rows } = await db.query(
+          'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+          [USERS.konfi1.id]
+        );
+        expect(rows[0].gemeinde_points).toBe(3);
+      });
+
+      it('die Leitung bleibt org-weit berechtigt', async () => {
+        // Gegenprobe: Der Jahrgangs-Check gilt ausdruecklich NUR fuer
+        // Teamer:innen. admin/org_admin duerfen weiterhin org-weit vergeben.
+        const res = await request(app)
+          .post(`/api/admin/konfis/${USERS.konfi2.id}/bonus-points`)
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ points: 4, type: 'gemeinde', description: 'Leitung org-weit' });
+
+        expect(res.status).toBe(201);
+      });
+    });
+
     it('Konfi bekommt 403 auf Bonus', async () => {
       const res = await request(app)
         .post(`/api/admin/konfis/${USERS.konfi1.id}/bonus-points`)
