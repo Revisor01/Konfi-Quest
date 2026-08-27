@@ -236,6 +236,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die Zahl am App-Icon bleibt jetzt auch zwischen zwei Benachrichtigungen
+  richtig. Bisher zeigte sie kurz nach einer Nachricht alles Offene an, wurde
+  aber wenig später auf die reinen Chat-Nachrichten heruntergesetzt — offene
+  Anträge, unbearbeitete Termine und neue Abzeichen fielen dabei weg.
+
 - Beim Jahrgangswechsel bleibt keine Anmeldung mehr für einen Termin liegen,
   den die Konfi gar nicht mehr sieht. Bisher belegte sie dort weiter einen
   Platz, auf den niemand nachrücken konnte.
