@@ -21,7 +21,7 @@ TestFlight
 
 ## Was blockiert 2.0.0 noch?
 
-Stand 27.08.2026, abends. Alle 12 offenen `- [ ]`-Punkte dieser Datei einzeln
+Stand 27.08.2026, spätabends. Alle offenen `- [ ]`-Punkte dieser Datei einzeln
 durchgegangen. **Ergebnis: genau einer betrifft den Release, und der ist der
 Release selbst.**
 
@@ -31,22 +31,31 @@ Release selbst.**
 
 Alles andere ist eingeordnet und blockiert nichts:
 
-| Offener Punkt | Wo | Warum kein Blocker |
-|---|---|---|
-| Antwortform der Teamer-Abzeichen vereinheitlichen | Z. 883 | dort schon als "NACH 2.0.0" vermerkt |
-| N8 — `bible_translation` je Rolle in anderer Tabelle | Z. 1062 | Datenmodell-Aufräumung, kein Fehlverhalten |
-| Admin-Startseite zeigt nur eine der Neuerungs-Karten | Z. 1240 | kosmetisch, wird parallel bearbeitet |
-| Konsolidierung der Zähler | Z. 1310 | Vereinfachung, Verhalten stimmt |
-| Zeitzonen und Datumsgrenzen | Z. ~1364 | **Prüfauftrag**, kein Befund |
-| Wrapped | Z. ~1367 | **Prüfauftrag**, kein Befund |
-| 3-MB-Bundle aufteilen | Z. ~1375 | ausdrücklich "Nach 2.0.0" |
-| Ionic 9 mit react-router-Umbau | Z. ~1411 | ausdrücklich "Nach 2.0.0" |
+| Offener Punkt | Warum kein Blocker |
+|---|---|
+| Antwortform der Teamer-Abzeichen vereinheitlichen | dort schon als "NACH 2.0.0" vermerkt |
+| Abgelehnte Offline-Nachreichungen verschwinden still (H1) | Befund aus dem Offline-Bericht, nach 2.0.0 |
+| Teamer-Offline-Buchung verwirft die Server-Antwort (H2) | ebenda |
+| 10 von 30 Push-Arten ohne Antipp-Ziel (M2) | Befund aus dem Push-Bericht, nach 2.0.0 |
+| Hintergrund-Sync lässt das Hauptamt aus (M3) | ebenda; betrifft nur das Icon, nicht die Daten |
+| `new_event` an ausgeschiedene Konfis (M5) | ebenda |
+| Zwei Push-Arten ohne Content-Org (M4) | ebenda; nur Multi-Org-Teamer:innen |
+| Zeitzonen und Datumsgrenzen | **Prüfauftrag**, kein Befund |
+| Wrapped | **Prüfauftrag**, kein Befund |
+| Termin-Zählungen: gemeinsame SQL-View | ausdrücklich "Nach 2.0.0" |
+| 3-MB-Bundle aufteilen | ausdrücklich "Nach 2.0.0" |
+| Ionic 9 mit react-router-Umbau | ausdrücklich "Nach 2.0.0" |
 
-**Vorsicht bei drei Einträgen unter "Welche Prüfläufe sich als nächstes
-lohnen"** (Chat-Baum, Offline-Schreibvorgänge, Push-Zustellung): Das sind
-**Vorschläge für Prüfaufträge, keine Befunde**. Sie stehen dort ausdrücklich
-als "Vorschläge, nicht beauftragt". Solange kein Bericht dazu vorliegt, ist
-daraus nichts abzuleiten — weder ein Blocker noch eine Entwarnung.
+> **Diese Übersicht war schon einmal falsch — zweimal sogar.** Ihre erste
+> Fassung führte N8, die Neuerungs-Karten und die Konsolidierung der Zähler
+> als offen; alle drei waren erledigt. Und sie warnte, zu den drei Prüfläufen
+> Chat-Baum, Offline-Schreibvorgänge und Push-Zustellung liege "kein Bericht
+> vor" — alle drei Berichte existierten, sie lagen nur auf einem Branch statt
+> auf `main` (siehe Regel 6 in `docs/agenten-berichte/README.md`).
+>
+> **Wer diese Tabelle fortschreibt, misst vorher am Code nach.** Eine
+> Blocker-Übersicht, die aus dem Register abgeschrieben wird, erbt dessen
+> Fehler und sieht dabei aus wie eine Prüfung.
 
 ---
 
@@ -1373,13 +1382,6 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       die SQL-Bausteine — der Einzelweg ist ein Bulk-Aufruf mit einem Element,
       damit die zwei Fassungen gar nicht erst auseinanderlaufen können. Ein
       zweiter Paritätstest hält Einzel- gegen Bulk-Weg je Rolle.
-- [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
-      existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
-      nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
-      Eine COUNT-Abfrage als fünftes Feld `newBadges` in `badge-counts` deckt
-      beides ab — gemessen 101–112 ms, im Rauschen des Endpunkts.
-      Löscht netto Code, macht den intuitiven `refreshAllCounts()`-Aufruf zum
-      richtigen und erledigt B1 gleich mit.
 
       Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
       (`backgroundService.js`) setzte weiterhin nur Chat-Unread.
