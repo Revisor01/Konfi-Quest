@@ -810,7 +810,6 @@ falschen Teamer-Erklärtexte (PR #83).
       des Routen-Blocks ein Vermerk mit Datum und Messwerten, damit
       nachvollziehbar bleibt, dass es die Routen gab.
 
-- [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
 - [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
       verspricht sie Konfis. ERLEDIGT 27.08.2026 (Simons Entscheidung:
       freigeben, Gates trennen). Alle drei Teile des Befunds bestätigt: Das
