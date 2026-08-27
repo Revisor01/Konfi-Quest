@@ -7,7 +7,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.0.0
+## [2.0.0] - 2026-08-27
 
 **Neu ist vor allem eins: Challenges.** Alles andere in dieser Liste sind
 Verbesserungen und Fehlerbehebungen an dem, was es schon gab — viele davon
