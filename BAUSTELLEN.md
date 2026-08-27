@@ -647,7 +647,24 @@ falschen Teamer-Erklärtexte (PR #83).
             plus Zählwerte in HTTP-Headern statt `{available, earned, stats}`)
             und ohne die "unerreichbar"-Ausblendung des Konfi-Pfads. Das ist
             ein Umbau, kein Einzeiler — eigener Auftrag.
-- [ ] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
+- [x] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
+      ERLEDIGT 27.08.2026. **War mehr als eine Anzeige-Divergenz.** Vor dem
+      Beheben nachgemessen: Der Konfi-Weg filterte weder beim Lesen NOCH beim
+      Anlegen. Eine Konfi konnte per API einen Antrag auf eine
+      Teamer-Aktivität stellen (POST → **201**), er erschien in ihrer Liste
+      (**1 Treffer**) und die Leitung konnte ihn bestätigen — Punkte aus einer
+      Aktivität, die nicht für Konfis gedacht ist. Über die Oberfläche nicht
+      erreichbar, weil die Auswahlliste dort filtert; per API offen.
+      Der Bericht hatte nur den Lesepfad genannt; die eigentliche Lücke lag am
+      Anlege-Weg (`konfi.js:711`). Beide sind jetzt zu, mit Tests für den
+      verbotenen UND den erlaubten Fall.
+      **Der `LEFT JOIN` bleibt bewusst ein `LEFT JOIN`** (der Bericht führte
+      ihn als Divergenz auf): Beim Teamer fällt ein Antrag zu einer gelöschten
+      Aktivität aus der Liste, beim Konfi bleibt er mit leerem Namen stehen.
+      Anzeigen ist besser als Verlieren — der Filter greift deshalb nur, wenn
+      überhaupt eine Aktivität vorliegt. Durch einen eigenen Test
+      festgehalten. Wer die beiden Wege angleicht, sollte den Teamer-Weg auf
+      LEFT JOIN umstellen, nicht umgekehrt.
 - [ ] **N4 — org_admin kann an Challenges teilnehmen, hat aber keine eigene
       Abzeichen-Ansicht.**
 - [x] **N5 — Leitung kann das Konfi-Wrapped nicht ansehen, obwohl das Backend
