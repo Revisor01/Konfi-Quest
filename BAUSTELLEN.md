@@ -800,7 +800,6 @@ falschen Teamer-Erklärtexte (PR #83).
       ergänzt, dass Mitglieder nachtragen der Leitung vorbehalten bleibt und
       die Mitgliederliste allen offensteht.
 - [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
-- [ ] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
 - [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
       verspricht sie Konfis. ERLEDIGT 27.08.2026 (Simons Entscheidung:
       freigeben, Gates trennen). Alle drei Teile des Befunds bestätigt: Das
