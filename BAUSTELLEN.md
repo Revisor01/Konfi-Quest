@@ -800,6 +800,24 @@ falschen Teamer-Erklärtexte (PR #83).
       ergänzt, dass Mitglieder nachtragen der Leitung vorbehalten bleibt und
       die Mitgliederliste allen offensteht.
 - [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
+- [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
+      verspricht sie Konfis. ERLEDIGT 27.08.2026 (Simons Entscheidung:
+      freigeben, Gates trennen). Alle drei Teile des Befunds bestätigt: Das
+      Backend gibt die Teilnehmerliste seit jeher jedem Raum-Mitglied frei
+      (`chat.js:1336`, geprüft wird nur `darfRaumOeffnen`), der Knopf hing am
+      `isAdmin`-Gate — **zusammen mit "Umfrage erstellen", also zwei
+      verschiedene Rechte an einem Schalter** — und das Handbuch verspricht
+      sie Konfis ausdrücklich (`10-konfis.md:46`).
+      Jetzt sehen alle Raum-Mitglieder die Liste, Umfragen anlegen bleibt bei
+      der Leitung. In Einzelchats bleibt der Knopf weg (dort weiß man, wer
+      dabei ist).
+      **Vor dem Freigeben geprüft:** Das Modal enthält auch Verwaltungsaktionen
+      (entfernen, hinzufügen). Die hängen an einem eigenen Gate
+      (`canManageMembers`, `MembersModal.tsx:271`) und bleiben bei der
+      Leitung — sonst hätte das Öffnen der Liste versehentlich die Verwaltung
+      mit freigegeben. Der Endpunkt liefert Anzeigename, Rolle, Jahrgang und
+      Beitrittsdatum, keine Kontaktdaten.
+
 - [x] **Teamer-Kapitel im Handbuch verschweigt das Challenge-Löschen.**
       ERLEDIGT 27.08.2026. Bestätigt: `DELETE /challenges/admin/:id` läuft
       unter `requireTeamer` (`challenges.js:1408`), die Oberfläche bietet es
@@ -821,6 +839,9 @@ falschen Teamer-Erklärtexte (PR #83).
       **Serverseitig war es nie eine Lücke** — `requireOrgAdmin` hielt. Es
       ging um Aktionen, die sichtbar sind und dann scheitern.
 
+
+- [ ] **Benutzerseite per Deep-Link für Admins erreichbar**, Aktionen liefen
+      in 403. *Teilweise entschärft durch PR #82.*
 - [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
       27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
       konnte per API Bonuspunkte an eine Konfi eines **fremden Jahrgangs**
@@ -862,8 +883,20 @@ falschen Teamer-Erklärtexte (PR #83).
 - [ ] **Admin-Startseite zeigt nur eine der beiden Neuerungs-Karten.**
 - [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
       Snapshot-Existenz.**
-- [ ] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
-      kaputtem JSON relevant).
+- [x] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
+      kaputtem JSON relevant). ERLEDIGT 27.08.2026. Bestätigt: Es fehlten
+      `challenges` und `konfispruch` — beide längst Teil der Dashboards. Wer
+      in diesen Fall geriete, verlöre sie stillschweigend.
+      **Warum es überhaupt veralten konnte:** Die Listen greifen nur, wenn der
+      gespeicherte Wert kein gültiges JSON ist, also praktisch nie. Genau
+      deshalb fiel es nicht auf.
+      Jetzt an die Dashboard-Fallbacks angeglichen (`konfi.js:306`,
+      `teamer.js:960`) — gespiegelt, nicht neu erfunden. Ein Test hält die
+      Übereinstimmung fest und prüft dabei nur die *Menge* der Abschnitte,
+      nicht ihre Reihenfolge; die ist Geschmackssache. Gegenprobe: Konfis und
+      Teamer:innen behalten unterschiedliche Listen — angleichen heißt nicht
+      gleichmachen.
+      **Kein CHANGELOG-Eintrag:** Der Fall tritt praktisch nie ein.
 
 ### Aus dem Abzeichen-Zähler-Bericht (27.08.)
 
