@@ -648,8 +648,8 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       Lauf rot. Gelöst mit einem frisch angelegten Admin, den vorher niemand
       geladen hat.
 
-- [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
-      Ansicht änderbar.** Die Backend-Route existiert
+- [x] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
+      Ansicht änderbar.** ERLEDIGT 27.08.2026. Die Backend-Route existiert
       (`konfi-management.js:282`, nicht `:269`), hat aber keinen UI-Aufrufer.
       ENTSCHIEDEN 27.08.2026: Bearbeiten für die Leitung bauen, Name UND
       Jahrgang.
@@ -661,16 +661,41 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       **Dabei eine Mandantenluecke gefunden — behoben, siehe unten.**
       **Was vor dem Bau noch fehlt** (aus derselben Messung):
       - [x] Org-Pruefung des Ziel-Jahrgangs (Sicherheitsluecke, behoben)
-      - [ ] Freiwillige Termine des alten Jahrgangs abmelden (Simons
-            Entscheidung 27.08.: wie bei Pflichtterminen — nur kuenftige, nur
-            ohne erfasste Anwesenheit, mit Austritt aus dem Termin-Chat).
-            Heute bleibt die Buchung stehen: Die Konfi sieht den Termin nicht
-            mehr (`konfi.js:1224` filtert per INNER JOIN auf den AKTUELLEN
-            Jahrgang), belegt aber weiter einen Platz und bleibt im Chat.
-      - [ ] **Vier Sachfragen offen** (Wrapped-Snapshot am alten Jahrgang,
-            abgeschaltete Punkteart im Ziel-Jahrgang, Challenge-Beitraege,
-            Jahrgang ausserhalb der eigenen Zuweisung als `admin`) — stehen
-            im Handoff.
+      - [x] Freiwillige Termine des alten Jahrgangs abmelden — GEBAUT
+            27.08.2026. Es reichte, `AND e.mandatory = true` aus der
+            Abmeldung zu nehmen; das EINBUCHEN bleibt auf Pflichttermine
+            beschraenkt (freiwillige sucht man sich selbst aus). Vier Tests,
+            gegen Mutation geprueft.
+            **Mit erledigt:** Die Umbuchung lief bisher NACH dem COMMIT in
+            eigenen try/catch, deren Fehler nur geloggt wurden — bei einem
+            Fehler war der Jahrgang gewechselt, die Termine aber nur halb
+            umgebucht, und niemand erfuhr davon. Sie steht jetzt IN der
+            Transaktion, wie die Befoerderung Konfi->Teamer es vormacht.
+      - [x] **Die vier Sachfragen sind entschieden** (27.08.2026 nachmittags):
+
+            **Leitgedanke, Simons Worte:** "Neuer Jahrgang, die Regeln des
+            Jahrgangs gelten." Und: Der typische Fall ist "ich hab den falsch
+            angelegt, der muss in den richtigen Jahrgang" — nicht ein Wechsel
+            kurz vor der Konfirmation.
+
+            1. **Jahresrueckblick: NICHTS BAUEN.** Wenn beim Wechsel ohnehin
+               Termine und Pflichtveranstaltungen wegfallen, ist es folgerichtig,
+               dass auch der Rueckblick verschwindet — und erst wiederkommt,
+               wenn der NEUE Jahrgang seine Freigabe hat. Das heutige Verhalten
+               ist damit bereits richtig: Das Gate prueft den aktuellen Jahrgang
+               (`wrapped.js:463-477`), der Snapshot bleibt liegen und wird
+               sichtbar, sobald der neue Jahrgang freigegeben ist.
+            2. **Abgeschaltete Punkteart: WARNEN, aber zulassen.** Bestaetigung
+               beim Speichern, die die Folge benennt ("Gemeindepunkte sind in
+               2026/2027 abgeschaltet — die 12 Punkte werden dort nicht mehr
+               angezeigt"). Simons Haltung: "Pech gehabt" — aber informiert.
+            3. **Challenge-Beitraege: harter Schnitt, wie heute.** Mit dem
+               Jahrgang endet der Zugriff, auch auf eigene Beitraege. Keine
+               Ausnahme bauen.
+            4. **Fremder Jahrgang als `admin`: WARNEN, aber zulassen.** Hinweis
+               im Dialog, dass die Konfi danach aus der eigenen Liste
+               verschwindet. Kein Sicherheitsproblem — die Organisation ist
+               seit dem Fix von heute geprueft.
 
 - [x] **Mandantenluecke: `PUT /admin/konfis/:id` prueft den Ziel-Jahrgang
       nicht gegen die eigene Organisation.** GEFUNDEN UND BEHOBEN 27.08.2026,

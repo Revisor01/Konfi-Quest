@@ -336,25 +336,37 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
             }
 
-            await client.query('COMMIT');
-
-            // Auto-Enrollment für zukünftige Pflicht-Events des neuen Jahrgangs
+            // Umbuchung der Termine — seit 27.08.2026 INNERHALB der
+            // Transaktion. Vorher lief sie nach dem COMMIT in eigenen
+            // try/catch, deren Fehler nur geloggt wurden: Bei einem Fehler war
+            // der Jahrgang gewechselt, die Termine aber nur halb umgebucht,
+            // und niemand erfuhr davon. Die Befoerderung Konfi->Teamer weiter
+            // unten zeigt das richtige Muster — alles Zustandsaendernde in die
+            // Transaktion, nur Nebenwirkungen ohne DB-Bezug danach.
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
               // Zuerst die Pflichttermine des ALTEN Jahrgangs abraeumen. Ohne das
               // blieb der Konfi dort gebucht und stand anschliessend in den
               // Pflichtterminen beider Jahrgänge (Befund 24.08.2026).
-              // Bewusst eng gefasst: nur kuenftige Pflichttermine, nur solange
-              // keine Anwesenheit erfasst ist und der Termin nicht auch zum
-              // neuen Jahrgang gehört — Historie bleibt damit unberuehrt.
+              // Bewusst eng gefasst: nur kuenftige Termine, nur solange keine
+              // Anwesenheit erfasst ist und der Termin nicht auch zum neuen
+              // Jahrgang gehört — Historie bleibt damit unberuehrt.
+              //
+              // Seit 27.08.2026 auch FREIWILLIGE Termine (Simons Entscheidung).
+              // Vorher stand hier `AND e.mandatory = true`, und die Buchung
+              // eines freiwilligen Termins blieb liegen: Die Konfi sah ihn
+              // nicht mehr (`konfi.js` filtert die Liste per INNER JOIN auf den
+              // AKTUELLEN Jahrgang), belegte aber weiter einen Platz und blieb
+              // im Termin-Chat. Ein Geisterplatz, auf den niemand nachruecken
+              // konnte.
+              // Das EINBUCHEN unten bleibt auf Pflichttermine beschraenkt:
+              // Freiwillige sucht man sich selbst aus.
               if (currentProfile.jahrgang_id) {
-                try {
-                  const { rows: abgemeldet } = await db.query(
+                  const { rows: abgemeldet } = await client.query(
                     `DELETE FROM event_bookings eb
                      USING events e
                      WHERE eb.event_id = e.id
                        AND eb.user_id = $1
                        AND eb.attendance_status IS NULL
-                       AND e.mandatory = true
                        AND e.event_date > NOW()
                        AND e.organization_id = $2
                        AND EXISTS (
@@ -371,16 +383,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                   // Wer nicht mehr gebucht ist, gehört auch nicht mehr in den
                   // Event-Chat — dieselbe Regel wie bei der Abmeldung
                   // (eventChat.js). Ohne das las der Konfi im Chat eines
-                  // Pflichttermins mit, den er gar nicht mehr sieht
+                  // Termins mit, den er gar nicht mehr sieht
                   // (Befund 24.08.2026).
                   for (const row of abgemeldet) {
-                    await removeFromEventChat(db, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
+                    await removeFromEventChat(client, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
                   }
-                } catch (unenrollErr) {
-                  console.error('Abmelden von Pflicht-Events des alten Jahrgangs fehlgeschlagen:', unenrollErr);
-                }
               }
-              try {
                 const enrollFutureEventsQuery = `
                   INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
                   SELECT e.id, $1, 'confirmed', NOW(), $2
@@ -394,18 +402,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                   ON CONFLICT (user_id, event_id) DO NOTHING
                   RETURNING event_id
                 `;
-                const { rows: gebucht } = await db.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
+                const { rows: gebucht } = await client.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
                 // In die Chats der neu gebuchten Pflichttermine eintreten —
                 // dieselbe Regel wie beim Nachbuchen eines Jahrgangs am Event
                 // (events.js: syncEventChat). Existiert kein Chat, passiert
                 // nichts (Anlage bleibt Sache der Leitung).
                 for (const row of gebucht) {
-                  await addToEventChat(db, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
+                  await addToEventChat(client, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
                 }
-              } catch (enrollErr) {
-                console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
-              }
             }
+
+            await client.query('COMMIT');
 
             res.json({ message: 'Konfi erfolgreich aktualisiert' });
 
