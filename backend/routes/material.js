@@ -40,20 +40,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   };
 
   // Validierungsregeln
-  const validateCreateTag = [
-    body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
-    handleValidationErrors
-  ];
-
-  const validateUpdateTag = [
-    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
-    body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
-    handleValidationErrors
-  ];
-
   const validateCreateMaterial = [
     body('title').notEmpty().trim().isLength({ min: 1, max: 255 }).withMessage('Titel erforderlich (1-255 Zeichen)'),
-    body('tag_ids').optional().isArray().withMessage('tag_ids muss ein Array sein'),
     handleValidationErrors
   ];
 
@@ -66,99 +54,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // ====================================================================
-  // TAG ENDPOINTS (Lesen: requireTeamer, CRUD: requireAdmin)
-  // ====================================================================
-
-  // GET /tags - Tags der eigenen Organisation laden
-  router.get('/tags', rbacVerifier, requireTeamer, async (req, res) => {
-    try {
-      const { rows } = await db.query(
-        'SELECT id, name, created_at FROM material_tags WHERE organization_id = $1 ORDER BY name',
-        [req.user.organization_id]
-      );
-      res.json(rows);
-    } catch (err) {
-      console.error('Fehler beim Laden der Tags:', err.message);
-      res.status(500).json({ error: 'Fehler beim Laden der Tags' });
-    }
-  });
-
-  // POST /tags - Neuen Tag erstellen
-  router.post('/tags', rbacVerifier, requireAdmin, validateCreateTag, async (req, res) => {
-    try {
-      const { name } = req.body;
-      if (!name || !name.trim()) {
-        return res.status(400).json({ error: 'Tag-Name ist erforderlich' });
-      }
-
-      const { rows: [tag] } = await db.query(
-        'INSERT INTO material_tags (name, organization_id) VALUES ($1, $2) RETURNING id, name, created_at',
-        [name.trim(), req.user.organization_id]
-      );
-      res.status(201).json(tag);
-      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
-    } catch (err) {
-      if (err.code === '23505') {
-        return res.status(409).json({ error: 'Ein Tag mit diesem Namen existiert bereits' });
-      }
-      console.error('Fehler beim Erstellen des Tags:', err.message);
-      res.status(500).json({ error: 'Fehler beim Erstellen des Tags' });
-    }
-  });
-
-  // PUT /tags/:id - Tag umbenennen
-  router.put('/tags/:id', rbacVerifier, requireAdmin, validateUpdateTag, async (req, res) => {
-    try {
-      const { name } = req.body;
-      if (!name || !name.trim()) {
-        return res.status(400).json({ error: 'Tag-Name ist erforderlich' });
-      }
-
-      const { rows: [tag] } = await db.query(
-        'UPDATE material_tags SET name = $1 WHERE id = $2 AND organization_id = $3 RETURNING id, name',
-        [name.trim(), req.params.id, req.user.organization_id]
-      );
-
-      if (!tag) {
-        return res.status(404).json({ error: 'Tag nicht gefunden' });
-      }
-      res.json(tag);
-      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
-    } catch (err) {
-      if (err.code === '23505') {
-        return res.status(409).json({ error: 'Ein Tag mit diesem Namen existiert bereits' });
-      }
-      console.error('Fehler beim Umbenennen des Tags:', err.message);
-      res.status(500).json({ error: 'Fehler beim Umbenennen des Tags' });
-    }
-  });
-
-  // DELETE /tags/:id - Tag löschen (CASCADE löscht Zuordnungen)
-  router.delete('/tags/:id', rbacVerifier, requireAdmin, async (req, res) => {
-    try {
-      const { rowCount } = await db.query(
-        'DELETE FROM material_tags WHERE id = $1 AND organization_id = $2',
-        [req.params.id, req.user.organization_id]
-      );
-
-      if (rowCount === 0) {
-        return res.status(404).json({ error: 'Tag nicht gefunden' });
-      }
-      res.json({ message: 'Tag gelöscht' });
-      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
-    } catch (err) {
-      console.error('Fehler beim Löschen des Tags:', err.message);
-      res.status(500).json({ error: 'Fehler beim Löschen des Tags' });
-    }
-  });
-
-  // ====================================================================
   // MATERIAL ENDPOINTS
   // ====================================================================
 
@@ -166,7 +61,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
-      const { tag_id, search, event_id, jahrgang_id } = req.query;
+      const { search, event_id, jahrgang_id } = req.query;
 
       let query = `
         SELECT m.id, m.title, m.description,
@@ -180,12 +75,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       `;
       const params = [orgId];
       let paramIndex = 2;
-
-      if (tag_id) {
-        query += ` AND EXISTS (SELECT 1 FROM material_file_tags mft WHERE mft.material_id = m.id AND mft.tag_id = $${paramIndex})`;
-        params.push(tag_id);
-        paramIndex++;
-      }
 
       if (search) {
         query += ` AND (m.title ILIKE $${paramIndex} OR m.description ILIKE $${paramIndex})`;
@@ -220,14 +109,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         const materialIds = materials.map(m => m.id);
 
         // Tags für alle Materialien laden
-        const { rows: tags } = await db.query(
-          `SELECT mft.material_id, mt.id, mt.name
-           FROM material_file_tags mft
-           JOIN material_tags mt ON mft.tag_id = mt.id
-           WHERE mft.material_id = ANY($1)`,
-          [materialIds]
-        );
-
         // Events für alle Materialien laden
         const { rows: matEvents } = await db.query(
           `SELECT me.material_id, e.id, e.name
@@ -237,11 +118,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           [materialIds]
         );
 
-        const tagsByMaterial = {};
-        for (const tag of tags) {
-          if (!tagsByMaterial[tag.material_id]) tagsByMaterial[tag.material_id] = [];
-          tagsByMaterial[tag.material_id].push({ id: tag.id, name: tag.name });
-        }
 
         const eventsByMaterial = {};
         for (const ev of matEvents) {
@@ -265,7 +141,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         }
 
         for (const material of materials) {
-          material.tags = tagsByMaterial[material.id] || [];
           material.events = eventsByMaterial[material.id] || [];
           material.jahrgaenge = jahrgaengeByMaterial[material.id] || [];
           material.file_count = parseInt(material.file_count, 10);
@@ -333,14 +208,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       // Tags laden
-      const { rows: tags } = await db.query(
-        `SELECT mt.id, mt.name
-         FROM material_file_tags mft
-         JOIN material_tags mt ON mft.tag_id = mt.id
-         WHERE mft.material_id = $1`,
-        [material.id]
-      );
-      material.tags = tags;
 
       // Events laden (Many-to-Many)
       const { rows: matEvents } = await db.query(
@@ -384,7 +251,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireAdmin, validateCreateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
@@ -396,9 +263,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
         return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
-      }
-      if (!(await allIdsBelongToOrg(db, 'material_tags', tag_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Tag gehört nicht zu deiner Organisation' });
       }
 
       const { rows: [material] } = await db.query(
@@ -430,16 +294,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Tags zuordnen
-      if (tag_ids && tag_ids.length > 0) {
-        const tagValues = tag_ids.map((tagId, i) => `($1, $${i + 2})`).join(', ');
-        const tagParams = [material.id, ...tag_ids];
-        await db.query(
-          `INSERT INTO material_file_tags (material_id, tag_id) VALUES ${tagValues}`,
-          tagParams
-        );
-      }
-
       res.status(201).json(material);
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
       // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
@@ -453,7 +307,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
@@ -473,9 +327,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
         return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
-      }
-      if (!(await allIdsBelongToOrg(db, 'material_tags', tag_ids, req.user.organization_id))) {
-        return res.status(400).json({ error: 'Mindestens ein Tag gehört nicht zu deiner Organisation' });
       }
 
       const updates = [];
@@ -526,19 +377,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           await db.query(
             `INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ${jgValues}`,
             jgParams
-          );
-        }
-      }
-
-      // Tags aktualisieren (DELETE + INSERT)
-      if (tag_ids !== undefined) {
-        await db.query('DELETE FROM material_file_tags WHERE material_id = $1', [materialId]);
-        if (tag_ids.length > 0) {
-          const tagValues = tag_ids.map((tagId, i) => `($1, $${i + 2})`).join(', ');
-          const tagParams = [materialId, ...tag_ids];
-          await db.query(
-            `INSERT INTO material_file_tags (material_id, tag_id) VALUES ${tagValues}`,
-            tagParams
           );
         }
       }

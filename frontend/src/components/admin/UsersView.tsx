@@ -43,6 +43,13 @@ interface UsersViewProps {
   onAddUserClick: () => void;
   onSelectUser: (user: AdminUser) => void;
   onDeleteUser: (user: AdminUser) => void;
+  // Befund 16 aus dem Rollen-Bericht (26.08.2026): Der Loesch-Wisch haing
+  // allein an can_edit, ohne Rollen-Gate. Die Route /admin/users ist
+  // ungegatet — ein admin, der die Adresse kennt, sah die Wische und lief
+  // damit in 403 (users.js:385, requireOrgAdmin). Verwalten darf nur
+  // org_admin; der Anlegen-Knopf prueft das seit jeher
+  // (AdminUsersPage.tsx:121), die Liste nicht.
+  darfVerwalten: boolean;
 }
 
 const UsersView: React.FC<UsersViewProps> = ({
@@ -50,6 +57,7 @@ const UsersView: React.FC<UsersViewProps> = ({
   onUpdate,
   onAddUserClick,
   onSelectUser,
+  darfVerwalten,
   onDeleteUser
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
@@ -299,7 +307,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     Tippen = bearbeiten, Wischen = löschen. Der frühere
                     Bearbeiten-Wisch rief exakt dieselbe Funktion wie der
                     Tap auf und war damit reine Doppelung (Audit 10.08.). */}
-                {user.can_edit !== false && (
+                {darfVerwalten && user.can_edit !== false && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
                       onClick={() => {
