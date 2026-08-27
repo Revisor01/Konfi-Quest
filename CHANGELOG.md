@@ -75,6 +75,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Was es fürs Mitmachen bei einer Challenge gibt, heißt jetzt **Stempel** statt
+  Abzeichen. Der alte Name versprach etwas zum Sammeln — genau das ist es
+  nicht: Es geht nicht um Punkte oder Ranglisten, sondern darum, dabei gewesen
+  zu sein. Abzeichen bleiben Abzeichen; die sammelt man weiterhin.
+
 - Die Leitung kann Teamer:innen jetzt anlegen, bearbeiten und löschen — bisher
   konnten das nur Org-Admins, obwohl die App den Weg allen anbot. Org-Admins
   selbst lassen sich weiterhin nur von anderen Org-Admins verwalten.

@@ -15,7 +15,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Neu: Challenges',
-    text: 'Challenges begleiten die Konfis über einen Zeitraum, den du festlegst: Fotos, Texte, Aufnahmen oder Links. Ohne Punkte, ohne Zähler, ohne Rangliste — nur ein Abzeichen fürs Mitmachen. Die Idee: sich eine Zeit lang mit einem Thema beschäftigen, mitten im Alltag. Sie haben einen eigenen Tab in deiner Tab-Leiste.',
+    text: 'Challenges begleiten die Konfis über einen Zeitraum, den du festlegst: Fotos, Texte, Aufnahmen oder Links. Ohne Punkte, ohne Zähler, ohne Rangliste — nur ein Stempel fürs Mitmachen. Die Idee: sich eine Zeit lang mit einem Thema beschäftigen, mitten im Alltag. Sie haben einen eigenen Tab in deiner Tab-Leiste.',
   },
   {
     icon: flagOutline,

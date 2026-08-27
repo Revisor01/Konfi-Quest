@@ -40,5 +40,5 @@ steht im Kapitel [Punkte, Level und Ziele](40-punkte.md).
 
 **Challenges.** Sie sind Aufgaben über einen Zeitraum, auf die man mit einem
 Beitrag antwortet — Text, Foto, Aufnahme oder Link. Es gibt keine Zähler und
-keine Rangliste, nur ein Abzeichen fürs Mitmachen. Das ist Absicht: Hier
+keine Rangliste, nur ein Stempel fürs Mitmachen. Das ist Absicht: Hier
 soll niemand rechnen.

@@ -249,7 +249,7 @@ export interface ChallengeLeitungModalProps {
    * Bearbeiten bewusst nur auf dem Wisch (Tippen = Moderation) — wer die
    * Challenge schon geöffnet hat, soll dafür nicht zurück und wischen müssen
    * (Nutzerwunsch 24.08.2026). Der Knopf erscheint IMMER: auch nach dem Start
-   * bleiben Titel, Beschreibung, Ende, Abzeichen und Jahrgänge änderbar; die
+   * bleiben Titel, Beschreibung, Ende, Stempel und Jahrgänge änderbar; die
    * eingefrorenen Felder zeigt das Formular selbst als gesperrt.
    */
   onEdit?: (challenge: AdminChallenge) => void;

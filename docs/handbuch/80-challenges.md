@@ -1,6 +1,6 @@
 ---
 titel: Challenges
-untertitel: Aufgaben stellen, Beiträge begleiten, Abzeichen vergeben
+untertitel: Aufgaben stellen, Beiträge begleiten, Stempel vergeben
 farbe: "#be185d"
 gruppe: Nachschlagen
 ---
@@ -22,7 +22,7 @@ Antwort — und ein Foto vom Sonnenaufgang ist nicht „drei Punkte wert". Sobal
 Punkte im Spiel wären, würden Beiträge nach Ertrag statt nach Ehrlichkeit
 entstehen.
 
-Was es stattdessen gibt: ein **Abzeichen** für alle, die mitgemacht haben
+Was es stattdessen gibt: einen **Stempel** für alle, die mitgemacht haben
 (siehe unten) — für alle dasselbe, ohne Abstufung.
 
 > **Achtung:** Weil nichts gezählt wird, taucht eine Challenge auch in keiner
@@ -241,7 +241,7 @@ oder wischen.
   ausgeblendet gewesen.
 
 > **Achtung:** „Freigegeben" heißt nicht automatisch „sichtbar". Hat ein Konfi
-> „Nur Leitung" gewählt, zeigt das Abzeichen am Beitrag ein Schloss statt eines
+> „Nur Leitung" gewählt, zeigt der Stempel am Beitrag ein Schloss statt eines
 > Hakens — freigegeben, aber trotzdem nirgends zu sehen. Das ist so richtig.
 
 Bei Challenges ohne Freigabe-Pflicht gibt es in der Leitungs-Ansicht kein
@@ -263,7 +263,7 @@ wurde, sind fünf Dinge eingefroren:
 | Startzeitpunkt | **gesperrt** |
 | Titel, Beschreibung | änderbar |
 | Ende | änderbar |
-| Name und Symbol des Abzeichens | änderbar |
+| Name und Symbol des Stempels | änderbar |
 | Gestellt von | änderbar |
 | Jahrgänge | **wirkungslos** — siehe unten |
 
@@ -333,37 +333,38 @@ ohnehin sehen dürfen:
 
 ---
 
-## Das Abzeichen
+## Der Stempel
 
-Jede Challenge trägt ein eigenes Abzeichen: ein Name (Pflicht, höchstens 100
+Jede Challenge trägt einen eigenen Stempel: ein Name (Pflicht, höchstens 100
 Zeichen) und ein Symbol aus einer Auswahl. Voreinstellung ist die Flagge.
 
-**Es funktioniert grundsätzlich anders als die
-[normalen Abzeichen](60-badges.md):**
+**Er ist etwas anderes als ein [Abzeichen](60-badges.md)** — und heißt seit
+dem 27.08.2026 deshalb auch anders. Ein Abzeichen sammelt man, ein Stempel
+belegt, dass man dabei war:
 
-| | Normale Abzeichen | Challenge-Abzeichen |
+| | Abzeichen | Stempel |
 |---|---|---|
 | Wofür | eine Bedingung erfüllen (Punkte, Anzahl, Serie …) | **einen Beitrag einreichen** |
 | Wann | bei der nächsten Prüfung | beim Absenden bzw. mit der Freigabe (siehe unten) |
 | Zählen | ja, Bedingungen mit Werten | nein, es gibt nichts zu zählen |
-| Abstufungen | ja, verschiedene Abzeichen | nein, für alle dasselbe |
+| Abstufungen | ja, verschiedene Abzeichen | nein, für alle derselbe |
 | Wo es steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung |
 
 Wann es kommt, hängt an der Freigabe-Pflicht der Challenge:
 
-- **Ohne Freigabe-Pflicht** gibt es das Abzeichen **sofort beim Absenden**.
-- **Mit Freigabe-Pflicht** gibt es das Abzeichen erst, **wenn der Beitrag
+- **Ohne Freigabe-Pflicht** gibt es den Stempel **sofort beim Absenden**.
+- **Mit Freigabe-Pflicht** gibt es den Stempel erst, **wenn der Beitrag
   freigegeben wurde** — ein wartender oder ausgeblendeter Beitrag zählt noch
   nicht. Das gilt für alle gleich, auch für Teamer:innen und die Leitung.
 
-An der Anzahl hängt es nie: Wer fünf Beiträge schickt, hat trotzdem genau ein
-Abzeichen. Mit dem Abzeichen kommt zusätzlich eine Benachrichtigung aufs
+An der Anzahl hängt es nie: Wer fünf Beiträge schickt, hat trotzdem genau einen
+Stempel. Mit dem Stempel kommt zusätzlich eine Benachrichtigung aufs
 Gerät.
 
-> **Achtung:** Änderst du Name oder Symbol des Abzeichens nachträglich, ändert
-> sich das auch für alle, die es schon haben — es hängt an der Challenge, nicht
-> an der Person. Das ist der einzige Weg, ein einmal vergebenes
-> Challenge-Abzeichen noch zu beeinflussen; entziehen lässt es sich nicht.
+> **Achtung:** Änderst du Name oder Symbol des Stempels nachträglich, ändert
+> sich das auch für alle, die ihn schon haben — er hängt an der Challenge, nicht
+> an der Person. Das ist der einzige Weg, einen einmal vergebenen Stempel noch
+> zu beeinflussen; entziehen lässt er sich nicht.
 
 ---
 
@@ -469,7 +470,7 @@ Links zum Exportieren."
   verloren."*
 
 Beim Löschen verschwindet alles: die Challenge, sämtliche Beiträge, sämtliche
-hochgeladenen Dateien vom Server und damit auch das Abzeichen bei allen, die es
+hochgeladenen Dateien vom Server und damit auch den Stempel bei allen, die ihn
 hatten. Das lässt sich nicht rückgängig machen und es gibt keinen Papierkorb.
 
 > **Achtung:** Wenn du eine Challenge nur aus dem Weg räumen willst, ohne
@@ -487,7 +488,7 @@ hatten. Das lässt sich nicht rückgängig machen und es gibt keinen Papierkorb.
   „Freigegeben", „Ausgeblendet")
 - die Galerie ansehen, soweit die Sichtbarkeit es zulässt
 - beendete Challenges im Archiv nachlesen
-- ihre Abzeichen sammeln
+- ihre Stempel sammeln
 
 **Können nicht:**
 
@@ -515,7 +516,7 @@ deine Leitung, falls ein Beitrag entfernt werden soll."*
   geplante Challenge tatsächlich startet — nicht schon beim Anlegen.
 - **Die Leitung** bekommt eine Benachrichtigung bei **jedem** neuen Beitrag —
   auch wenn er ohne Moderation sofort öffentlich ist.
-- **Der Konfi** bekommt eine Benachrichtigung, sobald er das Abzeichen der
+- **Der Konfi** bekommt eine Benachrichtigung, sobald er den Stempel der
   Challenge erhält — je nach Freigabe-Pflicht direkt beim Absenden oder mit
   der Freigabe.
 - **Alle Konfis der Jahrgänge** bekommen mit, wenn eine Challenge startet, sich

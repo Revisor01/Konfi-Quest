@@ -133,7 +133,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
-  // Anzahl der eigenen Challenge-Abzeichen (marks). Schlanker Zusatzabruf —
+  // Anzahl der eigenen Challenge-Stempel (marks). Schlanker Zusatzabruf —
   // fällt er aus, bleibt die Kachel bei 0 statt das Profil zu stoeren.
   const [challengeMarksCount, setChallengeMarksCount] = useState<number>(0);
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
@@ -182,7 +182,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     loadBadges();
   }, []);
 
-  // Challenge-Abzeichen zählen. Fehler bewusst still: die Kachel zeigt dann 0.
+  // Challenge-Stempel zählen. Fehler bewusst still: die Kachel zeigt dann 0.
   React.useEffect(() => {
     api.get('/challenges/konfi')
       .then(res => {

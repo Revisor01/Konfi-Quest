@@ -59,7 +59,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
 
   const [presentAlert] = useIonAlert();
 
-  // Eigene Abzeichen aus der EINEN Liste ableiten: has_badge liefert
+  // Eigene Stempel aus der EINEN Liste ableiten: has_badge liefert
   // GET /challenges/admin seit der Zusammenlegung mit (11.08.) — dadurch
   // braucht es keinen zweiten Endpunkt für die Teilnehmer-Sicht.
   const marks = useMemo(
