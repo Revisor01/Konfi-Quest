@@ -228,6 +228,21 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Konfi-Liste das jetzt auch. Bisher stand dort "Noch keine Konfis angelegt",
   obwohl es Konfis gibt.
 
+- Die Abzeichen-Seite der Teamer:innen bleibt auch dann heil, wenn bei einem
+  einzelnen Abzeichen die hinterlegte Bedingung beschädigt ist. Bisher konnte
+  ein einziger solcher Eintrag die ganze Seite unbenutzbar machen.
+
+- Teamer:innen sehen keine Abzeichen mehr, die niemand erreichen kann, weil
+  ihnen die Bedingung fehlt — so wie Konfis das schon länger nicht tun.
+
+- Die Zahl der geheimen Abzeichen bedeutet jetzt in beiden Ansichten dasselbe:
+  wie viele es noch zu entdecken gibt. Bei Teamer:innen zählten abgeschaltete
+  Abzeichen mit.
+
+- Die Abzeichen-Zahl auf der Konfi-Startseite nennt jetzt ein Ziel, das sich
+  auch erreichen lässt. Abzeichen, die niemand bekommen kann, zählten bisher
+  mit — dann stand dort etwa "3 von 10", obwohl es nur acht zu holen gab.
+
 - Der Einstieg zum Jahresrückblick erscheint nur noch, wenn der Rückblick
   wirklich vorliegt. Schlug die Erstellung für einzelne Konfis fehl, führte
   der Einstieg bisher ins Leere.

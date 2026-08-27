@@ -3507,7 +3507,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Badges mit Fortschritt",
-        "description": "Gemeinsame Berechnung mit Admin-Sicht (utils/konfiBadgeProgress.js).",
+        "description": "Gemeinsame Berechnung mit der Admin-Sicht (utils/konfiBadgeProgress.js). Der Fortschritt selbst kommt seit 27.08.2026 aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen (Befund N2). Die Antwortform ist unveraendert: {available, earned, stats}. stats.totalVisible/totalSecret zaehlen NUR ERREICHBARE und AKTIVE Abzeichen. Vorher kamen sie aus einer eigenen organisationsweiten Query, die von der Ausblendung unerreichbarer Abzeichen nichts wusste — das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte. Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3520,7 +3520,7 @@
         },
         "responses": {
           "200": {
-            "description": "Badge-Liste mit earned/progress"
+            "description": "{available[], earned[], stats:{totalVisible,totalSecret}} — stats zaehlt nur erreichbare und aktive Abzeichen"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -9964,7 +9964,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt",
-        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen.\n",
+        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen. Seit 27.08.2026 (Befund N2): Der Fortschritt kommt aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen. Die Antwortform ist unveraendert. Zwei Verhaltensaenderungen: (1) Abzeichen ohne hinterlegte Bedingung (specific_activity ohne required_activity_name, category_activities ohne required_category, activity_combination ohne required_activities, oder unlesbares criteria_extra) werden nicht mehr ausgeliefert — sie sind unerreichbar, weil die Wertung genau dieses Feld prueft. Verdiente Abzeichen bleiben immer sichtbar. Konfis hatten diese Ausblendung bereits. (2) Die Kopfzeilen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also je nach Rolle etwas anderes.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9979,16 +9979,16 @@
         },
         "responses": {
           "200": {
-            "description": "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage); ohne unverdiente geheime",
+            "description": "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage); ohne unverdiente geheime und ohne unerreichbare (Bedingung fehlt)",
             "headers": {
               "X-Badges-Secret-Total": {
-                "description": "Gesamtzahl der geheimen Abzeichen, auch der nicht ausgelieferten",
+                "description": "Anzahl der AKTIVEN geheimen Abzeichen, auch der nicht ausgelieferten. Abgeschaltete zaehlen seit 27.08.2026 nicht mehr mit (angeglichen an den Konfi-Pfad).",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-Badges-Visible-Total": {
-                "description": "Gesamtzahl der offen sichtbaren Abzeichen",
+                "description": "Anzahl der AKTIVEN offen sichtbaren Abzeichen. Wird derzeit von keiner Ansicht gelesen (die zaehlen aus der Liste), bleibt aber als Zusage der Schnittstelle bestehen.",
                 "schema": {
                   "type": "integer"
                 }

@@ -624,6 +624,89 @@ describe('Konfi Routes', () => {
       expect(nachher.body.stats.totalVisible).toBe(zuvor);
     });
 
+    // Befund 27.08.2026 (beim Zusammenlegen der Fortschritts-Logik, N2):
+    // Die Gesamtzahl kam aus einer eigenen Query, die organisationsweit
+    // zaehlte und nichts von der Ausblendung unerreichbarer Abzeichen wusste.
+    // Ein Abzeichen ohne hinterlegte Bedingung stand in KEINER Liste, zaehlte
+    // aber im Nenner mit — im Dashboard stand dann "3/10", obwohl nur 8
+    // erreichbar waren. In Org 1 waren zehn solcher Abzeichen angelegt.
+    it('Die Gesamtzahl zaehlt kein unerreichbares Abzeichen mit', async () => {
+      const vorher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.stats.totalVisible;
+      expect(typeof zuvor).toBe('number');
+
+      // specific_activity OHNE required_activity_name: Die Wertung prueft
+      // genau dieses Feld, das Abzeichen ist damit fuer niemanden erreichbar.
+      await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ('Ohne Bedingung', 'specific_activity', 3, '{}', 'ribbon', '#5b21b6', $1, 'konfi', true)`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      // Weder in der Liste noch im Nenner.
+      expect(nachher.body.stats.totalVisible).toBe(zuvor);
+      expect(nachher.body.available.some(b => b.name === 'Ohne Bedingung')).toBe(false);
+    });
+
+    it('Die Gesamtzahl zaehlt ein erreichbares Abzeichen sehr wohl mit', async () => {
+      // Gegenprobe: Sonst wuerde der Test oben auch dann gruen bleiben, wenn
+      // die Zahl gar nichts mehr zaehlt.
+      const vorher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.stats.totalVisible;
+
+      await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ('Mit Bedingung', 'specific_activity', 3, '{"required_activity_name":"Konfitag"}', 'ribbon', '#5b21b6', $1, 'konfi', true)`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(nachher.body.stats.totalVisible).toBe(zuvor + 1);
+      expect(nachher.body.available.some(b => b.name === 'Mit Bedingung')).toBe(true);
+    });
+
+    it('Die Gesamtzahl zaehlt ein abgeschaltetes Abzeichen nicht als offenes Ziel', async () => {
+      // Verdiente abgeschaltete Abzeichen bleiben in der Liste sichtbar (sonst
+      // verschwaende ein erreichtes Abzeichen), duerfen aber nicht im Nenner
+      // stehen — sie sind kein offenes Ziel mehr. Beim Teamer-Pfad zaehlten
+      // sie mit, weshalb dieselbe Zahl je nach Rolle etwas anderes bedeutete.
+      const vorher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.stats.totalVisible;
+
+      const { rows: [abgeschaltet] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Abgeschaltet', 'event_count', 1, 'ribbon', '#5b21b6', $1, 'konfi', false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, NOW())`,
+        [USERS.konfi1.id, abgeschaltet.id, ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(nachher.body.stats.totalVisible).toBe(zuvor);
+      // Sichtbar bleibt es trotzdem — als verdient.
+      expect(nachher.body.earned.some(b => b.name === 'Abgeschaltet')).toBe(true);
+    });
+
     // Befund 24.08.2026: Die Konfi-Abfrage verlangte is_active auch für bereits
     // VERDIENTE Abzeichen. Schaltet die Leitung eines ab (Saisonende), verlor
     // der Konfi es aus der Ansicht, obwohl der Eintrag bestehen blieb — und die

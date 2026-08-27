@@ -654,8 +654,8 @@ falschen Teamer-Erklärtexte (PR #83).
       Konfi-Pfad zählt ohne Rollenfilter (`konfi.js:1634-1641`), `events.js`
       filtert Teamer heraus. Folgenlos, solange Teamer-Buchungen keine
       `timeslot_id` bekommen — nicht mit angefasst.
-- [ ] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
-      250-Zeilen-Inline-Kopie für Teamer.** Der Befund hat ZWEI Teile:
+- [x] **N2 — Badge-Fortschritt: eine gemeinsame Quelle für Konfis, eine
+      250-Zeilen-Inline-Kopie für Teamer.** ERLEDIGT 27.08.2026, beide Teile.
       - [x] **Der Zählfehler in `GET /konfi/badges/stats` ist behoben**
             (27.08.2026). `total_badges` filterte auf `target_role='konfi'`,
             `earned_badges` zählte ALLE Abzeichen der Person — derselbe
@@ -668,11 +668,70 @@ falschen Teamer-Erklärtexte (PR #83).
             fiel es nie auf. Beides war Grund, ihn abzusichern statt ihn
             liegenzulassen: Wer ihn als nächstes einbindet, hätte den Fehler
             geerbt.
-      - [ ] **Die 250-Zeilen-Inline-Kopie bleibt offen.** `routes/teamer.js`
-            rechnet den Fortschritt selbst (eigene Antwortform: flaches Array
-            plus Zählwerte in HTTP-Headern statt `{available, earned, stats}`)
-            und ohne die "unerreichbar"-Ausblendung des Konfi-Pfads. Das ist
-            ein Umbau, kein Einzeiler — eigener Auftrag.
+      - [x] **Die Inline-Kopie ist aufgeloest** (27.08.2026). Vor dem Umbau
+            wurden beide Pfade verglichen, weil "angleichen" hier leicht
+            Absicht zerstoert haette. Ergebnis: Die ZAEHL-Queries sind
+            fachlich verschieden und bleiben getrennt — Konfis haben
+            Punktekonten und Pflichttermine, Teamer:innen gezaehlte
+            `target_role='teamer'`-Aktivitaeten und Dienstjahre. Eine
+            Funktion mit Rollen-Schalter waere die Kopie mit einem `if`
+            davor gewesen.
+            Gemeinsam ist jetzt der Rechenkern: `utils/badgeProgress.js` mit
+            `berechneBadgeProgress` (rechnet aus fertigen Zaehlern) und
+            `bedingungFehlt`. Netto 107 Zeilen weniger bei mehr Kommentar.
+            **Die Antwortform des Teamer-Pfads blieb bewusst unangetastet**
+            (flaches Array, `progress_points`/`progress_percentage`, Zaehler
+            in Kopfzeilen): Zwei Ansichten und vier Tests haengen daran, ein
+            Formwechsel haette aus einem risikoarmen Umbau einen mit
+            Frontend-Regressionsrisiko gemacht. Er bleibt als eigene,
+            spaetere Aufgabe offen (siehe unten).
+            **Drei echte Fehler kamen dabei heraus**, keine blossen
+            Doppelungen:
+            1. Das JSON-Parsen von `criteria_extra` stand im Teamer-Pfad
+               OHNE Auffangnetz — ein einziger beschaedigter Datensatz haette
+               die ganze Abzeichen-Seite in den 500 laufen lassen. Der
+               Konfi-Pfad fing es ab.
+            2. Die Zaehler pro Kategorie/Aktivitaetsname waren ein Plain
+               Object; eine Kategorie namens `constructor` haette eine
+               Funktion statt einer Zahl geliefert. Der Konfi-Pfad nutzte
+               laengst eine `Map`.
+            3. Der Geheim-Zaehler zaehlte beim Teamer auch ABGESCHALTETE,
+               aber verdiente Abzeichen mit — dieselbe Zahl bedeutete je nach
+               Rolle etwas anderes. Auf den Konfi-Weg angeglichen (Simons
+               Entscheidung): nur aktive.
+            Dazu die **"unerreichbar"-Ausblendung fuer Teamer:innen** (Simons
+            Entscheidung): Ein Abzeichen ohne hinterlegte Bedingung wird nicht
+            mehr ausgeliefert, wie bei den Konfis. Verdiente bleiben sichtbar.
+            Die Punktearten-Haelfte der Konfi-Pruefung gilt hier NICHT —
+            Teamer:innen haben kein Punktekonto.
+            **Eine Namensfalle war der Grund fuer das Zaehler-Objekt:** Beide
+            Pfade hatten eine Variable `activityCount`. Beim Konfi sind Events
+            NICHT enthalten und werden addiert, beim Teamer schon. Gleicher
+            Name, andere Bedeutung — im Kern heisst das Feld deshalb
+            `aktivitaetenUndEvents`, der Aufrufer muss sich entscheiden.
+            Abgesichert durch 40 Einheitstests ohne Datenbank
+            (`tests/utils/badgeProgress.test.js`), gegen Mutation geprueft.
+            **Mitbehoben, weil der Umbau es sichtbar machte:** Die Anzeige
+            "x von y Abzeichen" im KONFI-Dashboard zaehlte auch die
+            ausgeblendeten unerreichbaren mit — der Nenner kam aus einer
+            eigenen Query, die organisationsweit zaehlte und von der
+            Ausblendung nichts wusste. Bei zehn bedingungslosen Abzeichen in
+            Org 1 stand dort ein Ziel, das niemand vollmachen konnte. Gezaehlt
+            wird jetzt aus der geladenen Liste, wo `unreachable` bekannt ist,
+            mit `is_active`-Filter (verdiente abgeschaltete bleiben sichtbar,
+            zaehlen aber nicht als offenes Ziel). Die eigene Statistik-Query
+            entfaellt damit — eine Abfrage weniger pro Aufruf.
+
+- [ ] **Antwortform der Teamer-Abzeichen vereinheitlichen.** Aus N2
+      abgetrennt. Der Teamer-Pfad liefert ein flaches Array plus
+      `X-Badges-Secret-Total`/`X-Badges-Visible-Total` in Kopfzeilen, der
+      Konfi-Pfad `{available, earned, stats}`. Daran haengen
+      `TeamerBadgesPage.tsx:52-62` und `TeamerDashboardPage.tsx:278-288`
+      (beide lesen die Kopfzeile und normalisieren Feldnamen) sowie vier
+      Tests in `teamer.test.js`. Geschaetzt 3 Stunden.
+      Nebenbefund: **`X-Badges-Visible-Total` liest niemand** — beide
+      Ansichten zaehlen aus der Liste. Die Kopfzeile ist eine Zusage der
+      Schnittstelle ohne Nutzer; beim Vereinheitlichen mitentscheiden.
 - [x] **N3 — Anträge lesen: `target_role`-Filter nur beim Teamer.**
       ERLEDIGT 27.08.2026. **War mehr als eine Anzeige-Divergenz.** Vor dem
       Beheben nachgemessen: Der Konfi-Weg filterte weder beim Lesen NOCH beim

@@ -506,14 +506,25 @@ paths:
     get:
       tags: ["Abzeichen"]
       summary: Eigene Badges mit Fortschritt
-      description: Gemeinsame Berechnung mit Admin-Sicht (utils/konfiBadgeProgress.js).
+      description: >
+        Gemeinsame Berechnung mit der Admin-Sicht (utils/konfiBadgeProgress.js).
+        Der Fortschritt selbst kommt seit 27.08.2026 aus dem gemeinsamen
+        Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad
+        teilen (Befund N2). Die Antwortform ist unveraendert:
+        {available, earned, stats}.
+        stats.totalVisible/totalSecret zaehlen NUR ERREICHBARE und AKTIVE
+        Abzeichen. Vorher kamen sie aus einer eigenen organisationsweiten
+        Query, die von der Ausblendung unerreichbarer Abzeichen nichts wusste —
+        das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte.
+        Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie
+        inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "nur eigene Daten"
       responses:
-        "200": { description: Badge-Liste mit earned/progress }
+        "200": { description: "{available[], earned[], stats:{totalVisible,totalSecret}} — stats zaehlt nur erreichbare und aktive Abzeichen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

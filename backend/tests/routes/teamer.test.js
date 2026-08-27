@@ -255,6 +255,179 @@ describe('Teamer Routes', () => {
       // ...werden aber gezählt, damit "x Geheimnisse" stimmt.
       expect(res.headers['x-badges-secret-total']).toBe('2');
     });
+
+    // ----------------------------------------------------------------
+    // Unerreichbare Abzeichen ausblenden (Befund N2, 27.08.2026)
+    // ----------------------------------------------------------------
+    // Ein Teamer-Abzeichen anlegen und die id zurückgeben.
+    const teamerAbzeichen = async (name, criteriaType, criteriaExtra, extras = {}) => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra,
+                                    icon, color, organization_id, target_role, is_active, is_hidden)
+         VALUES ($1, $2, 3, $3, 'ribbon', '#be185d', $4, 'teamer', $5, $6)
+         RETURNING id`,
+        [
+          `${name}-${Math.random()}`,
+          criteriaType,
+          criteriaExtra,
+          ORGS.testGemeinde.id,
+          extras.is_active === undefined ? true : extras.is_active,
+          extras.is_hidden === undefined ? false : extras.is_hidden
+        ]
+      );
+      return badge.id;
+    };
+
+    // Befund N2: Die Wertung (badges.js) prüft bei 'specific_activity' genau
+    // required_activity_name. Fehlt es, kann niemand dem Abzeichen näherkommen
+    // -- es stand bisher trotzdem mit 0 % in der Teamer-Liste. Konfis hatten
+    // die Ausblendung längst, Teamer:innen nicht.
+    it('specific_activity OHNE required_activity_name wird nicht ausgeliefert', async () => {
+      const unerreichbar = await teamerAbzeichen('Ohne Aktivitaetsname', 'specific_activity', '{}');
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(b => b.id)).not.toContain(unerreichbar);
+    });
+
+    // Gleiche Lücke bei den beiden anderen Kriterien mit Pflicht-Bedingung:
+    // ohne required_category bzw. mit leerer required_activities-Liste zählt
+    // die Wertung nie etwas hoch.
+    it('category_activities ohne required_category und activity_combination mit leerer Liste werden nicht ausgeliefert', async () => {
+      const ohneKategorie = await teamerAbzeichen('Ohne Kategorie', 'category_activities', '{}');
+      const leereKombination = await teamerAbzeichen(
+        'Leere Kombination',
+        'activity_combination',
+        JSON.stringify({ required_activities: [] })
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(b => b.id);
+      expect(ids).not.toContain(ohneKategorie);
+      expect(ids).not.toContain(leereKombination);
+    });
+
+    // Der eigentliche Befund: criteria_extra ist eine TEXT-Spalte. Ein einziger
+    // unlesbarer Datensatz liess das JSON.parse im Teamer-Pfad fliegen und riss
+    // die KOMPLETTE Abzeichen-Seite in den 500. Jetzt faengt der Rechenkern das
+    // ab, das Abzeichen gilt als unerreichbar -- und die Route antwortet 200.
+    it('Unlesbares criteria_extra wird ausgeblendet, die Route antwortet trotzdem mit 200', async () => {
+      const kaputt = await teamerAbzeichen('Kaputtes Kriterium', 'specific_activity', '{kaputt');
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.map(b => b.id)).not.toContain(kaputt);
+    });
+
+    // Gegenprobe: Der Filter darf nicht zu viel wegnehmen. Ein sauber
+    // gepflegtes Abzeichen muss weiterhin in der Liste stehen.
+    it('specific_activity MIT required_activity_name wird ausgeliefert', async () => {
+      const erreichbar = await teamerAbzeichen(
+        'Mit Aktivitaetsname',
+        'specific_activity',
+        JSON.stringify({ required_activity_name: 'Teamer-Schulung' })
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const gefunden = res.body.find(b => b.id === erreichbar);
+      expect(gefunden.id).toBe(erreichbar);
+      expect(gefunden.progress_points).toBe(0);
+    });
+
+    // Zweite Gegenprobe: Wer ein Abzeichen bereits hat, soll es behalten --
+    // auch wenn die Bedingung später aus der Konfiguration verschwunden ist.
+    // Sonst würde ein verdientes Abzeichen still aus der Sammlung fallen.
+    it('Ein VERDIENTES Abzeichen ohne Bedingung bleibt sichtbar', async () => {
+      const verdient = await teamerAbzeichen('Verdient ohne Bedingung', 'specific_activity', '{}');
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3)`,
+        [USERS.teamer1.id, verdient, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const gefunden = res.body.find(b => b.id === verdient);
+      expect(gefunden.id).toBe(verdient);
+      expect(gefunden.earned).toBe(true);
+    });
+
+    // ----------------------------------------------------------------
+    // Geheim-Zähler zählt nur aktive Abzeichen (Entscheidung 27.08.2026)
+    // ----------------------------------------------------------------
+    // Befund N2: Die Query holt auch INAKTIVE Abzeichen, sofern verdient. Die
+    // zählten in den Kopfzeilen mit -- "3 Geheimnisse zu entdecken" enthielt
+    // also abgeschaltete Abzeichen, die es gar nicht mehr zu entdecken gibt.
+    // Beim Konfi zählte dieselbe Zahl schon immer nur aktive.
+    it('Der Geheim-Zaehler zaehlt nur AKTIVE Abzeichen', async () => {
+      await teamerAbzeichen('Aktiv geheim eins', 'teamer_year', null, { is_hidden: true });
+      await teamerAbzeichen('Aktiv geheim zwei', 'teamer_year', null, { is_hidden: true });
+      const inaktivVerdient = await teamerAbzeichen(
+        'Inaktiv aber verdient',
+        'teamer_year',
+        null,
+        { is_hidden: true, is_active: false }
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3)`,
+        [USERS.teamer1.id, inaktivVerdient, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      // Zwei aktive geheime -- das inaktive verdiente zaehlt nicht mehr mit.
+      expect(res.headers['x-badges-secret-total']).toBe('2');
+      // Es bleibt aber in der Liste: verdient ist verdient.
+      expect(res.body.map(b => b.id)).toContain(inaktivVerdient);
+    });
+
+    // Dieselbe Regel für die offenen Abzeichen: ein abgeschaltetes, aber
+    // verdientes Abzeichen ist kein offenes Ziel mehr und darf die Zahl im
+    // Kopf der Ansicht nicht aufblähen.
+    it('Der Sichtbar-Zaehler zaehlt ebenfalls nur AKTIVE Abzeichen', async () => {
+      await teamerAbzeichen('Aktiv offen', 'teamer_year', null);
+      const inaktivVerdient = await teamerAbzeichen(
+        'Inaktiv offen aber verdient',
+        'teamer_year',
+        null,
+        { is_active: false }
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3)`,
+        [USERS.teamer1.id, inaktivVerdient, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-badges-visible-total']).toBe('1');
+      expect(res.body.map(b => b.id)).toContain(inaktivVerdient);
+    });
   });
 
   // ================================================================
