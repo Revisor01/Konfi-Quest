@@ -251,6 +251,26 @@ ein Push.
 Pflicht-Events haben ihren eigenen Push beim Anlegen und sind hiervon
 ausgenommen.
 
+### Bis wann sich Konfis wieder abmelden können
+
+**Zwei Tage vor dem Termin ist Schluss.** Danach ist der Abmelden-Knopf für
+Konfis gesperrt, und in der App steht „Abmelden geht nur bis 2 Tage vorher".
+
+Das ist **fest eingestellt** und lässt sich nicht ändern — der Anmeldezeitraum
+oben regelt nur, wann man sich *anmelden* kann, nicht das Abmelden.
+
+Der Gedanke dahinter: Wer kurzfristig doch nicht kann, soll Bescheid sagen,
+statt sich still auszutragen. Und ihr könnt zwei Tage vorher verlässlich
+planen, wie viele kommen.
+
+> **Du selbst bist davon nicht betroffen.** Die Leitung kann eine Anmeldung
+> in der Detailansicht jederzeit entfernen — auch am Tag des Termins. Sagt
+> also jemand kurzfristig ab, trägst du es dort aus.
+
+Nicht zu verwechseln mit dem **Zeitfenster für den QR-Code** (siehe
+[QR-Check-in](#qr-check-in)): Das legt fest, wie lange vor und nach dem
+Termin eingecheckt werden kann, und ist pro Termin einstellbar.
+
 ---
 
 ## Plätze und Warteliste
