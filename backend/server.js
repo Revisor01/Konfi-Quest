@@ -407,8 +407,30 @@ const app = createApp(db, {
   },
 });
 
-// HTTP-Requests an Express-App weiterleiten
-server.on('request', app);
+// HTTP-Requests an die Express-App weiterleiten — ABER nur die, die
+// Socket.IO nicht schon selbst beantwortet hat.
+//
+// Befund 27.08.2026, in Produktion gemessen: Hier stand
+// `server.on('request', app)`. Das haengt Express als ZWEITEN Listener an
+// dasselbe Event, an dem auch Engine.IO haengt — Node ruft dann BEIDE auf.
+// Bei einem fehlerhaften Handshake (z.B. /socket.io/?transport=polling ohne
+// EIO-Parameter) antwortet Engine.IO mit "Bad request" und schliesst die
+// Antwort; unmittelbar danach laeuft Express ueber dieselbe, bereits
+// abgeschlossene Antwort und wirft ERR_HTTP_HEADERS_SENT. Der Fehler
+// entsteht im Event-Handler, nicht in einer Express-Middleware — keine
+// error-Middleware faengt ihn, der Prozess stirbt.
+//
+// Gemessen: 20 Abstuerze in 45 Minuten normaler Nutzung, beide Replikas
+// betroffen (RestartCount 9 bzw. 11). Eine einzige URL genuegte, um das
+// Backend reproduzierbar umzuwerfen.
+//
+// Der Fix behaelt die Reihenfolge bei (Socket.IO zuerst, siehe oben) und
+// prueft nur, ob die Antwort schon steht.
+server.on('request', (req, res) => {
+  // Engine.IO hat bereits geantwortet (Handshake abgelehnt) -> nichts tun.
+  if (res.headersSent || res.writableEnded) return;
+  app(req, res);
+});
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION
