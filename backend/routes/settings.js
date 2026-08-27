@@ -79,8 +79,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         [req.user.organization_id]
       );
 
-      const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
-      const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+      // Diese Listen greifen nur, wenn der gespeicherte Wert KEIN gueltiges
+      // JSON ist -- also praktisch nie. Genau deshalb waren sie am 27.08.2026
+      // veraltet: Es fehlten 'challenges' und 'konfispruch', beide laengst
+      // Teil der Dashboards. Wer in diesen Fall geriete, verloere sie
+      // stillschweigend.
+      // Massgeblich sind die Fallbacks der Dashboards selbst
+      // (konfi.js:306, teamer.js:960) -- hier gespiegelt, nicht neu erfunden.
+      const DEFAULT_KONFI_ORDER = ['konfirmation', 'challenges', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+      const DEFAULT_TEAMER_ORDER = ['zertifikate', 'challenges', 'konfispruch', 'events', 'badges', 'losung'];
 
       const settings = {};
       rows.forEach(row => {
