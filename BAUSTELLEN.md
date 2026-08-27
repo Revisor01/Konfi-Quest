@@ -1800,13 +1800,24 @@ View nennen überall dieselben Zahlen (2/5/7/7/12/7).
 
 ## Zielgerade 2.0.0 (Reihenfolge)
 
-1. Laufende Agenten abwarten, Ergebnisse prüfen (nicht glauben), ausrollen
-2. GitHub-Meldungen abschließen — CodeQL und Dependabot sauber
-3. Restliche Prüfaufträge starten (Abzeichen-Logik, API-Vollständigkeit,
-   Swagger, Socket.IO nach Logout, Dashboard-Schalter)
-4. **Deploy**
-5. **TestFlight-Build** — dann mit Multi-Org-Push, den Build 140 noch nicht hat
-6. Erst danach: Store-Texte, Bildschirmfotos, Tag, Release
+**Nachgeführt 27.08.2026, abends.** Die alte Fassung dieser Liste war
+überholt: Sie führte Store-Texte und Bildschirmfotos als letzten Schritt,
+obwohl beides seit dem 25.08. erledigt ist, und sprach von Build 140 — im
+TestFlight liegt Build 147.
+
+1. ~~Laufende Agenten abwarten, Ergebnisse prüfen, ausrollen~~ — erledigt
+2. ~~GitHub-Meldungen abschließen~~ — erledigt: **0 offene Dependabot-,
+   0 offene CodeQL-Meldungen** (27.08. abends nachgemessen; Meldung 103 kam
+   nach dem alten Vermerk dazu und ist als Fehlalarm geschlossen)
+3. ~~Restliche Prüfaufträge~~ — Abzeichen-Logik gegen Produktion gemessen;
+   Chat-Baum, Offline-Schreibvorgänge und Push-Zustellung sind gelaufen, ihre
+   Berichte liegen in `docs/agenten-berichte/`
+4. ~~Store-Texte und Bildschirmfotos~~ — erledigt (`e27413a5`)
+5. **Simons Test** ← hier stehen wir
+6. **Deploy** — der automatische ist pausiert (`ci.yml:219`), live läuft
+   `109d4e0`, 209 Commits zurück. Vier bis fünf Migrationen laufen dabei an,
+   132 mit einem nicht umkehrbaren `DROP COLUMN`.
+7. **Tag und GitHub-Release** (ohne `v`-Präfix), Datum im CHANGELOG
 
 ## Vor dem Release 2.0.0
 
