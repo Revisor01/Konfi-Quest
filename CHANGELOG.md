@@ -208,6 +208,20 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   der Teamer-Liste und muss nicht nachfragen. Eine Begründung ist freiwillig,
   und die Zusage lässt sich jederzeit ändern.
 
+- Konfis und Teamer:innen kommen jetzt direkt aus dem Termin in den Termin-Chat,
+  statt ihn in der Chat-Übersicht suchen zu müssen. Der Einstieg erscheint nur,
+  wenn es einen Chat gibt und man darin ist.
+
+- Das Check-in-Fenster steht jetzt im Termin — bisher ließ es sich einstellen,
+  aber nirgends nachlesen. Alle drei Ansichten zeigen, wie lange vor und nach
+  Beginn der QR-Code gilt.
+
+- Termine aus einer Reihe sind jetzt auch für Konfis und Teamer:innen als solche
+  erkennbar.
+
+- Teamer:innen sehen im Termin jetzt den Anmeldezeitraum, wie Leitung und Konfis
+  schon vorher.
+
 ### Behoben
 
 - Ist einer Leitungsperson noch kein Jahrgang zugewiesen, sagt die leere
@@ -225,6 +239,13 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Auf der Benutzerverwaltung erscheinen Lösch-Aktionen nur noch dort, wo sie
   auch erlaubt sind. Bisher waren sie in manchen Fällen sichtbar und
   scheiterten dann beim Antippen.
+
+- Der Anmeldestatus eines Termins ist in Liste und Detailansicht jetzt derselbe.
+  Bisher konnte ein Pflichttermin im Detail als "Geschlossen" gelten und ein
+  ausgebuchter Termin mit freier Warteliste ebenso, obwohl die Warteliste offen
+  war.
+
+- Bei Terminen ohne Punkte steht in der Leitungsansicht nicht mehr "Punkte 0".
 
 - Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
   überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
