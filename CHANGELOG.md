@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   auch erlaubt sind. Bisher waren sie in manchen Fällen sichtbar und
   scheiterten dann beim Antippen.
 
+- Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
+  überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
+  Abzeichen, und andere Benachrichtigungen setzten die Zahl immer auf eins.
+
 - In Gruppenchats sehen jetzt alle Mitglieder, wer sonst noch dabei ist —
   bisher war die Mitgliederliste der Leitung vorbehalten, obwohl das Handbuch
   sie allen versprach. Mitglieder entfernen oder hinzufügen kann weiterhin
