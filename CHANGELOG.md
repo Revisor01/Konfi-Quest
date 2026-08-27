@@ -198,6 +198,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Die Leitung kann den Jahresrückblick einer Konfi jetzt auf deren Profilseite
+  ansehen — denselben, den die Konfi selbst sieht. Er erscheint erst, wenn der
+  Rückblick für den Jahrgang freigegeben wurde.
+
 - Teamer:innen können bei Terminen jetzt ausdrücklich absagen: "Ich bin dabei"
   und "Ich bin nicht dabei" stehen nebeneinander. Eine Absage ist damit eine
   Rückmeldung und nicht mehr dasselbe wie Schweigen — die Leitung sieht sie in
@@ -205,6 +209,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   und die Zusage lässt sich jederzeit ändern.
 
 ### Behoben
+
+- Ändert eine Konfi ihre E-Mail-Adresse, wird die neue Adresse sofort überall
+  in der App verwendet — bisher blieb bis zur nächsten Anmeldung die alte
+  stehen.
+
+- Wählen Teamer:innen im Profil ohne Netz eine andere Bibelübersetzung, wird
+  die Wahl jetzt nachgetragen, sobald die App wieder online ist. Bisher sah
+  sie übernommen aus und war beim nächsten Start wieder verschwunden.
 
 - Die Auswahl der Bibelübersetzung für die Tageslosung ist überall dieselbe.
   Bisher bot das Konfi-Profil eine Übersetzung mehr an als die Startseite und
