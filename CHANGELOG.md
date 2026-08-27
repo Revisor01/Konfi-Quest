@@ -9,6 +9,13 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.0.0
 
+**Neu ist vor allem eins: Challenges.** Alles andere in dieser Liste sind
+Verbesserungen und Fehlerbehebungen an dem, was es schon gab — viele davon
+unter der Haube: kürzere Ladezeiten, zusammengelegte Ansichten, deutlich
+weniger Abfragen. Zwei gemessene Beispiele: Die Tageslosung braucht statt
+7 Sekunden noch 4,5 Millisekunden, die Zähler der Organisationsübersicht
+statt 198 Millisekunden noch 0,9.
+
 Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 älteren Geräten bleibt die zuletzt installierte Version nutzbar.
 
@@ -25,17 +32,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   kommt beim Öffnen der App ohne Passwort hinein. Die Anmeldedaten liegen dabei
   im geschützten Speicher des Geräts; beim Abmelden werden sie gelöscht. Der Schalter erscheint nur auf Geräten, auf denen
   Biometrie eingerichtet ist.
-- Challenges: Die Leitung kann einen einzelnen Beitrag jetzt endgültig
-  löschen — samt hochgeladener Datei, nach deutlicher Rückfrage. Alle
-  Aktionen (Freigeben, Anonym stellen, Ausblenden, Löschen) erreichbar durch
-  Antippen des Beitrags, zusätzlich zum Wischen; das Ausblenden bleibt als
-  umkehrbare Alternative bestehen.
 - Team-Chat leeren: Die Leitung kann über das Mülleimer-Symbol oben im
   Team-Chat alle Nachrichten samt Dateien endgültig löschen — nach klarer
   Rückfrage; der Chat selbst und seine Mitglieder bleiben bestehen.
-- Challenges: Beim Ausblenden eines Beitrags kann die Leitung eine Begründung
-  eintragen — die einreichende Person sieht sie bei ihrem Beitrag und bekommt
-  eine Mitteilung. Die Begründung ist freiwillig, Ausblenden geht auch ohne.
 - Teamer-Dashboard: Laufende Challenges erscheinen jetzt auch auf der
   Startseite der Teamer:innen, mit Restzeit und Absprung in den
   Challenges-Bereich. Die Leitung kann die Karte in den
@@ -56,18 +55,28 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
   Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
   Zu finden über das Menü oben rechts im Chat.
-- Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
-  eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne
-  Punkte, ohne Zähler und ohne Rangliste; fürs Mitmachen gibt es ein Abzeichen.
-- Challenges: Beim Anlegen werden Jahrgänge, Zeitraum, erlaubte Medienarten,
-  Sichtbarkeit und Freigabe festgelegt. Nach dem Start bleiben Sichtbarkeit und
-  Freigabe unveränderlich — die Zusage an die Konfis gilt.
-- Challenges: Konfis entscheiden je Beitrag, ob er mit Namen, anonym oder nur
-  für die Leitung sichtbar ist.
-- Challenges: Teamer:innen und Leitung nehmen selbst teil; es gibt auch Runden
-  nur fürs Team.
-- Challenges: Die Leitung kann Beiträge freigeben, nachträglich anonymisieren
-  oder ausblenden. Anonymisieren lässt sich nicht zurücknehmen.
+- **Challenges** — der große neue Bereich dieser Version. Aufgaben, auf die
+  Konfis über einen frei gewählten Zeitraum mit eigenen Beiträgen antworten:
+  Foto, Text, Aufnahme oder Link. Bewusst **ohne Punkte, ohne Zähler und ohne
+  Rangliste** — fürs Mitmachen gibt es einen Stempel.
+  - **Anlegen:** Jahrgänge, Zeitraum, erlaubte Medienarten, Sichtbarkeit und
+    Freigabe werden beim Erstellen festgelegt. Nach dem Start bleiben
+    Sichtbarkeit und Freigabe unveränderlich — die Zusage an die Konfis gilt.
+    Entwürfe brauchen noch kein Datum und stehen im Reiter "Geplant".
+  - **Sichtbarkeit:** Konfis entscheiden je Beitrag, ob er mit Namen, anonym
+    oder nur für die Leitung sichtbar ist. Im Kopf der Challenge steht
+    ausdrücklich, was gilt.
+  - **Wer mitmacht:** Teamer:innen und Leitung nehmen selbst teil; es gibt
+    auch Runden nur fürs Team und Runden nur für Konfis.
+  - **Moderation:** Die Leitung kann Beiträge freigeben, anonym stellen,
+    ausblenden (umkehrbar, auf Wunsch mit Begründung an die einreichende
+    Person) oder endgültig löschen — samt Datei, nach deutlicher Rückfrage.
+  - **Aufbau:** Für alle gleich — Reiter für Aktuelles und Archiv, die
+    Leitung sieht zusätzlich "Geplant". Die Zahlen über der Liste springen
+    zum jeweiligen Reiter. Laufende Challenges erscheinen auch auf der
+    Startseite von Konfis und Teamer:innen.
+  - **Link-Beiträge** nehmen Musik-Links von Spotify, Apple Music und
+    YouTube Music an und zeigen nur die Seite statt der vollen Adresse.
 - Veranstaltungen: eigenes Kontingent für Teamer:innen mit eigener Warteliste,
   getrennt von den Plätzen der Konfis.
 - Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
@@ -136,16 +145,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Challenges: Die Beitragsliste der Leitung zeigt im Reiter "Feed" nur noch,
   was auch die Konfis sehen — Wartendes und Ausgeblendetes steht in eigenen
   Reitern.
-- Challenges: Die Leitung kann jetzt jeden Beitrag nachträglich anonym
-  stellen, auch in Runden ohne eigene Sichtbarkeits-Wahl und bei Beiträgen
-  von Teamer:innen. Wie bisher gilt: Das lässt sich nicht rückgängig machen.
-- Challenges: Eigene Beiträge der Leitung haben keine "Ausblenden"-Aktion
-  mehr — sie war dort ohne Nutzen.
-- Challenges: Entwürfe stehen jetzt im Reiter "Geplant" statt unter "Aktuell" —
-  dort steht nur noch, was wirklich läuft.
 - Challenges: In der geöffneten Challenge gibt es oben einen Bearbeiten-Knopf —
   bisher ging Bearbeiten nur über das Wischen in der Liste.
-- Challenges: Ein Entwurf braucht kein Start- und Enddatum mehr; der Zeitraum
   wird erst beim Einplanen festgelegt.
 - Challenges: Klarere Beschriftungen — die Sichtbarkeit "Konfi entscheidet"
   heißt jetzt "Selbst entscheiden" (sie gilt auch fürs Team), "Nur für euch
@@ -195,10 +196,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   statt darin — bei Konfis, Teamer:innen und der Leitung an derselben Stelle.
 - Konfi-Übersicht: Der Plus-Button legt jetzt eine Teamer:in an, wenn die
   Teamer-Liste geöffnet ist.
-- Challenges: Aktuelle Challenges und Archiv liegen jetzt auf zwei Reitern
-  statt untereinander.
-- Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
-  "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
 - Die Einstellung "Chat-Berechtigungen" ist entfallen. Sie war nicht erreichbar
   und ohne Wirkung; es gilt unverändert: Konfis schreiben nur das Team an.
@@ -680,8 +677,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die
   Neuerungen stehen bereits in der Einführung.
-- Challenges: Die Leitungsansicht hat jetzt die Reiter Aktuell, Geplant und
-  Archiv; die Zahlen darüber springen zum jeweiligen Reiter.
 - Die Startseite der Konfis lädt die Tageslosung nur noch einmal statt zweimal.
 - Ist die Tageslosung in den Einstellungen abgeschaltet, wird sie auch nicht
   mehr im Hintergrund abgerufen. Startseiten öffnen dadurch ohne Wartezeit,
@@ -869,7 +864,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Die Anmeldung zur API-Dokumentation bremst wiederholte Fehlversuche jetzt
   aus — das gemeinsame Passwort lässt sich nicht mehr durchprobieren.
 - Challenges: Links aus Beiträgen öffnen nur noch reguläre Web-Adressen.
-- Challenges: Link-Beiträge nehmen nur noch Musik-Links von Spotify,
   Apple Music, YouTube Music und Deezer an; das Einreichen-Formular sagt das
   vorher an. Titel und Interpret werden automatisch dazugeschrieben — ein
   Cover wird bewusst nicht geladen, damit der Musikdienst beim Ansehen der
