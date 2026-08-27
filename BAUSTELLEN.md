@@ -799,7 +799,17 @@ falschen Teamer-Erklärtexte (PR #83).
       **Konfis** auf Einzelchats. `90-chat.md` korrigiert; dabei gleich
       ergänzt, dass Mitglieder nachtragen der Leitung vorbehalten bleibt und
       die Mitgliederliste allen offensteht.
-- [ ] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
+- [x] **Material-Tags: komplette Backend-Verwaltung ohne jede Oberfläche.**
+      ERLEDIGT 27.08.2026 (Simons Entscheidung: entfernen). Bestätigt:
+      vollständiges CRUD, Zuordnungstabelle und `tag_id`-Filter im Backend —
+      null Zeilen Oberfläche, kein Wort im Handbuch.
+      **Vor dem Entfernen in Produktion nachgemessen:** `material_tags` 1
+      Zeile ("Spiele", Org 1), `material_file_tags` **0** Zeilen. Ein
+      Test-Überbleibsel ohne Zuordnung — es ging nichts verloren.
+      Migration 130 räumt beide Tabellen ab. In der API-Doku steht an Stelle
+      des Routen-Blocks ein Vermerk mit Datum und Messwerten, damit
+      nachvollziehbar bleibt, dass es die Routen gab.
+
 - [x] **Mitgliederliste im Chat:** Backend offen, UI nur für Admins, Handbuch
       verspricht sie Konfis. ERLEDIGT 27.08.2026 (Simons Entscheidung:
       freigeben, Gates trennen). Alle drei Teile des Befunds bestätigt: Das
