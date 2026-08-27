@@ -820,7 +820,6 @@ falschen Teamer-Erklärtexte (PR #83).
       (eigene Gegenprobe).
       **Serverseitig war es nie eine Lücke** — `requireOrgAdmin` hielt. Es
       ging um Aktionen, die sichtbar sind und dann scheitern.
-- [ ] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.**
 
 - [x] **Teamer-Bonuspunkte per API ohne Jahrgangs-Grenze.** ERLEDIGT
       27.08.2026. Nachgemessen, bevor es repariert wurde: Eine Teamer:in
