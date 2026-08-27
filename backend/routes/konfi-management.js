@@ -1202,25 +1202,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
 
-            // 10. Bibeluebersetzung mitnehmen (Befund N8).
-            // Dieselbe Praeferenz liegt je Rolle in einer ANDEREN Spalte:
-            // Konfis in konfi_profiles.bible_translation (konfi.js:2062),
-            // Teamer in users.bible_translation (Migration 107, weil Teamer
-            // kein konfi_profile haben). Ohne diese Zeile las die Teamer-
-            // Ansicht nach der Befoerderung die noch leere users-Spalte und
-            // die Tageslosung sprang still auf LUT zurueck.
-            // Die konfi_profiles-Spalte bleibt stehen (das Profil bleibt
-            // insgesamt bestehen, siehe 7.) — bei einer Rueckstufung ist die
-            // Wahl damit weiterhin da.
-            await client.query(
-                `UPDATE users u
-                    SET bible_translation = kp.bible_translation
-                   FROM konfi_profiles kp
-                  WHERE u.id = $1
-                    AND kp.user_id = u.id
-                    AND kp.bible_translation IS NOT NULL`,
-                [konfiId]
-            );
+            // 10. Bibeluebersetzung: hier ist NICHTS mehr zu tun (Befund N8).
+            // Bis Migration 132 lag dieselbe Praeferenz je Rolle in einer
+            // anderen Spalte (Konfis in konfi_profiles, Teamer in users),
+            // weshalb die Befoerderung sie an dieser Stelle eigens
+            // uebertragen musste -- sonst las die Teamer-Ansicht die noch
+            // leere users-Spalte und die Tageslosung sprang still auf LUT.
+            // Seit der Zusammenlegung steht die Wahl fuer alle Rollen in
+            // users.bible_translation und ueberlebt den Rollenwechsel von
+            // selbst: an der Zeile aendert die Befoerderung nichts.
 
             await client.query('COMMIT');
 

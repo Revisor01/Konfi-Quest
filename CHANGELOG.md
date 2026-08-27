@@ -236,10 +236,16 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die Leitung sieht auf ihrer Startseite jetzt beide Neuerungs-Karten — auch
+  den Hinweis zum Mitmachen-Bereich, den bisher nur Konfis und Teamer:innen
+  dort hatten. Beide lassen sich wie gewohnt wegklicken und stehen dauerhaft
+  unter "Mehr".
+- Challenges: Die Kachel über der Beitragsliste zeigt bei genau einem Beitrag
+  wieder "Beitrag" statt "Beiträge".
+
 - Beim Jahrgangswechsel bleibt keine Anmeldung mehr für einen Termin liegen,
   den die Konfi gar nicht mehr sieht. Bisher belegte sie dort weiter einen
   Platz, auf den niemand nachrücken konnte.
-
 - Sicherheit: Beim Ändern eines Konfi-Datensatzes wird der Jahrgang jetzt
   gegen die eigene Gemeinde geprüft. Über die App war das nie möglich, der
   Weg dorthin stand aber offen.
