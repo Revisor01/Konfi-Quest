@@ -1,0 +1,143 @@
+name: Notfall-Deploy
+
+# Rollt EINEN bereits gebauten Stand sofort aus — ohne Tests, ohne Build.
+#
+# Wofuer: Wenn in Produktion etwas brennt und der regulaere Weg zu lange
+# dauert. Der CI-Deploy laeuft erst nach backend-test (rund 9 Minuten, im
+# Zweifel laenger) und dann nach build-and-push. Am 27.08.2026 kostete das
+# bei einem Absturz-Fix ueber 20 Minuten, in denen das Backend weiter alle
+# paar Minuten neu startete.
+#
+# WICHTIG — was diese Action NICHT tut:
+# Sie baut KEINE Images. Sie rollt aus, was auf ghcr bereits unter dem
+# angegebenen Tag liegt. Das ist bewusst so: Der Notfall ist "der Fix ist
+# gebaut, aber die Pipeline haelt ihn auf", nicht "bau mir schnell was".
+# Gibt es das Image nicht, schlaegt der Deploy fehl und Produktion bleibt
+# unveraendert — das ist der sichere Ausgang.
+#
+# WANN NICHT BENUTZEN:
+# Fuer den Normalfall. Ungetestet auszurollen ist eine Ausnahme mit Ansage;
+# der regulaere Weg ueber main prueft vorher. Diese Action laeuft nur von
+# Hand und schreibt in die Zusammenfassung, wer sie ausgeloest hat.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image-Tag (7 Zeichen, z.B. 712263d). Leer = aktueller main-Stand"
+        required: false
+        default: ""
+      grund:
+        description: "Warum? (steht spaeter im Protokoll)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Tag bestimmen und pruefen, ob das Image existiert
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(git rev-parse --short=7 HEAD)
+            echo "Kein Tag angegeben -> aktueller Stand: $TAG"
+          else
+            TAG=$(echo "$TAG" | cut -c1-7)
+            echo "Angegebener Tag: $TAG"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          # Vorab pruefen statt blind deployen: Liegt das Image nicht auf ghcr,
+          # zieht der Redeploy sonst den alten Stand und meldet trotzdem Erfolg.
+          echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          fehlt=0
+          for repo in backend frontend; do
+            if docker manifest inspect "ghcr.io/revisor01/konfi-quest-$repo:$TAG" >/dev/null 2>&1; then
+              echo "  ok: konfi-quest-$repo:$TAG"
+            else
+              echo "::error::Image konfi-quest-$repo:$TAG existiert nicht auf ghcr."
+              fehlt=1
+            fi
+          done
+          if [ "$fehlt" = "1" ]; then
+            echo "::error::Abbruch — Produktion bleibt unveraendert. Erst den regulaeren Build abwarten."
+            exit 1
+          fi
+
+      - name: Ausrollen (Portainer) + Verify
+        env:
+          P_URL: ${{ secrets.PORTAINER_URL }}
+          P_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          STACK_ID: "249"
+          ENDPOINT_ID: "1"
+          IMG_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -e
+          echo "Notfall-Deploy von $IMG_TAG — ausgeloest von ${{ github.actor }}"
+          echo "Grund: ${{ inputs.grund }}"
+
+          curl -sf -H "X-API-Key: $P_KEY" "$P_URL/api/stacks/$STACK_ID/file" \
+            | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
+          test -s compose.yml || { echo "::error::compose leer"; exit 1; }
+
+          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
+          echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
+          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite fehlgeschlagen"; exit 1; }
+
+          redeploy() {
+            python3 <<'PY'
+          import json,os,urllib.request,urllib.error
+          url,key=os.environ["P_URL"],os.environ["P_KEY"]
+          sid,eid=os.environ["STACK_ID"],os.environ["ENDPOINT_ID"]
+          compose=open("compose.yml").read()
+          body=json.dumps({"stackFileContent":compose,"env":[],"prune":False,"pullImage":True}).encode()
+          req=urllib.request.Request(f"{url}/api/stacks/{sid}?endpointId={eid}",data=body,method="PUT")
+          req.add_header("X-API-Key",key); req.add_header("Content-Type","application/json")
+          try:
+              r=urllib.request.urlopen(req,timeout=180); print(r.status)
+          except urllib.error.HTTPError as e:
+              print(e.code)
+          PY
+          }
+
+          for runde in 1 2 3; do
+            echo "== Deploy-Runde $runde =="
+            code=$(redeploy); echo "Redeploy HTTP $code"
+            [ "$code" = "200" ] || { echo "::warning::Redeploy HTTP $code"; sleep 15; continue; }
+            for i in $(seq 1 12); do
+              sleep 10
+              s=$(curl -s https://konfi-quest.de/api/status || echo "")
+              db=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('checks',{}).get('database',''))" 2>/dev/null || echo "")
+              live=$(printf '%s' "$s" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit','')[:7])" 2>/dev/null || echo "")
+              if [ "$db" = "ok" ] && [ "$live" = "$IMG_TAG" ]; then
+                echo "OK — live auf $live, Datenbank ok"
+                {
+                  echo "### Notfall-Deploy erfolgreich"
+                  echo ""
+                  echo "- **Stand:** \`$IMG_TAG\`"
+                  echo "- **Ausgeloest von:** @${{ github.actor }}"
+                  echo "- **Grund:** ${{ inputs.grund }}"
+                  echo ""
+                  echo "Ohne Tests ausgerollt. Der regulaere Lauf auf \`main\` prueft nach."
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              echo "  warte... (db=$db live=$live erwartet=$IMG_TAG)"
+            done
+            echo "Runde $runde ohne Erfolg -> neuer Versuch"
+          done
+          echo "::error::Deploy nicht verifiziert. Produktion pruefen!"
+          exit 1
