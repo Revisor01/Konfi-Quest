@@ -699,7 +699,7 @@ paths:
         Loest je Konfi den gewaehlten Konfispruch auf: bei Listen-Wahl wird
         die Uebersetzung aus konfspruch_uebersetzungen nachgeladen (Spalte
         kp.konfspruch_translation, NICHT die Tageslosungs-Praeferenz
-        kp.bible_translation; Standard luther2017), bei Freitext werden Text
+        users.bible_translation; Standard luther2017), bei Freitext werden Text
         und Pflicht-Referenz direkt geliefert. konfirmation_date stammt aus
         dem individuell gebuchten is_konfirmation-Event, nicht aus dem
         Jahrgang.
