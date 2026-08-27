@@ -164,4 +164,32 @@ async function holeTageslosung(db, translation, today) {
   return { data: losungData.data, translation, cached: false };
 }
 
-module.exports = { fetchTageslosung, _resetNegativCache: () => gescheiterteAbrufe.clear() };
+/**
+ * Statischer Notfall-Text, wenn die Losungs-Schnittstelle nicht erreichbar ist
+ * UND der Zwischenspeicher leer ist.
+ *
+ * Warum hier und nicht in der Route: Bis 27.08.2026 hatte nur der Konfi-Weg
+ * diesen Fallback (konfi.js), der Teamer-Weg endete mit HTTP 500 -- obwohl der
+ * Kommentar dort "Fallback wie in der Konfi-Route" behauptete. Ein klassischer
+ * Ein-Datei-Fix, zur Haelfte uebernommen (Befund M2). An einer gemeinsamen
+ * Stelle kann das nicht mehr auseinanderlaufen.
+ *
+ * Psalm 23 bewusst gewaehlt: der wohl bekannteste Trosttext, passt zu jedem
+ * Anlass und wirkt auch dann nicht deplatziert, wenn jemand die Notlage nicht
+ * bemerkt.
+ */
+function tageslosungFallback() {
+  return {
+    date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    losung: { text: "Der HERR ist mein Hirte, mir wird nichts mangeln.", reference: "Psalm 23,1", testament: "AT" },
+    lehrtext: { text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.", reference: "Johannes 10,11", testament: "NT" },
+    translation: { code: "LUT", name: "Lutherbibel 2017", language: "German" },
+    source: "Fallback"
+  };
+}
+
+module.exports = {
+  fetchTageslosung,
+  tageslosungFallback,
+  _resetNegativCache: () => gescheiterteAbrufe.clear()
+};
