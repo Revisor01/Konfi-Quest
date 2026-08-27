@@ -1447,6 +1447,36 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       die Leitung — der Tap öffnet die App nur dort, wo sie zuletzt stand.
       Ein Paritätstest Backend-Typen gegen Frontend-Weiche würde das dauerhaft
       verhindern.
+- [ ] **Der Hintergrund-Sync lässt eine der beiden Leitungsrollen aus** (M3
+      Push-Bericht). **Am Code nachgeprüft 27.08. abends, gilt auch nach
+      PR #131** — der Bericht sagte das ausdrücklich vorher, und es stimmt:
+      Der Fix rechnet die richtige Summe, den Rollenfilter fasst er nicht an.
+      `backgroundService.js:120` lädt die Empfänger mit `WHERE r.name != 'admin'`,
+      obwohl der Kommentar zwei Zeilen darüber "Alle Konfis und Teamer:innen"
+      sagt. Jede Organisation hat aber ZWEI Leitungsrollen
+      (`organizations.js:339-340`): `org_admin` ("Organisations-Admin") und
+      `admin` ("Hauptamt"). Folge: `org_admin` läuft alle fünf Minuten durch
+      den Sync mit, das Hauptamt bekommt im Hintergrund **nie** eine
+      Aktualisierung des App-Icons.
+      Zu tun: Filter auf `r.name IN ('konfi','teamer')` verengen oder beide
+      Leitungsrollen bewusst aufnehmen — die heutige Fassung tut weder das
+      eine noch das andere.
+- [ ] **`new_event` geht auch an ausgeschiedene Konfis** (M5 Push-Bericht,
+      gemessen). `sendNewEventToOrgKonfis` (`pushService.js:1049-1052`)
+      selektiert alle Org-Konfis ohne `u.deleted_at IS NULL` — die
+      Nachbarmethode `sendChallengeStartedToJahrgaenge` (`:1103-1110`) hat den
+      Filter. Die Jahrgangs-Archivierung setzt 60–120 Tage nach der
+      Konfirmation nur `deleted_at` und löscht keine Tokens. Solche Konten
+      bekommen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
+      Gemeinde, aus der sie ausgeschieden sind.
+      *Am Code gegengeprüft 27.08. abends: beide Stellen unverändert.*
+- [ ] **Zwei Push-Arten reichen die Organisation nicht durch** (M4
+      Push-Bericht, nicht einzeln gemessen). `sendBadgeEarnedToKonfi` und
+      `sendActivityRequestStatusToKonfi` setzen keine Content-Org, obwohl
+      beide auch Teamer:innen erreichen — und die können mehreren Gemeinden
+      angehören. Der Fallback nimmt dann die Primär-Org: Der Tap wechselt in
+      die falsche Gemeinde. Die eigene Regel dazu steht in
+      `pushService.js:83-86`; `sendCertificateToTeamer` macht es richtig vor.
 - [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
       gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
       `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
