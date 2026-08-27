@@ -774,6 +774,33 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
 
         try {
+            // Befund 11 aus dem Rollen-Bericht (26.08.2026): Hier wurde fuer
+            // Teamer:innen nur die Organisation geprueft, kein Jahrgang —
+            // inkonsistent zu assign-activity (activities.js:665-679) und zum
+            // Handbuch (45-jahrgaenge.md:180 verspricht ausdruecklich
+            // "Kein Zugriff auf diesen Konfi").
+            //
+            // Nachgemessen am 27.08.2026, bevor es repariert wurde: Eine
+            // Teamer:in konnte per API Bonuspunkte an eine Konfi eines FREMDEN
+            // Jahrgangs vergeben (POST -> 201, Eintrag angelegt). Ueber die
+            // Oberflaeche nicht erreichbar, weil die Teamer-Ansicht gar keine
+            // Punktevergabe hat — bekommt sie eine, waere die Luecke sofort
+            // real.
+            if (req.user.role_name === 'teamer') {
+                const { rows: [konfiProfile] } = await db.query(
+                    'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [req.params.id]
+                );
+                if (!konfiProfile) {
+                    return res.status(404).json({ error: 'Konfi nicht gefunden' });
+                }
+                const hasAccess = req.user.assigned_jahrgaenge.some(
+                    j => j.id === konfiProfile.jahrgang_id && j.can_view
+                );
+                if (!hasAccess) {
+                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+                }
+            }
+
             // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
             const { enabled, error } = await checkPointTypeEnabled(db, req.params.id, type);
             if (!enabled) return res.status(400).json({ error });
