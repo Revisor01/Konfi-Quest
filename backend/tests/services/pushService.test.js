@@ -251,6 +251,38 @@ describe('PushService: organization_id in jedem Payload', () => {
         expect(push.data.organization_id).toBe('1');
       }
     });
+
+    // Befund M5 (Push-Bericht 27.08.2026), gemessen: Die Empfaengerabfrage
+    // filterte weder `deleted_at` noch `is_active`. Die Jahrgangs-
+    // Archivierung setzt bei Konfis 60-120 Tage nach der Konfirmation nur
+    // `deleted_at` und loescht keine Push-Tokens — ausgeschiedene Konten
+    // bekamen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
+    // Gemeinde, aus der sie laengst raus sind.
+    it('M5: archivierte Konfis bekommen keinen new_event-Push mehr', async () => {
+      const vorher = await (async () => {
+        await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin A', new Date().toISOString(), 5);
+        const n = gesendete().length;
+        sendFirebasePushNotification.mockClear();
+        return n;
+      })();
+      // Erlaubter Fall: beide aktiven Konfis der Org 1 bekommen den Push
+      // (konfi1 und konfi2; konfi3 gehoert zu Org 2, siehe seed.js).
+      expect(vorher).toBe(2);
+
+      // Verbotener Fall: ein archivierter Konfi faellt raus, obwohl sein
+      // Token noch existiert.
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin B', new Date().toISOString(), 6);
+      expect(gesendete().length).toBe(1);
+      expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
+      sendFirebasePushNotification.mockClear();
+
+      // Dasselbe fuer ein deaktiviertes Konto.
+      await db.query('UPDATE users SET deleted_at = NULL, is_active = false WHERE id = $1', [USERS.konfi1.id]);
+      await PushService.sendNewEventToOrgKonfis(db, 1, 'Termin C', new Date().toISOString(), 7);
+      expect(gesendete().length).toBe(1);
+      expect(gesendete().map(p => p.token)).not.toContain('token-konfi1');
+    });
   });
 
   // ================================================================
@@ -293,6 +325,66 @@ describe('PushService: organization_id in jedem Payload', () => {
       const [push] = gesendete();
       expect(push.data.type).toBe('challenge_badge_earned');
       expect(push.data.organization_id).toBe('1');
+    });
+  });
+
+  // ================================================================
+  // M4 (Push-Bericht 27.08.2026): Zwei Typen erreichen auch
+  // Teamer:innen — und die koennen mehreren Gemeinden angehoeren.
+  // Fuer sie ist der Primaer-Org-Fallback FALSCH: Der Tap muss in die
+  // Organisation des INHALTS wechseln, nicht in die Heimatgemeinde.
+  //
+  // Verbotener Fall: Content-Org der Zweitgemeinde (2) darf NICHT durch
+  // die Primaer-Org (1) ersetzt werden.
+  // Erlaubter Fall: ohne Content-Org greift der Fallback weiter — fuer
+  // Konfis ist er richtig, sie sind immer Single-Org.
+  // ================================================================
+  describe('M4: Content-Org schlaegt die Primaer-Org (Multi-Org-Teamer)', () => {
+    it('sendBadgeEarnedToKonfi: uebergebene Org 2 gewinnt gegen Primaer-Org 1', async () => {
+      await PushService.sendBadgeEarnedToKonfi(
+        db, USERS.teamer1.id, 'Abzeichen', 'star', 'Beschreibung', null,
+        ORGS.andereGemeinde.id
+      );
+      const [push] = gesendete();
+      expect(push.data.type).toBe('badge_earned');
+      expect(push.data.organization_id).toBe('2');
+    });
+
+    it('sendBadgeEarnedToKonfi: ohne Org greift der Fallback (Primaer-Org 1)', async () => {
+      await PushService.sendBadgeEarnedToKonfi(
+        db, USERS.teamer1.id, 'Abzeichen', 'star', 'Beschreibung'
+      );
+      const [push] = gesendete();
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendActivityRequestStatusToKonfi: uebergebene Org 2 gewinnt', async () => {
+      await PushService.sendActivityRequestStatusToKonfi(
+        db, USERS.teamer1.id, 'Aktivitaet', 3, 'approved', null, null,
+        ORGS.andereGemeinde.id
+      );
+      const [push] = gesendete();
+      expect(push.data.type).toBe('activity_request_status');
+      expect(push.data.organization_id).toBe('2');
+    });
+
+    it('sendActivityRequestStatusToKonfi: ohne Org greift der Fallback', async () => {
+      await PushService.sendActivityRequestStatusToKonfi(
+        db, USERS.teamer1.id, 'Aktivitaet', 3, 'approved'
+      );
+      const [push] = gesendete();
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendBadgeEarnedToKonfi reicht die badge_id mit durch', async () => {
+      // Vorher blieb badge_id leer, weil die Aufrufstelle in badges.js sie
+      // nicht uebergab — der Tap kannte das Abzeichen also nicht.
+      await PushService.sendBadgeEarnedToKonfi(
+        db, USERS.konfi1.id, 'Abzeichen', 'star', 'Beschreibung', 42,
+        ORGS.testGemeinde.id
+      );
+      const [push] = gesendete();
+      expect(push.data.badge_id).toBe('42');
     });
   });
 

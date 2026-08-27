@@ -53,20 +53,18 @@ Release selbst.** Kein einziger offener Befund blockiert ihn.
 
 Alles andere ist eingeordnet und blockiert nichts:
 
-| Offener Punkt | Warum kein Blocker |
-|---|---|
-| Antwortform der Teamer-Abzeichen vereinheitlichen | dort schon als "NACH 2.0.0" vermerkt |
-| Abgelehnte Offline-Nachreichungen verschwinden still (H1) | Befund aus dem Offline-Bericht, nach 2.0.0 |
-| Teamer-Offline-Buchung verwirft die Server-Antwort (H2) | ebenda |
-| 10 von 30 Push-Arten ohne Antipp-Ziel (M2) | Befund aus dem Push-Bericht, nach 2.0.0 |
-| Hintergrund-Sync lässt das Hauptamt aus (M3) | ebenda; betrifft nur das Icon, nicht die Daten |
-| `new_event` an ausgeschiedene Konfis (M5) | ebenda |
-| Zwei Push-Arten ohne Content-Org (M4) | ebenda; nur Multi-Org-Teamer:innen |
-| Zeitzonen und Datumsgrenzen | **Prüfauftrag**, kein Befund |
-| Wrapped | **Prüfauftrag**, kein Befund |
-| Termin-Zählungen: gemeinsame SQL-View | ausdrücklich "Nach 2.0.0" |
-| 3-MB-Bundle aufteilen | ausdrücklich "Nach 2.0.0" |
-| Ionic 9 mit react-router-Umbau | ausdrücklich "Nach 2.0.0" |
+| Offener Punkt | Art | Warum kein Blocker |
+|---|---|---|
+| Antwortform der Teamer-Abzeichen vereinheitlichen | Aufräumarbeit | dort schon als "NACH 2.0.0" vermerkt |
+| Termin-Zählungen auf die vorhandene View umstellen | Aufräumarbeit | Verhalten stimmt, die Wurzel bleibt |
+| 3-MB-Bundle aufteilen | Aufräumarbeit | ausdrücklich "Nach 2.0.0" |
+| Ionic 9 mit react-router-Umbau | Aufräumarbeit | ausdrücklich "Nach 2.0.0" |
+| Zeitzonen und Datumsgrenzen | **Prüfvorschlag** | kein Befund, unbeauftragt |
+| Wrapped | **Prüfvorschlag** | kein Befund, unbeauftragt |
+
+**Kein offener Befund.** Die sechs aus den drei Prüfberichten (H1, H2, M2
+mit N1, M3, M4, M5) sind am 27.08.2026 abends behoben — volle Suiten grün,
+1468 Backend- und 601 Frontend-Tests, jede Änderung mit Gegenprobe.
 
 > **Diese Übersicht war schon einmal falsch — zweimal sogar.** Ihre erste
 > Fassung führte N8, die Neuerungs-Karten und die Konsolidierung der Zähler
@@ -1568,18 +1566,35 @@ Vollständig abgearbeitet, es steht nichts mehr offen:
 
 Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
 
-- [ ] **Abgelehnte Offline-Nachreichungen verschwinden still** (H1
+- [x] **Abgelehnte Offline-Nachreichungen verschwinden still** (H1
       Offline-Bericht). Für alles außer Chat gibt es nur einen
       4-Sekunden-Toast; im Hintergrund-Flush oder nach einem Neustart ist die
       Meldung spurlos weg (`writeQueue.ts:106`, `189-219`). Eine offline
       abgegebene Abmeldung kann verpuffen, während die App "wird gesendet"
       bestätigt hat.
-- [ ] **Teamer-Offline-Buchung verwirft die Server-Antwort** (H2
+      **ERLEDIGT 27.08.2026.** Fehlgeschlagene Vorgaenge bekommen jetzt einen
+      dauerhaften Merker (`queue:failedActions`), nach demselben Muster, das
+      Chat-Nachrichten laengst hatten. Der Toast bleibt als schneller Hinweis
+      fuer alle, die gerade hinsehen. `handleFlushResult` ist dafuer
+      awaitbar geworden — sonst waere der Merker beim naechsten Lesezugriff
+      noch nicht geschrieben. Fuenf Tests, Gegenprobe rot: 4xx wird gemerkt,
+      5xx (noch im Retry) NICHT, `fire-and-forget` nicht, Chat weiterhin nur
+      im eigenen Merker.
+- [x] **Teamer-Offline-Buchung verwirft die Server-Antwort** (H2
       Offline-Bericht). Landet die Buchung auf der Warteliste, erfährt die
       Teamer:in das nie (`writeQueue.ts:387-399`,
       `TeamerEventsPage.tsx:575-586`, `events.js:1719-1725`). Entweder
       online-pflichtig machen wie beim Konfi oder die Antwort auswerten.
-- [ ] **10 von 30 Push-Arten haben beim Antippen kein Ziel** (M2
+      **ERLEDIGT 27.08.2026.** Von den beiden Optionen des Berichts die
+      gewaehlt, die zur Konfi-Ansicht passt: Die Buchung ist jetzt
+      online-pflichtig, beide Knoepfe sind offline deaktiviert und benennen
+      den Grund. So macht es die Konfi-Anmeldung seit jeher
+      (`EventDetailView.tsx`, `disabled={!isOnline}`).
+      **Bewusst NICHT mitgeaendert:** Zusage/Absage und die Abmeldung laufen
+      weiter offline — bei ihnen gibt es keine Server-Antwort, die man
+      verpassen koennte. Der Test unterscheidet die drei Faelle ausdruecklich,
+      damit niemand sie spaeter ueber einen Kamm schert.
+- [x] **10 von 30 Push-Arten haben beim Antippen kein Ziel** (M2
       Push-Bericht). Die Weiche `buildPushTargetUrl`
       (`frontend/src/utils/pushNavigation.ts:75-145`) kennt 20 Typen, der
       `default`-Zweig liefert `''`. Betroffen u.a. Event-Änderung,
@@ -1587,7 +1602,20 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       die Leitung — der Tap öffnet die App nur dort, wo sie zuletzt stand.
       Ein Paritätstest Backend-Typen gegen Frontend-Weiche würde das dauerhaft
       verhindern.
-- [ ] **Der Hintergrund-Sync lässt eine der beiden Leitungsrollen aus** (M3
+      **ERLEDIGT 27.08.2026.** Alle zehn haben ein Ziel, je Rolle geprueft
+      gegen die tatsaechlich vorhandenen Routen in `MainTabs.tsx`.
+      Termin-Pushes fuehren ins Detail, wenn die ID mitkommt und die Rolle
+      eine Detailroute hat — Teamer:innen haben keine, fuer sie die Liste.
+      **Dazu ein Paritaetstest**, wie der Bericht ihn vorschlug: Er
+      vergleicht die von `pushService.js` gesendeten Typen mit den Faellen der
+      Weiche. Eine neue Push-Art ohne Ziel faellt damit sofort auf, statt
+      erst jemandem beim Antippen. 41 Tests.
+      **Mit erledigt (N1):** Die zwei veralteten Teamer-Ziele. Der Kommentar
+      behauptete, es gebe keine Requests- und keine Badges-Seite fuer
+      Teamer:innen — beide existieren. Zwei bestehende Tests trugen die alte
+      Erwartung und wurden angepasst, nicht aufgeweicht: Sie waren ueberholt,
+      nicht falsch.
+- [x] **Der Hintergrund-Sync lässt eine der beiden Leitungsrollen aus** (M3
       Push-Bericht). **Am Code nachgeprüft 27.08. abends, gilt auch nach
       PR #131** — der Bericht sagte das ausdrücklich vorher, und es stimmt:
       Der Fix rechnet die richtige Summe, den Rollenfilter fasst er nicht an.
@@ -1601,7 +1629,17 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       Zu tun: Filter auf `r.name IN ('konfi','teamer')` verengen oder beide
       Leitungsrollen bewusst aufnehmen — die heutige Fassung tut weder das
       eine noch das andere.
-- [ ] **`new_event` geht auch an ausgeschiedene Konfis** (M5 Push-Bericht,
+      **ERLEDIGT 27.08.2026.** Der Filter zaehlt die Rollen jetzt
+      ausdruecklich auf (`konfi`, `teamer`, `admin`, `org_admin`) statt eine
+      zu negieren — eine neue Rolle faellt damit auf, statt still
+      mitzulaufen. `super_admin` bleibt bewusst aussen vor (org-fremd, hat
+      weder Chat noch Antraege).
+      **Beim Bauen aufgefallen:** Die Leitung wird jetzt fuer den Zaehler
+      mitgeladen, kann aber keine Abzeichen bekommen. Ohne Gegenmassnahme
+      liefe `checkAndAwardBadges` je Lauf und je Leitungskonto in eine
+      Rollen-Abfrage, um mit `{count: 0}` abzubrechen. Die Vergabe-Pruefung
+      ist deshalb auf Konfis und Teamer:innen eingegrenzt. Zwei Tests.
+- [x] **`new_event` geht auch an ausgeschiedene Konfis** (M5 Push-Bericht,
       gemessen). `sendNewEventToOrgKonfis` (`pushService.js:1049-1052`)
       selektiert alle Org-Konfis ohne `u.deleted_at IS NULL` — die
       Nachbarmethode `sendChallengeStartedToJahrgaenge` (`:1103-1110`) hat den
@@ -1610,30 +1648,40 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       bekommen bis zur 30-Tage-Token-Bereinigung weiter "Neues Event!" einer
       Gemeinde, aus der sie ausgeschieden sind.
       *Am Code gegengeprüft 27.08. abends: beide Stellen unverändert.*
-- [ ] **VIER Push-Arten reichen die Organisation nicht durch** (M4
-      Push-Bericht — der nannte zwei; **beim Nachzählen am 27.08. abends
-      wurden es vier**). Von 36 Sende-Methoden in `pushService.js` führen 23
-      ein `organizationId`, 13 nicht. Bei den meisten der 13 ist das richtig:
-      Ihre Empfänger sind Konfis, und die sind immer Single-Org — genau der
-      Fall, für den der Fallback (`pushService.js:80-87`) gebaut ist.
-      **Vier erreichen aber auch Teamer:innen, und die können mehreren
-      Gemeinden angehören:**
-      - `sendBadgeEarnedToKonfi` (`:600`) — Abzeichen gehen ausdrücklich auch
-        an Teamer:innen (`badges.js:648-651`)
-      - `sendActivityRequestStatusToKonfi` (`:568`) — Anträge stellen auch
-        Teamer:innen (`teamer.js:1520`)
-      - `sendChallengeBadgeEarnedToKonfi` — **im Bericht nicht genannt**
-      - `sendChallengeSubmissionHiddenToUser` — **im Bericht nicht genannt**
+      **ERLEDIGT 27.08.2026.** `deleted_at IS NULL AND is_active = true`
+      ergaenzt. Der Test misst konkrete Zahlen statt "irgendwas kam an":
+      zwei aktive Konfis in Org 1 bekommen den Push, nach dem Archivieren
+      einer von ihnen nur noch einer — und das Token des archivierten Kontos
+      ist nachweislich nicht dabei. Dasselbe fuer ein deaktiviertes Konto.
+- [x] **Zwei Push-Arten reichen die Organisation nicht durch** (M4
+      Push-Bericht). `sendBadgeEarnedToKonfi` und
+      `sendActivityRequestStatusToKonfi` setzten keine Content-Org, obwohl
+      beide auch Teamer:innen erreichen — und die können mehreren Gemeinden
+      angehören. Der Fallback nahm dann die Primär-Org: Der Tap wechselte in
+      die falsche Gemeinde. Die eigene Regel dazu steht in
+      `pushService.js:80-87`; `sendCertificateToTeamer` macht es richtig vor.
 
-      Die letzten beiden hängen daran, dass Teamer:innen Challenge-Beiträge
-      einreichen dürfen: `challenges.js:623` lässt `konfi` UND `TEAM_ROLES`
-      zu. Wer den Befund behebt, prüft alle vier — sonst bleibt die Hälfte.
-      Ohne Content-Org nimmt der Fallback die Primär-Org: Der Tap wechselt in
-      die falsche Gemeinde. `sendCertificateToTeamer` (`:1588`) macht es
-      richtig vor.
-      *Gegengeprüft: `sendBonusPointsToKonfi` und `sendActivityAssignedToKonfi`
-      haben ebenfalls kein `organizationId`, laufen aber über
-      `konfi-management` bzw. den Konfi-Pfad — dort ist der Fallback korrekt.*
+      **ERLEDIGT 27.08.2026 — und dabei die eigene Zählung korrigiert.**
+      Hier stand zwischenzeitlich "VIER Push-Arten". Das war falsch: Ich
+      hatte nur die Signaturen verglichen, nicht die Rümpfe.
+      `sendChallengeBadgeEarnedToKonfi` und
+      `sendChallengeSubmissionHiddenToUser` holen die Content-Org längst
+      selbst aus der Challenge — sie waren nie betroffen. **Es sind die zwei,
+      die der Bericht nannte.** Von 36 Sende-Methoden führen 23 ein
+      `organizationId`; von den 13 ohne sind die übrigen 11 reine
+      Konfi-Pfade, wo der Fallback richtig ist (`sendEventRegisteredToTeamer`
+      und `sendWaitlistPromotionToTeamer` reichen ihn an die Konfi-Variante
+      durch).
+      Beide bekommen `organizationId` jetzt als optionalen Parameter (alte
+      Aufrufstellen brechen damit nicht), und die zwei Aufrufstellen geben
+      ihn mit: `badges.js` hatte ihn ohnehin in der Hand, `activities.js`
+      hat `req.user.organization_id` direkt daneben.
+      **Nebenbei behoben:** `badges.js` übergab auch die `badge_id` nicht —
+      der Tap kannte das Abzeichen also gar nicht. Fünf Tests, verbotener
+      und erlaubter Fall (Content-Org schlägt Primär-Org; ohne Angabe greift
+      der Fallback weiter, was für Konfis richtig ist).
+      **Die Lehre:** Eine fehlende Signatur ist noch kein Befund. Erst der
+      Rumpf sagt, ob die Methode sich die Org selbst holt.
 - [x] **Erinnerungen an abgesagte Termine** — ERLEDIGT 27.08.2026, vorher
       gemessen. Beide Erinnerungs-Queries (1 Tag / 1 Stunde vorher) prüften
       `cancelled` nicht, und die Absage laesst die Buchungen auf `confirmed`
@@ -1648,11 +1696,13 @@ Aus den drei Berichten noch offen — **nach 2.0.0**, keiner ist ein Blocker:
       `event_bookings_event_id_fkey` haengt mit `ON DELETE CASCADE` daran. Mit
       dem Event verschwinden die Buchungen, der JOIN findet nichts — der Fall
       existiert gar nicht.
-- [ ] **Zeitzonen und Datumsgrenzen.** Termine, Anmeldeschluss, Challenges mit
-      Restzeit, Tageslosung, Wrapped-Jahresgrenze — überall Datumslogik,
-      nirgends geprüft, ob sie an Tagesgrenzen und über die Sommerzeit stimmt.
-- [ ] **Wrapped.** Kommt in mehreren Berichten am Rand vor (Slide-Inhalte nie
-      geprüft, `has_wrapped` prüft nur die Freigabe statt der Snapshot-Existenz),
+- [ ] **Zeitzonen und Datumsgrenzen.** **NACH 2.0.0** (Prüfauftrag, kein
+      Befund). Termine, Anmeldeschluss, Challenges mit Restzeit, Tageslosung,
+      Wrapped-Jahresgrenze — überall Datumslogik, nirgends geprüft, ob sie an
+      Tagesgrenzen und über die Sommerzeit stimmt.
+- [ ] **Wrapped.** **NACH 2.0.0** (Prüfauftrag, kein Befund). Kommt in
+      mehreren Berichten am Rand vor (Slide-Inhalte nie geprüft, `has_wrapped`
+      prüfte nur die Freigabe statt der Snapshot-Existenz — das ist behoben),
       war aber nie eigener Gegenstand.
 
 ---

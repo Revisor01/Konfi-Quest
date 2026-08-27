@@ -88,7 +88,11 @@ describe('buildPushTargetUrl', () => {
 
   it('new_activity_request: Requests-Seite je Rolle', () => {
     expect(buildPushTargetUrl('new_activity_request', {}, 'admin')).toBe('/admin/requests');
-    expect(buildPushTargetUrl('new_activity_request', {}, 'teamer')).toBe('/teamer/dashboard');
+    // Geaendert am 27.08.2026 (Befund N1): Hier stand '/teamer/dashboard',
+    // weil es fuer Teamer:innen angeblich keine Requests-Seite gab. Es gibt
+    // sie (MainTabs: /teamer/requests) -- die Erwartung war ueberholt, nicht
+    // falsch. Der Push landete in der richtigen Rolle, nur eine Ebene zu hoch.
+    expect(buildPushTargetUrl('new_activity_request', {}, 'teamer')).toBe('/teamer/requests');
     expect(buildPushTargetUrl('activity_request_status', {}, 'konfi')).toBe('/konfi/requests');
   });
 
@@ -109,7 +113,11 @@ describe('buildPushTargetUrl', () => {
 
   it('unbekannter Typ: leerer String (keine Navigation)', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(buildPushTargetUrl('certificate', {}, 'teamer')).toBe('');
+    // 'certificate' stand hier als Beispiel fuer einen Typ ohne Fall -- war
+    // aber keiner: Das Backend SENDET ihn (sendCertificateToTeamer), er fiel
+    // nur durch (Befund M2). Seit dem 27.08.2026 hat er ein Ziel; als
+    // Beispiel dient jetzt ein Typ, den niemand sendet.
+    expect(buildPushTargetUrl('gibt_es_nicht', {}, 'teamer')).toBe('');
     expect(buildPushTargetUrl(undefined, {}, 'konfi')).toBe('');
     warnSpy.mockRestore();
   });

@@ -565,7 +565,10 @@ class PushService {
   /**
    * Antrag genehmigt/abgelehnt - Push an Konfi
    */
-  static async sendActivityRequestStatusToKonfi(db, konfiId, activityName, points, status, adminComment = null, requestId = null) {
+  // organizationId optional, siehe sendBadgeEarnedToKonfi: Antraege stellen
+  // auch Teamer:innen (teamer.js), die Statusmeldung geht an request.user_id
+  // (activities.js) -- also ggf. an eine Multi-Org-Teamer:in (Befund M4).
+  static async sendActivityRequestStatusToKonfi(db, konfiId, activityName, points, status, adminComment = null, requestId = null, organizationId = null) {
     try {
 
       const isApproved = status === 'approved';
@@ -579,7 +582,8 @@ class PushService {
           status: status,
           activity_name: activityName,
           points: points.toString(),
-          request_id: requestId?.toString() || ''
+          request_id: requestId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -597,7 +601,12 @@ class PushService {
   /**
    * Badge erhalten - Push an Konfi
    */
-  static async sendBadgeEarnedToKonfi(db, konfiId, badgeName, badgeIcon, badgeDescription, badgeId = null) {
+  // organizationId ist optional, damit alte Aufrufstellen nicht brechen --
+  // ohne sie greift der Primaer-Org-Fallback, der fuer Konfis richtig ist.
+  // Abzeichen gehen aber ausdruecklich auch an Teamer:innen (badges.js), und
+  // die koennen mehreren Gemeinden angehoeren: dann ist die Content-Org
+  // noetig (Befund M4, Push-Bericht 27.08.2026).
+  static async sendBadgeEarnedToKonfi(db, konfiId, badgeName, badgeIcon, badgeDescription, badgeId = null, organizationId = null) {
     try {
 
       const notification = {
@@ -607,7 +616,8 @@ class PushService {
           type: 'badge_earned',
           badge_name: badgeName,
           badge_icon: badgeIcon,
-          badge_id: badgeId?.toString() || ''
+          badge_id: badgeId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -1046,10 +1056,22 @@ class PushService {
     try {
 
       // Hole alle Konfi-IDs der Organisation
+      // deleted_at/is_active pruefen (Befund M5 aus dem Push-Bericht,
+      // 27.08.2026): Die Jahrgangs-Archivierung setzt bei Konfis 60-120 Tage
+      // nach der Konfirmation nur `deleted_at`, loescht aber keine
+      // Push-Tokens. Ohne diesen Filter bekamen ausgeschiedene Konten bis zur
+      // 30-Tage-Token-Bereinigung weiter "Neues Event!" einer Gemeinde, aus
+      // der sie laengst raus sind. Die Nachbarmethode
+      // `sendChallengeStartedToJahrgaenge` filtert seit jeher `deleted_at`.
+      // `is_active` kommt hier dazu — deaktivierte Konten sollen ebenso
+      // wenig angeschrieben werden, und die Leitungs-Abfrage weiter unten
+      // (`sendToOrgAdmins`) prueft es bereits so.
       const konfisQuery = `
         SELECT u.id FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE u.organization_id = $1 AND r.name = 'konfi'
+          AND u.deleted_at IS NULL
+          AND u.is_active = true
       `;
       const { rows: konfis } = await db.query(konfisQuery, [organizationId]);
       const konfiIds = konfis.map(k => k.id);

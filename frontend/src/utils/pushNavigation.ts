@@ -84,12 +84,17 @@ export const buildPushTargetUrl = (
 
     case 'activity_request_status':
     case 'new_activity_request':
-      // Requests-Seite (Teamer hat keine Requests-Page, Dashboard stattdessen)
-      return userType === 'admin' ? '/admin/requests' : userType === 'teamer' ? '/teamer/dashboard' : '/konfi/requests';
+      // Antrags-Ansicht je Rolle. Der Kommentar hier sagte bis 27.08.2026
+      // "Teamer hat keine Requests-Page" und schickte sie aufs Dashboard --
+      // /teamer/requests existiert inzwischen (Befund N1, Push-Bericht).
+      return `${routePrefix}/requests`;
 
     case 'badge_earned':
-      // Badges-Seite (Teamer hat keine Badges-Page, Profil stattdessen)
-      return userType === 'admin' ? '/admin/badges' : userType === 'teamer' ? '/teamer/profile' : '/konfi/badges';
+      // Abzeichen-Seite je Rolle. Auch hier war der Kommentar veraltet
+      // ("Teamer hat keine Badges-Page" -> Profil): /teamer/badges gibt es
+      // (Befund N1). Beides landete in der richtigen Rolle, nur eine Ebene
+      // zu hoch.
+      return `${routePrefix}/badges`;
 
     case 'new_event': {
       // "Anmeldung möglich"-Push: direkt zum Event-Detail, wenn die ID
@@ -138,6 +143,53 @@ export const buildPushTargetUrl = (
       // Bestandsluecke: Das Wrapped-Modal liegt auf dem Dashboard —
       // ohne diesen Fall lief der Tap ins Leere (default-Zweig).
       return `${routePrefix}/dashboard`;
+
+    // ------------------------------------------------------------------
+    // Ab hier: die zehn Typen, die bis zum 27.08.2026 im default-Zweig
+    // landeten und damit KEIN Ziel hatten (Befund M2, Push-Bericht).
+    // Der Tap oeffnete die App nur dort, wo sie zuletzt stand.
+    // ------------------------------------------------------------------
+
+    case 'event_changed':
+    case 'event_opt_in':
+    case 'event_opt_out':
+    case 'mandatory_event_created': {
+      // Termin-Detail, wenn die ID mitkommt und die Rolle eine Detailroute
+      // hat (Konfi und Leitung -- Teamer:innen haben keine, siehe MainTabs).
+      const evId = data?.event_id || data?.eventId;
+      if (evId && (userType === 'konfi' || userType === 'admin')) {
+        return `${routePrefix}/events/${evId}`;
+      }
+      return `${routePrefix}/events`;
+    }
+
+    case 'teamer_event_booking':
+    case 'teamer_event_cancellation':
+      // Meldungen an die Leitung ueber Teamer-Buchungen: zur Terminliste
+      // der Leitung. Andere Rollen bekommen diese Pushes nicht, fallen aber
+      // sauber auf ihre eigene Liste zurueck.
+      return `${routePrefix}/events`;
+
+    case 'challenge_badge_earned':
+      // Stempel aus einer Challenge -> Abzeichen-Seite der Rolle.
+      return `${routePrefix}/badges`;
+
+    case 'challenge_submission_hidden':
+      // Eigener Beitrag ausgeblendet -> Challenge-Bereich, dort steht die
+      // Begruendung am Beitrag.
+      return `${routePrefix}/challenges`;
+
+    case 'certificate':
+      // Zertifikat -> Profil, dort liegt der Download.
+      return `${routePrefix}/profile`;
+
+    case 'jahrgang_deletion_warning':
+      // Vorwarnung zur Jahrgangs-Archivierung. Betrifft die Leitung:
+      // Einstellungen -> Jahrgaenge. Teamer:innen und Konfis haben diese
+      // Seite nicht, fuer sie bleibt das Dashboard.
+      return userType === 'admin'
+        ? '/admin/settings/jahrgaenge'
+        : `${routePrefix}/dashboard`;
 
     default:
       console.warn('Unbekannter Notification-Typ:', notificationType);

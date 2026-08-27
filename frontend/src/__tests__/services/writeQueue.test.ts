@@ -274,3 +274,106 @@ describe('writeQueue — clear() raeumt vollstaendig auf', () => {
     expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
   });
 });
+
+// ====================================================================
+// Befund H1 (Offline-Bericht 27.08.2026): Eine vom Server ABGELEHNTE
+// Nachreichung existierte fuer alles ausser Chat nur als
+// 4-Sekunden-Toast. Laeuft der Flush im Hintergrund oder startet die App
+// zwischendurch neu, sah die Meldung niemand — eine offline abgegebene
+// Abmeldung konnte verpuffen, waehrend die App "wird gesendet"
+// bestaetigt hatte.
+//
+// Chat-Nachrichten hatten den Schutz laengst (queue:failedChat). Diese
+// Tests halten fest, dass ihn jetzt auch der Rest hat.
+// ====================================================================
+describe('writeQueue — H1: abgelehnte Nachreichungen verschwinden nicht mehr still', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  const optOutItem = (clientId: string) => ({
+    method: 'POST' as const,
+    url: '/konfi/events/5/opt-out',
+    body: { reason: 'krank', client_id: clientId },
+    maxRetries: 5,
+    hasFileUpload: false,
+    metadata: { type: 'opt-out' as const, clientId, label: 'Abmeldung' },
+  });
+
+  it('merkt sich eine vom Server abgelehnte Abmeldung dauerhaft (4xx)', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    // 4xx = endgueltig, kein Retry. Genau der Fall, den vorher nur der
+    // Toast meldete.
+    mockPost.mockRejectedValue({ response: { status: 409 }, message: 'Anmeldeschluss vorbei' });
+
+    await writeQueue.enqueue(optOutItem('c-optout'));
+    await writeQueue.flush();
+
+    const gemerkt = await writeQueue.getFailedActions();
+    expect(gemerkt).toHaveLength(1);
+    expect(gemerkt[0].label).toBe('Abmeldung');
+    expect(gemerkt[0].type).toBe('opt-out');
+    expect(gemerkt[0].error.status).toBe(409);
+    // Der Merker liegt persistent, ueberlebt also einen App-Neustart.
+    expect(JSON.parse(store['queue:failedActions'] || '[]')).toHaveLength(1);
+  });
+
+  it('merkt sich NICHTS, solange die Queue es noch erneut versucht (5xx)', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    // 5xx = transient, das Item bleibt in der Queue. Ein Merker waere hier
+    // falsch: Der Vorgang ist nicht gescheitert, nur noch nicht durch.
+    mockPost.mockRejectedValue({ response: { status: 503 }, message: 'Service Unavailable' });
+
+    await writeQueue.enqueue(optOutItem('c-optout-2'));
+    await writeQueue.flush();
+
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(1);
+  });
+
+  it('merkt sich stille Hintergrund-Aufraeumer NICHT', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockRejectedValue({ response: { status: 401 }, message: 'Unauthorized' });
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/notifications/push-token/remove',
+      body: {},
+      maxRetries: 1,
+      hasFileUpload: false,
+      metadata: { type: 'fire-and-forget' as const, clientId: 'c-ff', label: 'Push-Token entfernen' },
+    });
+    await writeQueue.flush();
+
+    // Diese scheitern nach dem Logout zwangslaeufig und gehen niemanden
+    // etwas an — sie bekommen schon keinen Toast, also auch keinen Merker.
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+  });
+
+  it('merkt sich Chat-Nachrichten NICHT hier — die haben ihren eigenen Merker', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockRejectedValue({ response: { status: 403 }, message: 'Verboten' });
+
+    await writeQueue.enqueue(chatItem('c-chat'));
+    await writeQueue.flush();
+
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+    // Gegenprobe: Der Chat-Merker hat sie sehr wohl.
+    expect(await writeQueue.getFailedChat()).toHaveLength(1);
+  });
+
+  it('ein gemerkter Fehlschlag laesst sich verwerfen', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockRejectedValue({ response: { status: 409 }, message: 'Konflikt' });
+
+    await writeQueue.enqueue(optOutItem('c-weg'));
+    await writeQueue.flush();
+
+    const [eintrag] = await writeQueue.getFailedActions();
+    await writeQueue.forgetFailedAction(eintrag.id);
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+  });
+});

@@ -598,7 +598,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         );
 
 
-        // Send push notification to konfi (mit Request ID für Navigation)
+        // Push an die antragstellende Person (mit Request ID für Navigation).
+        // organization_id ausdruecklich mitgeben: Antraege stellen auch
+        // Teamer:innen (target_role === 'teamer', siehe oben), und die
+        // koennen mehreren Gemeinden angehoeren. Ohne Content-Org griffe der
+        // Primaer-Org-Fallback und der Tap landete in der falschen Gemeinde
+        // (Befund M4, Push-Bericht 27.08.2026).
         await PushService.sendActivityRequestStatusToKonfi(
           db,
           request.user_id,
@@ -606,7 +611,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           request.points,
           status,
           admin_comment,
-          requestId
+          requestId,
+          req.user.organization_id
         );
       } catch (notifErr) {
  console.error('Error sending notification:', notifErr);
