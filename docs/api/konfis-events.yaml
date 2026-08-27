@@ -646,11 +646,19 @@ paths:
         die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen
         gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats
         schon gebucht war.
+
+
+        Seit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only)
+        werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400.
+        Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte
+        (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt
+        bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits
+        Angemeldete eingesperrt.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt"
+        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt; nicht teamer_only, nicht cancelled"
         hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
@@ -662,9 +670,9 @@ paths:
                 timeslot_id: { type: integer, description: Pflicht bei Timeslot-Events }
       responses:
         "200": { description: "message, registration_id, status (confirmed|waitlist), timeslot_id" }
-        "400": { description: Anmeldefenster zu, Slot fehlt/voll ohne Warteliste }
+        "400": { description: "Anmeldefenster zu, Slot fehlt/voll ohne Warteliste, oder Termin abgesagt" }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Keine Konfi-Rolle, oder Termin nur für Teamer:innen" }
         "404": { description: Event/Zeitslot nicht gefunden }
         "409": { description: Bereits angemeldet oder bereits ein Konfirmationstermin gebucht }
         "500": { $ref: '#/components/responses/ServerError' }
