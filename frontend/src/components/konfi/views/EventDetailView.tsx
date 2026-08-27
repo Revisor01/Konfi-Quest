@@ -50,7 +50,7 @@ import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime } from '../../shared';
+import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
@@ -415,7 +415,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     if (!eventData) return events;
 
-    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isPastEvent = istVergangen(eventData);
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
@@ -439,7 +439,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Status-Text für Header
   const getStatusText = () => {
     if (!eventData) return 'Event';
-    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isPastEvent = istVergangen(eventData);
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
@@ -821,7 +821,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         <div className="app-event-detail__action-area">
           {eventData.mandatory ? (
             (() => {
-              const isPastEvent = new Date(eventData.event_date) < new Date();
+              const isPastEvent = istVergangen(eventData);
               const isOptedOut = eventData.is_opted_out || eventData.booking_status === 'opted_out';
 
               if (isPastEvent) {

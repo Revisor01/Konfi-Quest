@@ -39,6 +39,7 @@ import EventModal from '../modals/EventModal';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { eventEnde } from '../../shared';
 
 interface ActivityRequest {
   id: number;
@@ -216,8 +217,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Massgeblicher Zeitpunkt für "vergangen?": bei mehrtaegigen Events das ENDE
   // (event_end_time), sonst der Start. So rutscht ein Event erst NACH dem letzten
   // Tag aus "Aktuell" und ins "Verbuchen"/"Vergangen" — nicht schon nach dem Start.
-  const eventEndDate = (event: Event) =>
-    new Date(event.event_end_time || event.event_date);
+  // Seit Befund N6 (27.08.2026) aus der geteilten Quelle.
+  const eventEndDate = eventEnde;
 
   // Tab "Aktuell": zukuenftige/laufende Events, ABGESAGTE EINGESCHLOSSEN.
   // Sie stehen dort durchgestrichen — verschwinden sie ganz, sieht die Leitung

@@ -127,27 +127,30 @@ Löschen lassen sich nur **abgelehnte** Anträge. Die anderen sind geschützt:
 | Genehmigt | nein | „Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“ |
 | Abgelehnt | ja | — |
 
-## Direktvergabe durch Leitung und Teamer:innen
+## Direktvergabe durch die Leitung
 
-Nicht alles muss den Antragsweg gehen. Ihr könnt eine Aktivität auch direkt
-zuschreiben — praktisch, wenn ihr ohnehin dabei wart.
+Nicht alles muss den Antragsweg gehen. Die Leitung kann eine Aktivität auch
+direkt zuschreiben — praktisch, wenn sie ohnehin dabei war.
 
-Es gibt dafür zwei Stellen in der App, und sie verhalten sich leider
-unterschiedlich:
+Der Weg führt über die **Konfi-Verwaltung**: Konfi öffnen, Aktivität
+hinzufügen. Ein Kommentar ist möglich, aber freiwillig.
 
-| | Über die Konfi-Verwaltung | Über die Aktivitäten-Seite |
-|---|---|---|
-| Wer darf | nur Leitung | Leitung und Teamer:innen |
-| Kommentar möglich | **ja**, optional | nein |
-| Push an den Konfi | **nein** | ja („+X Punkte!“) |
-| Level sofort neu berechnet | **nein** | ja |
-| Abzeichen sofort geprüft | ja | ja |
+| | Über die Konfi-Verwaltung |
+|---|---|
+| Wer darf | nur Leitung |
+| Kommentar möglich | ja, optional |
+| Push an den Konfi | nein |
+| Abzeichen sofort geprüft | ja |
+| Level sofort neu berechnet | nein |
 
-> **Das ist eine echte Unstimmigkeit im System, keine Absicht.** Vergibst du
-> über die Konfi-Verwaltung, merkt der Konfi es nicht sofort — es kommt kein
-> Push, und ein dadurch erreichtes neues Level wird erst beim nächsten Öffnen
-> des Dashboards sichtbar. Wenn dir wichtig ist, dass jemand die Punkte
-> mitbekommt, nimm den Weg über die Aktivitäten-Seite.
+> **Der Konfi merkt es nicht sofort.** Es kommt keine Push-Nachricht, und ein
+> dadurch erreichtes neues Level wird erst beim nächsten Öffnen des Dashboards
+> sichtbar. Die Punkte selbst stehen aber sofort da. Wenn jemand es
+> mitbekommen soll, sag am besten kurz Bescheid.
+
+> **Hinweis für Teamer:innen:** Punkte direkt vergeben können nur die
+> Leitungsrollen. Teamer:innen bestätigen Anträge — den Weg beschreibt der
+> Abschnitt oben.
 
 ## Wie Punkte wieder verschwinden
 
