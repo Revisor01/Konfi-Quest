@@ -240,6 +240,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   "Der Termin wurde abgesagt" am Vortag trotzdem noch "Morgen: Event!" und
   eine Stunde vorher "Gleich: Event!". Auch die Leitung wird nicht mehr
   aufgefordert, die Teilnahme an einem abgesagten Termin nachzuverbuchen.
+- Die Zahl am App-Icon bleibt jetzt auch zwischen zwei Benachrichtigungen
+  richtig. Bisher zeigte sie kurz nach einer Nachricht alles Offene an, wurde
+  aber wenig später auf die reinen Chat-Nachrichten heruntergesetzt — offene
+  Anträge, unbearbeitete Termine und neue Abzeichen fielen dabei weg.
 - Teamer:innen können jetzt auch im Chat auf Nachrichten reagieren. Der
   Reaktionsknopf war für sie sichtbar, das Antippen blieb aber wirkungslos —
   die Reaktion wurde nie gespeichert. Für die Leitung und für Konfis hat es

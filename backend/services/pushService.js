@@ -409,14 +409,38 @@ class PushService {
 
   /**
    * Sendet Badge Update (für Background App Badge Count)
+   *
+   * Die Zahl wird HIER gerechnet, nicht vom Aufrufer uebernommen (Befund
+   * 27.08.2026 abends). Der Hintergrunddienst uebergab bisher seinen eigenen
+   * Wert, und der zaehlte NUR ungelesene Chat-Nachrichten
+   * (`backgroundService.js:162`). Am App-Icon steht aber dieselbe Zahl, die
+   * jeder Push aus `appIconSummeOderNull` setzt — Chat PLUS Antraege, Termine
+   * und Abzeichen. Ergebnis: Ein Push setzte korrekt "7", und bis zu fuenf
+   * Minuten spaeter ueberschrieb der Hintergrund-Sync sie mit "2".
+   *
+   * Das ist derselbe Fehler wie B2b, nur an der letzten Stelle, die damals
+   * aussen vor blieb: Wer die Zahl setzt, muss sie auch rechnen.
+   *
+   * Die Funktion nimmt bewusst KEINE Zahl mehr entgegen: Wer sie setzt, holt
+   * sie aus der einen Quelle. Laesst sie sich nicht ermitteln (Person
+   * geloescht oder Datenbankfehler), wird NICHT gesendet — eine geratene Zahl
+   * am App-Icon ist schlechter als keine.
+   *
+   * @param {object} db
+   * @param {number} userId
    */
-  static async sendBadgeUpdate(db, userId, badgeCount) {
+  static async sendBadgeUpdate(db, userId) {
     try {
 
       const tokens = await this.getTokensForUser(db, userId);
 
       if (tokens.length === 0) {
         return { success: false, message: 'No tokens found' };
+      }
+
+      const badgeCount = await this.berechneBadge(db, userId);
+      if (badgeCount == null) {
+        return { success: false, message: 'Badge nicht ermittelbar' };
       }
 
       let successCount = 0;
@@ -451,7 +475,12 @@ class PushService {
         }
       }
 
-      return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
+      // `badge` mit zurueckgeben: Der Hintergrunddienst merkt sich den zuletzt
+      // gesendeten Stand, um nicht bei jedem Lauf zu senden. Er kennt die
+      // Gesamtzahl aber nicht — er zaehlt nur den Chat. Ohne diesen Rueckgabe-
+      // wert vergliche er Aepfel mit Birnen und feuerte entweder dauernd oder
+      // gar nicht mehr.
+      return { success: true, sent: successCount, errors: errorCount, total: tokens.length, badge: badgeCount };
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);

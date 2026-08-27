@@ -1359,6 +1359,28 @@ Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
       `sendToUser` gewinnt ein ausdrücklich übergebener Wert, in
       `sendChatNotification` wird er ersetzt (er ist per Definition zu
       niedrig).
+      **Nachtrag 27.08.2026 abends — der vierte Schreiber ist zu.** Die
+      Einschätzung, der 5-Minuten-Hintergrund-Sync (`backgroundService.js`)
+      laufe nur bei geöffneter App, war falsch: Er sendet an jedes Gerät mit
+      Token, unabhängig davon. Damit überschrieb er die korrekte Zahl mit dem
+      reinen Chat-Zähler — ein Push setzte "7", fünf Minuten später stand "2".
+      `sendBadgeUpdate` nimmt jetzt keine Zahl mehr entgegen, sondern rechnet
+      sie aus derselben Quelle; der Sync nutzt dieselbe Gesamtzahl.
+      **Damit das tragfähig bleibt:** Die Summe pro Person zu rechnen kostete
+      im Sync 2990 Abfragen je Takt für 1000 Personen. `appIconSummenFuerAlle`
+      liefert dieselbe Summe für beliebig viele Personen in **6 Abfragen**
+      (gemessen: 1060 ms → 10 ms für 1000 Personen). Beide Wege teilen sich
+      die SQL-Bausteine — der Einzelweg ist ein Bulk-Aufruf mit einem Element,
+      damit die zwei Fassungen gar nicht erst auseinanderlaufen können. Ein
+      zweiter Paritätstest hält Einzel- gegen Bulk-Weg je Rolle.
+- [ ] **Konsolidierung der Zähler.** Der in der Falle-Notiz vermutete Haken
+      existiert NICHT: Der Zähler braucht die Fortschrittsberechnung gar
+      nicht, `user_badges.seen` liegt für beide Rollen in derselben Tabelle.
+      Eine COUNT-Abfrage als fünftes Feld `newBadges` in `badge-counts` deckt
+      beides ab — gemessen 101–112 ms, im Rauschen des Endpunkts.
+      Löscht netto Code, macht den intuitiven `refreshAllCounts()`-Aufruf zum
+      richtigen und erledigt B1 gleich mit.
+
       Offen bleibt der vierte Schreiber: der 5-Minuten-Hintergrund-Sync
       (`backgroundService.js`) setzt weiterhin nur Chat-Unread.
       **Korrigiert 27.08.2026 — die frühere Entwarnung war falsch.** Hier
