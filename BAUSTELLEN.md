@@ -305,8 +305,6 @@ Teamer-Weg nur eine Zahl. Wer das angeht, muss beides zusammenbringen.
       Material (`b5d76109`).
       ALT:, aber kleinschrittiger dokumentieren.
       Wo sind Fehler, Doppelungen, Unnötiges?
-- [x] **Handbuch mit Bildschirmfotos** — 16 Abbildungen in den drei
-      Rollenkapiteln (`4a31627c`), erzeugt per `scripts/screenshots.mjs`.
 - [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
       fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
 - [x] **Pushes nach dem Abmelden** — erledigt durch `f267a982` (23.08.),
@@ -511,47 +509,87 @@ falschen Teamer-Erklärtexte (PR #83).
 
 **Diese Berichte gelten als geschlossen, wenn die Liste hier leer ist.**
 
-### Offen, alle zulasten der Teamer-Ansicht
+**Abgeglichen am 27.08.2026 nachmittags:** Zehn Eintraege standen hier noch
+als offen, obwohl sie im Code laengst behoben waren — die meisten mit
+Waechtertest. Jeder ist unten einzeln am Code belegt. **Die Befundtexte
+beschreiben weiterhin den ALTEN Zustand**, der Erledigt-Vermerk steht jeweils
+am Ende. Wer hier liest, liest also erst das Problem und dann die Loesung.
+Aus demselben Durchgang: `has_wrapped` stand zweimal drin, einmal erledigt mit
+Begruendung und einmal als leere Wiederholung — die Wiederholung ist weg.
 
-- [ ] **H1 — Abzeichen werden Teamer:innen nie als "neu" gezeigt.** Das
+### Aus den HOCH-Befunden: erledigt (Stand 27.08.2026)
+
+- [x] **H1 — Abzeichen werden Teamer:innen nie als "neu" gezeigt.** Das
       Backend hat beides fertig (`teamer.js:526` unseen, `:544` mark-seen),
       im Frontend ruft es NIEMAND auf. Der Zähler-Loader bricht für alle
       außer Konfis ab (`MainTabs.tsx:176`), der Teamer-Badges-Tab hat kein
       IonBadge (`:349-352`). Damit bleibt `seen` dauerhaft false.
       Steht seit dem 25.08. als Befund 10 im Abzeichen-Bericht.
+      ERLEDIGT (nachgemessen 27.08.2026). `TeamerBadgesPage.tsx:83-103` ruft
+      mark-seen auf, der Teamer-Tab hat sein IonBadge (`MainTabs.tsx:344-351`).
+      Test: `abzeichenZaehlerTeamer.test.ts`.
+      **Der Befundtext oben ist ueberholt:** Den eigenen Zaehler-Loader in
+      `MainTabs.tsx:176` gibt es nicht mehr — alle fuenf Zaehler kommen jetzt
+      zentral aus `GET /notifications/badge-counts` ueber den `BadgeContext`
+      (`MainTabs.tsx:110`).
 
-- [ ] **H2 — Teamer-Dashboard zeigt "Teamer gesucht"-Termine nie.** Die Query
+- [x] **H2 — Teamer-Dashboard zeigt "Teamer gesucht"-Termine nie.** Die Query
       erzwingt `AND eb.id IS NOT NULL` (`teamer.js:880`) und macht damit aus
       dem LEFT JOIN auf die eigene Buchung einen INNER JOIN — es erscheinen
       nur Termine, für die man schon gebucht ist. Der Kommentar darüber
-      behauptet das Gegenteil. (Nebenbei: LIMIT 5, nicht 3 wie kommentiert.)
+      behauptet das Gegenteil.
+      ERLEDIGT (nachgemessen 27.08.2026). `teamer.js:874-902`: Die Bedingung
+      ist jetzt `eb.id IS NOT NULL OR teamer_only OR teamer_needed`, der
+      Kommentar benennt den Befund. Der Filter auf teamer_only/teamer_needed
+      fehlte vorher ganz — ohne ihn stuenden auch reine Konfi-Termine auf der
+      Teamer-Startseite.
+      **Die Klammerbemerkung zu `LIMIT 5` ist gegenstandslos:** Der Kommentar
+      spricht nicht mehr von 3, die 5 ist gewollt.
 
-- [ ] **H3 — Termin-Status ignoriert das Teamer-Kontingent, auf drei Ebenen.**
+- [x] **H3 — Termin-Status ignoriert das Teamer-Kontingent, auf drei Ebenen.**
       Backend: `registration_status` rechnet nur mit Konfi-Zahlen
       (`events.js:119-134`), `teamer_max_participants` fließt nicht ein.
       Frontend: `getEventStatusInfo` im Teamer-Baum kennt kein "voll"
       (`TeamerEventsPage.tsx:482-538`) — ein volles Team-Kontingent steht als
       "Offen". Karte: keine Wartelisten-Zahl, obwohl geliefert.
       Folge: Man erfährt erst beim Absenden (400), dass kein Platz ist.
+      ERLEDIGT (nachgemessen 27.08.2026), alle drei Ebenen. Backend: eigenes
+      Feld `teamer_registration_status` (`events.js:135-160`) neben dem
+      Konfi-Status. Frontend: `TeamerEventsPage.tsx:532-545` kennt jetzt
+      `closed`/`waitlist`/`upcoming`. Karte: `:1512-1522` zeigt die
+      Team-Wartelistenzahl. Test: `teamerKontingentStatus.test.ts`.
 
-- [ ] **H4 — Challenge-Freigabe-Zähler übersieht "nur Team"-Challenges.**
+- [x] **H4 — Challenge-Freigabe-Zähler übersieht "nur Team"-Challenges.**
       Der Teamer-Zweig zählt nur über Jahrgangszuordnungen
       (`notifications.js:82-93`) und liefert ohne Jahrgänge konstant 0.
       `audience='nur_team'` hat per Definition keine Jahrgangszuordnung.
       Ein Teamer moderiert also eine Team-Runde, wird aber nie darauf
       gestoßen. Der Admin-Zweig ist korrekt.
+      ERLEDIGT (nachgemessen 27.08.2026). `notifications.js:83-110`: Der
+      Teamer-Zweig laeuft immer, die Bedingung lautet
+      `c.audience = 'nur_team' OR EXISTS(...jahrgang...)`. Test in
+      `notifications.test.js`.
 
-- [ ] **H5 — "Alle bestätigen" fehlt für Teamer:innen.** Die Route nimmt
+- [x] **H5 — "Alle bestätigen" fehlt für Teamer:innen.** Die Route nimmt
       `rolle: 'teamer'` entgegen und verbucht dann gezielt ohne Punkte
       (`events.js:2782`, Nutzerentscheid 25.08.). Das Frontend ruft sie ohne
       Body auf und zeigt den Knopf nur über der Konfi-Sektion, bei
       `teamer_only`-Terminen gar nicht. Die Leitung muss einzeln verbuchen,
       und der Termin bleibt im "Verbuchen"-Reiter hängen.
+      ERLEDIGT (nachgemessen 27.08.2026). `EventDetailView.tsx:383-407` mit
+      `rolle: 'konfi' | 'teamer'` im Body und eigener Rueckfrage ohne
+      Punkte-Zusage. Test: `alleBestaetigenTeamer.test.ts` (8 Assertions).
+      **Zeilenangabe veraltet:** Die Route steht bei `events.js:2821`, nicht
+      mehr bei `:2782`.
 
-- [ ] **H6 — Abgesagter Termin: zwei Antworten für denselben Termin.** Die
+- [x] **H6 — Abgesagter Termin: zwei Antworten für denselben Termin.** Die
       Konfi-Liste liefert ihn mit `registration_status='cancelled'`
       (`konfi.js:1224`), der Status-Endpunkt filtert abgesagte raus und
       antwortet 404 (`konfi.js:1316-1322`).
+      ERLEDIGT (nachgemessen 27.08.2026). `konfi.js:1347-1352` liefert
+      `WHEN e.cancelled THEN 'cancelled'`, und `:1380-1390` laesst abgesagte
+      Termine durch, wenn man gebucht war
+      (`AND (e.cancelled IS NOT TRUE OR $3::boolean)`).
 
 ### Offen aus dem Rollen-Bericht
 
@@ -560,6 +598,11 @@ falschen Teamer-Erklärtexte (PR #83).
       ein frisch angelegter Admin ohne Zuweisung einen leeren Landing-Tab
       sieht und die App für kaputt hält. Ein Hinweis auf der leeren Liste
       würde reichen. `konfi-management.js:62-69`.
+      **In Arbeit:** PR #114 baut genau diesen Hinweis (mit der vorhandenen
+      `EmptyState`-Komponente). Mit dem Merge erledigt sich der Punkt; bis
+      dahin steht er zu Recht offen — nachgemessen am 27.08. nachmittags gibt
+      `konfi-management.js:68` weiterhin ein leeres Array zurueck, und
+      `KonfisView.tsx:416-417` zeigt weiterhin "Noch keine Konfis angelegt".
 
 - [ ] **Konfi-Stammdaten (Name, Jahrgang) sind nach dem Anlegen in KEINER
       Ansicht änderbar.** Die Backend-Route existiert
@@ -613,12 +656,23 @@ falschen Teamer-Erklärtexte (PR #83).
       Der Wächtertest gegen stilles Offline-Scheitern kannte nur
       `if (!isOnline) return` und war für `!networkMonitor.isOnline` blind —
       diese Schreibweise prüft er jetzt mit.
-- [ ] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
-      Leitung, Teamer-Weg nur Push.**
-- [ ] **M7 — Wrapped: Freigabe-Gate nur im Dashboard, nicht am
-      Datenendpunkt.**
-- [ ] **M8 — Teamer-Dashboard-Challenges kommen vom Leitungs-Endpunkt ohne
-      Audience-Filter.**
+- [x] **M6 — Antrag stellen: Konfi-Weg erzeugt In-App-Mitteilungen für die
+      Leitung, Teamer-Weg nur Push.** ERLEDIGT (nachgemessen 27.08.2026).
+      `teamer.js:1504-1548` legt jetzt ebenfalls eine In-App-Mitteilung an
+      `admin` UND `org_admin` an, zusaetzlich zum Push. Nebenbei wurde der
+      Konfi-Weg auf `org_admin` erweitert (`konfi.js:795-800`) — dort fehlte
+      die Rolle bisher.
+- [x] **M7 — Wrapped: Freigabe-Gate nur im Dashboard, nicht am
+      Datenendpunkt.** ERLEDIGT (nachgemessen 27.08.2026).
+      `wrapped.js:456-477` prueft die Freigabe jetzt auch in
+      `GET /wrapped/me` und antwortet 403 statt durchzureichen. Die Pruefung
+      steht bewusst NACH der Snapshot-Pruefung, damit "kein Snapshot"
+      weiterhin 404 bleibt. Test in `wrapped.test.js`.
+- [x] **M8 — Teamer-Dashboard-Challenges kommen vom Leitungs-Endpunkt ohne
+      Audience-Filter.** ERLEDIGT (nachgemessen 27.08.2026).
+      `TeamerDashboardPage.tsx:327-343` ruft `/challenges/konfi` auf (den
+      Teilnehmer-Endpunkt mit Audience-Filter) statt `/challenges/admin`.
+      Test: `teamerDashboardChallenges.test.tsx`.
 - [x] **M9 — E-Mail-Änderung: Teamer und Leitung aktualisieren den
       User-Context, Konfi nicht.** ERLEDIGT 27.08.2026. Die Konfi-Ansicht rief
       nur `onReload()` (lädt allein die Profildaten der Seite); Context und
@@ -934,8 +988,6 @@ falschen Teamer-Erklärtexte (PR #83).
       und ein eigener Test hält fest, dass Dashboard und `/wrapped/me`
       dieselbe Antwort geben.
 
-- [ ] **Konfi-`has_wrapped` prüft nur die Freigabe, nicht die
-      Snapshot-Existenz.**
 - [x] **Veraltete Fallback-Defaults in `settings.js:83-84`** (nur bei
       kaputtem JSON relevant). ERLEDIGT 27.08.2026. Bestätigt: Es fehlten
       `challenges` und `konfispruch` — beide längst Teil der Dashboards. Wer
