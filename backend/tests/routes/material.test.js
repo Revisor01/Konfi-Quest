@@ -37,138 +37,11 @@ describe('Material Routes', () => {
   // ================================================================
   // TAG ENDPOINTS
   // ================================================================
-  describe('GET /api/material/tags', () => {
-    it('Teamer bekommt 200 + leeres Tag-Array', async () => {
-      const res = await request(app)
-        .get('/api/material/tags')
-        .set('Authorization', `Bearer ${teamerToken}`);
+  // Die Tag-Tests standen hier bis zum 27.08.2026. Die Routen wurden
+  // entfernt (Simons Entscheidung): vollstaendiges CRUD ohne eine Zeile
+  // Oberflaeche und ohne Erwaehnung im Handbuch, Befund 13 aus dem
+  // Rollen-Bericht. In Produktion nachgemessen: 1 Tag, 0 Zuordnungen.
 
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(0);
-    });
-
-    it('Admin bekommt 200', async () => {
-      const res = await request(app)
-        .get('/api/material/tags')
-        .set('Authorization', `Bearer ${adminToken}`);
-
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-    });
-
-    it('Konfi bekommt 403', async () => {
-      const res = await request(app)
-        .get('/api/material/tags')
-        .set('Authorization', `Bearer ${konfiToken}`);
-
-      expect(res.status).toBe(403);
-    });
-  });
-
-  describe('POST /api/material/tags', () => {
-    it('OrgAdmin erstellt Tag -> 201', async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Gottesdienst-Material' });
-
-      expect(res.status).toBe(201);
-      expect(res.body.id).toBeDefined();
-      expect(res.body.name).toBe('Gottesdienst-Material');
-    });
-
-    it('Admin (nicht org_admin) erstellt Tag -> 201 (Material-CRUD fuer Admins freigegeben)', async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Admin-Material-Tag' });
-
-      expect(res.status).toBe(201);
-      expect(res.body.id).toBeDefined();
-    });
-
-    it('Teamer bekommt 403', async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${teamerToken}`)
-        .send({ name: 'Test-Tag' });
-
-      expect(res.status).toBe(403);
-    });
-
-    it('Leerer Name gibt Validierungsfehler', async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: '' });
-
-      expect(res.status).toBe(400);
-    });
-  });
-
-  describe('PUT /api/material/tags/:id', () => {
-    let tagId;
-
-    beforeEach(async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Original-Tag' });
-      tagId = res.body.id;
-    });
-
-    it('OrgAdmin aktualisiert Tag -> 200', async () => {
-      const res = await request(app)
-        .put(`/api/material/tags/${tagId}`)
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Aktualisierter Tag' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.name).toBe('Aktualisierter Tag');
-    });
-
-    it('Nicht-existierende ID gibt 404', async () => {
-      const res = await request(app)
-        .put('/api/material/tags/99999')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Gibts nicht' });
-
-      expect(res.status).toBe(404);
-    });
-  });
-
-  describe('DELETE /api/material/tags/:id', () => {
-    let tagId;
-
-    beforeEach(async () => {
-      const res = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Loesch-Tag' });
-      tagId = res.body.id;
-    });
-
-    it('OrgAdmin loescht Tag -> 200', async () => {
-      const res = await request(app)
-        .delete(`/api/material/tags/${tagId}`)
-        .set('Authorization', `Bearer ${orgAdminToken}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.message).toContain('gelöscht');
-    });
-
-    it('Nicht-existierende ID gibt 404', async () => {
-      const res = await request(app)
-        .delete('/api/material/tags/99999')
-        .set('Authorization', `Bearer ${orgAdminToken}`);
-
-      expect(res.status).toBe(404);
-    });
-  });
-
-  // ================================================================
-  // MATERIAL CRUD ENDPOINTS
   // ================================================================
   describe('GET /api/material', () => {
     it('Teamer bekommt 200 + Material-Liste', async () => {
@@ -219,31 +92,6 @@ describe('Material Routes', () => {
       expect(res.status).toBe(400);
     });
 
-    it('Material mit Tags erstellen', async () => {
-      // Zuerst Tag erstellen
-      const tagRes = await request(app)
-        .post('/api/material/tags')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ name: 'Test-Tag' });
-
-      const res = await request(app)
-        .post('/api/material')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({
-          title: 'Material mit Tag',
-          tag_ids: [tagRes.body.id],
-        });
-
-      expect(res.status).toBe(201);
-
-      // Verify: Material hat Tag
-      const detailRes = await request(app)
-        .get(`/api/material/${res.body.id}`)
-        .set('Authorization', `Bearer ${teamerToken}`);
-
-      expect(detailRes.status).toBe(200);
-      expect(detailRes.body.tags.length).toBe(1);
-    });
   });
 
   describe('GET /api/material/:id', () => {
@@ -264,7 +112,6 @@ describe('Material Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Detail-Material');
-      expect(res.body.tags).toBeDefined();
       expect(res.body.files).toBeDefined();
     });
 

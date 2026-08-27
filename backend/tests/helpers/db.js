@@ -64,7 +64,7 @@ const TRUNCATE_SQL = `TRUNCATE
     konfspruch_uebersetzungen,
     konfsprueche,
     konfi_profiles, user_jahrgang_assignments,
-    material_file_tags, material_files, material_jahrgaenge, material_events, materials, material_tags,
+    material_files, material_jahrgaenge, material_events, materials,
     user_certificates, certificate_types,
     wrapped_snapshots,
     challenge_submissions, challenge_jahrgang_assignments, challenges,

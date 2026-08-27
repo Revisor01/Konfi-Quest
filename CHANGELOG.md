@@ -214,6 +214,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   auch funktioniert. Bisher war er in einem Fall sichtbar und scheiterte beim
   Antippen.
 
+- Auf der Benutzerverwaltung erscheinen Lösch-Aktionen nur noch dort, wo sie
+  auch erlaubt sind. Bisher waren sie in manchen Fällen sichtbar und
+  scheiterten dann beim Antippen.
+
 - Die Zahl am App-Symbol zeigt jetzt alles, was offen ist — bisher
   überschrieb eine neue Chat-Nachricht die Anzahl der Anträge, Termine und
   Abzeichen, und andere Benachrichtigungen setzten die Zahl immer auf eins.
