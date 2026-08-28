@@ -35,6 +35,10 @@ Versionsüberschrift.
 - Bei abgesagten Terminen zählte die Teilnehmerzahl bisher Konfis und
   Teamer:innen zusammen, während dieselbe Zahl überall sonst nur Konfis meint.
   Jetzt ist sie überall gleich zu lesen; die Teamer:innen stehen daneben.
+- Die Abzeichen-Zahlen im Teamer-Bereich („x von y", „x Geheimnisse") zählen
+  jetzt genauso wie bei den Konfis: Abgeschaltete und nicht erreichbare
+  Abzeichen blähen die Ziele nicht mehr auf, und Dashboard und Abzeichen-Seite
+  zeigen dieselben Zahlen.
 
 ### Behoben
 - Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
