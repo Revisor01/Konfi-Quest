@@ -1847,20 +1847,63 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         });
       }
       
-      // Delete registration
-      await db.query(
-        'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
-        [konfiId, eventId]
-      );
+      // Ab hier transaktional (Befund 28.08.2026).
+      //
+      // Vorher liefen Loeschung, Chat-Austritt, Kapazitaets-Check, Nachruecken
+      // und Protokoll als einzelne Pool-Abfragen. Zwei Folgen:
+      //
+      // Erstens konnte die Abmeldung zwischendurch abbrechen — Buchung weg,
+      // niemand nachgerueckt, und der Eintrag in `event_unregistrations` (der
+      // laut Kommentar "IMMER" kommt) fehlte. Fuer die Leitung sah es aus, als
+      // waere der Konfi nie angemeldet gewesen.
+      //
+      // Zweitens lief der Kapazitaets-Check in einer anderen impliziten
+      // Transaktion als das Nachruecken. Zwischen beiden konnte jemand ueber
+      // die (korrekt gesperrte) Buchungsroute den frei gewordenen Platz
+      // nehmen — danach rueckte trotzdem jemand nach: elf Bestaetigte auf
+      // zehn Plaetzen. Die Buchungsroute war sauber, diese hier hebelte sie
+      // aus.
+      //
+      // Vorbild ist DELETE /events/:id/book (events.js), das denselben
+      // fachlichen Vorgang schon immer transaktional erledigt hat.
+      const client = await db.getClient();
+      let promotedUserId = null;
+      try {
+        await client.query('BEGIN');
 
-      // Auch aus dem Event-Chat entfernen. Fehlte hier bisher, während die
-      // Teamer-Abmeldung es tat — Konfis blieben nach der Abmeldung im Chat
-      // und konnten ihn nicht einmal manuell verlassen (Befund 24.08.2026).
-      await removeFromEventChat(db, eventId, konfiId, req.user.organization_id);
+        // Die eigene Buchung sperren: Zwei gleichzeitige Abmeldungen desselben
+        // Kontos wuerden sonst beide nachruecken lassen.
+        const { rows: [gesperrt] } = await client.query(
+          'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2 FOR UPDATE',
+          [konfiId, eventId]
+        );
+        if (!gesperrt) {
+          // Zwischenzeitlich schon abgemeldet — das Ziel ist erreicht.
+          await client.query('ROLLBACK');
+          // KEIN client.release() hier — das finally unten released.
+          return res.json({ message: 'Abmeldung erfolgreich', bereits_abgemeldet: true });
+        }
 
-      // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
-      if (registration.status === 'confirmed') {
-        try {
+        await client.query(
+          'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+          [konfiId, eventId]
+        );
+
+        // Auch aus dem Event-Chat entfernen. Fehlte hier bisher, während die
+        // Teamer-Abmeldung es tat — Konfis blieben nach der Abmeldung im Chat
+        // und konnten ihn nicht einmal manuell verlassen (Befund 24.08.2026).
+        await removeFromEventChat(client, eventId, konfiId, req.user.organization_id);
+
+        // Protokoll direkt an die Loeschung heften, nicht erst nach dem
+        // Nachruecken: Vorher konnte ein Fehler beim Nachruecken dazwischen
+        // liegen und die Abmeldung blieb unprotokolliert.
+        await client.query(
+          'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
+          [konfiId, eventId, reason || null, req.user.organization_id]
+        );
+
+        // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
+        if (registration.status === 'confirmed') {
           // Kapazität prüfen: Nur nachruecken wenn confirmedCount < maxCapacity.
           // Bei Timeslot-Events gilt die SLOT-Kapazität (dort wird auch
           // slot-genau nachgerueckt), sonst die Event-Kapazität.
@@ -1869,12 +1912,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           let maxCapacity = event.max_participants || 0;
           let confirmedCount = 0;
           if (event.has_timeslots && registration.timeslot_id) {
-            const { rows: [slot] } = await db.query(
+            const { rows: [slot] } = await client.query(
               'SELECT max_participants FROM event_timeslots WHERE id = $1',
               [registration.timeslot_id]
             );
             maxCapacity = slot?.max_participants || 0;
-            const { rows: [slotCount] } = await db.query(
+            const { rows: [slotCount] } = await client.query(
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                JOIN users u ON eb.user_id = u.id
@@ -1885,7 +1928,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             );
             confirmedCount = parseInt(slotCount?.confirmed_count || '0', 10);
           } else {
-            const { rows: [countResult] } = await db.query(
+            const { rows: [countResult] } = await client.query(
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                JOIN users u ON eb.user_id = u.id
@@ -1900,31 +1943,32 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
             // roleFilter 'not_teamer': ein frei gewordener Konfi-Platz wird nur
             // aus der Konfi-Warteliste nachbesetzt, nie aus der Teamer-Warteliste.
-            const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id, 'not_teamer');
-
-            if (promotedUserId) {
-              // Push-Notification an nachgerückten Konfi
-              try {
-                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId, req.user.organization_id);
-              } catch (pushErr) {
-                console.error('Error sending waitlist promotion push:', pushErr);
-              }
-
-              // Live-Update an nachgerückten Konfi
-              liveUpdate.sendToKonfi(promotedUserId, 'events', 'update');
-            }
+            //
+            // Kein eigener try/catch mehr um diesen Block: Ein geschluckter
+            // Fehler wuerde jetzt in ein COMMIT laufen und einen halben Zustand
+            // festschreiben. Scheitert das Nachruecken, rollt die ganze
+            // Abmeldung zurueck und die Konfi kann es erneut versuchen.
+            promotedUserId = await promoteFromWaitlist(client, eventId, registration.timeslot_id, 'not_teamer');
           }
-        } catch (promotionErr) {
-          console.error('Error promoting from waitlist:', promotionErr);
-          // Stornierung war bereits erfolgreich, Promotion-Fehler nicht an User weitergeben
         }
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
       }
 
-      // IMMER Abmeldung protokollieren (mit oder ohne Grund)
-      await db.query(
-        'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
-        [konfiId, eventId, reason || null, req.user.organization_id]
-      );
+      // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt.
+      if (promotedUserId) {
+        try {
+          await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId, req.user.organization_id);
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push:', pushErr);
+        }
+        liveUpdate.sendToKonfi(promotedUserId, 'events', 'update');
+      }
 
       // Hole Konfi-Name für Admin-Push
       const { rows: [konfiData] } = await db.query(

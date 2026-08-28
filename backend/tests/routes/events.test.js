@@ -2426,6 +2426,104 @@ describe('Events Routes', () => {
       return { start_time: s.toISOString(), end_time: e.toISOString(), max_participants: 5 };
     };
 
+    // Umgebaut 28.08.2026: Die Timeslots entstanden vorher als N einzelne
+    // INSERTs in einem Promise.all ueber N Pool-Verbindungen, jetzt als ein
+    // Multi-Row-INSERT in der Transaktion. Genau dieser Pfad war ungetestet —
+    // die vorhandenen Timeslot-Tests pruefen nur Faelle, in denen KEINE Slots
+    // angelegt werden.
+    it('POST mit mehreren Timeslots legt sie alle korrekt an', async () => {
+      const s1 = new Date(); s1.setDate(s1.getDate() + 10); s1.setHours(9, 0, 0, 0);
+      const e1 = new Date(s1); e1.setHours(10, 0, 0, 0);
+      const s2 = new Date(s1); s2.setHours(11, 0, 0, 0);
+      const e2 = new Date(s1); e2.setHours(12, 0, 0, 0);
+      const s3 = new Date(s1); s3.setHours(14, 0, 0, 0);
+      const e3 = new Date(s1); e3.setHours(15, 0, 0, 0);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Workshop mit drei Slots',
+          event_date: s1.toISOString(),
+          max_participants: 16,
+          has_timeslots: true,
+          timeslots: [
+            { start_time: s1.toISOString(), end_time: e1.toISOString(), max_participants: 5 },
+            { start_time: s2.toISOString(), end_time: e2.toISOString(), max_participants: 8 },
+            { start_time: s3.toISOString(), end_time: e3.toISOString(), max_participants: 3 },
+          ],
+        });
+
+      expect(createRes.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT start_time, end_time, max_participants, organization_id
+           FROM event_timeslots WHERE event_id = $1 ORDER BY start_time`,
+        [createRes.body.id]
+      );
+
+      expect(rows.length).toBe(3);
+      // Die Kapazitaeten muessen dem jeweils richtigen Slot zugeordnet sein —
+      // beim Multi-Row-INSERT waere ein Vertauschen der haeufigste Fehler.
+      expect(rows.map(r => r.max_participants)).toEqual([5, 8, 3]);
+      // Und die Organisation muss gesetzt sein, sonst faellt der Slot aus
+      // jeder org-gefilterten Abfrage.
+      expect(rows.every(r => r.organization_id === ORGS.testGemeinde.id)).toBe(true);
+      // Zeiten kommen als echte Zeitstempel zurueck, nicht als Text.
+      expect(rows[0].start_time.getTime()).toBe(s1.getTime());
+      expect(rows[0].end_time.getTime()).toBe(e1.getTime());
+    });
+
+    it('Ein einzelner Timeslot funktioniert genauso', async () => {
+      const s1 = new Date(); s1.setDate(s1.getDate() + 10); s1.setHours(9, 0, 0, 0);
+      const e1 = new Date(s1); e1.setHours(10, 0, 0, 0);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ein Slot',
+          event_date: s1.toISOString(),
+          max_participants: 7,
+          has_timeslots: true,
+          timeslots: [{ start_time: s1.toISOString(), end_time: e1.toISOString(), max_participants: 7 }],
+        });
+
+      expect(createRes.status).toBe(201);
+      const { rows } = await db.query(
+        'SELECT max_participants FROM event_timeslots WHERE event_id = $1',
+        [createRes.body.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].max_participants).toBe(7);
+    });
+
+    it('Schlaegt die Anlage fehl, bleibt KEIN halbes Event zurueck', async () => {
+      // Der Kern der Transaktion: Ein ungueltiger Jahrgang aus einer fremden
+      // Organisation wird abgewiesen — und zwar bevor irgendetwas entsteht.
+      const vorher = await db.query(
+        'SELECT COUNT(*)::int AS n FROM events WHERE organization_id = $1',
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Darf nicht entstehen',
+          event_date: futureDate(),
+          jahrgang_ids: [JAHRGAENGE.jahrgang2.id], // gehoert zu Org 2
+        });
+
+      expect(res.status).toBe(400);
+
+      const nachher = await db.query(
+        'SELECT COUNT(*)::int AS n FROM events WHERE organization_id = $1',
+        [ORGS.testGemeinde.id]
+      );
+      expect(nachher.rows[0].n).toBe(vorher.rows[0].n);
+    });
+
     it('POST mandatory=true mit has_timeslots -> Server erzwingt has_timeslots=false, keine Timeslots angelegt', async () => {
       const createRes = await request(app)
         .post('/api/events')

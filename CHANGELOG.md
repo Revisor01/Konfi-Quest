@@ -62,6 +62,11 @@ Versionsüberschrift.
 - Bei Terminserien über eine Monatsgrenze hinweg öffnete die Anmeldung erst
   nach dem Termin — niemand konnte sich anmelden. Betroffen war jeder Termin
   einer solchen Serie.
+- Wird jemand von einem Termin entfernt oder auf die Warteliste gesetzt, kann
+  der Punktestand nicht mehr halb verändert zurückbleiben. Bricht etwas ab,
+  wird alles rückgängig gemacht statt ein Teil stehenzulassen.
+- Meldet sich jemand ab, während gleichzeitig jemand anders bucht, kann der
+  Termin nicht mehr überbelegt werden.
 
 ## [2.0.0] - 2026-08-27
 

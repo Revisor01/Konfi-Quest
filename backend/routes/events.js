@@ -6,7 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
+const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis, takeBackEventPoints } = require('../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { removeFromEventChat, addToEventChat, syncEventChat } = require('../utils/eventChat');
 const { nachAntwort } = require('../utils/nachAntwort');
@@ -963,10 +963,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // umgangen werden kann (Frontend disabled das Toggle zusaetzlich).
     const effectiveHasTimeslots = (mandatory || is_konfirmation) ? false : (has_timeslots || false);
 
-    // NOTE: For transactions with pg-pool, a client must be checked out.
-    // As per the instructions, we use db.query for everything. This is safe
-    // as long as the logic is encapsulated inside a single route handler.
+    // Transaktional (Befund 28.08.2026).
+    //
+    // Hier stand bis dahin: "As per the instructions, we use db.query for
+    // everything. This is safe as long as the logic is encapsulated inside a
+    // single route handler." Beides war falsch. Es gibt keine solchen
+    // "instructions" — der einzige Treffer im ganzen Backend war dieser Satz
+    // selbst; er stammt aus der SQLite-Umstellung im Juli 2025. Und ein
+    // Route-Handler ist keine Transaktionsgrenze: Express weiss nichts von
+    // Postgres, jedes db.query() ist eine eigene Auto-Commit-Transaktion auf
+    // einer beliebigen Verbindung. database.js sagt direkt ueber getClient()
+    // das Gegenteil, und POST /series legt DIESELBEN Datensaetze seit jeher
+    // transaktional an.
+    //
+    // Praktische Folge des alten Zustands: Riss zwischen Kategorien und
+    // Jahrgaengen hiess ein Termin ohne Jahrgangs-Zuordnung — fuer niemanden
+    // sichtbar, ohne Teilnehmer, und der Client legte ihn nach dem 500er
+    // vermutlich noch einmal an.
+    const client = await db.getClient();
     try {
+      await client.query('BEGIN');
 
       const insertEventQuery = `
         INSERT INTO events (
@@ -980,7 +996,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
         RETURNING id
       `;
-      const { rows: [newEvent] } = await db.query(insertEventQuery, [
+      const { rows: [newEvent] } = await client.query(insertEventQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
         effectivePoints, point_type || 'gemeinde', type || 'event', effectiveMaxParticipants,
         registration_opens_at, registration_closes_at, effectiveHasTimeslots,
@@ -995,30 +1011,41 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       ]);
       
       const eventId = newEvent.id;
-      const promises = [];
-      
+
+      // Sequentiell statt Promise.all: Auf einem einzelnen Client gibt es
+      // keine echte Parallelitaet, und das alte Promise.all checkte pro
+      // Timeslot eine eigene Pool-Verbindung aus (bei acht Slots die Haelfte
+      // des Pools auf einen Schlag). Es brach ausserdem beim ersten Fehler ab,
+      // waehrend die uebrigen weiterliefen und committeten — der Fehlerzustand
+      // war damit nicht einmal vorhersagbar.
+
       // Add categories
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
         const categoryQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-        promises.push(db.query(categoryQuery, [eventId, category_ids]));
+        await client.query(categoryQuery, [eventId, category_ids]);
       }
-      
+
       // Add jahrgaenge
       if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
         const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-        promises.push(db.query(jahrgangQuery, [eventId, jahrgang_ids]));
+        await client.query(jahrgangQuery, [eventId, jahrgang_ids]);
       }
-      
+
       // If has timeslots, create them (effectiveHasTimeslots ist bei mandatory/
       // is_konfirmation bereits false -> dann werden keine Timeslots angelegt)
+      // Ein Multi-Row-INSERT statt N Einzelabfragen — dasselbe unnest-Muster
+      // wie bei den Kategorien oben.
       if (effectiveHasTimeslots && timeslots && timeslots.length > 0) {
-        const timeslotQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
-        timeslots.forEach(slot => {
-          promises.push(db.query(timeslotQuery, [eventId, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]));
-        });
+        await client.query(
+          `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
+           SELECT $1, s.start_time, s.end_time, s.max_participants, $3
+             FROM UNNEST($2::jsonb[]) AS t(slot),
+                  LATERAL (SELECT (slot->>'start_time')::timestamptz AS start_time,
+                                  (slot->>'end_time')::timestamptz   AS end_time,
+                                  (slot->>'max_participants')::int   AS max_participants) s`,
+          [eventId, timeslots.map(slot => JSON.stringify(slot)), req.user.organization_id]
+        );
       }
-      
-      await Promise.all(promises);
 
       // Auto-Enrollment für Pflicht-Events
       if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
@@ -1034,8 +1061,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             AND u.deleted_at IS NULL
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
-        await db.query(enrollQuery, [eventId, jahrgang_ids, req.user.organization_id]);
+        await client.query(enrollQuery, [eventId, jahrgang_ids, req.user.organization_id]);
       }
+
+      await client.query('COMMIT');
 
       res.status(201).json({ id: eventId, message: 'Event erfolgreich erstellt' });
 
@@ -1070,12 +1099,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
     } catch (err) {
+      // Rollback ist ein No-op, wenn der Fehler NACH dem COMMIT auftrat
+      // (Push, LiveUpdate) — dann ist die Transaktion bereits abgeschlossen.
+      await client.query('ROLLBACK').catch(() => {});
  console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Ein ähnliches Event existiert möglicherweise bereits.' });
       }
       res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
     }
   });
   
@@ -2315,64 +2349,86 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Get booking details to verify ownership and status (Event-Org wird mitgeprueft).
       // Die Rolle des ENTFERNTEN Users wird mitgelesen: sie entscheidet, aus welcher
       // Warteliste nachgerueckt wird (Konfi- und Teamer-Kontingent sind getrennt).
-      const { rows: [booking] } = await db.query(`
-        SELECT eb.*, u.organization_id, e.organization_id as event_org_id,
-               (r.name = 'teamer') as is_teamer_booking
-        FROM event_bookings eb
-        JOIN users u ON eb.user_id = u.id
-        JOIN roles r ON u.role_id = r.id
-        JOIN events e ON eb.event_id = e.id
-        WHERE eb.id = $1 AND eb.event_id = $2`, [bookingId, eventId]);
+      // Transaktional ab hier (Befund 28.08.2026).
+      //
+      // Sechs Schreibzugriffe ueber vier Tabellen liefen vorher einzeln ueber
+      // den Pool: Punkte-Zeile loeschen, Saldo verringern, Buchung loeschen,
+      // Chat-Austritt, Nachruecken, Chat-Eintritt des Nachrueckers. Riss
+      // zwischen den ersten beiden hiess: Der Konfi behaelt Punkte ohne Beleg,
+      // nicht mehr rekonstruierbar. Riss vor dem Nachruecken hiess: ein Platz
+      // bleibt dauerhaft leer, obwohl Leute warten.
+      //
+      // FOR UPDATE OF eb dazu: Zwei Leitungen, die gleichzeitig denselben
+      // Teilnehmer entfernen, zogen die Punkte sonst zweimal ab. Das zweite
+      // DELETE war idempotent, der zweite Punktabzug nicht.
+      const client = await db.getClient();
+      let booking = null;
+      let punkteZurueck = null;
+      let promotedUserId = null;
+      let promotedType = null;
+      let promotedEventName = null;
+      try {
+        await client.query('BEGIN');
 
-      if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
-      if (booking.organization_id !== req.user.organization_id || booking.event_org_id !== req.user.organization_id) {
-        return res.status(403).json({ error: 'Zugriff verweigert' });
-      }
-      
-      // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
-      // Event-Punkte zuruecknehmen (sonst behält er Punkte für ein Event, an dem
-      // er nicht mehr als Teilnehmer geführt wird). Nur für Konfis relevant.
-      if (booking.attendance_status === 'present') {
-        const { rows: [pts] } = await db.query(
-          "SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2",
-          [booking.user_id, eventId]
-        );
-        if (pts) {
-          await db.query("DELETE FROM event_points WHERE id = $1", [pts.id]);
-          const profileUpd = pts.point_type === 'gottesdienst'
-            ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
-            : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
-          await db.query(profileUpd, [pts.points, booking.user_id]);
-          // Dashboard/Punkte live aktualisieren.
-          liveUpdate.sendToUser('konfi', booking.user_id, 'dashboard', 'update', { points: -pts.points });
+        // Get booking details to verify ownership and status (Event-Org wird mitgeprueft).
+        // Die Rolle des ENTFERNTEN Users wird mitgelesen: sie entscheidet, aus welcher
+        // Warteliste nachgerueckt wird (Konfi- und Teamer-Kontingent sind getrennt).
+        const { rows: [gefunden] } = await client.query(`
+          SELECT eb.*, u.organization_id, e.organization_id as event_org_id,
+                 (r.name = 'teamer') as is_teamer_booking
+          FROM event_bookings eb
+          JOIN users u ON eb.user_id = u.id
+          JOIN roles r ON u.role_id = r.id
+          JOIN events e ON eb.event_id = e.id
+          WHERE eb.id = $1 AND eb.event_id = $2
+          FOR UPDATE OF eb`, [bookingId, eventId]);
+        booking = gefunden;
+
+        if (!booking) {
+          await client.query('ROLLBACK');
+          // KEIN client.release() hier — das finally unten released.
+          return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
-      }
+        if (booking.organization_id !== req.user.organization_id || booking.event_org_id !== req.user.organization_id) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Zugriff verweigert' });
+        }
 
-      // Delete the booking
-      await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
+        // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
+        // Event-Punkte zuruecknehmen (sonst behält er Punkte für ein Event, an dem
+        // er nicht mehr als Teilnehmer geführt wird). Nur für Konfis relevant.
+        if (booking.attendance_status === 'present') {
+          punkteZurueck = await takeBackEventPoints(client, booking.user_id, eventId);
+        }
 
-      // Wer von der Leitung ausgetragen wird, gehört auch nicht mehr in den
-      // Event-Chat. Bisher tat das nur die Selbstabmeldung der Teamer
-      // (Befund 24.08.2026).
-      await removeFromEventChat(db, eventId, booking.user_id, req.user.organization_id);
+        // Delete the booking
+        await client.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
+
+        // Wer von der Leitung ausgetragen wird, gehört auch nicht mehr in den
+        // Event-Chat. Bisher tat das nur die Selbstabmeldung der Teamer
+        // (Befund 24.08.2026).
+        await removeFromEventChat(client, eventId, booking.user_id, req.user.organization_id);
 
       // Auto-promote from waitlist if the deleted booking was confirmed.
       // Konfi- und Teamer-Kontingent sind strikt getrennt: ein frei gewordener
       // Konfi-Platz wird nur aus der Konfi-Warteliste nachbesetzt und umgekehrt.
       // promoteFromWaitlist filtert die Rolle und schließt geloeschte User aus.
-      if (booking.status === 'confirmed') {
-        const removedIsTeamer = booking.is_teamer_booking === true;
-        try {
+        if (booking.status === 'confirmed') {
+          const removedIsTeamer = booking.is_teamer_booking === true;
+          // Kein eigener try/catch mehr um diesen Block: Ein geschluckter
+          // Fehler wuerde jetzt in ein COMMIT laufen und einen halben Zustand
+          // festschreiben. Scheitert das Nachruecken, rollt das Entfernen
+          // zurueck und laesst sich wiederholen.
           let maxCapacity = 0;
           let confirmedCount = 0;
 
           if (removedIsTeamer) {
             // Teamer-Buchungen haben nie einen Timeslot -> event-weite Zählung.
-            const { rows: [teamerCapInfo] } = await db.query(
+            const { rows: [teamerCapInfo] } = await client.query(
               "SELECT teamer_max_participants FROM events WHERE id = $1 AND organization_id = $2",
               [eventId, req.user.organization_id]
             );
-            const { rows: [teamerCountRes] } = await db.query(
+            const { rows: [teamerCountRes] } = await client.query(
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                JOIN users u ON eb.user_id = u.id
@@ -2384,14 +2440,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             maxCapacity = teamerCapInfo?.teamer_max_participants || 0;
             confirmedCount = parseInt(teamerCountRes?.confirmed_count || '0', 10);
           } else if (booking.timeslot_id) {
-            const { rows: [slotInfo] } = await db.query(
+            const { rows: [slotInfo] } = await client.query(
               "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
               [booking.timeslot_id, req.user.organization_id]
             );
             // Teamer:innen zählen NICHT gegen das Konfi-Kontingent (sie haben
             // ihr eigenes) — sonst blockiert eine bestaetigte Teamer-Buchung
             // den Nachrueckplatz eines Konfis.
-            const { rows: [slotCountRes] } = await db.query(
+            const { rows: [slotCountRes] } = await client.query(
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                LEFT JOIN users u ON eb.user_id = u.id
@@ -2402,11 +2458,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             maxCapacity = slotInfo?.max_participants || 0;
             confirmedCount = parseInt(slotCountRes?.confirmed_count || '0', 10);
           } else {
-            const { rows: [eventCapInfo] } = await db.query(
+            const { rows: [eventCapInfo] } = await client.query(
               "SELECT max_participants FROM events WHERE id = $1 AND organization_id = $2",
               [eventId, req.user.organization_id]
             );
-            const { rows: [countResult] } = await db.query(
+            const { rows: [countResult] } = await client.query(
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                LEFT JOIN users u ON eb.user_id = u.id
@@ -2420,37 +2476,53 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
           // Nur nachruecken wenn unter Kapazität (0 = unbegrenzt, immer nachruecken).
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
-            const promotedUserId = await promoteFromWaitlist(
-              db,
+            promotedUserId = await promoteFromWaitlist(
+              client,
               eventId,
               removedIsTeamer ? null : booking.timeslot_id,
               removedIsTeamer ? 'teamer' : 'not_teamer'
             );
 
             if (promotedUserId) {
-              const { rows: [eventInfo] } = await db.query(
+              const { rows: [eventInfo] } = await client.query(
                 "SELECT name FROM events WHERE id = $1", [eventId]
               );
-              const eventName = eventInfo?.name || null;
-              const promotedType = removedIsTeamer ? 'teamer' : 'konfi';
-
-              if (eventName) {
-                if (removedIsTeamer) {
-                  await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, eventName, null, eventId, req.user.organization_id);
-                } else {
-                  await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventName, null, eventId, req.user.organization_id);
-                }
-              }
-              // Live Update: Notify promoted user about their status change
-              liveUpdate.sendToUser(promotedType, promotedUserId, 'events', 'update', { eventId, action: 'promoted' });
+              promotedEventName = eventInfo?.name || null;
+              promotedType = removedIsTeamer ? 'teamer' : 'konfi';
             }
           }
-        } catch (promotionError) {
-          console.error('Error promoting from waitlist:', promotionError);
         }
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
       }
 
       res.json({ message: 'Teilnehmer erfolgreich entfernt' });
+
+      // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt.
+      if (punkteZurueck) {
+        liveUpdate.sendToUser('konfi', booking.user_id, 'dashboard', 'update', { points: -punkteZurueck.points });
+      }
+
+      if (promotedUserId && promotedEventName) {
+        try {
+          if (promotedType === 'teamer') {
+            await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, promotedEventName, null, eventId, req.user.organization_id);
+          } else {
+            await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName, null, eventId, req.user.organization_id);
+          }
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push:', pushErr);
+        }
+      }
+      if (promotedUserId) {
+        // Live Update: Notify promoted user about their status change
+        liveUpdate.sendToUser(promotedType, promotedUserId, 'events', 'update', { eventId, action: 'promoted' });
+      }
 
       // Live Update: Notify the removed user (rollenrichtiger Kanal) and admins
       liveUpdate.sendToUser(booking.is_teamer_booking ? 'teamer' : 'konfi', booking.user_id, 'events', 'update', { eventId, action: 'removed' });
@@ -2791,39 +2863,74 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       
-      const { rows: [booking] } = await db.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id, e.name AS event_name, e.event_date FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2", [participantId, eventId]);
-      if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
-      if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
-      if (booking.status === status) return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });
+      // Transaktional ab hier (Befund 28.08.2026).
+      //
+      // Der Weg auf die Warteliste nimmt die Event-Punkte zurueck: erst die
+      // event_points-Zeile loeschen, dann den Saldo verringern. Riss dazwischen
+      // hiess: Der Konfi behaelt Punkte, fuer die es keinen Beleg mehr gibt.
+      //
+      // Und anders als anderswo war dieser Zustand NICHT reparierbar. Der
+      // Guard unten ("ist bereits auf der Warteliste") laesst einen zweiten
+      // Versuch gar nicht erst zu — der Saldo blieb dauerhaft falsch und war
+      // nur per Hand in der Datenbank zu korrigieren.
+      //
+      // FOR UPDATE OF eb dazu: Zwei Leitungen, die gleichzeitig denselben
+      // Teilnehmer herabstufen, zogen die Punkte sonst zweimal ab.
+      const client = await db.getClient();
+      let punkteZurueck = null;
+      let wasWaitlist = false;
+      let betroffenerUser = null;
+      let eventName = null;
+      let eventDatum = null;
+      try {
+        await client.query('BEGIN');
 
-      // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
-      // Wartelisten-Befoerderung (Push an die betroffene Person). Bei 'confirmed'
-      // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh nötig).
-      const wasWaitlist = booking.status === 'waitlist';
-      let pointsRemoved = false;
-
-      if (status === 'waitlist') {
-        // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
-        await db.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL WHERE id = $1", [participantId]);
-
-        // Event-Punkte zurücknehmen falls vorhanden
-        const { rows: [existingPoints] } = await db.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [booking.user_id, eventId]);
-        if (existingPoints) {
-          await db.query("DELETE FROM event_points WHERE id = $1", [existingPoints.id]);
-          const updateProfileQuery = existingPoints.point_type === 'gottesdienst'
-            ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
-            : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
-          await db.query(updateProfileQuery, [existingPoints.points, booking.user_id]);
-          pointsRemoved = true;
+        const { rows: [booking] } = await client.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id, e.name AS event_name, e.event_date FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2 FOR UPDATE OF eb", [participantId, eventId]);
+        if (!booking) {
+          await client.query('ROLLBACK');
+          // KEIN client.release() hier — das finally unten released.
+          return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
-      } else {
-        await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
-      }
+        if (booking.organization_id !== req.user.organization_id) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Zugriff verweigert' });
+        }
+        if (booking.status === status) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });
+        }
 
-      // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
-      // auf die Warteliste: angemeldet ist angemeldet, entfernt wird erst beim
-      // Austragen (idempotent, meist schon drin).
-      await addToEventChat(db, eventId, booking.user_id, req.user.organization_id);
+        // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
+        // Wartelisten-Befoerderung (Push an die betroffene Person). Bei 'confirmed'
+        // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh nötig).
+        wasWaitlist = booking.status === 'waitlist';
+        betroffenerUser = booking.user_id;
+        eventName = booking.event_name;
+        eventDatum = booking.event_date;
+
+        if (status === 'waitlist') {
+          // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
+          await client.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL WHERE id = $1", [participantId]);
+
+          // Punkte-Ruecknahme ueber den gemeinsamen Helfer: Derselbe Block lag
+          // vorher viermal im Code, zweimal transaktional und zweimal nicht.
+          punkteZurueck = await takeBackEventPoints(client, booking.user_id, eventId);
+        } else {
+          await client.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
+        }
+
+        // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
+        // auf die Warteliste: angemeldet ist angemeldet, entfernt wird erst beim
+        // Austragen (idempotent, meist schon drin).
+        await addToEventChat(client, eventId, booking.user_id, req.user.organization_id);
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
+      }
 
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
@@ -2833,17 +2940,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       nachAntwort(req, async () => {
         if (status === 'confirmed' && wasWaitlist) {
           try {
-            await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId, req.user.organization_id);
+            await PushService.sendWaitlistPromotionToKonfi(db, betroffenerUser, eventName, eventDatum, eventId, req.user.organization_id);
           } catch (pushErr) {
             console.error('Error sending waitlist promotion push:', pushErr);
           }
         }
 
         // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
-        liveUpdate.sendToUserByRole(booking.user_id, 'events', 'update', { eventId });
+        liveUpdate.sendToUserByRole(betroffenerUser, 'events', 'update', { eventId });
         // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
-        if (pointsRemoved) {
-          liveUpdate.sendToUserByRole(booking.user_id, 'dashboard', 'update');
+        if (punkteZurueck) {
+          liveUpdate.sendToUserByRole(betroffenerUser, 'dashboard', 'update');
         }
         // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
