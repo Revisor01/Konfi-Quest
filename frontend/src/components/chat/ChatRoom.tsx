@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -27,14 +27,7 @@ import { Message, ChatRoomProps as ChatRoomComponentProps } from '../../types/ch
 import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
-import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
-// Camera is now handled via ChatRoomSections helpers
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-// Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
-import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue, onItemFailed } from '../../services/writeQueue';
 import {
   ergaenzeLokaleBubbles,
@@ -45,12 +38,13 @@ import {
 } from './chatOutbox';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
-import { compressImage } from '../../services/mediaCompression';
-import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
+import { ChatHeader, MessageInput, autoCapitalize } from './ChatRoomSections';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { useChatScroll } from './useChatScroll';
 import { useChatSocket } from './useChatSocket';
 import { useUmfragenUndReaktionen } from './useUmfragenUndReaktionen';
+import { useChatDateien } from './useChatDateien';
+import { nachrichtTeilen, chatVerlaufExportieren } from './chatTeilen';
 
 
 
@@ -142,8 +136,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   }, [room?.id]);
 
   const [messageText, setMessageText] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
+  // Datei-Auswahl (Kamera, Galerie, Kompression, 10MB-Grenze) und das Oeffnen
+  // empfangener Dateien liegen gebuendelt in useChatDateien.
+  const {
+    selectedFile,
+    selectedFilePreview,
+    handleFileSelect,
+    clearSelectedFile,
+    handleFileClick,
+  } = useChatDateien({ messages });
 
   const [uploading, setUploading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -162,7 +163,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   } = useChatScroll({ messages, initialUnreadRef, newDividerRef });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
-  const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
   // client_ids eigener Sendungen, deren Server-Kopie noch nicht per Socket
   // angekommen ist — Fallback-Reload nur wenn der Socket nicht liefert.
   const pendingSendsRef = useRef<Set<string>>(new Set());
@@ -261,19 +261,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       presentingElement: presentingElement || undefined // <-- Verwendet das Prop
     });
   };
-
-  // FileViewer Modal mit useIonModal Hook (universeller Datei-Viewer)
-  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get files() { return viewerRef.current.files; },
-    get initialIndex() { return viewerRef.current.initialIndex; },
-    onClose: () => {
-      dismissFileViewer();
-      viewerRef.current.files.forEach(f => {
-        if (f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
-      });
-      viewerRef.current = { files: [], initialIndex: 0 };
-    }
-  });
 
   // Mark-Read drosseln (Audit Achse 4, Fund 13): Ohne Debounce feuerte dieser
   // Effekt pro empfangener Nachricht einen POST /mark-read. Wichtig: Der lokale
@@ -526,90 +513,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     });
   };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = event.target.files?.[0];
-    // Input zuruecksetzen, damit dieselbe Datei erneut waehlbar ist.
-    event.target.value = '';
-    if (!picked) return;
-
-    // Bilder vor Upload resizen + komprimieren (max 1920px lange Kante). Andere
-    // Dateien (Videos, PDFs) bleiben unverändert.
-    let file = picked;
-    let previewUrl: string | null = null;
-    if (picked.type.startsWith('image/')) {
-      try {
-        const result = await compressImage(picked);
-        file = result.file;
-        previewUrl = result.previewUrl;
-      } catch {
-        file = picked;
-        previewUrl = URL.createObjectURL(picked);
-      }
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit (nach Kompression)
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setError('Datei ist zu groß (max. 10MB)');
-      return;
-    }
-
-    setSelectedFile(file);
-    setSelectedFilePreview(previewUrl);
-  };
-
-  // Cleanup preview URL on unmount or file change
-  useEffect(() => {
-    return () => {
-      if (selectedFilePreview) {
-        URL.revokeObjectURL(selectedFilePreview);
-      }
-    };
-  }, [selectedFilePreview]);
-
   const handleTextInputChange = (value: string) => {
     setMessageText(autoCapitalize(value));
-  };
-
-  const takePicture = async () => {
-    try {
-      const result = await takePictureHelper();
-      if (result) {
-        if (result.file.size > 10 * 1024 * 1024) {
-          setError('Foto ist zu groß (max. 10MB)');
-          return;
-        }
-        setSelectedFile(result.file);
-        setSelectedFilePreview(result.previewUrl);
-      }
-    } catch (error) {
- console.error('Camera error:', error);
-      setError('Kamera-Zugriff fehlgeschlagen');
-    }
-  };
-
-  const selectFromGallery = async () => {
-    try {
-      const result = await selectFromGalleryHelper();
-      if (result) {
-        if (result.file.size > 10 * 1024 * 1024) {
-          setError('Foto ist zu groß (max. 10MB)');
-          return;
-        }
-        setSelectedFile(result.file);
-        setSelectedFilePreview(result.previewUrl);
-      }
-    } catch (error) {
- console.error('Gallery error:', error);
-      setError('Galerie-Zugriff fehlgeschlagen');
-    }
-  };
-
-  const clearSelectedFile = () => {
-    if (selectedFilePreview) {
-      URL.revokeObjectURL(selectedFilePreview);
-    }
-    setSelectedFile(null);
-    setSelectedFilePreview(null);
   };
 
   const handleLongPress = async (message: Message) => {
@@ -630,58 +535,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     }
   };
 
+  // Teilen-Blatt fuer die ausgewaehlte Nachricht, Details in
+  // chatTeilen.nachrichtTeilen.
   const handleShare = async () => {
     if (!selectedMessage) return;
-
-    try {
-      if (selectedMessage.file_path) {
-        // For files, share the actual file natively (with auth token)
-        const response = await api.get(`/chat/files/${selectedMessage.file_path}`, { responseType: 'blob' });
-        const blob = response.data;
-        const fileName = selectedMessage.file_name || 'file';
-
-        // Write to Documents directory for sharing
-        const base64Data = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(blob);
-        });
-
-        const path = `share/${fileName}`;
-        await Filesystem.writeFile({
-          path,
-          data: base64Data,
-          directory: Directory.Documents,
-          recursive: true
-        });
-
-        // Get local file URI for sharing
-        const fileUri = await Filesystem.getUri({
-          directory: Directory.Documents,
-          path
-        });
-
-        await Share.share({
-          title: 'Datei aus Konfi Quest',
-          text: selectedMessage.content || fileName,
-          url: fileUri.uri
-        });
-      } else {
-        // For text messages, share text content
-        await Share.share({
-          text: selectedMessage.content,
-          title: 'Nachricht aus Konfi Quest'
-        });
-      }
-    } catch (error) {
- console.error('Error sharing:', error);
-      if (error instanceof Error && error.name !== 'AbortError') {
-        setError('Fehler beim Teilen');
-      }
-    }
+    await nachrichtTeilen(selectedMessage, setError);
   };
 
 
@@ -726,54 +584,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     handleShare();
   };
 
-  const handleFileClick = async (filePath: string, fileName: string, mimeType: string) => {
-    try {
-      await Haptics.impact({ style: ImpactStyle.Light });
-
-      // Angeklickte Datei als Blob laden
-      const response = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-      const blob = response.data;
-      const contentType = response.headers?.['content-type'];
-      const mime: string = typeof contentType === 'string' ? contentType : mimeType;
-
-      // Nativ oeffnen versuchen (per D-12)
-      const openedNatively = await openFileNatively(blob, fileName, mime);
-      if (openedNatively) return;
-
-      // Web-Fallback: FileViewerModal mit Swipe-Kontext
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
-      const allFileMessages = messages.filter(m => m.file_path);
-      const files: FileItem[] = allFileMessages.map(m => {
-        if (m.file_path === filePath) {
-          return { url: blobUrl, fileName: m.file_name || fileName, mimeType: mime };
-        }
-        return {
-          url: `/api/chat/files/${m.file_path}`,
-          fileName: m.file_name || 'Datei',
-          mimeType: m.file_name ? getMimeFromFileName(m.file_name) : 'application/octet-stream'
-        };
-      });
-      const clickedIndex = allFileMessages.findIndex(m => m.file_path === filePath);
-      viewerRef.current = { files, initialIndex: Math.max(0, clickedIndex) };
-      presentFileViewer({ cssClass: 'file-viewer-modal' });
-    } catch {
-      setError('Fehler beim Öffnen der Datei');
-    }
-  };
-
-  // MIME-Type aus Dateiname ableiten
-  const getMimeFromFileName = (name: string): string => {
-    const ext = (name.split('.').pop() || '').toLowerCase();
-    const map: Record<string, string> = {
-      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-      mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
-      pdf: 'application/pdf',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    };
-    return map[ext] || 'application/octet-stream';
-  };
-
   const canLeaveChat = (): boolean => {
     if (!room) return false;
     // Admins duerfen NIEMALS einen Chat verlassen
@@ -805,42 +615,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const darfTeamChatLeeren = user?.type === 'admin'
     && ['admin', 'org_admin'].includes(user?.role_name || '');
 
-  // Chat-Export (nur Leitung): laedt den kompletten Verlauf als Textdatei.
-  // Anlass: Inhalte aus Konfi-Chats für die Gottesdienst-Vorbereitung
-  // aufbereiten. Auf dem Geraet über das Teilen-Blatt, im Web als Download.
+  // Chat-Export (nur Leitung), Details in chatTeilen.chatVerlaufExportieren.
   const handleExportChat = async () => {
     if (!room || !isOnline) return;
-    try {
-      const res = await api.get(`/chat/rooms/${room.id}/export`, { responseType: 'blob' });
-      const dateiname = `${getDisplayRoomName().replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50) || 'chat'}_${new Date().toISOString().slice(0, 10)}.txt`;
-
-      if (Capacitor.isNativePlatform()) {
-        // Auf dem Geraet: in den Dokumenten ablegen und das Teilen-Blatt oeffnen,
-        // damit die Datei in Mail, Notizen o.ae. weiterwandern kann.
-        const text = await (res.data as Blob).text();
-        await Filesystem.writeFile({
-          path: dateiname,
-          data: text,
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8,
-        });
-        const { uri } = await Filesystem.getUri({ path: dateiname, directory: Directory.Cache });
-        await Share.share({ title: 'Chat-Verlauf', url: uri });
-      } else {
-        const url = URL.createObjectURL(res.data as Blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = dateiname;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (err: any) {
-      if (err?.response?.status === 403) {
-        setError('Nur die Leitung darf Chats exportieren');
-      } else {
-        setError('Export fehlgeschlagen');
-      }
-    }
+    await chatVerlaufExportieren(room.id, getDisplayRoomName(), setError);
   };
 
   // Sammelt die Optionen hinter dem Menue-Button: Export (Leitung) und
