@@ -589,14 +589,23 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         run: () => moderate(submission, 'unhide')
       });
     }
-    // Endgültig löschen (immer, als letzte Aktion): Datenbank-Eintrag UND
-    // Datei. Auch für den eigenen Beitrag — anders als beim Ausblenden gibt
-    // es hier nichts zu verheimlichen, es ist schlicht weg.
-    actions.push({
-      key: 'delete', text: 'Endgültig löschen', icon: trashOutline,
-      color: 'var(--app-color-danger)', role: 'destructive',
-      run: () => confirmDelete(submission)
-    });
+    // Endgültig löschen: Datenbank-Eintrag UND Datei. Auch für den eigenen
+    // Beitrag — anders als beim Ausblenden gibt es hier nichts zu
+    // verheimlichen, es ist schlicht weg.
+    //
+    // NUR FÜR DIE LEITUNG (Nutzerentscheid 28.08.2026): Teamer:innen
+    // moderieren voll mit — freigeben, ausblenden, anonymisieren — weil das
+    // die Arbeit vor Ort produktiv hält. Nur das Endgültige nicht:
+    // Ausgeblendetes bleibt für die Leitung einsehbar, Gelöschtes wäre für
+    // alle weg. Das Backend weist es seit demselben Tag mit 403 ab; ohne
+    // diese Zeile stünde der Knopf da und liefe ins Leere.
+    if (user?.type === 'admin') {
+      actions.push({
+        key: 'delete', text: 'Endgültig löschen', icon: trashOutline,
+        color: 'var(--app-color-danger)', role: 'destructive',
+        run: () => confirmDelete(submission)
+      });
+    }
     return actions;
   };
 
