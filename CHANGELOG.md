@@ -20,6 +20,12 @@ Versionsüberschrift.
   gerade nicht hinsah, erfuhr nie davon.
 
 ### Geändert
+- Die automatisch vergebenen Passwörter sind jetzt echte Bibelstellen: Wer
+  `Rut4,17` bekommt, kann den Vers aufschlagen. Bisher wurden Kapitel und Vers
+  blind gewürfelt, unabhängig vom Buch — dabei entstanden auch Angaben, die es
+  gar nicht gibt. Bücher mit Ordnungszahl sind jetzt vollständig dabei
+  (`1Korinther13,4`), und kein Passwort ist mehr zu kurz für die eigenen
+  Vorgaben.
 - Bei abgesagten Terminen zählte die Teilnehmerzahl bisher Konfis und
   Teamer:innen zusammen, während dieselbe Zahl überall sonst nur Konfis meint.
   Jetzt ist sie überall gleich zu lesen; die Teamer:innen stehen daneben.
