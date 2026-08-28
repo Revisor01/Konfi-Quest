@@ -2711,6 +2711,102 @@ describe('Events Routes', () => {
       expect(new Set(rows.map(r => String(r.series_id))).size).toBe(1);
     });
 
+    // Befund 28.08.2026: Das Anmeldefenster wurde ueber `getDate()`
+    // verschoben — das liefert nur den TAG IM MONAT, nicht die verstrichene
+    // Zeit. Ueber eine Monatsgrenze hinweg ergab das Unsinn: Termin am 1.9.,
+    // Anmeldung ab 25.8. wurde zu "1 minus 25 = -24 Tage" statt der echten 7.
+    // Gemessen verschob sich das Fenster um 31 Tage, bei JEDEM Termin der
+    // Serie — die Anmeldung oeffnete durchgehend NACH dem Termin.
+    it('Anmeldefenster behaelt seinen Abstand ueber Monatsgrenzen (der Befund)', async () => {
+      // Fester Termin am 1. eines Monats, Anmeldung 7 Tage vorher im
+      // VORMONAT. Genau die Konstellation, die vorher kippte.
+      const terminDatum = new Date();
+      terminDatum.setFullYear(terminDatum.getFullYear() + 1);
+      terminDatum.setMonth(8, 1); // 1. September naechsten Jahres
+      terminDatum.setHours(18, 0, 0, 0);
+
+      const anmeldungAb = new Date(terminDatum);
+      anmeldungAb.setDate(anmeldungAb.getDate() - 7); // 25. August
+      const anmeldungBis = new Date(terminDatum);
+      anmeldungBis.setDate(anmeldungBis.getDate() - 1); // 31. August
+
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Monatsgrenze',
+          event_date: terminDatum.toISOString(),
+          registration_opens_at: anmeldungAb.toISOString(),
+          registration_closes_at: anmeldungBis.toISOString(),
+          max_participants: 20,
+          series_count: 3,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT event_date, registration_opens_at, registration_closes_at
+           FROM events
+          WHERE name LIKE 'Monatsgrenze%' AND organization_id = $1
+          ORDER BY event_date`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows.length).toBe(3);
+
+      const TAG = 24 * 60 * 60 * 1000;
+      for (const zeile of rows) {
+        const termin = new Date(zeile.event_date);
+        const oeffnet = new Date(zeile.registration_opens_at);
+        const schliesst = new Date(zeile.registration_closes_at);
+
+        // Der verbotene Fall: Die Anmeldung darf nie nach dem Termin oeffnen.
+        expect(oeffnet.getTime()).toBeLessThan(termin.getTime());
+
+        // Und der Abstand muss der des ersten Termins sein — 7 bzw. 1 Tag.
+        expect((termin - oeffnet) / TAG).toBeCloseTo(7, 5);
+        expect((termin - schliesst) / TAG).toBeCloseTo(1, 5);
+      }
+    });
+
+    it('Anmeldefenster stimmt auch innerhalb eines Monats', async () => {
+      // Gegenprobe: Der Fall ohne Monatsgrenze war vorher schon richtig und
+      // muss es bleiben.
+      const terminDatum = new Date();
+      terminDatum.setFullYear(terminDatum.getFullYear() + 1);
+      terminDatum.setMonth(8, 20); // 20. September
+      terminDatum.setHours(18, 0, 0, 0);
+
+      const anmeldungAb = new Date(terminDatum);
+      anmeldungAb.setDate(anmeldungAb.getDate() - 5); // 15. September
+
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Innerhalb',
+          event_date: terminDatum.toISOString(),
+          registration_opens_at: anmeldungAb.toISOString(),
+          max_participants: 20,
+          series_count: 2,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT event_date, registration_opens_at FROM events
+          WHERE name LIKE 'Innerhalb%' AND organization_id = $1 ORDER BY event_date`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const TAG = 24 * 60 * 60 * 1000;
+      for (const zeile of rows) {
+        const abstand = (new Date(zeile.event_date) - new Date(zeile.registration_opens_at)) / TAG;
+        expect(abstand).toBeCloseTo(5, 5);
+      }
+    });
+
     // Regression (Bugreport 09.08.2026): Die Serien-Route destrukturierte die
     // Teamer-Kontingent-Felder, mandatory/is_konfirmation, bring_items und
     // checkin_window gar nicht aus dem Body — jede Serie fiel still auf die

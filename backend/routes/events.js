@@ -2603,20 +2603,27 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           eventEndDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
         }
 
-        // Calculate registration dates for this event
-        const regOpens = registration_opens_at ? new Date(date) : null;
-        if (regOpens && registration_opens_at) {
-          const openTime = new Date(registration_opens_at);
-          regOpens.setHours(openTime.getHours(), openTime.getMinutes(), 0, 0);
-          regOpens.setDate(regOpens.getDate() - (new Date(event_date).getDate() - new Date(registration_opens_at).getDate()));
-        }
+        // Anmeldefenster: derselbe zeitliche Abstand wie beim ersten Termin
+        // (Befund 28.08.2026).
+        //
+        // Vorher wurde die Verschiebung ueber `getDate()` gerechnet — das
+        // liefert nur den TAG IM MONAT, nicht die verstrichene Zeit. Ueber
+        // eine Monatsgrenze hinweg ergab das Unsinn: Termin am 1.9.,
+        // Anmeldung ab 25.8. wurde zu "1 minus 25 = -24 Tage" statt der
+        // echten 7. Gemessen verschob sich das Fenster dadurch um 31 Tage,
+        // und zwar bei JEDEM Termin der Serie — die Anmeldung oeffnete
+        // durchgehend NACH dem Termin und war damit unbrauchbar.
+        //
+        // Der Abstand in Millisekunden ist die einzige Groesse, die ueber
+        // Monatsgrenzen traegt. Denselben Ansatz nutzt die Datei bereits an
+        // anderer Stelle (`d.getTime()`).
+        const regOpens = registration_opens_at
+          ? new Date(date.getTime() - (new Date(event_date) - new Date(registration_opens_at)))
+          : null;
 
-        const regCloses = registration_closes_at ? new Date(date) : null;
-        if (regCloses && registration_closes_at) {
-          const closeTime = new Date(registration_closes_at);
-          regCloses.setHours(closeTime.getHours(), closeTime.getMinutes(), 0, 0);
-          regCloses.setDate(regCloses.getDate() - (new Date(event_date).getDate() - new Date(registration_closes_at).getDate()));
-        }
+        const regCloses = registration_closes_at
+          ? new Date(date.getTime() - (new Date(event_date) - new Date(registration_closes_at)))
+          : null;
 
         let eventId;
 

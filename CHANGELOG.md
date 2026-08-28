@@ -53,6 +53,9 @@ Versionsüberschrift.
   aber womöglich nie an, und beim nächsten Laden war sie kommentarlos weg.
 - Terminlisten zählen Buchungen gelöschter Konten nicht mehr mit. Die Zahl in
   der Liste konnte dadurch höher liegen als die Teilnehmerliste lang war.
+- Bei Terminserien über eine Monatsgrenze hinweg öffnete die Anmeldung erst
+  nach dem Termin — niemand konnte sich anmelden. Betroffen war jeder Termin
+  einer solchen Serie.
 
 ## [2.0.0] - 2026-08-27
 
