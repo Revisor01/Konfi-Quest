@@ -17,6 +17,11 @@ Versionsüberschrift.
   kann jetzt auch in ihrer eigenen Umfrage in einem Gruppenchat abstimmen, in
   dem sie nicht als Mitglied eingetragen ist. Fremde Zweiergespräche bleiben
   weiterhin zu.
+- Gesperrte und gelöschte Konten bekommen keine Mitteilungen mehr. Wer aus dem
+  Team ausgeschieden war, wurde bisher weiter über neue Anträge und Termine
+  informiert.
+- Wer die App länger nicht öffnet, bekommt danach wieder Mitteilungen. Bisher
+  endete die Zustellung nach 30 Tagen Pause stillschweigend.
 
 ## [2.0.0] - 2026-08-27
 

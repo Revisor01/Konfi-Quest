@@ -286,6 +286,143 @@ describe('PushService: organization_id in jedem Payload', () => {
   });
 
   // ================================================================
+  // Zustellung haelt den Token am Leben (28.08.2026)
+  //
+  // Die Bereinigung entfernt Tokens, die 30 Tage nicht aktualisiert wurden.
+  // Aktualisiert wurden sie vorher nur beim Oeffnen der App — wer ueber die
+  // Ferien pausierte, verlor die Zustellung stillschweigend, obwohl sein
+  // Geraet die ganze Zeit erreichbar war.
+  // ================================================================
+  describe('Token-Zeitstempel', () => {
+    const alterStempel = async (userId) => {
+      await db.query(
+        "UPDATE push_tokens SET updated_at = NOW() - INTERVAL '25 days' WHERE user_id = $1",
+        [userId]
+      );
+      const { rows: [row] } = await db.query(
+        'SELECT updated_at FROM push_tokens WHERE user_id = $1', [userId]
+      );
+      return row.updated_at;
+    };
+
+    it('Ein zugestellter Push frischt updated_at auf', async () => {
+      const vorher = await alterStempel(USERS.admin1.id);
+
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+
+      const { rows: [row] } = await db.query(
+        'SELECT updated_at FROM push_tokens WHERE user_id = $1', [USERS.admin1.id]
+      );
+      expect(row.updated_at.getTime()).toBeGreaterThan(vorher.getTime());
+
+      // Und damit ueberlebt der Token die Bereinigung.
+      const { rowCount } = await db.query(
+        "DELETE FROM push_tokens WHERE updated_at < NOW() - INTERVAL '30 days' AND user_id = $1",
+        [USERS.admin1.id]
+      );
+      expect(rowCount).toBe(0);
+    });
+
+    it('Ohne Zustellung bleibt der Stempel alt — der Fall, den die Bereinigung meint', async () => {
+      const vorher = await alterStempel(USERS.admin2.id);
+
+      // Push geht an Org 1; admin2 gehoert zu Org 2 und bekommt nichts.
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+
+      const { rows: [row] } = await db.query(
+        'SELECT updated_at FROM push_tokens WHERE user_id = $1', [USERS.admin2.id]
+      );
+      expect(row.updated_at.getTime()).toBe(vorher.getTime());
+    });
+
+    it('Erfolgreiche Zustellung setzt den Fehlerzaehler zurueck', async () => {
+      await db.query(
+        'UPDATE push_tokens SET error_count = 3, last_error_at = NOW() WHERE user_id = $1',
+        [USERS.admin1.id]
+      );
+
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+
+      const { rows: [row] } = await db.query(
+        'SELECT error_count, last_error_at FROM push_tokens WHERE user_id = $1', [USERS.admin1.id]
+      );
+      expect(row.error_count).toBe(0);
+      expect(row.last_error_at).toBeNull();
+    });
+  });
+
+  // ================================================================
+  // Gesperrte und geloeschte Konten bekommen gar nichts (28.08.2026)
+  //
+  // Elf von fuenfzehn Empfaenger-Abfragen prueften weder `is_active` noch
+  // `deleted_at` — darunter sendToOrgAdmins, sendNewActivityRequestToAdmins
+  // und die Opt-in/Opt-out-Meldungen. Wer aus dem Team ausgeschieden und
+  // deaktiviert war, wurde weiter ueber neue Antraege und Termine
+  // informiert. Der Filter sitzt jetzt zentral in getTokensForUser, damit er
+  // fuer alle Wege gilt; diese Tests sichern das ueber mehrere Wege ab.
+  // ================================================================
+  describe('Gesperrte Konten', () => {
+    it('sendToOrgAdmins: aktive Leitung bekommt, deaktivierte nicht', async () => {
+      // Erlaubter Fall zuerst — sonst prueft ein spaeterer 0-Vergleich nichts.
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+      sendFirebasePushNotification.mockClear();
+
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+    });
+
+    it('sendNewActivityRequestToAdmins: deaktivierte Leitung faellt raus', async () => {
+      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
+      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+      sendFirebasePushNotification.mockClear();
+
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
+      await PushService.sendNewActivityRequestToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Aktivitaet', 3);
+      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+    });
+
+    it('sendEventOptOutToAdmins: deaktivierte Leitung faellt raus', async () => {
+      await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');
+      expect(gesendete().map(p => p.token)).toContain('token-admin1');
+      sendFirebasePushNotification.mockClear();
+
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
+      await PushService.sendEventOptOutToAdmins(db, ORGS.testGemeinde.id, 'Konfi', 'Termin', 'krank');
+      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+    });
+
+    it('Geloeschtes Konto bekommt ebenfalls nichts', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.admin1.id]);
+      await PushService.sendToOrgAdmins(db, ORGS.testGemeinde.id, {
+        title: 'Neu', body: 'Etwas ist passiert', data: { type: 'test' },
+      });
+      expect(gesendete().map(p => p.token)).not.toContain('token-admin1');
+    });
+
+    it('getTokensForUser liefert fuer ein gesperrtes Konto nichts, fuer ein aktives alles', async () => {
+      const aktiv = await PushService.getTokensForUser(db, USERS.admin1.id);
+      expect(aktiv.length).toBe(1);
+      expect(aktiv[0].token).toBe('token-admin1');
+
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.admin1.id]);
+      const gesperrt = await PushService.getTokensForUser(db, USERS.admin1.id);
+      expect(gesperrt.length).toBe(0);
+    });
+  });
+
+  // ================================================================
   // Challenges
   // ================================================================
   describe('Challenge-Pushes', () => {
