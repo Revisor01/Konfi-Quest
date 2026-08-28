@@ -21,11 +21,15 @@ const lies = (pfad: string) =>
   readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
 const chatRoom = lies('src/components/chat/ChatRoom.tsx');
+// Beim Aufteilen von ChatRoom.tsx (28.08.2026) zogen die Rechte-Gates und das
+// Optionen-Blatt unveraendert nach useChatVerwaltung.ts um — die Zusicherungen
+// gelten inhaltlich weiter, nur die Datei ist eine andere.
+const chatVerwaltung = lies('src/components/chat/useChatVerwaltung.ts');
 const backend = lies('../backend/routes/chat.js');
 
 describe('super_admin und der Team-Chat-Muelleimer', () => {
   it('das Leeren haengt an einem eigenen, engeren Gate', () => {
-    expect(chatRoom).toContain(
+    expect(chatVerwaltung).toContain(
       "const darfTeamChatLeeren = user?.type === 'admin'\n    && ['admin', 'org_admin'].includes(user?.role_name || '');"
     );
   });
@@ -39,12 +43,12 @@ describe('super_admin und der Team-Chat-Muelleimer', () => {
     // Gegenprobe: Dort war die weite Definition richtig und darf nicht
     // mitgeaendert werden. Das Trennen der Gates ist der Punkt, nicht das
     // Verengen von beidem.
-    expect(chatRoom).toContain(
+    expect(chatVerwaltung).toContain(
       "const istLeitung = user?.type === 'admin'\n    && ['admin', 'org_admin', 'super_admin'].includes(user?.role_name || '');"
     );
-    const menue = chatRoom.slice(
-      chatRoom.indexOf('const handleChatOptions'),
-      chatRoom.indexOf('Chat-Verlauf exportieren')
+    const menue = chatVerwaltung.slice(
+      chatVerwaltung.indexOf('const handleChatOptions'),
+      chatVerwaltung.indexOf('Chat-Verlauf exportieren')
     );
     expect(menue).toContain('if (istLeitung)');
   });
