@@ -23,6 +23,9 @@ Versionsüberschrift.
 - In der Leitungssicht heißt ein verbuchter Antrag jetzt **Verbucht** statt
   „Genehmigt" — dasselbe Wort wie bei den Terminen. Es sagt, was passiert ist:
   Die Punkte sind gutgeschrieben.
+- Tippt man im Teamer-Bereich ein noch nicht erreichtes Abzeichen an, steht
+  jetzt sein Name da statt „???" — man sieht, was es zu holen gibt. Bei Konfis
+  war das schon so. Wirklich geheime Abzeichen bleiben weiterhin verdeckt.
 - Die automatisch vergebenen Passwörter sind jetzt echte Bibelstellen: Wer
   `Rut4,17` bekommt, kann den Vers aufschlagen. Bisher wurden Kapitel und Vers
   blind gewürfelt, unabhängig vom Buch — dabei entstanden auch Angaben, die es
