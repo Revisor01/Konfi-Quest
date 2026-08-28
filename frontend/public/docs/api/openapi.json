@@ -3894,7 +3894,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Von Pflicht-Event abmelden (Opt-out mit Begruendung)",
-        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.",
+        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist, bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3931,12 +3931,12 @@
         },
         "responses": {
           "200": {
-            "description": "Abmeldung erfolgreich"
+            "description": "Abmeldung erfolgreich; bereits_abgemeldet=true wenn schon vorher abgemeldet"
           },
           "400": {
             "description": "Begruendung zu kurz",
             "kein Pflicht-Event": null,
-            "Event vorbei oder keine aktive Anmeldung": null
+            "Event vorbei oder gar keine Anmeldung vorhanden": null
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4794,7 +4794,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4814,7 +4814,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Storniert"
+            "description": "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4823,7 +4823,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Buchung nicht gefunden"
+            "description": "Termin existiert nicht in dieser Organisation"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"

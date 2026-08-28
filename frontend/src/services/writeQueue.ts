@@ -53,6 +53,26 @@ function notifyFailed(item: FailedQueueItem): void {
   });
 }
 
+// --- Aenderungen an der Warteschlange melden ---
+//
+// Die Anzeige "Wird gesendet..." lag bisher nur an zwei Stellen und aktuali-
+// sierte sich, wenn die zugehoerige Liste neu lud. Leerte sich die Queue im
+// Hintergrund (Reconnect, App-Start), blieb der Hinweis stehen, bis jemand
+// zog. Ueber diesen Melder erfaehrt jede Ansicht davon, ohne zu pollen.
+type ChangeListener = () => void;
+const changeListeners = new Set<ChangeListener>();
+
+export function onQueueChanged(listener: ChangeListener): () => void {
+  changeListeners.add(listener);
+  return () => { changeListeners.delete(listener); };
+}
+
+function notifyChanged(): void {
+  changeListeners.forEach((l) => {
+    try { l(); } catch { /* ein kaputter Melder darf den Flush nicht stoppen */ }
+  });
+}
+
 // --- Persistenz-Layer ---
 
 const QUEUE_KEY = 'queue:items';
@@ -125,6 +145,7 @@ async function _loadFailedActions(): Promise<FailedAction[]> {
 async function _saveFailedActions(list: FailedAction[]): Promise<void> {
   _failedActions = list;
   await Preferences.set({ key: FAILED_ACTIONS_KEY, value: JSON.stringify(list) });
+  notifyChanged();
 }
 
 async function rememberFailedAction(
@@ -245,6 +266,7 @@ async function _load(): Promise<QueueItem[]> {
 async function _save(items: QueueItem[]): Promise<void> {
   _items = items;
   await Preferences.set({ key: QUEUE_KEY, value: JSON.stringify(items) });
+  notifyChanged();
 }
 
 // --- UUID Helper ---
@@ -650,6 +672,7 @@ networkMonitor.subscribe((isOnline) => {
 // --- Export ---
 
 export const writeQueue = {
+  onQueueChanged,
   enqueue,
   flush,
   flushTextOnly,

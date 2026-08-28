@@ -2002,6 +2002,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       );
 
       if (rowCount === 0) {
+        // Schon abgemeldet? Dann ist das Ziel erreicht (Befund 28.08.2026).
+        //
+        // Eine offline abgegebene Abmeldung kann zweimal ankommen: Die Anfrage
+        // erreicht den Server, die Antwort geht auf dem Rueckweg verloren
+        // (Funkloch, Timeout), und die Warteschlange legt sie erneut vor. Der
+        // zweite Lauf traf 0 Zeilen und meldete 400 — ein erfolgreicher
+        // Vorgang wurde also als Fehler angezeigt und im Fehl-Merker abgelegt.
+        //
+        // Eine client_id braucht es dafuer nicht: Der Zustand selbst sagt
+        // schon, dass nichts mehr zu tun ist.
+        const { rows: [bestehend] } = await db.query(
+          `SELECT status FROM event_bookings WHERE user_id = $1 AND event_id = $2`,
+          [konfiId, eventId]
+        );
+        if (bestehend && bestehend.status === 'opted_out') {
+          return res.json({ message: 'Abmeldung erfolgreich', bereits_abgemeldet: true });
+        }
         return res.status(400).json({ error: 'Keine aktive Anmeldung gefunden' });
       }
 

@@ -696,6 +696,65 @@ describe('Events Routes', () => {
     });
   });
 
+  // ================================================================
+  // DELETE /api/events/:id/book — Doppelversand (28.08.2026)
+  //
+  // Wie bei der Abmeldung: Kommt eine offline abgegebene Stornierung zweimal
+  // an, fand der zweite Lauf keine Buchung mehr und meldete 404 — ein
+  // erfolgreicher Vorgang wurde als Fehler angezeigt und im Fehl-Merker
+  // abgelegt. Ein Termin, den es gar nicht gibt, bleibt aber 404.
+  // ================================================================
+  describe('DELETE /api/events/:id/book', () => {
+    beforeEach(async () => {
+      await request(app)
+        .post(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+    });
+
+    it('Erste Stornierung entfernt die Buchung -> 200', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [USERS.konfi1.id, EVENTS.gottesdienstEvent.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Zweiter Versand derselben Stornierung ist kein Fehler -> 200', async () => {
+      await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      const zweite = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(zweite.status).toBe(200);
+      expect(zweite.body.bereits_storniert).toBe(true);
+    });
+
+    it('Termin einer fremden Gemeinde bleibt 404', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.event2.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Termin, den es nicht gibt, bleibt 404', async () => {
+      const res = await request(app)
+        .delete('/api/events/99999/book')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe('POST /api/events/:id/book', () => {
     it('Konfi bucht freiwilliges Event -> 201 confirmed', async () => {
       const res = await request(app)
@@ -1906,12 +1965,18 @@ describe('Events Routes', () => {
       expect(res.body.message).toContain('storniert');
     });
 
-    it('Stornierung ohne Buchung gibt 404', async () => {
+    // Geaendert 28.08.2026: Vorher erwartete dieser Test 404 fuer einen
+    // vorhandenen Termin ohne eigene Buchung. Das war der Fall, an dem ein
+    // erfolgreicher Doppelversand aus der Warteschlange als Fehler ankam. Der
+    // Termin existiert und die Buchung ist weg — das Ziel ist erreicht. Fuer
+    // einen Termin, den es nicht gibt, bleibt es beim 404 (Test weiter oben).
+    it('Stornierung ohne Buchung ist kein Fehler, der Termin existiert ja -> 200', async () => {
       const res = await request(app)
         .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
         .set('Authorization', `Bearer ${konfiToken}`);
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
+      expect(res.body.bereits_storniert).toBe(true);
     });
   });
 

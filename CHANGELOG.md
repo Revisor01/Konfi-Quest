@@ -24,6 +24,9 @@ Versionsüberschrift.
   endete die Zustellung nach 30 Tagen Pause stillschweigend.
 - Die Antragsliste lässt sich jetzt nach offen, verbucht oder abgelehnt
   abfragen. Bisher kam immer alles zurück, egal was angefragt war.
+- Eine offline abgegebene Abmeldung oder Stornierung wird nicht mehr als
+  fehlgeschlagen gemeldet, wenn sie in Wahrheit angekommen war. Bisher konnte
+  eine erfolgreiche Abmeldung als Fehler in der Liste stehen.
 
 ## [2.0.0] - 2026-08-27
 

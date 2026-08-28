@@ -1932,8 +1932,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         );
 
         if (!booking) {
+          // Keine Buchung (mehr) — zwei sehr verschiedene Faelle (28.08.2026):
+          //
+          // a) Der Termin gehoert gar nicht zu dieser Gemeinde oder existiert
+          //    nicht. Das bleibt ein 404.
+          //
+          // b) Der Termin existiert, die Buchung ist bereits weg. Dann ist das
+          //    Ziel erreicht. Genau so kommt eine offline abgegebene Abmeldung
+          //    zurueck, wenn die Anfrage ankam, aber die Antwort auf dem
+          //    Rueckweg verloren ging und die Warteschlange sie erneut vorlegt.
+          //    Vorher meldete dieser Fall 404 — ein erfolgreicher Vorgang
+          //    wurde als Fehler angezeigt und im Fehl-Merker abgelegt.
+          const { rows: [terminDa] } = await client.query(
+            'SELECT 1 FROM events WHERE id = $1 AND organization_id = $2',
+            [eventId, req.user.organization_id]
+          );
           await client.query('ROLLBACK');
           // KEIN client.release() hier — das finally unten released (sonst Doppel-Release)
+          if (terminDa) {
+            return res.json({ message: 'Buchung storniert', bereits_storniert: true });
+          }
           return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
 

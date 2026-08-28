@@ -731,7 +731,12 @@ paths:
     post:
       tags: ["Termine (Konfis)"]
       summary: Von Pflicht-Event abmelden (Opt-out mit Begruendung)
-      description: Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.
+      description: >
+        Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur
+        zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist,
+        bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein
+        Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag
+        ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -748,8 +753,8 @@ paths:
               properties:
                 reason: { type: string, minLength: 5 }
       responses:
-        "200": { description: Abmeldung erfolgreich }
-        "400": { description: Begruendung zu kurz, kein Pflicht-Event, Event vorbei oder keine aktive Anmeldung }
+        "200": { description: "Abmeldung erfolgreich; bereits_abgemeldet=true wenn schon vorher abgemeldet" }
+        "400": { description: Begruendung zu kurz, kein Pflicht-Event, Event vorbei oder gar keine Anmeldung vorhanden }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1167,6 +1172,10 @@ paths:
         Event-Chat, nimmt bei attendance_status='present' die Event-Punkte
         zurück und laesst rollenrichtig aus der passenden Warteliste
         nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).
+        Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden,
+        kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus
+        der Offline-Warteschlange soll nicht als Fehlschlag ankommen
+        (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1175,10 +1184,10 @@ paths:
         hinweis: "Punkte-Entzugs-Weg n) der Analyse. Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: Storniert }
+        "200": { description: "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { description: Buchung nicht gefunden }
+        "404": { description: Termin existiert nicht in dieser Organisation }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/events/{id}/participants:
