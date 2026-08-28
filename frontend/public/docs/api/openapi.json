@@ -8241,7 +8241,7 @@
             "description": "option_index fehlt/ungueltig ODER Umfrage abgelaufen"
           },
           "403": {
-            "description": "Kein Teilnehmer des Raums"
+            "description": "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft)"
           },
           "404": {
             "description": "Umfrage nicht gefunden"
@@ -8264,7 +8264,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins müssen Teilnehmer sein)"
+          "objekt-pruefung": "darfRaumOeffnen: Teilnehmer des Raums, oder Leitung in einem Raum der eigenen Gemeinde — ausser in fremden Direktchats. BEHOBEN 2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in ihr abstimmen. Ausserdem lief die Pruefung erst NACH Ablauf- und Options-Check und verriet so den Zustand fremder Umfragen.\n"
         }
       }
     },
@@ -8274,7 +8274,7 @@
           "Chat"
         ],
         "summary": "Abstimmen per Message-ID (Frontend-Kompatibilitaet)",
-        "description": "Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne exclusive_options-Sperrlogik.\n",
+        "description": "Aeltere Adressform derselben Route. Seit 2026-08-23 teilen sich beide denselben Handler — Toggle-Semantik, Einzelauswahl-Ersetzung und exclusive_options gelten hier genauso.\n",
         "parameters": [
           {
             "name": "messageId",
@@ -8309,14 +8309,16 @@
             "description": "Stimme abgegeben"
           },
           "400": {
-            "description": "option_index fehlt/ungueltig",
-            "Umfrage abgelaufen ODER bereits fuer Option gestimmt": null
+            "description": "option_index fehlt/ungueltig ODER Umfrage abgelaufen"
           },
           "403": {
-            "description": "Kein Teilnehmer des Raums"
+            "description": "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft)"
           },
           "404": {
             "description": "Keine Umfrage zu dieser Nachricht"
+          },
+          "409": {
+            "description": "Exklusive Option bereits vergeben"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8333,8 +8335,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR Teilnehmer des Raums (kein Admin-Bypass)",
-          "hinweis": "Aeltere Schwester-Route ohne exclusive_options-Behandlung"
+          "objekt-pruefung": "Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (Teilnehmer oder Leitung der eigenen Gemeinde, ausser in fremden Direktchats).\n",
+          "hinweis": "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
         }
       }
     },
@@ -9699,8 +9701,8 @@
             "verifyTokenRBAC",
             "validateDeleteToken"
           ],
-          "org-scope": true,
-          "objekt-pruefung": "Nur eigene Tokens der eigenen Org"
+          "org-scope": false,
+          "objekt-pruefung": "Nur eigene Tokens (user_id aus dem geprueften Token). BEHOBEN 2026-08-28: Die Route verengte zusaetzlich ueber users.organization_id und verglich damit die PRIMAER-Org des Kontos mit der AKTIVEN Org aus dem Token. Bei Mehrfach-Mitgliedschaft loeschte sie nichts und meldete trotzdem Erfolg.\n"
         }
       }
     },

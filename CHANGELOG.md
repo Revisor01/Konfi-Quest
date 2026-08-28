@@ -7,6 +7,17 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.0
+
+### Behoben
+- Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
+  zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
+  weiter Mitteilungen für das abgemeldete Konto.
+- Abstimmen in Umfragen folgt derselben Regel wie der übrige Chat: Die Leitung
+  kann jetzt auch in ihrer eigenen Umfrage in einem Gruppenchat abstimmen, in
+  dem sie nicht als Mitglied eingetragen ist. Fremde Zweiergespräche bleiben
+  weiterhin zu.
+
 ## [2.0.0] - 2026-08-27
 
 **Neu ist vor allem eins: Challenges.** Alles andere in dieser Liste sind

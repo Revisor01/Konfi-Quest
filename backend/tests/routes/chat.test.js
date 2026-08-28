@@ -1054,6 +1054,101 @@ describe('Chat Routes', () => {
   // vollstaendig — über sie konnten mehrere Personen dieselbe Option belegen,
   // während /polls/:pollId/vote das korrekt mit 409 ablehnt.
   // ================================================================
+  // ================================================================
+  // Abstimmen: dieselbe Raum-Regel wie ueberall sonst (28.08.2026)
+  //
+  // Die Abstimm-Route hatte eine eigene Kopie der Zugriffspruefung, die
+  // strikt einen Eintrag in chat_participants verlangte. Damit durfte die
+  // Leitung in einem Gruppenchat, in dem sie nicht eingetragen ist, eine
+  // Umfrage ANLEGEN, aber nicht abstimmen. Jetzt laeuft beides ueber
+  // darfRaumOeffnen — inklusive der Ausnahme fuer fremde Direktchats.
+  // ================================================================
+  describe('Abstimmen folgt der Raum-Regel', () => {
+    let orgAdmin1Token;
+
+    beforeEach(() => {
+      orgAdmin1Token = generateToken('orgAdmin1');
+    });
+
+    const umfrageAnlegen = async (roomId, token) => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${roomId}/polls`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ question: 'Wann treffen wir uns?', options: ['Freitag', 'Samstag'] });
+      expect(res.status).toBe(201);
+      return res.body;
+    };
+
+    it('Leitung stimmt in ihrer eigenen Gruppenchat-Umfrage ab -> 200 (der erlaubte Fall)', async () => {
+      // Vorbedingung absichern: orgAdmin1 ist NICHT Teilnehmerin von Raum 3.
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+
+      const poll = await umfrageAnlegen(CHAT_ROOMS.group.id, orgAdmin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Konfi aus einer anderen Gemeinde darf nicht abstimmen -> 403', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Zugriff auf diesen Raum verweigert');
+    });
+
+    it('Leitung darf im fremden Direktchat nicht abstimmen -> 403', async () => {
+      // Raum 2 ist der Direktchat konfi1 <-> admin1; orgAdmin1 gehoert nicht dazu.
+      // admin1 ist Teilnehmer und darf dort anlegen.
+      const poll = await umfrageAnlegen(CHAT_ROOMS.direct.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Abgelaufene fremde Umfrage verraet ihren Zustand nicht -> 403 statt 400', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+      await db.query(
+        "UPDATE chat_polls SET expires_at = NOW() - INTERVAL '1 hour' WHERE id = $1",
+        [poll.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Ueber die Nachrichten-ID gilt dieselbe Regel -> 403', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe('Exklusive Umfragen — beide Abstimm-Routen', () => {
     const exklusiveUmfrageAnlegen = async () => {
       const res = await request(app)
