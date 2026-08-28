@@ -20,6 +20,9 @@ Versionsüberschrift.
   gerade nicht hinsah, erfuhr nie davon.
 
 ### Geändert
+- In der Leitungssicht heißt ein verbuchter Antrag jetzt **Verbucht** statt
+  „Genehmigt" — dasselbe Wort wie bei den Terminen. Es sagt, was passiert ist:
+  Die Punkte sind gutgeschrieben.
 - Die automatisch vergebenen Passwörter sind jetzt echte Bibelstellen: Wer
   `Rut4,17` bekommt, kann den Vers aufschlagen. Bisher wurden Kapitel und Vers
   blind gewürfelt, unabhängig vom Buch — dabei entstanden auch Angaben, die es

@@ -48,6 +48,11 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Verpasst': closeCircle,
   'Ausstehend': hourglassOutline,
   // Gemeldete Aktivitäten
+  // Die Leitungssicht sagt seit dem 28.08.2026 'Verbucht' statt 'Genehmigt' —
+  // dasselbe Wort und dasselbe Symbol wie bei den Terminen weiter oben.
+  // 'Genehmigt' bleibt trotzdem stehen: Das alte Wort kann noch in
+  // Screenshots oder älteren Ansichten auftauchen und verlöre sonst sein
+  // Symbol.
   'Genehmigt': checkmarkCircle,
   'Abgelehnt': closeCircle,
   // Badges / generische Zustände (keine Text-Corner-Badges mehr)
