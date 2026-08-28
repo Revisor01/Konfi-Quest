@@ -16,6 +16,7 @@ import {
   fehlgeschlageneZuBubble,
   ergaenzeLokaleBubbles,
   chatNachrichtEinreihen,
+  mergeMitLokalen,
 } from '../../components/chat/chatOutbox';
 
 const absender = { id: 7, name: 'Test Konfi', type: 'konfi' as const };
@@ -149,5 +150,62 @@ describe('chatOutbox — chatNachrichtEinreihen persistiert die Nachricht', () =
     expect(item.body._localFilePath).toBe('queue-uploads/queue_c-file_bild.png');
     expect(item.body._fileName).toBe('bild.png');
     expect(item.body._fileType).toBe('image/png');
+  });
+});
+
+// Beim Aufteilen von ChatRoom.tsx hierher gezogen — die Faelle stammen aus dem
+// urspruenglichen Fund (Hennstedt 22.08.2026): Reload darf wartende lokale
+// Nachrichten nicht verschlucken.
+describe('mergeMitLokalen', () => {
+  const serverMsg = (id: number, clientId?: string) => ({
+    id,
+    content: `server-${id}`,
+    sender_id: 1,
+    sender_name: 'A',
+    sender_type: 'konfi',
+    created_at: new Date(id).toISOString(),
+    message_type: 'text',
+    ...(clientId ? { client_id: clientId } : {}),
+  }) as any;
+
+  const lokaleMsg = (clientId: string, status: 'pending' | 'error') => ({
+    id: -1,
+    content: `lokal-${clientId}`,
+    sender_id: 1,
+    sender_name: 'A',
+    sender_type: 'konfi',
+    created_at: new Date().toISOString(),
+    message_type: 'text',
+    queueStatus: status,
+    localId: clientId,
+    clientId,
+  }) as any;
+
+  it('haengt wartende und fehlgeschlagene lokale Nachrichten ans Ende', () => {
+    const server = [serverMsg(1), serverMsg(2)];
+    const vorher = [serverMsg(1), lokaleMsg('c-1', 'pending'), lokaleMsg('c-2', 'error')];
+
+    const ergebnis = mergeMitLokalen(server, vorher);
+
+    expect(ergebnis).toHaveLength(4);
+    expect(ergebnis[2].localId).toBe('c-1');
+    expect(ergebnis[3].localId).toBe('c-2');
+  });
+
+  it('laesst die lokale Fassung fallen, sobald die Server-Kopie da ist', () => {
+    const server = [serverMsg(1), serverMsg(2, 'c-1')];
+    const vorher = [lokaleMsg('c-1', 'pending')];
+
+    const ergebnis = mergeMitLokalen(server, vorher);
+
+    expect(ergebnis).toHaveLength(2);
+    expect(ergebnis.every(m => m.queueStatus === undefined)).toBe(true);
+  });
+
+  it('gibt ohne offene lokale Nachrichten die Server-Liste unveraendert zurueck', () => {
+    const server = [serverMsg(1)];
+    const vorher = [serverMsg(1)];
+
+    expect(mergeMitLokalen(server, vorher)).toBe(server);
   });
 });
