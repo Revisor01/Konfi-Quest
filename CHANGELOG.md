@@ -40,6 +40,12 @@ Versionsüberschrift.
   Abzeichen blähen die Ziele nicht mehr auf, und Dashboard und Abzeichen-Seite
   zeigen dieselben Zahlen.
 
+### Hinzugefügt
+- Beim Wählen des Konfispruchs steht jetzt der Wortlaut da — in Luther 2017
+  und in der Gute Nachricht Bibel. Bisher sah man nur die Stellenangabe und
+  den Hinweis, der Text werde noch ergänzt. Für die Bibel in gerechter Sprache
+  und die Elberfelder steht das noch aus.
+
 ### Behoben
 - Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
   zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
