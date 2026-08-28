@@ -162,7 +162,7 @@ function parseAllowedMedia(raw) {
 }
 
 module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) => {
-  const { requireTeamer } = roleHelpers;
+  const { requireTeamer, requireAdmin } = roleHelpers;
   const challengeDir = path.join(uploadsDir, 'challenges');
 
   // ====================================================================
@@ -1405,9 +1405,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
   // DELETE /admin/:id — Entwuerfe direkt; gestartete Challenges nur mit
   // ?force=true (löscht dann Beitraege inkl. Dateien mit).
+  // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
+  // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
+  // ausblenden, anonymisieren -- weil das die Arbeit vor Ort produktiv haelt.
+  // Nur das endgueltige Loeschen nicht: Ausgeblendetes bleibt fuer die Leitung
+  // einsehbar, Geloeschtes waere fuer alle weg. Beim Loeschen einer Challenge
+  // haengen zudem ALLE eingereichten Beitraege mit dran.
   router.delete('/admin/:id',
     rbacVerifier,
-    requireTeamer,
+    requireAdmin,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     query('force').optional().isIn(['true', 'false']).withMessage('Ungültiger force-Parameter'),
     handleValidationErrors,
@@ -1662,9 +1668,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // leadershipMayAccess (Teamer nur bei zugewiesenem Jahrgang / 'nur_team').
   // Reihenfolge: erst file_path lesen, dann DB-Delete, dann Datei —
   // deleteChallengeFile wirft nie, eine fehlende Datei kippt nichts.
+  // Auch hier nur die Leitung (Nutzerentscheid 28.08.2026): Ausblenden
+  // erledigen Teamer:innen weiterhin selbst -- das ist umkehrbar und die
+  // Leitung sieht den Beitrag weiter. Loeschen entfernt ihn samt Datei
+  // endgueltig.
   router.delete('/admin/submissions/:id',
     rbacVerifier,
-    requireTeamer,
+    requireAdmin,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     handleValidationErrors,
     async (req, res) => {

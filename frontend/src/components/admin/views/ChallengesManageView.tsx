@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useApp } from '../../../contexts/AppContext';
 import {
   IonIcon,
   IonItem,
@@ -168,6 +169,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   headerSlot,
   marks: marksRaw = []
 }) => {
+  // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
+  // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
+  // ausblenden, anonymisieren --, nur das Endgueltige nicht. Beim Loeschen
+  // einer Challenge haengen ALLE eingereichten Beitraege mit dran.
+  // Das Backend weist es seit demselben Tag mit 403 ab; ohne diese Pruefung
+  // stuende der Wisch-Knopf da und liefe ins Leere.
+  const { user } = useApp();
+  const darfLoeschen = user?.type === 'admin';
+
   const marks: ChallengeMark[] = Array.isArray(marksRaw) ? marksRaw : [];
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const challenges: AdminChallenge[] = Array.isArray(challengesRaw) ? challengesRaw : [];
@@ -400,15 +410,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                     <IonIcon icon={createOutline} />
                   </div>
                 </IonItemOption>
-                <IonItemOption
-                  onClick={() => { closeOpenSlidingItems(); onDeleteChallenge(challenge); }}
-                  aria-label="Challenge löschen"
-                  className="app-swipe-action"
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                    <IonIcon icon={trashOutline} />
-                  </div>
-                </IonItemOption>
+                {darfLoeschen && (
+                  <IonItemOption
+                    onClick={() => { closeOpenSlidingItems(); onDeleteChallenge(challenge); }}
+                    aria-label="Challenge löschen"
+                    className="app-swipe-action"
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                      <IonIcon icon={trashOutline} />
+                    </div>
+                  </IonItemOption>
+                )}
               </IonItemOptions>
             </IonItemSliding>
           );

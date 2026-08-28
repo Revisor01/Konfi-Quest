@@ -2060,7 +2060,12 @@ describe('Challenges Routes', () => {
       expect(rows.length).toBe(0);
     });
 
-    it('Teamer mit zugewiesenem Jahrgang darf loeschen -> 200', async () => {
+    // Geaendert am 28.08.2026 (Nutzerentscheid): Hier stand
+    // "Teamer mit zugewiesenem Jahrgang darf loeschen -> 200". Die Erwartung
+    // war nicht falsch, sondern ueberholt -- Loeschen ist jetzt der Leitung
+    // vorbehalten. Teamer:innen moderieren weiterhin voll mit, nur das
+    // Endgueltige nicht: Ausgeblendetes bleibt fuer die Leitung einsehbar.
+    it('Teamer mit zugewiesenem Jahrgang darf NICHT loeschen -> 403', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
       const submission = await createSubmission({
@@ -2072,10 +2077,11 @@ describe('Challenges Routes', () => {
       const res = await request(app)
         .delete(`/api/challenges/admin/submissions/${submission.id}`)
         .set('Authorization', `Bearer ${teamer1Token}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
 
+      // Der Beitrag muss noch da sein -- sonst waere die Sperre wirkungslos.
       const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
-      expect(rows.length).toBe(0);
+      expect(rows.length).toBe(1);
     });
 
     it('Verbotener Fall: Konfi bekommt 403, Zeile und Datei bleiben', async () => {
@@ -2129,6 +2135,51 @@ describe('Challenges Routes', () => {
 
       const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
       expect(rows.length).toBe(1);
+    });
+  });
+
+  // ==================================================================
+  // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026).
+  //
+  // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
+  // ausblenden, anonymisieren -- weil das die Arbeit vor Ort produktiv
+  // haelt. Nur das endgueltige Loeschen nicht: Ausgeblendetes bleibt fuer
+  // die Leitung einsehbar, Geloeschtes waere fuer alle weg.
+  //
+  // Vorher stand auf beiden Loesch-Routen requireTeamer -- eine Teamer:in
+  // konnte eine ganze Challenge samt aller eingereichten Beitraege
+  // unwiderruflich entfernen.
+  // ==================================================================
+  describe('Loeschen nur durch die Leitung', () => {
+    it('verbotener Fall: Teamer:in darf eine Challenge NICHT loeschen', async () => {
+      const res = await request(app)
+        .delete('/api/challenges/admin/1')
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('verbotener Fall: Teamer:in darf einen Beitrag NICHT loeschen', async () => {
+      const res = await request(app)
+        .delete('/api/challenges/admin/submissions/1')
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('erlaubter Fall: Teamer:in darf weiterhin moderieren (ausblenden)', async () => {
+      // Gegenprobe -- die Sperre darf die Alltagsmoderation nicht mitnehmen.
+      const res = await request(app)
+        .put('/api/challenges/admin/submissions/1/moderate')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ action: 'hide', reason: 'Test' });
+      expect(res.status).not.toBe(403);
+    });
+
+    it('erlaubter Fall: die Leitung darf loeschen', async () => {
+      const res = await request(app)
+        .delete('/api/challenges/admin/submissions/999999')
+        .set('Authorization', `Bearer ${admin1Token}`);
+      // 404 statt 403: Die Berechtigung greift, nur der Beitrag fehlt.
+      expect(res.status).not.toBe(403);
     });
   });
 });
