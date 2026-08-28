@@ -5648,7 +5648,23 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Alle Anträge der Organisation",
-        "description": "Liefert alle Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person.\n",
+        "description": "Liefert die Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter alle, mit ?status= nur die des angegebenen Status. BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen — die Route lieferte immer alles.\n",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            },
+            "description": "Optionaler Filter. Ein unbekannter Wert ergibt 400."
+          }
+        ],
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5665,6 +5681,9 @@
         "responses": {
           "200": {
             "description": "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+          },
+          "400": {
+            "description": "Unbekannter Wert fuer ?status="
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

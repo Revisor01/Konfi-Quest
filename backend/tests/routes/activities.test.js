@@ -446,6 +446,86 @@ describe('Activities Routes', () => {
   // ================================================================
   // Abgelehnte Anträge einzeln löschen
   // ================================================================
+  // ================================================================
+  // GET /admin/activities/requests — Status-Filter (28.08.2026)
+  //
+  // Der Parameter ?status= wurde stillschweigend verworfen: Die Route lieferte
+  // immer alle Antraege. Wer sich darauf verliess, sah falsche Zahlen.
+  // ================================================================
+  describe('GET /admin/activities/requests', () => {
+    const antragAnlegen = async (status) => {
+      const { rows: [r] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE) RETURNING id`,
+        [USERS.konfi1.id, ACTIVITIES.kirchenchor.id, status, 1]
+      );
+      return r.id;
+    };
+
+    beforeEach(async () => {
+      await antragAnlegen('pending');
+      await antragAnlegen('pending');
+      await antragAnlegen('approved');
+      await antragAnlegen('rejected');
+    });
+
+    it('Ohne Filter kommen alle Antraege -> 4', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(4);
+    });
+
+    it('?status=pending liefert nur die offenen -> 2', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests?status=pending')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(2);
+      expect(res.body.every(r => r.status === 'pending')).toBe(true);
+    });
+
+    it('?status=approved liefert nur die verbuchten -> 1', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests?status=approved')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].status).toBe('approved');
+    });
+
+    it('?status=rejected liefert nur die abgelehnten -> 1', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests?status=rejected')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].status).toBe('rejected');
+    });
+
+    it('Unbekannter Status -> 400 statt stiller Vollausgabe', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests?status=quatsch')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Der Filter hebelt die Org-Trennung nicht aus', async () => {
+      const res = await request(app)
+        .get('/api/admin/activities/requests?status=pending')
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(0);
+    });
+  });
+
   describe('DELETE /admin/activities/requests/:id', () => {
     const antragAnlegen = async (status) => {
       const { rows: [r] } = await db.query(

@@ -22,6 +22,8 @@ Versionsüberschrift.
   informiert.
 - Wer die App länger nicht öffnet, bekommt danach wieder Mitteilungen. Bisher
   endete die Zustellung nach 30 Tagen Pause stillschweigend.
+- Die Antragsliste lässt sich jetzt nach offen, verbucht oder abgelehnt
+  abfragen. Bisher kam immer alles zurück, egal was angefragt war.
 
 ## [2.0.0] - 2026-08-27
 
