@@ -2,7 +2,7 @@
 # Konfi Quest API - OpenAPI 3.1 - BLOCK 2 von 3
 # Dokumentierte Dateien (Stand main, 22.08.2026, am Code verifiziert):
 #   backend/routes/konfi.js            -> Prefix /api/konfi            (24 Routen)
-#   backend/routes/events.js           -> Prefix /api/events           (21 Routen)
+#   backend/routes/events/ (aufgeteilt) -> Prefix /api/events          (21 Routen)
 #   backend/routes/konfi-management.js -> Prefix /api/admin/konfis     (16 Routen)
 #   backend/routes/activities.js       -> Prefix /api/admin/activities (10 Routen)
 #
@@ -836,7 +836,7 @@ paths:
         "500": { $ref: '#/components/responses/ServerError' }
 
   # ===================================================================
-  # backend/routes/events.js  (Prefix /api/events)
+  # backend/routes/events/ (seit 28.08.2026 aufgeteilt, Prefix /api/events)
   # Schreibende Verwaltungs-Routen: requireTeamer (org_admin, admin, teamer).
   # Lese-/Buchungsrouten: nur rbacVerifier (alle Rollen, inkl. Konfi).
   # ===================================================================
