@@ -9,6 +9,16 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.1.0
 
+### Hinzugefügt
+- Wartende Vorgänge sind jetzt überall in der App sichtbar: Solange etwas ohne
+  Netz eingetragen wurde und noch nicht gesendet ist, steht unten ein Hinweis,
+  der antippbar die offenen Vorgänge zeigt. Bisher gab es das nur bei den
+  Anträgen; Abmeldungen, Buchungen und alle Aktionen der Leitung liefen
+  unsichtbar.
+- Was endgültig nicht gesendet werden konnte, bleibt sichtbar, bis man es zur
+  Kenntnis genommen hat. Bisher verschwand die Meldung nach vier Sekunden — wer
+  gerade nicht hinsah, erfuhr nie davon.
+
 ### Behoben
 - Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
   zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
@@ -27,6 +37,9 @@ Versionsüberschrift.
 - Eine offline abgegebene Abmeldung oder Stornierung wird nicht mehr als
   fehlgeschlagen gemeldet, wenn sie in Wahrheit angekommen war. Bisher konnte
   eine erfolgreiche Abmeldung als Fehler in der Liste stehen.
+- Eine ohne Netz abgegebene Stimme in einer Umfrage und eine Reaktion im Chat
+  scheitern nicht mehr stillschweigend. Bisher wurde die Stimme angezeigt, kam
+  aber womöglich nie an, und beim nächsten Laden war sie kommentarlos weg.
 
 ## [2.0.0] - 2026-08-27
 

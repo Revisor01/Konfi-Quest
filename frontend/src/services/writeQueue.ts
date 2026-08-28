@@ -17,7 +17,12 @@ export interface QueueItem {
   createdAt: number;
   hasFileUpload: boolean;
   metadata: {
-    type: 'chat' | 'request' | 'opt-out' | 'fire-and-forget' | 'admin' | 'teamer';
+    // 'fire-and-forget' sind STILLE Hintergrund-Aufraeumer (Push-Token
+    // entfernen, gelesen markieren, Einstellungen). Ein Fehlschlag geht
+    // niemanden etwas an. 'chat-aktion' sind bewusste Handlungen im Chat
+    // (Stimme, Reaktion) — sie scheiterten bis 28.08.2026 lautlos, weil
+    // sie faelschlich als 'fire-and-forget' eingereiht wurden.
+    type: 'chat' | 'chat-aktion' | 'request' | 'opt-out' | 'fire-and-forget' | 'admin' | 'teamer';
     clientId: string;
     roomId?: number;
     label?: string;
@@ -315,6 +320,10 @@ async function handleFlushResult(result: FlushResult): Promise<void> {
     // Toast erscheint sonst "aus dem Nichts", wenn ein Hintergrund-Flush
     // (Reconnect/Online) eine alte Queue-Nachricht erneut nicht senden kann.
     if (item.metadata.type === 'chat') continue;
+    // 'chat-aktion' (Stimme, Reaktion) laeuft bewusst NICHT in eines der
+    // beiden continue: Es sind bewusste Handlungen ohne eigene Bubble, die
+    // eine Rueckmeldung brauchen. Bis 28.08.2026 waren sie als
+    // 'fire-and-forget' eingereiht und scheiterten damit lautlos.
     const label = item.metadata.label || 'Aktion';
     // Zwei Wege, bewusst beide (Befund H1): Der Toast erreicht, wer gerade
     // hinsieht. Der Merker ueberlebt Hintergrund-Flush und App-Neustart —

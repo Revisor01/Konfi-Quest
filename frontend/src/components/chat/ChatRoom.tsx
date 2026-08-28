@@ -926,13 +926,23 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         return m;
       }));
 
-      writeQueue.enqueue({
+      // 'chat-aktion' statt 'fire-and-forget' (Befund 28.08.2026): Als
+      // 'fire-and-forget' uebersprang handleFlushResult das Item vollstaendig
+      // — kein Toast, kein Merker. Die Stimme wurde optimistisch angezeigt,
+      // kam aber nie an, und niemand erfuhr davon; beim naechsten Laden war
+      // sie kommentarlos weg. Bei einer exklusiven Umfrage antwortet der
+      // Server ausserdem 409 ("Option bereits vergeben") — offline blieb auch
+      // das ungesagt.
+      //
+      // await, weil enqueue selbst werfen kann (voller Speicher). Ohne das
+      // wurde daraus eine unbehandelte Zusage und die Stimme war still weg.
+      await writeQueue.enqueue({
         method: 'POST',
         url: `/chat/polls/${messageId}/vote`,
         body: { option_index: optionIndex },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `poll-${messageId}-${optionIndex}-${safeUUID()}`, label: 'Abstimmung' },
+        metadata: { type: 'chat-aktion', clientId: `poll-${messageId}-${optionIndex}-${safeUUID()}`, label: 'Abstimmung' },
       });
 
       setTimeout(() => setShouldAutoScroll(true), 1000);
@@ -1012,13 +1022,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         };
       }));
 
-      writeQueue.enqueue({
+      // Wie bei der Stimme: 'chat-aktion' statt 'fire-and-forget', damit ein
+      // Fehlschlag gemeldet wird statt lautlos zu verschwinden.
+      await writeQueue.enqueue({
         method: 'POST',
         url: `/chat/messages/${messageId}/reactions`,
         body: { emoji },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `reaction-${messageId}-${emoji}-${safeUUID()}`, label: 'Reaktion' },
+        metadata: { type: 'chat-aktion', clientId: `reaction-${messageId}-${emoji}-${safeUUID()}`, label: 'Reaktion' },
       });
 
       setShowReactionPicker(false);
