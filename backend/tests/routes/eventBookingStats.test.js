@@ -47,13 +47,29 @@ describe('event_booking_stats: eine Quelle für alle Zahlen', () => {
   });
 
   it('Abgemeldete sind KEINE Teilnehmenden und KEIN offener Fall', async () => {
+    // Gehaertet 28.08.2026: Vorher stand hier eine confirmed-Buchung daneben
+    // und die Zusicherung lautete konfi_offen === 1. Die 1 kam von der
+    // confirmed-Buchung — der Test waere auch dann gruen geblieben, wenn die
+    // Abgemeldete faelschlich mitgezaehlt und die andere nicht gezaehlt
+    // worden waere. Er prueft die Regel jetzt allein.
+    await buchen(USERS.konfi2.id, 'opted_out');
+
+    const s = await stats();
+    expect(s.konfi_confirmed).toBe(0);
+    expect(s.konfi_opted_out).toBe(1);
+    // Verbotener Fall: Abgemeldete als "noch zu verbuchen" zu fuehren.
+    expect(s.konfi_offen).toBe(0);
+  });
+
+  it('Abgemeldete neben Zusagen aendern den offenen Stand nicht', async () => {
+    // Der Fall aus dem alten Test, jetzt mit klarer Erwartung: Die eine
+    // offene Zusage bleibt offen, die Abgemeldete kommt nicht dazu.
     await buchen(USERS.konfi1.id, 'confirmed');
     await buchen(USERS.konfi2.id, 'opted_out');
 
     const s = await stats();
     expect(s.konfi_confirmed).toBe(1);
     expect(s.konfi_opted_out).toBe(1);
-    // Verbotener Fall: Abgemeldete als "noch zu verbuchen" zu führen.
     expect(s.konfi_offen).toBe(1);
   });
 
@@ -106,17 +122,32 @@ describe('event_booking_stats: eine Quelle für alle Zahlen', () => {
 
   it('bildet den echten Fall der Konfi-Fahrt ab (19 Konfis, 4 Teamer, 2 abgemeldet)', async () => {
     // Genau die Konstellation, die am 25.08. drei verschiedene Zahlen ergab.
-    const konfis = [USERS.konfi1.id, USERS.konfi2.id, USERS.konfi3.id];
-    for (const id of konfis) await buchen(id, 'confirmed');
+    //
+    // Gehaertet 28.08.2026: Vorher buchte dieser Test USERS.konfi4 — den es
+    // im Seed nicht gibt. Der Fallback (konfi1.id + 100) traf keinen
+    // vorhandenen Nutzer, das INSERT scheiterte am Fremdschluessel und ein
+    // .catch(() => {}) schluckte den Fehler. Der Abgemeldeten-Fall, den der
+    // Titel verspricht, wurde also gar nicht geprueft. Die Schluss-Zusicherung
+    // war ausserdem tautologisch: sie ist fuer jedes teamer_confirmed !== 0
+    // wahr, unabhaengig davon, ob die Zahlen stimmen.
+    //
+    // Jetzt mit echten Nutzern und den Zahlen im Verhaeltnis des echten Falls
+    // (der Seed hat drei Konfis, nicht neunzehn).
+    for (const id of [USERS.konfi1.id, USERS.konfi2.id]) await buchen(id, 'confirmed');
     await buchen(USERS.teamer1.id, 'confirmed');
-    await buchen(USERS.konfi4?.id || USERS.konfi1.id + 100, 'opted_out').catch(() => {});
+    await buchen(USERS.konfi3.id, 'opted_out');
 
     const s = await stats();
-    expect(s.konfi_confirmed).toBe(3);
+    // Die Teilnehmerzahl ist konfi_confirmed: weder die Teamer noch die
+    // Abgemeldete zaehlen hinein.
+    expect(s.konfi_confirmed).toBe(2);
     expect(s.teamer_confirmed).toBe(1);
-    // Die Teilnehmerzahl ist konfi_confirmed — nicht minus Teamer,
-    // nicht plus Abgemeldete.
-    expect(s.konfi_confirmed).not.toBe(s.konfi_confirmed - s.teamer_confirmed);
+    expect(s.konfi_opted_out).toBe(1);
+    // gebucht_gesamt zaehlt Konfis und Teamer, aber keine Abgemeldeten.
+    expect(s.gebucht_gesamt).toBe(3);
+    // Und alle drei Zusagen stehen noch zum Verbuchen offen.
+    expect(s.konfi_offen).toBe(2);
+    expect(s.teamer_offen).toBe(1);
   });
 });
 
@@ -167,5 +198,62 @@ describe('event_booking_stats deckt sich mit den Endpunkten', () => {
 
     // Genau der Widerspruch, der am 25.08. auffiel: Detail zaehlte Teamer mit.
     expect(Number(res.body.registered_count)).toBe(s.konfi_confirmed);
+  });
+
+  // Ab 28.08.2026 lesen auch die beiden Konfi-Endpunkte die View. Ohne diese
+  // Gegenproben faellt es nicht auf, wenn dort kuenftig wieder eigenstaendig
+  // gezaehlt wird.
+  it('Konfi-Liste und View melden dieselbe Konfi-Zahl', async () => {
+    // Der Termin muss dem Jahrgang der Konfi zugeordnet sein, sonst kommt er
+    // in ihrer Liste gar nicht vor.
+    await db2.query(
+      `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id)
+       VALUES ($1, 1) ON CONFLICT DO NOTHING`,
+      [EVENT]
+    );
+
+    const { rows: [s] } = await db2.query(
+      'SELECT * FROM event_booking_stats WHERE event_id = $1', [EVENT]
+    );
+    const res = await request(app2)
+      .get('/api/konfi/events')
+      .set('Authorization', `Bearer ${generateToken('konfi1')}`);
+
+    const ev = res.body.find((e) => e.id === EVENT);
+    expect(ev).toBeDefined();
+    expect(Number(ev.registered_count)).toBe(s.konfi_confirmed);
+    expect(Number(ev.teamer_count)).toBe(s.teamer_confirmed);
+  });
+
+  it('Konfi-Terminstatus und View melden dieselbe Konfi-Zahl', async () => {
+    const { rows: [s] } = await db2.query(
+      'SELECT * FROM event_booking_stats WHERE event_id = $1', [EVENT]
+    );
+    const res = await request(app2)
+      .get(`/api/konfi/events/${EVENT}/status`)
+      .set('Authorization', `Bearer ${generateToken('konfi1')}`);
+
+    expect(res.status).toBe(200);
+    expect(Number(res.body.confirmed_count)).toBe(s.konfi_confirmed);
+    expect(Number(res.body.waitlist_count)).toBe(s.konfi_waitlist);
+  });
+
+  it('Abgesagte Termine und View melden dieselbe Konfi-Zahl', async () => {
+    await db2.query(
+      'UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1',
+      [EVENT]
+    );
+
+    const { rows: [s] } = await db2.query(
+      'SELECT * FROM event_booking_stats WHERE event_id = $1', [EVENT]
+    );
+    const res = await request(app2)
+      .get('/api/events/cancelled')
+      .set('Authorization', `Bearer ${generateToken('admin1')}`);
+
+    const ev = res.body.find((e) => e.id === EVENT);
+    // Vorher zaehlte diese Route Teamer mit und meldete 3 statt 2.
+    expect(Number(ev.registered_count)).toBe(s.konfi_confirmed);
+    expect(Number(ev.teamer_count)).toBe(s.teamer_confirmed);
   });
 });

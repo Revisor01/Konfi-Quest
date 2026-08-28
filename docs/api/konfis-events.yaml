@@ -943,13 +943,21 @@ paths:
     get:
       tags: ["Termine (Verwaltung)"]
       summary: Abgesagte Events auflisten (Leitungssicht)
+      description: >
+        GEAENDERT 2026-08-28: registered_count/waitlist_count/unprocessed_count
+        zaehlen jetzt NUR Konfis, wie an allen anderen Stellen. Vorher hatte
+        diese Route als einzige keinen Rollenfilter — derselbe Feldname
+        bedeutete hier "Konfis und Teamer", in der normalen Liste "nur Konfis".
+        Die Teamer stehen jetzt getrennt in teamer_count,
+        teamer_waitlist_count und teamer_unprocessed_count. Grundlage ist wie
+        bei den uebrigen Zaehlstellen die View event_booking_stats.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "kein Jahrgang-Filter (alle abgesagten Events der Org)"
       responses:
-        "200": { description: "Array abgesagter Events (e.*, Zaehler, categories[], jahrgaenge[], registration_status='cancelled')" }
+        "200": { description: "Array abgesagter Events (e.*, Konfi-Zaehler registered_count/waitlist_count/unprocessed_count, Teamer-Zaehler teamer_count/teamer_waitlist_count/teamer_unprocessed_count, categories[], jahrgaenge[], registration_status='cancelled')" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

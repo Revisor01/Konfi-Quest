@@ -1776,6 +1776,78 @@ describe('Chat Routes', () => {
       ]);
     });
 
+    // Messung 28.08.2026 (Punkt 5 des Handoffs): Das 403 fuer
+    // Nicht-Teilnehmende war gemessen, aber durch keinen Test festgehalten.
+    // Diese vier Tests halten den Ist-Zustand fest, damit er nicht still
+    // wegbricht.
+    //
+    // Beachte den Unterschied zum Abstimmen: Reagieren verlangt strikt einen
+    // Eintrag in chat_participants, kennt also KEINEN Leitungs-Zugriff auf
+    // Gruppen- und Jahrgangschats. Lesen der Reaktionen (GET, weiter unten)
+    // laesst die Leitung dagegen durch (darfRaumOeffnen). Beim Abstimmen wurde
+    // das am 28.08.2026 angeglichen; hier bleibt es bewusst beim strengeren
+    // Verhalten, solange es niemand anders entscheidet.
+    it('Fremde Gemeinde darf nicht reagieren -> 403', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi');
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(403);
+      expect(await reaktionenAus(id)).toEqual([]);
+    });
+
+    it('Leitung ohne Teilnahme darf im Gruppenchat nicht reagieren -> 403', async () => {
+      const orgAdmin1Token = generateToken('orgAdmin1');
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type)
+         VALUES ($1, $2, 'teamer', 'Hallo Gruppe', 'text') RETURNING id`,
+        [CHAT_ROOMS.group.id, USERS.teamer1.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${msg.id}/reactions`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Leitung DARF die Reaktionen desselben Raums aber lesen -> 200', async () => {
+      // Gegenprobe: Lesen laeuft ueber darfRaumOeffnen und laesst die Leitung
+      // durch. Die beiden Regeln sind unterschiedlich — festgehalten, damit
+      // niemand die eine fuer einen Fehler der anderen haelt.
+      const orgAdmin1Token = generateToken('orgAdmin1');
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type)
+         VALUES ($1, $2, 'teamer', 'Hallo Gruppe', 'text') RETURNING id`,
+        [CHAT_ROOMS.group.id, USERS.teamer1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/chat/messages/${msg.id}/reactions`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Nachricht, die es nicht gibt -> 404', async () => {
+      const res = await request(app)
+        .post('/api/chat/messages/999999/reactions')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(404);
+    });
+
     it('Alle drei Rollen reagieren auf dieselbe Nachricht -> drei Zeilen', async () => {
       // Gegenprobe zum zu engen CHECK: nur wenn alle drei user_type-Werte
       // erlaubt sind, stehen hier auch drei Reaktionen.

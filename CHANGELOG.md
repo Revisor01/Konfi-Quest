@@ -19,6 +19,11 @@ Versionsüberschrift.
   Kenntnis genommen hat. Bisher verschwand die Meldung nach vier Sekunden — wer
   gerade nicht hinsah, erfuhr nie davon.
 
+### Geändert
+- Bei abgesagten Terminen zählte die Teilnehmerzahl bisher Konfis und
+  Teamer:innen zusammen, während dieselbe Zahl überall sonst nur Konfis meint.
+  Jetzt ist sie überall gleich zu lesen; die Teamer:innen stehen daneben.
+
 ### Behoben
 - Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
   zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
@@ -40,6 +45,8 @@ Versionsüberschrift.
 - Eine ohne Netz abgegebene Stimme in einer Umfrage und eine Reaktion im Chat
   scheitern nicht mehr stillschweigend. Bisher wurde die Stimme angezeigt, kam
   aber womöglich nie an, und beim nächsten Laden war sie kommentarlos weg.
+- Terminlisten zählen Buchungen gelöschter Konten nicht mehr mit. Die Zahl in
+  der Liste konnte dadurch höher liegen als die Teilnehmerliste lang war.
 
 ## [2.0.0] - 2026-08-27
 

@@ -697,6 +697,72 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // GET /api/events/cancelled — Zaehlung angeglichen (28.08.2026)
+  //
+  // Diese Route hatte als einzige KEINEN Rollenfilter: registered_count hiess
+  // hier "Konfis UND Teamer", ueberall sonst "nur Konfis". Ein abgesagter
+  // Termin mit Teamer:innen meldete deshalb eine hoehere Zahl als die normale
+  // Liste fuer denselben Termin. Jetzt liest die Route event_booking_stats,
+  // wie die uebrigen Zaehlstellen auch.
+  // ================================================================
+  describe('GET /api/events/cancelled — Zaehlung', () => {
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', 1), ($3, $2, 'confirmed', 1), ($4, $2, 'confirmed', 1)`,
+        [USERS.konfi1.id, EVENTS.gottesdienstEvent.id, USERS.konfi2.id, USERS.teamer1.id]
+      );
+      await db.query(
+        'UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1',
+        [EVENTS.gottesdienstEvent.id]
+      );
+    });
+
+    it('registered_count zaehlt nur Konfis, Teamer stehen getrennt', async () => {
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+      // Zwei Konfis und eine Teamer:in — vorher stand hier 3.
+      expect(ev.registered_count).toBe(2);
+      expect(ev.teamer_count).toBe(1);
+    });
+
+    it('meldet dieselbe Konfi-Zahl wie die View', async () => {
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+
+      const { rows: [sicht] } = await db.query(
+        'SELECT * FROM event_booking_stats WHERE event_id = $1',
+        [EVENTS.gottesdienstEvent.id]
+      );
+
+      expect(ev.registered_count).toBe(sicht.konfi_confirmed);
+      expect(ev.waitlist_count).toBe(sicht.konfi_waitlist);
+      expect(ev.unprocessed_count).toBe(sicht.konfi_offen);
+      expect(ev.teamer_count).toBe(sicht.teamer_confirmed);
+    });
+
+    it('Abgemeldete zaehlen nicht als angemeldet', async () => {
+      await db.query(
+        "UPDATE event_bookings SET status = 'opted_out' WHERE user_id = $1 AND event_id = $2",
+        [USERS.konfi2.id, EVENTS.gottesdienstEvent.id]
+      );
+
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+
+      expect(ev.registered_count).toBe(1);
+    });
+  });
+
+  // ================================================================
   // DELETE /api/events/:id/book — Doppelversand (28.08.2026)
   //
   // Wie bei der Abmeldung: Kommt eine offline abgegebene Stornierung zweimal

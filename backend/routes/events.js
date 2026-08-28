@@ -164,32 +164,35 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 eb_user.attendance_status,
                 mat.material_count
         FROM events e
+        -- Zahlen aus der View statt aus einer eigenen Kopie (28.08.2026).
+        --
+        -- event_booking_stats liegt seit Migration 128 bereit und wurde von
+        -- keinem Endpunkt gelesen: Fuenf Stellen zaehlten dieselben Buchungen
+        -- getrennt und liefen im August dreimal auseinander. Die Spalten sind
+        -- deckungsgleich, nur anders benannt; die Namen nach aussen bleiben,
+        -- damit kein Aufrufer bricht.
+        --
+        -- Eine Verhaltensaenderung ist dabei: Die alte Kopie hatte einen
+        -- LEFT JOIN auf users ohne deleted_at-Filter und zaehlte Buchungen
+        -- geloeschter Konten mit. Die View filtert sie heraus — das ist der
+        -- Fehler, den ihr Kommentar (Migration 128) ausdruecklich meint.
         LEFT JOIN LATERAL (
           SELECT
-            -- registered_count/waitlist_count sind KONFI-Zahlen (Migration 120:
-            -- Teamer haben ein eigenes Kontingent). Ohne den Rollenfilter
-            -- zählten angemeldete Teamer gegen die Konfi-Plaetze, und
-            -- registration_status meldete "ausgebucht", obwohl für Konfis noch
-            -- Plaetze frei waren.
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
-            COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
-            -- Befund 3 (25.08.2026): Diese Zahl hatte als EINZIGE keinen
-            -- Rollenfilter, obwohl "Alle bestaetigen" nur Konfis verbucht
-            -- (events.js PUT /:id/participants/attendance-all). Ein Termin,
-            -- dessen Konfis alle verbucht sind, dessen Teamer aber nicht,
-            -- blieb dadurch dauerhaft im Verbuchen-Tab haengen — waehrend die
-            -- Karte ihn nicht als "Verbuchen" zeigte. Tab und Karte
-            -- widersprachen sich.
-            -- Bedeutung jetzt wie konfi_offen in event_booking_stats.
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL AND COALESCE(r_book.name, '') <> 'teamer') as unprocessed_count,
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL AND r_book.name = 'teamer') as teamer_unprocessed_count,
-            COUNT(*) as total_participants,
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count,
-            COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND r_book.name = 'teamer') as teamer_waitlist_count
-          FROM event_bookings eb
-          LEFT JOIN users u_book ON eb.user_id = u_book.id
-          LEFT JOIN roles r_book ON u_book.role_id = r_book.id
-          WHERE eb.event_id = e.id
+            COALESCE(ebs.konfi_confirmed, 0)   as registered_count,
+            COALESCE(ebs.konfi_waitlist, 0)    as waitlist_count,
+            COALESCE(ebs.konfi_offen, 0)       as unprocessed_count,
+            COALESCE(ebs.teamer_offen, 0)      as teamer_unprocessed_count,
+            COALESCE(ebs.teamer_confirmed, 0)  as teamer_count,
+            COALESCE(ebs.teamer_waitlist, 0)   as teamer_waitlist_count,
+            -- total_participants zaehlte alles inklusive Abgemeldeter.
+            -- gebucht_gesamt laesst sie aus, deshalb hier wieder dazu, damit
+            -- die Zahl nach aussen dieselbe bleibt. (Gelesen wird sie derzeit
+            -- von niemandem — weder Backend noch App.)
+            COALESCE(ebs.gebucht_gesamt, 0)
+              + COALESCE(ebs.konfi_opted_out, 0)
+              + COALESCE(ebs.teamer_opted_out, 0) as total_participants
+          FROM event_booking_stats ebs
+          WHERE ebs.event_id = e.id
         ) bstats ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
@@ -342,21 +345,40 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       const query = `
         SELECT e.*, 
-                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
+                -- Zahlen aus event_booking_stats (28.08.2026).
+                --
+                -- BEDEUTUNGSAENDERUNG, bewusst und abgestimmt: Diese Stelle
+                -- hatte als einzige KEINEN Rollenfilter. registered_count hiess
+                -- hier "Konfis UND Teamer", ueberall sonst "nur Konfis" — ein
+                -- abgesagter Termin mit 19 Konfis und 4 Teamer:innen meldete
+                -- 23, waehrend die Liste 19 zeigte. Derselbe Feldname mit zwei
+                -- Bedeutungen ist genau die Fehlerklasse, die im August dreimal
+                -- zugeschlagen hat.
+                --
+                -- Die Teamer gehen nicht verloren, sie stehen jetzt getrennt —
+                -- wie in der normalen Liste auch.
+                COALESCE(ebs.konfi_confirmed, 0)  as registered_count,
+                COALESCE(ebs.konfi_waitlist, 0)   as waitlist_count,
+                COALESCE(ebs.konfi_offen, 0)      as unprocessed_count,
+                COALESCE(ebs.teamer_confirmed, 0) as teamer_count,
+                COALESCE(ebs.teamer_waitlist, 0)  as teamer_waitlist_count,
+                COALESCE(ebs.teamer_offen, 0)     as teamer_unprocessed_count,
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
                 STRING_AGG(DISTINCT c.name, ', ') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names
         FROM events e
-        LEFT JOIN event_bookings eb ON e.id = eb.event_id
+        LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
         LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN jahrgaenge j ON eja.jahrgang_id = j.id
         WHERE e.organization_id = $1 AND e.cancelled = TRUE
-        GROUP BY e.id
+        -- Die ebs-Spalten muessen ins GROUP BY: Das STRING_AGG fuer Kategorien
+        -- und Jahrgaenge verlangt es, und die View liefert pro Termin genau
+        -- eine Zeile, gruppiert also nichts zusammen.
+        GROUP BY e.id, ebs.konfi_confirmed, ebs.konfi_waitlist, ebs.konfi_offen,
+                 ebs.teamer_confirmed, ebs.teamer_waitlist, ebs.teamer_offen
         ORDER BY e.cancelled_at DESC
       `;
       
@@ -800,6 +822,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         [eventId]
       );
 
+      // Bewusst NICHT auf event_booking_stats umgestellt (28.08.2026): Hier
+      // wird ueber die ohnehin schon geladene Teilnehmerliste gezaehlt, deren
+      // Abfrage bereits deleted_at filtert — die Bedeutung ist mit der View
+      // deckungsgleich. Ein Griff zur View waere eine zusaetzliche Abfrage fuer
+      // Zahlen, die hier schon im Speicher liegen. Aendert sich die Bedeutung
+      // der View, muessen diese vier Zeilen mitwandern.
+      //
       // registered_count/pending_count sind KONFI-Zahlen — dieselbe Semantik
       // wie die Liste (events.js, bstats-LATERAL). Ohne den Rollenfilter
       // zählte das Detail Teamer mit (Befund 2, 25.08.2026): bei einem
