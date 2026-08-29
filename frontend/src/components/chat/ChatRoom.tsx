@@ -520,11 +520,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     }
   };
 
-  // Teilen-Blatt fuer die ausgewaehlte Nachricht, Details in
-  // chatTeilen.nachrichtTeilen.
-  const handleShare = async () => {
-    if (!selectedMessage) return;
-    await nachrichtTeilen(selectedMessage, setError);
+  // Teilen-Blatt fuer eine Nachricht, Details in chatTeilen.nachrichtTeilen.
+  // Die Nachricht kommt als Argument, nicht aus selectedMessage: der frühere
+  // Weg setzte den Zustand und las ihn sofort wieder — also den Stand des
+  // vorigen Renderns. Solange nur die ohnehin ausgewählte Nachricht geteilt
+  // wurde, fiel das nicht auf; eine zweite Aufrufstelle hätte die falsche
+  // Nachricht geteilt.
+  const handleShareMessage = async (message: Message) => {
+    setSelectedMessage(message);
+    await nachrichtTeilen(message, setError);
   };
 
 
@@ -573,11 +577,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       </>
     );
   }
-
-  const handleShareMessage = (message: Message) => {
-    setSelectedMessage(message);
-    handleShare();
-  };
 
   return (
     <>

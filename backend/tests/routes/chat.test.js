@@ -1676,6 +1676,52 @@ describe('Chat Routes', () => {
   });
 
   // ================================================================
+  // DELETE /api/chat/rooms/:roomId — Raum loeschen raeumt die Dateien mit weg
+  // ================================================================
+  describe('DELETE /api/chat/rooms/:roomId (Dateien aufraeumen)', () => {
+    // Gefunden 28.08.2026 beim Aufteilen von events.js: Diese Stelle baute den
+    // Pfad ueber path.join(__dirname, '..', 'uploads', 'chat', ...), obwohl das
+    // Modul ein uploadsDir injiziert bekommt und es an vier anderen Stellen
+    // auch benutzt. Weicht das echte Upload-Verzeichnis vom Standardpfad ab —
+    // wie hier im Test und wie ueberall dort, wo die Uploads auf einem eigenen
+    // Volume liegen —, loeschte die Stelle am falschen Ort: Der Raum war weg,
+    // die Dateien blieben auf der Platte liegen.
+    // Gruppenraum, nicht Jahrgang: Jahrgangs-Raeume laufen ueber das Loeschen
+    // des Jahrgangs und lassen sich hier nicht direkt entfernen.
+    const RAUM = CHAT_ROOMS.group.id;
+    const chatDir = path.join(os.tmpdir(), 'konfi-test-uploads', 'chat');
+
+    it('loescht die Dateien im injizierten uploadsDir, nicht im Standardpfad', async () => {
+      fs.mkdirSync(chatDir, { recursive: true });
+      const dateiname = `test-raumloeschen-${Date.now()}.jpg`;
+      const dateipfad = path.join(chatDir, dateiname);
+      fs.writeFileSync(dateipfad, 'Inhalt');
+
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path)
+         VALUES ($1, $2, 'admin', 'file', 'Datei', $3)`,
+        [RAUM, USERS.admin1.id, dateiname]
+      );
+
+      expect(fs.existsSync(dateipfad)).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${RAUM}`)
+        .query({ force: 'true' })
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+
+      // Der Raum ist weg — und die Datei mit ihm.
+      expect(fs.existsSync(dateipfad)).toBe(false);
+
+      const { rows: [raum] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_rooms WHERE id = $1', [RAUM]
+      );
+      expect(raum.count).toBe(0);
+    });
+  });
+
+  // ================================================================
   // POST /api/chat/messages/:messageId/reactions
   // ================================================================
   describe('POST /api/chat/messages/:messageId/reactions', () => {

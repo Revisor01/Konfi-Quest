@@ -47,6 +47,9 @@ Versionsüberschrift.
   und die Elberfelder steht das noch aus.
 
 ### Behoben
+- Wird ein Chat-Raum gelöscht, verschwinden jetzt auch die darin geteilten
+  Bilder und Dateien zuverlässig. Je nachdem, wo die Uploads liegen, blieben
+  sie bisher auf dem Server zurück, obwohl der Raum weg war.
 - Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
   zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
   weiter Mitteilungen für das abgemeldete Konto.
@@ -77,6 +80,11 @@ Versionsüberschrift.
   wird alles rückgängig gemacht statt ein Teil stehenzulassen.
 - Meldet sich jemand ab, während gleichzeitig jemand anders bucht, kann der
   Termin nicht mehr überbelegt werden.
+- Beim Teilen einer Chat-Nachricht wird sicher die angetippte Nachricht
+  geteilt.
+
+### Sonstiges
+- Ungenutzte Reste aus der Aufteilung der Chat-Ansicht entfernt.
 
 ## [2.0.0] - 2026-08-27
 

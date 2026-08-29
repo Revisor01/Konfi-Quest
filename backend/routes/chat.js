@@ -2258,12 +2258,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         await client.query("DELETE FROM chat_rooms WHERE id = $1", [roomId]);
 
         // 7. Clean up files from filesystem (best effort, don't fail if files don't exist)
+        // Der Pfad kommt aus dem injizierten uploadsDir, nicht aus __dirname:
+        // sonst raeumt diese Stelle am Standardpfad auf, waehrend die Dateien
+        // woanders liegen, sobald das Upload-Verzeichnis abweicht.
         const fs = require('fs').promises;
         const path = require('path');
 
         for (const fileRecord of filesForDeletion) {
           try {
-            const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
+            const fullPath = path.join(uploadsDir, 'chat', fileRecord.file_path);
             await fs.unlink(fullPath);
           } catch (fileErr) {
  console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);

@@ -8,7 +8,6 @@ import { compressImage } from '../../services/mediaCompression';
 import { openFileNatively } from '../../utils/nativeFileViewer';
 import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
 import { Message } from '../../types/chat';
-import { takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
 
 /**
  * Datei-Handling des Chatraums (beim Aufteilen von ChatRoom.tsx hierher
@@ -94,40 +93,6 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     };
   }, [selectedFilePreview]);
 
-  const takePicture = async () => {
-    try {
-      const result = await takePictureHelper();
-      if (result) {
-        if (result.file.size > 10 * 1024 * 1024) {
-          setError('Foto ist zu groß (max. 10MB)');
-          return;
-        }
-        setSelectedFile(result.file);
-        setSelectedFilePreview(result.previewUrl);
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      setError('Kamera-Zugriff fehlgeschlagen');
-    }
-  };
-
-  const selectFromGallery = async () => {
-    try {
-      const result = await selectFromGalleryHelper();
-      if (result) {
-        if (result.file.size > 10 * 1024 * 1024) {
-          setError('Foto ist zu groß (max. 10MB)');
-          return;
-        }
-        setSelectedFile(result.file);
-        setSelectedFilePreview(result.previewUrl);
-      }
-    } catch (error) {
-      console.error('Gallery error:', error);
-      setError('Galerie-Zugriff fehlgeschlagen');
-    }
-  };
-
   const clearSelectedFile = () => {
     if (selectedFilePreview) {
       URL.revokeObjectURL(selectedFilePreview);
@@ -175,8 +140,6 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     selectedFile,
     selectedFilePreview,
     handleFileSelect,
-    takePicture,
-    selectFromGallery,
     clearSelectedFile,
     handleFileClick,
   };
