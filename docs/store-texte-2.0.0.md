@@ -7,7 +7,19 @@ Beide Texte sind getrennt zu verwenden — niemals mischen.
 
 ## iOS — App Store Connect, "Neues in dieser Version"
 
-Zeichen: 1828 (Limit 4000)
+> **Kein Wort über andere Plattformen — Apple lehnt danach ab.**
+> Am 29.08.2026 wurde 2.0.0 (Build 149) unter Guideline 2.3.10 zurückgewiesen,
+> weil im letzten Absatz "der Anzeige auf Android" stand. Ein einziger
+> Halbsatz, gedacht als Aufzählung behobener Fehler. Die Ablehnung kostete
+> zwei Tage Wartezeit, danach eine neue Prüfrunde — der Build selbst war in
+> Ordnung und blieb unverändert.
+> Verboten sind Android, Google Play, Windows und Verweise auf eine Web-App,
+> in JEDEM Feld: Neues in dieser Version, Beschreibung, Werbetext, Keywords.
+> Vor dem Einreichen prüfen:
+> `grep -niE "android|google play|play store|windows" docs/store-texte-*.md`
+> — im iOS-Abschnitt darf davon nichts stehen.
+
+Zeichen: 1820 (Limit 4000)
 
 ```
 Konfi Quest 2.0 ist das größte Update bisher.
@@ -28,7 +40,7 @@ Offline
 Termine, Tageslosung und das Melden von Aktivitäten funktionieren jetzt auch ohne Verbindung; Meldungen werden nachgesendet. Aktionen, die wirklich Netz brauchen, sagen das.
 
 Außerdem
-Listen und Zähler aktualisieren sich live bei allen Beteiligten. Der Jahresrückblick erzählt jetzt euren eigenen Weg statt Platzierungen. Dazu viele Korrekturen an Abzeichen, Terminzahlen, Anwesenheit und der Anzeige auf Android.
+Listen und Zähler aktualisieren sich live bei allen Beteiligten. Der Jahresrückblick erzählt jetzt euren eigenen Weg statt Platzierungen. Dazu viele Korrekturen an Abzeichen, Terminzahlen, Anwesenheit und der Darstellung.
 
 Diese Version braucht iOS 16.4 oder neuer.
 ```
