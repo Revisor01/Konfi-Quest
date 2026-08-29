@@ -133,9 +133,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
+    const isSuperadmin = currentUser?.is_super_admin;
 
     // Konfis werden über separate KonfiModal erstellt
     if (roleName === 'konfi') return false;
+
+    if (roleName === 'super_admin') {
+      return isSuperadmin || userRole === 'super_admin';
+    }
 
     if (userRole === 'org_admin') {
       return roleName !== 'konfi';
