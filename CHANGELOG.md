@@ -47,6 +47,9 @@ iOS-Build 151
   zeigen dieselben Zahlen.
 
 ### Behoben
+- Öffnet die Leitung ohne Verbindung einen Termin, steht jetzt der Termin da
+  statt einer roten Fehlermeldung ohne Titel. Teilnehmerliste und Abmeldungen
+  bleiben dabei leer — die brauchen eine Verbindung.
 - Wird ein Chat-Raum gelöscht, verschwinden jetzt auch die darin geteilten
   Bilder und Dateien zuverlässig. Je nachdem, wo die Uploads liegen, blieben
   sie bisher auf dem Server zurück, obwohl der Raum weg war.

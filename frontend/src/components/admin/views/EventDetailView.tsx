@@ -13,6 +13,7 @@ import {
   returnUpBack, qrCodeOutline, chatbubbleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { offlineCache } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
@@ -98,7 +99,7 @@ interface EventDetailViewProps {
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
-  const { setSuccess, setError, isOnline } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const router = useIonRouter();
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
@@ -197,9 +198,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     filterRole: 'konfi'
   });
 
+  // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
+  // aus dem Cache gezeigte Grundstand durch die vollen Detaildaten
+  // (Teilnehmer, Abmeldungen) ersetzt werden. Ohne das bliebe die Seite auf
+  // dem Offline-Stand stehen, bis man sie verlaesst und neu oeffnet.
   useEffect(() => {
     loadEventData();
-  }, [eventId]);
+  }, [eventId, isOnline]);
 
   useEffect(() => {
     setPresentingElement(pageRef.current);
@@ -217,6 +222,37 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // stillLaden: bei Live-Ereignissen ohne Ladebalken nachladen, sonst
     // flackert die Teilnehmerliste bei jedem QR-Scan.
     if (!stillLaden) setLoading(true);
+
+    // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
+    // Listen-Cache zeigen. Vorher lief der Abruf ins Leere, eventData blieb
+    // null und die Seite zeigte nur "Fehler beim Laden der Event-Daten" —
+    // ein roter Kasten ohne Titel, obwohl der Termin in der Liste davor
+    // sichtbar war (Nutzerhinweis 29.08.2026).
+    //
+    // Dieselbe Klasse Fehler war in der Konfi-Ansicht am 25.08.2026 behoben
+    // worden; die Leitungssicht blieb dabei aussen vor. Drei Ansichten, eine
+    // Aenderung an einer davon.
+    //
+    // Die Liste liefert nur den Grundstand: Teilnehmerliste und Abmeldungen
+    // haengen an GET /events/:id und bleiben offline leer. Besser der Titel
+    // mit Datum als gar nichts.
+    if (!isOnline) {
+      try {
+        const gecacht = await offlineCache.get<Event[]>('admin:events:' + user?.organization_id);
+        const ausListe = gecacht?.data?.find((e) => e.id === eventId) || null;
+        if (ausListe) {
+          setEventData(ausListe);
+          setError('');
+        } else {
+          setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+        }
+      } catch {
+        setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
       const eventRes = await api.get(`/events/${eventId}`);
       setEventData(eventRes.data);
