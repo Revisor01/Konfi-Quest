@@ -377,3 +377,176 @@ describe('writeQueue — H1: abgelehnte Nachreichungen verschwinden nicht mehr s
     expect(await writeQueue.getFailedActions()).toHaveLength(0);
   });
 });
+
+// ====================================================================
+// Umfrage-Stimme und Reaktion scheitern nicht mehr lautlos (28.08.2026)
+//
+// Beide wurden als 'fire-and-forget' eingereiht. handleFlushResult
+// ueberspringt diesen Typ vollstaendig — kein Toast, kein Merker. Die Stimme
+// wurde optimistisch angezeigt, kam aber nie an, und beim naechsten Laden war
+// sie kommentarlos weg. Der Typ 'chat-aktion' trennt jetzt die bewussten
+// Handlungen von den stillen Hintergrund-Aufraeumern.
+// ====================================================================
+describe('writeQueue — bewusste Chat-Handlungen werden gemeldet', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  const stimmItem = (clientId: string) => ({
+    method: 'POST' as const,
+    url: '/chat/polls/7/vote',
+    body: { option_index: 0 },
+    maxRetries: 3,
+    hasFileUpload: false,
+    metadata: { type: 'chat-aktion' as const, clientId, label: 'Abstimmung' },
+  });
+
+  it('eine abgelehnte Stimme wird gemerkt (der Befund)', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    // 409 = exklusive Option bereits vergeben. Genau der Fall, von dem
+    // offline niemand erfuhr.
+    mockPost.mockRejectedValue({ response: { status: 409 }, message: 'Diese Option ist bereits vergeben' });
+
+    await writeQueue.enqueue(stimmItem('c-stimme'));
+    await writeQueue.flush();
+
+    const gemerkt = await writeQueue.getFailedActions();
+    expect(gemerkt).toHaveLength(1);
+    expect(gemerkt[0].label).toBe('Abstimmung');
+    expect(gemerkt[0].type).toBe('chat-aktion');
+    expect(gemerkt[0].error.status).toBe(409);
+  });
+
+  it('eine abgelehnte Reaktion wird gemerkt', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockRejectedValue({ response: { status: 403 }, message: 'Zugriff verweigert' });
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/chat/messages/7/reactions',
+      body: { emoji: '👍' },
+      maxRetries: 3,
+      hasFileUpload: false,
+      metadata: { type: 'chat-aktion' as const, clientId: 'c-reaktion', label: 'Reaktion' },
+    });
+    await writeQueue.flush();
+
+    const gemerkt = await writeQueue.getFailedActions();
+    expect(gemerkt).toHaveLength(1);
+    expect(gemerkt[0].label).toBe('Reaktion');
+  });
+
+  it('stille Hintergrund-Aufraeumer bleiben still — der erlaubte Fall', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockRejectedValue({ response: { status: 401 }, message: 'Unauthorized' });
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/notifications/mark-read',
+      body: {},
+      maxRetries: 3,
+      hasFileUpload: false,
+      metadata: { type: 'fire-and-forget' as const, clientId: 'c-still', label: 'Mark-Read' },
+    });
+    await writeQueue.flush();
+
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+  });
+
+  it('eine durchgegangene Stimme wird nicht gemerkt', async () => {
+    const { writeQueue } = await import('../../services/writeQueue');
+    mockPost.mockResolvedValue({ data: { action: 'added' } });
+
+    await writeQueue.enqueue(stimmItem('c-ok'));
+    await writeQueue.flush();
+
+    expect(await writeQueue.getFailedActions()).toHaveLength(0);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+  });
+});
+
+// ====================================================================
+// Aenderungs-Melder (28.08.2026)
+//
+// Die Anzeige "Wird gesendet..." aktualisierte sich nur, wenn die zugehoerige
+// Liste neu lud. Leerte sich die Queue im Hintergrund (Reconnect, App-Start),
+// blieb der Hinweis stehen, bis jemand zog.
+// ====================================================================
+describe('writeQueue — meldet Aenderungen an die Anzeige', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('Einreihen und erfolgreiches Senden melden je eine Aenderung', async () => {
+    const { writeQueue, onQueueChanged } = await import('../../services/writeQueue');
+    mockPost.mockResolvedValue({ data: {} });
+
+    let meldungen = 0;
+    const abmelden = onQueueChanged(() => { meldungen++; });
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/konfi/events/5/opt-out',
+      body: { reason: 'krank' },
+      maxRetries: 5,
+      hasFileUpload: false,
+      metadata: { type: 'opt-out' as const, clientId: 'c-melde', label: 'Abmeldung' },
+    });
+    expect(meldungen).toBeGreaterThanOrEqual(1);
+
+    const vorFlush = meldungen;
+    await writeQueue.flush();
+    // Das Leeren der Queue meldet sich ebenfalls — genau darauf wartet die
+    // Anzeige, um den Hinweis wieder zu entfernen.
+    expect(meldungen).toBeGreaterThan(vorFlush);
+
+    abmelden();
+  });
+
+  it('Abgemeldete Melder werden nicht mehr gerufen', async () => {
+    const { writeQueue, onQueueChanged } = await import('../../services/writeQueue');
+
+    let meldungen = 0;
+    const abmelden = onQueueChanged(() => { meldungen++; });
+    abmelden();
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/konfi/events/5/opt-out',
+      body: { reason: 'krank' },
+      maxRetries: 5,
+      hasFileUpload: false,
+      metadata: { type: 'opt-out' as const, clientId: 'c-ab', label: 'Abmeldung' },
+    });
+
+    expect(meldungen).toBe(0);
+  });
+
+  it('Ein kaputter Melder legt die Warteschlange nicht lahm', async () => {
+    const { writeQueue, onQueueChanged } = await import('../../services/writeQueue');
+    mockPost.mockResolvedValue({ data: {} });
+
+    const abmelden = onQueueChanged(() => { throw new Error('kaputt'); });
+
+    await writeQueue.enqueue({
+      method: 'POST' as const,
+      url: '/konfi/events/5/opt-out',
+      body: { reason: 'krank' },
+      maxRetries: 5,
+      hasFileUpload: false,
+      metadata: { type: 'opt-out' as const, clientId: 'c-kaputt', label: 'Abmeldung' },
+    });
+    const ergebnis = await writeQueue.flush();
+
+    expect(ergebnis.succeeded).toHaveLength(1);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+
+    abmelden();
+  });
+});

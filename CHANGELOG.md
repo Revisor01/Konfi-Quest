@@ -7,6 +7,85 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [2.1.0] - 2026-08-29
+
+iOS-Build 151
+
+### Hinzugefügt
+- Wartende Vorgänge sind jetzt überall in der App sichtbar: Solange etwas ohne
+  Netz eingetragen wurde und noch nicht gesendet ist, steht unten ein Hinweis,
+  der antippbar die offenen Vorgänge zeigt. Bisher gab es das nur bei den
+  Anträgen; Abmeldungen, Buchungen und alle Aktionen der Leitung liefen
+  unsichtbar.
+- Was endgültig nicht gesendet werden konnte, bleibt sichtbar, bis man es zur
+  Kenntnis genommen hat. Bisher verschwand die Meldung nach vier Sekunden — wer
+  gerade nicht hinsah, erfuhr nie davon.
+- Beim Wählen des Konfispruchs steht jetzt der Wortlaut da — in Luther 2017
+  und in der Gute Nachricht Bibel. Bisher sah man nur die Stellenangabe und
+  den Hinweis, der Text werde noch ergänzt. Für die Bibel in gerechter Sprache
+  und die Elberfelder steht das noch aus.
+
+### Geändert
+- In der Leitungssicht heißt ein verbuchter Antrag jetzt **Verbucht** statt
+  „Genehmigt" — dasselbe Wort wie bei den Terminen. Es sagt, was passiert ist:
+  Die Punkte sind gutgeschrieben.
+- Tippt man im Teamer-Bereich ein noch nicht erreichtes Abzeichen an, steht
+  jetzt sein Name da statt „???" — man sieht, was es zu holen gibt. Bei Konfis
+  war das schon so. Wirklich geheime Abzeichen bleiben weiterhin verdeckt.
+- Die automatisch vergebenen Passwörter sind jetzt echte Bibelstellen: Wer
+  `Rut4,17` bekommt, kann den Vers aufschlagen. Bisher wurden Kapitel und Vers
+  blind gewürfelt, unabhängig vom Buch — dabei entstanden auch Angaben, die es
+  gar nicht gibt. Bücher mit Ordnungszahl sind jetzt vollständig dabei
+  (`1Korinther13,4`), und kein Passwort ist mehr zu kurz für die eigenen
+  Vorgaben.
+- Bei abgesagten Terminen zählte die Teilnehmerzahl bisher Konfis und
+  Teamer:innen zusammen, während dieselbe Zahl überall sonst nur Konfis meint.
+  Jetzt ist sie überall gleich zu lesen; die Teamer:innen stehen daneben.
+- Die Abzeichen-Zahlen im Teamer-Bereich („x von y", „x Geheimnisse") zählen
+  jetzt genauso wie bei den Konfis: Abgeschaltete und nicht erreichbare
+  Abzeichen blähen die Ziele nicht mehr auf, und Dashboard und Abzeichen-Seite
+  zeigen dieselben Zahlen.
+
+### Behoben
+- Wird ein Chat-Raum gelöscht, verschwinden jetzt auch die darin geteilten
+  Bilder und Dateien zuverlässig. Je nachdem, wo die Uploads liegen, blieben
+  sie bisher auf dem Server zurück, obwohl der Raum weg war.
+- Abmelden entfernt den Push-Token jetzt auch dann, wenn man gerade in einer
+  zweiten Gemeinde angemeldet ist. Vorher blieb er stehen und das Gerät bekam
+  weiter Mitteilungen für das abgemeldete Konto.
+- Abstimmen in Umfragen folgt derselben Regel wie der übrige Chat: Die Leitung
+  kann jetzt auch in ihrer eigenen Umfrage in einem Gruppenchat abstimmen, in
+  dem sie nicht als Mitglied eingetragen ist. Fremde Zweiergespräche bleiben
+  weiterhin zu.
+- Gesperrte und gelöschte Konten bekommen keine Mitteilungen mehr. Wer aus dem
+  Team ausgeschieden war, wurde bisher weiter über neue Anträge und Termine
+  informiert.
+- Wer die App länger nicht öffnet, bekommt danach wieder Mitteilungen. Bisher
+  endete die Zustellung nach 30 Tagen Pause stillschweigend.
+- Die Antragsliste lässt sich jetzt nach offen, verbucht oder abgelehnt
+  abfragen. Bisher kam immer alles zurück, egal was angefragt war.
+- Eine offline abgegebene Abmeldung oder Stornierung wird nicht mehr als
+  fehlgeschlagen gemeldet, wenn sie in Wahrheit angekommen war. Bisher konnte
+  eine erfolgreiche Abmeldung als Fehler in der Liste stehen.
+- Eine ohne Netz abgegebene Stimme in einer Umfrage und eine Reaktion im Chat
+  scheitern nicht mehr stillschweigend. Bisher wurde die Stimme angezeigt, kam
+  aber womöglich nie an, und beim nächsten Laden war sie kommentarlos weg.
+- Terminlisten zählen Buchungen gelöschter Konten nicht mehr mit. Die Zahl in
+  der Liste konnte dadurch höher liegen als die Teilnehmerliste lang war.
+- Bei Terminserien über eine Monatsgrenze hinweg öffnete die Anmeldung erst
+  nach dem Termin — niemand konnte sich anmelden. Betroffen war jeder Termin
+  einer solchen Serie.
+- Wird jemand von einem Termin entfernt oder auf die Warteliste gesetzt, kann
+  der Punktestand nicht mehr halb verändert zurückbleiben. Bricht etwas ab,
+  wird alles rückgängig gemacht statt ein Teil stehenzulassen.
+- Meldet sich jemand ab, während gleichzeitig jemand anders bucht, kann der
+  Termin nicht mehr überbelegt werden.
+- Beim Teilen einer Chat-Nachricht wird sicher die angetippte Nachricht
+  geteilt.
+
+### Sonstiges
+- Ungenutzte Reste aus der Aufteilung der Chat-Ansicht entfernt.
+
 ## [2.0.0] - 2026-08-27
 
 **Neu ist vor allem eins: Challenges.** Alles andere in dieser Liste sind

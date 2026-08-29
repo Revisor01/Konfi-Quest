@@ -42,3 +42,25 @@ steht im Kapitel [Punkte, Level und Ziele](40-punkte.md).
 Beitrag antwortet — Text, Foto, Aufnahme oder Link. Es gibt keine Zähler und
 keine Rangliste, nur ein Stempel fürs Mitmachen. Das ist Absicht: Hier
 soll niemand rechnen.
+
+## Ohne Netz weiterarbeiten
+
+Vieles geht auch ohne Verbindung: eine Aktivität melden, sich von einem
+Pflichttermin abmelden, im Chat schreiben, als Leitung eine Kategorie oder
+einen Jahrgang anlegen. Die App merkt sich, was zu tun ist, und sendet es,
+sobald wieder Netz da ist.
+
+Solange etwas aussteht, erscheint unten über der Leiste ein oranger Hinweis
+**„… wird gesendet"**. Antippen zeigt, was genau noch offen ist. Verschwindet
+der Hinweis, ist alles angekommen.
+
+Geht etwas endgültig schief — etwa weil der Anmeldeschluss inzwischen vorbei
+war —, wird der Hinweis rot: **„… wurde nicht gesendet"**. Auch hier zeigt
+Antippen die Einzelheiten, und man kann den Eintrag wegwischen, wenn man ihn
+zur Kenntnis genommen hat. So geht keine Meldung mehr unbemerkt verloren.
+
+Ein paar Dinge brauchen zwingend Netz, weil sie sich nicht nachreichen lassen:
+sich zu einem Termin **anmelden** (der freie Platz ließe sich nicht
+zurückhalten), einen **QR-Code scannen** und einen **Challenge-Beitrag**
+abschicken. Die App sagt in diesen Fällen deutlich, dass es gerade nicht geht,
+statt etwas zu versprechen, das sie nicht halten kann.

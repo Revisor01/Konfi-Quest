@@ -696,6 +696,131 @@ describe('Events Routes', () => {
     });
   });
 
+  // ================================================================
+  // GET /api/events/cancelled — Zaehlung angeglichen (28.08.2026)
+  //
+  // Diese Route hatte als einzige KEINEN Rollenfilter: registered_count hiess
+  // hier "Konfis UND Teamer", ueberall sonst "nur Konfis". Ein abgesagter
+  // Termin mit Teamer:innen meldete deshalb eine hoehere Zahl als die normale
+  // Liste fuer denselben Termin. Jetzt liest die Route event_booking_stats,
+  // wie die uebrigen Zaehlstellen auch.
+  // ================================================================
+  describe('GET /api/events/cancelled — Zaehlung', () => {
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', 1), ($3, $2, 'confirmed', 1), ($4, $2, 'confirmed', 1)`,
+        [USERS.konfi1.id, EVENTS.gottesdienstEvent.id, USERS.konfi2.id, USERS.teamer1.id]
+      );
+      await db.query(
+        'UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1',
+        [EVENTS.gottesdienstEvent.id]
+      );
+    });
+
+    it('registered_count zaehlt nur Konfis, Teamer stehen getrennt', async () => {
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+      // Zwei Konfis und eine Teamer:in — vorher stand hier 3.
+      expect(ev.registered_count).toBe(2);
+      expect(ev.teamer_count).toBe(1);
+    });
+
+    it('meldet dieselbe Konfi-Zahl wie die View', async () => {
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+
+      const { rows: [sicht] } = await db.query(
+        'SELECT * FROM event_booking_stats WHERE event_id = $1',
+        [EVENTS.gottesdienstEvent.id]
+      );
+
+      expect(ev.registered_count).toBe(sicht.konfi_confirmed);
+      expect(ev.waitlist_count).toBe(sicht.konfi_waitlist);
+      expect(ev.unprocessed_count).toBe(sicht.konfi_offen);
+      expect(ev.teamer_count).toBe(sicht.teamer_confirmed);
+    });
+
+    it('Abgemeldete zaehlen nicht als angemeldet', async () => {
+      await db.query(
+        "UPDATE event_bookings SET status = 'opted_out' WHERE user_id = $1 AND event_id = $2",
+        [USERS.konfi2.id, EVENTS.gottesdienstEvent.id]
+      );
+
+      const res = await request(app)
+        .get('/api/events/cancelled')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const ev = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+
+      expect(ev.registered_count).toBe(1);
+    });
+  });
+
+  // ================================================================
+  // DELETE /api/events/:id/book — Doppelversand (28.08.2026)
+  //
+  // Wie bei der Abmeldung: Kommt eine offline abgegebene Stornierung zweimal
+  // an, fand der zweite Lauf keine Buchung mehr und meldete 404 — ein
+  // erfolgreicher Vorgang wurde als Fehler angezeigt und im Fehl-Merker
+  // abgelegt. Ein Termin, den es gar nicht gibt, bleibt aber 404.
+  // ================================================================
+  describe('DELETE /api/events/:id/book', () => {
+    beforeEach(async () => {
+      await request(app)
+        .post(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+    });
+
+    it('Erste Stornierung entfernt die Buchung -> 200', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [USERS.konfi1.id, EVENTS.gottesdienstEvent.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Zweiter Versand derselben Stornierung ist kein Fehler -> 200', async () => {
+      await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      const zweite = await request(app)
+        .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(zweite.status).toBe(200);
+      expect(zweite.body.bereits_storniert).toBe(true);
+    });
+
+    it('Termin einer fremden Gemeinde bleibt 404', async () => {
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.event2.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Termin, den es nicht gibt, bleibt 404', async () => {
+      const res = await request(app)
+        .delete('/api/events/99999/book')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe('POST /api/events/:id/book', () => {
     it('Konfi bucht freiwilliges Event -> 201 confirmed', async () => {
       const res = await request(app)
@@ -1906,12 +2031,18 @@ describe('Events Routes', () => {
       expect(res.body.message).toContain('storniert');
     });
 
-    it('Stornierung ohne Buchung gibt 404', async () => {
+    // Geaendert 28.08.2026: Vorher erwartete dieser Test 404 fuer einen
+    // vorhandenen Termin ohne eigene Buchung. Das war der Fall, an dem ein
+    // erfolgreicher Doppelversand aus der Warteschlange als Fehler ankam. Der
+    // Termin existiert und die Buchung ist weg — das Ziel ist erreicht. Fuer
+    // einen Termin, den es nicht gibt, bleibt es beim 404 (Test weiter oben).
+    it('Stornierung ohne Buchung ist kein Fehler, der Termin existiert ja -> 200', async () => {
       const res = await request(app)
         .delete(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
         .set('Authorization', `Bearer ${konfiToken}`);
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
+      expect(res.body.bereits_storniert).toBe(true);
     });
   });
 
@@ -2295,6 +2426,104 @@ describe('Events Routes', () => {
       return { start_time: s.toISOString(), end_time: e.toISOString(), max_participants: 5 };
     };
 
+    // Umgebaut 28.08.2026: Die Timeslots entstanden vorher als N einzelne
+    // INSERTs in einem Promise.all ueber N Pool-Verbindungen, jetzt als ein
+    // Multi-Row-INSERT in der Transaktion. Genau dieser Pfad war ungetestet —
+    // die vorhandenen Timeslot-Tests pruefen nur Faelle, in denen KEINE Slots
+    // angelegt werden.
+    it('POST mit mehreren Timeslots legt sie alle korrekt an', async () => {
+      const s1 = new Date(); s1.setDate(s1.getDate() + 10); s1.setHours(9, 0, 0, 0);
+      const e1 = new Date(s1); e1.setHours(10, 0, 0, 0);
+      const s2 = new Date(s1); s2.setHours(11, 0, 0, 0);
+      const e2 = new Date(s1); e2.setHours(12, 0, 0, 0);
+      const s3 = new Date(s1); s3.setHours(14, 0, 0, 0);
+      const e3 = new Date(s1); e3.setHours(15, 0, 0, 0);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Workshop mit drei Slots',
+          event_date: s1.toISOString(),
+          max_participants: 16,
+          has_timeslots: true,
+          timeslots: [
+            { start_time: s1.toISOString(), end_time: e1.toISOString(), max_participants: 5 },
+            { start_time: s2.toISOString(), end_time: e2.toISOString(), max_participants: 8 },
+            { start_time: s3.toISOString(), end_time: e3.toISOString(), max_participants: 3 },
+          ],
+        });
+
+      expect(createRes.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT start_time, end_time, max_participants, organization_id
+           FROM event_timeslots WHERE event_id = $1 ORDER BY start_time`,
+        [createRes.body.id]
+      );
+
+      expect(rows.length).toBe(3);
+      // Die Kapazitaeten muessen dem jeweils richtigen Slot zugeordnet sein —
+      // beim Multi-Row-INSERT waere ein Vertauschen der haeufigste Fehler.
+      expect(rows.map(r => r.max_participants)).toEqual([5, 8, 3]);
+      // Und die Organisation muss gesetzt sein, sonst faellt der Slot aus
+      // jeder org-gefilterten Abfrage.
+      expect(rows.every(r => r.organization_id === ORGS.testGemeinde.id)).toBe(true);
+      // Zeiten kommen als echte Zeitstempel zurueck, nicht als Text.
+      expect(rows[0].start_time.getTime()).toBe(s1.getTime());
+      expect(rows[0].end_time.getTime()).toBe(e1.getTime());
+    });
+
+    it('Ein einzelner Timeslot funktioniert genauso', async () => {
+      const s1 = new Date(); s1.setDate(s1.getDate() + 10); s1.setHours(9, 0, 0, 0);
+      const e1 = new Date(s1); e1.setHours(10, 0, 0, 0);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ein Slot',
+          event_date: s1.toISOString(),
+          max_participants: 7,
+          has_timeslots: true,
+          timeslots: [{ start_time: s1.toISOString(), end_time: e1.toISOString(), max_participants: 7 }],
+        });
+
+      expect(createRes.status).toBe(201);
+      const { rows } = await db.query(
+        'SELECT max_participants FROM event_timeslots WHERE event_id = $1',
+        [createRes.body.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].max_participants).toBe(7);
+    });
+
+    it('Schlaegt die Anlage fehl, bleibt KEIN halbes Event zurueck', async () => {
+      // Der Kern der Transaktion: Ein ungueltiger Jahrgang aus einer fremden
+      // Organisation wird abgewiesen — und zwar bevor irgendetwas entsteht.
+      const vorher = await db.query(
+        'SELECT COUNT(*)::int AS n FROM events WHERE organization_id = $1',
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Darf nicht entstehen',
+          event_date: futureDate(),
+          jahrgang_ids: [JAHRGAENGE.jahrgang2.id], // gehoert zu Org 2
+        });
+
+      expect(res.status).toBe(400);
+
+      const nachher = await db.query(
+        'SELECT COUNT(*)::int AS n FROM events WHERE organization_id = $1',
+        [ORGS.testGemeinde.id]
+      );
+      expect(nachher.rows[0].n).toBe(vorher.rows[0].n);
+    });
+
     it('POST mandatory=true mit has_timeslots -> Server erzwingt has_timeslots=false, keine Timeslots angelegt', async () => {
       const createRes = await request(app)
         .post('/api/events')
@@ -2578,6 +2807,102 @@ describe('Events Routes', () => {
       expect(rows.length).toBe(4);
       // Alle Events hängen an derselben series_id
       expect(new Set(rows.map(r => String(r.series_id))).size).toBe(1);
+    });
+
+    // Befund 28.08.2026: Das Anmeldefenster wurde ueber `getDate()`
+    // verschoben — das liefert nur den TAG IM MONAT, nicht die verstrichene
+    // Zeit. Ueber eine Monatsgrenze hinweg ergab das Unsinn: Termin am 1.9.,
+    // Anmeldung ab 25.8. wurde zu "1 minus 25 = -24 Tage" statt der echten 7.
+    // Gemessen verschob sich das Fenster um 31 Tage, bei JEDEM Termin der
+    // Serie — die Anmeldung oeffnete durchgehend NACH dem Termin.
+    it('Anmeldefenster behaelt seinen Abstand ueber Monatsgrenzen (der Befund)', async () => {
+      // Fester Termin am 1. eines Monats, Anmeldung 7 Tage vorher im
+      // VORMONAT. Genau die Konstellation, die vorher kippte.
+      const terminDatum = new Date();
+      terminDatum.setFullYear(terminDatum.getFullYear() + 1);
+      terminDatum.setMonth(8, 1); // 1. September naechsten Jahres
+      terminDatum.setHours(18, 0, 0, 0);
+
+      const anmeldungAb = new Date(terminDatum);
+      anmeldungAb.setDate(anmeldungAb.getDate() - 7); // 25. August
+      const anmeldungBis = new Date(terminDatum);
+      anmeldungBis.setDate(anmeldungBis.getDate() - 1); // 31. August
+
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Monatsgrenze',
+          event_date: terminDatum.toISOString(),
+          registration_opens_at: anmeldungAb.toISOString(),
+          registration_closes_at: anmeldungBis.toISOString(),
+          max_participants: 20,
+          series_count: 3,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT event_date, registration_opens_at, registration_closes_at
+           FROM events
+          WHERE name LIKE 'Monatsgrenze%' AND organization_id = $1
+          ORDER BY event_date`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows.length).toBe(3);
+
+      const TAG = 24 * 60 * 60 * 1000;
+      for (const zeile of rows) {
+        const termin = new Date(zeile.event_date);
+        const oeffnet = new Date(zeile.registration_opens_at);
+        const schliesst = new Date(zeile.registration_closes_at);
+
+        // Der verbotene Fall: Die Anmeldung darf nie nach dem Termin oeffnen.
+        expect(oeffnet.getTime()).toBeLessThan(termin.getTime());
+
+        // Und der Abstand muss der des ersten Termins sein — 7 bzw. 1 Tag.
+        expect((termin - oeffnet) / TAG).toBeCloseTo(7, 5);
+        expect((termin - schliesst) / TAG).toBeCloseTo(1, 5);
+      }
+    });
+
+    it('Anmeldefenster stimmt auch innerhalb eines Monats', async () => {
+      // Gegenprobe: Der Fall ohne Monatsgrenze war vorher schon richtig und
+      // muss es bleiben.
+      const terminDatum = new Date();
+      terminDatum.setFullYear(terminDatum.getFullYear() + 1);
+      terminDatum.setMonth(8, 20); // 20. September
+      terminDatum.setHours(18, 0, 0, 0);
+
+      const anmeldungAb = new Date(terminDatum);
+      anmeldungAb.setDate(anmeldungAb.getDate() - 5); // 15. September
+
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Innerhalb',
+          event_date: terminDatum.toISOString(),
+          registration_opens_at: anmeldungAb.toISOString(),
+          max_participants: 20,
+          series_count: 2,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT event_date, registration_opens_at FROM events
+          WHERE name LIKE 'Innerhalb%' AND organization_id = $1 ORDER BY event_date`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const TAG = 24 * 60 * 60 * 1000;
+      for (const zeile of rows) {
+        const abstand = (new Date(zeile.event_date) - new Date(zeile.registration_opens_at)) / TAG;
+        expect(abstand).toBeCloseTo(5, 5);
+      }
     });
 
     // Regression (Bugreport 09.08.2026): Die Serien-Route destrukturierte die

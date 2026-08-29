@@ -636,6 +636,42 @@ Punkte, Plätze, Warteliste, Kategorien, Jahrgänge, Pflicht-Häkchen,
 Check-in-Fenster, Teamer-Kontingent — alles wird auf jeden Termin der Serie
 übertragen, mit denselben Zwangsregeln wie beim Einzeltermin.
 
+### Das Anmeldefenster wandert mit
+
+Eine Einstellung wird nicht einfach kopiert, sondern **mitverschoben**: der
+Anmeldezeitraum.
+
+Du stellst ihn einmal für den ersten Termin ein — und der **Abstand**, den du
+dort wählst, gilt dann für jeden weiteren Termin der Serie.
+
+Ein Beispiel. Erster Termin am 1. September, Anmeldung ab dem 25. August, also
+sieben Tage vorher:
+
+| Termin | Anmeldung öffnet |
+|---|---|
+| 1. September | 25. August |
+| 8. September | 1. September |
+| 15. September | 8. September |
+| 22. September | 15. September |
+
+Immer sieben Tage vor dem jeweiligen Termin — nicht immer am 25. Dasselbe gilt
+für den Anmeldeschluss.
+
+Das ist meistens genau das, was man will: Zu jeder Konfi-Stunde soll eine Woche
+vorher die Anmeldung aufgehen, nicht zu allen zwölf gleichzeitig.
+
+> **Wenn du es anders brauchst** — etwa eine Anmeldung, die für alle Termine
+> gleichzeitig öffnet — geht das nicht über die Serie. Dann legst du die
+> Termine einzeln an, oder du legst die Serie an und passt die Anmeldezeiten
+> danach an den einzelnen Terminen an. Nach dem Anlegen sind es ohnehin
+> gewöhnliche Einzeltermine (siehe unten).
+
+Der Abstand wird als echte Zeitspanne gerechnet, nicht als Tag im Kalender —
+eine Serie darf also über einen Monatswechsel oder über den Jahreswechsel
+laufen, ohne dass das Fenster verrutscht. *(Bis August 2026 stimmte das nicht:
+Lief die Serie über eine Monatsgrenze, öffnete die Anmeldung erst nach dem
+Termin, und niemand konnte sich anmelden. Behoben.)*
+
 ### Was danach passiert
 
 **Es gibt keine Serien-Bearbeitung.** Nach dem Anlegen sind es ganz normale

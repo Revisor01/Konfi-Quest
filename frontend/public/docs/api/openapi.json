@@ -3894,7 +3894,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Von Pflicht-Event abmelden (Opt-out mit Begruendung)",
-        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.",
+        "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist, bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3931,12 +3931,12 @@
         },
         "responses": {
           "200": {
-            "description": "Abmeldung erfolgreich"
+            "description": "Abmeldung erfolgreich; bereits_abgemeldet=true wenn schon vorher abgemeldet"
           },
           "400": {
             "description": "Begruendung zu kurz",
             "kein Pflicht-Event": null,
-            "Event vorbei oder keine aktive Anmeldung": null
+            "Event vorbei oder gar keine Anmeldung vorhanden": null
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4359,6 +4359,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Abgesagte Events auflisten (Leitungssicht)",
+        "description": "GEAENDERT 2026-08-28: registered_count/waitlist_count/unprocessed_count zaehlen jetzt NUR Konfis, wie an allen anderen Stellen. Vorher hatte diese Route als einzige keinen Rollenfilter — derselbe Feldname bedeutete hier \"Konfis und Teamer\", in der normalen Liste \"nur Konfis\". Die Teamer stehen jetzt getrennt in teamer_count, teamer_waitlist_count und teamer_unprocessed_count. Grundlage ist wie bei den uebrigen Zaehlstellen die View event_booking_stats.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4374,7 +4375,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array abgesagter Events (e.*, Zaehler, categories[], jahrgaenge[], registration_status='cancelled')"
+            "description": "Array abgesagter Events (e.*, Konfi-Zaehler registered_count/waitlist_count/unprocessed_count, Teamer-Zaehler teamer_count/teamer_waitlist_count/teamer_unprocessed_count, categories[], jahrgaenge[], registration_status='cancelled')"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4794,7 +4795,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4814,7 +4815,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Storniert"
+            "description": "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4823,7 +4824,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Buchung nicht gefunden"
+            "description": "Termin existiert nicht in dieser Organisation"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -5648,7 +5649,23 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Alle Anträge der Organisation",
-        "description": "Liefert alle Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person.\n",
+        "description": "Liefert die Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter alle, mit ?status= nur die des angegebenen Status. BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen — die Route lieferte immer alles.\n",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            },
+            "description": "Optionaler Filter. Ein unbekannter Wert ergibt 400."
+          }
+        ],
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5665,6 +5682,9 @@
         "responses": {
           "200": {
             "description": "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+          },
+          "400": {
+            "description": "Unbekannter Wert fuer ?status="
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -8241,7 +8261,7 @@
             "description": "option_index fehlt/ungueltig ODER Umfrage abgelaufen"
           },
           "403": {
-            "description": "Kein Teilnehmer des Raums"
+            "description": "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft)"
           },
           "404": {
             "description": "Umfrage nicht gefunden"
@@ -8264,7 +8284,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins müssen Teilnehmer sein)"
+          "objekt-pruefung": "darfRaumOeffnen: Teilnehmer des Raums, oder Leitung in einem Raum der eigenen Gemeinde — ausser in fremden Direktchats. BEHOBEN 2026-08-28: Die Route hatte eine eigene Kopie der Pruefung, die strikt einen Teilnehmer-Eintrag verlangte. Dadurch durfte die Leitung in einem Gruppenchat eine Umfrage anlegen, aber nicht in ihr abstimmen. Ausserdem lief die Pruefung erst NACH Ablauf- und Options-Check und verriet so den Zustand fremder Umfragen.\n"
         }
       }
     },
@@ -8274,7 +8294,7 @@
           "Chat"
         ],
         "summary": "Abstimmen per Message-ID (Frontend-Kompatibilitaet)",
-        "description": "Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne exclusive_options-Sperrlogik.\n",
+        "description": "Aeltere Adressform derselben Route. Seit 2026-08-23 teilen sich beide denselben Handler — Toggle-Semantik, Einzelauswahl-Ersetzung und exclusive_options gelten hier genauso.\n",
         "parameters": [
           {
             "name": "messageId",
@@ -8309,14 +8329,16 @@
             "description": "Stimme abgegeben"
           },
           "400": {
-            "description": "option_index fehlt/ungueltig",
-            "Umfrage abgelaufen ODER bereits fuer Option gestimmt": null
+            "description": "option_index fehlt/ungueltig ODER Umfrage abgelaufen"
           },
           "403": {
-            "description": "Kein Teilnehmer des Raums"
+            "description": "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft)"
           },
           "404": {
             "description": "Keine Umfrage zu dieser Nachricht"
+          },
+          "409": {
+            "description": "Exklusive Option bereits vergeben"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8333,8 +8355,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR Teilnehmer des Raums (kein Admin-Bypass)",
-          "hinweis": "Aeltere Schwester-Route ohne exclusive_options-Behandlung"
+          "objekt-pruefung": "Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (Teilnehmer oder Leitung der eigenen Gemeinde, ausser in fremden Direktchats).\n",
+          "hinweis": "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
         }
       }
     },
@@ -9699,8 +9721,8 @@
             "verifyTokenRBAC",
             "validateDeleteToken"
           ],
-          "org-scope": true,
-          "objekt-pruefung": "Nur eigene Tokens der eigenen Org"
+          "org-scope": false,
+          "objekt-pruefung": "Nur eigene Tokens (user_id aus dem geprueften Token). BEHOBEN 2026-08-28: Die Route verengte zusaetzlich ueber users.organization_id und verglich damit die PRIMAER-Org des Kontos mit der AKTIVEN Org aus dem Token. Bei Mehrfach-Mitgliedschaft loeschte sie nichts und meldete trotzdem Erfolg.\n"
         }
       }
     },
@@ -9968,7 +9990,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt",
-        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen. Seit 27.08.2026 (Befund N2): Der Fortschritt kommt aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen. Die Antwortform ist unveraendert. Zwei Verhaltensaenderungen: (1) Abzeichen ohne hinterlegte Bedingung (specific_activity ohne required_activity_name, category_activities ohne required_category, activity_combination ohne required_activities, oder unlesbares criteria_extra) werden nicht mehr ausgeliefert — sie sind unerreichbar, weil die Wertung genau dieses Feld prueft. Verdiente Abzeichen bleiben immer sichtbar. Konfis hatten diese Ausblendung bereits. (2) Die Kopfzeilen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also je nach Rolle etwas anderes.\n",
+        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Seit 27.08.2026 (Befund N2): Der Fortschritt kommt aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen. Zwei Verhaltensaenderungen: (1) Abzeichen ohne hinterlegte Bedingung (specific_activity ohne required_activity_name, category_activities ohne required_category, activity_combination ohne required_activities, oder unlesbares criteria_extra) werden nicht mehr ausgeliefert — sie sind unerreichbar, weil die Wertung genau dieses Feld prueft. Verdiente Abzeichen bleiben immer sichtbar. Konfis hatten diese Ausblendung bereits. (2) Die Gesamtzahlen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also je nach Rolle etwas anderes. Seit 28.08.2026 (Handoff-Punkt 12, BEHOBEN): Die Antwortform ist an GET /konfi/badges angeglichen — { available, earned, stats } statt flachem Array plus Zaehlern in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total. Die Kopfzeilen entfallen: Die Sichtbar-Zahl las keine Ansicht, die Geheim-Zahl steht jetzt als stats.totalSecret im Rumpf (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen). Jedes Abzeichen traegt earned, earned_at, unreachable und progress ({ current, target, percentage }; percentage ungerundet wie beim Konfi). Neu dabei: Unerreichbare Abzeichen zaehlen auch in stats nicht mehr mit — wie beim Konfi seit 27.08.2026.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9983,21 +10005,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage); ohne unverdiente geheime und ohne unerreichbare (Bedingung fehlt)",
-            "headers": {
-              "X-Badges-Secret-Total": {
-                "description": "Anzahl der AKTIVEN geheimen Abzeichen, auch der nicht ausgelieferten. Abgeschaltete zaehlen seit 27.08.2026 nicht mehr mit (angeglichen an den Konfi-Pfad).",
-                "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-Badges-Visible-Total": {
-                "description": "Anzahl der AKTIVEN offen sichtbaren Abzeichen. Wird derzeit von keiner Ansicht gelesen (die zaehlen aus der Liste), bleibt aber als Zusage der Schnittstelle bestehen.",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
+            "description": "{ available, earned, stats } wie bei GET /konfi/badges: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen. Die frueheren Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total entfallen seit 28.08.2026."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

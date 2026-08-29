@@ -102,7 +102,7 @@ Einstellungen im Detail stehen im Kapitel [Termine](70-termine.md).
 
 ### Aktivitäten
 
-Die Meldungen der Konfis und Teamer:innen: **Offen**, **Genehmigt**,
+Die Meldungen der Konfis und Teamer:innen: **Offen**, **Verbucht**,
 **Abgelehnt**. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen
 musst du einen Grund angeben — den bekommt die Person zu sehen. Der ganze
 [Weg einer Meldung](40-punkte.md#der-weg-einer-aktivitaets-meldung) steht im

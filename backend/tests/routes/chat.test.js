@@ -1054,6 +1054,101 @@ describe('Chat Routes', () => {
   // vollstaendig — über sie konnten mehrere Personen dieselbe Option belegen,
   // während /polls/:pollId/vote das korrekt mit 409 ablehnt.
   // ================================================================
+  // ================================================================
+  // Abstimmen: dieselbe Raum-Regel wie ueberall sonst (28.08.2026)
+  //
+  // Die Abstimm-Route hatte eine eigene Kopie der Zugriffspruefung, die
+  // strikt einen Eintrag in chat_participants verlangte. Damit durfte die
+  // Leitung in einem Gruppenchat, in dem sie nicht eingetragen ist, eine
+  // Umfrage ANLEGEN, aber nicht abstimmen. Jetzt laeuft beides ueber
+  // darfRaumOeffnen — inklusive der Ausnahme fuer fremde Direktchats.
+  // ================================================================
+  describe('Abstimmen folgt der Raum-Regel', () => {
+    let orgAdmin1Token;
+
+    beforeEach(() => {
+      orgAdmin1Token = generateToken('orgAdmin1');
+    });
+
+    const umfrageAnlegen = async (roomId, token) => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${roomId}/polls`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ question: 'Wann treffen wir uns?', options: ['Freitag', 'Samstag'] });
+      expect(res.status).toBe(201);
+      return res.body;
+    };
+
+    it('Leitung stimmt in ihrer eigenen Gruppenchat-Umfrage ab -> 200 (der erlaubte Fall)', async () => {
+      // Vorbedingung absichern: orgAdmin1 ist NICHT Teilnehmerin von Raum 3.
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+
+      const poll = await umfrageAnlegen(CHAT_ROOMS.group.id, orgAdmin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Konfi aus einer anderen Gemeinde darf nicht abstimmen -> 403', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Zugriff auf diesen Raum verweigert');
+    });
+
+    it('Leitung darf im fremden Direktchat nicht abstimmen -> 403', async () => {
+      // Raum 2 ist der Direktchat konfi1 <-> admin1; orgAdmin1 gehoert nicht dazu.
+      // admin1 ist Teilnehmer und darf dort anlegen.
+      const poll = await umfrageAnlegen(CHAT_ROOMS.direct.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Abgelaufene fremde Umfrage verraet ihren Zustand nicht -> 403 statt 400', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+      await db.query(
+        "UPDATE chat_polls SET expires_at = NOW() - INTERVAL '1 hour' WHERE id = $1",
+        [poll.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Ueber die Nachrichten-ID gilt dieselbe Regel -> 403', async () => {
+      const poll = await umfrageAnlegen(CHAT_ROOMS.jahrgang.id, admin1Token);
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ option_index: 0 });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe('Exklusive Umfragen — beide Abstimm-Routen', () => {
     const exklusiveUmfrageAnlegen = async () => {
       const res = await request(app)
@@ -1581,6 +1676,52 @@ describe('Chat Routes', () => {
   });
 
   // ================================================================
+  // DELETE /api/chat/rooms/:roomId — Raum loeschen raeumt die Dateien mit weg
+  // ================================================================
+  describe('DELETE /api/chat/rooms/:roomId (Dateien aufraeumen)', () => {
+    // Gefunden 28.08.2026 beim Aufteilen von events.js: Diese Stelle baute den
+    // Pfad ueber path.join(__dirname, '..', 'uploads', 'chat', ...), obwohl das
+    // Modul ein uploadsDir injiziert bekommt und es an vier anderen Stellen
+    // auch benutzt. Weicht das echte Upload-Verzeichnis vom Standardpfad ab —
+    // wie hier im Test und wie ueberall dort, wo die Uploads auf einem eigenen
+    // Volume liegen —, loeschte die Stelle am falschen Ort: Der Raum war weg,
+    // die Dateien blieben auf der Platte liegen.
+    // Gruppenraum, nicht Jahrgang: Jahrgangs-Raeume laufen ueber das Loeschen
+    // des Jahrgangs und lassen sich hier nicht direkt entfernen.
+    const RAUM = CHAT_ROOMS.group.id;
+    const chatDir = path.join(os.tmpdir(), 'konfi-test-uploads', 'chat');
+
+    it('loescht die Dateien im injizierten uploadsDir, nicht im Standardpfad', async () => {
+      fs.mkdirSync(chatDir, { recursive: true });
+      const dateiname = `test-raumloeschen-${Date.now()}.jpg`;
+      const dateipfad = path.join(chatDir, dateiname);
+      fs.writeFileSync(dateipfad, 'Inhalt');
+
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path)
+         VALUES ($1, $2, 'admin', 'file', 'Datei', $3)`,
+        [RAUM, USERS.admin1.id, dateiname]
+      );
+
+      expect(fs.existsSync(dateipfad)).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/chat/rooms/${RAUM}`)
+        .query({ force: 'true' })
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+
+      // Der Raum ist weg — und die Datei mit ihm.
+      expect(fs.existsSync(dateipfad)).toBe(false);
+
+      const { rows: [raum] } = await db.query(
+        'SELECT COUNT(*)::int AS count FROM chat_rooms WHERE id = $1', [RAUM]
+      );
+      expect(raum.count).toBe(0);
+    });
+  });
+
+  // ================================================================
   // POST /api/chat/messages/:messageId/reactions
   // ================================================================
   describe('POST /api/chat/messages/:messageId/reactions', () => {
@@ -1679,6 +1820,78 @@ describe('Chat Routes', () => {
       expect(await reaktionenAus(id)).toEqual([
         { user_id: USERS.konfi1.id, user_type: 'konfi', emoji: 'laugh' },
       ]);
+    });
+
+    // Messung 28.08.2026 (Punkt 5 des Handoffs): Das 403 fuer
+    // Nicht-Teilnehmende war gemessen, aber durch keinen Test festgehalten.
+    // Diese vier Tests halten den Ist-Zustand fest, damit er nicht still
+    // wegbricht.
+    //
+    // Beachte den Unterschied zum Abstimmen: Reagieren verlangt strikt einen
+    // Eintrag in chat_participants, kennt also KEINEN Leitungs-Zugriff auf
+    // Gruppen- und Jahrgangschats. Lesen der Reaktionen (GET, weiter unten)
+    // laesst die Leitung dagegen durch (darfRaumOeffnen). Beim Abstimmen wurde
+    // das am 28.08.2026 angeglichen; hier bleibt es bewusst beim strengeren
+    // Verhalten, solange es niemand anders entscheidet.
+    it('Fremde Gemeinde darf nicht reagieren -> 403', async () => {
+      const id = await nachrichtVon(USERS.konfi1.id, 'konfi');
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${id}/reactions`)
+        .set('Authorization', `Bearer ${konfi3Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(403);
+      expect(await reaktionenAus(id)).toEqual([]);
+    });
+
+    it('Leitung ohne Teilnahme darf im Gruppenchat nicht reagieren -> 403', async () => {
+      const orgAdmin1Token = generateToken('orgAdmin1');
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type)
+         VALUES ($1, $2, 'teamer', 'Hallo Gruppe', 'text') RETURNING id`,
+        [CHAT_ROOMS.group.id, USERS.teamer1.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/chat/messages/${msg.id}/reactions`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Leitung DARF die Reaktionen desselben Raums aber lesen -> 200', async () => {
+      // Gegenprobe: Lesen laeuft ueber darfRaumOeffnen und laesst die Leitung
+      // durch. Die beiden Regeln sind unterschiedlich — festgehalten, damit
+      // niemand die eine fuer einen Fehler der anderen haelt.
+      const orgAdmin1Token = generateToken('orgAdmin1');
+      const { rows: [msg] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type)
+         VALUES ($1, $2, 'teamer', 'Hallo Gruppe', 'text') RETURNING id`,
+        [CHAT_ROOMS.group.id, USERS.teamer1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/chat/messages/${msg.id}/reactions`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Nachricht, die es nicht gibt -> 404', async () => {
+      const res = await request(app)
+        .post('/api/chat/messages/999999/reactions')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ emoji: 'like' });
+
+      expect(res.status).toBe(404);
     });
 
     it('Alle drei Rollen reagieren auf dieselbe Nachricht -> drei Zeilen', async () => {

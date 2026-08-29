@@ -84,7 +84,7 @@ dass der Antrag geprüft wird. Punkte gibt es noch keine.
 **3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: **genehmigen** oder
 **ablehnen**.
 
-- **Genehmigt:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
+- **Verbucht:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
   Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob
   damit neue [Abzeichen](60-badges.md) oder ein neues Level erreicht sind. Der
   Konfi bekommt „Antrag genehmigt!“ mit der Punktzahl.
@@ -124,7 +124,7 @@ Löschen lassen sich nur **abgelehnte** Anträge. Die anderen sind geschützt:
 | Zustand | Löschen möglich? | Meldung |
 |---|---|---|
 | Ausstehend | nein | „Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.“ |
-| Genehmigt | nein | „Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“ |
+| Verbucht | nein | „Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“ |
 | Abgelehnt | ja | — |
 
 ## Direktvergabe durch die Leitung

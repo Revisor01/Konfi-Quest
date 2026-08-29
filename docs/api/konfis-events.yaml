@@ -2,7 +2,7 @@
 # Konfi Quest API - OpenAPI 3.1 - BLOCK 2 von 3
 # Dokumentierte Dateien (Stand main, 22.08.2026, am Code verifiziert):
 #   backend/routes/konfi.js            -> Prefix /api/konfi            (24 Routen)
-#   backend/routes/events.js           -> Prefix /api/events           (21 Routen)
+#   backend/routes/events/ (aufgeteilt) -> Prefix /api/events          (21 Routen)
 #   backend/routes/konfi-management.js -> Prefix /api/admin/konfis     (16 Routen)
 #   backend/routes/activities.js       -> Prefix /api/admin/activities (10 Routen)
 #
@@ -731,7 +731,12 @@ paths:
     post:
       tags: ["Termine (Konfis)"]
       summary: Von Pflicht-Event abmelden (Opt-out mit Begruendung)
-      description: Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.
+      description: >
+        Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur
+        zukuenftige Pflicht-Events. Wiederholbar: Wer bereits abgemeldet ist,
+        bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein
+        Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag
+        ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -748,8 +753,8 @@ paths:
               properties:
                 reason: { type: string, minLength: 5 }
       responses:
-        "200": { description: Abmeldung erfolgreich }
-        "400": { description: Begruendung zu kurz, kein Pflicht-Event, Event vorbei oder keine aktive Anmeldung }
+        "200": { description: "Abmeldung erfolgreich; bereits_abgemeldet=true wenn schon vorher abgemeldet" }
+        "400": { description: Begruendung zu kurz, kein Pflicht-Event, Event vorbei oder gar keine Anmeldung vorhanden }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -831,7 +836,7 @@ paths:
         "500": { $ref: '#/components/responses/ServerError' }
 
   # ===================================================================
-  # backend/routes/events.js  (Prefix /api/events)
+  # backend/routes/events/ (seit 28.08.2026 aufgeteilt, Prefix /api/events)
   # Schreibende Verwaltungs-Routen: requireTeamer (org_admin, admin, teamer).
   # Lese-/Buchungsrouten: nur rbacVerifier (alle Rollen, inkl. Konfi).
   # ===================================================================
@@ -938,13 +943,21 @@ paths:
     get:
       tags: ["Termine (Verwaltung)"]
       summary: Abgesagte Events auflisten (Leitungssicht)
+      description: >
+        GEAENDERT 2026-08-28: registered_count/waitlist_count/unprocessed_count
+        zaehlen jetzt NUR Konfis, wie an allen anderen Stellen. Vorher hatte
+        diese Route als einzige keinen Rollenfilter — derselbe Feldname
+        bedeutete hier "Konfis und Teamer", in der normalen Liste "nur Konfis".
+        Die Teamer stehen jetzt getrennt in teamer_count,
+        teamer_waitlist_count und teamer_unprocessed_count. Grundlage ist wie
+        bei den uebrigen Zaehlstellen die View event_booking_stats.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "kein Jahrgang-Filter (alle abgesagten Events der Org)"
       responses:
-        "200": { description: "Array abgesagter Events (e.*, Zaehler, categories[], jahrgaenge[], registration_status='cancelled')" }
+        "200": { description: "Array abgesagter Events (e.*, Konfi-Zaehler registered_count/waitlist_count/unprocessed_count, Teamer-Zaehler teamer_count/teamer_waitlist_count/teamer_unprocessed_count, categories[], jahrgaenge[], registration_status='cancelled')" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1167,6 +1180,10 @@ paths:
         Event-Chat, nimmt bei attendance_status='present' die Event-Punkte
         zurück und laesst rollenrichtig aus der passenden Warteliste
         nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).
+        Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden,
+        kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus
+        der Offline-Warteschlange soll nicht als Fehlschlag ankommen
+        (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1175,10 +1192,10 @@ paths:
         hinweis: "Punkte-Entzugs-Weg n) der Analyse. Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: Storniert }
+        "200": { description: "Storniert; bereits_storniert=true wenn keine Buchung mehr vorhanden war" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "404": { description: Buchung nicht gefunden }
+        "404": { description: Termin existiert nicht in dieser Organisation }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/events/{id}/participants:
@@ -1565,8 +1582,17 @@ paths:
       tags: ["Aktivitäten & Anträge"]
       summary: Alle Anträge der Organisation
       description: >
-        Liefert alle Aktivitaetsantraege der aktiven Organisation samt
-        Konfi-Name, Aktivitaetsdaten und genehmigender Person.
+        Liefert die Aktivitaetsantraege der aktiven Organisation samt
+        Konfi-Name, Aktivitaetsdaten und genehmigender Person. Ohne Filter
+        alle, mit ?status= nur die des angegebenen Status.
+        BEHOBEN 2026-08-28: ?status= wurde vorher stillschweigend verworfen —
+        die Route lieferte immer alles.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [pending, approved, rejected] }
+          description: Optionaler Filter. Ein unbekannter Wert ergibt 400.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
@@ -1578,6 +1604,7 @@ paths:
           (dafuer gibt es GET /api/teamer/requests).
       responses:
         "200": { description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)" }
+        "400": { description: "Unbekannter Wert fuer ?status=" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

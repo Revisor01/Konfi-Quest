@@ -17,7 +17,12 @@ export interface QueueItem {
   createdAt: number;
   hasFileUpload: boolean;
   metadata: {
-    type: 'chat' | 'request' | 'opt-out' | 'fire-and-forget' | 'admin' | 'teamer';
+    // 'fire-and-forget' sind STILLE Hintergrund-Aufraeumer (Push-Token
+    // entfernen, gelesen markieren, Einstellungen). Ein Fehlschlag geht
+    // niemanden etwas an. 'chat-aktion' sind bewusste Handlungen im Chat
+    // (Stimme, Reaktion) — sie scheiterten bis 28.08.2026 lautlos, weil
+    // sie faelschlich als 'fire-and-forget' eingereiht wurden.
+    type: 'chat' | 'chat-aktion' | 'request' | 'opt-out' | 'fire-and-forget' | 'admin' | 'teamer';
     clientId: string;
     roomId?: number;
     label?: string;
@@ -50,6 +55,26 @@ export function onItemFailed(listener: FailedListener): () => void {
 function notifyFailed(item: FailedQueueItem): void {
   failedListeners.forEach((l) => {
     try { l(item); } catch { /* ein kaputter Melder darf den Flush nicht stoppen */ }
+  });
+}
+
+// --- Aenderungen an der Warteschlange melden ---
+//
+// Die Anzeige "Wird gesendet..." lag bisher nur an zwei Stellen und aktuali-
+// sierte sich, wenn die zugehoerige Liste neu lud. Leerte sich die Queue im
+// Hintergrund (Reconnect, App-Start), blieb der Hinweis stehen, bis jemand
+// zog. Ueber diesen Melder erfaehrt jede Ansicht davon, ohne zu pollen.
+type ChangeListener = () => void;
+const changeListeners = new Set<ChangeListener>();
+
+export function onQueueChanged(listener: ChangeListener): () => void {
+  changeListeners.add(listener);
+  return () => { changeListeners.delete(listener); };
+}
+
+function notifyChanged(): void {
+  changeListeners.forEach((l) => {
+    try { l(); } catch { /* ein kaputter Melder darf den Flush nicht stoppen */ }
   });
 }
 
@@ -125,6 +150,7 @@ async function _loadFailedActions(): Promise<FailedAction[]> {
 async function _saveFailedActions(list: FailedAction[]): Promise<void> {
   _failedActions = list;
   await Preferences.set({ key: FAILED_ACTIONS_KEY, value: JSON.stringify(list) });
+  notifyChanged();
 }
 
 async function rememberFailedAction(
@@ -245,6 +271,7 @@ async function _load(): Promise<QueueItem[]> {
 async function _save(items: QueueItem[]): Promise<void> {
   _items = items;
   await Preferences.set({ key: QUEUE_KEY, value: JSON.stringify(items) });
+  notifyChanged();
 }
 
 // --- UUID Helper ---
@@ -293,6 +320,10 @@ async function handleFlushResult(result: FlushResult): Promise<void> {
     // Toast erscheint sonst "aus dem Nichts", wenn ein Hintergrund-Flush
     // (Reconnect/Online) eine alte Queue-Nachricht erneut nicht senden kann.
     if (item.metadata.type === 'chat') continue;
+    // 'chat-aktion' (Stimme, Reaktion) laeuft bewusst NICHT in eines der
+    // beiden continue: Es sind bewusste Handlungen ohne eigene Bubble, die
+    // eine Rueckmeldung brauchen. Bis 28.08.2026 waren sie als
+    // 'fire-and-forget' eingereiht und scheiterten damit lautlos.
     const label = item.metadata.label || 'Aktion';
     // Zwei Wege, bewusst beide (Befund H1): Der Toast erreicht, wer gerade
     // hinsieht. Der Merker ueberlebt Hintergrund-Flush und App-Neustart —
@@ -650,6 +681,7 @@ networkMonitor.subscribe((isOnline) => {
 // --- Export ---
 
 export const writeQueue = {
+  onQueueChanged,
   enqueue,
   flush,
   flushTextOnly,

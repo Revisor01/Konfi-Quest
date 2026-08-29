@@ -41,8 +41,18 @@ Dasselbe funktioniert bei Teamer:innen.
 ### Wie die Einmalpasswörter aussehen
 
 Die App erzeugt Passwörter nach dem Muster **Bibelbuch + Kapitel + Vers**, zum
-Beispiel `Jesaja41,10` oder `Matthaeus5,9`. Das ist leicht vorzulesen und leicht
+Beispiel `Jesaja41,10` oder `Matthäus5,9`. Das ist leicht vorzulesen und leicht
 abzutippen — der eigentliche Zweck.
+
+**Die Stelle gibt es wirklich.** Seit August 2026 wird gegen die tatsächliche
+Kapitel- und Verszählung gezogen: Wer `Rut4,17` als Passwort bekommt, kann den
+Vers aufschlagen. Vorher wurden Kapitel und Vers blind gewürfelt, unabhängig
+vom Buch — dabei entstanden auch Angaben wie `Ruth47,29`, obwohl das Buch Rut
+nur vier Kapitel hat.
+
+Bücher mit Ordnungszahl stehen ohne Punkt und ohne Leerzeichen: `1Korinther13,4`,
+nicht `1. Korinther 13,4`. Die Mose-Bücher tragen ihre lateinischen Namen —
+`Genesis`, `Exodus`, `Levitikus`, `Numeri`, `Deuteronomium`.
 
 > **Wichtig beim Weitergeben:** Keine Leerzeichen, und das Zeichen zwischen
 > Kapitel und Vers ist ein **Komma**, kein Punkt. iPhone-Tastaturen machen aus

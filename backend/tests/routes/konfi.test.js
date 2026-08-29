@@ -29,6 +29,78 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // POST /api/konfi/events/:id/opt-out — Doppelversand (28.08.2026)
+  //
+  // Eine offline abgegebene Abmeldung kann zweimal ankommen: Die Anfrage
+  // erreicht den Server, die Antwort geht auf dem Rueckweg verloren, und die
+  // Warteschlange legt sie erneut vor. Der zweite Lauf traf 0 Zeilen und
+  // meldete 400 — ein erfolgreicher Vorgang wurde als Fehler angezeigt.
+  // ================================================================
+  describe('POST /api/konfi/events/:id/opt-out', () => {
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3)`,
+        [USERS.konfi1.id, EVENTS.pflichtEvent.id, ORGS.testGemeinde.id]
+      );
+    });
+
+    it('Erste Abmeldung setzt den Status -> 200', async () => {
+      const res = await request(app)
+        .post(`/api/konfi/events/${EVENTS.pflichtEvent.id}/opt-out`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ reason: 'Bin krank geworden' });
+
+      expect(res.status).toBe(200);
+
+      const { rows: [b] } = await db.query(
+        'SELECT status, opt_out_reason FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [USERS.konfi1.id, EVENTS.pflichtEvent.id]
+      );
+      expect(b.status).toBe('opted_out');
+      expect(b.opt_out_reason).toBe('Bin krank geworden');
+    });
+
+    it('Zweiter Versand derselben Abmeldung ist kein Fehler -> 200', async () => {
+      await request(app)
+        .post(`/api/konfi/events/${EVENTS.pflichtEvent.id}/opt-out`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ reason: 'Bin krank geworden' });
+
+      const zweite = await request(app)
+        .post(`/api/konfi/events/${EVENTS.pflichtEvent.id}/opt-out`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ reason: 'Bin krank geworden' });
+
+      expect(zweite.status).toBe(200);
+      expect(zweite.body.bereits_abgemeldet).toBe(true);
+
+      // Der Grund der ERSTEN Abmeldung bleibt stehen.
+      const { rows: [b] } = await db.query(
+        'SELECT status, opt_out_reason FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [USERS.konfi1.id, EVENTS.pflichtEvent.id]
+      );
+      expect(b.status).toBe('opted_out');
+      expect(b.opt_out_reason).toBe('Bin krank geworden');
+    });
+
+    it('Ohne jede Anmeldung bleibt es beim Fehler -> 400', async () => {
+      await db.query(
+        'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [USERS.konfi1.id, EVENTS.pflichtEvent.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/konfi/events/${EVENTS.pflichtEvent.id}/opt-out`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ reason: 'Bin krank geworden' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Keine aktive Anmeldung gefunden');
+    });
+  });
+
+  // ================================================================
   // GET /api/konfi/dashboard
   // ================================================================
   describe('GET /api/konfi/dashboard', () => {

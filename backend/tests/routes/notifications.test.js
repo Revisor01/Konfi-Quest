@@ -165,6 +165,59 @@ describe('Notifications Routes', () => {
       expect(rows.length).toBe(0);
     });
 
+    it('Multi-Org: Loeschen in der AKTIVEN Org entfernt den Token wirklich', async () => {
+      // Fund 28.08.2026: Die Route verengte auf users.organization_id (PRIMAER-Org),
+      // waehrend im Token die AKTIVE Org steht. Wer in einer zweiten Gemeinde
+      // angemeldet war, traf 0 Zeilen — die Route meldete trotzdem Erfolg, und
+      // das abgemeldete Geraet bekam weiter Push-Nachrichten.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer1.id, ORGS.andereGemeinde.id, 7]
+      );
+
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .set('X-Active-Organization', String(ORGS.andereGemeinde.id))
+        .send({ token: 'fcm-multi-org', platform: 'ios', device_id: 'geraet-multi' });
+
+      const res = await request(app)
+        .delete('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .set('X-Active-Organization', String(ORGS.andereGemeinde.id))
+        .send({ device_id: 'geraet-multi', platform: 'ios' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.changes).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT * FROM push_tokens WHERE user_id = $1 AND device_id = $2',
+        [USERS.teamer1.id, 'geraet-multi']
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Fremdes Geraet eines anderen Kontos bleibt unangetastet', async () => {
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'fcm-fremd', platform: 'android', device_id: 'geraet-fremd' });
+
+      const res = await request(app)
+        .delete('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ device_id: 'geraet-fremd', platform: 'android' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.changes).toBe(0);
+
+      const { rows } = await db.query(
+        'SELECT * FROM push_tokens WHERE user_id = $1 AND device_id = $2',
+        [USERS.konfi1.id, 'geraet-fremd']
+      );
+      expect(rows.length).toBe(1);
+    });
+
     it('Fehlende device_id -> 400 Validierungsfehler', async () => {
       const res = await request(app)
         .delete('/api/notifications/device-token')

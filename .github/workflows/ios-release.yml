@@ -33,6 +33,38 @@ jobs:
           SDK_STAMP=$(plutil -extract ProductBuildVersion raw "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/"iPhoneOS*.sdk/SDKSettings.plist 2>/dev/null | head -1 || true)
           echo "iOS-SDK ProductBuildVersion: ${SDK_STAMP:-unbekannt}"
 
+      - name: Store-Texte auf Plattform-Verweise pruefen
+        # Apple lehnt unter Guideline 2.3.10 ab, wenn die Store-Texte andere
+        # Plattformen nennen. Am 29.08.2026 hat genau ein Halbsatz ("der
+        # Anzeige auf Android") 2.0.0 gekippt — zwei Tage Wartezeit fuer nichts,
+        # der Build war in Ordnung. Die Pruefung sieht nur den iOS-Abschnitt an;
+        # der Android-Abschnitt darf und soll Android nennen.
+        run: |
+          python3 - <<'PRUEF'
+          import glob, re, sys
+          schlecht = []
+          for datei in glob.glob('docs/store-texte-*.md'):
+              text = open(datei, encoding='utf-8').read()
+              if '## iOS' not in text:
+                  continue
+              start = text.index('## iOS')
+              ende = text.index('## Android') if '## Android' in text else len(text)
+              # Hinweisbloecke (Zeilen mit ">") sind Anweisungen an uns,
+              # kein Store-Text — die duerfen die Woerter nennen.
+              zeilen = [z for z in text[start:ende].split('\n')
+                        if not z.strip().startswith('>')]
+              for treffer in re.finditer(r'(?i)android|google play|play store|windows',
+                                         '\n'.join(zeilen)):
+                  schlecht.append(f"{datei}: {treffer.group()}")
+          if schlecht:
+              print('Plattform-Verweise im iOS-Abschnitt gefunden:')
+              for z in schlecht:
+                  print('  ', z)
+              print('Apple lehnt das unter Guideline 2.3.10 ab. Bitte entfernen.')
+              sys.exit(1)
+          print('iOS-Store-Texte sauber.')
+          PRUEF
+
       - name: Node einrichten
         uses: actions/setup-node@v7
         with:
