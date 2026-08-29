@@ -15,8 +15,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // GET /api/roles - Alle Rollen der Organisation anzeigen
   // Nur für org_admin (um User zuzuweisen)
   router.get('/', rbacVerifier, async (req, res) => {
-    // Nur org_admin darf Rollen sehen
-    if (!['super_admin', 'org_admin'].includes(req.user.role_name)) {
+    // Nur org_admin darf Rollen sehen; Change 29.08.2026 - admin darf auch eine Liste der Rollen bekommen. Notwendig für die Möglichkeit, dass Admins Teamer anlegen können
+    if (!['super_admin', 'org_admin', 'admin'].includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 

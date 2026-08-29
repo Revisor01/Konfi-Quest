@@ -605,7 +605,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Assign jahrgaenge to user
-  router.post('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, validateJahrgangAssignments, async (req, res) => {
+  // requireAdmin, weil für anlegen von Teamern ist ein Jahrgang Assign sinnvoll. Ansonsten entsteht ein Teamer ohne Jahrgangassignments. Da ein assign im Frontend angeboten wird gibt es sonst Fehler.
+  router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -724,7 +725,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Get user's jahrgang assignments
-  router.get('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // Analog zum POST requireAdmin
+  router.get('/:id/jahrgaenge', rbacVerifier, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
