@@ -493,14 +493,38 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // vollmachen kann. Der Konfi-Pfad rechnet seit 27.08.2026 genau so.
       const zaehlbar = enrichedBadges.filter(b => b.is_active && !b.unreachable);
 
-      res.json({
-        available,
-        earned,
-        stats: {
-          totalVisible: zaehlbar.filter(b => !b.is_hidden).length,
-          totalSecret: zaehlbar.filter(b => b.is_hidden).length
-        }
-      });
+      // ZURUECK AUF ARRAY, 29.08.2026 — Vorfall am Abend des Rollouts.
+      //
+      // Diese Route lieferte bis zum 28.08. ein ARRAY und wurde auf die
+      // Konfi-Form { available, earned, stats } umgestellt (Handoff-Punkt 12).
+      // Die AUSGELIEFERTEN Apps (iOS 2.0.0 / Android versionCode 81) rufen
+      // darauf `.filter()` auf — auf einem Objekt wirft das einen TypeError,
+      // das Teamer-Dashboard stuerzte SOFORT nach dem Login ab, auf beiden
+      // Plattformen. Im Browser fiel es nicht auf, dort laeuft die neue
+      // Oberfläche, die die neue Form erwartet.
+      //
+      // Der Kommentar an der alten Fassung hatte genau davor gewarnt: "Die
+      // Antwort ist ein Array, und zwei Ansichten lesen sie so. Eine neue
+      // Huelle haette beide gebrochen." Uebersehen wurde, dass die Apps im
+      // Store ebenfalls Leser sind — die lassen sich nicht mitdeployen.
+      //
+      // Beide Formen in EINER Antwort gehen nicht: JSON kennt entweder Array
+      // oder Objekt, und JSON.stringify verwirft Zusatzfelder an einem Array
+      // (nachgemessen). Also bleibt die Route beim Array — dem Vertrag, den
+      // die ausgelieferten Apps kennen — und die Zahlen gehen wie vorher als
+      // Kopfzeilen mit. Die neue Oberflaeche liest beide Formen (siehe
+      // teamerBadges.ts im Frontend).
+      //
+      // Die Vereinheitlichung auf die Konfi-Form bleibt das Ziel; sie gehoert
+      // aber in eine versionierte Route, nicht in eine stille Aenderung an
+      // einer, die ausgelieferte Apps benutzen.
+      const sichtbareBadges = enrichedBadges.filter(
+        b => (!b.is_hidden || b.earned) && (b.earned || !b.unreachable)
+      );
+
+      res.set('X-Badges-Secret-Total', String(zaehlbar.filter(b => b.is_hidden).length));
+      res.set('X-Badges-Visible-Total', String(zaehlbar.filter(b => !b.is_hidden).length));
+      res.json(sichtbareBadges);
     } catch (err) {
       console.error('Error loading teamer badges:', err);
       res.status(500).json({ error: 'Fehler beim Laden der Teamer-Badges' });

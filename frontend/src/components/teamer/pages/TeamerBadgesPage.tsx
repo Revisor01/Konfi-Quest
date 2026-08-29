@@ -15,6 +15,7 @@ import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { normalisiereTeamerBadges } from '../teamerBadges';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -61,7 +62,8 @@ const TeamerBadgesPage: React.FC = () => {
     'teamer:badges:v2:' + user?.id,
     async () => {
       const res = await api.get('/teamer/badges');
-      return res.data;
+      // Beide Antwortformen lesen — siehe teamerBadges.ts.
+      return normalisiereTeamerBadges<TeamerBadgeAPI>(res.data, res.headers as any);
     },
     { ttl: CACHE_TTL.BADGES }
   );

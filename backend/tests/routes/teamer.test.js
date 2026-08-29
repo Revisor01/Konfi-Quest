@@ -178,21 +178,38 @@ describe('Teamer Routes', () => {
   // TEAMER BADGES
   // ================================================================
   describe('GET /api/teamer/badges', () => {
-    it('Teamer bekommt 200 + { available, earned, stats } (Konfi-Form)', async () => {
+    // VERTRAG MIT DEN AUSGELIEFERTEN APPS, 29.08.2026.
+    //
+    // Diese Route MUSS ein Array liefern. Am 28.08. wurde sie auf die
+    // Konfi-Form { available, earned, stats } umgestellt; die Apps im Store
+    // (iOS 2.0.0, Android versionCode 81) rufen darauf `.filter()` auf — auf
+    // einem Objekt ein TypeError. Das Teamer-Dashboard stuerzte am Abend des
+    // Rollouts sofort nach dem Login ab, auf beiden Plattformen.
+    //
+    // Die Tests hier hielten damals die neue Form fest und waren gruen: Sie
+    // kannten nur die mitdeployte Oberflaeche, nicht die ausgelieferte App.
+    // Eine Route, die eine App im Store benutzt, hat einen Vertrag, der aelter
+    // ist als das Repo — der bricht nicht durch einen gruenen Testlauf.
+    it('liefert ein ARRAY — die Apps im Store filtern darauf', async () => {
       const res = await request(app)
         .get('/api/teamer/badges')
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      // Seit 28.08.2026 dieselbe Antwortform wie GET /konfi/badges: keine
-      // flache Liste mehr, keine Zaehler in Kopfzeilen.
-      expect(Array.isArray(res.body.available)).toBe(true);
-      expect(Array.isArray(res.body.earned)).toBe(true);
-      // Der Seed enthaelt keine Teamer-Abzeichen — beide Zaehler starten bei 0.
-      expect(res.body.stats).toEqual({ totalVisible: 0, totalSecret: 0 });
-      // Die alten Kopfzeilen duerfen nicht mehr gesendet werden.
-      expect(res.headers['x-badges-secret-total']).toBeUndefined();
-      expect(res.headers['x-badges-visible-total']).toBeUndefined();
+      expect(Array.isArray(res.body)).toBe(true);
+      // Genau der Aufruf, der in der Store-App den TypeError warf.
+      expect(() => res.body.filter(b => b.earned)).not.toThrow();
+    });
+
+    it('schickt die Zaehler als Kopfzeilen mit', async () => {
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      // Der Seed enthaelt keine Teamer-Abzeichen — beide Zaehler bei 0.
+      expect(res.headers['x-badges-visible-total']).toBe('0');
+      expect(res.headers['x-badges-secret-total']).toBe('0');
     });
 
     it('Konfi bekommt 403', async () => {
@@ -220,7 +237,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
       expect(res.status).toBe(200);
 
-      const ids = [...res.body.available, ...res.body.earned].map(b => b.id);
+      const ids = res.body.map(b => b.id);
       expect(ids).not.toContain(geheim.id);
       // Der Name darf auch sonst nirgends in der Antwort auftauchen.
       expect(JSON.stringify(res.body)).not.toContain('Streng geheim');
@@ -243,10 +260,10 @@ describe('Teamer Routes', () => {
         .get('/api/teamer/badges')
         .set('Authorization', `Bearer ${teamerToken}`);
       expect(res.status).toBe(200);
-      expect(res.body.earned.map(b => b.id)).toContain(geheim.id);
+      expect(res.body.filter(b => b.earned).map(b => b.id)).toContain(geheim.id);
     });
 
-    it('Die Gesamtzahl der Geheimnisse steht in stats.totalSecret', async () => {
+    it('Die Gesamtzahl der Geheimnisse steht in der Kopfzeile', async () => {
       await db.query(
         `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active, is_hidden)
          VALUES ('Geheim eins', 'teamer_year', 98, 'ribbon', '#5b21b6', $1, 'teamer', true, true),
@@ -259,12 +276,12 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
       expect(res.status).toBe(200);
       // Beide sind unverdient, stehen also in keiner Liste...
-      expect(res.body.available.filter(b => b.is_hidden).length).toBe(0);
-      expect(res.body.earned.length).toBe(0);
+      expect(res.body.filter(b => !b.earned && b.is_hidden).length).toBe(0);
+      expect(res.body.filter(b => b.earned).length).toBe(0);
       // ...werden aber gezählt, damit "x Geheimnisse" stimmt. Frueher stand
       // die Zahl in der Kopfzeile X-Badges-Secret-Total, seit 28.08.2026 wie
       // beim Konfi im Rumpf.
-      expect(res.body.stats.totalSecret).toBe(2);
+      expect(res.headers['x-badges-secret-total']).toBe('2');
     });
 
     // ----------------------------------------------------------------
@@ -301,7 +318,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect([...res.body.available, ...res.body.earned].map(b => b.id)).not.toContain(unerreichbar);
+      expect(res.body.map(b => b.id)).not.toContain(unerreichbar);
     });
 
     // Gleiche Lücke bei den beiden anderen Kriterien mit Pflicht-Bedingung:
@@ -320,7 +337,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const ids = [...res.body.available, ...res.body.earned].map(b => b.id);
+      const ids = res.body.map(b => b.id);
       expect(ids).not.toContain(ohneKategorie);
       expect(ids).not.toContain(leereKombination);
     });
@@ -337,8 +354,8 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.available)).toBe(true);
-      expect([...res.body.available, ...res.body.earned].map(b => b.id)).not.toContain(kaputt);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.map(b => b.id)).not.toContain(kaputt);
     });
 
     // Gegenprobe: Der Filter darf nicht zu viel wegnehmen. Ein sauber
@@ -355,7 +372,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const gefunden = res.body.available.find(b => b.id === erreichbar);
+      const gefunden = res.body.find(b => b.id === erreichbar);
       expect(gefunden.id).toBe(erreichbar);
       expect(gefunden.progress.current).toBe(0);
     });
@@ -376,7 +393,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const gefunden = res.body.earned.find(b => b.id === verdient);
+      const gefunden = res.body.find(b => b.id === verdient);
       expect(gefunden.id).toBe(verdient);
       expect(gefunden.earned).toBe(true);
     });
@@ -409,9 +426,9 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(200);
       // Zwei aktive geheime -- das inaktive verdiente zaehlt nicht mehr mit.
-      expect(res.body.stats.totalSecret).toBe(2);
+      expect(res.headers['x-badges-secret-total']).toBe('2');
       // Es bleibt aber in der Liste: verdient ist verdient.
-      expect(res.body.earned.map(b => b.id)).toContain(inaktivVerdient);
+      expect(res.body.filter(b => b.earned).map(b => b.id)).toContain(inaktivVerdient);
     });
 
     // Dieselbe Regel für die offenen Abzeichen: ein abgeschaltetes, aber
@@ -436,8 +453,8 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.stats.totalVisible).toBe(1);
-      expect(res.body.earned.map(b => b.id)).toContain(inaktivVerdient);
+      expect(res.headers['x-badges-visible-total']).toBe('1');
+      expect(res.body.filter(b => b.earned).map(b => b.id)).toContain(inaktivVerdient);
     });
 
     // Mit der Konfi-Form gilt auch die Konfi-Zaehlweise: Was als unerreichbar
@@ -457,8 +474,8 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.stats.totalVisible).toBe(1);
-      expect([...res.body.available, ...res.body.earned].map(b => b.id)).not.toContain(unerreichbar);
+      expect(res.headers['x-badges-visible-total']).toBe('1');
+      expect(res.body.map(b => b.id)).not.toContain(unerreichbar);
     });
   });
 
@@ -502,7 +519,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const badge = res.body.available.find(b => b.id === badgeId);
+      const badge = res.body.find(b => b.id === badgeId);
       expect(badge).toBeDefined();
       expect(badge.progress.current).toBe(1);
     });
@@ -518,7 +535,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const badge = res.body.available.find(b => b.id === badgeId);
+      const badge = res.body.find(b => b.id === badgeId);
       expect(badge).toBeDefined();
       expect(badge.progress.current).toBe(2);
     });
@@ -534,7 +551,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const badge = res.body.available.find(b => b.id === badgeId);
+      const badge = res.body.find(b => b.id === badgeId);
       expect(badge).toBeDefined();
       expect(badge.progress.current).toBe(2);
     });
@@ -566,7 +583,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(200);
-      const found = res.body.available.find(b => b.id === badge.id);
+      const found = res.body.find(b => b.id === badge.id);
       expect(found).toBeDefined();
       expect(found.progress.current).toBe(2);
     });

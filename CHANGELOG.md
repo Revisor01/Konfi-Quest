@@ -47,6 +47,9 @@ iOS-Build 151
   zeigen dieselben Zahlen.
 
 ### Behoben
+- Teamer:innen wurden direkt nach dem Anmelden wieder herausgeworfen. Ursache
+  war eine Änderung an den Abzeichen-Daten, mit der die veröffentlichte App
+  nichts anfangen konnte. Rückgängig gemacht; die App läuft wieder.
 - Öffnet die Leitung ohne Verbindung einen Termin, steht jetzt der Termin da
   statt einer roten Fehlermeldung ohne Titel. Teilnehmerliste und Abmeldungen
   bleiben dabei leer — die brauchen eine Verbindung.
