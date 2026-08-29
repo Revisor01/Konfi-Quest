@@ -1,5 +1,7 @@
-Konfi Quest 2.0 bringt Challenges: Aufgaben, auf die ihr mit Foto, Text, Aufnahme oder Link antwortet — ohne Punkte und ohne Rangliste, mit Stempel fürs Mitmachen. Ihr entscheidet je Beitrag, ob mit Namen, anonym oder nur für die Leitung.
+Diese Version räumt auf: viele kleine Fehler sind weg, und einiges läuft verlässlicher.
 
-Aus "Events" wird "Mitmachen" mit Terminen und Aktivitäten. Teamer:innen können zu- und absagen. Neu: ein Handbuch für alle Rollen.
+Beim Konfispruch steht jetzt der Wortlaut da, in Luther 2017 und Gute Nachricht.
 
-Vieles geht jetzt offline, Listen aktualisieren sich live, Push kommt wieder zuverlässig an.
+Ohne Netz seht ihr überall, was noch aussteht — und was nicht rausging, verschwindet nicht mehr unbemerkt.
+
+Mitteilungen kommen auch nach längerer Pause wieder an. Bei Terminreihen öffnet die Anmeldung rechtzeitig, und überbuchen geht nicht mehr.

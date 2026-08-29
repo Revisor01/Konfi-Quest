@@ -7,7 +7,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.1.0
+## [2.1.0] - 2026-08-29
+
+iOS-Build 151
 
 ### Hinzugefügt
 - Wartende Vorgänge sind jetzt überall in der App sichtbar: Solange etwas ohne
@@ -18,6 +20,10 @@ Versionsüberschrift.
 - Was endgültig nicht gesendet werden konnte, bleibt sichtbar, bis man es zur
   Kenntnis genommen hat. Bisher verschwand die Meldung nach vier Sekunden — wer
   gerade nicht hinsah, erfuhr nie davon.
+- Beim Wählen des Konfispruchs steht jetzt der Wortlaut da — in Luther 2017
+  und in der Gute Nachricht Bibel. Bisher sah man nur die Stellenangabe und
+  den Hinweis, der Text werde noch ergänzt. Für die Bibel in gerechter Sprache
+  und die Elberfelder steht das noch aus.
 
 ### Geändert
 - In der Leitungssicht heißt ein verbuchter Antrag jetzt **Verbucht** statt
@@ -39,12 +45,6 @@ Versionsüberschrift.
   jetzt genauso wie bei den Konfis: Abgeschaltete und nicht erreichbare
   Abzeichen blähen die Ziele nicht mehr auf, und Dashboard und Abzeichen-Seite
   zeigen dieselben Zahlen.
-
-### Hinzugefügt
-- Beim Wählen des Konfispruchs steht jetzt der Wortlaut da — in Luther 2017
-  und in der Gute Nachricht Bibel. Bisher sah man nur die Stellenangabe und
-  den Hinweis, der Text werde noch ergänzt. Für die Bibel in gerechter Sprache
-  und die Elberfelder steht das noch aus.
 
 ### Behoben
 - Wird ein Chat-Raum gelöscht, verschwinden jetzt auch die darin geteilten
