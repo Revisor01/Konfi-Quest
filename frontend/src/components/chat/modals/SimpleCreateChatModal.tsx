@@ -43,6 +43,43 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { istTeamTyp } from '../../../utils/chatRoles';
+import { fehlerTextOderMessage } from '../../../utils/fehlerText';
+
+/** Ein Eintrag aus GET /chat/available-users (Konfi-Sicht). */
+interface VerfuegbarerPartner {
+  id: number;
+  name: string;
+  type: ChatUser['type'];
+  role_name?: string;
+  role_description?: string;
+  /** Das Backend liefert hier derzeit immer null. */
+  jahrgang_name?: string | null;
+}
+
+/** Ein Eintrag aus GET /admin/users/me/jahrgaenge. */
+interface EigenerJahrgang {
+  id: number;
+  name: string;
+  can_view?: boolean;
+  can_edit?: boolean;
+}
+
+/** Ein Eintrag aus GET /admin/konfis. */
+interface KonfiEintrag {
+  id: number;
+  name: string;
+  username?: string;
+  jahrgang_id?: number | null;
+  jahrgang_name?: string | null;
+}
+
+/** Ein Eintrag aus GET /chat/team-contacts. */
+interface TeamKontakt {
+  id: number;
+  display_name: string;
+  role_name: string;
+  role_description?: string;
+}
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
@@ -55,7 +92,6 @@ interface SimpleCreateChatModalProps {
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { user, setError, isOnline } = useApp();
   const { refreshFromAPI } = useBadge();
-  const [presentDuplicateAlert] = useIonAlert();
   const [presentUnsavedAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -86,7 +122,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     }
   };
   const [users, setUsers] = useState<ChatUser[]>([]);
-  const [existingChats, setExistingChats] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const { isSubmitting: creating, guard } = useActionGuard();
@@ -108,10 +143,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   }, [groupName, selectedParticipants]);
 
   useEffect(() => {
-    loadExistingChats();
-  }, []);
-
-  useEffect(() => {
     loadUsers();
   }, [chatType]);
 
@@ -122,30 +153,21 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     }
   }, [user]);
 
-  const loadExistingChats = async () => {
-    try {
-      const response = await api.get('/chat/rooms');
-      setExistingChats(response.data);
-    } catch (err) {
- console.error('Error loading existing chats:', err);
-    }
-  };
-
   const loadUsers = async () => {
     setLoading(true);
     try {
       if (user?.type === 'konfi') {
         // Konfi: Verwende neue sichere API
         const response = await api.get('/chat/available-users');
-        const availableUsers = response.data.users.map((u: any) => ({
+        const availableUsers: ChatUser[] = (response.data.users as VerfuegbarerPartner[]).map((u) => ({
           id: u.id,
           name: u.name,
           display_name: u.name,
           // Das Backend liefert 'teamer' als eigenen Wert — vorher war der Typ
           // hier auf admin|konfi verengt und Teamer:innen wurden in der Liste
           // wie Konfis dargestellt.
-          type: u.type as ChatUser['type'],
-          jahrgang_name: u.jahrgang_name,
+          type: u.type,
+          jahrgang_name: u.jahrgang_name ?? undefined,
           // Funktionsbeschreibung vom Backend (bereits mit Fallback)
           role_description: u.role_description
         }));
@@ -153,9 +175,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
         // Verfügbare Jahrgänge ermitteln
         const jahrgaenge = [...new Set(availableUsers
-          .filter((u: any) => u.jahrgang_name)
-          .map((u: any) => u.jahrgang_name!))]
-          .sort() as string[];
+          .map((u) => u.jahrgang_name)
+          .filter((name): name is string => Boolean(name)))]
+          .sort();
         setAvailableJahrgaenge(jahrgaenge);
 
         setUsers(availableUsers);
@@ -170,8 +192,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
         // Backend liefert {id, name, ...} -- nicht jahrgang_id (Bug-Quelle)
         let allowedJahrgangIds: number[] = [];
-        if (userJahrgangRes.data.length > 0) {
-          allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id ?? j.id);
+        const eigeneJahrgaenge = userJahrgangRes.data as EigenerJahrgang[];
+        if (eigeneJahrgaenge.length > 0) {
+          allowedJahrgangIds = eigeneJahrgaenge.map((j) => j.id);
         }
 
         // Leitung und Admins erreichen alle Konfis der Gemeinde, Teamer:innen
@@ -182,18 +205,20 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         // Fehlermeldung.
         const istTeamer = user?.type === 'teamer';
 
-        let konfis: ChatUser[] = konfisRes.data
-          .filter((konfi: any) => {
+        const konfis: ChatUser[] = (konfisRes.data as KonfiEintrag[])
+          .filter((konfi) => {
             if (!istTeamer) return true;
-            return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
+            return Boolean(konfi.jahrgang_id) && allowedJahrgangIds.includes(konfi.jahrgang_id as number);
           })
-          .map((konfi: any) => ({
+          // GET /admin/konfis liefert display_name als `name` und den Jahrgang
+          // ausschliesslich als `jahrgang_name`. Die frueheren Fallbacks
+          // (konfi.display_name, konfi.jahrgang) griffen nie.
+          .map((konfi) => ({
             id: konfi.id,
-            name: konfi.name || konfi.display_name,
-            display_name: konfi.name || konfi.display_name,
+            name: konfi.name,
+            display_name: konfi.name,
             type: 'konfi' as const,
-            jahrgang: konfi.jahrgang,
-            jahrgang_name: konfi.jahrgang_name
+            jahrgang_name: konfi.jahrgang_name ?? undefined
           }));
 
         // Auch die anderen Team-Mitglieder (Admins, Org-Admins, Teamer:innen) laden.
@@ -203,7 +228,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         let adminUsers: ChatUser[] = [];
         try {
           const usersRes = await api.get('/chat/team-contacts');
-          adminUsers = usersRes.data.map((member: any) => ({
+          adminUsers = (usersRes.data as TeamKontakt[]).map((member) => ({
             id: member.id,
             name: member.display_name,
             display_name: member.display_name,
@@ -243,16 +268,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     }
   };
 
-  const checkDirectChatExists = (targetUser: ChatUser) => {
-    return existingChats.some(chat =>
-      chat.type === 'direct' &&
-      chat.participants &&
-      chat.participants.some((p: any) =>
-        p.id === targetUser.id && p.type === targetUser.type
-      )
-    );
-  };
-
   const handleParticipantToggle = (id: string) => {
     const newSelected = new Set(selectedParticipants);
     if (newSelected.has(id)) {
@@ -265,16 +280,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
   const createDirectMessage = async (targetUser: ChatUser) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    // Check if chat already exists
-    if (checkDirectChatExists(targetUser)) {
-      presentDuplicateAlert({
-        header: 'Chat existiert bereits',
-        message: `Ein Chat mit ${targetUser.name || targetUser.display_name} existiert bereits.`,
-        buttons: ['OK']
-      });
-      return;
-    }
-
+    // Frueher stand hier eine Doppel-Pruefung ("Chat existiert bereits") gegen
+    // chat.participants. GET /chat/rooms liefert dieses Feld gar nicht — die
+    // Pruefung war immer false und der Hinweis erschien nie. Sie wird auch
+    // nicht gebraucht: POST /chat/direct gibt einen bestehenden Raum zurueck
+    // (created: false), und /chat/available-users blendet Partner mit
+    // bestehendem Direktchat ohnehin aus.
     await guard(async () => {
       try {
         const directRes = await api.post('/chat/direct', {
@@ -325,9 +336,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         await refreshFromAPI(); // Update badge context
         handleModalClose();
         onSuccess(groupRes.data?.room_id);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error creating group chat:', err);
-        setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
+        setError(`Fehler beim Erstellen des Gruppenchats: ${fehlerTextOderMessage(err, 'Unbekannter Fehler')}`);
       }
     });
   };
