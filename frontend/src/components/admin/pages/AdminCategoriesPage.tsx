@@ -126,12 +126,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
         onSuccess();
         handleClose();
-      } catch (error: any) {
-        if (error.response?.data?.error) {
-          setError(error.response.data.error);
-        } else {
-          setError('Fehler beim Speichern der Kategorie');
-        }
+      } catch (error) {
+        setError(fehlerText(error, 'Fehler beim Speichern der Kategorie'));
       } finally {
         setLoading(false);
       }

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -105,12 +106,8 @@ const AdminOrganizationsPage: React.FC = () => {
             try {
               await api.delete(`/organizations/${organization.id}`);
               await loadOrganizations();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen der Organisation');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen der Organisation'));
             }
           }
         }

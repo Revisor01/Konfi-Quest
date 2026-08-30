@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -136,13 +137,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           setIsDirty(false);
           await onSave();
           doClose();
-        } catch (err: any) {
+        } catch (err) {
           // Ohne diese Meldung blieb das Modal bei einer Ablehnung des Servers
           // einfach offen stehen — etwa wenn die Punktart im Jahrgang
           // abgeschaltet ist. Für die Leitung sah das so aus, als passiere
           // nichts (Befund 24.08.2026).
           console.error('Error saving activity:', err);
-          setError(err?.response?.data?.error || 'Aktivität konnte nicht gespeichert werden');
+          setError(fehlerText(err, 'Aktivität konnte nicht gespeichert werden'));
         }
       } else {
         await writeQueue.enqueue({

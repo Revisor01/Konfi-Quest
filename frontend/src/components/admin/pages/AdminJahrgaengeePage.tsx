@@ -168,12 +168,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
         onSuccess();
         handleClose();
-      } catch (error: any) {
-        if (error.response?.data?.error) {
-          setError(error.response.data.error);
-        } else {
-          setError('Fehler beim Speichern des Jahrgangs');
-        }
+      } catch (error) {
+        setError(fehlerText(error, 'Fehler beim Speichern des Jahrgangs'));
       } finally {
         setLoading(false);
       }

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -251,12 +252,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
       setIsDirty(false);
       onSuccess();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Speichern der Aktivität');
-      }
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern der Aktivität'));
     } finally {
       setLoading(false);
     }

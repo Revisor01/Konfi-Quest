@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useMemo } from 'react';
 import {
   IonPage,
@@ -133,8 +134,8 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
     try {
       const res = await api.get(`/admin/jahrgaenge/${id}/attendance-matrix`);
       setData(res.data);
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Fehler beim Laden der Anwesenheit');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Anwesenheit'));
       setData(null);
     } finally {
       setLoading(false);
@@ -147,8 +148,8 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
     try {
       const res = await api.get(`/admin/jahrgaenge/${id}/sprueche`);
       setSprueche(res.data);
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Fehler beim Laden der Konfisprüche');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Konfisprüche'));
       setSprueche(null);
     } finally {
       setSpruecheLoading(false);
@@ -170,8 +171,8 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
     try {
       await api.post(`/admin/jahrgaenge/${jahrgangId}/matrix-email`, { type: viewMode });
       setSuccess('E-Mail an deine Adresse gesendet');
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Fehler beim Senden der E-Mail');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Senden der E-Mail'));
     } finally {
       setSending(false);
     }
