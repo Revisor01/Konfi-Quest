@@ -21,6 +21,7 @@ import {
   useIonAlert,
   useIonRouter
 } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useLocation } from 'react-router-dom';
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
@@ -288,7 +289,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         );
 
         // Show action sheet for series deletion
-        const buttons: any[] = [
+        const buttons: ActionSheetButton[] = [
           {
             text: 'Nur diesen Termin löschen',
             icon: 'trash-outline',

@@ -103,3 +103,54 @@ export interface Event {
   // Dashboard
   max_participants_display?: number;
 }
+
+/**
+ * Ein Eintrag aus der Teilnehmerliste eines Termins
+ * (GET /events/:id -> participants, backend/routes/events/lesen.js).
+ *
+ * Die Abfrage liefert `eb.*` aus event_bookings, angereichert um Name,
+ * Jahrgang, Rolle und die Zeiten des gebuchten Zeitfensters. Deshalb sind
+ * hier ALLE Buchungsstatus moeglich — auch 'waitlist' und 'opted_out'.
+ *
+ * Diese Definition ist die einzige: bis zum 30.08.2026 gab es sie zweimal,
+ * und die Fassung im ParticipantManagementModal kannte nur
+ * 'confirmed' | 'pending', obwohl sie dieselbe Antwort las.
+ */
+export interface Participant {
+  id: number;
+  user_id?: number;
+  participant_name: string;
+  jahrgang_name?: string;
+  role_name?: string;
+  created_at: string;
+  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
+  attendance_status?: 'present' | 'absent' | null;
+  timeslot_id?: number;
+  timeslot_start_time?: string;
+  timeslot_end_time?: string;
+  opt_out_reason?: string;
+  opt_out_date?: string;
+}
+
+/**
+ * Material, das an einem Termin haengt (GET /material/by-event/:eventId,
+ * backend/routes/material.js). Die Abfrage liefert genau diese Felder;
+ * file_count wird serverseitig zur Zahl gemacht.
+ */
+export interface EventMaterial {
+  id: number;
+  title: string;
+  description?: string;
+  created_at: string;
+  created_by_name?: string;
+  file_count?: number;
+}
+
+/** Eine Abmeldung von einem Termin (GET /events/:id -> unregistrations). */
+export interface Unregistration {
+  id: number;
+  user_id: number;
+  konfi_name: string;
+  reason?: string;
+  unregistered_at: string;
+}
