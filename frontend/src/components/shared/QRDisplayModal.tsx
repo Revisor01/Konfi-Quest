@@ -85,7 +85,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
       const response = await api.get(`/events/${eventId}/attendance-count`);
       setCheckedIn(response.data.checked_in);
       setTotal(response.data.total);
-    } catch (err) {
+    } catch {
       // Polling-Fehler still ignorieren
     }
   };

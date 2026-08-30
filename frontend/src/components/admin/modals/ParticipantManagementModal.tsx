@@ -111,7 +111,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
       // Dann verfügbare Konfis laden (braucht Participants für Filterung)
       await loadAvailableKonfis(loadedParticipants);
-    } catch (error) {
+    } catch {
       setError('Fehler beim Laden der Daten');
     }
   };
@@ -155,7 +155,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       setAvailableJahrgaenge(jahrgaenge);
 
       setAvailableKonfis(roleFiltered);
-    } catch (error) {
+    } catch {
       setError('Fehler beim Laden der Personen');
     }
   };
@@ -239,7 +239,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         setCurrentParticipants(updatedParticipants);
         await loadAvailableKonfis(updatedParticipants);
         onSuccess();
-      } catch (error) {
+      } catch {
         setError('Fehler beim Hinzufügen der Teilnehmer:innen');
       } finally {
         setLoading(false);
@@ -261,7 +261,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       setCurrentParticipants(updatedParticipants);
       await loadAvailableKonfis(updatedParticipants);
       onSuccess();
-    } catch (error) {
+    } catch {
       setError('Fehler beim Entfernen der Teilnehmer:in');
     }
   };

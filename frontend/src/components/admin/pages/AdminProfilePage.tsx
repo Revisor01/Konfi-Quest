@@ -67,7 +67,7 @@ const AdminProfilePage: React.FC = () => {
           await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
-      } catch (err) {
+      } catch {
         // Profile bereits via refreshProfile aktualisiert
       }
     },

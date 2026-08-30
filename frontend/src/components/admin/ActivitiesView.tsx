@@ -121,7 +121,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     try {
       await onDeleteActivity(activity);
       // Bei erfolgreichem Löschen schließt sich das Sliding automatisch durch den Re-render
-    } catch (error) {
+    } catch {
       // Bei Fehler: Sliding automatisch schließen für bessere UX
       if (slidingElement) {
         await slidingElement.close();

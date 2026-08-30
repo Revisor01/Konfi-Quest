@@ -259,7 +259,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         } else {
           setTimeslots([]);
         }
-      } catch (err) {
+      } catch {
         setTimeslots([]);
         setTimeslotsLoadFailed(true);
       }
@@ -268,13 +268,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       try {
         const partRes = await api.get(`/konfi/events/${eventId}/participants`);
         setParticipants(partRes.data || []);
-      } catch (err) {
+      } catch {
         // Teilnehmerliste ist nur Anzeige
       }
       try {
         const hasKonf = await checkExistingKonfirmation();
         setHasExistingKonfirmation(hasKonf);
-      } catch (err) {
+      } catch {
         // Konfirmations-Check wird bei der Anmeldung erneut geprüft
       }
     };
@@ -300,7 +300,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Andere, bereits gebuchte Konfirmation (nicht dieses Event selbst).
       const myEvents = response.data.filter((e: Event) => e.is_registered && e.id !== eventData?.id);
       return myEvents.some((e: Event) => isKonfirmationEvent(e));
-    } catch (err) {
+    } catch {
       return false;
     }
   };

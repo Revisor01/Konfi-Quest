@@ -122,7 +122,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           const mk = response.data?.max_konfis;
           setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) setKonfiLimit(null);
       }
     };

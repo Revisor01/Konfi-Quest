@@ -192,7 +192,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             try {
               await api.delete(`/admin/konfis/${konfi.id}`);
               await refreshKonfis();
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen');
             }
           }

@@ -232,7 +232,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     try {
       await navigator.clipboard.writeText(registrationUrl);
       setSuccess('Link kopiert');
-    } catch (error) {
+    } catch {
       setError('Fehler beim Kopieren');
     }
   };
@@ -250,7 +250,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
           text: `Registriere dich für ${jahrgangName} bei Konfi Quest!`,
           url: registrationUrl
         });
-      } catch (error) {
+      } catch {
         // User cancelled share
       }
     } else {

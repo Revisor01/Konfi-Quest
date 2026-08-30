@@ -266,7 +266,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       } catch {
         setEventMaterials([]);
       }
-    } catch (error) {
+    } catch {
       setError('Fehler beim Laden der Event-Daten');
     } finally {
       setLoading(false);
@@ -362,7 +362,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         attendance_status: status
       });
       triggerRefresh('events');
-    } catch (error) {
+    } catch {
       setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
       ));
