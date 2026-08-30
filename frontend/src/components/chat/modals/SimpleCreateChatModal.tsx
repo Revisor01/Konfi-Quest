@@ -42,44 +42,9 @@ import { useBadge } from '../../../contexts/BadgeContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
+import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
 import { fehlerTextOderMessage } from '../../../utils/fehlerText';
-
-/** Ein Eintrag aus GET /chat/available-users (Konfi-Sicht). */
-interface VerfuegbarerPartner {
-  id: number;
-  name: string;
-  type: ChatUser['type'];
-  role_name?: string;
-  role_description?: string;
-  /** Das Backend liefert hier derzeit immer null. */
-  jahrgang_name?: string | null;
-}
-
-/** Ein Eintrag aus GET /admin/users/me/jahrgaenge. */
-interface EigenerJahrgang {
-  id: number;
-  name: string;
-  can_view?: boolean;
-  can_edit?: boolean;
-}
-
-/** Ein Eintrag aus GET /admin/konfis. */
-interface KonfiEintrag {
-  id: number;
-  name: string;
-  username?: string;
-  jahrgang_id?: number | null;
-  jahrgang_name?: string | null;
-}
-
-/** Ein Eintrag aus GET /chat/team-contacts. */
-interface TeamKontakt {
-  id: number;
-  display_name: string;
-  role_name: string;
-  role_description?: string;
-}
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;

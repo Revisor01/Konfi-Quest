@@ -58,6 +58,7 @@ import { ChatRoomOverview } from '../../types/chat';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { istTeamTyp } from '../../utils/chatRoles';
+import { apiFehler, fehlerText } from '../../utils/fehlerText';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -257,13 +258,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               .then(() => {
                 refresh();
               })
-              .catch((error: any) => {
-                if (error.response?.data?.canForceDelete) {
+              .catch((error: unknown) => {
+                if (apiFehler(error).response?.data?.canForceDelete) {
                   // Hat Nachrichten - Force Delete nötig
                   setTimeout(() => {
                     presentAlert({
                       header: 'Chat hat Nachrichten',
-                      message: `${error.response.data.error}\n\nTrotzdem löschen?`,
+                      message: `${fehlerText(error, 'Der Chat enthält Nachrichten.')}\n\nTrotzdem löschen?`,
                       buttons: [
                         { text: 'Abbrechen', role: 'cancel' },
                         {
@@ -281,7 +282,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     });
                   }, 300);
                 } else {
-                  setError(error.response?.data?.error || 'Fehler beim Löschen');
+                  setError(fehlerText(error, 'Fehler beim Löschen'));
                 }
               });
           }

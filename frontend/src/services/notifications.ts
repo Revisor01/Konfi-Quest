@@ -13,6 +13,21 @@ import { PushNotifications, type PushNotificationSchema } from '@capacitor/push-
 // schlucken Fehler defensiv: ein fehlgeschlagenes Aufräumen darf den Flow
 // (Navigation, Mark-Read) nie blockieren.
 
+/**
+ * Nutzdaten eines Pushes, soweit die App sie liest.
+ *
+ * FCM liefert alle data-Werte als String, APNs teils als Zahl — deshalb sind
+ * die Kennungen bewusst offen und werden vor dem Vergleich per String()
+ * normalisiert.
+ */
+export interface PushNutzdaten {
+  type?: string;
+  roomId?: string | number;
+  room_id?: string | number;
+  organization_id?: string | number;
+  [feld: string]: unknown;
+}
+
 // ALLE zugestellten Notifications entfernen. Bewusst sparsam einsetzen
 // (z.B. für Admins, die ohnehin laufend Erinnerungen bekommen) — für
 // normale Nutzer wäre "beim App-Start alles weg" zu aggressiv.
@@ -67,7 +82,7 @@ export const removeDeliveredWhere = async (
 // roomId kann im Push-Payload als String oder Number liegen -> beide vergleichen.
 export const removeDeliveredForChatRoom = (roomId: number): Promise<void> =>
   removeDeliveredWhere((n) => {
-    const data: any = n.data || {};
+    const data = (n.data ?? {}) as PushNutzdaten;
     if (data.type !== 'chat') return false;
     const rid = data.roomId ?? data.room_id;
     return rid != null && String(rid) === String(roomId);
@@ -88,4 +103,7 @@ const EVENT_NOTIFICATION_TYPES = new Set([
 ]);
 
 export const removeDeliveredForEvents = (): Promise<void> =>
-  removeDeliveredWhere((n) => EVENT_NOTIFICATION_TYPES.has((n.data as any)?.type));
+  removeDeliveredWhere((n) => {
+    const typ = (n.data as PushNutzdaten | undefined)?.type;
+    return typeof typ === 'string' && EVENT_NOTIFICATION_TYPES.has(typ);
+  });

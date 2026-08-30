@@ -17,6 +17,8 @@ interface ApiFehlerAntwort {
       message?: unknown;
       /** Validierungsfehler des Backends, z.B. bei der Registrierung. */
       details?: { message?: unknown }[];
+      /** Chat-Loeschen: Raum hat Nachrichten, force=true noetig. */
+      canForceDelete?: unknown;
     };
   };
   /** axios-Fehlercode, z.B. 'ERR_NETWORK'. */

@@ -1,4 +1,5 @@
 import { useIonAlert, useIonActionSheet } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/core';
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { fehlerText } from '../../utils/fehlerText';
@@ -95,7 +96,7 @@ export function useChatVerwaltung({
   // Sammelt die Optionen hinter dem Menue-Button: Export (Leitung) und
   // Verlassen (wer darf). Frueher loeste der Button direkt das Verlassen aus.
   const handleChatOptions = () => {
-    const buttons: any[] = [];
+    const buttons: ActionSheetButton[] = [];
     if (istLeitung) {
       buttons.push({
         text: 'Chat-Verlauf exportieren',
