@@ -17,8 +17,8 @@ const mockApiPost = vi.fn(async () => ({ data: {} }));
 const mockApiDelete = vi.fn(async () => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: {
-    post: (...a: any[]) => mockApiPost(...a),
-    delete: (...a: any[]) => mockApiDelete(...a),
+    post: (...a: unknown[]) => mockApiPost(...a),
+    delete: (...a: unknown[]) => mockApiDelete(...a),
     get: vi.fn(),
   },
 }));
@@ -30,7 +30,7 @@ vi.mock('../../services/tokenStore', () => ({
   setToken: vi.fn(),
   setRefreshToken: vi.fn(),
   getRefreshToken: vi.fn(() => 'refresh-token'),
-  clearAuth: (...a: any[]) => mockClearAuth(...a),
+  clearAuth: (...a: unknown[]) => mockClearAuth(...a),
   getDeviceId: vi.fn(() => null),
   setDeviceId: vi.fn(),
   setLoggingOut: vi.fn(),
@@ -44,8 +44,8 @@ const mockQueueFlush = vi.fn(async () => ({ succeeded: [], failed: [] }));
 const mockQueueClear = vi.fn(async () => undefined);
 vi.mock('../../services/writeQueue', () => ({
   writeQueue: {
-    flush: (...a: any[]) => mockQueueFlush(...a),
-    clear: (...a: any[]) => mockQueueClear(...a),
+    flush: (...a: unknown[]) => mockQueueFlush(...a),
+    clear: (...a: unknown[]) => mockQueueClear(...a),
   },
 }));
 

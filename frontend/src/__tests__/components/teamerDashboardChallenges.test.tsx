@@ -43,7 +43,7 @@ const mockApiGet = vi.fn((url: string) => {
 });
 vi.mock('../../services/api', () => ({
   default: {
-    get: (...args: any[]) => mockApiGet(...(args as [string])),
+    get: (...args: unknown[]) => mockApiGet(...(args as [string])),
   },
 }));
 

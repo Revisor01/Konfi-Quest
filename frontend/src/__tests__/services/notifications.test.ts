@@ -13,9 +13,9 @@ const removeDeliveredNotifications = vi.fn();
 const removeAllDeliveredNotifications = vi.fn();
 vi.mock('@capacitor/push-notifications', () => ({
   PushNotifications: {
-    getDeliveredNotifications: (...args: any[]) => getDeliveredNotifications(...args),
-    removeDeliveredNotifications: (...args: any[]) => removeDeliveredNotifications(...args),
-    removeAllDeliveredNotifications: (...args: any[]) => removeAllDeliveredNotifications(...args),
+    getDeliveredNotifications: (...args: unknown[]) => getDeliveredNotifications(...args),
+    removeDeliveredNotifications: (...args: unknown[]) => removeDeliveredNotifications(...args),
+    removeAllDeliveredNotifications: (...args: unknown[]) => removeAllDeliveredNotifications(...args),
   },
 }));
 

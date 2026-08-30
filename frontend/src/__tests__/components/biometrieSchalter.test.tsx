@@ -12,10 +12,10 @@ const mockAktivieren = vi.fn();
 const mockVergessen = vi.fn(async () => undefined);
 
 vi.mock('../../services/biometrics', () => ({
-  biometrieVerfuegbar: (...a: any[]) => mockVerfuegbar(...(a as [])),
-  istBiometrieAktiv: (...a: any[]) => mockIstAktiv(...(a as [])),
-  biometrieAktivieren: (...a: any[]) => mockAktivieren(...(a as [])),
-  biometrieVergessen: (...a: any[]) => mockVergessen(...(a as [])),
+  biometrieVerfuegbar: (...a: unknown[]) => mockVerfuegbar(...(a as [])),
+  istBiometrieAktiv: (...a: unknown[]) => mockIstAktiv(...(a as [])),
+  biometrieAktivieren: (...a: unknown[]) => mockAktivieren(...(a as [])),
+  biometrieVergessen: (...a: unknown[]) => mockVergessen(...(a as [])),
   GESPEICHERTE_SITZUNG_MAX_TAGE: 14,
 }));
 

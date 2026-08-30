@@ -61,11 +61,11 @@ const mockIsAvailable = vi.fn(async () => {
 
 vi.mock('@capgo/capacitor-native-biometric', () => ({
   NativeBiometric: {
-    isAvailable: (...a: any[]) => mockIsAvailable(...(a as [])),
-    setData: (...a: any[]) => mockSetData(...(a as [any])),
-    getSecureData: (...a: any[]) => mockGetSecureData(...(a as [any])),
-    getData: (...a: any[]) => mockGetData(...(a as [])),
-    deleteData: (...a: any[]) => mockDeleteData(...(a as [any])),
+    isAvailable: (...a: unknown[]) => mockIsAvailable(...(a as [])),
+    setData: (...a: unknown[]) => mockSetData(...(a as [any])),
+    getSecureData: (...a: unknown[]) => mockGetSecureData(...(a as [any])),
+    getData: (...a: unknown[]) => mockGetData(...(a as [])),
+    deleteData: (...a: unknown[]) => mockDeleteData(...(a as [any])),
   },
   AccessControl: { NONE: 0, BIOMETRY_CURRENT_SET: 1, BIOMETRY_ANY: 2 },
   BiometryType: {
