@@ -7,6 +7,12 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Behoben
+- Konfis, die zu einem schon bestehenden Jahrgang dazukamen, landeten nicht im
+  Jahrgangschat und sahen ihn nie. Sie werden jetzt beim Anlegen eingetragen.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151
