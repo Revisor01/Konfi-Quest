@@ -7,6 +7,19 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Behoben
+- Termine lassen sich in der Leitungsansicht wieder per Wischen kopieren. Die
+  Aktion war bei einer früheren Überarbeitung der Wischleiste verloren
+  gegangen — der Kopier-Knopf fehlte, obwohl die Funktion dahinter noch da war.
+- Beim Wechsel auf das Teamer-Segment in der Konfi-Verwaltung stand während
+  des Ladens fälschlich "Noch keine Teamer:innen vorhanden". Jetzt dreht sich
+  dort ein Ladekreis, bis die Liste da ist.
+- Bei einer beendeten Challenge ohne eigenen Beitrag riet die App, "oben auf
+  das Plus" zu tippen — den Knopf gibt es bei beendeten Challenges gar nicht.
+  Jetzt steht dort, dass die Challenge beendet ist.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151
