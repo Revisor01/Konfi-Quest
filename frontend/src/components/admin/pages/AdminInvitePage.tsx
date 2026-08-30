@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
@@ -155,8 +156,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setQrCodeDataUrl(qrDataUrl);
 
       await refreshInvites(); // Reload to show in existing invites
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Generieren des Codes'));
     } finally {
       setGeneratingCode(false);
     }
@@ -167,8 +168,11 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     try {
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
       await refreshInvites();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
+    } catch (error) {
+      // fehlerText statt eigenem Zugriff auf err.response (Vereinheitlichung
+      // 30.08.2026). Das finally mit setExtendingInvite entfaellt: Der State
+      // wurde nie gelesen und ist als toter Code entfernt worden.
+      setError(fehlerText(error, 'Fehler beim Verlängern des Codes'));
     }
   };
 
@@ -190,8 +194,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 setQrCodeDataUrl(null);
               }
               await refreshInvites();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen'));
             }
           }
         }

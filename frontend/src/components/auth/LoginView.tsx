@@ -179,17 +179,25 @@ const LoginView: React.FC = () => {
     try {
       const user = await loginWithAutoDetection(username, password);
       weiterNachAnmeldung(user);
-    } catch (err: any) {
+    } catch (err) {
+      // Typisierte Sicht auf den axios-Fehler (rateLimitMessage setzt der
+      // Response-Interceptor in services/api.ts bei 429ern).
+      const fehler = (typeof err === 'object' && err !== null ? err : {}) as {
+        response?: { status?: number; data?: { error?: string; error_code?: string } };
+        message?: string;
+        code?: string;
+        rateLimitMessage?: string;
+      };
       // Defensiv: errorMessage immer ein String, sonst werfen die .includes()-Checks unten
-      const errorMessage: string = err?.response?.data?.error || err?.message || '';
-      const errorCode: string = err?.response?.data?.error_code || '';
+      const errorMessage: string = fehler.response?.data?.error || fehler.message || '';
+      const errorCode: string = fehler.response?.data?.error_code || '';
       let displayError: string;
 
       // Rate-Limit (429) ZUERST prüfen — ein 429 ist KEINE fehlende Verbindung.
       // Sonst zeigt die App bei "zu viele Versuche" faelschlich "Keine Verbindung".
-      if (err.response?.status === 429 || err.rateLimitMessage) {
-        displayError = err.rateLimitMessage || err?.response?.data?.error || 'Zu viele Login-Versuche. Bitte warte einen Moment.';
-      } else if (!err.response || err.code === 'ERR_NETWORK') {
+      if (fehler.response?.status === 429 || fehler.rateLimitMessage) {
+        displayError = fehler.rateLimitMessage || fehler.response?.data?.error || 'Zu viele Login-Versuche. Bitte warte einen Moment.';
+      } else if (!fehler.response || fehler.code === 'ERR_NETWORK') {
         // Netzwerkfehler erkennen
         displayError = 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
         setIsNetworkError(true);

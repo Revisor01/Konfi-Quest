@@ -1,3 +1,4 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import {
@@ -258,13 +259,16 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               .then(() => {
                 refresh();
               })
-              .catch((error: any) => {
-                if (error.response?.data?.canForceDelete) {
+              .catch((error: unknown) => {
+                const data = typeof error === 'object' && error !== null
+                  ? (error as { response?: { data?: { canForceDelete?: boolean; error?: string } } }).response?.data
+                  : undefined;
+                if (data?.canForceDelete) {
                   // Hat Nachrichten - Force Delete nötig
                   setTimeout(() => {
                     presentAlert({
                       header: 'Chat hat Nachrichten',
-                      message: `${error.response.data.error}\n\nTrotzdem löschen?`,
+                      message: `${data.error}\n\nTrotzdem löschen?`,
                       buttons: [
                         { text: 'Abbrechen', role: 'cancel' },
                         {
@@ -282,7 +286,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     });
                   }, 300);
                 } else {
-                  setError(error.response?.data?.error || 'Fehler beim Löschen');
+                  setError(fehlerText(error, 'Fehler beim Löschen'));
                 }
               });
           }

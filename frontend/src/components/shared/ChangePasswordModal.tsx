@@ -1,3 +1,4 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import { setToken, setRefreshToken } from '../../services/tokenStore';
@@ -147,8 +148,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
         setSuccess('Passwort erfolgreich geändert');
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Ändern des Passworts'));
       }
     });
   };

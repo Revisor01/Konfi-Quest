@@ -130,9 +130,10 @@ describe('api-Service', () => {
 
       try {
         await responseInterceptor.rejected(error);
-      } catch (e: any) {
-        expect(e.rateLimitMessage).toBeDefined();
-        expect(typeof e.rateLimitMessage).toBe('string');
+      } catch (e) {
+        const geworfen = e as typeof error;
+        expect(geworfen.rateLimitMessage).toBeDefined();
+        expect(typeof geworfen.rateLimitMessage).toBe('string');
       }
 
       expect(dispatchSpy).toHaveBeenCalledWith(
@@ -162,8 +163,9 @@ describe('api-Service', () => {
 
       try {
         await responseInterceptor.rejected(error);
-      } catch (e: any) {
-        expect(e.rateLimitMessage).toBe('Bitte warte 15 Minuten');
+      } catch (e) {
+        const geworfen = e as typeof error;
+        expect(geworfen.rateLimitMessage).toBe('Bitte warte 15 Minuten');
       }
     }
   });

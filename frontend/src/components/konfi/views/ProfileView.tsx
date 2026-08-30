@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import {
   IonButton,
@@ -211,8 +212,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       setSelectedTranslation(translation);
       // Update profile to reflect the change
       await onReload();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }
   };
 

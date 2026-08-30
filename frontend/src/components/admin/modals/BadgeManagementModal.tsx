@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -354,8 +355,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // Speichern legt das Badge mehrfach an.
       onDirtyChange?.(false);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern des Badges');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Speichern des Badges'));
     } finally {
       setLoading(false);
     }

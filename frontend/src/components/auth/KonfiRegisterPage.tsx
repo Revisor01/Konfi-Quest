@@ -1,3 +1,4 @@
+import { fehlerText, istNetzwerkfehler } from '../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import {
@@ -170,20 +171,20 @@ const KonfiRegisterPage: React.FC = () => {
         organization_name: response.data.organization_name
       });
       setInviteCode(code);
-    } catch (err: any) {
+    } catch (err) {
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (istNetzwerkfehler(err)) {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Differenzierte Fehlermeldungen
-        const errorCode = err.response?.data?.error_code;
+        const errorCode = (err as { response?: { data?: { error_code?: string } } }).response?.data?.error_code;
         if (errorCode === 'not_found') {
           setError('Dieser Einladungscode existiert nicht. Bitte prüfe deine Eingabe.');
         } else if (errorCode === 'expired') {
           setError('Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.');
         } else {
-          setError(err.response?.data?.error || 'Fehler bei der Code-Validierung');
+          setError(fehlerText(err, 'Fehler bei der Code-Validierung'));
         }
       }
       setInviteInfo(null);
@@ -258,16 +259,17 @@ const KonfiRegisterPage: React.FC = () => {
         }, 1500);
       }
 
-    } catch (err: any) {
+    } catch (err) {
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (istNetzwerkfehler(err)) {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Validierungsfehler des Backends kommen als details-Array — die konkrete
         // Meldung anzeigen statt nur "Validierungsfehler".
-        const detailMessage = err.response?.data?.details?.[0]?.message;
-        setError(detailMessage || err.response?.data?.error || 'Fehler bei der Registrierung');
+        const detailMessage = (err as { response?: { data?: { details?: { message?: string }[] } } })
+          .response?.data?.details?.[0]?.message;
+        setError(detailMessage || fehlerText(err, 'Fehler bei der Registrierung'));
       }
       triggerShake();
     } finally {

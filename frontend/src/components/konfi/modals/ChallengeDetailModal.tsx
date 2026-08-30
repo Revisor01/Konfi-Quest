@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   IonPage,
@@ -344,8 +345,8 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           ? { ...data.challenge, gallery, own_submissions: data.own_submissions || [] }
           : null
       );
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Laden der Challenge');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
     } finally {
       setLoading(false);
     }

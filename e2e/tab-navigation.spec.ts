@@ -47,7 +47,12 @@ for (const [rolle, tabs] of Object.entries(TABS)) {
         await page.locator(`ion-tab-button[tab="${tab}"]`).click();
         await expect(page).toHaveURL(new RegExp(pfad.replace(/\//g, '\\/')));
         // Nicht nur die URL: die Seite muss auch wirklich etwas rendern.
-        await expect(page.locator('ion-content').first()).toBeVisible({ timeout: 10_000 });
+        //
+        // NICHT .first(): Ionic haelt beim Tab-Wechsel mehrere Seiten im Stack,
+        // die alten bleiben als verstecktes ion-content liegen. Das erste im
+        // DOM ist deshalb oft ein altes. Gesucht ist das sichtbare — Playwright
+        // wartet mit :visible darauf, dass die neue Seite oben liegt.
+        await expect(page.locator('ion-content:visible').first()).toBeVisible({ timeout: 10_000 });
       }
     });
 

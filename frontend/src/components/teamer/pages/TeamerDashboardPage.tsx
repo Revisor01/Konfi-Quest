@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
@@ -333,10 +334,10 @@ const TeamerDashboardPage: React.FC = () => {
       await api.put('/teamer/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await refreshVerse();
-    } catch (err: any) {
+    } catch (err) {
       // Siehe DashboardView (Konfi): stiller Fehlschlag bei bewusster Auswahl.
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
-      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
+      setError(fehlerText(err, 'Übersetzung konnte nicht gespeichert werden'));
     }
   };
 

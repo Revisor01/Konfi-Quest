@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -228,8 +229,8 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
         onSuccess();
         handleClose();
-      } catch (error: any) {
-        setError(error.response?.data?.error || 'Fehler beim Speichern');
+      } catch (error) {
+        setError(fehlerText(error, 'Fehler beim Speichern'));
       } finally {
         setLoading(false);
       }
@@ -421,11 +422,11 @@ const AdminCertificatesPage: React.FC = () => {
             try {
               await api.delete(`/teamer/certificate-types/${certType.id}`);
               refreshCertificateTypes();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              setError(error.response?.data?.error || 'Fehler beim Löschen');
+              setError(fehlerText(error, 'Fehler beim Löschen'));
             }
           }
         }

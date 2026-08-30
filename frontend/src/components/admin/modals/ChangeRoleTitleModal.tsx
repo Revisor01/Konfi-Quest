@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -74,8 +75,8 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
           role_title: roleTitle.trim()
         });
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Aktualisieren der Funktionsbeschreibung'));
       }
     });
   };

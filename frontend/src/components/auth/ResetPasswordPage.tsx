@@ -1,3 +1,4 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
 
@@ -99,8 +100,8 @@ const ResetPasswordPage: React.FC = () => {
         newPassword: password
       });
       setSuccess(true);
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts';
+    } catch (err) {
+      const message = fehlerText(err, 'Fehler beim Zurücksetzen des Passworts');
       if (message.includes('abgelaufen') || message.includes('expired') || message.includes('ungültig')) {
         setError('Dieser Link ist abgelaufen oder ungültig. Bitte fordere einen neuen an.');
       } else {

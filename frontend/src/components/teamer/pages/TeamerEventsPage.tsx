@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
@@ -263,8 +264,8 @@ const TeamerEventsPage: React.FC = () => {
             try {
               await api.delete(`/teamer/requests/${request.id}`);
               refreshRequests();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen der Aktivität');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'));
             }
           }
         }
@@ -465,8 +466,8 @@ const TeamerEventsPage: React.FC = () => {
         setSuccess('Wird gesendet, sobald du wieder online bist');
       }
       refreshLive();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Speichern'));
     } finally {
       setBookingLoading(false);
     }
@@ -576,8 +577,8 @@ const TeamerEventsPage: React.FC = () => {
         // spaeter einschraenken koennte.
         setError('Für die Buchung brauchst du eine Verbindung — sonst wüsstest du nicht, ob du einen Platz oder die Warteliste bekommst.');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Buchung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Buchung'));
     } finally {
       setBookingLoading(false);
     }
@@ -606,8 +607,8 @@ const TeamerEventsPage: React.FC = () => {
         });
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Stornieren');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Stornieren'));
     } finally {
       setBookingLoading(false);
     }

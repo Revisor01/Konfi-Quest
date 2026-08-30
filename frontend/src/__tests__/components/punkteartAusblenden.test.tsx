@@ -18,8 +18,8 @@ const mockApiGet = vi.fn().mockResolvedValue({ data: [] });
 const mockApiPost = vi.fn().mockResolvedValue({ data: {} });
 vi.mock('../../services/api', () => ({
   default: {
-    get: (...args: any[]) => mockApiGet(...args),
-    post: (...args: any[]) => mockApiPost(...args),
+    get: (...args: unknown[]) => mockApiGet(...args),
+    post: (...args: unknown[]) => mockApiPost(...args),
   },
 }));
 

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -270,8 +271,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         setIsDirty(false);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern des Benutzers'));
       }
     });
   };

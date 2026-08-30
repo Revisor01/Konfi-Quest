@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockWriteFile = vi.fn(async () => undefined);
 vi.mock('@capacitor/filesystem', () => ({
-  Filesystem: { writeFile: (...args: any[]) => mockWriteFile(...args) },
+  Filesystem: { writeFile: (...args: unknown[]) => mockWriteFile(...args) },
   Directory: { Data: 'DATA' },
 }));
 
 const mockEnqueue = vi.fn(async () => undefined);
 vi.mock('../../services/writeQueue', () => ({
-  writeQueue: { enqueue: (...args: any[]) => mockEnqueue(...args) },
+  writeQueue: { enqueue: (...args: unknown[]) => mockEnqueue(...args) },
 }));
 
 import {

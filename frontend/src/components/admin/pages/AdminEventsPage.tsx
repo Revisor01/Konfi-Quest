@@ -1,3 +1,4 @@
+import { fehlerText, fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
@@ -346,11 +347,11 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              if (error.response?.status === 409) {
-                confirmForceDelete(event, error.response.data);
+            } catch (error) {
+              if (fehlerStatus(error) === 409) {
+                confirmForceDelete(event, (error as { response: { data: unknown } }).response.data);
               } else {
-                setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+                setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
             }
           }
@@ -378,8 +379,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}?force=true`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen des Events'));
             }
           }
         }
@@ -524,8 +525,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               setSuccess(`Event "${event.name}" wurde abgesagt`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Absagen'));
             }
           }
         },
@@ -602,8 +603,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               // hochzaehlen; Punkte werden zurückgenommen -> Konfi-Liste.
               triggerRefresh('requests');
               triggerRefresh('konfis');
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Zurücksetzen der Aktivität');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücksetzen der Aktivität'));
             }
           }
         }

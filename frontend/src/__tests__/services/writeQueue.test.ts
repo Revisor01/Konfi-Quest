@@ -14,15 +14,15 @@ const mockReadFile = vi.fn(async () => ({ data: btoa('fake-image-bytes') }));
 const mockDeleteFile = vi.fn(async () => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: {
-    readFile: (...args: any[]) => mockReadFile(...args),
-    deleteFile: (...args: any[]) => mockDeleteFile(...args),
+    readFile: (...args: unknown[]) => mockReadFile(...args),
+    deleteFile: (...args: unknown[]) => mockDeleteFile(...args),
   },
   Directory: { Data: 'DATA' },
 }));
 
 const mockPost = vi.fn();
 vi.mock('../../services/api', () => ({
-  default: { post: (...a: any[]) => mockPost(...a), put: vi.fn(), delete: vi.fn() },
+  default: { post: (...a: unknown[]) => mockPost(...a), put: vi.fn(), delete: vi.fn() },
 }));
 
 vi.mock('@ionic/core', () => ({ toastController: { create: vi.fn() } }));

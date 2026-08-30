@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -303,8 +304,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         }
 
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern'));
       }
     });
   };

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
@@ -460,9 +461,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Demote participant error:', error);
-      setError(error.response?.data?.error || 'Fehler beim Verschieben auf Warteliste');
+      setError(fehlerText(error, 'Fehler beim Verschieben auf Warteliste'));
     }
   };
 
@@ -487,9 +488,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Delete participant error:', error);
-      setError(error.response?.data?.error || 'Fehler beim Entfernen des Teilnehmers');
+      setError(fehlerText(error, 'Fehler beim Entfernen des Teilnehmers'));
     }
   };
 
@@ -529,8 +530,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               });
               setSuccess('Event wurde abgesagt');
               onBack();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Absagen'));
             }
           }
         },
@@ -545,8 +546,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const res = await api.post(`/events/${eventData?.id}/chat`);
       setSuccess('Chat erstellt');
       router.push(`/admin/chat/room/${res.data.chat_room_id}`, 'root');
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Erstellen des Chats');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Erstellen des Chats'));
     }
   };
 

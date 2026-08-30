@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -75,12 +76,8 @@ const AdminUsersPage: React.FC = () => {
             try {
               await api.delete(`/users/${userToDelete.id}`);
               await refreshUsers();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Benutzers');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen des Benutzers'));
             }
           }
         }

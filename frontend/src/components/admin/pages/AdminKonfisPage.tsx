@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -219,8 +220,8 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
                 await api.delete(`/users/${teamer.id}`);
                 await refreshKonfis();
                 setSuccess(`Teamer:in "${teamer.display_name || teamer.name}" gelöscht`);
-              } catch (err: any) {
-                setError(err.response?.data?.error || 'Fehler beim Löschen');
+              } catch (err) {
+                setError(fehlerText(err, 'Fehler beim Löschen'));
               } finally {
                 resolve();
               }
@@ -300,8 +301,8 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             try {
               const response = await api.post('/admin/konfis', { ...konfiData, confirm: true });
               await handleKonfiCreated(response, konfiData);
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
             }
           }
         }
@@ -313,15 +314,18 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     try {
       const response = await api.post('/admin/konfis', konfiData);
       await handleKonfiCreated(response, konfiData);
-    } catch (err: any) {
-      const errorCode = err.response?.data?.error_code;
+    } catch (err) {
+      const antwort = typeof err === 'object' && err !== null
+        ? (err as { response?: { status?: number; data?: { error_code?: string; next_tier?: number } } }).response
+        : undefined;
+      const errorCode = antwort?.data?.error_code;
 
       if (errorCode === 'limit_grace') {
         // 409 Grace: Bestätigungsdialog mit Tarif-Hinweis und "Trotzdem anlegen"
-        presentGraceDialog(konfiData, err.response?.data);
+        presentGraceDialog(konfiData, antwort?.data);
       } else if (errorCode === 'limit_exceeded') {
         // 403 Hard-Block: nur Hinweis, kein Override
-        const nextTier = err.response?.data?.next_tier;
+        const nextTier = antwort?.data?.next_tier;
         const tarifHinweis = nextTier
           ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
           : 'Bitte wende dich an den Support für ein passendes Angebot.';
@@ -330,11 +334,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           message: `Das Konfi-Limit ist ausgeschöpft. Um weitere Konfis anzulegen, ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
           buttons: [{ text: 'Verstanden', role: 'cancel' }]
         });
-      } else if (err.response?.status === 409) {
+      } else if (antwort?.status === 409) {
         // Username-Kollision (unverändert)
         setError('Ein Konfi mit diesem Namen existiert bereits.');
       } else {
-        setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
+        setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
       }
     }
   };

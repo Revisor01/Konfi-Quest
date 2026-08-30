@@ -1,3 +1,4 @@
+import { fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -325,9 +326,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         await refreshFromAPI(); // Update badge context
         handleModalClose();
         onSuccess(groupRes.data?.room_id);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error creating group chat:', err);
-        setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
+        setError(`Fehler beim Erstellen des Gruppenchats: ${fehlerTextOderMessage(err, 'Unbekannter Fehler')}`);
       }
     });
   };

@@ -1,3 +1,4 @@
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -123,8 +124,8 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
         setPhotoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(prepared);
-    } catch (err: any) {
-      setError(err?.message || 'Foto konnte nicht verarbeitet werden');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Foto konnte nicht verarbeitet werden');
     }
   };
 
@@ -150,8 +151,8 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
       });
 
       return response.data.filename;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Fehler beim Hochladen des Fotos');
+    } catch (error) {
+      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'));
     }
   };
 
@@ -203,8 +204,8 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
-        } catch (error: any) {
-          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen der Aktivität');
+        } catch (error) {
+          setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
         } finally {
           setUploadProgress(0);
         }

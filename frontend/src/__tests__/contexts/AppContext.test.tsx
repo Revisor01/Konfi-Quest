@@ -54,9 +54,9 @@ const mockSetPushTokenTimestamp = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../services/tokenStore', () => ({
   getUser: () => mockGetUser(),
   getDeviceId: () => mockGetDeviceId(),
-  setDeviceId: (...args: any[]) => mockSetDeviceId(...args),
+  setDeviceId: (...args: unknown[]) => mockSetDeviceId(...args),
   getPushTokenTimestamp: () => mockGetPushTokenTimestamp(),
-  setPushTokenTimestamp: (...args: any[]) => mockSetPushTokenTimestamp(...args),
+  setPushTokenTimestamp: (...args: unknown[]) => mockSetPushTokenTimestamp(...args),
   getToken: vi.fn().mockReturnValue(null),
   getRefreshToken: vi.fn().mockReturnValue(null),
   getActiveOrgId: vi.fn().mockReturnValue(null),
@@ -81,10 +81,10 @@ const mockQueueGetAll = vi.fn().mockResolvedValue([]);
 
 vi.mock('../../services/writeQueue', () => ({
   writeQueue: {
-    flush: (...args: any[]) => mockQueueFlush(...args),
+    flush: (...args: unknown[]) => mockQueueFlush(...args),
     flushTextOnly: vi.fn().mockResolvedValue({ succeeded: [], failed: [] }),
-    clear: (...args: any[]) => mockQueueClear(...args),
-    getAll: (...args: any[]) => mockQueueGetAll(...args),
+    clear: (...args: unknown[]) => mockQueueClear(...args),
+    getAll: (...args: unknown[]) => mockQueueGetAll(...args),
   },
 }));
 

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -86,8 +87,8 @@ const AdminActivitiesPage: React.FC = () => {
             try {
               await api.delete(`/admin/activities/${activity.id}`);
               await refreshActivities();
-            } catch (err: any) {
-              const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
+            } catch (err) {
+              const errorMessage = fehlerText(err, 'Fehler beim Löschen der Aktivität');
               setError(errorMessage);
             }
           }

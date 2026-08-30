@@ -9,9 +9,9 @@ const mockCacheIsStale = vi.fn();
 
 vi.mock('../../services/offlineCache', () => ({
   offlineCache: {
-    get: (...args: any[]) => mockCacheGet(...args),
-    set: (...args: any[]) => mockCacheSet(...args),
-    isStale: (...args: any[]) => mockCacheIsStale(...args),
+    get: (...args: unknown[]) => mockCacheGet(...args),
+    set: (...args: unknown[]) => mockCacheSet(...args),
+    isStale: (...args: unknown[]) => mockCacheIsStale(...args),
   },
 }));
 
