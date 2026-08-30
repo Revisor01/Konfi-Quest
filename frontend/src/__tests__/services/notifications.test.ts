@@ -13,9 +13,9 @@ const removeDeliveredNotifications = vi.fn();
 const removeAllDeliveredNotifications = vi.fn();
 vi.mock('@capacitor/push-notifications', () => ({
   PushNotifications: {
-    getDeliveredNotifications: (...args: any[]) => getDeliveredNotifications(...args),
-    removeDeliveredNotifications: (...args: any[]) => removeDeliveredNotifications(...args),
-    removeAllDeliveredNotifications: (...args: any[]) => removeAllDeliveredNotifications(...args),
+    getDeliveredNotifications: (...args: unknown[]) => getDeliveredNotifications(...args),
+    removeDeliveredNotifications: (...args: unknown[]) => removeDeliveredNotifications(...args),
+    removeAllDeliveredNotifications: (...args: unknown[]) => removeAllDeliveredNotifications(...args),
   },
 }));
 
@@ -26,7 +26,11 @@ import {
   removeDeliveredForEvents,
 } from '../../services/notifications';
 
-const delivered = (notifications: any[]) => {
+// Nur die Felder, die der Code auswertet — die Tests liefern bewusst
+// unvollstaendige Notifications (u.a. ganz ohne data).
+type TestNotification = { id: string; data?: Record<string, unknown> };
+
+const delivered = (notifications: TestNotification[]) => {
   getDeliveredNotifications.mockResolvedValue({ notifications });
   removeDeliveredNotifications.mockResolvedValue(undefined);
 };
@@ -83,8 +87,8 @@ describe('removeDeliveredForChatRoom', () => {
     ]);
     await removeDeliveredForChatRoom(62);
     expect(removeDeliveredNotifications).toHaveBeenCalledTimes(1);
-    const arg = removeDeliveredNotifications.mock.calls[0][0];
-    expect(arg.notifications.map((n: any) => n.id).sort()).toEqual(['1', '4']);
+    const arg = removeDeliveredNotifications.mock.calls[0][0] as { notifications: { id: string }[] };
+    expect(arg.notifications.map((n) => n.id).sort()).toEqual(['1', '4']);
   });
 
   it('entfernt nichts, wenn kein Raum passt', async () => {
@@ -109,8 +113,8 @@ describe('removeDeliveredForEvents', () => {
       { id: '4', data: { type: 'badge_earned' } },
     ]);
     await removeDeliveredForEvents();
-    const arg = removeDeliveredNotifications.mock.calls[0][0];
-    expect(arg.notifications.map((n: any) => n.id).sort()).toEqual(['1', '2']);
+    const arg = removeDeliveredNotifications.mock.calls[0][0] as { notifications: { id: string }[] };
+    expect(arg.notifications.map((n) => n.id).sort()).toEqual(['1', '2']);
   });
 
   it('ist no-op im Web', async () => {

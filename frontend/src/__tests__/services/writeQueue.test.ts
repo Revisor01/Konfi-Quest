@@ -14,15 +14,15 @@ const mockReadFile = vi.fn(async () => ({ data: btoa('fake-image-bytes') }));
 const mockDeleteFile = vi.fn(async () => undefined);
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: {
-    readFile: (...args: any[]) => mockReadFile(...args),
-    deleteFile: (...args: any[]) => mockDeleteFile(...args),
+    readFile: (...args: unknown[]) => mockReadFile(...args),
+    deleteFile: (...args: unknown[]) => mockDeleteFile(...args),
   },
   Directory: { Data: 'DATA' },
 }));
 
 const mockPost = vi.fn();
 vi.mock('../../services/api', () => ({
-  default: { post: (...a: any[]) => mockPost(...a), put: vi.fn(), delete: vi.fn() },
+  default: { post: (...a: unknown[]) => mockPost(...a), put: vi.fn(), delete: vi.fn() },
 }));
 
 vi.mock('@ionic/core', () => ({ toastController: { create: vi.fn() } }));
@@ -95,7 +95,7 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
 });
 
 // Hilfen für die neuen Faelle
-const chatItem = (clientId: string, extra: Record<string, any> = {}) => ({
+const chatItem = (clientId: string, extra: Record<string, unknown> = {}) => ({
   method: 'POST' as const,
   url: '/chat/rooms/1/messages',
   body: { content: 'hallo', client_id: clientId },

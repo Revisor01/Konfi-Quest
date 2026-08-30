@@ -1,4 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { AxiosInstance, AxiosInterceptorManager, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+
+// axios legt die registrierten Interceptor-Handler intern unter `handlers` ab.
+// Das ist Bibliotheks-Interna und daher nicht in den oeffentlichen Typen —
+// hier lokal beschrieben, damit die Tests die Handler direkt ausfuehren koennen.
+interface InterceptorHandler<T> {
+  fulfilled?: (value: T) => T | Promise<T>;
+  rejected?: (error: unknown) => unknown;
+}
+type ManagerMitHandlers<T> = AxiosInterceptorManager<T> & { handlers: (InterceptorHandler<T> | null)[] };
+
+const requestHandler = (api: AxiosInstance) =>
+  (api.interceptors.request as ManagerMitHandlers<InternalAxiosRequestConfig>).handlers
+    .find((h): h is InterceptorHandler<InternalAxiosRequestConfig> => Boolean(h && h.fulfilled));
+
+const responseHandler = (api: AxiosInstance) =>
+  (api.interceptors.response as ManagerMitHandlers<AxiosResponse>).handlers
+    .find((h): h is InterceptorHandler<AxiosResponse> => Boolean(h && h.rejected));
 
 // Mock tokenStore
 vi.mock('../../services/tokenStore', () => ({
@@ -52,11 +70,10 @@ describe('api-Service', () => {
     const { default: api } = await import('../../services/api');
 
     // Interceptors manuell ausfuehren
-    const handlers = (api.interceptors.request as any).handlers;
-    const requestInterceptor = handlers.find((h: any) => h && h.fulfilled);
+    const requestInterceptor = requestHandler(api);
 
-    if (requestInterceptor) {
-      const config = { headers: {} as any };
+    if (requestInterceptor?.fulfilled) {
+      const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
       const result = await requestInterceptor.fulfilled(config);
       expect(result.headers.Authorization).toBe('Bearer my-jwt-token');
     }
@@ -68,11 +85,10 @@ describe('api-Service', () => {
 
     const { default: api } = await import('../../services/api');
 
-    const handlers = (api.interceptors.request as any).handlers;
-    const requestInterceptor = handlers.find((h: any) => h && h.fulfilled);
+    const requestInterceptor = requestHandler(api);
 
-    if (requestInterceptor) {
-      const config = { headers: {} as any };
+    if (requestInterceptor?.fulfilled) {
+      const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
       const result = await requestInterceptor.fulfilled(config);
       expect(result.headers.Authorization).toBeUndefined();
     }
@@ -86,10 +102,9 @@ describe('api-Service', () => {
     const { default: api } = await import('../../services/api');
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
-    const handlers = (api.interceptors.response as any).handlers;
-    const responseInterceptor = handlers.find((h: any) => h && h.rejected);
+    const responseInterceptor = responseHandler(api);
 
-    if (responseInterceptor) {
+    if (responseInterceptor?.rejected) {
       const error = {
         config: { url: '/some-endpoint', headers: {} },
         response: { status: 401 },
@@ -114,10 +129,9 @@ describe('api-Service', () => {
     const { default: api } = await import('../../services/api');
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
-    const handlers = (api.interceptors.response as any).handlers;
-    const responseInterceptor = handlers.find((h: any) => h && h.rejected);
+    const responseInterceptor = responseHandler(api);
 
-    if (responseInterceptor) {
+    if (responseInterceptor?.rejected) {
       const error = {
         config: { url: '/some-endpoint' },
         response: {
@@ -130,9 +144,10 @@ describe('api-Service', () => {
 
       try {
         await responseInterceptor.rejected(error);
-      } catch (e: any) {
-        expect(e.rateLimitMessage).toBeDefined();
-        expect(typeof e.rateLimitMessage).toBe('string');
+      } catch (e) {
+        const fehler = e as { rateLimitMessage?: string };
+        expect(fehler.rateLimitMessage).toBeDefined();
+        expect(typeof fehler.rateLimitMessage).toBe('string');
       }
 
       expect(dispatchSpy).toHaveBeenCalledWith(
@@ -146,10 +161,9 @@ describe('api-Service', () => {
   it('429-Response bevorzugt Backend-Error-Message', async () => {
     const { default: api } = await import('../../services/api');
 
-    const handlers = (api.interceptors.response as any).handlers;
-    const responseInterceptor = handlers.find((h: any) => h && h.rejected);
+    const responseInterceptor = responseHandler(api);
 
-    if (responseInterceptor) {
+    if (responseInterceptor?.rejected) {
       const error = {
         config: { url: '/some-endpoint' },
         response: {
@@ -162,8 +176,8 @@ describe('api-Service', () => {
 
       try {
         await responseInterceptor.rejected(error);
-      } catch (e: any) {
-        expect(e.rateLimitMessage).toBe('Bitte warte 15 Minuten');
+      } catch (e) {
+        expect((e as { rateLimitMessage?: string }).rateLimitMessage).toBe('Bitte warte 15 Minuten');
       }
     }
   });
@@ -172,10 +186,9 @@ describe('api-Service', () => {
     const tokenStore = await import('../../services/tokenStore');
     const { default: api } = await import('../../services/api');
 
-    const handlers = (api.interceptors.response as any).handlers;
-    const responseInterceptor = handlers.find((h: any) => h && h.rejected);
+    const responseInterceptor = responseHandler(api);
 
-    if (responseInterceptor) {
+    if (responseInterceptor?.rejected) {
       const error = {
         config: { url: '/auth/login', headers: {} },
         response: { status: 401 },
@@ -277,7 +290,7 @@ describe('ensureFreshToken', () => {
     vi.mocked(tokenStore.getToken).mockReturnValue(expiredToken);
     vi.mocked(tokenStore.getRefreshToken).mockReturnValue('refresh-1');
 
-    let resolveRefresh: (value: any) => void;
+    let resolveRefresh: (value: { data: { token: string; refresh_token: string } }) => void;
     const postSpy = vi.spyOn(axios, 'post').mockImplementation(
       () => new Promise((resolve) => { resolveRefresh = resolve; })
     );
