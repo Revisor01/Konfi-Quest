@@ -1266,7 +1266,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         min="0"
                         value={maxKonfis}
                         onIonInput={(e) => handleMaxKonfisChange(e.detail.value ?? '')}
-                        placeholder="z.B. 30 — leer lassen für unbegrenzt"
+                        placeholder={isOnline ? "z.B. 30 — leer lassen für unbegrenzt" : "Ohne Internetverbindung nicht möglich"}
+                        title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
                         disabled={!isOnline}
                       />
                     </IonItem>

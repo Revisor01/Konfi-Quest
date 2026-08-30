@@ -27,6 +27,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { offlineCache } from '../../../services/offlineCache';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
@@ -714,6 +715,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           teamerEvents={teamerEvents}
           activities={activities}
         />
+
+        {/* Punkte-Historie, Aktivitaeten und Anwesenheit haengen an
+            GET /admin/konfis/:id und fehlen offline — Name und Punktestand
+            kommen aus dem Listen-Cache. */}
+        {currentKonfi && activities.length === 0 && !isOnline && (
+          <OfflinePlatzhalter was="Die Aktivitäten- und Punkte-Historie" />
+        )}
 
         {/* Konfirmation (Termin + Spruch + Pflicht-Events, read-only) - nur für Konfis */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (

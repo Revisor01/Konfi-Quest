@@ -95,12 +95,16 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
             </IonButton>
           )}
           {onClearChat && (
-            <IonButton aria-label="Team-Chat leeren" disabled={!isOnline} onClick={onClearChat}>
+            <IonButton aria-label={isOnline ? "Team-Chat leeren" : "Team-Chat leeren — Ohne Internetverbindung nicht möglich"}
+              title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
+              disabled={!isOnline} onClick={onClearChat}>
               <IonIcon icon={trashOutline} />
             </IonButton>
           )}
           {canLeave && (
-            <IonButton aria-label="Weitere Chat-Optionen" disabled={!isOnline} onClick={onLeaveChat}>
+            <IonButton aria-label={isOnline ? "Weitere Chat-Optionen" : "Weitere Chat-Optionen — Ohne Internetverbindung nicht möglich"}
+              title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
+              disabled={!isOnline} onClick={onLeaveChat}>
               <IonIcon icon={ellipsisVertical} />
             </IonButton>
           )}

@@ -3126,3 +3126,24 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   .app-wartende-leiste:active { transform: none; }
 }
 }
+
+
+/* ====================================================================
+   Offline-Platzhalter (30.08.2026)
+
+   Ersetzt Abschnitte, die offline kommentarlos verschwanden, durch eine
+   Zeile, die sagt was fehlt. Grau und schmal: Dass etwas fehlt, ist eine
+   Information, kein Fehler.
+   ==================================================================== */
+.app-offline-platzhalter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  color: var(--ion-color-medium, #92949c);
+  font-size: 0.85rem;
+}
+.app-offline-platzhalter ion-icon {
+  flex-shrink: 0;
+  font-size: 1.05rem;
+}

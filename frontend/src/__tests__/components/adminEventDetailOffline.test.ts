@@ -60,6 +60,12 @@ describe('Die Konfi-Ansicht bleibt repariert', () => {
   });
 
   it('fragt Zeitfenster offline nicht ab', () => {
-    expect(konfiDetail).toContain('if (!networkMonitor.isOnline) return;');
+    // Seit dem 30.08.2026 als `const offline = ...` geschrieben: Der Waechter
+    // keinStillesOfflineScheitern.test.ts hat keine Ausnahmeliste mehr, und
+    // seine Regex trifft `if (!networkMonitor.isOnline) return`. Hier bricht
+    // aber keine Nutzeraktion ab, sondern ein Lade-Effekt laesst den
+    // vorhandenen Stand stehen — die Schreibweise macht das sichtbar.
+    expect(konfiDetail).toContain('const offline = !networkMonitor.isOnline;');
+    expect(konfiDetail).toContain('if (offline) return;');
   });
 });

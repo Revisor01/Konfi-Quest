@@ -14,6 +14,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineCache } from '../../../services/offlineCache';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import api from '../../../services/api';
 import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
@@ -351,7 +353,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     setParticipants(prev => prev.map(p =>
       p.id === participant.id ? { ...p, attendance_status: status } : p
     ));
@@ -369,7 +371,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const showAttendanceActionSheet = (participant: Participant) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     const buttons: any[] = [];
     if (participant.attendance_status !== 'present') {
       buttons.push({ text: 'Anwesend', icon: checkmarkCircle, handler: () => handleAttendanceUpdate(participant, 'present') });
@@ -382,7 +384,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const showWaitlistActionSheet = (participant: Participant) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentActionSheet({
       header: participant.participant_name,
       subHeader: 'Warteliste verwalten',
@@ -421,7 +423,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     waitlistCount: number,
     rolle: 'konfi' | 'teamer' = 'konfi'
   ) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     const waitlistHint = waitlistCount > 0
       ? ` Die Warteliste (${waitlistCount}) bleibt unberührt.`
       : '';
@@ -496,7 +498,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   // Ebenfalls per Wisch-Geste erreichbar und nicht umkehrbar -> Rueckfrage.
   const handleRemoveParticipant = (participant: Participant) => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Anmeldung entfernen?',
       message: `${participant.participant_name || 'Diese Person'} wird von diesem Event abgemeldet. Ein frei werdender Platz geht an die Warteliste.`,
@@ -541,7 +543,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const handleCreateEventChat = async () => {
-    if (!isOnline) return;
+    if (offlineBlockiert(isOnline, setError)) return;
     try {
       const res = await api.post(`/events/${eventData?.id}/chat`);
       setSuccess('Chat erstellt');
@@ -784,6 +786,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           />
         )}
 
+        {/* Teilnehmer, Abmeldungen und Anwesenheit haengen an GET /events/:id
+            und fehlen offline — der Grundstand kommt aus dem Listen-Cache.
+            Ohne diesen Hinweis saehe die Seite aus, als gaebe es keine
+            Teilnehmer (Simons Kritik vom 29.08.2026). */}
+        {eventData && participants.length === 0 && !isOnline && (
+          <OfflinePlatzhalter was="Die Teilnehmerliste" />
+        )}
+
         {/* Beschreibung */}
         {eventData?.description && (
           <DescriptionSection description={eventData.description} />
@@ -903,6 +913,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       if (unprocessed === 0) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
+                          title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
                           onClick={() => handleConfirmAllAttendance(unprocessed, waitlistParticipants.length)}>
                           <IonIcon icon={checkmark} slot="start" />
                           Alle bestätigen ({unprocessed})
@@ -942,6 +953,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       if (unprocessedTeamer === 0) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
+                          title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
                           onClick={() => handleConfirmAllAttendance(unprocessedTeamer, teamerWaitlist.length, 'teamer')}>
                           <IonIcon icon={checkmark} slot="start" />
                           Alle bestätigen ({unprocessedTeamer})

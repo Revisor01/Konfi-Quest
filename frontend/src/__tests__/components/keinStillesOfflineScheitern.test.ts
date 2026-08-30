@@ -10,12 +10,21 @@ import { join, relative } from 'path';
 
 const componentsDir = join(__dirname, '..', '..', 'components');
 
-// Diese Dateien werden parallel separat repariert (25.08.2026) und sind hier
-// solange erlaubt; der Eintrag kann nach deren Fix ersatzlos entfallen.
-const erlaubt = new Set([
-  'admin/views/EventDetailView.tsx',
-  'konfi/views/EventDetailView.tsx',
-]);
+// Die Ausnahmeliste ist am 30.08.2026 LEER geworden und bleibt es.
+//
+// Sie trug seit dem 25.08.2026 zwei Dateien mit der Begruendung "werden
+// parallel separat repariert" — das ist nie passiert, und solange sie drauf
+// standen, waren sie gegen NEUE Verstoesse ungeschuetzt. In
+// admin/views/EventDetailView.tsx hatten sich sechs stille Rueckkehrer
+// gehalten (Anwesenheit setzen, Teilnehmer entfernen, Chat anlegen), die
+// offline kommentarlos verpufften.
+//
+// Wer hier wieder etwas eintragen will: Es gibt keinen Grund. Wer offline
+// blockieren muss, nimmt offlineBlockiert() (Meldung) oder die writeQueue.
+// Ein Lade-Effekt, der bewusst den letzten Stand stehen laesst, ist kein
+// Verstoss — der schreibt sich `const offline = !isOnline; if (offline)
+// return;` und sagt im Kommentar, warum.
+const erlaubt = new Set<string>([]);
 
 const alleDateien = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {

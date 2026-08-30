@@ -51,6 +51,14 @@ iOS-Build 151
   zeigen dieselben Zahlen.
 
 ### Behoben
+- Ohne Verbindung sagt die App jetzt, was fehlt: Wo Teilnehmerliste,
+  Zeitfenster oder Punkte-Historie nicht geladen werden konnten, steht ein
+  Hinweis. Bisher verschwanden diese Abschnitte wortlos — man konnte nicht
+  erkennen, ob es nichts gibt oder nur nichts geladen wurde.
+- Tippt die Leitung ohne Verbindung auf Anwesenheit, Teilnehmer entfernen
+  oder Chat anlegen, kommt jetzt eine Meldung. Bisher passierte kommentarlos
+  nichts.
+- Ausgegraute Knöpfe sagen jetzt beim Berühren, warum sie nicht gehen.
 - Teamer:innen wurden direkt nach dem Anmelden wieder herausgeworfen. Ursache
   war eine Änderung an den Abzeichen-Daten, mit der die veröffentlichte App
   nichts anfangen konnte. Rückgängig gemacht; die App läuft wieder.

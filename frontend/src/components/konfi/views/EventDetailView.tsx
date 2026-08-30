@@ -49,6 +49,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
+import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -242,7 +243,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // wuerde die vorhandenen Werte auf leer setzen. Zeitfenster und
       // Teilnehmerliste behalten stattdessen ihren letzten Stand
       // (Nutzerhinweis 25.08.2026).
-      if (!networkMonitor.isOnline) return;
+      //
+      // Das ist KEIN stilles Scheitern im Sinne von offlineAktion.ts: Hier
+      // bricht keine Nutzeraktion ab, sondern ein Lade-Effekt laesst den
+      // vorhandenen Stand stehen. Eine Fehlermeldung waere hier falsch — die
+      // Seite zeigt den Termin ja. Was offline fehlt, sagen die Platzhalter
+      // in den betroffenen Abschnitten.
+      const offline = !networkMonitor.isOnline;
+      if (offline) return;
       setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
@@ -626,6 +634,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               </div>
 
               {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
+              {eventData.has_timeslots && timeslots.length === 0 && !isOnline && (
+                <OfflinePlatzhalter was="Die Zeitfenster-Auswahl" />
+              )}
               {eventData.has_timeslots && timeslots.length > 0 && (
                 <div className="app-info-row app-info-row--top">
                   <IonIcon icon={time} className="app-info-row__icon app-icon-color--time app-event-detail__icon--align-top" />
@@ -838,6 +849,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         )}
 
         {/* Teilnehmer-Liste */}
+        {participants.length === 0 && !isOnline && (
+          <OfflinePlatzhalter was="Die Teilnehmerliste" />
+        )}
         {participants.length > 0 && (
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
