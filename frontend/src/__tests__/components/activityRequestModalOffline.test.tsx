@@ -47,18 +47,23 @@ vi.mock('../../contexts/AppContext', () => ({
 }));
 
 vi.mock('../../hooks/useActionGuard', () => ({
-  useActionGuard: () => ({ isSubmitting: false, guard: (fn: any) => fn }),
+  // Der Guard wird in diesen Tests nie ausgeloest — es geht um die
+  // Verdrahtung der Auswahlliste, nicht um den Versand.
+  useActionGuard: () => ({ isSubmitting: false, guard: (fn: () => Promise<unknown>) => fn }),
 }));
 
 // useOfflineQuery steuerbar mocken: Aufrufe aufzeichnen, gecachte Aktivitäten
 // liefern — so wie es offline mit gefülltem Cache aussieht.
-const offlineQueryCalls: Array<{ key: string; options?: any }> = [];
+// Nur die Option, die die Tests pruefen — useOfflineQuery exportiert seinen
+// Options-Typ nicht.
+type OfflineQueryOptions = { ttl?: number };
+const offlineQueryCalls: Array<{ key: string; options?: OfflineQueryOptions }> = [];
 const gecachteAktivitaeten = [
   { id: 1, name: 'Gottesdienst besucht', points: 2, type: 'gottesdienst' },
   { id: 2, name: 'Gemeindefest geholfen', points: 3, type: 'gemeinde' },
 ];
 vi.mock('../../hooks/useOfflineQuery', () => ({
-  useOfflineQuery: (key: string, _fetcher: any, options?: any) => {
+  useOfflineQuery: (key: string, _fetcher: unknown, options?: OfflineQueryOptions) => {
     offlineQueryCalls.push({ key, options });
     return {
       data: gecachteAktivitaeten,

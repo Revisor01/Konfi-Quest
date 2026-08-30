@@ -141,7 +141,7 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
   // offline nicht vorgeladen.
   it.each(ROLLEN)('%s: jede Route traegt eine lazy-Seite mit Vorlader', (rolle) => {
     for (const r of BAEUME[rolle].routes) {
-      expect((r.page as any).$$typeof, `${rolle}: ${r.path} ist nicht lazy`).toBe(Symbol.for('react.lazy'));
+      expect((r.page as unknown as { $$typeof?: symbol }).$$typeof, `${rolle}: ${r.path} ist nicht lazy`).toBe(Symbol.for('react.lazy'));
       expect(hatLader(r.page), `${rolle}: ${r.path} ohne Vorlader`).toBe(true);
     }
   });

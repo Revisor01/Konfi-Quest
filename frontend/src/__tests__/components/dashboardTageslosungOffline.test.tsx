@@ -28,7 +28,10 @@ vi.mock('../../contexts/AppContext', () => ({
 
 // useOfflineQuery steuerbar mocken: Aufrufe samt Optionen aufzeichnen und
 // eine gecachte Losung liefern.
-const offlineQueryCalls: Array<{ key: string; options?: any }> = [];
+// Nur die Optionen, die die Tests pruefen — useOfflineQuery exportiert
+// seinen Options-Typ nicht.
+type OfflineQueryOptions = { ttl?: number; enabled?: boolean };
+const offlineQueryCalls: Array<{ key: string; options?: OfflineQueryOptions }> = [];
 const gecachteLosung = {
   losungstext: 'Der Herr ist mein Hirte.',
   losungsvers: 'Psalm 23,1',
@@ -37,7 +40,7 @@ const gecachteLosung = {
   translation: 'LUT',
 };
 vi.mock('../../hooks/useOfflineQuery', () => ({
-  useOfflineQuery: (key: string, _fetcher: any, options?: any) => {
+  useOfflineQuery: (key: string, _fetcher: unknown, options?: OfflineQueryOptions) => {
     offlineQueryCalls.push({ key, options });
     const enabled = options?.enabled !== false;
     return {
@@ -88,9 +91,13 @@ vi.mock('@ionic/react', async () => {
 });
 
 import DashboardView from '../../components/konfi/views/DashboardView';
+
+// DashboardView exportiert seinen Props-Typ nicht — ueber die Komponente
+// bleiben die Testdaten trotzdem an den echten Typ gebunden.
+type DashboardViewProps = React.ComponentProps<typeof DashboardView>;
 import { CACHE_TTL } from '../../services/offlineCache';
 
-const dashboardData: any = {
+const dashboardData: DashboardViewProps['dashboardData'] = {
   konfi: {
     id: 7,
     display_name: 'Emilia Test',
@@ -106,7 +113,7 @@ const dashboardData: any = {
   ranking: [],
 };
 
-const renderView = (dashboardConfig: any) =>
+const renderView = (dashboardConfig: DashboardViewProps['dashboardConfig']) =>
   render(
     <DashboardView
       dashboardData={dashboardData}

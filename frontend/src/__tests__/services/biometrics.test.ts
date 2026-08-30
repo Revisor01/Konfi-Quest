@@ -1,4 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type {
+  AvailableResult,
+  SetDataOptions,
+  GetSecureDataOptions,
+  DeleteDataOptions,
+} from '@capgo/capacitor-native-biometric';
+
+// Das Plugin wirft Error-Objekte mit einem numerischen `code` aus
+// BiometricAuthError. Der Typ steht in den Plugin-Typen nicht bereit.
+type PluginFehler = Error & { code: number };
+const pluginFehler = (nachricht: string, code: number): PluginFehler =>
+  Object.assign(new Error(nachricht), { code });
 
 // --- Mocks ---
 
@@ -33,9 +45,7 @@ const mockSetData = vi.fn(async ({ key, value }: { key: string; value: string })
 });
 const mockGetSecureData = vi.fn(async ({ key }: { key: string }) => {
   if (!sicher.has(key)) {
-    const fehler: any = new Error('No protected data found');
-    fehler.code = 21; // NO_PROTECTED_CREDENTIALS_FOUND
-    throw fehler;
+    throw pluginFehler('No protected data found', 21); // NO_PROTECTED_CREDENTIALS_FOUND
   }
   return { value: sicher.get(key)! };
 });
@@ -43,17 +53,16 @@ const mockDeleteData = vi.fn(async ({ key }: { key: string }) => {
   sicher.delete(key);
 });
 const mockGetData = vi.fn(async () => {
-  const fehler: any = new Error('nichts');
-  fehler.code = 21;
-  throw fehler;
+  throw pluginFehler('nichts', 21);
 });
-let verfuegbarkeitsAntwort: any = {
+// Entweder die Antwort des Plugins oder ein Fehler, den der Test werfen laesst.
+let verfuegbarkeitsAntwort: AvailableResult | Error = {
   isAvailable: true,
   biometryType: 2, // FACE_ID
   authenticationStrength: 1,
   deviceIsSecure: true,
   strongBiometryIsAvailable: true,
-};
+} as AvailableResult;
 const mockIsAvailable = vi.fn(async () => {
   if (verfuegbarkeitsAntwort instanceof Error) throw verfuegbarkeitsAntwort;
   return verfuegbarkeitsAntwort;
@@ -61,11 +70,11 @@ const mockIsAvailable = vi.fn(async () => {
 
 vi.mock('@capgo/capacitor-native-biometric', () => ({
   NativeBiometric: {
-    isAvailable: (...a: unknown[]) => mockIsAvailable(...(a as [])),
-    setData: (...a: unknown[]) => mockSetData(...(a as [any])),
-    getSecureData: (...a: unknown[]) => mockGetSecureData(...(a as [any])),
-    getData: (...a: unknown[]) => mockGetData(...(a as [])),
-    deleteData: (...a: unknown[]) => mockDeleteData(...(a as [any])),
+    isAvailable: () => mockIsAvailable(),
+    setData: (options: SetDataOptions) => mockSetData(options),
+    getSecureData: (options: GetSecureDataOptions) => mockGetSecureData(options),
+    getData: () => mockGetData(),
+    deleteData: (options: DeleteDataOptions) => mockDeleteData(options),
   },
   AccessControl: { NONE: 0, BIOMETRY_CURRENT_SET: 1, BIOMETRY_ANY: 2 },
   BiometryType: {
@@ -108,7 +117,7 @@ beforeEach(() => {
     authenticationStrength: 1,
     deviceIsSecure: true,
     strongBiometryIsAvailable: true,
-  };
+  } as AvailableResult;
 });
 
 describe('biometrieVerfuegbar', () => {
@@ -166,7 +175,7 @@ describe('biometrieAktivieren', () => {
   it('schuetzt die Ablage mit BIOMETRY_ANY und ohne offenes Zeitfenster-Missverhaeltnis', async () => {
     const { biometrieAktivieren } = await laden();
     await biometrieAktivieren();
-    const optionen = mockSetData.mock.calls[0][0] as any;
+    const optionen = mockSetData.mock.calls[0][0];
     expect(optionen.accessControl).toBe(2); // BIOMETRY_ANY
     expect(optionen.key).toBe(SICHERER_SCHLUESSEL);
   });

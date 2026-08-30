@@ -309,7 +309,7 @@ describe('AppContext', () => {
       const getCtx = await renderMitContext();
       // Start-Flush aus der Zaehlung nehmen — geprueft wird der switchOrg-Flush
       mockQueueFlush.mockClear();
-      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+      vi.mocked(api.post).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
 
       await act(async () => {
         await getCtx().switchOrg(2);
@@ -324,7 +324,7 @@ describe('AppContext', () => {
 
     it('meldet ehrlich, wenn eine ungesendete Chat-Nachricht verworfen wird', async () => {
       const getCtx = await renderMitContext();
-      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+      vi.mocked(api.post).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
       // Nach dem (erfolglosen) Flush liegt noch eine Chat-Nachricht in der Queue
       mockQueueGetAll.mockResolvedValueOnce([
         { id: 'q1', metadata: { type: 'chat', clientId: 'c1', roomId: 1 } },

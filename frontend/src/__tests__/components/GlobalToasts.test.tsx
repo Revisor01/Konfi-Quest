@@ -5,7 +5,12 @@ import GlobalToasts from '../../components/common/GlobalToasts';
 // IonToast ist eine Overlay-Komponente und rendert in jsdom nur <template>.
 // Daher wird hier ein Stub genutzt, um die Verdrahtung (Props/Dismiss) zu testen.
 vi.mock('@ionic/react', () => ({
-  IonToast: (props: any) => (
+  IonToast: (props: {
+    isOpen?: boolean;
+    color?: string;
+    message?: string;
+    onDidDismiss?: () => void;
+  }) => (
     <div
       data-testid="toast"
       data-open={String(props.isOpen)}

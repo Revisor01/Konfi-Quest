@@ -13,8 +13,8 @@ vi.mock('@capacitor/device', () => ({
   Device: { getId: vi.fn().mockResolvedValue({ identifier: 'dev-1' }) },
 }));
 
-const mockApiPost = vi.fn(async () => ({ data: {} }));
-const mockApiDelete = vi.fn(async () => ({ data: {} }));
+const mockApiPost = vi.fn<(...args: unknown[]) => Promise<{ data: object }>>(async () => ({ data: {} }));
+const mockApiDelete = vi.fn<(...args: unknown[]) => Promise<{ data: object }>>(async () => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: {
     post: (...a: unknown[]) => mockApiPost(...a),
@@ -23,7 +23,7 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
-const mockClearAuth = vi.fn(async () => undefined);
+const mockClearAuth = vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined);
 vi.mock('../../services/tokenStore', () => ({
   getUser: vi.fn(() => null),
   setUser: vi.fn(),
@@ -40,8 +40,8 @@ vi.mock('../../services/offlineCache', () => ({
   offlineCache: { clearAll: vi.fn(async () => undefined) },
 }));
 
-const mockQueueFlush = vi.fn(async () => ({ succeeded: [], failed: [] }));
-const mockQueueClear = vi.fn(async () => undefined);
+const mockQueueFlush = vi.fn<(...args: unknown[]) => Promise<{ succeeded: unknown[]; failed: unknown[] }>>(async () => ({ succeeded: [], failed: [] }));
+const mockQueueClear = vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined);
 vi.mock('../../services/writeQueue', () => ({
   writeQueue: {
     flush: (...a: unknown[]) => mockQueueFlush(...a),

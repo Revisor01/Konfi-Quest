@@ -18,10 +18,12 @@ import {
   chatNachrichtEinreihen,
   mergeMitLokalen,
 } from '../../components/chat/chatOutbox';
+import type { QueueItem, FailedChatMessage } from '../../services/writeQueue';
+import type { Message } from '../../types/chat';
 
 const absender = { id: 7, name: 'Test Konfi', type: 'konfi' as const };
 
-const queueItem = (clientId: string, createdAt: number, body: Record<string, any> = { content: 'hallo' }) => ({
+const queueItem = (clientId: string, createdAt: number, body: Record<string, unknown> = { content: 'hallo' }): QueueItem => ({
   id: `q-${clientId}`,
   method: 'POST' as const,
   url: '/chat/rooms/1/messages',
@@ -33,7 +35,7 @@ const queueItem = (clientId: string, createdAt: number, body: Record<string, any
   metadata: { type: 'chat' as const, clientId, roomId: 1 },
 });
 
-const fehlRecord = (clientId: string, createdAt: number, extra: Record<string, any> = {}) => ({
+const fehlRecord = (clientId: string, createdAt: number, extra: Partial<FailedChatMessage> = {}): FailedChatMessage => ({
   clientId,
   roomId: 1,
   content: 'kaputt gegangen',
@@ -82,9 +84,11 @@ describe('chatOutbox — Bubbles aus Queue und Fehl-Merker rekonstruieren', () =
   it('ergaenzt nur unbekannte Nachrichten — Server-Kopie und vorhandene Bubbles gewinnen', () => {
     const vorhanden = [
       // Vom Server bereits zugestellte Kopie (client_id gesetzt)
-      { id: 10, content: 'hallo', client_id: 'c-server', created_at: '2026-08-24T10:00:00Z' } as any,
+      { id: 10, content: 'hallo', client_id: 'c-server', created_at: '2026-08-24T10:00:00Z',
+        sender_id: 1, sender_name: 'A', sender_type: 'konfi', message_type: 'text' } satisfies Message,
       // Noch offene lokale Bubble
-      { id: -1, content: 'offen', localId: 'c-lokal', queueStatus: 'pending', created_at: '2026-08-24T10:01:00Z' } as any,
+      { id: -1, content: 'offen', localId: 'c-lokal', queueStatus: 'pending', created_at: '2026-08-24T10:01:00Z',
+        sender_id: 1, sender_name: 'A', sender_type: 'konfi', message_type: 'text' } satisfies Message,
     ];
     const ergebnis = ergaenzeLokaleBubbles(
       vorhanden,
@@ -113,7 +117,8 @@ describe('chatOutbox — Bubbles aus Queue und Fehl-Merker rekonstruieren', () =
   });
 
   it('ohne neue Eintraege bleibt die Liste identisch (gleiche Referenz)', () => {
-    const vorhanden = [{ id: 1, content: 'x', created_at: '2026-08-24T10:00:00Z' } as any];
+    const vorhanden: Message[] = [{ id: 1, content: 'x', created_at: '2026-08-24T10:00:00Z',
+      sender_id: 1, sender_name: 'A', sender_type: 'konfi', message_type: 'text' }];
     expect(ergaenzeLokaleBubbles(vorhanden, [], [], absender)).toBe(vorhanden);
   });
 });
@@ -157,7 +162,7 @@ describe('chatOutbox — chatNachrichtEinreihen persistiert die Nachricht', () =
 // urspruenglichen Fund (Hennstedt 22.08.2026): Reload darf wartende lokale
 // Nachrichten nicht verschlucken.
 describe('mergeMitLokalen', () => {
-  const serverMsg = (id: number, clientId?: string) => ({
+  const serverMsg = (id: number, clientId?: string): Message => ({
     id,
     content: `server-${id}`,
     sender_id: 1,
@@ -166,9 +171,9 @@ describe('mergeMitLokalen', () => {
     created_at: new Date(id).toISOString(),
     message_type: 'text',
     ...(clientId ? { client_id: clientId } : {}),
-  }) as any;
+  });
 
-  const lokaleMsg = (clientId: string, status: 'pending' | 'error') => ({
+  const lokaleMsg = (clientId: string, status: 'pending' | 'error'): Message => ({
     id: -1,
     content: `lokal-${clientId}`,
     sender_id: 1,
@@ -179,7 +184,7 @@ describe('mergeMitLokalen', () => {
     queueStatus: status,
     localId: clientId,
     clientId,
-  }) as any;
+  });
 
   it('haengt wartende und fehlgeschlagene lokale Nachrichten ans Ende', () => {
     const server = [serverMsg(1), serverMsg(2)];

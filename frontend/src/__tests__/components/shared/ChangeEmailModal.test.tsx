@@ -27,7 +27,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 
 vi.mock('../../../hooks/useActionGuard', () => ({
-  useActionGuard: () => ({ isSubmitting: false, guard: (fn: any) => fn() }),
+  useActionGuard: () => ({ isSubmitting: false, guard: <T,>(fn: () => Promise<T>) => fn() }),
 }));
 
 import ChangeEmailModal from '../../../components/shared/ChangeEmailModal';

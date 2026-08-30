@@ -95,7 +95,7 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
 });
 
 // Hilfen für die neuen Faelle
-const chatItem = (clientId: string, extra: Record<string, any> = {}) => ({
+const chatItem = (clientId: string, extra: Record<string, unknown> = {}) => ({
   method: 'POST' as const,
   url: '/chat/rooms/1/messages',
   body: { content: 'hallo', client_id: clientId },

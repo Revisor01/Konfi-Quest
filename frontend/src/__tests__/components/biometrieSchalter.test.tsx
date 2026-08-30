@@ -21,7 +21,7 @@ vi.mock('../../services/biometrics', () => ({
 
 const mockPresentAlert = vi.fn();
 vi.mock('@ionic/react', async () => {
-  const echt = await vi.importActual<any>('@ionic/react');
+  const echt = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...echt,
     useIonAlert: () => [mockPresentAlert, vi.fn()],

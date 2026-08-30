@@ -56,7 +56,19 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
 }));
 
 // Dashboard-Daten kommen über useOfflineQuery — steuerbar mocken.
-const dashboardData: any = {
+// TeamerDashboardPage exportiert seinen DashboardData-Typ nicht; hier steht
+// der Ausschnitt, den die Seite in diesen Tests liest.
+interface TestDashboardData {
+  greeting: { display_name: string; hour: number };
+  certificates: unknown[];
+  events: unknown[];
+  badges: { recent: unknown[]; earned_count: number; total_count: number };
+  config: { show_challenges: boolean; show_losung: boolean };
+  has_wrapped: boolean;
+  konfspruch: null;
+}
+
+const dashboardData: TestDashboardData = {
   greeting: { display_name: 'Test Teamer', hour: 9 },
   certificates: [],
   events: [],
@@ -108,7 +120,7 @@ vi.mock('../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../utils/badgeIcons', () => ({ getIconFromString: () => 'icon' }));
 
 vi.mock('@ionic/react', () => {
-  const passthrough = ({ children }: any) => <div>{children}</div>;
+  const passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
   return {
     IonPage: passthrough,
     IonHeader: passthrough,

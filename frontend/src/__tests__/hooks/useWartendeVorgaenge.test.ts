@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
+import type { QueueItem, FailedAction } from '../../services/writeQueue';
 
 // Die Warteschlange wird nachgestellt: Der Hook soll gegen ihre Schnittstelle
 // getestet werden, nicht gegen Capacitor-Speicher.
-let queueItems: any[] = [];
-let failedActions: any[] = [];
+let queueItems: QueueItem[] = [];
+let failedActions: FailedAction[] = [];
 const melder = new Set<() => void>();
 
 const meldeAenderung = () => { melder.forEach(l => l()); };
@@ -30,7 +31,7 @@ vi.mock('../../services/writeQueue', () => ({
 
 import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
 
-const item = (id: string, type: string, label: string) => ({
+const item = (id: string, type: QueueItem['metadata']['type'], label: string): QueueItem => ({
   id, method: 'POST', url: '/x', maxRetries: 3, retryCount: 0,
   createdAt: 0, hasFileUpload: false,
   metadata: { type, clientId: id, label },
