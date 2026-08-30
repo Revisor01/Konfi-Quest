@@ -38,6 +38,7 @@ import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../../shared/WartendeVorgaengeKarte';
 import { removeDeliveredForEvents } from '../../../services/notifications';
 import api from '../../../services/api';
+import { fehlerText } from '../../../utils/fehlerText';
 import EventsView from '../views/EventsView';
 import RequestsView from '../views/RequestsView';
 import QRScannerModal from '../modals/QRScannerModal';
@@ -252,8 +253,8 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
             try {
               await api.delete(`/konfi/requests/${request.id}`);
               refreshRequests();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen der Aktivität');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'));
             }
           }
         }

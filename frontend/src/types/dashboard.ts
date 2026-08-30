@@ -31,6 +31,7 @@ export interface ApiBadge {
   criteria_extra?: string | null;
   is_hidden: boolean;
   is_active: boolean;
+  sort_order?: number;
   color?: string;
   earned: boolean;
   earned_at?: string | null;
@@ -70,10 +71,17 @@ export interface AnzeigeBadge {
   progress_percentage?: number;
 }
 
-/** Antwort von GET /konfi/badges und GET /teamer/badges. */
-export interface BadgeUebersicht {
-  earned: ApiBadge[];
+/**
+ * Verdiente und noch offene Abzeichen — die beiden Listen aus
+ * GET /konfi/badges, wie die Startseite sie durchreicht.
+ */
+export interface AlleAbzeichen {
   available: ApiBadge[];
+  earned: ApiBadge[];
+}
+
+/** Antwort von GET /konfi/badges und GET /teamer/badges. */
+export interface BadgeUebersicht extends AlleAbzeichen {
   stats: {
     totalVisible: number;
     totalSecret: number;
@@ -83,14 +91,33 @@ export interface BadgeUebersicht {
 // DashboardEvent ist jetzt ein Re-Export von Event
 export type { Event as DashboardEvent } from './event';
 
+/**
+ * Ein Eintrag der Ranking-Liste aus GET /konfi/dashboard.
+ *
+ * Achtung bei den Feldnamen: Die Route liefert `id` und `points` (konfi.js,
+ * rankingSql), nicht `user_id`/`total_points` — der Typ fuehrte bis
+ * 30.08.2026 die falschen Namen, was nur deshalb nicht auffiel, weil die
+ * Ranking-Liste intern ueber `any` lief. `points` ist null fuer die
+ * eingeschobenen Nachbarplaetze: deren Punktzahl liefert der Server bewusst
+ * nicht.
+ */
 export interface RankingEntry {
-  user_id: number;
+  id: number | string;
   display_name: string;
-  total_points: number;
-  rank: number;
-  separator?: boolean;
+  points: number | null;
+  /** Vom Server berechnete Initialen; '??' wenn kein Anzeigename vorliegt. */
+  initials?: string;
+  /** Erst in der Ansicht gesetzt (Platz, Trenner, eigene Zeile). */
+  rank?: number;
+  actualRank?: number;
   isCurrentUser?: boolean;
   isNeighbor?: boolean;
-  initials?: string;
-  actualRank?: number;
 }
+
+/** Platzhalter-Zeile ("...") zwischen Platz 1 und der eigenen Umgebung. */
+export interface RankingTrenner {
+  separator: true;
+}
+
+/** Was die Ranking-Liste anzeigt: echte Plaetze und Trennzeilen. */
+export type RankingZeile = RankingEntry | RankingTrenner;

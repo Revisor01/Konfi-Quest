@@ -17,8 +17,18 @@ import { Badge } from '../../../types/dashboard';
 
 
 // Level Popover Content Komponente
+/** Eine Stufe aus GET /konfi/dashboard (Tabelle levels). */
+export interface DashboardLevel {
+  id: number;
+  name: string;
+  title: string;
+  icon: string;
+  color: string;
+  points_required: number;
+}
+
 export interface LevelPopoverData {
-  level: { id: number; name: string; title: string; icon: string; color: string; points_required: number } | null;
+  level: DashboardLevel | null;
   isReached: boolean;
 }
 
@@ -172,7 +182,12 @@ export const formatEventDate = (dateString: string | undefined) => {
   });
 };
 
-export const getBadgeColor = (badge: Badge) => {
+/**
+ * Farbe eines Abzeichens. Nimmt bewusst nur die drei gelesenen Felder statt
+ * eines der Abzeichen-Typen — sie wird sowohl mit der API-Form (`ApiBadge`)
+ * als auch mit der Anzeige-Form aufgerufen.
+ */
+export const getBadgeColor = (badge: Pick<Badge, 'color' | 'criteria_type' | 'criteria_value'>) => {
   if (badge.color) return badge.color;
   if (badge.criteria_type === 'total_points') {
     if (badge.criteria_value <= 5) return '#cd7f32'; // Bronze
@@ -279,7 +294,7 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
 });
 
 // --- RankingSection ---
-import { RankingEntry as RankingEntryType } from '../../../types/dashboard';
+import { RankingEntry as RankingEntryType, RankingZeile } from '../../../types/dashboard';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
 // Re-Export für bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
@@ -308,7 +323,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
 }) => {
   const currentUserRank = rankInJahrgang || 1;
   const totalRanking = ranking;
-  const playersToShow: any[] = [];
+  const playersToShow: RankingZeile[] = [];
 
   // Immer Platz 1 zeigen
   if (totalRanking.length > 0) {
@@ -394,7 +409,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {playersToShow.map((item, index) => {
-            if (item.separator) {
+            if ('separator' in item) {
               return (
                 <div key="separator" style={{
                   display: 'flex',
@@ -415,7 +430,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
               );
             }
 
-            const entry = item as { id?: number | string; display_name?: string; points?: number | null; initials?: string; actualRank?: number; rank?: number; isCurrentUser?: boolean; isNeighbor?: boolean };
+            const entry: RankingEntryType = item;
             const isCurrentUser = entry.isCurrentUser || entry.id === konfiId;
             const rank = entry.actualRank ?? entry.rank ?? 0;
 
@@ -507,9 +522,9 @@ export const RankingSection = React.memo<RankingSectionProps>(({
 
 // --- LevelIconsRow ---
 interface LevelIconsRowProps {
-  allLevels: Array<{ id: number; name: string; title: string; icon: string; color: string; points_required: number }>;
+  allLevels: DashboardLevel[];
   levelIndex: number;
-  onLevelClick: (e: React.MouseEvent, level: any, isReached: boolean) => void;
+  onLevelClick: (e: React.MouseEvent, level: DashboardLevel, isReached: boolean) => void;
 }
 
 export const LevelIconsRow = React.memo<LevelIconsRowProps>(({ allLevels, levelIndex, onLevelClick }) => (

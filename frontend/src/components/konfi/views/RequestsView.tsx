@@ -148,7 +148,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
-          onIonChange={(e) => onTabChange(e.detail.value as any)}
+          onIonChange={(e) => onTabChange(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
         >
           <IonSegmentButton value="pending">
             <IonLabel>Offen</IonLabel>

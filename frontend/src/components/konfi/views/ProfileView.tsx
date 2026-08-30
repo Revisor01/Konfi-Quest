@@ -40,6 +40,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import type { BadgeUebersicht } from '../../../types/dashboard';
+import { fehlerText } from '../../../utils/fehlerText';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -171,8 +173,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     const loadBadges = async () => {
       try {
         const response = await api.get('/konfi/badges');
-        const badges = [...(response.data.available || []), ...(response.data.earned || [])];
-        const earnedCount = badges.filter((badge: any) => badge.earned || badge.is_earned).length;
+        const uebersicht = response.data as BadgeUebersicht;
+        // GET /konfi/badges fuehrt den Status als `earned`; `is_earned` gibt es
+        // nur in der Anzeige-Form der Abzeichen-Seite.
+        const badges = [...(uebersicht.available || []), ...(uebersicht.earned || [])];
+        const earnedCount = badges.filter((badge) => badge.earned).length;
         setEarnedBadgesCount(earnedCount);
       } catch (err) {
  console.warn('Could not load badges for count:', err);
@@ -211,8 +216,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       setSelectedTranslation(translation);
       // Update profile to reflect the change
       await onReload();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }
   };
 
