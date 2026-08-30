@@ -7,6 +7,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Behoben
+- Beim Ansehen von Foto-Nachweisen (bei Meldungen und in der Antragsprüfung
+  der Leitung) wurde der Bildspeicher nie wieder freigegeben — er wuchs mit
+  jedem angesehenen Foto, bis die App neu gestartet wurde.
+- Wechselte man von einer Meldung mit Foto zu einer ohne, blieb das Foto der
+  vorherigen Meldung stehen.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151
