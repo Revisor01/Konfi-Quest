@@ -7,6 +7,14 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.2.0
+
+### Geändert
+- Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
+  Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
+  restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
+  Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151

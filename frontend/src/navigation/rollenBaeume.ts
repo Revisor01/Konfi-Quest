@@ -1,41 +1,99 @@
+import { lazy } from 'react';
+import type React from 'react';
 import { home, people, chatbubbles, calendar, flash, flag, star, ellipsisHorizontal } from 'ionicons/icons';
 import type { Rolle, RollenBaum } from './routes';
 
-import AdminKonfisPage from '../components/admin/pages/AdminKonfisPage';
-import AdminActivitiesPage from '../components/admin/pages/AdminActivitiesPage';
-import AdminEventsPage from '../components/admin/pages/AdminEventsPage';
-import AdminCategoriesPage from '../components/admin/pages/AdminCategoriesPage';
-import AdminJahrgaengeePage from '../components/admin/pages/AdminJahrgaengeePage';
-import AdminBadgesPage from '../components/admin/pages/AdminBadgesPage';
-import AdminUsersPage from '../components/admin/pages/AdminUsersPage';
-import AdminOrganizationsPage from '../components/admin/pages/AdminOrganizationsPage';
-import AdminMetricsPage from '../components/admin/pages/AdminMetricsPage';
-import AdminProfilePage from '../components/admin/pages/AdminProfilePage';
-import AdminSettingsPage from '../components/admin/pages/AdminSettingsPage';
-import AdminMaterialPage from '../components/admin/pages/AdminMaterialPage';
-import AdminCertificatesPage from '../components/admin/pages/AdminCertificatesPage';
-import AdminDashboardSettingsPage from '../components/admin/pages/AdminDashboardSettingsPage';
-import AdminLevelsPage from '../components/admin/pages/AdminLevelsPage';
-import AdminInvitePage from '../components/admin/pages/AdminInvitePage';
-import AdminChallengesPage from '../components/admin/pages/AdminChallengesPage';
-import ChatOverviewPage from '../components/chat/pages/ChatOverviewPage';
-import ChatRoomView from '../components/chat/views/ChatRoomView';
-import KonfiDetailView from '../components/admin/views/KonfiDetailView';
-import EventDetailView from '../components/admin/views/EventDetailView';
-import KonfiDashboardPage from '../components/konfi/pages/KonfiDashboardPage';
-import KonfiEventsPage from '../components/konfi/pages/KonfiEventsPage';
-import KonfiEventDetailPage from '../components/konfi/pages/KonfiEventDetailPage';
-import KonfiBadgesPage from '../components/konfi/pages/KonfiBadgesPage';
-import KonfiChallengesPage from '../components/konfi/pages/KonfiChallengesPage';
-import KonfiProfilePage from '../components/konfi/pages/KonfiProfilePage';
-import TeamerDashboardPage from '../components/teamer/pages/TeamerDashboardPage';
-import TeamerEventsPage from '../components/teamer/pages/TeamerEventsPage';
-import TeamerMaterialPage from '../components/teamer/pages/TeamerMaterialPage';
-import TeamerMaterialDetailPage from '../components/teamer/pages/TeamerMaterialDetailPage';
-import TeamerProfilePage from '../components/teamer/pages/TeamerProfilePage';
-import TeamerBadgesPage from '../components/teamer/pages/TeamerBadgesPage';
-import TeamerKonfiStatsPage from '../components/teamer/pages/TeamerKonfiStatsPage';
-import TeamerChallengesPage from '../components/teamer/pages/TeamerChallengesPage';
+// Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
+// React.lazy erst geladen, wenn ihre Route erstmals rendert. Ein Konfi laedt
+// damit nicht mehr die komplette Leitungsoberflaeche (52 Dateien, ~25.000
+// Zeilen) mit, die er nie sieht. Vorher lag ALLES in einem Einstiegs-Bundle
+// von ~3 MB (715 kB gepackt).
+//
+// faul() merkt sich zu jeder lazy-Seite ihren Lade-Thunk, damit
+// ladeRolleVor() alle Seiten einer Rolle im Hintergrund NACHLADEN kann
+// (MainTabs stoesst das kurz nach dem Start an). Das ist die
+// Offline-Versicherung: Ist eine Seite einmal importiert, haelt die
+// Modul-Registry sie im Speicher — ein spaeterer Tab-Wechsel braucht dann
+// KEIN Netz mehr. Ohne das waere eine noch nie besuchte Seite offline
+// unerreichbar (die App hat keinen Service Worker; nativ kommen die Chunks
+// ohnehin aus dem App-Bundle von der Platte).
+
+type Lader = () => Promise<{ default: React.ComponentType<any> }>;
+
+const LADER = new Map<React.ComponentType<any>, Lader>();
+
+// Ein fehlgeschlagener lazy-Import bleibt in React DAUERHAFT kaputt (die
+// Huelle merkt sich die Ablehnung bis zum Reload). Ein kurzer Funkabriss im
+// falschen Moment wuerde die Route fuer die ganze Sitzung sperren — darum
+// ein zweiter Versuch nach kurzer Pause, bevor der Fehler durchschlaegt.
+const mitZweitversuch = (lade: Lader): Lader => async () => {
+  try {
+    return await lade();
+  } catch {
+    await new Promise((r) => setTimeout(r, 1500));
+    return lade();
+  }
+};
+
+const faul = (lade: Lader): React.ComponentType<any> => {
+  const laden = mitZweitversuch(lade);
+  const Seite = lazy(laden);
+  LADER.set(Seite, laden);
+  return Seite;
+};
+
+/** Nur fuer Tests: Ist diese Seite per ladeRolleVor() vorladbar? */
+export const hatLader = (seite: React.ComponentType<any>): boolean => LADER.has(seite);
+
+/**
+ * Laedt alle Seiten einer Rolle im Hintergrund nach (dedupliziert).
+ * Liefert die Zahl der erfolgreich geladenen Module — Fehler (z.B. kein
+ * Netz) werden geschluckt: Dann laedt die Seite eben beim ersten Besuch.
+ */
+export const ladeRolleVor = async (rolle: Rolle): Promise<number> => {
+  const lader = new Set<Lader>();
+  for (const route of BAEUME[rolle].routes) {
+    const l = LADER.get(route.page);
+    if (l) lader.add(l);
+  }
+  const ergebnisse = await Promise.allSettled([...lader].map((l) => l()));
+  return ergebnisse.filter((e) => e.status === 'fulfilled').length;
+};
+
+const AdminKonfisPage = faul(() => import('../components/admin/pages/AdminKonfisPage'));
+const AdminActivitiesPage = faul(() => import('../components/admin/pages/AdminActivitiesPage'));
+const AdminEventsPage = faul(() => import('../components/admin/pages/AdminEventsPage'));
+const AdminCategoriesPage = faul(() => import('../components/admin/pages/AdminCategoriesPage'));
+const AdminJahrgaengeePage = faul(() => import('../components/admin/pages/AdminJahrgaengeePage'));
+const AdminBadgesPage = faul(() => import('../components/admin/pages/AdminBadgesPage'));
+const AdminUsersPage = faul(() => import('../components/admin/pages/AdminUsersPage'));
+const AdminOrganizationsPage = faul(() => import('../components/admin/pages/AdminOrganizationsPage'));
+const AdminMetricsPage = faul(() => import('../components/admin/pages/AdminMetricsPage'));
+const AdminProfilePage = faul(() => import('../components/admin/pages/AdminProfilePage'));
+const AdminSettingsPage = faul(() => import('../components/admin/pages/AdminSettingsPage'));
+const AdminMaterialPage = faul(() => import('../components/admin/pages/AdminMaterialPage'));
+const AdminCertificatesPage = faul(() => import('../components/admin/pages/AdminCertificatesPage'));
+const AdminDashboardSettingsPage = faul(() => import('../components/admin/pages/AdminDashboardSettingsPage'));
+const AdminLevelsPage = faul(() => import('../components/admin/pages/AdminLevelsPage'));
+const AdminInvitePage = faul(() => import('../components/admin/pages/AdminInvitePage'));
+const AdminChallengesPage = faul(() => import('../components/admin/pages/AdminChallengesPage'));
+const ChatOverviewPage = faul(() => import('../components/chat/pages/ChatOverviewPage'));
+const ChatRoomView = faul(() => import('../components/chat/views/ChatRoomView'));
+const KonfiDetailView = faul(() => import('../components/admin/views/KonfiDetailView'));
+const EventDetailView = faul(() => import('../components/admin/views/EventDetailView'));
+const KonfiDashboardPage = faul(() => import('../components/konfi/pages/KonfiDashboardPage'));
+const KonfiEventsPage = faul(() => import('../components/konfi/pages/KonfiEventsPage'));
+const KonfiEventDetailPage = faul(() => import('../components/konfi/pages/KonfiEventDetailPage'));
+const KonfiBadgesPage = faul(() => import('../components/konfi/pages/KonfiBadgesPage'));
+const KonfiChallengesPage = faul(() => import('../components/konfi/pages/KonfiChallengesPage'));
+const KonfiProfilePage = faul(() => import('../components/konfi/pages/KonfiProfilePage'));
+const TeamerDashboardPage = faul(() => import('../components/teamer/pages/TeamerDashboardPage'));
+const TeamerEventsPage = faul(() => import('../components/teamer/pages/TeamerEventsPage'));
+const TeamerMaterialPage = faul(() => import('../components/teamer/pages/TeamerMaterialPage'));
+const TeamerProfilePage = faul(() => import('../components/teamer/pages/TeamerProfilePage'));
+const TeamerBadgesPage = faul(() => import('../components/teamer/pages/TeamerBadgesPage'));
+const TeamerKonfiStatsPage = faul(() => import('../components/teamer/pages/TeamerKonfiStatsPage'));
+const TeamerChallengesPage = faul(() => import('../components/teamer/pages/TeamerChallengesPage'));
 
 // Die drei Rollenbäume als Tabelle. Reihenfolge der Routen ist bedeutsam:
 // spezifischere Pfade (/admin/events/:id) müssen VOR den allgemeineren
