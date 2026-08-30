@@ -21,7 +21,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       // Dismiss all active modals
       await modalController.dismiss();
-    } catch (error) {
+    } catch {
       // Cleanup warning ignored - expected when no modals active
     }
   };

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { initializeWebSocket, getSocket, reconnectWithToken } from '../services/websocket';
+import { initializeWebSocket, reconnectWithToken } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import api from '../services/api';
 import { useApp } from './AppContext';
