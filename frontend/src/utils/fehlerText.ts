@@ -13,11 +13,17 @@ interface ApiFehlerAntwort {
     status?: number;
     data?: {
       error?: unknown;
+      error_code?: unknown;
       message?: unknown;
+      /** Validierungsfehler des Backends, z.B. bei der Registrierung. */
+      details?: { message?: unknown }[];
     };
   };
-  message?: unknown;
+  /** axios-Fehlercode, z.B. 'ERR_NETWORK'. */
   code?: unknown;
+  message?: unknown;
+  /** Vom api-Interceptor bei 429 gesetzt. */
+  rateLimitMessage?: unknown;
 }
 
 const istObjekt = (wert: unknown): wert is Record<string, unknown> =>

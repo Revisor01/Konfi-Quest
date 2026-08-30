@@ -18,6 +18,7 @@ import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection, mitBiometrieAnmelden } from '../../services/auth';
 import { biometrieVerfuegbar, istBiometrieAktiv } from '../../services/biometrics';
 import { BaseUser } from '../../types/user';
+import { apiFehler, fehlerStatus, fehlerText, fehlerTextOderMessage } from '../../utils/fehlerText';
 
 const LoginView: React.FC = () => {
   const { setUser } = useApp();
@@ -179,17 +180,19 @@ const LoginView: React.FC = () => {
     try {
       const user = await loginWithAutoDetection(username, password);
       weiterNachAnmeldung(user);
-    } catch (err: any) {
+    } catch (err) {
+      const daten = apiFehler(err);
       // Defensiv: errorMessage immer ein String, sonst werfen die .includes()-Checks unten
-      const errorMessage: string = err?.response?.data?.error || err?.message || '';
-      const errorCode: string = err?.response?.data?.error_code || '';
+      const errorMessage: string = fehlerTextOderMessage(err, '');
+      const errorCode: string = typeof daten.response?.data?.error_code === 'string' ? daten.response.data.error_code : '';
+      const rateLimitMessage = typeof daten.rateLimitMessage === 'string' ? daten.rateLimitMessage : '';
       let displayError: string;
 
       // Rate-Limit (429) ZUERST prüfen — ein 429 ist KEINE fehlende Verbindung.
       // Sonst zeigt die App bei "zu viele Versuche" faelschlich "Keine Verbindung".
-      if (err.response?.status === 429 || err.rateLimitMessage) {
-        displayError = err.rateLimitMessage || err?.response?.data?.error || 'Zu viele Login-Versuche. Bitte warte einen Moment.';
-      } else if (!err.response || err.code === 'ERR_NETWORK') {
+      if (fehlerStatus(err) === 429 || rateLimitMessage) {
+        displayError = rateLimitMessage || fehlerText(err, 'Zu viele Login-Versuche. Bitte warte einen Moment.');
+      } else if (!daten.response || daten.code === 'ERR_NETWORK') {
         // Netzwerkfehler erkennen
         displayError = 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
         setIsNetworkError(true);

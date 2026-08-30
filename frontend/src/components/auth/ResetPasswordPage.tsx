@@ -16,6 +16,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle, arrowBack } from 'ionicons/icons';
 import api from '../../services/api';
+import { fehlerText } from '../../utils/fehlerText';
 
 const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
   <div style={{
@@ -98,8 +99,8 @@ const ResetPasswordPage: React.FC = () => {
         newPassword: password
       });
       setSuccess(true);
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts';
+    } catch (err) {
+      const message = fehlerText(err, 'Fehler beim Zurücksetzen des Passworts');
       if (message.includes('abgelaufen') || message.includes('expired') || message.includes('ungültig')) {
         setError('Dieser Link ist abgelaufen oder ungültig. Bitte fordere einen neuen an.');
       } else {

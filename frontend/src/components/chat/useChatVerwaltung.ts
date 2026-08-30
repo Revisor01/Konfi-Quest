@@ -1,6 +1,7 @@
 import { useIonAlert, useIonActionSheet } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { fehlerText } from '../../utils/fehlerText';
 import api from '../../services/api';
 import { ChatRoomBase, Message } from '../../types/chat';
 import { chatVerlaufExportieren } from './chatTeilen';
@@ -130,8 +131,8 @@ export function useChatVerwaltung({
               await api.delete(`/chat/rooms/${room?.id}/messages`);
               setMessages([]);
               refreshMessagesCache();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Leeren des Chats');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Leeren des Chats'));
             }
           }
         }

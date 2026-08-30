@@ -34,6 +34,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { fehlerText } from '../../utils/fehlerText';
 import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
 
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten (Muster:
@@ -147,8 +148,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
         setSuccess('Passwort erfolgreich geändert');
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Ändern des Passworts'));
       }
     });
   };

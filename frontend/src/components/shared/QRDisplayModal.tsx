@@ -13,6 +13,7 @@ import {
 import { closeOutline, printOutline, cloudOfflineOutline } from 'ionicons/icons';
 import QRCode from 'qrcode';
 import api from '../../services/api';
+import { fehlerText } from '../../utils/fehlerText';
 import { useApp } from '../../contexts/AppContext';
 
 interface QRDisplayModalProps {
@@ -73,8 +74,8 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
       // Start polling
       fetchAttendance();
       pollRef.current = setInterval(fetchAttendance, 10000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'QR-Code konnte nicht generiert werden');
+    } catch (err) {
+      setError(fehlerText(err, 'QR-Code konnte nicht generiert werden'));
     } finally {
       setLoading(false);
     }

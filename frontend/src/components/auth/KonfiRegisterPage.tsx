@@ -32,6 +32,7 @@ import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
 import { hasValidUsernameChars, USERNAME_RULES_MESSAGE } from '../../utils/usernameValidation';
+import { apiFehler, fehlerText } from '../../utils/fehlerText';
 import { useApp } from '../../contexts/AppContext';
 
 interface PasswordCheck {
@@ -169,20 +170,21 @@ const KonfiRegisterPage: React.FC = () => {
         organization_name: response.data.organization_name
       });
       setInviteCode(code);
-    } catch (err: any) {
+    } catch (err) {
+      const daten = apiFehler(err);
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (!daten.response || daten.code === 'ERR_NETWORK') {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Differenzierte Fehlermeldungen
-        const errorCode = err.response?.data?.error_code;
+        const errorCode = daten.response.data?.error_code;
         if (errorCode === 'not_found') {
           setError('Dieser Einladungscode existiert nicht. Bitte prüfe deine Eingabe.');
         } else if (errorCode === 'expired') {
           setError('Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.');
         } else {
-          setError(err.response?.data?.error || 'Fehler bei der Code-Validierung');
+          setError(fehlerText(err, 'Fehler bei der Code-Validierung'));
         }
       }
       setInviteInfo(null);
@@ -257,16 +259,19 @@ const KonfiRegisterPage: React.FC = () => {
         }, 1500);
       }
 
-    } catch (err: any) {
+    } catch (err) {
+      const daten = apiFehler(err);
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (!daten.response || daten.code === 'ERR_NETWORK') {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Validierungsfehler des Backends kommen als details-Array — die konkrete
         // Meldung anzeigen statt nur "Validierungsfehler".
-        const detailMessage = err.response?.data?.details?.[0]?.message;
-        setError(detailMessage || err.response?.data?.error || 'Fehler bei der Registrierung');
+        const detailMessage = daten.response.data?.details?.[0]?.message;
+        setError(typeof detailMessage === 'string' && detailMessage
+          ? detailMessage
+          : fehlerText(err, 'Fehler bei der Registrierung'));
       }
       triggerShake();
     } finally {

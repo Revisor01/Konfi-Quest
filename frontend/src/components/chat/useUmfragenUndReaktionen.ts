@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { safeUUID } from '../../utils/uuid';
+import { fehlerStatus } from '../../utils/fehlerText';
 import { Message, PollVote } from '../../types/chat';
 
 /**
@@ -80,9 +81,9 @@ export function useUmfragenUndReaktionen({
       await loadMessages();
       // Re-enable auto-scroll after a short delay
       setTimeout(() => setShouldAutoScroll(true), 1000);
-    } catch (err: any) {
+    } catch (err) {
       // Exklusive Umfrage: Option wurde inzwischen von jemand anderem belegt (409).
-      if (err?.response?.status === 409) {
+      if (fehlerStatus(err) === 409) {
         setError('Diese Option ist bereits vergeben');
         await loadMessages(); // aktuellen Stand (Belegung) nachziehen
       } else {

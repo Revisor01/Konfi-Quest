@@ -30,6 +30,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { fehlerStatus, fehlerText } from '../../utils/fehlerText';
 
 interface DeleteAccountModalProps {
   onClose: () => void;
@@ -58,11 +59,11 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
         onDeleted?.();
         onClose();
         await signOut();
-      } catch (err: any) {
-        if (err.response?.status === 400) {
+      } catch (err) {
+        if (fehlerStatus(err) === 400) {
           setInlineError('Passwort ist falsch');
         } else {
-          setError(err.response?.data?.error || 'Fehler beim Löschen des Accounts');
+          setError(fehlerText(err, 'Fehler beim Löschen des Accounts'));
         }
       }
     });
