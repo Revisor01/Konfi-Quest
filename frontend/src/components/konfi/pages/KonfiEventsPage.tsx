@@ -22,14 +22,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import {
-  qrCodeOutline,
-  add,
-  home,
-  people,
-  closeOutline,
-  informationCircleOutline
-} from 'ionicons/icons';
+import { qrCodeOutline, add, home, people } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -117,7 +110,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
   // State
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
-  const [searchText, setSearchText] = useState('');
+  const [searchText] = useState('');
 
   // --- Aktivitäten-State ---
   const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');

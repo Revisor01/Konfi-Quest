@@ -1,44 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonIcon,
-  useIonAlert,
   useIonPopover,
   useIonModal,
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import ActivityRings from '../../admin/views/ActivityRings';
-import {
-  calendar,
-  location,
-  eyeOff,
-  helpCircle,
-  chevronForward,
-  time,
-  timeOutline,
-  eyeOutline,
-  megaphoneOutline,
-  constructOutline,
-  flagOutline
-} from 'ionicons/icons';
+import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, eyeOutline, megaphoneOutline, constructOutline, flagOutline } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
-import {
-  getIconFromString,
-  LevelPopoverContent,
-  DashboardBadgePopoverContent,
-  LevelPopoverData,
-  getGreeting,
-  getFirstName,
-  getInitials,
-  formatTimeUntil,
-  formatEventTime,
-  formatEventDate,
-  getBadgeColor,
-  EventCard,
-  RankingSection,
-  LevelIconsRow,
-  LevelProgress
-} from './DashboardSections';
+import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -198,7 +169,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const router = useIonRouter();
   const { setError } = useApp();
-  const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
@@ -285,13 +255,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Level Popover via useIonPopover
   const levelPopoverRef = useRef<LevelPopoverData>({ level: null, isReached: false });
-  const [presentLevelPopover, dismissLevelPopover] = useIonPopover(LevelPopoverContent, {
+  const [presentLevelPopover] = useIonPopover(LevelPopoverContent, {
     dataRef: levelPopoverRef
   });
 
   // Badge Popover via useIonPopover
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null, isEarned: false });
-  const [presentBadgePopover, dismissBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
+  const [presentBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
     dataRef: badgePopoverRef
   });
 

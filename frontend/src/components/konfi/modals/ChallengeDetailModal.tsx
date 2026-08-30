@@ -19,25 +19,7 @@ import {
   IonRefresherContent,
   IonSpinner
 } from '@ionic/react';
-import {
-  close,
-  timeOutline,
-  personOutline,
-  documentTextOutline,
-  imageOutline,
-  micOutline,
-  videocamOutline,
-  linkOutline,
-  peopleOutline,
-  addOutline,
-  openOutline,
-  checkmarkOutline,
-  eyeOutline,
-  eyeOffOutline,
-  lockClosedOutline,
-  removeCircleOutline,
-  chatbubbleEllipsesOutline
-} from 'ionicons/icons';
+import { close, timeOutline, personOutline, documentTextOutline, imageOutline, micOutline, videocamOutline, linkOutline, peopleOutline, addOutline, checkmarkOutline, eyeOutline, eyeOffOutline, lockClosedOutline, removeCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */

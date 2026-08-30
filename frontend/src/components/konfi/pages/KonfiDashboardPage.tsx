@@ -119,9 +119,9 @@ interface DailyVerse {
 }
 
 const KonfiDashboardPage: React.FC = () => {
-  const { user, setError } = useApp();
+  const { user } = useApp();
   const router = useIonRouter();
-  const [showLehrtext, setShowLehrtext] = useState(false);
+  const [] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
 
   // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
@@ -187,7 +187,7 @@ const KonfiDashboardPage: React.FC = () => {
   // Derived state from badges
   const badgeStats: BadgeStats = (() => {
     if (!badgesRaw) return { totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 };
-    const { available, earned, stats } = badgesRaw;
+    const { earned, stats } = badgesRaw;
     const visibleEarned = earned?.filter((badge: any) => !badge.is_hidden).length || 0;
     const visibleTotal = stats?.totalVisible || 0;
     const secretEarned = earned?.filter((badge: any) => badge.is_hidden === true).length || 0;

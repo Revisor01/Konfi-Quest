@@ -166,7 +166,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         emptyIconColor="#059669"
       >
         {filteredRequests.map((request, index) => {
-          const { statusColor, statusText, statusIcon, isPending, isApproved, isRejected } = getRequestStatusInfo(request);
+          const { statusColor, statusText, statusIcon, isPending, isRejected } = getRequestStatusInfo(request);
 
           return (
             <IonItemSliding key={request.id}>

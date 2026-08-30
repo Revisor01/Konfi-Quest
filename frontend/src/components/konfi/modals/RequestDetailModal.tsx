@@ -25,7 +25,6 @@ import {
   hourglass,
   trashOutline
 } from 'ionicons/icons';
-import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
 export interface ActivityRequest {
@@ -58,7 +57,6 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   onClose,
   onDelete
 }) => {
-  const { setError } = useApp();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false);
   const [photoLoadFailed, setPhotoLoadFailed] = useState(false);

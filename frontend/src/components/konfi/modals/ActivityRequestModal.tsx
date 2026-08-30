@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -67,7 +67,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline, user } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const [presentAlert] = useIonAlert();
 
   const { isSubmitting, guard } = useActionGuard();
@@ -233,7 +233,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch (err) {
+          } catch {
             setError('Foto konnte nicht lokal gespeichert werden');
             return;
           }
