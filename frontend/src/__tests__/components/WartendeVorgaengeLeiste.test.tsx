@@ -1,27 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import type { QueueItem, FailedAction } from '../../services/writeQueue';
+
+// Die Stubs unten geben nur das weiter, was die Tests brauchen — die vollen
+// Ionic-Prop-Typen waeren hier irrefuehrend, weil der Stub sie nicht bedient.
+type StubProps = { children?: ReactNode };
 
 // Ionic-Overlays rendern in jsdom nur <template>. Stubs, um die Verdrahtung
 // zu pruefen — hier geht es um den Text der Leiste und darum, wann sie
 // ueberhaupt erscheint.
 vi.mock('@ionic/react', () => ({
-  IonIcon: (props: any) => <span data-testid="icon" data-icon={props.icon} aria-hidden={props['aria-hidden']} />,
-  IonModal: (props: any) => (props.isOpen ? <div data-testid="modal">{props.children}</div> : null),
-  IonHeader: (props: any) => <div>{props.children}</div>,
-  IonToolbar: (props: any) => <div>{props.children}</div>,
-  IonTitle: (props: any) => <div>{props.children}</div>,
-  IonButtons: (props: any) => <div>{props.children}</div>,
-  IonButton: (props: any) => <button onClick={props.onClick}>{props.children}</button>,
-  IonContent: (props: any) => <div>{props.children}</div>,
-  IonList: (props: any) => <div>{props.children}</div>,
-  IonListHeader: (props: any) => <div>{props.children}</div>,
-  IonCard: (props: any) => <div>{props.children}</div>,
-  IonCardContent: (props: any) => <div>{props.children}</div>,
-  IonLabel: (props: any) => <div>{props.children}</div>,
+  IonIcon: (props: { icon?: string; 'aria-hidden'?: boolean | 'true' | 'false' }) =>
+    <span data-testid="icon" data-icon={props.icon} aria-hidden={props['aria-hidden']} />,
+  IonModal: (props: StubProps & { isOpen?: boolean }) =>
+    (props.isOpen ? <div data-testid="modal">{props.children}</div> : null),
+  IonHeader: (props: StubProps) => <div>{props.children}</div>,
+  IonToolbar: (props: StubProps) => <div>{props.children}</div>,
+  IonTitle: (props: StubProps) => <div>{props.children}</div>,
+  IonButtons: (props: StubProps) => <div>{props.children}</div>,
+  IonButton: (props: StubProps & { onClick?: () => void }) =>
+    <button onClick={props.onClick}>{props.children}</button>,
+  IonContent: (props: StubProps) => <div>{props.children}</div>,
+  IonList: (props: StubProps) => <div>{props.children}</div>,
+  IonListHeader: (props: StubProps) => <div>{props.children}</div>,
+  IonCard: (props: StubProps) => <div>{props.children}</div>,
+  IonCardContent: (props: StubProps) => <div>{props.children}</div>,
+  IonLabel: (props: StubProps) => <div>{props.children}</div>,
 }));
 
-let mockWartend: any[] = [];
-let mockGescheitert: any[] = [];
+let mockWartend: QueueItem[] = [];
+let mockGescheitert: FailedAction[] = [];
 
 vi.mock('../../hooks/useWartendeVorgaenge', () => ({
   useWartendeVorgaenge: () => ({
@@ -34,10 +43,15 @@ vi.mock('../../hooks/useWartendeVorgaenge', () => ({
 
 import WartendeVorgaengeLeiste from '../../components/common/WartendeVorgaengeLeiste';
 
-const item = (id: string, label: string) => ({
+const item = (id: string, label: string): QueueItem => ({
   id, method: 'POST', url: '/x', maxRetries: 3, retryCount: 0,
   createdAt: 0, hasFileUpload: false,
   metadata: { type: 'admin', clientId: id, label },
+});
+
+const fehlschlag = (id: string, label: string): FailedAction => ({
+  id, label, type: 'admin', createdAt: 0, failedAt: 0,
+  error: { status: 409, message: 'Konflikt' },
 });
 
 describe('WartendeVorgaengeLeiste', () => {
@@ -108,7 +122,7 @@ describe('Kompakter Knopf statt Leiste', () => {
 
   it('zaehlt Wartende und Gescheiterte zusammen', () => {
     mockWartend = [item('a', 'Eins')];
-    mockGescheitert = [item('b', 'Zwei')];
+    mockGescheitert = [fehlschlag('b', 'Zwei')];
     const { container } = render(<WartendeVorgaengeLeiste />);
     expect(container.querySelector('.app-wartende-leiste__zahl')?.textContent).toBe('2');
   });
@@ -136,7 +150,7 @@ describe('Kompakter Knopf statt Leiste', () => {
   });
 
   it('ein Fehlschlag faerbt weiterhin rot — das ist eine Aufgabe, kein Hinweis', () => {
-    mockGescheitert = [item('a', 'Eins')];
+    mockGescheitert = [fehlschlag('a', 'Eins')];
     const { container } = render(<WartendeVorgaengeLeiste />);
     expect(container.querySelector('.app-wartende-leiste')?.getAttribute('data-variante')).toBe('danger');
   });
