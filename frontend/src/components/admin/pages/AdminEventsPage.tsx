@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -22,7 +23,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { useLocation } from 'react-router-dom';
+
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -70,7 +71,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const router = useIonRouter();
-  const routerLocation = useLocation();
+  const routerLocation = useAppLocation();
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
@@ -88,7 +89,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       setMainSegment('events');
     }
   }, [routerLocation.search]);
-
 
   // Offline-Query: Events
   const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(

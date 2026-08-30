@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAppLocation } from '../../navigation/useAppLocation';
 import {
   IonPage,
   IonContent,
@@ -28,7 +29,7 @@ import {
   refreshOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+
 import api from '../../services/api';
 import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
 import { hasValidUsernameChars, USERNAME_RULES_MESSAGE } from '../../utils/usernameValidation';
@@ -43,7 +44,7 @@ interface PasswordCheck {
 }
 
 const KonfiRegisterPage: React.FC = () => {
-  const location = useLocation();
+  const location = useAppLocation();
   const router = useIonRouter();
   const { setUser, setSuccess: setAppSuccess, isOnline } = useApp();
 

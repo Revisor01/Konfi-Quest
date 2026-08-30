@@ -2,6 +2,7 @@
 
 // 1. Benötigte Imports hinzufügen
 import React, { useState, useEffect, useRef } from 'react'; // useRef hinzufügen
+import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -13,7 +14,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 import { arrowBack } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom'; // Hinzufügen
+ // Hinzufügen
 import { useModalPage } from '../../../contexts/ModalContext'; // Hinzufügen
 import ChatRoom from '../ChatRoom';
 import api from '../../../services/api';
@@ -45,7 +46,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
   );
 
   // 2. Den useModalPage-Hook HIER aufrufen
-  const location = useLocation();
+  const location = useAppLocation();
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
   const { pageRef, presentingElement } = useModalPage(tabId);
 

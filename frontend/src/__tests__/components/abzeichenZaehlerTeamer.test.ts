@@ -32,13 +32,15 @@ describe('Abzeichen-Zaehler gilt auch fuer Teamer:innen', () => {
     });
 
     it('der Teamer-Reiter zeigt den Zaehler an', () => {
-      // Vorher hatte dieser Tab-Button gar kein IonBadge.
-      const teamerTab = mainTabs.slice(
-        mainTabs.indexOf('tab="teamer-badges"'),
-        mainTabs.indexOf('</IonTabBar>', mainTabs.indexOf('tab="teamer-badges"'))
-      );
-      expect(teamerTab).toContain('newBadgesCount > 0');
-      expect(teamerTab).toContain('IonBadge');
+      // Vorher hatte dieser Tab-Button gar kein IonBadge. Seit dem Umbau auf
+      // die Routen-Konfiguration (30.08.2026) steht die Verdrahtung als
+      // `badge: 'badges'` in navigation/rollenBaeume.ts; der eine Renderer in
+      // MainTabs macht daraus fuer JEDE Rolle ein IonBadge — die frueher
+      // moegliche Luecke, dass ein Tab den Zaehler vergisst, gibt es nicht mehr.
+      const baeume = lies('src/navigation/rollenBaeume.ts');
+      const zeile = baeume.split('\n').find(z => z.includes("tab: 'teamer-badges'")) || '';
+      expect(zeile).toContain("badge: 'badges'");
+      expect(mainTabs).toContain('<IonBadge color="danger">');
     });
   });
 

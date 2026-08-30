@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useAppLocation } from '../../navigation/useAppLocation';
+
 import {
   IonPage,
   IonContent,
@@ -34,7 +35,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 
 const ResetPasswordPage: React.FC = () => {
   const router = useIonRouter();
-  const location = useLocation();
+  const location = useAppLocation();
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

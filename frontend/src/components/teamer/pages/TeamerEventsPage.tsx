@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -28,7 +29,7 @@ import {
   useIonViewWillEnter
 } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
-import { useLocation } from 'react-router-dom';
+
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
 import {
   calendar,
@@ -111,7 +112,7 @@ interface ActivityRequest {
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
-  const routerLocation = useLocation();
+  const routerLocation = useAppLocation();
   const router = useIonRouter();
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
   const [presentAlert] = useIonAlert();
@@ -138,7 +139,6 @@ const TeamerEventsPage: React.FC = () => {
       setMainSegment('events');
     }
   }, [routerLocation.search]);
-
 
   // Offline-Query: Events
   const { data: events, loading, refresh, refreshLive } = useOfflineQuery<Event[]>(

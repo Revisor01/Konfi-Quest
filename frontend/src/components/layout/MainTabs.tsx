@@ -1,6 +1,8 @@
 // MainTabs.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Redirect, Route, RouteComponentProps, useLocation } from 'react-router-dom'; // useLocation importieren!
+// react-router nur noch fuer die Routen-Bausteine — der Standort kommt
+// ueber useAppLocation aus navigation/.
+import { Redirect, Route, RouteComponentProps } from 'react-router-dom';
 import {
   IonIcon,
   IonLabel,
@@ -27,72 +29,29 @@ import {
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
+import { BAEUME } from '../../navigation/rollenBaeume';
+import { istTabLeisteVersteckt } from '../../navigation/routes';
+import type { Rolle, BadgeKey } from '../../navigation/routes';
+import { useAppLocation } from '../../navigation/useAppLocation';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
 import api from '../../services/api';
 import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
-import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
-import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
-import AdminEventsPage from '../admin/pages/AdminEventsPage';
-import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
-import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
-import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
-import AdminUsersPage from '../admin/pages/AdminUsersPage';
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
-import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
-import AdminMetricsPage from '../admin/pages/AdminMetricsPage';
-import AdminProfilePage from '../admin/pages/AdminProfilePage';
-import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
-import AdminMaterialPage from '../admin/pages/AdminMaterialPage';
-import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
-import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
-import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
-import AdminInvitePage from '../admin/pages/AdminInvitePage';
-import AdminChallengesPage from '../admin/pages/AdminChallengesPage';
-import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
-import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
-import KonfiDetailView from '../admin/views/KonfiDetailView';
-import EventDetailView from '../admin/views/EventDetailView';
-import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
-import KonfiEventsPage from '../konfi/pages/KonfiEventsPage';
-import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
-import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
-import KonfiChallengesPage from '../konfi/pages/KonfiChallengesPage';
-import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
-import TeamerDashboardPage from '../teamer/pages/TeamerDashboardPage';
-import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
-import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 
-import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
-import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
-import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
-import TeamerChallengesPage from '../teamer/pages/TeamerChallengesPage';
 
-// Wrapper-Komponenten für Route render-props (migriert von props.history.goBack())
-const KonfiDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
+// Eine Seite, die einen Routen-Parameter braucht. Sie bekommt ihn als Zahl
+// unter ihrem eigenen Prop-Namen (konfiId, eventId, roomId) plus onBack —
+// vorher stand dafuer fuer JEDE dieser Routen eine eigene Wrapper-Komponente
+// in dieser Datei, fuenf fast identische Bloecke.
+const ParamSeite: React.FC<{
+  Seite: React.ComponentType<any>;
+  prop: string;
+  wert: string;
+}> = ({ Seite, prop, wert }) => {
   const router = useIonRouter();
-  return <KonfiDetailView konfiId={parseInt(match.params.id)} onBack={() => router.goBack()} />;
-};
-
-const AdminEventDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
-  const router = useIonRouter();
-  return <EventDetailView eventId={parseInt(match.params.id)} onBack={() => router.goBack()} />;
-};
-
-const AdminChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
-  const router = useIonRouter();
-  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
-};
-
-const TeamerChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
-  const router = useIonRouter();
-  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
-};
-
-const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
-  const router = useIonRouter();
-  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
+  return <Seite {...{ [prop]: parseInt(wert, 10) }} onBack={() => router.goBack()} />;
 };
 
 const MainTabs: React.FC = () => {
@@ -110,7 +69,7 @@ const MainTabs: React.FC = () => {
   const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, newBadgesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
-  const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
+  const location = useAppLocation();
 
   // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
   // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zählt auch
@@ -184,7 +143,6 @@ const MainTabs: React.FC = () => {
   // useLiveRefresh('badges'). Der Kanal 'badges' bleibt fuer die Listen-Seiten
   // bestehen, der Zaehler haengt aber nicht mehr daran.
 
-
   if (!user) {
     return null;
   }
@@ -195,222 +153,75 @@ const MainTabs: React.FC = () => {
     return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/') || path.startsWith('/teamer/chat/room/');
   };
 
-  return isSuperAdmin ? (
-    // Super-Admin: Nur Organisationen-View ohne TabBar
-    <ModalProvider>
-      <IonRouterOutlet>
-        <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
-        <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
-        <Route exact path="/admin/metrics" component={AdminMetricsPage} />
-        <Route exact path="/login" render={() => <Redirect to="/admin/organizations" />} />
-        <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
-      </IonRouterOutlet>
-    </ModalProvider>
-  ) : user.type === 'admin' ? (
-    // Admin Tabs (org_admin / teamer)
-    <ModalProvider>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
-          <Route exact path="/admin/konfis" component={AdminKonfisPage} />
-          <Route exact path="/admin/konfis/:id" component={KonfiDetailRoute} />
+  // EIN Renderer fuer alle Rollen — die Routen, Tabs und Umleitungen stehen
+  // als Daten in navigation/rollenBaeume.ts.
+  //
+  // Vorher standen hier drei fast wortgleiche JSX-Bloecke (je ~80 Zeilen).
+  // Genau das Muster, bei dem eine Aenderung zwei Rollen vergisst — Simons
+  // stehende Warnung, im August 2026 mehrfach eingetreten. Jetzt gilt jede
+  // Aenderung zwangslaeufig fuer alle drei, und der Test in
+  // __tests__/navigation/ iteriert ueber dieselbe Tabelle.
+  const rolle: Rolle = isSuperAdmin
+    ? 'super_admin'
+    : user.type === 'admin'
+      ? 'admin'
+      : user.type === 'teamer'
+        ? 'teamer'
+        : 'konfi';
+  const baum = BAEUME[rolle];
+  const tabLeisteZeigen = baum.tabs.length > 0 && !istTabLeisteVersteckt(location.pathname);
 
-          {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/admin/chat" component={ChatOverviewPage} />
-          <Route exact path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
+  const zaehler: Record<BadgeKey, number> = {
+    chat: chatUnreadTotal,
+    events: pendingEventsCount + pendingRequestsCount,
+    challenges: pendingChallengesCount,
+    badges: newBadgesCount,
+  };
 
-          <Route exact path="/admin/activities" component={AdminActivitiesPage} />
-          <Route exact path="/admin/events/:id" component={AdminEventDetailRoute} />
-          <Route exact path="/admin/events" component={AdminEventsPage} />
-          <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
-          <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
-          <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
-          <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
-          <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
-              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
-          <Route exact path="/admin/requests" render={() => <Redirect to="/admin/events?segment=antraege" />} />
-          <Route exact path="/admin/challenges" component={AdminChallengesPage} />
-          <Route exact path="/admin/users" component={AdminUsersPage} />
-          <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
-          <Route exact path="/admin/material" component={AdminMaterialPage} />
-          <Route exact path="/admin/settings/certificates" component={AdminCertificatesPage} />
+  // Die Routen des Baums plus die Einstiege von "/" und "/login".
+  const outlet = (
+    <IonRouterOutlet>
+      {baum.routes.map(({ path, page: Seite, param, propName }) => (
+        <Route
+          key={path}
+          exact
+          path={path}
+          render={(props: RouteComponentProps<any>) =>
+            param
+              ? <ParamSeite Seite={Seite} prop={propName} wert={props.match.params[param]} />
+              : <Seite {...props} />
+          }
+        />
+      ))}
+      {baum.redirects.map(({ from, to }) => (
+        <Route key={from} exact path={from} render={() => <Redirect to={to} />} />
+      ))}
+      <Route exact path="/login" render={() => <Redirect to={baum.home} />} />
+      <Route exact path="/" render={() => <Redirect to={baum.home} />} />
+    </IonRouterOutlet>
+  );
 
-          <Route exact path="/admin/settings/dashboard" component={AdminDashboardSettingsPage} />
-          <Route exact path="/admin/settings" component={AdminSettingsPage} />
-          <Route exact path="/admin/profile" component={AdminProfilePage} />
-          {/* Performance/Metrics — auch im normalen Admin-Outlet, da super_admins
-              meist role_name=org_admin haben (is_super_admin=true). Die Seite selbst
-              prueft die Berechtigung serverseitig (403 fuer nicht-super-admins). */}
-          <Route exact path="/admin/metrics" component={AdminMetricsPage} />
-          <Route exact path="/login" render={() => <Redirect to="/admin/konfis" />} />
-          <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
-        </IonRouterOutlet>
+  // Super-Admin: nur das Outlet, keine Tab-Leiste.
+  if (baum.tabs.length === 0) {
+    return <ModalProvider>{outlet}</ModalProvider>;
+  }
 
-        {/* Die IonTabBar wird bedingt gerendert (nur in Chat-Räumen versteckt) */}
-        {!isTabBarHidden(location.pathname) && (
-          <IonTabBar slot="bottom">
-            <IonTabButton tab="admin-konfis" href="/admin/konfis">
-              <IonIcon icon={people} />
-              <IonLabel>Konfis</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="admin-chat" href="/admin/chat">
-              <IonIcon icon={chatbubbles} />
-              <IonLabel>Chat</IonLabel>
-              {chatUnreadTotal > 0 && (
-                <IonBadge color="danger">
-                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="admin-events" href="/admin/events">
-              <IonIcon icon={flash} />
-              <IonLabel>Mitmachen</IonLabel>
-              {(pendingEventsCount + pendingRequestsCount) > 0 && (
-                <IonBadge color="danger">
-                  {(pendingEventsCount + pendingRequestsCount) > 9 ? '9+' : (pendingEventsCount + pendingRequestsCount)}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="admin-challenges" href="/admin/challenges">
-              <IonIcon icon={flag} />
-              <IonLabel>Challenges</IonLabel>
-              {pendingChallengesCount > 0 && (
-                <IonBadge color="danger">
-                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="admin-settings" href="/admin/settings">
-              <IonIcon icon={ellipsisHorizontal} />
-              <IonLabel>Mehr</IonLabel>
-            </IonTabButton>
-          </IonTabBar>
-        )}
-      </IonTabs>
-    </ModalProvider>
-  ) : user.type === 'teamer' ? (
-    // Teamer Tabs
+  return (
     <ModalProvider>
       <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
-          <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
-          <Route exact path="/teamer/chat" component={ChatOverviewPage} />
-          <Route exact path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
-          <Route exact path="/teamer/events" component={TeamerEventsPage} />
-          <Route exact path="/teamer/material" component={TeamerMaterialPage} />
-          <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
-          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte
-              Route bleibt wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
-          <Route exact path="/teamer/requests" render={() => <Redirect to="/teamer/events?segment=antraege" />} />
-          <Route exact path="/teamer/challenges" component={TeamerChallengesPage} />
-
-          <Route exact path="/teamer/profile" component={TeamerProfilePage} />
-          <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
-          <Route exact path="/teamer/profile/material" component={TeamerMaterialPage} />
-          <Route exact path="/teamer/profile/konfi-stats" component={TeamerKonfiStatsPage} />
-          <Route exact path="/login" render={() => <Redirect to="/teamer/dashboard" />} />
-          <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
-        </IonRouterOutlet>
-        {!isTabBarHidden(location.pathname) && (
+        {outlet}
+        {tabLeisteZeigen && (
           <IonTabBar slot="bottom">
-            <IonTabButton tab="teamer-dashboard" href="/teamer/dashboard">
-              <IonIcon icon={home} />
-              <IonLabel>Start</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="teamer-chat" href="/teamer/chat">
-              <IonIcon icon={chatbubbles} />
-              <IonLabel>Chat</IonLabel>
-              {chatUnreadTotal > 0 && (
-                <IonBadge color="danger">
-                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="teamer-events" href="/teamer/events">
-              <IonIcon icon={calendar} />
-              <IonLabel>Mitmachen</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="teamer-challenges" href="/teamer/challenges">
-              <IonIcon icon={flag} />
-              <IonLabel>Challenges</IonLabel>
-              {pendingChallengesCount > 0 && (
-                <IonBadge color="danger">
-                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="teamer-badges" href="/teamer/badges">
-              <IonIcon icon={star} />
-              <IonLabel>Badges</IonLabel>
-              {newBadgesCount > 0 && (
-                <IonBadge color="danger">
-                  {newBadgesCount > 9 ? '9+' : newBadgesCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
-          </IonTabBar>
-        )}
-      </IonTabs>
-    </ModalProvider>
-  ) : (
-    // Konfi Tabs
-    <ModalProvider>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/konfi" render={() => <Redirect to="/konfi/dashboard" />} />
-          <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
-          <Route exact path="/konfi/events" component={KonfiEventsPage} />
-          <Route exact path="/konfi/events/:id" component={KonfiEventDetailPage} />
-          <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
-          <Route exact path="/konfi/challenges" component={KonfiChallengesPage} />
-
-          {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/konfi/chat" component={ChatOverviewPage} />
-          <Route exact path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
-
-          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
-              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
-          <Route exact path="/konfi/requests" render={() => <Redirect to="/konfi/events?segment=antraege" />} />
-          <Route exact path="/konfi/profile" component={KonfiProfilePage} />
-          <Route exact path="/login" render={() => <Redirect to="/konfi/dashboard" />} />
-          <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
-        </IonRouterOutlet>
-
-        {/* Die IonTabBar wird bedingt gerendert */}
-        {!isTabBarHidden(location.pathname) && (
-          <IonTabBar slot="bottom">
-            <IonTabButton tab="dashboard" href="/konfi/dashboard">
-              <IonIcon icon={home} />
-              <IonLabel>Start</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="chat" href="/konfi/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
-              <IonIcon icon={chatbubbles} />
-              <IonLabel>Chat</IonLabel>
-              {chatUnreadTotal > 0 && (
-                <IonBadge color="danger">
-                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="challenges" href="/konfi/challenges">
-              <IonIcon icon={flag} />
-              <IonLabel>Challenges</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="events" href="/konfi/events">
-              <IonIcon icon={calendar} />
-              <IonLabel>Mitmachen</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="badges" href="/konfi/badges">
-              <IonIcon icon={star} />
-              <IonLabel>Badges</IonLabel>
-              {newBadgesCount > 0 && (
-                <IonBadge color="danger">
-                  {newBadgesCount > 9 ? '9+' : newBadgesCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
+            {baum.tabs.map(({ tab, href, icon, label, badge }) => {
+              const n = badge ? zaehler[badge] : 0;
+              return (
+                <IonTabButton key={tab} tab={tab} href={href}>
+                  <IonIcon icon={icon} />
+                  <IonLabel>{label}</IonLabel>
+                  {n > 0 && <IonBadge color="danger">{n > 9 ? '9+' : n}</IonBadge>}
+                </IonTabButton>
+              );
+            })}
           </IonTabBar>
         )}
       </IonTabs>

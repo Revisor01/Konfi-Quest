@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppLocation } from '../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -40,7 +41,7 @@ import {
   filterOutline,
   calendar
 } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -118,7 +119,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   // Nutze den useModalPage Hook, um die Seite zu registrieren
-  const location = useLocation();
+  const location = useAppLocation();
   // Bestimme die korrekte Tab-ID basierend auf dem Pfad
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
   const { pageRef, presentingElement } = useModalPage(tabId);

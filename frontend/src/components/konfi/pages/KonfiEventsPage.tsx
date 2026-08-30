@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -19,7 +20,7 @@ import {
   useIonViewWillEnter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { useLocation } from 'react-router-dom';
+
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import {
   qrCodeOutline,
@@ -77,7 +78,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
   const router = useIonRouter();
-  const routerLocation = useLocation();
+  const routerLocation = useAppLocation();
   const [presentAlert] = useIonAlert();
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
