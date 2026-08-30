@@ -62,7 +62,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 
-const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
+const CERT_ICONS: Record<string, { icon: string; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
   trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
   medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },

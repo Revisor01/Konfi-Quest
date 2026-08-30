@@ -14,6 +14,7 @@ import {
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerDaten } from '../../../utils/fehler';
 
 interface EventModalProps {
   event?: Event | null;
@@ -178,7 +179,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   };
 
   const removeTimeslot = (index: number) => { setTimeslots(timeslots.filter((_, i) => i !== index)); };
-  const updateTimeslot = (index: number, field: keyof Timeslot, value: any) => {
+  const updateTimeslot = (index: number, field: keyof Timeslot, value: string | number | boolean) => {
     const updated = [...timeslots]; updated[index] = { ...updated[index], [field]: value }; setTimeslots(updated);
   };
 
@@ -292,9 +293,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // Validierungsfehler des Backends kommen als { error, details: [...] } —
       // ohne die details liest man nur "Validierungsfehler" und weiß nicht,
       // welches Feld gemeint ist.
-      const data = typeof error === 'object' && error !== null
-        ? (error as { response?: { data?: { error?: unknown; details?: unknown } } }).response?.data
-        : undefined;
+      const data = fehlerDaten(error);
       const details = (Array.isArray(data?.details) ? data.details : [])
         .map((d: unknown) => (typeof d === 'object' && d !== null ? (d as { message?: unknown }).message : undefined))
         .filter((m): m is string => typeof m === 'string' && m !== '')

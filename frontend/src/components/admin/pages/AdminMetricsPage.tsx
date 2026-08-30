@@ -137,9 +137,14 @@ const AdminMetricsPage: React.FC = () => {
 
   const load = useCallback(async (withHistory = false) => {
     try {
-      const reqs: Promise<any>[] = [api.get('/metrics')];
-      if (withHistory) reqs.push(api.get('/metrics/history?days=7'));
-      const [m, h] = await Promise.all(reqs);
+      // Zwei Endpunkte mit unterschiedlicher Antwortform: der zweite wird nur
+      // bei withHistory geholt, deshalb die Union statt eines gemeinsamen Typs.
+      const [m, h] = await Promise.all([
+        api.get<Snapshot>('/metrics'),
+        withHistory
+          ? api.get<{ snapshots?: HistorySnap[] }>('/metrics/history?days=7')
+          : Promise.resolve(null),
+      ]);
       setSnap(m.data);
       if (h) setHistory(h.data.snapshots || []);
       setError(null);
@@ -257,7 +262,7 @@ const AdminMetricsPage: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <IonSegment value={tab} onIonChange={(e) => setTab(e.detail.value as any)} style={{ marginBottom: '12px' }}>
+            <IonSegment value={tab} onIonChange={(e) => setTab(e.detail.value as 'slow' | 'busy' | 'errors' | 'history')} style={{ marginBottom: '12px' }}>
               <IonSegmentButton value="slow"><IonLabel>Langsam</IonLabel></IonSegmentButton>
               <IonSegmentButton value="busy"><IonLabel>Häufig</IonLabel></IonSegmentButton>
               <IonSegmentButton value="errors"><IonLabel>Fehler ({snap.recentErrors.length})</IonLabel></IonSegmentButton>

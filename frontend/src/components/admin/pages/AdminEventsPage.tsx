@@ -1,7 +1,8 @@
-import { fehlerText, fehlerStatus } from '../../../utils/fehler';
+import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
@@ -21,6 +22,21 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { eventEnde } from '../../shared';
+
+/**
+ * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
+ * Nennt konkret, was beim endgueltigen Löschen verloren geht — die Zahlen
+ * stehen in der zweiten Rueckfrage.
+ */
+interface EventLoeschKonflikt {
+  error?: string;
+  error_code?: string;
+  booking_count?: number;
+  message_count?: number;
+  points_count?: number;
+  points_total?: number;
+  [feld: string]: unknown;
+}
 
 interface ActivityRequest {
   id: number;
@@ -250,7 +266,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         );
 
         // Show action sheet for series deletion
-        const buttons: any[] = [
+        const buttons: ActionSheetButton[] = [
           {
             text: 'Nur diesen Termin löschen',
             icon: 'trash-outline',
@@ -294,7 +310,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Baut aus der 409-Antwort des Backends die konkrete Verlustliste
   // (Anmeldungen, Chat-Nachrichten, vergebene Punkte).
-  const buildVerlustText = (data: any): string => {
+  const buildVerlustText = (data: EventLoeschKonflikt | undefined): string => {
     const teile: string[] = [];
     const bookings = data?.booking_count || 0;
     const messages = data?.message_count || 0;
@@ -329,7 +345,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await refreshCancelled();
             } catch (error) {
               if (fehlerStatus(error) === 409) {
-                confirmForceDelete(event, (error as { response: { data: unknown } }).response.data);
+                confirmForceDelete(event, fehlerDaten(error));
               } else {
                 setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
@@ -341,7 +357,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   // Zweite, deutliche Rueckfrage nach 409: nennt konkret, was verloren geht.
-  const confirmForceDelete = (event: Event, data: any) => {
+  const confirmForceDelete = (event: Event, data: EventLoeschKonflikt | undefined) => {
     const verluste = buildVerlustText(data);
     presentAlert({
       header: 'Wirklich löschen?',
@@ -389,12 +405,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshEvents();
             await refreshCancelled();
 
-            const konflikte: { event: Event; data: any }[] = [];
+            const konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[] = [];
             const fehler: PromiseRejectedResult[] = [];
             results.forEach((r, i) => {
               if (r.status === 'rejected') {
-                if ((r as PromiseRejectedResult).reason?.response?.status === 409) {
-                  konflikte.push({ event: seriesEvents[i], data: (r as PromiseRejectedResult).reason.response.data });
+                if (fehlerStatus(r.reason) === 409) {
+                  konflikte.push({ event: seriesEvents[i], data: fehlerDaten(r.reason) });
                 } else {
                   fehler.push(r as PromiseRejectedResult);
                 }
@@ -402,7 +418,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             });
 
             if (fehler.length > 0) {
-              const firstError = fehler[0].reason?.response?.data?.error;
+              const firstError = fehlerDaten(fehler[0].reason)?.error;
               setError(
                 `${fehler.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -419,8 +435,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Zweite Rueckfrage für Serien-Termine, die mit 409 geblockt haben:
   // aufsummierte Verluste über alle betroffenen Termine anzeigen.
-  const confirmForceDeleteSeries = (konflikte: { event: Event; data: any }[]) => {
-    const summe = (feld: string) => konflikte.reduce((s, k) => s + (k.data?.[feld] || 0), 0);
+  const confirmForceDeleteSeries = (konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[]) => {
+    const summe = (feld: keyof EventLoeschKonflikt) =>
+      konflikte.reduce((s, k) => {
+        const wert = k.data?.[feld];
+        return s + (typeof wert === 'number' ? wert : 0);
+      }, 0);
     const verluste = buildVerlustText({
       booking_count: summe('booking_count'),
       message_count: summe('message_count'),
@@ -442,7 +462,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshCancelled();
             const failed = results.filter(r => r.status === 'rejected');
             if (failed.length > 0) {
-              const firstError = (failed[0] as PromiseRejectedResult).reason?.response?.data?.error;
+              const firstError = fehlerDaten((failed[0] as PromiseRejectedResult).reason)?.error;
               setError(
                 `${failed.length} von ${konflikte.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -455,21 +475,26 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleCopyEvent = (event: Event) => {
-    // Create a copy of the event with modified name and reset dates
-    const eventCopy = {
-      ...event,
-      name: `${event.name} (Kopie)`
-    };
+    // Kopie ohne die Felder, die zum urspruenglichen Termin gehoeren: id und
+    // created_at (neuer Datensatz), die Zaehler/Status der Anmeldungen sowie
+    // alle Zeitpunkte — die setzt das Formular neu.
+    //
+    // Die Feldnamen stehen als keyof Event da: Ein Tippfehler faellt beim
+    // Uebersetzen auf. Das fruehere `delete (eventCopy as any).feld` haette
+    // ihn stillschweigend verschluckt.
+    const nichtUebernehmen: (keyof Event)[] = [
+      'id',
+      'registered_count',
+      'registration_status',
+      'created_at',
+      'event_date',
+      'event_end_time',
+      'registration_opens_at',
+      'registration_closes_at'
+    ];
 
-    // Remove properties that shouldn't be copied
-    delete (eventCopy as any).id;
-    delete (eventCopy as any).registered_count;
-    delete (eventCopy as any).registration_status;
-    delete (eventCopy as any).created_at;
-    delete (eventCopy as any).event_date;
-    delete (eventCopy as any).event_end_time;
-    delete (eventCopy as any).registration_opens_at;
-    delete (eventCopy as any).registration_closes_at;
+    const eventCopy: Partial<Event> = { ...event, name: `${event.name} (Kopie)` };
+    for (const feld of nichtUebernehmen) delete eventCopy[feld];
 
     setEditEvent(eventCopy as Event);
     presentEventModalHook({

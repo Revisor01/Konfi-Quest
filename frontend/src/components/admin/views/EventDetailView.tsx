@@ -8,6 +8,7 @@ import {
   IonItemSliding, IonItemOptions, IonItemOption,
   useIonActionSheet, useIonAlert, useIonRouter
 } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/react';
 import {
   arrowBack, createOutline, calendar, people, ban,
   personAdd, checkmarkCircle, closeCircle, checkmark, trash,
@@ -30,7 +31,8 @@ import {
   UnregistrationsSection, EventMaterialSection, EventActionsSection,
   TimeslotsSection
 } from './EventDetailSections';
-import type { Participant, Unregistration } from './EventDetailSections';
+import type { Participant, Unregistration, EventData } from './EventDetailSections';
+import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
@@ -43,53 +45,12 @@ interface Category {
   name: string;
 }
 
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  point_type?: 'gottesdienst' | 'gemeinde';
-  categories?: Category[];
-  jahrgaenge?: Jahrgang[];
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed';
-  available_spots: number;
-  participants: Participant[];
-  timeslots?: Timeslot[];
-  has_timeslots?: boolean;
-  mandatory?: boolean;
-  is_konfirmation?: boolean;
-  bring_items?: string;
-  teamer_needed?: boolean;
-  teamer_only?: boolean;
-  teamer_max_participants?: number;
-  teamer_waitlist_enabled?: boolean;
-  teamer_max_waitlist_size?: number;
-  teamer_waitlist_count?: number;
-  is_series?: boolean;
-  // In der Datenbank bigint, also eine Zahl (nachgemessen 30.08.2026 an
-  // Produktion). Hier stand `string` — folgenlos, weil der Wert nur auf
-  // Vorhandensein geprueft wurde, aber im Widerspruch zu types/event.ts.
-  // Ionic 9 typisiert useIonModal strenger und hat es aufgedeckt.
-  series_id?: number;
-  series_events?: Event[];
-  created_at: string;
-  chat_room_id?: number | null;
-  cancelled?: boolean;
-  // Konfi-Warteliste: kommt vom Server (SELECT in routes/events/lesen.js)
-  // mit — fehlte hier nur im Typ, weshalb die Zugriffe als (as any) getarnt
-  // waren (Befund 30.08.2026).
-  waitlist_enabled?: boolean;
-  max_waitlist_size?: number;
-}
+// Die Termin-Form dieser Ansicht ist dieselbe, die die Abschnitte erwarten
+// (EventData). Bis zum 30.08.2026 stand hier eine zweite, fast gleiche
+// Fassung -- ihr fehlten waitlist_enabled, max_waitlist_size und
+// checkin_window, obwohl der Code sie liest. Genau deshalb standen an den
+// Uebergabestellen `as any`-Casts, die den Unterschied verdeckten.
+type Event = EventData;
 
 interface Jahrgang {
   id: number;
@@ -125,7 +86,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
-  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   // Material Detail Modal (wie Teamer)
@@ -382,7 +343,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const showAttendanceActionSheet = (participant: Participant) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    const buttons: any[] = [];
+    const buttons: ActionSheetButton[] = [];
     if (participant.attendance_status !== 'present') {
       buttons.push({ text: 'Anwesend', icon: checkmarkCircle, handler: () => handleAttendanceUpdate(participant, 'present') });
     }
@@ -882,7 +843,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             );
           }
 
-          let konfiHeaderText = '';
+          // Ohne Initialisierer: Beide Ketten enden auf einem nackten else,
+          // jeder Zweig weist zu. tsc bestaetigt die definitive Zuweisung.
+          let konfiHeaderText: string;
           if (eventData?.has_timeslots) {
             if (hasUnassigned && hasWaitlist) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
             else if (hasUnassigned) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;

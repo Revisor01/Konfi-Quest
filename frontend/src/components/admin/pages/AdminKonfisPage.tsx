@@ -1,4 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -36,6 +36,10 @@ import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import type { ApiFehlerAntwort } from '../../../utils/fehler';
+import type { KonfiFormDaten, KonfiAngelegtAntwort } from '../../../types/user';
+import type { AxiosResponse } from 'axios';
+import type { TeamerListenEintrag } from '../../../types/user';
 
 interface Konfi {
   id: number;
@@ -135,7 +139,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const [presentKonfiModalHook, dismissKonfiModalHook] = useIonModal(KonfiModal, {
     jahrgaenge: jahrgaenge || [],
     onClose: () => dismissKonfiModalHook(),
-    onSave: (konfiData: any) => {
+    onSave: (konfiData: KonfiFormDaten) => {
       handleAddKonfi(konfiData);
       dismissKonfiModalHook();
     },
@@ -204,7 +208,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
 
   // Gibt ein Promise zurück, das erst nach abgeschlossenem Delete (oder Abbruch)
   // resolved — so kann KonfisView danach die lokale Teamer-Liste neu laden.
-  const handleDeleteTeamer = (teamer: any): Promise<void> => {
+  const handleDeleteTeamer = (teamer: TeamerListenEintrag): Promise<void> => {
     if (offlineBlockiert(isOnline, setError)) return Promise.resolve();
     return new Promise<void>((resolve) => {
       presentAlert({
@@ -249,7 +253,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   };
 
   // Erfolgsbehandlung nach erfolgreichem Anlegen (auch nach Grace-Bestätigung wiederverwendet)
-  const handleKonfiCreated = async (response: any, konfiData: any) => {
+  const handleKonfiCreated = async (response: AxiosResponse<KonfiAngelegtAntwort>, konfiData: KonfiFormDaten) => {
     // Automatisch Jahrgangschat erstellen/zuweisen
     if (konfiData.jahrgang_id) {
       await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
@@ -260,7 +264,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       presentAlert({
         header: 'Einmalpasswort',
         subHeader: tempPassword,
-        message: `Konfi "${konfiData.display_name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
+        message: `Konfi "${konfiData.name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
         buttons: [
           {
             text: 'Kopieren',
@@ -280,7 +284,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   };
 
   // Grace-Bestätigungsdialog: legt den Konfi nach "Trotzdem anlegen" mit confirm-Flag erneut an
-  const presentGraceDialog = (konfiData: any, data: any) => {
+  const presentGraceDialog = (konfiData: KonfiFormDaten, data: ApiFehlerAntwort | undefined) => {
     const count = data?.count;
     const limit = data?.limit;
     const nextTier = data?.next_tier;
@@ -310,22 +314,20 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     });
   };
 
-  const handleAddKonfi = async (konfiData: any) => {
+  const handleAddKonfi = async (konfiData: KonfiFormDaten) => {
     try {
       const response = await api.post('/admin/konfis', konfiData);
       await handleKonfiCreated(response, konfiData);
     } catch (err) {
-      const antwort = typeof err === 'object' && err !== null
-        ? (err as { response?: { status?: number; data?: { error_code?: string; next_tier?: number } } }).response
-        : undefined;
-      const errorCode = antwort?.data?.error_code;
+      const daten = fehlerDaten(err);
+      const errorCode = daten?.error_code;
 
       if (errorCode === 'limit_grace') {
         // 409 Grace: Bestätigungsdialog mit Tarif-Hinweis und "Trotzdem anlegen"
-        presentGraceDialog(konfiData, antwort?.data);
+        presentGraceDialog(konfiData, daten);
       } else if (errorCode === 'limit_exceeded') {
         // 403 Hard-Block: nur Hinweis, kein Override
-        const nextTier = antwort?.data?.next_tier;
+        const nextTier = daten?.next_tier;
         const tarifHinweis = nextTier
           ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
           : 'Bitte wende dich an den Support für ein passendes Angebot.';
@@ -334,7 +336,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           message: `Das Konfi-Limit ist ausgeschöpft. Um weitere Konfis anzulegen, ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
           buttons: [{ text: 'Verstanden', role: 'cancel' }]
         });
-      } else if (antwort?.status === 409) {
+      } else if (fehlerStatus(err) === 409) {
         // Username-Kollision (unverändert)
         setError('Ein Konfi mit diesem Namen existiert bereits.');
       } else {

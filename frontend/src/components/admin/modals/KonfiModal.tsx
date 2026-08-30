@@ -20,6 +20,7 @@ import {
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, personOutline, informationCircleOutline, cloudOfflineOutline, schoolOutline, checkmark, warningOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import type { KonfiFormDaten } from '../../../types/user';
 
 interface Jahrgang {
   id: number;
@@ -33,7 +34,7 @@ interface Jahrgang {
 interface KonfiModalProps {
   jahrgaenge: Jahrgang[];
   onClose: () => void;
-  onSave: (konfiData: any) => void;
+  onSave: (konfiData: KonfiFormDaten) => void;
   dismiss?: () => void;
   /**
    * Gesetzt = BEARBEITEN, nicht gesetzt = ANLEGEN.

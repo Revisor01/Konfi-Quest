@@ -34,6 +34,7 @@ import { SectionHeader, ListSection } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
+import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
 
 
 
@@ -152,7 +153,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   };
 
   const getCriteriaDetail = (badge: Badge): string | null => {
-    let extra: any = {};
+    let extra: BadgeKriteriumExtra = {};
     try {
       if (badge.criteria_extra) {
         let parsed = typeof badge.criteria_extra === 'string'
@@ -206,9 +207,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       }
       case 'category_activities':
         return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
-      case 'time_based':
+      case 'time_based': {
         const weeks = extra.days ? Math.round(extra.days / 7) : (extra.weeks || '?');
         return `${badge.criteria_value} in ${weeks} Wochen`;
+      }
       case 'activity_count':
         return `${badge.criteria_value} Aktivitäten`;
       case 'event_count':

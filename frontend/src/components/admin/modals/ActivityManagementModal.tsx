@@ -190,7 +190,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     await guard(async () => {
     setLoading(true);
     try {
-      const payload: any = {
+      const payload = {
         name: formData.name.trim(),
         points: formData.target_role === 'teamer' ? 0 : formData.points,
         type: formData.target_role === 'teamer' ? null : formData.type,

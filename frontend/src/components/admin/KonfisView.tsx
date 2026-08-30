@@ -7,6 +7,7 @@ import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import type { TeamerListenEintrag } from '../../types/user';
 
 interface Konfi {
   id: number;
@@ -46,7 +47,7 @@ interface KonfisViewProps {
   onAddKonfiClick: () => void;
   onSelectKonfi: (konfi: Konfi) => void;
   onDeleteKonfi: (konfi: Konfi) => void;
-  onDeleteTeamer: (teamer: any) => void | Promise<void>;
+  onDeleteTeamer: (teamer: TeamerListenEintrag) => void | Promise<void>;
   // Im iPad-Split-View aktuell rechts geoeffneter Konfi (für Highlighting).
   selectedKonfiId?: number | null;
   // Meldet den Umschalter nach oben: der Plus-Button in der Kopfzeile gehört
@@ -85,7 +86,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
-  const [teamers, setTeamers] = useState<any[]>([]);
+  const [teamers, setTeamers] = useState<TeamerListenEintrag[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
   const [, setKonfiLimit] = useState<number | null>(null);
@@ -314,7 +315,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
           emptyIconColor="var(--app-color-teamer)"
         >
-          {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
+          {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer, index, arr) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
               <IonItem
                 button

@@ -27,6 +27,13 @@ Versionsüberschrift.
 - Wurde eine Challenge im geöffneten Beitrags-Fenster auf "nur Leitung"
   umgestellt, blieb die Kachel "Abgelehnt" stehen, obwohl es dann keine
   Gruppen-Galerie mehr gibt. Die Kachelleiste folgt jetzt der Sichtbarkeit.
+- Beim Löschen eines Termins, der zu einer Serie gehört, fragt die App wieder
+  zuverlässig nach, ob nur dieser oder die ganze Serie gelöscht werden soll.
+- Bei den Bonuspunkten einer Konfi steht jetzt der Name der Person, die sie
+  vergeben hat. Bisher stand dort immer nur „Admin".
+- Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
+  Bisher stand dort „Konfi "undefined" erstellt".
+
 ## [Unreleased] - 2.2.0
 
 ### Geändert

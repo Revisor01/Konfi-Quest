@@ -256,7 +256,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
     await guard(async () => {
       try {
-        const payload: any = {
+        const payload = {
           title: title.trim(),
           description: description.trim() || null,
           event_ids: eventIds,

@@ -1,4 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerDaten, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -493,14 +493,11 @@ const AdminJahrgaengeePage: React.FC = () => {
           await slidingElement.close();
         }
 
-        const data = typeof error === 'object' && error !== null
-          ? (error as { response?: { data?: { canForceDelete?: boolean; error?: string } } }).response?.data
-          : undefined;
-        if (data?.canForceDelete) {
+        if (fehlerDaten(error)?.canForceDelete) {
           // Org Admin kann trotzdem löschen
           presentAlert({
             header: 'Chat-Nachrichten vorhanden',
-            message: `${data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            message: `${fehlerText(error, 'Der Jahrgang enthält Chat-Nachrichten.')}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
             buttons: [
               { text: 'Abbrechen', role: 'cancel' },
               {

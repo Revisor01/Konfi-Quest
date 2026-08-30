@@ -79,6 +79,30 @@ const TEAMER_LABELS: Record<string, string> = {
 
 // Gemeinsame Default-Reihenfolgen (utils/sectionOrder) — sonst driften die
 // Listen zwischen Einstellungen und Dashboards auseinander.
+/**
+ * Die Dashboard-Felder aus GET /settings, soweit diese Seite sie liest.
+ *
+ * Alle optional: Eine Organisation, die nie etwas eingestellt hat, hat die
+ * Felder nicht — die Anzeige faellt dann ueberall auf `?? true` zurueck.
+ */
+interface DashboardEinstellungen {
+  dashboard_show_konfirmation?: boolean;
+  dashboard_show_challenges?: boolean;
+  dashboard_show_konfispruch?: boolean;
+  dashboard_show_events?: boolean;
+  dashboard_show_losung?: boolean;
+  dashboard_show_badges?: boolean;
+  dashboard_show_ranking?: boolean;
+  dashboard_section_order?: string[] | null;
+  teamer_dashboard_show_zertifikate?: boolean;
+  teamer_dashboard_show_challenges?: boolean;
+  teamer_dashboard_show_konfispruch?: boolean;
+  teamer_dashboard_show_events?: boolean;
+  teamer_dashboard_show_badges?: boolean;
+  teamer_dashboard_show_losung?: boolean;
+  teamer_dashboard_section_order?: string[] | null;
+}
+
 const DEFAULT_KONFI_ORDER = DEFAULT_KONFI_SECTION_ORDER;
 const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
@@ -129,12 +153,12 @@ const AdminDashboardSettingsPage: React.FC = () => {
   };
 
   // Offline-Query: Settings
-  const { loading, refresh: refreshSettings } = useOfflineQuery<any>(
+  const { loading, refresh: refreshSettings } = useOfflineQuery<DashboardEinstellungen>(
     'admin:settings:' + user?.organization_id,
     async () => { const res = await api.get('/settings'); return res.data; },
     {
       ttl: CACHE_TTL.SETTINGS,
-      onSuccess: (data: any) => {
+      onSuccess: (data: DashboardEinstellungen) => {
         setDashboardConfig({
           show_konfirmation: data.dashboard_show_konfirmation ?? true,
           show_challenges: data.dashboard_show_challenges ?? true,

@@ -1,4 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
+import { alsApiFehler, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   IonHeader,
@@ -276,7 +276,9 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       // den Konfi-Namen aus display_name normalisieren.
       const raw = Array.isArray(res.data) ? res.data : (res.data?.submissions || []);
       setSubmissions(
-        raw.map((row: any) => ({
+        // display_name ist die Altform des Namensfeldes — deshalb hier
+        // zusaetzlich zum Typ des Beitrags aufgefuehrt.
+        raw.map((row: ChallengeSubmission & { display_name?: string | null }) => ({
           ...row,
           konfi_name: row.konfi_name ?? row.display_name ?? null
         }))

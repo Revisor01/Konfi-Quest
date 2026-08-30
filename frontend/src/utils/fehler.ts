@@ -6,6 +6,13 @@
  * fehlt das Feld, ist es leer oder kein String, gibt es den Fallback.
  */
 
+/** Fehlerantwort des Backends — durchgaengig `{ error: "..." }`. */
+export interface ApiFehlerAntwort {
+  error?: string;
+  error_code?: string;
+  [feld: string]: unknown;
+}
+
 interface MitResponse {
   response?: {
     status?: number;
@@ -64,4 +71,23 @@ export function fehlerStatus(err: unknown): number | undefined {
 export function istNetzwerkfehler(err: unknown): boolean {
   const obj = alsObjekt(err);
   return !obj?.response || obj.code === 'ERR_NETWORK';
+}
+
+/**
+ * Rohdaten der Fehlerantwort (`err.response.data`), sonst undefined.
+ *
+ * Fuer die Stellen, die neben der Meldung noch Begleitfelder auswerten —
+ * etwa `error_code`, `canForceDelete` oder `next_tier` bei den Tarifgrenzen.
+ */
+export function fehlerDaten(err: unknown): ApiFehlerAntwort | undefined {
+  const daten = alsObjekt(err)?.response?.data;
+  return typeof daten === 'object' && daten !== null ? (daten as ApiFehlerAntwort) : undefined;
+}
+
+/**
+ * Engt einen `unknown` aus dem Catch auf die gelesene Form ein. Gibt immer
+ * ein Objekt zurueck, damit Aufrufer gefahrlos `?.` benutzen koennen.
+ */
+export function alsApiFehler(err: unknown): { response?: { status?: number; data?: ApiFehlerAntwort }; message?: string; code?: string } {
+  return alsObjekt(err) !== null ? (err as { response?: { status?: number; data?: ApiFehlerAntwort }; message?: string; code?: string }) : {};
 }

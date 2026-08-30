@@ -37,6 +37,7 @@ import {
 } from 'ionicons/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -69,7 +70,7 @@ export interface EventData {
   registered_count: number;
   registration_status: 'upcoming' | 'open' | 'closed';
   available_spots: number;
-  participants: any[];
+  participants: Participant[];
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;
   has_timeslots?: boolean;
   mandatory?: boolean;
@@ -83,10 +84,11 @@ export interface EventData {
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
   is_series?: boolean;
-  // In der Datenbank bigint, also eine Zahl (nachgemessen 30.08.2026 an
-  // Produktion). Hier stand `string` — folgenlos, weil der Wert nur auf
-  // Vorhandensein geprueft wurde, aber im Widerspruch zu types/event.ts.
-  // Ionic 9 typisiert useIonModal strenger und hat es aufgedeckt.
+  // Erster Termin der Serie -- die id des ersten Events (events.series_id),
+  // also eine Zahl. In der Datenbank bigint (nachgemessen 30.08.2026 an
+  // Produktion). Bis dahin stand hier string: der Vergleich
+  // e.series_id === event.series_id waere zwischen den beiden Fassungen nie
+  // wahr geworden, weil 12 !== "12".
   series_id?: number;
   series_events?: EventData[];
   created_at: string;
@@ -96,29 +98,10 @@ export interface EventData {
   max_waitlist_size?: number;
 }
 
-export interface Participant {
-  id: number;
-  user_id?: number;
-  participant_name: string;
-  jahrgang_name?: string;
-  role_name?: string;
-  created_at: string;
-  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
-  attendance_status?: 'present' | 'absent' | null;
-  timeslot_id?: number;
-  timeslot_start_time?: string;
-  timeslot_end_time?: string;
-  opt_out_reason?: string;
-  opt_out_date?: string;
-}
-
-export interface Unregistration {
-  id: number;
-  user_id: number;
-  konfi_name: string;
-  reason?: string;
-  unregistered_at: string;
-}
+// Participant und Unregistration stehen zentral in types/event — bis zum
+// 30.08.2026 gab es sie hier UND im ParticipantManagementModal, mit
+// unterschiedlichen Statuswerten.
+export type { Participant, Unregistration } from '../../../types/event';
 
 // ---- EventInfoCard ----
 
@@ -569,7 +552,7 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
 // ---- EventMaterialSection ----
 
 interface EventMaterialSectionProps {
-  eventMaterials: any[];
+  eventMaterials: EventMaterial[];
   onMaterialClick: (materialId: number) => void;
 }
 
@@ -587,7 +570,7 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
     <IonCard className="app-card">
       <IonCardContent style={{ padding: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {eventMaterials.map((mat: any) => (
+        {eventMaterials.map((mat) => (
           <div
             key={mat.id}
             className="app-list-item app-list-item--material"

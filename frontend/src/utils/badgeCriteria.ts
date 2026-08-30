@@ -25,6 +25,35 @@ import {
   sparkles
 } from 'ionicons/icons';
 
+/**
+ * Die Zusatzangaben eines Kriteriums (`custom_badges.criteria_extra`).
+ *
+ * In der Datenbank steht dort JSON, und zwar teils DOPPELT escaped
+ * ("{\"days\":30}") — beide Leser parsen deshalb bis zu zweimal. Welche
+ * Felder belegt sind, haengt am criteria_type; alle sind darum optional.
+ */
+export interface BadgeKriteriumExtra {
+  /** activity_count: eine bestimmte Aktivitaet. */
+  activity_id?: number;
+  /** Vom Backend aufgeloester Name zu activity_id. */
+  required_activity_name?: string;
+  /** activity_combination: mehrere Aktivitaeten, alle noetig. */
+  required_activities?: string[];
+  /** specific_activities: Auswahl, von der eine Mindestzahl noetig ist. */
+  activity_ids?: number[];
+  /** category_activities: Name der Kategorie. */
+  required_category?: string;
+  /** time_based: der gespeicherte Wert — die Anzeige rechnet in Wochen um. */
+  days?: number;
+  /**
+   * time_based, Altbestand: Frueher schrieb das Formular `weeks` direkt in
+   * die Zusatzangaben. Neu gespeichert wird immer `days` (weeks * 7); beide
+   * Leser nehmen deshalb `days` zuerst und fallen nur fuer alte Datensaetze
+   * auf `weeks` zurueck.
+   */
+  weeks?: number;
+}
+
 /** Standardfarbe eines Kriterientyps. Auch die Vorgabe für die Badge-Farbe. */
 export const CRITERIA_COLORS: Record<string, string> = {
   total_points: '#ffd700',

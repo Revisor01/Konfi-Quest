@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  fehlerText,
-  fehlerTextOderMessage,
-  fehlerStatus,
-  istNetzwerkfehler,
-} from '../../utils/fehler';
+import { alsApiFehler, fehlerDaten, fehlerStatus, fehlerText, fehlerTextOderMessage, istNetzwerkfehler } from '../../utils/fehler';
 
 /** Nachbau eines axios-Fehlers, wie ihn die Catch-Blöcke bisher gesehen haben. */
 const axiosFehler = (data: unknown, status = 400) => ({
@@ -95,5 +90,41 @@ describe('istNetzwerkfehler', () => {
 
   it('ist falsch, wenn der Server geantwortet hat', () => {
     expect(istNetzwerkfehler(axiosFehler({ error: 'nope' }, 500))).toBe(false);
+  });
+});
+
+describe('fehlerStatus und fehlerDaten', () => {
+  it('liest den Status der Fehlerantwort', () => {
+    expect(fehlerStatus({ response: { status: 409, data: {} } })).toBe(409);
+  });
+
+  it('liefert ohne response undefined statt zu werfen', () => {
+    expect(fehlerStatus(new Error('Network Error'))).toBeUndefined();
+    expect(fehlerDaten('kaputt')).toBeUndefined();
+  });
+
+  // Die 409-Antwort beim Loeschen eines Termins traegt die konkreten Zahlen,
+  // die der Rueckfrage-Dialog nennt (siehe events/verwaltung.js).
+  it('reicht die Zusatzfelder der Antwort durch', () => {
+    const konflikt = {
+      response: {
+        status: 409,
+        data: {
+          error: 'Beim Löschen dieses Events geht verloren: 3 Anmeldung(en).',
+          error_code: 'event_delete_confirm',
+          booking_count: 3,
+          message_count: 0,
+          points_count: 0,
+          points_total: 0,
+        },
+      },
+    };
+    expect(fehlerDaten(konflikt)?.booking_count).toBe(3);
+    expect(fehlerDaten(konflikt)?.error_code).toBe('event_delete_confirm');
+  });
+
+  it('macht aus einem Nicht-Objekt ein leeres Fehlerobjekt', () => {
+    expect(alsApiFehler('kaputt')).toEqual({});
+    expect(alsApiFehler(null)).toEqual({});
   });
 });
