@@ -15,7 +15,8 @@ import {
   IonSelect,
   IonSelectOption,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonSpinner
 } from '@ionic/react';
 import {
   trash,
@@ -82,6 +83,10 @@ interface KonfisViewProps {
   // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
   // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
   onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
+  // Startsegment. Nur der Erstwert — die Umschaltung bleibt interner State.
+  // (JSDOM reicht ionChange nicht an den React-Handler durch; ueber diesen
+  // Erstwert ist das Teamer-Segment auch im Test erreichbar.)
+  initialViewMode?: 'konfis' | 'teamer';
   /**
    * Der angemeldete Admin hat KEINEN Jahrgang zugewiesen (Header vom Server).
    * Dann ist die leere Liste kein "es gibt keine Konfis", sondern "du darfst
@@ -102,13 +107,14 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onDeleteTeamer,
   selectedKonfiId,
   ohneJahrgang = false,
-  onViewModeChange
+  onViewModeChange,
+  initialViewMode = 'konfis'
 }) => {
   const { user, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
+  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<any[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
@@ -317,8 +323,16 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Teamer-Liste */}
-      {viewMode === 'teamer' ? (
+      {/* Teamer-Liste. Waehrend des Ladens KEIN Leerzustand: "Noch keine
+          Teamer:innen vorhanden" waere hier schlicht falsch — dieselbe
+          Fehlerklasse wie der Audit-Befund vom 10.08. (Fehler nicht als
+          Leerzustand ausgeben). teamerLoading wurde gepflegt, aber nie
+          gerendert (Befund 30.08.2026). */}
+      {viewMode === 'teamer' && teamerLoading && teamers.length === 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+          <IonSpinner name="crescent" />
+        </div>
+      ) : viewMode === 'teamer' ? (
         <ListSection
           icon={ribbon}
           title="Teamer:innen"
