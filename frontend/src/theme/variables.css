@@ -3125,7 +3125,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   .app-wartende-leiste { transition: none; }
   .app-wartende-leiste:active { transform: none; }
 }
-}
 
 
 /* ====================================================================
