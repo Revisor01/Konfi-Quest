@@ -12,6 +12,11 @@ Versionsüberschrift.
 ### Behoben
 - Konfis, die zu einem schon bestehenden Jahrgang dazukamen, landeten nicht im
   Jahrgangschat und sahen ihn nie. Sie werden jetzt beim Anlegen eingetragen.
+- Beim Öffnen eines Termins oder eines Konfis in der Leitungsansicht stand
+  kurz ein leeres Gerüst ohne Namen und mit Nullen. Jetzt läuft solange eine
+  Ladeanzeige.
+- Beim Verlängern einer Einladung passierte sichtbar nichts, bis die Liste neu
+  geladen war. Jetzt zeigt die Einladung, dass sie gerade verlängert wird.
 
 ## [2.1.0] - 2026-08-29
 

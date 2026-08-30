@@ -32,6 +32,7 @@ import {
 import type { Participant, Unregistration } from './EventDetailSections';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface Category {
   id: number;
@@ -674,6 +675,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       </IonItemSliding>
     );
   };
+
+  // Solange geladen wird, den Spinner zeigen statt ein leeres Geruest mit
+  // Platzhaltertitel - so wie es die Konfi-Ansicht desselben Events macht.
+  if (loading) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>Event Details</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+          <LoadingSpinner message="Event wird geladen..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

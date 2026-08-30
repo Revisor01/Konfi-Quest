@@ -44,6 +44,7 @@ import KonfiBadgesSection from './KonfiBadgesSection';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface KonfiDetailViewProps {
   konfiId: number;
@@ -660,6 +661,30 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       ]
     });
   };
+
+  // Solange geladen wird, den Spinner zeigen statt Kacheln auf 0 und den
+  // Platzhaltertitel - dasselbe Muster wie in der Event-Detailansicht.
+  if (loading) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}>
+                  <IonIcon icon={arrowBack} />
+                </IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>{isTeamer ? 'Teamer:in Details' : 'Konfi Details'}</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+          <LoadingSpinner message={isTeamer ? 'Teamer:in wird geladen...' : 'Konfi wird geladen...'} />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
