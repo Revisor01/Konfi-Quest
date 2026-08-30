@@ -489,8 +489,23 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </IonItem>
 
-                {(onDeleteEvent || onCancelEvent) && (
+                {(onDeleteEvent || onCancelEvent || onCopyEvent) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
+                    {/* Kopieren war bei einer Swipe-Ueberarbeitung verloren
+                        gegangen: Die Page reichte onCopyEvent samt
+                        Berechtigungspruefung weiter, gerendert wurde es nicht
+                        mehr — die Funktion war unerreichbar (Befund 30.08.2026). */}
+                    {onCopyEvent && (
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); onCopyEvent(event); }}
+                        aria-label="Event kopieren"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--info">
+                          <IonIcon icon={copy} />
+                        </div>
+                      </IonItemOption>
+                    )}
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => { closeOpenSlidingItems(); onCancelEvent(event); }}
