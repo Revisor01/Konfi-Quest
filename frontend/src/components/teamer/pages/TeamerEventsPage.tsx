@@ -10,6 +10,18 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { fehlerText } from '../../../utils/fehlerText';
+
+/** Ein Eintrag aus GET /material/by-event/:eventId (material.js). */
+interface EventMaterial {
+  id: number;
+  title: string;
+  description?: string | null;
+  created_at: string;
+  created_by_name?: string | null;
+  /** Serverseitig bereits als Zahl geliefert. */
+  file_count: number;
+}
 import { writeQueue } from '../../../services/writeQueue';
 import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../../shared/WartendeVorgaengeKarte';
@@ -55,7 +67,7 @@ const TeamerEventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
-  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   const materialIdRef = useRef<number | null>(null);
 
@@ -986,7 +998,7 @@ const TeamerEventsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
-                  {eventMaterials.map((mat: any) => (
+                  {eventMaterials.map((mat) => (
                     <div
                       key={mat.id}
                       className="app-list-item app-list-item--material"
@@ -1288,7 +1300,7 @@ const TeamerEventsPage: React.FC = () => {
             <div className="app-segment-wrapper">
               <IonSegment
                 value={activeTab}
-                onIonChange={(e) => setActiveTab(e.detail.value as any)}
+                onIonChange={(e) => setActiveTab(e.detail.value as 'meine' | 'alle' | 'team')}
               >
                 <IonSegmentButton value="alle">
                   <IonLabel>Alle</IonLabel>

@@ -2,6 +2,7 @@ import { fehlerText } from '../utils/fehler';
 import { useIonAlert } from '@ionic/react';
 import { useApp } from '../contexts/AppContext';
 import api from '../services/api';
+import { fehlerText } from '../utils/fehlerText';
 import { getChallengeStatus } from '../components/admin/views/ChallengesManageView';
 import type { AdminChallenge } from '../types/challenges';
 

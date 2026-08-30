@@ -42,7 +42,9 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
+import { writeQueue, QueueBody } from '../../../services/writeQueue';
+import { AktivitaetMelden } from '../../../types/request';
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehlerText';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';
@@ -192,7 +194,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             photoFilename = await uploadPhoto();
           }
 
-          const requestData: any = {
+          const requestData: AktivitaetMelden = {
             activity_id: parseInt(formData.activity_id),
             description: formData.description.trim(),
             requested_date: formData.requested_date,
@@ -212,7 +214,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
       } else {
         // Offline-Pfad: Queue-Fallback
         let hasFileUpload = false;
-        const queueBody: any = {
+        const queueBody: QueueBody & AktivitaetMelden = {
           activity_id: parseInt(formData.activity_id),
           description: formData.description.trim(),
           requested_date: formData.requested_date,

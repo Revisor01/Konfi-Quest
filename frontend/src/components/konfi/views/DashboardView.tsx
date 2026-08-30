@@ -12,6 +12,8 @@ import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, ey
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
+import type { KonfiChallenge } from '../../../types/challenges';
+import { fehlerText } from '../../../utils/fehlerText';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -108,10 +110,6 @@ interface BadgeStats {
   secretEarned: number;
 }
 
-interface AllBadgesData {
-  available: Badge[];
-  earned: Badge[];
-}
 
 interface DashboardConfig {
   show_konfirmation: boolean;
@@ -141,7 +139,7 @@ interface DashboardViewProps {
   // die sie noch setzen.
   dailyVerse?: DailyVerse | null;
   badgeStats: BadgeStats;
-  allBadges: AllBadgesData;
+  allBadges: AlleAbzeichen;
   upcomingEvents: DashboardEvent[];
   targetGottesdienst: number;
   targetGemeinde: number;
@@ -231,7 +229,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const active = Array.isArray(res.data?.active) ? res.data.active : [];
         setActiveChallenges(
           active
-            .map((c: any) => ({
+            .map((c: KonfiChallenge) => ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
@@ -333,19 +331,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const nextConfirmationEvent = confirmationEvents.length > 0 ? confirmationEvents[0] : null;
 
   // Badge-Berechnungen memoisiert
-  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: Badge) => b.id)), [allBadges.earned]);
+  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: ApiBadge) => b.id)), [allBadges.earned]);
   const recentBadgeIds = useMemo(() => new Set(dashboardData.recent_badges?.map((b: Badge) => b.id) || []), [dashboardData.recent_badges]);
 
   const visibleBadges = useMemo(() => [
-    ...allBadges.earned.filter((b: Badge) => !b.is_hidden),
-    ...allBadges.available.filter((b: Badge) => !earnedIds.has(b.id) && !b.is_hidden)
+    ...allBadges.earned.filter((b: ApiBadge) => !b.is_hidden),
+    ...allBadges.available.filter((b: ApiBadge) => !earnedIds.has(b.id) && !b.is_hidden)
   ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), [allBadges, earnedIds]);
 
-  const secretEarned = useMemo(() => allBadges.earned.filter((b: Badge) => b.is_hidden), [allBadges.earned]);
+  const secretEarned = useMemo(() => allBadges.earned.filter((b: ApiBadge) => b.is_hidden), [allBadges.earned]);
   const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
   const recentSecretCount = useMemo(() =>
-    secretEarned.filter((b: Badge) => recentBadgeIds.has(b.id)).length,
+    secretEarned.filter((b: ApiBadge) => recentBadgeIds.has(b.id)).length,
     [secretEarned, recentBadgeIds]
   );
   const recentVisibleCount = useMemo(() =>
@@ -353,10 +351,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     [dashboardData.recent_badges, recentSecretCount]
   );
 
-  const handleLevelClick = (e: React.MouseEvent, level: any, isReached: boolean) => {
+  const handleLevelClick = (e: React.MouseEvent, level: DashboardLevel, isReached: boolean) => {
     levelPopoverRef.current = { level, isReached };
     presentLevelPopover({
-      event: (e as any).nativeEvent,
+      event: e.nativeEvent,
       side: 'top',
       alignment: 'center'
     });

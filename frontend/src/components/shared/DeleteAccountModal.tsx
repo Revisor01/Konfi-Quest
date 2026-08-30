@@ -31,6 +31,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { fehlerStatus, fehlerText } from '../../utils/fehlerText';
 
 interface DeleteAccountModalProps {
   onClose: () => void;

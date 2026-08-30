@@ -1,17 +1,48 @@
+import type { AxiosRequestConfig } from 'axios';
 import { Preferences } from '@capacitor/preferences';
 import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehler';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
 import api from './api';
+import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehlerText';
 
 // --- Interfaces ---
+
+/**
+ * Der eingereihte Request-Rumpf.
+ *
+ * Muss serialisierbar bleiben (er ueberlebt in Preferences den App-Neustart),
+ * darum nur JSON-Werte. Felder mit fuehrendem Unterstrich sind LOKALE
+ * Marker fuer Dateien im Capacitor-Filesystem; sie werden beim Senden
+ * aufgeloest und nie an den Server geschickt.
+ */
+export interface QueueBody {
+  [feld: string]: unknown;
+  /** Nachrichtentext (Chat) bzw. Freitext des Vorgangs. */
+  content?: string;
+  /**
+   * Beschreibung eines gemeldeten Vorgangs — die Liste der wartenden
+   * Vorgaenge zeigt sie an. Formulare liefern hier auch null.
+   */
+  description?: string | null;
+  /** Idempotenzschluessel — der Server erkennt daran den Doppelversand. */
+  client_id?: string;
+  /** Pfad eines lokal zwischengespeicherten Fotos (gemeldete Aktivitaeten). */
+  _localPhotoPath?: string;
+  _photoFileName?: string;
+  photo_filename?: string;
+  /** Pfad einer lokal zwischengespeicherten Chat-Datei. */
+  _localFilePath?: string;
+  _fileName?: string;
+  _fileType?: string;
+}
 
 export interface QueueItem {
   id: string;
   method: 'POST' | 'PUT' | 'DELETE';
   url: string;
-  body?: any;
+  body?: QueueBody;
   headers?: Record<string, string>;
   maxRetries: number;
   retryCount: number;
@@ -337,7 +368,7 @@ async function handleFlushResult(result: FlushResult): Promise<void> {
 
 // --- Foto-Upload Helfer für Queue-Items mit _localPhotoPath ---
 
-async function resolveLocalPhoto(body: any): Promise<void> {
+async function resolveLocalPhoto(body: QueueBody): Promise<void> {
   if (!body?._localPhotoPath) return;
 
   // Datei aus Capacitor Filesystem lesen
@@ -479,7 +510,7 @@ async function flush(): Promise<FlushResult> {
         // Chat-Bild aus lokalem Filesystem zu FormData konvertieren.
         // requestBody ist FLUECHTIG — item.body bleibt unverändert (serialisierbar),
         // damit ein Retry nach transientem Fehler die Datei erneut lesen kann.
-        let requestBody: any = item.body;
+        let requestBody: QueueBody | FormData | undefined = item.body;
         let requestHeaders = item.headers;
         if (item.body?._localFilePath) {
           const formData = await resolveLocalFile(item);
@@ -489,7 +520,7 @@ async function flush(): Promise<FlushResult> {
           }
         }
 
-        const config: any = {};
+        const config: AxiosRequestConfig = {};
         if (requestHeaders) config.headers = requestHeaders;
         // Medien-Replays (FormData) brauchen auf Mobilfunk mehr als die globalen 20s
         if (typeof FormData !== 'undefined' && requestBody instanceof FormData) {
@@ -576,7 +607,7 @@ async function flushTextOnly(): Promise<FlushResult> {
       }
 
       try {
-        const config: any = {};
+        const config: AxiosRequestConfig = {};
         if (item.headers) config.headers = item.headers;
 
         if (item.method === 'DELETE') {

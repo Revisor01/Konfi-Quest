@@ -1,5 +1,5 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { writeQueue, QueueItem, FailedChatMessage } from '../../services/writeQueue';
+import { writeQueue, QueueBody, QueueItem, FailedChatMessage } from '../../services/writeQueue';
 import { Message, ChatUserType } from '../../types/chat';
 
 /**
@@ -114,7 +114,7 @@ export async function chatNachrichtEinreihen(
   roomId: number,
   opts: { clientId: string; content: string; file?: File | null; replyToId?: number | null }
 ): Promise<void> {
-  const queueBody: Record<string, any> = { content: opts.content, client_id: opts.clientId };
+  const queueBody: QueueBody = { content: opts.content, client_id: opts.clientId };
   let hasFileUpload = false;
 
   if (opts.file) {

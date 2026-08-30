@@ -60,6 +60,7 @@ import { ChatRoomOverview } from '../../types/chat';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { istTeamTyp } from '../../utils/chatRoles';
+import { apiFehler, fehlerText } from '../../utils/fehlerText';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;

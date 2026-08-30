@@ -30,6 +30,7 @@ import PointsHistoryModal from '../modals/PointsHistoryModal';
 import KonfispruchSelectModal from '../modals/KonfispruchSelectModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
+import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner } from '../../shared';
@@ -63,11 +64,11 @@ interface DashboardData {
     confirmation_location?: string;
   };
   total_points: number;
-  recent_badges: any[];
+  recent_badges: Badge[];
   badge_count: number;
-  recent_events: any[];
+  recent_events: DashboardEvent[];
   event_count: number;
-  ranking: any[];
+  ranking: RankingEntry[];
   days_to_confirmation?: number;
   confirmation_date?: string;
   point_config?: PointConfig;
@@ -102,10 +103,6 @@ interface BadgeStats {
   secretEarned: number;
 }
 
-interface AllBadgesData {
-  available: any[];
-  earned: any[];
-}
 
 
 const KonfiDashboardPage: React.FC = () => {
@@ -119,7 +116,9 @@ const KonfiDashboardPage: React.FC = () => {
   const scrollMarken = useRef<Set<number>>(new Set());
   const handleScrollTiefe = useCallback((ev: CustomEvent) => {
     const el = ev.target as HTMLIonContentElement & { scrollHeight?: number; clientHeight?: number };
-    const detail: any = ev.detail || {};
+    // ion-content liefert im scroll-Ereignis { scrollTop, scrollLeft };
+    // ein eigener Ionic-Typ dafuer ist nicht exportiert.
+    const detail = (ev.detail || {}) as { scrollTop?: number };
     const hoehe = (el?.scrollHeight || 0) - (el?.clientHeight || 0);
     if (hoehe <= 0) return;
     const anteil = Math.round(((detail.scrollTop || 0) / hoehe) * 100);
@@ -159,15 +158,15 @@ const KonfiDashboardPage: React.FC = () => {
     () => api.get('/konfi/events').then(r => r.data),
     {
       ttl: CACHE_TTL.EVENTS,
-      select: (events) => events.filter((event: any) =>
-        new Date(event.event_date || event.date) >= new Date() &&
+      select: (events) => events.filter((event) =>
+        new Date(event.event_date || event.date || '') >= new Date() &&
         (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
       )
     }
   );
 
   // --- useOfflineQuery: Badges ---
-  const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<any>(
+  const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
     'konfi:badges:' + user?.id,
     () => api.get('/konfi/badges').then(r => r.data),
     { ttl: CACHE_TTL.BADGES }
@@ -179,12 +178,12 @@ const KonfiDashboardPage: React.FC = () => {
     const { earned, stats } = badgesRaw;
     const visibleEarned = earned?.filter((badge: any) => !badge.is_hidden).length || 0;
     const visibleTotal = stats?.totalVisible || 0;
-    const secretEarned = earned?.filter((badge: any) => badge.is_hidden === true).length || 0;
+    const secretEarned = earned?.filter((badge) => badge.is_hidden === true).length || 0;
     const secretTotal = stats?.totalSecret || 0;
     return { totalAvailable: visibleTotal, totalEarned: visibleEarned, secretAvailable: secretTotal, secretEarned: secretEarned };
   })();
 
-  const allBadges: AllBadgesData = {
+  const allBadges: AlleAbzeichen = {
     available: badgesRaw?.available || [],
     earned: badgesRaw?.earned || []
   };

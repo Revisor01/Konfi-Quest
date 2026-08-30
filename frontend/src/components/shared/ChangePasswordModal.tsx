@@ -35,6 +35,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { fehlerText } from '../../utils/fehlerText';
 import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
 
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten (Muster:

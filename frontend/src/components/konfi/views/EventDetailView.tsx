@@ -50,6 +50,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
+import type { ActionSheetButton } from '@ionic/core';
+import { fehlerText } from '../../../utils/fehlerText';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
@@ -326,7 +328,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!eventData) return;
 
     try {
-      const payload: any = {};
+      const payload: { timeslot_id?: number } = {};
       if (timeslotId) {
         payload.timeslot_id = timeslotId;
       }
@@ -382,7 +384,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const waitlistEnabled = !!eventData.waitlist_enabled;
       const maxWaitlist = eventData.max_waitlist_size || 0;
 
-      const timeslotButtons = timeslots.map((slot) => {
+      const timeslotButtons: ActionSheetButton[] = timeslots.map((slot) => {
         const isFull = slot.max_participants > 0 && parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
         const slotWaitlist = parseInt(String(slot.waitlist_count || 0));
         // Auf einen vollen Slot kann man sich auf die Warteliste setzen, solange
@@ -419,9 +421,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
       timeslotButtons.push({
         text: 'Abbrechen',
-        role: 'cancel' as any,
+        role: 'cancel',
         handler: () => {}
-      } as any);
+      });
 
       presentActionSheet({
         header: 'Zeitslot auswählen',

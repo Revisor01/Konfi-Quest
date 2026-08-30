@@ -34,6 +34,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { fehlerStatus, fehlerText } from '../../../utils/fehlerText';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 

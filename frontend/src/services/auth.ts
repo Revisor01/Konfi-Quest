@@ -41,7 +41,7 @@ export const loginWithAutoDetection = async (username: string, password: string)
       code: err.code,
       fullError: error
     });
-    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message));
+    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message), { cause: error });
   }
 };
 

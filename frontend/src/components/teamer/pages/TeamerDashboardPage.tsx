@@ -31,6 +31,8 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import type { KonfiChallenge } from '../../../types/challenges';
+import { fehlerText } from '../../../utils/fehlerText';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { normalisiereTeamerBadges } from '../teamerBadges';
@@ -305,8 +307,8 @@ const TeamerDashboardPage: React.FC = () => {
         const liste = Array.isArray(res.data?.active) ? res.data.active : [];
         setActiveChallenges(
           liste
-            .filter((c: any) => c.ends_at)
-            .map((c: any) => ({
+            .filter((c: KonfiChallenge) => c.ends_at)
+            .map((c: KonfiChallenge) => ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
@@ -597,7 +599,7 @@ const TeamerDashboardPage: React.FC = () => {
                         className="app-cert-card"
                         onClick={(e) => {
                           certPopoverRef.current = cert;
-                          presentCertPopover({ event: e as any });
+                          presentCertPopover({ event: e.nativeEvent });
                         }}
                         style={{
                           borderRadius: '12px',
@@ -648,7 +650,7 @@ const TeamerDashboardPage: React.FC = () => {
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical' as any
+                          WebkitBoxOrient: 'vertical' as const
                         }}>
                           {cert.name}
                         </span>

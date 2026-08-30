@@ -17,6 +17,7 @@ import {
 import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
+import { apiFehler, fehlerStatus } from '../../utils/fehlerText';
 
 const ForgotPasswordPage: React.FC = () => {
   const { isOnline } = useApp();
