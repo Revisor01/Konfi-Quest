@@ -7,6 +7,12 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Behoben
+- Beim Löschen eines Termins, der zu einer Serie gehört, fragt die App wieder
+  zuverlässig nach, ob nur dieser oder die ganze Serie gelöscht werden soll.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151
