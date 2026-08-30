@@ -217,8 +217,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { pageRef, presentingElement } = useModalPage('admin-categories');
+  const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Categories
   const { data: categories, loading, refresh: refreshCategories, refreshLive: refreshCategoriesLive } = useOfflineQuery<Category[]>(

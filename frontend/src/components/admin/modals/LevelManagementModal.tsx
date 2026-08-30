@@ -65,7 +65,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       onClose();
     }
   };
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const [formData, setFormData] = useState<Level>({
     name: '',
     title: '',

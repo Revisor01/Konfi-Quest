@@ -107,9 +107,9 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
   const [teamers, setTeamers] = useState<any[]>([]);
-  const [teamerLoading, setTeamerLoading] = useState(false);
+  const [, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
+  const [, setKonfiLimit] = useState<number | null>(null);
 
   // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
   useEffect(() => {

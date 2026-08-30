@@ -47,7 +47,7 @@ interface EventModalProps {
 }
 
 const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -284,7 +284,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
       if (networkMonitor.isOnline) {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          const { is_series: _is_series, series_count: _series_count, series_interval: _series_interval, ...updatePayload } = payload;
           await api.put(`/events/${event.id}`, updatePayload);
         } else {
           if (formData.is_series) {
@@ -296,7 +296,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         }
       } else {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          const { is_series: _is_series, series_count: _series_count, series_interval: _series_interval, ...updatePayload } = payload;
           await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event bearbeiten' } });
           setSuccess('Event wird aktualisiert sobald du wieder online bist');
         } else if (formData.is_series) {

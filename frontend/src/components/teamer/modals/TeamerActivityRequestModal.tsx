@@ -70,7 +70,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline, user } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const [presentAlert] = useIonAlert();
 
   const { isSubmitting, guard } = useActionGuard();

@@ -167,7 +167,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Participant Management Modal
-  const [presentParticipantModalHook, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
+  const [, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
     onClose: () => dismissParticipantModalHook(),
     onSuccess: () => {

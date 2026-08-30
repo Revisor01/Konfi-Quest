@@ -273,7 +273,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {material.files.map((file, index) => (
+                    {material.files.map((file) => (
                       <div
                         key={file.id}
                         className="app-list-item"

@@ -39,7 +39,7 @@ interface Activity {
 
 const AdminActivitiesPage: React.FC = () => {
   const { user, setError, isOnline } = useApp();
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
+  const { pageRef, presentingElement } = useModalPage('admin-activities');
   
   // State
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');

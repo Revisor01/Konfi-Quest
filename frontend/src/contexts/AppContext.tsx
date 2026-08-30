@@ -132,7 +132,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<BaseUser | null>(getUser());
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState<boolean>(true);

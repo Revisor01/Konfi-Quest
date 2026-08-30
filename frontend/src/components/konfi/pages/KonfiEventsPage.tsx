@@ -123,7 +123,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
   // State
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
-  const [searchText, setSearchText] = useState('');
+  const [searchText] = useState('');
 
   // --- Aktivitäten-State ---
   const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');

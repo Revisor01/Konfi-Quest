@@ -50,9 +50,9 @@ interface BadgeData {
 }
 
 const KonfiBadgesPage: React.FC = () => {
-  const { user, setError } = useApp();
+  const { user } = useApp();
   const { refreshAllCounts } = useBadge();
-  const { pageRef, presentingElement } = useModalPage('konfi-badges');
+  const { pageRef } = useModalPage('konfi-badges');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
   // --- useOfflineQuery: Badges ---

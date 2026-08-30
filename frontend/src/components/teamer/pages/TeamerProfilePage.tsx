@@ -89,7 +89,7 @@ interface TeamerProfile {
 }
 
 const TeamerProfilePage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('profile');
+  const { pageRef } = useModalPage('profile');
   const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
