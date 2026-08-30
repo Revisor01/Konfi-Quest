@@ -365,7 +365,15 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
     // Ohne Freigabe-Pflicht bleiben nur zwei Kacheln — die Gesamtzahl fuellt
     // auf und beantwortet zugleich "wie viele Beitraege sind es insgesamt".
-    if (stats.length < 3) stats.splice(1, 0, { value: counts.total, label: 'Beiträge' });
+    // Einzahl korrekt: bei genau einem Beitrag hiess die Kachel "1 Beiträge"
+    // (User-Hinweis). Der Helfer entscheidet, das Label traegt nur das Wort —
+    // die Zahl steht schon als Kachelwert darueber.
+    if (stats.length < 3) {
+      stats.splice(1, 0, {
+        value: counts.total,
+        label: anzahlBeitraege(counts.total).replace(`${counts.total} `, '')
+      });
+    }
 
     // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Gesamt" hat
     // keinen eigenen Reiter (die Reiter sind disjunkt) und bleibt reine Anzeige.

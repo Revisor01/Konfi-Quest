@@ -174,9 +174,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       return;
     }
 
+    // Wie beim Opt-out: Ohne Verbindung in die Warteschlange, statt den Knopf
+    // zu sperren (30.08.2026). Eine Abmeldung gibt einen Platz FREI — es gibt
+    // nichts zu pruefen, was offline unbekannt waere. Das unterscheidet sie
+    // vom Anmelden, das wegen der begrenzten Plaetze gesperrt bleibt.
+    const clientId = safeUUID();
+
+    if (!networkMonitor.isOnline) {
+      await writeQueue.enqueue({
+        method: 'DELETE',
+        url: `/konfi/events/${eventData.id}/register`,
+        body: { reason: reason.trim(), client_id: clientId },
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'opt-out',
+          clientId,
+          label: `Abmeldung von "${eventData.name}"`,
+        },
+      });
+      setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+      return;
+    }
+
     try {
       await api.delete(`/konfi/events/${eventData.id}/register`, {
-        data: { reason: reason.trim() }
+        data: { reason: reason.trim(), client_id: clientId }
       });
 
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
@@ -934,13 +957,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       expand="block"
                       fill="outline"
                       color="danger"
-                      disabled={!isOnline}
                       onClick={() => presentOptOutModal({
                         presentingElement: pageRef.current || undefined
                       })}
                     >
                       <IonIcon icon={closeCircle} slot="start" />
-                      {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
+                      {/* NICHT offline gesperrt: handleOptOut legt die Abmeldung
+                          in die Warteschlange (Typ 'opt-out') und sendet sie
+                          nach, sobald Netz da ist. Der Knopf war bis zum
+                          30.08.2026 trotzdem `disabled` — der Offline-Pfad
+                          darunter war damit toter Code, und die Warteschlange
+                          versprach etwas, das die Oberflaeche nicht zuliess
+                          (Simons Einwand). Anders als beim Anmelden gibt es
+                          hier auch nichts zu pruefen: Ein Platz wird frei,
+                          nicht belegt. */}
+                      {!isOnline
+                        ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                        : 'Abmelden'}
                     </IonButton>
                   </div>
                 );
@@ -962,13 +995,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   expand="block"
                   fill="outline"
                   color="danger"
-                  disabled={!isOnline}
                   onClick={() => presentUnregisterModal({
                     presentingElement: pageRef.current || undefined
                   })}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
-                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
+                  {!isOnline
+                    ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                    : 'Abmelden'}
                 </IonButton>
               ) : (
                 <IonButton

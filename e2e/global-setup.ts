@@ -34,9 +34,14 @@ async function seedDatabase(): Promise<void> {
 
 async function globalSetup(): Promise<void> {
   console.log('E2E: Starte Docker-Compose Stack...');
+  // 180 s reichten nicht: Der Frontend-Container baut die komplette App
+  // (npm ci + vite build), und allein das dauert auf einem kalten Cache
+  // laenger. Gemessen am 30.08.2026 — der Lauf brach mit ETIMEDOUT ab, BEVOR
+  // je ein Test lief. Zusammen mit der fehlenden Schema-Einspielung war das
+  // der Grund, warum die E2E-Specs faktisch nie durchliefen.
   execSync(`docker compose -f ${COMPOSE_FILE} up -d --build --wait`, {
     stdio: 'inherit',
-    timeout: 180_000,
+    timeout: 900_000,
   });
 
   console.log('E2E: Warte auf Backend Health...');

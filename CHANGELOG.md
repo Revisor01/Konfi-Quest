@@ -51,6 +51,10 @@ iOS-Build 151
   zeigen dieselben Zahlen.
 
 ### Behoben
+- Von einem Termin abmelden geht jetzt auch ohne Verbindung — die Abmeldung
+  wird gesendet, sobald wieder Netz da ist. Bisher war der Knopf ausgegraut,
+  obwohl die Warteschlange das längst konnte. Anmelden bleibt online-pflichtig,
+  weil die Plätze begrenzt sind.
 - Ohne Verbindung sagt die App jetzt, was fehlt: Wo Teilnehmerliste,
   Zeitfenster oder Punkte-Historie nicht geladen werden konnten, steht ein
   Hinweis. Bisher verschwanden diese Abschnitte wortlos — man konnte nicht
