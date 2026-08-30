@@ -377,7 +377,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         : !/[A-Z]/.test(pw) ? 'Das Passwort muss einen Großbuchstaben enthalten'
         : !/[a-z]/.test(pw) ? 'Das Passwort muss einen Kleinbuchstaben enthalten'
         : !/[0-9]/.test(pw) ? 'Das Passwort muss eine Zahl enthalten'
-        : !/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/~`]/.test(pw) ? 'Das Passwort muss ein Sonderzeichen enthalten'
+        : !/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw) ? 'Das Passwort muss ein Sonderzeichen enthalten'
         : null;
 
       if (passwortFehler) {

@@ -424,7 +424,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   const renderCriteriaSpecificFields = () => {
     switch (formData.criteria_type) {
-      case 'specific_activity':
+      case 'specific_activity': {
         const selectedActivity = activities.find(a => a.id === extraCriteria.activity_id);
         return (
           <div style={{ marginTop: '16px' }}>
@@ -482,8 +482,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
-      case 'category_activities':
+      case 'category_activities': {
         const selectedCategory = categories.find(c => c.name === extraCriteria.required_category);
         return (
           <div style={{ marginTop: '16px' }}>
@@ -535,6 +536,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
       case 'time_based':
         return (
@@ -555,7 +557,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           </IonItem>
         );
 
-      case 'activity_combination':
+      case 'activity_combination': {
         const selectedActivities = activities.filter(a => (extraCriteria.activity_ids || []).includes(a.id));
         return (
           <div style={{ marginTop: '16px' }}>
@@ -620,6 +622,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
       default:
         return null;

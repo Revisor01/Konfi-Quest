@@ -214,9 +214,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       }
       case 'category_activities':
         return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
-      case 'time_based':
+      case 'time_based': {
         const weeks = extra.days ? Math.round(extra.days / 7) : (extra.weeks || '?');
         return `${badge.criteria_value} in ${weeks} Wochen`;
+      }
       case 'activity_count':
         return `${badge.criteria_value} Aktivitäten`;
       case 'event_count':

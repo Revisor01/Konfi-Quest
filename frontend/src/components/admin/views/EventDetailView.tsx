@@ -843,7 +843,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             );
           }
 
-          let konfiHeaderText = '';
+          // Ohne Initialisierer: Beide Ketten enden auf einem nackten else,
+          // jeder Zweig weist zu. tsc bestaetigt die definitive Zuweisung.
+          let konfiHeaderText: string;
           if (eventData?.has_timeslots) {
             if (hasUnassigned && hasWaitlist) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
             else if (hasUnassigned) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;

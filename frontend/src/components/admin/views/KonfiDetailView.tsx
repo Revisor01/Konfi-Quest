@@ -601,7 +601,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         // Vorherige Blob-URL freigeben, falls direkt ein weiteres Foto geoeffnet wird
         setSelectedPhoto((prev) => {
           if (prev && prev.startsWith('blob:')) {
-            try { URL.revokeObjectURL(prev); } catch {}
+            try { URL.revokeObjectURL(prev); } catch { /* Freigeben darf scheitern: die URL war schon ungueltig. Das neue Foto trotzdem zeigen. */ }
           }
           return photoUrl;
         });
