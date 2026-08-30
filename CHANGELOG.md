@@ -26,6 +26,10 @@ iOS-Build 151
   und die Elberfelder steht das noch aus.
 
 ### Geändert
+- Der Hinweis auf noch nicht gesendete Vorgänge ist jetzt ein kleiner Knopf
+  mit Zähler statt eines breiten Balkens quer über den Bildschirm. Antippen
+  zeigt wie bisher, was aussteht; was endgültig nicht gesendet werden konnte,
+  bleibt rot und damit deutlich sichtbar.
 - In der Leitungssicht heißt ein verbuchter Antrag jetzt **Verbucht** statt
   „Genehmigt" — dasselbe Wort wie bei den Terminen. Es sagt, was passiert ist:
   Die Punkte sind gutgeschrieben.

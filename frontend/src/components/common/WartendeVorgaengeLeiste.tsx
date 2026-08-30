@@ -9,14 +9,28 @@ import {
   IonButton,
   IonContent,
 } from '@ionic/react';
-import { timeOutline, alertCircleOutline, chevronForwardOutline } from 'ionicons/icons';
+import { timeOutline, alertCircleOutline } from 'ionicons/icons';
 import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../shared/WartendeVorgaengeKarte';
 
 /**
- * Schmale Leiste, die in der ganzen App erscheint, sobald etwas in der
+ * Kompakter Knopf, der in der ganzen App erscheint, sobald etwas in der
  * Offline-Warteschlange liegt oder endgueltig gescheitert ist. Antippen
  * oeffnet die Liste.
+ *
+ * War bis zum 30.08.2026 eine vollbreite orange Leiste. Simons Einwand:
+ * "fast ein bisschen doll" — fuer drei Vorgangsarten (Abmeldung, Aktivitaet
+ * melden, Chat) ein Dauerbalken ueber der ganzen App. Anmelden und
+ * Warteliste sind offline naemlich GESPERRT, nicht eingereiht; die Leiste
+ * versprach mehr, als die Warteschlange traegt.
+ *
+ * Jetzt: runder Knopf mit Zaehler-Badge, Farbe nur am Badge. Der volle Satz
+ * steht im aria-label (Screenreader lesen ihn weiter) und im Modal. Sitzt
+ * LINKS: unten rechts steht auf TeamerEventsPage ein IonFab
+ * (TeamerEventsPage.tsx:1566), links ist in allen drei Baeumen frei.
+ *
+ * Wartend ist Information, Fehlschlag ist eine Aufgabe — deshalb bleibt
+ * data-variante="danger" auffaelliger (rot statt orange).
  *
  * Haengt wie GlobalToasts auf App-Ebene. Grund: Die rund zwanzig
  * Leitungs-Aktionen (Kategorien, Jahrgaenge, Abzeichen, Level, Termine,
@@ -49,10 +63,10 @@ const WartendeVorgaengeLeiste: React.FC = () => {
         className="app-wartende-leiste"
         data-variante={nurGescheitert ? 'danger' : 'warning'}
         onClick={() => setOffen(true)}
+        aria-label={`${text} — antippen zeigt die Liste`}
       >
-        <IonIcon icon={nurGescheitert ? alertCircleOutline : timeOutline} />
-        <span className="app-wartende-leiste__text">{text}</span>
-        <IonIcon icon={chevronForwardOutline} className="app-wartende-leiste__pfeil" />
+        <IonIcon icon={nurGescheitert ? alertCircleOutline : timeOutline} aria-hidden="true" />
+        <span className="app-wartende-leiste__zahl" aria-hidden="true">{anzahl}</span>
       </button>
 
       <IonModal isOpen={offen} onDidDismiss={() => setOffen(false)}>

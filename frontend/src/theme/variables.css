@@ -3039,70 +3039,90 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 /* ====================================================================
    Warteschlangen-Leiste (28.08.2026)
 
-   Schmale Leiste, die in der ganzen App erscheint, sobald etwas offline
-   eingereiht wurde oder endgueltig gescheitert ist. Haengt auf App-Ebene
+   Kompakter Knopf, der in der ganzen App erscheint, sobald etwas offline
+   eingereiht wurde oder endgueltig gescheitert ist. Bis zum 30.08.2026 eine
+   vollbreite orange Leiste — zu laut fuer das, was die Warteschlange traegt
+   (Anmelden ist offline gesperrt, nicht eingereiht). Haengt auf App-Ebene
    (WartendeVorgaengeLeiste), weil die rund zwanzig Leitungs-Aktionen sich
    ueber ebenso viele Seiten mit je eigener Kopfzeile verteilen — es gibt
    keine gemeinsame Huelle, in die sich ein Hinweis pro Ansicht haengen
    liesse.
 
-   Sitzt ueber der Tab-Leiste statt unter der Kopfzeile: Jede Seite bringt
-   ihre eigene ion-header mit, ein Streifen darunter waere in jede einzeln
-   einzubauen — genau das, was diese Loesung vermeiden soll.
+   Sitzt ueber der Tab-Leiste statt in der Kopfzeile: Jede Seite bringt ihre
+   eigene ion-header mit (32 Dateien), ein Knopf dort waere in jede einzeln
+   einzubauen — genau das, was diese Loesung vermeiden soll. Ein Platz IN der
+   ion-tab-bar waere moeglich, faellt aber weg, sobald die Tab-Leiste
+   versteckt wird (in Chat-Raeumen, MainTabs.tsx:250).
    ==================================================================== */
 .app-wartende-leiste {
   position: fixed;
-  left: 12px;
-  right: 12px;
+  /* LINKS statt vollbreit: unten rechts steht auf TeamerEventsPage ein
+     IonFab (Zeile 1566). Links ist in allen drei Baeumen frei. */
+  left: 16px;
   /* Ueber der Tab-Leiste: 56px Hoehe plus der Sicherheitsabstand unten.
      Derselbe Wert wie in ion-tab-bar.md weiter oben. */
-  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px);
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
   z-index: 20;
 
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: auto;
-  padding: 11px 14px;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
   border: none;
-  border-radius: 14px;
+  border-radius: 50%;
 
-  background: var(--app-color-warning);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-align: left;
+  /* Neutraler Grund, Farbe traegt nur das Badge: Wartend ist Information,
+     kein Alarm. Bis zum 30.08.2026 war die ganze Flaeche orange und
+     vollbreit — zu laut fuer das, was die Warteschlange wirklich traegt. */
+  background: var(--ion-color-step-50, #fff);
+  color: var(--ion-text-color, #000);
   cursor: pointer;
 
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.app-wartende-leiste[data-variante="danger"] {
+
+/* Der Zaehler traegt die Farbe — orange beim Warten, rot beim Fehlschlag.
+   Ein Fehlschlag ist eine Aufgabe, kein Hinweis, und darf auffallen. */
+.app-wartende-leiste__zahl {
+  /* Bezug ist der Knopf selbst: position:fixed erzeugt bereits einen
+     Containing Block, ein zusaetzliches relative waere ein Konflikt. */
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--app-color-warning);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.app-wartende-leiste[data-variante="danger"] .app-wartende-leiste__zahl {
   background: var(--app-color-danger);
 }
-.app-wartende-leiste__text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.app-wartende-leiste__pfeil {
-  flex-shrink: 0;
-  opacity: 0.85;
+.app-wartende-leiste[data-variante="danger"] ion-icon {
+  color: var(--app-color-danger);
 }
 .app-wartende-leiste ion-icon {
-  font-size: 1.1rem;
+  font-size: 1.35rem;
 }
 .app-wartende-leiste:active {
-  transform: scale(0.985);
+  transform: scale(0.94);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 .app-wartende-leiste:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline: 2px solid var(--app-color-warning);
+  outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
   .app-wartende-leiste { transition: none; }
   .app-wartende-leiste:active { transform: none; }
+}
 }
