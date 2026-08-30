@@ -73,7 +73,7 @@ interface ChatOverviewRef {
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, selectedRoomId }, ref) => {
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
-  const { chatUnreadByRoom, refreshAllCounts } = useBadge();
+  const { chatUnreadByRoom } = useBadge();
   // socketEpoch: nach Reconnect-mit-neuem-Token ist getSocket() ein anderes
   // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
   // BadgeContext).
@@ -122,7 +122,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const location = useAppLocation();
   // Bestimme die korrekte Tab-ID basierend auf dem Pfad
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
-  const { pageRef, presentingElement } = useModalPage(tabId);
+  const { pageRef } = useModalPage(tabId);
 
   // --- useOfflineQuery: Chat Rooms ---
   // Defensiver select-Transform (Incident 13.06.2026): gecachte rooms-Responses

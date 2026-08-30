@@ -23,19 +23,7 @@ import {
   IonCardContent,
   useIonAlert
 } from '@ionic/react';
-import {
-  closeOutline,
-  checkmarkOutline,
-  person,
-  personOutline,
-  search,
-  chatbubbles,
-  people,
-  peopleOutline,
-  filterOutline,
-  calendar,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, person, personOutline, search, people, peopleOutline, filterOutline, calendar, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useBadge } from '../../../contexts/BadgeContext';

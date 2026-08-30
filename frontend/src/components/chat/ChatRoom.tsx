@@ -435,7 +435,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
         if (room) markRoomAsRead();
         setShouldAutoScroll(true);
-      } catch (err) {
+      } catch {
         pendingSendsRef.current.delete(clientId);
         // Fehlgeschlagener Online-Versand: Die Nachricht lebte bisher NUR im
         // React-State — Raum verlassen oder App neu gestartet, und sie war
