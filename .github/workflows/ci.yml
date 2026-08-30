@@ -102,6 +102,35 @@ jobs:
         # Ionic nicht vertraegt.
         run: npm ci
 
+      # Lint NUR fuer die im PR geaenderten Frontend-Dateien: Der Altbestand
+      # (~1100 Meldungen, Stand 30.08.2026) bleibt unangetastet, aber wer eine
+      # Datei anfasst, hinterlaesst sie sauber. Bewusst KEINE Baseline-Datei:
+      # die muesste bei jedem Fix neu erzeugt werden und produziert bei 1100
+      # Eintraegen Dauer-Merge-Konflikte. Auch kein --max-warnings ueber alles:
+      # eine Gesamtzahl ortet den Verursacher nicht.
+      # BEOBACHTUNGSPHASE: continue-on-error haelt den Job gruen — der Schritt
+      # zeigt rot, blockiert aber nichts. Zum Scharfschalten die Zeile
+      # "continue-on-error: true" entfernen.
+      - name: Lint (nur im PR geaenderte Dateien)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          # HEAD ist bei pull_request der Merge-Commit von Base+PR — der
+          # Zwei-Punkt-Diff gegen die Base-Spitze ergibt genau die PR-Aenderungen.
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR \
+            "origin/${{ github.base_ref }}" HEAD -- \
+            'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' \
+            | sed 's|^frontend/||')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "Keine geaenderten Frontend-Quelldateien — Lint uebersprungen."
+            exit 0
+          fi
+          echo "Gelintet werden ${#files[@]} Datei(en):"
+          printf ' - %s\n' "${files[@]}"
+          cd frontend
+          npx eslint --no-error-on-unmatched-pattern --max-warnings 0 "${files[@]}"
+
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
       # und scripts/ liegen ausserhalb und sind dort nicht erreichbar).
