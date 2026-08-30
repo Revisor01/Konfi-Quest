@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // react-router nur noch fuer die Routen-Bausteine — der Standort kommt
 // ueber useAppLocation aus navigation/.
-import { Redirect, Route, RouteComponentProps } from 'react-router-dom';
+import { Navigate, Route, useParams } from 'react-router-dom';
 import {
   IonIcon,
   IonLabel,
@@ -48,10 +48,13 @@ import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 const ParamSeite: React.FC<{
   Seite: React.ComponentType<any>;
   prop: string;
-  wert: string;
-}> = ({ Seite, prop, wert }) => {
+  param: string;
+}> = ({ Seite, prop, param }) => {
+  // react-router 6 reicht Parameter nicht mehr als Props durch (kein
+  // RouteComponentProps mehr) — sie kommen ueber useParams.
+  const params = useParams();
   const router = useIonRouter();
-  return <Seite {...{ [prop]: parseInt(wert, 10) }} onBack={() => router.goBack()} />;
+  return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={() => router.goBack()} />;
 };
 
 const MainTabs: React.FC = () => {
@@ -184,20 +187,15 @@ const MainTabs: React.FC = () => {
       {baum.routes.map(({ path, page: Seite, param, propName }) => (
         <Route
           key={path}
-          exact
           path={path}
-          render={(props: RouteComponentProps<any>) =>
-            param
-              ? <ParamSeite Seite={Seite} prop={propName} wert={props.match.params[param]} />
-              : <Seite {...props} />
-          }
+          element={param ? <ParamSeite Seite={Seite} prop={propName} param={param} /> : <Seite />}
         />
       ))}
       {baum.redirects.map(({ from, to }) => (
-        <Route key={from} exact path={from} render={() => <Redirect to={to} />} />
+        <Route key={from} path={from} element={<Navigate to={to} replace />} />
       ))}
-      <Route exact path="/login" render={() => <Redirect to={baum.home} />} />
-      <Route exact path="/" render={() => <Redirect to={baum.home} />} />
+      <Route path="/login" element={<Navigate to={baum.home} replace />} />
+      <Route path="/" element={<Navigate to={baum.home} replace />} />
     </IonRouterOutlet>
   );
 

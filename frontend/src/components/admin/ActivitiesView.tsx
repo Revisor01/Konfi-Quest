@@ -30,6 +30,10 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface Activity {
   id: number;
   name: string;
@@ -66,7 +70,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   const filteredAndSortedActivities = (() => {
     let result = filterBySearchTerm(activities, searchTerm, ['name', 'description']);

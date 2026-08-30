@@ -244,7 +244,7 @@ const ResetPasswordPage: React.FC = () => {
                       placeholder="Neues Passwort"
                       className="app-auth-input__value"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                     />
                     <IonIcon
@@ -280,7 +280,7 @@ const ResetPasswordPage: React.FC = () => {
                       placeholder="Passwort wiederholen"
                       className="app-auth-input__value"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                     />
                     <IonIcon

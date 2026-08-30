@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import {
   IonApp,
   IonIcon,
@@ -155,17 +155,17 @@ const AppContent: React.FC = () => {
       <IonApp>
         <IonReactRouter>
           <IonRouterOutlet>
-            <Route path="/login" component={LoginView} exact />
-            <Route path="/register" component={KonfiRegisterPage} exact />
-            <Route path="/forgot-password" component={ForgotPasswordPage} exact />
-            <Route path="/reset-password" component={ResetPasswordPage} exact />
-            <Redirect exact from="/" to="/login" />
+            <Route path="/login" element={<LoginView />} />
+            <Route path="/register" element={<KonfiRegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             {/* Catch-all fuer ALLE uebrigen URLs: nach dem Logout steht die URL
                 noch auf einer Admin-/Konfi-Route (z.B. /admin/organizations).
                 Ohne diesen Fallback matcht im Login-Outlet KEINE Route -> weisse
                 Seite. Der "/"-Fall wird bereits oben exakt behandelt, damit der
                 Default-Render (Tests) die simple /->/login-Transition nutzt. */}
-            <Route render={() => <Redirect to="/login" />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </IonRouterOutlet>
         </IonReactRouter>
       </IonApp>
@@ -181,7 +181,7 @@ const AppContent: React.FC = () => {
       <IonReactRouter key={orgVersion}>
         <IonRouterOutlet>
           {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
-          <Route path="/" component={MainTabs} />
+          <Route path="/*" element={<MainTabs />} />
         </IonRouterOutlet>
       </IonReactRouter>
       <GlobalToasts />

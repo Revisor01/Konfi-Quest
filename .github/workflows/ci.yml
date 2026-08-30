@@ -95,7 +95,12 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci --legacy-peer-deps
+        # Kein --legacy-peer-deps mehr: Der Dauerkonflikt kam von
+        # @eslint/js@10 gegen eslint@9 und ist mit dem Sprung auf ESLint 10
+        # (30.08.2026) weg. Der Flag haette kuenftige ECHTE Peer-Konflikte
+        # stillschweigend durchgewunken — etwa eine react-router-Version, die
+        # Ionic nicht vertraegt.
+        run: npm ci
 
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/

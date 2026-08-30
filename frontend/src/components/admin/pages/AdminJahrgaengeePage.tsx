@@ -57,6 +57,10 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface Jahrgang {
   id: number;
   name: string;
@@ -454,7 +458,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   );
 
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();

@@ -83,7 +83,11 @@ export interface EventData {
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
   is_series?: boolean;
-  series_id?: string;
+  // In der Datenbank bigint, also eine Zahl (nachgemessen 30.08.2026 an
+  // Produktion). Hier stand `string` — folgenlos, weil der Wert nur auf
+  // Vorhandensein geprueft wurde, aber im Widerspruch zu types/event.ts.
+  // Ionic 9 typisiert useIonModal strenger und hat es aufgedeckt.
+  series_id?: number;
   series_events?: EventData[];
   created_at: string;
   chat_room_id?: number | null;

@@ -47,24 +47,15 @@ import RequestDetailModal from '../modals/RequestDetailModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+// Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
+// RequestDetailModal weiter, und zwei gleichnamige Typen mit
+// unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
+// der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
+import type { ActivityRequest } from '../modals/RequestDetailModal';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert.
 
-interface ActivityRequest {
-  id: number;
-  activity_id: number;
-  activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface KonfiEventsPageProps {
   // Im iPad-Split-View setzt der Master die Auswahl als State statt zu

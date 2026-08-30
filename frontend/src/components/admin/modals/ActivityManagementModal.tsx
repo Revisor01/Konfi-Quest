@@ -32,7 +32,11 @@ interface Activity {
   id: number;
   name: string;
   points: number;
-  type: 'gottesdienst' | 'gemeinde';
+  // null ist moeglich und kommt vor: in Produktion tragen zwei Aktivitaeten
+  // keinen Punkttyp (nachgemessen 30.08.2026). Die Liste kannte den Fall
+  // laengst, dieses Modal nicht — Ionic 9 typisiert useIonModal strenger und
+  // hat den Widerspruch aufgedeckt.
+  type: 'gottesdienst' | 'gemeinde' | null;
   categories?: Category[];
   target_role?: 'konfi' | 'teamer';
 }
@@ -151,7 +155,11 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           setFormData({
             name: activity.name,
             points: activity.points,
-            type: activity.type,
+            // Das Formular kennt "kein Typ" als leeren String, die Daten als
+            // null (zwei Aktivitaeten in Produktion, nachgemessen 30.08.2026).
+            // Umgesetzt wird an der Grenze, damit das Select nicht auf null
+            // laeuft.
+            type: activity.type ?? '',
             category_ids: activity.categories?.map((cat: Category) => cat.id) || [],
             target_role: activity.target_role || targetRole
           });

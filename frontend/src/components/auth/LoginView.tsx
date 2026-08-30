@@ -287,7 +287,7 @@ const LoginView: React.FC = () => {
                   placeholder="Dein Nutzername"
                   className="app-auth-input__value"
                   autocapitalize="none"
-                  autocorrect="off"
+                  autocorrect={false}
                   spellcheck={false}
                 />
               </IonItem>
@@ -304,7 +304,7 @@ const LoginView: React.FC = () => {
                   placeholder="Dein Passwort"
                   className="app-auth-input__value"
                   autocapitalize="none"
-                  autocorrect="off"
+                  autocorrect={false}
                   spellcheck={false}
                 />
                 <IonIcon

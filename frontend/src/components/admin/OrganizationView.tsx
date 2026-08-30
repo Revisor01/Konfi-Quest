@@ -35,6 +35,10 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { triggerPullHaptic } from '../../utils/haptics';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface Organization {
   id: number;
   name: string;
@@ -71,7 +75,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
   onSelectOrganization,
   onDeleteOrganization
 }) => {
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 

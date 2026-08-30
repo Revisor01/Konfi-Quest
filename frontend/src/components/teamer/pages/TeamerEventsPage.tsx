@@ -90,24 +90,15 @@ import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+// Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
+// RequestDetailModal weiter, und zwei gleichnamige Typen mit
+// unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
+// der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
+import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
 
-interface ActivityRequest {
-  id: number;
-  activity_id: number;
-  activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
@@ -289,7 +280,9 @@ const TeamerEventsPage: React.FC = () => {
 
   // Material Detail Modal (useRef für dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
-    get materialId() { return materialIdRef.current; },
+    // Der Ref wird beim Antippen gesetzt (Zeile ~1054), BEVOR das Modal
+    // geoeffnet wird — beim Rendern ist er null, beim Anzeigen nie.
+    get materialId() { return materialIdRef.current as number; },
     onClose: () => dismissMaterialModal()
   });
 

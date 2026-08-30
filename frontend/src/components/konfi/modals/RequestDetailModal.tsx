@@ -28,7 +28,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
-interface ActivityRequest {
+export interface ActivityRequest {
   id: number;
   activity_id: number;
   activity_name: string;

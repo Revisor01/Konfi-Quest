@@ -103,6 +103,10 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
   trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
@@ -384,7 +388,7 @@ const AdminCertificatesPage: React.FC = () => {
   );
 
   const [editCert, setEditCert] = useState<CertificateType | null>(null);
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   const [presentAlert] = useIonAlert();
 

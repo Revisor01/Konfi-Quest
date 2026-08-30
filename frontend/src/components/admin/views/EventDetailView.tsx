@@ -33,6 +33,10 @@ import type { Participant, Unregistration } from './EventDetailSections';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface Category {
   id: number;
   name: string;
@@ -70,7 +74,11 @@ interface Event {
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
   is_series?: boolean;
-  series_id?: string;
+  // In der Datenbank bigint, also eine Zahl (nachgemessen 30.08.2026 an
+  // Produktion). Hier stand `string` — folgenlos, weil der Wert nur auf
+  // Vorhandensein geprueft wurde, aber im Widerspruch zu types/event.ts.
+  // Ionic 9 typisiert useIonModal strenger und hat es aufgedeckt.
+  series_id?: number;
   series_events?: Event[];
   created_at: string;
   chat_room_id?: number | null;
@@ -100,7 +108,7 @@ interface EventDetailViewProps {
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const { user, setSuccess, setError, isOnline } = useApp();
   const router = useIonRouter();
   const { triggerRefresh } = useLiveUpdate();
@@ -117,7 +125,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Material Detail Modal (wie Teamer)
   const materialIdRef = useRef<number | null>(null);
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
-    get materialId() { return materialIdRef.current; },
+    // Der Ref wird in handleMaterialClick gesetzt, BEVOR das Modal geoeffnet
+    // wird — beim Rendern ist er null, beim Anzeigen nie. Ionic 9 typisiert
+    // useIonModal strenger und sieht nur die Deklaration.
+    get materialId() { return materialIdRef.current as number; },
     onClose: () => dismissMaterialModal()
   });
 

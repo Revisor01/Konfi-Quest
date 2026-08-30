@@ -449,7 +449,7 @@ const KonfiRegisterPage: React.FC = () => {
                       placeholder="z.B. max123"
                       disabled={registering}
                       autocapitalize="off"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       className="app-auth-input__value"
                     />
@@ -510,7 +510,7 @@ const KonfiRegisterPage: React.FC = () => {
                       placeholder="Sicheres Passwort"
                       disabled={registering}
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       className="app-auth-input__value"
                     />
@@ -547,7 +547,7 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, password_confirm: e.detail.value! })}
                       placeholder="Passwort wiederholen"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       disabled={registering}
                       className="app-auth-input__value"

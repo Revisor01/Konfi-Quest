@@ -29,21 +29,12 @@ import {
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+// Gemeinsamer Typ statt eigener Kopie — siehe RequestDetailModal. Sieben
+// gleichnamige ActivityRequest-Definitionen lagen in der App verstreut, mit
+// unterschiedlicher Nullbarkeit; Ionic 9 typisiert useIonModal strenger und
+// hat die Widersprueche aufgedeckt.
+import type { ActivityRequest } from '../modals/RequestDetailModal';
 
-interface ActivityRequest {
-  id: number;
-  activity_id: number;
-  activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface RequestsViewProps {
   requests: ActivityRequest[];
