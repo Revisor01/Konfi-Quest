@@ -44,6 +44,43 @@ export interface AdminUser {
   can_edit?: boolean;
 }
 
+/**
+ * Ein Bonuspunkt-Eintrag einer Konfi
+ * (GET /admin/konfis/:id -> bonusPoints, backend/routes/konfi-management.js).
+ *
+ * Die Abfrage liefert `bp.*` aus bonus_points plus den aufgeloesten Namen der
+ * vergebenden Person als `admin_name` — NICHT als `admin`.
+ */
+export interface BonusEintrag {
+  id: number;
+  points: number;
+  type: 'gottesdienst' | 'gemeinde';
+  description?: string;
+  completed_date?: string;
+  created_at?: string;
+  admin_id?: number;
+  /** Aufgeloester Name der vergebenden Person (u.display_name as admin_name). */
+  admin_name?: string;
+}
+
+/**
+ * Ein Event-Punkte-Eintrag einer Konfi
+ * (GET /admin/konfis/:id/event-points). Liefert `ep.*` plus Name und Datum
+ * des Termins sowie den Namen der vergebenden Person.
+ */
+export interface EventPunkteEintrag {
+  id: number;
+  event_id: number;
+  points: number;
+  point_type: 'gottesdienst' | 'gemeinde';
+  awarded_date?: string;
+  created_at?: string;
+  admin_id?: number;
+  event_name?: string;
+  event_date?: string;
+  admin_name?: string;
+}
+
 // Chat-User (DirectMessage, SimpleCreateChat, Members)
 export interface ChatUser {
   id: number;

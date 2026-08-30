@@ -51,6 +51,15 @@ import ActivityRings from './ActivityRings';
 import { EmptyState } from '../../shared';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import type { UseIonModalResult } from '@ionic/react';
+import type { AxiosInstance } from 'axios';
+import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+
+/**
+ * Die "present"-Funktion aus useIonModal — erste Haelfte des Rueckgabepaars.
+ * So bleibt der Typ an Ionic gebunden, statt ihn als (opts?: any) zu raten.
+ */
+type HookOverlayPresenter = UseIonModalResult[0];
 
 // ---- Shared Types ----
 
@@ -293,12 +302,12 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
 // ---- BonusSection ----
 
 interface BonusSectionProps {
-  bonusEntries: any[];
+  bonusEntries: BonusEintrag[];
   currentKonfi: Konfi | null;
   getBonusPoints: () => number;
   formatDate: (dateString: string) => string;
-  handleDeleteBonus: (bonus: any) => void;
-  presentBonusModal: (opts?: any) => void;
+  handleDeleteBonus: (bonus: BonusEintrag) => void;
+  presentBonusModal: HookOverlayPresenter;
   presentingElement: HTMLElement | null;
 }
 
@@ -329,7 +338,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {bonusEntries.map((bonus: any, index: number) => {
+            {bonusEntries.map((bonus, index) => {
               const isTypeDisabled = (bonus.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (bonus.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
               return (
@@ -371,9 +380,12 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={calendar} className="app-icon-color--events" />
-                              {formatDate(bonus.completed_date || bonus.date)}
+                              {/* `bonus.date` gibt es in dieser Antwort nicht — sie
+                                  liefert bp.* aus bonus_points. Der Rueckfall geht
+                                  deshalb auf created_at. */}
+                              {formatDate(bonus.completed_date || bonus.created_at || '')}
                             </span>
-                            <span className="app-list-item__meta-item">{bonus.admin || 'Admin'}</span>
+                            <span className="app-list-item__meta-item">{bonus.admin_name || 'Admin'}</span>
                           </div>
                         </div>
                       </div>
@@ -507,7 +519,7 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
 // ---- EventPointsSection ----
 
 interface EventPointsSectionProps {
-  eventPoints: any[];
+  eventPoints: EventPunkteEintrag[];
   currentKonfi: Konfi | null;
 }
 
@@ -520,7 +532,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={podium} />
       </div>
-      <IonLabel>Events ({eventPoints.reduce((sum: number, ep: any) => sum + (ep.points || 0), 0)})</IonLabel>
+      <IonLabel>Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: eventPoints.length === 0 ? '16px' : '12px' }}>
@@ -533,7 +545,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {eventPoints.map((eventPoint: any, index: number) => {
+            {eventPoints.map((eventPoint, index) => {
               const isEventTypeDisabled = (eventPoint.point_type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (eventPoint.point_type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
               return (
@@ -717,7 +729,7 @@ interface ActivitiesSectionProps {
   formatDate: (dateString: string) => string;
   handleDeleteActivity: (activity: Activity) => void;
   handlePhotoClick: (activity: Activity) => void;
-  presentActivityModal: (opts?: any) => void;
+  presentActivityModal: HookOverlayPresenter;
   presentingElement: HTMLElement | null;
 }
 
@@ -1012,7 +1024,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
 interface TeamerSinceSectionProps {
   currentKonfi: Konfi | null;
   konfiId: number;
-  api: any;
+  api: AxiosInstance;
   setCurrentKonfi: (fn: (prev: Konfi | null) => Konfi | null) => void;
   setError: (msg: string) => void;
 }

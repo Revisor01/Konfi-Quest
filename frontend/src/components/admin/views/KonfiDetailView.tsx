@@ -40,6 +40,22 @@ import {
 } from './KonfiDetailSections';
 import KonfiModal from '../modals/KonfiModal';
 import type { Konfi, Activity } from './KonfiDetailSections';
+import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+
+/**
+ * Ein Aktivitaets-Antrag aus GET /admin/activities/requests, soweit diese
+ * Ansicht ihn liest: Die offenen Antraege der Konfi werden als "wartende"
+ * Aktivitaeten unter die verbuchten gemischt.
+ */
+interface OffenerAntrag {
+  id: number;
+  konfi_id: number;
+  status: 'pending' | 'approved' | 'rejected';
+  activity_name: string;
+  activity_points: number;
+  requested_date: string;
+  photo_filename?: string;
+}
 import KonfiBadgesSection from './KonfiBadgesSection';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
@@ -62,8 +78,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [bonusEntries, setBonusEntries] = useState<any[]>([]);
-  const [eventPoints, setEventPoints] = useState<any[]>([]);
+  const [bonusEntries, setBonusEntries] = useState<BonusEintrag[]>([]);
+  const [eventPoints, setEventPoints] = useState<EventPunkteEintrag[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
@@ -354,7 +370,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         const ausListe = gecacht?.data?.find((k) => k.id === konfiId) || null;
         if (ausListe) {
           setCurrentKonfi({ ...ausListe });
-          setTargetRole((ausListe as any).role_name || 'konfi');
+          setTargetRole(ausListe.role_name || 'konfi');
           setError('');
         } else {
           setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
@@ -429,14 +445,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         setAttendanceStats(null);
       }
 
-      const enhancedActivities = allActivities.map((activity: any) => ({
+      const enhancedActivities: Activity[] = allActivities.map((activity: Activity) => ({
         ...activity,
         hasPhoto: false
       }));
 
-      const pendingRequests = (requestsRes.data || [])
-        .filter((req: any) => req.konfi_id === konfiId && req.status === 'pending')
-        .map((req: any) => ({
+      const pendingRequests: Activity[] = (requestsRes.data || [])
+        .filter((req: OffenerAntrag) => req.konfi_id === konfiId && req.status === 'pending')
+        .map((req: OffenerAntrag) => ({
           id: `request-${req.id}`,
           name: `${req.activity_name} (gemeldet)`,
           points: req.activity_points,
@@ -525,7 +541,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     });
   };
 
-  const handleDeleteBonus = async (bonus: any) => {
+  const handleDeleteBonus = async (bonus: BonusEintrag) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Bonuspunkte löschen',
