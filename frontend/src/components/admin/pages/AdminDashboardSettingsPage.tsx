@@ -84,7 +84,7 @@ const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 
 const AdminDashboardSettingsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setError } = useApp();
   const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({

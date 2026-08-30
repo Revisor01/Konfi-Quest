@@ -97,7 +97,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
     return result;
   })();
 
-  const getActiveOrganizations = () => organizations.filter(org => org.is_active);
   const getTotalKonfis = () => organizations.reduce((sum, org) => sum + org.konfi_count, 0);
   const getTotalUsers = () => organizations.reduce((sum, org) => sum + org.user_count, 0);
 

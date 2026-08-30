@@ -73,7 +73,7 @@ interface ProgressOverview {
 }
 
 const KonfiProfilePage: React.FC = () => {
-  const { user, setError } = useApp();
+  const { user } = useApp();
   const { pageRef, presentingElement } = useModalPage('profile');
 
   // --- useOfflineQuery: Profile ---

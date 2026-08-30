@@ -117,28 +117,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<any[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
-  // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
-
-  // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
-  useEffect(() => {
-    if (!user?.organization_id) return;
-    let cancelled = false;
-    const loadLimit = async () => {
-      try {
-        const response = await api.get(`/organizations/${user.organization_id}`);
-        if (!cancelled) {
-          const mk = response.data?.max_konfis;
-          setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
-        }
-      } catch (err) {
-        if (!cancelled) setKonfiLimit(null);
-      }
-    };
-    loadLimit();
-    return () => { cancelled = true; };
-  }, [user?.organization_id]);
-
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
     setTeamerLoading(true);
@@ -457,7 +435,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const percentTotal = targetTotal > 0 ? Math.round((totalPoints / targetTotal) * 100) : 0;
                   const percentGodi = targetGodi > 0 ? Math.round((godiPoints / targetGodi) * 100) : 0;
                   const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
-                  const isComplete = percentTotal >= 100;
 
                   return (
                     <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? '8px' : '0' }}>

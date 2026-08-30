@@ -125,13 +125,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return badges.filter(badge => badge.is_active && !badge.is_hidden);
   };
 
-  const getHiddenBadges = () => {
-    return badges.filter(badge => badge.is_hidden);
-  };
 
-  const getInactiveBadges = () => {
-    return badges.filter(badge => !badge.is_active);
-  };
 
   const getTotalEarnedCount = () => {
     return badges.reduce((sum, badge) => sum + (badge.earned_count || 0), 0);
@@ -231,17 +225,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
   };
 
-  const getBadgeStatusColor = (badge: Badge) => {
-    if (!badge.is_active) return 'danger';
-    if (badge.is_hidden) return 'warning';
-    return 'success';
-  };
 
-  const getBadgeStatusText = (badge: Badge) => {
-    if (!badge.is_active) return 'Inaktiv';
-    if (badge.is_hidden) return 'Versteckt';
-    return 'Aktiv';
-  };
 
   return (
     <>

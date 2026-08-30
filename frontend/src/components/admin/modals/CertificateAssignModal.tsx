@@ -164,8 +164,6 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
   const [durationMonths, setDurationMonths] = useState<string>('');
 
   const selectedType = availableTypes.find(t => t.id === selectedTypeId);
-  const selectedIconKey = selectedType?.icon || '';
-  const selectedIconData = CERT_ICONS[selectedIconKey];
 
   const handleSave = async () => {
     if (!selectedTypeId) {

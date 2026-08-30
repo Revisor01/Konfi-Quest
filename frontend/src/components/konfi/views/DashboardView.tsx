@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonIcon,
-  useIonAlert,
   useIonPopover,
   useIonModal,
   useIonRouter
@@ -198,7 +197,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const router = useIonRouter();
   const { setError } = useApp();
-  const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
@@ -285,13 +283,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Level Popover via useIonPopover
   const levelPopoverRef = useRef<LevelPopoverData>({ level: null, isReached: false });
-  const [presentLevelPopover, dismissLevelPopover] = useIonPopover(LevelPopoverContent, {
+  const [presentLevelPopover] = useIonPopover(LevelPopoverContent, {
     dataRef: levelPopoverRef
   });
 
   // Badge Popover via useIonPopover
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null, isEarned: false });
-  const [presentBadgePopover, dismissBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
+  const [presentBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
     dataRef: badgePopoverRef
   });
 

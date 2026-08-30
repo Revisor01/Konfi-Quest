@@ -205,13 +205,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     });
   };
 
-  const handleDeleteQueuedMessage = async (message: Message) => {
-    // Aus UI entfernen
-    setMessages(prev => prev.filter(m => m.localId !== message.localId));
-    // Queue-Item, Fehl-Merker und lokale Dateikopien aufraeumen
-    await wartendeNachrichtAufraeumen(room?.id, message.localId);
-  };
-
   // Poll Modal mit useIonModal Hook (iOS Card Design)
   const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
     onClose: () => dismissPollModalHook(),
@@ -717,7 +710,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           onDeselectMessage={() => setSelectedMessage(null)}
           textareaRef={textareaRef}
           onRetry={handleRetryMessage}
-          onDeleteQueued={handleDeleteQueuedMessage}
         />
       </IonContent>
 

@@ -142,7 +142,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return '#667eea';
   };
 
-  const [presentBadgePopover, dismissBadgePopover] = useIonPopover(BadgePopoverContent, {
+  const [presentBadgePopover] = useIonPopover(BadgePopoverContent, {
     dataRef: badgePopoverRef
   });
 

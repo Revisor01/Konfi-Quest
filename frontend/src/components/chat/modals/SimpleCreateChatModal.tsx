@@ -371,27 +371,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     return user.name || user.display_name || 'Unbekannt';
   };
 
-  const canCreate = () => {
-    if (chatType === 'group') {
-      return groupName.trim() && selectedParticipants.size > 0;
-    }
-    return chatType === 'direct';
-  };
-
-  const getAvailableChatTypes = () => {
-    if (user?.type === 'admin' || user?.type === 'teamer') {
-      return [
-        { value: 'direct', label: 'Direktnachricht' },
-        { value: 'group', label: 'Gruppenchat' }
-      ];
-    }
-
-    // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten an Admins senden
-    return [
-      { value: 'direct', label: 'Direktnachricht' }
-    ];
-  };
-
   const isFormValid = chatType === 'direct' || (chatType === 'group' && groupName.trim() && selectedParticipants.size > 0);
   const isAdmin = user?.type === 'admin';
   const isTeamer = user?.type === 'teamer';

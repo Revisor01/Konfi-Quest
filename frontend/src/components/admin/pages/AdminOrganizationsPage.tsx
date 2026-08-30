@@ -62,7 +62,6 @@ const AdminOrganizationsPage: React.FC = () => {
   const organizations = organizationsData ?? [];
 
   // Modal state
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
@@ -72,7 +71,6 @@ const AdminOrganizationsPage: React.FC = () => {
     organizationId: modalOrganizationId,
     onClose: () => {
       dismissOrganizationModalHook();
-      setSelectedOrganization(null);
       setModalOrganizationId(null);
     },
     onSuccess: () => {
@@ -82,7 +80,6 @@ const AdminOrganizationsPage: React.FC = () => {
       // der Vergleich auf die eigene Org war fehleranfaellig (modalOrganizationId
       // wurde teils schon zurückgesetzt). super_admin ohne Org schadet es nicht.
       refreshUser();
-      setSelectedOrganization(null);
       setModalOrganizationId(null);
       loadOrganizations();
     }
@@ -119,7 +116,6 @@ const AdminOrganizationsPage: React.FC = () => {
   };
 
   const handleSelectOrganization = (organization: Organization) => {
-    setSelectedOrganization(organization);
     setModalOrganizationId(organization.id);
     presentOrganizationModalHook({
       presentingElement: presentingElement
@@ -127,7 +123,6 @@ const AdminOrganizationsPage: React.FC = () => {
   };
 
   const presentOrganizationModal = () => {
-    setSelectedOrganization(null);
     setModalOrganizationId(null);
     presentOrganizationModalHook({
       presentingElement: presentingElement

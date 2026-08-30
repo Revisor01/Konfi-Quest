@@ -92,7 +92,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   onSuccess,
   onDirtyChange
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);

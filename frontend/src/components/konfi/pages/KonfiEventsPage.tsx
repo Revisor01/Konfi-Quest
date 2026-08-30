@@ -117,7 +117,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
   // State
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
-  const [searchText, setSearchText] = useState('');
 
   // --- Aktivitäten-State ---
   const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
@@ -280,16 +279,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
         break;
       default:
         filteredEvents = allEvents;
-    }
-
-    // Suchfilter
-    if (searchText) {
-      const lower = searchText.toLowerCase();
-      filteredEvents = filteredEvents.filter(e =>
-        e.name?.toLowerCase().includes(lower) ||
-        e.title?.toLowerCase().includes(lower) ||
-        e.location?.toLowerCase().includes(lower)
-      );
     }
 
     // Sort events: nächstes Event immer oben

@@ -117,7 +117,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
-  const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -176,17 +175,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     onClose: () => dismissQRDisplayModal()
   });
 
-  // Participant Management Modal
-  const [presentParticipantModalHook, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
-    eventId: eventId,
-    onClose: () => dismissParticipantModalHook(),
-    onSuccess: () => {
-      dismissParticipantModalHook();
-      loadEventData();
-    },
-    dismiss: () => dismissParticipantModalHook()
-  });
-
   // Teamer Modal (filterRole: 'teamer')
   const [presentTeamerModal, dismissTeamerModal] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
@@ -228,14 +216,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // QR-Check-in (events.js): Der Zaehler auf dem offenen QR-Code stand still
   // (Befund 25.08.2026).
   useLiveRefresh(['events', 'konfis'], useCallback(() => {
-    loadEventData(true);
+    loadEventData();
   }, [eventId]));
 
-  const loadEventData = async (stillLaden = false) => {
-    // stillLaden: bei Live-Ereignissen ohne Ladebalken nachladen, sonst
-    // flackert die Teilnehmerliste bei jedem QR-Scan.
-    if (!stillLaden) setLoading(true);
-
+  const loadEventData = async () => {
     // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
     // Listen-Cache zeigen. Vorher lief der Abruf ins Leere, eventData blieb
     // null und die Seite zeigte nur "Fehler beim Laden der Event-Daten" —
@@ -262,7 +246,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       } catch {
         setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
       }
-      setLoading(false);
       return;
     }
 
@@ -279,8 +262,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
     } catch (error) {
       setError('Fehler beim Laden der Event-Daten');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -369,7 +350,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       p.id === participant.id ? { ...p, attendance_status: status } : p
     ));
     try {
-      const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
+      await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
       triggerRefresh('events');

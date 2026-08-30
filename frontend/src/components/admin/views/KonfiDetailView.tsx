@@ -64,7 +64,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [bonusEntries, setBonusEntries] = useState<any[]>([]);
   const [eventPoints, setEventPoints] = useState<any[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
-  const [loading, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
   // Fuer das Bearbeiten-Modal: alle Jahrgaenge der Organisation (mit ihren
   // Punktearten, damit die Warnung stimmt) und die eigenen Zuweisungen.
@@ -325,14 +324,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Punkte vergeben werden. Vergab eine zweite Person Punkte oder gab einen
   // Antrag frei, blieb hier der alte Stand stehen (Befund 25.08.2026).
   useLiveRefresh(['konfis', 'points', 'requests', 'badges'], useCallback(() => {
-    loadKonfiData(true);
+    loadKonfiData();
   }, [konfiId]));
 
-  const loadKonfiData = async (stillLaden = false) => {
-    // stillLaden: bei Live-Ereignissen NICHT den Ladebalken zeigen — die
-    // Ansicht wuerde bei jeder fremden Punktvergabe kurz leer flackern.
-    if (!stillLaden) setLoading(true);
-
+  const loadKonfiData = async () => {
     // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
     // Listen-Cache zeigen. Vorher lief der Abruf ins Leere und die Ansicht
     // zeigte nur "Fehler beim Laden der Konfi-Daten" — obwohl die Person in
@@ -361,7 +356,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       } catch {
         setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
       }
-      setLoading(false);
       return;
     }
 
@@ -451,8 +445,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       setActivities([...enhancedActivities, ...pendingRequests]);
     } catch (err) {
       setError('Fehler beim Laden der Konfi-Daten');
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -37,7 +37,6 @@ import LoginView from './components/auth/LoginView';
 import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
 import ResetPasswordPage from './components/auth/ResetPasswordPage';
-import LoadingSpinner from './components/common/LoadingSpinner';
 import MainTabs from './components/layout/MainTabs';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import GlobalToasts from './components/common/GlobalToasts';
@@ -87,7 +86,7 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, loading, setUser, orgVersion } = useApp();
+  const { user, setUser, orgVersion } = useApp();
 
   // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
   // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
@@ -141,14 +140,6 @@ const AppContent: React.FC = () => {
   //     clearInterval(interval);
   //   };
   // }, [user, refreshFromAPI]);
-
-  if (loading) {
-    return (
-      <IonApp>
-        <LoadingSpinner fullScreen message="Deine Quest wird vorbereitet..." />
-      </IonApp>
-    );
-  }
 
   if (!user) {
     return (

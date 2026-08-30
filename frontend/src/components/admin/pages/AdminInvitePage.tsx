@@ -75,7 +75,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+  const { data: jahrgaenge } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -99,7 +99,6 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
-  const [extendingInvite, setExtendingInvite] = useState<number | null>(null);
   const [initialQrShown, setInitialQrShown] = useState(false);
 
   // Initialen Jahrgang und QR-Code setzen wenn Daten geladen
@@ -166,13 +165,10 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   const extendInvite = async (inviteId: number) => {
     if (offlineBlockiert(isOnline, setError)) return;
     try {
-      setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
       await refreshInvites();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
-    } finally {
-      setExtendingInvite(null);
     }
   };
 

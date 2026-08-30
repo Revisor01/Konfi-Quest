@@ -127,7 +127,7 @@ import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopover
 
 const TeamerKonfiStatsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('teamer-konfi-stats');
-  const { user, setError } = useApp();
+  const { user } = useApp();
 
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null });
 
