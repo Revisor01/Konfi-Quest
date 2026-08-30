@@ -29,7 +29,6 @@ import {
   person,
   personOutline,
   search,
-  chatbubbles,
   people,
   peopleOutline,
   filterOutline,

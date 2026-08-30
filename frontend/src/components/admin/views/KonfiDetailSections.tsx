@@ -11,7 +11,6 @@ import {
   IonItemOption,
   IonIcon,
   IonButton,
-  IonInput,
   IonDatetimeButton,
   IonDatetime,
   IonModal
@@ -38,8 +37,6 @@ import {
   cloudOfflineOutline,
   chevronDown,
   chevronUp,
-  bookOutline,
-  locationOutline,
   book,
   documentText,
   chevronForward,

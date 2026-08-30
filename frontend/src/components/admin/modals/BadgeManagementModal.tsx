@@ -12,13 +12,9 @@ import {
   IonLabel,
   IonInput,
   IonTextarea,
-  IonSelect,
-  IonSelectOption,
   IonToggle,
   IonCard,
   IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
   IonIcon,
   IonText,
   IonSpinner,
@@ -44,7 +40,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
-import { ICON_CHOICES as BADGE_ICONS, getIconFromString } from '../../../utils/badgeIcons';
+import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 
 

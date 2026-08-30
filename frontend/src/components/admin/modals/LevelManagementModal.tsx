@@ -25,8 +25,6 @@ import {
   checkmarkOutline,
   closeOutline,
   create,
-  trophy,
-  pin,
   chevronDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';

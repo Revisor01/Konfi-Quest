@@ -13,9 +13,6 @@ import {
   IonSegment,
   IonSegmentButton,
   IonLabel,
-  IonList,
-  IonCard,
-  IonCardContent,
   useIonModal,
   useIonActionSheet,
   useIonAlert,
@@ -24,7 +21,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useLocation } from 'react-router-dom';
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
+import { add, ban } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -19,7 +19,6 @@ import {
   useIonModal
 } from '@ionic/react';
 import {
-  personOutline,
   keyOutline,
   mailOutline,
   arrowBack,

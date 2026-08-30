@@ -1,20 +1,13 @@
 import React, { useState } from 'react';
 import {
   IonButton,
-  IonButtons,
   IonCard,
   IonCardContent,
-  IonContent,
-  IonHeader,
   IonIcon,
-  IonItem,
   IonLabel,
   IonList,
   IonListHeader,
-  IonPage,
   IonProgressBar,
-  IonTitle,
-  IonToolbar,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -34,9 +27,7 @@ import {
   mailOutline,
   timeOutline,
   compassOutline,
-  imagesOutline,
-  sparklesOutline,
-  chevronForwardOutline
+  imagesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';

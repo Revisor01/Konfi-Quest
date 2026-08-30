@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -22,7 +22,7 @@ import {
   IonReorder,
   IonReorderGroup
 } from '@ionic/react';
-import { arrowBack, appsOutline, reorderThreeOutline } from 'ionicons/icons';
+import { arrowBack, appsOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';

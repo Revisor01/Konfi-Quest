@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { Redirect, Route, RouteComponentProps, useLocation } from 'react-router-dom'; // useLocation importieren!
 import {
   IonIcon,
@@ -8,27 +8,22 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  IonItem,
   IonBadge
 } from '@ionic/react';
 import {
-  people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, calendar, business, flag
+  people,
+  chatbubbles,
+  star,
+  ellipsisHorizontal,
+  home,
+  flash,
+  calendar,
+  flag
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
-import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
 import api from '../../services/api';
 import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten

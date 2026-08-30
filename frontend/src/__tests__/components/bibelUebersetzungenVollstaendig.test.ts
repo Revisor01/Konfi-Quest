@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { BIBLE_TRANSLATIONS, getTranslationName } from '../../components/shared/BibleTranslationModal';
+import { BIBLE_TRANSLATIONS } from '../../components/shared/BibleTranslationModal';
 
 // Befund M4: Das Konfi-Profil hatte eine EIGENE Kopie des Bibeluebersetzungs-
 // Modals, die RVR60 (Reina-Valera 1960) anbot — das geteilte Modal (Konfi-

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -35,7 +35,6 @@ import {
   closeOutline,
   arrowBack,
   trash,
-  createOutline,
   trophy,
   medal,
   star,

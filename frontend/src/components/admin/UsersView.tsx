@@ -12,8 +12,6 @@ import {
   IonInput,
   IonSegment,
   IonSegmentButton,
-  IonCard,
-  IonCardContent,
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
@@ -23,7 +21,6 @@ import {
   person,
   personOutline,
   shield,
-  createOutline,
   at,
   school,
   time,

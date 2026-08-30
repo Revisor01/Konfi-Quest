@@ -1,7 +1,7 @@
 // ChatRoomView.tsx
 
 // 1. Benötigte Imports hinzufügen
-import React, { useState, useEffect, useRef } from 'react'; // useRef hinzufügen
+import React from 'react'; // useRef hinzufügen
 import {
   IonPage,
   IonHeader,

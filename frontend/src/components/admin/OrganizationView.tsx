@@ -1,7 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  IonCard,
-  IonCardContent,
   IonIcon,
   IonItem,
   IonLabel,

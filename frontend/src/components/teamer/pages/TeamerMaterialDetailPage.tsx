@@ -26,7 +26,6 @@ import {
   calendar,
   people,
   person,
-  time,
   closeOutline,
   informationCircle,
   textOutline,

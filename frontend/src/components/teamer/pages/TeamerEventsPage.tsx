@@ -22,7 +22,6 @@ import {
   IonItemGroup,
   IonInput,
   IonButtons,
-  IonBackButton,
   useIonModal,
   useIonAlert,
   useIonViewWillEnter
@@ -43,10 +42,7 @@ import {
   trophy,
   bagHandle,
   qrCodeOutline,
-  navigateOutline,
   informationCircle,
-  informationCircleOutline,
-  closeOutline,
   pricetag,
   shieldCheckmark,
   home,
@@ -54,11 +50,9 @@ import {
   attachOutline,
   search,
   filterOutline,
-  lockOpenOutline,
   lockOpen,
   copy,
   chatbubbleOutline,
-  personAdd,
   infinite,
   add,
   listOutline,
@@ -76,7 +70,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';

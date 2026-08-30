@@ -30,13 +30,11 @@ import {
   linkOutline,
   peopleOutline,
   addOutline,
-  openOutline,
   checkmarkOutline,
   eyeOutline,
   eyeOffOutline,
   lockClosedOutline,
-  removeCircleOutline,
-  chatbubbleEllipsesOutline
+  removeCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 

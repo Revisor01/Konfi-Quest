@@ -36,7 +36,6 @@ import {
   arrowBack,
   people,
   person,
-  time,
   informationCircle,
   textOutline,
   create

@@ -57,7 +57,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
-import { Event, Category } from '../../../types/event';
+import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';

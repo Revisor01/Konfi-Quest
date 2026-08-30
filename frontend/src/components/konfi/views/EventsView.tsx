@@ -17,21 +17,15 @@ import {
   location,
   people,
   checkmarkCircle,
-  hourglass,
-  close,
   trophy,
   listOutline,
   calendarOutline,
-  lockOpenOutline,
-  shieldCheckmark,
   bagHandle,
-  closeCircle,
   search,
-  flame,
   filterOutline,
   infinite
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 

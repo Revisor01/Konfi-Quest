@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  IonCard,
-  IonCardContent,
   IonIcon,
   IonLabel,
   IonList,
@@ -20,7 +18,6 @@ import {
 import {
   trash,
   swapVertical,
-  star,
   calendar,
   people,
   peopleOutline,

@@ -18,7 +18,7 @@ import {
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
-import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';

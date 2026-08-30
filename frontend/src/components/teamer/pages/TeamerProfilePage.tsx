@@ -27,7 +27,6 @@ import {
   briefcaseOutline,
   calendarOutline,
   settingsOutline,
-  trophy,
   logOutOutline,
   trashOutline,
   ribbon,
@@ -37,8 +36,6 @@ import {
   imagesOutline,
   bookOutline,
   compassOutline,
-  sparklesOutline,
-  chevronForwardOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';

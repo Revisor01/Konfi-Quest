@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   IonIcon,
   IonItem,
@@ -14,13 +14,10 @@ import {
   IonSelectOption,
   IonList,
   IonListHeader,
-  IonCard,
-  IonCardContent,
   useIonModal
 } from '@ionic/react';
 import {
   people,
-  peopleOutline,
   calendar,
   time,
   location,
@@ -30,17 +27,12 @@ import {
   trophy,
   listOutline,
   calendarOutline,
-  shieldCheckmark,
   bagHandle,
   attachOutline,
   filterOutline,
-  flame,
   search
 } from 'ionicons/icons';
-import { useApp } from '../../contexts/AppContext';
-import { filterBySearchTerm } from '../../utils/helpers';
-import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';

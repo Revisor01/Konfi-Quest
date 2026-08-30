@@ -35,8 +35,6 @@ import {
   informationCircleOutline,
   schoolOutline,
   compassOutline,
-  sparklesOutline,
-  chevronForwardOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';

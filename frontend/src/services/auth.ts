@@ -2,7 +2,7 @@ import axios from 'axios';
 import api, { API_URL } from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId, setLoggingOut } from './tokenStore';
+import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
 import {
   mitBiometrieEntsperren,
   gespeichertenTokenAuffrischen,

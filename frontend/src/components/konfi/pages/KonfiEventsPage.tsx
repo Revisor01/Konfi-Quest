@@ -25,9 +25,7 @@ import {
   qrCodeOutline,
   add,
   home,
-  people,
-  closeOutline,
-  informationCircleOutline
+  people
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';

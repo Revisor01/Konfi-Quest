@@ -46,7 +46,6 @@ import {
   checkmarkOutline,
   lockClosedOutline,
   removeCircleOutline,
-  chatbubbleEllipsesOutline,
   trashOutline
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';

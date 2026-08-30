@@ -1,8 +1,7 @@
 import React from 'react';
 import {
   IonIcon,
-  IonAvatar,
-  IonText
+  IonAvatar
 } from '@ionic/react';
 import {
   barChart,
@@ -20,7 +19,7 @@ import {
   timeOutline,
   alertCircleOutline
 } from 'ionicons/icons';
-import { Message, Reaction, ChatRoomBase, ReactionEmojiData } from '../../types/chat';
+import { Message, Reaction, ChatRoomBase } from '../../types/chat';
 import { REACTION_EMOJIS } from './constants';
 import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
