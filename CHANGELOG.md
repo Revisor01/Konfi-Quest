@@ -50,6 +50,9 @@ iOS-Build 151
 - Teamer:innen wurden direkt nach dem Anmelden wieder herausgeworfen. Ursache
   war eine Änderung an den Abzeichen-Daten, mit der die veröffentlichte App
   nichts anfangen konnte. Rückgängig gemacht; die App läuft wieder.
+- Öffnet die Leitung ohne Verbindung eine Person aus der Konfi-Liste, stehen
+  jetzt Name und Punktestand da statt einer roten Fehlermeldung. Punkte-
+  Historie und Anwesenheit brauchen weiterhin eine Verbindung.
 - Öffnet die Leitung ohne Verbindung einen Termin, steht jetzt der Termin da
   statt einer roten Fehlermeldung ohne Titel. Teilnehmerliste und Abmeldungen
   bleiben dabei leer — die brauchen eine Verbindung.

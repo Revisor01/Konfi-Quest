@@ -26,6 +26,7 @@ import {
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
+import { offlineCache } from '../../../services/offlineCache';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
@@ -295,9 +296,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     }
   });
 
+  // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
+  // aus dem Cache gezeigte Grundstand durch die vollen Detaildaten ersetzt
+  // werden (Punkte, Aktivitaeten, Anwesenheit).
   useEffect(() => {
     loadKonfiData();
-  }, [konfiId]);
+  }, [konfiId, isOnline]);
 
   // Jahrgaenge fuer das Bearbeiten-Modal. Einmal beim Oeffnen der Seite; die
   // Liste enthaelt dank SELECT j.* auch die Punktearten, aus denen die Warnung
@@ -327,6 +331,39 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     // stillLaden: bei Live-Ereignissen NICHT den Ladebalken zeigen — die
     // Ansicht wuerde bei jeder fremden Punktvergabe kurz leer flackern.
     if (!stillLaden) setLoading(true);
+
+    // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
+    // Listen-Cache zeigen. Vorher lief der Abruf ins Leere und die Ansicht
+    // zeigte nur "Fehler beim Laden der Konfi-Daten" — obwohl die Person in
+    // der Liste davor sichtbar war, denn AdminKonfisPage haelt sie unter
+    // admin:konfis:<org> im Cache (AdminKonfisPage.tsx:105).
+    //
+    // DRITTE Ansicht mit demselben Muster: In der Konfi-Terminansicht wurde
+    // es am 25.08.2026 behoben, in der Leitungs-Terminansicht am 29.08.2026
+    // (87e04fc8) — hier stand es noch. Gefunden bei der Offline-Pruefung am
+    // 30.08.2026.
+    //
+    // Punkte, Aktivitaeten und Anwesenheit haengen an der Detail-Route und
+    // bleiben offline leer; die Liste traegt Name, Jahrgang und Punktestand.
+    // Besser der Name mit Punktestand als ein roter Kasten.
+    if (!isOnline) {
+      try {
+        const gecacht = await offlineCache.get<Konfi[]>('admin:konfis:' + user?.organization_id);
+        const ausListe = gecacht?.data?.find((k) => k.id === konfiId) || null;
+        if (ausListe) {
+          setCurrentKonfi({ ...ausListe });
+          setTargetRole((ausListe as any).role_name || 'konfi');
+          setError('');
+        } else {
+          setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+        }
+      } catch {
+        setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
       const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
 
