@@ -1,29 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import {
-  IonApp,
-  IonIcon,
-  IonLabel,
-  IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonSpinner,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  IonItem,
-  IonBadge,
-  setupIonicReact,
-  isPlatform,
-  useIonAlert
-} from '@ionic/react';
+import { Navigate, Route } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, setupIonicReact, isPlatform, useIonAlert } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 // iOS26 Theme Animationen
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios26';

@@ -32,7 +32,7 @@ import {
 
 import api from '../../services/api';
 import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
-import { hasValidUsernameChars, USERNAME_RULES_MESSAGE } from '../../utils/usernameValidation';
+import { hasValidUsernameChars } from '../../utils/usernameValidation';
 import { useApp } from '../../contexts/AppContext';
 
 interface PasswordCheck {
