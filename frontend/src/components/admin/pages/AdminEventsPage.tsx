@@ -106,7 +106,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   );
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
+  const { data: jahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -128,7 +128,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // --- Aktivitäten-State ---
-  const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
@@ -155,12 +154,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     requestId: modalRequestId,
     onClose: () => {
       dismissRequestModalHook();
-      setSelectedRequest(null);
       setModalRequestId(null);
     },
     onSuccess: () => {
       dismissRequestModalHook();
-      setSelectedRequest(null);
       setModalRequestId(null);
       refreshRequests();
       // Genehmigen/Ablehnen ändert die Anzahl offener Anträge -> 'requests'
@@ -615,7 +612,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleSelectRequest = (request: ActivityRequest) => {
-    setSelectedRequest(request);
     setModalRequestId(request.id);
     presentRequestModalHook({
       presentingElement: presentingElement

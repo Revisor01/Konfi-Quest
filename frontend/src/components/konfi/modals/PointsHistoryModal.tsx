@@ -55,16 +55,9 @@ interface PointEntry {
   source_type: 'activity' | 'bonus' | 'event';
 }
 
-interface PointsTotals {
-  gottesdienst: number;
-  gemeinde: number;
-  total: number;
-}
-
 const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint, profileTotals }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
-  const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
 
   // Enabled-Flags mit Fallback (Abwaertskompatibilitaet)
   const gottesdienstEnabled = pointConfig?.gottesdienst_enabled !== false;
@@ -78,7 +71,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     try {
       const response = await api.get(apiEndpoint || '/konfi/points-history');
       setHistory(response.data.history || []);
-      setTotals(response.data.totals || { gottesdienst: 0, gemeinde: 0, total: 0 });
     } catch (err) {
  console.error('Error loading points history:', err);
     } finally {
@@ -138,29 +130,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     }
   };
 
-  // Label für die Kategorie
-  const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case 'gottesdienst': return 'Gottesdienst';
-      case 'gemeinde': return 'Gemeinde';
-      default: return category;
-    }
-  };
-
   // Typ-Badge Farbe (orange für Bonus, rot für Event)
   const getTypeBadgeColor = (sourceType: string) => {
     switch (sourceType) {
       case 'bonus': return 'var(--app-color-badges)';
       case 'event': return 'var(--app-color-events)';
-      default: return null;
-    }
-  };
-
-  // Typ-Badge Label
-  const getTypeBadgeLabel = (sourceType: string) => {
-    switch (sourceType) {
-      case 'bonus': return 'Bonus';
-      case 'event': return 'Event';
       default: return null;
     }
   };
@@ -237,7 +211,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                       {filteredHistory.map((entry) => {
                         const categoryColor = getCategoryColor(entry.category);
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
-                        const typeBadgeLabel = getTypeBadgeLabel(entry.source_type);
 
                         // Farbe basiert auf category (blau/gruen)
                         const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities';

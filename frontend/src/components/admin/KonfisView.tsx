@@ -15,7 +15,8 @@ import {
   IonSelect,
   IonSelectOption,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonSpinner
 } from '@ionic/react';
 import {
   trash,
@@ -82,6 +83,10 @@ interface KonfisViewProps {
   // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
   // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
   onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
+  // Startsegment. Nur der Erstwert — die Umschaltung bleibt interner State.
+  // (JSDOM reicht ionChange nicht an den React-Handler durch; ueber diesen
+  // Erstwert ist das Teamer-Segment auch im Test erreichbar.)
+  initialViewMode?: 'konfis' | 'teamer';
   /**
    * Der angemeldete Admin hat KEINEN Jahrgang zugewiesen (Header vom Server).
    * Dann ist die leere Liste kein "es gibt keine Konfis", sondern "du darfst
@@ -102,37 +107,16 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onDeleteTeamer,
   selectedKonfiId,
   ohneJahrgang = false,
-  onViewModeChange
+  onViewModeChange,
+  initialViewMode = 'konfis'
 }) => {
   const { user, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
+  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<any[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
-  // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
-
-  // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
-  useEffect(() => {
-    if (!user?.organization_id) return;
-    let cancelled = false;
-    const loadLimit = async () => {
-      try {
-        const response = await api.get(`/organizations/${user.organization_id}`);
-        if (!cancelled) {
-          const mk = response.data?.max_konfis;
-          setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
-        }
-      } catch (err) {
-        if (!cancelled) setKonfiLimit(null);
-      }
-    };
-    loadLimit();
-    return () => { cancelled = true; };
-  }, [user?.organization_id]);
-
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
     setTeamerLoading(true);
@@ -317,8 +301,16 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Teamer-Liste */}
-      {viewMode === 'teamer' ? (
+      {/* Teamer-Liste. Waehrend des Ladens KEIN Leerzustand: "Noch keine
+          Teamer:innen vorhanden" waere hier schlicht falsch — dieselbe
+          Fehlerklasse wie der Audit-Befund vom 10.08. (Fehler nicht als
+          Leerzustand ausgeben). teamerLoading wurde gepflegt, aber nie
+          gerendert (Befund 30.08.2026). */}
+      {viewMode === 'teamer' && teamerLoading && teamers.length === 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+          <IonSpinner name="crescent" />
+        </div>
+      ) : viewMode === 'teamer' ? (
         <ListSection
           icon={ribbon}
           title="Teamer:innen"
@@ -443,7 +435,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const percentTotal = targetTotal > 0 ? Math.round((totalPoints / targetTotal) * 100) : 0;
                   const percentGodi = targetGodi > 0 ? Math.round((godiPoints / targetGodi) * 100) : 0;
                   const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
-                  const isComplete = percentTotal >= 100;
 
                   return (
                     <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? '8px' : '0' }}>

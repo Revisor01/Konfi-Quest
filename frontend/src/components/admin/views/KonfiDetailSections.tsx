@@ -127,8 +127,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
   getGottesdienstPoints,
   getGemeindePoints,
   certificates,
-  teamerEvents,
-  activities
+  teamerEvents
 }) => (
   <div
     style={{

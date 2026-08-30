@@ -95,13 +95,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   };
 
 
-  const getTypeColor = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'primary';
-      case 'gemeinde': return 'primary';
-      default: return 'medium';
-    }
-  };
 
   const getTypeIcon = (type: string | null) => {
     switch (type) {
@@ -111,13 +104,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
   };
 
-  const getTypeText = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'Gottesdienst';
-      case 'gemeinde': return 'Gemeinde';
-      default: return 'Unbekannt';
-    }
-  };
 
   const handleDeleteWithSlideClose = async (activity: Activity) => {
     const slidingElement = slidingRefs.current.get(activity.id);

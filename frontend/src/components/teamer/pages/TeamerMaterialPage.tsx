@@ -45,7 +45,6 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -90,7 +89,6 @@ interface MaterialDetail {
 
 const TeamerMaterialPage: React.FC = () => {
   const { user, setError } = useApp();
-  const { presentingElement } = useModalPage('teamer-material');
 
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
@@ -166,13 +164,6 @@ const TeamerMaterialPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
 
   const formatDateLong = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {

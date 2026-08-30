@@ -186,7 +186,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
-      'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfiData.slides.zeitraum.ende} displayName={displayName} />,
+      'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfiData.slides.zeitraum.ende} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
     };
 

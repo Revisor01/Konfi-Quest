@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   IonIcon,
   IonItem,
@@ -94,7 +94,6 @@ const EventsView: React.FC<EventsViewProps> = ({
   selectedEventId,
   headerSlot
 }) => {
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
   const [presentLegend, dismissLegend] = useIonModal(EventLegendModal, {
     variant: 'admin',
@@ -118,54 +117,16 @@ const EventsView: React.FC<EventsViewProps> = ({
     return events.filter(event => eventEndDate(event) <= now);
   };
 
-  const getOpenEvents = () => {
-    return events.filter(event => calculateRegistrationStatus(event) === 'open');
-  };
 
-  const getTotalPoints = () => {
-    return events.reduce((sum, event) => sum + event.points, 0);
-  };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' => {
     // Use the backend-calculated status directly
     return event.registration_status as 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
   };
 
-  const getRegistrationStatusColor = (event: Event) => {
-    const status = calculateRegistrationStatus(event);
-    switch (status) {
-      case 'upcoming': return 'medium';
-      case 'open': return 'success';
-      case 'closed': return 'danger';
-      case 'cancelled': return 'danger';
-      default: return 'medium';
-    }
-  };
 
-  const getRegistrationStatusText = (event: Event) => {
-    const status = calculateRegistrationStatus(event);
-    switch (status) {
-      case 'upcoming': return 'Bald verfügbar';
-      case 'open': return 'Anmeldung offen';
-      case 'closed': return 'Anmeldung geschlossen';
-      case 'cancelled': return 'Abgesagt';
-      default: return 'Unbekannt';
-    }
-  };
 
-  const getTotalRegistrations = () => {
-    return events.reduce((sum, event) => sum + event.registered_count, 0);
-  };
 
-  const getAverageParticipation = () => {
-    // Nur Events mit echter Kapazität (max_participants > 0) zählen in die
-    // Auslastungs-Statistik. Unbegrenzte Events (max_participants = 0) wuerden
-    // sonst eine Division durch 0 (-> NaN) verursachen.
-    const capped = events.filter(event => (event.max_participants || 0) > 0);
-    if (capped.length === 0) return 0;
-    const total = capped.reduce((sum, event) => sum + (event.registered_count / event.max_participants), 0);
-    return Math.round((total / capped.length) * 100);
-  };
 
   return (
     <>
@@ -489,8 +450,23 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </IonItem>
 
-                {(onDeleteEvent || onCancelEvent) && (
+                {(onDeleteEvent || onCancelEvent || onCopyEvent) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
+                    {/* Kopieren war bei einer Swipe-Ueberarbeitung verloren
+                        gegangen: Die Page reichte onCopyEvent samt
+                        Berechtigungspruefung weiter, gerendert wurde es nicht
+                        mehr — die Funktion war unerreichbar (Befund 30.08.2026). */}
+                    {onCopyEvent && (
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); onCopyEvent(event); }}
+                        aria-label="Event kopieren"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--info">
+                          <IonIcon icon={copy} />
+                        </div>
+                      </IonItemOption>
+                    )}
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => { closeOpenSlidingItems(); onCancelEvent(event); }}

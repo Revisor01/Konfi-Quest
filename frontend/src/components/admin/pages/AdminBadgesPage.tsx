@@ -56,7 +56,6 @@ const AdminBadgesPage: React.FC = () => {
   );
 
   // Modal state
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
@@ -73,12 +72,10 @@ const AdminBadgesPage: React.FC = () => {
     onDirtyChange: (dirty: boolean) => { badgeModalDirtyRef.current = dirty; },
     onClose: () => {
       dismissBadgeModalHook();
-      setSelectedBadge(null);
       setModalBadgeId(null);
     },
     onSuccess: () => {
       dismissBadgeModalHook();
-      setSelectedBadge(null);
       setModalBadgeId(null);
       refreshBadges();
     }
@@ -136,7 +133,6 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const handleSelectBadge = (badge: Badge) => {
-    setSelectedBadge(badge);
     setModalBadgeId(badge.id);
     presentBadgeModalHook({
       presentingElement: presentingElement,
@@ -146,7 +142,6 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const presentBadgeModal = () => {
-    setSelectedBadge(null);
     setModalBadgeId(null);
     presentBadgeModalHook({
       presentingElement: presentingElement,

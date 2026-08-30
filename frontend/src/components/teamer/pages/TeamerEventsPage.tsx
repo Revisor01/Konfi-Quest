@@ -224,8 +224,8 @@ const TeamerEventsPage: React.FC = () => {
   // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitäten nicht. Deshalb
   // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stünde
   // hier kein falsches "Gemeinde".
-  const getRequestTypeIcon = (_type: string) => ribbon;
-  const getRequestTypeText = (_type: string) => 'Aktivität';
+  const getRequestTypeIcon = () => ribbon;
+  const getRequestTypeText = () => 'Aktivität';
 
   const getFilteredRequests = () => {
     const allRequests = Array.isArray(requests) ? requests : [];

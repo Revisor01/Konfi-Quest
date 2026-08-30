@@ -31,7 +31,7 @@ interface EventModalProps {
 }
 
 const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -71,13 +71,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     if (initializedRef.current) setIsDirty(true);
   }, [formData]);
 
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-  };
-
   useEffect(() => {
     loadCategories();
     loadJahrgaenge();
@@ -116,7 +109,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       else setTeamerAccess('normal');
       if (event.has_timeslots) loadTimeslots(event.id);
     } else {
-      const now = new Date();
       const roundToHalfHour = (date: Date) => {
         const rounded = new Date(date);
         const minutes = rounded.getMinutes();
@@ -268,7 +260,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
       if (networkMonitor.isOnline) {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          // Serienfelder gehoeren nicht in ein Update einzelner Events.
+          const updatePayload = { ...payload } as Record<string, unknown>;
+          delete updatePayload.is_series;
+          delete updatePayload.series_count;
+          delete updatePayload.series_interval;
           await api.put(`/events/${event.id}`, updatePayload);
         } else {
           if (formData.is_series) {
@@ -280,7 +276,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         }
       } else {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          const updatePayload = { ...payload } as Record<string, unknown>;
+          delete updatePayload.is_series;
+          delete updatePayload.series_count;
+          delete updatePayload.series_interval;
           await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event bearbeiten' } });
           setSuccess('Event wird aktualisiert sobald du wieder online bist');
         } else if (formData.is_series) {

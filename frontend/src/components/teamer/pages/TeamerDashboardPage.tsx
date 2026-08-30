@@ -241,7 +241,7 @@ const TeamerDashboardPage: React.FC = () => {
     async () => {
       const res = await api.get('/teamer/badges');
       // Beide Antwortformen lesen — siehe teamerBadges.ts.
-      return normalisiereTeamerBadges<TeamerBadgeFull>(res.data, res.headers as any);
+      return normalisiereTeamerBadges<TeamerBadgeFull>(res.data, res.headers);
     },
     { ttl: CACHE_TTL.BADGES }
   );

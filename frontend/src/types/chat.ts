@@ -82,6 +82,9 @@ export interface ChatRoomBase {
   // Automatischer Team-Chat der Organisation (Migration 104) — nur er
   // laesst sich über den Mülleimer im Header leeren.
   is_team_chat?: boolean;
+  // Ungelesen-Stand aus der Chat-Uebersicht: vorhanden, wenn der Raum von
+  // dort geoeffnet wurde (ChatRoomOverview verlangt ihn dann verpflichtend).
+  unread_count?: number;
 }
 
 export interface ChatRoomOverview extends ChatRoomBase {

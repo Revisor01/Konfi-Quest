@@ -21,7 +21,6 @@ import {
 import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
-import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 
 interface Konfi {
@@ -248,21 +247,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     } catch {
       // Zweiter Aufruf verworfen — Ladezustand sicher zuruecknehmen.
       setLoading(false);
-    }
-  };
-
-  const handleRemoveParticipant = async (participantId: number) => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    try {
-      await api.delete(`/events/${eventId}/bookings/${participantId}`);
-      // Participants und verfügbare Konfis neu laden
-      const eventResponse = await api.get(`/events/${eventId}`);
-      const updatedParticipants: Participant[] = eventResponse.data.participants || [];
-      setCurrentParticipants(updatedParticipants);
-      await loadAvailableKonfis(updatedParticipants);
-      onSuccess();
-    } catch (error) {
-      setError('Fehler beim Entfernen der Teilnehmer:in');
     }
   };
 

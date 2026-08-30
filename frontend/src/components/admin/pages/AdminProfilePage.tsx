@@ -44,7 +44,7 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
-  const { user, setUser, setSuccess, setError } = useApp();
+  const { user, setUser } = useApp();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
 
   // Offline-Query: Profile (user-spezifisch)

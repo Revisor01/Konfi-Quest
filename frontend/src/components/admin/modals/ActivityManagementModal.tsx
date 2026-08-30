@@ -65,7 +65,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   onSuccess,
   dismiss
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);

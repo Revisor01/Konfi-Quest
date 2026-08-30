@@ -39,7 +39,6 @@ const AdminUsersPage: React.FC = () => {
   );
   
   // Modal state
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
@@ -50,12 +49,10 @@ const AdminUsersPage: React.FC = () => {
     userId: modalUserId,
     onClose: () => {
       dismissUserModalHook();
-      setSelectedUser(null);
       setModalUserId(null);
     },
     onSuccess: () => {
       dismissUserModalHook();
-      setSelectedUser(null);
       setModalUserId(null);
       refreshUsers();
     }
@@ -92,7 +89,6 @@ const AdminUsersPage: React.FC = () => {
   };
 
   const handleSelectUser = (user: AdminUser) => {
-    setSelectedUser(user);
     setModalUserId(user.id);
     presentUserModalHook({
       presentingElement: presentingElement
@@ -100,7 +96,6 @@ const AdminUsersPage: React.FC = () => {
   };
 
   const presentUserModal = () => {
-    setSelectedUser(null);
     setModalUserId(null);
     presentUserModalHook({
       presentingElement: presentingElement

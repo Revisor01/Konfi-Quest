@@ -289,13 +289,13 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
 
         {/* Warteliste (Konfis) \u2014 entfaellt bei "Nur Teamer:innen" und bei
             unbegrenzten Plaetzen (dann kann niemand warten) */}
-        {(eventData as any)?.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
+        {eventData.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
             <div>
               <div className="app-info-row__label">Warteliste</div>
               <div className="app-info-row__value">
-                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
+                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {eventData.max_waitlist_size || 10}
               </div>
             </div>
           </div>
@@ -698,7 +698,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
           const slotEndFormatted = formatTime(timeslot.end_time);
           // Teilnehmer diesem Slot zuordnen (per timeslot_id, Fallback über Zeit).
           const matchesSlot = (p: Participant) => {
-            if ((p as any).timeslot_id && (timeslot as any).id) return (p as any).timeslot_id === (timeslot as any).id;
+            if (p.timeslot_id && timeslot.id) return p.timeslot_id === timeslot.id;
             if (p.timeslot_start_time && p.timeslot_end_time) {
               return formatTime(p.timeslot_start_time) === slotStartFormatted &&
                      formatTime(p.timeslot_end_time) === slotEndFormatted;

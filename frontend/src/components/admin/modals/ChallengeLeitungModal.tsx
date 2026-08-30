@@ -51,7 +51,7 @@ import {
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
@@ -395,7 +395,12 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       if (!ziel) return s;
       return { ...s, onClick: () => setStatusFilter(ziel), active: aktiverFilter === ziel };
     });
-  }, [challenge?.moderated, counts, statusFilter]);
+    // challenge?.visibility gehoert in die Abhaengigkeiten: Die Sichtbarkeit
+    // ist im OFFENEN Modal aenderbar (Bearbeiten-Knopf; die ChallengesPage
+    // spiegelt die frische Challenge zurueck). Ohne sie blieb die
+    // "Abgelehnt"-Kachel nach dem Umstellen auf "nur Leitung" stehen,
+    // solange sich counts und Filter nicht aenderten (Befund 30.08.2026).
+  }, [challenge?.moderated, challenge?.visibility, counts, statusFilter]);
 
   // Abgeleiteter Status — dieselbe Quelle wie die Liste. Vorher wurde hier nur
   // aktiv/inaktiv unterschieden, wodurch Entwürfe und Geplante fälschlich
@@ -651,7 +656,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           path: fileName,
           data: text,
           directory: Directory.Cache,
-          encoding: 'utf8' as any
+          encoding: Encoding.UTF8
         });
         const uri = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
         await Share.share({ title: challenge.title, files: [uri.uri] });

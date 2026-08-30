@@ -194,14 +194,6 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Challenges scrollte man lange am Archiv vorbei.
   const [reiter, setReiter] = useState<'aktuell' | 'geplant' | 'archiv'>('aktuell');
 
-  const counts = useMemo(() => {
-    const byStatus: Record<ChallengeStatus, number> = { draft: 0, scheduled: 0, active: 0, ended: 0 };
-    challenges.forEach((c) => {
-      byStatus[getChallengeStatus(c)] += 1;
-    });
-    return byStatus;
-  }, [challenges]);
-
   // Drei Reiter: Aktuell = was läuft, Geplant = was kommt (eingeplant UND
   // Entwurf), Archiv = was vorbei ist. Die Zuordnung selbst liegt in
   // teileChallengesAuf (pure Funktion, testbar).

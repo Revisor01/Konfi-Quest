@@ -377,10 +377,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   const effektiverReiter: KonfiReiter = current.visibility === 'private' ? 'meins' : reiter;
   const sichtbareBeitraege = effektiverReiter === 'meins' ? ownSubmissions : gallery;
 
-  // Beendete Challenge ohne eigene Beitraege: der Abschnitt "Deine Beitraege"
-  // fällt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
-  const showOwnSection = isActive || ownSubmissions.length > 0;
-
   // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
   // bekommt (User-Hinweis 10.08.). Dieselbe Angabe steht zusätzlich in der
@@ -544,7 +540,13 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                       <EmptyState
                         icon={documentTextOutline}
                         title="Noch kein Beitrag von dir"
-                        message="Tippe oben auf das Plus, um etwas einzureichen."
+                        // Bei beendeter Challenge gibt es das Plus nicht mehr
+                        // (canSubmitMore verlangt isActive) — der Hinweis
+                        // zeigte auf einen Knopf, der nicht existiert
+                        // (Befund 30.08.2026).
+                        message={isActive
+                          ? 'Tippe oben auf das Plus, um etwas einzureichen.'
+                          : 'Diese Challenge ist beendet — du hattest nichts eingereicht.'}
                         iconColor="var(--app-color-challenges)"
                       />
                     ) : (

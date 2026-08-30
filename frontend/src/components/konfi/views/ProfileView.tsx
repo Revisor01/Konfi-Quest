@@ -309,15 +309,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     } : undefined
   });
 
-  const getInitials = (name: string | undefined) => {
-    if (!name) return '??';
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
 
   const getActivityIcon = (activity: RecentActivity) => {
     switch (activity.type) {
@@ -329,15 +320,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     }
   };
 
-  const getActivityColor = (activity: RecentActivity) => {
-    switch (activity.type) {
-      case 'badge': return '#ffd700';
-      case 'event': return '#3880ff';
-      case 'activity': return '#2dd36f';
-      case 'request': return '#ffcc00';
-      default: return '#667eea';
-    }
-  };
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unbekannt';
