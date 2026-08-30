@@ -35,6 +35,7 @@ import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { useModalPage } from '../../../contexts/ModalContext';
 
 interface Material {
   id: number;

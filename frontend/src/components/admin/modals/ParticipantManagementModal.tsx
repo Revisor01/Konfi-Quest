@@ -22,6 +22,7 @@ import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutlin
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import { offlineBlockiert } from '../../../utils/offlineAktion';
 
 interface Konfi {
   id: number;

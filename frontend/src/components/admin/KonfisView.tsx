@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton } from '@ionic/react';
+import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
+  IonSpinner} from '@ionic/react';
 import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner } from '../shared';
@@ -85,7 +86,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<any[]>([]);
-  const [, setTeamerLoading] = useState(false);
+  const [teamerLoading, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
   const [, setKonfiLimit] = useState<number | null>(null);
 

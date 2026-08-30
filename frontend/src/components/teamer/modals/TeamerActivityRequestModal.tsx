@@ -1,3 +1,4 @@
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useRef } from 'react';
 import {
   IonPage,
