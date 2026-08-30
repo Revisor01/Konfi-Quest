@@ -163,8 +163,6 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
   );
   const [durationMonths, setDurationMonths] = useState<string>('');
 
-  const selectedType = availableTypes.find(t => t.id === selectedTypeId);
-
   const handleSave = async () => {
     if (!selectedTypeId) {
       setError('Bitte wähle einen Zertifikat-Typ aus');
