@@ -24,20 +24,6 @@ import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
 
 
 
-interface Badge {
-  id: number;
-  name: string;
-  icon: string;
-  description?: string;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_extra?: string;
-  is_active: boolean;
-  is_hidden: boolean;
-  earned_count: number;
-  created_at: string;
-}
-
 interface Activity {
   id: number;
   name: string;

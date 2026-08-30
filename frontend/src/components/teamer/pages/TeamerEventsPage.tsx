@@ -1233,10 +1233,6 @@ const TeamerEventsPage: React.FC = () => {
               activeTab={requestsTab}
               onTabChange={setRequestsTab}
               formatDate={formatRequestDate}
-              getStatusColor={getRequestStatusColor}
-              getStatusText={getRequestStatusText}
-              getTypeIcon={getRequestTypeIcon}
-              getTypeText={getRequestTypeText}
               teamerMode={true}
               headerSlot={
                 <>

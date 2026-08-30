@@ -256,7 +256,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const handleKonfiCreated = async (response: AxiosResponse<KonfiAngelegtAntwort>, konfiData: KonfiFormDaten) => {
     // Automatisch Jahrgangschat erstellen/zuweisen
     if (konfiData.jahrgang_id) {
-      await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
+      await createOrJoinJahrgangChat(konfiData.jahrgang_id);
     }
 
     const tempPassword = response.data.temporaryPassword;
@@ -345,19 +345,21 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     }
   };
 
-  const createOrJoinJahrgangChat = async (jahrgangId: number, konfiId: number) => {
+  const createOrJoinJahrgangChat = async (jahrgangId: number) => {
     try {
       // Finde den Jahrgang-Namen
       const jahrgangResponse = await api.get(`/admin/jahrgaenge/${jahrgangId}`);
       const jahrgangName = jahrgangResponse.data.name;
-      
-      // Erstelle oder finde existierenden Jahrgangschat
+
+      // Legt den Jahrgangschat an, falls es ihn noch nicht gibt, und traegt
+      // in beiden Faellen alle Konfis des Jahrgangs ein - auch die, die
+      // spaeter dazugekommen sind.
       await api.post('/chat/rooms', {
         type: 'jahrgang',
         name: `Jahrgang ${jahrgangName}`,
         jahrgang_id: jahrgangId
       });
-      
+
     } catch (err) {
  console.error('Fehler beim Jahrgangschat:', err);
       // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde
@@ -422,9 +424,6 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           <KonfisView 
             konfis={konfis || []}
             jahrgaenge={jahrgaenge || []}
-            settings={settings || {}}
-            onUpdate={refreshAll}
-            onAddKonfiClick={presentKonfiModal}
             onViewModeChange={setViewMode}
             onSelectKonfi={handleSelectKonfi}
             onDeleteKonfi={handleDeleteKonfi}

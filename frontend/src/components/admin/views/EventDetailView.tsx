@@ -35,6 +35,7 @@ import type { Participant, Unregistration, EventData } from './EventDetailSectio
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -645,6 +646,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       </IonItemSliding>
     );
   };
+
+  // Solange geladen wird, den Spinner zeigen statt ein leeres Geruest mit
+  // Platzhaltertitel - so wie es die Konfi-Ansicht desselben Events macht.
+  if (loading) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>Event Details</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+          <LoadingSpinner message="Event wird geladen..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

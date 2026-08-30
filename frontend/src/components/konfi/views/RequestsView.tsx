@@ -43,10 +43,6 @@ interface RequestsViewProps {
   activeTab: 'all' | 'pending' | 'approved' | 'rejected';
   onTabChange: (tab: 'all' | 'pending' | 'approved' | 'rejected') => void;
   formatDate: (dateString: string) => string;
-  getStatusColor: (status: string) => string;
-  getStatusText: (status: string) => string;
-  getTypeIcon: (type: string) => string;
-  getTypeText: (type: string) => string;
   // Teamer-Aktivitäten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
   teamerMode?: boolean;
@@ -62,10 +58,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   activeTab,
   onTabChange,
   formatDate,
-  getStatusColor,
-  getStatusText,
-  getTypeIcon,
-  getTypeText,
   teamerMode = false,
   headerSlot
 }) => {

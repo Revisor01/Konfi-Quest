@@ -517,7 +517,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {filteredRooms.map((room, index) => {
+                  {filteredRooms.map((room) => {
                     const colorClass = getRoomColorClass(room);
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');

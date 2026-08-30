@@ -459,7 +459,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
-          return res.status(409).json({ error: 'Jahrgangs-Chat existiert bereits' });
+          // Der Raum steht schon: dann ist das hier ein Beitritt, kein Fehler.
+          // Frueher kam an dieser Stelle 409 zurueck, ohne irgendwen einzutragen.
+          // Konfis, die nach dem Anlegen des Jahrgangs dazukamen, landeten
+          // deshalb nie in chat_participants und sahen den Chat nie.
+          const { rows: konfis } = await db.query(
+            `SELECT u.id FROM users u
+               JOIN roles r ON u.role_id = r.id
+               JOIN konfi_profiles kp ON u.id = kp.user_id
+              WHERE r.name = 'konfi' AND kp.jahrgang_id = $1
+                AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+            [jahrgang_id, organizationId]
+          );
+          for (const konfi of konfis) {
+            await db.query(
+              "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi') ON CONFLICT DO NOTHING",
+              [existing.id, konfi.id]
+            );
+          }
+          res.json({ room_id: existing.id, created: false });
+
+          try {
+            const { rows: currentParticipants } = await db.query(
+              'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+              [existing.id]
+            );
+            emitRoomsChanged(currentParticipants);
+          } catch (notifyErr) {
+            console.error('Failed to emit roomsChanged (join jahrgang chat):', notifyErr);
+          }
+          return;
         }
       }
       

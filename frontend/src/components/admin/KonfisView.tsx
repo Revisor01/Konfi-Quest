@@ -34,17 +34,9 @@ interface Jahrgang {
   name: string;
 }
 
-interface Settings {
-  target_gottesdienst?: string;
-  target_gemeinde?: string;
-}
-
 interface KonfisViewProps {
   konfis: Konfi[];
   jahrgaenge: Jahrgang[];
-  settings: Settings;
-  onUpdate: () => void;
-  onAddKonfiClick: () => void;
   onSelectKonfi: (konfi: Konfi) => void;
   onDeleteKonfi: (konfi: Konfi) => void;
   onDeleteTeamer: (teamer: TeamerListenEintrag) => void | Promise<void>;
@@ -70,9 +62,6 @@ interface KonfisViewProps {
 const KonfisView: React.FC<KonfisViewProps> = ({
   konfis,
   jahrgaenge,
-  settings,
-  onUpdate,
-  onAddKonfiClick,
   onSelectKonfi,
   onDeleteKonfi,
   onDeleteTeamer,
@@ -112,7 +101,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
-    setTeamerLoading(true);
     try {
       const response = await api.get('/admin/konfis/teamer');
       setTeamers(response.data || []);
@@ -122,8 +110,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       console.error('Error loading teamers:', err);
       setTeamers([]);
       setError('Teamer:innen konnten nicht geladen werden');
-    } finally {
-      setTeamerLoading(false);
     }
   }, []);
 

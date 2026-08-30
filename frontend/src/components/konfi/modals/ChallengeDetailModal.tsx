@@ -287,22 +287,18 @@ interface ChallengeDetailModalProps {
   onClose: () => void;
   /** Oeffnet das Einreich-Modal (wird von der Seite gesteuert). */
   onSubmit?: (challenge: KonfiChallenge) => void;
-  /** Wird gerufen, wenn sich etwas geändert hat. */
-  onChanged?: () => void;
 }
 
 interface ChallengeDetailContentProps {
   challenge: KonfiChallenge;
   onClose: () => void;
   onSubmit?: (challenge: KonfiChallenge) => void;
-  onChanged?: () => void;
 }
 
 const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   challenge,
   onClose,
-  onSubmit,
-  onChanged
+  onSubmit
 }) => {
   const { setError } = useApp();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
@@ -575,8 +571,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
 const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
   challenge,
   onClose,
-  onSubmit,
-  onChanged
+  onSubmit
 }) => {
   if (!challenge) {
     return (
@@ -606,7 +601,6 @@ const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
       challenge={challenge}
       onClose={onClose}
       onSubmit={onSubmit}
-      onChanged={onChanged}
     />
   );
 };

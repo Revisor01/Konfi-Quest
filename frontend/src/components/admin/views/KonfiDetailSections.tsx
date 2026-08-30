@@ -80,7 +80,6 @@ interface KonfiHeaderCardProps {
   getGemeindePoints: () => number;
   certificates: Array<{ id: number }>;
   teamerEvents: Array<{ id: number }>;
-  activities: Activity[];
 }
 
 export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({

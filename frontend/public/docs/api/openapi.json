@@ -7117,7 +7117,7 @@
           "Chat"
         ],
         "summary": "Chat-Raum erstellen (group/direct/jahrgang)",
-        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt (409, wenn der Jahrgangs-Chat schon existiert). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\n",
+        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt. Existiert der Jahrgangs-Chat schon, ist der Aufruf ein Beitritt: der vorhandene Raum kommt mit created=false zurueck und fehlende Konfis werden nachgetragen (BEHOBEN 30.08.2026 — vorher 409, wodurch spaeter angelegte Konfis nie in den Jahrgangschat kamen). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7162,7 +7162,7 @@
         },
         "responses": {
           "200": {
-            "description": "Raum erstellt",
+            "description": "Raum erstellt (created=true) oder bestehender Jahrgangs-Chat beigetreten (created=false)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7172,8 +7172,7 @@
                       "type": "integer"
                     },
                     "created": {
-                      "type": "boolean",
-                      "const": true
+                      "type": "boolean"
                     }
                   }
                 }
@@ -7186,9 +7185,6 @@
           },
           "403": {
             "description": "Konfi mit type != direct ODER Jahrgang nicht in eigener Org"
-          },
-          "409": {
-            "description": "Jahrgangs-Chat existiert bereits"
           },
           "500": {
             "description": "Datenbankfehler"

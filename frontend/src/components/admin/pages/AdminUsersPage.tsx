@@ -139,7 +139,6 @@ const AdminUsersPage: React.FC = () => {
           <UsersView 
             users={users || []}
             onUpdate={refreshUsers}
-            onAddUserClick={presentUserModal}
             onSelectUser={handleSelectUser}
             onDeleteUser={handleDeleteUser}
             // Befund 16: Die Route /admin/users ist ungegatet. Verwalten darf

@@ -47,8 +47,6 @@ interface Activity {
 
 interface ActivitiesViewProps {
   activities: Activity[];
-  onUpdate: () => void;
-  onAddActivityClick: () => void;
   onSelectActivity: (activity: Activity) => void;
   onDeleteActivity: (activity: Activity) => void;
   canEdit: boolean;
@@ -59,8 +57,6 @@ interface ActivitiesViewProps {
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   activities,
-  onUpdate,
-  onAddActivityClick,
   onSelectActivity,
   onDeleteActivity,
   canEdit,

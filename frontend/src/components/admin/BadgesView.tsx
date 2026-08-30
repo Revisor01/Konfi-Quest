@@ -55,8 +55,6 @@ interface Badge {
 
 interface BadgesViewProps {
   badges: Badge[];
-  onUpdate: () => void;
-  onAddBadgeClick: () => void;
   onSelectBadge: (badge: Badge) => void;
   onDeleteBadge: (badge: Badge) => void;
   targetRole?: 'konfi' | 'teamer';
@@ -65,8 +63,6 @@ interface BadgesViewProps {
 
 const BadgesView: React.FC<BadgesViewProps> = ({
   badges,
-  onUpdate,
-  onAddBadgeClick,
   onSelectBadge,
   onDeleteBadge,
   targetRole = 'konfi',

@@ -13,7 +13,6 @@ type SlidingRef = { close: () => Promise<void> };
 interface UsersViewProps {
   users: AdminUser[];
   onUpdate: () => void;
-  onAddUserClick: () => void;
   onSelectUser: (user: AdminUser) => void;
   onDeleteUser: (user: AdminUser) => void;
   // Befund 16 aus dem Rollen-Bericht (26.08.2026): Der Loesch-Wisch haing
@@ -28,7 +27,6 @@ interface UsersViewProps {
 const UsersView: React.FC<UsersViewProps> = ({
   users,
   onUpdate,
-  onAddUserClick,
   onSelectUser,
   darfVerwalten,
   onDeleteUser

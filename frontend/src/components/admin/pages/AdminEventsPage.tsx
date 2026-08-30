@@ -629,7 +629,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const canCreate = canManageEvents;
   const canEdit = canManageEvents;
   const canDelete = canManageEvents;
-  const canCopy = canCreate;
   const canCancel = canEdit;
 
   const isAntraege = mainSegment === 'antraege';
@@ -702,7 +701,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           ) : (
             <ActivityRequestsView
               requests={requests || []}
-              onUpdate={refreshRequests}
               onSelectRequest={handleSelectRequest}
               onResetRequest={handleResetRequest}
               headerSlot={mainSegmentSlot}
@@ -717,12 +715,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               activeTab === 'vergangen' ? applySearch(filterByJahrgang(getVergangenEvents())) :
               applySearch(filterByJahrgang(getAktuellEvents()))
             }
-            onUpdate={refreshEvents}
-            onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
             selectedEventId={selectedEventId}
             onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
-            onCopyEvent={canCopy ? handleCopyEvent : undefined}
             onCancelEvent={canCancel ? handleCancelEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}

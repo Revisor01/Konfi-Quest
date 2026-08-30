@@ -24,8 +24,14 @@ import {
   IonSpinner
 } from '@ionic/react';
 import {
-  people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, calendar, business, flag
+  people,
+  chatbubbles,
+  star,
+  ellipsisHorizontal,
+  home,
+  flash,
+  calendar,
+  flag
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
@@ -35,8 +41,6 @@ import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { useBadge } from '../../contexts/BadgeContext';
-import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
-import api from '../../services/api';
 import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded

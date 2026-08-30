@@ -102,7 +102,6 @@ interface ChallengesViewProps {
   archive: KonfiChallenge[];
   marks: ChallengeMark[];
   onSelectChallenge: (challenge: KonfiChallenge) => void;
-  onSubmit: (challenge: KonfiChallenge) => void;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Leitungs-Sicht:
   // Verwalten|Mitmachen). Gleiches Muster wie EventsView/RequestsView.
   headerSlot?: React.ReactNode;
@@ -167,7 +166,6 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
   archive,
   marks,
   onSelectChallenge,
-  onSubmit,
   headerSlot
 }) => {
   // Aktive Challenges: die knappste Frist zuerst — was zuerst endet, steht oben.

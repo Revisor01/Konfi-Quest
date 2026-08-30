@@ -401,13 +401,19 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                             </div>
                           </IonItem>
                           <IonItemOptions side="end" className="app-swipe-actions">
+                            {/* Solange verlaengert wird, den Spinner zeigen und
+                                die Aktion sperren - sonst wischt man ein
+                                zweites Mal, weil nichts passiert. */}
                             <IonItemOption
                               onClick={() => { closeOpenSlidingItems(); extendInvite(invite.id); }}
                               aria-label="Einladung verlängern"
                               className="app-swipe-action"
+                              disabled={extendingInvite === invite.id}
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
-                                <IonIcon icon={time} />
+                                {extendingInvite === invite.id
+                                  ? <IonSpinner name="crescent" />
+                                  : <IonIcon icon={time} />}
                               </div>
                             </IonItemOption>
                             <IonItemOption

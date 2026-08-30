@@ -21,7 +21,6 @@ interface EventsViewProps {
   activeTab: 'meine' | 'alle' | 'konfirmation';
   onTabChange: (tab: 'meine' | 'alle' | 'konfirmation') => void;
   onSelectEvent: (event: Event) => void;
-  onUpdate: () => void;
   // Für Card-Modal-Optik (Sheet über der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (für Highlighting).
@@ -36,7 +35,6 @@ const EventsView: React.FC<EventsViewProps> = ({
   activeTab,
   onTabChange,
   onSelectEvent,
-  onUpdate,
   presentingElement,
   selectedEventId,
   headerSlot

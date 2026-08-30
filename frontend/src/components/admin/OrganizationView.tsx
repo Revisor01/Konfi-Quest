@@ -46,7 +46,6 @@ interface Organization {
 interface OrganizationViewProps {
   organizations: Organization[];
   onUpdate: () => void;
-  onAddOrganizationClick: () => void;
   onSelectOrganization: (organization: Organization) => void;
   onDeleteOrganization: (organization: Organization) => void;
 }
@@ -54,7 +53,6 @@ interface OrganizationViewProps {
 const OrganizationView: React.FC<OrganizationViewProps> = ({
   organizations,
   onUpdate,
-  onAddOrganizationClick,
   onSelectOrganization,
   onDeleteOrganization
 }) => {

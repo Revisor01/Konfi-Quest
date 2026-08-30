@@ -29,7 +29,6 @@ import { useApp } from '../../../contexts/AppContext';
 interface UnregisterModalProps {
   eventName: string;
   mandatory?: boolean;
-  onClose: () => void;
   onUnregister: (reason: string) => void;
   dismiss: (data?: string, role?: string) => void;
 }
@@ -37,7 +36,6 @@ interface UnregisterModalProps {
 const UnregisterModal: React.FC<UnregisterModalProps> = ({
   eventName,
   mandatory,
-  onClose,
   onUnregister,
   dismiss
 }) => {

@@ -8,11 +8,8 @@ import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface EventsViewProps {
   events: Event[];
-  onUpdate: () => void;
-  onAddEventClick: () => void;
   onSelectEvent: (event: Event) => void;
   onDeleteEvent?: (event: Event) => void;
-  onCopyEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
   activeTab?: 'aktuell' | 'verbuchen' | 'vergangen';
   onTabChange?: (tab: 'aktuell' | 'verbuchen' | 'vergangen') => void;
@@ -37,11 +34,8 @@ interface EventsViewProps {
 
 const EventsView: React.FC<EventsViewProps> = ({
   events,
-  onUpdate,
-  onAddEventClick,
   onSelectEvent,
   onDeleteEvent,
-  onCopyEvent,
   onCancelEvent,
   activeTab = 'aktuell',
   onTabChange,
