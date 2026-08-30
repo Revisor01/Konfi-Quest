@@ -11,6 +11,7 @@ interface EventsViewProps {
   onSelectEvent: (event: Event) => void;
   onDeleteEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
+  onCopyEvent?: (event: Event) => void;
   activeTab?: 'aktuell' | 'verbuchen' | 'vergangen';
   onTabChange?: (tab: 'aktuell' | 'verbuchen' | 'vergangen') => void;
   eventCounts?: {
@@ -37,6 +38,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onDeleteEvent,
   onCancelEvent,
+  onCopyEvent,
   activeTab = 'aktuell',
   onTabChange,
   eventCounts,

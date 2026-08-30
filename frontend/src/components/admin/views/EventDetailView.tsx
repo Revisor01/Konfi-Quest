@@ -85,7 +85,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -225,6 +225,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         }
       } catch {
         setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      } finally {
+        setLoading(false);
       }
       return;
     }
@@ -242,6 +244,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
     } catch {
       setError('Fehler beim Laden der Event-Daten');
+    } finally {
+      setLoading(false);
     }
   };
 

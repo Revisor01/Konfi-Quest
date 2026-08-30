@@ -82,7 +82,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [bonusEntries, setBonusEntries] = useState<BonusEintrag[]>([]);
   const [eventPoints, setEventPoints] = useState<EventPunkteEintrag[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
   // Fuer das Bearbeiten-Modal: alle Jahrgaenge der Organisation (mit ihren
   // Punktearten, damit die Warnung stimmt) und die eigenen Zuweisungen.
@@ -377,6 +377,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         }
       } catch {
         setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      } finally {
+        setLoading(false);
       }
       return;
     }
@@ -467,6 +469,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       setActivities([...enhancedActivities, ...pendingRequests]);
     } catch {
       setError('Fehler beim Laden der Konfi-Daten');
+    } finally {
+      setLoading(false);
     }
   };
 

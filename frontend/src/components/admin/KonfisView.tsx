@@ -101,6 +101,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
+    setTeamerLoading(true);
     try {
       const response = await api.get('/admin/konfis/teamer');
       setTeamers(response.data || []);
@@ -110,6 +111,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       console.error('Error loading teamers:', err);
       setTeamers([]);
       setError('Teamer:innen konnten nicht geladen werden');
+    } finally {
+      setTeamerLoading(false);
     }
   }, []);
 
