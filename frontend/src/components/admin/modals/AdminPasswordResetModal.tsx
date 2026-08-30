@@ -33,6 +33,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface AdminPasswordResetModalProps {
   adminId: number;
@@ -148,8 +149,8 @@ const AdminPasswordResetModal: React.FC<AdminPasswordResetModalProps> = ({ admin
         await api.put(`/users/${adminId}/reset-password`, { password: newPassword });
         setSuccess('Passwort erfolgreich zurückgesetzt');
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Zurücksetzen des Passworts'));
       }
     });
   };

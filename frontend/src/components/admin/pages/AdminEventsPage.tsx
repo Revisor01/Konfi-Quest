@@ -40,6 +40,22 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { eventEnde } from '../../shared';
+import { fehlerText, fehlerDaten, fehlerStatus } from '../../../utils/fehlerText';
+
+/**
+ * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
+ * Nennt konkret, was beim endgueltigen Löschen verloren geht — die Zahlen
+ * stehen in der zweiten Rueckfrage.
+ */
+interface EventLoeschKonflikt {
+  error?: string;
+  error_code?: string;
+  booking_count?: number;
+  message_count?: number;
+  points_count?: number;
+  points_total?: number;
+  [feld: string]: unknown;
+}
 
 interface ActivityRequest {
   id: number;
@@ -316,7 +332,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Baut aus der 409-Antwort des Backends die konkrete Verlustliste
   // (Anmeldungen, Chat-Nachrichten, vergebene Punkte).
-  const buildVerlustText = (data: any): string => {
+  const buildVerlustText = (data: EventLoeschKonflikt | undefined): string => {
     const teile: string[] = [];
     const bookings = data?.booking_count || 0;
     const messages = data?.message_count || 0;
@@ -349,11 +365,11 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              if (error.response?.status === 409) {
-                confirmForceDelete(event, error.response.data);
+            } catch (error) {
+              if (fehlerStatus(error) === 409) {
+                confirmForceDelete(event, fehlerDaten(error));
               } else {
-                setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+                setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
             }
           }
@@ -363,7 +379,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   // Zweite, deutliche Rueckfrage nach 409: nennt konkret, was verloren geht.
-  const confirmForceDelete = (event: Event, data: any) => {
+  const confirmForceDelete = (event: Event, data: EventLoeschKonflikt | undefined) => {
     const verluste = buildVerlustText(data);
     presentAlert({
       header: 'Wirklich löschen?',
@@ -381,8 +397,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}?force=true`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen des Events'));
             }
           }
         }
@@ -411,12 +427,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshEvents();
             await refreshCancelled();
 
-            const konflikte: { event: Event; data: any }[] = [];
+            const konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[] = [];
             const fehler: PromiseRejectedResult[] = [];
             results.forEach((r, i) => {
               if (r.status === 'rejected') {
-                if ((r as PromiseRejectedResult).reason?.response?.status === 409) {
-                  konflikte.push({ event: seriesEvents[i], data: (r as PromiseRejectedResult).reason.response.data });
+                if (fehlerStatus(r.reason) === 409) {
+                  konflikte.push({ event: seriesEvents[i], data: fehlerDaten(r.reason) });
                 } else {
                   fehler.push(r as PromiseRejectedResult);
                 }
@@ -424,7 +440,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             });
 
             if (fehler.length > 0) {
-              const firstError = fehler[0].reason?.response?.data?.error;
+              const firstError = fehlerDaten(fehler[0].reason)?.error;
               setError(
                 `${fehler.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -441,8 +457,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Zweite Rueckfrage für Serien-Termine, die mit 409 geblockt haben:
   // aufsummierte Verluste über alle betroffenen Termine anzeigen.
-  const confirmForceDeleteSeries = (konflikte: { event: Event; data: any }[]) => {
-    const summe = (feld: string) => konflikte.reduce((s, k) => s + (k.data?.[feld] || 0), 0);
+  const confirmForceDeleteSeries = (konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[]) => {
+    const summe = (feld: keyof EventLoeschKonflikt) =>
+      konflikte.reduce((s, k) => {
+        const wert = k.data?.[feld];
+        return s + (typeof wert === 'number' ? wert : 0);
+      }, 0);
     const verluste = buildVerlustText({
       booking_count: summe('booking_count'),
       message_count: summe('message_count'),
@@ -464,7 +484,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshCancelled();
             const failed = results.filter(r => r.status === 'rejected');
             if (failed.length > 0) {
-              const firstError = (failed[0] as PromiseRejectedResult).reason?.response?.data?.error;
+              const firstError = fehlerDaten((failed[0] as PromiseRejectedResult).reason)?.error;
               setError(
                 `${failed.length} von ${konflikte.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -527,8 +547,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               setSuccess(`Event "${event.name}" wurde abgesagt`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Absagen'));
             }
           }
         },
@@ -605,8 +625,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               // hochzaehlen; Punkte werden zurückgenommen -> Konfi-Liste.
               triggerRefresh('requests');
               triggerRefresh('konfis');
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Zurücksetzen der Aktivität');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücksetzen der Aktivität'));
             }
           }
         }

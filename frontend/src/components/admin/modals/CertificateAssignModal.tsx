@@ -83,6 +83,7 @@ import {
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import { fehlerText } from '../../../utils/fehlerText';
 
 const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
@@ -188,8 +189,8 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
           expiry_date: expiryDate
         });
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Zuweisen');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Zuweisen'));
       }
     });
   };

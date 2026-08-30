@@ -49,6 +49,7 @@ import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Category {
   id: number;
@@ -121,12 +122,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
         onSuccess();
         handleClose();
-      } catch (error: any) {
-        if (error.response?.data?.error) {
-          setError(error.response.data.error);
-        } else {
-          setError('Fehler beim Speichern der Kategorie');
-        }
+      } catch (error) {
+        setError(fehlerText(error, 'Fehler beim Speichern der Kategorie'));
       } finally {
         setLoading(false);
       }
@@ -267,11 +264,11 @@ const AdminCategoriesPage: React.FC = () => {
             try {
               await api.delete(`/admin/categories/${category.id}`);
               refreshCategories();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              const errorMessage = error.response?.data?.error || 'Fehler beim Löschen der Kategorie';
+              const errorMessage = fehlerText(error, 'Fehler beim Löschen der Kategorie');
               setError(errorMessage);
             }
           }

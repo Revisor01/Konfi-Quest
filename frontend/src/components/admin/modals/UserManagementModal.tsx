@@ -32,6 +32,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { AdminUser } from '../../../types/user';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Role {
   id: number;
@@ -270,8 +271,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         setIsDirty(false);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern des Benutzers'));
       }
     });
   };

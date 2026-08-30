@@ -105,6 +105,7 @@ import {
   istNurTeam,
   zeitraumFehler
 } from '../../../utils/challengeForm';
+import { fehlerText } from '../../../utils/fehlerText';
 
 // Icon-Auswahl: identisches Pattern und identischer Vorrat wie BadgeManagementModal,
 // damit Challenge-Stempel und Abzeichen dieselbe Bildsprache haben.
@@ -408,9 +409,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         // (sonst blockiert canDismiss das Schliessen -> doppeltes Anlegen).
         onDirtyChange?.(false);
         onSuccess();
-      } catch (err: any) {
+      } catch (err) {
         // 409 = nach Start gesperrtes Feld geändert (Backend erzwingt Konsens-Integritaet)
-        setError(err.response?.data?.error || 'Fehler beim Speichern der Challenge');
+        setError(fehlerText(err, 'Fehler beim Speichern der Challenge'));
       } finally {
         setLoading(false);
       }

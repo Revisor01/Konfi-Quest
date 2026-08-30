@@ -43,6 +43,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import QRCode from 'qrcode';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Jahrgang {
   id: number;
@@ -156,8 +157,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setQrCodeDataUrl(qrDataUrl);
 
       await refreshInvites(); // Reload to show in existing invites
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Generieren des Codes'));
     } finally {
       setGeneratingCode(false);
     }
@@ -169,8 +170,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
       await refreshInvites();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Verlängern des Codes'));
     } finally {
       setExtendingInvite(null);
     }
@@ -194,8 +195,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 setQrCodeDataUrl(null);
               }
               await refreshInvites();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen'));
             }
           }
         }

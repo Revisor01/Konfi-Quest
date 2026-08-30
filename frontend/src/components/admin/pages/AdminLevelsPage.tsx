@@ -36,6 +36,7 @@ import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { getIconFromString } from '../../../utils/badgeIcons';
+import { fehlerText } from '../../../utils/fehlerText';
 
 
 
@@ -107,11 +108,11 @@ const AdminLevelsPage: React.FC = () => {
             try {
               await api.delete(`/levels/${level.id}`);
               await refreshLevels();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Levels');
+              setError(fehlerText(error, 'Fehler beim Löschen des Levels'));
             }
           }
         }

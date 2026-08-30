@@ -36,6 +36,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as LEVEL_ICONS, getIconFromString } from '../../../utils/badgeIcons';
+import { fehlerText } from '../../../utils/fehlerText';
 
 
 
@@ -150,8 +151,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       }
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Speichern');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern'));
     } finally {
       setLoading(false);
     }

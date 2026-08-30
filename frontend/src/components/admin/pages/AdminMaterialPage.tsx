@@ -50,6 +50,7 @@ import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { fehlerText } from '../../../utils/fehlerText';
 
 
 interface Material {
@@ -120,8 +121,8 @@ const AdminMaterialPage: React.FC = () => {
             try {
               await api.delete(`/material/${material.id}`);
               refreshMaterial();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen'));
             }
           }
         }

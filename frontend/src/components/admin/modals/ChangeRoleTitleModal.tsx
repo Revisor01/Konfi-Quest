@@ -30,6 +30,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface ChangeRoleTitleModalProps {
   onClose: () => void;
@@ -74,8 +75,8 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
           role_title: roleTitle.trim()
         });
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Aktualisieren der Funktionsbeschreibung'));
       }
     });
   };

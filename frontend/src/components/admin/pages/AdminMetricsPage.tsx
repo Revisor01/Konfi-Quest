@@ -19,6 +19,7 @@ import {
 import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerStatus } from '../../../utils/fehlerText';
 
 interface RouteRow {
   route: string;
@@ -142,8 +143,8 @@ const AdminMetricsPage: React.FC = () => {
       setSnap(m.data);
       if (h) setHistory(h.data.snapshots || []);
       setError(null);
-    } catch (e: any) {
-      setError(e?.response?.status === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
+    } catch (e) {
+      setError(fehlerStatus(e) === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
     } finally {
       setLoading(false);
     }

@@ -28,6 +28,7 @@ import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Organization {
   id: number;
@@ -105,12 +106,8 @@ const AdminOrganizationsPage: React.FC = () => {
             try {
               await api.delete(`/organizations/${organization.id}`);
               await loadOrganizations();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen der Organisation');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen der Organisation'));
             }
           }
         }

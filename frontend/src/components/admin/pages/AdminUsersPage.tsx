@@ -26,6 +26,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import UserManagementModal from '../modals/UserManagementModal';
 import { AdminUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerText } from '../../../utils/fehlerText';
 
 const AdminUsersPage: React.FC = () => {
   const { setError, user, isOnline } = useApp();
@@ -78,12 +79,8 @@ const AdminUsersPage: React.FC = () => {
             try {
               await api.delete(`/users/${userToDelete.id}`);
               await refreshUsers();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Benutzers');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen des Benutzers'));
             }
           }
         }

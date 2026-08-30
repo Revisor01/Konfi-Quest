@@ -60,6 +60,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import AdminPasswordResetModal from './AdminPasswordResetModal';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Organization {
   id: number;
@@ -456,8 +457,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
         setIsDirty(false);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern'));
       }
     });
   };
@@ -491,8 +492,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setOrgAdmins([...orgAdmins, response.data]);
       setNewAdminData({ display_name: '', username: '', password: '' });
       setShowAddAdmin(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Administrators');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Hinzufügen des Administrators'));
     } finally {
       setAddingAdmin(false);
     }
@@ -547,8 +548,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setMemberSearch('');
       setMemberSearchResults([]);
       await loadMembers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Mitglied konnte nicht hinzugefügt werden');
+    } catch (err) {
+      setError(fehlerText(err, 'Mitglied konnte nicht hinzugefügt werden'));
     } finally {
       setMemberAddingId(null);
     }
@@ -559,8 +560,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     try {
       await api.delete(`/organizations/${organizationId}/members/${member.id}`);
       await loadMembers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Mitglied konnte nicht entfernt werden');
+    } catch (err) {
+      setError(fehlerText(err, 'Mitglied konnte nicht entfernt werden'));
     }
   };
 

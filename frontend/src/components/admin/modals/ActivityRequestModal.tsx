@@ -32,6 +32,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerText } from '../../../utils/fehlerText';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal außerhalb des Provider-Trees
 // Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
 
@@ -161,8 +162,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           // Parent-Page refresht via onSuccess + useLiveRefresh
           onSuccess();
           onClose();
-        } catch (err: any) {
-          setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`);
+        } catch (err) {
+          setError(fehlerText(err, `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`));
         }
       } else {
         await writeQueue.enqueue({

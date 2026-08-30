@@ -46,6 +46,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as BADGE_ICONS, getIconFromString } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
+import { fehlerText } from '../../../utils/fehlerText';
 
 
 
@@ -354,8 +355,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // Speichern legt das Badge mehrfach an.
       onDirtyChange?.(false);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern des Badges');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Speichern des Badges'));
     } finally {
       setLoading(false);
     }

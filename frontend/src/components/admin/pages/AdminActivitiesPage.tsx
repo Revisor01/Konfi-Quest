@@ -25,6 +25,7 @@ import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ActivityManagementModal from '../modals/ActivityManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Activity {
   id: number;
@@ -86,8 +87,8 @@ const AdminActivitiesPage: React.FC = () => {
             try {
               await api.delete(`/admin/activities/${activity.id}`);
               await refreshActivities();
-            } catch (err: any) {
-              const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
+            } catch (err) {
+              const errorMessage = fehlerText(err, 'Fehler beim Löschen der Aktivität');
               setError(errorMessage);
             }
           }

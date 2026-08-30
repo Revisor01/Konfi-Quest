@@ -19,6 +19,7 @@ import {
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerDaten } from '../../../utils/fehlerText';
 
 interface EventModalProps {
   event?: Event | null;
@@ -294,13 +295,16 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose über
       // canDismiss schließt (sonst blockiert canDismiss -> Modal bleibt offen).
       setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
-    } catch (error: any) {
+    } catch (error) {
       // Validierungsfehler des Backends kommen als { error, details: [...] } —
       // ohne die details liest man nur "Validierungsfehler" und weiß nicht,
       // welches Feld gemeint ist.
-      const data = error.response?.data;
+      const data = fehlerDaten(error);
       const details = Array.isArray(data?.details)
-        ? data.details.map((d: any) => d.message).filter(Boolean).join(', ')
+        ? data.details
+            .map((d) => (typeof d === 'object' && d !== null ? (d as { message?: string }).message : undefined))
+            .filter(Boolean)
+            .join(', ')
         : '';
       if (details) setError(details);
       else if (data?.error) setError(data.error);

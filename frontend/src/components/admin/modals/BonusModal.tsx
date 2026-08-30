@@ -36,6 +36,7 @@ import {
   type Punkteart,
   type PunkteartFlags,
 } from '../../../utils/punktearten';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface BonusModalProps {
   konfiId: number;
@@ -93,9 +94,9 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           await api.post(`/admin/konfis/${konfiId}/bonus-points`, body);
           await onSave();
           handleClose();
-        } catch (err: any) {
+        } catch (err) {
           console.error('Error saving bonus points:', err);
-          setError(err?.response?.data?.error || 'Bonus-Punkte konnten nicht gespeichert werden');
+          setError(fehlerText(err, 'Bonus-Punkte konnten nicht gespeichert werden'));
         }
       } else {
         await writeQueue.enqueue({

@@ -27,6 +27,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Activity {
   id: number;
@@ -243,12 +244,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
       setIsDirty(false);
       onSuccess();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Speichern der Aktivität');
-      }
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern der Aktivität'));
     } finally {
       setLoading(false);
     }

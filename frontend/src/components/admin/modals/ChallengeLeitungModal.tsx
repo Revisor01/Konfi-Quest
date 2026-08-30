@@ -67,6 +67,7 @@ import type {
   KonfiChallenge,
   ChallengeSubmission
 } from '../../../types/challenges';
+import { fehlerText, alsApiFehler } from '../../../utils/fehlerText';
 
 // VEREINTES Challenge-Detail für Leitung und Teamer:innen (11.08.): Verwalten
 // UND Mitmachen in EINEM Modal, statt eines Segments, das die ganze Seite
@@ -302,8 +303,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           konfi_name: row.konfi_name ?? row.display_name ?? null
         }))
       );
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Laden der Beiträge');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Beiträge'));
     } finally {
       setLoading(false);
     }
@@ -451,8 +452,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       });
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Moderation');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Moderation'));
     } finally {
       setBusyId(null);
     }
@@ -480,8 +481,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       await api.delete(`/challenges/admin/submissions/${submission.id}`);
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Löschen des Beitrags');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Löschen des Beitrags'));
     } finally {
       setBusyId(null);
     }
@@ -659,10 +660,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         URL.revokeObjectURL(url);
         setSuccess('Export heruntergeladen');
       }
-    } catch (err: any) {
+    } catch (err) {
       // Abgebrochenes Share-Sheet ist kein Fehler
-      if (err?.message && /cancel/i.test(err.message)) return;
-      setError(err.response?.data?.error || 'Export fehlgeschlagen');
+      const message = alsApiFehler(err).message;
+      if (message && /cancel/i.test(message)) return;
+      setError(fehlerText(err, 'Export fehlgeschlagen'));
     }
   };
 

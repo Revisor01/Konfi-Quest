@@ -25,6 +25,7 @@ import BadgesView from '../BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgeManagementModal from '../modals/BadgeManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface Badge {
   id: number;
@@ -122,12 +123,8 @@ const AdminBadgesPage: React.FC = () => {
             try {
               await api.delete(`/admin/badges/${badge.id}`);
               await refreshBadges();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Badges');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen des Badges'));
             }
           }
         }

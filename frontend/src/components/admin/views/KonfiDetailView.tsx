@@ -44,6 +44,7 @@ import KonfiBadgesSection from './KonfiBadgesSection';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface KonfiDetailViewProps {
   konfiId: number;
@@ -622,8 +623,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             try {
               await api.delete(`/teamer/${konfiId}/certificates/${cert.id}`);
               await loadKonfiData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Entfernen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Entfernen'));
             }
           }
         }
@@ -652,8 +653,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               setSuccess(`${currentKonfi.name} wurde zur Teamer:in befördert`);
               triggerRefresh('konfis');
               onBack();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Befördern');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Befördern'));
             }
           }
         }

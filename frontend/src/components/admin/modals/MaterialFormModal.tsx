@@ -49,6 +49,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { fehlerText } from '../../../utils/fehlerText';
 
 interface MaterialFile {
   id: number;
@@ -303,8 +304,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         }
 
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern'));
       }
     });
   };
