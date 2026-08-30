@@ -52,8 +52,10 @@ import type {
   KonfiChallenge,
   KonfiChallengeDetail,
   ChallengeSubmission,
+  ChallengeGalerieZeile,
   ChallengeMediaType
 } from '../../../types/challenges';
+import { fehlerText } from '../../../utils/fehlerText';
 
 // Detailansicht einer Challenge für Konfis: Beschreibung, oeffentliche Galerie
 // (anonyme Beitraege OHNE Namen — das Backend liefert dort gar keinen Namen mit)
@@ -335,7 +337,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
       // Die Galerie-Query liefert den Namen als display_name (bei anonymen
       // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
       // erscheint JEDER Galerie-Beitrag als "Anonym".
-      const gallery = (data?.gallery || []).map((row: any) => ({
+      const gallery = ((data?.gallery ?? []) as ChallengeGalerieZeile[]).map((row) => ({
         ...row,
         konfi_name: row.konfi_name ?? row.display_name ?? null
       }));
@@ -344,8 +346,8 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           ? { ...data.challenge, gallery, own_submissions: data.own_submissions || [] }
           : null
       );
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Laden der Challenge');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
     } finally {
       setLoading(false);
     }

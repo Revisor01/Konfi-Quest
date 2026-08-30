@@ -43,22 +43,7 @@ import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopover
 
 
 
-interface Badge {
-  id: number;
-  name: string;
-  description?: string;
-  icon: string;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_extra?: string;
-  is_hidden: boolean;
-  is_active: boolean;
-  color?: string;
-  is_earned: boolean;
-  earned_at?: string;
-  progress_points?: number;
-  progress_percentage?: number;
-}
+import type { AnzeigeBadge as Badge } from '../../../types/dashboard';
 
 interface BadgesViewProps {
   badges: Badge[];

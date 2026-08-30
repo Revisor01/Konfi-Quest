@@ -33,15 +33,19 @@ export interface BadgePopoverBadge {
   color?: string;
   criteria_type?: string;
   criteria_value?: number;
-  criteria_extra?: string | Record<string, unknown>;
+  /** In der Datenbank nullbar (custom_badges.criteria_extra). */
+  criteria_extra?: string | Record<string, unknown> | null;
   is_hidden?: boolean;
   /** Konfi-Abzeichen fuehren den Status am Abzeichen selbst … */
   is_earned?: boolean;
   /** … das Teamer-Dashboard unter anderem Namen. */
   earned?: boolean;
-  /** Zwei Namen fuer dasselbe Datum, je nach Endpunkt. */
-  earned_at?: string;
-  awarded_date?: string;
+  /**
+   * Zwei Namen fuer dasselbe Datum, je nach Endpunkt. Null bei einem noch
+   * nicht erreichten Abzeichen (LEFT JOIN auf user_badges).
+   */
+  earned_at?: string | null;
+  awarded_date?: string | null;
   progress_points?: number;
   progress_percentage?: number;
 }

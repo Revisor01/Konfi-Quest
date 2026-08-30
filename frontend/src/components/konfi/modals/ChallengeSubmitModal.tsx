@@ -45,6 +45,7 @@ import { track } from '../../../services/analytics';
 import { compressImage } from '../../../services/mediaCompression';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
+import { fehlerTextOderMessage } from '../../../utils/fehlerText';
 import { AudioPlayer } from '../../shared';
 import type {
   KonfiChallenge,
@@ -323,8 +324,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       recordTimerRef.current = setInterval(() => {
         setRecordSeconds((s) => s + 1);
       }, 1000);
-    } catch (err: any) {
-      const message = String(err?.message || '');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err ?? '');
       if (/permission|denied/i.test(message)) {
         setError('Zugriff aufs Mikrofon wurde nicht erlaubt.');
       } else {
@@ -414,8 +415,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         setSuccess(getSuccessMessage(challenge, isChoice ? consent : 'publish'));
         if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || err.message || 'Fehler beim Einreichen');
+      } catch (err) {
+        setError(fehlerTextOderMessage(err, 'Fehler beim Einreichen'));
       } finally {
         setUploadProgress(0);
       }
