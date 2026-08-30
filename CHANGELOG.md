@@ -19,6 +19,9 @@ Versionsüberschrift.
 - Bei einer beendeten Challenge ohne eigenen Beitrag riet die App, "oben auf
   das Plus" zu tippen — den Knopf gibt es bei beendeten Challenges gar nicht.
   Jetzt steht dort, dass die Challenge beendet ist.
+- Wurde eine Challenge im geöffneten Beitrags-Fenster auf "nur Leitung"
+  umgestellt, blieb die Kachel "Abgelehnt" stehen, obwohl es dann keine
+  Gruppen-Galerie mehr gibt. Die Kachelleiste folgt jetzt der Sichtbarkeit.
 
 ## [2.1.0] - 2026-08-29
 
