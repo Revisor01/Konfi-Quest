@@ -5,7 +5,6 @@ import { personOutline, calendarOutline, starOutline, trophy, checkmark, flash, 
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import type { BadgeUebersicht } from '../../../types/dashboard';
-import { fehlerText } from '../../../utils/fehlerText';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';

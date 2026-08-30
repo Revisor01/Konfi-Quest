@@ -9,11 +9,10 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import ActivityRings from '../../admin/views/ActivityRings';
 import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, eyeOutline, megaphoneOutline, constructOutline, flagOutline } from 'ionicons/icons';
-import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
-import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
+import { AlleAbzeichen, ApiBadge, Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
+import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, DashboardLevel, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import type { KonfiChallenge } from '../../../types/challenges';
-import { fehlerText } from '../../../utils/fehlerText';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';

@@ -33,7 +33,6 @@ import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
-import { fehlerTextOderMessage } from '../../../utils/fehlerText';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;

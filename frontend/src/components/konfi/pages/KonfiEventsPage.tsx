@@ -33,7 +33,6 @@ import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../../shared/WartendeVorgaengeKarte';
 import { removeDeliveredForEvents } from '../../../services/notifications';
 import api from '../../../services/api';
-import { fehlerText } from '../../../utils/fehlerText';
 import EventsView from '../views/EventsView';
 import RequestsView from '../views/RequestsView';
 import QRScannerModal from '../modals/QRScannerModal';

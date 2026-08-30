@@ -51,7 +51,6 @@ import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
 import type { ActionSheetButton } from '@ionic/core';
-import { fehlerText } from '../../../utils/fehlerText';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';

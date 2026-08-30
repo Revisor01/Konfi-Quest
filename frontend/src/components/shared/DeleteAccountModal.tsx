@@ -1,4 +1,4 @@
-import { fehlerText, fehlerStatus } from '../../utils/fehler';
+import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import React, { useState } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import {
@@ -31,7 +31,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import { fehlerStatus, fehlerText } from '../../utils/fehlerText';
 
 interface DeleteAccountModalProps {
   onClose: () => void;

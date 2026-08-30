@@ -5,7 +5,6 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
 import api from './api';
-import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehlerText';
 
 // --- Interfaces ---
 

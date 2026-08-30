@@ -44,7 +44,6 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue, QueueBody } from '../../../services/writeQueue';
 import { AktivitaetMelden } from '../../../types/request';
-import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehlerText';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';

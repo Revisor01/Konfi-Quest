@@ -1,4 +1,4 @@
-import { fehlerText, fehlerStatus } from '../../../utils/fehler';
+import { fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
@@ -34,7 +34,6 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-import { fehlerStatus, fehlerText } from '../../../utils/fehlerText';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 

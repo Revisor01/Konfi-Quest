@@ -46,7 +46,6 @@ import { track } from '../../../services/analytics';
 import { compressImage } from '../../../services/mediaCompression';
 import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { getVisibilityInfo, getSuccessMessage } from '../../../utils/challengeTexte';
-import { fehlerTextOderMessage } from '../../../utils/fehlerText';
 import { AudioPlayer } from '../../shared';
 import type {
   KonfiChallenge,

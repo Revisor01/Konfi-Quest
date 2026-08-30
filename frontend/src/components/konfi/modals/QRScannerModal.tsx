@@ -14,7 +14,6 @@ import { closeOutline, cameraOutline } from 'ionicons/icons';
 import QrScanner from 'qr-scanner';
 import QrScannerWorkerPath from 'qr-scanner/qr-scanner-worker.min.js?url';
 import api from '../../../services/api';
-import { fehlerText } from '../../../utils/fehlerText';
 import { useApp } from '../../../contexts/AppContext';
 
 QrScanner.WORKER_PATH = QrScannerWorkerPath;

@@ -26,7 +26,6 @@ import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOut
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
-import { fehlerText } from '../../../utils/fehlerText';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';

@@ -10,7 +10,6 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
-import { fehlerText } from '../../../utils/fehlerText';
 
 /** Ein Eintrag aus GET /material/by-event/:eventId (material.js). */
 interface EventMaterial {

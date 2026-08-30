@@ -409,7 +409,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {playersToShow.map((item) => {
-            if (item.separator) {
+            if ('separator' in item) {
               return (
                 <div key="separator" style={{
                   display: 'flex',

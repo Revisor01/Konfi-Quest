@@ -6,7 +6,6 @@ import api from '../../services/api';
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { safeUUID } from '../../utils/uuid';
-import { fehlerStatus } from '../../utils/fehlerText';
 import { Message, PollVote } from '../../types/chat';
 
 /**

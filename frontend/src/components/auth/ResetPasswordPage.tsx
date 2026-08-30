@@ -18,7 +18,6 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle, arrowBack } from 'ionicons/icons';
 import api from '../../services/api';
-import { fehlerText } from '../../utils/fehlerText';
 
 const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
   <div style={{

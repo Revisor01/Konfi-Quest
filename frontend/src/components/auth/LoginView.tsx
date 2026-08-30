@@ -18,7 +18,7 @@ import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection, mitBiometrieAnmelden } from '../../services/auth';
 import { biometrieVerfuegbar, istBiometrieAktiv } from '../../services/biometrics';
 import { BaseUser } from '../../types/user';
-import { apiFehler, fehlerStatus, fehlerText, fehlerTextOderMessage } from '../../utils/fehlerText';
+import { fehlerStatus, fehlerText, fehlerTextOderMessage } from '../../utils/fehler';
 
 const LoginView: React.FC = () => {
   const { setUser } = useApp();

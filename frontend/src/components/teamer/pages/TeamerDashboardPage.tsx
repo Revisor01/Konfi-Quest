@@ -32,7 +32,6 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import type { KonfiChallenge } from '../../../types/challenges';
-import { fehlerText } from '../../../utils/fehlerText';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { normalisiereTeamerBadges } from '../teamerBadges';

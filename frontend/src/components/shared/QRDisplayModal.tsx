@@ -14,7 +14,6 @@ import {
 import { closeOutline, printOutline, cloudOfflineOutline } from 'ionicons/icons';
 import QRCode from 'qrcode';
 import api from '../../services/api';
-import { fehlerText } from '../../utils/fehlerText';
 import { useApp } from '../../contexts/AppContext';
 
 interface QRDisplayModalProps {

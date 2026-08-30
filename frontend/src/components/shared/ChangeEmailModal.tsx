@@ -1,4 +1,4 @@
-import { fehlerText, fehlerStatus } from '../../utils/fehler';
+import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import {
@@ -28,7 +28,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import { fehlerStatus, fehlerText } from '../../utils/fehlerText';
 
 // Farbvariante der jeweiligen Rolle — dasselbe Muster wie BiometrieSchalter:
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten, die Seiten geben

@@ -38,7 +38,6 @@ import type {
   ChallengeGalerieZeile,
   ChallengeMediaType
 } from '../../../types/challenges';
-import { fehlerText } from '../../../utils/fehlerText';
 
 // Detailansicht einer Challenge für Konfis: Beschreibung, oeffentliche Galerie
 // (anonyme Beitraege OHNE Namen — das Backend liefert dort gar keinen Namen mit)

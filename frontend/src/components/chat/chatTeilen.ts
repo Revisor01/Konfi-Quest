@@ -3,7 +3,6 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import api from '../../services/api';
-import { fehlerStatus } from '../../utils/fehlerText';
 import { Message } from '../../types/chat';
 
 /**
