@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -219,8 +220,8 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
                 await api.delete(`/users/${teamer.id}`);
                 await refreshKonfis();
                 setSuccess(`Teamer:in "${teamer.display_name || teamer.name}" gelöscht`);
-              } catch (err: any) {
-                setError(err.response?.data?.error || 'Fehler beim Löschen');
+              } catch (err) {
+                setError(fehlerText(err, 'Fehler beim Löschen'));
               } finally {
                 resolve();
               }
@@ -300,8 +301,8 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             try {
               const response = await api.post('/admin/konfis', { ...konfiData, confirm: true });
               await handleKonfiCreated(response, konfiData);
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
             }
           }
         }

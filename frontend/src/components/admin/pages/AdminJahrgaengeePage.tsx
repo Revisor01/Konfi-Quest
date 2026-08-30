@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -203,8 +204,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       setWrappedReleasedAt(new Date().toISOString());
       setSuccess('Wrapped wurde freigegeben und die Konfis wurden benachrichtigt');
       onRefresh?.();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Freigeben von Wrapped');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Freigeben von Wrapped'));
     } finally {
       setWrappedLoading(false);
     }
@@ -217,8 +218,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       await api.delete(`/wrapped/${jahrgang.id}`);
       setWrappedReleasedAt(null);
       onRefresh?.();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Löschen von Wrapped');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Löschen von Wrapped'));
     } finally {
       setWrappedLoading(false);
     }

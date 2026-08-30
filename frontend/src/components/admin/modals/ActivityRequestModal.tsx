@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -161,8 +162,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           // Parent-Page refresht via onSuccess + useLiveRefresh
           onSuccess();
           onClose();
-        } catch (err: any) {
-          setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`);
+        } catch (err) {
+          setError(fehlerText(err, `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`));
         }
       } else {
         await writeQueue.enqueue({

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -271,11 +272,11 @@ const AdminCategoriesPage: React.FC = () => {
             try {
               await api.delete(`/admin/categories/${category.id}`);
               refreshCategories();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              const errorMessage = error.response?.data?.error || 'Fehler beim Löschen der Kategorie';
+              const errorMessage = fehlerText(error, 'Fehler beim Löschen der Kategorie');
               setError(errorMessage);
             }
           }

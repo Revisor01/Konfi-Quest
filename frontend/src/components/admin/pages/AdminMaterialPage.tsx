@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
@@ -120,8 +121,8 @@ const AdminMaterialPage: React.FC = () => {
             try {
               await api.delete(`/material/${material.id}`);
               refreshMaterial();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen'));
             }
           }
         }

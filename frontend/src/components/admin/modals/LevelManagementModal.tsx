@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonHeader,
@@ -150,8 +151,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       }
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Speichern');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern'));
     } finally {
       setLoading(false);
     }

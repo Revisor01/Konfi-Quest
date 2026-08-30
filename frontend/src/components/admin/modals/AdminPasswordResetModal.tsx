@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -148,8 +149,8 @@ const AdminPasswordResetModal: React.FC<AdminPasswordResetModalProps> = ({ admin
         await api.put(`/users/${adminId}/reset-password`, { password: newPassword });
         setSuccess('Passwort erfolgreich zurückgesetzt');
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Zurücksetzen des Passworts'));
       }
     });
   };

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -147,8 +148,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       });
 
       return response.data.filename;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Fehler beim Hochladen des Fotos');
+    } catch (error) {
+      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'));
     }
   };
 

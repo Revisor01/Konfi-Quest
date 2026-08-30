@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import {
   IonPage,
@@ -188,8 +189,8 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
           expiry_date: expiryDate
         });
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Zuweisen');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Zuweisen'));
       }
     });
   };

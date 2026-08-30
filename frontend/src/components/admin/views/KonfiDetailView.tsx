@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
@@ -622,8 +623,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             try {
               await api.delete(`/teamer/${konfiId}/certificates/${cert.id}`);
               await loadKonfiData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Entfernen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Entfernen'));
             }
           }
         }
@@ -652,8 +653,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               setSuccess(`${currentKonfi.name} wurde zur Teamer:in befördert`);
               triggerRefresh('konfis');
               onBack();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Befördern');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Befördern'));
             }
           }
         }

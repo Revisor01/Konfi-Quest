@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   IonHeader,
@@ -302,8 +303,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           konfi_name: row.konfi_name ?? row.display_name ?? null
         }))
       );
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Laden der Beiträge');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Beiträge'));
     } finally {
       setLoading(false);
     }
@@ -459,8 +460,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       });
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Moderation');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Moderation'));
     } finally {
       setBusyId(null);
     }
@@ -488,8 +489,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       await api.delete(`/challenges/admin/submissions/${submission.id}`);
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Löschen des Beitrags');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Löschen des Beitrags'));
     } finally {
       setBusyId(null);
     }

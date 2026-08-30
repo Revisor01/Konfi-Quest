@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -111,11 +112,11 @@ const AdminLevelsPage: React.FC = () => {
             try {
               await api.delete(`/levels/${level.id}`);
               await refreshLevels();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Levels');
+              setError(fehlerText(error, 'Fehler beim Löschen des Levels'));
             }
           }
         }

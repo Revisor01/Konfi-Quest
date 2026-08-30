@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
@@ -187,8 +188,8 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           });
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
-        } catch (err: any) {
-          showError(err.response?.data?.error || 'Der Konfispruch konnte nicht gespeichert werden');
+        } catch (err) {
+          showError(fehlerText(err, 'Der Konfispruch konnte nicht gespeichert werden'));
         }
       });
     }

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -135,8 +136,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
         await refreshEvents();
         triggerRefresh('events');
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler bei der Abmeldung'));
       }
     } else {
       await writeQueue.enqueue({
@@ -163,8 +164,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Wiederanmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Wiederanmeldung'));
     }
   };
 
@@ -205,8 +206,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Abmeldung'));
     }
   };
 
@@ -350,8 +351,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Anmeldung'));
     }
   };
 
