@@ -1,71 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonRefresher,
-  IonRefresherContent,
-  IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonButton,
-  IonList,
-  IonListHeader,
-  IonCard,
-  IonCardContent,
-  IonFab,
-  IonFabButton,
-  IonItem,
-  IonItemGroup,
-  IonInput,
-  IonButtons,
-  IonBackButton,
-  useIonModal,
-  useIonAlert,
-  useIonViewWillEnter
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonFab, IonFabButton, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
-import {
-  calendar,
-  time,
-  location,
-  people,
-  checkmarkCircle,
-  closeCircle,
-  hourglass,
-  calendarOutline,
-  arrowBack,
-  trophy,
-  bagHandle,
-  qrCodeOutline,
-  navigateOutline,
-  informationCircle,
-  informationCircleOutline,
-  closeOutline,
-  pricetag,
-  shieldCheckmark,
-  home,
-  document as documentIcon,
-  attachOutline,
-  search,
-  filterOutline,
-  lockOpenOutline,
-  lockOpen,
-  copy,
-  chatbubbleOutline,
-  personAdd,
-  infinite,
-  add,
-  listOutline,
-  ribbon,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, ribbon, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -77,9 +16,8 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
-import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import QRDisplayModal from '../../shared/QRDisplayModal';

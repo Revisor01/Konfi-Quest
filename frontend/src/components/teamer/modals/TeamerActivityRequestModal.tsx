@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -70,7 +70,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline, user } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const [presentAlert] = useIonAlert();
 
   const { isSubmitting, guard } = useActionGuard();
@@ -236,7 +236,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch (err) {
+          } catch {
             setError('Foto konnte nicht lokal gespeichert werden');
             return;
           }

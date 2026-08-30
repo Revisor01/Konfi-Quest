@@ -22,25 +22,7 @@ import {
   IonSelectOption,
   useIonModal
 } from '@ionic/react';
-import {
-  document as documentIcon,
-  documentOutline,
-  imageOutline,
-  videocamOutline,
-  musicalNotesOutline,
-  attachOutline,
-  calendar,
-  calendarOutline,
-  filterOutline,
-  search as searchIcon,
-  arrowBack,
-  people,
-  person,
-  time,
-  informationCircle,
-  textOutline,
-  create
-} from 'ionicons/icons';
+import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
@@ -90,7 +72,7 @@ interface MaterialDetail {
 
 const TeamerMaterialPage: React.FC = () => {
   const { user, setError } = useApp();
-  const { presentingElement } = useModalPage('teamer-material');
+  useModalPage('teamer-material');
 
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();

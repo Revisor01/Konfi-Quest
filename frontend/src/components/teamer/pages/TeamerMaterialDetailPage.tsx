@@ -17,21 +17,7 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import {
-  document as documentIcon,
-  imageOutline,
-  videocamOutline,
-  musicalNotesOutline,
-  documentOutline,
-  calendar,
-  people,
-  person,
-  time,
-  closeOutline,
-  informationCircle,
-  textOutline,
-  create
-} from 'ionicons/icons';
+import { document as documentIcon, imageOutline, videocamOutline, musicalNotesOutline, documentOutline, calendar, people, person, closeOutline, informationCircle, textOutline, create } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
