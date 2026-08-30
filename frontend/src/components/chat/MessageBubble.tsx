@@ -94,7 +94,6 @@ interface MessageBubbleProps {
   onDeselectMessage: () => void;
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
   onRetry?: (message: Message) => void;
-  onDeleteQueued?: (message: Message) => void;
 }
 
 const formatMessageTime = (dateString: string) => {
@@ -132,8 +131,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onError,
   onDeselectMessage,
   textareaRef,
-  onRetry,
-  onDeleteQueued
+  onRetry
 }) => {
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
 

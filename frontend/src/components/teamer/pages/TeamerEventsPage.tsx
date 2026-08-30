@@ -56,7 +56,6 @@ import {
   infinite,
   add,
   listOutline,
-  ribbon,
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -72,7 +71,6 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
 import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
-import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import QRDisplayModal from '../../shared/QRDisplayModal';
@@ -204,31 +202,6 @@ const TeamerEventsPage: React.FC = () => {
       year: 'numeric'
     });
   };
-
-  const getRequestStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getRequestStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Offen';
-      case 'approved': return 'Verbucht';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Unbekannt';
-    }
-  };
-
-  // RequestsView verlangt diese Props, nutzt sie im teamerMode aber NICHT —
-  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitäten nicht. Deshalb
-  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stünde
-  // hier kein falsches "Gemeinde".
-  const getRequestTypeIcon = (_type: string) => ribbon;
-  const getRequestTypeText = (_type: string) => 'Aktivität';
 
   const getFilteredRequests = () => {
     const allRequests = Array.isArray(requests) ? requests : [];
@@ -1295,10 +1268,6 @@ const TeamerEventsPage: React.FC = () => {
               activeTab={requestsTab}
               onTabChange={setRequestsTab}
               formatDate={formatRequestDate}
-              getStatusColor={getRequestStatusColor}
-              getStatusText={getRequestStatusText}
-              getTypeIcon={getRequestTypeIcon}
-              getTypeText={getRequestTypeText}
               teamerMode={true}
               headerSlot={
                 <>

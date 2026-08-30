@@ -359,7 +359,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       p.id === participant.id ? { ...p, attendance_status: status } : p
     ));
     try {
-      const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
+      await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
       triggerRefresh('events');

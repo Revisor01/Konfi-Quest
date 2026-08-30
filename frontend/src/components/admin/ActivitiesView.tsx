@@ -43,8 +43,6 @@ interface Activity {
 
 interface ActivitiesViewProps {
   activities: Activity[];
-  onUpdate: () => void;
-  onAddActivityClick: () => void;
   onSelectActivity: (activity: Activity) => void;
   onDeleteActivity: (activity: Activity) => void;
   canEdit: boolean;
@@ -55,8 +53,6 @@ interface ActivitiesViewProps {
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   activities,
-  onUpdate,
-  onAddActivityClick,
   onSelectActivity,
   onDeleteActivity,
   canEdit,
@@ -91,27 +87,11 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   };
 
 
-  const getTypeColor = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'primary';
-      case 'gemeinde': return 'primary';
-      default: return 'medium';
-    }
-  };
-
   const getTypeIcon = (type: string | null) => {
     switch (type) {
       case 'gottesdienst': return home;
       case 'gemeinde': return people;
       default: return calendar;
-    }
-  };
-
-  const getTypeText = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'Gottesdienst';
-      case 'gemeinde': return 'Gemeinde';
-      default: return 'Unbekannt';
     }
   };
 

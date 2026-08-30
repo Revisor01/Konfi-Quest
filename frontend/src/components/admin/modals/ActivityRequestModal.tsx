@@ -205,7 +205,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const isPending = request?.status === 'pending';
   const isApproved = request?.status === 'approved';
-  const isRejected = request?.status === 'rejected';
 
   if (!request) {
     return (

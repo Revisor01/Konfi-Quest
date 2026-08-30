@@ -302,22 +302,18 @@ interface ChallengeDetailModalProps {
   onClose: () => void;
   /** Oeffnet das Einreich-Modal (wird von der Seite gesteuert). */
   onSubmit?: (challenge: KonfiChallenge) => void;
-  /** Wird gerufen, wenn sich etwas geändert hat. */
-  onChanged?: () => void;
 }
 
 interface ChallengeDetailContentProps {
   challenge: KonfiChallenge;
   onClose: () => void;
   onSubmit?: (challenge: KonfiChallenge) => void;
-  onChanged?: () => void;
 }
 
 const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   challenge,
   onClose,
-  onSubmit,
-  onChanged
+  onSubmit
 }) => {
   const { setError } = useApp();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
@@ -374,10 +370,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // eigene Reiter, unabhaengig davon, was zuletzt gewaehlt war.
   const effektiverReiter: KonfiReiter = current.visibility === 'private' ? 'meins' : reiter;
   const sichtbareBeitraege = effektiverReiter === 'meins' ? ownSubmissions : gallery;
-
-  // Beendete Challenge ohne eigene Beitraege: der Abschnitt "Deine Beitraege"
-  // fällt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
-  const showOwnSection = isActive || ownSubmissions.length > 0;
 
   // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
@@ -588,8 +580,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
 const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
   challenge,
   onClose,
-  onSubmit,
-  onChanged
+  onSubmit
 }) => {
   if (!challenge) {
     return (
@@ -619,7 +610,6 @@ const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
       challenge={challenge}
       onClose={onClose}
       onSubmit={onSubmit}
-      onChanged={onChanged}
     />
   );
 };

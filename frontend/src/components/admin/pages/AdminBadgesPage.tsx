@@ -195,8 +195,6 @@ const AdminBadgesPage: React.FC = () => {
         ) : (
           <BadgesView
             badges={badges || []}
-            onUpdate={refreshBadges}
-            onAddBadgeClick={presentBadgeModal}
             onSelectBadge={handleSelectBadge}
             onDeleteBadge={handleDeleteBadge}
             targetRole={selectedRole}

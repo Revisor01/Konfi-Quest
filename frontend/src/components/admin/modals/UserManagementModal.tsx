@@ -283,10 +283,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }));
   };
 
-  const getSelectedRole = () => {
-    return roles.find(role => role.id === formData.role_id);
-  };
-
   const getAllowedRoles = () => {
     return roles.filter(role => canAssignRole(role.name));
   };

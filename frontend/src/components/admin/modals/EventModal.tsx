@@ -87,13 +87,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     if (initializedRef.current) setIsDirty(true);
   }, [formData]);
 
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-  };
-
   useEffect(() => {
     loadCategories();
     loadJahrgaenge();
@@ -132,7 +125,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       else setTeamerAccess('normal');
       if (event.has_timeslots) loadTimeslots(event.id);
     } else {
-      const now = new Date();
       const roundToHalfHour = (date: Date) => {
         const rounded = new Date(date);
         const minutes = rounded.getMinutes();

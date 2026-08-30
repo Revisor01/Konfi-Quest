@@ -171,7 +171,6 @@ const AdminOrganizationsPage: React.FC = () => {
             <OrganizationView
               organizations={organizations}
               onUpdate={loadOrganizations}
-              onAddOrganizationClick={presentOrganizationModal}
               onSelectOrganization={handleSelectOrganization}
               onDeleteOrganization={handleDeleteOrganization}
             />

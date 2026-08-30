@@ -189,10 +189,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
-    onClose: () => {
-      dismissUnregisterModal();
-      refreshEvents();
-    },
     onUnregister: handleUnregister,
     dismiss: (data?: string, role?: string) => {
       dismissUnregisterModal(data, role);
@@ -203,9 +199,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [presentOptOutModal, dismissOptOutModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
     mandatory: true,
-    onClose: () => {
-      dismissOptOutModal();
-    },
     onUnregister: handleOptOut,
     dismiss: (data?: string, role?: string) => {
       dismissOptOutModal(data, role);
@@ -214,7 +207,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
     onClose: () => dismissScannerModal(),
-    onSuccess: (eventId: number, eventName: string) => {
+    onSuccess: (_eventId: number, _eventName: string) => {
       dismissScannerModal();
       refreshEvents();
       setSuccess('Erfolgreich eingecheckt!');

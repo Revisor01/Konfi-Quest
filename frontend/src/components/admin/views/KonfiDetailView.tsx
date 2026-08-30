@@ -738,7 +738,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           getGemeindePoints={getGemeindePoints}
           certificates={certificates}
           teamerEvents={teamerEvents}
-          activities={activities}
         />
 
         {/* Punkte-Historie, Aktivitaeten und Anwesenheit haengen an

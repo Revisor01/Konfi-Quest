@@ -160,8 +160,6 @@ const AdminActivitiesPage: React.FC = () => {
         ) : (
           <ActivitiesView
             activities={activities || []}
-            onUpdate={refreshActivities}
-            onAddActivityClick={presentActivityModal}
             onSelectActivity={handleSelectActivity}
             onDeleteActivity={handleDeleteActivity}
             canEdit={canEdit}

@@ -89,7 +89,7 @@ interface MaterialDetail {
 
 const TeamerMaterialPage: React.FC = () => {
   const { user, setError } = useApp();
-  const { presentingElement } = useModalPage('teamer-material');
+  useModalPage('teamer-material');
 
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
@@ -163,14 +163,6 @@ const TeamerMaterialPage: React.FC = () => {
     } finally {
       setDetailLoading(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
   };
 
   const formatDateLong = (dateString: string) => {

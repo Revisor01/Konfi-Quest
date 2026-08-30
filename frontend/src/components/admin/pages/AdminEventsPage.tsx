@@ -473,31 +473,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
-  const handleCopyEvent = (event: Event) => {
-    // Create a copy of the event with modified name and reset dates
-    const eventCopy = {
-      ...event,
-      name: `${event.name} (Kopie)`
-    };
-
-    // Remove properties that shouldn't be copied
-    delete (eventCopy as any).id;
-    delete (eventCopy as any).registered_count;
-    delete (eventCopy as any).registration_status;
-    delete (eventCopy as any).created_at;
-    delete (eventCopy as any).event_date;
-    delete (eventCopy as any).event_end_time;
-    delete (eventCopy as any).registration_opens_at;
-    delete (eventCopy as any).registration_closes_at;
-
-    setEditEvent(eventCopy as Event);
-    presentEventModalHook({
-      presentingElement: presentingElement,
-      canDismiss: eventModalCanDismiss,
-      backdropDismiss: false
-    });
-  };
-
   const handleCancelEvent = async (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
     const eventDate = new Date(event.event_date).toLocaleDateString('de-DE', {
@@ -624,7 +599,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const canCreate = canManageEvents;
   const canEdit = canManageEvents;
   const canDelete = canManageEvents;
-  const canCopy = canCreate;
   const canCancel = canEdit;
 
   const isAntraege = mainSegment === 'antraege';
@@ -697,7 +671,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           ) : (
             <ActivityRequestsView
               requests={requests || []}
-              onUpdate={refreshRequests}
               onSelectRequest={handleSelectRequest}
               onResetRequest={handleResetRequest}
               headerSlot={mainSegmentSlot}
@@ -712,12 +685,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               activeTab === 'vergangen' ? applySearch(filterByJahrgang(getVergangenEvents())) :
               applySearch(filterByJahrgang(getAktuellEvents()))
             }
-            onUpdate={refreshEvents}
-            onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
             selectedEventId={selectedEventId}
             onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
-            onCopyEvent={canCopy ? handleCopyEvent : undefined}
             onCancelEvent={canCancel ? handleCancelEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}

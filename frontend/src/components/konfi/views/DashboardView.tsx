@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonIcon,
-  useIonAlert,
   useIonPopover,
   useIonModal,
   useIonRouter
@@ -181,7 +180,6 @@ interface DashboardViewProps {
 
 const DashboardView: React.FC<DashboardViewProps> = ({
   dashboardData,
-  dailyVerse,
   badgeStats,
   allBadges,
   upcomingEvents,

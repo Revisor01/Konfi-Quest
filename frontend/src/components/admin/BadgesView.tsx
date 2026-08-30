@@ -54,8 +54,6 @@ interface Badge {
 
 interface BadgesViewProps {
   badges: Badge[];
-  onUpdate: () => void;
-  onAddBadgeClick: () => void;
   onSelectBadge: (badge: Badge) => void;
   onDeleteBadge: (badge: Badge) => void;
   targetRole?: 'konfi' | 'teamer';
@@ -64,8 +62,6 @@ interface BadgesViewProps {
 
 const BadgesView: React.FC<BadgesViewProps> = ({
   badges,
-  onUpdate,
-  onAddBadgeClick,
   onSelectBadge,
   onDeleteBadge,
   targetRole = 'konfi',
@@ -122,14 +118,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   const getActiveBadges = () => {
     return badges.filter(badge => badge.is_active && !badge.is_hidden);
-  };
-
-  const getHiddenBadges = () => {
-    return badges.filter(badge => badge.is_hidden);
-  };
-
-  const getInactiveBadges = () => {
-    return badges.filter(badge => !badge.is_active);
   };
 
   const getTotalEarnedCount = () => {
@@ -228,18 +216,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       default:
         return `Wert: ${badge.criteria_value}`;
     }
-  };
-
-  const getBadgeStatusColor = (badge: Badge) => {
-    if (!badge.is_active) return 'danger';
-    if (badge.is_hidden) return 'warning';
-    return 'success';
-  };
-
-  const getBadgeStatusText = (badge: Badge) => {
-    if (!badge.is_active) return 'Inaktiv';
-    if (badge.is_hidden) return 'Versteckt';
-    return 'Aktiv';
   };
 
   return (

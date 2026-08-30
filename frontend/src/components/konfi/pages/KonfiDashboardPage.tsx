@@ -107,16 +107,6 @@ interface AllBadgesData {
   earned: any[];
 }
 
-interface DailyVerse {
-  losungstext: string;
-  losungsvers: string;
-  lehrtext: string;
-  lehrtextvers: string;
-  date?: string;
-  translation?: string;
-  fallback?: boolean;
-  cached?: boolean;
-}
 
 const KonfiDashboardPage: React.FC = () => {
   const { user } = useApp();

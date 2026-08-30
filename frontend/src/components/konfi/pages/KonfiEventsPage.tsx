@@ -23,9 +23,7 @@ import { useLocation } from 'react-router-dom';
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import {
   qrCodeOutline,
-  add,
-  home,
-  people
+  add
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -183,32 +181,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
       month: '2-digit',
       year: 'numeric'
     });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Offen';
-      case 'approved': return 'Verbucht';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Unbekannt';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    return type === 'gottesdienst' ? home : people;
-  };
-
-  const getTypeText = (type: string) => {
-    return type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
   };
 
   const getFilteredRequests = () => {
@@ -413,10 +385,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
               activeTab={requestsTab}
               onTabChange={setRequestsTab}
               formatDate={formatDate}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-              getTypeIcon={getTypeIcon}
-              getTypeText={getTypeText}
               headerSlot={
                 <>
                   {mainSegmentSlot}
@@ -440,7 +408,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
             onTabChange={setActiveTab}
             onSelectEvent={handleSelectEvent}
             selectedEventId={selectedEventId}
-            onUpdate={refresh}
             presentingElement={presentingElement}
             headerSlot={mainSegmentSlot}
           />

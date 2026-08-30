@@ -24,7 +24,6 @@ import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
-import api from '../../services/api';
 import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';

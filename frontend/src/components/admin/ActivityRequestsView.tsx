@@ -46,7 +46,6 @@ interface ActivityRequest {
 
 interface ActivityRequestsViewProps {
   requests: ActivityRequest[];
-  onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
@@ -56,7 +55,6 @@ interface ActivityRequestsViewProps {
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
-  onUpdate,
   onSelectRequest,
   onResetRequest,
   headerSlot

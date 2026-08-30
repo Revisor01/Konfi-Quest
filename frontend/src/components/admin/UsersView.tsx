@@ -37,7 +37,6 @@ import { triggerPullHaptic } from '../../utils/haptics';
 interface UsersViewProps {
   users: AdminUser[];
   onUpdate: () => void;
-  onAddUserClick: () => void;
   onSelectUser: (user: AdminUser) => void;
   onDeleteUser: (user: AdminUser) => void;
   // Befund 16 aus dem Rollen-Bericht (26.08.2026): Der Loesch-Wisch haing
@@ -52,7 +51,6 @@ interface UsersViewProps {
 const UsersView: React.FC<UsersViewProps> = ({
   users,
   onUpdate,
-  onAddUserClick,
   onSelectUser,
   darfVerwalten,
   onDeleteUser
@@ -88,7 +86,6 @@ const UsersView: React.FC<UsersViewProps> = ({
     return result;
   })();
 
-  const getActiveUsers = () => users.filter(user => user.is_active);
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
@@ -101,30 +98,12 @@ const UsersView: React.FC<UsersViewProps> = ({
     }
   };
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName) {
-      case 'org_admin': return 'primary';
-      case 'admin': return 'primary';
-      case 'teamer': return 'warning';
-      default: return 'medium';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
-  };
-
-  const getInitials = (displayName: string) => {
-    return displayName
-      .split(' ')
-      .map(name => name.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
   };
 
   const closeAllSlidingItems = () => {
