@@ -6,10 +6,9 @@ import type { SlideProps } from '../../../types/wrapped';
 
 interface KonfirmationsSlideProps extends SlideProps {
   zeitraumEnde: string;
-  displayName: string;
 }
 
-const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitraumEnde, displayName }) => {
+const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitraumEnde }) => {
   const endeDate = new Date(zeitraumEnde);
   const now = new Date();
   const diffMs = endeDate.getTime() - now.getTime();

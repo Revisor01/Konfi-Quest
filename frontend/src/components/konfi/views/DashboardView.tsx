@@ -182,7 +182,6 @@ interface DashboardViewProps {
 
 const DashboardView: React.FC<DashboardViewProps> = ({
   dashboardData,
-  dailyVerse,
   badgeStats,
   allBadges,
   upcomingEvents,
