@@ -54,9 +54,9 @@ const mockSetPushTokenTimestamp = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../services/tokenStore', () => ({
   getUser: () => mockGetUser(),
   getDeviceId: () => mockGetDeviceId(),
-  setDeviceId: (...args: any[]) => mockSetDeviceId(...args),
+  setDeviceId: (...args: unknown[]) => mockSetDeviceId(...args),
   getPushTokenTimestamp: () => mockGetPushTokenTimestamp(),
-  setPushTokenTimestamp: (...args: any[]) => mockSetPushTokenTimestamp(...args),
+  setPushTokenTimestamp: (...args: unknown[]) => mockSetPushTokenTimestamp(...args),
   getToken: vi.fn().mockReturnValue(null),
   getRefreshToken: vi.fn().mockReturnValue(null),
   getActiveOrgId: vi.fn().mockReturnValue(null),
@@ -81,10 +81,10 @@ const mockQueueGetAll = vi.fn().mockResolvedValue([]);
 
 vi.mock('../../services/writeQueue', () => ({
   writeQueue: {
-    flush: (...args: any[]) => mockQueueFlush(...args),
+    flush: (...args: unknown[]) => mockQueueFlush(...args),
     flushTextOnly: vi.fn().mockResolvedValue({ succeeded: [], failed: [] }),
-    clear: (...args: any[]) => mockQueueClear(...args),
-    getAll: (...args: any[]) => mockQueueGetAll(...args),
+    clear: (...args: unknown[]) => mockQueueClear(...args),
+    getAll: (...args: unknown[]) => mockQueueGetAll(...args),
   },
 }));
 
@@ -309,7 +309,7 @@ describe('AppContext', () => {
       const getCtx = await renderMitContext();
       // Start-Flush aus der Zaehlung nehmen — geprueft wird der switchOrg-Flush
       mockQueueFlush.mockClear();
-      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+      vi.mocked(api.post).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
 
       await act(async () => {
         await getCtx().switchOrg(2);
@@ -324,7 +324,7 @@ describe('AppContext', () => {
 
     it('meldet ehrlich, wenn eine ungesendete Chat-Nachricht verworfen wird', async () => {
       const getCtx = await renderMitContext();
-      (api.post as any).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
+      vi.mocked(api.post).mockResolvedValue({ data: { token: 'neues-token', type: 'admin', is_primary: false } });
       // Nach dem (erfolglosen) Flush liegt noch eine Chat-Nachricht in der Queue
       mockQueueGetAll.mockResolvedValueOnce([
         { id: 'q1', metadata: { type: 'chat', clientId: 'c1', roomId: 1 } },
