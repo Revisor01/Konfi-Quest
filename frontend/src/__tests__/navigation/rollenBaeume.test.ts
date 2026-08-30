@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BAEUME } from '../../navigation/rollenBaeume';
+import { BAEUME, hatLader, ladeRolleVor } from '../../navigation/rollenBaeume';
 import { rollenStart, istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle } from '../../navigation/routes';
 
@@ -130,5 +130,39 @@ describe('Tab-Leiste verstecken', () => {
     for (const rolle of ['admin', 'teamer', 'konfi'] as const) {
       expect(istTabLeisteVersteckt(BAEUME[rolle].home)).toBe(false);
     }
+  });
+});
+
+describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
+  // Seit dem Splitting (30.08.2026) ist jede Seite eine React.lazy-Huelle,
+  // registriert mit ihrem Lade-Thunk. Faellt eine Seite aus der Registrierung
+  // (z.B. jemand importiert sie wieder statisch und reicht die Komponente
+  // direkt hinein), waere sie fuer ladeRolleVor() unsichtbar — und damit
+  // offline nicht vorgeladen.
+  it.each(ROLLEN)('%s: jede Route traegt eine lazy-Seite mit Vorlader', (rolle) => {
+    for (const r of BAEUME[rolle].routes) {
+      expect((r.page as any).$$typeof, `${rolle}: ${r.path} ist nicht lazy`).toBe(Symbol.for('react.lazy'));
+      expect(hatLader(r.page), `${rolle}: ${r.path} ohne Vorlader`).toBe(true);
+    }
+  });
+
+  // ladeRolleVor laedt die Module WIRKLICH — schlaegt ein Import fehl
+  // (Tippfehler im Pfad, kaputter Default-Export), faellt das hier auf und
+  // nicht erst beim Nutzer. Die Zahlen sind die deduplizierten Seiten je
+  // Rolle: teamer hat 11 Routen, aber Badges/Material doppelt verdrahtet.
+  it('konfi: ladeRolleVor laedt alle 8 Seiten-Module', async () => {
+    await expect(ladeRolleVor('konfi')).resolves.toBe(8);
+  });
+
+  it('teamer: ladeRolleVor laedt alle 9 Seiten-Module', async () => {
+    await expect(ladeRolleVor('teamer')).resolves.toBe(9);
+  });
+
+  it('admin: ladeRolleVor laedt alle 21 Seiten-Module', async () => {
+    await expect(ladeRolleVor('admin')).resolves.toBe(21);
+  });
+
+  it('super_admin: ladeRolleVor laedt alle 2 Seiten-Module', async () => {
+    await expect(ladeRolleVor('super_admin')).resolves.toBe(2);
   });
 });

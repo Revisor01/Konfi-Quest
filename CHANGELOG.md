@@ -27,6 +27,13 @@ Versionsüberschrift.
 - Wurde eine Challenge im geöffneten Beitrags-Fenster auf "nur Leitung"
   umgestellt, blieb die Kachel "Abgelehnt" stehen, obwohl es dann keine
   Gruppen-Galerie mehr gibt. Die Kachelleiste folgt jetzt der Sichtbarkeit.
+## [Unreleased] - 2.2.0
+
+### Geändert
+- Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
+  Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
+  restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
+  Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
 
 ## [2.1.0] - 2026-08-29
 

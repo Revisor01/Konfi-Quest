@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
 // react-router nur noch fuer die Routen-Bausteine — der Standort kommt
 // ueber useAppLocation aus navigation/.
 import { Navigate, Route, useParams } from 'react-router-dom';
@@ -20,7 +20,8 @@ import {
   IonCardTitle,
   IonCardContent,
   IonItem,
-  IonBadge
+  IonBadge,
+  IonSpinner
 } from '@ionic/react';
 import {
   people, chatbubbles, star, ellipsisHorizontal,
@@ -29,7 +30,7 @@ import {
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
-import { BAEUME } from '../../navigation/rollenBaeume';
+import { BAEUME, ladeRolleVor } from '../../navigation/rollenBaeume';
 import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -56,6 +57,21 @@ const ParamSeite: React.FC<{
   const router = useIonRouter();
   return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={() => router.goBack()} />;
 };
+
+// Ladezustand, waehrend ein Seiten-Chunk erstmals geladen wird. Bewusst eine
+// leere IonPage mit Spinner: Der IonRouterOutlet behaelt gemountete Seiten im
+// Speicher, und die lazy-Instanzen leben auf Modulebene — beim Tab-WECHSEL
+// zurueck oder nach dem Org-Wechsel-Remount (key=orgVersion) rendert eine
+// bereits geladene Seite synchron, dieser Fallback erscheint dann NICHT mehr.
+const SeiteLaedt: React.FC = () => (
+  <IonPage>
+    <IonContent>
+      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+        <IonSpinner name="crescent" />
+      </div>
+    </IonContent>
+  </IonPage>
+);
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
@@ -146,6 +162,27 @@ const MainTabs: React.FC = () => {
   // useLiveRefresh('badges'). Der Kanal 'badges' bleibt fuer die Listen-Seiten
   // bestehen, der Zaehler haengt aber nicht mehr daran.
 
+  const rolle: Rolle = isSuperAdmin
+    ? 'super_admin'
+    : user?.type === 'admin'
+      ? 'admin'
+      : user?.type === 'teamer'
+        ? 'teamer'
+        : 'konfi';
+
+  // Offline-Versicherung fuers Code-Splitting: Kurz nach dem Start alle
+  // Seiten der eigenen Rolle im Hintergrund nachladen. Einmal importiert,
+  // haelt die Modul-Registry sie im Speicher — ein Tab-Wechsel braucht dann
+  // kein Netz mehr, auch im Browser ohne Service Worker. Die Verzoegerung
+  // laesst den Start-Datenverkehr (Login, Badge-Zaehler) zuerst durch.
+  // Schlaegt das Laden fehl (offline), schluckt ladeRolleVor den Fehler;
+  // die Seite laedt dann eben beim ersten Besuch.
+  useEffect(() => {
+    if (!user) return;
+    const timer = setTimeout(() => { void ladeRolleVor(rolle); }, 2500);
+    return () => clearTimeout(timer);
+  }, [rolle, user?.id]);
+
   if (!user) {
     return null;
   }
@@ -164,13 +201,6 @@ const MainTabs: React.FC = () => {
   // stehende Warnung, im August 2026 mehrfach eingetreten. Jetzt gilt jede
   // Aenderung zwangslaeufig fuer alle drei, und der Test in
   // __tests__/navigation/ iteriert ueber dieselbe Tabelle.
-  const rolle: Rolle = isSuperAdmin
-    ? 'super_admin'
-    : user.type === 'admin'
-      ? 'admin'
-      : user.type === 'teamer'
-        ? 'teamer'
-        : 'konfi';
   const baum = BAEUME[rolle];
   const tabLeisteZeigen = baum.tabs.length > 0 && !istTabLeisteVersteckt(location.pathname);
 
@@ -188,7 +218,11 @@ const MainTabs: React.FC = () => {
         <Route
           key={path}
           path={path}
-          element={param ? <ParamSeite Seite={Seite} prop={propName} param={param} /> : <Seite />}
+          element={
+            <Suspense fallback={<SeiteLaedt />}>
+              {param ? <ParamSeite Seite={Seite} prop={propName} param={param} /> : <Seite />}
+            </Suspense>
+          }
         />
       ))}
       {baum.redirects.map(({ from, to }) => (
