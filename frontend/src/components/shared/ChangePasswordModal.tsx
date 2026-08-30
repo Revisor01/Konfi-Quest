@@ -107,7 +107,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       hasUppercase: /[A-Z]/.test(pw),
       hasLowercase: /[a-z]/.test(pw),
       hasNumber: /[0-9]/.test(pw),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw)
     });
   }, [passwordData.new_password]);
 

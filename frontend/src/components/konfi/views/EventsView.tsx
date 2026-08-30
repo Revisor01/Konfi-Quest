@@ -157,7 +157,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       konfis: 'var(--app-color-konfis)',     // lila (Konfirmation)
       past: '#6c757d',                       // grau (vergangen) — kein Token
     };
-    let statusColor = C.bonus;
+    let statusColor: string;
     if (isCancelled) statusColor = C.danger;
     else if (isMandatory && isOptedOut) statusColor = C.events;
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
@@ -184,7 +184,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else statusColor = C.danger;
 
     // Bestimme Text (Pflicht ist separates Badge, nicht im Status-Text)
-    let statusText = 'Offen';
+    let statusText: string;
     if (isCancelled) statusText = 'Abgesagt';
     else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';

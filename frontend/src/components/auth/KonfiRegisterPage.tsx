@@ -156,7 +156,7 @@ const KonfiRegisterPage: React.FC = () => {
       hasUppercase: /[A-Z]/.test(pw),
       hasLowercase: /[a-z]/.test(pw),
       hasNumber: /[0-9]/.test(pw),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw)
     });
   }, [formData.password]);
 

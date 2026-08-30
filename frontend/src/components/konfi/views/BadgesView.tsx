@@ -81,7 +81,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   // Badges nach Kategorien gruppieren
   const getBadgeCategories = () => {
-    let filtered = badges;
+    let filtered: Badge[];
     switch (selectedFilter) {
       case 'nicht_erhalten':
         filtered = badges.filter(badge => !badge.is_earned);

@@ -57,7 +57,7 @@ export const calculateBadgeProgress = (konfi: Konfi, badge: Badge) => {
   if (!konfi || !badge) return { current: 0, target: badge?.criteria_value || 0, percentage: 0 };
   
   const target = parseInt(badge.criteria_value.toString()) || 0;
-  let current = 0;
+  let current: number;
   
   switch (badge.criteria_type) {
     case 'total_points':

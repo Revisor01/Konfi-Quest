@@ -180,7 +180,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
     return () => {
       Object.values(resolvedUrlsRef.current).forEach((u) => {
         if (u.startsWith('blob:')) {
-          try { URL.revokeObjectURL(u); } catch {}
+          try { URL.revokeObjectURL(u); } catch { /* Freigeben darf scheitern */ }
         }
       });
       resolvedUrlsRef.current = {};

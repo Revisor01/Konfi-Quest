@@ -128,7 +128,6 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     };
     // socketEpoch in den Deps: nach Reconnect-mit-neuem-Token werden die
     // Listener am frischen Socket neu gebunden.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socketEpoch, user?.id]);
 
   // Subscribe function

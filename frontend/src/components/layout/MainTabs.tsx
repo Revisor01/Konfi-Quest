@@ -127,7 +127,7 @@ const MainTabs: React.FC = () => {
                 const reg = register(bar);
                 if (reg && typeof reg.destroy === 'function') {
                   cleanupFns.push(() => {
-                    try { reg.destroy(); } catch {}
+                    try { reg.destroy(); } catch { /* Abraeumen darf scheitern */ }
                   });
                 }
               } catch (e) {
