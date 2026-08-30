@@ -51,7 +51,7 @@ import {
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
@@ -298,7 +298,9 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       // den Konfi-Namen aus display_name normalisieren.
       const raw = Array.isArray(res.data) ? res.data : (res.data?.submissions || []);
       setSubmissions(
-        raw.map((row: any) => ({
+        // display_name ist die Altform des Namensfeldes — deshalb hier
+        // zusaetzlich zum Typ des Beitrags aufgefuehrt.
+        raw.map((row: ChallengeSubmission & { display_name?: string | null }) => ({
           ...row,
           konfi_name: row.konfi_name ?? row.display_name ?? null
         }))
@@ -644,7 +646,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           path: fileName,
           data: text,
           directory: Directory.Cache,
-          encoding: 'utf8' as any
+          encoding: Encoding.UTF8
         });
         const uri = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
         await Share.share({ title: challenge.title, files: [uri.uri] });

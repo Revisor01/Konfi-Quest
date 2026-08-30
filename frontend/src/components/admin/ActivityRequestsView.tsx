@@ -124,7 +124,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
           value={statusFilter}
-          onIonChange={(e) => setStatusFilter(e.detail.value as any)}
+          onIonChange={(e) => setStatusFilter(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
         >
           <IonSegmentButton value="pending">
             <IonLabel>Offen</IonLabel>

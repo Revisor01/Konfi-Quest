@@ -251,7 +251,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         <div className="app-segment-wrapper">
           <IonSegment
             value={activeTab}
-            onIonChange={(e) => onTabChange(e.detail.value as any)}
+            onIonChange={(e) => onTabChange(e.detail.value as 'aktuell' | 'verbuchen' | 'vergangen')}
           >
             <IonSegmentButton value="aktuell">
               <IonLabel>Aktuell</IonLabel>

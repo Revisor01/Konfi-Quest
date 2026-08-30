@@ -413,7 +413,28 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           }
         }
 
-        const orgData: any = {
+        // Die optionalen Felder kommen erst weiter unten dazu: Testphase und
+        // Konfi-Limit nur fuer super_admin, die Admin-Zugangsdaten nur beim
+        // Anlegen einer neuen Organisation.
+        const orgData: {
+          name: string;
+          slug: string;
+          display_name: string;
+          description: string | null;
+          contact_name: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          address: string | null;
+          website_url: string | null;
+          kirchenkreis: string | null;
+          is_active: boolean;
+          trial_ends_at?: string | null;
+          is_trial?: boolean;
+          max_konfis?: number | null;
+          admin_username?: string;
+          admin_password?: string;
+          admin_display_name?: string;
+        } = {
           name: systemName,
           slug: systemName,
           display_name: formData.display_name.trim(),

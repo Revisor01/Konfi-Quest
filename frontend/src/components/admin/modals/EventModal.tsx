@@ -192,7 +192,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   };
 
   const removeTimeslot = (index: number) => { setTimeslots(timeslots.filter((_, i) => i !== index)); };
-  const updateTimeslot = (index: number, field: keyof Timeslot, value: any) => {
+  const updateTimeslot = (index: number, field: keyof Timeslot, value: string | number | boolean) => {
     const updated = [...timeslots]; updated[index] = { ...updated[index], [field]: value }; setTimeslots(updated);
   };
 

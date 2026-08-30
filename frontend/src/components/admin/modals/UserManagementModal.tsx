@@ -232,7 +232,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     await guard(async () => {
       try {
-        const userData: any = {
+        // password wird nur gesetzt, wenn eines eingegeben wurde — deshalb
+        // steht es hier als optionales Feld statt per any.
+        const userData: {
+          username?: string;
+          email: string | null;
+          display_name: string;
+          role_title: string | null;
+          role_id: number;
+          is_active: boolean;
+          password?: string;
+        } = {
           // Leer lassen, wenn der Server ihn erzeugen soll.
           username: nameAutomatisch ? undefined : formData.username.trim(),
           email: formData.email.trim() || null,

@@ -46,6 +46,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as BADGE_ICONS, getIconFromString } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
+import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
 import { fehlerText } from '../../../utils/fehlerText';
 
 
@@ -74,6 +75,30 @@ interface Activity {
 interface Category {
   id: number;
   name: string;
+}
+
+/**
+ * Ein waehlbarer Kriterientyp aus GET /admin/badges/criteria-types
+ * (CRITERIA_TYPES in backend/routes/badges.js): kurze Bezeichnung, ein Satz
+ * dazu und der ausfuehrliche Hilfetext mit Beispiel.
+ */
+interface KriteriumTyp {
+  label: string;
+  description: string;
+  help: string;
+}
+
+/**
+ * Die Zusatzangaben, WIE SIE IM FORMULAR stehen.
+ *
+ * Bewusst nicht BadgeKriteriumExtra: Das Formular arbeitet mit `weeks`,
+ * gespeichert wird daraus `days` (weeks * 7, siehe handleSubmit).
+ */
+interface ExtraKriteriumFormular {
+  activity_id?: number;
+  activity_ids?: number[];
+  required_category?: string;
+  weeks?: number;
 }
 
 interface BadgeManagementModalProps {
@@ -138,10 +163,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // Available data for dropdowns
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [criteriaTypes, setCriteriaTypes] = useState<any>({});
+  const [criteriaTypes, setCriteriaTypes] = useState<Record<string, KriteriumTyp>>({});
 
   // Additional form fields for complex criteria
-  const [extraCriteria, setExtraCriteria] = useState<any>({});
+  const [extraCriteria, setExtraCriteria] = useState<ExtraKriteriumFormular>({});
 
   const isEditMode = !!badgeId;
 
@@ -193,7 +218,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       if (badge) {
         // Parse extra criteria FIRST (kann doppelt escaped sein: "{\"days\":30}")
-        let extra: any = {};
+        let extra: BadgeKriteriumExtra = {};
         try {
           let parsed = badge.criteria_extra;
           if (typeof parsed === 'string') {
@@ -929,7 +954,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         if (value === 'teamer_year' && formData.target_role !== 'teamer') return false;
                         return true;
                       })
-                      .map(([value, type]: [string, any]) => {
+                      .map(([value, type]) => {
                       const isSelected = formData.criteria_type === value;
                       const typColor = getCategoryColor(value);
                       // Remove emojis from label

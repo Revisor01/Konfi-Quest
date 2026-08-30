@@ -45,6 +45,46 @@ export interface AdminUser {
 }
 
 /**
+ * Eine Teamer:in in der Listenansicht (GET /admin/konfis/teamer).
+ *
+ * Achtung auf den Namen: Die Abfrage aliast `u.display_name as name`
+ * (konfi-management.js:116) — in DIESER Antwort gibt es also nur `name`.
+ * `display_name` ist hier optional, weil dieselbe Liste auch aus anderen
+ * Quellen befuellt wird.
+ */
+export interface TeamerListenEintrag {
+  id: number;
+  name: string;
+  display_name?: string;
+  username?: string;
+  teamer_since?: string;
+  jahrgang_name?: string;
+  badge_count?: number;
+  cert_count?: number;
+}
+
+/**
+ * Was das Konfi-Formular beim Anlegen/Bearbeiten abschickt (KonfiModal)
+ * und was POST /admin/konfis erwartet.
+ *
+ * Das Feld heisst `name` — NICHT display_name. Das Backend liest
+ * `const { name, jahrgang_id } = req.body` (konfi-management.js:154).
+ */
+export interface KonfiFormDaten {
+  name: string;
+  jahrgang_id: number;
+  /** Nur beim zweiten Anlauf nach der Limit-Rueckfrage ("Trotzdem anlegen"). */
+  confirm?: boolean;
+}
+
+/** Antwort von POST /admin/konfis. */
+export interface KonfiAngelegtAntwort {
+  id: number;
+  /** Einmalpasswort — nur direkt beim Anlegen in der Antwort enthalten. */
+  temporaryPassword?: string;
+}
+
+/**
  * Ein Bonuspunkt-Eintrag einer Konfi
  * (GET /admin/konfis/:id -> bonusPoints, backend/routes/konfi-management.js).
  *

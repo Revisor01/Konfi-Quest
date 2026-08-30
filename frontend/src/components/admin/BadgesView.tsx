@@ -35,6 +35,7 @@ import { star } from 'ionicons/icons';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
+import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
 
 
 
@@ -159,7 +160,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   };
 
   const getCriteriaDetail = (badge: Badge): string | null => {
-    let extra: any = {};
+    let extra: BadgeKriteriumExtra = {};
     try {
       if (badge.criteria_extra) {
         let parsed = typeof badge.criteria_extra === 'string'

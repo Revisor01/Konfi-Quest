@@ -104,7 +104,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { fehlerText } from '../../../utils/fehlerText';
 
-const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
+const CERT_ICONS: Record<string, { icon: string; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
   trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
   medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },
@@ -162,6 +162,10 @@ const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> 
 const getIconFromString = (iconName: string) => {
   return CERT_ICONS[iconName]?.icon || ribbon;
 };
+
+/** Die Icons der Auswahl, nach Kategorie gebuendelt (nur fuer die Anzeige). */
+type IconEintrag = { key: string; data: (typeof CERT_ICONS)[string] };
+type IconGruppe = { category: string; icons: IconEintrag[] };
 
 interface CertificateType {
   id: number;
@@ -314,21 +318,21 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
                           </IonLabel>
                         </IonItem>
                         <div slot="content" style={{ padding: '16px' }}>
-                          {Object.entries(CERT_ICONS).reduce((acc, [key, data]) => {
-                            const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                          {Object.entries(CERT_ICONS).reduce((acc: IconGruppe[], [key, data]) => {
+                            const categoryIndex = acc.findIndex((group) => group.category === data.category);
                             if (categoryIndex === -1) {
                               acc.push({ category: data.category, icons: [{ key, data }] });
                             } else {
                               acc[categoryIndex].icons.push({ key, data });
                             }
                             return acc;
-                          }, [] as any[]).map((group: any) => (
+                          }, []).map((group) => (
                             <div key={group.category} style={{ marginBottom: '16px' }}>
                               <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
                                 {group.category}
                               </IonText>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
-                                {group.icons.map(({ key, data }: any) => (
+                                {group.icons.map(({ key, data }) => (
                                   <div
                                     key={key}
                                     onClick={() => setIcon(key)}

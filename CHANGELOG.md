@@ -14,6 +14,8 @@ Versionsüberschrift.
   zuverlässig nach, ob nur dieser oder die ganze Serie gelöscht werden soll.
 - Bei den Bonuspunkten einer Konfi steht jetzt der Name der Person, die sie
   vergeben hat. Bisher stand dort immer nur „Admin".
+- Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
+  Bisher stand dort „Konfi \"undefined\" erstellt".
 
 ## [2.1.0] - 2026-08-29
 

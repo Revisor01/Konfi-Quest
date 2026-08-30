@@ -23,6 +23,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import type { Participant } from '../../../types/event';
 
 interface Konfi {
   id: number;
@@ -32,14 +33,9 @@ interface Konfi {
   role_name?: string;
 }
 
-interface Participant {
-  id: number;
-  user_id?: number;
-  participant_name: string;
-  jahrgang_name?: string;
-  created_at: string;
-  status?: 'confirmed' | 'pending';
-}
+// Participant kommt zentral aus types/event. Die fruehere Fassung hier kannte
+// nur 'confirmed' | 'pending' — dieselbe Antwort liefert aber auch 'waitlist'
+// und 'opted_out' (backend/routes/events/lesen.js).
 
 interface Timeslot {
   id: number;
@@ -127,8 +123,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         api.get('/admin/konfis'),
         api.get('/admin/konfis/teamer')
       ]);
-      const allKonfis = konfisRes.data.map((k: any) => ({ ...k, role_name: 'konfi' }));
-      const teamerUsers = teamerRes.data.map((u: any) => ({ ...u, role_name: 'teamer' }));
+      const allKonfis = konfisRes.data.map((k: Konfi) => ({ ...k, role_name: 'konfi' }));
+      const teamerUsers = teamerRes.data.map((u: Konfi) => ({ ...u, role_name: 'teamer' }));
       const allPersons = [...allKonfis, ...teamerUsers];
 
       // Aktuelle Participants nutzen (Parameter oder State)
@@ -219,7 +215,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       try {
         // Add each selected konfi as participant
         for (const konfiId of selectedKonfis) {
-          const requestData: any = {
+          // timeslot_id kommt nur dazu, wenn der Termin Zeitfenster hat.
+          const requestData: { user_id: number; status: 'confirmed'; timeslot_id?: number } = {
             user_id: konfiId,
             status: 'confirmed' // Admin fügt direkt als bestätigt hinzu (übersteuert Kapazität)
           };

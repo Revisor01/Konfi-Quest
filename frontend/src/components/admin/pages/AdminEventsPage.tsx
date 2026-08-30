@@ -498,21 +498,26 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleCopyEvent = (event: Event) => {
-    // Create a copy of the event with modified name and reset dates
-    const eventCopy = {
-      ...event,
-      name: `${event.name} (Kopie)`
-    };
+    // Kopie ohne die Felder, die zum urspruenglichen Termin gehoeren: id und
+    // created_at (neuer Datensatz), die Zaehler/Status der Anmeldungen sowie
+    // alle Zeitpunkte — die setzt das Formular neu.
+    //
+    // Die Feldnamen stehen als keyof Event da: Ein Tippfehler faellt beim
+    // Uebersetzen auf. Das fruehere `delete (eventCopy as any).feld` haette
+    // ihn stillschweigend verschluckt.
+    const nichtUebernehmen: (keyof Event)[] = [
+      'id',
+      'registered_count',
+      'registration_status',
+      'created_at',
+      'event_date',
+      'event_end_time',
+      'registration_opens_at',
+      'registration_closes_at'
+    ];
 
-    // Remove properties that shouldn't be copied
-    delete (eventCopy as any).id;
-    delete (eventCopy as any).registered_count;
-    delete (eventCopy as any).registration_status;
-    delete (eventCopy as any).created_at;
-    delete (eventCopy as any).event_date;
-    delete (eventCopy as any).event_end_time;
-    delete (eventCopy as any).registration_opens_at;
-    delete (eventCopy as any).registration_closes_at;
+    const eventCopy: Partial<Event> = { ...event, name: `${event.name} (Kopie)` };
+    for (const feld of nichtUebernehmen) delete eventCopy[feld];
 
     setEditEvent(eventCopy as Event);
     presentEventModalHook({

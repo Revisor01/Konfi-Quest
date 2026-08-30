@@ -197,7 +197,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     '--bar-background-active': 'var(--app-color-bonus)',
                     '--knob-background': 'var(--app-color-bonus)',
                     '--pin-background': 'var(--app-color-bonus)',
-                  } as any}
+                  } as React.CSSProperties}
                 />
                 <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
               </div>
