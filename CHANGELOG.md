@@ -7,6 +7,14 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Sonstiges
+- Der Dialog zum Anlegen eines Chats lädt beim Öffnen eine Abfrage weniger.
+  Sie diente einer Doppelprüfung, die nie greifen konnte; wer jemanden
+  anschreibt, mit dem schon ein Chat besteht, landet wie bisher direkt in
+  diesem Chat.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151
