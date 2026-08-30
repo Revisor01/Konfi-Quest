@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
 import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp, getActiveOrgId, setActiveOrgId, setToken, getToken } from '../services/tokenStore';
@@ -567,8 +568,9 @@ useEffect(() => {
     return;
   }
 
-  const handleNativeFCMToken = (event: any) => {
-    const token = event.detail;
+  // Eigenes Fenster-Ereignis der nativen Bruecke; der Token steht in detail.
+  const handleNativeFCMToken = (event: Event) => {
+    const token = (event as CustomEvent<string>).detail;
 
     if (token && token.length > 100) {
       // ANTI-SPAM für native Events verwenden
@@ -640,7 +642,7 @@ useEffect(() => {
       }
     };
 
-    let stateChangeListener: any = null;
+    let stateChangeListener: PluginListenerHandle | null = null;
 
     // Setup single listener for app state changes
     const setupListener = async () => {

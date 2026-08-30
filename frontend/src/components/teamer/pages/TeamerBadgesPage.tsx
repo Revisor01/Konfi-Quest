@@ -63,7 +63,7 @@ const TeamerBadgesPage: React.FC = () => {
     async () => {
       const res = await api.get('/teamer/badges');
       // Beide Antwortformen lesen — siehe teamerBadges.ts.
-      return normalisiereTeamerBadges<TeamerBadgeAPI>(res.data, res.headers as any);
+      return normalisiereTeamerBadges<TeamerBadgeAPI>(res.data, res.headers as unknown as Record<string, unknown>);
     },
     { ttl: CACHE_TTL.BADGES }
   );

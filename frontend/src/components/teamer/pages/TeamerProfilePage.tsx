@@ -44,6 +44,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { fehlerText } from '../../../utils/fehlerText';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -136,8 +137,8 @@ const TeamerProfilePage: React.FC = () => {
     try {
       await api.put('/teamer/bible-translation', { translation });
       refresh();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }
   };
 
@@ -372,7 +373,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentRoleTitleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -399,7 +400,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentEmailModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -426,7 +427,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentPasswordModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -451,7 +452,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentBibleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -479,7 +480,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={itemStyle as any}
+                  style={itemStyle as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">

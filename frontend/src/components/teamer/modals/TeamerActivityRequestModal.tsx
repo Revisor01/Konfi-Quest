@@ -41,7 +41,9 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
+import { writeQueue, QueueBody } from '../../../services/writeQueue';
+import { AktivitaetMelden } from '../../../types/request';
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehlerText';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';
@@ -123,8 +125,8 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
         setPhotoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(prepared);
-    } catch (err: any) {
-      setError(err?.message || 'Foto konnte nicht verarbeitet werden');
+    } catch (err) {
+      setError(fehlerTextOderMessage(err, 'Foto konnte nicht verarbeitet werden'));
     }
   };
 
@@ -150,8 +152,8 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
       });
 
       return response.data.filename;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Fehler beim Hochladen des Fotos');
+    } catch (error) {
+      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'), { cause: error });
     }
   };
 
@@ -191,7 +193,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             photoFilename = await uploadPhoto();
           }
 
-          const requestData: any = {
+          const requestData: AktivitaetMelden = {
             activity_id: parseInt(formData.activity_id),
             description: formData.description.trim(),
             requested_date: formData.requested_date,
@@ -203,15 +205,15 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
-        } catch (error: any) {
-          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen der Aktivität');
+        } catch (error) {
+          setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
         } finally {
           setUploadProgress(0);
         }
       } else {
         // Offline-Pfad: Queue-Fallback
         let hasFileUpload = false;
-        const queueBody: any = {
+        const queueBody: QueueBody & AktivitaetMelden = {
           activity_id: parseInt(formData.activity_id),
           description: formData.description.trim(),
           requested_date: formData.requested_date,

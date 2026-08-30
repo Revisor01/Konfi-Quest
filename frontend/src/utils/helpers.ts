@@ -115,29 +115,33 @@ export const filterByJahrgang = <T extends { jahrgang?: string }>(items: T[], se
   return items.filter(item => item.jahrgang === selectedJahrgang);
 };
 
-export const filterBySearchTerm = <T extends Record<string, any>>(
-  items: T[], 
-  searchTerm: string, 
+export const filterBySearchTerm = <T>(
+  items: T[],
+  searchTerm: string,
   searchFields: string[] = ['name']
 ): T[] => {
   if (!searchTerm) return items;
-  
+
   const lowerSearch = searchTerm.toLowerCase();
-  return items.filter(item => 
-    searchFields.some(field => 
-      item[field]?.toLowerCase().includes(lowerSearch)
-    )
+  return items.filter(item =>
+    searchFields.some(field => {
+      // Der Aufrufer gibt die Feldnamen als Strings mit; welche Felder T hat,
+      // ist hier nicht bekannt. Deshalb wird der Wert gelesen und eingeengt,
+      // statt den Typparameter zu verschaerfen.
+      const wert = (item as Record<string, unknown>)[field];
+      return typeof wert === 'string' && wert.toLowerCase().includes(lowerSearch);
+    })
   );
 };
 
-export const sortByDate = <T extends Record<string, any>>(
-  items: T[], 
-  field: string = 'created_at', 
+export const sortByDate = <T>(
+  items: T[],
+  field: string = 'created_at',
   ascending: boolean = false
 ): T[] => {
   return [...items].sort((a, b) => {
-    const dateA = new Date(a[field]);
-    const dateB = new Date(b[field]);
+    const dateA = new Date(String((a as Record<string, unknown>)[field] ?? ''));
+    const dateB = new Date(String((b as Record<string, unknown>)[field] ?? ''));
     return ascending ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
   });
 };

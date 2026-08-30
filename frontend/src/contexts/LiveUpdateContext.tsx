@@ -30,7 +30,9 @@ export interface LiveUpdateEvent {
   action: 'refresh' | 'update' | 'delete' | 'create' | 'earned' | 'submission_update' | 'challenge_update';
   targetUserId?: number;      // Fuer welchen User
   targetUserType?: string;    // 'konfi' | 'admin'
-  data?: any;                 // Optionale Daten
+  // Optionale Nutzdaten des Ereignisses. Der Inhalt haengt am type; die
+  // Empfaenger lesen ihn gezielt und muessen ihn selbst eingrenzen.
+  data?: unknown;
 }
 
 interface LiveUpdateContextType {
