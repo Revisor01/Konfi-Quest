@@ -15,7 +15,7 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('@ionic/react', () => ({
-  IonIcon: (props: any) => <span data-testid="icon" data-icon={String(props.icon)} />,
+  IonIcon: (props: { icon?: unknown }) => <span data-testid="icon" data-icon={String(props.icon)} />,
 }));
 
 vi.mock('../../utils/badgeIcons', () => ({
