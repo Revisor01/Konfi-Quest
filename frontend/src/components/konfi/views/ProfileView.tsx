@@ -1,44 +1,7 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
-import {
-  IonButton,
-  IonButtons,
-  IonCard,
-  IonCardContent,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonPage,
-  IonProgressBar,
-  IonTitle,
-  IonToolbar,
-  useIonModal,
-  useIonAlert
-} from '@ionic/react';
-import {
-  personOutline,
-  calendarOutline,
-  starOutline,
-  trophy,
-  checkmark,
-  flash,
-  logOutOutline,
-  trashOutline,
-  rocket,
-  keyOutline,
-  bookOutline,
-  locationOutline,
-  mailOutline,
-  timeOutline,
-  compassOutline,
-  imagesOutline,
-  sparklesOutline,
-  chevronForwardOutline
-} from 'ionicons/icons';
+import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader, IonProgressBar, useIonModal, useIonAlert } from '@ionic/react';
+import { personOutline, calendarOutline, starOutline, trophy, checkmark, flash, logOutOutline, trashOutline, rocket, keyOutline, bookOutline, locationOutline, mailOutline, timeOutline, compassOutline, imagesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';

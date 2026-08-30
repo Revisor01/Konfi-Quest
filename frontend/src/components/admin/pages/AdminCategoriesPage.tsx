@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -26,16 +25,7 @@ import {
   IonTextarea,
   IonSpinner
 } from '@ionic/react';
-import {
-  add,
-  pricetag,
-  checkmarkOutline,
-  closeOutline,
-  arrowBack,
-  trash,
-  informationCircleOutline,
-  pricetagOutline
-} from 'ionicons/icons';
+import { add, pricetag, checkmarkOutline, closeOutline, arrowBack, trash, pricetagOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';

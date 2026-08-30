@@ -1,32 +1,11 @@
 import { fehlerText, fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonRefresher,
-  IonRefresherContent,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonList,
-  IonCard,
-  IonCardContent,
-  useIonModal,
-  useIonActionSheet,
-  useIonAlert,
-  useIonRouter
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
+import { add, ban } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -129,6 +108,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // --- Aktivitäten-State ---
+  const [, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem

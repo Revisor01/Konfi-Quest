@@ -1,46 +1,7 @@
-import React, { useState } from 'react';
-import {
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonItemGroup,
-  IonSegment,
-  IonSegmentButton,
-  IonSelect,
-  IonSelectOption,
-  IonList,
-  IonListHeader,
-  IonCard,
-  IonCardContent,
-  useIonModal
-} from '@ionic/react';
-import {
-  people,
-  peopleOutline,
-  calendar,
-  time,
-  location,
-  copy,
-  ban,
-  trash,
-  trophy,
-  listOutline,
-  calendarOutline,
-  shieldCheckmark,
-  bagHandle,
-  attachOutline,
-  filterOutline,
-  flame,
-  search
-} from 'ionicons/icons';
-import { useApp } from '../../contexts/AppContext';
-import { filterBySearchTerm } from '../../utils/helpers';
-import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
+import React, { useRef } from 'react';
+import { IonIcon, IonItem, IonLabel, IonInput, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonList, IonListHeader, useIonModal } from '@ionic/react';
+import { people, calendar, time, location, copy, ban, trash, trophy, listOutline, calendarOutline, bagHandle, attachOutline, filterOutline, search } from 'ionicons/icons';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';

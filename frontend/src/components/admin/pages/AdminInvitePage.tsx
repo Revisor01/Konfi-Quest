@@ -100,6 +100,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [, setExtendingInvite] = useState<number | null>(null);
   const [initialQrShown, setInitialQrShown] = useState(false);
 
   // Initialen Jahrgang und QR-Code setzen wenn Daten geladen
@@ -232,7 +233,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     try {
       await navigator.clipboard.writeText(registrationUrl);
       setSuccess('Link kopiert');
-    } catch (error) {
+    } catch {
       setError('Fehler beim Kopieren');
     }
   };
@@ -250,7 +251,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
           text: `Registriere dich für ${jahrgangName} bei Konfi Quest!`,
           url: registrationUrl
         });
-      } catch (error) {
+      } catch {
         // User cancelled share
       }
     } else {

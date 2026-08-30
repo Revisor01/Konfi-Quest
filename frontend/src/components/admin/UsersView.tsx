@@ -1,37 +1,6 @@
 import React, { useState, useRef } from 'react';
-import {
-  IonIcon,
-  IonItem,
-  IonItemGroup,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonInput,
-  IonSegment,
-  IonSegmentButton,
-  IonCard,
-  IonCardContent,
-  IonRefresher,
-  IonRefresherContent
-} from '@ionic/react';
-import {
-  trash,
-  people,
-  person,
-  personOutline,
-  shield,
-  createOutline,
-  at,
-  school,
-  time,
-  briefcase,
-  filterOutline,
-  peopleOutline,
-  search
-} from 'ionicons/icons';
+import { IonIcon, IonItem, IonItemGroup, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonSegment, IonSegmentButton, IonRefresher, IonRefresherContent } from '@ionic/react';
+import { trash, people, person, personOutline, shield, at, school, time, briefcase, filterOutline, peopleOutline, search } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';

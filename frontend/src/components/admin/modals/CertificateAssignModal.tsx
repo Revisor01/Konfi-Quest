@@ -1,29 +1,6 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  IonList,
-  IonListHeader,
-  IonLabel,
-  IonCard,
-  IonCardContent,
-  IonItem,
-  IonRadioGroup,
-  IonRadio,
-  IonInput,
-  IonDatetimeButton,
-  IonDatetime,
-  IonModal,
-  IonSpinner,
-  IonRange
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonList, IonListHeader, IonLabel, IonCard, IonCardContent, IonDatetimeButton, IonDatetime, IonModal, IonSpinner, IonRange } from '@ionic/react';
 import {
   closeOutline,
   checkmarkOutline,

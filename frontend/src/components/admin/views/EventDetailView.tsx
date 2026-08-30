@@ -123,6 +123,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
+  const [, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -179,6 +180,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     eventName: eventData?.name || '',
     eventDate: eventData?.event_date || '',
     onClose: () => dismissQRDisplayModal()
+  });
+
+  // Participant Management Modal
+  const [, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    onClose: () => dismissParticipantModalHook(),
+    onSuccess: () => {
+      dismissParticipantModalHook();
+      loadEventData();
+    },
+    dismiss: () => dismissParticipantModalHook()
   });
 
   // Teamer Modal (filterRole: 'teamer')
@@ -266,7 +278,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       } catch {
         setEventMaterials([]);
       }
-    } catch (error) {
+    } catch {
       setError('Fehler beim Laden der Event-Daten');
     }
   };
@@ -360,7 +372,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         attendance_status: status
       });
       triggerRefresh('events');
-    } catch (error) {
+    } catch {
       setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
       ));

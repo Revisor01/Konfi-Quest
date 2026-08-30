@@ -1,5 +1,4 @@
-import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -237,7 +236,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch (err) {
+          } catch {
             setError('Foto konnte nicht lokal gespeichert werden');
             return;
           }

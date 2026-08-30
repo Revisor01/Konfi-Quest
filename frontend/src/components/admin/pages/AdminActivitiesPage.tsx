@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,

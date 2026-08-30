@@ -121,6 +121,7 @@ interface DailyVerse {
 const KonfiDashboardPage: React.FC = () => {
   const { user } = useApp();
   const router = useIonRouter();
+  const [] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
 
   // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte

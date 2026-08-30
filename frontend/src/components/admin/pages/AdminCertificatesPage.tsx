@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -28,68 +27,7 @@ import {
   useIonAlert,
   useIonModal
 } from '@ionic/react';
-import {
-  add,
-  ribbon,
-  ribbonOutline,
-  checkmarkOutline,
-  closeOutline,
-  arrowBack,
-  trash,
-  createOutline,
-  trophy,
-  medal,
-  star,
-  checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
-  sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  calendar,
-  today,
-  time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  home,
-  business,
-  location,
-  navigate,
-  compass,
-  pin,
-  flag,
-  informationCircle,
-  helpCircle,
-  alertCircle,
-  hammer,
-  chevronDownOutline
-} from 'ionicons/icons';
+import { add, ribbon, ribbonOutline, checkmarkOutline, closeOutline, arrowBack, trash, trophy, medal, star, checkmarkCircle, diamond, shield, flame, flash, rocket, sparkles, thumbsUp, heart, people, personAdd, chatbubbles, gift, book, school, construct, brush, colorPalette, sunny, moon, leaf, rose, calendar, today, time, timer, stopwatch, restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon, home, business, location, navigate, compass, pin, flag, informationCircle, helpCircle, alertCircle, hammer, chevronDownOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';

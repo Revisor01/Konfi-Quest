@@ -65,6 +65,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [bonusEntries, setBonusEntries] = useState<any[]>([]);
   const [eventPoints, setEventPoints] = useState<any[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
+  const [, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
   // Fuer das Bearbeiten-Modal: alle Jahrgaenge der Organisation (mit ihren
   // Punktearten, damit die Warnung stimmt) und die eigenen Zuweisungen.
@@ -415,14 +416,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       try {
         const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
         setEventPoints(eventPointsRes.data || []);
-      } catch (eventPointsError) {
+      } catch {
         setEventPoints([]);
       }
 
       try {
         const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
         setAttendanceStats(attendanceRes.data);
-      } catch (attendanceError) {
+      } catch {
         setAttendanceStats(null);
       }
 
@@ -447,7 +448,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         }));
 
       setActivities([...enhancedActivities, ...pendingRequests]);
-    } catch (err) {
+    } catch {
       setError('Fehler beim Laden der Konfi-Daten');
     }
   };
@@ -511,7 +512,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
               await loadKonfiData();
               triggerRefresh('konfis');
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen der Aktivität');
             }
           }
@@ -535,7 +536,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
               await loadKonfiData();
               triggerRefresh('konfis');
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen der Bonuspunkte');
             }
           }
@@ -565,7 +566,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         ]
       });
       triggerRefresh('konfis');
-    } catch (err) {
+    } catch {
       setError('Fehler beim Zurücksetzen des Passworts');
     }
   };
@@ -587,7 +588,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         presentPhotoModalHook({
           presentingElement: presentingElement || undefined
         });
-      } catch (error) {
+      } catch {
         setError('Foto konnte nicht geladen werden');
       }
     }

@@ -22,14 +22,7 @@ import {
   IonAccordionGroup,
   IonRange
 } from '@ionic/react';
-import {
-  checkmarkOutline,
-  closeOutline,
-  create,
-  trophy,
-  pin,
-  chevronDownOutline
-} from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, chevronDownOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';

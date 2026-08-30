@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -18,17 +18,7 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import {
-  personOutline,
-  keyOutline,
-  mailOutline,
-  arrowBack,
-  briefcaseOutline,
-  settingsOutline,
-  calendarOutline,
-  trashOutline,
-  imagesOutline
-} from 'ionicons/icons';
+import { keyOutline, mailOutline, arrowBack, briefcaseOutline, settingsOutline, calendarOutline, trashOutline, imagesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -68,7 +58,7 @@ const AdminProfilePage: React.FC = () => {
           await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
-      } catch (err) {
+      } catch {
         // Profile bereits via refreshProfile aktualisiert
       }
     },

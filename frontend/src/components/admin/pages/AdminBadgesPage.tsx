@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -57,6 +56,7 @@ const AdminBadgesPage: React.FC = () => {
   );
 
   // Modal state
+  const [, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge

@@ -58,6 +58,7 @@ interface PointEntry {
 const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint, profileTotals }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
+  const [, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
 
   // Enabled-Flags mit Fallback (Abwaertskompatibilitaet)
   const gottesdienstEnabled = pointConfig?.gottesdienst_enabled !== false;

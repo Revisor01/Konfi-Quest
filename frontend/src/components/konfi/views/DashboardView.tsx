@@ -8,37 +8,9 @@ import {
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import ActivityRings from '../../admin/views/ActivityRings';
-import {
-  calendar,
-  location,
-  eyeOff,
-  helpCircle,
-  chevronForward,
-  time,
-  timeOutline,
-  eyeOutline,
-  megaphoneOutline,
-  constructOutline,
-  flagOutline
-} from 'ionicons/icons';
+import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, eyeOutline, megaphoneOutline, constructOutline, flagOutline } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
-import {
-  getIconFromString,
-  LevelPopoverContent,
-  DashboardBadgePopoverContent,
-  LevelPopoverData,
-  getGreeting,
-  getFirstName,
-  getInitials,
-  formatTimeUntil,
-  formatEventTime,
-  formatEventDate,
-  getBadgeColor,
-  EventCard,
-  RankingSection,
-  LevelIconsRow,
-  LevelProgress
-} from './DashboardSections';
+import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';

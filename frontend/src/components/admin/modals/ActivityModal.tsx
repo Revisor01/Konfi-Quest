@@ -1,29 +1,7 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonList,
-  IonListHeader,
-  IonIcon,
-  IonTextarea,
-  IonCard,
-  IonCardContent,
-  IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
-  IonModal,
-  useIonAlert
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonItem, IonLabel, IonList, IonListHeader, IonIcon, IonTextarea, IonCard, IonCardContent, IonSpinner, IonDatetime, IonDatetimeButton, IonModal, useIonAlert } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag, ribbon } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';

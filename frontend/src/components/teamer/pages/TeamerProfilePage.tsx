@@ -22,26 +22,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import {
-  mailOutline,
-  keyOutline,
-  briefcaseOutline,
-  calendarOutline,
-  settingsOutline,
-  trophy,
-  logOutOutline,
-  trashOutline,
-  ribbon,
-  schoolOutline,
-  timeOutline,
-  arrowBack,
-  imagesOutline,
-  bookOutline,
-  compassOutline,
-  sparklesOutline,
-  chevronForwardOutline,
-  document as documentIcon
-} from 'ionicons/icons';
+import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, arrowBack, imagesOutline, bookOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';

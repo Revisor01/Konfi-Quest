@@ -1,37 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemGroup,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonItem,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
-  IonSegment,
-  IonSegmentButton,
-  IonSpinner
-} from '@ionic/react';
-import {
-  trash,
-  swapVertical,
-  star,
-  calendar,
-  people,
-  peopleOutline,
-  ribbonOutline,
-  filterOutline,
-  search,
-  calendarOutline,
-  ribbon,
-  documentOutline
-} from 'ionicons/icons';
+import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton } from '@ionic/react';
+import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
@@ -116,7 +85,29 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   const [teamers, setTeamers] = useState<any[]>([]);
-  const [teamerLoading, setTeamerLoading] = useState(false);
+  const [, setTeamerLoading] = useState(false);
+  // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
+  const [, setKonfiLimit] = useState<number | null>(null);
+
+  // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
+  useEffect(() => {
+    if (!user?.organization_id) return;
+    let cancelled = false;
+    const loadLimit = async () => {
+      try {
+        const response = await api.get(`/organizations/${user.organization_id}`);
+        if (!cancelled) {
+          const mk = response.data?.max_konfis;
+          setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
+        }
+      } catch {
+        if (!cancelled) setKonfiLimit(null);
+      }
+    };
+    loadLimit();
+    return () => { cancelled = true; };
+  }, [user?.organization_id]);
+
   // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
     setTeamerLoading(true);

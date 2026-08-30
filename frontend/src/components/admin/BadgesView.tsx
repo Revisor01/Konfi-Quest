@@ -31,7 +31,6 @@ import api from '../../services/api';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 
-import { star } from 'ionicons/icons';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
