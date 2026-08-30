@@ -1,52 +1,6 @@
 import React from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItem,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonIcon,
-  IonButton,
-  IonInput,
-  IonDatetimeButton,
-  IonDatetime,
-  IonModal
-} from '@ionic/react';
-import {
-  trophy,
-  flash,
-  calendar,
-  school,
-  add,
-  time,
-  gift,
-  trash,
-  image,
-  podium,
-  personOutline,
-  ribbon,
-  documentOutline,
-  calendarOutline,
-  timeOutline,
-  starOutline,
-  flashOutline,
-  giftOutline,
-  cloudOfflineOutline,
-  chevronDown,
-  chevronUp,
-  bookOutline,
-  locationOutline,
-  book,
-  documentText,
-  chevronForward,
-  checkmarkCircle,
-  closeCircle,
-  alertCircle
-} from 'ionicons/icons';
+import { IonCard, IonCardContent, IonLabel, IonList, IonListHeader, IonItem, IonItemSliding, IonItemOptions, IonItemOption, IonIcon, IonButton, IonDatetimeButton, IonDatetime, IonModal } from '@ionic/react';
+import { trophy, flash, calendar, school, add, time, gift, trash, image, podium, personOutline, ribbon, documentOutline, calendarOutline, timeOutline, starOutline, flashOutline, giftOutline, cloudOfflineOutline, chevronDown, chevronUp, book, documentText, chevronForward, checkmarkCircle, closeCircle, alertCircle } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 import { EmptyState } from '../../shared';
 import { getIconFromString } from '../../../utils/badgeIcons';

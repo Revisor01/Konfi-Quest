@@ -92,7 +92,7 @@ interface MaterialFormModalProps {
 }
 
 const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose, onSuccess }) => {
-  const { setError, setSuccess, isOnline } = useApp();
+  const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -22,7 +22,7 @@ import {
   IonReorder,
   IonReorderGroup
 } from '@ionic/react';
-import { arrowBack, appsOutline, reorderThreeOutline } from 'ionicons/icons';
+import { arrowBack, appsOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -84,7 +84,7 @@ const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 
 const AdminDashboardSettingsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setError } = useApp();
   const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({

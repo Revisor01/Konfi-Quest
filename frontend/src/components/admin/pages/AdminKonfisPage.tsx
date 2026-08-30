@@ -77,7 +77,7 @@ interface AdminKonfisPageProps {
 const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, selectedKonfiId }) => {
   const { setSuccess, setError, user, isOnline } = useApp();
   const router = useIonRouter();
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
+  const { pageRef, presentingElement } = useModalPage('admin-konfis');
   // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
   // der Landing-Page für Admins/Org-Admins) — bzw. für Bestandsnutzer die
   // Neuigkeiten-Karte "Was ist neu in Version 2.0". Der Walkthrough öffnet
@@ -112,14 +112,14 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   );
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge, refreshLive: refreshJahrgaengeLive } = useOfflineQuery<Jahrgang[]>(
+  const { data: jahrgaenge, refreshLive: refreshJahrgaengeLive } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
   // Offline-Query: Settings
-  const { data: settings, refresh: refreshSettings, refreshLive: refreshSettingsLive } = useOfflineQuery<Settings>(
+  const { data: settings, refreshLive: refreshSettingsLive } = useOfflineQuery<Settings>(
     'admin:settings:' + user?.organization_id,
     async () => { const res = await api.get('/settings'); return res.data; },
     { ttl: CACHE_TTL.SETTINGS }
@@ -192,7 +192,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             try {
               await api.delete(`/admin/konfis/${konfi.id}`);
               await refreshKonfis();
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen');
             }
           }

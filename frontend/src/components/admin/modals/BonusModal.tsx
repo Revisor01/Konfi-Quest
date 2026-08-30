@@ -51,7 +51,7 @@ interface BonusModalProps {
 }
 
 const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss, punkteartFlags }) => {
-  const { isOnline, setError } = useApp();
+  const { setError } = useApp();
   const handleClose = () => {
     if (dismiss) {
       dismiss();

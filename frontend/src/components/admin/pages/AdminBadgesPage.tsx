@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -56,7 +56,7 @@ const AdminBadgesPage: React.FC = () => {
   );
 
   // Modal state
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const [, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge

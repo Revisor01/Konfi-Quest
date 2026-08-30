@@ -1,28 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonList,
-  IonListHeader,
-  IonIcon,
-  IonTextarea,
-  IonCard,
-  IonCardContent,
-  IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
-  IonModal,
-  useIonAlert
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonItem, IonLabel, IonList, IonListHeader, IonIcon, IonTextarea, IonCard, IonCardContent, IonSpinner, IonDatetime, IonDatetimeButton, IonModal, useIonAlert } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag, ribbon } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -55,7 +33,7 @@ interface ActivityModalProps {
 }
 
 const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole, punkteartFlags }) => {
-  const { isOnline, setError } = useApp();
+  const { setError } = useApp();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');

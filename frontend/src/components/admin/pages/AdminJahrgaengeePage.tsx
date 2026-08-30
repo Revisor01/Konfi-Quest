@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -447,7 +447,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 };
 
 const AdminJahrgaengeePage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
+  const { pageRef, presentingElement } = useModalPage('admin-jahrgaenge');
   const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Jahrgänge

@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
-  IonItem, IonLabel, IonInput, IonDatetime, IonIcon, IonSpinner,
-  IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal,
-  IonDatetimeButton, IonRange
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonDatetime, IonIcon, IonSpinner, IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal, IonDatetimeButton, IonRange } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, time, calendar } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -31,7 +26,7 @@ interface EventModalProps {
 }
 
 const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);

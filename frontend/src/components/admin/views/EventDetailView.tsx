@@ -117,7 +117,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -177,7 +177,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Participant Management Modal
-  const [presentParticipantModalHook, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
+  const [, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
     onClose: () => dismissParticipantModalHook(),
     onSuccess: () => {
@@ -277,7 +277,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       } catch {
         setEventMaterials([]);
       }
-    } catch (error) {
+    } catch {
       setError('Fehler beim Laden der Event-Daten');
     } finally {
       setLoading(false);
@@ -373,7 +373,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         attendance_status: status
       });
       triggerRefresh('events');
-    } catch (error) {
+    } catch {
       setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
       ));

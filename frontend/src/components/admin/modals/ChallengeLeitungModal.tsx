@@ -26,29 +26,7 @@ import {
   useIonActionSheet,
   useIonModal
 } from '@ionic/react';
-import {
-  closeOutline,
-  createOutline,
-  flag,
-  shareOutline,
-  addOutline,
-  personOutline,
-  checkmarkCircleOutline,
-  eyeOffOutline,
-  eyeOutline,
-  documentTextOutline,
-  linkOutline,
-  imageOutline,
-  micOutline,
-  videocamOutline,
-  albumsOutline,
-  timeOutline,
-  checkmarkOutline,
-  lockClosedOutline,
-  removeCircleOutline,
-  chatbubbleEllipsesOutline,
-  trashOutline
-} from 'ionicons/icons';
+import { closeOutline, createOutline, flag, shareOutline, addOutline, personOutline, checkmarkCircleOutline, eyeOffOutline, eyeOutline, documentTextOutline, linkOutline, imageOutline, micOutline, videocamOutline, albumsOutline, timeOutline, checkmarkOutline, lockClosedOutline, removeCircleOutline, trashOutline } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';

@@ -1,22 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonInput,
-  IonItemGroup,
-  IonSelect,
-  IonSelectOption,
-  IonRefresher,
-  IonRefresherContent
-} from '@ionic/react';
+import { IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonItemGroup, IonSelect, IonSelectOption, IonRefresher, IonRefresherContent } from '@ionic/react';
 import {
   trash,
   business,

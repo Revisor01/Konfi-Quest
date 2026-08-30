@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -25,16 +25,7 @@ import {
   IonTextarea,
   IonSpinner
 } from '@ionic/react';
-import {
-  add,
-  pricetag,
-  checkmarkOutline,
-  closeOutline,
-  arrowBack,
-  trash,
-  informationCircleOutline,
-  pricetagOutline
-} from 'ionicons/icons';
+import { add, pricetag, checkmarkOutline, closeOutline, arrowBack, trash, pricetagOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -222,8 +213,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { pageRef, presentingElement } = useModalPage('admin-categories');
+  const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Categories
   const { data: categories, loading, refresh: refreshCategories, refreshLive: refreshCategoriesLive } = useOfflineQuery<Category[]>(

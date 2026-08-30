@@ -21,14 +21,7 @@ import {
   IonAccordionGroup,
   IonRange
 } from '@ionic/react';
-import {
-  checkmarkOutline,
-  closeOutline,
-  create,
-  trophy,
-  pin,
-  chevronDownOutline
-} from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, chevronDownOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -67,7 +60,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       onClose();
     }
   };
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const [formData, setFormData] = useState<Level>({
     name: '',
     title: '',

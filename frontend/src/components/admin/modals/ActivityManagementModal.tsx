@@ -1,26 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonButton,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonIcon,
-  IonSpinner,
-  IonList,
-  IonListHeader,
-  IonCard,
-  IonCardContent,
-  IonRange,
-  IonModal,
-  useIonAlert
-} from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag, checkmarkCircle, peopleOutline } from 'ionicons/icons';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonIcon, IonSpinner, IonList, IonListHeader, IonCard, IonCardContent, IonRange, useIonAlert } from '@ionic/react';
+import { checkmarkOutline, closeOutline, create, pricetag, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -65,7 +45,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   onSuccess,
   dismiss
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);

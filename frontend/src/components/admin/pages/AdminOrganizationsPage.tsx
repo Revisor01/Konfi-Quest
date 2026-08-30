@@ -62,7 +62,7 @@ const AdminOrganizationsPage: React.FC = () => {
   const organizations = organizationsData ?? [];
 
   // Modal state
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [, setSelectedOrganization] = useState<Organization | null>(null);
   const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge

@@ -1,36 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemGroup,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonItem,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
-  IonSegment,
-  IonSegmentButton
-} from '@ionic/react';
-import {
-  trash,
-  swapVertical,
-  star,
-  calendar,
-  people,
-  peopleOutline,
-  ribbonOutline,
-  filterOutline,
-  search,
-  calendarOutline,
-  ribbon,
-  documentOutline
-} from 'ionicons/icons';
+import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton } from '@ionic/react';
+import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
@@ -110,9 +80,9 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
   const [teamers, setTeamers] = useState<any[]>([]);
-  const [teamerLoading, setTeamerLoading] = useState(false);
+  const [, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
+  const [, setKonfiLimit] = useState<number | null>(null);
 
   // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
   useEffect(() => {
@@ -125,7 +95,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           const mk = response.data?.max_konfis;
           setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) setKonfiLimit(null);
       }
     };

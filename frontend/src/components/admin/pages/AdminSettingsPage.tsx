@@ -17,28 +17,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
-import {
-  people,
-  shield,
-  business,
-  pricetag,
-  school,
-  person,
-  trophy,
-  ribbon,
-  logOut,
-  flash,
-  notifications,
-  qrCode,
-  appsOutline,
-  pulseOutline,
-  informationCircleOutline,
-  schoolOutline,
-  compassOutline,
-  sparklesOutline,
-  chevronForwardOutline,
-  document as documentIcon
-} from 'ionicons/icons';
+import { people, shield, business, pricetag, school, person, trophy, ribbon, logOut, flash, notifications, qrCode, appsOutline, pulseOutline, informationCircleOutline, schoolOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';

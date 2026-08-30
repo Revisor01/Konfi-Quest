@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -39,7 +39,7 @@ const AdminUsersPage: React.FC = () => {
   );
   
   // Modal state
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
