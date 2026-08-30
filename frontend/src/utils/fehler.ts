@@ -32,6 +32,23 @@ export function fehlerText(err: unknown, fallback: string): string {
 }
 
 /**
+ * Wie fehlerText, faellt aber vor dem Fallback noch auf `err.message`
+ * zurueck (bisheriges Muster der Upload-Pfade:
+ * `err.response?.data?.error || err.message || fallback`).
+ */
+export function fehlerTextOderMessage(err: unknown, fallback: string): string {
+  const serverfehler = alsObjekt(err)?.response?.data?.error;
+  if (typeof serverfehler === 'string' && serverfehler) {
+    return serverfehler;
+  }
+  const message = (alsObjekt(err) as { message?: unknown } | null)?.message;
+  if (typeof message === 'string' && message) {
+    return message;
+  }
+  return fallback;
+}
+
+/**
  * HTTP-Status aus `err.response.status`, sonst undefined
  * (auch bei Netzwerkfehlern ohne Response).
  */

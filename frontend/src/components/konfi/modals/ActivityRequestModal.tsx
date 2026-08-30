@@ -1,4 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -121,8 +121,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         setPhotoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(prepared);
-    } catch (err: any) {
-      setError(err?.message || 'Foto konnte nicht verarbeitet werden');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Foto konnte nicht verarbeitet werden');
     }
   };
 
@@ -201,8 +201,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
-        } catch (error: any) {
-          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen der Aktivität');
+        } catch (error) {
+          setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
         } finally {
           setUploadProgress(0);
         }

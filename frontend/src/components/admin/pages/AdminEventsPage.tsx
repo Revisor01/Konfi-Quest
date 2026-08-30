@@ -1,4 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerText, fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
@@ -350,11 +350,11 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              if (error.response?.status === 409) {
-                confirmForceDelete(event, error.response.data);
+            } catch (error) {
+              if (fehlerStatus(error) === 409) {
+                confirmForceDelete(event, (error as { response: { data: unknown } }).response.data);
               } else {
-                setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+                setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
             }
           }

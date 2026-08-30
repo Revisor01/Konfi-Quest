@@ -1,3 +1,4 @@
+import { fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -142,8 +143,8 @@ const AdminMetricsPage: React.FC = () => {
       setSnap(m.data);
       if (h) setHistory(h.data.snapshots || []);
       setError(null);
-    } catch (e: any) {
-      setError(e?.response?.status === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
+    } catch (e) {
+      setError(fehlerStatus(e) === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
     } finally {
       setLoading(false);
     }

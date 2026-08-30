@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { fehlerText, fehlerStatus, istNetzwerkfehler } from '../../utils/fehler';
+import {
+  fehlerText,
+  fehlerTextOderMessage,
+  fehlerStatus,
+  istNetzwerkfehler,
+} from '../../utils/fehler';
 
 /** Nachbau eines axios-Fehlers, wie ihn die Catch-Blöcke bisher gesehen haben. */
 const axiosFehler = (data: unknown, status = 400) => ({
@@ -40,6 +45,29 @@ describe('fehlerText', () => {
     expect(fehlerText(null, 'Fallback')).toBe('Fallback');
     expect(fehlerText(undefined, 'Fallback')).toBe('Fallback');
     expect(fehlerText(42, 'Fallback')).toBe('Fallback');
+  });
+});
+
+describe('fehlerTextOderMessage', () => {
+  it('bevorzugt die Server-Meldung', () => {
+    const err = axiosFehler({ error: 'Datei zu groß' }, 413);
+    expect(fehlerTextOderMessage(err, 'Fallback')).toBe('Datei zu groß');
+  });
+
+  it('nimmt ohne Server-Meldung err.message', () => {
+    const err = axiosFehler({}, 500);
+    expect(fehlerTextOderMessage(err, 'Fallback')).toBe(
+      'Request failed with status code 500'
+    );
+    expect(fehlerTextOderMessage(new Error('kaputt'), 'Fallback')).toBe('kaputt');
+  });
+
+  it('faellt ohne beides auf den Fallback zurueck', () => {
+    expect(fehlerTextOderMessage({}, 'Unbekannter Fehler')).toBe('Unbekannter Fehler');
+    expect(fehlerTextOderMessage(null, 'Unbekannter Fehler')).toBe('Unbekannter Fehler');
+    expect(fehlerTextOderMessage(new Error(''), 'Unbekannter Fehler')).toBe(
+      'Unbekannter Fehler'
+    );
   });
 });
 

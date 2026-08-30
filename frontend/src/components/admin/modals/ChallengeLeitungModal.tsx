@@ -668,10 +668,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         URL.revokeObjectURL(url);
         setSuccess('Export heruntergeladen');
       }
-    } catch (err: any) {
+    } catch (err) {
       // Abgebrochenes Share-Sheet ist kein Fehler
-      if (err?.message && /cancel/i.test(err.message)) return;
-      setError(err.response?.data?.error || 'Export fehlgeschlagen');
+      if (err instanceof Error && err.message && /cancel/i.test(err.message)) return;
+      setError(fehlerText(err, 'Export fehlgeschlagen'));
     }
   };
 

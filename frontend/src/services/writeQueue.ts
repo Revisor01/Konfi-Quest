@@ -1,4 +1,5 @@
 import { Preferences } from '@capacitor/preferences';
+import { fehlerStatus, fehlerTextOderMessage } from '../utils/fehler';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
@@ -513,10 +514,10 @@ async function flush(): Promise<FlushResult> {
         result.succeeded.push(item);
         items.shift();
         await _save(items);
-      } catch (err: any) {
+      } catch (err) {
         if (zwischenzeitlichGeleert()) break;
-        const status = err?.response?.status || 0;
-        const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+        const status = fehlerStatus(err) || 0;
+        const message = fehlerTextOderMessage(err, 'Unbekannter Fehler');
 
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           // 4xx (außer 408/429): Item entfernen, als failed markieren
@@ -591,10 +592,10 @@ async function flushTextOnly(): Promise<FlushResult> {
         result.succeeded.push(item);
         items.splice(i, 1);
         await _save(items);
-      } catch (err: any) {
+      } catch (err) {
         if (zwischenzeitlichGeleert()) break;
-        const status = err?.response?.status || 0;
-        const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+        const status = fehlerStatus(err) || 0;
+        const message = fehlerTextOderMessage(err, 'Unbekannter Fehler');
 
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };

@@ -49,7 +49,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
 
     scannerRef.current = scanner;
 
-    scanner.start().catch((err: any) => {
+    scanner.start().catch((err: unknown) => {
       console.error('Scanner start error:', err);
       if (String(err).toLowerCase().includes('permission') || String(err).toLowerCase().includes('denied') || String(err).toLowerCase().includes('not allowed')) {
         setPermissionDenied(true);

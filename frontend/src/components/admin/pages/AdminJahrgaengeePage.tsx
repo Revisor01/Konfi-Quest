@@ -488,16 +488,19 @@ const AdminJahrgaengeePage: React.FC = () => {
         const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
         await api.delete(url);
         refreshJahrgaenge();
-      } catch (error: any) {
+      } catch (error) {
         if (slidingElement) {
           await slidingElement.close();
         }
 
-        if (error.response?.data?.canForceDelete) {
+        const data = typeof error === 'object' && error !== null
+          ? (error as { response?: { data?: { canForceDelete?: boolean; error?: string } } }).response?.data
+          : undefined;
+        if (data?.canForceDelete) {
           // Org Admin kann trotzdem löschen
           presentAlert({
             header: 'Chat-Nachrichten vorhanden',
-            message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            message: `${data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
             buttons: [
               { text: 'Abbrechen', role: 'cancel' },
               {
@@ -508,8 +511,7 @@ const AdminJahrgaengeePage: React.FC = () => {
             ]
           });
         } else {
-          const errorMessage = error.response?.data?.error || 'Fehler beim Löschen des Jahrgangs';
-          setError(errorMessage);
+          setError(fehlerText(error, 'Fehler beim Löschen des Jahrgangs'));
         }
       }
     };

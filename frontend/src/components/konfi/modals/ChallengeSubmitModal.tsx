@@ -1,3 +1,4 @@
+import { fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   IonPage,
@@ -323,8 +324,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       recordTimerRef.current = setInterval(() => {
         setRecordSeconds((s) => s + 1);
       }, 1000);
-    } catch (err: any) {
-      const message = String(err?.message || '');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
       if (/permission|denied/i.test(message)) {
         setError('Zugriff aufs Mikrofon wurde nicht erlaubt.');
       } else {
@@ -414,8 +415,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         setSuccess(getSuccessMessage(challenge, isChoice ? consent : 'publish'));
         if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || err.message || 'Fehler beim Einreichen');
+      } catch (err) {
+        setError(fehlerTextOderMessage(err, 'Fehler beim Einreichen'));
       } finally {
         setUploadProgress(0);
       }

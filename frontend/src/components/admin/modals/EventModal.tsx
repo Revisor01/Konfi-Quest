@@ -294,16 +294,19 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose über
       // canDismiss schließt (sonst blockiert canDismiss -> Modal bleibt offen).
       setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
-    } catch (error: any) {
+    } catch (error) {
       // Validierungsfehler des Backends kommen als { error, details: [...] } —
       // ohne die details liest man nur "Validierungsfehler" und weiß nicht,
       // welches Feld gemeint ist.
-      const data = error.response?.data;
-      const details = Array.isArray(data?.details)
-        ? data.details.map((d: any) => d.message).filter(Boolean).join(', ')
-        : '';
+      const data = typeof error === 'object' && error !== null
+        ? (error as { response?: { data?: { error?: unknown; details?: unknown } } }).response?.data
+        : undefined;
+      const details = (Array.isArray(data?.details) ? data.details : [])
+        .map((d: unknown) => (typeof d === 'object' && d !== null ? (d as { message?: unknown }).message : undefined))
+        .filter((m): m is string => typeof m === 'string' && m !== '')
+        .join(', ');
       if (details) setError(details);
-      else if (data?.error) setError(data.error);
+      else if (typeof data?.error === 'string' && data.error) setError(data.error);
       else setError('Fehler beim Speichern des Events');
     } finally { setLoading(false); }
       });
