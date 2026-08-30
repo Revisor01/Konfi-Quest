@@ -124,7 +124,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // --- Aktivitäten-State ---
-  const [, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem

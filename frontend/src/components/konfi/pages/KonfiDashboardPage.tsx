@@ -176,7 +176,7 @@ const KonfiDashboardPage: React.FC = () => {
   const badgeStats: BadgeStats = (() => {
     if (!badgesRaw) return { totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 };
     const { earned, stats } = badgesRaw;
-    const visibleEarned = earned?.filter((badge: any) => !badge.is_hidden).length || 0;
+    const visibleEarned = earned?.filter((badge) => !badge.is_hidden).length || 0;
     const visibleTotal = stats?.totalVisible || 0;
     const secretEarned = earned?.filter((badge) => badge.is_hidden === true).length || 0;
     const secretTotal = stats?.totalSecret || 0;

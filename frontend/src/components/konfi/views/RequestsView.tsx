@@ -154,7 +154,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         emptyMessage="Noch keine Aktivitäten gemeldet"
         emptyIconColor="#059669"
       >
-        {filteredRequests.map((request, index) => {
+        {filteredRequests.map((request) => {
           const { statusColor, statusText, statusIcon, isPending, isRejected } = getRequestStatusInfo(request);
 
           return (

@@ -41,30 +41,12 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
 type SlidingRef = { close: () => Promise<void> };
 
-interface Category {
-  id: number;
-  name: string;
-}
-
 // Die Termin-Form dieser Ansicht ist dieselbe, die die Abschnitte erwarten
 // (EventData). Bis zum 30.08.2026 stand hier eine zweite, fast gleiche
 // Fassung -- ihr fehlten waitlist_enabled, max_waitlist_size und
 // checkin_window, obwohl der Code sie liest. Genau deshalb standen an den
 // Uebergabestellen `as any`-Casts, die den Unterschied verdeckten.
 type Event = EventData;
-
-interface Jahrgang {
-  id: number;
-  name: string;
-}
-
-interface Timeslot {
-  id: number;
-  start_time: string;
-  end_time: string;
-  max_participants: number;
-  registered_count: number;
-}
 
 interface EventDetailViewProps {
   eventId: number;

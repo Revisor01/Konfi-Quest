@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { IonIcon, IonItem, IonLabel, IonInput, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonList, IonListHeader, useIonModal } from '@ionic/react';
 import { people, calendar, time, location, copy, ban, trash, trophy, listOutline, calendarOutline, bagHandle, attachOutline, filterOutline, search } from 'ionicons/icons';
 import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';

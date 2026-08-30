@@ -19,5 +19,5 @@ export interface AppLocation {
 
 export const useAppLocation = (): AppLocation => {
   const loc = useLocation();
-  return { pathname: loc.pathname, search: loc.search, state: (loc as any).state };
+  return { pathname: loc.pathname, search: loc.search, state: loc.state };
 };

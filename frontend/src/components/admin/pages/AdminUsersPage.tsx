@@ -40,7 +40,6 @@ const AdminUsersPage: React.FC = () => {
   );
   
   // Modal state
-  const [, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge

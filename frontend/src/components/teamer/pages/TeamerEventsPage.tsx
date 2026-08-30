@@ -5,7 +5,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, Ion
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
-import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, ribbon, cloudOfflineOutline } from 'ionicons/icons';
+import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -151,31 +151,6 @@ const TeamerEventsPage: React.FC = () => {
       year: 'numeric'
     });
   };
-
-  const getRequestStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getRequestStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Offen';
-      case 'approved': return 'Verbucht';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Unbekannt';
-    }
-  };
-
-  // RequestsView verlangt diese Props, nutzt sie im teamerMode aber NICHT —
-  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitäten nicht. Deshalb
-  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stünde
-  // hier kein falsches "Gemeinde".
-  const getRequestTypeIcon = () => ribbon;
-  const getRequestTypeText = () => 'Aktivität';
 
   const getFilteredRequests = () => {
     const allRequests = Array.isArray(requests) ? requests : [];

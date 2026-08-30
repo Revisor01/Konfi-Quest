@@ -124,7 +124,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   );
 
   // Offline-Query: Settings
-  const { data: settings, refreshLive: refreshSettingsLive } = useOfflineQuery<Settings>(
+  const { refreshLive: refreshSettingsLive } = useOfflineQuery<Settings>(
     'admin:settings:' + user?.organization_id,
     async () => { const res = await api.get('/settings'); return res.data; },
     { ttl: CACHE_TTL.SETTINGS }

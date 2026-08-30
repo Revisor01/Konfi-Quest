@@ -153,7 +153,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
 
       return response.data.filename;
     } catch (error) {
-      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'));
+      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'), { cause: error });
     }
   };
 

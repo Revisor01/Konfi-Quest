@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useEffect } from 'react';
 // react-router nur noch fuer die Routen-Bausteine — der Standort kommt
 // ueber useAppLocation aus navigation/.
 import { Navigate, Route, useParams } from 'react-router-dom';
@@ -11,28 +11,10 @@ import {
   IonTabButton,
   IonTabs,
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  IonItem,
   IonBadge,
   IonSpinner
 } from '@ionic/react';
-import {
-  people,
-  chatbubbles,
-  star,
-  ellipsisHorizontal,
-  home,
-  flash,
-  calendar,
-  flag
-} from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
@@ -51,6 +33,12 @@ import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // vorher stand dafuer fuer JEDE dieser Routen eine eigene Wrapper-Komponente
 // in dieser Datei, fuenf fast identische Bloecke.
 const ParamSeite: React.FC<{
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+  Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+  Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+  (ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+  gerade nicht an). Dass Route und Props zusammenpassen, sichert
+  stattdessen __tests__/navigation/. */
   Seite: React.ComponentType<any>;
   prop: string;
   param: string;
@@ -190,12 +178,6 @@ const MainTabs: React.FC = () => {
   if (!user) {
     return null;
   }
-
-  // Funktion, um zu prüfen, ob die Tab-Bar angezeigt werden soll
-  const isTabBarHidden = (path: string) => {
-    // Verstecke die Tab-Bar, wenn der Pfad ein Chat-Raum ist
-    return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/') || path.startsWith('/teamer/chat/room/');
-  };
 
   // EIN Renderer fuer alle Rollen — die Routen, Tabs und Umleitungen stehen
   // als Daten in navigation/rollenBaeume.ts.

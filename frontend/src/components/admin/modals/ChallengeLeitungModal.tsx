@@ -1,4 +1,4 @@
-import { alsApiFehler, fehlerText } from '../../../utils/fehler';
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   IonHeader,

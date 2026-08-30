@@ -18,8 +18,20 @@ import type { Rolle, RollenBaum } from './routes';
 // unerreichbar (die App hat keinen Service Worker; nativ kommen die Chunks
 // ohnehin aus dem App-Bundle von der Platte).
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+(ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+gerade nicht an). Dass Route und Props zusammenpassen, sichert
+stattdessen __tests__/navigation/. */
 type Lader = () => Promise<{ default: React.ComponentType<any> }>;
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+(ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+gerade nicht an). Dass Route und Props zusammenpassen, sichert
+stattdessen __tests__/navigation/. */
 const LADER = new Map<React.ComponentType<any>, Lader>();
 
 // Ein fehlgeschlagener lazy-Import bleibt in React DAUERHAFT kaputt (die
@@ -35,6 +47,12 @@ const mitZweitversuch = (lade: Lader): Lader => async () => {
   }
 };
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+(ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+gerade nicht an). Dass Route und Props zusammenpassen, sichert
+stattdessen __tests__/navigation/. */
 const faul = (lade: Lader): React.ComponentType<any> => {
   const laden = mitZweitversuch(lade);
   const Seite = lazy(laden);
@@ -43,6 +61,12 @@ const faul = (lade: Lader): React.ComponentType<any> => {
 };
 
 /** Nur fuer Tests: Ist diese Seite per ladeRolleVor() vorladbar? */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+(ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+gerade nicht an). Dass Route und Props zusammenpassen, sichert
+stattdessen __tests__/navigation/. */
 export const hatLader = (seite: React.ComponentType<any>): boolean => LADER.has(seite);
 
 /**

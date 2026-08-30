@@ -57,7 +57,6 @@ const AdminBadgesPage: React.FC = () => {
   );
 
   // Modal state
-  const [, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge

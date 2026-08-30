@@ -36,12 +36,24 @@ export type RouteDef =
   | {
       /** Pfad wie er in der URL steht — der Vertrag nach außen. */
       path: string;
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+      Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+      Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+      (ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+      gerade nicht an). Dass Route und Props zusammenpassen, sichert
+      stattdessen __tests__/navigation/. */
       page: React.ComponentType<any>;
       param?: undefined;
       propName?: undefined;
     }
   | {
       path: string;
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+      Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
+      Parameter-Props traegt, laesst sich nur ueber any gemeinsam typisieren
+      (ComponentType<Record<string, unknown>> nimmt die spezielleren Seiten
+      gerade nicht an). Dass Route und Props zusammenpassen, sichert
+      stattdessen __tests__/navigation/. */
       page: React.ComponentType<any>;
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
