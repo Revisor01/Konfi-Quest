@@ -4,6 +4,12 @@ import {
   IonContent,
   IonButton
 } from '@ionic/react';
+// Statisch statt dynamisch importiert: Beide Module haengen ohnehin im
+// Einstiegs-Bundle (api.ts u.a. importieren sie statisch) — der fruehere
+// import() hier brachte also nichts und produzierte nur die
+// INEFFECTIVE_DYNAMIC_IMPORT-Warnung im Build.
+import { clearAuth } from '../../services/tokenStore';
+import { offlineCache } from '../../services/offlineCache';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -43,8 +49,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   // damit es auch bei einem Fehler darin nicht hängt.
   private handleBackToLogin = () => {
     Promise.allSettled([
-      import('../../services/tokenStore').then((m) => m.clearAuth()),
-      import('../../services/offlineCache').then((m) => m.offlineCache.clearAll()),
+      Promise.resolve().then(() => clearAuth()),
+      Promise.resolve().then(() => offlineCache.clearAll()),
     ]).finally(() => { window.location.reload(); });
   };
 
