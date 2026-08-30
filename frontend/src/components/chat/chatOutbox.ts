@@ -173,7 +173,7 @@ export function mergeMitLokalen(server: Message[], vorher: Message[]): Message[]
 
   // Ist die Server-Kopie inzwischen da, fällt die lokale Fassung weg.
   const serverClientIds = new Set(
-    server.map(m => (m as any).client_id || m.localId).filter(Boolean)
+    server.map(m => m.client_id || m.localId).filter(Boolean)
   );
   const nochOffen = offen.filter(m => !serverClientIds.has(m.localId));
   if (nochOffen.length === 0) return server;

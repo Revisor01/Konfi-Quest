@@ -83,6 +83,11 @@ interface Event {
   created_at: string;
   chat_room_id?: number | null;
   cancelled?: boolean;
+  // Konfi-Warteliste: kommt vom Server (SELECT in routes/events/lesen.js)
+  // mit — fehlte hier nur im Typ, weshalb die Zugriffe als (as any) getarnt
+  // waren (Befund 30.08.2026).
+  waitlist_enabled?: boolean;
+  max_waitlist_size?: number;
 }
 
 interface Jahrgang {
@@ -313,7 +318,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // meldet bei freier Warteliste weiterhin 'open' (`events.js:129-131`).
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
-    if (istVoll && (eventData as any).waitlist_enabled) return waitlist;
+    if (istVoll && eventData.waitlist_enabled) return waitlist;
     if (istVoll) return danger;
     if (regStatus === 'open') return success;
     if (regStatus === 'upcoming') return upcoming;
@@ -337,7 +342,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (regStatus === 'mandatory') return 'Pflichttermin';
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
-    if (istVoll && (eventData as any).waitlist_enabled) return 'Warteliste';
+    if (istVoll && eventData.waitlist_enabled) return 'Warteliste';
     if (istVoll) return 'Ausgebucht';
     if (regStatus === 'open') return 'Offen';
     if (regStatus === 'upcoming') return 'Bald';
@@ -771,7 +776,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Event Details */}
         {eventData && (
           <EventInfoCard
-            eventData={eventData as any}
+            eventData={eventData}
             participants={participants}
             formatDate={formatDate}
             formatTime={formatTime}
@@ -808,7 +813,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Series Events */}
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
           <SeriesEventsSection
-            seriesEvents={eventData.series_events as any}
+            seriesEvents={eventData.series_events}
             formatDate={formatDate}
             formatTime={formatTime}
             onNavigate={(eventId) => router.push(`/admin/events/${eventId}`, 'forward')}
@@ -822,16 +827,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
           const allWaitlistParticipants = konfiParticipants.filter(p => p.status === 'waitlist');
           const unassignedParticipants = eventData?.has_timeslots
-            ? confirmedParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time) : [];
+            ? confirmedParticipants.filter(p => !p.timeslot_id && !p.timeslot_start_time) : [];
           // Bei Timeslot-Events werden slot-zugeordnete Wartelistler bereits in der
           // TimeslotsSection unter ihrem Slot angezeigt -> hier nur die OHNE Slot,
           // damit sie nicht doppelt erscheinen.
           const waitlistParticipants = eventData?.has_timeslots
-            ? allWaitlistParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time)
+            ? allWaitlistParticipants.filter(p => !p.timeslot_id && !p.timeslot_start_time)
             : allWaitlistParticipants;
           const displayParticipants = eventData?.has_timeslots
             ? [...unassignedParticipants, ...waitlistParticipants] : konfiParticipants;
-          const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
+          const hasWaitlist = eventData?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
           // Noch niemand angemeldet: nur die Hinzufuegen-Buttons zeigen — aber
@@ -1002,7 +1007,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Event absagen */}
         {eventData && (
           <EventActionsSection
-            eventData={eventData as any}
+            eventData={eventData}
             isCancelled={!!isCancelled}
             isOnline={isOnline}
             handleCancelEvent={handleCancelEvent}

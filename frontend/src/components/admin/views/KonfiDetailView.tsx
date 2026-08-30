@@ -348,7 +348,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         const ausListe = gecacht?.data?.find((k) => k.id === konfiId) || null;
         if (ausListe) {
           setCurrentKonfi({ ...ausListe });
-          setTargetRole((ausListe as any).role_name || 'konfi');
+          // GET /admin/konfis liefert kein role_name (und enthaelt nur
+          // Konfis) — der fruehere (as any)-Zugriff war IMMER undefined und
+          // fiel still auf 'konfi' zurueck. Ehrlich hingeschrieben:
+          setTargetRole('konfi');
           setError('');
         } else {
           setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');

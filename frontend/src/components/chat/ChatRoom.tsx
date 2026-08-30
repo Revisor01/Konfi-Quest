@@ -79,7 +79,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       setMessages(prev => mergeMitLokalen(initialMessages, prev));
       // Ist die Server-Kopie da, ist der "endgueltig fehlgeschlagen"-Merker
       // fuer diese client_ids hinfaellig (best-effort).
-      writeQueue.forgetFailedChatMany(initialMessages.map(m => (m as any).client_id));
+      writeQueue.forgetFailedChatMany(initialMessages.map(m => m.client_id));
     }
   }, [initialMessages]);
 
@@ -321,7 +321,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   // beim Verlassen des Raums zurueck.
   useChatSocket({
     roomId: room?.id,
-    roomUnreadCount: (room as any)?.unread_count,
+    roomUnreadCount: room?.unread_count,
     userId: user?.id,
     chatUnreadByRoom,
     messages,
