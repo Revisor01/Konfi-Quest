@@ -518,6 +518,10 @@ paths:
         das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte.
         Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie
         inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.
+        Ersetzt durch GET /api/konfi/badges/v2 (31.08.2026), das dieselbe
+        Huelle ohne die Verwaltungsfelder liefert. Diese Route bleibt
+        unveraendert stehen, bis keine App im Store sie mehr ruft —
+        Abrissbedingung und Pruefweg in docs/api/ABRISS.md.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -529,10 +533,51 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
 
+  /api/konfi/badges/v2:
+    get:
+      tags: ["Abzeichen"]
+      summary: Eigene Badges mit Fortschritt (Generation v2)
+      description: >
+        Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie
+        GET /api/teamer/badges/v2 — { available, earned, stats } —, damit
+        Konfi und Teamer denselben Vertrag haben. Fuer die Konfi-Rolle ist das
+        dieselbe Form wie bisher; angeglichen wurde die Teamer-Seite, die
+        vorher ein Array plus Kopfzeilen lieferte.
+        Gerechnet wird unveraendert in utils/konfiBadgeProgress.js — dieselbe
+        Quelle wie die alte Route und wie die Leitungs-Sicht
+        GET /api/admin/konfis/{id}/badges. So koennen alte und neue Route
+        nicht auseinanderlaufen.
+        Neu ist allein, dass die Verwaltungsfelder wegfallen: created_at,
+        created_by, organization_id und target_role landen auf keinem
+        Bildschirm und kosten rund ein Viertel der Antwortgroesse
+        (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder).
+        Erhalten bleiben criteria_type, criteria_value, criteria_extra,
+        is_active, is_hidden, sort_order und seen — die Ansichten gruppieren,
+        sortieren und filtern danach; `seen` steuert, ob mark-seen ueberhaupt
+        gerufen wird.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten"
+      responses:
+        "200":
+          description: "{ available, earned, stats }: je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, seen, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — nur erreichbare und aktive Abzeichen."
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
   /api/konfi/badges/stats:
     get:
       tags: ["Abzeichen"]
       summary: Eigene Badge-Statistik (total/earned)
+      description: >
+        FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026): ersatzlos.
+        Was sie liefert, steckt genauer in GET /api/konfi/badges/v2 (stats
+        bzw. die Laenge von earned) — dort zaehlen unerreichbare Abzeichen
+        nicht mit. Sie hatte nie einen Aufrufer in der Oberflaeche und bleibt
+        nur stehen, weil eine App im Store sie noch rufen koennte.
+        Abrissbedingung und Pruefweg in docs/api/ABRISS.md.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]

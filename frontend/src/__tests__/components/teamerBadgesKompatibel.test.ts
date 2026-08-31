@@ -44,7 +44,11 @@ describe('Array-Form (was die Route heute liefert)', () => {
   });
 });
 
-describe('Objektform (falls die Route spaeter versioniert umgestellt wird)', () => {
+// Seit 31.08.2026 ist das die Form, die GET /teamer/badges/v2 liefert — die
+// Oberflaeche ruft inzwischen diese Route. Die Array-Haelfte oben bleibt
+// trotzdem geprueft: Im Zwischenspeicher koennen noch Eintraege der alten
+// Form liegen, und die alte Route steht bis zum Abriss weiter (ABRISS.md).
+describe('Objektform (heute: GET /teamer/badges/v2)', () => {
   it('wird unveraendert durchgereicht', () => {
     const o = { available: [b(2, false)], earned: [b(1, true)], stats: { totalVisible: 5, totalSecret: 1 } };
     expect(normalisiereTeamerBadges(o)).toEqual(o);

@@ -239,10 +239,10 @@ const TeamerDashboardPage: React.FC = () => {
   // Schluessel mit v2: Im Zwischenspeicher koennen noch flache Arrays der
   // alten Antwortform liegen — die sollen nicht als neue Form gelesen werden.
   const { data: badgeData, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<TeamerBadgeResponse>(
-    'teamer:all-badges:v2:' + user?.id,
+    'teamer:all-badges:v3:' + user?.id,
     async () => {
-      const res = await api.get('/teamer/badges');
-      // Beide Antwortformen lesen — siehe teamerBadges.ts.
+      // Abzeichen-Generation v2 (31.08.2026) — gleiche Huelle wie beim Konfi.
+      const res = await api.get('/teamer/badges/v2');
       return normalisiereTeamerBadges<TeamerBadgeFull>(res.data, res.headers);
     },
     { ttl: CACHE_TTL.BADGES }

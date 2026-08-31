@@ -135,7 +135,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   React.useEffect(() => {
     const loadBadges = async () => {
       try {
-        const response = await api.get('/konfi/badges');
+        const response = await api.get('/konfi/badges/v2');
         const uebersicht = response.data as BadgeUebersicht;
         // GET /konfi/badges fuehrt den Status als `earned`; `is_earned` gibt es
         // nur in der Anzeige-Form der Abzeichen-Seite.

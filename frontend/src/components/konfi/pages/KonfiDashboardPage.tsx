@@ -181,8 +181,9 @@ const KonfiDashboardPage: React.FC = () => {
   // erscheint sie einen Wimpernschlag spaeter.
   const [abzeichenAktiv, setAbzeichenAktiv] = useState(false);
   const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
-    'konfi:badges:' + user?.id,
-    () => api.get('/konfi/badges').then(r => r.data),
+    // Abzeichen-Generation v2 (31.08.2026) — siehe KonfiBadgesPage.
+    'konfi:badges:v2:' + user?.id,
+    () => api.get('/konfi/badges/v2').then(r => r.data),
     { ttl: CACHE_TTL.BADGES, enabled: abzeichenAktiv }
   );
 

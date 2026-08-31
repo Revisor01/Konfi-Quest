@@ -411,16 +411,21 @@ paths:
         (2) Die Gesamtzahlen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten
         auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also
         je nach Rolle etwas anderes.
-        Seit 28.08.2026 (Handoff-Punkt 12, BEHOBEN): Die Antwortform ist an
-        GET /konfi/badges angeglichen — { available, earned, stats } statt
-        flachem Array plus Zaehlern in den Kopfzeilen X-Badges-Secret-Total /
-        X-Badges-Visible-Total. Die Kopfzeilen entfallen: Die Sichtbar-Zahl las
-        keine Ansicht, die Geheim-Zahl steht jetzt als stats.totalSecret im
-        Rumpf (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen).
+        ACHTUNG, ANTWORTFORM: Diese Route liefert ein ARRAY plus die Zaehler
+        in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total.
+        Am 28.08.2026 wurde sie auf die Konfi-Form { available, earned, stats }
+        umgestellt und am 29.08.2026 zurueckgenommen: Die ausgelieferten Apps
+        (iOS 2.0.0 / Android versionCode 81) rufen auf der Antwort .filter()
+        auf — auf einem Objekt ein TypeError, das Teamer-Dashboard stuerzte
+        sofort nach dem Login ab. Diese Route bleibt deshalb unveraendert.
+        Die Angleichung an den Konfi-Pfad steht seit 31.08.2026 in
+        GET /api/teamer/badges/v2. Diese Route hier faellt weg, sobald keine
+        App im Store sie mehr ruft — Bedingung und Pruefweg in
+        docs/api/ABRISS.md.
         Jedes Abzeichen traegt earned, earned_at, unreachable und progress
         ({ current, target, percentage }; percentage ungerundet wie beim
-        Konfi). Neu dabei: Unerreichbare Abzeichen zaehlen auch in stats nicht
-        mehr mit — wie beim Konfi seit 27.08.2026.
+        Konfi). Unerreichbare Abzeichen zaehlen in den Kopfzeilen nicht mit —
+        wie beim Konfi seit 27.08.2026.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -428,7 +433,46 @@ paths:
         objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
       responses:
         "200":
-          description: "{ available, earned, stats } wie bei GET /konfi/badges: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen. Die frueheren Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total entfallen seit 28.08.2026."
+          description: "ARRAY der anzeigbaren Abzeichen (nicht geheim ODER verdient; und verdient ODER erreichbar). Je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. Die Zaehler stehen in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total und zaehlen nur aktive, erreichbare Abzeichen."
+          headers:
+            X-Badges-Secret-Total:
+              schema: { type: integer }
+              description: "Anzahl aktiver, erreichbarer GEHEIMER Abzeichen"
+            X-Badges-Visible-Total:
+              schema: { type: integer }
+              description: "Anzahl aktiver, erreichbarer sichtbarer Abzeichen"
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/badges/v2:
+    get:
+      tags: ["Abzeichen"]
+      summary: Eigene Teamer-Abzeichen mit Fortschritt (Generation v2)
+      description: >
+        Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie
+        GET /api/konfi/badges/v2 — { available, earned, stats } —, damit Konfi
+        und Teamer denselben Vertrag haben: dieselben Feldnamen, dieselbe
+        Semantik, die Zaehler im RUMPF statt in Kopfzeilen (der
+        App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen).
+        Gerechnet wird in utils/teamerBadgeProgress.js — dieselbe Quelle wie
+        die alte Route GET /api/teamer/badges, die nur anders verpackt. So
+        koennen alte und neue Route nicht auseinanderlaufen.
+        Gegenueber der alten Route fehlen die Verwaltungsfelder created_at,
+        created_by, organization_id und target_role: Sie landen auf keinem
+        Bildschirm und kosten rund ein Viertel der Antwortgroesse
+        (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder).
+        Erhalten bleiben criteria_type, criteria_value, criteria_extra,
+        is_active, is_hidden und sort_order — die Ansichten gruppieren,
+        sortieren und filtern danach.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+      responses:
+        "200":
+          description: "{ available, earned, stats }: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen."
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -448,9 +492,11 @@ paths:
           Konfi-Abzeichen stecken.
           Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler
           kommt aus newBadges in GET /api/notifications/badge-counts, das
-          korrekt auf target_role filtert. Der Endpunkt bleibt vorerst fuer
-          ausgelieferte App-Versionen bestehen; ueber seine Abschaffung ist
-          noch nicht entschieden.
+          korrekt auf target_role filtert.
+          FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026): ersatzlos,
+          der Zaehler kommt aus badge-counts. Der Endpunkt bleibt nur stehen,
+          weil eine App im Store ihn noch rufen koennte — Abrissbedingung und
+          Pruefweg in docs/api/ABRISS.md.
       responses:
         "200": { description: "unseen (Anzahl)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -460,7 +506,31 @@ paths:
   /api/teamer/badges/mark-seen:
     put:
       tags: ["Abzeichen"]
-      summary: Eigene Abzeichen als gesehen markieren
+      summary: Eigene Abzeichen als gesehen markieren (alte Generation)
+      description: >
+        ALTE GENERATION: PUT, waehrend der Konfi-Pfad seit jeher POST nutzt —
+        dieselbe Handlung, zwei Verben. In v2 ist das aufgeloest: dieselbe
+        Route als POST (siehe unten). Diese Variante bleibt unveraendert, bis
+        keine App im Store sie mehr ruft (docs/api/ABRISS.md).
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "UPDATE nur auf eigene user_badges (user_id + organization_id)"
+      responses:
+        "200": { description: Abzeichen als gesehen markiert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: ["Abzeichen"]
+      summary: Eigene Abzeichen als gesehen markieren (Generation v2)
+      description: >
+        Verb-Angleichung an den Konfi-Pfad (31.08.2026). POST statt PUT, weil
+        hier weder eine adressierte Ressource noch ein mitgeschickter Zustand
+        vorliegt, sondern eine Handlung auf einer Menge eigener Datensaetze —
+        genau dafuer ist POST da. Wirkung identisch zur PUT-Variante: beide
+        rufen dasselbe UPDATE (eine Quelle in routes/teamer.js).
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]

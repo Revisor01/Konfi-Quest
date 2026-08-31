@@ -56,13 +56,18 @@ const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
-  // Schluessel mit v2: Im Zwischenspeicher koennen noch flache Arrays der
-  // alten Antwortform liegen — die sollen nicht als neue Form gelesen werden.
+  // Abzeichen-Generation v2 (31.08.2026): GET /teamer/badges/v2 liefert
+  // dieselbe Huelle wie die Konfi-Route — { available, earned, stats } — und
+  // ohne die Verwaltungsfelder, die diese Seite nie gelesen hat.
+  //
+  // Der Zwischenspeicher-Schluessel wandert auf v3, weil dort noch Eintraege
+  // der alten Formen liegen koennen (flaches Array bzw. Objekt MIT den
+  // Verwaltungsfeldern). normalisiereTeamerBadges bleibt trotzdem davor: Ein
+  // alter Eintrag aus dem Zwischenspeicher kaeme sonst ungeprueft durch.
   const { data: badgesData, loading, refresh, refreshLive } = useOfflineQuery<TeamerBadgeResponse>(
-    'teamer:badges:v2:' + user?.id,
+    'teamer:badges:v3:' + user?.id,
     async () => {
-      const res = await api.get('/teamer/badges');
-      // Beide Antwortformen lesen — siehe teamerBadges.ts.
+      const res = await api.get('/teamer/badges/v2');
       return normalisiereTeamerBadges<TeamerBadgeAPI>(res.data, res.headers);
     },
     { ttl: CACHE_TTL.BADGES }
@@ -94,7 +99,7 @@ const TeamerBadgesPage: React.FC = () => {
 
     if (!networkMonitor.isOnline) {
       writeQueue.enqueue({
-        method: 'PUT',
+        method: 'POST',
         url: '/teamer/badges/mark-seen',
         maxRetries: 3,
         hasFileUpload: false,
@@ -102,7 +107,9 @@ const TeamerBadgesPage: React.FC = () => {
       });
       return;
     }
-    api.put('/teamer/badges/mark-seen')
+    // POST statt PUT (v2, 31.08.2026): dieselbe Handlung wie beim Konfi,
+    // jetzt auch dasselbe Verb.
+    api.post('/teamer/badges/mark-seen')
       .then(() => { refreshAllCounts(); })
       .catch((markError) => {
         console.warn('Abzeichen konnten nicht als gesehen markiert werden:', markError);

@@ -13,6 +13,7 @@ const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, de
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
+const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 // Single Source of Truth: welche Events zählen für Konfi-Badges (kein Pflicht/Konfirmation).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 
@@ -1074,7 +1075,40 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
   });
 
+  // GET /konfi/badges/v2 - Abzeichen-Generation v2 (Konfi-Haelfte)
+  //
+  // Gleiche Huelle wie GET /teamer/badges/v2: { available, earned, stats }.
+  // Fuer die Konfi-Rolle ist das dieselbe Form wie bisher — die Angleichung
+  // passiert auf der Teamer-Seite, die vorher ein Array plus Kopfzeilen
+  // lieferte. Neu ist hier allein, dass die Verwaltungsfelder wegfallen
+  // (created_at, created_by, organization_id, target_role, seen; Begruendung
+  // in utils/badgeAntwortV2.js).
+  //
+  // Gerechnet wird unveraendert in utils/konfiBadgeProgress.js — dieselbe
+  // Quelle wie die alte Route und wie die Leitungs-Sicht
+  // GET /admin/konfis/:id/badges. Hier steht nur die Verpackung.
+  router.get('/badges/v2', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    }
+
+    try {
+      const result = await getKonfiBadgeProgress(db, req.user.id, req.user.organization_id);
+      res.json(baueBadgeAntwortV2(result));
+    } catch (err) {
+ console.error('Database error in GET /badges/v2:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get badge statistics for konfi
+  //
+  // FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026).
+  // Keine Ansicht ruft sie auf: Was sie liefert (total_badges,
+  // earned_badges), steckt laengst in GET /konfi/badges als stats bzw. in
+  // der Laenge von earned — und zwar genauer, weil dort unerreichbare
+  // Abzeichen nicht mitzaehlen. Sie bleibt nur stehen, weil eine App im
+  // Store sie noch rufen koennte — Abrissbedingung siehe docs/api/ABRISS.md.
   router.get('/badges/stats', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });

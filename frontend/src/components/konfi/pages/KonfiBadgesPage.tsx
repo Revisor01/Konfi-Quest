@@ -41,8 +41,11 @@ const KonfiBadgesPage: React.FC = () => {
 
   // --- useOfflineQuery: Badges ---
   const { data: badgeData, loading: badgesLoading, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
-    'konfi:badges:' + user?.id,
-    () => api.get('/konfi/badges').then(r => r.data),
+    // Abzeichen-Generation v2 (31.08.2026): gleiche Huelle wie bisher, aber
+    // ohne die Verwaltungsfelder. Neuer Schluessel, weil im Zwischenspeicher
+    // noch Eintraege MIT diesen Feldern liegen koennen.
+    'konfi:badges:v2:' + user?.id,
+    () => api.get('/konfi/badges/v2').then(r => r.data),
     { ttl: CACHE_TTL.BADGES }
   );
 
