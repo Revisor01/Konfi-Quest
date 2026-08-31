@@ -14,15 +14,15 @@ test.describe('Chat', () => {
     await konfiPage.waitForSelector('ion-content', { state: 'visible' });
 
     // 3. Jahrgangs-Chat oeffnen (Route: /konfi/chat/room/:roomId)
-    const chatRoom = konfiPage.locator('ion-item, ion-card', { hasText: /Jahrgang 2025/i });
+    const chatRoom = konfiPage.getByRole('listitem').filter({ hasText: /Jahrgang 2025/i });
     await chatRoom.waitFor({ state: 'visible', timeout: 10_000 });
     await chatRoom.click();
 
     // 4. Nachricht eingeben — IonTextarea mit placeholder "Nachricht schreiben..."
-    const textarea = konfiPage.locator('ion-textarea[placeholder="Nachricht schreiben..."]');
+    const textarea = konfiPage.locator('textarea[placeholder="Nachricht schreiben..."]');
     await textarea.waitFor({ state: 'visible', timeout: 10_000 });
     // IonTextarea: Wert über native textarea setzen
-    const nativeTextarea = textarea.locator('textarea');
+    const nativeTextarea = textarea;
     await nativeTextarea.fill(uniqueMsg);
 
     // 5. Sende-Button klicken (runder IonButton fill="solid" shape="round")
@@ -43,7 +43,7 @@ test.describe('Chat', () => {
     await adminPage.goto('/admin/chat');
     await adminPage.waitForSelector('ion-content', { state: 'visible' });
 
-    const adminChatRoom = adminPage.locator('ion-item, ion-card', { hasText: /Jahrgang 2025/i });
+    const adminChatRoom = adminPage.getByRole('listitem').filter({ hasText: /Jahrgang 2025/i });
     await adminChatRoom.waitFor({ state: 'visible', timeout: 10_000 });
     await adminChatRoom.click();
 

@@ -26,6 +26,25 @@ async function seedDatabase(): Promise<void> {
   const pool = new Pool({ connectionString: DB_URL });
   try {
     await seed(pool);
+
+    // Die Admins brauchen fuer die Oberflaeche eine Jahrgangs-Zuweisung:
+    // GET /admin/konfis verengt ueber die einsehbaren Jahrgaenge und liefert
+    // einem Admin OHNE Zuweisung bewusst eine leere Liste (Simons
+    // Entscheidung 26.08.2026, erkennbar am Header
+    // X-Kein-Jahrgang-Zugewiesen). Ohne diese Zeilen sah der E2E-Test eine
+    // leere Konfi-Verwaltung und meldete einen Fehler, den es in der App
+    // nicht gibt (geklaert 31.08.2026).
+    //
+    // BEWUSST HIER und nicht im gemeinsamen Seed: Die Backend-Tests pruefen
+    // genau den Fall "Admin ohne Zuweisung" und wuerden reihenweise
+    // fehlschlagen (nachgemessen: 92 gruen ohne, 140 rot mit der Aenderung
+    // im Seed).
+    await pool.query(
+      `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id)
+       VALUES (4, 1), (8, 2)
+       ON CONFLICT DO NOTHING`
+    );
+
     console.log('E2E: Datenbank erfolgreich geseeded');
   } finally {
     await pool.end();

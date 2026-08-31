@@ -28,4 +28,27 @@ export async function loginAs(page: Page, username: string, password = 'testpass
 
   // Warten bis Login abgeschlossen (URL wechselt weg von /login)
   await page.waitForURL(/\/(?:konfi|admin|teamer)\//, { timeout: 15_000 });
+
+  // Die Willkommens-Tour legt sich beim ERSTEN Start eines Accounts als
+  // Overlay ueber die Seite und faengt alle Klicks ab ("... subtree intercepts
+  // pointer events", Befund 31.08.2026 im punkte-vergabe-Test). Sie merkt sich
+  // ihren Marker ueber Capacitor Preferences, im Browser also localStorage.
+  //
+  // Der Nutzerdatensatz liegt unter CapacitorStorage.konfi_user — fuer ALLE
+  // Rollen, historisch gewachsen (nachgemessen).
+  //
+  // Der Marker wird hier NACH dem Login gesetzt: Er traegt die Nutzer-ID im
+  // Schluessel, die vorher nicht feststeht. Damit stolpert kein Test mehr
+  // ueber die Tour — wer sie PRUEFEN will, setzt den Marker vorher wieder
+  // zurueck.
+  await page.evaluate(() => {
+    const roh = window.localStorage.getItem('CapacitorStorage.konfi_user');
+    let id: string | number = 'x';
+    try { id = roh ? JSON.parse(roh).id ?? 'x' : 'x'; } catch { /* Marker faellt auf 'x' zurueck */ }
+    for (const rolle of ['admin_onboarding_seen', 'konfi_onboarding_seen', 'teamer_onboarding_seen']) {
+      window.localStorage.setItem(`CapacitorStorage.${rolle}_${id}`, '1');
+    }
+  });
+  await page.reload();
+  await page.waitForSelector('ion-content', { state: 'visible', timeout: 10_000 });
 }

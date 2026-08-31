@@ -11,7 +11,7 @@ test.describe('Punkte-Vergabe', () => {
     await page.waitForSelector('ion-content', { state: 'visible' });
 
     // 3. Konfi1 in der Liste finden und oeffnen (Route: /admin/konfis/:id)
-    const konfiItem = page.locator('ion-item', { hasText: /Test Konfi 1/i });
+    const konfiItem = page.getByRole('button', { name: /Test Konfi 1/i });
     await konfiItem.waitFor({ state: 'visible', timeout: 10_000 });
     await konfiItem.click();
 
@@ -22,8 +22,9 @@ test.describe('Punkte-Vergabe', () => {
 
     // 5. ActivityModal: Sonntagsgottesdienst auswählen
     //    Modal zeigt IonList mit Activities — klicke auf das Item
-    const activityItem = page.locator('ion-item, ion-card', { hasText: /Sonntagsgottesdienst/i });
+    const activityItem = page.locator('.app-list-item').filter({ hasText: /Sonntagsgottesdienst/i });
     await activityItem.waitFor({ state: 'visible', timeout: 10_000 });
+    await activityItem.scrollIntoViewIfNeeded();
     await activityItem.click();
 
     // 6. Speichern via Submit-Button (app-modal-submit-btn mit checkmark Icon)
@@ -33,8 +34,18 @@ test.describe('Punkte-Vergabe', () => {
     // 7. Warten auf Erfolgsmeldung oder Modal schließt sich
     await page.waitForTimeout(2_000);
 
-    // 8. Abmelden und als Konfi einloggen
-    await page.goto('/login');
+    // 8. Abmelden und als Konfi einloggen.
+    //    Der blosse Aufruf von /login genuegt NICHT: Die App leitet eine
+    //    bestehende Sitzung sofort aufs Dashboard zurueck, das Formular
+    //    erscheint nie. Deshalb die gespeicherte Sitzung wegraeumen —
+    //    Capacitor Preferences liegen im Browser in localStorage.
+    await page.evaluate(() => {
+      for (const k of Object.keys(window.localStorage)) {
+        if (k.includes('token') || k.includes('konfi_user') || k.startsWith('CapacitorStorage.cache:')) {
+          window.localStorage.removeItem(k);
+        }
+      }
+    });
     await loginAs(page, 'konfi1');
 
     // 9. Konfi-Dashboard prüfen (Route: /konfi/dashboard)

@@ -69,8 +69,12 @@ test.describe('Zurueck-Navigation', () => {
     await page.locator('ion-tab-button[tab="events"]').click();
     await expect(page).toHaveURL(/\/konfi\/events/);
 
-    const ersterTermin = page.locator('ion-card, ion-item').first();
-    if (await ersterTermin.count() === 0) test.skip();
+    const reiterAlle = page.locator('ion-segment-button').filter({ hasText: 'Alle' });
+    await reiterAlle.waitFor({ state: 'visible', timeout: 10_000 });
+    await reiterAlle.click();
+
+    const ersterTermin = page.getByRole('button', { name: /Weihnachtsgottesdienst/i });
+    await ersterTermin.waitFor({ state: 'visible', timeout: 10_000 });
     await ersterTermin.click();
     await expect(page).toHaveURL(/\/konfi\/events\/\d+/, { timeout: 10_000 });
 

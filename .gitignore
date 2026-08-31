@@ -157,3 +157,8 @@ HANDOFF.md
 CLAUDE.md
 docs/agenten-berichte/
 .planning/
+
+# Playwright: Screenshots, Traces und Berichte fehlgeschlagener Laeufe.
+# Reine Laufzeit-Artefakte, gehoeren nicht ins Repo.
+test-results/
+playwright-report/
