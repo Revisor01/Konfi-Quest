@@ -29,13 +29,6 @@ interface RouteRow {
   avgMs: number;
   p95Ms: number;
   maxMs: number;
-  // Serverzeit: bis der Handler die Antwort geschrieben hat. NUR die ist im
-  // Backend beeinflussbar. avgMs/p95Ms laufen dagegen bis zur Auslieferung
-  // beim Client und enthalten die Zeit auf der Leitung.
-  serverAvgMs?: number;
-  serverP95Ms?: number;
-  serverMaxMs?: number;
-  netzAvgMs?: number;
   notModified?: number;
   cacheQuote?: number;
 }
@@ -116,18 +109,6 @@ const TimelineChart: React.FC<{ data: TimelinePoint[] }> = ({ data }) => {
   );
 };
 
-// Aeltere Backend-Staende liefern die Server-Felder noch nicht; dann faellt
-// die Anzeige auf die Gesamtzeit zurueck statt leer zu bleiben.
-const serverAvg = (r: RouteRow) => r.serverAvgMs ?? r.avgMs;
-const serverP95 = (r: RouteRow) => r.serverP95Ms ?? r.p95Ms;
-
-// Anteil der Zeit, der NICHT im Server vergeht. Ab etwa 60 % lohnt keine
-// Backend-Optimierung mehr — dann haengt es an der Verbindung.
-const netzAnteil = (r: RouteRow): number | null => {
-  if (r.serverAvgMs === undefined || r.avgMs <= 0) return null;
-  return Math.round(((r.avgMs - r.serverAvgMs) / r.avgMs) * 100);
-};
-
 const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ rows, mode }) => (
   <div style={{ background: '#fff', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
     {rows.length === 0 && <div style={{ padding: '16px', color: '#8e8e93', fontSize: '0.85rem' }}>Keine Daten.</div>}
@@ -136,28 +117,25 @@ const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ row
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.78rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{r.route}</span>
           {mode === 'slow'
-            ? <span style={{ fontWeight: 700, fontSize: '0.85rem', color: msColor(serverP95(r)), flexShrink: 0 }}>{serverP95(r)}ms</span>
+            ? <span style={{ fontWeight: 700, fontSize: '0.85rem', color: msColor(r.p95Ms), flexShrink: 0 }}>{r.p95Ms}ms</span>
             : <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#06b6d4', flexShrink: 0 }}>{r.count}×</span>}
         </div>
         {/* Erste Zeile: was der SERVER gebraucht hat — die einzige Zahl, an
             der eine Backend-Aenderung etwas dreht. */}
         <div style={{ display: 'flex', gap: '12px', marginTop: '3px', fontSize: '0.72rem', color: '#8e8e93' }}>
           <span>{r.count}× Aufrufe</span>
-          <span>Server Ø {serverAvg(r)}ms</span>
-          <span>p95 {serverP95(r)}ms</span>
-          <span>max {r.serverMaxMs ?? r.maxMs}ms</span>
+          <span>Ø {r.avgMs}ms</span>
+          <span>p95 {r.p95Ms}ms</span>
+          <span>max {r.maxMs}ms</span>
           {r.errors > 0 && <span style={{ color: '#dc3545', fontWeight: 600 }}>{r.errors} Fehler</span>}
         </div>
-        {/* Zweite Zeile: bis es beim Geraet ankam. Die Differenz ist Leitung
-            und Warteschlange des Geraets — im Backend nicht zu kuerzen. */}
+        {/* Die Zeiten laufen bis zur AUSLIEFERUNG beim Client und enthalten
+            damit die Verbindung des Geraets. Eine Trennung Server/Leitung
+            gab es hier kurzzeitig — sie war falsch gemessen (von
+            Middleware-Eintritt bis res.end, also inklusive Warten auf den
+            Client) und zeigte bei 20 von 20 Routen zweimal dieselbe Zahl.
+            Lieber eine ehrliche Zahl als zwei, von denen eine luegt. */}
         <div style={{ display: 'flex', gap: '12px', marginTop: '2px', fontSize: '0.72rem', color: '#b0b0b5' }}>
-          <span>beim Gerät Ø {r.avgMs}ms</span>
-          <span>p95 {r.p95Ms}ms</span>
-          {netzAnteil(r) !== null && (
-            <span style={{ color: netzAnteil(r)! >= 60 ? '#f59e0b' : '#b0b0b5' }}>
-              davon Leitung {netzAnteil(r)}%
-            </span>
-          )}
           {r.cacheQuote !== undefined && r.cacheQuote > 0 && (
             <span style={{ color: r.cacheQuote >= 50 ? '#28a745' : '#b0b0b5' }}>
               {r.cacheQuote}% aus dem Cache
