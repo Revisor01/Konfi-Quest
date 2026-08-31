@@ -37,6 +37,7 @@ import {
   calendar,
   calendarOutline,
   filterOutline,
+  globeOutline,
   linkOutline,
   search as searchIcon,
 } from 'ionicons/icons';
@@ -64,6 +65,9 @@ interface Material {
   jahrgang_name?: string;
   file_count?: number;
   link_url?: string | null;
+  // Kommt seit dem 31.08.2026 mit. Aeltere Eintraege aus dem Offline-Cache
+  // liefern das Feld nicht -- dann gilt "nicht global", nie ein Fehler.
+  ist_global?: boolean;
   created_at: string;
 }
 
@@ -74,7 +78,11 @@ const AdminMaterialPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
 
   const [search, setSearch] = useState('');
+  // Der Jahrgangs-Filter kennt drei Zustaende: alle, ein Jahrgang, oder
+  // "nur globales Material". Letzteres filtert die Oberflaeche selbst --
+  // die Route kennt dafuer keinen Parameter.
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
+  const [nurGlobal, setNurGlobal] = useState(false);
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
 
   useEffect(() => {
@@ -90,7 +98,7 @@ const AdminMaterialPage: React.FC = () => {
 
   // Offline-Query: Material (cache-key enthält search + jahrgang filter)
   const { data: materials, loading, refresh: refreshMaterial, refreshLive: refreshMaterialLive } = useOfflineQuery<Material[]>(
-    `admin:material:${user?.organization_id}:${search}:${activeJahrgangId || ''}`,
+    `admin:material:${user?.organization_id}:${search}:${activeJahrgangId || ''}:${nurGlobal ? 'global' : ''}`,
     async () => {
       const res = await api.get('/material', {
         params: {
@@ -107,7 +115,11 @@ const AdminMaterialPage: React.FC = () => {
   // vorher erst beim nächsten Oeffnen (Audit 22.08.2026).
   useLiveRefresh('materials', refreshMaterialLive);
 
-  const filteredMaterials = materials || [];
+  // "Nur globales Material" filtert die Oberflaeche. Ein gecachter Eintrag
+  // ohne das Feld gilt als nicht global.
+  const filteredMaterials = nurGlobal
+    ? (materials || []).filter(m => m.ist_global === true)
+    : (materials || []);
 
   const handleDelete = (material: Material) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -231,13 +243,18 @@ const AdminMaterialPage: React.FC = () => {
                   <IonItem>
                     <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonSelect
-                      value={activeJahrgangId ?? 'alle'}
-                      onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
+                      value={nurGlobal ? 'global' : (activeJahrgangId ?? 'alle')}
+                      onIonChange={(e) => {
+                        const wert = e.detail.value;
+                        setNurGlobal(wert === 'global');
+                        setActiveJahrgangId(wert === 'alle' || wert === 'global' ? undefined : wert);
+                      }}
                       interface="popover"
                       placeholder="Jahrgang"
                       style={{ width: '100%' }}
                     >
                       <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                      <IonSelectOption value="global">Nur globales Material</IonSelectOption>
                       {(jahrgaenge || []).map(jg => (
                         <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
                       ))}
@@ -300,6 +317,12 @@ const AdminMaterialPage: React.FC = () => {
                                       </div>
                                     )}
                                     <div className="app-list-item__meta">
+                                      {mat.ist_global && (
+                                        <span className="app-list-item__meta-item">
+                                          <IonIcon icon={globeOutline} style={{ color: 'var(--app-color-material)' }} />
+                                          Für alle
+                                        </span>
+                                      )}
                                       {mat.link_url && (
                                         <span className="app-list-item__meta-item">
                                           <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />

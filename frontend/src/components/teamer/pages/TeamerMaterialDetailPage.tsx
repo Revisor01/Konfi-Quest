@@ -17,7 +17,7 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import { document as documentIcon, imageOutline, videocamOutline, musicalNotesOutline, documentOutline, calendar, people, person, closeOutline, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
+import { document as documentIcon, imageOutline, videocamOutline, musicalNotesOutline, documentOutline, calendar, people, person, closeOutline, informationCircle, textOutline, create, globeOutline, linkOutline, openOutline } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
@@ -51,6 +51,9 @@ interface MaterialDetail {
   admin_name?: string;
   files?: MaterialFile[];
   link_url?: string | null;
+  // Material fuer alle Teamer:innen (seit 31.08.2026). Ein gecachter Eintrag
+  // von vorher liefert das Feld nicht -- dann gilt "nicht global".
+  ist_global?: boolean;
   created_at: string;
 }
 
@@ -218,6 +221,15 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
+                  {material.ist_global && (
+                    <div className="app-info-row">
+                      <IonIcon icon={globeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                      <div>
+                        <div className="app-info-row__label">Sichtbar für</div>
+                        <div className="app-info-row__value">Alle Teamer:innen der Gemeinde</div>
+                      </div>
+                    </div>
+                  )}
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />

@@ -22,7 +22,7 @@ import {
   IonSelectOption,
   useIonModal
 } from '@ionic/react';
-import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
+import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, globeOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
@@ -49,6 +49,9 @@ interface Material {
   jahrgang_name?: string;
   file_count?: number;
   link_url?: string | null;
+  // Material fuer alle Teamer:innen (seit 31.08.2026). Gecachte Eintraege von
+  // vorher liefern das Feld nicht -- dann gilt "nicht global", nie ein Fehler.
+  ist_global?: boolean;
   created_at: string;
 }
 
@@ -71,6 +74,7 @@ interface MaterialDetail {
   admin_name?: string;
   files?: MaterialFile[];
   link_url?: string | null;
+  ist_global?: boolean;
   created_at: string;
 }
 
@@ -122,6 +126,21 @@ const TeamerMaterialPage: React.FC = () => {
     }
     return filtered;
   }, [allMaterials, search, activeJahrgangId]);
+
+  // MATERIAL FUER ALLE (Entscheidung Simon, 31.08.2026)
+  //
+  // Bekommt einen eigenen Abschnitt ganz oben, damit erkennbar ist, was
+  // absichtlich fuer das ganze Team gedacht ist. Gecachte Eintraege von vor
+  // der Umstellung liefern das Feld nicht -- die landen im unteren
+  // Abschnitt, nie in einem Fehler.
+  const globaleMaterials = useMemo(
+    () => materials.filter(m => m.ist_global === true),
+    [materials]
+  );
+  const uebrigeMaterials = useMemo(
+    () => materials.filter(m => m.ist_global !== true),
+    [materials]
+  );
 
   // FileViewer Modal (In-App Dateivorschau mit Backdrop)
   const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
@@ -287,6 +306,15 @@ const TeamerMaterialPage: React.FC = () => {
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
+                {selectedMaterial.ist_global && (
+                  <div className="app-info-row">
+                    <IonIcon icon={globeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                    <div>
+                      <div className="app-info-row__label">Sichtbar für</div>
+                      <div className="app-info-row__value">Alle Teamer:innen der Gemeinde</div>
+                    </div>
+                  </div>
+                )}
                 {selectedMaterial.events && selectedMaterial.events.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
@@ -431,6 +459,87 @@ const TeamerMaterialPage: React.FC = () => {
   };
 
   // === MATERIAL LIST VIEW ===
+  // Ein Listeneintrag. Steht seit der Aufteilung in "Für alle" und die
+  // uebrigen Materialien (31.08.2026) an einer Stelle, damit beide
+  // Abschnitte gleich aussehen.
+  const renderEintrag = (mat: Material, index: number, anzahl: number) => (
+    <IonItem
+      key={mat.id}
+      button
+      onClick={() => openDetail(mat.id)}
+      detail={false}
+      lines="none"
+      style={{
+        '--background': 'transparent',
+        '--padding-start': '0',
+        '--padding-end': '0',
+        '--inner-padding-end': '0',
+        '--inner-border-width': '0',
+        '--border-style': 'none',
+        '--min-height': 'auto',
+        marginBottom: index < anzahl - 1 ? '8px' : '0'
+      }}
+    >
+      <div
+        className="app-list-item"
+        style={{
+          width: '100%',
+          borderLeftColor: 'var(--app-color-material)'
+        }}
+      >
+        <div className="app-list-item__row">
+          <div className="app-list-item__main">
+            <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
+              <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
+            </div>
+            <div className="app-list-item__content">
+              <div className="app-list-item__title">
+                {mat.title}
+              </div>
+              {mat.description && (
+                <div className="app-list-item__subtitle" style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical'
+                }}>
+                  {mat.description}
+                </div>
+              )}
+              <div className="app-list-item__meta">
+                {mat.ist_global && (
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={globeOutline} style={{ color: 'var(--app-color-material)' }} />
+                    Für alle
+                  </span>
+                )}
+                {mat.link_url && (
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
+                    Link
+                  </span>
+                )}
+                {mat.file_count !== undefined && mat.file_count > 0 && (
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />
+                    {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
+                  </span>
+                )}
+                {(mat.event_count || 0) > 0 && (
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
+                    {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </IonItem>
+  );
+
   const renderList = () => (
     <IonPage>
       <IonHeader translucent={true}>
@@ -511,7 +620,8 @@ const TeamerMaterialPage: React.FC = () => {
               </IonItemGroup>
             </IonList>
 
-            {/* Material-Liste */}
+            {/* Material-Liste: "Für alle" oben, danach alles Weitere
+                (Entscheidung Simon, 31.08.2026). */}
             {materials.length === 0 ? (
               <EmptyState
                 icon={documentOutline}
@@ -520,89 +630,39 @@ const TeamerMaterialPage: React.FC = () => {
                 iconColor="var(--app-color-material)"
               />
             ) : (
-              <IonList inset={true} className="app-segment-wrapper">
-                <IonListHeader>
-                  <div className="app-section-icon app-section-icon--material">
-                    <IonIcon icon={documentIcon} />
-                  </div>
-                  <IonLabel>Materialien ({materials.length})</IonLabel>
-                </IonListHeader>
-                <IonCard className="app-card">
-                  <IonCardContent>
-                    {materials.map((mat, index) => (
-                      <IonItem
-                        key={mat.id}
-                        button
-                        onClick={() => openDetail(mat.id)}
-                        detail={false}
-                        lines="none"
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--border-style': 'none',
-                          '--min-height': 'auto',
-                          marginBottom: index < materials.length - 1 ? '8px' : '0'
-                        }}
-                      >
-                        <div
-                          className="app-list-item"
-                          style={{
-                            width: '100%',
-                            borderLeftColor: 'var(--app-color-material)'
-                          }}
-                        >
-                          <div className="app-list-item__row">
-                            <div className="app-list-item__main">
-                              <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
-                                <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
-                              </div>
-                              <div className="app-list-item__content">
-                                <div className="app-list-item__title">
-                                  {mat.title}
-                                </div>
-                                {mat.description && (
-                                  <div className="app-list-item__subtitle" style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical'
-                                  }}>
-                                    {mat.description}
-                                  </div>
-                                )}
-                                <div className="app-list-item__meta">
-                                  {mat.link_url && (
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
-                                      Link
-                                    </span>
-                                  )}
-                                  {mat.file_count !== undefined && mat.file_count > 0 && (
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />
-                                      {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
-                                    </span>
-                                  )}
-                                  {(mat.event_count || 0) > 0 && (
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
-                                      {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </IonItem>
-                    ))}
-                  </IonCardContent>
-                </IonCard>
-              </IonList>
+              <>
+                {globaleMaterials.length > 0 && (
+                  <IonList inset={true} className="app-segment-wrapper">
+                    <IonListHeader>
+                      <div className="app-section-icon app-section-icon--material">
+                        <IonIcon icon={globeOutline} />
+                      </div>
+                      <IonLabel>Für alle ({globaleMaterials.length})</IonLabel>
+                    </IonListHeader>
+                    <IonCard className="app-card">
+                      <IonCardContent>
+                        {globaleMaterials.map((mat, index) => renderEintrag(mat, index, globaleMaterials.length))}
+                      </IonCardContent>
+                    </IonCard>
+                  </IonList>
+                )}
+
+                {uebrigeMaterials.length > 0 && (
+                  <IonList inset={true} className="app-segment-wrapper">
+                    <IonListHeader>
+                      <div className="app-section-icon app-section-icon--material">
+                        <IonIcon icon={documentIcon} />
+                      </div>
+                      <IonLabel>Materialien ({uebrigeMaterials.length})</IonLabel>
+                    </IonListHeader>
+                    <IonCard className="app-card">
+                      <IonCardContent>
+                        {uebrigeMaterials.map((mat, index) => renderEintrag(mat, index, uebrigeMaterials.length))}
+                      </IonCardContent>
+                    </IonCard>
+                  </IonList>
+                )}
+              </>
             )}
           </>
         )}

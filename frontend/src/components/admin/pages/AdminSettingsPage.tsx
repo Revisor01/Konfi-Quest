@@ -136,7 +136,8 @@ const AdminSettingsPage: React.FC = () => {
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
         'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
-        'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis.',
+        'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sehen es nur dessen Teamer:innen — oder ausdrücklich für alle, dann sehen es alle Teamer:innen der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
+        'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: alle Teamer:innen.',
       ],
     },
     certificates: {

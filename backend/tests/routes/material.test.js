@@ -656,4 +656,260 @@ describe('Material Routes', () => {
       expect(resAdmin.body.error).toBe('Datei nicht auf dem Server gefunden');
     });
   });
+
+  // ================================================================
+  // MATERIAL FUER ALLE (ist_global, Entscheidung Simon 31.08.2026)
+  // ================================================================
+  // "Fuer alle" heisst: alle TEAMER:INNEN der Gemeinde. Konfis kommen an
+  // keine Material-Route (requireTeamer) -- das prueft der Konfi-Test unten
+  // mit.
+  describe('Material fuer alle Teamer:innen (ist_global)', () => {
+    let global1;
+    let bestandOhneJahrgang;
+    let mitFremdemJahrgang;
+    let zweiterJahrgang;
+
+    const anlegen = async ({ titel, orgId = ORGS.testGemeinde.id, global = false, jahrgangId = null }) => {
+      const { rows: [m] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by, ist_global)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [titel, orgId, orgId === ORGS.testGemeinde.id ? USERS.admin1.id : USERS.admin2.id, global]
+      );
+      if (jahrgangId) {
+        await db.query(
+          'INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ($1, $2)',
+          [m.id, jahrgangId]
+        );
+      }
+      return m.id;
+    };
+
+    const listeFuer = async (token) => {
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      return res.body.map(m => m.id);
+    };
+
+    beforeEach(async () => {
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      zweiterJahrgang = jg.id;
+
+      // Global UND einem fremden Jahrgang zugeordnet: der globale Zweig muss
+      // gewinnen, sonst waere "fuer alle" nur ein anderes Wort fuer
+      // "ohne Jahrgang".
+      global1 = await anlegen({ titel: 'Fuer alle Teamer:innen', global: true, jahrgangId: zweiterJahrgang });
+      // Bestand: ohne Jahrgang, ist_global = false (so kommt alles Alte aus
+      // Migration 137 heraus).
+      bestandOhneJahrgang = await anlegen({ titel: 'Altbestand ohne Jahrgang' });
+      mitFremdemJahrgang = await anlegen({ titel: 'Nur zweiter Jahrgang', jahrgangId: zweiterJahrgang });
+    });
+
+    it('Teamer:in OHNE jede Jahrgangszuweisung sieht globales Material', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      const ids = await listeFuer(teamerToken);
+      expect(ids).toContain(global1);
+    });
+
+    it('Teamer:in eines fremden Jahrgangs sieht globales Material', async () => {
+      // teamer1 haengt an jahrgang1, das Material an zweiterJahrgang.
+      expect(await listeFuer(teamerToken)).toContain(global1);
+    });
+
+    it('REGRESSION: Bestandsmaterial ohne Jahrgang bleibt fuer alle sichtbar', async () => {
+      // Die globale Regel kam ADDITIV dazu. Wuerde sie den Zweig
+      // "kein Jahrgang zugeordnet" ERSETZEN, verschwaende alles Alte.
+      const ids = await listeFuer(teamerToken);
+      expect(ids).toContain(bestandOhneJahrgang);
+
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      expect(await listeFuer(teamerToken)).toContain(bestandOhneJahrgang);
+    });
+
+    it('Jahrgangsgebundenes Material eines fremden Jahrgangs bleibt unsichtbar', async () => {
+      expect(await listeFuer(teamerToken)).not.toContain(mitFremdemJahrgang);
+    });
+
+    it('Das Detail globalen Materials liefert 200 und ist_global true', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      const res = await request(app)
+        .get(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(global1);
+      expect(res.body.ist_global).toBe(true);
+    });
+
+    it('Die Datei globalen Materials laesst sich herunterladen', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      const stored = 'b'.repeat(64);
+      await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'fuer-alle.pdf', $2, 'application/pdf', 100)`,
+        [global1, stored]
+      );
+
+      // Die Schranke laesst durch; erst danach faellt auf, dass die Datei
+      // nicht auf der Platte liegt -- genau wie beim Leitungs-Fall oben.
+      const res = await request(app)
+        .get(`/api/material/files/${stored}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.body.error).toBe('Datei nicht auf dem Server gefunden');
+    });
+
+    it('Teamer:in einer fremden Organisation sieht globales Material NICHT', async () => {
+      const ids = await listeFuer(teamer2Token);
+      expect(ids).not.toContain(global1);
+      expect(ids).not.toContain(bestandOhneJahrgang);
+    });
+
+    it('Das Detail globalen Materials bleibt einer fremden Organisation verschlossen', async () => {
+      const res = await request(app)
+        .get(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${teamer2Token}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('Konfi bekommt 403, auch bei globalem Material', async () => {
+      const res = await request(app)
+        .get(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('Die Leitung legt globales Material an -> 201, Flag gesetzt', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Neu und global', ist_global: true });
+
+      expect(res.status).toBe(201);
+      expect(res.body.ist_global).toBe(true);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1',
+        [res.body.id]
+      );
+      expect(gespeichert.ist_global).toBe(true);
+    });
+
+    it('Ohne Angabe entsteht Material NICHT global', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Ganz normal' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.ist_global).toBe(false);
+    });
+
+    it('admin mit ist_global:true im POST -> 403 und kein Material in der DB', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Heimlich global', ist_global: true });
+
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT id FROM materials WHERE title = $1',
+        ['Heimlich global']
+      );
+      expect(rows).toHaveLength(0);
+    });
+
+    it('admin darf ganz normales Material weiterhin anlegen', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Normales Material vom Admin' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.ist_global).toBe(false);
+    });
+
+    it('admin mit ist_global:true im PUT -> 403, Flag unveraendert', async () => {
+      const res = await request(app)
+        .put(`/api/material/${bestandOhneJahrgang}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Umgewidmet', ist_global: true });
+
+      expect(res.status).toBe(403);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT title, ist_global FROM materials WHERE id = $1',
+        [bestandOhneJahrgang]
+      );
+      expect(gespeichert.ist_global).toBe(false);
+      expect(gespeichert.title).toBe('Altbestand ohne Jahrgang');
+    });
+
+    it('admin entzieht globalem Material das Flag -> 403, Flag bleibt true', async () => {
+      const res = await request(app)
+        .put(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ist_global: false });
+
+      expect(res.status).toBe(403);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1',
+        [global1]
+      );
+      expect(gespeichert.ist_global).toBe(true);
+    });
+
+    it('admin bearbeitet globales Material inhaltlich weiterhin', async () => {
+      // Das Formular schickt den unveraenderten Wert mit -- das darf nicht
+      // an der Feldpruefung scheitern.
+      const res = await request(app)
+        .put(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Neuer Titel vom Admin', ist_global: true });
+
+      expect(res.status).toBe(200);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT title, ist_global FROM materials WHERE id = $1',
+        [global1]
+      );
+      expect(gespeichert.title).toBe('Neuer Titel vom Admin');
+      expect(gespeichert.ist_global).toBe(true);
+    });
+
+    it('Die Leitung entzieht das Flag -> 200, danach greift wieder der Jahrgang', async () => {
+      const res = await request(app)
+        .put(`/api/material/${global1}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ ist_global: false });
+
+      expect(res.status).toBe(200);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1',
+        [global1]
+      );
+      expect(gespeichert.ist_global).toBe(false);
+
+      // Das Material haengt an zweiterJahrgang, teamer1 an jahrgang1.
+      expect(await listeFuer(teamerToken)).not.toContain(global1);
+    });
+
+    it('Die Liste liefert ist_global an jedem Eintrag mit', async () => {
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+      const global = res.body.find(m => m.id === global1);
+      const bestand = res.body.find(m => m.id === bestandOhneJahrgang);
+      expect(global.ist_global).toBe(true);
+      expect(bestand.ist_global).toBe(false);
+    });
+  });
 });

@@ -10,6 +10,12 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Material lässt sich ausdrücklich für alle Teamer:innen der Gemeinde
+  freigeben — unabhängig vom Jahrgang. Die Teamer:innen finden es in einem
+  eigenen Abschnitt ganz oben, in der Leitung ist es am Globus zu erkennen.
+  Freigeben und zurückziehen kann nur der Org-Admin. Konfis sehen Material
+  weiterhin grundsätzlich nicht. Bestehendes Material bleibt sichtbar wie
+  bisher.
 - Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
   Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
   Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
@@ -34,6 +40,11 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- In der Leitung konnte man den Knopf „Neue Teamer:in anlegen" zwar antippen,
+  das Formular blieb aber ohne Auswahl und liess sich nicht abschicken.
+  Teamer:innen anlegen und ihnen Jahrgänge geben klappt jetzt für die ganze
+  Leitung. Personen mit mehr Rechten bleiben unangetastet: Wer sie bisher nicht
+  bearbeiten durfte, kann auch ihre Jahrgänge nicht ändern.
 - Trug die Leitung sich selbst oder eine andere Person aus der Leitung in einen
   Termin ein, belegte sie einen Platz der Konfis und tauchte in deren Liste
   auf. Bei Terminen nur für Teamer:innen wurde sie ganz abgewiesen. Die Leitung
