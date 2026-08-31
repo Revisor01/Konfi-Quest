@@ -2151,14 +2151,16 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin",
+            "userHierarchyMiddleware"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgänge auf eigene Org gefiltert"
+          "objekt-pruefung": "Jahrgänge auf eigene Org gefiltert; Ziel-User über die Rollenhierarchie (canManageRole): admin darf nur teamer und konfi, org_admin alle Rollen der eigenen Gemeinde. Seit 31.08.2026 (PR #148)"
         }
       },
       "post": {
@@ -2227,11 +2229,13 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
+            "userHierarchyMiddleware",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
@@ -2557,11 +2561,13 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin"
+            "requireAdmin",
+            "userHierarchyMiddleware"
           ],
           "org-scope": true,
           "objekt-pruefung": "wie GET /users/{id}/jahrgaenge",
@@ -2598,11 +2604,13 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireOrgAdmin",
+            "requireAdmin",
+            "userHierarchyMiddleware",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
@@ -13155,7 +13163,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Rolle weder super_admin noch org_admin"
+            "description": "Rolle weder super_admin, org_admin noch admin"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -13164,13 +13172,15 @@
         "x-berechtigung": {
           "rollen": [
             "super_admin",
-            "org_admin"
+            "org_admin",
+            "admin"
           ],
           "middleware": [
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id",
+          "objekt-pruefung": "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id",
+          "seit": "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403.",
           "hinweis": "Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
         }
       }

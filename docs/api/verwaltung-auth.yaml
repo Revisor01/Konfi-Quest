@@ -1091,10 +1091,10 @@ paths:
         "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, userHierarchyMiddleware]
         org-scope: true
-        objekt-pruefung: "Jahrgänge auf eigene Org gefiltert"
+        objekt-pruefung: "Jahrgänge auf eigene Org gefiltert; Ziel-User über die Rollenhierarchie (canManageRole): admin darf nur teamer und konfi, org_admin alle Rollen der eigenen Gemeinde. Seit 31.08.2026 (PR #148)"
     post:
       tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
@@ -1122,8 +1122,8 @@ paths:
         "400": { description: "Jahrgang nicht in eigener Org" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, userHierarchyMiddleware, validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: "User + alle Jahrgang-IDs müssen zur eigenen Org gehören"
         hinweis: "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
@@ -1274,8 +1274,8 @@ paths:
         "200": { description: "Array der Zuweisungen" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, userHierarchyMiddleware]
         org-scope: true
         objekt-pruefung: "wie GET /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."
@@ -1290,8 +1290,8 @@ paths:
         "400": { description: "Validierung" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, userHierarchyMiddleware, validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: "wie POST /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."

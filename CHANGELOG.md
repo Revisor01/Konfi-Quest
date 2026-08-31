@@ -7,6 +7,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.1
+
+### Behoben
+- Die Leitung konnte Teamer:innen anlegen, aber die Rollenauswahl im Dialog
+  blieb leer. Sie wird jetzt gefüllt, und der neuen Teamer:in lassen sich
+  dabei gleich Jahrgänge mitgeben. Wer dabei welche Personen bearbeiten darf,
+  richtet sich weiterhin nach der Rolle: Die Gemeindeleitung verwaltet alle,
+  ein Admin nur Teamer:innen und Konfis.
+
 ## [2.1.0] - 2026-08-29
 
 iOS-Build 151

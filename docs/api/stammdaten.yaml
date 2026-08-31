@@ -851,13 +851,14 @@ paths:
       responses:
         "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { description: "Rolle weder super_admin noch org_admin" }
+        "403": { description: "Rolle weder super_admin, org_admin noch admin" }
         "500": { $ref: "#/components/responses/ServerError" }
       x-berechtigung:
-        rollen: [super_admin, org_admin]
+        rollen: [super_admin, org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id"
+        objekt-pruefung: "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id"
+        seit: "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403."
         hinweis: >
           Der Inline-Check prüft strikt role_name und NICHT das
           is_super_admin-Flag — abweichend von der Projekt-Regel und von

@@ -605,8 +605,18 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Assign jahrgaenge to user
-  // requireAdmin, weil für anlegen von Teamern ist ein Jahrgang Assign sinnvoll. Ansonsten entsteht ein Teamer ohne Jahrgangassignments. Da ein assign im Frontend angeboten wird gibt es sonst Fehler.
-  router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, validateJahrgangAssignments, async (req, res) => {
+  // requireAdmin, weil fuers Anlegen von Teamer:innen eine Jahrgangs-Zuweisung
+  // sinnvoll ist -- sonst entsteht eine Teamer:in ohne Zuweisung, und das
+  // Frontend bietet die Zuweisung an (aus PR #148, Ron31).
+  //
+  // userHierarchyMiddleware ERGAENZT seit dem 31.08.2026 (die offene Frage aus
+  // demselben PR): requireAdmin allein prueft NICHT, ob der Ziel-User ueberhaupt
+  // vom aufrufenden Admin verwaltet werden darf. Ohne die Middleware koennte ein
+  // 'admin' die Jahrgangs-Rechte anderer Admins und sogar von Org-Admins
+  // aendern -- eine Rechteausweitung. canManageRole (utils/roleHierarchy.js)
+  // laesst 'admin' genau 'teamer' und 'konfi' zu, 'org_admin' alle Rollen der
+  // eigenen Gemeinde. Dasselbe Muster wie bei create/update/delete oben.
+  router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('update'), validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -725,8 +735,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Get user's jahrgang assignments
-  // Analog zum POST requireAdmin
-  router.get('/:id/jahrgaenge', rbacVerifier, requireAdmin, async (req, res) => {
+  // Analog zum POST: requireAdmin plus Hierarchie-Pruefung ('view'), damit die
+  // Lese-Route nicht mehr verraet als die Schreib-Route erlaubt.
+  router.get('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('view'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
