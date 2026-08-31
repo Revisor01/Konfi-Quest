@@ -10,9 +10,18 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Beim Material lässt sich statt Dateien auch eine Internetseite hinterlegen.
+  Teamer:innen erkennen sie am Link-Symbol; ein Tipp darauf öffnet sie im
+  Browser. Wer das Material sehen darf, entscheidet sich weiterhin über den
+  Jahrgang.
 - Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
   Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
   ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
+- Die Leitung lässt sich einem Termin zuordnen — genau wie Teamer:innen, über
+  „Leitung hinzufügen" in der Terminansicht. Wer zugeordnet ist, ist auch im
+  Chat zum Termin dabei. Das geschieht bewusst für jeden Termin einzeln;
+  niemand landet automatisch in einem Termin-Chat, und bestehende Chats
+  ändern sich dadurch nicht.
 
 ### Geändert
 - Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
@@ -21,6 +30,15 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Trug die Leitung sich selbst oder eine andere Person aus der Leitung in einen
+  Termin ein, belegte sie einen Platz der Konfis und tauchte in deren Liste
+  auf. Bei Terminen nur für Teamer:innen wurde sie ganz abgewiesen. Die Leitung
+  zählt jetzt zum Team.
+- In der Material-Übersicht der Teamer:innen lieferte der Jahrgangs-Filter
+  immer eine leere Liste. Er zeigt jetzt das Material des gewählten Jahrgangs.
+- Beim Bearbeiten einer Konfi stand beim Jahrgang "Keine Jahrgänge verfügbar",
+  obwohl es welche gibt. Die Auswahl ist wieder da, und der Jahrgang der Konfi
+  bleibt sichtbar und vorausgewählt — auch ohne Verbindung.
 - Beim ersten Aufruf einer Seite blieb sie weiß; erst beim zweiten Anlauf
   erschien der Inhalt. Betraf jede Seite, auch Detailansichten und Chaträume.
 - Öffnete man einen Chat über eine Push-Nachricht, war der Zurück-Knopf ohne
@@ -44,6 +62,11 @@ Versionsüberschrift.
   zuverlässig nach, ob nur dieser oder die ganze Serie gelöscht werden soll.
 - Bei den Bonuspunkten einer Konfi steht jetzt der Name der Person, die sie
   vergeben hat. Bisher stand dort immer nur „Admin".
+- Bei den Aktivitäten einer Konfi steht jetzt der Name der Person, die sie
+  eingetragen hat. Bisher blieb die Zeile dort leer.
+- Wer etwas eingetragen oder vergeben hat, steht in der Konfi-Ansicht der
+  Leitung jetzt überall mit einem Personen-Symbol davor — bei Aktivitäten,
+  Bonuspunkten und Terminen gleich.
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 

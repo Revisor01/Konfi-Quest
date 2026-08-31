@@ -63,6 +63,9 @@ const faul = (lade: Lader): React.ComponentType<any> => {
 // Welche Seiten-Chunks bereits im Speicher sind. MainTabs fragt das ab, um
 // eine schon geladene Seite OHNE Umweg ueber einen Ladezustand zu rendern —
 // sonst blitzt bei jedem Tab-Wechsel kurz der Spinner auf.
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Dieselbe Menge wie bei LADER: Sie haelt genau die Komponenten, die `faul`
+erzeugt, und traegt deshalb denselben Typ. Begruendung siehe oben. */
 const GELADEN = new Set<React.ComponentType<any>>();
 
 /** Ist der Chunk dieser Seite schon da? */
