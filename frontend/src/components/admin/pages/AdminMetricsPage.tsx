@@ -17,7 +17,7 @@ import {
   IonSpinner,
   IonToggle
 } from '@ionic/react';
-import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline } from 'ionicons/icons';
+import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline, layersOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -36,12 +36,18 @@ interface RouteRow {
   serverP95Ms?: number;
   serverMaxMs?: number;
   netzAvgMs?: number;
+  notModified?: number;
+  cacheQuote?: number;
 }
 interface TimelinePoint { t: string; requests: number; errors: number; avgMs: number; }
 interface ErrorRow { route: string; url: string; status: number; durationMs: number; at: string; }
 interface Snapshot {
   uptimeSeconds: number;
   totalRequests: number;
+  // Anfragen, die mit 304 beantwortet wurden: Der Client hatte die Daten
+  // schon, es ging nur die Rueckfrage ueber die Leitung.
+  totalNotModified?: number;
+  cacheQuote?: number;
   totalErrors: number;
   errorRate: number;
   inFlight: number;
@@ -152,6 +158,11 @@ const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ row
               davon Leitung {netzAnteil(r)}%
             </span>
           )}
+          {r.cacheQuote !== undefined && r.cacheQuote > 0 && (
+            <span style={{ color: r.cacheQuote >= 50 ? '#28a745' : '#b0b0b5' }}>
+              {r.cacheQuote}% aus dem Cache
+            </span>
+          )}
         </div>
       </div>
     ))}
@@ -257,6 +268,17 @@ const AdminMetricsPage: React.FC = () => {
               <Kpi icon={flashOutline} label="Parallel" value={String(snap.inFlight)} color="#7c3aed" sub={`max ${snap.maxInFlight}`} />
               <Kpi icon={speedometerOutline} label="Req/Sek" value={String(snap.rps)} color="#0891b2" sub="Ø letzte 10s" />
               <Kpi icon={alertCircleOutline} label="Fehlerrate" value={`${(snap.errorRate * 100).toFixed(1)}%`} color={snap.totalErrors ? '#dc3545' : '#28a745'} sub={`${snap.totalErrors} Fehler (5xx)`} />
+              {snap.cacheQuote !== undefined && (
+                /* Anteil 304: Der Client hatte die Daten schon. HOCH IST GUT —
+                   dann gingen keine Nutzdaten ueber die Leitung. Gruen ab 50 %. */
+                <Kpi
+                  icon={layersOutline}
+                  label="Aus dem Cache"
+                  value={`${snap.cacheQuote}%`}
+                  color={snap.cacheQuote >= 50 ? '#28a745' : snap.cacheQuote >= 25 ? '#f59e0b' : '#8e8e93'}
+                  sub={`${snap.totalNotModified ?? 0}× ohne Daten (304)`}
+                />
+              )}
             </div>
 
             {/* Lastverteilung ueber die Backend-Replicas (nur bei >1 Replica) */}

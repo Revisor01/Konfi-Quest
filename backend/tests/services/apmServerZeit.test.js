@@ -96,3 +96,69 @@ describe('APM: Serverzeit und Leitungszeit getrennt', () => {
     expect(z.netzAvgMs).toBe(185);
   });
 });
+
+// Cache-Quote: Anteil der Anfragen, die mit 304 beantwortet wurden.
+// Hoch ist GUT — dann hatte der Client die Daten schon und es gingen keine
+// Nutzdaten ueber die Leitung. Gemessen am 31.08.2026 lagen 79 % der
+// Startanfragen bei 304.
+describe('APM: Cache-Quote (304)', () => {
+  let apm;
+  beforeEach(() => { apm = frischesApm(); });
+
+  it('zaehlt 304 je Route und insgesamt', async () => {
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.get('/api/gecacht', (req, res) => res.status(304).end());
+    app.get('/api/frisch', (req, res) => res.json({ ok: true }));
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    for (let i = 0; i < 3; i++) await fetch(`http://127.0.0.1:${port}/api/gecacht`).then((r) => r.text());
+    await fetch(`http://127.0.0.1:${port}/api/frisch`).then((r) => r.text());
+    srv.close();
+
+    const s = apm.snapshot();
+    const gecacht = s.routesBusiest.find((r) => r.route === 'GET /api/gecacht');
+    const frisch = s.routesBusiest.find((r) => r.route === 'GET /api/frisch');
+
+    expect(gecacht.notModified).toBe(3);
+    expect(gecacht.cacheQuote).toBe(100);
+    expect(frisch.notModified).toBe(0);
+    expect(frisch.cacheQuote).toBe(0);
+
+    // Gesamt: 3 von 4 Anfragen aus dem Cache.
+    expect(s.totalNotModified).toBe(3);
+    expect(s.cacheQuote).toBe(75);
+  });
+
+  it('zaehlt 304 NICHT als Fehler', async () => {
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.get('/api/gecacht', (req, res) => res.status(304).end());
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    await fetch(`http://127.0.0.1:${port}/api/gecacht`).then((r) => r.text());
+    srv.close();
+
+    const s = apm.snapshot();
+    // 304 ist eine erfolgreiche Antwort — sie darf die Fehlerrate nicht heben.
+    expect(s.totalErrors).toBe(0);
+    expect(s.errorRate).toBe(0);
+  });
+
+  it('summiert die Cache-Quote ueber beide Replicas', () => {
+    const bau = (replica, count, notModified) => ({
+      replica, totalRequests: count, totalErrors: 0, inFlight: 0, uptimeSeconds: 1,
+      totalNotModified: notModified,
+      routesSlowest: [{ route: 'GET /api/x', count, errors: 0, avgMs: 10, p95Ms: 20, maxMs: 30, serverAvgMs: 5, serverP95Ms: 6, serverMaxMs: 7, netzAvgMs: 5, notModified, cacheQuote: Math.round(notModified / count * 100) }],
+      routesBusiest: [], timeline: [], recentErrors: [],
+    });
+    // 8 von 10 und 2 von 10 -> zusammen 10 von 20 = 50 %.
+    const z = apm.mergeSnapshots([bau('a', 10, 8), bau('b', 10, 2)]);
+    expect(z.totalNotModified).toBe(10);
+    expect(z.cacheQuote).toBe(50);
+    const route = z.routesSlowest.find((r) => r.route === 'GET /api/x');
+    expect(route.notModified).toBe(10);
+    expect(route.cacheQuote).toBe(50);
+  });
+});

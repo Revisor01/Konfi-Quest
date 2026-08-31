@@ -49,7 +49,7 @@ function record(method, normPath, statusCode, durationMs, rawUrl, handlerMs) {
   const key = `${method} ${normPath}`;
   let s = stats.get(key);
   if (!s) {
-    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [], handlerTotalMs: 0, handlerMaxMs: 0, handlerSamples: [] };
+    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [], handlerTotalMs: 0, handlerMaxMs: 0, handlerSamples: [], notModified: 0 };
     stats.set(key, s);
   }
   s.count += 1;
@@ -64,6 +64,10 @@ function record(method, normPath, statusCode, durationMs, rawUrl, handlerMs) {
     s.handlerSamples.push(handlerMs);
     if (s.handlerSamples.length > MAX_SAMPLES) s.handlerSamples.shift();
   }
+  // 304 = der Client hatte die Daten schon, es ging nur die Rueckfrage ueber
+  // die Leitung. Ein hoher Anteil ist GUT: Er bedeutet wenig uebertragene
+  // Bytes. Gemessen am 31.08.2026 lagen 79 % der Startanfragen bei 304.
+  if (statusCode === 304) s.notModified += 1;
   const isError = statusCode >= 500;
   if (isError) s.errors += 1;
   s.samples.push(durationMs);
@@ -171,6 +175,9 @@ function routeRows() {
       serverMaxMs: Math.round(s.handlerMaxMs || 0),
       // Differenz = Zeit auf der Leitung.
       netzAvgMs: Math.max(0, avgMs - serverAvgMs),
+      // Cache-Quote: Anteil der Anfragen, die mit 304 beantwortet wurden.
+      notModified: s.notModified || 0,
+      cacheQuote: s.count ? Math.round(((s.notModified || 0) / s.count) * 100) : 0,
     });
   }
   return routes;
@@ -223,13 +230,18 @@ function snapshot() {
   const routes = routeRows().sort((a, b) => (b.serverP95Ms ?? b.p95Ms) - (a.serverP95Ms ?? a.p95Ms));
   let totalCount = 0;
   let totalErrors = 0;
-  for (const r of routes) { totalCount += r.count; totalErrors += r.errors; }
+  let totalNotModified = 0;
+  for (const r of routes) { totalCount += r.count; totalErrors += r.errors; totalNotModified += r.notModified || 0; }
   return {
     replica: REPLICA_ID,
     uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     totalRequests: totalCount,
     totalErrors,
     errorRate: totalCount ? +(totalErrors / totalCount).toFixed(4) : 0,
+    // Wie oft der Client die Daten schon hatte (304). Hoch ist gut: Dann
+    // ging nur die Rueckfrage ueber die Leitung, keine Nutzdaten.
+    totalNotModified,
+    cacheQuote: totalCount ? Math.round((totalNotModified / totalCount) * 100) : 0,
     inFlight,
     maxInFlight,
     rps: currentRps(),
@@ -254,12 +266,13 @@ function mergeSnapshots(snaps) {
   const routeMap = new Map();
   const addRoutes = (rows) => {
     for (const r of rows) {
-      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, sumServerAvg: 0, serverP95Ms: 0, serverMaxMs: 0 };
+      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, sumServerAvg: 0, serverP95Ms: 0, serverMaxMs: 0, notModified: 0 };
       e.count += r.count;
       e.errors += r.errors;
       e.sumAvg += r.avgMs * r.count;      // gewichteter Mittelwert ueber count
       e.p95Ms = Math.max(e.p95Ms, r.p95Ms);
       e.maxMs = Math.max(e.maxMs, r.maxMs);
+      e.notModified += r.notModified || 0;
       e.sumServerAvg += (r.serverAvgMs || 0) * r.count;
       e.serverP95Ms = Math.max(e.serverP95Ms, r.serverP95Ms || 0);
       e.serverMaxMs = Math.max(e.serverMaxMs, r.serverMaxMs || 0);
@@ -282,6 +295,8 @@ function mergeSnapshots(snaps) {
       serverP95Ms: e.serverP95Ms,
       serverMaxMs: e.serverMaxMs,
       netzAvgMs: Math.max(0, avgMs - serverAvgMs),
+      notModified: e.notModified,
+      cacheQuote: e.count ? Math.round((e.notModified / e.count) * 100) : 0,
     };
   });
 
@@ -300,6 +315,7 @@ function mergeSnapshots(snaps) {
 
   const totalRequests = valid.reduce((s, x) => s + x.totalRequests, 0);
   const totalErrors = valid.reduce((s, x) => s + x.totalErrors, 0);
+  const totalNotModified = valid.reduce((s, x) => s + (x.totalNotModified || 0), 0);
   const recentErrors = valid.flatMap(x => x.recentErrors || [])
     .sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 50);
 
@@ -308,6 +324,8 @@ function mergeSnapshots(snaps) {
     totalRequests,
     totalErrors,
     errorRate: totalRequests ? +(totalErrors / totalRequests).toFixed(4) : 0,
+    totalNotModified,
+    cacheQuote: totalRequests ? Math.round((totalNotModified / totalRequests) * 100) : 0,
     inFlight: valid.reduce((s, x) => s + x.inFlight, 0),
     maxInFlight: valid.reduce((s, x) => s + x.maxInFlight, 0),
     rps: +valid.reduce((s, x) => s + x.rps, 0).toFixed(2),
