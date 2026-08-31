@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.1.1
 
+### Hinzugefügt
+- Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
+  Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
+  ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
+
 ### Geändert
 - Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".

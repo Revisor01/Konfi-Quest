@@ -14,12 +14,12 @@
 function anhangText(messageType, fileName) {
   const name = fileName ? `: ${fileName}` : '';
   switch (messageType) {
-    case 'image': return '📷 Foto';
-    case 'video': return `🎬 Video${name}`;
-    case 'audio': return '🎤 Sprachnachricht';
-    case 'file':  return `📎 Datei${name}`;
-    case 'poll':  return '📊 Umfrage';
-    default:      return '📎 Anhang';
+    case 'image': return 'Foto';
+    case 'video': return `Video${name}`;
+    case 'audio': return 'Sprachnachricht';
+    case 'file':  return `Datei${name}`;
+    case 'poll':  return 'Umfrage';
+    default:      return 'Anhang';
   }
 }
 

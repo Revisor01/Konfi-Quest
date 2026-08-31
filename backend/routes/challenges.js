@@ -786,6 +786,34 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           }
 
           try {
+            // Feed-Push an die Jahrgangs-Konfis — NUR wenn der Beitrag jetzt
+            // schon oeffentlich ist. Bei moderierten Challenges ist er das
+            // nicht; dort feuert der Push erst mit der Freigabe (PUT
+            // /admin/submissions/:id/moderate).
+            //
+            // Dieselbe Sichtbarkeitsregel wie die Galerie (isSubmissionPublic):
+            // Wer den Beitrag nicht sehen darf, erfaehrt auch nichts von ihm.
+            const sichtbar = isSubmissionPublic(
+              { moderation_status: moderationStatus, konfi_consent },
+              challenge
+            );
+            if (sichtbar) {
+              const anonym = isAnonymous({ konfi_consent }, challenge);
+              await PushService.sendChallengeFeedToJahrgaenge(
+                db,
+                req.user.organization_id,
+                challengeId,
+                challenge.title,
+                req.user.id,
+                anonym ? null : req.user.display_name,
+                media_type
+              );
+            }
+          } catch (pushErr) {
+            console.error('Feed-Push fehlgeschlagen:', pushErr.message);
+          }
+
+          try {
             if (moderationStatus === 'approved') {
               const { rows: [{ count: approvedCount }] } = await db.query(
                 `SELECT COUNT(*)::int AS count FROM challenge_submissions
@@ -1542,9 +1570,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: [submission] } = await db.query(
           `SELECT cs.id, cs.challenge_id, cs.user_id, cs.moderation_status,
-                  cs.konfi_consent, c.visibility, c.title AS challenge_title
+                  cs.konfi_consent, cs.media_type, c.visibility, c.title AS challenge_title,
+                  u.display_name AS einreicher_name
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
+           JOIN users u ON u.id = cs.user_id
            WHERE cs.id = $1 AND cs.organization_id = $2`,
           [submissionId, req.user.organization_id]
         );
@@ -1629,6 +1659,33 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             // Challenge, ist das Abzeichen jetzt verdient -> Push. Bewusst nur
             // bei 'approve' (nicht 'unhide'): ein wieder eingeblendeter
             // Beitrag war schon einmal freigegeben.
+            // Erst mit der Freigabe wird der Beitrag im Feed sichtbar —
+            // hier feuert deshalb der Feed-Push fuer moderierte Challenges.
+            // Bewusst NUR bei 'approve': Ein wieder eingeblendeter Beitrag
+            // ('unhide') war schon einmal sichtbar, dafuer gaebe es sonst eine
+            // zweite Mitteilung.
+            if (action === 'approve') {
+              const sichtbar = isSubmissionPublic(
+                { moderation_status: 'approved', konfi_consent: submission.konfi_consent },
+                { visibility: submission.visibility }
+              );
+              if (sichtbar) {
+                const anonym = isAnonymous(
+                  { konfi_consent: submission.konfi_consent },
+                  { visibility: submission.visibility }
+                );
+                await PushService.sendChallengeFeedToJahrgaenge(
+                  db,
+                  req.user.organization_id,
+                  submission.challenge_id,
+                  submission.challenge_title,
+                  submission.user_id,
+                  anonym ? null : submission.einreicher_name,
+                  submission.media_type
+                );
+              }
+            }
+
             if (action === 'approve') {
               const { rows: [{ count: approvedCount }] } = await db.query(
                 `SELECT COUNT(*)::int AS count FROM challenge_submissions
