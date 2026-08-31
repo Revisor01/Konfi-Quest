@@ -62,7 +62,9 @@ interface ParticipantManagementModalProps {
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
-  filterRole?: 'teamer' | 'konfi' | null;
+  // 'leitung' = Admins/Org-Admins zuordnen (31.08.2026). Bewusst pro Termin;
+  // niemand rutscht automatisch in einen Event-Chat.
+  filterRole?: 'teamer' | 'konfi' | 'leitung' | null;
 }
 
 const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
@@ -118,13 +120,19 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
   const loadAvailableKonfis = async (participantsList?: Participant[]) => {
     try {
-      const [konfisRes, teamerRes] = await Promise.all([
+      // Die Leitungsliste nur laden, wenn sie auch gebraucht wird — sonst
+      // holt jedes Oeffnen des Konfi-Modals eine Liste, die es nie zeigt.
+      const [konfisRes, teamerRes, leitungRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/admin/konfis/teamer')
+        api.get('/admin/konfis/teamer'),
+        filterRole === 'leitung' ? api.get('/admin/konfis/leitung') : Promise.resolve({ data: [] })
       ]);
       const allKonfis = konfisRes.data.map((k: Konfi) => ({ ...k, role_name: 'konfi' }));
       const teamerUsers = teamerRes.data.map((u: Konfi) => ({ ...u, role_name: 'teamer' }));
-      const allPersons = [...allKonfis, ...teamerUsers];
+      // role_name kommt hier ECHT aus dem Backend ('admin' oder 'org_admin')
+      // und wird nicht ueberschrieben — die Unterscheidung wird unten gebraucht.
+      const leitungUsers = leitungRes.data as Konfi[];
+      const allPersons = [...allKonfis, ...teamerUsers, ...leitungUsers];
 
       // Aktuelle Participants nutzen (Parameter oder State)
       const activeParticipants = participantsList || currentParticipants;
@@ -137,8 +145,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       let roleFiltered = available;
       if (filterRole === 'teamer') {
         roleFiltered = available.filter((p: Konfi) => p.role_name === 'teamer');
+      } else if (filterRole === 'leitung') {
+        roleFiltered = available.filter((p: Konfi) => p.role_name === 'admin' || p.role_name === 'org_admin');
       } else if (filterRole === 'konfi') {
-        roleFiltered = available.filter((p: Konfi) => p.role_name !== 'teamer');
+        // Positiv auf 'konfi' pruefen: Ein '!== teamer' liesse seit der
+        // Leitungs-Zuordnung auch Admins in die Konfi-Auswahl.
+        roleFiltered = available.filter((p: Konfi) => p.role_name === 'konfi');
       }
 
       // Extract available Jahrgänge (wird nur für Dropdown gebraucht wenn Event keine Jahrgänge hat)
@@ -159,12 +171,14 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     // Search filter
     const matchesSearch = konfi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (konfi.role_name === 'teamer' && 'teamer'.includes(searchTerm.toLowerCase()));
+      (konfi.role_name === 'teamer' && 'teamer'.includes(searchTerm.toLowerCase())) ||
+      ((konfi.role_name === 'admin' || konfi.role_name === 'org_admin') &&
+        'leitung'.includes(searchTerm.toLowerCase()));
 
     if (!matchesSearch) return false;
 
-    // Teamer sind immer sichtbar (kein Jahrgang-Filter)
-    if (konfi.role_name === 'teamer') return true;
+    // Teamer:innen und Leitung sind immer sichtbar (kein Jahrgang-Filter)
+    if (konfi.role_name !== 'konfi') return true;
 
     // Wenn Event Jahrgänge hat, nur diese Konfis zeigen (außer "alle" gewählt)
     if (hasEventJahrgaenge && selectedJahrgang === 'alle') {
@@ -251,7 +265,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer:innen verwalten'}</IonTitle>
+          <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'leitung' ? 'Leitung hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer:innen verwalten'}</IonTitle>
           <IonButtons slot="start">
             {/* NICHT an loading haengen: Bleibt der Ladezustand haengen,
                 waere das Modal sonst nur noch per Swipe zu verlassen.
@@ -417,7 +431,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                               <div className="app-list-item__subtitle">
                                 {konfi.role_name === 'teamer'
                                   ? `Teamer:in${konfi.jahrgang_name ? ` \u00B7 ${konfi.jahrgang_name}` : ''}`
-                                  : (konfi.jahrgang_name || '')}
+                                  : (konfi.role_name === 'admin' || konfi.role_name === 'org_admin')
+                                    ? 'Leitung'
+                                    : (konfi.jahrgang_name || '')}
                               </div>
                             </div>
                           </div>

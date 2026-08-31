@@ -144,6 +144,8 @@ export interface EventMaterial {
   created_at: string;
   created_by_name?: string;
   file_count?: number;
+  /** Gesetzt, wenn das Material einen Link statt Dateien traegt (ab 31.08.2026). */
+  link_url?: string | null;
 }
 
 /** Eine Abmeldung von einem Termin (GET /events/:id -> unregistrations). */

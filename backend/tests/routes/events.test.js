@@ -3510,4 +3510,276 @@ describe('Events Routes', () => {
       expect(rows.length).toBe(1);
     });
   });
+  // ================================================================
+  // Leitung einem Termin zuordnen (31.08.2026)
+  //
+  // Bis hierher liessen sich nur Teamer:innen einem Termin zuordnen und kamen
+  // dadurch in den Chat zum Termin. Fuer Admins gab es das nicht: Sie standen
+  // in keiner der beiden Auswahllisten (/admin/konfis filtert auf 'konfi',
+  // /admin/konfis/teamer auf 'teamer').
+  //
+  // Gemessen VOR der Aenderung: Ein per user_id durchgereichter Admin wurde
+  // angenommen (201), aber als KONFI verbucht — er belegte einen Konfi-Platz
+  // (registered_count 1, teamer_count 0) und wurde an einem Nur-Teamer-Termin
+  // mit 400 abgewiesen.
+  //
+  // Ausdruecklich NICHT gebaut: ein automatisches Hinzufuegen aller Admins
+  // eines Jahrgangs zu jedem Event-Chat. Die Zuordnung bleibt eine bewusste
+  // Handlung pro Termin.
+  // ================================================================
+  describe('Leitung einem Termin zuordnen', () => {
+    // Termin mit Teamer-Bedarf: 1 Konfi-Platz, 5 Team-Plaetze.
+    async function teamTermin({ teamerOnly = false, teamerMax = 5 } = {}) {
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, max_participants, waitlist_enabled, max_waitlist_size,
+                             teamer_needed, teamer_only, teamer_max_participants,
+                             teamer_waitlist_enabled, teamer_max_waitlist_size,
+                             point_type, created_by, organization_id)
+         VALUES ('Leitungs-Termin', NOW() + INTERVAL '7 days', 1, true, 5,
+                 $3, $4, $5, true, 3, 'gemeinde', $1, $2)
+         RETURNING id`,
+        [USERS.admin1.id, ORGS.testGemeinde.id, !teamerOnly, teamerOnly, teamerMax]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return event.id;
+    }
+
+    it('Erlaubter Fall: Leitung laesst sich zuordnen und belegt einen TEAM-Platz, keinen Konfi-Platz', async () => {
+      const eventId = await teamTermin();
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('confirmed');
+
+      // Kernpunkt: Die Zaehlung muss die Leitung auf der TEAM-Seite fuehren.
+      // Vor der Aenderung stand hier registered_count 1 / teamer_count 0 —
+      // die Leitung haette den einen Konfi-Platz belegt.
+      const list = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const listed = list.body.find((e) => e.id === eventId);
+      expect(parseInt(listed.registered_count, 10)).toBe(0);
+      expect(parseInt(listed.teamer_count, 10)).toBe(1);
+    });
+
+    it('Erlaubter Fall: Leitung an einem Nur-Teamer-Termin (frueher 400)', async () => {
+      const eventId = await teamTermin({ teamerOnly: true });
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('confirmed');
+    });
+
+    it('Der Konfi-Platz bleibt frei: nach der Leitungs-Zuordnung bekommt ein Konfi weiter einen bestaetigten Platz', async () => {
+      const eventId = await teamTermin();
+
+      await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      const konfiRes = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(konfiRes.status).toBe(201);
+      expect(konfiRes.body.status).toBe('confirmed');
+    });
+
+    it('Verbotener Fall: an einem reinen Konfi-Termin wird die Leitung mit 400 abgewiesen', async () => {
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, max_participants, waitlist_enabled,
+                             teamer_needed, teamer_only, point_type, created_by, organization_id)
+         VALUES ('Nur-Konfi-Termin', NOW() + INTERVAL '7 days', 10, false,
+                 false, false, 'gemeinde', $1, $2)
+         RETURNING id`,
+        [USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/events/${event.id}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Dieses Event ist nicht für Teamer:innen vorgesehen');
+
+      const { rows } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [event.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Verbotener Fall: ein Konfi darf niemanden zuordnen (403, keine Buchung)', async () => {
+      const eventId = await teamTermin();
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Verbotener Fall: Leitung einer FREMDEN Organisation wird nicht gefunden (404, keine Buchung)', async () => {
+      const eventId = await teamTermin();
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin2.id });
+
+      expect(res.status).toBe(404);
+      const { rows } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.orgAdmin2.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Zugeordnete Leitung kommt in den BESTEHENDEN Chat zum Termin — mit user_type admin', async () => {
+      const eventId = await teamTermin();
+
+      // Chat zuerst anlegen (bewusste Handlung der Leitung), dann zuordnen.
+      const chatRes = await request(app)
+        .post(`/api/events/${eventId}/chat`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(chatRes.status).toBe(201);
+      const roomId = chatRes.body.chat_room_id;
+
+      await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      const { rows } = await db.query(
+        'SELECT user_type FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [roomId, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(1);
+      // 'admin', nicht 'teamer' — sonst findet die Leitung ihren eigenen Raum nicht.
+      expect(rows[0].user_type).toBe('admin');
+    });
+
+    it('Ohne Chat entsteht KEINER: Zuordnen legt von sich aus keinen Raum an', async () => {
+      const eventId = await teamTermin();
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        'SELECT id FROM chat_rooms WHERE event_id = $1', [eventId]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Austragen entfernt die Leitung wieder aus dem Chat zum Termin', async () => {
+      const eventId = await teamTermin();
+
+      const chatRes = await request(app)
+        .post(`/api/events/${eventId}/chat`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const roomId = chatRes.body.chat_room_id;
+
+      await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+
+      const { rows: [booking] } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.orgAdmin1.id]
+      );
+
+      const delRes = await request(app)
+        .delete(`/api/events/${eventId}/bookings/${booking.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(delRes.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [roomId, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Bestehende Chats bleiben unberuehrt: ein Chat ohne Leitungs-Zuordnung bekommt keine Leitung dazu', async () => {
+      const eventId = await teamTermin();
+
+      // Nur eine Teamer:in ist zugeordnet, die Leitung NICHT.
+      await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.teamer1.id });
+
+      const chatRes = await request(app)
+        .post(`/api/events/${eventId}/chat`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const roomId = chatRes.body.chat_room_id;
+
+      // Im Raum stehen genau: der Ersteller (admin1) und die Teamer:in.
+      // orgAdmin1 ist nicht zugeordnet und darf deshalb NICHT drin sein.
+      const { rows } = await db.query(
+        'SELECT user_id FROM chat_participants WHERE room_id = $1 ORDER BY user_id',
+        [roomId]
+      );
+      expect(rows.map((r) => r.user_id).sort((a, b) => a - b))
+        .toEqual([USERS.teamer1.id, USERS.admin1.id].sort((a, b) => a - b));
+    });
+
+    it('Team-Warteliste: volle Team-Plaetze setzen die Leitung auf die Warteliste, und sie rueckt spaeter nach', async () => {
+      // Genau EIN Team-Platz: die Teamer:in nimmt ihn, die Leitung wartet.
+      const eventId = await teamTermin({ teamerMax: 1 });
+
+      const t = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.teamer1.id });
+      expect(t.body.status).toBe('confirmed');
+
+      const l = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.orgAdmin1.id });
+      expect(l.status).toBe(201);
+      expect(l.body.status).toBe('waitlist');
+
+      // Die Teamer:in wird ausgetragen -> die wartende Leitung muss nachruecken.
+      // Vor der Aenderung fand promoteFromWaitlist(...,'teamer') sie nie:
+      // eine tote Buchung, die dauerhaft auf der Warteliste stehen blieb.
+      const { rows: [tBooking] } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.teamer1.id]
+      );
+      await request(app)
+        .delete(`/api/events/${eventId}/bookings/${tBooking.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.orgAdmin1.id]
+      );
+      expect(rows[0].status).toBe('confirmed');
+    });
+  });
 });

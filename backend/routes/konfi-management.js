@@ -147,6 +147,40 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // GET alle Admins/Org-Admins der Organisation (31.08.2026).
+    //
+    // Zweck: Die Leitung soll sich einem Termin ZUORDNEN koennen — wie eine
+    // Teamer:in, bewusst und pro Termin — und kommt dadurch in den Chat zum
+    // Termin. Ein automatisches Hineinrutschen in jeden Event-Chat ist
+    // ausdruecklich NICHT gewollt.
+    //
+    // Eigene Route statt eines Filter-Parameters an /teamer: Deren Antwort ist
+    // ein Vertrag der ausgelieferten Apps (Teamer-Verwaltung), und ein
+    // zusaetzlicher Query-Parameter haette dort stillschweigend Admins in
+    // Listen gespuelt, die "Teamer:innen" ueberschrieben sind.
+    //
+    // Keine Zaehler (Abzeichen/Zertifikate): Die Liste dient nur der Auswahl.
+    // Ausgeliefert wird nur, was die Auswahl braucht — keine Login-Daten
+    // ausser dem username, wie bei /teamer.
+    router.get('/leitung', rbacVerifier, requireTeamer, async (req, res) => {
+        try {
+            const { rows } = await db.query(
+                `SELECT u.id, u.display_name as name, u.username, r.name as role_name
+                   FROM users u
+                   JOIN roles r ON u.role_id = r.id
+                  WHERE r.name IN ('admin', 'org_admin')
+                    AND u.organization_id = $1
+                    AND u.deleted_at IS NULL
+                  ORDER BY u.display_name`,
+                [req.user.organization_id]
+            );
+            res.json(rows);
+        } catch (err) {
+            console.error('Database error in GET /konfis/leitung:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        }
+    });
+
     // GET a single konfi/teamer by ID - weiterleiten an zweiten Handler
 
     // POST (create) a new konfi

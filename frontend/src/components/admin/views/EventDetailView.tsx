@@ -149,6 +149,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     filterRole: 'teamer'
   });
 
+  // Leitungs-Modal (filterRole: 'leitung') — Admins/Org-Admins bewusst pro
+  // Termin zuordnen. Wer zugeordnet ist, kommt in den Chat zum Termin; ein
+  // automatisches Hineinrutschen in jeden Event-Chat gibt es ausdruecklich nicht.
+  const [presentLeitungModal, dismissLeitungModal] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    onClose: () => dismissLeitungModal(),
+    onSuccess: () => {
+      dismissLeitungModal();
+      loadEventData();
+    },
+    dismiss: () => dismissLeitungModal(),
+    filterRole: 'leitung'
+  });
+
   // Konfi Modal (filterRole: 'konfi')
   const [presentKonfiModal, dismissKonfiModal] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
@@ -474,7 +488,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const eventDate = new Date(eventData.event_date).toLocaleDateString('de-DE', {
       weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
     });
-    const konfiCount = participants.filter(p => p.role_name !== 'teamer').length;
+    const konfiCount = participants.filter(p => p.role_name === 'konfi').length;
     presentActionSheet({
       header: `"${eventData.name}" absagen?`,
       subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
@@ -537,6 +551,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
+  // Zugeordnete Leitung (Admin/Org-Admin). Sie steht in der Team-Liste,
+  // hat aber keinen Jahrgang und ist deshalb eigens zu kennzeichnen.
+  const istLeitung = (p: Participant) =>
+    p.role_name === 'admin' || p.role_name === 'org_admin';
+
   // Helper: Einzelnen Teilnehmer rendern
   const renderParticipant = (participant: Participant) => {
     const isWaitlist = participant.status === 'waitlist';
@@ -598,9 +617,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {participant.participant_name}
                   </div>
                   <div className="app-list-item__subtitle">
-                    {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                    {/* Zugeordnete Leitung steht in derselben Liste wie die
+                        Teamer:innen und hat keinen Jahrgang — ohne Label
+                        bliebe die Zeile ohne Unterzeile und waere von einer
+                        Teamer:in nicht zu unterscheiden. */}
+                    {istLeitung(participant) && <>Leitung</>}
+                    {!istLeitung(participant) && participant.jahrgang_name && <>{participant.jahrgang_name}</>}
                     {participant.timeslot_start_time && participant.timeslot_end_time && (
-                      <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                      <>{(istLeitung(participant) || participant.jahrgang_name) ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
                     )}
                   </div>
                   {isOptedOut && participant.opt_out_reason && (
@@ -613,9 +637,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </div>
           </div>
         </IonItem>
-        {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
+        {(participant.role_name !== 'konfi' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
-          {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
+          {participant.role_name === 'konfi' && participant.status === 'confirmed' && (
             <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                 <IonIcon icon={returnUpBack} />
@@ -697,8 +721,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           icon={calendar}
           colors={getStatusColors()}
           stats={(() => {
-            const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
-            const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+            const konfiOnly = participants.filter(p => p.role_name === 'konfi');
+            // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026).
+            const teamerOnly = participants.filter(p => p.role_name !== 'konfi');
             const teamerConfirmedCount = teamerOnly.filter(p => p.status === 'confirmed').length;
             const teamerWaitlistCount = teamerOnly.filter(p => p.status === 'waitlist').length;
             // Teamer-Kontingent gilt, sobald das Event Teamer zulaesst \u2014 NICHT
@@ -805,8 +830,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
         {/* Participants List */}
         {(() => {
-          const konfiParticipants = participants.filter(p => p.role_name !== 'teamer');
-          const teamerParticipants = participants.filter(p => p.role_name === 'teamer');
+          const konfiParticipants = participants.filter(p => p.role_name === 'konfi');
+          // Team-Seite: Teamer:innen UND zugeordnete Leitung. Ein '!== konfi'
+          // statt '=== teamer', sonst landet zugeordnete Leitung in der
+          // Konfi-Liste und wird als Kind gezaehlt.
+          const teamerParticipants = participants.filter(p => p.role_name !== 'konfi');
           const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
           const allWaitlistParticipants = konfiParticipants.filter(p => p.status === 'waitlist');
           const unassignedParticipants = eventData?.has_timeslots
@@ -844,6 +872,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
                         <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                         Teamer:in hinzufügen
+                      </IonButton>
+                    )}
+                    {/* Leitung laeuft ueber dasselbe Team-Kontingent wie die
+                        Teamer:innen — deshalb auch dieselbe Bedingung. */}
+                    {teamerErlaubt && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Leitung hinzufügen
                       </IonButton>
                     )}
                   </IonCardContent>
@@ -953,6 +990,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                           onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                           Teamer:in hinzufügen
+                        </IonButton>
+                        <IonButton expand="block" fill="outline"
+                          onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
+                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          Leitung hinzufügen
                         </IonButton>
                       </div>
                     </IonCardContent>

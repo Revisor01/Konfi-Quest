@@ -514,12 +514,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // teamer_needed-Event mit Kapazität meldete das Detail "Ausgebucht",
       // während die Liste "Offen" zeigte. Teamer stehen getrennt in
       // teamer_count/teamer_waitlist_count (eigenes Kontingent, Migration 120).
-      const registeredCount = participants.filter(p => p.status === 'confirmed' && p.role_name !== 'teamer').length;
-      const pendingCount = participants.filter(p => p.status === 'waitlist' && p.role_name !== 'teamer').length;
+      const registeredCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'konfi').length;
+      const pendingCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'konfi').length;
 
       // Teamer-Kontingent: eigene Zähler, getrennt vom Konfi-Kontingent
-      const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'teamer').length;
-      const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'teamer').length;
+      // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026).
+      const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name !== 'konfi').length;
+      const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name !== 'konfi').length;
 
       // Buchungsstatus des eingeloggten Users (für Konfis UND Teamer:innen —
       // Teamer können seit dem Teamer-Kontingent ebenfalls 'waitlist' haben)

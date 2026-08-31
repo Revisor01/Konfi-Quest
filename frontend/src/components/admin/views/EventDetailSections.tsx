@@ -31,6 +31,7 @@ import {
   trash,
   document as documentIcon,
   attachOutline,
+  linkOutline,
   cloudOfflineOutline,
   lockOpen,
   qrCodeOutline
@@ -193,8 +194,10 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
 
         {/* TN gesamt - Konfis und Teamer getrennt */}
         {(() => {
-          const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
-          const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+          // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026) —
+          // sonst zaehlt zugeordnete Leitung als Konfi mit.
+          const konfiOnly = participants.filter(p => p.role_name === 'konfi');
+          const teamerOnly = participants.filter(p => p.role_name !== 'konfi');
           const teamerConfirmed = teamerOnly.filter(p => p.status === 'confirmed');
           const teamerWaitlistCount = eventData.teamer_waitlist_count !== undefined
             ? eventData.teamer_waitlist_count
@@ -278,7 +281,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             <div>
               <div className="app-info-row__label">Warteliste</div>
               <div className="app-info-row__value">
-                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {eventData.max_waitlist_size || 10}
+                {participants.filter(p => p.role_name === 'konfi' && p.status === 'waitlist').length} / {eventData.max_waitlist_size || 10}
               </div>
             </div>
           </div>
@@ -580,15 +583,22 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
             <div className="app-list-item__row">
               <div className="app-list-item__main">
                 <div className="app-icon-circle app-icon-circle--material">
-                  <IonIcon icon={documentIcon} />
+                  <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                 </div>
                 <div className="app-list-item__content">
                   <div className="app-list-item__title">{mat.title}</div>
                   <div className="app-list-item__meta">
-                    <span className="app-list-item__meta-item">
-                      <IonIcon icon={attachOutline} className="app-icon-color--material" />
-                      {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
-                    </span>
+                    {mat.link_url ? (
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={linkOutline} className="app-icon-color--material" />
+                        Link
+                      </span>
+                    ) : (
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={attachOutline} className="app-icon-color--material" />
+                        {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

@@ -187,13 +187,18 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
   if (roleFilter !== 'teamer' && roleFilter !== 'not_teamer') {
     throw new Error(`promoteFromWaitlist: roleFilter muss 'teamer' oder 'not_teamer' sein (war: ${roleFilter})`);
   }
-  // Rollen-Bedingung: Teamer-Warteliste vs. alles-was-kein-Teamer-ist (Konfis).
+  // Rollen-Bedingung: Team-Warteliste vs. Konfi-Warteliste.
+  // 'teamer' meint hier das TEAM-Kontingent — Teamer:innen und die einem
+  // Termin zugeordneten Admins (31.08.2026). Wuerde weiter strikt auf
+  // r.name = 'teamer' gefiltert, faende ein frei werdender Team-Platz eine
+  // wartende Admin-Buchung nie: genau die tote Buchung, gegen die dieser
+  // Filter ueberhaupt eingefuehrt wurde.
   // Geloeschte User (deleted_at) ruecken nie nach.
   const roleCondition = roleFilter === 'teamer'
     ? `EXISTS (SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
-                WHERE u.id = eb.user_id AND r.name = 'teamer' AND u.deleted_at IS NULL)`
+                WHERE u.id = eb.user_id AND r.name <> 'konfi' AND u.deleted_at IS NULL)`
     : `EXISTS (SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
-                WHERE u.id = eb.user_id AND r.name != 'teamer' AND u.deleted_at IS NULL)`;
+                WHERE u.id = eb.user_id AND r.name = 'konfi' AND u.deleted_at IS NULL)`;
 
   // Atomar: SELECT des nächsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
   // FOR UPDATE SKIP LOCKED verhindert, dass zwei gleichzeitige Stornierungen

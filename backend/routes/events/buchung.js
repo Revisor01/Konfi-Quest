@@ -71,7 +71,7 @@ module.exports = (db, rbacVerifier) => {
            FROM event_bookings eb
            JOIN users u ON eb.user_id = u.id
            JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+           WHERE eb.event_id = $1 AND r.name <> 'konfi' AND u.deleted_at IS NULL`,
           [eventId]
         );
         const teamerConfirmed = parseInt(teamerCounts.confirmed_count, 10);
@@ -208,7 +208,7 @@ module.exports = (db, rbacVerifier) => {
            FROM event_bookings eb
            JOIN users u ON eb.user_id = u.id
            JOIN roles r ON u.role_id = r.id
-           WHERE eb.timeslot_id = $1 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
+           WHERE eb.timeslot_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
           [timeslot_id]
         );
         const slotConfirmed = parseInt(slotCounts.confirmed_count, 10);
@@ -237,7 +237,7 @@ module.exports = (db, rbacVerifier) => {
            FROM event_bookings eb
            JOIN users u ON eb.user_id = u.id
            JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
+           WHERE eb.event_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
           [eventId]
         );
         const confirmedCount = parseInt(counts.confirmed_count, 10);
@@ -373,7 +373,7 @@ module.exports = (db, rbacVerifier) => {
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                LEFT JOIN users u ON eb.user_id = u.id
-               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name <> 'konfi'
                WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [booking.timeslot_id]
             );
@@ -384,7 +384,7 @@ module.exports = (db, rbacVerifier) => {
               `SELECT COUNT(*) as confirmed_count
                FROM event_bookings eb
                LEFT JOIN users u ON eb.user_id = u.id
-               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name <> 'konfi'
                WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [eventId]
             );
@@ -417,7 +417,7 @@ module.exports = (db, rbacVerifier) => {
              JOIN users u ON eb.user_id = u.id
              JOIN roles r ON u.role_id = r.id
              WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-               AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+               AND r.name <> 'konfi' AND u.deleted_at IS NULL`,
             [eventId]
           );
           const teamerMaxCapacity = teamerCapInfo?.teamer_max_participants || 0;

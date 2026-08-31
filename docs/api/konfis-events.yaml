@@ -1204,8 +1204,18 @@ paths:
       summary: Teilnehmer manuell hinzufuegen (Leitung)
       description: >
         Fuegt einen User der eigenen Org zum Event hinzu. status='auto'
-        entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot-
+        entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot-
         Kapazität, Warteliste); explizites status wird uebernommen.
+        Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern
+        einer existiert — angelegt wird dabei keiner.
+        GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi
+        statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung
+        (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine
+        Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das
+        TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz.
+        Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm
+        einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen.
+        Die Antwortform ist unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1846,6 +1856,32 @@ paths:
           Login-Daten außer dem username ausgeliefert.
       responses:
         "200": { description: "Array (id, name, username, teamer_since, jahrgang_name, badge_count, cert_count)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/admin/konfis/leitung:
+    get:
+      tags: ["Konfis (Verwaltung)"]
+      summary: Liste der Leitung (Admins/Org-Admins) der Organisation
+      description: >
+        Liefert alle User mit Rolle admin oder org_admin der aktiven
+        Organisation. Zweck ist die Auswahl beim Zuordnen der Leitung zu einem
+        Termin (POST /api/events/{id}/participants) — wer zugeordnet ist, kommt
+        in den Chat zum Termin. Neu am 31.08.2026.
+        Eigene Route statt eines Filters an /konfis/teamer: Deren Antwortform
+        ist ein Vertrag der ausgelieferten Apps und bleibt unveraendert.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE r.name IN ('admin','org_admin') AND u.organization_id = Token-Org AND deleted_at IS NULL"
+        hinweis: >
+          Kein Jahrgangs-Filter (wie bei /konfis/teamer). Es werden keine
+          Login-Daten ausser dem username ausgeliefert. Super-Admins ohne
+          org_admin-Rolle stehen nicht in der Liste.
+      responses:
+        "200": { description: "Array (id, name, username, role_name)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

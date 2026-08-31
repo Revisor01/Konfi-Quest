@@ -5,7 +5,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, Ion
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
-import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, linkOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -20,6 +20,8 @@ interface EventMaterial {
   created_by_name?: string | null;
   /** Serverseitig bereits als Zahl geliefert. */
   file_count: number;
+  /** Gesetzt, wenn das Material einen Link statt Dateien traegt (ab 31.08.2026). */
+  link_url?: string | null;
 }
 import { writeQueue } from '../../../services/writeQueue';
 import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
@@ -985,15 +987,22 @@ const TeamerEventsPage: React.FC = () => {
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
                           <div className="app-icon-circle app-icon-circle--material">
-                            <IonIcon icon={documentIcon} />
+                            <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                           </div>
                           <div className="app-list-item__content">
                             <div className="app-list-item__title">{mat.title}</div>
                             <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={attachOutline} className="app-icon-color--material" />
-                                {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
-                              </span>
+                              {mat.link_url ? (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={linkOutline} className="app-icon-color--material" />
+                                  Link
+                                </span>
+                              ) : (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={attachOutline} className="app-icon-color--material" />
+                                  {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

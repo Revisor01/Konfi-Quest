@@ -207,6 +207,97 @@ describe('Konfi-Management Routes', () => {
   });
 
   // ================================================================
+  // GET /api/admin/konfis/leitung — Auswahlliste fuer die Zuordnung der
+  // Leitung zu einem Termin (31.08.2026). Eigene Route, damit die Antwort
+  // von /teamer unveraendert bleibt (Vertrag der ausgelieferten Apps).
+  // ================================================================
+  describe('GET /api/admin/konfis/leitung', () => {
+    it('Erlaubter Fall: Admin bekommt 200 + genau die Admins/Org-Admins der eigenen Org', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      // Org 1 fuehrt admin1, orgAdmin1, superAdmin (role_id 5 = super_admin,
+      // also NICHT enthalten) und orgAdminSuper (org_admin-Rolle).
+      const ids = res.body.map((u) => u.id).sort((a, b) => a - b);
+      expect(ids).toEqual([USERS.admin1.id, USERS.orgAdmin1.id, USERS.orgAdminSuper.id].sort((a, b) => a - b));
+
+      // Keine Konfis, keine Teamer:innen in der Liste.
+      expect(ids).not.toContain(USERS.konfi1.id);
+      expect(ids).not.toContain(USERS.teamer1.id);
+    });
+
+    it('role_name wird echt ausgeliefert (die Auswahl unterscheidet danach)', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const gefunden = res.body.find((u) => u.id === USERS.orgAdmin1.id);
+      expect(gefunden.role_name).toBe('org_admin');
+      expect(gefunden.name).toBe(USERS.orgAdmin1.display_name);
+    });
+
+    it('Keine Login-Daten ausser dem username', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      for (const u of res.body) {
+        expect(u.password_hash).toBeUndefined();
+        expect(u.email).toBeUndefined();
+      }
+    });
+
+    it('Erlaubter Fall: Teamer:in darf die Liste sehen (sie darf auch zuordnen)', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Verbotener Fall: Konfi bekommt 403', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Verbotener Fall: ohne Token 401', async () => {
+      const res = await request(app).get('/api/admin/konfis/leitung');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Mandantengrenze: Admin aus Org 2 sieht ausschliesslich die Leitung von Org 2', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map((u) => u.id).sort((a, b) => a - b);
+      expect(ids).toEqual([USERS.admin2.id, USERS.orgAdmin2.id].sort((a, b) => a - b));
+      expect(ids).not.toContain(USERS.admin1.id);
+      expect(ids).not.toContain(USERS.orgAdmin1.id);
+    });
+
+    it('Geloeschte Konten stehen nicht in der Liste', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.orgAdmin1.id]);
+
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const ids = res.body.map((u) => u.id);
+      expect(ids).not.toContain(USERS.orgAdmin1.id);
+    });
+  });
+
+  // ================================================================
   // GET /api/admin/konfis/:id
   // ================================================================
   describe('GET /api/admin/konfis/:id', () => {
