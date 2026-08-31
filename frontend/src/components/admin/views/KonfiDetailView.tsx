@@ -290,8 +290,28 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Bearbeiten-Modal. Dasselbe Modal wie beim Anlegen, nur mit `konfi`
   // vorbelegt — zwei Dateien waeren genau die Kopie, die in diesem Projekt
   // regelmaessig auseinanderlaeuft.
+  // Der Jahrgang der Konfi muss beim Bearbeiten IMMER sichtbar sein — auch
+  // wenn man ihn gar nicht wechseln will. Kommt die Liste nicht an (offline,
+  // Serverfehler), stand hier sonst "Keine Jahrgänge verfügbar" und der
+  // bestehende Jahrgang war nirgends zu sehen; das Formular liess sich dann
+  // nicht einmal speichern, weil ohne Jahrgang nichts gueltig ist.
+  //
+  // Ist der Jahrgang schon in der geladenen Liste, bleibt es bei der Liste —
+  // sonst wird er vorne ergaenzt. Die Punktearten fehlen dem Ersatzeintrag;
+  // das ist unschaedlich, weil die Warnung nur beim WECHSEL in einen anderen
+  // Jahrgang greift und der eigene nie der Wechsel-Zielwert ist.
+  const jahrgaengeFuersModal = (() => {
+    const eigenerId = currentKonfi?.jahrgang_id;
+    if (!eigenerId) return alleJahrgaenge;
+    if (alleJahrgaenge.some((jg) => jg.id === eigenerId)) return alleJahrgaenge;
+    return [
+      { id: eigenerId, name: currentKonfi?.jahrgang_name || 'Aktueller Jahrgang' },
+      ...alleJahrgaenge
+    ];
+  })();
+
   const [presentBearbeitenModal, dismissBearbeitenModal] = useIonModal(KonfiModal, {
-    jahrgaenge: alleJahrgaenge,
+    jahrgaenge: jahrgaengeFuersModal,
     konfi: currentKonfi ? {
       id: currentKonfi.id,
       display_name: currentKonfi.display_name || currentKonfi.name,
@@ -324,12 +344,20 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
   // Jahrgaenge fuer das Bearbeiten-Modal. Einmal beim Oeffnen der Seite; die
   // Liste enthaelt dank SELECT j.* auch die Punktearten, aus denen die Warnung
-  // beim Wechsel gebaut wird. Faellt der Abruf aus, bleibt die Liste leer und
-  // das Modal zeigt "Keine Jahrgänge verfügbar" — die Seite selbst stoert das
-  // nicht.
+  // beim Wechsel gebaut wird.
+  //
+  // Der Pfad lautet /admin/jahrgaenge. Hier stand bis zum 31.08.2026
+  // /jahrgaenge — gemessen gegen Produktion: HTTP 404. Der Abruf lief still in
+  // den .catch()-Zweig, die Liste blieb leer, und das Bearbeiten-Modal zeigte
+  // "Keine Jahrgänge verfügbar", obwohl es welche gibt. Die Route filtert NICHT
+  // nach zugewiesenen Jahrgaengen (jahrgaenge.js: WHERE j.organization_id),
+  // der Fehler lag allein im Pfad.
+  //
+  // Faellt der Abruf trotzdem aus (offline, Serverfehler), faellt die Liste auf
+  // den Jahrgang der Konfi zurueck — siehe jahrgaengeFuersModal.
   useEffect(() => {
     if (isTeamer) return;
-    api.get('/jahrgaenge')
+    api.get('/admin/jahrgaenge')
       .then((res) => setAlleJahrgaenge(res.data || []))
       .catch(() => setAlleJahrgaenge([]));
   }, [isTeamer]);

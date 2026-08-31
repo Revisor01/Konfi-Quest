@@ -63,7 +63,12 @@ export interface Activity {
   date: string;
   completed_date?: string;
   target_role?: string;
+  // `admin` traegt bei offenen Antraegen den Statustext, den die Ansicht
+  // selbst setzt (KonfiDetailView.tsx). Fuer verbuchte Aktivitaeten liefert
+  // das Backend den Namen als `admin_name`
+  // (konfi-management.js:543 aliast u.display_name as admin_name).
   admin?: string;
+  admin_name?: string;
   isPending?: boolean;
   photo_filename?: string;
   requestId?: number;
@@ -337,7 +342,10 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                                   deshalb auf created_at. */}
                               {formatDate(bonus.completed_date || bonus.created_at || '')}
                             </span>
-                            <span className="app-list-item__meta-item">{bonus.admin_name || 'Admin'}</span>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={personOutline} className="app-icon-color--konfis" />
+                              {bonus.admin_name || 'Admin'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -541,7 +549,10 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                               month: '2-digit'
                             })}
                         </span>
-                        <span className="app-list-item__meta-item">{eventPoint.admin_name || 'Admin'}</span>
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={personOutline} className="app-icon-color--konfis" />
+                          {eventPoint.admin_name || 'Admin'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -792,7 +803,10 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                               <IonIcon icon={calendar} className="app-icon-color--events" />
                               {formatDate(activity.completed_date || activity.date)}
                             </span>
-                            <span className="app-list-item__meta-item">{activity.admin}</span>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={personOutline} className="app-icon-color--konfis" />
+                              {activity.admin || activity.admin_name || 'Admin'}
+                            </span>
                           </div>
                         </div>
                       </div>
