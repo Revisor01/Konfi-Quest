@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Behoben
+- Öffnete man einen Chat über eine Push-Nachricht, war der Zurück-Knopf ohne
+  Funktion — man kam aus dem Raum nicht mehr heraus. Das galt auch für
+  Termine und Konfi-Profile, die über eine Benachrichtigung geöffnet wurden.
 - Beim Ansehen von Foto-Nachweisen (bei Meldungen und in der Antragsprüfung
   der Leitung) wurde der Bildspeicher nie wieder freigegeben — er wuchs mit
   jedem angesehenen Foto, bis die App neu gestartet wurde.

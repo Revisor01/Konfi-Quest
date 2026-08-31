@@ -32,6 +32,18 @@ import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // unter ihrem eigenen Prop-Namen (konfiId, eventId, roomId) plus onBack —
 // vorher stand dafuer fuer JEDE dieser Routen eine eigene Wrapper-Komponente
 // in dieser Datei, fuenf fast identische Bloecke.
+// Uebergeordnete Seite einer Parameter-Route: '/konfi/chat/room/:roomId'
+// wird zu '/konfi/chat'. Dorthin fuehrt der Zurueck-Knopf, wenn es keinen
+// Verlauf gibt. Die Segmente ab dem Parameter fallen weg.
+export const elternPfad = (routenPfad: string): string => {
+  const teile = routenPfad.split('/').filter(Boolean);
+  const bisParameter = teile.findIndex((t) => t.startsWith(':'));
+  const ohneParameter = bisParameter === -1 ? teile.slice(0, -1) : teile.slice(0, bisParameter);
+  // Rolle + Bereich genuegen: '/konfi/chat/room' -> '/konfi/chat'. Mehr
+  // Segmente sind Zwischenstuecke ohne eigene Seite.
+  return '/' + ohneParameter.slice(0, 2).join('/');
+};
+
 const ParamSeite: React.FC<{
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
   Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
@@ -42,12 +54,31 @@ const ParamSeite: React.FC<{
   Seite: React.ComponentType<any>;
   prop: string;
   param: string;
-}> = ({ Seite, prop, param }) => {
+  /** Wohin, wenn es keinen Verlauf gibt (Einstieg per Push/Deep-Link). */
+  zurueckZu: string;
+}> = ({ Seite, prop, param, zurueckZu }) => {
   // react-router 6 reicht Parameter nicht mehr als Props durch (kein
   // RouteComponentProps mehr) — sie kommen ueber useParams.
   const params = useParams();
   const router = useIonRouter();
-  return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={() => router.goBack()} />;
+
+  // Kommt man ueber einen Push herein, laedt AppContext die App HART neu
+  // (window.location.href, AppContext.tsx) — der Verlauf ist danach LEER.
+  // goBack() lief dann ins Nichts und der Zurueck-Knopf tat gar nichts;
+  // aus dem Chatraum kam man nicht mehr heraus (Simons Geraetetest mit
+  // Build 152, 31.08.2026).
+  //
+  // Ohne Verlauf ersetzen wir den Eintrag durch die Uebersicht ('root'),
+  // damit dort nicht wieder ein toter Zurueck-Knopf steht.
+  const zurueck = () => {
+    if (router.canGoBack()) {
+      router.goBack();
+    } else {
+      router.push(zurueckZu, 'back', 'replace');
+    }
+  };
+
+  return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={zurueck} />;
 };
 
 // Ladezustand, waehrend ein Seiten-Chunk erstmals geladen wird. Bewusst eine
@@ -206,7 +237,9 @@ const MainTabs: React.FC = () => {
           path={path}
           element={
             <Suspense fallback={<SeiteLaedt />}>
-              {param ? <ParamSeite Seite={Seite} prop={propName} param={param} /> : <Seite />}
+              {param
+                ? <ParamSeite Seite={Seite} prop={propName} param={param} zurueckZu={elternPfad(path)} />
+                : <Seite />}
             </Suspense>
           }
         />
