@@ -27,7 +27,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ github.repository_owner }}/konfi-quest-backend
+  # Kleingeschrieben: Docker lehnt Grossbuchstaben im Repository-Namen ab,
+  # und github.repository_owner liefert 'Revisor01'.
+  BACKEND_IMAGE: revisor01/konfi-quest-backend
 
 jobs:
   build-test-image:
