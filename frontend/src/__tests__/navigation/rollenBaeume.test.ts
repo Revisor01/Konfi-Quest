@@ -150,19 +150,29 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
   // (Tippfehler im Pfad, kaputter Default-Export), faellt das hier auf und
   // nicht erst beim Nutzer. Die Zahlen sind die deduplizierten Seiten je
   // Rolle: teamer hat 11 Routen, aber Badges/Material doppelt verdrahtet.
+  // Zeitgrenze bewusst hochgesetzt (31.08.2026): Diese vier Tests laden die
+  // Seiten-Module WIRKLICH -- zwischen 2 und 21 Stueck. Auf einer ausgelasteten
+  // Maschine dauert das laenger als die 5 s, die vitest voreinstellt; gemessen
+  // 4,6 s im Leerlauf gegen einen Zeitueberlauf bei Lastdurchschnitt 27.
+  // Der Test wuerde also flattern, ohne dass am Code etwas falsch waere -- und
+  // seit die E2E-Suite scharf ist, blockiert ein flatternder Test den Deploy.
+  // 30 s sind grosszuegig genug fuer eine langsame CI-Maschine und immer noch
+  // eng genug, um einen ECHTEN Haenger (nie aufloesender Import) zu fangen.
+  const LADE_GRENZE = 30_000;
+
   it('konfi: ladeRolleVor laedt alle 8 Seiten-Module', async () => {
     await expect(ladeRolleVor('konfi')).resolves.toBe(8);
-  });
+  }, LADE_GRENZE);
 
   it('teamer: ladeRolleVor laedt alle 9 Seiten-Module', async () => {
     await expect(ladeRolleVor('teamer')).resolves.toBe(9);
-  });
+  }, LADE_GRENZE);
 
   it('admin: ladeRolleVor laedt alle 21 Seiten-Module', async () => {
     await expect(ladeRolleVor('admin')).resolves.toBe(21);
-  });
+  }, LADE_GRENZE);
 
   it('super_admin: ladeRolleVor laedt alle 2 Seiten-Module', async () => {
     await expect(ladeRolleVor('super_admin')).resolves.toBe(2);
-  });
+  }, LADE_GRENZE);
 });
