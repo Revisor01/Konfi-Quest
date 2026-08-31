@@ -5,8 +5,15 @@ farbe: "#047857"
 ---
 
 Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: **Admins**
-können fast alles, **Org-Admins** zusätzlich die Benutzerverwaltung, die
-Einladungen und die Dashboard-Einstellungen.
+kümmern sich um den laufenden Betrieb, **Org-Admins** zusätzlich um
+Benutzer:innen, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde.
+Was die beiden Stufen genau unterscheidet, steht im Kapitel
+[Rollen und Rechte](05-rollen.md).
+
+Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
+du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
+für die du eingetragen bist — ohne Zuweisung bleibt die Konfi-Liste leer. Nur
+der Org-Admin sieht immer die ganze Gemeinde.
 
 ## Konfis
 
@@ -39,8 +46,10 @@ schicken lassen kannst.
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind.
 
-Teamer:innen anlegen, bearbeiten und löschen darf die ganze Leitung. Nur
-Org-Admins lassen sich ausschließlich von anderen Org-Admins verwalten.
+Teamer:innen anlegen, bearbeiten und löschen darf die ganze Leitung. Weitere
+Admins und Org-Admins anlegen darf nur der Org-Admin — die
+[Übersicht dazu](05-rollen.md#wer-wen-anlegen-darf) steht im Kapitel Rollen und
+Rechte.
 
 ## Chat
 
@@ -144,8 +153,9 @@ stehen im Kapitel [Challenges](80-challenges.md).
 
 ### Verwaltung (nur Org-Admin)
 
-- **Benutzer:innen** — Rollen vergeben, Jahrgänge zuweisen. Die Zuweisung
-  entscheidet, welche Konfis eine Teamer:in erreicht und sieht.
+- **Benutzer:innen** — [Rollen](05-rollen.md) vergeben, Jahrgänge zuweisen. Die
+  Zuweisung entscheidet, welche Konfis eine Teamer:in oder ein Admin erreicht
+  und sieht.
 - **Dashboard** — welche Bereiche Konfis und Teamer:innen auf ihrer
   Startseite sehen, und in welcher Reihenfolge
 - **Konfis einladen** — QR-Code und Einladungscode zur Selbstregistrierung,

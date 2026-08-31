@@ -170,9 +170,13 @@ Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese Zuweisung ist die
 **wichtigste Berechtigungseinstellung im ganzen System** — sie entscheidet in
 sehr vielen Bereichen mit.
 
-Für die **Leitung** gilt das alles nicht: Sie sieht immer die ganze Gemeinde.
-Was das im Chat konkret bedeutet, steht im Kapitel
-[Chat](90-chat.md#wer-wen-anschreiben-darf).
+Für den **Org-Admin** gilt das alles nicht: Er sieht immer die ganze Gemeinde,
+unabhängig davon, welche Jahrgänge bei ihm eingetragen sind. Für **Admins**
+gilt das so nicht — bei der Konfi-Liste und im Chat sind auch sie auf ihre
+zugewiesenen Jahrgänge beschränkt. Ein Admin ohne Zuweisung sieht deshalb
+keine Konfis. Was das im Chat konkret bedeutet, steht im Kapitel
+[Chat](90-chat.md#wer-wen-anschreiben-darf); die Unterschiede zwischen den
+Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 
 | Bereich | Ohne passende Zuweisung |
 |---|---|

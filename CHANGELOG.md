@@ -10,6 +10,10 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
+  Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
+  Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
+  Admins ohne Zuweisung keine Konfis sehen.
 - Beim Material lässt sich statt Dateien auch eine Internetseite hinterlegen.
   Teamer:innen erkennen sie am Link-Symbol; ein Tipp darauf öffnet sie im
   Browser. Wer das Material sehen darf, entscheidet sich weiterhin über den
