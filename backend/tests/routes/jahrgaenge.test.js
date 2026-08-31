@@ -523,6 +523,131 @@ describe('Jahrgaenge Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('laedt die Sprueche aller Konfis in EINER Sammel-Abfrage', async () => {
+      // Vorher lief pro Konfi mit Listen-Wahl eine eigene Abfrage
+      // (N+1). Gemessen mit zwei solchen Konfis: 4 Abfragen
+      // (Jahrgang-Pruefung + Konfi-Liste + 2x Spruch). Seit der
+      // Buendelung sind es 3, unabhaengig von der Zahl der Konfis.
+      await db.query(
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Johannes 3,16', 'Johannes', 3, 16, NULL, 2)
+         RETURNING id`
+      );
+      const { rows: [zweiterSpruch] } = await db.query(
+        `SELECT id FROM konfsprueche WHERE reference = 'Johannes 3,16'`
+      );
+      await db.query(
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES ($1, 'luther2017', 'Also hat Gott die Welt geliebt.')`,
+        [zweiterSpruch.id]
+      );
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'luther2017'
+         WHERE user_id = $2`,
+        [zweiterSpruch.id, USERS.konfi2.id]
+      );
+
+      const abfragen = vi.spyOn(db, 'query');
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const anzahl = abfragen.mock.calls.length;
+      abfragen.mockRestore();
+
+      expect(res.status).toBe(200);
+      expect(anzahl).toBe(3);
+
+      // Und die Sprueche stimmen trotz Buendelung.
+      const konfi1Entry = res.body.find(r => r.user_id === USERS.konfi1.id);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi1Entry.konfspruch.text).toBe('Der Herr ist mein Hirte.');
+      expect(konfi2Entry.konfspruch.text).toBe('Also hat Gott die Welt geliebt.');
+      expect(konfi2Entry.konfspruch.reference).toBe('Johannes 3,16');
+    });
+
+    it('derselbe Spruch in zwei Uebersetzungen bleibt auseinandergehalten', async () => {
+      // Die Uebersetzung haengt am Konfi, nicht am Spruch. Wuerde die
+      // Sammel-Abfrage nur nach spruch_id zuordnen, bekaemen beide Konfis
+      // denselben Text.
+      await db.query(
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES ($1, 'bigs', 'Adonaj ist meine Hirtin.')`,
+        [spruchId]
+      );
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'bigs'
+         WHERE user_id = $2`,
+        [spruchId, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const konfi1Entry = res.body.find(r => r.user_id === USERS.konfi1.id);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi1Entry.konfspruch.text).toBe('Der Herr ist mein Hirte.');
+      expect(konfi1Entry.konfspruch.translation).toBe('luther2017');
+      expect(konfi2Entry.konfspruch.text).toBe('Adonaj ist meine Hirtin.');
+      expect(konfi2Entry.konfspruch.translation).toBe('bigs');
+    });
+
+    it('fehlende Uebersetzung liefert leeren Text, nicht null', async () => {
+      // LEFT JOIN auf konfspruch_uebersetzungen: den Spruch gibt es, die
+      // gewaehlte Uebersetzung nicht. Die Antwortform bleibt gleich
+      // (source/id/reference vorhanden, text ist '').
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'gibtesnicht'
+         WHERE user_id = $2`,
+        [spruchId, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi2Entry.konfspruch.source).toBe('liste');
+      expect(konfi2Entry.konfspruch.id).toBe(spruchId);
+      expect(konfi2Entry.konfspruch.reference).toBe('Psalm 23,1');
+      expect(konfi2Entry.konfspruch.text).toBe('');
+      expect(konfi2Entry.konfspruch.translation).toBe('gibtesnicht');
+    });
+
+    it('ein Spruch aus einer FREMDEN Org wird nicht aufgeloest', async () => {
+      // Die Org-Schranke (organization_id IS NULL OR = eigene) muss die
+      // Buendelung ueberleben.
+      const { rows: [fremd] } = await db.query(
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Rut 1,16', 'Rut', 1, 16, 2, 3)
+         RETURNING id`
+      );
+      await db.query(
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES ($1, 'luther2017', 'Wo du hingehst, da will auch ich hingehen.')`,
+        [fremd.id]
+      );
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'luther2017'
+         WHERE user_id = $2`,
+        [fremd.id, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi2Entry.konfspruch).toBeNull();
+    });
   });
 
   // ================================================================
