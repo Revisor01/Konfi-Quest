@@ -62,12 +62,40 @@ describe('Roles Routes', () => {
       expect(Array.isArray(res.body)).toBe(true);
     });
 
-    it('Admin bekommt 403 (nur org_admin/super_admin erlaubt)', async () => {
+    // Bis 31.08.2026 stand hier 403. Seit der Entscheidung, dass Admins
+    // Teamer:innen anlegen duerfen, brauchen sie die Rollenliste fuer den
+    // Anlege-Dialog — allerdings nur die Rollen, die sie auch vergeben duerfen.
+    it('Admin bekommt 200 + NUR die verwaltbaren Rollen (teamer, konfi)', async () => {
       const res = await request(app)
         .get('/api/roles')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      const roleNames = res.body.map(r => r.name).sort();
+      expect(roleNames).toEqual(['konfi', 'teamer']);
+    });
+
+    it('OrgAdmin sieht weiterhin ALLE Rollen der Org (ungefiltert)', async () => {
+      const res = await request(app)
+        .get('/api/roles')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const roleNames = res.body.map(r => r.name).sort();
+      expect(roleNames).toEqual(['admin', 'konfi', 'org_admin', 'super_admin', 'teamer']);
+    });
+
+    it('Admin sieht nur Rollen der EIGENEN Organisation', async () => {
+      const res = await request(app)
+        .get('/api/roles')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(r => r.id).sort((a, b) => a - b);
+      // Org 1: konfi=1, teamer=2 (Org 2 haette 6/7)
+      expect(ids).toEqual([ROLES.konfi.id, ROLES.teamer.id]);
     });
 
     it('Teamer bekommt 403', async () => {

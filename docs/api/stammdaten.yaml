@@ -849,16 +849,24 @@ paths:
       tags: ["Benutzer & Rollen"]
       summary: Alle Rollen der eigenen Organisation mit Nutzer-Zähler
       responses:
-        "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi" }
+        "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi. Fuer die Rolle admin auf die verwaltbaren Rollen (teamer, konfi) eingeschraenkt." }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { description: "Rolle weder super_admin noch org_admin" }
+        "403": { description: "Rolle nicht in [super_admin, org_admin, admin]" }
         "500": { $ref: "#/components/responses/ServerError" }
       x-berechtigung:
-        rollen: [super_admin, org_admin]
+        rollen: [super_admin, org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id"
+        objekt-pruefung: "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id; danach filterRolesByHierarchy fuer admin"
         hinweis: >
+          GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung
+          Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl
+          hier holt. Die Antwort wird fuer admin per filterRolesByHierarchy auf
+          die Rollen reduziert, die canManageRole ihm erlaubt (teamer, konfi) —
+          sonst boete der Dialog Rollen an, die POST /users danach mit 403
+          zurueckweist. super_admin und org_admin bekommen weiterhin alle
+          Rollen der Organisation samt Nutzer-Zaehlern. Die Antwortform bleibt
+          ein Array.
           Der Inline-Check prüft strikt role_name und NICHT das
           is_super_admin-Flag — abweichend von der Projekt-Regel und von
           GET /roles/list/assignable, das beides berücksichtigt. Praktisch

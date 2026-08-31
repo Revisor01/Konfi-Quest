@@ -1089,12 +1089,19 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht einsehbar (canManageRole)" }
+        "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('view')"]
         org-scope: true
-        objekt-pruefung: "Jahrgänge auf eigene Org gefiltert"
+        objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert"
+        hinweis: >
+          GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen
+          der von ihm verwalteten Personen (teamer, konfi) sehen — die von
+          anderen Admins und von Org-Admins nicht (403), fremde Organisationen
+          gar nicht (404). requireAdmin allein waere eine Rechteausweitung
+          gewesen; die Grenze zieht checkUserHierarchy."
     post:
       tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
@@ -1120,13 +1127,19 @@ paths:
       responses:
         "200": { description: "Zuweisungen ersetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert" }
         "400": { description: "Jahrgang nicht in eigener Org" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole)" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateJahrgangAssignments]
         org-scope: true
-        objekt-pruefung: "User + alle Jahrgang-IDs müssen zur eigenen Org gehören"
-        hinweis: "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
+        objekt-pruefung: "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören"
+        hinweis: >
+          GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung.
+          Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben
+          koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig.
+          admin kommt damit an teamer und konfi, NICHT an andere Admins oder
+          Org-Admins (403) und nicht an fremde Organisationen (404)."
 
   /api/users/me/jahrgaenge:
     get:
@@ -1273,9 +1286,10 @@ paths:
       responses:
         "200": { description: "Array der Zuweisungen" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('view')"]
         org-scope: true
         objekt-pruefung: "wie GET /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."
@@ -1289,9 +1303,10 @@ paths:
         "200": { description: "Zuweisungen ersetzt, Chat synchronisiert" }
         "400": { description: "Validierung" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
-        rollen: [org_admin]
-        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: "wie POST /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."

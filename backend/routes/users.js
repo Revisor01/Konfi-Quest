@@ -605,7 +605,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Assign jahrgaenge to user
-  router.post('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, validateJahrgangAssignments, async (req, res) => {
+  // requireAdmin + Hierarchie statt requireOrgAdmin (Entscheidung 31.08.2026):
+  // Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen —
+  // sonst ist die neue Teamer:in fuer niemanden zustaendig.
+  // requireAdmin ALLEIN waere eine Rechteausweitung: ein Admin koennte damit
+  // die Jahrgangs-Rechte anderer Admins und sogar von Org-Admins aendern.
+  // userHierarchyMiddleware('update') zieht dieselbe Grenze wie bei Anlegen,
+  // Bearbeiten und Loeschen: canManageRole laesst 'admin' nur teamer und konfi
+  // zu (roleHierarchy.js:36-38) und antwortet sonst mit 403 — bei Zielbenutzern
+  // aus einer fremden Organisation mit 404.
+  router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('update'), validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -724,7 +733,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Get user's jahrgang assignments
-  router.get('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // Wie POST /:id/jahrgaenge: requireAdmin + Hierarchie ('view'), damit die
+  // Leitung die Zuweisungen der von ihr verwalteten Teamer:innen sehen kann,
+  // die von Admins/Org-Admins aber nicht.
+  router.get('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('view'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 

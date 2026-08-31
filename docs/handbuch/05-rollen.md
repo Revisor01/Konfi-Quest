@@ -37,7 +37,9 @@ Aktivitäten, Material und Challenges. Bestätigt Aktivitäts-Meldungen, trägt
 Anwesenheiten ein und vergibt Bonuspunkte.
 
 Ein Admin kann **Teamer:innen und Konfis anlegen und bearbeiten** — andere
-Admins oder Org-Admins nicht.
+Admins oder Org-Admins nicht. Beim Anlegen einer Teamer:in gibt er ihr auch
+gleich die **Jahrgänge** mit; ohne die sieht sie keine einzige Konfi. Die
+Jahrgänge anderer Admins und der Org-Admins bleiben ihm verschlossen.
 
 **Wichtig:** Auch ein Admin braucht Jahrgangs-Zuweisungen. Bei der Konfi-Liste
 und im Chat sieht er nur die Jahrgänge, für die er eingetragen ist. Ein frisch

@@ -132,11 +132,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const nameAutomatisch = !isEditMode && !!festeRolle;
 
   // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
+  // Spiegelt canManageRole im Backend (utils/roleHierarchy.js) — durchgesetzt
+  // wird die Regel dort, hier geht es nur darum, keine Auswahl anzubieten, die
+  // der Server danach mit 403 zurueckweist.
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
 
     // Konfis werden über separate KonfiModal erstellt
     if (roleName === 'konfi') return false;
+
+    // super_admin ist nie zuweisbar: canManageRole erlaubt diese Rolle
+    // niemandem, auch super_admin nicht sich selbst.
+    if (roleName === 'super_admin') return false;
 
     if (userRole === 'org_admin') {
       return roleName !== 'konfi';
