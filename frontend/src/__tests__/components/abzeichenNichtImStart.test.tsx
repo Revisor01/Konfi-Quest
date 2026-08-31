@@ -37,7 +37,7 @@ const startAntworten: Record<string, unknown> = {
   },
   '/konfi/profile': {},
   '/konfi/events': [],
-  '/konfi/badges': { available: [], earned: [], stats: { totalVisible: 0, totalSecret: 0 } },
+  '/konfi/badges/v2': { available: [], earned: [], stats: { totalVisible: 0, totalSecret: 0 } },
 };
 
 const mockApiGet = vi.fn((pfad: string) =>
@@ -164,7 +164,7 @@ import KonfiDashboardPage from '../../components/konfi/pages/KonfiDashboardPage'
 import KonfiBadgesPage from '../../components/konfi/pages/KonfiBadgesPage';
 
 const abzeichenAufrufe = () =>
-  mockApiGet.mock.calls.filter(([pfad]) => pfad === '/konfi/badges').length;
+  mockApiGet.mock.calls.filter(([pfad]) => pfad === '/konfi/badges/v2').length;
 
 describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
   beforeEach(() => {
@@ -178,7 +178,7 @@ describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
     // `enabled: false` haelt die Anfrage zurueck, solange die Startseite ihre
     // eigenen Daten noch nicht hat. Ohne dieses Abmelden liefe sie im
     // Startschwung mit — sie war dort die dickste und langsamste Anfrage.
-    const abzeichenQuery = offlineQueryAufrufe.find(a => a.key === 'konfi:badges:7');
+    const abzeichenQuery = offlineQueryAufrufe.find(a => a.key === 'konfi:badges:v2:7');
     expect(abzeichenQuery).not.toBe(undefined);
     expect(abzeichenQuery!.options?.enabled).toBe(false);
     expect(abzeichenQuery!.options?.ttl).toBe(30 * 60 * 1000);
@@ -210,7 +210,7 @@ describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
     render(<KonfiBadgesPage />);
 
     await waitFor(() => expect(abzeichenAufrufe()).toBe(1));
-    expect(mockApiGet).toHaveBeenCalledWith('/konfi/badges');
+    expect(mockApiGet).toHaveBeenCalledWith('/konfi/badges/v2');
   });
 
   it('beide Seiten teilen sich denselben Cache-Schluessel', () => {
@@ -219,8 +219,8 @@ describe('Abzeichen liegen nicht mehr im App-Startschwung', () => {
     // den Stand der Startseite zu uebernehmen.
     const start = lies('src/components/konfi/pages/KonfiDashboardPage.tsx');
     const seite = lies('src/components/konfi/pages/KonfiBadgesPage.tsx');
-    expect(start).toContain("'konfi:badges:' + user?.id");
-    expect(seite).toContain("'konfi:badges:' + user?.id");
+    expect(start).toContain("'konfi:badges:v2:' + user?.id");
+    expect(seite).toContain("'konfi:badges:v2:' + user?.id");
   });
 });
 
@@ -241,7 +241,7 @@ describe('Offline: der Cache traegt die Abzeichen weiterhin', () => {
     (networkMonitor as { isOnline: boolean }).isOnline = false;
     const gecacht: Record<string, unknown> = {
       'konfi:dashboard:7': startAntworten['/konfi/dashboard'],
-      'konfi:badges:7': { available: [], earned: [], stats: { totalVisible: 4, totalSecret: 1 } },
+      'konfi:badges:v2:7': { available: [], earned: [], stats: { totalVisible: 4, totalSecret: 1 } },
     };
     vi.mocked(offlineCache.get).mockImplementation(async (key: string) =>
       gecacht[key] ? { data: gecacht[key] } : null
@@ -251,7 +251,7 @@ describe('Offline: der Cache traegt die Abzeichen weiterhin', () => {
 
     // Die Abzeichen kommen aus dem Cache ...
     await waitFor(() => {
-      expect(vi.mocked(offlineCache.get).mock.calls.map(([k]) => k)).toContain('konfi:badges:7');
+      expect(vi.mocked(offlineCache.get).mock.calls.map(([k]) => k)).toContain('konfi:badges:v2:7');
     });
     // ... und es geht dabei KEINE Netzanfrage raus.
     expect(abzeichenAufrufe()).toBe(0);
@@ -270,7 +270,7 @@ describe('Der Zaehler an der Reiterleiste haengt nicht an /konfi/badges', () => 
     // ... und der Context holt ihn aus dem leichten Zaehler-Endpunkt.
     expect(badgeContext).toContain('/notifications/badge-counts');
     // Weder MainTabs noch der Context rufen die schwere Abzeichen-Route.
-    expect(mainTabs).not.toContain("api.get('/konfi/badges')");
-    expect(badgeContext).not.toContain("api.get('/konfi/badges')");
+    expect(mainTabs).not.toContain("api.get('/konfi/badges");
+    expect(badgeContext).not.toContain("api.get('/konfi/badges");
   });
 });

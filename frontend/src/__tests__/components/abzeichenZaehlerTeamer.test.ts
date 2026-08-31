@@ -46,7 +46,14 @@ describe('Abzeichen-Zaehler gilt auch fuer Teamer:innen', () => {
 
   describe('TeamerBadgesPage', () => {
     it('markiert die Abzeichen beim Oeffnen als gesehen', () => {
-      expect(teamerBadges).toContain("api.put('/teamer/badges/mark-seen')");
+      // POST seit dem 01.09.2026 (Badge-Konsolidierung v2): Vorher war das
+      // hier ein PUT, waehrend der Konfi-Pfad laengst POST rief -- dieselbe
+      // Sache mit zwei Verben. PUT verspricht "lege die Ressource unter
+      // diesem Pfad auf diesen Zustand"; hier gibt es weder eine adressierte
+      // Ressource noch einen mitgeschickten Zustand, sondern eine Handlung
+      // auf den eigenen Datensaetzen. Die alte PUT-Route bleibt bestehen,
+      // bis keine App im Store sie mehr ruft (siehe docs/api/ABRISS.md).
+      expect(teamerBadges).toContain("api.post('/teamer/badges/mark-seen')");
     });
 
     it('stoesst danach die Aktualisierung an', () => {
