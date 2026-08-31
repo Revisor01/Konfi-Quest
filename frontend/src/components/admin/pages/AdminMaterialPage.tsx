@@ -37,6 +37,7 @@ import {
   calendar,
   calendarOutline,
   filterOutline,
+  linkOutline,
   search as searchIcon,
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -62,6 +63,7 @@ interface Material {
   jahrgang_id?: number;
   jahrgang_name?: string;
   file_count?: number;
+  link_url?: string | null;
   created_at: string;
 }
 
@@ -280,7 +282,7 @@ const AdminMaterialPage: React.FC = () => {
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
                                   <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
-                                    <IonIcon icon={documentIcon} />
+                                    <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                                   </div>
                                   <div className="app-list-item__content">
                                     <div className="app-list-item__title">
@@ -298,6 +300,12 @@ const AdminMaterialPage: React.FC = () => {
                                       </div>
                                     )}
                                     <div className="app-list-item__meta">
+                                      {mat.link_url && (
+                                        <span className="app-list-item__meta-item">
+                                          <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
+                                          Link
+                                        </span>
+                                      )}
                                       {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
                                           <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />

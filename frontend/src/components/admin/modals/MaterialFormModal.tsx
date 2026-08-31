@@ -23,6 +23,8 @@ import {
   IonCardContent,
   IonAccordion,
   IonAccordionGroup,
+  IonSegment,
+  IonSegmentButton,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -36,6 +38,7 @@ import {
   imageOutline,
   videocamOutline,
   musicalNotesOutline,
+  linkOutline,
   chevronDownOutline
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -50,6 +53,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { istWebLink } from '../../../utils/linkDisplay';
 
 interface MaterialFile {
   id: number;
@@ -82,6 +86,7 @@ interface Material {
   jahrgang_name?: string;
   jahrgaenge?: { id: number; name: string }[];
   files?: MaterialFile[];
+  link_url?: string | null;
   created_at: string;
 }
 
@@ -108,6 +113,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  // Datei ODER Link (Entscheidung Simon, 31.08.2026). Beim Bearbeiten
+  // entscheidet der gespeicherte Link, welche Art vorausgewaehlt ist.
+  const [art, setArt] = useState<'datei' | 'link'>(material?.link_url ? 'link' : 'datei');
+  const [linkUrl, setLinkUrl] = useState(material?.link_url || '');
   const { isSubmitting, guard } = useActionGuard();
 
   const [events, setEvents] = useState<EventOption[]>([]);
@@ -254,13 +263,23 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
       return;
     }
 
+    // Vorab-Pruefung im Formular, damit der Fehler ohne Netz sichtbar wird.
+    // Die verbindliche Pruefung macht der Server (routes/material.js).
+    if (art === 'link' && linkUrl.trim() && !istWebLink(linkUrl.trim())) {
+      setError('Der Link muss mit http:// oder https:// beginnen');
+      return;
+    }
+
     await guard(async () => {
       try {
         const payload = {
           title: title.trim(),
           description: description.trim() || null,
           event_ids: eventIds,
-          jahrgang_ids: jahrgangIds
+          jahrgang_ids: jahrgangIds,
+          // Bei "Datei" wird ein zuvor gesetzter Link geleert und umgekehrt --
+          // ein Material traegt entweder das eine oder das andere.
+          link_url: art === 'link' ? linkUrl.trim() : ''
         };
 
         if (networkMonitor.isOnline) {
@@ -275,7 +294,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           }
 
           // Neue Dateien hochladen
-          if (newFiles.length > 0 && materialId) {
+          if (art === 'datei' && newFiles.length > 0 && materialId) {
             const formData = new FormData();
             newFiles.forEach(file => {
               formData.append('files', file);
@@ -484,8 +503,68 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonCard>
         </IonList>
 
+        {/* Art des Materials: Datei ODER Link (Entscheidung Simon, 31.08.2026) */}
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--material">
+              <IonIcon icon={attachOutline} />
+            </div>
+            <IonLabel>Anhang</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <IonSegment
+                value={art}
+                onIonChange={(e) => setArt((e.detail.value as 'datei' | 'link') || 'datei')}
+              >
+                <IonSegmentButton value="datei">
+                  <IonIcon icon={attachOutline} />
+                  <IonLabel>Dateien</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="link">
+                  <IonIcon icon={linkOutline} />
+                  <IonLabel>Link</IonLabel>
+                </IonSegmentButton>
+              </IonSegment>
+              <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '10px 2px 0' }}>
+                {art === 'link'
+                  ? 'Statt Dateien wird eine Internetseite verknüpft. Sie öffnet sich im Browser.'
+                  : 'Dateien werden verschlüsselt in der App abgelegt.'}
+              </p>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Link */}
+        {art === 'link' && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--material">
+                <IonIcon icon={linkOutline} />
+              </div>
+              <IonLabel>Link</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonInput
+                    label="Adresse"
+                    labelPlacement="stacked"
+                    type="url"
+                    inputmode="url"
+                    autocapitalize="off"
+                    value={linkUrl}
+                    onIonInput={(e) => setLinkUrl(e.detail.value || '')}
+                    placeholder="https://konfi-quest.de/gottesbilder"
+                  />
+                </IonItem>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Bestehende Dateien */}
-        {existingFiles.length > 0 && (
+        {art === 'datei' && existingFiles.length > 0 && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--material">
@@ -543,6 +622,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         )}
 
         {/* Neue Dateien */}
+        {art === 'datei' && (
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">
@@ -622,6 +702,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
         <div className="ion-padding-bottom" />
       </IonContent>

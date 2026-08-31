@@ -94,6 +94,231 @@ describe('Material Routes', () => {
 
   });
 
+  // ================================================================
+  // LINK STATT DATEI (Entscheidung Simon, 31.08.2026)
+  // Material traegt entweder Dateien oder einen Link. Geprueft wird das
+  // SCHEMA ueber new URL(); alles ausser http/https wird abgewiesen, damit
+  // kein javascript:-Link in ein href der App geraet.
+  // ================================================================
+  describe('Link am Material', () => {
+    it('https-Link wird angenommen und zurueckgegeben', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Gottesbilder', link_url: 'https://konfi-quest.de/gottesbilder' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+    });
+
+    it('http-Link wird ebenfalls angenommen', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Alte Seite', link_url: 'http://gemeinde.example/seite' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBe('http://gemeinde.example/seite');
+    });
+
+    it('Umgebende Leerzeichen werden abgeschnitten', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Leerzeichen', link_url: '  https://konfi-quest.de/gottesbilder  ' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+    });
+
+    it('Ohne Link bleibt das Feld null', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Nur Dateien' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBeNull();
+    });
+
+    it('Leerer Link wird als "kein Link" gespeichert', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Leerer Link', link_url: '   ' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBeNull();
+    });
+
+    it.each([
+      ['javascript:alert(1)'],
+      ['data:text/html,<script>alert(1)</script>'],
+      ['file:///etc/passwd'],
+      ['ftp://server.example/datei.pdf'],
+      ['konfi-quest.de/gottesbilder'],
+      ['//konfi-quest.de/gottesbilder'],
+    ])('Verbotener Link %s gibt 400 und legt nichts an', async (linkUrl) => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Boeser Link', link_url: linkUrl });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Der Link muss mit http:// oder https:// beginnen');
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM materials WHERE title = $1',
+        ['Boeser Link']
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('Der Link taucht in Liste und Detail auf', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Gottesbilder', link_url: 'https://konfi-quest.de/gottesbilder' });
+      expect(erstellt.status).toBe(201);
+
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(liste.status).toBe(200);
+      const ausListe = liste.body.find(m => m.id === erstellt.body.id);
+      expect(ausListe.link_url).toBe('https://konfi-quest.de/gottesbilder');
+
+      const detail = await request(app)
+        .get(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+    });
+
+    it('Material ohne Link liefert link_url = null (Altbestand bleibt lesbar)', async () => {
+      const { rows: [alt] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by)
+         VALUES ('Altbestand', $1, $2) RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+
+      const detail = await request(app)
+        .get(`/api/material/${alt.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.link_url).toBeNull();
+      // Die bisherige Antwortform bleibt vollstaendig erhalten.
+      expect(detail.body.title).toBe('Altbestand');
+      expect(detail.body.files).toEqual([]);
+      expect(detail.body.events).toEqual([]);
+      expect(detail.body.jahrgaenge).toEqual([]);
+    });
+
+    it('by-event liefert den Link mit', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          title: 'Termin-Link',
+          link_url: 'https://konfi-quest.de/gottesbilder',
+          event_ids: [EVENTS.gottesdienstEvent.id],
+        });
+      expect(erstellt.status).toBe(201);
+
+      const res = await request(app)
+        .get(`/api/material/by-event/${EVENTS.gottesdienstEvent.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].link_url).toBe('https://konfi-quest.de/gottesbilder');
+    });
+
+    it('PUT setzt einen Link nachtraeglich', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Erst ohne Link' });
+
+      const put = await request(app)
+        .put(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_url: 'https://konfi-quest.de/gottesbilder' });
+      expect(put.status).toBe(200);
+
+      const detail = await request(app)
+        .get(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+    });
+
+    it('PUT mit leerem Link entfernt ihn wieder', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Link', link_url: 'https://konfi-quest.de/gottesbilder' });
+
+      const put = await request(app)
+        .put(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_url: '' });
+      expect(put.status).toBe(200);
+
+      const detail = await request(app)
+        .get(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.body.link_url).toBeNull();
+    });
+
+    it('PUT mit verbotenem Link gibt 400 und laesst den alten stehen', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Link', link_url: 'https://konfi-quest.de/gottesbilder' });
+
+      const put = await request(app)
+        .put(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Neuer Titel', link_url: 'javascript:alert(1)' });
+      expect(put.status).toBe(400);
+      expect(put.body.error).toBe('Der Link muss mit http:// oder https:// beginnen');
+
+      const detail = await request(app)
+        .get(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+      // Auch der Titel bleibt unveraendert: die Pruefung greift vor dem Schreiben.
+      expect(detail.body.title).toBe('Mit Link');
+    });
+
+    it('PUT ohne link_url laesst den bestehenden Link unangetastet', async () => {
+      const erstellt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Link', link_url: 'https://konfi-quest.de/gottesbilder' });
+
+      const put = await request(app)
+        .put(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Nur der Titel aendert sich' });
+      expect(put.status).toBe(200);
+
+      const detail = await request(app)
+        .get(`/api/material/${erstellt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.body.link_url).toBe('https://konfi-quest.de/gottesbilder');
+      expect(detail.body.title).toBe('Nur der Titel aendert sich');
+    });
+
+    it('Teamer:in darf keinen Link setzen (403)', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ title: 'Teamer-Link', link_url: 'https://konfi-quest.de/gottesbilder' });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe('GET /api/material/:id', () => {
     let materialId;
 

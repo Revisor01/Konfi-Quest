@@ -39,6 +39,38 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     )`;
   };
 
+  // LINK STATT DATEI (Entscheidung Simon, 31.08.2026)
+  //
+  // Ein Material traegt entweder Dateien ODER einen Link. Die Spalte
+  // materials.link_url kam ADDITIV dazu (Migration 135): Bestehendes Material
+  // hat NULL, die Antwortform bleibt sonst unveraendert -- ausgelieferte
+  // App-Versionen lesen das neue Feld einfach nicht.
+  //
+  // Geprueft wird ueber new URL() und das SCHEMA, nie per String-Suche:
+  // `javascript:alert(1)`, `data:text/html,...` und `file:///etc/passwd`
+  // fallen damit alle durch. Bewusst NICHT auf eine Host-Erlaubnisliste
+  // verengt (anders als die Musikdienste bei den Challenge-Beitraegen) --
+  // die Leitung verlinkt hier eigene Seiten und beliebige Fremdquellen.
+  const ERLAUBTE_SCHEMATA = ['http:', 'https:'];
+
+  const pruefeLink = (wert) => {
+    if (wert === undefined || wert === null || wert === '') return { ok: true, wert: null };
+    if (typeof wert !== 'string') return { ok: false };
+    const getrimmt = wert.trim();
+    if (!getrimmt) return { ok: true, wert: null };
+    if (getrimmt.length > 2000) return { ok: false };
+    let url;
+    try {
+      url = new URL(getrimmt);
+    } catch {
+      return { ok: false };
+    }
+    if (!ERLAUBTE_SCHEMATA.includes(url.protocol)) return { ok: false };
+    return { ok: true, wert: getrimmt };
+  };
+
+  const LINK_FEHLER = 'Der Link muss mit http:// oder https:// beginnen';
+
   // Validierungsregeln
   const validateCreateMaterial = [
     body('title').notEmpty().trim().isLength({ min: 1, max: 255 }).withMessage('Titel erforderlich (1-255 Zeichen)'),
@@ -64,7 +96,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const { search, event_id, jahrgang_id } = req.query;
 
       let query = `
-        SELECT m.id, m.title, m.description,
+        SELECT m.id, m.title, m.description, m.link_url,
                m.created_at, u.display_name as created_by_name,
                (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count,
                (SELECT COUNT(*) FROM material_events me WHERE me.material_id = m.id) as event_count,
@@ -164,7 +196,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: materials } = await db.query(
-        `SELECT m.id, m.title, m.description, m.created_at,
+        `SELECT m.id, m.title, m.description, m.link_url, m.created_at,
                 u.display_name as created_by_name,
                 (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
          FROM materials m
@@ -194,7 +226,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: [material] } = await db.query(
-        `SELECT m.id, m.title, m.description,
+        `SELECT m.id, m.title, m.description, m.link_url,
                 m.created_at, u.display_name as created_by_name
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
@@ -251,10 +283,15 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireAdmin, validateCreateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
+      }
+
+      const link = pruefeLink(link_url);
+      if (!link.ok) {
+        return res.status(400).json({ error: LINK_FEHLER });
       }
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
@@ -266,10 +303,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       const { rows: [material] } = await db.query(
-        `INSERT INTO materials (title, description, organization_id, created_by)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, title, description, created_at`,
-        [title.trim(), description || null, req.user.organization_id, req.user.id]
+        `INSERT INTO materials (title, description, link_url, organization_id, created_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, title, description, link_url, created_at`,
+        [title.trim(), description || null, link.wert, req.user.organization_id, req.user.id]
       );
 
       // Events zuordnen (Many-to-Many)
@@ -307,9 +344,14 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
+
+      const link = pruefeLink(link_url);
+      if (!link.ok) {
+        return res.status(400).json({ error: LINK_FEHLER });
+      }
 
       // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [existing] } = await db.query(
@@ -341,6 +383,14 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       if (description !== undefined) {
         updates.push(`description = $${paramIndex}`);
         params.push(description);
+        paramIndex++;
+      }
+      // Leerer String bzw. null loescht den Link wieder (pruefeLink gibt dann
+      // null zurueck) -- so laesst sich ein Material vom Link auf Dateien
+      // umstellen, ohne es neu anzulegen.
+      if (link_url !== undefined) {
+        updates.push(`link_url = $${paramIndex}`);
+        params.push(link.wert);
         paramIndex++;
       }
 

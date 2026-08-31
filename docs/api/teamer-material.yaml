@@ -880,6 +880,13 @@ paths:
   # Konfis haben auf keine dieser Routen Zugriff.
   # Keine Route kennt eine Jahrgangsgrenze (Befund M1).
   # ===================================================================
+  # LINK STATT DATEI (seit 31.08.2026): materials traegt zusaetzlich das Feld
+  # link_url. ADDITIV -- die bisherige Antwortform bleibt unveraendert, das
+  # Feld kommt lediglich dazu und ist bei Altbestand null. Ausgelieferte
+  # App-Versionen lesen es nicht und sehen dieselbe Antwort wie zuvor.
+  # Geprueft wird das SCHEMA (nur http/https), damit kein javascript:-Link in
+  # ein href der App geraet.
+  #
   # Die Tag-Routen (/api/material/tags, GET/POST/PUT/DELETE) wurden am
   # 27.08.2026 ENTFERNT (Simons Entscheidung). Sie boten ein vollstaendiges
   # CRUD, hatten aber keine Zeile Oberflaeche und kein Wort im Handbuch --
@@ -933,7 +940,7 @@ paths:
           schema: { type: integer }
           description: Nur Material dieses Jahrgangs
       responses:
-        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
+        "200": { description: "Array (id, title, description, link_url, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -963,9 +970,18 @@ paths:
                 event_ids: { type: array, items: { type: integer } }
                 jahrgang_ids: { type: array, items: { type: integer } }
                 tag_ids: { type: array, items: { type: integer } }
+                link_url:
+                  type: [string, "null"]
+                  maxLength: 2000
+                  description: >
+                    Optionaler Link statt Dateien (seit 31.08.2026). Nur http
+                    und https; geprueft wird das Schema ueber new URL(), alles
+                    andere (javascript:, data:, file:, ftp:, schemalose
+                    Adressen) gibt 400. Leerstring oder null bedeutet "kein
+                    Link". Umgebende Leerzeichen werden abgeschnitten.
       responses:
-        "201": { description: "id, title, description, created_at" }
-        "400": { description: Titel fehlt oder mindestens eine ID gehoert zu einer fremden Organisation }
+        "201": { description: "id, title, description, link_url, created_at" }
+        "400": { description: "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -987,7 +1003,7 @@ paths:
           schema: { type: integer, minimum: 1 }
           description: "ID des Termins"
       responses:
-        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count)" }
+        "200": { description: "Array (id, title, description, link_url, created_at, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1004,7 +1020,7 @@ paths:
         hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "id, title, description, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
+        "200": { description: "id, title, description, link_url, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1013,7 +1029,7 @@ paths:
       tags: ["Material"]
       summary: Material bearbeiten
       description: >
-        Teilaktualisierung von Titel und Beschreibung. Werden event_ids,
+        Teilaktualisierung von Titel, Beschreibung und Link. Werden event_ids,
         jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen
         komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder
         bleiben unverändert. Alle IDs werden gegen die eigene Organisation
@@ -1036,9 +1052,17 @@ paths:
                 event_ids: { type: array, items: { type: integer } }
                 jahrgang_ids: { type: array, items: { type: integer } }
                 tag_ids: { type: array, items: { type: integer } }
+                link_url:
+                  type: [string, "null"]
+                  maxLength: 2000
+                  description: >
+                    Link statt Dateien (seit 31.08.2026). Nur http und https,
+                    sonst 400. Leerstring oder null entfernt einen gesetzten
+                    Link wieder; wird das Feld gar nicht uebergeben, bleibt der
+                    gespeicherte Link unveraendert.
       responses:
         "200": { description: Aktualisiert }
-        "400": { description: Mindestens eine ID gehoert zu einer fremden Organisation }
+        "400": { description: "Der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }

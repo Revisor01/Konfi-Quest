@@ -22,7 +22,7 @@ import {
   IonSelectOption,
   useIonModal
 } from '@ionic/react';
-import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create } from 'ionicons/icons';
+import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
@@ -36,6 +36,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { istWebLink, hostAus } from '../../../utils/linkDisplay';
 
 interface Material {
   id: number;
@@ -43,9 +44,11 @@ interface Material {
   description?: string;
   events?: { id: number; name: string }[];
   event_count?: number;
-  jahrgang_id?: number;
+  // Die Jahrgangs-Zuordnung liefert GET /material als Array (material.js:177).
+  jahrgaenge?: { id: number; name: string }[];
   jahrgang_name?: string;
   file_count?: number;
+  link_url?: string | null;
   created_at: string;
 }
 
@@ -67,6 +70,7 @@ interface MaterialDetail {
   jahrgang_name?: string;
   admin_name?: string;
   files?: MaterialFile[];
+  link_url?: string | null;
   created_at: string;
 }
 
@@ -109,7 +113,12 @@ const TeamerMaterialPage: React.FC = () => {
       );
     }
     if (activeJahrgangId) {
-      filtered = filtered.filter(m => m.jahrgang_id === activeJahrgangId);
+      // Die Zuordnung kommt als Array `jahrgaenge` an jedem Eintrag
+      // (material.js:177). Frueher stand hier `m.jahrgang_id` -- ein Feld,
+      // das GET /material gar nicht liefert (Legacy-Spalte, seit Migration
+      // 064 durch material_jahrgaenge ersetzt). Der Filter fand deshalb
+      // IMMER nichts.
+      filtered = filtered.filter(m => m.jahrgaenge?.some(j => j.id === activeJahrgangId));
     }
     return filtered;
   }, [allMaterials, search, activeJahrgangId]);
@@ -188,6 +197,19 @@ const TeamerMaterialPage: React.FC = () => {
     } catch {
       setError('Fehler beim Öffnen der Datei');
     }
+  };
+
+  // Links oeffnen extern im Browser — derselbe Weg wie bei Kartenlinks und
+  // Links in Chatnachrichten (window.open mit _blank). istWebLink haelt alles
+  // ab, was kein http/https ist; der Server laesst zwar ohnehin nichts anderes
+  // durch, aber der Waechter steht dort, wo das href entsteht.
+  const openLink = async (url: string) => {
+    if (!istWebLink(url)) {
+      setError('Der Link konnte nicht geöffnet werden');
+      return;
+    }
+    await Haptics.impact({ style: ImpactStyle.Medium });
+    window.open(url, '_blank');
   };
 
   // === INLINE DETAIL VIEW ===
@@ -310,6 +332,46 @@ const TeamerMaterialPage: React.FC = () => {
               </IonCardContent>
             </IonCard>
           </IonList>
+
+          {/* Link (Entscheidung Simon, 31.08.2026): Material traegt Dateien
+              ODER einen Link. Eigenes Icon, damit er sich vom Dateianhang
+              unterscheidet; er oeffnet extern im Browser. */}
+          {istWebLink(selectedMaterial.link_url) && (
+            <IonList inset={true} className="app-segment-wrapper">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--material">
+                  <IonIcon icon={linkOutline} />
+                </div>
+                <IonLabel>Link</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <div
+                    className="app-list-item"
+                    style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
+                    onClick={() => openLink(selectedMaterial.link_url as string)}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
+                          <IonIcon icon={linkOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">{hostAus(selectedMaterial.link_url as string)}</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={openOutline} style={{ color: 'var(--app-color-material)' }} />
+                              Im Browser öffnen
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+          )}
 
           {/* Dateien */}
           <IonList inset={true} className="app-segment-wrapper">
@@ -495,7 +557,7 @@ const TeamerMaterialPage: React.FC = () => {
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
-                                <IonIcon icon={documentIcon} />
+                                <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                               </div>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title">
@@ -513,6 +575,12 @@ const TeamerMaterialPage: React.FC = () => {
                                   </div>
                                 )}
                                 <div className="app-list-item__meta">
+                                  {mat.link_url && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
+                                      Link
+                                    </span>
+                                  )}
                                   {mat.file_count !== undefined && mat.file_count > 0 && (
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />
