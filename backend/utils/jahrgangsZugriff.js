@@ -39,8 +39,19 @@ function darfJahrgang(req, jahrgangId, { edit = false } = {}) {
   if (!req || !req.user) return false;
 
   // Vollzugriff: super_admin (Rolle ODER Flag) und org_admin.
-  // Das Flag zaehlt mit, weil Simons eigenes Konto die Rolle org_admin mit
-  // is_super_admin=true traegt (siehe tests/helpers/seed.js: orgAdminSuper).
+  // Das Flag zaehlt mit, weil zwei org_admin-Konten es tragen (gemessen an
+  // Produktion 31.08.2026: org_admin|t = 2) -- ohne das Flag zu beachten
+  // haetten sie ueber die Rolle ohnehin Vollzugriff, mit ihm bleibt es dabei.
+  //
+  // ABWEICHUNG, bewusst und heute folgenlos: challenges.js:182 gibt der ROLLE
+  // super_admin ein leeres Array (= sieht nichts), rbac.js:288 weist sie bei
+  // Jahrgangs-Daten sogar ausdruecklich ab ("Super-Admin hat keinen Zugriff
+  // auf Jahrgangs-Daten"). Hier bekaeme sie true.
+  // Folgenlos, weil requireRole (rbac.js:242) strikt den Rollennamen prueft
+  // und 'super_admin' in KEINER der Listen requireAdmin/requireTeamer steht --
+  // ein super_admin erreicht diese Pruefung also gar nicht.
+  // Wer das aufloest, sollte es in EINE Richtung tun: Die etablierte Regel
+  // im Repo ist "super_admin hat auf Jahrgangs-Daten keinen Zugriff".
   if (req.user.is_super_admin || req.user.role_name === 'super_admin') return true;
   if (req.user.role_name === 'org_admin') return true;
 

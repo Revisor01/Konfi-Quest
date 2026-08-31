@@ -713,7 +713,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             }
 
             // Now, insert all new assignments
-            for (const assignment of jahrgang_assignments) {
+            for (const assignment of einzufuegen) {
                 const { jahrgang_id, can_view = true, can_edit = false } = assignment;
                 const insertQuery = `
                     INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, assigned_by)

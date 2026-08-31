@@ -43,11 +43,13 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
-- Ein Admin sah und bearbeitete Challenges aller Jahrgänge — auch derer, für
-  die er nicht zuständig ist, samt Beiträgen der Konfis. Challenges,
-  Beiträge und deren Moderation richten sich jetzt nach seinen Jahrgängen. Der
-  Org-Admin sieht weiterhin alles, Challenges für das ganze Team bleiben für
-  die gesamte Leitung sichtbar.
+- Ein Admin konnte Konfis Punkte geben, Bonuspunkte vergeben und ihre Anträge
+  genehmigen, zurücksetzen oder löschen, auch wenn sie zu einem Jahrgang
+  gehörten, für den er gar nicht zuständig ist. Das ist jetzt auf seine
+  eigenen Jahrgänge begrenzt. In der Antragsliste sieht er nur noch Anträge
+  aus seinen Jahrgängen, und die Nachweisfotos fremder Konfis bleiben ihm
+  verschlossen. Der Org-Admin darf weiterhin alles; Anträge und Aktivitäten
+  von Teamer:innen bleiben für die ganze Leitung sichtbar.
 - Ein Admin konnte Konfis in Jahrgängen anlegen und in Jahrgänge verschieben,
   für die er gar nicht zuständig ist — und sah sie danach nicht mehr, weil
   seine Liste nur die eigenen Jahrgänge zeigt. Anlegen und Verschieben sind
@@ -59,6 +61,11 @@ Versionsüberschrift.
   eigenen. Der Org-Admin verwaltet weiterhin alle.
 - Eine frisch gegebene oder entzogene Jahrgangs-Zuweisung wirkte bis zu eine
   halbe Minute lang nicht. Sie greift jetzt sofort.
+- Ein Admin sah und bearbeitete Challenges aller Jahrgänge — auch derer, für
+  die er nicht zuständig ist, samt Beiträgen der Konfis. Challenges,
+  Beiträge und deren Moderation richten sich jetzt nach seinen Jahrgängen. Der
+  Org-Admin sieht weiterhin alles, Challenges für das ganze Team bleiben für
+  die gesamte Leitung sichtbar.
 - In der Leitung konnte man den Knopf „Neue Teamer:in anlegen" zwar antippen,
   das Formular blieb aber ohne Auswahl und liess sich nicht abschicken.
   Teamer:innen anlegen und ihnen Jahrgänge geben klappt jetzt für die ganze

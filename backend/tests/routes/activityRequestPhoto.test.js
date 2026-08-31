@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, ACTIVITIES } = require('../helpers/seed');
+const { seed, ACTIVITIES, USERS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const { isEncrypted } = require('../../utils/photoCrypto');
 
@@ -36,6 +36,20 @@ describe('Activity Request Photo', () => {
     await seed(db);
     konfi1Token = generateToken('konfi1');
     admin1Token = generateToken('admin1');
+
+    // Jahrgangs-Bindung (31.08.2026): 'admin' ist seit dieser Regel an seine
+    // zugewiesenen Jahrgaenge gebunden. Der gemeinsame Seed vergibt
+    // Zuweisungen nur an Konfis und Teamer:innen (seed.js:177-183), admin1
+    // haette danach auf KEINE Konfi Zugriff — die Tests unten pruefen aber
+    // Statusfilter, Loesch-Regeln und Fotos, nicht die Jahrgangsgrenze.
+    // Deshalb hier die fehlende Zuweisung ergaenzen, statt die Erwartungen
+    // auf 403 aufzuweichen. Die Grenze selbst hat eine eigene Suite:
+    // tests/routes/jahrgangsBindungAdmin.test.js
+    await db.query(
+      `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+       VALUES ($1, $2, true, true)`,
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
     createdFiles.length = 0;
   });
 

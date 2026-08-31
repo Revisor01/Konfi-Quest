@@ -39,15 +39,34 @@
 #    - Alle uebrigen /api/konfi-Routen liefern ausschliesslich eigene Daten
 #      (WHERE user_id = req.user.id).
 #
-# 2. TEAMER-ZUGRIFF (assigned_jahrgaenge)
+# 2. TEAMER- UND ADMIN-ZUGRIFF (assigned_jahrgaenge)
+#    REGEL seit 31.08.2026 (Simon): org_admin und super_admin sind von ALLEN
+#    Jahrgangsbeschraenkungen ausgenommen. Die Rolle "admin" ist an ihre
+#    zugewiesenen Jahrgaenge gebunden — mit einer Ausnahme: Teamer:innen sieht
+#    ein Admin immer alle (das betrifft Personenlisten, nicht die Routen unten).
+#    Ein Admin ohne Zuweisung sieht daher keine Konfis, wohl aber alle
+#    Teamer:innen. Zentraler Baustein: backend/utils/jahrgangsZugriff.js
+#    (darfJahrgang / darfKonfi), Rollen-Weiche in middleware/rbac.js.
+#    Wo unten "Teamer" steht, gilt seit diesem Datum "Teamer UND Admin".
 #    Jahrgangs-Beschraenkung GREIFT bei:
 #    - GET /api/admin/konfis (Liste): nur can_view-Jahrgänge; keine Zuweisung
 #      -> leere Liste. ACHTUNG: Der Filter greift für ALLE Rollen außer
 #      org_admin/super_admin, also auch für Rolle "admin" - ein admin ohne
 #      Jahrgangs-Zuweisungen sieht hier NICHTS (Abweichung vom sonstigen
 #      Muster, wo admin org-weit sieht).
-#    - POST /api/admin/activities/assign-activity: Teamer nur für Konfis in
-#      can_view-Jahrgängen (403 sonst).
+#    - POST /api/admin/activities/assign-activity: Teamer UND Admin nur für
+#      Konfis in can_view-Jahrgängen (403 "Kein Zugriff auf diesen Konfi").
+#      Seit 31.08.2026 auch für die Rolle admin (vorher nur teamer).
+#      Ausgenommen: Aktivitäten mit target_role='teamer' — die Zielperson ist
+#      dann keine Konfi und hat keinen Jahrgang.
+#    - PUT /api/admin/activities/requests/:id (genehmigen/ablehnen),
+#      PUT .../reset und DELETE /api/admin/activities/requests/:id: seit
+#      31.08.2026 ebenfalls jahrgangs-gebunden für admin — alle drei vergeben,
+#      entziehen oder loeschen Punkte bzw. Antragsdaten einer Konfi.
+#    - GET /api/admin/activities/requests: seit 31.08.2026 GEFILTERT statt
+#      403 — ein Admin sieht die Anträge seiner Jahrgänge, ein Admin ohne
+#      Zuweisung ein leeres Array. Antwortform bleibt ein Array.
+#      Teamer-Anträge (target_role='teamer') bleiben immer sichtbar.
 #    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
 #      für zugewiesene Jahrgänge (+ allgemeine + teamer_only/teamer_needed).
 #      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.
@@ -64,8 +83,9 @@
 #      (nachgemessen: 201, Eintrag angelegt). Inkonsistent zu
 #      assign-activity, das den Jahrgang prüft, und zum Handbuch
 #      (45-jahrgaenge.md:180). Jetzt derselbe Check wie dort, mit 403
-#      "Kein Zugriff auf diesen Konfi". Die Leitung bleibt org-weit
-#      berechtigt.
+#      "Kein Zugriff auf diesen Konfi".
+#      ERWEITERT 31.08.2026: Der Check gilt jetzt auch für die Rolle admin
+#      (Simons Regel). Nur org_admin/super_admin bleiben org-weit berechtigt.
 #    - GET /api/events/:id (Detail): Teamer sieht Teilnehmerliste (Klarnamen,
 #      Anwesenheit, Opt-out-Gruende) und Abmeldungen ALLER Events der Org,
 #      auch solcher, die die Listen-Route für ihn ausblendet. Ebenso alle
@@ -76,13 +96,16 @@
 # 3. WER DARF PUNKTE VERGEBEN UND ENTZIEHEN? (vollstaendige Liste)
 #    VERGEBEN:
 #    a) POST /api/admin/activities/assign-activity
-#       org_admin, admin, teamer (Teamer nur eigene can_view-Jahrgänge).
+#       org_admin, admin, teamer — admin UND teamer nur in eigenen
+#       can_view-Jahrgängen (seit 31.08.2026 auch admin).
 #    b) PUT /api/admin/activities/requests/:id mit status=approved
 #       org_admin, admin (Antrag genehmigen -> user_activities + Punkte).
+#       admin seit 31.08.2026 nur in eigenen Jahrgängen.
 #    c) POST /api/admin/konfis/:id/activities
 #       org_admin, admin (Aktivität direkt zuweisen).
 #    d) POST /api/admin/konfis/:id/bonus-points
-#       org_admin, admin, teamer (OHNE Jahrgang-Check, siehe LÜCKE oben).
+#       org_admin, admin, teamer — admin und teamer nur in eigenen
+#       can_view-Jahrgängen (Jahrgang-Check seit 27.08./31.08.2026).
 #    e) PUT /api/events/:id/participants/:participantId/attendance
 #       (attendance_status=present) org_admin, admin, teamer -> event_points.
 #    f) PUT /api/events/:id/participants/attendance-all
@@ -95,6 +118,7 @@
 #    i) DELETE /api/admin/konfis/:id/bonus-points/:bonusId   org_admin, admin.
 #    j) PUT /api/admin/activities/requests/:id/reset         org_admin, admin
 #       (Reset eines genehmigten Antrags zieht die Punkte zurück).
+#       admin seit 31.08.2026 nur in eigenen Jahrgängen.
 #    k) PUT .../attendance (attendance_status=absent)        org_admin, admin, teamer.
 #    l) PUT /api/events/:id/participants/:participantId/status (-> waitlist)
 #       org_admin, admin, teamer (Degradierung löscht event_points).
@@ -116,9 +140,13 @@
 #      über activity_requests.organization_id.
 #    - GET /api/admin/activities/requests/:id/photo: NUR admin/org_admin
 #      (explizite Rollenpruefung, Teamer 403), Org-Scope, statusunabhaengig.
+#      Seit 31.08.2026 zusätzlich jahrgangs-gebunden: ein Admin sieht nur
+#      Fotos von Konfis seiner Jahrgänge (403 sonst) — das Nachweisfoto ist
+#      das persoenlichste Datum am Antrag.
 #      Foto-Referenz bleibt nach Genehmigung bewusst erhalten (Duplikats-
 #      Erkennung), Löschung manuell per DELETE .../photo.
-#    - DELETE /api/admin/activities/requests/:id/photo: admin/org_admin.
+#    - DELETE /api/admin/activities/requests/:id/photo: admin/org_admin,
+#      seit 31.08.2026 ebenfalls jahrgangs-gebunden für admin.
 #    -> Konfis können NIE Fotos anderer Konfis abrufen (user_id-Check).
 #       Teamer können ausschliesslich ihre EIGENEN Antragsfotos sehen.
 #
@@ -130,7 +158,9 @@
 #       jetzt aus allen Listen-Responses entfernt.
 #   L2  GET /api/admin/konfis/:id (+ /event-points, /badges): Teamer sieht
 #       Konfis außerhalb der zugewiesenen Jahrgänge im Detail.
-#   L3  POST /api/admin/konfis/:id/bonus-points: Teamer ohne Jahrgang-Check.
+#   L3  BEHOBEN 27.08.2026 (Teamer) und 31.08.2026 (Admin).
+#       POST /api/admin/konfis/:id/bonus-points prueft jetzt den Jahrgang für
+#       teamer UND admin; org_admin/super_admin bleiben ausgenommen.
 #   L4  GET /api/konfi/dashboard: Klarnamen + Punkte der Top 3 an alle Konfis.
 #   L5  BEHOBEN 22.08.2026. Der Jahrgangs-Filter verlangte length > 0 und
 #       entfiel damit für Teamer:innen ohne jede Zuweisung - sie sahen alle
@@ -1654,9 +1684,15 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE a.organization_id = req.user.organization_id"
         hinweis: >
-          Kein Jahrgangs-Filter: org_admin und admin sehen die Anträge ALLER
-          Jahrgänge der Organisation. Teamer:innen haben hier keinen Zugriff
-          (dafuer gibt es GET /api/teamer/requests).
+          GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin.
+          org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge;
+          ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin
+          ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in
+          jedem Fall ein Array). Anträge zu Teamer-Aktivitäten
+          (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil
+          Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht.
+          Teamer:innen haben hier keinen Zugriff (dafuer gibt es
+          GET /api/teamer/requests).
       responses:
         "200": { description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)" }
         "400": { description: "Unbekannter Wert fuer ?status=" }
@@ -1676,7 +1712,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateRequestUpdate]
         org-scope: true
-        objekt-pruefung: "Antrag über JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
+        objekt-pruefung: >
+          Antrag über JOIN activities auf die eigene Organisation eingegrenzt;
+          nur status=pending aenderbar.
+          JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1706,7 +1745,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Antrag über JOIN activities org-gescopt; nur status=rejected loeschbar"
+        objekt-pruefung: >
+          Antrag über JOIN activities org-gescopt; nur status=rejected
+          loeschbar.
+          JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Antrag geloescht" }
@@ -1728,7 +1770,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge ergeben 400"
+        objekt-pruefung: >
+          Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge
+          ergeben 400.
+          JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Antrag zurueckgesetzt, Punkte ggf. abgezogen" }
@@ -1749,7 +1794,11 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Inline-Rollencheck role_name in ['admin','org_admin']; danach Vergleich der organization_id des antragstellenden Users mit der eigenen"
+        objekt-pruefung: >
+          Inline-Rollencheck role_name in ['admin','org_admin']; danach
+          Vergleich der organization_id des antragstellenden Users mit der
+          eigenen.
+          JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
         hinweis: >
           Bewusst KEIN requireAdmin, sondern ein Inline-Check — die Wirkung ist
           dieselbe Rollenmenge. Teamer:innen erhalten 403.
@@ -1774,7 +1823,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich über den antragstellenden User"
+        objekt-pruefung: >
+          Inline-Rollencheck role_name in ['admin','org_admin']; danach
+          Org-Vergleich über den antragstellenden User.
+          JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Foto geloescht" }
@@ -1796,9 +1848,12 @@ paths:
         org-scope: true
         objekt-pruefung: >
           Aktivität UND Ziel-User müssen zur eigenen Organisation gehören
-          (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen
-          zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit
-          can_view liegen.
+          (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Zusaetzlich muss
+          der Jahrgang des Konfis in assigned_jahrgaenge mit can_view liegen —
+          fuer Teamer:innen und, seit 2026-08-31, auch fuer die Rolle admin
+          (403 "Kein Zugriff auf diesen Konfi"). org_admin/super_admin sind
+          ausgenommen. Bei Aktivitäten mit target_role='teamer' entfaellt die
+          Jahrgangs-Pruefung, weil die Zielperson keine Konfi ist.
       requestBody:
         required: true
         content:
@@ -2141,14 +2196,20 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateBonusPoints]
         org-scope: true
-        objekt-pruefung: "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang; fuer Teamer:innen zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi"
+        objekt-pruefung: >
+          Gutschrift läuft über JOIN users mit organization_id = Token-Org;
+          checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang;
+          zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi fuer teamer UND
+          admin (darfKonfi aus backend/utils/jahrgangsZugriff.js).
         hinweis: >
           Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und
           admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre
           zugewiesenen Jahrgaenge begrenzt (403 "Kein Zugriff auf diesen
           Konfi") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt,
-          was zu assign-activity und zum Handbuch inkonsistent war. Die
-          Leitung (admin/org_admin) bleibt org-weit berechtigt.
+          was zu assign-activity und zum Handbuch inkonsistent war.
+          GEAENDERT 2026-08-31: Dieselbe Grenze gilt jetzt auch fuer die Rolle
+          admin (Simons Regel: ein Admin ist an seine Jahrgaenge gebunden).
+          Nur org_admin/super_admin bleiben org-weit berechtigt.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true

@@ -892,19 +892,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // Oberflaeche nicht erreichbar, weil die Teamer-Ansicht gar keine
             // Punktevergabe hat — bekommt sie eine, waere die Luecke sofort
             // real.
-            if (req.user.role_name === 'teamer') {
-                const { rows: [konfiProfile] } = await db.query(
-                    'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [req.params.id]
-                );
-                if (!konfiProfile) {
-                    return res.status(404).json({ error: 'Konfi nicht gefunden' });
-                }
-                const hasAccess = req.user.assigned_jahrgaenge.some(
-                    j => j.id === konfiProfile.jahrgang_id && j.can_view
-                );
-                if (!hasAccess) {
-                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
-                }
+            //
+            // Seit 31.08.2026 gilt die Prüfung nicht mehr nur für Teamer:innen:
+            // Ein Admin ist an seine zugewiesenen Jahrgänge gebunden und kann
+            // Bonuspunkte nur an Konfis dort vergeben (Simons Regel).
+            // org_admin/super_admin bleiben ausgenommen. Die Rollen-Logik
+            // steckt jetzt in darfKonfi (utils/jahrgangsZugriff.js).
+            const zugriff = await darfKonfi(db, req, req.params.id);
+            if (!zugriff.gefunden) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+            if (!zugriff.erlaubt) {
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
             // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
