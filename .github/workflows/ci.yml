@@ -194,14 +194,13 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-latest
-    # BEOBACHTUNGSPHASE (seit 31.08.2026): continue-on-error haelt den Job
-    # gruen. Die Suite lief bis zum 31.08. NIE vollstaendig durch; sie steht
-    # jetzt auf 32/32, aber erst ein paar Laeufe in der CI zeigen, ob sie dort
-    # ebenso stabil ist (andere Maschine, andere Zeiten).
+    # SCHARF seit 31.08.2026: Die Suite steht auf 32/32 und haengt in den
+    # needs von build-and-push. Ab hier gilt: E2E rot -> kein Build -> kein
+    # Deploy, genauso wie bei den Unit-Tests.
     #
-    # Scharfschalten = diese Zeile loeschen UND e2e-test in die needs von
-    # build-and-push aufnehmen. Dann gilt: E2E rot -> kein Deploy.
-    continue-on-error: true
+    # Die Beobachtungsphase davor war kurz. Sollte sich die Suite in der CI
+    # als unzuverlaessig erweisen (andere Maschine, andere Zeiten), gehoert
+    # der FLATTERNDE TEST repariert -- nicht das Gate wieder aufgemacht.
     steps:
       - uses: actions/checkout@v4
 
@@ -233,10 +232,11 @@ jobs:
           retention-days: 7
 
   build-and-push:
-    needs: [backend-test, frontend-test]
-    # KEIN always() — Build+Deploy laufen NUR wenn backend-test UND frontend-test
-    # gruen sind (Default-needs-Verhalten). Das ist das eigentliche Test-Gate:
-    # Tests rot -> kein Build -> kein Webhook -> kein Deploy.
+    needs: [backend-test, frontend-test, e2e-test]
+    # KEIN always() — Build+Deploy laufen NUR wenn backend-test, frontend-test
+    # UND e2e-test gruen sind (Default-needs-Verhalten). Das ist das
+    # eigentliche Test-Gate: Tests rot -> kein Build -> kein Webhook -> kein
+    # Deploy. E2E haengt seit dem 31.08.2026 mit drin.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
