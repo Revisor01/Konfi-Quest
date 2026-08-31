@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React, { Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 // react-router nur noch fuer die Routen-Bausteine — der Standort kommt
 // ueber useAppLocation aus navigation/.
 import { Navigate, Route, useParams } from 'react-router-dom';
@@ -18,7 +18,7 @@ import {
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
-import { BAEUME, ladeRolleVor } from '../../navigation/rollenBaeume';
+import { BAEUME, ladeRolleVor, ladeSeite, istGeladen } from '../../navigation/rollenBaeume';
 import { istTabLeisteVersteckt } from '../../navigation/routes';
 import type { Rolle, BadgeKey } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -32,6 +32,50 @@ import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // unter ihrem eigenen Prop-Namen (konfiId, eventId, roomId) plus onBack —
 // vorher stand dafuer fuer JEDE dieser Routen eine eigene Wrapper-Komponente
 // in dieser Datei, fuenf fast identische Bloecke.
+// Laedt den Seiten-Chunk, BEVOR die Seite in den IonRouterOutlet kommt.
+//
+// Warum nicht einfach <Suspense fallback={...}>: IonRouterOutlet verwaltet
+// seine Kinder als Seiten-Stack und erwartet direkt darunter eine IonPage,
+// die es beim Einhaengen registriert. Steht ein Suspense dazwischen, meldet
+// es beim ERSTEN Aufruf den Platzhalter an und tauscht ihn danach gegen die
+// echte Seite — diesen Tausch bekommt Ionic nicht mit, die neue Seite bleibt
+// unsichtbar. Beim zweiten Aufruf ist der Chunk im Speicher, Suspense wird
+// nie aktiv, und alles ist da.
+//
+// Genau das Bild aus Simons Geraetetest (Build 153, 31.08.2026): "Erster
+// Aufruf weiss, zweiter dann da. Bei jeder Seite, auch Detailseiten und
+// Chatraeumen." Im Browser faellt es kaum auf, weil die Chunks dort in
+// Millisekunden kommen und der Vorlader nach 2,5 s ohnehin alles nachzieht.
+//
+// Hier wird der Chunk deshalb ausserhalb des Outlets geladen; erst wenn er
+// da ist, wird die Seite gerendert. Ionic sieht dann nur noch eine fertige
+// IonPage und keinen Wechsel.
+const SeiteMitChunk: React.FC<{
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+  Siehe Begruendung an ParamSeite: Props sind kontravariant. */
+  Seite: React.ComponentType<any>;
+  param?: string;
+  propName?: string;
+  zurueckZu: string;
+}> = ({ Seite, param, propName, zurueckZu }) => {
+  const [bereit, setBereit] = React.useState(() => istGeladen(Seite));
+
+  React.useEffect(() => {
+    if (bereit) return;
+    let abgebrochen = false;
+    void ladeSeite(Seite).then(() => {
+      if (!abgebrochen) setBereit(true);
+    });
+    return () => { abgebrochen = true; };
+  }, [Seite, bereit]);
+
+  if (!bereit) return <SeiteLaedt />;
+
+  return param && propName
+    ? <ParamSeite Seite={Seite} prop={propName} param={param} zurueckZu={zurueckZu} />
+    : <Seite />;
+};
+
 // Uebergeordnete Seite einer Parameter-Route: '/konfi/chat/room/:roomId'
 // wird zu '/konfi/chat'. Dorthin fuehrt der Zurueck-Knopf, wenn es keinen
 // Verlauf gibt. Die Segmente ab dem Parameter fallen weg.
@@ -236,11 +280,12 @@ const MainTabs: React.FC = () => {
           key={path}
           path={path}
           element={
-            <Suspense fallback={<SeiteLaedt />}>
-              {param
-                ? <ParamSeite Seite={Seite} prop={propName} param={param} zurueckZu={elternPfad(path)} />
-                : <Seite />}
-            </Suspense>
+            <SeiteMitChunk
+              Seite={Seite}
+              param={param}
+              propName={propName}
+              zurueckZu={elternPfad(path)}
+            />
           }
         />
       ))}

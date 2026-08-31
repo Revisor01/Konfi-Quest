@@ -28,12 +28,15 @@ describe('N6: Check-in-Fenster steht in allen drei Ansichten', () => {
     ['Teamer:in', teamerSeite]
   ])('%s sieht das Check-in-Fenster', (_rolle, quelle) => {
     expect(quelle).toContain('Check-in-Fenster');
-    expect(quelle).toContain('Min. vor bis');
+    // Kurzform seit 31.08.2026 (Simons Rueckmeldung: Text war zu lang).
+    expect(quelle).toContain('Min. (vor/nach Beginn)');
   });
 
   it('haengt an checkin_window und nicht an einem festen Wert', () => {
     for (const quelle of [adminSections, konfiDetail, teamerSeite]) {
-      expect(quelle).toMatch(/QR-Code \{[a-zA-Z]+\.checkin_window\} Min\. vor bis \{[a-zA-Z]+\.checkin_window\} Min\. nach Beginn/);
+      // Der Wert muss aus checkin_window kommen — eine feste Zahl im Text
+      // waere still falsch, sobald die Leitung das Fenster aendert.
+      expect(quelle).toMatch(/QR-Code \{[a-zA-Z]+\.checkin_window\} Min\. \(vor\/nach Beginn\)/);
     }
   });
 });

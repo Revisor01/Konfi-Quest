@@ -922,7 +922,7 @@ const TeamerEventsPage: React.FC = () => {
                     <div>
                       <div className="app-info-row__label">Check-in-Fenster</div>
                       <div className="app-info-row__value">
-                        QR-Code {selectedEvent.checkin_window} Min. vor bis {selectedEvent.checkin_window} Min. nach Beginn
+                        QR-Code {selectedEvent.checkin_window} Min. (vor/nach Beginn)
                       </div>
                     </div>
                   </div>

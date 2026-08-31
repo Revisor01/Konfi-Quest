@@ -825,7 +825,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <div>
                     <div className="app-info-row__label">Check-in-Fenster</div>
                     <div className="app-info-row__value">
-                      QR-Code {eventData.checkin_window} Min. vor bis {eventData.checkin_window} Min. nach Beginn
+                      QR-Code {eventData.checkin_window} Min. (vor/nach Beginn)
                     </div>
                   </div>
                 </div>

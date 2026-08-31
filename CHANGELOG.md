@@ -15,10 +15,14 @@ Versionsüberschrift.
   ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
 
 ### Geändert
+- Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
+  (vor/nach Beginn)".
 - Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Beim ersten Aufruf einer Seite blieb sie weiß; erst beim zweiten Anlauf
+  erschien der Inhalt. Betraf jede Seite, auch Detailansichten und Chaträume.
 - Öffnete man einen Chat über eine Push-Nachricht, war der Zurück-Knopf ohne
   Funktion — man kam aus dem Raum nicht mehr heraus. Das galt auch für
   Termine und Konfi-Profile, die über eine Benachrichtigung geöffnet wurden.

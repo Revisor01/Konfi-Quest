@@ -60,6 +60,44 @@ const faul = (lade: Lader): React.ComponentType<any> => {
   return Seite;
 };
 
+// Welche Seiten-Chunks bereits im Speicher sind. MainTabs fragt das ab, um
+// eine schon geladene Seite OHNE Umweg ueber einen Ladezustand zu rendern —
+// sonst blitzt bei jedem Tab-Wechsel kurz der Spinner auf.
+const GELADEN = new Set<React.ComponentType<any>>();
+
+/** Ist der Chunk dieser Seite schon da? */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant, siehe Begruendung an LADER. */
+export const istGeladen = (seite: React.ComponentType<any>): boolean => GELADEN.has(seite);
+
+/**
+ * Laedt den Chunk EINER Seite und merkt sich das.
+ *
+ * Gebraucht, damit der IonRouterOutlet nie einen Platzhalter gegen die
+ * fertige Seite tauschen muss — diesen Tausch bekommt Ionic nicht mit
+ * (Befund aus Simons Geraetetest, 31.08.2026: erster Aufruf weiss, zweiter
+ * in Ordnung). Schlaegt das Laden fehl, wird NICHT als geladen vermerkt,
+ * damit der naechste Versuch es erneut probiert.
+ */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any --
+Props sind kontravariant, siehe Begruendung an LADER. */
+export const ladeSeite = async (seite: React.ComponentType<any>): Promise<void> => {
+  if (GELADEN.has(seite)) return;
+  const lader = LADER.get(seite);
+  if (!lader) {
+    // Keine lazy-Seite (etwa in Tests direkt hineingereicht) -> nichts zu laden.
+    GELADEN.add(seite);
+    return;
+  }
+  try {
+    await lader();
+    GELADEN.add(seite);
+  } catch {
+    // Offline oder Funkabriss: nicht vermerken, der naechste Aufruf versucht
+    // es wieder. mitZweitversuch() hat bereits einmal nachgefasst.
+  }
+};
+
 /** Nur fuer Tests: Ist diese Seite per ladeRolleVor() vorladbar? */
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any --
 Props sind kontravariant: Eine Tabelle, die Seiten mit UND ohne
@@ -81,6 +119,11 @@ export const ladeRolleVor = async (rolle: Rolle): Promise<number> => {
     if (l) lader.add(l);
   }
   const ergebnisse = await Promise.allSettled([...lader].map((l) => l()));
+  // Vorgeladene Seiten als geladen vermerken, damit der Renderer sie ohne
+  // Ladezustand einhaengt.
+  for (const route of BAEUME[rolle].routes) {
+    if (LADER.has(route.page)) GELADEN.add(route.page);
+  }
   return ergebnisse.filter((e) => e.status === 'fulfilled').length;
 };
 
