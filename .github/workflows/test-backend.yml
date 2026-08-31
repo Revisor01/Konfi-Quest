@@ -58,6 +58,16 @@ jobs:
           fi
           echo "Keine neuen Migrationen — Schema bleibt unveraendert."
 
+      # github.sha zeigt auf den Commit, aus dem der Workflow DISPATCHT wurde
+      # (main) — nicht auf den ausgecheckten Branch. Dadurch trugen Image-Tag
+      # und GIT_SHA den falschen Stand: Der Container meldete ueber
+      # /api/status einen alten Commit, und 'test-latest' zeigte auf
+      # unveraenderten Inhalt, sodass docker pull "up to date" sagte
+      # (31.08.2026, zwei Builds lang unbemerkt).
+      - name: Commit des Branches ermitteln
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -75,10 +85,10 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:test-latest
-            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:test-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:test-${{ steps.commit.outputs.sha }}
           cache-from: type=gha
           build-args: |
-            GIT_SHA=${{ github.sha }}
+            GIT_SHA=${{ steps.commit.outputs.sha }}
 
       - name: Hinweis
         run: |
