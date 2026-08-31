@@ -9,6 +9,10 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.1.1
 
+### Geändert
+- Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
+  „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
+
 ### Behoben
 - Öffnete man einen Chat über eine Push-Nachricht, war der Zurück-Knopf ohne
   Funktion — man kam aus dem Raum nicht mehr heraus. Das galt auch für

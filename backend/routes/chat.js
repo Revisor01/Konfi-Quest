@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
+const { chatPushText } = require('../utils/pushText');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
@@ -1109,9 +1110,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           const roomName = room?.name || 'Chat';
           const isDirectChat = room?.type === 'direct';
           const pushTitle = isDirectChat ? message.sender_name : roomName;
-          const pushBody = isDirectChat
-          ? (content || '[Anhang]')
-          : `${message.sender_name}: ${content || '[Anhang]'}`;
+          // Text der Mitteilung: siehe utils/pushText.js — dort steht auch,
+          // warum es KEINE echte Bildvorschau gibt.
+          const pushBody = chatPushText({
+            content,
+            messageType: message.message_type,
+            fileName: message.file_name,
+            senderName: message.sender_name,
+            isDirectChat,
+          });
           
           for (const p of participants) {
             const badgeQuery = `
