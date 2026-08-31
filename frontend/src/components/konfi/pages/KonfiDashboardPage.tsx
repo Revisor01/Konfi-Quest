@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -165,12 +165,33 @@ const KonfiDashboardPage: React.FC = () => {
     }
   );
 
-  // --- useOfflineQuery: Badges ---
+  // --- useOfflineQuery: Badges (NACHGELAGERT) ---
+  // Die Abzeichen sind mit Abstand die dickste und langsamste Startanfrage
+  // (gemessen 31.08.2026 gegen Produktion: 402 ms / 13,4 kB gegenueber 152 ms /
+  // 3,2 kB fuer die Startseite selbst). Beim Start feuert die App rund 25
+  // Anfragen gleichzeitig; ueber Mobilfunk stehen die letzten in der
+  // Warteschlange des Geraets und ziehen die gefuehlte Startzeit hoch.
+  //
+  // Die Abzeichen-Sektion der Startseite braucht die Daten wirklich (sie
+  // zeichnet jedes Abzeichen als Kreis, nicht nur eine Zahl) — ersatzlos
+  // streichen geht also nicht. Stattdessen wartet die Anfrage, bis die
+  // Startseite steht: `enabled` springt erst nach dem ersten Rendern der
+  // fertigen Startseite auf true. Aus dem Cache (30 Min TTL) ist die Sektion
+  // beim naechsten Oeffnen ohnehin sofort da; nur beim allerersten Start
+  // erscheint sie einen Wimpernschlag spaeter.
+  const [abzeichenAktiv, setAbzeichenAktiv] = useState(false);
   const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
     'konfi:badges:' + user?.id,
     () => api.get('/konfi/badges').then(r => r.data),
-    { ttl: CACHE_TTL.BADGES }
+    { ttl: CACHE_TTL.BADGES, enabled: abzeichenAktiv }
   );
+
+  // Erst wenn die Startseite ihre eigenen Daten hat, die Abzeichen nachholen.
+  // dashboardData ist der Marker: bis dahin zeigt die Seite den Ladebildschirm,
+  // die Abzeichen-Sektion ist also noch gar nicht sichtbar.
+  useEffect(() => {
+    if (dashboardData && !abzeichenAktiv) setAbzeichenAktiv(true);
+  }, [dashboardData, abzeichenAktiv]);
 
   // Derived state from badges
   const badgeStats: BadgeStats = (() => {

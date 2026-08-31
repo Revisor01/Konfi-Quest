@@ -34,6 +34,9 @@ Versionsüberschrift.
   ändern sich dadurch nicht.
 
 ### Geändert
+- Die Startseite der Konfis ist schneller da: Die Abzeichen laden erst, wenn
+  die Startseite steht, statt den Start mit auszubremsen. Sichtbar bleibt
+  alles wie bisher.
 - Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
   (vor/nach Beginn)".
 - Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
