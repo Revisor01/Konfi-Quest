@@ -62,12 +62,13 @@ describe('Roles Routes', () => {
       expect(Array.isArray(res.body)).toBe(true);
     });
 
-    it('Admin bekommt 403 (nur org_admin/super_admin erlaubt)', async () => {
+    it('Admin bekommt 200', async () => {
       const res = await request(app)
         .get('/api/roles')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
     });
 
     it('Teamer bekommt 403', async () => {
