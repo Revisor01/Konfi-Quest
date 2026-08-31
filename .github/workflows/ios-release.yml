@@ -10,6 +10,11 @@ name: iOS Release Build
 
 on:
   workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'API-Basis (LEER = Produktion). Fuer Tests: https://test-api.konfi-quest.de/api'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -74,6 +79,11 @@ jobs:
 
       - name: Web-Build + Capacitor-Sync
         working-directory: frontend
+        # VITE_API_URL lenkt API UND Socket um (services/api.ts,
+        # services/websocket.ts lesen dieselbe Variable). LEER bedeutet
+        # Produktion — der normale Release-Weg aendert sich dadurch nicht.
+        env:
+          VITE_API_URL: ${{ inputs.api_url }}
         run: |
           npm ci --no-audit --no-fund
           npm run build

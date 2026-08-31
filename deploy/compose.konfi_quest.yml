@@ -152,6 +152,77 @@ services:
       - traefik
       - internal
 
+  # --- Test-Backend (Simons Geraetetest, 31.08.2026) ---
+  # Eigener Hostname, DIESELBE Datenbank: Die TestFlight-App spricht ueber
+  # test-api.konfi-quest.de mit neuem Code, waehrend Store-Apps und Browser
+  # unveraendert ueber konfi-quest.de laufen. Simon sieht dabei seine ECHTEN
+  # Daten — genau das war die Anforderung.
+  #
+  # Vier Punkte, die hier anders sind als bei backend/backend2:
+  #  1. EIGENER Router-Name (konfi-api-test). Mit dem Live-Namen wuerde
+  #     Traefik diesen Container in den Live-Pool aufnehmen.
+  #  2. RUN_BACKGROUND_JOBS=false — sonst laufen Auto-Loeschung, Erinnerungen
+  #     und APM-Snapshots DOPPELT gegen die echten Daten.
+  #  3. METRICS_PEERS leer — die Testmessung gehoert nicht in die Live-Zahlen.
+  #  4. CORS_ORIGINS gesetzt — die App kommt hier von einer ANDEREN Domain
+  #     als die API. Ohne das lehnt der Browser jede Anfrage ab. In
+  #     Produktion bleibt es leer (gleiche Domain, kein CORS noetig).
+  #
+  # Das Image traegt den Tag test-latest und wird NUR vom Workflow
+  # test-backend.yml gebaut — 'latest' bleibt unberuehrt, der Live-Redeploy
+  # zieht davon nichts.
+  #
+  # ACHTUNG: Migrationen laufen beim Start automatisch (database.js) und
+  # wirken auf die GANZE Datenbank, nicht nur auf die Demo-Organisation.
+  # Der Build-Workflow bricht deshalb ab, wenn der Branch neue Migrationen
+  # mitbringt.
+  backend-test:
+    image: ghcr.io/revisor01/konfi-quest-backend:test-latest
+    environment:
+      <<: *backend_env
+      RUN_BACKGROUND_JOBS: "false"
+      METRICS_PEERS: ""
+      CORS_ORIGINS: "https://test-api.konfi-quest.de,https://konfi-quest.de,capacitor://localhost,https://localhost"
+    volumes:
+      - /opt/Konfi-Quest/uploads:/app/uploads
+      - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
+    extra_hosts:
+      - "server.godsapp.de:213.109.162.132"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.konfi-api-test.rule=Host(`test-api.konfi-quest.de`)"
+      - "traefik.http.routers.konfi-api-test.priority=10"
+      - "traefik.http.services.konfi-api-test.loadbalancer.server.port=5000"
+      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.interval=5s"
+      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.timeout=3s"
+    networks:
+      - traefik
+      - internal
+
   frontend:
     image: ghcr.io/revisor01/konfi-quest-frontend:<TAG>
     restart: unless-stopped
