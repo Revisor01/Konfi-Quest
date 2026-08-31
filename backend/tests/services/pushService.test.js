@@ -358,6 +358,106 @@ describe('PushService: organization_id in jedem Payload', () => {
   });
 
   // ================================================================
+  // Von FCM abgelehnte Tokens werden beim Versand entsorgt (31.08.2026)
+  //
+  // Der Weg, auf dem ein Token ueberhaupt ungueltig wird, ist fast nie das
+  // bewusste Abmelden — es ist die abgelaufene Sitzung, die deinstallierte App
+  // oder das zurueckgesetzte Geraet. In all diesen Faellen ruft niemand mehr
+  // DELETE /notifications/device-token, und der Eintrag bliebe stehen. Was ihn
+  // entfernt, ist die Rueckmeldung von FCM beim naechsten Versand:
+  // 'registration-token-not-registered'. Diese Auswertung existiert in
+  // sendToUser, war aber ungetestet — ein stiller Pfad, an dem eine falsche
+  // Bedingung niemandem aufgefallen waere.
+  // ================================================================
+  describe('Ungueltige Tokens beim Versand', () => {
+    const tokenZeile = (userId) => db.query(
+      'SELECT id, error_count FROM push_tokens WHERE user_id = $1', [userId]
+    ).then(({ rows }) => rows[0] || null);
+
+    afterEach(() => {
+      // Der Default aus dem Modul-Setup gilt wieder fuer alle uebrigen Tests.
+      // mockReset raeumt auch eine gesetzte mockImplementation weg — ohne das
+      // wuerde sie in die folgenden Suiten durchschlagen. Hier statt im
+      // Test-Rumpf, damit es auch nach einer fehlgeschlagenen Assertion laeuft.
+      sendFirebasePushNotification.mockReset();
+      sendFirebasePushNotification.mockResolvedValue({ success: true });
+    });
+
+    it("'registration-token-not-registered' loescht den Token", async () => {
+      expect(await tokenZeile(USERS.konfi1.id)).not.toBeNull();
+
+      sendFirebasePushNotification.mockResolvedValue({
+        success: false,
+        error: 'Requested entity was not found.',
+        errorCode: 'messaging/registration-token-not-registered'
+      });
+
+      const ergebnis = await PushService.sendToUser(db, USERS.konfi1.id, {
+        title: 'Test', body: 'Test', data: { type: 'bonus_points' }
+      });
+
+      expect(ergebnis.sent).toBe(0);
+      expect(ergebnis.errors).toBe(1);
+      expect(await tokenZeile(USERS.konfi1.id)).toBeNull();
+    });
+
+    it("'invalid-registration-token' loescht den Token ebenfalls", async () => {
+      sendFirebasePushNotification.mockResolvedValue({
+        success: false,
+        error: 'The registration token is not a valid FCM registration token.',
+        errorCode: 'messaging/invalid-registration-token'
+      });
+
+      await PushService.sendToUser(db, USERS.konfi1.id, {
+        title: 'Test', body: 'Test', data: { type: 'bonus_points' }
+      });
+
+      expect(await tokenZeile(USERS.konfi1.id)).toBeNull();
+    });
+
+    it('Ein voruebergehender Fehler behaelt den Token und zaehlt hoch', async () => {
+      sendFirebasePushNotification.mockResolvedValue({
+        success: false,
+        error: 'The service is currently unavailable.',
+        errorCode: 'messaging/server-unavailable'
+      });
+
+      await PushService.sendToUser(db, USERS.konfi1.id, {
+        title: 'Test', body: 'Test', data: { type: 'bonus_points' }
+      });
+
+      const zeile = await tokenZeile(USERS.konfi1.id);
+      expect(zeile).not.toBeNull();
+      expect(zeile.error_count).toBe(1);
+    });
+
+    it('Nur der abgelehnte Token faellt weg, die uebrigen Geraete bleiben', async () => {
+      await db.query(
+        `INSERT INTO push_tokens (user_id, token, platform, device_id) VALUES ($1, $2, $3, $4)`,
+        [USERS.konfi1.id, 'token-konfi1-zweitgeraet', 'android', 'dev-konfi1-b']
+      );
+
+      sendFirebasePushNotification.mockImplementation(async (token) => (
+        token === 'token-konfi1'
+          ? { success: false, error: 'not found', errorCode: 'messaging/registration-token-not-registered' }
+          : { success: true, messageId: 'ok' }
+      ));
+
+      const ergebnis = await PushService.sendToUser(db, USERS.konfi1.id, {
+        title: 'Test', body: 'Test', data: { type: 'bonus_points' }
+      });
+
+      expect(ergebnis.sent).toBe(1);
+      expect(ergebnis.errors).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT token FROM push_tokens WHERE user_id = $1 ORDER BY token', [USERS.konfi1.id]
+      );
+      expect(rows.map(r => r.token)).toEqual(['token-konfi1-zweitgeraet']);
+    });
+  });
+
+  // ================================================================
   // Gesperrte und geloeschte Konten bekommen gar nichts (28.08.2026)
   //
   // Elf von fuenfzehn Empfaenger-Abfragen prueften weder `is_active` noch
