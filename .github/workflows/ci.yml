@@ -103,17 +103,26 @@ jobs:
         run: npm ci
 
       # Lint NUR fuer die im PR geaenderten Frontend-Dateien: Der Altbestand
-      # (~1100 Meldungen, Stand 30.08.2026) bleibt unangetastet, aber wer eine
-      # Datei anfasst, hinterlaesst sie sauber. Bewusst KEINE Baseline-Datei:
-      # die muesste bei jedem Fix neu erzeugt werden und produziert bei 1100
-      # Eintraegen Dauer-Merge-Konflikte. Auch kein --max-warnings ueber alles:
-      # eine Gesamtzahl ortet den Verursacher nicht.
-      # BEOBACHTUNGSPHASE: continue-on-error haelt den Job gruen — der Schritt
-      # zeigt rot, blockiert aber nichts. Zum Scharfschalten die Zeile
-      # "continue-on-error: true" entfernen.
+      # (273 Meldungen, Stand 31.08.2026 — von 1098 heruntergearbeitet) bleibt
+      # unangetastet, aber wer eine Datei anfasst, hinterlaesst sie sauber.
+      # Bewusst KEINE Baseline-Datei: die muesste bei jedem Fix neu erzeugt
+      # werden und produziert Dauer-Merge-Konflikte. Auch kein --max-warnings
+      # ueber alles: eine Gesamtzahl ortet den Verursacher nicht.
+      # SCHARF seit 31.08.2026: Ein Verstoss in einer geaenderten Datei laesst
+      # den Job fehlschlagen.
+      #
+      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings 0).
+      # Grund: Die rund 230 react-hooks-Meldungen wurden einzeln durchgesehen
+      # und begruendet als harmlos eingestuft (siehe eslint.config.js); sie
+      # liegen in 84 der 235 Quelldateien, darunter jede der acht am
+      # haeufigsten angefassten. Mit --max-warnings 0 wuerde praktisch jeder
+      # PR an geprueftem Altbestand scheitern — und der schnellste Ausweg
+      # waere ein eslint-disable, also genau die falsche Gewohnheit.
+      #
+      # Neue Verstoesse gegen no-explicit-any und no-unused-vars sind FEHLER
+      # und blockieren weiterhin. Beide stehen aktuell auf null.
       - name: Lint (nur im PR geaenderte Dateien)
         if: github.event_name == 'pull_request'
-        continue-on-error: true
         run: |
           git fetch --no-tags origin "${{ github.base_ref }}"
           # HEAD ist bei pull_request der Merge-Commit von Base+PR — der
@@ -129,7 +138,7 @@ jobs:
           echo "Gelintet werden ${#files[@]} Datei(en):"
           printf ' - %s\n' "${files[@]}"
           cd frontend
-          npx eslint --no-error-on-unmatched-pattern --max-warnings 0 "${files[@]}"
+          npx eslint --no-error-on-unmatched-pattern "${files[@]}"
 
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/

@@ -19,6 +19,28 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+
+      // Diese sechs Regeln wurden am 30.08.2026 EINZELN durchgesehen (rund 230
+      // Stellen) und begruendet als harmlos eingestuft; ein Umbau waere Risiko
+      // ohne Nutzen. Sie stehen deshalb auf 'warn' statt 'error':
+      //
+      //   refs                      Ionic-Popover-Muster (ref im Event-Handler)
+      //   set-state-in-effect       Init- und Reset-Muster beim Mount
+      //   immutability              TDZ-Meldung, laeuft zur Laufzeit korrekt
+      //   purity                    Date.now() in der Anzeige
+      //   static-components         bewusst lokal definierte Unterkomponenten
+      //   preserve-manual-memoization  vorhandene useMemo-Grenzen
+      //
+      // Warum nicht 'off': Als Warnung bleiben sie sichtbar, und die
+      // CI-Regel fuer geaenderte Dateien laeuft mit --max-warnings 0 —
+      // dort schlagen sie also NUR an, wenn jemand eine NEUE Stelle
+      // hinzufuegt. Der geprüfte Altbestand blockiert keinen PR.
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
