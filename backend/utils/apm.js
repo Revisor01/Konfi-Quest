@@ -79,7 +79,10 @@ function record(method, normPath, statusCode, durationMs, rawUrl, handlerMs) {
   if (!b) { b = { requests: 0, errors: 0, sumMs: 0 }; buckets.set(nowSec, b); }
   b.requests += 1;
   b.sumMs += durationMs;
-  if (statusCode >= 400) b.errors += 1;
+  // 404 zaehlt NICHT als Fehler: Der Client hat etwas angefragt, das es
+  // nicht gibt — das ist keine Stoerung des Dienstes und darf die Fehlerrate
+  // nicht heben. Sichtbar bleibt es trotzdem im Fehler-Log unten.
+  if (statusCode >= 400 && statusCode !== 404) b.errors += 1;
   if (buckets.size > HISTORY_SECONDS + 60) trimBuckets(nowSec);
 
   // Fehler (4xx + 5xx) ins rollierende Fehler-Log
@@ -109,10 +112,24 @@ function percentile(sortedAsc, p) {
 //   in die eigene Statistik schreiben.
 const IGNORED_PATHS = /^\/api\/(health|status|metrics)\b/;
 
+// Anfragen, die es in dieser App NIE gab: Scanner klopfen an jeder
+// oeffentlichen Domain nach Zugangsdaten, Quellcode und fremden
+// Banking-Skripten (.env, .git, twint_ch.js, antibot-client.js ...).
+// Sie finden nichts — hinter der API liegt kein Dateisystem —, fuellten
+// aber die Fehlerliste im Performance-Dashboard und verdeckten damit die
+// echten Fehler (Simons Screenshot 31.08.2026: 12 von 12 Eintraegen waren
+// Bot-Anfragen).
+//
+// Bewusst nach dem MUSTER und nicht nach Statuscode: Ein 404 auf einer
+// ECHTEN Route (Termin geloescht, alter Push-Link) ist ein Befund und soll
+// sichtbar bleiben.
+const SCANNER_PATHS = /(^\/\.|\/\.(env|git|vscode|aws|ssh)|^\/(js|assets|static|functions|cgi-bin|wp-|vendor|phpmyadmin)\/|\.(php|asp|aspx|jsp)$|^\/(robots\.txt|favicon\.ico|sitemap\.xml|bot-connect\.js)$|^\/@vite)/i;
+
 // Express-Middleware: misst jede Request-Dauer, zählt parallele Requests,
 // loggt langsame Requests. Infrastruktur-Pings (s.o.) werden übersprungen.
 function apmMiddleware(req, res, next) {
-  if (IGNORED_PATHS.test((req.originalUrl || req.url || '').split('?')[0])) {
+  const pfad = (req.originalUrl || req.url || '').split('?')[0];
+  if (IGNORED_PATHS.test(pfad) || SCANNER_PATHS.test(pfad)) {
     return next();
   }
   const start = process.hrtime.bigint();

@@ -162,3 +162,76 @@ describe('APM: Cache-Quote (304)', () => {
     expect(route.cacheQuote).toBe(50);
   });
 });
+
+// Scanner-Anfragen gehoeren nicht ins Performance-Dashboard.
+//
+// Befund aus Simons Screenshot (31.08.2026): In der Fehlerliste des
+// Test-Backends standen ZWOELF Eintraege, alle zwoelf von Scanner-Bots
+// (/js/antibot-client.js, /js/twint_ch.js, /.env, /robots.txt ...). Echte
+// Fehler waeren darin untergegangen.
+describe('APM: Scanner-Anfragen und 404', () => {
+  let apm;
+  beforeEach(() => { apm = frischesApm(); });
+
+  const scannerPfade = [
+    '/.env', '/.git/HEAD', '/.vscode/sftp.json',
+    '/js/antibot-client.js', '/js/twint_ch.js', '/assets/js/auth.js',
+    '/static/style/protect/index.js', '/robots.txt', '/favicon.ico',
+    '/bot-connect.js', '/wp-login.php', '/@vite/env',
+  ];
+
+  it('nimmt Scanner-Anfragen gar nicht erst auf', async () => {
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.use((req, res) => res.status(404).json({ error: 'nicht gefunden' }));
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    for (const pfad of scannerPfade) {
+      await fetch(`http://127.0.0.1:${port}${pfad}`).then((r) => r.text());
+    }
+    srv.close();
+
+    const s = apm.snapshot();
+    expect(s.totalRequests).toBe(0);
+    expect(s.recentErrors).toEqual([]);
+  });
+
+  it('zeigt einen 404 auf einer ECHTEN Route weiterhin an', async () => {
+    // Ein geloeschter Termin oder ein alter Push-Link ist ein Befund und
+    // darf nicht mit weggefiltert werden.
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.use((req, res) => res.status(404).json({ error: 'nicht gefunden' }));
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    await fetch(`http://127.0.0.1:${port}/api/events/9999`).then((r) => r.text());
+    srv.close();
+
+    const s = apm.snapshot();
+    expect(s.totalRequests).toBe(1);
+    expect(s.recentErrors.length).toBe(1);
+    expect(s.recentErrors[0].status).toBe(404);
+  });
+
+  it('zaehlt 404 NICHT in die Fehlerrate', async () => {
+    // Der Client hat etwas angefragt, das es nicht gibt — das ist keine
+    // Stoerung des Dienstes.
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.get('/api/gibtsnicht', (req, res) => res.status(404).end());
+    app.get('/api/kaputt', (req, res) => res.status(500).end());
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    await fetch(`http://127.0.0.1:${port}/api/gibtsnicht`).then((r) => r.text());
+    await fetch(`http://127.0.0.1:${port}/api/kaputt`).then((r) => r.text());
+    srv.close();
+
+    const s = apm.snapshot();
+    expect(s.totalRequests).toBe(2);
+    // Nur der 500er zaehlt als Fehler.
+    expect(s.totalErrors).toBe(1);
+  });
+});
