@@ -720,11 +720,11 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/admin</code></div>
         <p class="summary">Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -&gt; leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit.</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/challenges/admin</code></div>
         <p class="summary">Challenge anlegen (Entwurf oder geplant)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code> · <code>validateCreate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code> · <code>validateCreate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/challenges/admin/{id}</code></div>
         <p class="summary">Challenge löschen (gestartete nur mit force)</p>
@@ -732,7 +732,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/challenges/admin/{id}</code></div>
         <p class="summary">Challenge bearbeiten (Konsens-Felder nach Start eingefroren)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code> · <code>validateUpdate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code> · <code>validateUpdate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>leadershipMayAccess: org_admin immer; admin/teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit (admin seit 2026-08-31 jahrgangs-gebunden)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/admin/{id}/export</code></div>
         <p class="summary">Beitraege als Text exportieren (Liturgie/Playlist/Wand)</p>
@@ -744,7 +744,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/admin/authors</code></div>
         <p class="summary">Moegliche Urheber:innen einer Challenge</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Konfi-Eintraege auf die zugewiesenen Jahrgänge von admin bzw. teamer gefiltert (org_admin ungefiltert)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/challenges/admin/submissions/{id}</code></div>
         <p class="summary">Beitrag endgueltig löschen: Datei UND Datenbank-Zeile (NEU 2026-08-26)</p>
@@ -759,7 +759,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/files/{filename}</code></div>
         <p class="summary">Challenge-Datei abrufen (entschluesselt)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Owner immer; org_admin org-weit; admin/teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge (admin seit 2026-08-31 ebenfalls jahrgangs-gebunden); konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/konfi</code></div>
         <p class="summary">Aktive Challenges, Archiv und eigene Abzeichen</p>
@@ -767,7 +767,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/challenges/konfi/{id}</code></div>
         <p class="summary">Challenge-Detail mit Galerie und eigenen Beitraegen</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>participantMayAccess: konfi -&gt; eigener Jahrgang zugeordnet; teamer -&gt; zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer</div><div class="hinweis">Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-admin">Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>rbacVerifier</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>participantMayAccess: konfi -&gt; eigener Jahrgang zugeordnet; admin/teamer -&gt; zugewiesener Jahrgang oder 'nur_team'; org_admin immer (geaendert 2026-08-31: admin jahrgangs-gebunden)</div><div class="hinweis">Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/challenges/konfi/{id}/submissions</code></div>
         <p class="summary">Beitrag einreichen</p>

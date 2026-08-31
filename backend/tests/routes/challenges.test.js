@@ -10,6 +10,7 @@ const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const jwt = require('jsonwebtoken');
 
 // Echte gueltige 1x1-PNG (file-type verlangt valide Struktur für die
 // Magic-Bytes-Prüfung in challenges.js).
@@ -29,6 +30,16 @@ describe('Challenges Routes', () => {
   beforeEach(async () => {
     await truncateAll(db);
     await seed(db);
+    // admin1 ist seit 31.08.2026 an seine zugewiesenen Jahrgänge gebunden
+    // (wie ein Teamer, nur org_admin sieht alles). Der gemeinsame Seed gibt
+    // Admins keine Zuweisung, in Produktion hat aber jeder Admin eine — hier
+    // deshalb lokal setzen, statt den Seed zu aendern (daran haengen alle
+    // anderen Suiten). admin2 (Org 2) bleibt bewusst OHNE Zuweisung: er dient
+    // als Mandanten-Gegenprobe und darf ohnehin nichts aus Org 1 sehen.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
     konfi1Token = generateToken('konfi1');
     konfi2Token = generateToken('konfi2');
     teamer1Token = generateToken('teamer1');
@@ -539,7 +550,7 @@ describe('Challenges Routes', () => {
       expect(titles).not.toContain('Fremde-Challenge');
     });
 
-    it('Admin/Org-Admin sehen in GET /admin alle Challenges der Org (keine Jahrgangs-Einschraenkung)', async () => {
+    it('Org-Admin sieht in GET /admin alle Challenges der Org (keine Jahrgangs-Einschraenkung)', async () => {
       const { rows: [jg] } = await db.query(
         `INSERT INTO jahrgaenge (name, organization_id, confirmation_date) VALUES ('Beliebig', $1, '2026-05-01') RETURNING id`,
         [ORGS.testGemeinde.id]
@@ -606,6 +617,374 @@ describe('Challenges Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`)
         .send({ action: 'approve' });
       expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // Jahrgangs-Bindung der Rolle 'admin' (Regel vom 31.08.2026)
+  //
+  // org_admin und super_admin sind von allen Jahrgangsbeschraenkungen
+  // ausgenommen. 'admin' ist dagegen an seine zugewiesenen Jahrgänge gebunden —
+  // genau wie ein Teamer. Vorher gab viewableJahrgangIds() für 'admin' null
+  // zurück (= keine Einschraenkung), ein Admin sah damit die Challenges JEDES
+  // Jahrgangs seiner Organisation.
+  //
+  // admin1 ist im beforeEach dieser Suite auf jahrgang1 zugewiesen; wo ein
+  // Admin OHNE Zuweisung gebraucht wird, legen die Tests ihn selbst an (der
+  // gemeinsame Seed bleibt unangetastet).
+  // ================================================================
+  describe('Jahrgangs-Bindung der Rolle admin', () => {
+    // Legt einen zweiten Jahrgang in Org 1 an (der Seed hat dort nur jahrgang1).
+    async function createJahrgang(name) {
+      const { rows: [row] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ($1, $2, '2026-05-01') RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      return row.id;
+    }
+
+    // Zweiter Admin in Org 1, OHNE Jahrgangs-Zuweisung — gibt direkt ein
+    // gueltiges Token zurueck (generateToken kennt nur Seed-Keys, und der Seed
+    // darf für diesen Fall nicht angefasst werden).
+    async function createAdminOhneJahrgangToken() {
+      const { rows: [row] } = await db.query(
+        `INSERT INTO users (username, password_hash, display_name, role_id, organization_id, is_active)
+         SELECT 'admin_ohne_jg', password_hash, 'Admin ohne Jahrgang', $1, $2, true
+         FROM users WHERE id = $3 RETURNING id`,
+        [USERS.admin1.role_id, ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      return jwt.sign({
+        id: row.id,
+        type: 'admin',
+        display_name: 'Admin ohne Jahrgang',
+        organization_id: ORGS.testGemeinde.id,
+        role_id: USERS.admin1.role_id,
+      }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    }
+
+    it('admin MIT Zuweisung sieht seine Challenge in GET /admin, die fremde nicht', async () => {
+      const eigene = await createChallenge({ title: 'Admin-eigener Jahrgang' });
+      await assignJahrgang(eigene.id, JAHRGAENGE.jahrgang1.id);
+
+      const fremderJg = await createJahrgang('Admin-fremder Jahrgang');
+      const fremde = await createChallenge({ title: 'Admin-fremder Jahrgang-Challenge' });
+      await assignJahrgang(fremde.id, fremderJg);
+
+      const res = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+      const titles = res.body.map(c => c.title);
+      expect(titles).toContain('Admin-eigener Jahrgang');
+      expect(titles).not.toContain('Admin-fremder Jahrgang-Challenge');
+    });
+
+    it('admin MIT Zuweisung bearbeitet die Challenge seines Jahrgangs -> 200', async () => {
+      const challenge = await createChallenge({ title: 'Ursprung' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ title: 'Von Admin umbenannt' });
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Von Admin umbenannt');
+    });
+
+    it('admin bearbeitet Challenge eines FREMDEN Jahrgangs NICHT -> 403, Titel bleibt', async () => {
+      const fremderJg = await createJahrgang('Fremd fuer Admin');
+      const challenge = await createChallenge({ title: 'Unangetastet' });
+      await assignJahrgang(challenge.id, fremderJg);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ title: 'Uebergriff' });
+      expect(res.status).toBe(403);
+
+      const { rows: [row] } = await db.query('SELECT title FROM challenges WHERE id = $1', [challenge.id]);
+      expect(row.title).toBe('Unangetastet');
+    });
+
+    it('admin kann keine Challenge FUER einen fremden Jahrgang anlegen -> 403', async () => {
+      const fremderJg = await createJahrgang('Anlage-fremd');
+
+      const res = await request(app)
+        .post('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({
+          title: 'Fremdanlage',
+          description: 'Beschreibung der Fremdanlage',
+          badge_name: 'Testabzeichen',
+          starts_at: new Date(Date.now() + 3600000).toISOString(),
+          ends_at: new Date(Date.now() + 7 * 24 * 3600000).toISOString(),
+          jahrgang_ids: [fremderJg],
+        });
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT id FROM challenges WHERE title = $1', ['Fremdanlage']
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('admin legt fuer seinen EIGENEN Jahrgang an -> 201', async () => {
+      const res = await request(app)
+        .post('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({
+          title: 'Eigenanlage',
+          description: 'Beschreibung der Eigenanlage',
+          badge_name: 'Testabzeichen',
+          starts_at: new Date(Date.now() + 3600000).toISOString(),
+          ends_at: new Date(Date.now() + 7 * 24 * 3600000).toISOString(),
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe('Eigenanlage');
+    });
+
+    it('admin sieht Submissions einer Challenge seines Jahrgangs -> 200', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const res = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.submissions.length).toBe(1);
+    });
+
+    it('admin sieht Submissions einer Challenge eines fremden Jahrgangs NICHT -> 403', async () => {
+      const fremderJg = await createJahrgang('Submissions-fremd');
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, fremderJg);
+      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const res = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('admin moderiert eine Submission aus fremdem Jahrgang NICHT -> 403, Status bleibt pending', async () => {
+      const fremderJg = await createJahrgang('Moderation-fremd');
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, fremderJg);
+      const submission = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending',
+      });
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(res.status).toBe(403);
+
+      const { rows: [row] } = await db.query(
+        'SELECT moderation_status FROM challenge_submissions WHERE id = $1', [submission.id]
+      );
+      expect(row.moderation_status).toBe('pending');
+    });
+
+    it('admin OHNE Jahrgangs-Zuweisung bekommt in GET /admin eine LEERE Liste', async () => {
+      const challenge = await createChallenge({ title: 'Nicht fuer den Admin ohne Jahrgang' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const token = await createAdminOhneJahrgangToken();
+      const res = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('admin OHNE Jahrgangs-Zuweisung bekommt bei der Detail-Bearbeitung 403', async () => {
+      const challenge = await createChallenge({ title: 'Bleibt so' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const token = await createAdminOhneJahrgangToken();
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Geaendert' });
+      expect(res.status).toBe(403);
+
+      const { rows: [row] } = await db.query('SELECT title FROM challenges WHERE id = $1', [challenge.id]);
+      expect(row.title).toBe('Bleibt so');
+    });
+
+    it("admin OHNE Jahrgang sieht weiterhin org-weite 'nur_team'-Challenges (die haengen an der Rolle)", async () => {
+      const teamChallenge = await createChallenge({ title: 'Team-Runde', audience: 'nur_team' });
+
+      const token = await createAdminOhneJahrgangToken();
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      const titles = [...res.body.active, ...res.body.archive].map(c => c.title);
+      expect(titles).toContain('Team-Runde');
+      expect(teamChallenge.audience).toBe('nur_team');
+    });
+
+    it('Challenge OHNE Jahrgangs-Zuordnung ist fuer den admin gesperrt, fuer den org_admin nicht', async () => {
+      // Reiner Leitungs-Entwurf: keine challenge_jahrgang_assignments. Diese
+      // Regel galt vor dem 31.08.2026 schon fuer Teamer und trifft nun auch
+      // den admin — festgehalten, damit die Sperre nicht unbemerkt kippt.
+      const ohneJahrgang = await createChallenge({ title: 'Entwurf ohne Jahrgang', is_draft: true });
+
+      const alsAdmin = await request(app)
+        .put(`/api/challenges/admin/${ohneJahrgang.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ title: 'Admin greift zu' });
+      expect(alsAdmin.status).toBe(403);
+
+      const alsOrgAdmin = await request(app)
+        .put(`/api/challenges/admin/${ohneJahrgang.id}`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ title: 'Org-Admin greift zu' });
+      expect(alsOrgAdmin.status).toBe(200);
+      expect(alsOrgAdmin.body.title).toBe('Org-Admin greift zu');
+    });
+
+    // ----------------------------------------------------------------
+    // REGRESSION: org_admin bleibt von allem ausgenommen. Das ist der
+    // wichtigste Test hier — die Verschaerfung darf ihn NIE treffen.
+    // ----------------------------------------------------------------
+    it('REGRESSION org_admin: sieht in GET /admin auch Challenges eines Jahrgangs OHNE eigene Zuweisung', async () => {
+      const fremderJg = await createJahrgang('Org-Admin-fremd');
+      const fremde = await createChallenge({ title: 'Org-Admin sieht alles' });
+      await assignJahrgang(fremde.id, fremderJg);
+      const eigene = await createChallenge({ title: 'Org-Admin sieht auch das' });
+      await assignJahrgang(eigene.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(200);
+      const titles = res.body.map(c => c.title);
+      expect(titles).toContain('Org-Admin sieht alles');
+      expect(titles).toContain('Org-Admin sieht auch das');
+    });
+
+    it('REGRESSION org_admin: bearbeitet eine Challenge eines fremden Jahrgangs -> 200', async () => {
+      const fremderJg = await createJahrgang('Org-Admin-Bearbeitung');
+      const challenge = await createChallenge({ title: 'Original' });
+      await assignJahrgang(challenge.id, fremderJg);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ title: 'Vom Org-Admin umbenannt' });
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Vom Org-Admin umbenannt');
+    });
+
+    it('REGRESSION org_admin: moderiert eine Submission aus einem fremden Jahrgang -> approved', async () => {
+      const fremderJg = await createJahrgang('Org-Admin-Moderation');
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, fremderJg);
+      const submission = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending',
+      });
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ action: 'approve' });
+      expect(res.status).toBe(200);
+
+      const { rows: [row] } = await db.query(
+        'SELECT moderation_status FROM challenge_submissions WHERE id = $1', [submission.id]
+      );
+      expect(row.moderation_status).toBe('approved');
+    });
+
+    it('REGRESSION org_admin: sieht Submissions einer Challenge ohne eigene Zuweisung -> 200', async () => {
+      const fremderJg = await createJahrgang('Org-Admin-Sammelansicht');
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, fremderJg);
+      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const res = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.submissions.length).toBe(1);
+    });
+
+    // ----------------------------------------------------------------
+    // Teamer unveraendert
+    // ----------------------------------------------------------------
+    it('Teamer unveraendert: eigener Jahrgang -> 200, fremder Jahrgang -> 403', async () => {
+      const eigene = await createChallenge({ title: 'Teamer eigen' });
+      await assignJahrgang(eigene.id, JAHRGAENGE.jahrgang1.id);
+      const fremderJg = await createJahrgang('Teamer-fremd-2');
+      const fremde = await createChallenge({ title: 'Teamer fremd' });
+      await assignJahrgang(fremde.id, fremderJg);
+
+      const erlaubt = await request(app)
+        .put(`/api/challenges/admin/${eigene.id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ title: 'Teamer darf' });
+      expect(erlaubt.status).toBe(200);
+      expect(erlaubt.body.title).toBe('Teamer darf');
+
+      const verboten = await request(app)
+        .put(`/api/challenges/admin/${fremde.id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ title: 'Teamer darf nicht' });
+      expect(verboten.status).toBe(403);
+    });
+
+    // ----------------------------------------------------------------
+    // Mandantengrenze bleibt dicht: die Jahrgangs-Bindung darf die
+    // Org-Isolation weder ersetzen noch aufweichen.
+    // ----------------------------------------------------------------
+    it('Mandantengrenze: admin aus Org 2 sieht Challenge aus Org 1 nicht (GET /admin) und bekommt 404 im Detail', async () => {
+      // admin2 (Org 2) auf jahrgang2 zuweisen, damit die 404 wirklich von der
+      // ORG-Grenze kommt und nicht bloss von einer fehlenden Zuweisung.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
+      );
+      const fremde = await createChallenge({ title: 'Nur Org 1' });
+      await assignJahrgang(fremde.id, JAHRGAENGE.jahrgang1.id);
+
+      const liste = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin2Token}`);
+      expect(liste.status).toBe(200);
+      expect(liste.body.map(c => c.title)).not.toContain('Nur Org 1');
+
+      const detail = await request(app)
+        .put(`/api/challenges/admin/${fremde.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ title: 'Uebernommen' });
+      expect(detail.status).toBe(404);
+    });
+
+    it('Mandantengrenze: eine Zuweisung auf einen Jahrgang der ANDEREN Org oeffnet nichts', async () => {
+      // admin2 (Org 2) faelschlich auf jahrgang1 (Org 1) zuweisen. Der
+      // rbacVerifier scopt assigned_jahrgaenge auf die aktive Org — die
+      // Zuweisung darf daher wirkungslos bleiben.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin2.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const fremde = await createChallenge({ title: 'Weiterhin nur Org 1' });
+      await assignJahrgang(fremde.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${fremde.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ title: 'Uebernommen' });
+      expect(res.status).toBe(404);
+
+      const { rows: [row] } = await db.query('SELECT title FROM challenges WHERE id = $1', [fremde.id]);
+      expect(row.title).toBe('Weiterhin nur Org 1');
     });
   });
 
@@ -1395,10 +1774,17 @@ describe('Challenges Routes', () => {
     });
 
     it('Multi-Org: Admin aktiv auf Sekundaer-Org umgeschaltet kann eine Datei dieser Org laden -> 200 (vorher faelschlich 404 gegen die Primaer-Org)', async () => {
-      // admin1 zusaetzlich als Mitglied der zweiten Org eintragen (Org-Switcher).
+      // admin1 zusaetzlich als Mitglied der zweiten Org eintragen (Org-Switcher)
+      // und dort auf den Jahrgang der Org zuweisen — ein admin ist seit
+      // 31.08.2026 jahrgangs-gebunden, dieser Test misst aber die MULTI-ORG-
+      // Aufloesung, nicht die Jahrgangsgrenze (die hat ihren eigenen Test).
       await db.query(
         'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
         [USERS.admin1.id, ORGS.andereGemeinde.id, USERS.admin2.role_id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang2.id]
       );
 
       const challenge = await createChallenge({
@@ -1407,6 +1793,7 @@ describe('Challenges Routes', () => {
         moderated: true,
         created_by: USERS.admin2.id,
       });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang2.id);
       const filename = 'd'.repeat(64);
       await createSubmission({
         challenge_id: challenge.id,

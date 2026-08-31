@@ -8549,7 +8549,7 @@
           "Challenges (Konfis)"
         ],
         "summary": "Aktive Challenges, Archiv und eigene Abzeichen",
-        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').\n",
+        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); admin/teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team'). GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen gebunden (vorher org-weit wie org_admin).\n",
         "responses": {
           "200": {
             "description": "Gruppierte Challenge-Listen",
@@ -8684,7 +8684,7 @@
             "rbacVerifier"
           ],
           "org-scope": true,
-          "objekt-pruefung": "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer",
+          "objekt-pruefung": "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; admin/teamer -> zugewiesener Jahrgang oder 'nur_team'; org_admin immer (geaendert 2026-08-31: admin jahrgangs-gebunden)",
           "hinweis": "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
         }
       }
@@ -8899,7 +8899,7 @@
             "manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
+          "objekt-pruefung": "Owner immer; org_admin org-weit; admin/teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge (admin seit 2026-08-31 ebenfalls jahrgangs-gebunden); konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
         }
       }
     },
@@ -8909,7 +8909,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Moegliche Urheber:innen einer Challenge",
-        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge; Team-Mitglieder sehen sie immer.\n",
+        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). admin und teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge (admin seit 2026-08-31, vorher org-weit), org_admin alle; Team-Mitglieder sehen sie immer.\n",
         "responses": {
           "200": {
             "description": "Liste (id, display_name, role_name), Konfis zuletzt",
@@ -8959,7 +8959,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
+          "objekt-pruefung": "Konfi-Eintraege auf die zugewiesenen Jahrgänge von admin bzw. teamer gefiltert (org_admin ungefiltert)"
         }
       }
     },
@@ -8969,7 +8969,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
-        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.\n",
+        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit.\n",
         "responses": {
           "200": {
             "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)"
@@ -8992,7 +8992,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit"
+          "objekt-pruefung": "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -> leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
         }
       },
       "post": {
@@ -9000,7 +9000,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Challenge anlegen (Entwurf oder geplant)",
-        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen; Jahrgänge und Urheber werden org-gescopt validiert.\n",
+        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. admin und teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle; Jahrgänge und Urheber werden org-gescopt validiert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -9125,7 +9125,7 @@
             "description": "Validierungsfehler / Ende vor Start / Urheber nicht gefunden"
           },
           "403": {
-            "description": "requireTeamer ODER fremde Jahrgaenge ODER Teamer ohne Zugriff auf gewaehlten Jahrgang"
+            "description": "requireTeamer ODER fremde Jahrgaenge ODER admin/teamer ohne Zugriff auf gewaehlten Jahrgang"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -9143,7 +9143,7 @@
             "validateCreate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
+          "objekt-pruefung": "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
         }
       }
     },
@@ -9209,7 +9209,7 @@
             "validateUpdate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
+          "objekt-pruefung": "leadershipMayAccess: org_admin immer; admin/teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit (admin seit 2026-08-31 jahrgangs-gebunden)"
         }
       },
       "delete": {

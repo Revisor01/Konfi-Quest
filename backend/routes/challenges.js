@@ -169,18 +169,30 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // HELFER
   // ====================================================================
 
-  // Jahrgänge, die ein Teamer sehen darf. org_admin/admin sehen alles (null =
-  // keine Einschraenkung), super_admin nichts (leeres Array).
+  // Jahrgänge, die eine Person aus der Leitung sehen darf.
+  //   org_admin -> alles (null = keine Einschraenkung)
+  //   super_admin -> nichts (leeres Array)
+  //   admin/teamer -> nur die zugewiesenen Jahrgänge
+  // Seit 31.08.2026 ist auch 'admin' an seine Zuweisungen gebunden (vorher
+  // null = alles). Gleiche Semantik wie utils/jahrgangChat.js und
+  // routes/chat.js. Ein admin ohne Zuweisung sieht damit keine jahrgangs-
+  // gebundenen Challenges mehr — org-weite 'nur_team'-Challenges bleiben ihm,
+  // die haengen an der Rolle, nicht am Jahrgang.
   function viewableJahrgangIds(req) {
     if (req.user.role_name === 'super_admin') return [];
-    if (['org_admin', 'admin'].includes(req.user.role_name)) return null;
+    if (req.user.role_name === 'org_admin') return null;
     return (req.user.assigned_jahrgaenge || []).filter(j => j.can_view).map(j => j.id);
   }
 
-  // Darf die Leitung diese Challenge sehen/bearbeiten? org_admin/admin immer,
-  // Teamer nur wenn mindestens ein zugewiesener Jahrgang zugeordnet ist.
+  // Darf die Leitung diese Challenge sehen/bearbeiten? org_admin immer,
+  // admin und Teamer nur, wenn mindestens ein zugewiesener Jahrgang zugeordnet
+  // ist (admin seit 31.08.2026 ebenfalls gebunden).
   // Challenges ohne Jahrgangs-Zuordnung sind reine Leitungs-Entwuerfe und nur
-  // für org_admin/admin sichtbar (sonst könnte ein Teamer fremde Entwuerfe sehen).
+  // für den org_admin sichtbar (sonst saehe die uebrige Leitung fremde
+  // Entwuerfe). Folge, die schon vor dem 31.08.2026 fuer Teamer galt und nun
+  // auch fuer admin gilt: Wer eine Challenge OHNE jahrgang_ids anlegt, kommt
+  // anschliessend selbst nicht mehr heran — nur noch der org_admin. Das
+  // Formular markiert eine leere Jahrgangs-Auswahl deshalb rot.
   async function leadershipMayAccess(req, challengeId) {
     const viewable = viewableJahrgangIds(req);
     if (viewable === null) return true;
@@ -217,8 +229,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   //   audience 'nur_team'        -> Team der Org, ORG-WEIT (keine Jahrgangspruefung)
   //   audience 'konfis*'         -> Jahrgangsbindung:
   //                                 Konfi über konfi_profiles.jahrgang_id,
-  //                                 Teamer über zugewiesene Jahrgänge,
-  //                                 org_admin/admin immer (sehen alles ihrer Org)
+  //                                 admin/Teamer über zugewiesene Jahrgänge,
+  //                                 org_admin immer (sieht alles seiner Org)
   // Gibt { allowed, reason } zurück, damit die Route 403 vs. 404 unterscheiden kann.
   async function participantMayAccess(req, challenge) {
     const role = req.user.role_name;
@@ -235,9 +247,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       return { allowed: jahrgangIds.includes(jahrgangId) };
     }
 
-    if (['org_admin', 'admin'].includes(role)) return { allowed: true };
-
-    if (role === 'teamer') {
+    // org_admin: immer (leadershipMayAccess gibt für ihn sofort true zurück).
+    // admin/teamer: nur bei zugewiesenem Jahrgang — derselbe Weg, damit die
+    // Teilnehmer-Sicht nicht weiter ist als die Leitungs-Sicht.
+    if (['org_admin', 'admin', 'teamer'].includes(role)) {
       return { allowed: await leadershipMayAccess(req, challenge.id) };
     }
 
@@ -431,8 +444,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
       }
 
-      // Konfi: genau ein Jahrgang. Teamer: zugewiesene Jahrgänge.
-      // org_admin/admin: alle Jahrgänge der Org (viewable === null).
+      // Konfi: genau ein Jahrgang. admin/Teamer: zugewiesene Jahrgänge.
+      // org_admin: alle Jahrgänge der Org (viewable === null).
       let jahrgangIds = null;
       if (role === 'konfi') {
         const jahrgangId = await konfiJahrgangId(req.user.id);
@@ -440,8 +453,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.json({ active: [], archive: [], marks: [] });
         }
         jahrgangIds = [jahrgangId];
-      } else if (role === 'teamer') {
-        jahrgangIds = viewableJahrgangIds(req) || [];
+      } else {
+        jahrgangIds = viewableJahrgangIds(req);
       }
 
       // Sichtbare Challenges: entweder über die Jahrgangs-Zuordnung
@@ -941,10 +954,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         requester.role_name = membership.role_name;
       }
 
-      // Für Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG nachladen —
-      // gebraucht, um leadershipMayAccess/viewableJahrgangIds unten identisch
-      // zur rbacVerifier-Logik im Rest der Datei anzuwenden.
-      if (requester.role_name === 'teamer') {
+      // Für admin und Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG
+      // nachladen — gebraucht, um leadershipMayAccess/viewableJahrgangIds unten
+      // identisch zur rbacVerifier-Logik im Rest der Datei anzuwenden.
+      // (admin ist seit 31.08.2026 ebenfalls jahrgangs-gebunden.)
+      if (['admin', 'teamer'].includes(requester.role_name)) {
         const { rows: assigned } = await db.query(
           `SELECT j.id, uja.can_view
            FROM user_jahrgang_assignments uja
@@ -970,21 +984,21 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       const isOwner = row.user_id === requester.id;
       let mayAccess = isOwner;
 
-      if (!mayAccess && ['org_admin', 'admin'].includes(requester.role_name)) {
-        // org_admin/admin sehen alle Dateien ihrer (aktiven) Org, ohne
+      if (!mayAccess && requester.role_name === 'org_admin') {
+        // org_admin sieht alle Dateien seiner (aktiven) Org, ohne
         // Jahrgangs-Einschraenkung — identisch zu leadershipMayAccess().
         mayAccess = true;
-      } else if (!mayAccess && requester.role_name === 'teamer') {
+      } else if (!mayAccess && ['admin', 'teamer'].includes(requester.role_name)) {
         // 'nur_team'-Challenges sind org-weit (keine Jahrgangs-Zuordnung) —
-        // dort darf jeder Teamer der Org die Dateien sehen, sonst könnte er
-        // seine eigene Team-Runde nicht anschauen (Migration 121).
+        // dort darf jede:r aus dem Team der Org die Dateien sehen, sonst könnte
+        // sie/er die eigene Team-Runde nicht anschauen (Migration 121).
         if (row.audience === 'nur_team') {
           mayAccess = true;
         } else {
-          // Sonst nur für Submissions aus einem seiner zugewiesenen Jahrgänge —
+          // Sonst nur für Submissions aus einem der zugewiesenen Jahrgänge —
           // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
           // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
-          // Leitungs-Endpunkte, über die der Teamer die Challenge erst findet).
+          // Leitungs-Endpunkte, über die die Challenge erst gefunden wird).
           const viewable = (requester.assigned_jahrgaenge || [])
             .filter(j => j.can_view)
             .map(j => j.id);

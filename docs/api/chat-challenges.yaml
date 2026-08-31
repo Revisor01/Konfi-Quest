@@ -110,8 +110,9 @@
 #    - Eigene Beitraege: immer sichtbar (mit Moderationsstatus).
 #    - Leitung (GET /admin/:id/submissions): sieht IMMER alles inkl. Namen —
 #      Anonymitaet gilt gegenueber der Gruppe, nicht gegenueber der Leitung.
-#      org_admin/admin org-weit; teamer nur Challenges seiner zugewiesenen
-#      Jahrgänge ('nur_team'-Challenges org-weit für jeden Teamer).
+#      org_admin org-weit; admin und teamer nur Challenges ihrer zugewiesenen
+#      Jahrgänge ('nur_team'-Challenges org-weit für das ganze Team).
+#      GEAENDERT 2026-08-31: admin war vorher wie org_admin org-weit.
 #    - Export (GET /admin/:id/export): strenger als die Sammelansicht —
 #      konfi_consent='private' ("nur für die Leitung") landet NIE im Export;
 #      anonyme Beitraege erscheinen als "Anonym".
@@ -126,8 +127,8 @@
 #      Beitraege mit moderation_status='approved'. Ohne Moderation ist jeder
 #      Beitrag sofort approved -> Abzeichen sofort. has_submission ("schon
 #      eingereicht") haengt bewusst NICHT an der Freigabe.
-#    - Dateiabruf (GET /files/:filename): Owner immer; org_admin/admin
-#      org-weit; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit;
+#    - Dateiabruf (GET /files/:filename): Owner immer; org_admin org-weit;
+#      admin und teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit;
 #      Konfi nur oeffentliche Beitraege seines Jahrgangs. Auth NUR per
 #      Authorization-Header (bewusst kein ?token= wie im Chat).
 #
@@ -1118,9 +1119,11 @@ paths:
       description: >
         Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie
         Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines
-        Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge
-        ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle
-        der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').
+        Jahrgangs (nie 'nur_team'); admin/teamer -> zugewiesene Jahrgänge
+        ('konfis_und_team') + org-weite 'nur_team'; org_admin -> alle der Org
+        mit Team-Beteiligung ('konfis_und_team', 'nur_team').
+        GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen
+        gebunden (vorher org-weit wie org_admin).
       responses:
         '200':
           description: Gruppierte Challenge-Listen
@@ -1187,7 +1190,7 @@ paths:
         rollen: [konfi, teamer, admin, org_admin]
         middleware: [rbacVerifier]
         org-scope: true
-        objekt-pruefung: "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer"
+        objekt-pruefung: "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; admin/teamer -> zugewiesener Jahrgang oder 'nur_team'; org_admin immer (geaendert 2026-08-31: admin jahrgangs-gebunden)"
         hinweis: "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
 
   /api/challenges/konfi/{id}/submissions:
@@ -1280,9 +1283,10 @@ paths:
         middleware: ["manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)"]
         org-scope: true
         objekt-pruefung: >-
-          Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit,
-          sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche
-          Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'
+          Owner immer; org_admin org-weit; admin/teamer bei 'nur_team' org-weit,
+          sonst nur zugewiesene Jahrgänge der Challenge (admin seit 2026-08-31
+          ebenfalls jahrgangs-gebunden); konfi nur oeffentliche Beitraege
+          (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'
 
   # ==========================================================================
   # CHALLENGES — Leitungs-Endpunkte (org_admin / admin / teamer)
@@ -1294,8 +1298,9 @@ paths:
       summary: Moegliche Urheber:innen einer Challenge
       description: >
         Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem
-        Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen
-        Jahrgänge; Team-Mitglieder sehen sie immer.
+        Konfi stammen). admin und teamer sehen nur Konfis ihrer zugewiesenen
+        Jahrgänge (admin seit 2026-08-31, vorher org-weit), org_admin alle;
+        Team-Mitglieder sehen sie immer.
       responses:
         '200':
           description: Liste (id, display_name, role_name), Konfis zuletzt
@@ -1315,7 +1320,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
+        objekt-pruefung: "Konfi-Eintraege auf die zugewiesenen Jahrgänge von admin bzw. teamer gefiltert (org_admin ungefiltert)"
 
   /api/challenges/admin:
     get:
@@ -1324,8 +1329,10 @@ paths:
       description: >
         Verwaltungsliste inkl. submission_count, pending_count, eigener
         Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung.
-        Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus
-        org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
+        admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge
+        plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
+        org_admin sieht alle Challenges der Org.
+        GEAENDERT 2026-08-31: admin war vorher org-weit.
       responses:
         '200':
           description: Challenge-Liste mit status (abgeleitet) und locked (nach Start)
@@ -1335,7 +1342,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit"
+        objekt-pruefung: "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -> leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
     post:
       tags: ["Challenges (Leitung)"]
       summary: Challenge anlegen (Entwurf oder geplant)
@@ -1343,8 +1350,9 @@ paths:
         Defaults: audience 'konfis_und_team', visibility 'konfi_choice',
         moderated true, allow_multiple true, is_draft true, allowed_media
         [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht
-        gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge
-        bespielen; Jahrgänge und Urheber werden org-gescopt validiert.
+        gespeichert. admin und teamer duerfen nur eigene (zugewiesene)
+        Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle;
+        Jahrgänge und Urheber werden org-gescopt validiert.
       requestBody:
         required: true
         content:
@@ -1372,13 +1380,13 @@ paths:
       responses:
         '201': { description: Erstellte Challenge inkl. abgeleitetem status }
         '400': { description: Validierungsfehler / Ende vor Start / Urheber nicht gefunden }
-        '403': { description: requireTeamer ODER fremde Jahrgaenge ODER Teamer ohne Zugriff auf gewaehlten Jahrgang }
+        '403': { description: requireTeamer ODER fremde Jahrgaenge ODER admin/teamer ohne Zugriff auf gewaehlten Jahrgang }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer, validateCreate]
         org-scope: true
-        objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
+        objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
   /api/challenges/admin/{id}:
     put:
@@ -1409,7 +1417,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer, validateUpdate]
         org-scope: true
-        objekt-pruefung: "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
+        objekt-pruefung: "leadershipMayAccess: org_admin immer; admin/teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit (admin seit 2026-08-31 jahrgangs-gebunden)"
     delete:
       tags: ["Challenges (Leitung)"]
       summary: Challenge löschen (gestartete nur mit force)

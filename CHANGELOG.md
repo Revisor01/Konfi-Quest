@@ -43,6 +43,11 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Ein Admin sah und bearbeitete Challenges aller Jahrgänge — auch derer, für
+  die er nicht zuständig ist, samt Beiträgen der Konfis. Challenges,
+  Beiträge und deren Moderation richten sich jetzt nach seinen Jahrgängen. Der
+  Org-Admin sieht weiterhin alles, Challenges für das ganze Team bleiben für
+  die gesamte Leitung sichtbar.
 - Ein Admin konnte Konfis in Jahrgängen anlegen und in Jahrgänge verschieben,
   für die er gar nicht zuständig ist — und sah sie danach nicht mehr, weil
   seine Liste nur die eigenen Jahrgänge zeigt. Anlegen und Verschieben sind
