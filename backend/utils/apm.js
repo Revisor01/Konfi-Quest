@@ -45,16 +45,25 @@ function trimBuckets(nowSec) {
   }
 }
 
-function record(method, normPath, statusCode, durationMs, rawUrl) {
+function record(method, normPath, statusCode, durationMs, rawUrl, handlerMs) {
   const key = `${method} ${normPath}`;
   let s = stats.get(key);
   if (!s) {
-    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [] };
+    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [], handlerTotalMs: 0, handlerMaxMs: 0, handlerSamples: [] };
     stats.set(key, s);
   }
   s.count += 1;
   s.totalMs += durationMs;
   if (durationMs > s.maxMs) s.maxMs = durationMs;
+  // Handler-Zeit getrennt fuehren: Sie endet, wenn die Antwort GESCHRIEBEN
+  // ist, waehrend durationMs bis zur AUSLIEFERUNG laeuft. Die Differenz ist
+  // die Zeit auf der Leitung — und die kann man im Backend nicht kuerzen.
+  if (typeof handlerMs === 'number') {
+    s.handlerTotalMs += handlerMs;
+    if (handlerMs > s.handlerMaxMs) s.handlerMaxMs = handlerMs;
+    s.handlerSamples.push(handlerMs);
+    if (s.handlerSamples.length > MAX_SAMPLES) s.handlerSamples.shift();
+  }
   const isError = statusCode >= 500;
   if (isError) s.errors += 1;
   s.samples.push(durationMs);
@@ -106,15 +115,30 @@ function apmMiddleware(req, res, next) {
   inFlight += 1;
   if (inFlight > maxInFlight) maxInFlight = inFlight;
   let done = false;
+
+  // res.end() laeuft, wenn der Handler die Antwort fertig geschrieben hat —
+  // VOR der Auslieferung. Der Abstand zu res.on('finish') ist die Zeit auf
+  // der Leitung. Ohne diese Trennung schreibt das APM Wartezeit des Geraets
+  // der Route zu und laesst sie langsam aussehen (Befund 31.08.2026: 16 von
+  // 26 Anfragen ueber 1 s waren 304 mit LEEREM Body).
+  let handlerMs = null;
+  const origEnd = res.end;
+  res.end = function (...args) {
+    if (handlerMs === null) handlerMs = Number(process.hrtime.bigint() - start) / 1e6;
+    return origEnd.apply(this, args);
+  };
+
   const finish = () => {
     if (done) return;
     done = true;
     inFlight -= 1;
     const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
     const rawUrl = req.originalUrl || req.url;
-    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, rawUrl);
-    if (durationMs > SLOW_MS) {
-      console.warn(`[APM] LANGSAM ${Math.round(durationMs)}ms ${req.method} ${rawUrl} -> ${res.statusCode}`);
+    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, rawUrl, handlerMs);
+    // Nur warnen, wenn der SERVER langsam war. Haengt es an der Leitung,
+    // hilft keine Backend-Aenderung — dann steht es im Dashboard, nicht im Log.
+    if (handlerMs !== null && handlerMs > SLOW_MS) {
+      console.warn(`[APM] LANGSAM (Server) ${Math.round(handlerMs)}ms ${req.method} ${rawUrl} -> ${res.statusCode}`);
     }
   };
   res.on('finish', finish);
@@ -127,14 +151,26 @@ function routeRows() {
   const routes = [];
   for (const [route, s] of stats.entries()) {
     const sorted = [...s.samples].sort((a, b) => a - b);
+    const hSorted = [...(s.handlerSamples || [])].sort((a, b) => a - b);
+    const hCount = hSorted.length;
+    const avgMs = s.count ? Math.round(s.totalMs / s.count) : 0;
+    const serverAvgMs = hCount ? Math.round(s.handlerTotalMs / hCount) : 0;
     routes.push({
       route,
       count: s.count,
       errors: s.errors,
       errorRate: s.count ? +(s.errors / s.count).toFixed(4) : 0,
-      avgMs: s.count ? Math.round(s.totalMs / s.count) : 0,
+      // Gesamt: bis zur Auslieferung beim Client (enthaelt die Leitung).
+      avgMs,
       p95Ms: Math.round(percentile(sorted, 95)),
       maxMs: Math.round(s.maxMs),
+      // Server: bis der Handler fertig geschrieben hat. NUR das ist im
+      // Backend beeinflussbar.
+      serverAvgMs,
+      serverP95Ms: hCount ? Math.round(percentile(hSorted, 95)) : 0,
+      serverMaxMs: Math.round(s.handlerMaxMs || 0),
+      // Differenz = Zeit auf der Leitung.
+      netzAvgMs: Math.max(0, avgMs - serverAvgMs),
     });
   }
   return routes;
@@ -182,7 +218,9 @@ const REPLICA_ID = process.env.HOSTNAME || 'single';
 // Vollstaendiges Aggregat DIESER Replica (in-memory). Bei mehreren Replicas mergen
 // mergeSnapshots() die Einzel-Snapshots zu einem Gesamtbild.
 function snapshot() {
-  const routes = routeRows().sort((a, b) => b.p95Ms - a.p95Ms);
+  // Nach SERVER-p95 sortieren, nicht nach Gesamtzeit: Die Liste soll zeigen,
+  // wo das Backend arbeitet — nicht, wo die Verbindung des Geraets langsam war.
+  const routes = routeRows().sort((a, b) => (b.serverP95Ms ?? b.p95Ms) - (a.serverP95Ms ?? a.p95Ms));
   let totalCount = 0;
   let totalErrors = 0;
   for (const r of routes) { totalCount += r.count; totalErrors += r.errors; }
@@ -216,25 +254,36 @@ function mergeSnapshots(snaps) {
   const routeMap = new Map();
   const addRoutes = (rows) => {
     for (const r of rows) {
-      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0 };
+      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, sumServerAvg: 0, serverP95Ms: 0, serverMaxMs: 0 };
       e.count += r.count;
       e.errors += r.errors;
       e.sumAvg += r.avgMs * r.count;      // gewichteter Mittelwert ueber count
       e.p95Ms = Math.max(e.p95Ms, r.p95Ms);
       e.maxMs = Math.max(e.maxMs, r.maxMs);
+      e.sumServerAvg += (r.serverAvgMs || 0) * r.count;
+      e.serverP95Ms = Math.max(e.serverP95Ms, r.serverP95Ms || 0);
+      e.serverMaxMs = Math.max(e.serverMaxMs, r.serverMaxMs || 0);
       routeMap.set(r.route, e);
     }
   };
   valid.forEach(s => { addRoutes(s.routesSlowest || []); addRoutes(s.routesBusiest || []); });
-  const routes = [...routeMap.values()].map(e => ({
-    route: e.route,
-    count: e.count,
-    errors: e.errors,
-    errorRate: e.count ? +(e.errors / e.count).toFixed(4) : 0,
-    avgMs: e.count ? Math.round(e.sumAvg / e.count) : 0,
-    p95Ms: e.p95Ms,
-    maxMs: e.maxMs,
-  }));
+  const routes = [...routeMap.values()].map(e => {
+    const avgMs = e.count ? Math.round(e.sumAvg / e.count) : 0;
+    const serverAvgMs = e.count ? Math.round(e.sumServerAvg / e.count) : 0;
+    return {
+      route: e.route,
+      count: e.count,
+      errors: e.errors,
+      errorRate: e.count ? +(e.errors / e.count).toFixed(4) : 0,
+      avgMs,
+      p95Ms: e.p95Ms,
+      maxMs: e.maxMs,
+      serverAvgMs,
+      serverP95Ms: e.serverP95Ms,
+      serverMaxMs: e.serverMaxMs,
+      netzAvgMs: Math.max(0, avgMs - serverAvgMs),
+    };
+  });
 
   // Timeline pro Minute (ISO-Zeit) addieren.
   const tlMap = new Map();
@@ -262,7 +311,7 @@ function mergeSnapshots(snaps) {
     inFlight: valid.reduce((s, x) => s + x.inFlight, 0),
     maxInFlight: valid.reduce((s, x) => s + x.maxInFlight, 0),
     rps: +valid.reduce((s, x) => s + x.rps, 0).toFixed(2),
-    routesSlowest: [...routes].sort((a, b) => b.p95Ms - a.p95Ms).slice(0, 20),
+    routesSlowest: [...routes].sort((a, b) => (b.serverP95Ms ?? b.p95Ms) - (a.serverP95Ms ?? a.p95Ms)).slice(0, 20),
     routesBusiest: [...routes].sort((a, b) => b.count - a.count).slice(0, 20),
     recentErrors,
     timeline: timelineMerged,
