@@ -43,6 +43,17 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Ein Admin konnte Konfis in Jahrgängen anlegen und in Jahrgänge verschieben,
+  für die er gar nicht zuständig ist — und sah sie danach nicht mehr, weil
+  seine Liste nur die eigenen Jahrgänge zeigt. Anlegen und Verschieben sind
+  jetzt auf die eigenen Jahrgänge begrenzt. Der Org-Admin darf weiterhin
+  alles.
+- Wies ein Admin einer Teamer:in einen Jahrgang zu, verlor sie dabei still
+  alle Jahrgänge, für die dieser Admin nicht zuständig ist. Zuweisungen
+  fremder Jahrgänge bleiben jetzt erhalten; ein Admin ändert nur seine
+  eigenen. Der Org-Admin verwaltet weiterhin alle.
+- Eine frisch gegebene oder entzogene Jahrgangs-Zuweisung wirkte bis zu eine
+  halbe Minute lang nicht. Sie greift jetzt sofort.
 - In der Leitung konnte man den Knopf „Neue Teamer:in anlegen" zwar antippen,
   das Formular blieb aber ohne Auswahl und liess sich nicht abschicken.
   Teamer:innen anlegen und ihnen Jahrgänge geben klappt jetzt für die ganze

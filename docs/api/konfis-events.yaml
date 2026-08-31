@@ -1780,9 +1780,15 @@ paths:
   # requireAdmin. Bonuspunkte VERGEBEN duerfen auch Teamer:innen,
   # ZURUECKNEHMEN nur org_admin/admin.
   #
-  # JAHRGANGS-FILTER: Nur die Liste GET /api/admin/konfis filtert für
-  # Teamer:innen (und admin) auf assigned_jahrgaenge mit can_view. Alle
-  # Detail-Routen mit :id prüfen ausschliesslich die organization_id.
+  # JAHRGANGS-FILTER: Die Liste GET /api/admin/konfis filtert für
+  # Teamer:innen (und admin) auf assigned_jahrgaenge mit can_view.
+  # BEHOBEN 31.08.2026: Die SCHREIBWEGE POST /api/admin/konfis und
+  # PUT /api/admin/konfis/{id} sind seither ebenfalls an die Jahrgaenge des
+  # Aufrufers gebunden (can_edit) — vorher prüften sie nur die
+  # organization_id, ein admin konnte also Konfis in Jahrgaenge anlegen und
+  # verschieben, die er anschliessend nicht mehr sah. org_admin und
+  # super_admin bleiben ausgenommen. Die lesenden Detail-Routen mit :id
+  # prüfen weiterhin nur die organization_id.
   # ===================================================================
   /api/admin/konfis:
     get:
@@ -1815,9 +1821,18 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateKonfi]
         org-scope: true
-        objekt-pruefung: "jahrgang_id muss zur eigenen Organisation gehören; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit"
+        objekt-pruefung: >
+          jahrgang_id muss zur eigenen Organisation gehören; seit 31.08.2026
+          zusaetzlich zu den Jahrgaengen des Aufrufers (assigned_jahrgaenge
+          mit can_edit) — sonst 403. org_admin und super_admin ausgenommen.
+          Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über
+          checkKonfiLimit
         hinweis: >
           Teamer:innen können keine Konfis anlegen (requireAdmin).
+          BEHOBEN 31.08.2026: Vorher prüfte die Route nur die Organisation.
+          Ein admin konnte damit Konfis in jeden Jahrgang der Gemeinde
+          anlegen — und sah sie danach nicht mehr, weil die Liste sie
+          ausblendet.
       requestBody:
         required: true
         content:
@@ -1935,7 +1950,10 @@ paths:
         objekt-pruefung: >
           UPDATE ... WHERE id = :id AND organization_id = Token-Org;
           zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe
-          Organisation (400 bei fremdem oder unbekanntem Jahrgang)"
+          Organisation (400 bei fremdem oder unbekanntem Jahrgang);
+          BEHOBEN 31.08.2026: fuer admin muessen QUELL- UND ZIEL-Jahrgang in
+          seinen eigenen Zuweisungen liegen (can_edit), sonst 403. org_admin
+          und super_admin ausgenommen"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true

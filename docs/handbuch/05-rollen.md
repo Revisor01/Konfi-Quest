@@ -48,6 +48,17 @@ sieht nach einem Fehler aus, ist aber Absicht. Die App weist inzwischen darauf
 hin, dass die Zuweisung fehlt. Setzen kann sie der Org-Admin unter
 **Mehr › Benutzer:innen**.
 
+Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
+ändern darf:
+
+- **Konfis anlegen** geht nur in seinen eigenen Jahrgängen.
+- **Konfis verschieben** geht nur aus einem eigenen Jahrgang in einen anderen
+  eigenen Jahrgang.
+- **Teamer:innen** sieht er dagegen alle — er kann ihnen seine Jahrgänge geben
+  und sie daraus wieder entfernen. Jahrgänge, für die er nicht zuständig ist,
+  bleiben dabei unangetastet: Sie verschwinden nicht, wenn er die Zuweisung
+  einer Teamer:in ändert.
+
 ### Org-Admin
 
 Die Gemeindeleitung. Kann alles, was ein Admin kann, und zusätzlich:
@@ -76,7 +87,7 @@ darf **alle Rollen der eigenen Gemeinde** verwalten, auch andere Org-Admins.
 | Challenges anlegen und begleiten | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Admins und Org-Admins anlegen | — | — | — | ja |
-| Jahrgänge zuweisen | — | — | — | ja |
+| Jahrgänge zuweisen | — | — | nur die eigenen | ja |
 | Gemeinde-Einstellungen und Einladungen | — | — | — | ja |
 | Jahresrückblick freigeben | — | — | — | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
@@ -99,7 +110,7 @@ fragen. Ein Admin kann das nicht.
 |---|---|
 | **Konfi** | keine — ein Konfi gehört zu genau einem Jahrgang |
 | **Teamer:in** | entscheidet fast alles: Konfi-Liste, Chat, Termine, Challenges, Mitteilungen |
-| **Admin** | entscheidet über Konfi-Liste und Chat. Verwaltung von Terminen, Abzeichen und Kategorien geht auch ohne |
+| **Admin** | entscheidet über Konfi-Liste und Chat — und darüber, in welchen Jahrgängen er Konfis anlegen und wohin er sie verschieben darf. Verwaltung von Terminen, Abzeichen und Kategorien geht auch ohne. Teamer:innen sieht er alle |
 | **Org-Admin** | keine — er sieht immer die ganze Gemeinde |
 
 Die vollständige Liste dessen, was ohne passende Zuweisung nicht geht, steht im

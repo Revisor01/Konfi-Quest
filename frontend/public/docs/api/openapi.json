@@ -2171,7 +2171,7 @@
         "tags": [
           "Benutzer & Rollen"
         ],
-        "summary": "Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)",
+        "summary": "Jahrgangs-Zuweisungen setzen (transaktional, Chat-Sync; fuer admin nur die eigenen Jahrgaenge)",
         "parameters": [
           {
             "name": "id",
@@ -2222,13 +2222,13 @@
         },
         "responses": {
           "200": {
-            "description": "Zuweisungen ersetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert"
+            "description": "Zuweisungen gesetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert. assignments_count zaehlt die uebergebenen Zuweisungen (Antwortform unveraendert)"
           },
           "400": {
             "description": "Jahrgang nicht in eigener Org"
           },
           "403": {
-            "description": "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole)"
+            "description": "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole) ODER ein Jahrgang liegt ausserhalb der eigenen Zuweisungen"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -2246,8 +2246,8 @@
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404).\"\n"
+          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden.\"\n"
         }
       }
     },
@@ -6096,8 +6096,8 @@
             "validateCreateKonfi"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehören; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit",
-          "hinweis": "Teamer:innen können keine Konfis anlegen (requireAdmin).\n"
+          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehören; seit 31.08.2026 zusaetzlich zu den Jahrgaengen des Aufrufers (assigned_jahrgaenge mit can_edit) — sonst 403. org_admin und super_admin ausgenommen. Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit\n",
+          "hinweis": "Teamer:innen können keine Konfis anlegen (requireAdmin). BEHOBEN 31.08.2026: Vorher prüfte die Route nur die Organisation. Ein admin konnte damit Konfis in jeden Jahrgang der Gemeinde anlegen — und sah sie danach nicht mehr, weil die Liste sie ausblendet.\n"
         },
         "requestBody": {
           "required": true,
@@ -6285,7 +6285,7 @@
             "validateUpdateKonfi"
           ],
           "org-scope": true,
-          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org; zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe Organisation (400 bei fremdem oder unbekanntem Jahrgang)\"\n"
+          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org; zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe Organisation (400 bei fremdem oder unbekanntem Jahrgang); BEHOBEN 31.08.2026: fuer admin muessen QUELL- UND ZIEL-Jahrgang in seinen eigenen Zuweisungen liegen (can_edit), sonst 403. org_admin und super_admin ausgenommen\"\n"
         },
         "parameters": [
           {

@@ -1104,7 +1104,7 @@ paths:
           gewesen; die Grenze zieht checkUserHierarchy."
     post:
       tags: ["Benutzer & Rollen"]
-      summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
+      summary: Jahrgangs-Zuweisungen setzen (transaktional, Chat-Sync; fuer admin nur die eigenen Jahrgaenge)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
@@ -1125,21 +1125,33 @@ paths:
                       can_view: { type: boolean, default: true }
                       can_edit: { type: boolean, default: false }
       responses:
-        "200": { description: "Zuweisungen ersetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert" }
+        "200": { description: "Zuweisungen gesetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert. assignments_count zaehlt die uebergebenen Zuweisungen (Antwortform unveraendert)" }
         "400": { description: "Jahrgang nicht in eigener Org" }
-        "403": { description: "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole)" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole) ODER ein Jahrgang liegt ausserhalb der eigenen Zuweisungen" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateJahrgangAssignments]
         org-scope: true
-        objekt-pruefung: "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören"
+        objekt-pruefung: >
+          Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle);
+          alle Jahrgang-IDs müssen zur eigenen Org gehören; seit 31.08.2026
+          fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) —
+          sonst 403. org_admin und super_admin ausgenommen.
         hinweis: >
           GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung.
           Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben
           koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig.
           admin kommt damit an teamer und konfi, NICHT an andere Admins oder
-          Org-Admins (403) und nicht an fremde Organisationen (404)."
+          Org-Admins (403) und nicht an fremde Organisationen (404).
+          BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des
+          Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm
+          damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht
+          verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf
+          seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein
+          fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt
+          weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit
+          eine neue Zuweisung sofort greift statt erst nach 30 Sekunden."
 
   /api/users/me/jahrgaenge:
     get:

@@ -11,6 +11,10 @@ const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
+// Ein Ort fuer "darf dieser Aufrufer in diesem Jahrgang?" — org_admin und
+// super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
+// Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
+const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
@@ -211,6 +215,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
             }
 
+            // Ein Admin darf Konfis NUR in seinen eigenen Jahrgaengen anlegen
+            // (Simons Regel 31.08.2026). Bis 31.08. pruefte die Route nur die
+            // Organisation: Ein Admin konnte eine Konfi in einen fremden
+            // Jahrgang anlegen — und sah sie danach nie wieder, weil die Liste
+            // (GET / oben) nach `assigned_jahrgaenge` filtert. Anlegen ja,
+            // sehen nein.
+            // org_admin und super_admin bleiben von allen
+            // Jahrgangsbeschraenkungen ausgenommen.
+            if (!darfJahrgang(req, jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+            }
+
             const roleQuery = "SELECT id FROM roles WHERE name = 'konfi' AND organization_id = $1";
             const { rows: [role] } = await client.query(roleQuery, [req.user.organization_id]);
 
@@ -355,6 +372,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!zielJahrgang) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+            }
+
+            // Verschieben ist an die eigenen Jahrgaenge gebunden (Simons Regel
+            // 31.08.2026): Die Konfi muss aus einem eigenen Jahrgang kommen UND
+            // das Ziel muss ein eigener sein. Bis 31.08. pruefte die Route nur
+            // die Organisation — ein Admin konnte jede Konfi der Gemeinde in
+            // jeden Jahrgang der Gemeinde schieben, auch aus Jahrgaengen, die
+            // er gar nicht sehen darf. Das Frontend warnte davor nur
+            // (KonfiDetailView.tsx), erzwungen hat es niemand.
+            // org_admin und super_admin bleiben ausgenommen.
+            if (currentProfile && currentProfile.jahrgang_id
+                && !darfJahrgang(req, currentProfile.jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+            }
+            if (!darfJahrgang(req, jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
             }
 
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;

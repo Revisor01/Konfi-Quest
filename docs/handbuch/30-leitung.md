@@ -12,8 +12,12 @@ Was die beiden Stufen genau unterscheidet, steht im Kapitel
 
 Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
 du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
-für die du eingetragen bist — ohne Zuweisung bleibt die Konfi-Liste leer. Nur
-der Org-Admin sieht immer die ganze Gemeinde.
+für die du eingetragen bist — ohne Zuweisung bleibt die Konfi-Liste leer. Und
+sie begrenzt auch, was du ändern darfst: Konfis legst du nur in deinen
+Jahrgängen an und verschiebst sie nur zwischen ihnen. Teamer:innen siehst du
+dagegen alle; änderst du ihre Jahrgänge, bleiben die Zuweisungen, für die du
+nicht zuständig bist, unangetastet. Nur der Org-Admin sieht und ändert immer
+die ganze Gemeinde.
 
 ## Konfis
 
