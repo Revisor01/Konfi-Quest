@@ -43,6 +43,13 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Ein Antrag von Teamer:innen konnte mit einer Fehlermeldung enden, obwohl er
+  längst eingereicht war: Brach die Verbindung ab und versuchte es die App
+  erneut, kam beim zweiten Versuch ein Fehler statt des bereits gestellten
+  Antrags. Jetzt zeigt die App in diesem Fall den vorhandenen Antrag — wie es
+  bei Konfis schon immer war.
+- Im Punkte-Verlauf der Teamer:innen wird der Punktestand jetzt sicher auf die
+  eigene Gemeinde begrenzt. Angezeigte Punkte ändern sich dadurch nicht.
 - Sicherheitslücke geschlossen: In der Terminliste der Konfis wurde der
   Check-in-Code jedes Termins mitgeliefert. Damit hätte man sich von zu Hause
   als anwesend eintragen und Punkte gutschreiben können, ohne dagewesen zu

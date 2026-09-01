@@ -9,14 +9,17 @@ const liveUpdate = require('../utils/liveUpdate');
 const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
-const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist } = require('../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 // Single Source of Truth: welche Events zählen für Konfi-Badges (kein Pflicht/Konfirmation).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
+// Anmeldestatus und Zeitfenster: eine Rechnung fuer Leitungs- und Konfi-Sicht.
+const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/terminAnmeldeStatus');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
+const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -647,13 +650,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Idempotency: Prüfen ob Antrag mit dieser client_id bereits existiert
-      if (client_id) {
-        const { rows: [existing] } = await db.query(
-          'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [client_id]
-        );
-        if (existing) {
-          return res.status(200).json(existing);
-        }
+      // (Vorab-Check; den Race-Fall faengt der 23505-Catch unten ab)
+      const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
+      if (vorhanderAntrag) {
+        return res.status(200).json(vorhanderAntrag);
       }
       
       const date = requested_date || new Date().toISOString().split('T')[0];
@@ -774,16 +774,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
       // Race Condition: Antrag wurde zwischen Check und Insert eingefügt
-      if (err.code === '23505' && err.detail?.includes('client_id')) {
-        try {
-          const { rows: [existing] } = await db.query(
-            'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [req.body.client_id]
-          );
-          if (existing) return res.status(200).json(existing);
-        } catch (lookupErr) {
-          console.error('Error looking up duplicate request:', lookupErr);
-        }
-      }
+      if (await behandleClientIdRace(db, err, req.body.client_id, res)) return;
       console.error('Database error in POST /requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
@@ -1502,206 +1493,78 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
   });
 
-  // Register for event
-  // HINWEIS: Dieser Endpunkt ist die primäre Konfi-Buchungsroute.
-  // events.js POST /:id/book ist die ältere Route (wird vom Admin-Frontend genutzt).
-  // Beide verwenden einheitlich status='waitlist' für Wartelisten-Einträge.
+  // Selbst-Anmeldung einer Konfi zu einem Termin.
+  //
+  // Fachlich dieselbe Handlung wie POST /events/:id/book — und seit
+  // 01.09.2026 auch derselbe Code: beide Routen rufen `bucheTermin` aus
+  // utils/bookingUtils. Vorher war der Vorgang hier ein zweites Mal
+  // ausformuliert und bereits auseinandergelaufen (Zeitslots ohne Sperre und
+  // ohne Gemeinde-Pruefung, Zaehlung ohne Rollen- und deleted_at-Filter).
+  //
+  // Die HUELLE dieser Route bleibt unveraendert: Statuscode 200, die Felder
+  // {message, registration_id, status, timeslot_id}, der Platzhinweis in der
+  // Wartelisten-Nachricht und der Push an die Konfi. Ausgelieferte Apps lesen
+  // genau diese Form — sie darf sich nicht aendern.
   router.post('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
+    const konfiId = req.user.id;
+    const eventId = req.params.id;
+    const { timeslot_id } = req.body; // Optional timeslot for timeslot events
+
+    const client = await db.getClient();
+    let ergebnis;
     try {
-      const konfiId = req.user.id;
-      const eventId = req.params.id;
-      const { timeslot_id } = req.body; // Optional timeslot for timeslot events
-
-      // Transaktion starten für Race-Condition-Schutz
-      const client = await db.getClient();
-      try {
       await client.query('BEGIN');
-
-      // Check if already registered
-      const existing = await checkExistingBooking(client, konfiId, eventId);
-
-      if (existing) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
-      }
-
-      // Check if this is a Konfirmation event and if user already has one
-      // (flag-basiert seit Phase 117 — Migration 091 hat die "Konfirmation"-Kategorie entfernt)
-      const isKonfirmationQuery = `
-        SELECT e.id
-        FROM events e
-        WHERE e.id = $1 AND e.is_konfirmation = true
-      `;
-      const { rows: [isKonfirmation] } = await client.query(isKonfirmationQuery, [eventId]);
-
-      if (isKonfirmation) {
-        // Check if user already has a confirmed konfirmation booking
-        const existingKonfirmationQuery = `
-          SELECT eb.id
-          FROM event_bookings eb
-          JOIN events e ON eb.event_id = e.id
-          WHERE eb.user_id = $1
-            AND eb.status = 'confirmed'
-            AND e.is_konfirmation = true
-            AND e.organization_id = $2
-            AND (e.cancelled IS NULL OR e.cancelled = false)
-        `;
-        const { rows: [existingKonfirmation] } = await client.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
-
-        if (existingKonfirmation) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(409).json({
-            error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.'
-          });
-        }
-      }
-
-      // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile).
-      // excludeTeamers: Konfi- und Teamer-Plaetze sind strikt getrennt (Migration
-      // 120). Ohne den Filter zählten angemeldete Teamer gegen das KONFI-
-      // Kontingent — ein Event mit 5 Konfi-Plaetzen und 3 Teamern hätte nur noch
-      // 2 Konfis aufgenommen und danach faelschlich "ausgebucht" gemeldet.
-      const event = await getEventWithCounts(client, eventId, req.user.organization_id, { excludeTeamers: true });
-
-      if (!event) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden' });
-      }
-
-      // Befund N1 (27.08.2026): Diese Route hatte weder den teamer_only- noch
-      // den cancelled-Guard, die der regulaere Weg seit jeher hat
-      // (events.js:1666 bzw. teamer.js:1314). Nachgemessen: Beide Anmeldungen
-      // lieferten 200 -- eine Konfi konnte sich per API zu einem reinen
-      // Teamer-Termin UND zu einem abgesagten Termin anmelden. Ueber die
-      // Oberflaeche nicht erreichbar (die Liste filtert teamer_only heraus,
-      // events.js:254-256), per API aber offen.
-      if (event.teamer_only) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Dieser Termin ist nur für Teamer:innen' });
-      }
-
-      if (event.cancelled) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
-      }
-
-      // Registrierungsfenster prüfen
-      const regCheck = validateRegistrationWindow(event);
-      if (!regCheck.valid) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: regCheck.error });
-      }
-
-      // Check if event has timeslots and validate timeslot selection
-      let selectedTimeslot = null;
-      let maxCapacity = event.max_participants;
-      let confirmedCount = parseInt(event.confirmed_count) || 0;
-      let waitlistCount = parseInt(event.waitlist_count) || 0;
-
-      if (event.has_timeslots) {
-        if (!timeslot_id) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(400).json({ error: 'Bitte wähle einen Zeitslot aus' });
-        }
-
-        // Validate timeslot exists and belongs to this event
-        const { rows: [timeslot] } = await client.query(
-          'SELECT id, event_id, start_time, end_time, max_participants, organization_id FROM event_timeslots WHERE id = $1 AND event_id = $2',
-          [timeslot_id, eventId]
-        );
-
-        if (!timeslot) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
-        }
-
-        selectedTimeslot = timeslot;
-
-        // Get timeslot-specific counts
-        const timeslotCountQuery = `
-          SELECT
-            COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
-            COUNT(*) FILTER (WHERE status = 'waitlist') as waitlist_count
-          FROM event_bookings
-          WHERE timeslot_id = $1
-        `;
-        const { rows: [timeslotCounts] } = await client.query(timeslotCountQuery, [timeslot_id]);
-        confirmedCount = parseInt(timeslotCounts.confirmed_count) || 0;
-        waitlistCount = parseInt(timeslotCounts.waitlist_count) || 0;
-        maxCapacity = timeslot.max_participants;
-      }
-
-      // Determine registration status
-      const statusResult = determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacity);
-      if (typeof statusResult === 'object') {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(statusResult.status).json({ error: statusResult.error });
-      }
-      const status = statusResult;
-
-      // Register for event (with optional timeslot_id).
-      // organization_id MUSS gesetzt sein, sonst zählen Badge-Queries (event_count,
-      // activity_count, ...) die Buchung nicht (sie filtern auf organization_id).
-      const insertQuery = `
-        INSERT INTO event_bookings (user_id, event_id, timeslot_id, status, booking_date, organization_id)
-        VALUES ($1, $2, $3, $4, NOW(), $5)
-        RETURNING id
-      `;
-      const { rows: [newBooking] } = await client.query(insertQuery, [konfiId, eventId, timeslot_id || null, status, req.user.organization_id]);
-
-      // In den Chat zum Termin eintragen, falls es einen gibt. Bisher nahm der
-      // Chat beim Anlegen einen einmaligen Schnappschuss der Gebuchten — wer
-      // sich danach anmeldete, kam nie hinein (Befund 24.08.2026).
-      await addToEventChat(client, eventId, konfiId, req.user.organization_id);
-
-      // Transaktion abschliessen
-      await client.query('COMMIT');
-      client.release();
-
-      const message = status === 'confirmed'
-        ? 'Erfolgreich angemeldet'
-        : `Auf Warteliste gesetzt (Platz ${waitlistCount + 1})`;
-
-      res.json({
-        message,
-        registration_id: newBooking.id,
-        status,
-        timeslot_id: timeslot_id || null
+      ergebnis = await bucheTermin(client, {
+        eventId,
+        userId: konfiId,
+        orgId: req.user.organization_id,
+        rolle: 'konfi',
+        timeslotId: timeslot_id
       });
 
-      // Push-Notification an Konfi senden (nach COMMIT)
-      try {
-        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot, req.user.organization_id);
-      } catch (pushErr) {
-        console.error('Error sending event registration push:', pushErr);
-      }
-
-      // Live-Update an Konfi und Admins senden
-      liveUpdate.sendToKonfi(konfiId, 'events', 'update');
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
-
-      } catch (err) {
-        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      if (!ergebnis.ok) {
+        await client.query('ROLLBACK');
         client.release();
-        throw err;
+        // Diese Route hat den error_code nie mitgeliefert und tut es weiterhin
+        // nicht — sonst waere es eine Formaenderung fuer die Konfi-App.
+        return res.status(ergebnis.status).json({ error: ergebnis.error });
       }
+
+      await client.query('COMMIT');
+      client.release();
     } catch (err) {
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
       console.error('Database error in POST /events/:id/register:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+      return res.status(500).json({ error: 'Datenbankfehler' });
     }
+
+    const { bookingId, status, event, timeslot, waitlistPosition } = ergebnis;
+    const message = status === 'confirmed'
+      ? 'Erfolgreich angemeldet'
+      : `Auf Warteliste gesetzt (Platz ${waitlistPosition})`;
+
+    res.json({
+      message,
+      registration_id: bookingId,
+      status,
+      timeslot_id: timeslot_id || null
+    });
+
+    // Push-Notification an Konfi senden (nach COMMIT)
+    try {
+      await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, timeslot, req.user.organization_id);
+    } catch (pushErr) {
+      console.error('Error sending event registration push:', pushErr);
+    }
+
+    // Live-Update an Konfi und Admins senden
+    liveUpdate.sendToKonfi(konfiId, 'events', 'update');
+    liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
   });
 
   // Unregister from event
@@ -1821,6 +1684,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           // slot-genau nachgerueckt), sonst die Event-Kapazität.
           // Teamer zählen NIE mit: sie haben ein eigenes Kontingent, und
           // nachgerueckt wird hier ausschliesslich aus der Konfi-Warteliste.
+          // Zaehlung ueber zaehleBestaetigte (Migration 136): Die Konfi-Seite
+          // sind ausschliesslich Konfis. Vorher stand hier `r.name != 'teamer'` —
+          // damit belegte eine dem Termin zugeordnete Leitung einen Konfi-Platz
+          // und verhinderte das Nachruecken einer wartenden Konfi.
           let maxCapacity = event.max_participants || 0;
           let confirmedCount = 0;
           if (event.has_timeslots && registration.timeslot_id) {
@@ -1829,27 +1696,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               [registration.timeslot_id]
             );
             maxCapacity = slot?.max_participants || 0;
-            const { rows: [slotCount] } = await client.query(
-              `SELECT COUNT(*) as confirmed_count
-               FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-               WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed'
-                 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
-              [registration.timeslot_id]
-            );
-            confirmedCount = parseInt(slotCount?.confirmed_count || '0', 10);
+            confirmedCount = await zaehleBestaetigte(client, { timeslotId: registration.timeslot_id }, 'konfi');
           } else {
-            const { rows: [countResult] } = await client.query(
-              `SELECT COUNT(*) as confirmed_count
-               FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-               WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-                 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
-              [eventId]
-            );
-            confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
+            confirmedCount = await zaehleBestaetigte(client, { eventId }, 'konfi');
           }
 
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {

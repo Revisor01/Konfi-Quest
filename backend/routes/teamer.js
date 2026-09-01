@@ -5,12 +5,13 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { getTeamerBadgeProgress } = require('../utils/teamerBadgeProgress');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
-const { determineBookingStatus } = require('../utils/bookingUtils');
+const { determineBookingStatus, zaehleBuchungen } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
+const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1174,17 +1175,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           // Eine BESTEHENDE eigene Buchung zaehlt nicht als neuer Platz --
           // sonst koennte man sich durch Absage und erneute Zusage selbst
           // aussperren, obwohl der Platz noch einem gehoert.
-          const { rows: [zahlen] } = await client.query(
-            `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.user_id <> $2)::int AS confirmed_count,
-                    COUNT(*) FILTER (WHERE eb.status = 'waitlist'  AND eb.user_id <> $2)::int AS waitlist_count
-               FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-              WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
-            [eventId, req.user.id]
+          //
+          // Gezaehlt wird die TEAM-Seite im Sinne von Migration 136 —
+          // Teamer:innen UND zugeordnete Leitung. Vorher filterte diese Stelle
+          // hart auf r.name = 'teamer'; eine zugeordnete Leitung fiel damit aus
+          // dem Kontingent heraus und das Team liess sich ueberbuchen.
+          const zahlen = await zaehleBuchungen(
+            client, { eventId }, 'team', { ausserUserId: req.user.id }
           );
           const ergebnis = determineBookingStatus(
-            event, zahlen.confirmed_count, zahlen.waitlist_count,
+            event, zahlen.confirmed, zahlen.waitlist,
             event.teamer_max_participants || 0,
             { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
           );
@@ -1251,14 +1251,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const userId = req.user.id;
       const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
 
-      // Idempotency
-      if (client_id) {
-        const { rows: [existing] } = await db.query(
-          'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1',
-          [client_id]
-        );
-        if (existing) return res.status(200).json(existing);
-      }
+      // Idempotency (Vorab-Check; den Race-Fall faengt der 23505-Catch unten ab)
+      const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
+      if (vorhanderAntrag) return res.status(200).json(vorhanderAntrag);
 
       const date = requested_date || new Date().toISOString().split('T')[0];
 
@@ -1347,6 +1342,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
+      // Race Condition: Antrag wurde zwischen Check und Insert eingefügt.
+      // Fehlte hier bis 01.09.2026 (Befund M3) — ein Wiederholungsversuch
+      // nach Zeitueberschreitung lieferte Teamer:innen einen 500er, statt
+      // den bereits gestellten Antrag zurueckzugeben.
+      if (await behandleClientIdRace(db, err, req.body.client_id, res)) return;
       console.error('Database error in POST /teamer/requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
