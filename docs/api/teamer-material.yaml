@@ -1028,7 +1028,14 @@ paths:
   # ===================================================================
   # backend/routes/material.js  (Prefix /api/material)
   # Lesen und Herunterladen: requireTeamer (org_admin, admin, teamer).
-  # Alles Schreibende: requireAdmin (org_admin, admin).
+  # Alles Schreibende: requireAdmin (org_admin, admin). Seit 01.09.2026
+  # zusaetzlich die Ersteller-Regel (Simons Entscheidung: "Material
+  # bearbeiten kann nur der Ersteller!"): PUT/DELETE am Material und die
+  # Datei-Routen verlangen created_by = eigene id; org_admin und das
+  # is_super_admin-Flag bleiben ausgenommen, sonst waere das Material
+  # einer ausgeschiedenen Person fuer immer unveraenderlich. created_by
+  # IS NULL (Konto geloescht) heisst: nur noch die Leitung. Anlegen darf
+  # ein admin weiterhin.
   # Konfis haben auf keine dieser Routen Zugriff.
   # Jahrgangsgrenze seit 24.08.2026 (Befund M1 behoben), erweitert um
   # globales Material am 31.08.2026.
@@ -1088,8 +1095,8 @@ paths:
           unabhaengig von den zugeordneten Jahrgaengen. Seit 01.09.2026 gilt
           dieselbe Schranke auch fuer die Rolle admin (Simons Regel vom
           31.08.); nur org_admin (und is_super_admin-Flag) sieht weiterhin
-          alles. Die Schreib-Routen (PUT/DELETE per ID) pruefen weiterhin nur
-          die Organisation. Die Bindung an
+          alles. Die Schreib-Routen pruefen seit dem 01.09.2026 zusaetzlich
+          die erstellende Person (Ersteller-Regel, siehe PUT/DELETE). Die Bindung an
           einen Termin (material_events) bleibt bewusst reine Suchhilfe und
           grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die
           Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen
@@ -1116,7 +1123,7 @@ paths:
           schema: { type: integer }
           description: Nur Material dieses Jahrgangs
       responses:
-        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
+        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1171,7 +1178,7 @@ paths:
                     Adressen) gibt 400. Leerstring oder null bedeutet "kein
                     Link". Umgebende Leerzeichen werden abgeschnitten.
       responses:
-        "201": { description: "id, title, description, link_url, ist_global, created_at" }
+        "201": { description: "id, title, description, link_url, ist_global, created_at, created_by" }
         "400": { description: "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Rolle nicht berechtigt, oder ist_global = true ohne die Rolle org_admin" }
@@ -1194,7 +1201,7 @@ paths:
           schema: { type: integer, minimum: 1 }
           description: "ID des Termins"
       responses:
-        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count)" }
+        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1211,7 +1218,7 @@ paths:
         hinweis: "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "id, title, description, link_url, ist_global, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
+        "200": { description: "id, title, description, link_url, ist_global, created_at, created_by, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1229,14 +1236,27 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateMaterial]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)"
         hinweis: >
+          Ersteller-Regel seit 01.09.2026 (Simons Entscheidung: "Material
+          bearbeiten kann nur der Ersteller!"): Ein 'admin' darf nur Material
+          aendern, das er selbst angelegt hat (created_by = eigene id);
+          fremdes Material gibt 403 und die Zeile bleibt unveraendert.
+          org_admin und das is_super_admin-Flag sind ausgenommen -- sonst
+          waere das Material einer ausgeschiedenen Person fuer immer
+          unveraenderlich. created_by IS NULL (Konto der erstellenden Person
+          geloescht) heisst: nur noch die Leitung darf ran. Die Pruefung
+          greift erst NACH der Org-Pruefung, damit eine fremde Organisation
+          weiterhin 404 sieht und nicht am 403 ablesen kann, dass es das
+          Material gibt. Vorher (bis 01.09.2026) gab die Route hier 200 --
+          jeder 'admin' der Organisation konnte jedes Material aendern.
+
           Feld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -> true) als
           auch das Entziehen (true -> false) von ist_global ist der Rolle
           org_admin vorbehalten; ein 'admin' bekommt 403 und das Flag bleibt
           unveraendert. Schickt ein 'admin' den unveraenderten Wert mit (das
           Formular sendet ihn immer mit), geht die Anfrage durch -- er darf
-          globales Material inhaltlich weiterhin bearbeiten.
+          selbst angelegtes globales Material inhaltlich weiterhin bearbeiten.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1269,7 +1289,7 @@ paths:
         "200": { description: Aktualisiert }
         "400": { description: "Der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { description: "Rolle nicht berechtigt, oder Änderung von ist_global ohne die Rolle org_admin" }
+        "403": { description: "Rolle nicht berechtigt, nicht die erstellende Person (Ersteller-Regel seit 01.09.2026), oder Änderung von ist_global ohne die Rolle org_admin" }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
@@ -1283,12 +1303,18 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird über denselben Org-JOIN ermittelt"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); die Dateiliste wird über denselben Org-JOIN ermittelt"
+        hinweis: >
+          Ersteller-Regel seit 01.09.2026: Loeschen ist die schaerfste Form
+          des Bearbeitens und folgt derselben Regel wie PUT -- ein 'admin'
+          loescht nur eigenes Material, org_admin und is_super_admin-Flag
+          alles, created_by IS NULL nur noch die Leitung. Fremde
+          Organisationen sehen weiterhin 404. Vorher gab die Route hier 200.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
 
@@ -1309,7 +1335,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "multer materialUpload.array('files', 10)"]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen)"
+        hinweis: >
+          Ersteller-Regel seit 01.09.2026: Eine Datei anzuhaengen IST eine
+          Aenderung am Material -- sonst liesse sich die Regel ueber den
+          Datei-Umweg aushebeln. Ein 'admin' laedt nur zu eigenem Material
+          hoch; bei fremdem Material kommt 403 und es entsteht keine Datei.
+          created_by IS NULL: nur noch die Leitung. Vorher gab die Route
+          hier 201.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1326,7 +1359,7 @@ paths:
         "201": { description: "Array der angelegten Dateien (id, original_name, mime_type, file_size, created_at)" }
         "400": { description: Keine Dateien im Request oder Datei nicht lesbar }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
         "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js)" }
         "415": { description: Dateityp nicht verifizierbar (Magic-Bytes) }
@@ -1378,8 +1411,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst)"
+        objekt-pruefung: "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst); danach Ersteller-Regel auf materials.created_by: eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen)"
         hinweis: >
+          Ersteller-Regel seit 01.09.2026: Eine Datei zu loeschen IST eine
+          Aenderung am Material der erstellenden Person -- ein 'admin'
+          loescht nur Dateien seines eigenen Materials, sonst 403 und die
+          Datei bleibt. created_by IS NULL: nur noch die Leitung. Vorher gab
+          die Route hier 200.
+
           Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen
           bedient: der GET erwartet den 64-stelligen stored_name, der DELETE
           die numerische material_files.id. Im Code sind das zwei getrennte
@@ -1394,7 +1433,7 @@ paths:
       responses:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Rolle nicht berechtigt, oder nicht die erstellende Person des Materials (Ersteller-Regel seit 01.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
 

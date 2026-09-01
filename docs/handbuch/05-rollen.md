@@ -66,6 +66,10 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
   Jahrgänge anlegen kann er nicht** — das ist Sache des Org-Admins, der dabei
   gleich festlegt, welche Admins und Teamer:innen Zugriff bekommen.
 - **Den Jahresrückblick freigeben** kann er nur für seine eigenen Jahrgänge.
+- **Material bearbeiten und löschen** geht nur bei Material, das er selbst
+  angelegt hat — Dateien anhängen und entfernen eingeschlossen. Fremdes
+  Material sieht er (im Rahmen seiner Jahrgänge), öffnet es aber nur
+  schreibgeschützt. Neues Material anlegen darf er immer.
 - **Teamer:innen** sieht er dagegen alle — er kann ihnen seine Jahrgänge geben
   und sie daraus wieder entfernen. Jahrgänge, für die er nicht zuständig ist,
   bleiben dabei unangetastet: Sie verschwinden nicht, wenn er die Zuweisung
@@ -82,6 +86,8 @@ Die Gemeindeleitung. Kann alles, was ein Admin kann, und zusätzlich:
 - **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
 - **Jahresrückblick freigeben** und wieder zurückziehen
 - **Material für alle Teamer:innen freigeben**
+- **Jedes Material bearbeiten und löschen** — auch fremdes und solches,
+  dessen erstellende Person die Gemeinde verlassen hat
 
 Der Org-Admin ist außerdem der Einzige, der **an die Jahrgangs-Grenze nicht
 gebunden** ist: Er sieht immer die ganze Gemeinde, alle Konfis, alle

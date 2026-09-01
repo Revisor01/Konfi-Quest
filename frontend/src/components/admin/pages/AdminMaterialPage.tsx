@@ -53,6 +53,7 @@ import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
 
 
 interface Material {
@@ -68,6 +69,12 @@ interface Material {
   // Kommt seit dem 31.08.2026 mit. Aeltere Eintraege aus dem Offline-Cache
   // liefern das Feld nicht -- dann gilt "nicht global", nie ein Fehler.
   ist_global?: boolean;
+  // Kommen seit dem 01.09.2026 mit (Ersteller-Regel). created_by ist null,
+  // wenn das Konto der erstellenden Person geloescht wurde; bei Eintraegen
+  // aus einem aelteren Offline-Cache fehlt das Feld ganz -- beides behandelt
+  // darfMaterialBearbeiten wie "nicht meins".
+  created_by?: number | null;
+  created_by_name?: string | null;
   created_at: string;
 }
 
@@ -144,9 +151,13 @@ const AdminMaterialPage: React.FC = () => {
     });
   };
 
-  // Material Form Modal
+  // Material Form Modal.
+  // nurLesen: Bearbeiten kann nur die erstellende Person oder die Leitung
+  // (Entscheidung Simon, 01.09.2026). Wer es nicht darf, bekommt das Modal
+  // schreibgeschuetzt -- statt eines Speichern-Knopfs, der mit 403 endet.
   const [presentFormModal, dismissFormModal] = useIonModal(MaterialFormModal, {
     material: editMaterial,
+    nurLesen: editMaterial ? !darfMaterialBearbeiten(user, editMaterial) : false,
     onClose: () => {
       setEditMaterial(null);
       dismissFormModal();
@@ -347,17 +358,22 @@ const AdminMaterialPage: React.FC = () => {
                               </div>
                             </div>
                           </IonItem>
-                          <IonItemOptions className="app-swipe-actions" side="end">
-                            <IonItemOption
-                              className="app-swipe-action"
-                              onClick={() => { closeOpenSlidingItems(); handleDelete(mat); }}
-                              aria-label="Material löschen"
-                            >
-                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                <IonIcon icon={trash} />
-                              </div>
-                            </IonItemOption>
-                          </IonItemOptions>
+                          {/* Loeschen nur fuer die erstellende Person oder die
+                              Leitung (Entscheidung Simon, 01.09.2026) -- sonst
+                              gaebe es einen Wisch-Knopf, der mit 403 endet. */}
+                          {darfMaterialBearbeiten(user, mat) && (
+                            <IonItemOptions className="app-swipe-actions" side="end">
+                              <IonItemOption
+                                className="app-swipe-action"
+                                onClick={() => { closeOpenSlidingItems(); handleDelete(mat); }}
+                                aria-label="Material löschen"
+                              >
+                                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                  <IonIcon icon={trash} />
+                                </div>
+                              </IonItemOption>
+                            </IonItemOptions>
+                          )}
                         </IonItemSliding>
                       ))}
                     </div>
