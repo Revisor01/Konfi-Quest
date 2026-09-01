@@ -51,13 +51,19 @@ interface ActivityRequestsViewProps {
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
   // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
   headerSlot?: React.ReactNode;
+  // true, wenn der Server die (bis auf Teamer-Meldungen) leere Liste mit dem
+  // Header X-Kein-Jahrgang-Zugewiesen begruendet hat (Admin ohne
+  // Jahrgangs-Zuweisung, Entscheidung 31.08.2026). Dann erklaert der
+  // Leerzustand den Grund — dasselbe Muster wie in KonfisView.
+  ohneJahrgang?: boolean;
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
   onSelectRequest,
   onResetRequest,
-  headerSlot
+  headerSlot,
+  ohneJahrgang = false
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
@@ -143,8 +149,16 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         iconColorClass="success"
         isEmpty={filteredAndSortedRequests.length === 0}
         emptyIcon={documentTextOutline}
-        emptyTitle="Keine Aktivitäten vorhanden"
-        emptyMessage="Konfirmand:innen können Aktivitäten beantragen"
+        emptyTitle={ohneJahrgang ? 'Kein Jahrgang zugewiesen' : 'Keine Aktivitäten vorhanden'}
+        emptyMessage={
+          ohneJahrgang
+            // Der Server hat Konfi-Antraege wegen fehlender Jahrgangs-Zuweisung
+            // ausgeblendet (Header X-Kein-Jahrgang-Zugewiesen) — das ist kein
+            // Fehler, sondern Simons Regel vom 31.08.2026. Teamer-Meldungen
+            // bleiben sichtbar, deshalb spricht der Text nur von Konfis.
+            ? 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du keine Meldungen von Konfis. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+            : 'Konfirmand:innen können Aktivitäten beantragen'
+        }
         emptyIconColor="#059669"
       >
         {filteredAndSortedRequests.map((request, index) => {

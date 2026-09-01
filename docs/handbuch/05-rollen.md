@@ -43,8 +43,11 @@ Jahrgänge anderer Admins und der Org-Admins bleiben ihm verschlossen.
 
 **Wichtig:** Auch ein Admin braucht Jahrgangs-Zuweisungen. Bei der Konfi-Liste
 und im Chat sieht er nur die Jahrgänge, für die er eingetragen ist. Ein frisch
-angelegter Admin ohne Zuweisung sieht deshalb **keine einzige Konfi** — das
-sieht nach einem Fehler aus, ist aber Absicht. Die App weist inzwischen darauf
+angelegter Admin ohne Zuweisung sieht deshalb **keine einzige Konfi** — und
+auch keine jahrgangsgebundenen Challenges und keine Aktivitäts-Meldungen von
+Konfis. Das sieht nach einem Fehler aus, ist aber Absicht: Ein Admin ganz ohne
+Jahrgang ist ein gültiger Fall, etwa wenn er nur mit den Teamer:innen arbeitet
+— die sieht er immer alle. Die App weist an den betroffenen Stellen darauf
 hin, dass die Zuweisung fehlt. Setzen kann sie der Org-Admin unter
 **Mehr › Benutzer:innen**.
 

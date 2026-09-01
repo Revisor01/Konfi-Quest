@@ -12,6 +12,20 @@ const path = require('path');
  * @param {object} db - Test-DB Pool (aus getTestPool())
  * @returns {express.Application} Express-App für supertest
  */
+// Alle in diesem Worker erzeugten Test-Apps. truncateAll (helpers/db.js)
+// wartet vor jedem Leeren darauf, dass ihre Nachlaeufer durch sind — sonst
+// schreibt ein Seiteneffekt aus dem VORIGEN Test NACH dem TRUNCATE und der
+// naechste Test sieht Daten, die es nicht geben duerfte.
+//
+// Genau das war der sporadische Fehlschlag, der am 01.09.2026 viermal
+// auftrat: "PUT /api/teamer/certificate-types/99999 gibt 404" schlug im
+// Suitenlauf fehl und war allein gruen — bei GLEICHEM Code und gleicher
+// Suiten-Auswahl mal so, mal so. maxWorkers ist 1, es war also keine
+// Parallelitaet, sondern ein Nachlaeufer.
+//
+// Ein Set, keine Liste: dieselbe App wird pro Datei einmal erzeugt.
+const erzeugteApps = new Set();
+
 function getTestApp(db) {
   const uploadsDir = path.join(os.tmpdir(), 'konfi-test-uploads');
 
@@ -20,7 +34,18 @@ function getTestApp(db) {
     // transporter, io, rateLimiters: nicht uebergeben -> createApp nutzt Dummies
   });
 
+  erzeugteApps.add(app);
   return app;
+}
+
+/**
+ * Wartet auf die Nachlaeufer ALLER Test-Apps dieses Workers.
+ * Wird von truncateAll gerufen — so muss keine der 65 Testdateien daran denken.
+ */
+async function warteAufAlleNachwehen() {
+  for (const app of erzeugteApps) {
+    await warteAufNachwehen(app);
+  }
 }
 
 /**
@@ -40,4 +65,4 @@ function getTestApp(db) {
  */
 const { warteAufNachwehen } = require('../../utils/nachAntwort');
 
-module.exports = { getTestApp, warteAufNachwehen };
+module.exports = { getTestApp, warteAufNachwehen, warteAufAlleNachwehen };

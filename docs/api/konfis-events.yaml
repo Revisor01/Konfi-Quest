@@ -1756,8 +1756,22 @@ paths:
           Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht.
           Teamer:innen haben hier keinen Zugriff (dafuer gibt es
           GET /api/teamer/requests).
+          GEAENDERT 2026-09-01: Fehlt dem admin die Jahrgangs-Zuweisung,
+          traegt die Antwort zusaetzlich den Header
+          X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt
+          ein Array, Teamer-Antraege sind weiterhin enthalten). Die
+          Oberflaeche erklaert damit, warum keine Konfi-Antraege kommen.
       responses:
-        "200": { description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)" }
+        "200":
+          description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+          headers:
+            X-Kein-Jahrgang-Zugewiesen:
+              schema: { type: string, enum: ["true"] }
+              description: >
+                Nur gesetzt, wenn dem aufrufenden admin kein Jahrgang
+                zugewiesen ist und Konfi-Antraege deshalb ausgeblendet sind
+                (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei
+                org_admin und bei einer Liste, die aus anderem Grund leer ist.
         "400": { description: "Unbekannter Wert fuer ?status=" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
@@ -1968,7 +1982,18 @@ paths:
         org-scope: true
         objekt-pruefung: "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter für alle außer is_super_admin/org_admin"
       responses:
-        "200": { description: "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)" }
+        "200":
+          description: "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)"
+          headers:
+            # NACHDOKUMENTIERT 2026-09-01: Der Header existiert seit dem
+            # 26.08.2026 im Code, fehlte hier aber.
+            X-Kein-Jahrgang-Zugewiesen:
+              schema: { type: string, enum: ["true"] }
+              description: >
+                Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem
+                aufrufenden admin/teamer kein Jahrgang zugewiesen ist
+                (gueltiger Fall). Fehlt bei org_admin/super_admin und bei
+                einer Liste, die aus anderem Grund leer ist.
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

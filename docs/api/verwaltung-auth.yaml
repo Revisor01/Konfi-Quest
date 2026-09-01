@@ -212,6 +212,8 @@ paths:
               properties:
                 currentPassword: { type: string }
                 newPassword: { type: string, description: "Policy: min 8, Gross/Klein/Zahl/Sonderzeichen, keine Leerzeichen" }
+                device_id: { type: string, description: "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont" }
+                platform: { type: string, description: "Optional, zusammen mit device_id (ios/android/web)" }
       responses:
         "200": { description: "Passwort geaendert" }
         "400": { description: "Aktuelles Passwort falsch / Policy verletzt" }
@@ -225,6 +227,12 @@ paths:
         # revoziert alle offenen Refresh-Tokens. Die Antwort enthält ein
         # frisches Token-Paar für die aufrufende Sitzung, damit der eigene
         # Client nicht mitfliegt.
+        # BEHOBEN 01.09.2026 (Rest von N2): Push-Tokens der beendeten
+        # Sitzungen werden mitgeloescht — vorher bekam ein ausgesperrtes
+        # Geraet weiter Push-Nachrichten (Versand haengt nur an user_id).
+        # Mit device_id+platform bleibt das eigene Geraet verschont; ohne
+        # (alte Apps) fallen alle Tokens des Users und das eigene Geraet
+        # registriert sich beim naechsten App-Start neu.
 
   /api/auth/delete-account:
     post:
@@ -539,6 +547,10 @@ paths:
         # revoziert und token_invalidated_at gesetzt. Reset-Tokens liegen
         # ausserdem nur noch gehasht in der DB. HINWEIS (war N3): bestehende Refresh-Tokens des Users werden NICHT
         # revoziert; kein eigener Rate-Limiter (Token allerdings 32 Byte Hex).
+        # BEHOBEN 01.09.2026 (Rest von N2): alle Push-Tokens des Users werden
+        # geloescht — beim Reset ueberlebt keine Sitzung, kein Geraet darf
+        # weiter Push-Nachrichten fuer das Konto bekommen. Jedes Geraet
+        # registriert sich beim naechsten Login neu.
 
   /api/auth/refresh:
     post:
@@ -1368,8 +1380,9 @@ paths:
 
   # ==========================================================================
   # BETRIEB / DIAGNOSE (direkt in backend/createApp.js, kein Router)
-  # /health und /status sind bewusst OHNE Authentifizierung (Docker-Healthcheck
-  # und Uptime-Monitoring). Die drei Metrics-Endpunkte verlangen ein Token und
+  # /health, /status und /app-version sind bewusst OHNE Authentifizierung
+  # (Docker-Healthcheck, Uptime-Monitoring, Update-Hinweis der Apps).
+  # Die drei Metrics-Endpunkte verlangen ein Token und
   # zusaetzlich req.user.is_super_admin.
   # ==========================================================================
   /api/health:
@@ -1389,6 +1402,32 @@ paths:
         org-scope: false
         objekt-pruefung: "keine"
         hinweis: "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
+
+  /api/app-version:
+    get:
+      tags: ["System & Monitoring"]
+      summary: Aktuell im Store veroeffentlichte App-Version (ohne Anmeldung)
+      description: >
+        Meldet den Apps die aktuell veroeffentlichte Store-Version fuer den
+        dezenten Update-Hinweis auf den Dashboards. Quelle ist der offene
+        iTunes-Lookup (bundleId de.godsapp.konfiquest), serverseitig 6h
+        gecacht; Android traegt dieselbe Version, weil beide Apps im
+        Gleichschritt aus version.json released werden (Begruendung in
+        backend/utils/storeVersion.js). version ist null, wenn der Lookup
+        gerade nicht erreichbar ist — die App zeigt dann keinen Hinweis.
+        Die Antwortform ist Vertrag fuer ausgelieferte Apps ab 2.1.1:
+        Felder nur ergaenzen, nie entfernen oder umformen.
+      security: []
+      responses:
+        "200": { description: "ios: {version|null, url}, android: {version|null, url}" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "keine"
+        hinweis: >
+          Keine Authentifizierung — die veroeffentlichte Store-Version ist
+          oeffentlich einsehbar. Der globale Rate-Limiter gilt.
 
   /api/status:
     get:

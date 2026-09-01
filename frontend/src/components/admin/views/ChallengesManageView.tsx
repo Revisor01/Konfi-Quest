@@ -57,6 +57,14 @@ interface ChallengesManageViewProps {
    * Teilnahme — Leitung und Team machen selbst mit.
    */
   marks?: ChallengeMark[];
+  /**
+   * true, wenn der Server die leere Liste mit dem Header
+   * X-Kein-Jahrgang-Zugewiesen begruendet hat (Admin/Teamer ohne
+   * Jahrgangs-Zuweisung, Entscheidung 31.08.2026). Dann erklaeren die
+   * Leerzustaende den Grund, statt "keine Challenges" zu behaupten —
+   * dasselbe Muster wie in KonfisView.
+   */
+  ohneJahrgang?: boolean;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -167,8 +175,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   onDeleteChallenge,
   presentingElement,
   headerSlot,
-  marks: marksRaw = []
+  marks: marksRaw = [],
+  ohneJahrgang = false
 }) => {
+  // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
+  // leer — deshalb bekommen alle drei denselben erklaerenden Text.
+  const ohneJahrgangLeerText = {
+    emptyTitle: 'Kein Jahrgang zugewiesen',
+    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+  };
   // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
   // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
   // ausblenden, anonymisieren --, nur das Endgueltige nicht. Beim Loeschen
@@ -466,8 +481,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={current.length === 0}
         emptyIcon={flag}
-        emptyTitle="Gerade läuft keine Challenge"
-        emptyMessage="Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können"
+        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Gerade läuft keine Challenge'}
+        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können'}
         emptyIconColor="#be185d"
       >
         {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
@@ -483,8 +498,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={planned.length === 0}
         emptyIcon={timeOutline}
-        emptyTitle="Nichts in Planung"
-        emptyMessage="Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier"
+        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Nichts in Planung'}
+        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier'}
         emptyIconColor="#be185d"
       >
         {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
@@ -499,8 +514,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={archived.length === 0}
         emptyIcon={archiveOutline}
-        emptyTitle="Noch nichts im Archiv"
-        emptyMessage="Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen"
+        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Noch nichts im Archiv'}
+        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen'}
         emptyIconColor="#be185d"
       >
         {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}

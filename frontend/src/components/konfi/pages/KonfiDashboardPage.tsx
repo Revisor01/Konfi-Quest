@@ -33,7 +33,7 @@ import { Event } from '../../../types/event';
 import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
-import { TrialBanner, istVergangen } from '../../shared';
+import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
 import { track } from '../../../services/analytics';
 
 interface PointConfig {
@@ -375,6 +375,10 @@ const KonfiDashboardPage: React.FC = () => {
         </IonRefresher>
 
         <TrialBanner style={{ marginTop: '8px' }} />
+
+        {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
+            Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
+        <StoreUpdateBanner style={{ marginTop: '8px' }} />
 
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft

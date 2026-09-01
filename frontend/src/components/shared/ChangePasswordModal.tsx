@@ -1,7 +1,8 @@
 import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
-import { setToken, setRefreshToken } from '../../services/tokenStore';
+import { setToken, setRefreshToken, getDeviceId } from '../../services/tokenStore';
+import { Capacitor } from '@capacitor/core';
 import {
   IonPage,
   IonHeader,
@@ -132,9 +133,15 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
     await guard(async () => {
       try {
+        // Geraete-Angabe mitschicken: Der Passwortwechsel beendet alle
+        // ANDEREN Sitzungen und loescht deren Push-Tokens. Nur mit device_id
+        // + platform kann der Server das EIGENE Geraet verschonen — dieselbe
+        // Quelle wie bei der Token-Registrierung (AppContext nutzt getDeviceId).
         const res = await api.post('/auth/change-password', {
           currentPassword: passwordData.current_password,
-          newPassword: passwordData.new_password
+          newPassword: passwordData.new_password,
+          device_id: getDeviceId() || undefined,
+          platform: Capacitor.getPlatform()
         });
 
         // Der Passwortwechsel beendet serverseitig ALLE Sitzungen. Die Antwort

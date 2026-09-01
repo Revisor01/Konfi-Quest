@@ -86,6 +86,23 @@ async function truncateAll(db) {
   // Exclusive-Lock will). Deshalb: kurzer lock_timeout + Retry bei
   // Deadlock (40P01) / Lock-Timeout (55P03). So wartet TRUNCATE den Background-
   // Query ab, statt die Suite mit "deadlock detected" rot zu faerben.
+  // ZUERST die Nachlaeufer abwarten, DANN leeren. Der Advisory-Lock unten
+  // schuetzt nur davor, dass zwei TRUNCATE sich blockieren — nicht davor, dass
+  // ein Seiteneffekt NACH dem Leeren noch schreibt. Dann steht im naechsten
+  // Test eine Zeile, die es nicht geben duerfte (belegt am 01.09.2026:
+  // ein 404-Test auf eine nicht existierende ID schlug sporadisch fehl,
+  // bei gleichem Code mal gruen, mal rot).
+  //
+  // require() erst hier: helpers/testApp laedt createApp und damit die halbe
+  // Anwendung. Oben in der Datei wuerde das einen Ringschluss erzeugen, weil
+  // createApp seinerseits gegen die DB-Helfer laeuft.
+  try {
+    const { warteAufAlleNachwehen } = require('./testApp');
+    await warteAufAlleNachwehen();
+  } catch {
+    // Kein testApp im Spiel (reine Unit-Suite) — dann gibt es nichts zu warten.
+  }
+
   const MAX_ATTEMPTS = 5;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const client = await db.getClient();
