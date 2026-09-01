@@ -203,12 +203,16 @@ describe('Chat Routes', () => {
     });
 
     it('Konfi darf weiterhin einen Raum mit dem Team anlegen', async () => {
+      // Ziel ist die Leitung: Seit Simons Regel vom 01.09.2026 erreichen
+      // Konfis Admins nur noch mit gemeinsamem Jahrgang — admin1 hat im
+      // Seed keine Zuweisung. org_admin bleibt immer erreichbar.
       const res = await request(app)
         .post('/api/chat/rooms')
         .set('Authorization', `Bearer ${konfi1Token}`)
-        .send({ type: 'direct', name: 'Frage ans Team', participants: [USERS.admin1.id] });
+        .send({ type: 'direct', name: 'Frage ans Team', participants: [USERS.orgAdmin1.id] });
 
-      expect([200, 201]).toContain(res.status);
+      expect(res.status).toBe(200);
+      expect(res.body.room_id).toEqual(expect.any(Number));
     });
   });
 
@@ -315,9 +319,12 @@ describe('Chat Routes', () => {
   // ================================================================
   // Gegenrichtung: Konfi -> Team
   //
-  // Nutzerhinweis 23.08.2026: Konfis sollen Teamer:innen ebenfalls nur über
-  // einen gemeinsamen Jahrgang erreichen. Leitung (org_admin), Admins und
-  // Super-Admins bleiben für jeden Konfi erreichbar.
+  // Simons Regel vom 01.09.2026: "Konfis duerfen nur org Admins und Admins
+  // und Teamer ihres Jahrgangs anschreiben!" Teamer:innen (seit 23.08.2026)
+  // UND Admins (seit 01.09.2026) nur mit gemeinsamem Jahrgang; Leitung
+  // (org_admin) und Super-Admins (Rolle oder Flag) bleiben fuer jeden Konfi
+  // erreichbar. Die Detailfaelle fuer Admins als Ziel liegen in
+  // konfiAnschreibgrenze.test.js.
   // ================================================================
   describe('Jahrgangsgrenze fuer Konfis in Richtung Team', () => {
     // teamer1 aus dem Jahrgang von konfi1 herausnehmen.
@@ -363,11 +370,12 @@ describe('Chat Routes', () => {
       expect(res.body.created).toBe(true);
     });
 
-    it('Konfi erreicht Admins immer -> 200', async () => {
-      // Mit admin1 besteht laut Seed schon ein Chat — die Route gaebe dann
-      // auch ohne Berechtigungspruefung den vorhandenen Raum zurück. Deshalb
-      // hier orgAdminSuper, mit dem noch kein Raum existiert: So beweist der
-      // 200 wirklich die Berechtigung und nicht nur den Dedup-Pfad.
+    it('Konfi erreicht die Leitung auch mit Super-Admin-Flag -> 200', async () => {
+      // orgAdminSuper traegt org_admin-Rolle UND is_super_admin-Flag; mit ihm
+      // existiert noch kein Raum: So beweist der 200 wirklich die
+      // Berechtigung und nicht nur den Dedup-Pfad. (Konfi -> admin haengt
+      // seit dem 01.09.2026 am gemeinsamen Jahrgang, s.
+      // konfiAnschreibgrenze.test.js.)
       const { rows: [vorher] } = await db.query(
         `SELECT 1 FROM chat_rooms cr
            JOIN chat_participants a ON a.room_id = cr.id AND a.user_id = $1
@@ -492,13 +500,23 @@ describe('Chat Routes', () => {
 
   describe('POST /api/chat/direct', () => {
     it('Konfi1 erstellt Direct-Chat mit Admin1 -> 200', async () => {
+      // Seit dem 01.09.2026 braucht Konfi -> Admin den gemeinsamen Jahrgang;
+      // die Pruefung laeuft VOR dem Dedup, der bestehende Seed-Raum allein
+      // wuerde also nicht mehr reichen. admin1 bekommt deshalb den Jahrgang
+      // von konfi1 (Zuweisung wirkt sofort — die Pruefung liest die DB,
+      // nicht den rbac-Cache des Aufrufers).
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view) VALUES ($1, 1, true)',
+        [USERS.admin1.id]
+      );
+
       const res = await request(app)
         .post('/api/chat/direct')
         .set('Authorization', `Bearer ${konfi1Token}`)
         .send({ target_user_id: USERS.admin1.id, target_user_type: 'admin' });
 
       expect(res.status).toBe(200);
-      expect(res.body.room_id).toBeDefined();
+      expect(res.body.room_id).toEqual(expect.any(Number));
       // Koennte existing sein (Seed hat Direct-Room konfi1+admin1)
     });
 

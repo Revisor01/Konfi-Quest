@@ -97,7 +97,7 @@ Das ist die wichtigste Tabelle des Kapitels. **Stand 01.09.2026:**
 
 | ↓ schreibt an → | Konfi | Teamer:in | Admin | Leitung (Org-Admin) |
 |---|---|---|---|---|
-| **Konfi** | **nie** | nur bei **gemeinsamem Jahrgang** | immer | immer |
+| **Konfi** | **nie** | nur bei **gemeinsamem Jahrgang** | nur bei **gemeinsamem Jahrgang** | immer |
 | **Teamer:in** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
 | **Admin** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
 | **Leitung (Org-Admin)** | immer | ja | ja | ja |
@@ -114,13 +114,14 @@ Jahrgang — in beide Richtungen.** Eine Teamer:in sieht in ihrer Kontaktliste
 nur die Konfis der Jahrgänge, die ihr zugewiesen sind, und umgekehrt sehen
 Konfis nur die Teamer:innen, die für ihren Jahrgang zuständig sind.
 
-**3. Auch Admins erreichen Konfis nur über ihre zugewiesenen Jahrgänge** —
-das gilt fürs Anschreiben und fürs Aufnehmen in Gruppenchats gleichermaßen
-(seit 01.09.2026, vorher erreichte ein Admin jeden Konfi der Gemeinde).
-Umgekehrt bleibt es offen: **Ein Konfi darf jeden Admin anschreiben**, auch
-einen, der für seinen Jahrgang nicht zuständig ist. Das ist Absicht — die
-Jahrgangs-Bindung schützt die Konfis, nicht das Team, und ein Jahrgang ohne
-zugewiesenen Admin ließe die Konfis sonst ohne Ansprechperson zurück.
+**3. Admins und Konfis erreichen einander ebenfalls nur über einen
+gemeinsamen Jahrgang — in beide Richtungen** (seit 01.09.2026; vorher
+erreichte ein Admin jeden Konfi der Gemeinde, und ein Konfi jeden Admin).
+Das gilt fürs Anschreiben und fürs Aufnehmen in Gruppenchats gleichermaßen.
+Ein Konfi sieht in seiner Kontaktliste nur die Admins und Teamer:innen, die
+für seinen Jahrgang zuständig sind — plus immer die Leitung. Ohne
+Ansprechperson bleibt niemand zurück: Die Leitung (Org-Admin) ist für jeden
+Konfi erreichbar, auch wenn seinem Jahrgang kein Admin zugewiesen ist.
 Bestehende Gespräche sperrt die Regel nicht: Ein Direktchat, der vor einer
 Zuweisungs-Änderung entstanden ist, bleibt für beide Seiten offen.
 
@@ -128,13 +129,15 @@ Die Fehlermeldungen, wenn es doch jemand versucht:
 
 - *„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben"*
 - *„Diese Teamer:in ist nicht für deinen Jahrgang zuständig"*
+- *„Dieser Admin ist nicht für deinen Jahrgang zuständig"*
 
 **4. Die Leitung (Org-Admin) erreicht alle und ist für alle erreichbar.** Sie
 verantwortet die Gemeinde als Ganzes und ist als Einzige nicht an die
 Jahrgangs-Grenze gebunden.
 
 > **Achtung, häufiger Anruf:** Eine Teamer:in oder ein Admin **ohne
-> zugewiesenen Jahrgang** erreicht keinen einzigen Konfi. Wenn jemand meldet
+> zugewiesenen Jahrgang** erreicht keinen einzigen Konfi — und taucht
+> umgekehrt auch in keiner Konfi-Kontaktliste auf. Wenn jemand meldet
 > „ich sehe meine Konfis nicht im Chat", ist fast immer die
 > [Jahrgangs-Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
 > die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.

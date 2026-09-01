@@ -1,4 +1,4 @@
-import { fehlerTextOderMessage } from '../../../utils/fehler';
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -252,7 +252,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         handleModalClose();
         onSuccess(directRes.data?.room_id);
       } catch (err) {
-        setError('Fehler beim Erstellen der Direktnachricht');
+        // Ein 403 traegt eine verstaendliche Begruendung vom Server (z.B.
+        // "Dieser Admin ist nicht fuer deinen Jahrgang zustaendig",
+        // Jahrgangsregel vom 01.09.2026) — die zeigen wir statt der
+        // generischen Meldung.
+        setError(fehlerText(err, 'Fehler beim Erstellen der Direktnachricht'));
         console.error('Error creating direct message:', err);
       }
     });

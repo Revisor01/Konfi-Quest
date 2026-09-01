@@ -49,8 +49,17 @@ Versionsüberschrift.
 - Die Jahrgangs-Bindung für Admins gilt jetzt auch im Direktchat: Ein Admin
   kann nur noch Konfis seiner zugewiesenen Jahrgänge anschreiben oder in
   Gruppenchats aufnehmen — wie Teamer:innen. Der Org-Admin erreicht
-  weiterhin alle Konfis, und Konfis erreichen umgekehrt weiterhin jeden
-  Admin. Bereits bestehende Gespräche bleiben unverändert bestehen.
+  weiterhin alle Konfis. Bereits bestehende Gespräche bleiben unverändert
+  bestehen.
+- Die Jahrgangs-Grenze im Chat gilt jetzt in beide Richtungen: Konfis
+  erreichen nur noch die Admins und Teamer:innen ihres eigenen Jahrgangs —
+  die Leitung (Org-Admin) bleibt für jeden Konfi erreichbar, auch wenn dem
+  Jahrgang niemand zugewiesen ist. Die Kontaktliste zeigt nur noch, wer
+  auch wirklich anschreibbar ist. Bereits bestehende Gespräche bleiben
+  unverändert bestehen.
+- Eine Gemeindeleitung, die in mehreren Gemeinden tätig ist, ist jetzt auch
+  in ihren weiteren Gemeinden für Konfis im Chat erreichbar — vorher fand
+  die Kontaktliste sie dort nicht.
 - Material bearbeiten und löschen kann nur noch, wer es angelegt hat — dazu
   gehört auch das Anhängen und Entfernen von Dateien. Die Gemeindeleitung
   darf weiterhin alles, damit Material verwaltbar bleibt, wenn die

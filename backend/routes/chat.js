@@ -198,17 +198,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       
       const organizationId = req.user.organization_id;
-      // Teamer:innen nur mit gemeinsamem Jahrgang (KONFI_SIEHT_TEAMMITGLIED),
-      // Leitung und Admins immer. is_active/deleted_at filtern wie in
+      // Admins und Teamer:innen nur mit gemeinsamem Jahrgang, Leitung immer
+      // (KONFI_SIEHT_TEAMMITGLIED, Simons Regel vom 01.09.2026). Die Rolle
+      // kommt aus TEAM_MITGLIED_ROLLE (effektive Rolle in der aktiven Org,
+      // inkl. Multi-Org-Leitungen), der ersetzt auch den frueheren
+      // organization_id-Filter. is_active/deleted_at filtern wie in
       // /team-contacts — die Route tat das bisher als einzige nicht.
       // username wird nicht mehr ausgeliefert: für einen Chat unnötig, und
       // es ist der Login-Name.
       const query = `
         SELECT u.id, u.display_name
           FROM users u
-          JOIN roles r ON u.role_id = r.id
+          ${TEAM_MITGLIED_ROLLE}
          WHERE r.name IN ('admin', 'org_admin', 'teamer')
-           AND u.organization_id = $2
            AND u.is_active = true
            AND u.deleted_at IS NULL
            AND u.id <> $1
@@ -309,60 +311,98 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
-  // Teamer:innen und Konfis erreichen einander nur ueber einen gemeinsamen
-  // Jahrgang (symmetrisch zu konfiAnschreibenVerboten). Leitung (org_admin),
-  // Admins und Super-Admins bleiben fuer JEDEN Konfi der Gemeinde erreichbar.
+  // Sollregel (Simon, 01.09.2026), woertlich: "Konfis duerfen nur org Admins
+  // und Admins und Teamer ihres Jahrgangs anschreiben!" Die Regel ist damit
+  // SYMMETRISCH zu konfiAnschreibenVerboten:
+  //   - org_admin: immer erreichbar — er verantwortet die Gemeinde als
+  //     Ganzes und bleibt die Ansprechperson, wenn einem Jahrgang niemand
+  //     zugewiesen ist (gemessen 01.09.2026: jede der fuenf Gemeinden hat
+  //     genau einen Org-Admin, kein Konfi verliert seine letzte
+  //     Ansprechperson).
+  //   - super_admin (Rolle oder is_super_admin-Flag): wie org_admin.
+  //     darfJahrgang (utils/jahrgangsZugriff.js) nimmt beide von allen
+  //     Jahrgangsschranken aus — die Zielseite folgt derselben Quelle.
+  //   - admin und teamer: nur mit gemeinsamem Jahrgang (Zuweisung mit
+  //     can_view). Wer keinem Jahrgang zugewiesen ist, ist fuer Konfis
+  //     unsichtbar — die konsequente Gegenseite: er erreicht seinerseits
+  //     auch keinen einzigen Konfi.
   //
-  // Fuer Admins ist das seit dem 01.09.2026 BEWUSST unsymmetrisch: Der Admin
-  // selbst ist an seine Jahrgaenge gebunden (er erreicht fremde Konfis nicht
-  // mehr, s. konfiAnschreibenVerboten), ein Konfi darf aber weiterhin jeden
-  // Admin anschreiben. Gruende:
-  //   1. Die Jahrgangsbindung schuetzt Konfis vor breitem Zugriff des Teams,
-  //      nicht das Team vor Fragen der Konfis — wer nach oben schreibt,
-  //      sieht dabei keine fremden Jahrgangsdaten.
-  //   2. Ein Jahrgang ohne zugewiesenen Admin ist moeglich (die Zuweisung
-  //      ist optional). Symmetrisch gebunden erreichte so ein Konfi ausser
-  //      der Leitung niemanden mehr — schlechter als vorher.
-  //   3. Antworten kann der Admin in einem vom Konfi eroeffneten Raum
-  //      ohnehin (Teilnehmerschaft, darfRaumOeffnen) — eine symmetrische
-  //      Bindung griffe nur bis zur ersten Nachricht.
+  // Bis zum 01.09.2026 war das bewusst unsymmetrisch (ein Konfi durfte
+  // jeden Admin der Gemeinde anschreiben); Simon hat das am 01.09.2026
+  // ausdruecklich anders entschieden, die alte Begruendung ist ueberholt.
   //
-  // Eine Teamer:in OHNE Jahrgangszuweisung ist für Konfis unsichtbar. Das ist
-  // die konsequente Gegenseite: sie erreicht ihrerseits keinen einzigen Konfi.
+  // zielRolle muss die EFFEKTIVE Rolle in der aktiven Organisation sein —
+  // bei Multi-Org-Konten also die aus user_organizations, nicht die
+  // Primaerrolle (TEAM_MITGLIED_ROLLE loest das auf, rbac.js macht es beim
+  // Org-Wechsel genauso).
+  //
+  // Bestehende Raeume sperrt die Regel NICHT nachtraeglich: darfRaumOeffnen
+  // prueft Teilnehmerschaft, nicht Jahrgaenge. Gebunden ist nur das ANLEGEN.
   //
   // Gibt null zurück, wenn erlaubt, sonst eine Fehlermeldung.
   const teamAnschreibenVerboten = async (konfiUserId, zielRolle, zielUserId) => {
-    if (zielRolle !== 'teamer') return null;
+    if (zielRolle === 'org_admin' || zielRolle === 'super_admin') return null;
 
+    // is_super_admin-Flag zaehlt wie die Rolle (gleiche Quelle wie
+    // darfJahrgang); sonst entscheidet der gemeinsame Jahrgang.
     const { rows: [ziel] } = await db.query(
       `SELECT 1
-         FROM konfi_profiles kp
-         JOIN user_jahrgang_assignments uja
-           ON uja.jahrgang_id = kp.jahrgang_id AND uja.can_view
-        WHERE kp.user_id = $1 AND uja.user_id = $2
+         FROM users u
+        WHERE u.id = $2
+          AND (u.is_super_admin OR EXISTS (
+            SELECT 1
+              FROM konfi_profiles kp
+              JOIN user_jahrgang_assignments uja
+                ON uja.jahrgang_id = kp.jahrgang_id AND uja.can_view
+             WHERE kp.user_id = $1 AND uja.user_id = u.id
+          ))
         LIMIT 1`,
       [konfiUserId, zielUserId]
     );
 
     if (!ziel) {
-      return 'Diese Teamer:in ist nicht für deinen Jahrgang zuständig';
+      // Gleiche Tonlage fuer beide Rollen: sagt WARUM es nicht geht, ohne
+      // die Gemeindestruktur (Zuweisungen, andere Jahrgaenge) auszubreiten.
+      return zielRolle === 'admin'
+        ? 'Dieser Admin ist nicht für deinen Jahrgang zuständig'
+        : 'Diese Teamer:in ist nicht für deinen Jahrgang zuständig';
     }
     return null;
   };
 
-  // SQL-Bedingung für Kontaktlisten von Konfis: Team-Mitglied ist erreichbar,
-  // wenn es NICHT teamer ist (Leitung/Admin -> immer) ODER einen gemeinsamen
-  // Jahrgang mit dem Konfi hat. $1 muss die User-ID des Konfis sein.
+  // Effektive Rolle eines Team-Mitglieds in der aktiven Organisation ($2):
+  // die Primaerrolle, wenn $2 die Primaer-Org ist, sonst die Rolle aus
+  // user_organizations — exakt die Aufloesung, die rbac.js beim Org-Wechsel
+  // vornimmt. Der INNER JOIN auf roles filtert zugleich die Mitgliedschaft:
+  // Wer weder primaer noch per user_organizations in der Org ist, bekommt
+  // keine Rolle und faellt heraus (der WHERE-Filter u.organization_id = $2
+  // entfaellt an den Einsatzstellen). Noetig seit dem 01.09.2026: Ein
+  // Org-Admin kann seine Rolle AUSSCHLIESSLICH ueber user_organizations
+  // tragen (realer Fall in Produktion) — die Kontaktlisten und POST /direct
+  // sahen bis dahin nur Primaer-Konten und liessen solche Leitungen fuer
+  // Konfis unerreichbar.
+  const TEAM_MITGLIED_ROLLE = `
+    LEFT JOIN user_organizations uo
+      ON uo.user_id = u.id AND uo.organization_id = $2
+    JOIN roles r
+      ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END`;
+
+  // SQL-Bedingung fuer Kontaktlisten von Konfis (Simons Regel vom
+  // 01.09.2026, s. teamAnschreibenVerboten): erreichbar sind org_admin
+  // (immer), Konten mit is_super_admin-Flag (wie org_admin, gleiche Quelle
+  // wie darfJahrgang) und admin/teamer NUR mit gemeinsamem Jahrgang
+  // (can_view). Die Liste bietet damit exakt das an, was
+  // teamAnschreibenVerboten beim Anschreiben erlaubt — nicht mehr.
+  // $1 muss die User-ID des Konfis sein, r die EFFEKTIVE Rolle
+  // (TEAM_MITGLIED_ROLLE), $2 die aktive Organisation.
   //
-  // Admins bleiben hier BEWUSST fuer alle Konfis sichtbar, obwohl sie selbst
-  // seit dem 01.09.2026 jahrgangsgebunden sind (Entscheidung und Begruendung
-  // s. teamAnschreibenVerboten) — Liste und Anschreiben bieten dasselbe an.
-  //
-  // Bewusst als geteilter Baustein: Die Regel gilt an drei Stellen (/admins,
-  // /available-users, POST /direct). Stand sie mehrfach im Code, blieb bisher
+  // Bewusst als geteilter Baustein fuer beide Listen (/admins,
+  // /available-users); POST /direct zieht dieselbe Regel ueber
+  // teamAnschreibenVerboten. Stand die Regel mehrfach im Code, blieb bisher
   // regelmäßig eine Stelle zurück.
   const KONFI_SIEHT_TEAMMITGLIED = `(
-    r.name <> 'teamer'
+    r.name = 'org_admin'
+    OR u.is_super_admin
     OR EXISTS (
       SELECT 1
         FROM konfi_profiles kp
@@ -386,10 +426,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // 'admin' (die API kannte nur admin|konfi), der Raum wurde dann mit
       // user_type='admin' gespeichert und war für den Teamer (liest als
       // 'teamer') unsichtbar. Gleiche Fehlerklasse wie Migration 098.
+      //
+      // "Echte Rolle" heisst seit dem 01.09.2026: die EFFEKTIVE Rolle in der
+      // aktiven Organisation (TEAM_MITGLIED_ROLLE). Damit sind auch
+      // Multi-Org-Konten erreichbar, deren Rolle nur in user_organizations
+      // steht (realer Fall: die Leitung einer Gemeinde mit fremder
+      // Primaer-Org) — vorher galten sie hier als "nicht in deiner
+      // Organisation". Wer in der aktiven Org gar nicht Mitglied ist,
+      // bekommt unveraendert dieselbe 403-Antwort (kein Existenz-Leak).
       const { rows: [validUser] } = await db.query(
         `SELECT u.id, u.display_name, r.name AS role_name
-           FROM users u JOIN roles r ON u.role_id = r.id
-          WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+           FROM users u
+           ${TEAM_MITGLIED_ROLLE}
+          WHERE u.id = $1 AND u.deleted_at IS NULL`,
         [target_user_id, organizationId]
       );
       if (!validUser) {
@@ -401,8 +450,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Konfis können keine anderen Konfis anschreiben' });
       }
 
-      // Konfis erreichen Teamer:innen nur über einen gemeinsamen Jahrgang.
-      // Leitung, Admins und Super-Admins erreichen sie immer.
+      // Konfis erreichen Admins und Teamer:innen nur über einen gemeinsamen
+      // Jahrgang; Leitung und Super-Admins erreichen sie immer (Simons
+      // Regel vom 01.09.2026, s. teamAnschreibenVerboten).
       if (req.user.type === 'konfi') {
         const verboten = await teamAnschreibenVerboten(req.user.id, validUser.role_name, target_user_id);
         if (verboten) {
@@ -565,7 +615,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           }
 
           // Gegenrichtung: Ein Konfi darf hier keine fremdjahrgaengige
-          // Teamer:in eintragen — sonst wäre die Regel in POST /direct auf
+          // Teamer:in und (seit dem 01.09.2026) keinen fremdjahrgaengigen
+          // Admin eintragen — sonst wäre die Regel in POST /direct auf
           // demselben Weg zu umgehen wie beim Konfi-zu-Konfi-Fall oben.
           if (req.user.type === 'konfi') {
             for (const pu of partUsers) {
@@ -2626,11 +2677,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Konfi ist keinem Jahrgang zugewiesen' });
       }
 
-      // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
-      // Alle Admins, Org-Admins und Teamer der Organisation
+      // DATENSCHUTZ: Konfis dürfen NUR das Team anschreiben (keine Konfi-zu-Konfi Chats)
       // role_title ist die selbst gewählte Rollenbezeichnung (z.B. "Pastorin", "Teamerin")
-      // Teamer:innen nur mit gemeinsamem Jahrgang, Leitung/Admins immer
-      // (KONFI_SIEHT_TEAMMITGLIED). type kam bisher hart als 'admin' zurück —
+      // Admins und Teamer:innen nur mit gemeinsamem Jahrgang, Leitung immer
+      // (KONFI_SIEHT_TEAMMITGLIED, Simons Regel vom 01.09.2026); die Rolle
+      // ist die effektive Rolle in der aktiven Org (TEAM_MITGLIED_ROLLE,
+      // inkl. Multi-Org-Leitungen — ersetzt den organization_id-Filter).
+      // type kam bisher hart als 'admin' zurück —
       // damit landeten Teamer:innen im Konfi-Modal als Admin, obwohl
       // chat_participants sie als 'teamer' fuehrt.
       const adminQuery = `
@@ -2645,9 +2698,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           ) as role_description,
           null as jahrgang_name
         FROM users u
-        JOIN roles r ON u.role_id = r.id
+        ${TEAM_MITGLIED_ROLLE}
         WHERE r.name IN ('admin', 'org_admin', 'teamer')
-        AND u.organization_id = $2
         AND u.id <> $1
         AND u.is_active = true
         AND u.deleted_at IS NULL

@@ -1332,9 +1332,10 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
   //   - Nur die Rolle 'admin' wird gebunden; org_admin und das
   //     is_super_admin-Flag bleiben ausgenommen (wie darfJahrgang).
   //   - Konfi ohne Jahrgang: nur die Leitung erreicht ihn.
-  //   - Gegenrichtung bleibt OFFEN: Ein Konfi darf jeden Admin
-  //     anschreiben, auch einen nicht zustaendigen (Begruendung in
-  //     routes/chat.js, teamAnschreibenVerboten).
+  //   - Gegenrichtung seit dem 01.09.2026 SYMMETRISCH (Simons Korrektur):
+  //     Konfis erreichen nur org_admin, Super-Admins und die Admins/
+  //     Teamer:innen ihres Jahrgangs (Detailfaelle in
+  //     konfiAnschreibgrenze.test.js).
   //   - Bestehende Raeume werden NICHT nachtraeglich gesperrt, nur das
   //     Anlegen neuer Raeume ist gebunden.
   // ================================================================
@@ -1431,29 +1432,34 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       expect(leitung.body.created).toBe(true);
     });
 
-    // Gegenrichtung BEWUSST offen: Die Bindung schuetzt Konfis vor breitem
-    // Zugriff des Teams, nicht das Team vor Fragen der Konfis — und ein
-    // Jahrgang ohne zugewiesenen Admin liesse den Konfi sonst mit der
-    // Leitung als einzigem Kontakt zurueck.
-    it('Konfi darf einen NICHT zustaendigen Admin weiterhin anschreiben — 200', async () => {
+    // Gegenrichtung seit dem 01.09.2026 SYMMETRISCH (Simons Korrektur:
+    // "Konfis duerfen nur org Admins und Admins und Teamer ihres Jahrgangs
+    // anschreiben!"). KONFI_B liegt in JG_B, ADMIN_MIT_JG ist JG_A
+    // zugewiesen — also fremd.
+    it('Konfi erreicht einen NICHT zustaendigen Admin nicht mehr — 403, kein Raum', async () => {
       const res = await request(app)
         .post('/api/chat/direct')
         .set('Authorization', `Bearer ${konfiBToken}`)
         .send({ target_user_id: ADMIN_MIT_JG });
 
-      expect(res.status).toBe(200);
-      expect(res.body.created).toBe(true);
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Dieser Admin ist nicht für deinen Jahrgang zuständig');
+      expect(await direktRaeume(KONFI_B, ADMIN_MIT_JG)).toBe(0);
     });
 
-    it('Kontaktlisten des Konfis zeigen auch nicht zustaendige Admins (Arrays bleiben Arrays)', async () => {
+    it('Kontaktlisten des Konfis zeigen nur zustaendige Admins plus Leitung (Arrays bleiben Arrays)', async () => {
       const admins = await request(app)
         .get('/api/chat/admins')
         .set('Authorization', `Bearer ${konfiBToken}`);
       expect(admins.status).toBe(200);
       expect(Array.isArray(admins.body)).toBe(true);
       const adminIds = admins.body.map(u => u.id);
-      expect(adminIds).toContain(ADMIN_MIT_JG);
-      expect(adminIds).toContain(ADMIN_OHNE_JG);
+      // fremder und unzugewiesener Admin verschwinden aus der Liste ...
+      expect(adminIds).not.toContain(ADMIN_MIT_JG);
+      expect(adminIds).not.toContain(ADMIN_OHNE_JG);
+      // ... Leitung und Super-Admin-Flag bleiben sichtbar.
+      expect(adminIds).toContain(USERS.orgAdmin1.id);
+      expect(adminIds).toContain(ADMIN_SUPER);
 
       const verfuegbar = await request(app)
         .get('/api/chat/available-users')
@@ -1461,8 +1467,9 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       expect(verfuegbar.status).toBe(200);
       expect(Array.isArray(verfuegbar.body.users)).toBe(true);
       const verfuegbarIds = verfuegbar.body.users.map(u => u.id);
-      expect(verfuegbarIds).toContain(ADMIN_MIT_JG);
-      expect(verfuegbarIds).toContain(ADMIN_OHNE_JG);
+      expect(verfuegbarIds).not.toContain(ADMIN_MIT_JG);
+      expect(verfuegbarIds).not.toContain(ADMIN_OHNE_JG);
+      expect(verfuegbarIds).toContain(USERS.orgAdmin1.id);
     });
 
     it('die Grenze laesst sich nicht ueber POST /rooms (participants) umgehen — 403, kein Raum', async () => {
