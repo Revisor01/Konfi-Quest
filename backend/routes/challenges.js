@@ -1110,6 +1110,24 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       let jahrgangFilter = '';
       if (viewable !== null) {
         if (viewable.length === 0) {
+          // Leere Liste ohne Grund sah nach kaputter App aus (Befund
+          // 31.08.2026): Ein Admin ohne Jahrgangs-Zuweisung bekam hier
+          // dieselbe leere Liste wie eine Gemeinde ohne Challenges. Der Fall
+          // ist GUELTIG (Simons Entscheidung 31.08.: ein Admin braucht nicht
+          // zwingend einen Jahrgang) -- nur der Grund muss sichtbar werden.
+          // Als Header gemeldet, damit die Antwort ein Array bleibt und kein
+          // Aufrufer bricht -- dasselbe Muster wie GET /admin/konfis
+          // (konfi-management.js).
+          //
+          // NICHT fuer super_admin: viewableJahrgangIds gibt auch fuer ihn
+          // [] zurueck, aber aus einem anderen Grund -- er hat keinen Zugriff
+          // auf Jahrgangsdaten, nicht "keine Zuweisung". Heute weist ihn
+          // schon requireTeamer mit 403 ab (rbac.js), der Guard hier ist die
+          // Absicherung, falls sich das einmal aendert -- der Hinweis waere
+          // fuer ihn in jedem Fall falsch.
+          if (req.user.role_name !== 'super_admin') {
+            res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+          }
           return res.json([]);
         }
         params.push(viewable);

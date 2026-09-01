@@ -363,6 +363,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           .filter(j => j.can_view)
           .map(j => j.id);
         if (sichtbare.length === 0) {
+          // Ohne Zuweisung fallen alle Konfi-Antraege weg -- fuer den Admin
+          // sieht die Liste dann grundlos leer aus (oder es stehen nur noch
+          // Teamer-Meldungen darin). Der Fall ist GUELTIG (Simons
+          // Entscheidung 31.08.2026), aber die Oberflaeche muss den Grund
+          // nennen koennen. Als Header gemeldet, damit die Antwortform ein
+          // Array bleibt -- dasselbe Muster wie GET /admin/konfis
+          // (konfi-management.js).
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
           jahrgangFilter = ` AND a.target_role = 'teamer'`;
         } else {
           params.push(sichtbare);
