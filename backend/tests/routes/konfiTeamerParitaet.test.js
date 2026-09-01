@@ -356,4 +356,202 @@ describe('Konfi/Teamer-Paritaet (zusammengelegte Logik)', () => {
       }
     });
   });
+  // ================================================================
+  // M4 — Konfsprueche und Bibeluebersetzungs-Whitelist
+  // Die Whitelist lag doppelt im Code; die RVR60-Entfernung am 27.08.2026
+  // musste an beiden Stellen passieren (dokumentierte Drift-Geschichte).
+  // ================================================================
+  describe('Konfsprueche und Bibeluebersetzung', () => {
+    beforeEach(async () => {
+      // Ein org-eigener und ein globaler Spruch, mit Uebersetzungen
+      await db.query(
+        `INSERT INTO konfsprueche (id, reference, book, chapter, verse, is_active, sort_order, organization_id)
+         VALUES (1, 'Psalm 23,1', 'Psalm', 23, 1, true, 1, $1),
+                (2, 'Joh 3,16', 'Johannes', 3, 16, true, 2, NULL)`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES (1, 'luther2017', 'Der HERR ist mein Hirte.'),
+                (1, 'bigs', 'Adonaj weidet mich.'),
+                (2, 'luther2017', 'Also hat Gott die Welt geliebt.')`
+      );
+    });
+
+    it('GET /konfsprueche liefert auf beiden Wegen exakt dasselbe', async () => {
+      const konfiRes = await request(app)
+        .get('/api/konfi/konfsprueche')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const teamerRes = await request(app)
+        .get('/api/teamer/konfsprueche')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(konfiRes.status).toBe(200);
+      expect(teamerRes.status).toBe(200);
+      expect(konfiRes.body).toEqual(teamerRes.body);
+
+      // Antwortform: ARRAY (nicht Objekt) — Vertrag der ausgelieferten Apps
+      expect(Array.isArray(konfiRes.body)).toBe(true);
+      expect(Array.isArray(teamerRes.body)).toBe(true);
+      expect(konfiRes.body).toHaveLength(2);
+
+      const ersteFelder = ['id', 'reference', 'book', 'chapter', 'verse', 'uebersetzungen'];
+      expect(Object.keys(konfiRes.body[0]).sort()).toEqual([...ersteFelder].sort());
+
+      // Alle vier Uebersetzungs-Keys sind da, fehlende als leerer String
+      expect(konfiRes.body[0].uebersetzungen).toEqual({
+        luther2017: 'Der HERR ist mein Hirte.',
+        bigs: 'Adonaj weidet mich.',
+        gute_nachricht: '',
+        elberfelder: '',
+      });
+    });
+
+    it('GET /konfsprueche: Sprueche einer FREMDEN Org tauchen auf keinem Weg auf', async () => {
+      await db.query(
+        `INSERT INTO konfsprueche (id, reference, book, chapter, verse, is_active, sort_order, organization_id)
+         VALUES (3, 'Fremd 1,1', 'Fremd', 1, 1, true, 3, $1)`,
+        [ORGS.andereGemeinde.id]
+      );
+
+      const konfiRes = await request(app)
+        .get('/api/konfi/konfsprueche')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const teamerRes = await request(app)
+        .get('/api/teamer/konfsprueche')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(konfiRes.body).toHaveLength(2);
+      expect(teamerRes.body).toHaveLength(2);
+      expect(konfiRes.body.some((sp) => sp.reference === 'Fremd 1,1')).toBe(false);
+      expect(teamerRes.body.some((sp) => sp.reference === 'Fremd 1,1')).toBe(false);
+    });
+
+    it('PUT /bible-translation: dieselbe Whitelist auf beiden Wegen', async () => {
+      const erlaubt = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
+      // RVR60 wurde am 27.08.2026 entfernt und muss auf BEIDEN Wegen fehlen.
+      // Der Leerstring bleibt bewusst aussen vor: Der Konfi-Weg hat davor
+      // eine notEmpty-Middleware, der Teamer-Weg nicht (dokumentierter
+      // Unterschied, Befund N6) — hier geht es um die Whitelist selbst.
+      const verboten = ['RVR60', 'XYZ', 'rvr60'];
+
+      for (const [pfad, token] of [
+        ['/api/konfi/bible-translation', konfiToken],
+        ['/api/teamer/bible-translation', teamerToken],
+      ]) {
+        for (const translation of erlaubt) {
+          const res = await request(app).put(pfad)
+            .set('Authorization', `Bearer ${token}`).send({ translation });
+          expect(res.status).toBe(200);
+          expect(res.body.translation).toBe(translation);
+          expect(res.body.success).toBe(true);
+        }
+        for (const translation of verboten) {
+          const res = await request(app).put(pfad)
+            .set('Authorization', `Bearer ${token}`).send({ translation });
+          expect(res.status).toBe(400);
+          expect(res.body.valid_translations).toEqual(erlaubt);
+        }
+      }
+    });
+
+    it('PATCH /profile: Listen-Wahl setzt auf beiden Wegen denselben Spruch', async () => {
+      const koerper = { konfspruch_id: 1, translation: 'luther2017' };
+
+      const konfiRes = await request(app).patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`).send(koerper);
+      const teamerRes = await request(app).patch('/api/teamer/profile')
+        .set('Authorization', `Bearer ${teamerToken}`).send(koerper);
+
+      expect(konfiRes.status).toBe(200);
+      expect(teamerRes.status).toBe(200);
+      expect(konfiRes.body).toEqual({
+        success: true,
+        konfspruch: { source: 'liste', id: 1, translation: 'luther2017' },
+      });
+      expect(teamerRes.body).toEqual(konfiRes.body);
+    });
+
+    it('PATCH /profile: ungueltige Uebersetzung wird auf beiden Wegen mit 400 abgelehnt', async () => {
+      const koerper = { konfspruch_id: 1, translation: 'LUT' }; // Tageslosungs-Kuerzel, kein Spruch-Key
+      const erwartet = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
+
+      for (const [pfad, token] of [
+        ['/api/konfi/profile', konfiToken],
+        ['/api/teamer/profile', teamerToken],
+      ]) {
+        const res = await request(app).patch(pfad)
+          .set('Authorization', `Bearer ${token}`).send(koerper);
+        expect(res.status).toBe(400);
+        expect(res.body.valid_translations).toEqual(erwartet);
+      }
+    });
+
+    it('PATCH /profile: Spruch einer FREMDEN Org wird auf beiden Wegen mit 404 abgelehnt', async () => {
+      await db.query(
+        `INSERT INTO konfsprueche (id, reference, book, chapter, verse, is_active, sort_order, organization_id)
+         VALUES (3, 'Fremd 1,1', 'Fremd', 1, 1, true, 3, $1)`,
+        [ORGS.andereGemeinde.id]
+      );
+      const koerper = { konfspruch_id: 3, translation: 'luther2017' };
+
+      for (const [pfad, token] of [
+        ['/api/konfi/profile', konfiToken],
+        ['/api/teamer/profile', teamerToken],
+      ]) {
+        const res = await request(app).patch(pfad)
+          .set('Authorization', `Bearer ${token}`).send(koerper);
+        expect(res.status).toBe(404);
+        expect(res.body.error).toBe('Konfispruch nicht gefunden');
+      }
+    });
+
+    it('PATCH /profile: Freitext verlangt auf beiden Wegen eine Referenz', async () => {
+      for (const [pfad, token] of [
+        ['/api/konfi/profile', konfiToken],
+        ['/api/teamer/profile', teamerToken],
+      ]) {
+        const ohneReferenz = await request(app).patch(pfad)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ konfspruch_freitext: 'Mein eigener Spruch' });
+        expect(ohneReferenz.status).toBe(400);
+        expect(ohneReferenz.body.error).toBe(
+          'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
+        );
+
+        const mitReferenz = await request(app).patch(pfad)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ konfspruch_freitext: 'Mein eigener Spruch', konfspruch_freitext_referenz: 'Mk 1,1' });
+        expect(mitReferenz.status).toBe(200);
+        expect(mitReferenz.body).toEqual({
+          success: true,
+          konfspruch: { source: 'freitext', text: 'Mein eigener Spruch', reference: 'Mk 1,1' },
+        });
+      }
+    });
+
+    it('Listen-Wahl und Freitext schliessen sich auf beiden Wegen aus', async () => {
+      const faelle = [
+        ['/api/konfi/profile', konfiToken, USERS.konfi1.id],
+        ['/api/teamer/profile', teamerToken, USERS.teamer1.id],
+      ];
+
+      for (const [pfad, token, userId] of faelle) {
+        await request(app).patch(pfad).set('Authorization', `Bearer ${token}`)
+          .send({ konfspruch_freitext: 'Erst Freitext', konfspruch_freitext_referenz: 'Mk 1,1' });
+        await request(app).patch(pfad).set('Authorization', `Bearer ${token}`)
+          .send({ konfspruch_id: 1, translation: 'bigs' });
+
+        const { rows: [profil] } = await db.query(
+          `SELECT konfspruch_id, konfspruch_translation, konfspruch_freitext, konfspruch_freitext_referenz
+           FROM konfi_profiles WHERE user_id = $1`,
+          [userId]
+        );
+        expect(profil.konfspruch_id).toBe(1);
+        expect(profil.konfspruch_translation).toBe('bigs');
+        expect(profil.konfspruch_freitext).toBeNull();
+        expect(profil.konfspruch_freitext_referenz).toBeNull();
+      }
+    });
+  });
 });

@@ -6,6 +6,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { heuteBerlin } = require('../utils/zeitformat');
 const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
@@ -21,6 +22,7 @@ const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/t
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
+const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, loeseKonfspruchAuf } = require('../utils/konfspruch');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -495,40 +497,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         }
       };
 
-      // Gewaehlten Konfispruch aufloesen (genau EINE Quelle aktiv: Listen-Wahl ODER Freitext)
-      let konfspruch = null;
-      if (konfi.konfspruch_id) {
-        // Listen-Wahl: gewaehlte Konfispruch-Uebersetzung (konfspruch_translation) nachladen.
-        // Org-gescopt + is_active wie in der Listen- und PATCH-Route. Bei NULL-Translation
-        // greift ein Default (luther2017), damit der Text nicht leer bleibt.
-        const spruchTranslation = konfi.konfspruch_translation || 'luther2017';
-        const spruchQuery = `
-          SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ku.text
-          FROM konfsprueche ks
-          LEFT JOIN konfspruch_uebersetzungen ku
-            ON ku.spruch_id = ks.id AND ku.translation = $2
-          WHERE ks.id = $1
-            AND ks.is_active = true
-            AND (ks.organization_id IS NULL OR ks.organization_id = $3)
-        `;
-        const { rows: [spruch] } = await db.query(spruchQuery, [konfi.konfspruch_id, spruchTranslation, req.user.organization_id]);
-        if (spruch) {
-          konfspruch = {
-            source: 'liste',
-            id: spruch.id,
-            reference: spruch.reference,
-            text: spruch.text || '',
-            translation: konfi.konfspruch_translation || null
-          };
-        }
-      } else if (konfi.konfspruch_freitext) {
-        // Freitext-Spruch mit Pflicht-Referenz
-        konfspruch = {
-          source: 'freitext',
-          text: konfi.konfspruch_freitext,
-          reference: konfi.konfspruch_freitext_referenz
-        };
-      }
+      // Gewaehlten Konfispruch aufloesen (genau EINE Quelle aktiv: Listen-Wahl
+      // ODER Freitext). Aufloesung in utils/konfspruch.js — dieselbe Quelle
+      // wie der Teamer-Weg.
+      const konfspruch = await loeseKonfspruchAuf(db, konfi, req.user.organization_id);
 
       res.json({
         ...konfi,
@@ -627,7 +599,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(200).json(vorhanderAntrag);
       }
       
-      const date = requested_date || new Date().toISOString().split('T')[0];
+      // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+      // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Eintrag ohne Datum sonst
+      // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
+      const date = requested_date || heuteBerlin();
       
       // Get activity details for notification
       // Befund N3 (27.08.2026): Hier fehlte der target_role-Filter. Gemessen:
@@ -1893,16 +1868,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const konfiId = req.user.id;
       const { translation } = req.body;
       
-      // Validate translation
-      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
-      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
-      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
-      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
-      if (!validTranslations.includes(translation)) {
-        return res.status(400).json({ 
+      // Validate translation (Liste in utils/konfspruch.js — eine Quelle
+      // fuer den Konfi- und den Teamer-Weg)
+      if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
+        return res.status(400).json({
           error: 'Ungültige Bibelübersetzung',
-          valid_translations: validTranslations
+          valid_translations: BIBEL_UEBERSETZUNGEN
         });
       }
       
@@ -1927,52 +1898,16 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
   });
 
-  // Gueltige Translation-Keys für den Konfispruch (deskriptiv, NICHT die Kuerzel
-  // aus PUT /bible-translation). Diese Werte landen in der DEDIZIERTEN Spalte
-  // konfspruch_translation - getrennt von der Tageslosungs-Praeferenz bible_translation,
-  // damit sich die beiden Features nicht gegenseitig ueberschreiben.
-  const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
-
   // Kuratierte Konfsprueche für das Auswahl-Modal (org-gefiltert)
+  // Aufbereitung in utils/konfspruch.js — dieselbe Quelle wie
+  // GET /teamer/konfsprueche.
   router.get('/konfsprueche', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
-      const orgId = req.user.organization_id;
-      const query = `
-        SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse,
-               COALESCE(
-                 json_object_agg(ku.translation, ku.text) FILTER (WHERE ku.translation IS NOT NULL),
-                 '{}'::json
-               ) AS uebersetzungen
-        FROM konfsprueche ks
-        LEFT JOIN konfspruch_uebersetzungen ku ON ku.spruch_id = ks.id
-        WHERE ks.is_active = true
-          AND (ks.organization_id IS NULL OR ks.organization_id = $1)
-        GROUP BY ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ks.sort_order
-        ORDER BY ks.sort_order, ks.id
-      `;
-      const { rows } = await db.query(query, [orgId]);
-
-      // Sicherstellen, dass alle 4 Keys vorhanden sind (fehlende -> leerer Platzhalter)
-      const sprueche = rows.map((row) => {
-        const uebersetzungen = {};
-        for (const key of KONFSPRUCH_TRANSLATIONS) {
-          uebersetzungen[key] = (row.uebersetzungen && row.uebersetzungen[key]) || '';
-        }
-        return {
-          id: row.id,
-          reference: row.reference,
-          book: row.book,
-          chapter: row.chapter,
-          verse: row.verse,
-          uebersetzungen
-        };
-      });
-
-      res.json(sprueche);
+      res.json(await ladeSpruchliste(db, req.user.organization_id));
     } catch (err) {
       console.error('Database error in GET /konfsprueche:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

@@ -12,6 +12,7 @@ const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
+const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1031,13 +1032,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { translation } = req.body;
-      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
-      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
-      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
-      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
-      if (!validTranslations.includes(translation)) {
-        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: validTranslations });
+      // Liste in utils/konfspruch.js — eine Quelle fuer den Konfi- und den
+      // Teamer-Weg. Vorher lag sie doppelt im Code und musste bei jeder
+      // Aenderung an BEIDEN Stellen nachgezogen werden (Befund M4).
+      if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
+        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: BIBEL_UEBERSETZUNGEN });
       }
       await db.query('UPDATE users SET bible_translation = $1 WHERE id = $2', [translation, req.user.id]);
       res.json({ success: true, message: 'Bibelübersetzung erfolgreich aktualisiert', translation });
