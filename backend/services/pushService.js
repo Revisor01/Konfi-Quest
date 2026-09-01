@@ -165,7 +165,10 @@ class PushService {
         : (row.role_name === 'teamer' ? 'teamer' : 'admin');
 
       let assigned_jahrgaenge = [];
-      if (type === 'teamer') {
+      // Jahrgaenge fuer Teamer:innen UND die Rolle 'admin' (01.09.2026):
+      // Beide sind gebunden, ihre App-Icon-Summe haengt an der Zuweisung.
+      // org_admin braucht keine (zaehlt org-weit).
+      if (type === 'teamer' || row.role_name === 'admin') {
         const { rows } = await db.query(
           'SELECT jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = $1',
           [userId]

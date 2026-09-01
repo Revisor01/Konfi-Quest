@@ -15,7 +15,7 @@
 // Der Nachbar `appIconBadgeParitaet.test.js` prueft die andere Kante:
 // Server-Summe gegen das, was der Client anzeigt.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, ACTIVITIES } = require('../helpers/seed');
+const { seed, USERS, ORGS, ACTIVITIES, JAHRGAENGE } = require('../helpers/seed');
 const { berechneAppIconSumme, appIconSummenFuerAlle } = require('../../utils/appIconBadge');
 
 describe('Einzel- und Bulk-Weg liefern dieselbe App-Icon-Summe', () => {
@@ -86,23 +86,29 @@ describe('Einzel- und Bulk-Weg liefern dieselbe App-Icon-Summe', () => {
     expect(konfi.einzeln).toBe(4);
   });
 
-  it('Leitung: offene Antraege zaehlen org-weit, nicht pro Person', async () => {
+  it('Leitung: org_admin zaehlt Antraege org-weit, gebundener admin nur seine Jahrgaenge', async () => {
     await db.query(
       `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
        VALUES ($1, $2, '2026-08-27', 'pending', $3), ($4, $2, '2026-08-27', 'pending', $3)`,
       [USERS.konfi1.id, ACTIVITIES.sonntagsgottesdienst.id, ORGS.testGemeinde.id, USERS.konfi2.id]
     );
 
-    // Zwei Leitungen derselben Organisation: Beide muessen dieselben zwei
-    // Antraege sehen — die org-weite Zahl wird im Bulk-Weg verteilt.
-    const [admin, orgAdmin] = await beideWege([
-      empfaengerFuer(USERS.admin1, 'admin'),
+    // Jahrgangs-Bindung (01.09.2026): Der org_admin bekommt die org-weite
+    // Zahl verteilt; die Rolle 'admin' zaehlt personenbezogen nach ihren
+    // Zuweisungen (beide Konfis liegen in jahrgang1). Ein admin OHNE
+    // Zuweisung zaehlt 0 — Einzel- und Bulk-Weg muessen in allen drei
+    // Faellen dasselbe liefern.
+    const [adminMitJg, adminOhneJg, orgAdmin] = await beideWege([
+      empfaengerFuer(USERS.admin1, 'admin', [{ id: JAHRGAENGE.jahrgang1.id, can_view: true }]),
+      empfaengerFuer(USERS.admin2, 'admin'),
       empfaengerFuer(USERS.orgAdmin1, 'org_admin')
     ]);
 
-    expect(admin.bulk).toBe(admin.einzeln);
+    expect(adminMitJg.bulk).toBe(adminMitJg.einzeln);
+    expect(adminOhneJg.bulk).toBe(adminOhneJg.einzeln);
     expect(orgAdmin.bulk).toBe(orgAdmin.einzeln);
-    expect(admin.einzeln).toBe(2);
+    expect(adminMitJg.einzeln).toBe(2);
+    expect(adminOhneJg.einzeln).toBe(0);
     expect(orgAdmin.einzeln).toBe(2);
   });
 

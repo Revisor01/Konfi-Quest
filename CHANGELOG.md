@@ -48,7 +48,8 @@ Versionsüberschrift.
 ### Geändert
 - Die Jahrgangs-Bindung für Admins greift jetzt überall: Terminliste,
   Konfi-Auswahl im Chat, Material, Jahrgangs-Liste und die Meldungs-Zähler an
-  den Reitern zeigen einem Admin nur noch seine zugewiesenen Jahrgänge —
+  den Reitern und die Zahl am App-Symbol zeigen einem Admin nur noch seine
+  zugewiesenen Jahrgänge —
   genau wie die Konfi-Liste schon zuvor. Teamer:innen, Termine ohne Jahrgang,
   Team-Runden und Material „für alle" sieht er weiterhin. Der Org-Admin sieht
   unverändert die ganze Gemeinde.

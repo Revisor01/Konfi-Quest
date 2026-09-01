@@ -60,10 +60,17 @@ async function chatZaehler(db, personen) {
   )).rows;
 }
 
-// Offene Antraege und unverarbeitete Termine haengen NICHT an der Person,
-// sondern an der Organisation. Deshalb je Organisation einmal zaehlen und das
-// Ergebnis auf alle Leitungen dieser Organisation verteilen -- bei 20
-// Leitungen in einer Gemeinde ist das eine Abfrage statt 20.
+// Offene Antraege und unverarbeitete Termine haengen fuer den ORG-ADMIN nicht
+// an der Person, sondern an der Organisation. Deshalb je Organisation einmal
+// zaehlen und das Ergebnis auf alle org-weiten Leitungen dieser Organisation
+// verteilen -- bei 20 Leitungen in einer Gemeinde ist das eine Abfrage statt 20.
+//
+// Fuer die Rolle 'admin' gilt das seit 01.09.2026 NICHT mehr: Sie ist an ihre
+// zugewiesenen Jahrgaenge gebunden (Simons Regel vom 31.08.), badge-counts
+// zaehlt fuer sie nur noch, was ihre Listen zeigen -- und das App-Icon muss
+// dieselbe Summe tragen (Paritaets-Invariante B2b). Gebundene Admins laufen
+// deshalb unten durch personenbezogene Zaehler (antragZaehlerGebunden,
+// terminZaehlerGebunden, teamerFreigabeZaehler).
 async function antragZaehlerProOrg(db, orgIds) {
   if (orgIds.length === 0) return [];
   return (await db.query(
@@ -94,7 +101,66 @@ async function terminZaehlerProOrg(db, orgIds) {
   )).rows;
 }
 
-// Offene Challenge-Freigaben der Leitung: ebenfalls org-weit, nicht personen-
+// Offene Antraege fuer GEBUNDENE Admins: Teamer-Antraege zaehlen immer
+// (Teamer-Ausnahme), Konfi-Antraege nur aus zugewiesenen Jahrgaengen --
+// exakt der Filter der Antragsliste und von badge-counts. ANY auf leerem
+// Array trifft nichts: ohne Zuweisung bleiben nur Teamer-Antraege.
+async function antragZaehlerGebunden(db, personen) {
+  if (personen.length === 0) return [];
+  return (await db.query(
+    `SELECT z.user_id, z.user_type, COUNT(ar.id)::int AS c
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
+              AS z(user_id, user_type, organization_id, jahrgaenge)
+       LEFT JOIN activities a ON a.organization_id = z.organization_id
+       LEFT JOIN activity_requests ar
+              ON ar.activity_id = a.id
+             AND ar.status = 'pending'
+             AND (
+               a.target_role = 'teamer'
+               OR EXISTS (
+                 SELECT 1 FROM konfi_profiles kp
+                  WHERE kp.user_id = ar.user_id
+                    AND kp.jahrgang_id = ANY(z.jahrgaenge::int[])
+               )
+             )
+      GROUP BY z.user_id, z.user_type`,
+    [...spalten(personen), jahrgangsSpalte(personen)]
+  )).rows;
+}
+
+// Unverarbeitete Termine fuer GEBUNDENE Admins: derselbe Sichtbarkeits-Filter
+// wie die Terminliste (events/lesen.js) und badge-counts -- Termine ohne
+// Jahrgang und Teamer-Termine zaehlen immer, jahrgangsgebundene nur aus
+// zugewiesenen Jahrgaengen.
+async function terminZaehlerGebunden(db, personen) {
+  if (personen.length === 0) return [];
+  return (await db.query(
+    `SELECT z.user_id, z.user_type, COUNT(e.id)::int AS c
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
+              AS z(user_id, user_type, organization_id, jahrgaenge)
+       LEFT JOIN events e
+              ON e.organization_id = z.organization_id
+             AND e.event_date < NOW()
+             AND EXISTS (
+               SELECT 1 FROM event_bookings eb
+                WHERE eb.event_id = e.id
+                  AND eb.status = 'confirmed'
+                  AND eb.attendance_status IS NULL
+             )
+             AND (
+               e.teamer_only OR e.teamer_needed
+               OR NOT EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
+                               WHERE eja.event_id = e.id)
+               OR EXISTS (SELECT 1 FROM event_jahrgang_assignments eja
+                           WHERE eja.event_id = e.id
+                             AND eja.jahrgang_id = ANY(z.jahrgaenge::int[]))
+             )
+      GROUP BY z.user_id, z.user_type`,
+    [...spalten(personen), jahrgangsSpalte(personen)]
+  )).rows;
+}
+
+// Offene Challenge-Freigaben der ORG-WEITEN Leitung: org-weit, nicht personen-
 // gebunden.
 async function freigabeZaehlerProOrg(db, orgIds) {
   if (orgIds.length === 0) return [];
@@ -108,17 +174,15 @@ async function freigabeZaehlerProOrg(db, orgIds) {
   )).rows;
 }
 
-// Offene Freigaben fuer Teamer:innen. Hier haengt der Zaehler doch an der
-// Person, weil jede:r andere Jahrgaenge sieht.
+// Offene Freigaben fuer Teamer:innen UND (seit 01.09.2026) gebundene Admins.
+// Hier haengt der Zaehler an der Person, weil jede:r andere Jahrgaenge sieht.
 //
 // 'nur_team' ist ausdruecklich eingeschlossen: Solche Runden haben per
-// Definition keine Jahrgangs-Zuordnung, sind aber fuer jede:n Teamer:in der
+// Definition keine Jahrgangs-Zuordnung, sind aber fuer das ganze Team der
 // Organisation moderierbar (Migration 121, Befund H4).
 async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
-  const jahrgangsListen = teamer.map((p) =>
-    `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`
-  );
+  const jahrgangsListen = jahrgangsSpalte(teamer);
   return (await db.query(
     `SELECT z.user_id, z.user_type, COUNT(cs.id)::int AS c
        FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
@@ -168,6 +232,13 @@ function spalten(personen) {
   ];
 }
 
+/** Die can_view-Jahrgaenge je Person als Text-Array-Literal fuer `unnest`. */
+function jahrgangsSpalte(personen) {
+  return personen.map((p) =>
+    `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`
+  );
+}
+
 /** Schluessel der Zuordnung: id allein reicht nicht, der Typ gehoert dazu. */
 function schluessel(userId, userType) {
   return `${userId}_${userType}`;
@@ -202,16 +273,27 @@ async function appIconSummenFuerAlle(db, empfaenger) {
   for (const p of empfaenger) summen.set(schluessel(p.id, p.type), 0);
 
   const leitung = empfaenger.filter(istLeitung);
+  // Jahrgangs-Bindung (01.09.2026): Nur org_admin zaehlt org-weit; die Rolle
+  // 'admin' ist gebunden und laeuft durch dieselben personenbezogenen
+  // Zaehler-Filter wie badge-counts. Das is_super_admin-Flag liegt hier
+  // nicht vor -- in Produktion tragen es nur org_admin-Konten (gemessen
+  // 31.08.2026), fuer die sich nichts aendert.
+  const leitungOrgWeit = leitung.filter((p) => p.role_name === 'org_admin');
+  const leitungGebunden = leitung.filter((p) => p.role_name !== 'org_admin');
   const teamer = empfaenger.filter((p) => p.type === 'teamer');
   const mitAbzeichen = empfaenger.filter((p) => p.type === 'konfi' || p.type === 'teamer');
-  const leitungsOrgs = [...new Set(leitung.map((p) => p.organization_id))];
+  const leitungsOrgs = [...new Set(leitungOrgWeit.map((p) => p.organization_id))];
 
-  const [chat, antraege, termine, freigaben, teamerFreigaben, abzeichen] = await Promise.all([
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
     freigabeZaehlerProOrg(db, leitungsOrgs),
-    teamerFreigabeZaehler(db, teamer),
+    // Teamer:innen und gebundene Admins teilen sich die Freigaben-Regel
+    // (nur_team immer, sonst zugewiesene Jahrgaenge).
+    teamerFreigabeZaehler(db, [...teamer, ...leitungGebunden]),
+    antragZaehlerGebunden(db, leitungGebunden),
+    terminZaehlerGebunden(db, leitungGebunden),
     abzeichenZaehler(db, mitAbzeichen)
   ]);
 
@@ -221,15 +303,18 @@ async function appIconSummenFuerAlle(db, empfaenger) {
   };
 
   for (const r of chat) addiere(r.user_id, r.user_type, r.c);
-  for (const r of teamerFreigaben) addiere(r.user_id, r.user_type, r.c);
+  for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.c);
+  for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.c);
+  for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.c);
 
-  // Die org-weiten Zahlen auf jede Leitung dieser Organisation verteilen.
+  // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
+  // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
   const proOrg = new Map();
   for (const reihe of [antraege, termine, freigaben]) {
     for (const r of reihe) proOrg.set(r.organization_id, (proOrg.get(r.organization_id) || 0) + r.c);
   }
-  for (const p of leitung) addiere(p.id, p.type, proOrg.get(p.organization_id) || 0);
+  for (const p of leitungOrgWeit) addiere(p.id, p.type, proOrg.get(p.organization_id) || 0);
 
   for (const [k, wert] of summen) summen.set(k, Math.max(0, wert));
   return summen;
@@ -240,7 +325,12 @@ async function appIconSummenFuerAlle(db, empfaenger) {
  * Client im App-Icon anzeigt.
  *
  * Aufteilung je Rolle (identisch zu BadgeContext.totalBadgeCount):
- *   admin      Chat + offene Antraege + unverarbeitete Termine + Freigaben
+ *   org_admin  Chat + offene Antraege + unverarbeitete Termine + Freigaben
+ *              (org-weit)
+ *   admin      dieselben Bausteine, aber seit 01.09.2026 auf die
+ *              zugewiesenen Jahrgaenge gebunden (wie badge-counts:
+ *              Teamer-Antraege, Termine ohne Jahrgang/Teamer-Termine und
+ *              nur_team-Freigaben zaehlen immer)
  *   teamer     Chat + Freigaben + ungesehene Abzeichen
  *   konfi      Chat + ungesehene Abzeichen
  *

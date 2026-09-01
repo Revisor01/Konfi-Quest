@@ -196,7 +196,7 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
 | Jahrgangs-Chatraum | keine Aufnahme in den Raum |
 | Challenges | jahrgangsgebundene Challenges sind unsichtbar (Team-Runden bleiben) |
-| Meldungs-Zähler an den Reitern | zählen nur, was die eigenen Listen zeigen |
+| Meldungs-Zähler an den Reitern und am App-Symbol | zählen nur, was die eigenen Listen zeigen |
 | Mitteilungen und Push | nur für die eigenen Jahrgänge |
 
 > **Der Chat sperrt in BEIDE Richtungen.** Eine Teamer:in ohne Zuweisung ist für

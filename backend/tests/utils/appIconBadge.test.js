@@ -120,8 +120,22 @@ describe('berechneAppIconSumme (Befund B2b)', () => {
       [USERS.konfi1.id, ACTIVITIES.sonntagsgottesdienst.id, ORGS.testGemeinde.id]
     );
 
-    const summe = await berechneAppIconSumme(db, alsEmpfaenger(USERS.admin1, { role_name: 'admin' }));
+    // Jahrgangs-Bindung (01.09.2026): Die Rolle 'admin' zaehlt Antraege nur
+    // noch fuer zugewiesene Jahrgaenge — konfi1 haengt an jahrgang1.
+    const summe = await berechneAppIconSumme(db, alsEmpfaenger(USERS.admin1, {
+      role_name: 'admin',
+      assigned_jahrgaenge: [{ id: JAHRGAENGE.jahrgang1.id, can_view: true }]
+    }));
     expect(summe).toBe(1);
+
+    // Ohne Zuweisung zaehlt derselbe Antrag NICHT mehr (badge-counts zieht
+    // dieselbe Grenze; die Paritaet haelt appIconBadgeParitaet.test.js fest).
+    const ohneZuweisung = await berechneAppIconSumme(db, alsEmpfaenger(USERS.admin1, { role_name: 'admin' }));
+    expect(ohneZuweisung).toBe(0);
+
+    // org_admin bleibt org-weit und zaehlt ihn ohne jede Zuweisung.
+    const orgAdmin = await berechneAppIconSumme(db, alsEmpfaenger(USERS.orgAdmin1, { role_name: 'org_admin' }));
+    expect(orgAdmin).toBe(1);
   });
 
   it('Konfis bekommen die Antraege der Leitung NICHT mitgezaehlt', async () => {
