@@ -1634,6 +1634,14 @@ ion-toggle.app-toggle--events {
   cursor: pointer;
 }
 
+/* Klickbarer Material-Hinweis in den Eckdaten (01.09.2026) — gleiche Optik
+   wie der Ort-Link, eigener Name, damit die beiden unabhaengig bleiben. */
+.app-event-detail__material-link {
+  color: #007aff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Beschreibung-Sektion mit Trennlinie */
 .app-event-detail__description-divider {
   margin-top: 16px;

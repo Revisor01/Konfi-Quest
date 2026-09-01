@@ -111,13 +111,22 @@ interface EventInfoCardProps {
   participants: Participant[];
   formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
+  // Material-Hinweis in den Eckdaten (Simons Wunsch 01.09.2026): Dass ein
+  // Termin Material traegt, stand bisher NUR im Abschnitt ganz unten -- wer
+  // nicht scrollte, sah es nie. Beide Props sind optional, damit die Karte
+  // ohne Material-Wissen weiter funktioniert; ohne Material erscheint die
+  // Zeile gar nicht (kein "0 Material").
+  eventMaterials?: EventMaterial[];
+  onMaterialHinweisClick?: () => void;
 }
 
 export const EventInfoCard = React.memo<EventInfoCardProps>(({
   eventData,
   participants,
   formatDate,
-  formatTime
+  formatTime,
+  eventMaterials,
+  onMaterialHinweisClick
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -397,6 +406,28 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
+        {/* Material-Hinweis (01.09.2026): klickbar wie der Ort. Bei genau
+            einem Material steht dessen Titel und der Tipp oeffnet direkt das
+            Detail-Modal; bei mehreren steht die Anzahl und der Tipp springt
+            zum Material-Abschnitt unten -- dort ist jeder Eintrag einzeln
+            waehlbar, ein "erstes Material raten" waere Willkuer. Die
+            Entscheidung faellt im Handler der Detailansicht, nicht hier.
+            Offline ist eventMaterials leer (die Detailansicht laedt Material
+            nur online) -- die Zeile kann also nie ins Leere klicken. */}
+        {eventMaterials && eventMaterials.length > 0 && onMaterialHinweisClick && (
+          <div className="app-info-row">
+            <IonIcon icon={documentIcon} className="app-info-row__icon app-icon-color--material" />
+            <div onClick={onMaterialHinweisClick}>
+              <div className="app-info-row__label">Material</div>
+              <div className="app-info-row__value app-event-detail__material-link">
+                {eventMaterials.length === 1
+                  ? eventMaterials[0].title
+                  : `${eventMaterials.length} Materialien`}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Jahrgang */}
         {eventData.jahrgaenge && eventData.jahrgaenge.length > 0 && (
           <div className="app-info-row">
@@ -563,7 +594,10 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
   eventMaterials,
   onMaterialClick
 }) => (
-  <IonList className="app-section-inset" inset={true}>
+  // Die id ist das Sprungziel des Material-Hinweises in den Eckdaten
+  // (EventInfoCard, 01.09.2026): bei mehreren Materialien scrollt der Tipp
+  // hierher statt eines zu raten.
+  <IonList id="event-material-abschnitt" className="app-section-inset" inset={true}>
     <IonListHeader>
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={documentIcon} />

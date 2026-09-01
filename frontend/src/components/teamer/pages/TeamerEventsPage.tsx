@@ -955,6 +955,37 @@ const TeamerEventsPage: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Material-Hinweis (Simons Wunsch 01.09.2026): dass ein
+                    Termin Material traegt, stand nur im Abschnitt weiter
+                    unten -- wer nicht scrollte, sah es nie. Klickbar wie der
+                    Ort: bei genau einem Material oeffnet der Tipp direkt
+                    dessen Modal, bei mehreren springt er zum Abschnitt (dort
+                    ist jeder Eintrag einzeln waehlbar). Offline ist
+                    eventMaterials leer (der Abruf oben faengt Fehler mit []
+                    ab) -- die Zeile erscheint dann gar nicht. */}
+                {eventMaterials.length > 0 && (
+                  <div className="app-info-row">
+                    <IonIcon icon={documentIcon} className="app-info-row__icon app-icon-color--material" />
+                    <div
+                      onClick={() => {
+                        if (eventMaterials.length === 1) {
+                          materialIdRef.current = eventMaterials[0].id;
+                          presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
+                          return;
+                        }
+                        document.getElementById('teamer-material-abschnitt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                    >
+                      <div className="app-info-row__label">Material</div>
+                      <div className="app-info-row__value app-event-detail__material-link">
+                        {eventMaterials.length === 1
+                          ? eventMaterials[0].title
+                          : `${eventMaterials.length} Materialien`}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -978,9 +1009,11 @@ const TeamerEventsPage: React.FC = () => {
             </IonList>
           )}
 
-          {/* Material */}
+          {/* Material — die id ist das Sprungziel des Material-Hinweises in
+              den Eckdaten (01.09.2026): bei mehreren Materialien scrollt der
+              Tipp hierher statt eines zu raten. */}
           {eventMaterials.length > 0 && (
-            <IonList className="app-section-inset" inset={true}>
+            <IonList id="teamer-material-abschnitt" className="app-section-inset" inset={true}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--events">
                   <IonIcon icon={documentIcon} />
