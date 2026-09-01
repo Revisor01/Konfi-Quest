@@ -107,6 +107,9 @@ darf **alle Rollen der eigenen Gemeinde** verwalten, auch andere Org-Admins.
 | Termine, Abzeichen, Kategorien, Level anlegen | — | — | ja | ja |
 | Challenges anlegen und begleiten | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
+| Material sehen | — | ja | ja | ja |
+| Material anlegen | — | — | ja | ja |
+| Material bearbeiten und löschen | — | — | nur eigenes | ja |
 | Admins und Org-Admins anlegen | — | — | — | ja |
 | Jahrgänge anlegen | — | — | — | ja |
 | Jahrgänge bearbeiten und löschen | — | — | nur die eigenen | ja |

@@ -67,3 +67,14 @@ sich zu einem Termin **anmelden** (der freie Platz ließe sich nicht
 zurückhalten), einen **QR-Code scannen** und einen **Challenge-Beitrag**
 abschicken. Die App sagt in diesen Fällen deutlich, dass es gerade nicht geht,
 statt etwas zu versprechen, das sie nicht halten kann.
+
+## Wenn eine neuere Version bereitsteht
+
+Liegt im App Store oder bei Google Play eine neuere Version als die
+installierte, erscheint oben ein dezenter Hinweis. Ein Tipp darauf öffnet die
+App im Store, ein Tipp auf das Kreuz blendet ihn weg — für diese Version
+dauerhaft, auf diesem Gerät.
+
+Die App **blockiert nie**: Man kann sie in der alten Fassung so lange
+weiternutzen, wie man möchte. Der Hinweis ist eine Erinnerung, keine Hürde.
+Ohne Verbindung erscheint er gar nicht.
