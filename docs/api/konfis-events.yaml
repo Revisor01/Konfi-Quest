@@ -1168,6 +1168,11 @@ paths:
         jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte
         "Ausgebucht" melden, die Liste "Offen"); Teamer stehen getrennt in
         teamer_count/teamer_waitlist_count.
+        ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich
+        absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine
+        vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg
+        (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde
+        entfernt, umbenannt oder im Typ geaendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1271,6 +1276,16 @@ paths:
         event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich
         Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung,
         geloeschte Konten nie.
+
+
+        NEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung
+        (status opted_out aus POST /api/teamer/events/{id}/zusage) wird
+        reaktiviert statt mit 409 abgewiesen — "Ich bin doch dabei" nach
+        einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und
+        absage_nach_zusage geleert), alle Kapazitaetsregeln gelten
+        unveraendert. Fuer Konfis bleibt der 409: Ein Pflicht-Opt-out wird
+        ausschliesslich ueber POST /api/konfi/events/{id}/opt-in
+        zurueckgenommen.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1291,7 +1306,7 @@ paths:
         "403": { description: Rolle nicht buchbar bzw. Event nicht fuer diese Rolle }
         # 400 deckt seit 01.09.2026 auch den abgesagten Termin ab (cancelled-Guard).
         "404": { $ref: '#/components/responses/NotFound' }
-        "409": { description: Bereits gebucht oder Konfirmations-Sperre }
+        "409": { description: "Bereits gebucht oder Konfirmations-Sperre (eine abgesagte TEAMER-Buchung loest seit 01.09.2026 keinen 409 mehr aus, sondern wird reaktiviert)" }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
       tags: ["Termine (Verwaltung)"]
@@ -1305,6 +1320,10 @@ paths:
         kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus
         der Offline-Warteschlange soll nicht als Fehlschlag ankommen
         (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.
+        SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md):
+        Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage
+        (dabei=false), die die Absage samt Grund stehen laesst statt zu
+        loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]

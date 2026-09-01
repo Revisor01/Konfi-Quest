@@ -666,8 +666,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       <>{(istLeitung(participant) || participant.jahrgang_name) ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
                     )}
                   </div>
-                  {isOptedOut && participant.opt_out_reason && (
+                  {/* Absage-Details: Grund wie bisher; NEU (01.09.2026) das
+                      Kennzeichen aus Migration 141 — eine Absage, die eine
+                      Zusage zurueckgenommen hat, heisst fuer die Leitung
+                      "kurzfristig umplanen" und wird eigens benannt. */}
+                  {isOptedOut && (participant.opt_out_reason || participant.absage_nach_zusage) && (
                     <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+                      {participant.absage_nach_zusage && (
+                        <strong>Nach Zusage abgesagt{participant.opt_out_reason ? ': ' : ''}</strong>
+                      )}
                       {participant.opt_out_reason}
                     </div>
                   )}

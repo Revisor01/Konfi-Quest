@@ -34,6 +34,8 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
  * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
+ * teamer_event_booking        | sendTeamerEventBookingToAdmins       | Org-Admins      | ja
+ * teamer_event_cancellation   | sendTeamerEventCancellationToAdmins  | Org-Admins      | ja
  * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
@@ -1726,17 +1728,27 @@ class PushService {
   /**
    * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung.
    */
-  static async sendTeamerEventCancellationToAdmins(db, organizationId, teamerName, eventName, eventId) {
+  // reason ist seit 01.09.2026 dabei (ADDITIV, optional): Die Teamer-Absage
+  // ueber POST /teamer/events/:id/zusage traegt einen Grund — bei einer
+  // Absage nach Zusage sogar verpflichtend — und die Leitung soll ihn direkt
+  // in der Meldung lesen, ohne die App zu oeffnen. Der Storno-Weg
+  // (DELETE /events/:id/book) ruft weiter ohne reason auf; Text und
+  // data-Felder bleiben dann exakt wie bisher.
+  static async sendTeamerEventCancellationToAdmins(db, organizationId, teamerName, eventName, eventId, reason = null) {
     try {
-      return await this.sendToOrgAdmins(db, organizationId, {
+      const notification = {
         title: 'Teamer:in abgemeldet',
-        body: `${teamerName} hat sich von '${eventName}' abgemeldet`,
+        body: reason
+          ? `${teamerName} hat sich von '${eventName}' abgemeldet. Grund: ${reason}`
+          : `${teamerName} hat sich von '${eventName}' abgemeldet`,
         data: {
           type: 'teamer_event_cancellation',
           eventId: String(eventId),
           organization_id: String(organizationId)
         }
-      });
+      };
+      if (reason) notification.data.reason = reason;
+      return await this.sendToOrgAdmins(db, organizationId, notification);
     } catch (error) {
       console.error('sendTeamerEventCancellationToAdmins error:', error);
       return { success: false, error: error.message };

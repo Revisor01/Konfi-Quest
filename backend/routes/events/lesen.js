@@ -400,8 +400,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
 
       // Get participants
+      //
+      // absage_nach_zusage (Migration 141) kommt hier ADDITIV mit: Die
+      // Leitung sieht damit, ob eine Teamer-Absage eine vorherige Zusage
+      // zurueckgenommen hat ("kurzfristig abgesprungen") — der Grund steht
+      // wie bisher in opt_out_reason. Kein vorhandenes Feld aendert Form
+      // oder Typ; ausgelieferte Apps ignorieren das neue Feld einfach.
       const participantsQuery = `
-        SELECT eb.*, eb.opt_out_reason, eb.opt_out_date,
+        SELECT eb.*, eb.opt_out_reason, eb.opt_out_date, eb.absage_nach_zusage,
                 u.display_name as participant_name,
                 CASE
                   WHEN r.name = 'teamer' THEN (SELECT STRING_AGG(DISTINCT j2.name, ', ' ORDER BY j2.name) FROM user_jahrgang_assignments uja2 JOIN jahrgaenge j2 ON uja2.jahrgang_id = j2.id WHERE uja2.user_id = u.id)

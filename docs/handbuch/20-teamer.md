@@ -50,6 +50,25 @@ für die Teamer:innen gesucht werden, meldest du dich mit **„Ich bin dabei"**
 an. Es gibt ein [eigenes Kontingent für das Team](70-termine.md#teamer-kontingent),
 getrennt von den Plätzen der Konfis, und bei Bedarf eine eigene Warteliste.
 
+#### Zusagen und absagen
+
+Zu jedem Team-Termin gibst du eine klare Antwort: **„Ich bin dabei"** oder
+**„Ich bin nicht dabei"**. Eine Absage ist eine eigene Rückmeldung — die
+Leitung sieht sie und muss nicht nachfragen, ob deine Antwort noch kommt.
+Beides lässt sich **jederzeit ändern**, auch von der Absage zurück zur
+Zusage.
+
+Beim Absagen fragt die App nach einem **Grund**:
+
+- Sagst du ab, **ohne vorher zugesagt zu haben**, ist der Grund freiwillig —
+  er hilft der Leitung aber beim Planen.
+- Sagst du ab, **nachdem du zugesagt hattest** (fester Platz oder
+  Warteliste), ist der Grund **Pflicht**. Die Leitung hat mit dir geplant
+  und muss umplanen können.
+
+Sagst du von einem festen Platz ab, wird der Platz frei und die nächste
+Person rückt von der Team-Warteliste nach.
+
 Manche Termine sind reine Konfi-Termine. Die stehen dann nur zur Information
 da, ohne Anmeldung.
 
