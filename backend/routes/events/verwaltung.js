@@ -7,7 +7,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { isRegistrationOpenForKonfis } = require('../../utils/bookingUtils');
+const { isRegistrationOpenForKonfis, zaehleBestaetigte } = require('../../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -470,30 +470,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
 
       // Nachrück-Logik: Wenn Kapazität erhöht wurde, Wartelisten-Einträge nachrücken lassen.
-      // Konfi- und Teamer-Kontingent sind strikt getrennt — die Konfi-Bloecke hier
-      // duerfen NIE einen Teamer nachruecken lassen (r.name != 'teamer').
+      // Konfi- und Team-Kontingent sind strikt getrennt. Die Zaehlung folgt der
+      // Sicht aus Migration 136 (zaehleBestaetigte): Konfi-Seite = ausschliesslich
+      // Konfis, Team-Seite = Teamer:innen UND zugeordnete Leitung, geloeschte
+      // Konten nie. Vorher stand hier `r.name != 'teamer'` — eine zugeordnete
+      // Leitung belegte damit einen Konfi-Platz und blockierte das Nachruecken.
       const promotedUsers = [];
       const promotedTeamers = [];
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Bei Timeslot-Events: Für jeden Timeslot separat prüfen
         for (const slot of timeslots) {
           if (!slot.id) continue; // Nur bestehende Timeslots prüfen
-          const { rows: [tsCapacity] } = await client.query(
-            `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
-             JOIN users u ON eb.user_id = u.id
-             JOIN roles r ON u.role_id = r.id
-             WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND eb.organization_id = $2
-               AND r.name != 'teamer' AND u.deleted_at IS NULL`,
-            [slot.id, req.user.organization_id]
-          );
-          const freeSlots = slot.max_participants - tsCapacity.confirmed_count;
+          const bestaetigt = await zaehleBestaetigte(client, { timeslotId: slot.id }, 'konfi');
+          const freeSlots = slot.max_participants - bestaetigt;
           if (freeSlots > 0) {
             const { rows: waitlistEntries } = await client.query(
               `SELECT eb.id, eb.user_id FROM event_bookings eb
                JOIN users u ON eb.user_id = u.id
                JOIN roles r ON u.role_id = r.id
                WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist' AND eb.organization_id = $4
-                 AND r.name != 'teamer' AND u.deleted_at IS NULL
+                 AND r.name = 'konfi' AND u.deleted_at IS NULL
                ORDER BY eb.created_at ASC LIMIT $3`,
               [id, slot.id, freeSlots, req.user.organization_id]
             );
@@ -505,22 +501,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         }
       } else if (max_participants > 0) {
         // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit)
-        const { rows: [currentCounts] } = await client.query(
-          `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
-           JOIN users u ON eb.user_id = u.id
-           JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-             AND r.name != 'teamer' AND u.deleted_at IS NULL`,
-          [id]
-        );
-        const freeSlots = max_participants - currentCounts.confirmed_count;
+        const bestaetigt = await zaehleBestaetigte(client, { eventId: id }, 'konfi');
+        const freeSlots = max_participants - bestaetigt;
         if (freeSlots > 0) {
           const { rows: waitlistEntries } = await client.query(
             `SELECT eb.id, eb.user_id FROM event_bookings eb
              JOIN users u ON eb.user_id = u.id
              JOIN roles r ON u.role_id = r.id
              WHERE eb.event_id = $1 AND eb.status = 'waitlist'
-               AND r.name != 'teamer' AND u.deleted_at IS NULL
+               AND r.name = 'konfi' AND u.deleted_at IS NULL
              ORDER BY eb.created_at ASC LIMIT $2`,
             [id, freeSlots]
           );
@@ -538,18 +527,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       const newTeamerMax = effectiveTeamerMax !== null ? effectiveTeamerMax : (oldEvent?.teamer_max_participants ?? 0);
       const oldTeamerMax = oldEvent?.teamer_max_participants ?? 0;
       if (newTeamerMax === 0 || newTeamerMax > oldTeamerMax) {
-        const { rows: [teamerCounts] } = await client.query(
-          `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
-           JOIN users u ON eb.user_id = u.id
-           JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-             AND r.name = 'teamer' AND u.deleted_at IS NULL`,
-          [id]
-        );
+        const teamBestaetigt = await zaehleBestaetigte(client, { eventId: id }, 'team');
         // 0 = unbegrenzt -> keine Obergrenze für die Anzahl der Nachruecker
         const freeTeamerSlots = newTeamerMax === 0
           ? null
-          : newTeamerMax - teamerCounts.confirmed_count;
+          : newTeamerMax - teamBestaetigt;
         if (freeTeamerSlots === null || freeTeamerSlots > 0) {
           const limitClause = freeTeamerSlots === null ? '' : 'LIMIT $2';
           const limitParams = freeTeamerSlots === null ? [id] : [id, freeTeamerSlots];
@@ -558,7 +540,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
              JOIN users u ON eb.user_id = u.id
              JOIN roles r ON u.role_id = r.id
              WHERE eb.event_id = $1 AND eb.status = 'waitlist'
-               AND r.name = 'teamer' AND u.deleted_at IS NULL
+               AND r.name <> 'konfi' AND u.deleted_at IS NULL
              ORDER BY eb.created_at ASC ${limitClause}`,
             limitParams
           );

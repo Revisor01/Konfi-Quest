@@ -760,11 +760,22 @@ paths:
         (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt
         bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits
         Angemeldete eingesperrt.
+
+
+        Seit 01.09.2026 teilt sich diese Route den Buchungskern mit
+        POST /api/events/{id}/book (utils/bookingUtils.bucheTermin). Die
+        Antwortform bleibt unveraendert (200 mit message, registration_id,
+        status, timeslot_id; kein error_code). Drei Fehler dieser Route sind
+        dabei behoben: Zeitslot-Plaetze wurden ohne Rollen- und ohne
+        deleted_at-Filter gezaehlt (geloeschte Konten belegten Plaetze), der
+        Zeitslot wurde nicht gesperrt (zwei gleichzeitige Anmeldungen konnten
+        denselben letzten Platz bekommen) und die Gemeinde des Zeitslots
+        wurde nicht geprueft (jetzt 400 "Ungueltiger Zeitslot").
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt; nicht teamer_only, nicht cancelled"
+        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled"
         hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
@@ -1243,6 +1254,21 @@ paths:
         Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad:
         eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne
         Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.
+
+
+        Seit 01.09.2026 teilt sich diese Route den Buchungskern mit
+        POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin).
+        Die Antwortform bleibt unveraendert (201 mit id, message, status;
+        error_code konfirmation_already_booked weiterhin nur hier). Neu greift
+        auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem
+        abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier
+        bisher, obwohl die Doku ihn beschrieb.
+
+
+        Die Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht
+        event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich
+        Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung,
+        geloeschte Konten nie.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1261,6 +1287,7 @@ paths:
         "400": { description: Anmeldefenster/Slot/Kapazitaets-Fehler }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: Rolle nicht buchbar bzw. Event nicht fuer diese Rolle }
+        # 400 deckt seit 01.09.2026 auch den abgesagten Termin ab (cancelled-Guard).
         "404": { $ref: '#/components/responses/NotFound' }
         "409": { description: Bereits gebucht oder Konfirmations-Sperre }
         "500": { $ref: '#/components/responses/ServerError' }

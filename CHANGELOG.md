@@ -56,6 +56,17 @@ Versionsüberschrift.
   Startseite der Konfis. Bisher verschwand ausgerechnet die Freizeit, an der
   man gerade teilnahm, ab dem zweiten Tag aus der Liste, obwohl die Kachel sie
   noch als laufend auswies.
+- Plätze bei Terminen wurden teilweise falsch gezählt. Gelöschte Konten
+  belegten weiterhin einen Platz und hielten ihn sogar besetzt, wenn jemand
+  absagte — Wartende rückten dann nicht nach. Wer aus der Leitung einem
+  Termin zugeordnet war, zählte gegen die Plätze der Konfis statt gegen die
+  des Teams. Beides ist korrigiert; Termine, die deshalb zu früh als
+  ausgebucht galten, haben ihre freien Plätze zurück.
+- Bei Terminen mit Zeitfenstern konnte es passieren, dass zwei Konfis
+  gleichzeitig den letzten Platz eines Zeitfensters bekamen. Jetzt bekommt
+  ihn genau eine, die andere landet auf der Warteliste oder wird abgewiesen.
+- Eine Anmeldung zu einem abgesagten Termin ist jetzt auf allen Wegen
+  ausgeschlossen. Über einen der beiden Wege war sie bisher noch möglich.
 - Ein Antrag von Teamer:innen konnte mit einer Fehlermeldung enden, obwohl er
   längst eingereicht war: Brach die Verbindung ab und versuchte es die App
   erneut, kam beim zweiten Versuch ein Fehler statt des bereits gestellten

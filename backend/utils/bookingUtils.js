@@ -21,6 +21,15 @@ async function checkExistingBooking(client, userId, eventId) {
 
 /**
  * Laedt Event mit confirmed_count und waitlist_count (FOR UPDATE)
+ *
+ * ABGELOEST (01.09.2026): Kein Aufrufer mehr. `excludeTeamers` schloss nur die
+ * Rolle `teamer` aus — eine dem Termin zugeordnete Leitung zaehlte damit gegen
+ * das Konfi-Kontingent, entgegen Migration 136; ein deleted_at-Filter fehlte
+ * ganz. Wer eine Zaehlung braucht, nimmt `zaehleBuchungen` weiter unten. Die
+ * Funktion bleibt vorerst stehen und exportiert, damit kein parallel laufender
+ * Umbau ins Leere greift; sie kann entfernt werden, sobald feststeht, dass
+ * niemand sie mehr einbindet.
+ *
  * @param {object} client - DB-Client (innerhalb Transaktion)
  * @param {number} eventId - Event ID
  * @param {number} orgId - Organisation ID
@@ -260,6 +269,241 @@ function isRegistrationOpenForKonfis(event) {
   return validateRegistrationWindow(event).valid;
 }
 
+
+// ====================================================================
+// EINE ZAEHLUNG, EIN BUCHUNGSKERN (01.09.2026)
+// ====================================================================
+//
+// Vorher zaehlten die Schreibpfade dieselbe Zahl an sechs Stellen mit
+// mindestens fuenf Bedeutungen: mal ohne `deleted_at`-Filter (geloeschte
+// Konten belegten Plaetze), mal `r.name <> 'teamer'` (die zugeordnete
+// Leitung zaehlte gegen das Konfi-Kontingent), mal `r.name = 'teamer'`
+// (die Leitung fiel aus dem Team-Kontingent heraus). Verbindlich ist
+// seit Migration 136 allein die Sicht `event_booking_stats`:
+//
+//   konfi_*  = ausschliesslich Konfis
+//   teamer_* = das TEAM-Kontingent, also Teamer:innen UND zugeordnete Leitung
+//   geloeschte Konten (users.deleted_at) zaehlen nie mit
+//
+// `zaehleBuchungen` ist die einzige Stelle, die diese Bedeutung in SQL
+// giesst. Wer sie aendert, aendert die Bedeutung ueberall gleichzeitig —
+// genau das ist der Zweck.
+
+/** Rollenbedingung fuer eine Kontingent-Seite, View-konform (Migration 136). */
+function rollenBedingung(seite, alias = 'eb') {
+  if (seite !== 'konfi' && seite !== 'team') {
+    throw new Error(`zaehleBuchungen: seite muss 'konfi' oder 'team' sein (war: ${seite})`);
+  }
+  // COALESCE wie in der View: fehlt die Rollenzeile, faellt die Buchung auf
+  // die Team-Seite und belegt keinen Konfi-Platz.
+  const rollenTest = seite === 'konfi'
+    ? "r.name = 'konfi'"
+    : "COALESCE(r.name, '') <> 'konfi'";
+  return `EXISTS (
+    SELECT 1 FROM users u LEFT JOIN roles r ON u.role_id = r.id
+     WHERE u.id = ${alias}.user_id AND u.deleted_at IS NULL AND ${rollenTest}
+  )`;
+}
+
+/**
+ * Zaehlt bestaetigte Buchungen und Wartende einer Kontingent-Seite.
+ *
+ * Semantik identisch zur Sicht `event_booking_stats` (Migration 136):
+ * `seite: 'konfi'` liefert konfi_confirmed/konfi_waitlist,
+ * `seite: 'team'`  liefert teamer_confirmed/teamer_waitlist.
+ *
+ * @param {object} db - Client ODER Pool (reine Lesefrage)
+ * @param {object} bereich - { eventId } oder { timeslotId } — genau eines
+ * @param {'konfi'|'team'} seite
+ * @param {object} optionen - { ausserUserId } schliesst die eigene Buchung aus
+ * @returns {{confirmed: number, waitlist: number}}
+ */
+async function zaehleBuchungen(db, bereich, seite, optionen = {}) {
+  const { eventId = null, timeslotId = null } = bereich || {};
+  if ((eventId === null) === (timeslotId === null)) {
+    throw new Error('zaehleBuchungen: genau eines von eventId/timeslotId angeben');
+  }
+  const { ausserUserId = null } = optionen;
+
+  const params = [eventId !== null ? eventId : timeslotId];
+  const bereichsTest = eventId !== null ? 'eb.event_id = $1' : 'eb.timeslot_id = $1';
+  let eigeneRaus = '';
+  if (ausserUserId !== null) {
+    params.push(ausserUserId);
+    eigeneRaus = ` AND eb.user_id <> $${params.length}`;
+  }
+
+  const { rows: [z] } = await db.query(
+    `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed')::int AS confirmed,
+            COUNT(*) FILTER (WHERE eb.status = 'waitlist')::int  AS waitlist
+       FROM event_bookings eb
+      WHERE ${bereichsTest}${eigeneRaus} AND ${rollenBedingung(seite)}`,
+    params
+  );
+  return { confirmed: z.confirmed, waitlist: z.waitlist };
+}
+
+/**
+ * Nur die bestaetigten einer Kontingent-Seite — fuer die Nachrueck-Pruefung.
+ */
+async function zaehleBestaetigte(db, bereich, seite) {
+  const { confirmed } = await zaehleBuchungen(db, bereich, seite);
+  return confirmed;
+}
+
+/**
+ * DER Buchungskern: eine Selbst-Anmeldung, komplett.
+ *
+ * Fuehrt zusammen, was bis 01.09.2026 zweimal ausformuliert war —
+ * `POST /events/:id/book` (routes/events/buchung.js) und
+ * `POST /konfi/events/:id/register` (routes/konfi.js). Beide Fassungen
+ * waren bereits auseinandergelaufen; die register-Fassung zaehlte ohne
+ * Rollen- und `deleted_at`-Filter, sperrte den Zeitslot nicht und pruefte
+ * seine Gemeinde nicht.
+ *
+ * Die HUELLEN der beiden Routen bleiben unveraendert (Pfade, Statuscodes,
+ * Antwortfelder, Push- und Live-Update-Verhalten). Nur die Entscheidung,
+ * OB und mit welchem Status gebucht wird, liegt ab hier an einer Stelle.
+ *
+ * ERWARTET EINEN CLIENT in laufender Transaktion (BEGIN vorher, COMMIT
+ * danach) — der Kern sperrt Event- und Slot-Zeile mit FOR UPDATE, und
+ * diese Sperren halten nur bis zum Ende der Transaktion.
+ *
+ * @param {object} client - Client aus db.getClient(), NICHT der Pool
+ * @param {object} eingabe - { eventId, userId, orgId, rolle: 'konfi'|'teamer', timeslotId }
+ * @returns {{ok: true, bookingId: number, status: string, event: object, timeslot: object|null, waitlistPosition: number}
+ *          |{ok: false, status: number, error: string, error_code?: string}}
+ */
+async function bucheTermin(client, eingabe) {
+  verlangeClient(client, 'bucheTermin');
+  const { eventId, userId, orgId, rolle } = eingabe;
+  const timeslotId = eingabe.timeslotId ?? null;
+
+  if (rolle !== 'konfi' && rolle !== 'teamer') {
+    throw new Error(`bucheTermin: rolle muss 'konfi' oder 'teamer' sein (war: ${rolle})`);
+  }
+
+  const fehler = (status, error, error_code) =>
+    error_code ? { ok: false, status, error, error_code } : { ok: false, status, error };
+
+  // 1. Termin sperren. Der Gemeinde-Filter gehoert in DIESE Abfrage: eine
+  //    fremde Termin-ID darf nie bis zur Buchung durchkommen.
+  const { rows: [event] } = await client.query(
+    `SELECT id, name, description, event_date, event_end_time, location, points, point_type,
+            type, max_participants, registration_opens_at, registration_closes_at,
+            has_timeslots, waitlist_enabled, max_waitlist_size,
+            teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+            is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window,
+            teamer_needed, teamer_only, cancelled, created_by, organization_id
+       FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
+    [eventId, orgId]
+  );
+  if (!event) return fehler(404, 'Event nicht gefunden');
+
+  // 2. Doppelbuchung — vor allen fachlichen Pruefungen, damit ein zweiter
+  //    Versuch immer 409 meldet und nicht je nach Termin etwas anderes.
+  const vorhanden = await checkExistingBooking(client, userId, eventId);
+  if (vorhanden) return fehler(409, 'Du bist bereits für dieses Event angemeldet');
+
+  // ---------- TEAM-SEITE ----------
+  // Bewusst weiterhin OHNE Zeitslot und OHNE Anmeldefenster: Teamer:innen
+  // duerfen sich jederzeit melden, begrenzt wird nur die Anzahl.
+  if (rolle === 'teamer') {
+    if (!event.teamer_needed && !event.teamer_only) {
+      return fehler(403, 'Dieses Event ist nicht für Teamer:innen buchbar');
+    }
+
+    const zahlen = await zaehleBuchungen(client, { eventId }, 'team');
+    const ergebnis = determineBookingStatus(
+      event, zahlen.confirmed, zahlen.waitlist, event.teamer_max_participants || 0,
+      { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
+    );
+    if (typeof ergebnis === 'object') return fehler(ergebnis.status, ergebnis.error);
+
+    const { rows: [neu] } = await client.query(
+      `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+       VALUES ($1, $2, $3, NOW(), $4) RETURNING id`,
+      [eventId, userId, ergebnis, orgId]
+    );
+    await addToEventChat(client, eventId, userId, orgId);
+    return {
+      ok: true, bookingId: neu.id, status: ergebnis, event, timeslot: null,
+      waitlistPosition: zahlen.waitlist + 1
+    };
+  }
+
+  // ---------- KONFI-SEITE ----------
+  if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für Teamer:innen');
+  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+
+  const fenster = validateRegistrationWindow(event);
+  if (!fenster.valid) return fehler(400, fenster.error);
+
+  // Konfirmations-Sperre: nur EIN Konfirmationstermin pro Konfi.
+  if (event.is_konfirmation) {
+    const { rows: [andere] } = await client.query(
+      `SELECT e.id, e.name FROM event_bookings eb
+         JOIN events e ON e.id = eb.event_id
+        WHERE eb.user_id = $1 AND eb.event_id <> $2 AND eb.status = 'confirmed'
+          AND e.is_konfirmation = true AND e.organization_id = $3
+          AND (e.cancelled IS NULL OR e.cancelled = false)
+        LIMIT 1`,
+      [userId, eventId, orgId]
+    );
+    if (andere) {
+      return fehler(
+        409,
+        `Du bist bereits zu einem Konfirmationstermin angemeldet ("${andere.name}"). `
+        + 'Melde dich dort zuerst ab, um einen anderen Termin zu wählen.',
+        'konfirmation_already_booked'
+      );
+    }
+  }
+
+  // Kapazitaet. Bei Zeitslot-Terminen zaehlt der SLOT, nicht der Termin —
+  // sonst gilt ein voller Slot als "noch Platz", weil die Summe Luft hat.
+  let slot = null;
+  let zahlen;
+  let obergrenze;
+  if (event.has_timeslots) {
+    if (!timeslotId) return fehler(400, 'Bitte einen Zeitslot auswählen');
+    // FOR UPDATE: verhindert, dass zwei gleichzeitige Buchungen denselben
+    // letzten Platz bekommen. organization_id: ein Slot aus einer fremden
+    // Gemeinde darf nie akzeptiert werden.
+    const { rows: [gefunden] } = await client.query(
+      `SELECT id, event_id, start_time, end_time, max_participants, organization_id
+         FROM event_timeslots
+        WHERE id = $1 AND event_id = $2 AND organization_id = $3 FOR UPDATE`,
+      [timeslotId, eventId, orgId]
+    );
+    if (!gefunden) return fehler(400, 'Ungültiger Zeitslot');
+    slot = gefunden;
+    zahlen = await zaehleBuchungen(client, { timeslotId }, 'konfi');
+    obergrenze = slot.max_participants;
+  } else {
+    if (timeslotId) return fehler(400, 'Dieses Event hat keine Zeitslots');
+    zahlen = await zaehleBuchungen(client, { eventId }, 'konfi');
+    obergrenze = event.max_participants;
+  }
+
+  const ergebnis = determineBookingStatus(event, zahlen.confirmed, zahlen.waitlist, obergrenze);
+  if (typeof ergebnis === 'object') return fehler(ergebnis.status, ergebnis.error);
+
+  // organization_id MUSS gesetzt sein, sonst zaehlen die Abzeichen-Abfragen
+  // die Buchung nicht (sie filtern auf organization_id).
+  const { rows: [neu] } = await client.query(
+    `INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id)
+     VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id`,
+    [eventId, userId, timeslotId, ergebnis, orgId]
+  );
+  await addToEventChat(client, eventId, userId, orgId);
+
+  return {
+    ok: true, bookingId: neu.id, status: ergebnis, event, timeslot: slot,
+    waitlistPosition: zahlen.waitlist + 1
+  };
+}
+
 module.exports = {
   takeBackEventPoints,
   checkExistingBooking,
@@ -267,5 +511,8 @@ module.exports = {
   determineBookingStatus,
   promoteFromWaitlist,
   validateRegistrationWindow,
-  isRegistrationOpenForKonfis
+  isRegistrationOpenForKonfis,
+  zaehleBuchungen,
+  zaehleBestaetigte,
+  bucheTermin
 };
