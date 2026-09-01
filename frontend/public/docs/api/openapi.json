@@ -181,6 +181,14 @@
                   "newPassword": {
                     "type": "string",
                     "description": "Policy: min 8, Gross/Klein/Zahl/Sonderzeichen, keine Leerzeichen"
+                  },
+                  "device_id": {
+                    "type": "string",
+                    "description": "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont"
+                  },
+                  "platform": {
+                    "type": "string",
+                    "description": "Optional, zusammen mit device_id (ios/android/web)"
                   }
                 }
               }
