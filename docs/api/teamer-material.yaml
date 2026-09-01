@@ -3,7 +3,7 @@
 # Dokumentierte Dateien (Stand main, 23.08.2026, am Code verifiziert):
 #   backend/routes/teamer.js   -> Prefix /api/teamer   (21 Routen)
 #   backend/routes/material.js -> Prefix /api/material (13 Routen)
-#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (5 Routen)
+#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (6 Routen)
 #
 # Mount-Prefixe geprüft in backend/createApp.js (Zeilen 442-446):
 #   app.use('/api/teamer',   require('./routes/teamer')(...))
@@ -79,11 +79,13 @@
 #      Header. Die Snapshot-Query selbst filtert ebenfalls nur auf user_id.
 #      Bei Multi-Org-Setups kann ein Admin damit Snapshots sehen, die in einer
 #      anderen Organisation entstanden sind.
-#    - # HINWEIS W3: DELETE /api/wrapped/{jahrgangId} löscht über
-#      `jahrgang_id = $1 AND organization_id = $2`. Teamer-Snapshots haben
-#      kein jahrgang_id (der Teamer-INSERT setzt die Spalte nicht) und werden
-#      deshalb von dieser Route nie gelöscht. Es gibt keinen Endpunkt, der
-#      Teamer-Wrapped wieder entfernt.
+#    - # HINWEIS W3 (BEHOBEN am 01.09.2026): DELETE /api/wrapped/{jahrgangId}
+#      löschte über `jahrgang_id = $1 AND organization_id = $2`.
+#      Teamer-Snapshots haben kein jahrgang_id und wurden deshalb von dieser
+#      Route nie erfasst - einmal erzeugt, blieben sie fuer immer stehen.
+#      Seitdem gibt es DELETE /api/wrapped/teamer (org_admin, loescht die
+#      Teamer-Snapshots der eigenen Organisation). Der Jahrgangs-Weg filtert
+#      zusaetzlich auf wrapped_type='konfi' und laesst Teamer-Zeilen stehen.
 #    - # HINWEIS T1: POST /api/teamer/requests prüft die Idempotenz-client_id
 #      per `WHERE client_id = $1` OHNE user_id/organization_id. Existiert die
 #      UUID bereits, wird der fremde Datensatz mit 200 zurueckgegeben (er
@@ -145,8 +147,9 @@
 #       (ist_global) erweitert.
 #   W1  GET /api/wrapped/me ohne organization_id-Filter (Multi-Org).
 #   W2  GET /api/wrapped/history/{userId} prüft Primaer-Org statt aktiver Org.
-#   W3  DELETE /api/wrapped/{jahrgangId} erreicht Teamer-Snapshots nicht -
-#       Teamer-Wrapped ist nicht loeschbar.
+#   W3  BEHOBEN am 01.09.2026: DELETE /api/wrapped/{jahrgangId} erreichte
+#       Teamer-Snapshots nicht (kein jahrgang_id), Teamer-Wrapped war damit
+#       ueberhaupt nicht loeschbar. Neue Route DELETE /api/wrapped/teamer.
 #   W4  BEHOBEN am 01.09.2026: Der Jahresrueckblick zaehlte Termine nach einer
 #       anderen Regel als das Konfi-Dashboard (fuer eine Konfi der Demo-Gemeinde
 #       1 statt 15) und filterte trotz ausgewiesenem Zeitraum keine einzige Zahl
@@ -1386,11 +1389,18 @@ paths:
       summary: Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben
       description: >
         Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten
-        Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf
-        jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt
-        allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein
-        Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht
-        zurueckgerollt.
+        Konfis des Jahrgangs parallel und setzt jahrgaenge.wrapped_released_at
+        auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in
+        einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt
+        (errors), nicht zurueckgerollt.
+
+        Die Push-Nachricht geht nur bei der ERSTEN Freigabe raus (seit
+        01.09.2026, Befund W-D): War wrapped_released_at bereits gesetzt, gilt
+        der Lauf als Korrektur und benachrichtigt nicht erneut - sonst bekam
+        der ganze Jahrgang ein zweites Mal "Dein Konfi-Jahr ist da!", nur weil
+        jemand eine Zahl richtiggestellt hat. Das Antwortfeld `benachrichtigt`
+        sagt, welcher Fall eingetreten ist. Nach DELETE /api/wrapped/{jahrgangId}
+        (setzt die Marke auf NULL) benachrichtigt eine erneute Freigabe wieder.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "param('jahrgangId').isInt", handleValidationErrors]
@@ -1441,23 +1451,50 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
 
+  /api/wrapped/teamer:
+    delete:
+      tags: ["Wrapped"]
+      summary: Teamer-Jahresrueckblicke der Organisation löschen
+      description: >
+        Loescht alle Teamer-Snapshots der aktiven Organisation. Seit
+        01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id
+        gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal
+        erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte
+        Zahlen erzeugt hatte.
+
+        Eigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId},
+        weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation.
+        Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der
+        Teamer-Rueckblick kennt keine Freigabe-Markierung.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token"
+      responses:
+        "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
   /api/wrapped/{jahrgangId}:
     delete:
       tags: ["Wrapped"]
       summary: Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen
       description: >
-        Loescht alle Snapshots des Jahrgangs und setzt
+        Loescht die KONFI-Snapshots des Jahrgangs und setzt
         jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die
-        Konfis wieder verschwindet.
+        Konfis wieder verschwindet - und eine erneute Freigabe wieder
+        benachrichtigt.
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, "param('jahrgangId').isInt", handleValidationErrors]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id"
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id + wrapped_type='konfi'"
         hinweis: >
-          # BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und
-          von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des
-          Teamer-Rueckblicks gibt es nicht.
+          Loescht ausdruecklich nur Konfi-Snapshots. Teamer-Snapshots haben
+          kein jahrgang_id und werden hier nicht erfasst - dafuer gibt es seit
+          01.09.2026 DELETE /api/wrapped/teamer (Befund W3, behoben).
       parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }

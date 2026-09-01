@@ -43,6 +43,12 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Wer einen bereits freigegebenen Jahresrückblick noch einmal erzeugt — etwa
+  um eine Zahl richtigzustellen —, benachrichtigt den Jahrgang nicht ein
+  zweites Mal. Beim ersten Freigeben kommt die Mitteilung wie bisher.
+- Der Jahresrückblick der Teamer:innen lässt sich wieder entfernen. Bisher
+  blieb er nach dem Erzeugen dauerhaft stehen, auch wenn er fehlerhafte Zahlen
+  enthielt.
 - Beim Wechsel von einem Termin zum nächsten standen kurz noch die
   Teilnehmer:innen und Abmeldungen des vorherigen Termins — ohne Verbindung
   blieben sie sogar dauerhaft stehen. Jetzt zeigt jeder Termin von Anfang an

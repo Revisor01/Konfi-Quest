@@ -3,6 +3,7 @@ const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const PushService = require('../../services/pushService');
 
 describe('Wrapped Routes', () => {
   let app;
@@ -185,8 +186,12 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.generated).toBeDefined();
-      expect(res.body.year).toBeDefined();
+      // Harte Zahl statt toBeDefined: Der Seed legt zwei Teamer:innen in Org 1
+      // an (teamer1, teamer2 gehoert zu Org 2). Ein stiller Fehlschlag der
+      // Generierung liefe sonst als "definiert" durch.
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(0);
+      expect(res.body.year).toBe(new Date().getFullYear());
     });
 
     it('Admin (nicht OrgAdmin) bekommt 403', async () => {
@@ -229,7 +234,10 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.deleted).toBeDefined();
+      // Der Seed hat zwei Konfis in Jahrgang 1 (konfi1, konfi2) -- genau deren
+      // Snapshots muessen weg sein. `toBeDefined()` haette auch bei 0 gegruent,
+      // also gerade dann, wenn das Loeschen gar nichts trifft.
+      expect(res.body.deleted).toBe(2);
     });
 
     it('Konfi bekommt 403', async () => {
@@ -246,6 +254,217 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // Befund W-D (01.09.2026): Schluessel, Push und Loeschweg
+  // ================================================================
+  describe('Snapshot-Schluessel, Push und Loeschweg (W-D)', () => {
+    it('haelt fuer zwei Jahrgaenge im selben Jahr zwei Snapshots', async () => {
+      // Der Schluessel lautete UNIQUE(user_id, wrapped_type, year) -- ohne
+      // Jahrgang. Gehoerte eine Konfi im selben Jahr zu zwei Jahrgaengen,
+      // ueberschrieb der zweite Lauf den ersten still: kein Fehler, der
+      // Zaehler meldete trotzdem Erfolg, und der erste Jahrgang verlor
+      // seinen Rueckblick. Migration 140 nimmt den Jahrgang in den Schluessel.
+      const zweiterJahrgang = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id) VALUES ($1, $2) RETURNING id`,
+        ['Zweiter Jahrgang', ORGS.testGemeinde.id]
+      );
+      const jgZwei = zweiterJahrgang.rows[0].id;
+
+      const jahr = new Date().getFullYear();
+      const daten = JSON.stringify({ version: 1 });
+
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data)
+         VALUES ($1, $2, 'konfi', $3, $4, $5)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id, jahr, daten]
+      );
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data)
+         VALUES ($1, $2, 'konfi', $3, $4, $5)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id, jgZwei, jahr, daten]
+      );
+
+      const { rows } = await db.query(
+        `SELECT jahrgang_id FROM wrapped_snapshots
+         WHERE user_id = $1 AND wrapped_type = 'konfi' AND year = $2
+         ORDER BY jahrgang_id`,
+        [USERS.konfi1.id, jahr]
+      );
+
+      // Vor der Migration stand hier genau eine Zeile.
+      expect(rows).toHaveLength(2);
+      expect(rows.map(r => r.jahrgang_id).sort((a, b) => a - b))
+        .toEqual([JAHRGAENGE.jahrgang1.id, jgZwei].sort((a, b) => a - b));
+    });
+
+    it('haelt Teamer-Snapshots weiterhin eindeutig pro Person und Jahr', async () => {
+      // Der neue Schluessel benutzt COALESCE(jahrgang_id, 0). Ohne das waeren
+      // Teamer-Snapshots (jahrgang_id IS NULL) gar nicht mehr eindeutig --
+      // in einem UNIQUE-Index gelten zwei NULL als verschieden, jeder Lauf
+      // legte eine neue Zeile an und das ON CONFLICT liefe ins Leere.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+         WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    // Der Push wird am echten Versand geprueft, nicht an der Antwortmarke:
+    // Wer den Aufruf aendert und `benachrichtigt` stehen laesst, wuerde sonst
+    // nicht auffallen. (Beim Schreiben dieser Tests genau so passiert -- die
+    // Gegenprobe blieb gruen, bis auch die Marke zurueckgedreht war.)
+    it('benachrichtigt bei der ersten Freigabe', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      // An beide Konfis des Jahrgangs, als Konfi-Wrapped.
+      const [, userIds, typ] = spy.mock.calls[0];
+      expect([...userIds].sort((a, b) => a - b)).toEqual([USERS.konfi1.id, USERS.konfi2.id]);
+      expect(typ).toBe('konfi');
+
+      spy.mockRestore();
+    });
+
+    it('benachrichtigt beim erneuten Generieren NICHT noch einmal', async () => {
+      // Wer nach einer Korrektur neu generiert, schickte dem ganzen Jahrgang
+      // ein zweites Mal "Dein Konfi-Jahr ist da!".
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const zweiter = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(zweiter.status).toBe(200);
+      expect(zweiter.body.benachrichtigt).toBe(false);
+      expect(spy).not.toHaveBeenCalled();
+      // Die Snapshots werden trotzdem erneuert -- nur eben still.
+      expect(zweiter.body.generated).toBe(2);
+      expect(zweiter.body.errors).toBe(0);
+
+      spy.mockRestore();
+    });
+
+    it('benachrichtigt wieder, nachdem die Freigabe zurueckgenommen wurde', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app)
+        .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const erneut = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(erneut.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+    });
+
+    it('loescht Teamer-Snapshots ueber DELETE /teamer', async () => {
+      // Teamer-Snapshots haben keinen Jahrgang. DELETE /:jahrgangId filtert
+      // auf jahrgang_id und traf sie deshalb nie -- einmal erzeugt, blieben
+      // sie fuer immer stehen.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const vorher = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(vorher.rows[0].anzahl).toBe(1);
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.deleted).toBe(1);
+
+      const nachher = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(nachher.rows[0].anzahl).toBe(0);
+    });
+
+    it('laesst beim Loeschen eines Jahrgangs die Teamer-Snapshots stehen', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const res = await request(app)
+        .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      // Nur die beiden Konfi-Zeilen des Jahrgangs, nicht die Teamer-Zeile.
+      expect(res.body.deleted).toBe(2);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    it('loescht keine Teamer-Snapshots einer fremden Organisation', async () => {
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.body.deleted).toBe(1);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+         WHERE wrapped_type = 'teamer' AND organization_id = $1`,
+        [ORGS.andereGemeinde.id]
+      );
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    it('laesst Admin und Konfi nicht an DELETE /teamer', async () => {
+      const alsAdmin = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(alsAdmin.status).toBe(403);
+
+      const alsKonfi = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(alsKonfi.status).toBe(403);
     });
   });
 

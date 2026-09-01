@@ -489,8 +489,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       await konfiClient.query(
         `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
          VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
-         ON CONFLICT (user_id, wrapped_type, year)
-         DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), jahrgang_id = EXCLUDED.jahrgang_id, organization_id = EXCLUDED.organization_id`,
+         ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
+         DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
         [userId, orgId, jahrgangId, year, JSON.stringify(snapshot)]
       );
       return { userId, ok: true };
@@ -572,12 +572,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         // Jahrgang validieren: gehört zur Org des Admins
         const { rows: [jahrgang] } = await client.query(
-          `SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2`,
+          `SELECT id, name, wrapped_released_at FROM jahrgaenge WHERE id = $1 AND organization_id = $2`,
           [jahrgangId, req.user.organization_id]
         );
         if (!jahrgang) {
           return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
         }
+
+        // War der Rueckblick schon freigegeben, ist dieser Lauf eine
+        // KORREKTUR und keine Freigabe. Der Push unten entfaellt dann --
+        // sonst bekommt der ganze Jahrgang ein zweites Mal "Dein
+        // Jahresrueckblick ist da", nur weil jemand eine Zahl richtiggestellt
+        // hat. Zurueckgenommen wird die Marke ueber DELETE
+        // /wrapped/jahrgang/:id (setzt wrapped_released_at auf NULL);
+        // danach benachrichtigt eine erneute Freigabe wieder.
+        const schonFreigegeben = jahrgang.wrapped_released_at !== null;
 
         const currentYear = new Date().getFullYear();
 
@@ -607,12 +616,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         await client.query('COMMIT');
 
-        // Push-Notification an alle Konfis
-        try {
-          const konfiIds = konfis.map(k => k.user_id);
-          await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
-        } catch (pushErr) {
-          console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
+        // Push-Notification an alle Konfis -- nur bei der ERSTEN Freigabe.
+        if (!schonFreigegeben) {
+          try {
+            const konfiIds = konfis.map(k => k.user_id);
+            await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
+          } catch (pushErr) {
+            console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
+          }
         }
 
         res.json({
@@ -620,7 +631,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           generated,
           errors,
           jahrgang: jahrgang.name,
-          year: currentYear
+          year: currentYear,
+          // Additiv (ausgelieferte Apps lesen die Antwort): sagt der Leitung,
+          // ob dieser Lauf benachrichtigt hat oder eine stille Korrektur war.
+          benachrichtigt: !schonFreigegeben
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -661,7 +675,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             await client.query(
               `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
                VALUES ($1, $2, 'teamer', $3, $4, NOW())
-               ON CONFLICT (user_id, wrapped_type, year)
+               ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
                DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
               [teamer.user_id, req.user.organization_id, currentYear, JSON.stringify(snapshot)]
             );
@@ -698,7 +712,42 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   );
 
+  // DELETE /teamer - Teamer-Wrapped-Snapshots der Organisation loeschen
+  //
+  // Der Loeschweg fuer Konfis haengt am Jahrgang (DELETE /:jahrgangId, unten).
+  // Teamer-Snapshots werden ohne Jahrgang gespeichert (jahrgang_id IS NULL)
+  // und waren damit ueber KEINE Route erreichbar: einmal erzeugt, blieben sie
+  // fuer immer stehen -- auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.
+  // Erneutes Generieren ueberschreibt zwar, hilft aber nicht bei Teamer:innen,
+  // die inzwischen keine mehr sind.
+  //
+  // Eigene Route statt Erweiterung von DELETE /:jahrgangId: Dort ist der
+  // Jahrgang die Bezugsgroesse, hier die Organisation. Das mit einem
+  // Sonderwert im selben Pfad zu mischen, machte beide Wege unklar.
+  router.delete('/teamer',
+    rbacVerifier,
+    requireOrgAdmin,
+    async (req, res) => {
+      try {
+        const { rowCount } = await db.query(
+          `DELETE FROM wrapped_snapshots
+           WHERE wrapped_type = 'teamer' AND organization_id = $1`,
+          [req.user.organization_id]
+        );
+        res.json({ message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`, deleted: rowCount });
+      } catch (err) {
+        console.error('Error deleting teamer wrapped snapshots:', err);
+        res.status(500).json({ error: 'Fehler beim L\u00f6schen der Wrapped-Snapshots' });
+      }
+    }
+  );
+
   // DELETE /:jahrgangId - Wrapped-Snapshots für einen Jahrgang löschen
+  //
+  // Loescht ausdruecklich nur die KONFI-Snapshots des Jahrgangs. Der Filter
+  // auf wrapped_type kam am 01.09.2026 dazu: Ohne ihn haette der Zaehler in
+  // der Antwort spaeter auch Teamer-Zeilen mitgezaehlt, sobald diese einen
+  // Jahrgang bekaemen. Teamer-Snapshots loescht DELETE /teamer (oben).
   router.delete('/:jahrgangId',
     rbacVerifier,
     requireOrgAdmin,
@@ -721,7 +770,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         await client.query('BEGIN');
 
         const { rowCount } = await client.query(
-          `DELETE FROM wrapped_snapshots WHERE jahrgang_id = $1 AND organization_id = $2`,
+          `DELETE FROM wrapped_snapshots
+           WHERE jahrgang_id = $1 AND organization_id = $2 AND wrapped_type = 'konfi'`,
           [jahrgangId, req.user.organization_id]
         );
 
@@ -859,7 +909,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           await client.query(
             `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
              VALUES ($1, $2, 'teamer', $3, $4, NOW())
-             ON CONFLICT (user_id, wrapped_type, year)
+             ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
              DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
             [teamer.user_id, orgId, year, JSON.stringify(snapshot)]
           );

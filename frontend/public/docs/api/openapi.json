@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n243 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n244 Operationen."
   },
   "servers": [
     {
@@ -11701,7 +11701,7 @@
           "Wrapped"
         ],
         "summary": "Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben",
-        "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\n",
+        "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel und setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\nDie Push-Nachricht geht nur bei der ERSTEN Freigabe raus (seit 01.09.2026, Befund W-D): War wrapped_released_at bereits gesetzt, gilt der Lauf als Korrektur und benachrichtigt nicht erneut - sonst bekam der ganze Jahrgang ein zweites Mal \"Dein Konfi-Jahr ist da!\", nur weil jemand eine Zahl richtiggestellt hat. Das Antwortfeld `benachrichtigt` sagt, welcher Fall eingetreten ist. Nach DELETE /api/wrapped/{jahrgangId} (setzt die Marke auf NULL) benachrichtigt eine erneute Freigabe wieder.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11779,13 +11779,47 @@
         }
       }
     },
+    "/api/wrapped/teamer": {
+      "delete": {
+        "tags": [
+          "Wrapped"
+        ],
+        "summary": "Teamer-Jahresrueckblicke der Organisation löschen",
+        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation. Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token"
+        },
+        "responses": {
+          "200": {
+            "description": "message, deleted (Anzahl geloeschter Snapshots)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/api/wrapped/{jahrgangId}": {
       "delete": {
         "tags": [
           "Wrapped"
         ],
         "summary": "Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen",
-        "description": "Loescht alle Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet.\n",
+        "description": "Loescht die KONFI-Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet - und eine erneute Freigabe wieder benachrichtigt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -11797,8 +11831,8 @@
             "handleValidationErrors"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id",
-          "hinweis": "# BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des Teamer-Rueckblicks gibt es nicht.\n"
+          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id + wrapped_type='konfi'",
+          "hinweis": "Loescht ausdruecklich nur Konfi-Snapshots. Teamer-Snapshots haben kein jahrgang_id und werden hier nicht erfasst - dafuer gibt es seit 01.09.2026 DELETE /api/wrapped/teamer (Befund W3, behoben).\n"
         },
         "parameters": [
           {
