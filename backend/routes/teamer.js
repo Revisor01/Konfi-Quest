@@ -132,18 +132,27 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     try {
       const orgId = req.user.organization_id;
 
-      // Für org_admin/admin: alle Konfis der Organisation
-      // Für teamer: nur Konfis der zugewiesenen Jahrgänge
+      // Für org_admin (und is_super_admin-Flag): alle Konfis der Organisation.
+      // Für admin und teamer: nur Konfis der zugewiesenen Jahrgänge.
+      // Bis 01.09.2026 galt der Filter nur fuer Teamer:innen — ein Admin ohne
+      // Jahrgang sah hier ALLE Konfis, obwohl die Konfi-Liste (GET
+      // /admin/konfis) ihm laengst nichts mehr zeigte. Simons Regel: "ein
+      // admin ist bis auf bei den teamern immer an seine jahrgaenge gebunden".
+      // Antwortform bleibt ein Array (auch leer) — Vertrag der Apps.
       let jahrgangFilter = '';
       let params = [orgId];
       let placeholderIndex = 2;
 
-      if (req.user.role_name === 'teamer') {
+      if (!req.user.is_super_admin && req.user.role_name !== 'org_admin') {
         const viewableJahrgaenge = req.user.assigned_jahrgaenge
           .filter(j => j.can_view)
           .map(j => j.id);
 
         if (viewableJahrgaenge.length === 0) {
+          // Grund der leeren Liste mitliefern (dasselbe Muster wie GET
+          // /admin/konfis): keine Zuweisung, nicht "keine Konfis". Als
+          // Header, damit die Antwortform ein Array bleibt.
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
           return res.json([]);
         }
 

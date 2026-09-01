@@ -283,7 +283,6 @@ function createApp(db, options = {}) {
 
   const {
     verifyTokenRBAC,
-    filterByJahrgangAccess,
     requireSuperAdmin,
     requireOrgAdmin,
     requireAdmin,
@@ -483,7 +482,7 @@ function createApp(db, options = {}) {
   // Admin Routes
   app.use('/api/admin/activities', activitiesRouter);
   app.use('/api/admin/badges', badgesRouter);
-  app.use('/api/admin/konfis', require('./routes/konfi-management')(db, rbacVerifier, roleHelpers, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
+  app.use('/api/admin/konfis', require('./routes/konfi-management')(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
   app.use('/api/admin/jahrgaenge', require('./routes/jahrgaenge')(db, rbacVerifier, roleHelpers));
   app.use('/api/admin/categories', require('./routes/categories')(db, rbacVerifier, roleHelpers));
   app.use('/api/admin/users', require('./routes/users')(db, rbacVerifier, roleHelpers, ioOrDummy));

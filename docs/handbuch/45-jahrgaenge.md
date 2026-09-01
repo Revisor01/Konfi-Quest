@@ -183,14 +183,20 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Bereich | Ohne passende Zuweisung |
 |---|---|
 | Konfi-Liste | die Liste bleibt **komplett leer** |
+| Jahrgangs-Liste (Admin) | zeigt nur die eigenen Jahrgänge |
 | Konfi anlegen oder verschieben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
-| Punkte vergeben | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
-| Termine | jahrgangsgebundene Termine sind unsichtbar |
+| Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
+| Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
+| Termine | jahrgangsgebundene Termine sind unsichtbar (Termine ohne Jahrgang und Teamer-Termine bleiben) |
+| Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
+| Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
+| Jahresrückblick freigeben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Chat: Teamer:in schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
 | Chat: Konfi schreibt Teamer:in an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ |
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
 | Jahrgangs-Chatraum | keine Aufnahme in den Raum |
-| Challenges | jahrgangsgebundene Challenges sind unsichtbar |
+| Challenges | jahrgangsgebundene Challenges sind unsichtbar (Team-Runden bleiben) |
+| Meldungs-Zähler an den Reitern und am App-Symbol | zählen nur, was die eigenen Listen zeigen |
 | Mitteilungen und Push | nur für die eigenen Jahrgänge |
 
 > **Der Chat sperrt in BEIDE Richtungen.** Eine Teamer:in ohne Zuweisung ist für

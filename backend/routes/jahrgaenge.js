@@ -5,6 +5,7 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const liveUpdate = require('../utils/liveUpdate');
 const emailService = require('../services/emailService');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
@@ -39,14 +40,38 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   ];
 
   // GET all jahrgaenge for the admin's organization
+  //
+  // Jahrgangs-Bindung (01.09.2026): org_admin (und is_super_admin-Flag) sieht
+  // alle Jahrgaenge der Organisation; admin und teamer nur die zugewiesenen
+  // (can_view) — Simons Regel vom 31.08. Vorher lieferte die Liste jedem
+  // Admin und jeder Teamer:in ALLE Jahrgaenge samt Konfi-Zahl und
+  // Punktesummen. Die Liste speist auch die Auswahlfelder (Konfi anlegen,
+  // Termin zuordnen): Ein Admin bekommt damit nur noch Jahrgaenge angeboten,
+  // in denen er ohnehin anlegen darf. Antwortform bleibt ein Array.
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
+      let jahrgangFilter = '';
+      const params = [req.user.organization_id];
+      if (!req.user.is_super_admin && req.user.role_name !== 'org_admin') {
+        const sichtbare = (req.user.assigned_jahrgaenge || [])
+          .filter(j => j.can_view)
+          .map(j => j.id);
+        if (sichtbare.length === 0) {
+          // Grund der leeren Liste mitliefern (dasselbe Muster wie GET
+          // /admin/konfis): keine Zuweisung, nicht "keine Jahrgaenge".
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+          return res.json([]);
+        }
+        params.push(sichtbare);
+        jahrgangFilter = ' AND j.id = ANY($2::int[])';
+      }
+
       const query = `SELECT j.*,
         (SELECT COUNT(*) FROM konfi_profiles kp JOIN users u ON kp.user_id = u.id WHERE kp.jahrgang_id = j.id AND u.organization_id = j.organization_id)::int as konfi_count,
         (SELECT COALESCE(SUM(kp.gottesdienst_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gottesdienst_points > 0)::int as gottesdienst_points_total,
         (SELECT COALESCE(SUM(kp.gemeinde_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gemeinde_points > 0)::int as gemeinde_points_total
-      FROM jahrgaenge j WHERE j.organization_id = $1 ORDER BY j.name DESC`;
-      const { rows: jahrgaenge } = await db.query(query, [req.user.organization_id]);
+      FROM jahrgaenge j WHERE j.organization_id = $1${jahrgangFilter} ORDER BY j.name DESC`;
+      const { rows: jahrgaenge } = await db.query(query, params);
       res.json(jahrgaenge);
     } catch (err) {
  console.error('Database error in GET /api/jahrgaenge:', err);
@@ -78,6 +103,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         target_gemeinde !== undefined ? target_gemeinde : 10
       ];
       const { rows: [newJahrgang] } = await db.query(query, params);
+
+      // Jahrgangs-Bindung (01.09.2026): Ein gebundener 'admin' bekommt den
+      // selbst angelegten Jahrgang sofort zugewiesen (view+edit) — sonst
+      // waere der neue Jahrgang fuer ihn im selben Moment unsichtbar und
+      // unbearbeitbar (Liste, PUT und DELETE pruefen seither die Zuweisung).
+      // Das ist KEIN Aufweichen der Regel: Er weist sich nur zu, was er
+      // selbst erschaffen hat; in fremde Jahrgaenge kommt er weiterhin nicht.
+      // org_admin/super_admin brauchen keine Zuweisung (immer ausgenommen).
+      if (req.user.role_name === 'admin' && !req.user.is_super_admin) {
+        await db.query(
+          `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+           VALUES ($1, $2, true, true) ON CONFLICT DO NOTHING`,
+          [req.user.id, newJahrgang.id]
+        );
+        // Der rbac-Cache haelt req.user samt assigned_jahrgaenge bis zu 30 s —
+        // ohne Invalidierung liefe der naechste Zugriff gegen den alten Stand
+        // und der frische Jahrgang waere scheinbar gesperrt.
+        require('../middleware/rbac').invalidateUserCache(req.user.id);
+      }
 
       // Jahrgangs-Chat sofort anlegen + Mitglieder synchronisieren (Org-Admins,
       // zugewiesene Admins/Teamer, Konfis). Frueher entstand der Chat erst lazy
@@ -118,6 +162,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       if (!currentJahrgang) {
         return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+      }
+
+      // Jahrgangs-Bindung (01.09.2026): Bearbeiten (Name, Punktarten, Ziele)
+      // nur mit edit-Zuweisung auf diesen Jahrgang — Simons Regel vom 31.08.,
+      // org_admin/super_admin ausgenommen. Nach dem Org-404, damit fremde
+      // Organisationen weiterhin 404 sehen, nicht 403.
+      if (!darfJahrgang(req, req.params.id, { edit: true })) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
       }
 
       // Warnungen sammeln bei Deaktivierung mit bestehenden Punkten
@@ -204,6 +256,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     const forceDelete = req.query.force === 'true';
 
     try {
+      // Jahrgangs-Bindung (01.09.2026): Loeschen nur mit edit-Zuweisung —
+      // Simons Regel vom 31.08., org_admin/super_admin ausgenommen. Vorher
+      // Org-Existenz pruefen, damit fremde Organisationen 404 sehen (und die
+      // Konfi-Zaehlung unten nicht mehr ueber fremde Jahrgaenge laeuft).
+      const { rows: [jahrgangDa] } = await db.query(
+        'SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [jahrgangId, req.user.organization_id]
+      );
+      if (!jahrgangDa) {
+        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+      }
+      if (!darfJahrgang(req, jahrgangId, { edit: true })) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+      }
+
       // Blockieren NUR AKTIVE Konfis (Rolle = konfi). Beförderte Ex-Konfis
       // (jetzt teamer/admin) behalten beim Befördern bewusst ihr konfi_profiles
       // (Punkte-Historie), sind aber keine aktiven Konfis mehr und duerfen die
@@ -325,6 +392,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         [jahrgangId, req.user.organization_id]
       );
       if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+
+      // Jahrgangs-Bindung (01.09.2026): Die Matrix listet alle Konfis des
+      // Jahrgangs samt Anwesenheit — sichtbar nur mit view-Zuweisung
+      // (Simons Regel; org_admin/super_admin ausgenommen).
+      if (!darfJahrgang(req, jahrgangId)) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+      }
 
       const { rows: konfis } = await db.query(`
         SELECT u.id AS user_id, u.display_name, u.username
@@ -486,6 +560,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       );
       if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
 
+      // Jahrgangs-Bindung (01.09.2026): Konfisprueche sind Konfi-Daten des
+      // Jahrgangs — nur mit view-Zuweisung (Simons Regel).
+      if (!darfJahrgang(req, jahrgangId)) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+      }
+
       const sprueche = await buildSpruecheList(jahrgangId, req.user.organization_id);
       res.json(sprueche);
     } catch (err) {
@@ -511,6 +591,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         [jahrgangId, req.user.organization_id]
       );
       if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+
+      // Jahrgangs-Bindung (01.09.2026): Der Versand schickt dieselben Daten
+      // wie Matrix bzw. Sprueche-Liste — gleiche Schranke (view) wie dort.
+      if (!darfJahrgang(req, jahrgangId)) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+      }
 
       // E-Mail-Adresse der Admin:in laden (req.user enthält KEINE email -> aus users-Tabelle).
       const { rows: [adminRow] } = await db.query(

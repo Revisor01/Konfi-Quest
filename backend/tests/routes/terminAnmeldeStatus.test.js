@@ -37,6 +37,16 @@ describe('Anmeldestatus und Zeitfenster: eine Rechnung fuer alle Ansichten', () 
     await seed(db);
     konfiToken = generateToken('konfi1');
     adminToken = generateToken('admin1');
+
+    // Jahrgangs-Bindung (01.09.2026): Die Leitungsliste filtert auch fuer
+    // die Rolle 'admin' nach zugewiesenen Jahrgaengen, und die Testtermine
+    // haengen alle an jahrgang1. admin1 hat im Seed bewusst keine Zuweisung
+    // — fuer diese Vergleichstests bekommt er jahrgang1.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
   });
 
   afterAll(async () => {

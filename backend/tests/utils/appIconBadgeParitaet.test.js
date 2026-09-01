@@ -14,7 +14,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS, ACTIVITIES } = require('../helpers/seed');
+const { seed, USERS, ORGS, ACTIVITIES, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const { berechneAppIconSumme } = require('../../utils/appIconBadge');
 
@@ -22,7 +22,21 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
   let app, db;
 
   beforeAll(() => { db = getTestPool(); app = getTestApp(db); });
-  beforeEach(async () => { await truncateAll(db); await seed(db); });
+  beforeEach(async () => {
+    await truncateAll(db);
+    await seed(db);
+    // Jahrgangs-Bindung (01.09.2026): Die Rolle 'admin' zaehlt Antraege,
+    // Termine und Freigaben nur noch fuer zugewiesene Jahrgaenge — auf
+    // beiden Seiten des Vergleichs (badge-counts UND appIconBadge). admin1
+    // hat im Seed bewusst keine Zuweisung; fuer den Paritaets-Test mit
+    // Zaehlern > 0 bekommt er jahrgang1. Der Fall OHNE Zuweisung steht in
+    // jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+  });
   afterAll(async () => { await closePool(); });
 
   // Bildet totalBadgeCount aus BadgeContext.tsx nach.
@@ -42,12 +56,19 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
       .set('Authorization', `Bearer ${generateToken(tokenName)}`);
     expect(res.status).toBe(200);
 
+    // Zuweisungen wie in ladeEmpfaengerFuerBadge aus der DB — seit der
+    // Jahrgangs-Bindung braucht sie auch die Rolle 'admin', nicht nur Teamer.
+    const { rows: zuweisungen } = await db.query(
+      'SELECT jahrgang_id AS id, can_view FROM user_jahrgang_assignments WHERE user_id = $1',
+      [user.id]
+    );
+
     const server = await berechneAppIconSumme(db, {
       id: user.id,
       type: user.type,
       role_name: rolle === 'admin' ? 'admin' : rolle,
       organization_id: ORGS.testGemeinde.id,
-      assigned_jahrgaenge: []
+      assigned_jahrgaenge: zuweisungen
     });
 
     return { server, client: clientSumme(res.body, rolle) };
@@ -90,6 +111,32 @@ describe('App-Icon-Summe deckt sich mit badge-counts (B2b)', () => {
     const { server, client } = await vergleiche(USERS.admin1, 'admin', 'admin1');
     expect(server).toBe(client);
     expect(server).toBeGreaterThan(0);
+  });
+
+  it('Leitung: Antrag im FREMDEN Jahrgang zaehlt auf keiner Seite (Bindung 01.09.2026)', async () => {
+    // Konfi in einem Jahrgang, der admin1 NICHT zugewiesen ist.
+    await db.query(
+      `INSERT INTO jahrgaenge (id, name, organization_id, confirmation_date)
+       VALUES (901, 'Fremd 2027', 1, '2027-05-01')`
+    );
+    await db.query(
+      `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+       VALUES (902, 'konfi_fremd', 'x', 'Konfi Fremd', 1, 1, true)`
+    );
+    await db.query(
+      `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+       VALUES (902, 901, 0, 0, 1)`
+    );
+    await db.query(
+      `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id)
+       VALUES (902, $1, '2026-08-27', 'pending', 1)`,
+      [ACTIVITIES.sonntagsgottesdienst.id]
+    );
+
+    const { server, client } = await vergleiche(USERS.admin1, 'admin', 'admin1');
+    expect(server).toBe(client);
+    // Und zwar beide 0 — der fremde Antrag zaehlt weder am Icon noch am Reiter.
+    expect(server).toBe(0);
   });
 
   it('Teamer: mit Chat', async () => {

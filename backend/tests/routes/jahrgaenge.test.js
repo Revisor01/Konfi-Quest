@@ -30,6 +30,21 @@ describe('Jahrgaenge Routes', () => {
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
     admin2Token = generateToken('admin2');
+
+    // Jahrgangs-Bindung (01.09.2026): Liste, PUT, DELETE, Matrix, Sprueche
+    // und matrix-email verlangen seither eine Zuweisung — admin1 hat im Seed
+    // bewusst keine. Fuer die Bestandstests bekommt er jahrgang1; die Faelle
+    // OHNE Zuweisung stehen in jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin2.id);
   });
 
   afterAll(async () => {
@@ -548,6 +563,13 @@ describe('Jahrgaenge Routes', () => {
          WHERE user_id = $2`,
         [zweiterSpruch.id, USERS.konfi2.id]
       );
+
+      // Warm-up: fuellt den rbac-User-Cache (der beforeEach invalidiert ihn
+      // seit 01.09.2026), damit der Zaehler unten NUR die Abfragen der Route
+      // misst und nicht die Token-Verifikation mitzaehlt.
+      await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const abfragen = vi.spyOn(db, 'query');
       const res = await request(app)

@@ -11,7 +11,7 @@
 // Wer diese Tests rot macht, ändert die Bedeutung einer Zahl. Das ist eine
 // bewusste Entscheidung und darf nicht nebenbei passieren.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, EVENTS } = require('../helpers/seed');
+const { seed, USERS, EVENTS, JAHRGAENGE } = require('../helpers/seed');
 
 describe('event_booking_stats: eine Quelle für alle Zahlen', () => {
   let db;
@@ -170,6 +170,14 @@ describe('event_booking_stats deckt sich mit den Endpunkten', () => {
          ($1,$4,'confirmed',1), ($2,$4,'confirmed',1), ($3,$4,'confirmed',1)`,
       [USERS.konfi1.id, USERS.konfi2.id, USERS.teamer1.id, EVENT]
     );
+    // Jahrgangs-Bindung (01.09.2026): Die Terminliste filtert auch fuer die
+    // Rolle 'admin' nach zugewiesenen Jahrgaengen; der Seed-Termin haengt an
+    // jahrgang1. admin1 bekommt ihn fuer den Vergleich zugewiesen.
+    await db2.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
   });
 
   it('Liste und View melden dieselbe Konfi-Zahl', async () => {

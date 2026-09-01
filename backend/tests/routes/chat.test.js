@@ -213,7 +213,7 @@ describe('Chat Routes', () => {
   });
 
   // Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgänge direkt
-  // anschreiben — dieselbe Grenze, die checkJahrgangAccess im Rest des Systems
+  // anschreiben — dieselbe Grenze, die darfJahrgang im Rest des Systems
   // zieht. Der Chat war die einzige Stelle ohne sie (Nutzerhinweis 23.08.2026).
   // Alle Konfis erreichen nur org_admin und admin.
   describe('Jahrgangsgrenze fuer Teamer:innen im Direktchat', () => {

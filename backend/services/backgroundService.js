@@ -166,9 +166,13 @@ class BackgroundService {
       //
       // Gerechnet wird fuer alle, gesendet nur an Geraete mit Token — die
       // Abzeichen-Pruefung unten braucht ohnehin die volle Liste.
-      // Jahrgaenge nur fuer Teamer:innen, und in EINER Abfrage: Nur bei ihnen
-      // haengt die Zahl der offenen Freigaben an der Zuweisung.
-      const teamerIds = users.filter(u => u.user_type === 'teamer').map(u => u.user_id);
+      // Jahrgaenge fuer Teamer:innen UND die Rolle 'admin' (01.09.2026), in
+      // EINER Abfrage: Bei beiden haengen die Zaehler an der Zuweisung
+      // (Freigaben bei Teamer:innen; Antraege, Termine und Freigaben bei
+      // gebundenen Admins). org_admin zaehlt org-weit und braucht keine.
+      const teamerIds = users
+        .filter(u => u.user_type === 'teamer' || u.role_name === 'admin')
+        .map(u => u.user_id);
       const jahrgaengeProTeamer = new Map();
       if (teamerIds.length > 0) {
         const { rows: zuweisungen } = await db.query(

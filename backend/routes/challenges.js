@@ -1125,21 +1125,29 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           // schon requireTeamer mit 403 ab (rbac.js), der Guard hier ist die
           // Absicherung, falls sich das einmal aendert -- der Hinweis waere
           // fuer ihn in jedem Fall falsch.
-          if (req.user.role_name !== 'super_admin') {
-            res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+          if (req.user.role_name === 'super_admin') {
+            return res.json([]);
           }
-          return res.json([]);
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+          // KEIN early-return mehr (Widerspruch behoben, 01.09.2026): Die
+          // org-weiten 'nur_team'-Challenges haengen an der Rolle, nicht am
+          // Jahrgang -- leadershipMayAccess und der Freigaben-Zaehler
+          // (notifications.js) gestehen sie auch ohne Zuweisung zu, nur diese
+          // Liste gab vorher grundlos [] zurueck. Ohne Zuweisung bleibt
+          // genau der 'nur_team'-Anteil uebrig.
+          jahrgangFilter = `AND c.audience = 'nur_team'`;
+        } else {
+          params.push(viewable);
+          // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> für jeden Teamer
+          // sichtbar, sonst könnte er seine eigene Team-Runde nicht verwalten.
+          jahrgangFilter = `AND (
+            c.audience = 'nur_team'
+            OR EXISTS (
+              SELECT 1 FROM challenge_jahrgang_assignments cja2
+              WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($3::int[])
+            )
+          )`;
         }
-        params.push(viewable);
-        // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> für jeden Teamer
-        // sichtbar, sonst könnte er seine eigene Team-Runde nicht verwalten.
-        jahrgangFilter = `AND (
-          c.audience = 'nur_team'
-          OR EXISTS (
-            SELECT 1 FROM challenge_jahrgang_assignments cja2
-            WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($3::int[])
-          )
-        )`;
       }
 
       const { rows } = await db.query(

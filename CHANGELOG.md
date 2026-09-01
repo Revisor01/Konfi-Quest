@@ -46,6 +46,25 @@ Versionsüberschrift.
   ändern sich dadurch nicht.
 
 ### Geändert
+- Die Jahrgangs-Bindung für Admins greift jetzt überall: Terminliste,
+  Konfi-Auswahl im Chat, Material, Jahrgangs-Liste und die Meldungs-Zähler an
+  den Reitern und die Zahl am App-Symbol zeigen einem Admin nur noch seine
+  zugewiesenen Jahrgänge —
+  genau wie die Konfi-Liste schon zuvor. Teamer:innen, Termine ohne Jahrgang,
+  Team-Runden und Material „für alle" sieht er weiterhin. Der Org-Admin sieht
+  unverändert die ganze Gemeinde.
+- Konfis löschen oder befördern, ihr Passwort zurücksetzen, Punkte und
+  Aktivitäten zurücknehmen sowie Anwesenheits- und Spruchlisten abrufen geht
+  für Admins nur noch in den eigenen Jahrgängen; auch Jahrgänge bearbeiten
+  oder löschen und den Jahresrückblick freigeben ist an die eigene Zuweisung
+  gebunden. Wer einen Jahrgang selbst anlegt, bekommt ihn automatisch
+  zugewiesen.
+- Beim Befördern eines Konfis zur Teamer:in wird der alte Jahrgang nicht mehr
+  automatisch als Zuweisung übernommen. Die frisch beförderte Person hatte
+  dadurch sofort vollen Blick auf ihre bisherige Gruppe samt Bearbeitungsrecht
+  — jetzt vergibt die Leitung die Zuweisung bewusst, sobald die neue
+  Teamer:in aktiv werden soll. Die eigenen Punkte und Abzeichen aus der
+  Konfi-Zeit bleiben unverändert sichtbar.
 - Die Startseite der Konfis ist schneller da: Die Abzeichen laden erst, wenn
   die Startseite steht, statt den Start mit auszubremsen. Sichtbar bleibt
   alles wie bisher.
@@ -61,6 +80,13 @@ Versionsüberschrift.
   mit den Teamer:innen arbeitet.
 
 ### Behoben
+- Team-Runden erscheinen jetzt auch dann in der Challenge-Verwaltung, wenn
+  der Teamer:in oder dem Admin kein Jahrgang zugewiesen ist. Vorher blieb die
+  Liste grundlos leer, obwohl Team-Runden ausdrücklich für das ganze Team
+  gedacht sind und sich auch ohne Jahrgang moderieren lassen.
+- Das Zurücksetzen von Konfi-Passwörtern trifft nur noch Konfis. Vorher
+  konnte über diesen Weg das Passwort jedes Kontos der Gemeinde neu gesetzt
+  werden, auch das von Teamer:innen und Leitung.
 - Die Tageslosung verhält sich für Konfis und Teamer:innen wieder gleich. Bei
   einer Störung der Losungs-Quelle griff nur auf einer der beiden Seiten der
   Rückfall auf den zuletzt geladenen Vers.

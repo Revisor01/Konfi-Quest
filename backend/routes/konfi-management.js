@@ -20,7 +20,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
-module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJahrgangAccess, checkAndAwardBadges) => {
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
 
     // Validierungsregeln
     const validateCreateKonfi = [
@@ -515,6 +515,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
+            // Jahrgangs-Bindung (01.09.2026, Simons Regel vom 31.08.): Loeschen
+            // ist der endgueltigste Eingriff in einen Konfi — wer den Jahrgang
+            // nicht bearbeiten darf, darf seine Konfis erst recht nicht
+            // entfernen. Gleiche Stufe (edit) wie Anlegen und Verschieben
+            // (POST /, PUT /:id). org_admin/super_admin bleiben ausgenommen.
+            const loeschZugriff = await darfKonfi(client, req, userId, { edit: true });
+            if (!loeschZugriff.erlaubt) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
+
             // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth)
             await deleteKonfiCascade(client, userId, req.user.organization_id);
 
@@ -544,6 +555,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const client = await db.getClient();
         try {
             await client.query('BEGIN');
+
+            // Jahrgangs-Bindung (01.09.2026): Ein neues Passwort uebernimmt das
+            // Konto — das darf nur, wer den Jahrgang des Konfis bearbeiten
+            // darf. Vorher genuegte die Organisation; ein Admin konnte damit
+            // das Passwort JEDES Konfis der Gemeinde neu setzen und sich als
+            // dieser anmelden. Zusaetzlich wird die Konfi-Rolle geprueft: Die
+            // Route haengt unter /admin/konfis, aktualisierte aber bisher
+            // jeden users-Datensatz der Org — auch Teamer:innen und Leitung.
+            // Passwoerter der Teamer:innen setzt die Benutzerverwaltung
+            // (routes/users.js) zurueck, nicht dieser Weg.
+            const { rows: [zielKonfi] } = await client.query(
+                `SELECT u.id FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE u.id = $1 AND u.organization_id = $2
+                   AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+                [req.params.id, req.user.organization_id]
+            );
+            if (!zielKonfi) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+            const pwZugriff = await darfKonfi(client, req, req.params.id, { edit: true });
+            if (!pwZugriff.erlaubt) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
 
             const updateUserQuery = `
                 UPDATE users SET password_hash = $1
@@ -762,8 +799,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // GET event points for konfi
     router.get('/:id/event-points', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
-        
+
         try {
+            // Jahrgangs-Bindung (01.09.2026): Bisher genuegte die Organisation —
+            // jede:r Teamer:in und jeder Admin konnte die Event-Punkte JEDES
+            // Konfis der Gemeinde abrufen. Gleiche Stufe (view) wie die
+            // Detailansicht GET /:id, die dieselben Daten zeigt.
+            const zugriff = await darfKonfi(db, req, konfiId);
+            if (!zugriff.gefunden) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+            if (!zugriff.erlaubt) {
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
+
             const eventPointsQuery = `
                 SELECT ep.*, e.name as event_name, e.event_date, u.display_name as admin_name
                 FROM event_points ep
@@ -800,6 +849,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
+            // Jahrgangs-Bindung (01.09.2026): Abzeichen samt Fortschritt sind
+            // Konfi-Daten — sichtbar nur, wer den Jahrgang sehen darf (view),
+            // wie die Detailansicht GET /:id. org_admin bleibt ausgenommen.
+            const zugriff = await darfKonfi(db, req, konfiId);
+            if (!zugriff.erlaubt) {
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
+
             const result = await getKonfiBadgeProgress(db, parseInt(konfiId, 10), req.user.organization_id);
             res.json(result);
         } catch (err) {
@@ -821,6 +878,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             if (jahrgangResult.rows.length === 0) {
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+
+            // Jahrgangs-Bindung (01.09.2026): Die Anwesenheitsstatistik listet
+            // verpasste Pflichttermine samt Entschuldigungsgruenden — Konfi-
+            // Daten, die nur sehen darf, wer den Jahrgang sehen darf (view).
+            const zugriff = await darfKonfi(db, req, konfiId);
+            if (!zugriff.erlaubt) {
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
             const jahrgangId = jahrgangResult.rows[0].jahrgang_id;
@@ -994,6 +1059,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Bonuspunkte nicht gefunden' });
             }
 
+            // Jahrgangs-Bindung (01.09.2026): Loeschen zieht dem Konfi Punkte
+            // ab — gleiche Stufe (view) wie das Vergeben (POST bonus-points),
+            // damit Vergeben und Zuruecknehmen nicht auseinanderlaufen.
+            const zugriff = await darfKonfi(client, req, req.params.id);
+            if (!zugriff.erlaubt) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
+
             await client.query('DELETE FROM bonus_points WHERE id = $1', [req.params.bonusId]);
 
             const updateField = getPointField(bonus.type);
@@ -1044,6 +1118,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const isTeamerActivity = activity.target_role === 'teamer';
 
             if (!isTeamerActivity) {
+                // Jahrgangs-Bindung (01.09.2026): dieselbe Pruefung wie
+                // assign-activity (activities.js) und bonus-points — vergeben
+                // darf nur, wer den Konfi sehen darf (view). Teamer-
+                // Aktivitaeten (target_role='teamer') bleiben ausgenommen:
+                // Teamer:innen sieht ein Admin laut Regel alle.
+                const zugriff = await darfKonfi(db, req, req.params.id);
+                if (!zugriff.gefunden) {
+                    return res.status(404).json({ error: 'Konfi nicht gefunden' });
+                }
+                if (!zugriff.erlaubt) {
+                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+                }
+
                 // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
                 const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
                 if (!ptEnabled) return res.status(400).json({ error: ptError });
@@ -1113,7 +1200,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // lief aber trotzdem und zog dem fremden Konfi Punkte ab
             // (Audit 22.08.2026, gleiche Fehlerklasse wie assign-activity).
             const getActivityQuery = `
-                SELECT ka.*, a.points, a.type
+                SELECT ka.*, a.points, a.type, a.target_role
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 JOIN users u ON ka.user_id = u.id
@@ -1124,6 +1211,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!activity) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
+            }
+
+            // Jahrgangs-Bindung (01.09.2026): Loeschen zieht Punkte ab —
+            // gleiche Stufe (view) wie das Vergeben (POST /:id/activities).
+            // Teamer-Aktivitaeten bleiben ausgenommen (Teamer-Ausnahme).
+            if (activity.target_role !== 'teamer') {
+                const zugriff = await darfKonfi(client, req, req.params.id);
+                if (!zugriff.erlaubt) {
+                    await client.query('ROLLBACK');
+                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+                }
             }
 
             const { rowCount: geloescht } = await client.query(
@@ -1215,6 +1313,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(400).json({ error: 'User ist kein Konfi und kann nicht befördert werden' });
             }
 
+            // Jahrgangs-Bindung (01.09.2026): Befoerdern veraendert den Konfi
+            // grundlegend (Rolle, Buchungen und offene Antraege werden
+            // geloescht) — das darf nur, wer den Jahrgang des Konfis
+            // bearbeiten darf (edit). org_admin/super_admin ausgenommen.
+            const befoerderungsZugriff = await darfKonfi(client, req, konfiId, { edit: true });
+            if (!befoerderungsZugriff.erlaubt) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+            }
+
             // 2. Teamer-Role-ID laden (org-spezifisch oder global)
             let teamerRoleQuery = `SELECT id FROM roles WHERE name = 'teamer' AND organization_id = $1`;
             let { rows: [teamerRole] } = await client.query(teamerRoleQuery, [req.user.organization_id]);
@@ -1247,22 +1355,31 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             );
             await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND status = 'pending'", [konfiId]);
 
-            // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments übertragen
-            const { rows: [konfiProfile] } = await client.query(
-                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [konfiId]
-            );
-            if (konfiProfile && konfiProfile.jahrgang_id) {
-                const { rows: [existing] } = await client.query(
-                    'SELECT id FROM user_jahrgang_assignments WHERE user_id = $1 AND jahrgang_id = $2',
-                    [konfiId, konfiProfile.jahrgang_id]
-                );
-                if (!existing) {
-                    await client.query(
-                        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
-                        [konfiId, konfiProfile.jahrgang_id]
-                    );
-                }
-            }
+            // 6. KEINE automatische Jahrgangs-Zuweisung mehr (01.09.2026).
+            //
+            // Bis dahin wurde der Konfi-Jahrgang hier automatisch nach
+            // user_jahrgang_assignments uebertragen — mit can_view UND
+            // can_edit. Die frisch befoerderte Person sah damit sofort alle
+            // Konfis ihres alten Jahrgangs (die eigene Peergroup) samt
+            // Punkten, Antraegen und Anwesenheiten und durfte dort sogar
+            // bearbeiten — ohne dass irgendjemand das entschieden haette.
+            //
+            // Simons Regel sagt ausdruecklich: Teamer:innen duerfen auch OHNE
+            // Jahrgang existieren, die Zuweisung kommt bewusst spaeter, wenn
+            // sie aktiv sein sollen — und das ist typischerweise der NEUE
+            // Jahrgang, nicht der eigene alte. Deshalb entfaellt der Automatik-
+            // Eintrag ersatzlos; die Zuweisung vergibt die Leitung wie bei
+            // jeder anderen Teamer:in (Benutzerverwaltung).
+            //
+            // Folgen, bewusst in Kauf genommen:
+            //  - Ohne Zuweisung faellt die Person beim naechsten
+            //    syncJahrgangChat aus dem Chat ihres alten Jahrgangs (Schritt 9
+            //    haelt sie nur bis dahin drin). Konsistent: Wer die Jahrgangs-
+            //    Daten nicht sieht, sitzt auch nicht im Jahrgangs-Chat.
+            //  - Die EIGENEN eingefrorenen Konfi-Daten (Punkte, Abzeichen,
+            //    Historie, Wrapped) haengen an konfi_profiles/user_id, nicht
+            //    an der Zuweisung — /teamer/profile und /teamer/konfi-history
+            //    zeigen sie unveraendert.
 
             // 7. konfi_profiles BLEIBT bestehen
             // 8. user_badges BLEIBEN bestehen

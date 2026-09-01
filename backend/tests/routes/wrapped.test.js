@@ -27,6 +27,18 @@ describe('Wrapped Routes', () => {
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
     orgAdmin2Token = generateToken('orgAdmin2');
+
+    // Jahrgangs-Bindung (01.09.2026): Freigeben (POST /generate/:jahrgangId)
+    // und die Historie fremder Konfis verlangen seither eine Zuweisung —
+    // admin1 hat im Seed bewusst keine. Fuer die Bestandstests bekommt er
+    // jahrgang1; der Fall OHNE Zuweisung steht in
+    // jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    // Die Zuweisung haengt sonst im rbac-Cache (30 s TTL) des vorigen Tests.
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
   });
 
   afterAll(async () => {
