@@ -33,7 +33,7 @@ import { Event } from '../../../types/event';
 import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
-import { TrialBanner } from '../../shared';
+import { TrialBanner, istVergangen } from '../../shared';
 import { track } from '../../../services/analytics';
 
 interface PointConfig {
@@ -158,8 +158,10 @@ const KonfiDashboardPage: React.FC = () => {
     () => api.get('/konfi/events').then(r => r.data),
     {
       ttl: CACHE_TTL.EVENTS,
+      // istVergangen(): Ein laufender mehrtaegiger Termin bleibt im Teaser,
+      // bis er wirklich vorbei ist (event_end_time), nicht nur bis zum Start.
       select: (events) => events.filter((event) =>
-        new Date(event.event_date || event.date || '') >= new Date() &&
+        !istVergangen({ event_date: event.event_date || event.date || '', event_end_time: event.event_end_time }) &&
         (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
       )
     }

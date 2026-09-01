@@ -19,6 +19,7 @@ import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTra
 import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { istVergangen } from '../../shared';
 
 interface DashboardData {
   konfi: {
@@ -310,7 +311,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
   const myRegisteredEvents = useMemo(() => upcomingEvents
     .filter(e => e.is_registered || e.booking_status === 'waitlist')
-    .filter(e => new Date(e.event_date || e.date || '') >= new Date())
+    // istVergangen(): laufende mehrtaegige Termine bleiben sichtbar.
+    .filter(e => !istVergangen({ event_date: e.event_date || e.date || '', event_end_time: e.event_end_time }))
     .sort((a, b) => new Date(a.event_date || a.date || '').getTime() - new Date(b.event_date || b.date || '').getTime()),
   [upcomingEvents]);
 

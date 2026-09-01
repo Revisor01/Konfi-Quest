@@ -60,14 +60,17 @@ const EventsView: React.FC<EventsViewProps> = ({
     konfirmationEvents.some(e => e.is_registered),
   [konfirmationEvents]);
 
+  // istVergangen() statt eines Vergleichs auf event_date: Mehrtaegige Termine
+  // sind erst nach event_end_time vorbei. Am 12. einer Freizeit vom 10.-14.
+  // sagte das Abzeichen 'laeuft', die Liste zeigte sie aber nicht mehr an.
   const eventCounts = useMemo(() => ({
     all: events.length,
     meine: events.filter(e => e.is_registered || e.booking_status === 'opted_out').length,
-    alle: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
-    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) >= new Date()).length,
-    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) < new Date()).length,
+    alle: nonKonfirmationEvents.filter(e => !istVergangen(e)).length,
+    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && !istVergangen(e)).length,
+    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && istVergangen(e)).length,
     konfirmation: konfirmationEvents.length,
-    konfirmationUpcoming: konfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
+    konfirmationUpcoming: konfirmationEvents.filter(e => !istVergangen(e)).length,
     konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
   }), [events, konfirmationEvents, nonKonfirmationEvents]);
 
@@ -82,7 +85,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'alle':
         return [
           { label: 'Gesamt', count: eventCounts.alle, icon: calendar },
-          { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date() && !e.is_registered).length, icon: time },
+          { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => !istVergangen(e) && !e.is_registered).length, icon: time },
           { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: checkmarkCircle }
         ];
       case 'konfirmation':
@@ -217,7 +220,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'meine':
         return events.filter(e => e.is_registered || e.booking_status === 'opted_out');
       case 'alle':
-        return nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
+        return nonKonfirmationEvents.filter(e => !istVergangen(e));
       case 'konfirmation':
         return konfirmationEvents;
       default:
