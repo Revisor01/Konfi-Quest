@@ -46,6 +46,12 @@ Versionsüberschrift.
   ändern sich dadurch nicht.
 
 ### Geändert
+- Material bearbeiten und löschen kann nur noch, wer es angelegt hat — dazu
+  gehört auch das Anhängen und Entfernen von Dateien. Die Gemeindeleitung
+  darf weiterhin alles, damit Material verwaltbar bleibt, wenn die
+  erstellende Person die Gemeinde verlässt. Bei fremdem Material öffnet
+  sich die Ansicht schreibgeschützt und nennt, wer es angelegt hat; Anlegen
+  von neuem Material geht unverändert für die ganze Leitung.
 - Die Jahrgangs-Bindung für Admins greift jetzt überall: Terminliste,
   Konfi-Auswahl im Chat, Material, Jahrgangs-Liste und die Meldungs-Zähler an
   den Reitern und die Zahl am App-Symbol zeigen einem Admin nur noch seine

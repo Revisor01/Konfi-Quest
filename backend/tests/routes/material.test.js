@@ -912,4 +912,351 @@ describe('Material Routes', () => {
       expect(bestand.ist_global).toBe(false);
     });
   });
+
+  // ================================================================
+  // BEARBEITEN NUR DURCH DIE ERSTELLENDE PERSON
+  // (Entscheidung Simon, 01.09.2026: "Material bearbeiten kann nur der
+  // Ersteller!")
+  // ================================================================
+  // org_admin und is_super_admin bleiben ausgenommen -- sonst waere das
+  // Material einer ausgeschiedenen Person fuer immer unveraenderlich.
+  // Die Datei-Routen zaehlen als Bearbeitung. created_by IS NULL (Konto
+  // geloescht) heisst: nur noch die Leitung darf ran.
+  describe('Bearbeiten nur durch die erstellende Person', () => {
+    const FEHLER = 'Nur wer das Material angelegt hat oder die Gemeindeleitung kann es ändern';
+    let vomAdmin;      // created_by = admin1
+    let vomOrgAdmin;   // created_by = orgAdmin1
+    let ohneErsteller; // created_by = NULL (Konto geloescht)
+
+    beforeEach(async () => {
+      // Der User-Cache in rbacVerifier (30 s TTL) ueberlebt das Reseed --
+      // der Flag-Test unten wuerde sonst in die Folgetests hineinwirken.
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache();
+
+      const resAdmin = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Material vom Admin' });
+      expect(resAdmin.status).toBe(201);
+      vomAdmin = resAdmin.body.id;
+
+      const resOrgAdmin = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Material der Leitung' });
+      expect(resOrgAdmin.status).toBe(201);
+      vomOrgAdmin = resOrgAdmin.body.id;
+
+      const { rows: [verwaist] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by)
+         VALUES ('Verwaistes Material', $1, NULL) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      ohneErsteller = verwaist.id;
+    });
+
+    const titelAus = async (id) => {
+      const { rows: [zeile] } = await db.query(
+        'SELECT title FROM materials WHERE id = $1', [id]
+      );
+      return zeile ? zeile.title : null;
+    };
+
+    // ---------------- PUT ----------------
+
+    it('PUT: die erstellende Person aendert ihr Material -> 200', async () => {
+      const res = await request(app)
+        .put(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Vom Admin geaendert' });
+
+      expect(res.status).toBe(200);
+      expect(await titelAus(vomAdmin)).toBe('Vom Admin geaendert');
+    });
+
+    it('PUT: ein anderer admin derselben Gemeinde -> 403, Zeile unveraendert', async () => {
+      const res = await request(app)
+        .put(`/api/material/${vomOrgAdmin}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Fremdaenderung', description: 'sollte nie ankommen' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(FEHLER);
+
+      const { rows: [zeile] } = await db.query(
+        'SELECT title, description FROM materials WHERE id = $1', [vomOrgAdmin]
+      );
+      expect(zeile.title).toBe('Material der Leitung');
+      expect(zeile.description).toBeNull();
+    });
+
+    it('PUT: org_admin aendert fremdes Material -> 200', async () => {
+      const res = await request(app)
+        .put(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Von der Leitung geaendert' });
+
+      expect(res.status).toBe(200);
+      expect(await titelAus(vomAdmin)).toBe('Von der Leitung geaendert');
+    });
+
+    it('PUT: das is_super_admin-Flag zaehlt wie org_admin -> 200', async () => {
+      // Die REINE super_admin-Rolle kommt gar nicht durch requireAdmin
+      // (rbac.js: "NUR Organisations-Verwaltung"). Relevant ist das FLAG auf
+      // einer zugelassenen Rolle -- dieselbe Ausnahme wie in
+      // jahrgangsSchranke. Hier: ein 'admin' mit gesetztem Flag darf
+      // fremdes Material aendern.
+      await db.query(
+        'UPDATE users SET is_super_admin = true WHERE id = $1',
+        [USERS.admin1.id]
+      );
+      // rbacVerifier haelt User-Objekte 30 s im Cache -- ohne Invalidierung
+      // kaeme hier noch das Objekt OHNE Flag an.
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .put(`/api/material/${vomOrgAdmin}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Vom Admin mit Super-Flag geaendert' });
+
+      expect(res.status).toBe(200);
+      expect(await titelAus(vomOrgAdmin)).toBe('Vom Admin mit Super-Flag geaendert');
+    });
+
+    it('PUT: fremde Organisation bekommt 404, nicht 403', async () => {
+      // 404 statt 403, damit die Antwort nicht verraet, dass es das
+      // Material ueberhaupt gibt.
+      const res = await request(app)
+        .put(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${orgAdmin2Token}`)
+        .send({ title: 'Fremde Org' });
+
+      expect(res.status).toBe(404);
+      expect(await titelAus(vomAdmin)).toBe('Material vom Admin');
+    });
+
+    it('PUT: created_by NULL -> admin 403, org_admin 200', async () => {
+      const resAdmin = await request(app)
+        .put(`/api/material/${ohneErsteller}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Vom Admin gekapert' });
+      expect(resAdmin.status).toBe(403);
+      expect(resAdmin.body.error).toBe(FEHLER);
+      expect(await titelAus(ohneErsteller)).toBe('Verwaistes Material');
+
+      const resLeitung = await request(app)
+        .put(`/api/material/${ohneErsteller}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Von der Leitung uebernommen' });
+      expect(resLeitung.status).toBe(200);
+      expect(await titelAus(ohneErsteller)).toBe('Von der Leitung uebernommen');
+    });
+
+    // ---------------- DELETE ----------------
+
+    it('DELETE: die erstellende Person loescht ihr Material -> 200', async () => {
+      const res = await request(app)
+        .delete(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(await titelAus(vomAdmin)).toBeNull();
+    });
+
+    it('DELETE: ein anderer admin derselben Gemeinde -> 403, Zeile bleibt', async () => {
+      const res = await request(app)
+        .delete(`/api/material/${vomOrgAdmin}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(FEHLER);
+      expect(await titelAus(vomOrgAdmin)).toBe('Material der Leitung');
+    });
+
+    it('DELETE: org_admin loescht fremdes Material -> 200', async () => {
+      const res = await request(app)
+        .delete(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(await titelAus(vomAdmin)).toBeNull();
+    });
+
+    it('DELETE: fremde Organisation bekommt 404, Zeile bleibt', async () => {
+      const res = await request(app)
+        .delete(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+
+      expect(res.status).toBe(404);
+      expect(await titelAus(vomAdmin)).toBe('Material vom Admin');
+    });
+
+    it('DELETE: created_by NULL -> admin 403, org_admin 200', async () => {
+      const resAdmin = await request(app)
+        .delete(`/api/material/${ohneErsteller}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(resAdmin.status).toBe(403);
+      expect(await titelAus(ohneErsteller)).toBe('Verwaistes Material');
+
+      const resLeitung = await request(app)
+        .delete(`/api/material/${ohneErsteller}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(resLeitung.status).toBe(200);
+      expect(await titelAus(ohneErsteller)).toBeNull();
+    });
+
+    // ---------------- DATEI-ROUTEN ----------------
+    // Eine Datei anzuhaengen oder zu loeschen IST eine Aenderung am
+    // Material -- sonst liesse sich die Regel ueber den Umweg aushebeln.
+
+    const dateiAnzahl = async (materialId) => {
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM material_files WHERE material_id = $1',
+        [materialId]
+      );
+      return rows[0].anzahl;
+    };
+
+    it('POST files: die erstellende Person laedt hoch -> 201', async () => {
+      const res = await request(app)
+        .post(`/api/material/${vomAdmin}/files`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .attach('files', Buffer.from('Notizen zum Gottesdienst'), {
+          filename: 'notizen.txt', contentType: 'text/plain'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].original_name).toBe('notizen.txt');
+      expect(await dateiAnzahl(vomAdmin)).toBe(1);
+    });
+
+    it('POST files: ein anderer admin -> 403, keine Datei entsteht', async () => {
+      const res = await request(app)
+        .post(`/api/material/${vomOrgAdmin}/files`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .attach('files', Buffer.from('eingeschmuggelt'), {
+          filename: 'fremd.txt', contentType: 'text/plain'
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(FEHLER);
+      expect(await dateiAnzahl(vomOrgAdmin)).toBe(0);
+    });
+
+    it('POST files: org_admin laedt zu fremdem Material hoch -> 201', async () => {
+      const res = await request(app)
+        .post(`/api/material/${vomAdmin}/files`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .attach('files', Buffer.from('Ablaufplan der Leitung'), {
+          filename: 'ablauf.txt', contentType: 'text/plain'
+        });
+
+      expect(res.status).toBe(201);
+      expect(await dateiAnzahl(vomAdmin)).toBe(1);
+    });
+
+    it('POST files: fremde Organisation bekommt 404', async () => {
+      const res = await request(app)
+        .post(`/api/material/${vomAdmin}/files`)
+        .set('Authorization', `Bearer ${orgAdmin2Token}`)
+        .attach('files', Buffer.from('fremde org'), {
+          filename: 'fremd.txt', contentType: 'text/plain'
+        });
+
+      expect(res.status).toBe(404);
+      expect(await dateiAnzahl(vomAdmin)).toBe(0);
+    });
+
+    it('DELETE files: ein anderer admin -> 403, Datei bleibt', async () => {
+      const { rows: [datei] } = await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'leitung.pdf', $2, 'application/pdf', 100) RETURNING id`,
+        [vomOrgAdmin, 'c'.repeat(64)]
+      );
+
+      const res = await request(app)
+        .delete(`/api/material/files/${datei.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe(FEHLER);
+      expect(await dateiAnzahl(vomOrgAdmin)).toBe(1);
+    });
+
+    it('DELETE files: die erstellende Person loescht ihre Datei -> 200', async () => {
+      const { rows: [datei] } = await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'eigene.pdf', $2, 'application/pdf', 100) RETURNING id`,
+        [vomAdmin, 'd'.repeat(64)]
+      );
+
+      const res = await request(app)
+        .delete(`/api/material/files/${datei.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(await dateiAnzahl(vomAdmin)).toBe(0);
+    });
+
+    it('DELETE files: org_admin loescht die Datei fremden Materials -> 200', async () => {
+      const { rows: [datei] } = await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'admin.pdf', $2, 'application/pdf', 100) RETURNING id`,
+        [vomAdmin, 'e'.repeat(64)]
+      );
+
+      const res = await request(app)
+        .delete(`/api/material/files/${datei.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(await dateiAnzahl(vomAdmin)).toBe(0);
+    });
+
+    it('DELETE files: fremde Organisation bekommt 404, Datei bleibt', async () => {
+      const { rows: [datei] } = await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'admin.pdf', $2, 'application/pdf', 100) RETURNING id`,
+        [vomAdmin, 'f'.repeat(64)]
+      );
+
+      const res = await request(app)
+        .delete(`/api/material/files/${datei.id}`)
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+
+      expect(res.status).toBe(404);
+      expect(await dateiAnzahl(vomAdmin)).toBe(1);
+    });
+
+    // ---------------- created_by in den Lese-Antworten ----------------
+
+    it('Liste und Detail liefern created_by ADDITIV mit', async () => {
+      // Die Oberflaeche blendet Bearbeiten/Loeschen anhand der ID aus --
+      // created_by_name allein reicht nicht (Anzeigenamen sind nicht
+      // eindeutig). Das Feld kommt DAZU, es verschwindet keines.
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(liste.status).toBe(200);
+      const ausListe = liste.body.find(m => m.id === vomAdmin);
+      expect(ausListe.created_by).toBe(USERS.admin1.id);
+      expect(ausListe.created_by_name).toBe(USERS.admin1.display_name);
+
+      const detail = await request(app)
+        .get(`/api/material/${vomAdmin}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.created_by).toBe(USERS.admin1.id);
+
+      const verwaist = await request(app)
+        .get(`/api/material/${ohneErsteller}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(verwaist.status).toBe(200);
+      expect(verwaist.body.created_by).toBeNull();
+    });
+  });
+
 });

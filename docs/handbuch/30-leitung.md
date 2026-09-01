@@ -176,8 +176,22 @@ gedacht ist:
 grundsätzlich nicht.
 
 Freigeben und die Freigabe zurückziehen kann nur der Org-Admin. Alle anderen
-in der Leitung sehen die Auswahl, können sie aber nicht ändern — Titel,
-Beschreibung und Dateien dürfen sie trotzdem bearbeiten.
+in der Leitung sehen die Auswahl, können sie aber nicht ändern — bei eigenem
+Material dürfen sie Titel, Beschreibung und Dateien trotzdem bearbeiten.
+
+### Wer darf Material bearbeiten?
+
+Bearbeiten und löschen kann nur, **wer das Material angelegt hat** — dazu
+gehört auch das Anhängen und Entfernen von Dateien. Fremdes Material öffnet
+sich schreibgeschützt; die Ansicht nennt, wer es angelegt hat.
+
+Der **Org-Admin** darf immer alles bearbeiten und löschen. So bleibt
+Material verwaltbar, wenn die erstellende Person die Gemeinde verlässt —
+wurde ihr Konto gelöscht, kommt nur noch der Org-Admin an das Material.
+
+Neues Material **anlegen** darf unverändert die ganze Leitung. Wer welches
+Material *sieht*, regelt weiterhin die Sichtbarkeit oben — die
+Bearbeiten-Regel kommt dazu, sie ersetzt nichts.
 
 ### Verwaltung (nur Org-Admin)
 

@@ -11242,7 +11242,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke für teamer und admin (admin seit 01.09.2026)",
-          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich: Material mit ist_global = true sehen alle Teamer:innen der Gemeinde, unabhaengig von den zugeordneten Jahrgaengen. Seit 01.09.2026 gilt dieselbe Schranke auch fuer die Rolle admin (Simons Regel vom 31.08.); nur org_admin (und is_super_admin-Flag) sieht weiterhin alles. Die Schreib-Routen (PUT/DELETE per ID) pruefen weiterhin nur die Organisation. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich: Material mit ist_global = true sehen alle Teamer:innen der Gemeinde, unabhaengig von den zugeordneten Jahrgaengen. Seit 01.09.2026 gilt dieselbe Schranke auch fuer die Rolle admin (Simons Regel vom 31.08.); nur org_admin (und is_super_admin-Flag) sieht weiterhin alles. Die Schreib-Routen pruefen seit dem 01.09.2026 zusaetzlich die erstellende Person (Ersteller-Regel, siehe PUT/DELETE). Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
         },
         "parameters": [
           {
@@ -11284,7 +11284,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])"
+            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11373,7 +11373,7 @@
         },
         "responses": {
           "201": {
-            "description": "id, title, description, link_url, ist_global, created_at"
+            "description": "id, title, description, link_url, ist_global, created_at, created_by"
           },
           "400": {
             "description": "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation"
@@ -11424,7 +11424,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count)"
+            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11465,7 +11465,7 @@
         ],
         "responses": {
           "200": {
-            "description": "id, title, description, link_url, ist_global, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)"
+            "description": "id, title, description, link_url, ist_global, created_at, created_by, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11498,8 +11498,8 @@
             "validateUpdateMaterial"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)",
-          "hinweis": "Feld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -> true) als auch das Entziehen (true -> false) von ist_global ist der Rolle org_admin vorbehalten; ein 'admin' bekommt 403 und das Flag bleibt unveraendert. Schickt ein 'admin' den unveraenderten Wert mit (das Formular sendet ihn immer mit), geht die Anfrage durch -- er darf globales Material inhaltlich weiterhin bearbeiten.\n"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)",
+          "hinweis": "Ersteller-Regel seit 01.09.2026 (Simons Entscheidung: \"Material bearbeiten kann nur der Ersteller!\"): Ein 'admin' darf nur Material aendern, das er selbst angelegt hat (created_by = eigene id); fremdes Material gibt 403 und die Zeile bleibt unveraendert. org_admin und das is_super_admin-Flag sind ausgenommen -- sonst waere das Material einer ausgeschiedenen Person fuer immer unveraenderlich. created_by IS NULL (Konto der erstellenden Person geloescht) heisst: nur noch die Leitung darf ran. Die Pruefung greift erst NACH der Org-Pruefung, damit eine fremde Organisation weiterhin 404 sieht und nicht am 403 ablesen kann, dass es das Material gibt. Vorher (bis 01.09.2026) gab die Route hier 200 -- jeder 'admin' der Organisation konnte jedes Material aendern.\nFeld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -> true) als auch das Entziehen (true -> false) von ist_global ist der Rolle org_admin vorbehalten; ein 'admin' bekommt 403 und das Flag bleibt unveraendert. Schickt ein 'admin' den unveraenderten Wert mit (das Formular sendet ihn immer mit), geht die Anfrage durch -- er darf selbst angelegtes globales Material inhaltlich weiterhin bearbeiten.\n"
         },
         "parameters": [
           {
@@ -11567,7 +11567,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Rolle nicht berechtigt, oder Änderung von ist_global ohne die Rolle org_admin"
+            "description": "Rolle nicht berechtigt, nicht die erstellende Person (Ersteller-Regel seit 01.09.2026), oder Änderung von ist_global ohne die Rolle org_admin"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -11593,7 +11593,8 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird über denselben Org-JOIN ermittelt"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); die Dateiliste wird über denselben Org-JOIN ermittelt",
+          "hinweis": "Ersteller-Regel seit 01.09.2026: Loeschen ist die schaerfste Form des Bearbeitens und folgt derselben Regel wie PUT -- ein 'admin' loescht nur eigenes Material, org_admin und is_super_admin-Flag alles, created_by IS NULL nur noch die Leitung. Fremde Organisationen sehen weiterhin 404. Vorher gab die Route hier 200.\n"
         },
         "parameters": [
           {
@@ -11608,7 +11609,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -11637,7 +11638,8 @@
             "multer materialUpload.array('files', 10)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst)"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen)",
+          "hinweis": "Ersteller-Regel seit 01.09.2026: Eine Datei anzuhaengen IST eine Aenderung am Material -- sonst liesse sich die Regel ueber den Datei-Umweg aushebeln. Ein 'admin' laedt nur zu eigenem Material hoch; bei fremdem Material kommt 403 und es entsteht keine Datei. created_by IS NULL: nur noch die Leitung. Vorher gab die Route hier 201.\n"
         },
         "parameters": [
           {
@@ -11675,7 +11677,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle nicht berechtigt, oder nicht die erstellende Person (Ersteller-Regel seit 01.09.2026)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -11763,8 +11765,8 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst)",
-          "hinweis": "Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen bedient: der GET erwartet den 64-stelligen stored_name, der DELETE die numerische material_files.id. Im Code sind das zwei getrennte Routen (/files/:filename und /files/:fileId); in OpenAPI müssen sie sich einen Pfad teilen, daher der neutrale Name fileRef.\n"
+          "objekt-pruefung": "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst); danach Ersteller-Regel auf materials.created_by: eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen)",
+          "hinweis": "Ersteller-Regel seit 01.09.2026: Eine Datei zu loeschen IST eine Aenderung am Material der erstellenden Person -- ein 'admin' loescht nur Dateien seines eigenen Materials, sonst 403 und die Datei bleibt. created_by IS NULL: nur noch die Leitung. Vorher gab die Route hier 200.\nAchtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen bedient: der GET erwartet den 64-stelligen stored_name, der DELETE die numerische material_files.id. Im Code sind das zwei getrennte Routen (/files/:filename und /files/:fileId); in OpenAPI müssen sie sich einen Pfad teilen, daher der neutrale Name fileRef.\n"
         },
         "parameters": [
           {
@@ -11786,7 +11788,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle nicht berechtigt, oder nicht die erstellende Person des Materials (Ersteller-Regel seit 01.09.2026)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"

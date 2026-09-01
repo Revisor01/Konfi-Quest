@@ -23,8 +23,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // seine jahrgaenge gebunden") bindet seither auch hier die Rolle 'admin':
   // Er sieht sein jahrgangsgebundenes Material, alles Globale und alles ohne
   // Jahrgang — verwaltbar bleibt es, nur eben im eigenen Zustaendigkeitsraum.
-  // Die SCHREIB-Routen (PUT/DELETE per ID) pruefen weiterhin nur die
-  // Organisation; die Liste bietet Unsichtbares aber nicht mehr an.
+  // Die SCHREIB-Routen pruefen seit dem 01.09.2026 zusaetzlich die
+  // erstellende Person (darfMaterialAendern weiter unten).
   //
   // GLOBALES MATERIAL (Entscheidung Simon, 31.08.2026)
   //
@@ -113,6 +113,45 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
   const darfGlobalSetzen = (user) => user.role_name === 'org_admin';
 
+  // BEARBEITEN NUR DURCH DIE ERSTELLENDE PERSON (Entscheidung Simon, 01.09.2026)
+  //
+  //   "Admins sehen Material ihrer Jahrgaenge und globales Material.
+  //    Material bearbeiten kann nur der Ersteller!"
+  //
+  // Die vier Schreibrouten (PUT /:id, DELETE /:id, POST /:id/files,
+  // DELETE /files/:fileId) prueften bis dahin nur die Organisation -- jeder
+  // 'admin' konnte damit fremdes Material aendern und loeschen. Jetzt gilt:
+  //
+  //   org_admin (und is_super_admin-Flag) -> weiterhin alles. Ohne diese
+  //   Ausnahme waere das Material einer ausgeschiedenen Person fuer immer
+  //   unveraenderlich -- genau Simons Sorge vom 24.08. ("sonst nicht
+  //   verwaltbar").
+  //   admin -> nur eigenes Material (created_by = eigene id). Anlegen darf
+  //   er weiterhin (requireAdmin bleibt auf allen Schreibrouten).
+  //
+  // Die DATEI-Routen zaehlen mit: Eine Datei anzuhaengen oder zu loeschen
+  // veraendert das Material genauso wie ein neuer Titel -- sonst liesse
+  // sich die Regel ueber den Datei-Umweg aushebeln.
+  //
+  // created_by IS NULL: users.js setzt die Spalte beim Loeschen eines
+  // Kontos auf NULL. Dann gibt es keinen Ersteller mehr, also darf nur noch
+  // die Leitung ran. Wuerde NULL "jeder admin darf" bedeuten, machte das
+  // Loeschen eines Kontos dessen Material schlagartig fuer alle Admins
+  // bearbeitbar. In Produktion war materials am 01.09.2026 leer (0 Zeilen,
+  // gemessen) -- die neue Regel sperrt also niemanden von Bestand aus.
+  //
+  // Ausgelieferte Apps: Die Antwortform aendert sich nicht, nur duerfen
+  // manche Anfragen jetzt 403 statt 200. Die App zeigt dafuer die
+  // Fehlermeldung an (fehlerText im Formular) -- kein Absturz, nur weniger
+  // duerfen. created_by kommt ADDITIV in die Lese-Antworten, damit die
+  // Oberflaeche die Aktionen von vornherein ausblenden kann.
+  const darfMaterialAendern = (user, createdBy) =>
+    user.is_super_admin === true
+    || user.role_name === 'org_admin'
+    || (createdBy !== null && createdBy === user.id);
+
+  const ERSTELLER_FEHLER = 'Nur wer das Material angelegt hat oder die Gemeindeleitung kann es ändern';
+
   // Validierungsregeln
   const validateCreateMaterial = [
     body('title').notEmpty().trim().isLength({ min: 1, max: 255 }).withMessage('Titel erforderlich (1-255 Zeichen)'),
@@ -139,7 +178,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       let query = `
         SELECT m.id, m.title, m.description, m.link_url, m.ist_global,
-               m.created_at, u.display_name as created_by_name,
+               m.created_at, m.created_by, u.display_name as created_by_name,
                (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count,
                (SELECT COUNT(*) FROM material_events me WHERE me.material_id = m.id) as event_count,
                (SELECT COUNT(*) FROM material_jahrgaenge mj WHERE mj.material_id = m.id) as jahrgang_count
@@ -239,7 +278,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       const { rows: materials } = await db.query(
         `SELECT m.id, m.title, m.description, m.link_url, m.ist_global, m.created_at,
-                u.display_name as created_by_name,
+                m.created_by, u.display_name as created_by_name,
                 (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
@@ -269,7 +308,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       const { rows: [material] } = await db.query(
         `SELECT m.id, m.title, m.description, m.link_url, m.ist_global,
-                m.created_at, u.display_name as created_by_name
+                m.created_at, m.created_by, u.display_name as created_by_name
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
          WHERE m.id = $1 AND m.organization_id = $2
@@ -353,7 +392,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const { rows: [material] } = await db.query(
         `INSERT INTO materials (title, description, link_url, ist_global, organization_id, created_by)
          VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, title, description, link_url, ist_global, created_at`,
+         RETURNING id, title, description, link_url, ist_global, created_at, created_by`,
         [title.trim(), description || null, link.wert, global === true, req.user.organization_id, req.user.id]
       );
 
@@ -403,12 +442,19 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [existing] } = await db.query(
-        'SELECT id, ist_global FROM materials WHERE id = $1 AND organization_id = $2',
+        'SELECT id, ist_global, created_by FROM materials WHERE id = $1 AND organization_id = $2',
         [materialId, orgId]
       );
 
       if (!existing) {
         return res.status(404).json({ error: 'Material nicht gefunden' });
+      }
+
+      // Ersteller-Regel (01.09.2026): erst NACH der Org-Pruefung, damit eine
+      // fremde Organisation weiterhin 404 sieht und nicht am 403 ablesen
+      // kann, dass es das Material gibt.
+      if (!darfMaterialAendern(req.user, existing.created_by)) {
+        return res.status(403).json({ error: ERSTELLER_FEHLER });
       }
 
       // Setzen UND Entziehen sind der Leitung vorbehalten. Schickt ein
@@ -509,6 +555,22 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
+      // Ersteller-Regel (01.09.2026): Loeschen ist die schaerfste Form des
+      // Bearbeitens. Erst die Org-Pruefung (404 fuer fremde Organisationen),
+      // dann die Ersteller-Pruefung (403).
+      const { rows: [existing] } = await db.query(
+        'SELECT id, created_by FROM materials WHERE id = $1 AND organization_id = $2',
+        [materialId, orgId]
+      );
+
+      if (!existing) {
+        return res.status(404).json({ error: 'Material nicht gefunden' });
+      }
+
+      if (!darfMaterialAendern(req.user, existing.created_by)) {
+        return res.status(403).json({ error: ERSTELLER_FEHLER });
+      }
+
       // Dateien vom Dateisystem holen bevor CASCADE löscht
       const { rows: files } = await db.query(
         `SELECT mf.stored_name FROM material_files mf
@@ -561,12 +623,19 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [material] } = await db.query(
-        'SELECT id FROM materials WHERE id = $1 AND organization_id = $2',
+        'SELECT id, created_by FROM materials WHERE id = $1 AND organization_id = $2',
         [materialId, orgId]
       );
 
       if (!material) {
         return res.status(404).json({ error: 'Material nicht gefunden' });
+      }
+
+      // Ersteller-Regel (01.09.2026): Eine Datei anzuhaengen IST eine
+      // Aenderung am Material -- sonst liesse sich die Regel ueber den
+      // Datei-Umweg aushebeln.
+      if (!darfMaterialAendern(req.user, material.created_by)) {
+        return res.status(403).json({ error: ERSTELLER_FEHLER });
       }
 
       if (!req.files || req.files.length === 0) {
@@ -690,7 +759,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Datei-Info holen und Organisation prüfen
       const { rows: [fileRecord] } = await db.query(
-        `SELECT mf.id, mf.stored_name, mf.material_id
+        `SELECT mf.id, mf.stored_name, mf.material_id, m.created_by
          FROM material_files mf
          JOIN materials m ON mf.material_id = m.id
          WHERE mf.id = $1 AND m.organization_id = $2`,
@@ -699,6 +768,12 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       if (!fileRecord) {
         return res.status(404).json({ error: 'Datei nicht gefunden' });
+      }
+
+      // Ersteller-Regel (01.09.2026): Eine Datei zu loeschen IST eine
+      // Aenderung am Material des Erstellers.
+      if (!darfMaterialAendern(req.user, fileRecord.created_by)) {
+        return res.status(403).json({ error: ERSTELLER_FEHLER });
       }
 
       // DB-Eintrag löschen

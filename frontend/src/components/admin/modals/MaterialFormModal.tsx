@@ -90,17 +90,24 @@ interface Material {
   files?: MaterialFile[];
   link_url?: string | null;
   ist_global?: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
   created_at: string;
 }
 
 interface MaterialFormModalProps {
   material?: Material | null;
+  // Schreibschutz (Entscheidung Simon, 01.09.2026): Bearbeiten kann nur die
+  // erstellende Person oder die Leitung. Wer es nicht darf, sieht das
+  // Material hier trotzdem -- ohne Speichern-Knopf, ohne Datei-Loeschen,
+  // ohne Upload. Die verbindliche Pruefung macht der Server (403).
+  nurLesen?: boolean;
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
 }
 
-const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose, onSuccess }) => {
+const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLesen = false, onClose, onSuccess }) => {
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -273,6 +280,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   };
 
   const handleSave = async () => {
+    // Doppelter Boden zum ausgeblendeten Speichern-Knopf -- der Server
+    // wuerde ohnehin mit 403 antworten (Ersteller-Regel, 01.09.2026).
+    if (nurLesen) return;
     if (!title.trim()) {
       setError('Bitte einen Titel eingeben');
       return;
@@ -354,16 +364,36 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
-          <IonTitle>{material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting} aria-label="Material speichern">
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
-            </IonButton>
-          </IonButtons>
+          <IonTitle>{nurLesen ? 'Material ansehen' : material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
+          {/* Ohne Bearbeitungsrecht gibt es keinen Speichern-Knopf -- ein
+              Knopf, der mit 403 endet, waere schlechter als keiner. */}
+          {!nurLesen && (
+            <IonButtons slot="end">
+              <IonButton onClick={handleSave} disabled={isSubmitting} aria-label="Material speichern">
+                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="app-gradient-background">
+        {/* Hinweis im Lese-Modus: WER bearbeiten darf, statt es nur stumm zu
+            sperren. created_by_name kann fehlen (Konto geloescht). */}
+        {nurLesen && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonCard className="app-card">
+              <IonCardContent>
+                <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>
+                  {material?.created_by_name
+                    ? `Angelegt von ${material.created_by_name}. Bearbeiten und löschen kann nur diese Person oder die Gemeindeleitung.`
+                    : 'Das Konto der erstellenden Person wurde gelöscht. Bearbeiten und löschen kann nur noch die Gemeindeleitung.'}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Titel & Beschreibung */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
@@ -381,6 +411,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                   value={title}
                   onIonInput={(e) => setTitle(e.detail.value || '')}
                   placeholder="Material-Titel"
+                  readonly={nurLesen}
                   required
                 />
               </IonItem>
@@ -393,6 +424,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                   placeholder="Optionale Beschreibung..."
                   autoGrow={true}
                   rows={3}
+                  readonly={nurLesen}
                 />
               </IonItem>
             </IonCardContent>
@@ -415,10 +447,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
               <IonSegment
                 value={istGlobal ? 'global' : 'jahrgang'}
                 onIonChange={(e) => {
-                  if (!darfGlobalSetzen) return;
+                  if (!darfGlobalSetzen || nurLesen) return;
                   setIstGlobal(e.detail.value === 'global');
                 }}
-                disabled={!darfGlobalSetzen}
+                disabled={!darfGlobalSetzen || nurLesen}
               >
                 <IonSegmentButton value="jahrgang">
                   <IonIcon icon={peopleOutline} />
@@ -434,7 +466,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                   ? 'Alle Teamer:innen der Gemeinde sehen das Material, unabhängig vom Jahrgang. Konfis sehen Material grundsätzlich nicht.'
                   : 'Ohne zugeordneten Jahrgang sehen alle Teamer:innen das Material. Mit Jahrgang nur dessen Teamer:innen. Konfis sehen Material grundsätzlich nicht.'}
               </p>
-              {!darfGlobalSetzen && (
+              {/* Der Zusatz "kannst du trotzdem aendern" stimmt im
+                  Lese-Modus nicht -- dort erklaert schon der Hinweis oben,
+                  wer bearbeiten darf. */}
+              {!darfGlobalSetzen && !nurLesen && (
                 <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '6px 0 0 0' }}>
                   Nur die Gemeindeleitung kann Material für alle Teamer:innen freigeben oder die Freigabe zurückziehen. Titel, Beschreibung und Dateien kannst du trotzdem ändern.
                 </p>
@@ -478,6 +513,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                               key={ev.id}
                               className="app-list-item"
                               onClick={() => {
+                                if (nurLesen) return;
                                 if (isSelected) {
                                   setEventIds(eventIds.filter(id => id !== ev.id));
                                 } else {
@@ -534,6 +570,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                             key={jg.id}
                             className="app-list-item"
                             onClick={() => {
+                              if (nurLesen) return;
                               if (isSelected) {
                                 setJahrgangIds(jahrgangIds.filter(id => id !== jg.id));
                               } else {
@@ -577,7 +614,11 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             <IonCardContent>
               <IonSegment
                 value={art}
-                onIonChange={(e) => setArt((e.detail.value as 'datei' | 'link') || 'datei')}
+                onIonChange={(e) => {
+                  if (nurLesen) return;
+                  setArt((e.detail.value as 'datei' | 'link') || 'datei');
+                }}
+                disabled={nurLesen}
               >
                 <IonSegmentButton value="datei">
                   <IonIcon icon={attachOutline} />
@@ -618,6 +659,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                     value={linkUrl}
                     onIonInput={(e) => setLinkUrl(e.detail.value || '')}
                     placeholder="https://konfi-quest.de/gottesbilder"
+                    readonly={nurLesen}
                   />
                 </IonItem>
               </IonCardContent>
@@ -664,17 +706,22 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                           </div>
                         </div>
                       </IonItem>
-                      <IonItemOptions className="app-swipe-actions" side="end">
-                        <IonItemOption
-                          className="app-swipe-action"
-                          onClick={() => { closeOpenSlidingItems(); handleDeleteExistingFile(file); }}
-                          aria-label="Datei löschen"
-                        >
-                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
-                          </div>
-                        </IonItemOption>
-                      </IonItemOptions>
+                      {/* Datei-Loeschen zaehlt als Bearbeitung des Materials
+                          (Entscheidung Simon, 01.09.2026) -- im Lese-Modus
+                          gibt es den Wisch-Knopf nicht. Ansehen bleibt. */}
+                      {!nurLesen && (
+                        <IonItemOptions className="app-swipe-actions" side="end">
+                          <IonItemOption
+                            className="app-swipe-action"
+                            onClick={() => { closeOpenSlidingItems(); handleDeleteExistingFile(file); }}
+                            aria-label="Datei löschen"
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                              <IonIcon icon={trash} />
+                            </div>
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
                     </IonItemSliding>
                   ))}
                 </div>
@@ -683,8 +730,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonList>
         )}
 
-        {/* Neue Dateien */}
-        {art === 'datei' && (
+        {/* Neue Dateien. Dateien anhaengen zaehlt als Bearbeitung des
+            Materials (Entscheidung Simon, 01.09.2026) -- im Lese-Modus fehlt
+            der ganze Abschnitt. */}
+        {art === 'datei' && !nurLesen && (
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">
