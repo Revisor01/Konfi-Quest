@@ -203,8 +203,8 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick freigeben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
-| Chat: Teamer:in schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
-| Chat: Konfi schreibt Teamer:in an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ |
+| Chat: Teamer:in oder Admin schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
+| Chat: Konfi schreibt Teamer:in an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ (Admins darf ein Konfi dagegen immer anschreiben) |
 | Chat: Kontaktliste | die Teamer:in taucht bei den Konfis gar nicht erst auf |
 | Jahrgangs-Chatraum | keine Aufnahme in den Raum |
 | Challenges | jahrgangsgebundene Challenges sind unsichtbar (Team-Runden bleiben) |

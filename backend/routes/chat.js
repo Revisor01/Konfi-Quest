@@ -11,6 +11,7 @@ const PushService = require('../services/pushService');
 const { chatPushText } = require('../utils/pushText');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
+const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 
@@ -225,35 +226,52 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Create or get direct chat room
   // Darf der Anfragende diesen Konfi anschreiben?
   //
-  // Leitung (org_admin) und Admins erreichen alle Konfis der Organisation.
-  // Teamer:innen NUR die Konfis ihrer zugewiesenen Jahrgänge — dieselbe
-  // Regel, die darfJahrgang (utils/jahrgangsZugriff.js) im Rest des Systems
-  // durchsetzt. Der Chat war die einzige Stelle ohne diese Grenze: eine
-  // Teamer:in konnte jeden Konfi der Organisation direkt anschreiben, auch
-  // ohne einen einzigen zugewiesenen Jahrgang (Nutzerhinweis 23.08.2026).
+  // Leitung (org_admin) und Super-Admins (Rolle oder Flag) erreichen alle
+  // Konfis der Organisation — sie verantworten die Gemeinde als Ganzes.
+  // Admins und Teamer:innen erreichen NUR die Konfis ihrer zugewiesenen
+  // Jahrgaenge — dieselbe Regel, die darfJahrgang/darfKonfi
+  // (utils/jahrgangsZugriff.js) seit dem 01.09.2026 im ganzen System
+  // durchsetzen ("ein admin ist bis auf bei den teamern immer an seine
+  // jahrgaenge gebunden", Simon 31.08.2026). Fuer Teamer:innen gilt die
+  // Grenze hier seit dem 23.08.2026; der Direktchat war danach die letzte
+  // Stelle, an der ein Admin noch jeden Konfi der Gemeinde erreichte
+  // (nachgezogen 01.09.2026). Die Kontaktliste des Admin-Modals laedt ueber
+  // GET /admin/konfis und ist bereits jahrgangsgefiltert — Liste und
+  // Anschreiben bieten damit dasselbe an.
   //
-  // Gibt null zurück, wenn erlaubt, sonst eine Fehlermeldung.
+  // Konfi ohne Jahrgang: nur Leitung/Super-Admin erreichen ihn (Entscheidung
+  // 01.09.2026). Ein gebundener Admin hat keinen Jahrgang, ueber den ihm
+  // dieser Konfi gehoeren koennte — und die fehlende Zuordnung kann ohnehin
+  // nur die Leitung beheben, die erreichbar bleibt.
+  //
+  // Bestehende Direktchats sperrt die Regel NICHT nachtraeglich:
+  // darfRaumOeffnen prueft Teilnehmerschaft, nicht Jahrgaenge. Ein bereits
+  // gefuehrtes Gespraech bleibt fuer beide Seiten lesbar und beschreibbar;
+  // gebunden ist nur das ANLEGEN neuer Raeume. (Gemessen an Produktion
+  // 01.09.2026: 0 bestehende Admin-Konfi-Direktchats ohne passende
+  // Zuweisung — die Regel trifft kein laufendes Gespraech.)
+  //
+  // Gibt null zurueck, wenn erlaubt, sonst eine Fehlermeldung.
   const konfiAnschreibenVerboten = async (anfragender, zielUserId) => {
-    if (anfragender.role_name !== 'teamer') return null;
+    const pseudoReq = { user: anfragender };
 
-    const { rows: [ziel] } = await db.query(
-      'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
-      [zielUserId]
-    );
+    // Vollzugriff zuerst, ueber dieselbe Quelle: darfJahrgang laesst
+    // org_admin und super_admin (Rolle oder Flag) vor jeder Jahrgangs-
+    // pruefung durch. So bleibt fuer die Leitung auch ein Konfi-Konto ohne
+    // konfi_profiles-Datensatz erreichbar (Reparaturfall).
+    if (darfJahrgang(pseudoReq, null)) return null;
 
-    // Konfi ohne Jahrgang: nur Leitung und Admins erreichen ihn.
-    if (!ziel || !ziel.jahrgang_id) {
+    // darfKonfi ist die EINE Semantik-Quelle fuer die gebundenen Rollen
+    // (admin, teamer): Zuweisung mit can_view noetig, Konfi ohne Jahrgang
+    // ergibt erlaubt=false. Keine vierte Kopie der Regel hier.
+    const { gefunden, erlaubt, jahrgangId } = await darfKonfi(db, pseudoReq, zielUserId);
+    if (erlaubt) return null;
+
+    // Konfi ohne Jahrgang (oder ohne Profil-Datensatz).
+    if (!gefunden || !jahrgangId) {
       return 'Diese Konfirmand:in ist keinem deiner Jahrgänge zugeordnet';
     }
-
-    const zugewiesen = (anfragender.assigned_jahrgaenge || [])
-      .filter(j => j.can_view)
-      .map(j => j.id);
-
-    if (!zugewiesen.includes(ziel.jahrgang_id)) {
-      return 'Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben';
-    }
-    return null;
+    return 'Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben';
   };
 
   // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen)?
@@ -291,11 +309,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
-  // Symmetrisch zu konfiAnschreibenVerboten: Teamer:innen und Konfis erreichen
-  // einander nur über einen gemeinsamen Jahrgang. Leitung (org_admin), Admins
-  // und Super-Admins sind für jeden Konfi der Gemeinde erreichbar — sie
-  // verantworten die Gemeinde als Ganzes und haben im uebrigen System ohnehin
-  // Zugriff auf alle Jahrgänge (rbac.js:331).
+  // Teamer:innen und Konfis erreichen einander nur ueber einen gemeinsamen
+  // Jahrgang (symmetrisch zu konfiAnschreibenVerboten). Leitung (org_admin),
+  // Admins und Super-Admins bleiben fuer JEDEN Konfi der Gemeinde erreichbar.
+  //
+  // Fuer Admins ist das seit dem 01.09.2026 BEWUSST unsymmetrisch: Der Admin
+  // selbst ist an seine Jahrgaenge gebunden (er erreicht fremde Konfis nicht
+  // mehr, s. konfiAnschreibenVerboten), ein Konfi darf aber weiterhin jeden
+  // Admin anschreiben. Gruende:
+  //   1. Die Jahrgangsbindung schuetzt Konfis vor breitem Zugriff des Teams,
+  //      nicht das Team vor Fragen der Konfis — wer nach oben schreibt,
+  //      sieht dabei keine fremden Jahrgangsdaten.
+  //   2. Ein Jahrgang ohne zugewiesenen Admin ist moeglich (die Zuweisung
+  //      ist optional). Symmetrisch gebunden erreichte so ein Konfi ausser
+  //      der Leitung niemanden mehr — schlechter als vorher.
+  //   3. Antworten kann der Admin in einem vom Konfi eroeffneten Raum
+  //      ohnehin (Teilnehmerschaft, darfRaumOeffnen) — eine symmetrische
+  //      Bindung griffe nur bis zur ersten Nachricht.
   //
   // Eine Teamer:in OHNE Jahrgangszuweisung ist für Konfis unsichtbar. Das ist
   // die konsequente Gegenseite: sie erreicht ihrerseits keinen einzigen Konfi.
@@ -323,6 +353,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // SQL-Bedingung für Kontaktlisten von Konfis: Team-Mitglied ist erreichbar,
   // wenn es NICHT teamer ist (Leitung/Admin -> immer) ODER einen gemeinsamen
   // Jahrgang mit dem Konfi hat. $1 muss die User-ID des Konfis sein.
+  //
+  // Admins bleiben hier BEWUSST fuer alle Konfis sichtbar, obwohl sie selbst
+  // seit dem 01.09.2026 jahrgangsgebunden sind (Entscheidung und Begruendung
+  // s. teamAnschreibenVerboten) — Liste und Anschreiben bieten dasselbe an.
   //
   // Bewusst als geteilter Baustein: Die Regel gilt an drei Stellen (/admins,
   // /available-users, POST /direct). Stand sie mehrfach im Code, blieb bisher
@@ -376,7 +410,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
       }
 
-      // Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgänge.
+      // Admins und Teamer:innen erreichen nur Konfis ihrer zugewiesenen
+      // Jahrgaenge; Leitung und Super-Admins erreichen alle (seit dem
+      // 01.09.2026 auch fuer Admins scharf, s. konfiAnschreibenVerboten).
       if (validUser.role_name === 'konfi') {
         const verboten = await konfiAnschreibenVerboten(req.user, target_user_id);
         if (verboten) {
@@ -541,11 +577,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             }
           }
 
-          // Jahrgangsgrenze für Teamer:innen — wie in POST /direct. Ohne diese
-          // Prüfung wäre die Regel dort wertlos: ein Raum mit demselben Konfi
-          // liesse sich hier einfach anlegen (gleiche Umgehung wie beim
-          // Konfi-zu-Konfi-Fall oben).
-          if (req.user.role_name === 'teamer') {
+          // Jahrgangsgrenze fuer Admins und Teamer:innen — wie in POST
+          // /direct (seit dem 01.09.2026 auch fuer Admins). Ohne diese
+          // Pruefung waere die Regel dort wertlos: ein Raum mit demselben
+          // Konfi liesse sich hier einfach anlegen (gleiche Umgehung wie
+          // beim Konfi-zu-Konfi-Fall oben). Kein Rollen-Gate mehr davor:
+          // konfiAnschreibenVerboten laesst Leitung und Super-Admins selbst
+          // durch; Konfis als Aufrufer sind oben bereits abgehandelt.
+          if (req.user.type !== 'konfi') {
             for (const pu of partUsers.filter(x => x.role_name === 'konfi')) {
               const verboten = await konfiAnschreibenVerboten(req.user, pu.id);
               if (verboten) {
@@ -1454,6 +1493,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
       const user_type = roleToParticipantType(targetUser.role_name);
+
+      // Jahrgangsgrenze auch beim NACHTRAEGLICHEN Hinzufuegen (01.09.2026):
+      // Sonst liesse sich die Bindung aus POST /rooms trivial umgehen —
+      // Gruppe leer anlegen, fremden Konfi danach eintragen.
+      // konfiAnschreibenVerboten laesst Leitung und Super-Admins durch;
+      // Teamer:innen erreichen diese Route gar nicht (requesterType-Check).
+      if (targetUser.role_name === 'konfi') {
+        const verboten = await konfiAnschreibenVerboten(req.user, targetUser.id);
+        if (verboten) {
+          return res.status(403).json({ error: verboten });
+        }
+      }
 
       const { rows: [existing] } = await db.query("SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2", [roomId, user_id]);
       if (existing) {

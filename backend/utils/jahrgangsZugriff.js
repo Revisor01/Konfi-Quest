@@ -25,8 +25,11 @@
 //
 // Dieser Baustein IST die Semantik-Quelle (seit 01.09.2026): Die frueheren
 // rbac.js-Helfer (checkJahrgangAccess, filterByJahrgangAccess) waren nie
-// eingehaengt und sind geloescht. Gleiche Regel auch in utils/jahrgangChat.js
-// und routes/chat.js (dort als SQL-Filter).
+// eingehaengt und sind geloescht. Gleiche Regel auch in utils/jahrgangChat.js.
+// routes/chat.js ruft fuer die Richtung Team -> Konfi seit dem 01.09.2026
+// direkt darfJahrgang/darfKonfi auf (konfiAnschreibenVerboten); der dortige
+// SQL-Filter KONFI_SIEHT_TEAMMITGLIED bildet die Gegenrichtung Konfi -> Team
+// ab und laesst Admins bewusst ungebunden (Begruendung dort).
 
 /**
  * Darf der Aufrufer auf diesen Jahrgang zugreifen?

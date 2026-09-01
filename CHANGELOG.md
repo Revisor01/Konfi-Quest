@@ -46,6 +46,11 @@ Versionsüberschrift.
   ändern sich dadurch nicht.
 
 ### Geändert
+- Die Jahrgangs-Bindung für Admins gilt jetzt auch im Direktchat: Ein Admin
+  kann nur noch Konfis seiner zugewiesenen Jahrgänge anschreiben oder in
+  Gruppenchats aufnehmen — wie Teamer:innen. Der Org-Admin erreicht
+  weiterhin alle Konfis, und Konfis erreichen umgekehrt weiterhin jeden
+  Admin. Bereits bestehende Gespräche bleiben unverändert bestehen.
 - Material bearbeiten und löschen kann nur noch, wer es angelegt hat — dazu
   gehört auch das Anhängen und Entfernen von Dateien. Die Gemeindeleitung
   darf weiterhin alles, damit Material verwaltbar bleibt, wenn die

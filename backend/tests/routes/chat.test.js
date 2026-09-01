@@ -212,11 +212,12 @@ describe('Chat Routes', () => {
     });
   });
 
-  // Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgänge direkt
-  // anschreiben — dieselbe Grenze, die darfJahrgang im Rest des Systems
-  // zieht. Der Chat war die einzige Stelle ohne sie (Nutzerhinweis 23.08.2026).
-  // Alle Konfis erreichen nur org_admin und admin.
-  describe('Jahrgangsgrenze fuer Teamer:innen im Direktchat', () => {
+  // Admins und Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgaenge
+  // direkt anschreiben — dieselbe Grenze, die darfJahrgang im Rest des
+  // Systems zieht. Fuer Teamer:innen gilt sie seit dem 23.08.2026
+  // (Nutzerhinweis), fuer Admins seit dem 01.09.2026 (Simons Regel vom
+  // 31.08.2026). Leitung (org_admin) und Super-Admins bleiben ausgenommen.
+  describe('Jahrgangsgrenze fuer Admins und Teamer:innen im Direktchat', () => {
     it('Teamer:in schreibt Konfi des EIGENEN Jahrgangs an -> 200', async () => {
       const res = await request(app)
         .post('/api/chat/direct')
@@ -261,7 +262,14 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Admin erreicht JEDEN Konfi der Organisation -> 200', async () => {
+    // Seit dem 01.09.2026 gilt Simons Jahrgangsregel auch fuer die Rolle
+    // 'admin' — der Direktchat war die letzte Stelle, an der ein Admin noch
+    // jeden Konfi der Gemeinde erreichte. admin1 hat im Seed KEINE
+    // Jahrgangszuweisung; vorher stand hier "Admin erreicht JEDEN Konfi der
+    // Organisation -> 200". Die Detailfaelle (mit/ohne Zuweisung, org_admin,
+    // Super-Admin-Flag, Konfi ohne Jahrgang) liegen in
+    // jahrgangsBindungAdmin.test.js.
+    it('Admin OHNE Jahrgangszuweisung erreicht keinen Konfi mehr -> 403, kein Raum', async () => {
       const { invalidateUserCache } = require('../../middleware/rbac');
       await db.query(
         'INSERT INTO jahrgaenge (id, name, organization_id) VALUES (99, $1, 1) ON CONFLICT DO NOTHING',
@@ -270,12 +278,37 @@ describe('Chat Routes', () => {
       await db.query('UPDATE konfi_profiles SET jahrgang_id = 99 WHERE user_id = $1', [USERS.konfi2.id]);
       invalidateUserCache(USERS.admin1.id);
 
+      const vorher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ target_user_id: USERS.konfi2.id });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben');
+
+      // Kein Raum entstanden
+      const nachher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+      expect(nachher.rows[0].c).toBe(vorher.rows[0].c);
+    });
+
+    it('Admin MIT Zuweisung erreicht den Konfi seines Jahrgangs -> 200', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      // konfi2 liegt im Seed in Jahrgang 1 — admin1 bekommt genau diesen.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, 1)',
+        [USERS.admin1.id]
+      );
+      invalidateUserCache(USERS.admin1.id);
+
       const res = await request(app)
         .post('/api/chat/direct')
         .set('Authorization', `Bearer ${admin1Token}`)
         .send({ target_user_id: USERS.konfi2.id });
 
       expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
     });
   });
 
@@ -716,7 +749,19 @@ describe('Chat Routes', () => {
   // POST /api/chat/rooms/:roomId/participants
   // ================================================================
   describe('POST /api/chat/rooms/:roomId/participants', () => {
-    it('Admin fuegt Teilnehmer zu Gruppenchat hinzu -> 201', async () => {
+    // Seit dem 01.09.2026 braucht der Admin fuer Konfi-Teilnehmer den
+    // passenden Jahrgang (admin1 hat im Seed keinen).
+    const admin1JahrgangGeben = async () => {
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, 1)',
+        [USERS.admin1.id]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+    };
+
+    it('Admin fuegt Konfi des EIGENEN Jahrgangs zu Gruppenchat hinzu -> 201', async () => {
+      await admin1JahrgangGeben();
+
       const res = await request(app)
         .post(`/api/chat/rooms/${CHAT_ROOMS.group.id}/participants`)
         .set('Authorization', `Bearer ${admin1Token}`)
@@ -732,6 +777,29 @@ describe('Chat Routes', () => {
       expect(participantsRes.status).toBe(200);
       // Room 3 hatte 2 (teamer1 + admin1), jetzt 3
       expect(participantsRes.body.length).toBe(3);
+    });
+
+    // Ohne diese Grenze waere die Bindung aus POST /rooms trivial umgehbar:
+    // Gruppe leer anlegen, fremden Konfi nachtraeglich eintragen.
+    it('Admin OHNE passenden Jahrgang kann keinen Konfi eintragen -> 403', async () => {
+      // Der rbac-Cache (30 s TTL) haelt sonst die Zuweisung aus dem
+      // vorherigen Test fest — truncate/seed leert ihn NICHT.
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.group.id}/participants`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ user_id: USERS.konfi1.id, user_type: 'konfi' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben');
+
+      // Konfi1 ist nachweislich NICHT eingetragen worden
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.konfi1.id]
+      );
+      expect(rows[0].c).toBe(0);
     });
 
     it('Konfi darf keine Teilnehmer hinzufuegen -> 403', async () => {
@@ -758,7 +826,13 @@ describe('Chat Routes', () => {
   // ================================================================
   describe('DELETE /api/chat/rooms/:roomId/participants/:userId/:userType', () => {
     it('Admin entfernt Teilnehmer aus Gruppenchat -> 200', async () => {
-      // Zuerst Konfi1 zum Gruppenchat hinzufuegen
+      // Zuerst Konfi1 zum Gruppenchat hinzufuegen (braucht seit dem
+      // 01.09.2026 den passenden Jahrgang)
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, 1)',
+        [USERS.admin1.id]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
       await request(app)
         .post(`/api/chat/rooms/${CHAT_ROOMS.group.id}/participants`)
         .set('Authorization', `Bearer ${admin1Token}`)
