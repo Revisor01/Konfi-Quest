@@ -112,7 +112,7 @@ const ChallengeMomenteSlide: React.FC<ChallengeMomenteSlideProps> = ({ isActive,
         <p className="wrapped-subtitle">Das hast du beigetragen</p>
       </div>
 
-      <div className="challenge-momente-liste wrapped-anim-fade wrapped-anim-delay-2">
+      <div className={`challenge-momente-liste wrapped-anim-fade wrapped-anim-delay-2${sichtbar.length <= 2 ? ' challenge-momente-liste--wenige' : ''}`}>
         {sichtbar.map((moment, i) => (
           <div
             key={`${moment.challenge_title}-${moment.created_at}-${i}`}

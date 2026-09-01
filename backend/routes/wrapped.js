@@ -254,28 +254,283 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const fehlendePunkte = Math.max(0, zielTotal - aktuellTotal);
     const endspurtAktiv = aktuellTotal < zielTotal;
 
-    // highlight_type berechnen: ueber_das_ziel hat hoechste Prio
+    // ================================================================
+    // Persoenliche Zahlen fuer die Highlight-Auswahl (01.09.2026)
+    // ================================================================
+    // Simons Wunsch: Der Rueckblick soll sich von Konfi zu Konfi dynamisch
+    // unterscheiden -- Chat, Reaktionen, Kraftproben, Verlaesslichkeit.
+    // Alle Zaehlungen halten sich an DENSELBEN Zeitraum wie die uebrigen
+    // Zahlen (berechneZeitraum), damit keine Seite anders zaehlt als die
+    // andere.
+
+    // Chat: gesendete Nachrichten (geloeschte zaehlen nicht -- was der Konfi
+    // selbst zurueckgenommen hat, soll ihm der Rueckblick nicht vorrechnen).
+    // Org-Grenze ueber den Raum, nicht ueber die Nachricht (chat_messages
+    // traegt keine organization_id).
+    const { rows: [chatRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM chat_messages cm
+       JOIN chat_rooms cr ON cm.room_id = cr.id
+       WHERE cm.user_id = $1 AND cr.organization_id = $2
+         AND cm.deleted_at IS NULL
+         AND cm.created_at >= $3::date
+         AND cm.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const chatNachrichten = parseInt(chatRow.count, 10) || 0;
+
+    // Reaktionen BEKOMMEN (von anderen, auf eigene Nachrichten).
+    // Entscheidung: Als Highlight zaehlt die Zustimmung, die jemand BEKOMMEN
+    // hat, nicht die vergebenen Likes -- "deine Nachrichten kamen an" ist
+    // eine Aussage ueber die Person und ihr Ankommen in der Gruppe,
+    // "du hast viel geliked" nur eine ueber ihr Tippverhalten. Eigene
+    // Reaktionen auf eigene Nachrichten zaehlen nicht mit.
+    const { rows: [reaktionenBekommenRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM chat_message_reactions r
+       JOIN chat_messages cm ON r.message_id = cm.id
+       JOIN chat_rooms cr ON cm.room_id = cr.id
+       WHERE cm.user_id = $1 AND r.user_id <> $1
+         AND cr.organization_id = $2
+         AND cm.deleted_at IS NULL
+         AND r.created_at >= $3::date
+         AND r.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const reaktionenBekommen = parseInt(reaktionenBekommenRow.count, 10) || 0;
+
+    // Reaktionen GEGEBEN -- nur als Zahl im Snapshot, kein eigenes Highlight
+    // (siehe Begruendung oben).
+    const { rows: [reaktionenGegebenRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM chat_message_reactions r
+       JOIN chat_messages cm ON r.message_id = cm.id
+       JOIN chat_rooms cr ON cm.room_id = cr.id
+       WHERE r.user_id = $1 AND cr.organization_id = $2
+         AND r.created_at >= $3::date
+         AND r.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const reaktionenGegeben = parseInt(reaktionenGegebenRow.count, 10) || 0;
+
+    // Challenges: Gesamtzahl der Beitraege (challengeMomente ist auf 12
+    // gedeckelt, fuer die Auswahl zaehlt die echte Zahl) plus die Challenge,
+    // bei der die Person am aktivsten war. Defensiv wie die Momente selbst:
+    // Alt-Deployments ohne Challenge-Tabellen liefern 0 / null.
+    let challengeBeitraege = 0;
+    let topChallenge = null;
+    try {
+      const { rows: [beitragRow] } = await client.query(
+        `SELECT COUNT(*) as count FROM challenge_submissions cs
+         WHERE cs.user_id = $1 AND cs.organization_id = $2
+           AND cs.moderation_status <> 'hidden'
+           AND cs.created_at >= $3::date
+           AND cs.created_at < ($4::date + INTERVAL '1 day')`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      challengeBeitraege = parseInt(beitragRow.count, 10) || 0;
+
+      const { rows: topRows } = await client.query(
+        `SELECT c.title, c.badge_icon, COUNT(*) as count
+         FROM challenge_submissions cs
+         JOIN challenges c ON cs.challenge_id = c.id
+         WHERE cs.user_id = $1 AND cs.organization_id = $2
+           AND cs.moderation_status <> 'hidden'
+           AND cs.created_at >= $3::date
+           AND cs.created_at < ($4::date + INTERVAL '1 day')
+         GROUP BY c.id, c.title, c.badge_icon
+         ORDER BY count DESC, c.title
+         LIMIT 1`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      if (topRows.length > 0) {
+        topChallenge = {
+          title: topRows[0].title,
+          badge_icon: topRows[0].badge_icon,
+          count: parseInt(topRows[0].count, 10)
+        };
+      }
+    } catch (challengeErr) {
+      console.warn('Wrapped: Challenge-Zahlen konnten nicht geladen werden:', challengeErr.message);
+    }
+
+    // Verlaesslichkeit: Selbst-Abmeldungen aus event_unregistrations.
+    // Das ist die Handlung "Konfi meldet sich ab" (die Buchung wird dabei
+    // GELOESCHT, routes/konfi.js) -- events.abgesagt oben zaehlt dagegen
+    // stehen gebliebene 'cancelled'-Buchungen, das sind zwei verschiedene
+    // Dinge. Zeitanker ist unregistered_at (die Handlung im Konfi-Jahr),
+    // nicht das Eventdatum: Die Absage bleibt auch zaehlbar, wenn der Termin
+    // spaeter verschoben oder geloescht wird.
+    const { rows: [abmeldungRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM event_unregistrations eu
+       WHERE eu.user_id = $1 AND eu.organization_id = $2
+         AND eu.unregistered_at >= $3::date
+         AND eu.unregistered_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const abmeldungen = parseInt(abmeldungRow.count, 10) || 0;
+    // "Nie abgesagt" ist erst ab 5 Buchungen eine Aussage -- wer nur zweimal
+    // gebucht hat, hatte kaum Gelegenheit abzusagen.
+    const nieAbgesagt = abmeldungen === 0 && totalAttended >= 5;
+
+    // ================================================================
+    // Jahrgangsvergleich: Was ist an DIESER Person besonders?
+    // ================================================================
+    // Frueher gewann der groesste Rohwert -- 15 Termine schlugen immer
+    // 8 Abzeichen, und weil fast alle am meisten Termine haben, sah der
+    // Rueckblick fuer fast alle gleich aus. Jetzt zaehlt, worin jemand
+    // im Vergleich zum eigenen Jahrgang heraussticht: Der Durchschnitt
+    // des Jahrgangs je Metrik ist die Messlatte, das beste Verhaeltnis
+    // eigener Wert / Jahrgangsschnitt gewinnt. Der Vergleich bleibt anonym
+    // (nur der Schnitt, nie andere Namen) und landet nur dann im Text,
+    // wenn er freundlich ist (Frontend zeigt ihn nur oberhalb des Schnitts).
+    let jahrgangsSchnitt = null;
+    try {
+      const { rows: [avgRow] } = await client.query(
+        `WITH jahrgang_konfis AS (
+           SELECT kp.user_id FROM konfi_profiles kp
+           JOIN users u ON kp.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+         )
+         SELECT
+           (SELECT COUNT(*) FROM jahrgang_konfis) AS anzahl,
+           (SELECT COUNT(*) FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             WHERE eb.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND eb.organization_id = $2
+               AND e.event_date >= $3::date
+               AND e.event_date < ($4::date + INTERVAL '1 day')) AS events_gesamt,
+           (SELECT COUNT(*) FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             WHERE eb.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND eb.organization_id = $2
+               AND e.point_type = 'gottesdienst'
+               AND e.event_date >= $3::date
+               AND e.event_date < ($4::date + INTERVAL '1 day')) AS gottesdienste_gesamt,
+           (SELECT COUNT(*) FROM user_badges ub
+             WHERE ub.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND ub.organization_id = $2
+               AND ub.awarded_date >= $3::date
+               AND ub.awarded_date < ($4::date + INTERVAL '1 day')) AS badges_gesamt,
+           (SELECT COALESCE(SUM(kp2.gemeinde_points), 0) FROM konfi_profiles kp2
+             WHERE kp2.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND kp2.jahrgang_id = $1) AS gemeinde_gesamt,
+           (SELECT COUNT(*) FROM chat_messages cm
+             JOIN chat_rooms cr ON cm.room_id = cr.id
+             WHERE cm.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND cr.organization_id = $2
+               AND cm.deleted_at IS NULL
+               AND cm.created_at >= $3::date
+               AND cm.created_at < ($4::date + INTERVAL '1 day')) AS chat_gesamt,
+           (SELECT COUNT(*) FROM chat_message_reactions r
+             JOIN chat_messages cm ON r.message_id = cm.id
+             JOIN chat_rooms cr ON cm.room_id = cr.id
+             WHERE cm.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND r.user_id <> cm.user_id
+               AND cr.organization_id = $2
+               AND cm.deleted_at IS NULL
+               AND r.created_at >= $3::date
+               AND r.created_at < ($4::date + INTERVAL '1 day')) AS reaktionen_gesamt,
+           (SELECT COUNT(*) FROM challenge_submissions cs
+             WHERE cs.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND cs.organization_id = $2
+               AND cs.moderation_status <> 'hidden'
+               AND cs.created_at >= $3::date
+               AND cs.created_at < ($4::date + INTERVAL '1 day')) AS challenges_gesamt`,
+        [jahrgangId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      const anzahl = parseInt(avgRow.anzahl, 10) || 0;
+      if (anzahl > 0) {
+        jahrgangsSchnitt = {
+          events: parseInt(avgRow.events_gesamt, 10) / anzahl,
+          gottesdienste: parseInt(avgRow.gottesdienste_gesamt, 10) / anzahl,
+          badges: parseInt(avgRow.badges_gesamt, 10) / anzahl,
+          gemeinde: parseInt(avgRow.gemeinde_gesamt, 10) / anzahl,
+          chat: parseInt(avgRow.chat_gesamt, 10) / anzahl,
+          reaktionen: parseInt(avgRow.reaktionen_gesamt, 10) / anzahl,
+          challenges: parseInt(avgRow.challenges_gesamt, 10) / anzahl
+        };
+      }
+    } catch (avgErr) {
+      // Alt-Deployment ohne Challenge-Tabellen o.ae.: ohne Schnitt faellt
+      // die Auswahl unten auf die Rohwert-Logik zurueck.
+      console.warn('Wrapped: Jahrgangsschnitt konnte nicht berechnet werden:', avgErr.message);
+    }
+
+    // Deterministischer Formulierung-Seed (vor der Auswahl gebraucht: er
+    // entscheidet auch den Gleichstand zwischen zwei Highlight-Kandidaten).
+    const formulierungSeed = (userId * 31 + year * 17) % 97;
+
+    // ================================================================
+    // Highlight-Auswahl
+    // ================================================================
+    // ueber_das_ziel behaelt die hoechste Prioritaet (erreichtes Ziel ist
+    // immer die Nachricht des Jahres). Danach: Kandidaten mit Mindestwert
+    // (damit niemand fuer 2 Chat-Nachrichten zum "Chat-Star" wird), Score =
+    // eigener Wert / Jahrgangsschnitt. 'verlaesslich' hat keinen Zaehlwert-
+    // Vergleich und tritt mit festem Score 1.2 an: Es gewinnt, wenn sonst
+    // niemand deutlich ueber dem Schnitt liegt -- ein echter Ausreisser
+    // schlaegt es.
+    //
+    // BEWUSST WEGGELASSEN: ein Highlight "am oeftesten abgesagt". Der
+    // Rueckblick geht an 12- bis 14-Jaehrige; Absagen haben oft Gruende
+    // ausserhalb ihrer Kontrolle (Familie, Krankheit, Fahrdienste). Einem
+    // Kind als Jahresbotschaft "du hast am meisten abgesagt" zu zeigen,
+    // beschaemt und erzieht nicht -- der Gegenpol ist deshalb nur positiv
+    // gewendet (verlaesslich = nie abgesagt bei genug Buchungen), die
+    // Absagen-Zahl selbst steht neutral im Snapshot und wird nicht
+    // hervorgehoben. Fachliche Entscheidung, siehe Handbuch 95-wrapped.
     let highlightType = 'events_held';
+    let highlightWert = totalAttended;
+    let highlightSchnitt = null;
     if (aktuellTotal >= zielTotal && zielTotal > 0) {
       highlightType = 'ueber_das_ziel';
+      highlightWert = aktuellTotal - zielTotal;
     } else {
       const candidates = [
-        { type: 'events_held', value: totalAttended },
-        { type: 'badge_collector', value: badgeRows.length },
-        { type: 'gottesdienst_treue', value: gottesdienstCount },
-        { type: 'gemeinde_aktiv', value: gemeinde }
+        { type: 'events_held', value: totalAttended, avg: jahrgangsSchnitt ? jahrgangsSchnitt.events : null, min: 3 },
+        { type: 'badge_collector', value: badgeRows.length, avg: jahrgangsSchnitt ? jahrgangsSchnitt.badges : null, min: 2 },
+        { type: 'gottesdienst_treue', value: gottesdienstCount, avg: jahrgangsSchnitt ? jahrgangsSchnitt.gottesdienste : null, min: 3 },
+        { type: 'gemeinde_aktiv', value: gemeinde, avg: jahrgangsSchnitt ? jahrgangsSchnitt.gemeinde : null, min: 3 },
+        { type: 'chat_star', value: chatNachrichten, avg: jahrgangsSchnitt ? jahrgangsSchnitt.chat : null, min: 20 },
+        { type: 'reaktions_magnet', value: reaktionenBekommen, avg: jahrgangsSchnitt ? jahrgangsSchnitt.reaktionen : null, min: 5 },
+        { type: 'challenge_fan', value: challengeBeitraege, avg: jahrgangsSchnitt ? jahrgangsSchnitt.challenges : null, min: 2 }
       ];
-      let maxVal = -1;
-      for (const c of candidates) {
-        if (c.value > maxVal) {
-          maxVal = c.value;
-          highlightType = c.type;
+
+      if (jahrgangsSchnitt) {
+        // Score-Auswahl: Verhaeltnis zum Jahrgangsschnitt, Nenner mindestens
+        // 1, damit ein Schnitt nahe 0 keine absurden Scores erzeugt.
+        const scored = candidates
+          .filter(c => c.value >= c.min)
+          .map(c => ({ ...c, score: c.value / Math.max(c.avg, 1) }));
+        if (nieAbgesagt) {
+          scored.push({ type: 'verlaesslich', value: totalAttended, avg: null, score: 1.2 });
+        }
+        if (scored.length > 0) {
+          scored.sort((a, b) => b.score - a.score);
+          // Gleichstand (praktisch identischer Score): der Seed entscheidet,
+          // damit zwei aehnliche Konfis nicht dieselbe Seite sehen.
+          const beste = scored.filter(c => scored[0].score - c.score < 0.001);
+          const gewinner = beste[formulierungSeed % beste.length];
+          highlightType = gewinner.type;
+          highlightWert = gewinner.value;
+          highlightSchnitt = (gewinner.avg !== null && gewinner.avg !== undefined)
+            ? Math.round(gewinner.avg * 10) / 10
+            : null;
+        }
+        // Kein Kandidat ueber Mindestwert: events_held bleibt als Default
+        // stehen (wie bisher).
+      } else {
+        // Fallback ohne Jahrgangsschnitt: bisherige Rohwert-Logik ueber die
+        // klassischen vier Kandidaten (unveraendertes Verhalten).
+        let maxVal = -1;
+        for (const c of candidates.slice(0, 4)) {
+          if (c.value > maxVal) {
+            maxVal = c.value;
+            highlightType = c.type;
+            highlightWert = c.value;
+          }
         }
       }
     }
-
-    // Deterministischer Formulierung-Seed
-    const formulierungSeed = (userId * 31 + year * 17) % 97;
 
     // Challenge-Momente: eigene Beitraege im Wrapped-Zeitraum (max 12, neueste zuerst).
     // Defensiv: Auf Alt-Deployments ohne Challenge-Tabellen liefern wir ein leeres Array
@@ -324,11 +579,40 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
 
     return {
-      version: 2,
+      // Version 3 (01.09.2026): persoenliche Highlights + Chat-/Challenge-/
+      // Verlaesslichkeits-Zahlen. Rein ADDITIV zu Version 2 -- kein Feld
+      // wurde entfernt, umbenannt oder umtypisiert. Ausgelieferte Apps
+      // rendern jeden Snapshot mit version >= 2 ueber die feste
+      // Slide-Reihenfolge und ignorieren unbekannte Felder.
+      version: 3,
       highlight_type: highlightType,
       formulierung_seed: formulierungSeed,
       slides: {
         challenge_momente: challengeMomente,
+        // Das gewaehlte Highlight samt Zahl und (anonymem) Jahrgangsschnitt.
+        // Neu ab Version 3; alte Clients kennen das Feld nicht und rendern
+        // wie bisher.
+        highlight: {
+          type: highlightType,
+          wert: highlightWert,
+          jahrgangsschnitt: highlightSchnitt
+        },
+        // 'chat' gab es schon in Version-1-Snapshots als Objekt mit
+        // nachrichten_gesendet -- derselbe Name, derselbe Typ, nur zwei
+        // Felder mehr (Vertragstreue gegenueber alten Lesern).
+        chat: {
+          nachrichten_gesendet: chatNachrichten,
+          reaktionen_gegeben: reaktionenGegeben,
+          reaktionen_bekommen: reaktionenBekommen
+        },
+        challenges: {
+          beitraege: challengeBeitraege,
+          top_challenge: topChallenge
+        },
+        verlaesslichkeit: {
+          abmeldungen,
+          nie_abgesagt: nieAbgesagt
+        },
         punkte: {
           gottesdienst,
           gemeinde,
