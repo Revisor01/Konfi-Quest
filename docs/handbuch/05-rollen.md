@@ -63,8 +63,9 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
 - **Konfis löschen, befördern und ihr Passwort zurücksetzen** geht nur in
   seinen eigenen Jahrgängen — genau wie Punkte vergeben und zurücknehmen.
 - **Konfis direkt anschreiben** und in Gruppenchats aufnehmen geht nur in
-  seinen eigenen Jahrgängen. Umgekehrt darf jeder Konfi ihn weiterhin
-  anschreiben, und bestehende Gespräche bleiben offen.
+  seinen eigenen Jahrgängen — und das gilt in beide Richtungen: Auch ein
+  Konfi erreicht nur die Admins seines Jahrgangs (die Leitung dagegen
+  immer). Bestehende Gespräche bleiben offen.
 - **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen. **Neue
   Jahrgänge anlegen kann er nicht** — das ist Sache des Org-Admins, der dabei
   gleich festlegt, welche Admins und Teamer:innen Zugriff bekommen.

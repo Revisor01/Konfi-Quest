@@ -7073,7 +7073,7 @@
           "Chat"
         ],
         "summary": "Anschreibbare Team-Mitglieder (Konfi-Sicht)",
-        "description": "Nur für Konfis: admin/org_admin der eigenen Organisation sowie die Teamer:innen mit gemeinsamem Jahrgang. Konfis können ausschliesslich diese Personen anschreiben.\n",
+        "description": "Nur für Konfis: die Leitung (org_admin, auch Multi-Org via user_organizations), Super-Admins sowie die Admins und Teamer:innen mit gemeinsamem Jahrgang. Konfis können ausschliesslich diese Personen anschreiben (Regel vom 2026-09-01).\n",
         "responses": {
           "200": {
             "description": "Liste (id, display_name) — username wird seit 23.08.2026 nicht mehr ausgeliefert",
@@ -7111,8 +7111,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.type muss 'konfi' sein; Teamer:innen nur mit gemeinsamem Jahrgang (KONFI_SIEHT_TEAMMITGLIED)",
-          "hinweis": "Admins bleiben auch ohne Zustaendigkeit fuer den Jahrgang des Konfis sichtbar — die Gegenrichtung der Admin-Jahrgangsbindung ist bewusst offen (2026-09-01, s. Kernfragen oben).\n"
+          "objekt-pruefung": "req.user.type muss 'konfi' sein; Admins und Teamer:innen nur mit gemeinsamem Jahrgang, org_admin/is_super_admin immer (KONFI_SIEHT_TEAMMITGLIED)",
+          "hinweis": "Seit 2026-09-01 symmetrisch: Die Liste bietet exakt an, was teamAnschreibenVerboten beim Anschreiben erlaubt. Vorher blieben Admins auch ohne Zustaendigkeit sichtbar; diese bewusste Unsymmetrie hat Simon am 2026-09-01 aufgehoben. Multi-Org- Leitungen (Rolle nur in user_organizations) erscheinen seither ebenfalls (TEAM_MITGLIED_ROLLE).\n"
         }
       }
     },
@@ -7185,8 +7185,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.type muss 'konfi' sein; Jahrgang muss existieren; Teamer:innen nur mit gemeinsamem Jahrgang (KONFI_SIEHT_TEAMMITGLIED)",
-          "hinweis": "Admins bleiben auch ohne Zustaendigkeit fuer den Jahrgang des Konfis sichtbar — die Gegenrichtung der Admin-Jahrgangsbindung ist bewusst offen (2026-09-01, s. Kernfragen oben).\n"
+          "objekt-pruefung": "req.user.type muss 'konfi' sein; Jahrgang muss existieren; Admins und Teamer:innen nur mit gemeinsamem Jahrgang, org_admin/is_super_admin immer (KONFI_SIEHT_TEAMMITGLIED)",
+          "hinweis": "Seit 2026-09-01 symmetrisch zur Admin-Jahrgangsbindung (Simons Korrektur, s. Kernfragen oben); Multi-Org-Leitungen erscheinen ueber TEAM_MITGLIED_ROLLE.\n"
         }
       }
     },
@@ -7196,7 +7196,7 @@
           "Chat"
         ],
         "summary": "Direktchat erstellen oder vorhandenen zurueckgeben",
-        "description": "Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten. Jahrgangsgrenze in Richtung Konfi: Teamer:innen (seit 23.08.2026) und Admins (seit 01.09.2026) erreichen nur Konfis ihrer zugewiesenen Jahrgänge (can_view); org_admin und super_admin (Rolle oder Flag) erreichen alle Konfis der Organisation. Wer ohne Zuweisung ist, erreicht gar keinen Konfi; einen Konfi ohne Jahrgang erreicht nur die Leitung. Team-Kontakte bleiben unberuehrt.\n",
+        "description": "Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus der EFFEKTIVEN Rolle in der aktiven Org abgeleitet (inkl. user_organizations). Konfi-zu-Konfi ist verboten. Jahrgangsgrenze, seit 01.09.2026 in BEIDEN Richtungen: Teamer:innen (seit 23.08.2026) und Admins (seit 01.09.2026) erreichen nur Konfis ihrer zugewiesenen Jahrgänge (can_view) — und Konfis erreichen umgekehrt nur Admins und Teamer:innen ihres Jahrgangs. org_admin und super_admin (Rolle oder Flag) erreichen alle und bleiben fuer alle erreichbar. Wer ohne Zuweisung ist, erreicht gar keinen Konfi und ist fuer Konfis unsichtbar; einen Konfi ohne Jahrgang erreicht nur die Leitung. Team-Kontakte untereinander bleiben unberuehrt.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7238,7 +7238,7 @@
             "description": "target_user_id fehlt"
           },
           "403": {
-            "description": "Ziel nicht in eigener Org, Konfi-zu-Konfi-Versuch, ODER admin/teamer schreibt einen Konfi ausserhalb der zugewiesenen Jahrgaenge an"
+            "description": "Ziel nicht in eigener Org, Konfi-zu-Konfi-Versuch, admin/teamer schreibt einen Konfi ausserhalb der zugewiesenen Jahrgaenge an, ODER Konfi schreibt einen Admin/eine Teamer:in ohne gemeinsamen Jahrgang an"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -7255,8 +7255,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss zur eigenen Org gehören (sonst 403); konfi->konfi wird geblockt; admin->konfi und teamer->konfi nur bei passender Jahrgangs-Zuweisung (can_view), Quelle ist darfKonfi (utils/jahrgangsZugriff.js); org_admin/super_admin sind ausgenommen. Dieselbe Prüfung greift in POST /chat/rooms und POST /chat/rooms/:id/participants, sonst wäre sie über das participants-Feld bzw. nachtraegliches Hinzufuegen umgehbar.\n",
-          "hinweis": "\"admin -> Konfi ohne Jahrgangspruefung\" wurde am 2026-09-01 geschlossen (vorher: jeder Konfi der Org, auch fremde Jahrgänge). Konfi -> admin bleibt bewusst ungebunden; bestehende Direktraeume werden nicht nachtraeglich gesperrt, die Pruefung laeuft aber VOR dem Dedup — ein erneuter Anlege-Versuch fuer ein inzwischen verbotenes Paar gibt 403, der Raum selbst bleibt nutzbar.\n"
+          "objekt-pruefung": "Ziel-User muss Mitglied der aktiven Org sein (primaer ODER via user_organizations, effektive Rolle; sonst 403); konfi->konfi wird geblockt; admin->konfi und teamer->konfi nur bei passender Jahrgangs-Zuweisung (can_view), Quelle ist darfKonfi (utils/jahrgangsZugriff.js); konfi->admin und konfi->teamer nur bei gemeinsamem Jahrgang (teamAnschreibenVerboten); org_admin/super_admin sind in beiden Richtungen ausgenommen. Dieselbe Prüfung greift in POST /chat/rooms und POST /chat/rooms/:id/participants, sonst wäre sie über das participants-Feld bzw. nachtraegliches Hinzufuegen umgehbar.\n",
+          "hinweis": "\"admin -> Konfi ohne Jahrgangspruefung\" wurde am 2026-09-01 geschlossen (vorher: jeder Konfi der Org, auch fremde Jahrgänge); am selben Tag hat Simon auch die Gegenrichtung gebunden (\"Konfis duerfen nur org Admins und Admins und Teamer ihres Jahrgangs anschreiben!\") — die zuvor dokumentierte bewusste Unsymmetrie ist aufgehoben. Bestehende Direktraeume werden nicht nachtraeglich gesperrt, die Pruefung laeuft aber VOR dem Dedup — ein erneuter Anlege-Versuch fuer ein inzwischen verbotenes Paar gibt 403, der Raum selbst bleibt nutzbar.\n"
         }
       }
     },
@@ -7351,7 +7351,7 @@
             "validateCreateRoom"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprüft. Konfi-Teilnehmer zusaetzlich gegen die Jahrgangsbindung des Aufrufers: teamer seit 2026-08-23, admin seit 2026-09-01 (org_admin/super_admin ausgenommen); Konfis koennen keine anderen Konfis und keine fremdjahrgaengigen Teamer:innen eintragen.\n",
+          "objekt-pruefung": "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprüft. Konfi-Teilnehmer zusaetzlich gegen die Jahrgangsbindung des Aufrufers: teamer seit 2026-08-23, admin seit 2026-09-01 (org_admin/super_admin ausgenommen); Konfis koennen keine anderen Konfis und (seit 2026-09-01) weder fremdjahrgaengige Teamer:innen noch fremdjahrgaengige Admins eintragen.\n",
           "hinweis": "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
         }
       },

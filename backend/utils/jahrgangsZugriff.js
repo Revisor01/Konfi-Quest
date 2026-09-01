@@ -27,9 +27,11 @@
 // rbac.js-Helfer (checkJahrgangAccess, filterByJahrgangAccess) waren nie
 // eingehaengt und sind geloescht. Gleiche Regel auch in utils/jahrgangChat.js.
 // routes/chat.js ruft fuer die Richtung Team -> Konfi seit dem 01.09.2026
-// direkt darfJahrgang/darfKonfi auf (konfiAnschreibenVerboten); der dortige
-// SQL-Filter KONFI_SIEHT_TEAMMITGLIED bildet die Gegenrichtung Konfi -> Team
-// ab und laesst Admins bewusst ungebunden (Begruendung dort).
+// direkt darfJahrgang/darfKonfi auf (konfiAnschreibenVerboten); die
+// Gegenrichtung Konfi -> Team (teamAnschreibenVerboten und der SQL-Filter
+// KONFI_SIEHT_TEAMMITGLIED) folgt seit dem 01.09.2026 derselben Semantik
+// symmetrisch: org_admin/super_admin (Rolle oder Flag) immer erreichbar,
+// admin/teamer nur mit gemeinsamem Jahrgang (Simons Entscheidung 01.09.2026).
 
 /**
  * Darf der Aufrufer auf diesen Jahrgang zugreifen?
