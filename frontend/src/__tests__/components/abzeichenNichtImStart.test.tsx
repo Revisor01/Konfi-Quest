@@ -123,7 +123,7 @@ vi.mock('../../components/konfi/modals/KonfiUpdateWalkthroughModal', () => ({ de
 vi.mock('../../components/wrapped/WrappedModal', () => ({ default: () => null }));
 vi.mock('../../components/shared/NeuerungenBanner', () => ({ default: () => null }));
 vi.mock('../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
-vi.mock('../../components/shared', () => ({ TrialBanner: () => null }));
+vi.mock('../../components/shared', () => ({ TrialBanner: () => null, StoreUpdateBanner: () => null }));
 vi.mock('../../components/common/LoadingSpinner', () => ({ default: () => null }));
 
 vi.mock('../../hooks/useOnboardingOnce', () => ({

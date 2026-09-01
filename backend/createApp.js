@@ -23,6 +23,7 @@ const CHALLENGE_UPLOAD_LIMIT = 50 * 1024 * 1024;
  * @param {object} options.io - Socket.IO-Instanz (Default: Dummy)
  * @param {object} options.rateLimiters - Rate-Limiter-Objekte (Default: {})
  * @param {string} options.uploadsDir - Upload-Verzeichnis (Default: ./uploads)
+ * @param {Function} options.holeStoreVersion - Store-Version-Abfrage fuer /api/app-version (Default: utils/storeVersion, Tests injizieren einen Stub)
  * @returns {express.Application} Express-App
  */
 function createApp(db, options = {}) {
@@ -33,6 +34,7 @@ function createApp(db, options = {}) {
     rateLimiters = {},
     uploadsDir = path.join(__dirname, 'uploads'),
     corsOrigins = null,
+    holeStoreVersion = null,
   } = options;
 
   const app = express();
@@ -320,6 +322,13 @@ function createApp(db, options = {}) {
   app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Konfi Points API is running' });
   });
+
+  // App-Version-Endpunkt — BEWUSST ohne Auth (wie /health): meldet den Apps
+  // die aktuell im Store veroeffentlichte Version fuer den Update-Hinweis.
+  // Quelle und Begruendung: utils/storeVersion.js (iTunes-Lookup, gecacht).
+  app.use('/api/app-version', require('./routes/appVersion')(
+    holeStoreVersion ? { holeStoreVersion } : {}
+  ));
 
   // Status-Endpoint — Detail-Readiness für Status-Page / Uptime Kuma.
   // Getrennt von /health, weil er echte Abhaengigkeiten prüft (DB) und damit
