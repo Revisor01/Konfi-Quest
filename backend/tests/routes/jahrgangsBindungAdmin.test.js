@@ -30,6 +30,7 @@ const ADMIN_MIT_JG = 203;   // admin, JG_A zugewiesen
 const ADMIN_OHNE_JG = 204;  // admin, keine Zuweisung
 const TEAMER_AKTIVITAET = 301;
 const TEAMER_ZIEL = 205;    // Teamer:in als Ziel einer Teamer-Aktivitaet
+const ADMIN_SUPER = 206;    // admin-Rolle MIT is_super_admin-Flag (Chat-Tests)
 
 function tokenFuer(id, roleId, orgId = 1, type = 'admin') {
   return jwt.sign(
@@ -103,6 +104,14 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       [TEAMER_ZIEL]
     );
 
+    // admin-Rolle MIT is_super_admin-Flag: darfJahrgang nimmt das Flag
+    // unabhaengig von der Rolle aus — das muss auch im Chat gelten.
+    await db.query(
+      `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active, is_super_admin)
+       VALUES ($1, 'admin_super', 'x', 'Admin mit Super-Flag', 3, 1, true, true)`,
+      [ADMIN_SUPER]
+    );
+
     // Eine Teamer-Aktivitaet (target_role='teamer') — muss von der Bindung
     // ausgenommen bleiben.
     await db.query(
@@ -123,6 +132,9 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
     const { invalidateUserCache } = require('../../middleware/rbac');
     invalidateUserCache(ADMIN_MIT_JG);
     invalidateUserCache(ADMIN_OHNE_JG);
+    invalidateUserCache(ADMIN_SUPER);
+    invalidateUserCache(KONFI_A);
+    invalidateUserCache(KONFI_B);
   });
 
   // Legt einen Antrag fuer eine Konfi an und gibt die ID zurueck.
@@ -1309,6 +1321,201 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.pendingRequests).toBe(2);
+    });
+  });
+
+  // ================================================================
+  // Direktchat (nachgezogen am 01.09.2026)
+  //
+  // Der Chat war die letzte Stelle, an der ein Admin noch jeden Konfi
+  // der Gemeinde erreichte. Entscheidungen:
+  //   - Nur die Rolle 'admin' wird gebunden; org_admin und das
+  //     is_super_admin-Flag bleiben ausgenommen (wie darfJahrgang).
+  //   - Konfi ohne Jahrgang: nur die Leitung erreicht ihn.
+  //   - Gegenrichtung bleibt OFFEN: Ein Konfi darf jeden Admin
+  //     anschreiben, auch einen nicht zustaendigen (Begruendung in
+  //     routes/chat.js, teamAnschreibenVerboten).
+  //   - Bestehende Raeume werden NICHT nachtraeglich gesperrt, nur das
+  //     Anlegen neuer Raeume ist gebunden.
+  // ================================================================
+  describe('Direktchat (POST /api/chat/direct)', () => {
+    let adminSuperToken;
+    let konfiBToken;
+
+    beforeEach(() => {
+      adminSuperToken = tokenFuer(ADMIN_SUPER, 3);
+      konfiBToken = tokenFuer(KONFI_B, 1, 1, 'konfi');
+    });
+
+    // Anzahl der Direktraeume, in denen BEIDE Nutzer Teilnehmer sind.
+    const direktRaeume = async (userA, userB) => {
+      const { rows } = await db.query(
+        `SELECT COUNT(DISTINCT cr.id)::int AS c
+           FROM chat_rooms cr
+           JOIN chat_participants pa ON pa.room_id = cr.id AND pa.user_id = $1
+           JOIN chat_participants pb ON pb.room_id = cr.id AND pb.user_id = $2
+          WHERE cr.type = 'direct'`,
+        [userA, userB]
+      );
+      return rows[0].c;
+    };
+
+    it('Admin MIT passendem Jahrgang darf anschreiben — 200, Raum entsteht', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ target_user_id: KONFI_A });
+
+      expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
+      expect(await direktRaeume(ADMIN_MIT_JG, KONFI_A)).toBe(1);
+    });
+
+    it('Admin OHNE passenden Jahrgang bekommt 403 — und es entsteht KEIN Raum', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ target_user_id: KONFI_B });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben');
+      expect(await direktRaeume(ADMIN_MIT_JG, KONFI_B)).toBe(0);
+    });
+
+    it('Admin ganz OHNE Zuweisung erreicht gar keinen Konfi — 403, kein Raum', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminOhneJgToken}`)
+        .send({ target_user_id: KONFI_A });
+
+      expect(res.status).toBe(403);
+      expect(await direktRaeume(ADMIN_OHNE_JG, KONFI_A)).toBe(0);
+    });
+
+    it('org_admin erreicht jeden Konfi — 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ target_user_id: KONFI_B });
+
+      expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
+    });
+
+    it('admin-Rolle MIT is_super_admin-Flag bleibt ausgenommen — 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminSuperToken}`)
+        .send({ target_user_id: KONFI_B });
+
+      expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
+    });
+
+    it('Konfi ohne Jahrgang: gebundener Admin 403, Leitung 200', async () => {
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = NULL WHERE user_id = $1', [KONFI_A]);
+
+      const gebunden = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ target_user_id: KONFI_A });
+      expect(gebunden.status).toBe(403);
+      expect(gebunden.body.error).toBe('Diese Konfirmand:in ist keinem deiner Jahrgänge zugeordnet');
+      expect(await direktRaeume(ADMIN_MIT_JG, KONFI_A)).toBe(0);
+
+      const leitung = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ target_user_id: KONFI_A });
+      expect(leitung.status).toBe(200);
+      expect(leitung.body.created).toBe(true);
+    });
+
+    // Gegenrichtung BEWUSST offen: Die Bindung schuetzt Konfis vor breitem
+    // Zugriff des Teams, nicht das Team vor Fragen der Konfis — und ein
+    // Jahrgang ohne zugewiesenen Admin liesse den Konfi sonst mit der
+    // Leitung als einzigem Kontakt zurueck.
+    it('Konfi darf einen NICHT zustaendigen Admin weiterhin anschreiben — 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfiBToken}`)
+        .send({ target_user_id: ADMIN_MIT_JG });
+
+      expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
+    });
+
+    it('Kontaktlisten des Konfis zeigen auch nicht zustaendige Admins (Arrays bleiben Arrays)', async () => {
+      const admins = await request(app)
+        .get('/api/chat/admins')
+        .set('Authorization', `Bearer ${konfiBToken}`);
+      expect(admins.status).toBe(200);
+      expect(Array.isArray(admins.body)).toBe(true);
+      const adminIds = admins.body.map(u => u.id);
+      expect(adminIds).toContain(ADMIN_MIT_JG);
+      expect(adminIds).toContain(ADMIN_OHNE_JG);
+
+      const verfuegbar = await request(app)
+        .get('/api/chat/available-users')
+        .set('Authorization', `Bearer ${konfiBToken}`);
+      expect(verfuegbar.status).toBe(200);
+      expect(Array.isArray(verfuegbar.body.users)).toBe(true);
+      const verfuegbarIds = verfuegbar.body.users.map(u => u.id);
+      expect(verfuegbarIds).toContain(ADMIN_MIT_JG);
+      expect(verfuegbarIds).toContain(ADMIN_OHNE_JG);
+    });
+
+    it('die Grenze laesst sich nicht ueber POST /rooms (participants) umgehen — 403, kein Raum', async () => {
+      const vorher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ type: 'group', name: 'Umweg', participants: [KONFI_B] });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben');
+
+      // Kein verwaister Raum zurueckgeblieben
+      const nachher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+      expect(nachher.rows[0].c).toBe(vorher.rows[0].c);
+    });
+
+    it('Bestehender Direktchat mit fremdem Konfi bleibt nutzbar — nur NEUES Anlegen ist gebunden', async () => {
+      // Bestehenden Raum direkt anlegen (entstanden vor der Regel).
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, created_by, organization_id)
+         VALUES ('Altbestand', 'direct', $1, 1) RETURNING id`,
+        [ADMIN_MIT_JG]
+      );
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $2, 'admin'), ($1, $3, 'konfi')`,
+        [raum.id, ADMIN_MIT_JG, KONFI_B]
+      );
+
+      // Der Raum bleibt in der Liste des Admins ...
+      const rooms = await request(app)
+        .get('/api/chat/rooms')
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+      expect(rooms.status).toBe(200);
+      expect(rooms.body.map(r => r.id)).toContain(raum.id);
+
+      // ... und er kann weiterhin hineinschreiben.
+      const nachricht = await request(app)
+        .post(`/api/chat/rooms/${raum.id}/messages`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ content: 'Bestehendes Gespraech geht weiter' });
+      expect(nachricht.status).toBe(200);
+
+      // Ein NEUER Anlege-Versuch desselben Paars bleibt trotzdem 403 —
+      // die Route prueft die Berechtigung vor dem Dedup (wie schon seit
+      // dem 23.08.2026 bei Teamer:innen).
+      const neu = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ target_user_id: KONFI_B });
+      expect(neu.status).toBe(403);
     });
   });
 });
