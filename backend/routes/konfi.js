@@ -1334,8 +1334,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           }
         }
         
+        // qr_token MUSS raus, bevor die Zeile den Server verlaesst.
+        // Die Abfrage holt `SELECT e.*`, damit lag der Check-in-Token jedes
+        // Termins in der Antwort -- an KONFIS. Mit ihm kann man sich per
+        // POST /events/qr-checkin von zu Hause als anwesend eintragen und
+        // Punkte gutschreiben, ohne dagewesen zu sein.
+        //
+        // Dieselbe Luecke wurde am 22.08.2026 fuer GET /events geschlossen
+        // (events/lesen.js), die Konfi-Liste dabei uebersehen -- der Schutz
+        // war ueber sie also weiter umgehbar. Gefunden bei der
+        // API-Konsolidierungspruefung am 01.09.2026.
+        //
+        // Konfis brauchen den Token nie: Gescannt wird der QR-Code, den die
+        // Leitung anzeigt; das Backend loest ihn selbst auf.
+        const { qr_token: _qrToken, ...rowOhneToken } = row;
+
         return {
-          ...row,
+          ...rowOhneToken,
           categories: categories
         };
       });

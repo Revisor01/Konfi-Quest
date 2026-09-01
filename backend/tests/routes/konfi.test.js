@@ -1265,6 +1265,38 @@ describe('Konfi Routes', () => {
       expect(Array.isArray(res.body)).toBe(true);
     });
 
+    it('die Antwort enthaelt KEIN qr_token', async () => {
+      // Befund 01.09.2026: Die Abfrage holt SELECT e.* und reichte die Zeile
+      // unveraendert weiter -- der Check-in-Token lag damit in der Antwort an
+      // Konfis. Mit ihm kann man sich per POST /events/qr-checkin von zu
+      // Hause als anwesend eintragen und Punkte gutschreiben.
+      // Dieselbe Luecke war am 22.08.2026 fuer GET /events geschlossen
+      // worden; die Konfi-Liste wurde uebersehen.
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // Ohne gesetzten Token waere der Test wertlos -- er wuerde auch bei
+      // durchgereichtem Feld gruen sein, weil dort dann null stuende.
+      await db.query(
+        "UPDATE events SET qr_token = 'geheim-testtoken-123' WHERE id = $1",
+        [EVENTS.gottesdienstEvent.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      for (const event of res.body) {
+        expect(event.qr_token).toBeUndefined();
+      }
+      // Gegenprobe, dass der Token wirklich in der Datenbank steht:
+      const { rows } = await db.query('SELECT qr_token FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(rows[0].qr_token).toBe('geheim-testtoken-123');
+    });
+
     it('Konfi bekommt Events nach Jahrgang-Assignment', async () => {
       // ON CONFLICT DO NOTHING seit 01.09.2026: Der Seed legt die Zuordnung
       // Termin -> Jahrgang seit dem 30.08.2026 selbst an (seed.js:245ff, fuer

@@ -43,6 +43,10 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Sicherheitslücke geschlossen: In der Terminliste der Konfis wurde der
+  Check-in-Code jedes Termins mitgeliefert. Damit hätte man sich von zu Hause
+  als anwesend eintragen und Punkte gutschreiben können, ohne dagewesen zu
+  sein. Der Code verlässt den Server jetzt nicht mehr.
 - Beim Zuweisen von Jahrgängen bot die App einem Admin auch Jahrgänge an, für
   die er gar nicht zuständig ist — beim Speichern kam dann eine Fehlermeldung.
   Die Auswahl zeigt jetzt nur die eigenen Jahrgänge. Wer selbst keinen
