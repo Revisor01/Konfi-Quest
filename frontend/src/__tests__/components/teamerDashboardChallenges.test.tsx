@@ -96,6 +96,7 @@ vi.mock('../../components/wrapped/WrappedModal', () => ({ default: () => null })
 vi.mock('../../components/shared', () => ({
   ProfileHeaderButton: () => null,
   TrialBanner: () => null,
+  StoreUpdateBanner: () => null,
 }));
 vi.mock('../../components/shared/BibleTranslationModal', () => ({
   default: () => null,

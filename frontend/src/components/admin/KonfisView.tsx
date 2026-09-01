@@ -3,7 +3,7 @@ import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding
   IonSpinner} from '@ionic/react';
 import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
-import { SectionHeader, ListSection, TrialBanner } from '../shared';
+import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../shared';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -189,6 +189,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   return (
     <>
       <TrialBanner />
+
+      {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
+          Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
+      <StoreUpdateBanner />
 
       <SectionHeader
         title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}

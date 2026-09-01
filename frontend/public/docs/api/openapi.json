@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n244 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n245 Operationen."
   },
   "servers": [
     {
@@ -2755,6 +2755,30 @@
           "org-scope": false,
           "objekt-pruefung": "keine",
           "hinweis": "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
+        }
+      }
+    },
+    "/api/app-version": {
+      "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
+        "summary": "Aktuell im Store veroeffentlichte App-Version (ohne Anmeldung)",
+        "description": "Meldet den Apps die aktuell veroeffentlichte Store-Version fuer den dezenten Update-Hinweis auf den Dashboards. Quelle ist der offene iTunes-Lookup (bundleId de.godsapp.konfiquest), serverseitig 6h gecacht; Android traegt dieselbe Version, weil beide Apps im Gleichschritt aus version.json released werden (Begruendung in backend/utils/storeVersion.js). version ist null, wenn der Lookup gerade nicht erreichbar ist — die App zeigt dann keinen Hinweis. Die Antwortform ist Vertrag fuer ausgelieferte Apps ab 2.1.1: Felder nur ergaenzen, nie entfernen oder umformen.\n",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ios: {version|null, url}, android: {version|null, url}"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [],
+          "org-scope": false,
+          "objekt-pruefung": "keine",
+          "hinweis": "Keine Authentifizierung — die veroeffentlichte Store-Version ist oeffentlich einsehbar. Der globale Rate-Limiter gilt.\n"
         }
       }
     },

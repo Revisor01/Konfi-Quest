@@ -39,7 +39,7 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
-import { ProfileHeaderButton, TrialBanner } from '../../shared';
+import { ProfileHeaderButton, TrialBanner, StoreUpdateBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
@@ -475,6 +475,10 @@ const TeamerDashboardPage: React.FC = () => {
         </IonRefresher>
 
         <TrialBanner style={{ marginTop: '8px' }} />
+
+        {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
+            Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
+        <StoreUpdateBanner style={{ marginTop: '8px' }} />
 
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft

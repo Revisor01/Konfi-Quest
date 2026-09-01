@@ -10,6 +10,10 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Liegt in den Stores eine neuere App-Version, weist die Startseite dezent
+  darauf hin. Ein Tipp öffnet die Store-Seite zum Aktualisieren; das X blendet
+  den Hinweis für diese Version dauerhaft aus. Nichts wird erzwungen, ohne
+  Internet erscheint der Hinweis nicht.
 - Material lässt sich ausdrücklich für alle Teamer:innen der Gemeinde
   freigeben — unabhängig vom Jahrgang. Die Teamer:innen finden es in einem
   eigenen Abschnitt ganz oben, in der Leitung ist es am Globus zu erkennen.
