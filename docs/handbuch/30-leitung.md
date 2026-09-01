@@ -106,7 +106,11 @@ Beim **Anlegen** eines Termins legst du fest:
 
 In der Detailansicht trägst du **Anwesenheit** ein, bestätigst die
 **Warteliste**, fügst Teilnehmende von Hand hinzu und siehst die
-**Abmeldungen** samt Begründung. Über das QR-Symbol zeigst du den Code zum
+**Abmeldungen** samt Begründung. Bei Team-Terminen stehen dort auch die
+[**Zu- und Absagen der Teamer:innen**](70-termine.md#teamer-innen-sagen-zu-oder-ab)
+mit Grund — eine Absage nach vorheriger Zusage ist als „Nach Zusage
+abgesagt" gekennzeichnet, weil du dann umplanen musst. Über das QR-Symbol
+zeigst du den Code zum
 [Selbst-Einchecken](70-termine.md#qr-check-in) — auch zum Ausdrucken.
 
 Ein Termin lässt sich [**absagen** statt löschen](70-termine.md#absagen-oder-loeschen).

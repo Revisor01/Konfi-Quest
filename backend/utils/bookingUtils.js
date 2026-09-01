@@ -12,8 +12,11 @@ const { addToEventChat } = require('./eventChat');
  * @returns {object|null} Booking-Objekt oder null
  */
 async function checkExistingBooking(client, userId, eventId) {
+  // status ist seit 01.09.2026 mit dabei: Der Buchungskern muss eine
+  // abgesagte Buchung (opted_out) von einer aktiven unterscheiden koennen,
+  // um sie zu reaktivieren statt mit 409 abzuweisen.
   const { rows: [existing] } = await client.query(
-    'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+    'SELECT id, status FROM event_bookings WHERE user_id = $1 AND event_id = $2',
     [userId, eventId]
   );
   return existing || null;
@@ -288,6 +291,28 @@ function isRegistrationOpenForKonfis(event) {
 // `zaehleBuchungen` ist die einzige Stelle, die diese Bedeutung in SQL
 // giesst. Wer sie aendert, aendert die Bedeutung ueberall gleichzeitig —
 // genau das ist der Zweck.
+//
+// DIE REGEL FUER status = 'opted_out' (aufgeschrieben 01.09.2026 — sie galt
+// schon laenger, stand aber nirgends):
+//
+//   'opted_out' setzen NUR die beiden Wege, bei denen die Absage selbst eine
+//   Aussage ist, die die Leitung sehen soll:
+//     1. der Konfi-Opt-out von PFLICHTterminen (konfi.js POST /events/:id/
+//        opt-out) — die Konfi wurde automatisch eingeschrieben und traegt
+//        sich begruendet aus; die Zeile bleibt stehen, damit die Leitung
+//        Abmeldung und Grund sieht.
+//     2. die Teamer-Absage ("Ich bin nicht dabei", setzeTeamerZusage unten)
+//        — eine Absage ist hier eine eigene, sichtbare Rueckmeldung und
+//        gerade NICHT dasselbe wie "hat noch nicht reagiert".
+//
+//   Die SELBST-Abmeldung von freiwilligen Terminen (DELETE /events/:id/book,
+//   DELETE /konfi/events/:id/register) LOESCHT die Zeile dagegen und
+//   protokolliert in `event_unregistrations` — dort ist die Person danach
+//   wieder "offen" und kann regulaer neu buchen.
+//
+//   Fuer die Zaehlung ist beides gleich: opted_out zaehlt in zaehleBuchungen
+//   und in der View event_booking_stats NIE als belegter Platz — eine Absage
+//   gibt den Platz frei.
 
 /** Rollenbedingung fuer eine Kontingent-Seite, View-konform (Migration 136). */
 function rollenBedingung(seite, alias = 'eb') {
@@ -402,8 +427,24 @@ async function bucheTermin(client, eingabe) {
 
   // 2. Doppelbuchung — vor allen fachlichen Pruefungen, damit ein zweiter
   //    Versuch immer 409 meldet und nicht je nach Termin etwas anderes.
+  //
+  //    AUSNAHME seit 01.09.2026: Eine ABGESAGTE Teamer-Buchung (opted_out)
+  //    ist kein Doppelbuchungsfall, sondern eine Meinungsaenderung — "Ich bin
+  //    doch dabei" muss nach einer Absage funktionieren (Simons Anforderung:
+  //    zu- und absagen laesst sich jederzeit aendern). Vorher lief genau
+  //    dieser Knopf in der App auf 409 "bereits angemeldet". Die Zeile wird
+  //    weiter unten AKTUALISIERT statt neu angelegt; alle Kapazitaets-
+  //    pruefungen gelten unveraendert (die opted_out-Zeile belegt keinen
+  //    Platz, zaehleBuchungen zaehlt sie nicht).
+  //
+  //    Bewusst NUR auf der Team-Seite: Konfis nehmen eine Pflicht-Abmeldung
+  //    ueber POST /konfi/events/:id/opt-in zurueck (eigene Regeln, eigener
+  //    Push an die Leitung) — dieser Weg bleibt fuer sie der einzige.
   const vorhanden = await checkExistingBooking(client, userId, eventId);
-  if (vorhanden) return fehler(409, 'Du bist bereits für dieses Event angemeldet');
+  const reaktivierung = !!vorhanden && vorhanden.status === 'opted_out' && rolle === 'teamer';
+  if (vorhanden && !reaktivierung) {
+    return fehler(409, 'Du bist bereits für dieses Event angemeldet');
+  }
 
   // ---------- TEAM-SEITE ----------
   // Bewusst weiterhin OHNE Zeitslot und OHNE Anmeldefenster: Teamer:innen
@@ -420,11 +461,30 @@ async function bucheTermin(client, eingabe) {
     );
     if (typeof ergebnis === 'object') return fehler(ergebnis.status, ergebnis.error);
 
-    const { rows: [neu] } = await client.query(
-      `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
-       VALUES ($1, $2, $3, NOW(), $4) RETURNING id`,
-      [eventId, userId, ergebnis, orgId]
-    );
+    let neu;
+    if (reaktivierung) {
+      // Absage zuruecknehmen: Zeile aktualisieren statt neu anlegen. Grund,
+      // Absage-Datum und das Kennzeichen "nach Zusage abgesagt" werden
+      // geleert — die neue Zusage ersetzt die Absage, sie ergaenzt sie nicht
+      // (gleiches Verhalten wie setzeTeamerZusage bei dabei=true).
+      // booking_date auf NOW(): Fuer Warteliste und Nachruecken zaehlt die
+      // NEUE Entscheidung, nicht der Zeitpunkt der zurueckgenommenen.
+      ({ rows: [neu] } = await client.query(
+        `UPDATE event_bookings
+            SET status = $3, booking_date = NOW(),
+                opt_out_reason = NULL, opt_out_date = NULL,
+                absage_nach_zusage = false
+          WHERE id = $4 AND user_id = $2 AND event_id = $1
+          RETURNING id`,
+        [eventId, userId, ergebnis, vorhanden.id]
+      ));
+    } else {
+      ({ rows: [neu] } = await client.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, $3, NOW(), $4) RETURNING id`,
+        [eventId, userId, ergebnis, orgId]
+      ));
+    }
     await addToEventChat(client, eventId, userId, orgId);
     return {
       ok: true, bookingId: neu.id, status: ergebnis, event, timeslot: null,
@@ -504,6 +564,157 @@ async function bucheTermin(client, eingabe) {
   };
 }
 
+/**
+ * Teamer-Zusage/-Absage: "Ich bin dabei" / "Ich bin nicht dabei".
+ *
+ * Drei Zustaende, alle in event_bookings.status (siehe Regel-Block oben):
+ * keine Zeile = offen, confirmed/waitlist = zugesagt, opted_out = abgesagt.
+ * Jeder Uebergang ist jederzeit erlaubt — die Meinung darf sich aendern.
+ *
+ * GRUND: freiwillig, mit EINER Ausnahme (Simons Anforderung 01.09.2026):
+ * Eine Absage NACH einer Zusage (vorheriger Status confirmed ODER waitlist)
+ * verlangt einen Grund, sonst 400 mit error_code 'grund_erforderlich'.
+ * Warum auch die Warteliste zaehlt: Die Zusage ist die AUSSAGE "Ich bin
+ * dabei" — ob das System daraus einen festen Platz oder einen Wartelisten-
+ * platz gemacht hat, hat die Person nicht entschieden. Wer seine Aussage
+ * zuruecknimmt, sagt warum; die Leitung plant damit. Die Regel wird HIER
+ * durchgesetzt, nicht nur in der Oberflaeche — die Oberflaeche fragt den
+ * Grund ab, das Backend lehnt ohne ihn ab.
+ *
+ * Eine Absage aus "offen" (noch keine Buchung) oder aus einer frueheren
+ * Absage braucht weiterhin KEINEN Grund: Da wird keine Zusage zurueck-
+ * genommen, es soll nur die Rueckmeldung ueberhaupt da sein.
+ *
+ * KAPAZITAET: Die Zusage laeuft ueber dieselben Funktionen wie der regulaere
+ * Buchungsweg (zaehleBuchungen/determineBookingStatus, Team-Seite im Sinne
+ * von Migration 136). Eine Absage aus 'confirmed' gibt einen Team-Platz frei
+ * und laesst — wie die Stornierung — aus der TEAM-Warteliste nachruecken.
+ *
+ * ERWARTET EINEN CLIENT in laufender Transaktion (wie bucheTermin): Event-
+ * Zeile wird mit FOR UPDATE gesperrt, das Nachruecken haengt an der Sperre.
+ *
+ * @param {object} client - Client aus db.getClient(), NICHT der Pool
+ * @param {object} eingabe - { eventId, userId, orgId, dabei: boolean, grund?: string }
+ * @returns {{ok: true, status: string, vorherigerStatus: string|null, event: object, promotedUserId: number|null}
+ *          |{ok: false, status: number, error: string, error_code?: string}}
+ */
+async function setzeTeamerZusage(client, eingabe) {
+  verlangeClient(client, 'setzeTeamerZusage');
+  const { eventId, userId, orgId, dabei } = eingabe;
+  const grund = typeof eingabe.grund === 'string' && eingabe.grund.trim()
+    ? eingabe.grund.trim().slice(0, 500)
+    : null;
+
+  const fehler = (status, error, error_code) =>
+    error_code ? { ok: false, status, error, error_code } : { ok: false, status, error };
+
+  // Termin sperren — Gemeinde-Filter in DIESER Abfrage (wie bucheTermin).
+  const { rows: [event] } = await client.query(
+    `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled,
+            teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+            organization_id
+       FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
+    [eventId, orgId]
+  );
+  if (!event) return fehler(404, 'Termin nicht gefunden');
+  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
+  // Konfi-Terminen gibt es nichts zuzusagen.
+  if (!event.teamer_needed && !event.teamer_only) {
+    return fehler(400, 'Für diesen Termin werden keine Teamer:innen gesucht');
+  }
+  if (new Date(event.event_date) <= new Date()) {
+    return fehler(400, 'Der Termin liegt bereits in der Vergangenheit');
+  }
+
+  // Eigene Buchung sperren: Der vorherige Status entscheidet ueber den
+  // Grund-Zwang und das Nachruecken — er darf sich zwischen Lesen und
+  // Schreiben nicht aendern (zwei gleichzeitige Absagen desselben Kontos
+  // wuerden sonst beide nachruecken lassen).
+  const { rows: [bestehend] } = await client.query(
+    'SELECT id, status FROM event_bookings WHERE user_id = $1 AND event_id = $2 FOR UPDATE',
+    [userId, eventId]
+  );
+  const vorherigerStatus = bestehend ? bestehend.status : null;
+
+  let status;
+  let promotedUserId = null;
+
+  if (dabei) {
+    // Bei einer ZUSAGE gilt das Teamer-Kontingent genauso wie auf dem
+    // regulaeren Buchungsweg. Die eigene bestehende Buchung zaehlt nicht als
+    // neuer Platz — sonst koennte man sich durch Absage und erneute Zusage
+    // selbst aussperren, obwohl der Platz noch einem gehoert.
+    const zahlen = await zaehleBuchungen(client, { eventId }, 'team', { ausserUserId: userId });
+    const ergebnis = determineBookingStatus(
+      event, zahlen.confirmed, zahlen.waitlist,
+      event.teamer_max_participants || 0,
+      { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
+    );
+    if (typeof ergebnis === 'object') return fehler(ergebnis.status, ergebnis.error);
+    status = ergebnis; // 'confirmed' oder 'waitlist'
+  } else {
+    // DER Grund-Zwang: Absage nach Zusage nur mit Grund. Aus 'offen' oder
+    // aus einer frueheren Absage bleibt der Grund freiwillig.
+    const hatteZugesagt = vorherigerStatus === 'confirmed' || vorherigerStatus === 'waitlist';
+    if (hatteZugesagt && !grund) {
+      return fehler(
+        400,
+        'Du hattest zugesagt — bitte gib einen Grund für deine Absage an, damit die Leitung umplanen kann',
+        'grund_erforderlich'
+      );
+    }
+    status = 'opted_out';
+  }
+
+  // Vorhandene Buchung aktualisieren oder neu anlegen. absage_nach_zusage
+  // haelt fest, ob eine Absage eine Zusage zurueckgenommen hat (Migration
+  // 141) — bei jeder neuen Zusage wird es wieder geleert.
+  //
+  // WIEDERHOLTE Absage (vorher schon opted_out, z.B. Doppelversand aus der
+  // Offline-Warteschlange): Grund und Kennzeichen BLEIBEN stehen, wenn kein
+  // neuer Grund mitkommt — ein Duplikat darf die erste, begruendete Absage
+  // nicht zu einer grundlosen machen. Ein neuer Grund ueberschreibt.
+  if (bestehend) {
+    const nahmZusageZurueck =
+      status === 'opted_out' && (vorherigerStatus === 'confirmed' || vorherigerStatus === 'waitlist');
+    await client.query(
+      `UPDATE event_bookings
+          SET status = $3,
+              opt_out_reason = CASE WHEN $3 = 'opted_out' THEN COALESCE($4, opt_out_reason) ELSE NULL END,
+              opt_out_date   = CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END,
+              absage_nach_zusage = CASE
+                WHEN $3 <> 'opted_out' THEN false
+                WHEN $5 THEN true
+                ELSE absage_nach_zusage
+              END
+        WHERE id = $6 AND organization_id = $7 AND user_id = $1 AND event_id = $2`,
+      [userId, eventId, status, grund, nahmZusageZurueck, bestehend.id, orgId]
+    );
+  } else {
+    await client.query(
+      `INSERT INTO event_bookings
+         (user_id, event_id, status, organization_id, opt_out_reason, opt_out_date, absage_nach_zusage)
+       VALUES ($1, $2, $3, $4, $5, CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END, false)`,
+      [userId, eventId, status, orgId, status === 'opted_out' ? grund : null]
+    );
+  }
+
+  // Absage aus 'confirmed' gibt einen TEAM-Platz frei -> aus der Team-
+  // Warteliste nachruecken, mit derselben Kapazitaetspruefung wie beim
+  // Storno (DELETE /events/:id/book). Teamer-Buchungen haben nie einen
+  // Timeslot -> event-weite Zaehlung.
+  if (status === 'opted_out' && vorherigerStatus === 'confirmed') {
+    const teamerMax = event.teamer_max_participants || 0;
+    const teamerBestaetigt = await zaehleBestaetigte(client, { eventId }, 'team');
+    if (teamerMax === 0 || teamerBestaetigt < teamerMax) {
+      promotedUserId = await promoteFromWaitlist(client, eventId, null, 'teamer');
+    }
+  }
+
+  return { ok: true, status, vorherigerStatus, event, promotedUserId };
+}
+
 module.exports = {
   takeBackEventPoints,
   checkExistingBooking,
@@ -514,5 +725,6 @@ module.exports = {
   isRegistrationOpenForKonfis,
   zaehleBuchungen,
   zaehleBestaetigte,
-  bucheTermin
+  bucheTermin,
+  setzeTeamerZusage
 };

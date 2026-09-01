@@ -24,7 +24,7 @@ const PushService = require('../../services/pushService');
 
 // Alle gesendeten Payloads einsammeln: [{ token, data }]
 const gesendete = () => sendFirebasePushNotification.mock.calls.map(
-  ([token, payload]) => ({ token, data: payload.data, title: payload.title })
+  ([token, payload]) => ({ token, data: payload.data, title: payload.title, body: payload.body })
 );
 
 describe('PushService: organization_id in jedem Payload', () => {
@@ -696,16 +696,32 @@ describe('PushService: organization_id in jedem Payload', () => {
       expect(push.data.organization_id).toBe('1');
     });
 
-    it('sendTeamerEventCancellationToAdmins: Abmeldung', async () => {
+    it('sendTeamerEventCancellationToAdmins: Abmeldung ohne Grund — Text wie bisher', async () => {
+      // Der Storno-Weg (DELETE /events/:id/book) ruft ohne reason auf: Der
+      // Text darf sich fuer ihn nicht aendern.
       await PushService.sendTeamerEventCancellationToAdmins(
         db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 42
       );
 
       const [push] = gesendete();
       expect(push.title).toBe('Teamer:in abgemeldet');
+      expect(push.body).toBe("Lasse Brandt hat sich von 'Konfi-Freizeit' abgemeldet");
       expect(push.data.type).toBe('teamer_event_cancellation');
       expect(push.data.eventId).toBe('42');
       expect(push.data.organization_id).toBe('1');
+      expect(push.data.reason).toBeUndefined();
+    });
+
+    it('sendTeamerEventCancellationToAdmins: Absage MIT Grund nennt ihn (01.09.2026)', async () => {
+      await PushService.sendTeamerEventCancellationToAdmins(
+        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 42, 'Familienfeier'
+      );
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Teamer:in abgemeldet');
+      expect(push.body).toBe("Lasse Brandt hat sich von 'Konfi-Freizeit' abgemeldet. Grund: Familienfeier");
+      expect(push.data.type).toBe('teamer_event_cancellation');
+      expect(push.data.reason).toBe('Familienfeier');
     });
 
     it('sendCertificateToTeamer: Zertifikat an die Teamer:in', async () => {

@@ -171,6 +171,7 @@ Stand der Nachprüfung: 01.09.2026, gegen Commit `4c46a3f2`.
 | `GET /api/levels/konfi/:userId` | `GET /api/konfi/dashboard` (Level und Fortschritt stehen dort) | | 01.09.2026 |
 | `GET /api/users/:id/jahrgaenge` | ersatzlos — die Zuweisungen kommen mit `GET /api/users/:id` | POST auf demselben Pfad IST in Benutzung (`UserManagementModal.tsx:307`) — **nur das GET** ist gemeint | 01.09.2026 |
 | `DELETE /api/admin/activities/requests/:id` | ersatzlos | Nur `…/:id/photo`-DELETE wird gerufen (`ActivityRequestModal.tsx:141`) | 01.09.2026 |
+| `DELETE /api/events/:id/book` | Teamer: `POST /api/teamer/events/:id/zusage` mit `dabei=false` (lässt die Absage samt Grund stehen); Konfi: `DELETE /api/konfi/events/:id/register` (protokolliert in `event_unregistrations`) | Löscht die Buchung, ohne irgendetwas zu protokollieren — genau deshalb abgelöst (Absage-mit-Grund, 01.09.2026). Store-Apps rufen sie für die Teamer-Abmeldung noch; `POST` auf demselben Pfad IST in Benutzung (`TeamerEventsPage.tsx`, handleBook) — **nur das DELETE** ist gemeint | 01.09.2026 |
 
 ### C — Bleiben dauerhaft (geprüft, kein Abrisskandidat)
 

@@ -130,6 +130,12 @@ export interface Participant {
   timeslot_end_time?: string;
   opt_out_reason?: string;
   opt_out_date?: string;
+  /**
+   * Hat diese Absage eine vorherige Zusage zurueckgenommen? (Migration 141,
+   * 01.09.2026). Nur beim Teamer-Zusage-Weg gesetzt; fuer die Leitung der
+   * Unterschied zwischen "war nie eingeplant" und "kurzfristig abgesprungen".
+   */
+  absage_nach_zusage?: boolean;
 }
 
 /**

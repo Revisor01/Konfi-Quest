@@ -37,6 +37,7 @@ import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import QRDisplayModal from '../../shared/QRDisplayModal';
 import RequestsView from '../../konfi/views/RequestsView';
 import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
+import TeamerAbsageModal from '../modals/TeamerAbsageModal';
 import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
@@ -366,13 +367,19 @@ const TeamerEventsPage: React.FC = () => {
   // Zusage/Absage: "Ich bin dabei" / "Ich bin nicht dabei".
   // Eine Absage ist eine eigene, sichtbare Aussage — vorher verschwand man
   // einfach aus der Liste und die Leitung musste nachfragen, ob die
-  // Rueckmeldung noch kommt (Nutzerwunsch 25.08.2026). BEWUSST ohne
-  // Begruendungszwang: Teamer:innen arbeiten selbststaendig.
-  const handleZusage = async (event: Event, dabei: boolean) => {
+  // Rueckmeldung noch kommt (Nutzerwunsch 25.08.2026).
+  //
+  // GRUND (Anforderung 01.09.2026): freiwillig — AUSSER die Absage nimmt
+  // eine Zusage zurueck, dann Pflicht. Abgefragt wird er im
+  // TeamerAbsageModal (oeffneAbsage unten); durchgesetzt wird die Regel im
+  // Backend, das ohne Grund mit error_code 'grund_erforderlich' ablehnt —
+  // dieser Handler zeigt dann die Server-Meldung an.
+  const handleZusage = async (event: Event, dabei: boolean, reason?: string) => {
     setBookingLoading(true);
+    const body = reason && reason.trim() ? { dabei, reason: reason.trim() } : { dabei };
     try {
       if (networkMonitor.isOnline) {
-        await api.post(`/teamer/events/${event.id}/zusage`, { dabei });
+        await api.post(`/teamer/events/${event.id}/zusage`, body);
         const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
         if (updated) setSelectedEvent(updated);
         setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
@@ -380,7 +387,7 @@ const TeamerEventsPage: React.FC = () => {
         await writeQueue.enqueue({
           method: 'POST',
           url: `/teamer/events/${event.id}/zusage`,
-          body: { dabei },
+          body,
           maxRetries: 5,
           hasFileUpload: false,
           metadata: {
@@ -397,6 +404,28 @@ const TeamerEventsPage: React.FC = () => {
     } finally {
       setBookingLoading(false);
     }
+  };
+
+  // Nimmt DIESE Absage eine Zusage zurueck? Dann verlangt das Backend einen
+  // Grund (confirmed ODER waitlist — die Aussage "Ich bin dabei" zaehlt,
+  // nicht der zugeteilte Platz). 'pending' ist ein Alt-Status mit derselben
+  // Bedeutung wie waitlist und wird gleich behandelt.
+  const absageBrauchtGrund = (event: Event): boolean =>
+    event.booking_status === 'confirmed' ||
+    event.booking_status === 'waitlist' ||
+    event.booking_status === 'pending';
+
+  const [presentAbsageModal, dismissAbsageModal] = useIonModal(TeamerAbsageModal, {
+    eventName: selectedEvent?.name || '',
+    grundPflicht: selectedEvent ? absageBrauchtGrund(selectedEvent) : false,
+    onAbsage: (reason: string) => {
+      if (selectedEvent) handleZusage(selectedEvent, false, reason);
+    },
+    dismiss: (data?: string, role?: string) => dismissAbsageModal(data, role)
+  });
+
+  const oeffneAbsage = () => {
+    presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
   // Status-Infos für Event-Karten
@@ -445,6 +474,12 @@ const TeamerEventsPage: React.FC = () => {
     } else if (isPastEvent) {
       statusColor = C.past;
       statusText = 'Vergangen';
+    } else if (event.booking_status === 'opted_out') {
+      // Eigene Absage: eigener Zustand statt "Offen"/"Ausgebucht" — die
+      // Absage ist eine abgegebene Rueckmeldung, kein offener Termin.
+      // Umentscheiden geht weiterhin ueber "Ich bin dabei" im Detail.
+      statusColor = C.danger;
+      statusText = 'Abgesagt von dir';
     } else if (canRegister && event.teamer_registration_status === 'closed') {
       // Teamer-Kontingent voll UND keine Warteliste mehr. Bis 27.08.2026 fehlte
       // dieser Zweig ganz: Ein volles Team-Kontingent stand hier als "Offen",
@@ -510,35 +545,13 @@ const TeamerEventsPage: React.FC = () => {
     }
   };
 
-  const handleUnbook = async (event: Event) => {
-    setBookingLoading(true);
-    try {
-      if (networkMonitor.isOnline) {
-        await api.delete(`/events/${event.id}/book`);
-        await refresh();
-        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
-        if (updated) setSelectedEvent(updated);
-      } else {
-        await writeQueue.enqueue({
-          method: 'DELETE',
-          url: `/events/${event.id}/book`,
-          body: {},
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'teamer',
-            clientId: safeUUID(),
-            label: 'Event abmelden',
-          },
-        });
-        setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
-      }
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Stornieren'));
-    } finally {
-      setBookingLoading(false);
-    }
-  };
+  // KEIN handleUnbook (DELETE /events/:id/book) mehr (01.09.2026): Der
+  // Loesch-Weg protokollierte nichts — wer nach einer Zusage abserang, war
+  // fuer die Leitung nicht von "hat nie reagiert" zu unterscheiden, und der
+  // Pflicht-Grund liess sich gar nicht erst abgeben. Jede Absage laeuft
+  // jetzt ueber die Zusage-Route (oeffneAbsage -> handleZusage dabei=false),
+  // die den Zustand als 'opted_out' samt Grund stehen laesst. Die
+  // DELETE-Route selbst bleibt im Backend — Store-Apps rufen sie noch.
 
   // Status-Farben für SectionHeader — globale Tokens
   // Darf sich ein Teamer zu diesem Event überhaupt anmelden? Nur bei
@@ -568,6 +581,7 @@ const TeamerEventsPage: React.FC = () => {
     if (isOnWaitlist) return bonus;
     if (event.is_registered && !isPastEvent) return info; // angemeldet = blau
     if (isPastEvent) return past;
+    if (event.booking_status === 'opted_out') return danger; // eigene Absage
     if (event.registration_status === 'open') {
       // Anmeldbares Team-Event = rosa (Teamer-Farbe), nicht gruen.
       return teamerCanRegister(event) ? teamer : neutral;
@@ -587,6 +601,7 @@ const TeamerEventsPage: React.FC = () => {
     if (isOnWaitlist) return 'Warteliste';
     if (event.is_registered && !isPastEvent) return 'Dabei';
     if (isPastEvent) return 'Vergangen';
+    if (event.booking_status === 'opted_out') return 'Abgesagt von dir';
     if (event.registration_status === 'open') {
       return teamerCanRegister(event) ? 'Offen' : 'Nur Info';
     }
@@ -1046,7 +1061,7 @@ const TeamerEventsPage: React.FC = () => {
                   expand="block"
                   fill="outline"
                   color="danger"
-                  onClick={() => handleUnbook(selectedEvent)}
+                  onClick={oeffneAbsage}
                   disabled={bookingLoading}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
@@ -1080,14 +1095,16 @@ const TeamerEventsPage: React.FC = () => {
                         </IonButton>
                         {/* Gegenknopf: Ohne ihn war eine Absage nicht von
                             "hat noch nicht reagiert" zu unterscheiden. Bei
-                            bereits abgesagten Terminen entfaellt er. */}
+                            bereits abgesagten Terminen entfaellt er.
+                            Der Dialog fragt einen freiwilligen Grund ab
+                            (aus "offen" heraus ohne Zwang). */}
                         {selectedEvent.booking_status !== 'opted_out' && (
                           <IonButton
                             className="app-action-button"
                             expand="block"
                             fill="outline"
                             color="medium"
-                            onClick={() => handleZusage(selectedEvent, false)}
+                            onClick={oeffneAbsage}
                             disabled={bookingLoading}
                           >
                             <IonIcon icon={closeCircle} slot="start" />

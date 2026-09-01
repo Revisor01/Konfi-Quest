@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n244 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n245 Operationen."
   },
   "servers": [
     {
@@ -4635,7 +4635,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4792,7 +4792,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
-        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n",
+        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n\nNEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung (status opted_out aus POST /api/teamer/events/{id}/zusage) wird reaktiviert statt mit 409 abgewiesen — \"Ich bin doch dabei\" nach einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und absage_nach_zusage geleert), alle Kapazitaetsregeln gelten unveraendert. Fuer Konfis bleibt der 409: Ein Pflicht-Opt-out wird ausschliesslich ueber POST /api/konfi/events/{id}/opt-in zurueckgenommen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4840,7 +4840,7 @@
             "$ref": "#/components/responses/NotFound"
           },
           "409": {
-            "description": "Bereits gebucht oder Konfirmations-Sperre"
+            "description": "Bereits gebucht oder Konfirmations-Sperre (eine abgesagte TEAMER-Buchung loest seit 01.09.2026 keinen 409 mehr aus, sondern wird reaktiviert)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -4852,7 +4852,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404.\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer). Wiederholbar: Ist die Buchung schon weg, der Termin aber vorhanden, kommt 200 mit bereits_storniert=true statt 404 — ein Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag ankommen (28.08.2026). Fuer einen Termin, den es nicht gibt, bleibt es bei 404. SEIT 01.09.2026 ohne Aufrufer in der Oberflaeche (siehe ABRISS.md): Die Teamer-Abmeldung laeuft ueber POST /api/teamer/events/{id}/zusage (dabei=false), die die Absage samt Grund stehen laesst statt zu loeschen. Die Route bleibt unveraendert fuer ausgelieferte Apps.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -9813,6 +9813,77 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigene Tokens (user_id aus dem geprueften Token). BEHOBEN 2026-08-28: Die Route verengte zusaetzlich ueber users.organization_id und verglich damit die PRIMAER-Org des Kontos mit der AKTIVEN Org aus dem Token. Bei Mehrfach-Mitgliedschaft loeschte sie nichts und meldete trotzdem Erfolg.\n"
+        }
+      }
+    },
+    "/api/teamer/events/{id}/zusage": {
+      "post": {
+        "tags": [
+          "Teamer:innen"
+        ],
+        "summary": "Zusage/Absage zu einem Termin (\"Ich bin dabei\" / \"Ich bin nicht dabei\")",
+        "description": "Drei Zustaende in event_bookings.status: keine Zeile = offen, confirmed/waitlist = zugesagt, opted_out = abgesagt (Grund in opt_out_reason). Jeder Uebergang ist jederzeit erlaubt. Die Zusage prueft das Teamer-Kontingent wie der regulaere Buchungsweg (Team-Seite nach Migration 136); eine Absage aus confirmed gibt den Platz frei und laesst aus der TEAM-Warteliste nachruecken. GRUND (01.09.2026): freiwillig, max. 500 Zeichen — AUSSER die Absage nimmt eine Zusage zurueck (vorher confirmed ODER waitlist): dann ist er Pflicht, sonst 400 mit error_code 'grund_erforderlich'. Die Wiederholung einer Absage (Offline-Doppelversand) braucht keinen Grund und laesst den gespeicherten Grund samt Kennzeichen absage_nach_zusage stehen. Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes an die Leitung ueber die Teamer-Typen teamer_event_booking bzw. teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text); nachrueckende Teamer:innen bekommen waitlist_promotion.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "nur die eigene Buchung; Termin org-gescopt (404 sonst); nur teamer_needed/teamer_only, nicht abgesagt, nicht vergangen"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dabei"
+                ],
+                "properties": {
+                  "dabei": {
+                    "type": "boolean",
+                    "description": "true = Zusage, false = Absage"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Grund; Pflicht nur bei Absage nach Zusage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "status (confirmed|waitlist|opted_out), message"
+          },
+          "400": {
+            "description": "dabei fehlt/kein Boolean; Termin abgesagt/vergangen/ohne Teamer-Bedarf; Kontingent und Warteliste voll; Absage nach Zusage ohne Grund (error_code grund_erforderlich)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },

@@ -10,6 +10,14 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Teamer:innen sagen zu Terminen ausdrücklich zu oder ab („Bin dabei" /
+  „Bin nicht dabei") und können ihre Antwort jederzeit ändern — auch zurück
+  zur Zusage. Ein Grund für die Absage ist freiwillig; wer nach einer Zusage
+  absagt, muss einen angeben, damit die Leitung umplanen kann. Bei einer
+  Absage wird der Platz frei und die Warteliste rückt nach.
+- Die Leitung sieht in der Terminansicht, wer abgesagt hat und warum — eine
+  Absage nach vorheriger Zusage ist eigens gekennzeichnet. Die Mitteilung
+  über eine Teamer-Absage nennt jetzt auch den Grund.
 - Material lässt sich ausdrücklich für alle Teamer:innen der Gemeinde
   freigeben — unabhängig vom Jahrgang. Die Teamer:innen finden es in einem
   eigenen Abschnitt ganz oben, in der Leitung ist es am Globus zu erkennen.
