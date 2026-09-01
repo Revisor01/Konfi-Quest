@@ -49,11 +49,14 @@ Versionsüberschrift.
   nur seine eigenen Daten.
 - Uhrzeiten in Mitteilungen und E-Mails stimmen wieder. Erinnerungen,
   Terminabsagen und Änderungshinweise nannten die Zeit zwei Stunden zu früh —
-  eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt.
+  eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt. Auch das Datum in
+  der Absage eines Termins stimmt jetzt: Bei einem Termin kurz nach Mitternacht
+  stand dort der Vortag.
 - Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen.
 - Punkte und Anträge, die spätnachts eingetragen werden, tragen jetzt das
-  richtige Datum. Bisher landeten sie zwischen Mitternacht und zwei Uhr im
-  Vortag — und damit im falschen Tag der Punkte-Historie und des Rückblicks.
+  richtige Datum — die von Konfis wie die von Teamer:innen. Bisher landeten sie
+  zwischen Mitternacht und zwei Uhr im Vortag — und damit im falschen Tag der
+  Punkte-Historie und des Rückblicks.
 - Abmeldezeiten in der Teilnehmerliste stimmen wieder. Wer sich um 12:34
   abgemeldet hatte, stand dort mit 14:34.
 - Mehrtägige Termine bleiben während sie laufen in der Terminliste und auf der

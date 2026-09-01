@@ -13,6 +13,7 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
+const { heuteBerlin } = require('../utils/zeitformat');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -1254,7 +1255,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
       if (vorhanderAntrag) return res.status(200).json(vorhanderAntrag);
 
-      const date = requested_date || new Date().toISOString().split('T')[0];
+      // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+      // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Antrag ohne Datum sonst
+      // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
+      const date = requested_date || heuteBerlin();
 
       // Activity muss existieren und target_role='teamer' sein
       const { rows: [activity] } = await db.query(

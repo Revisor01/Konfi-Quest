@@ -12,6 +12,7 @@ const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
 const { validateTeamerQuota } = require('./validierung');
+const { formatDatum } = require('../../utils/zeitformat');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -822,7 +823,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       nachAntwort(req, async () => {
         // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
         if (bookedKonfiUserIds.length > 0) {
-          const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
+          const eventDateFormatted = formatDatum(event.event_date);
           try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
         }
 
@@ -943,7 +944,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
 
       // Push und LiveUpdate NACH COMMIT und client.release()
       const userIds = participants.map(p => p.user_id);
-      const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
+      const eventDateFormatted = formatDatum(event.event_date);
       if (userIds.length > 0) {
         try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }

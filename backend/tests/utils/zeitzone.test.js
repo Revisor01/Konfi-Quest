@@ -276,3 +276,68 @@ describe('Soft-Revoke: der Widerruf wirkt sofort und zonenunabhaengig', () => {
     await db.query('UPDATE users SET token_invalidated_at = NULL WHERE id = $1', [USERS.konfi1.id]);
   });
 });
+
+describe('Antragsdatum ohne Angabe: Konfi- und Teamer-Weg rechnen gleich', () => {
+  // Befund vom 01.09.2026: Der Teamer-Weg (POST /teamer/requests) fiel ohne
+  // Datum auf `new Date().toISOString().split('T')[0]` zurueck und trug damit
+  // den UTC-Tag -- zwischen 00:00 und 02:00 Berliner Zeit also den Vortag.
+  // Der Konfi-Weg (POST /konfi/requests) war seit dem Fix vom selben Tag schon
+  // auf heuteBerlin() umgestellt; die beiden Wege liefen auseinander.
+  //
+  // Warum hier und nicht als HTTP-Test: Beide Routen validieren
+  // `requested_date` mit notEmpty(), ein Request ohne Datum bekommt 400, bevor
+  // der Handler laeuft. Der Fallback ist der Guertel zum Hosentraeger -- er
+  // laesst sich nur am Quelltext und an der Semantik von heuteBerlin() pruefen.
+  const fs = require('fs');
+  const path = require('path');
+  const lies = (p) => fs.readFileSync(path.join(__dirname, '..', '..', p), 'utf8');
+
+  it('teamer.js leitet das Antragsdatum aus heuteBerlin() ab', () => {
+    expect(lies('routes/teamer.js')).toContain('const date = requested_date || heuteBerlin();');
+  });
+
+  it('teamer.js nimmt den UTC-Tag nicht mehr als Antragsdatum', () => {
+    expect(lies('routes/teamer.js')).not.toContain("new Date().toISOString().split('T')[0]");
+  });
+
+  it('konfi.js und teamer.js nutzen denselben Ausdruck', () => {
+    const zeile = 'const date = requested_date || heuteBerlin();';
+    expect(lies('routes/konfi.js')).toContain(zeile);
+    expect(lies('routes/teamer.js')).toContain(zeile);
+  });
+
+  it('der Fallback trifft um 00:30 Berliner Zeit den Berliner Tag, nicht den UTC-Tag', () => {
+    // Der Fehlerfall Zeichen fuer Zeichen: 22:30 UTC ist in Berlin bereits der
+    // 02.09. Der alte Ausdruck lieferte hier den 01.09.
+    const zeitpunkt = new Date('2026-09-01T22:30:00Z');
+    expect(heuteBerlin(zeitpunkt)).toBe('2026-09-02');
+    expect(zeitpunkt.toISOString().split('T')[0]).toBe('2026-09-01');
+  });
+});
+
+describe('Terminabsage: das Datum in der Push-Nachricht traegt die Zeitzone', () => {
+  // Befund vom 01.09.2026: routes/events/verwaltung.js formatierte das
+  // Termindatum fuer die Absage-Push mit blankem toLocaleDateString('de-DE'),
+  // also in der Zeitzone des Prozesses. Lief der Container in UTC, bekamen die
+  // Konfis bei einem Termin um 00:30 den Vortag angesagt.
+  const fs = require('fs');
+  const path = require('path');
+  const quelle = () => fs.readFileSync(
+    path.join(__dirname, '..', '..', 'routes', 'events', 'verwaltung.js'), 'utf8'
+  );
+
+  it('formatiert das Termindatum ueber den gemeinsamen Helfer', () => {
+    const treffer = quelle().match(/const eventDateFormatted = formatDatum\(event\.event_date\);/g);
+    // Beide Stellen: Termin geloescht und Termin abgesagt.
+    expect(treffer).toHaveLength(2);
+  });
+
+  it('formatiert kein Datum mehr ohne Zeitzone', () => {
+    expect(quelle()).not.toContain("toLocaleDateString('de-DE')");
+  });
+
+  it('nennt bei einem Termin um 00:30 Berliner Zeit den richtigen Tag', () => {
+    // Derselbe Zeitpunkt wie oben: 22:30 UTC = 02.09. in Berlin.
+    expect(formatDatum(new Date('2026-09-01T22:30:00Z'))).toBe('2.9.2026');
+  });
+});
