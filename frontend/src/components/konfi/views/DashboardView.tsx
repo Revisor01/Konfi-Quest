@@ -11,6 +11,7 @@ import ActivityRings from '../../admin/views/ActivityRings';
 import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, eyeOutline, megaphoneOutline, constructOutline, flagOutline } from 'ionicons/icons';
 import { AlleAbzeichen, ApiBadge, Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, DashboardLevel, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
+import { kalendertag } from '../../shared/eventFormatting';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import type { KonfiChallenge } from '../../../types/challenges';
 import api from '../../../services/api';
@@ -272,7 +273,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   // zusaetzlich mit 204 ab.
   const losungAktiv = dashboardConfig?.show_losung !== false;
   const { data: gecachteLosung, loading: losungLaedt } = useOfflineQuery<DailyVerse | null>(
-    'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
+    'konfi:tageslosung:' + kalendertag(),
     async () => {
       const response = await api.get('/konfi/tageslosung');
       if (response.data && response.data.success) {

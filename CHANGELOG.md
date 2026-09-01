@@ -58,7 +58,12 @@ Versionsüberschrift.
   eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt. Auch das Datum in
   der Absage eines Termins stimmt jetzt: Bei einem Termin kurz nach Mitternacht
   stand dort der Vortag.
-- Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen.
+- Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen —
+  jetzt auch in der Anzeige, nicht nur im Hintergrund.
+- Termine am selben Tag stehen als „Heute" statt fälschlich als „Morgen". Ein
+  Termin am Abend wurde bisher schon auf den nächsten Tag gerechnet.
+- Der Zeitpunkt im Kopf eines Chat-Exports stimmt: Er stand zwei Stunden zu
+  früh, während die Nachrichten darunter richtig waren.
 - Punkte und Anträge, die spätnachts eingetragen werden, tragen jetzt das
   richtige Datum — die von Konfis wie die von Teamer:innen. Bisher landeten sie
   zwischen Mitternacht und zwei Uhr im Vortag — und damit im falschen Tag der

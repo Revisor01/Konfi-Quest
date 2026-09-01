@@ -1310,14 +1310,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Textformat: für Menschen zum Lesen und Weiterverarbeiten.
-      const zeit = (d) => new Date(d).toLocaleString('de-DE', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-
+      // Ueber die Helfer aus utils/zeitformat, nicht ueber ein eigenes
+      // toLocaleString ohne Zone: Der Container laeuft in UTC, der Kopf des
+      // Exports nannte die Uhrzeit sonst zwei Stunden zu frueh -- waehrend
+      // die Nachrichten darunter (formatDatum/formatUhrzeit) korrekt in
+      // Berliner Zeit standen. Zwei Zeitrechnungen in einer Datei.
       const zeilen = [];
       zeilen.push(`Chat-Verlauf: ${raumName}`);
-      zeilen.push(`Exportiert am ${zeit(new Date())} — ${messages.length} Nachrichten`);
+      const jetzt = new Date();
+      zeilen.push(`Exportiert am ${formatDatum(jetzt)} ${formatUhrzeit(jetzt)} — ${messages.length} Nachrichten`);
       zeilen.push('='.repeat(60));
       zeilen.push('');
 

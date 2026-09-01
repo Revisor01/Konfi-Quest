@@ -50,6 +50,7 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData, getBadgeColor } from '../../shared/BadgePopoverContent';
+import { formatTimeUntil, kalendertag } from '../../shared/eventFormatting';
 
 
 
@@ -264,7 +265,7 @@ const TeamerDashboardPage: React.FC = () => {
   const losungAktiv = dashboardData?.config?.show_losung !== false;
 
   const { data: dailyVerse, loading: loadingVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse | null>(
-    'teamer:tageslosung:' + new Date().toISOString().split('T')[0],
+    'teamer:tageslosung:' + kalendertag(),
     async () => {
       const response = await api.get('/teamer/tageslosung');
       if (response.data && response.data.success) {
@@ -395,24 +396,6 @@ const TeamerDashboardPage: React.FC = () => {
     return `Gute Nacht, ${firstName}!`;
   };
 
-  // 1:1 aus DashboardView.tsx
-  const formatTimeUntil = (dateString: string | undefined) => {
-    if (!dateString) return '';
-    const targetDate = new Date(dateString);
-    const now = new Date();
-    const diffTime = targetDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Heute';
-    if (diffDays === 1) return 'Morgen';
-    if (diffDays < 0) return 'Vorbei';
-    if (diffDays < 7) return `${diffDays} Tage`;
-    if (diffDays < 14) return '1 Woche';
-    if (diffDays < 21) return '2 Wochen';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} Wochen`;
-    if (diffDays < 365) return `${diffDays} Tage`;
-    return `${Math.floor(diffDays / 365)} Jahr${Math.floor(diffDays / 365) > 1 ? 'e' : ''}`;
-  };
 
   const formatEventTime = (dateString: string | undefined) => {
     if (!dateString) return '';

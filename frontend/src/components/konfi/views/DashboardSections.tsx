@@ -144,24 +144,10 @@ export const getFirstName = (name: string) => {
   return name.split(' ')[0];
 };
 
-export const formatTimeUntil = (dateString: string | undefined) => {
-  if (!dateString) return '';
-  const targetDate = new Date(dateString);
-  const now = new Date();
-  const diffTime = targetDate.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Heute';
-  if (diffDays === 1) return 'Morgen';
-  if (diffDays < 0) return 'Vorbei';
-  if (diffDays === 1) return '1 Tag';
-  if (diffDays < 7) return `${diffDays} Tage`;
-  if (diffDays < 14) return '1 Woche';
-  if (diffDays < 21) return '2 Wochen';
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} Wochen`;
-  if (diffDays < 365) return `${diffDays} Tage`;
-  return `${Math.floor(diffDays / 365)} Jahr${Math.floor(diffDays / 365) > 1 ? 'e' : ''}`;
-};
+// Rechnet jetzt in Kalendertagen statt in 24-Stunden-Bloecken (siehe
+// eventFormatting.ts). Bleibt hier re-exportiert, weil DashboardView und
+// diese Datei sie unter diesem Namen importieren.
+export { formatTimeUntil };
 
 export const formatEventTime = (dateString: string | undefined) => {
   if (!dateString) return '';
@@ -297,6 +283,7 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
 import { RankingEntry as RankingEntryType, RankingZeile } from '../../../types/dashboard';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
+import { formatTimeUntil } from '../../shared/eventFormatting';
 // Re-Export für bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
 export { getIconFromString };
 
