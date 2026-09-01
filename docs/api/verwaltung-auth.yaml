@@ -1005,7 +1005,7 @@ paths:
         "409": { description: "Username existiert (systemweit)" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('create')", validateCreateUser]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('create')", validateCreateUser]
         org-scope: true
         objekt-pruefung: "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
 
@@ -1021,7 +1021,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('view')"]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
         objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
     put:
@@ -1050,7 +1050,7 @@ paths:
         "409": { description: "Username/E-Mail existiert bereits" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateUpdateUser]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateUpdateUser]
         org-scope: true
         objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
@@ -1077,7 +1077,7 @@ paths:
         "409": { description: "Letzter org_admin der Org nicht loeschbar" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('delete')", validateUserId]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
         org-scope: true
         objekt-pruefung: "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
 
@@ -1093,7 +1093,7 @@ paths:
         "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('view')"]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
         objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert"
         hinweis: >
@@ -1131,7 +1131,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateJahrgangAssignments]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: >
           Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle);
@@ -1301,7 +1301,7 @@ paths:
         "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('view')"]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
         objekt-pruefung: "wie GET /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."
@@ -1318,7 +1318,7 @@ paths:
         "404": { description: "Ziel-User nicht in eigener Organisation" }
       x-berechtigung:
         rollen: [org_admin, admin]
-        middleware: [verifyTokenRBAC, requireAdmin, "checkUserHierarchy('update')", validateJahrgangAssignments]
+        middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('update')", validateJahrgangAssignments]
         org-scope: true
         objekt-pruefung: "wie POST /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."

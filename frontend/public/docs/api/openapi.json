@@ -1939,7 +1939,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('create')",
+            "userHierarchyMiddleware('create')",
             "validateCreateUser"
           ],
           "org-scope": true,
@@ -1983,7 +1983,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('view')"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
@@ -2067,7 +2067,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('update')",
+            "userHierarchyMiddleware('update')",
             "validateUpdateUser"
           ],
           "org-scope": true,
@@ -2116,7 +2116,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('delete')",
+            "userHierarchyMiddleware('delete')",
             "validateUserId"
           ],
           "org-scope": true,
@@ -2160,7 +2160,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('view')"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert",
@@ -2242,7 +2242,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('update')",
+            "userHierarchyMiddleware('update')",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
@@ -2577,7 +2577,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('view')"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
           "objekt-pruefung": "wie GET /users/{id}/jahrgaenge",
@@ -2623,7 +2623,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('update')",
+            "userHierarchyMiddleware('update')",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
@@ -13406,6 +13406,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id; danach filterRolesByHierarchy fuer admin",
+          "seit": "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403.",
           "hinweis": "GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl hier holt. Die Antwort wird fuer admin per filterRolesByHierarchy auf die Rollen reduziert, die canManageRole ihm erlaubt (teamer, konfi) — sonst boete der Dialog Rollen an, die POST /users danach mit 403 zurueckweist. super_admin und org_admin bekommen weiterhin alle Rollen der Organisation samt Nutzer-Zaehlern. Die Antwortform bleibt ein Array. Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
         }
       }

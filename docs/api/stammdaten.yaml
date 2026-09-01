@@ -858,6 +858,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id; danach filterRolesByHierarchy fuer admin"
+        seit: "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403."
         hinweis: >
           GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung
           Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl

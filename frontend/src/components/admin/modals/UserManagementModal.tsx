@@ -138,8 +138,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
 
-    // Konfis werden über separate KonfiModal erstellt
-    if (roleName === 'konfi') return false;
+    // Konfis werden über separate KonfiModal erstellt || Super-Admin kann via backend nicht vergeben werden, gibt immer 403
+    if (roleName === 'konfi' || roleName === 'super_admin') return false;
 
     // super_admin ist nie zuweisbar: canManageRole erlaubt diese Rolle
     // niemandem, auch super_admin nicht sich selbst.
