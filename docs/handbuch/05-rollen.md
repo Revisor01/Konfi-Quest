@@ -91,7 +91,6 @@ Die Gemeindeleitung. Kann alles, was ein Admin kann, und zusätzlich:
   freiwillig; zuweisen geht auch später unter **Mehr › Benutzer:innen**
 - **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
 - **Jahresrückblick freigeben** und wieder zurückziehen
-- **Material für alle Teamer:innen freigeben**
 - **Jedes Material bearbeiten und löschen** — auch fremdes und solches,
   dessen erstellende Person die Gemeinde verlassen hat
 

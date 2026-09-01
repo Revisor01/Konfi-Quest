@@ -36,7 +36,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useModalPage } from '../../../contexts/ModalContext';
-import { istWebLink, hostAus } from '../../../utils/linkDisplay';
+import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { materialStats } from '../../../utils/materialStats';
 
 interface Material {
@@ -75,6 +75,9 @@ interface MaterialDetail {
   admin_name?: string;
   files?: MaterialFile[];
   link_url?: string | null;
+  // Mehrere Links (seit 01.09.2026). link_url bleibt als Alt-Feld der
+  // Spiegel des ersten Links -- materialLinks() faellt darauf zurueck.
+  links?: { id: number; url: string }[];
   ist_global?: boolean;
   created_at: string;
 }
@@ -362,40 +365,46 @@ const TeamerMaterialPage: React.FC = () => {
             </IonCard>
           </IonList>
 
-          {/* Link (Entscheidung Simon, 31.08.2026): Material traegt Dateien
-              ODER einen Link. Eigenes Icon, damit er sich vom Dateianhang
-              unterscheidet; er oeffnet extern im Browser. */}
-          {istWebLink(selectedMaterial.link_url) && (
+          {/* Links (Entscheidung Simon, 01.09.2026): Material traegt
+              beliebig viele Links UND Dateien parallel. Eigenes Icon, damit
+              sie sich vom Dateianhang unterscheiden; sie oeffnen extern im
+              Browser. istWebLink filtert in materialLinks(). */}
+          {materialLinks(selectedMaterial).length > 0 && (
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
                   <IonIcon icon={linkOutline} />
                 </div>
-                <IonLabel>Link</IonLabel>
+                <IonLabel>{materialLinks(selectedMaterial).length === 1 ? 'Link' : 'Links'}</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <div
-                    className="app-list-item"
-                    style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
-                    onClick={() => openLink(selectedMaterial.link_url as string)}
-                  >
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
-                          <IonIcon icon={linkOutline} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">{hostAus(selectedMaterial.link_url as string)}</div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={openOutline} style={{ color: 'var(--app-color-material)' }} />
-                              Im Browser öffnen
-                            </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {materialLinks(selectedMaterial).map((url) => (
+                      <div
+                        key={url}
+                        className="app-list-item"
+                        style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
+                        onClick={() => openLink(url)}
+                      >
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
+                              <IonIcon icon={linkOutline} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title">{hostAus(url)}</div>
+                              <div className="app-list-item__meta">
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={openOutline} style={{ color: 'var(--app-color-material)' }} />
+                                  Im Browser öffnen
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </IonCardContent>
               </IonCard>

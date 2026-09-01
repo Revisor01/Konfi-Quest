@@ -799,14 +799,25 @@ describe('Material Routes', () => {
       expect(gespeichert.ist_global).toBe(true);
     });
 
-    it('Ohne Angabe entsteht Material NICHT global', async () => {
-      const res = await request(app)
+    it('Ohne Angabe folgt das Flag der Jahrgangs-Zuordnung (Ableitung seit 01.09.2026)', async () => {
+      // Bis zum 01.09.2026 galt: ohne Angabe NICHT global. Simons Regel
+      // ("wenn kein Jahrgang dann global. Fertig.") leitet das Flag jetzt
+      // ab, wenn der Client es nicht mitschickt. An der SICHTBARKEIT
+      // aendert das nichts: Material ohne Jahrgang war schon ueber den
+      // mittleren Zweig der Schranke fuer alle sichtbar.
+      const ohne = await request(app)
         .post('/api/material')
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ title: 'Ganz normal' });
+      expect(ohne.status).toBe(201);
+      expect(ohne.body.ist_global).toBe(true);
 
-      expect(res.status).toBe(201);
-      expect(res.body.ist_global).toBe(false);
+      const mit = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Jahrgang', jahrgang_ids: [JAHRGAENGE.jahrgang1.id] });
+      expect(mit.status).toBe(201);
+      expect(mit.body.ist_global).toBe(false);
     });
 
     it('admin mit ist_global:true im POST -> 403 und kein Material in der DB', async () => {
@@ -828,10 +839,30 @@ describe('Material Routes', () => {
       const res = await request(app)
         .post('/api/material')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Normales Material vom Admin' });
+        .send({ title: 'Normales Material vom Admin', jahrgang_ids: [JAHRGAENGE.jahrgang1.id] });
 
       expect(res.status).toBe(201);
       expect(res.body.ist_global).toBe(false);
+    });
+
+    it('admin ohne Jahrgaenge bekommt das ABGELEITETE Flag ohne 403 (erlaubter Fall)', async () => {
+      // Die org_admin-Pruefung gilt nur fuer das EXPLIZITE Feld: Die
+      // Ableitung benennt bloss die Sichtbarkeit, die die fehlende
+      // Jahrgangs-Zuordnung ohnehin ergibt -- sie darf deshalb nicht an
+      // der Rolle scheitern.
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Fuer alle vom Admin' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.ist_global).toBe(true);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1',
+        [res.body.id]
+      );
+      expect(gespeichert.ist_global).toBe(true);
     });
 
     it('admin mit ist_global:true im PUT -> 403, Flag unveraendert', async () => {
@@ -1256,6 +1287,426 @@ describe('Material Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
       expect(verwaist.status).toBe(200);
       expect(verwaist.body.created_by).toBeNull();
+    });
+  });
+
+  // ================================================================
+  // MEHRERE LINKS UND DATEIEN PARALLEL
+  // (Entscheidung Simon, 01.09.2026: "Vielleicht will ich ein pdf und
+  // ein oder mehrere YouTube Videos. Also mehr links und beides
+  // moeglich.")
+  // ================================================================
+  // Tabelle material_links (Migration 142). materials.link_url bleibt der
+  // Spiegel des ERSTEN Links -- das ist der Vertrag mit den ausgelieferten
+  // Apps, die nur dieses Feld kennen.
+  describe('Mehrere Links und Dateien am selben Material', () => {
+    const LINKS = [
+      'https://konfi-quest.de/gottesbilder',
+      'https://www.youtube.com/watch?v=abc123',
+      'https://www.youtube.com/watch?v=def456',
+    ];
+
+    const linksAus = async (materialId) => {
+      const { rows } = await db.query(
+        'SELECT url FROM material_links WHERE material_id = $1 ORDER BY id',
+        [materialId]
+      );
+      return rows.map(r => r.url);
+    };
+
+    const spiegelAus = async (materialId) => {
+      const { rows: [zeile] } = await db.query(
+        'SELECT link_url FROM materials WHERE id = $1', [materialId]
+      );
+      return zeile ? zeile.link_url : null;
+    };
+
+    it('POST mit drei Links legt drei Zeilen an, link_url spiegelt den ersten', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'PDF und Videos', link_urls: LINKS });
+
+      expect(res.status).toBe(201);
+      expect(res.body.links).toHaveLength(3);
+      expect(res.body.links.map(l => l.url)).toEqual(LINKS);
+      expect(res.body.link_url).toBe(LINKS[0]);
+
+      expect(await linksAus(res.body.id)).toEqual(LINKS);
+      expect(await spiegelAus(res.body.id)).toBe(LINKS[0]);
+    });
+
+    it('Dateien UND Links leben am selben Material: Detail liefert 2 Dateien und 3 Links', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Beides parallel', link_urls: LINKS });
+      expect(angelegt.status).toBe(201);
+      const materialId = angelegt.body.id;
+
+      const upload = await request(app)
+        .post(`/api/material/${materialId}/files`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .attach('files', Buffer.from('nur text eins', 'utf8'), { filename: 'handout.txt', contentType: 'text/plain' })
+        .attach('files', Buffer.from('nur text zwei', 'utf8'), { filename: 'notizen.txt', contentType: 'text/plain' });
+      expect(upload.status).toBe(201);
+      expect(upload.body).toHaveLength(2);
+
+      const detail = await request(app)
+        .get(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.files).toHaveLength(2);
+      expect(detail.body.links).toHaveLength(3);
+      expect(detail.body.links.map(l => l.url)).toEqual(LINKS);
+      expect(detail.body.link_url).toBe(LINKS[0]);
+    });
+
+    it('Die Liste zaehlt die Links mit (link_count = 3)', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Gezaehlt', link_urls: LINKS });
+      expect(angelegt.status).toBe(201);
+
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(liste.status).toBe(200);
+      const eintrag = liste.body.find(m => m.id === angelegt.body.id);
+      expect(eintrag.link_count).toBe(3);
+      expect(eintrag.link_url).toBe(LINKS[0]);
+    });
+
+    it('PUT mit link_urls ersetzt alle Links, der Spiegel folgt', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Wird umgebaut', link_urls: LINKS });
+      const materialId = angelegt.body.id;
+
+      const neueListe = ['https://konfi-quest.de/neu', 'https://example.org/zwei'];
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_urls: neueListe });
+      expect(res.status).toBe(200);
+
+      expect(await linksAus(materialId)).toEqual(neueListe);
+      expect(await spiegelAus(materialId)).toBe('https://konfi-quest.de/neu');
+    });
+
+    it('PUT mit leerem Array entfernt alle Links, link_url wird null', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Wird geleert', link_urls: LINKS });
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_urls: [] });
+      expect(res.status).toBe(200);
+
+      expect(await linksAus(materialId)).toEqual([]);
+      expect(await spiegelAus(materialId)).toBeNull();
+    });
+
+    it('Ein verbotener Link im Array gibt 400 und aendert nichts', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Bleibt wie er ist', link_urls: [LINKS[0]] });
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_urls: ['https://ok.example', 'javascript:alert(1)'] });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Der Link muss mit http:// oder https:// beginnen');
+
+      expect(await linksAus(materialId)).toEqual([LINKS[0]]);
+      expect(await spiegelAus(materialId)).toBe(LINKS[0]);
+    });
+
+    it('Mehr als 20 Links werden abgewiesen (400)', async () => {
+      const zuViele = Array.from({ length: 21 }, (_, i) => `https://example.org/${i}`);
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Zu viele', link_urls: zuViele });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Hoechstens 20 Links pro Material');
+    });
+
+    it('Leere Eintraege im Array fallen still heraus', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Mit Luecken', link_urls: ['', LINKS[0], '   '] });
+      expect(res.status).toBe(201);
+      expect(res.body.links).toHaveLength(1);
+      expect(res.body.link_url).toBe(LINKS[0]);
+    });
+
+    // ---------------- ALT-APP-VERTRAG ----------------
+    // Ausgelieferte Apps kennen nur link_url. Sie muessen weiter einen
+    // Link SEHEN, solange es welche gibt, und duerfen beim SCHREIBEN nur
+    // den ersten Link anfassen -- weitere Links hat ihr Formular nie
+    // angezeigt.
+
+    it('Alt-Client: POST mit link_url legt genau einen Link an', async () => {
+      const res = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Alte App', link_url: LINKS[0] });
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBe(LINKS[0]);
+      expect(await linksAus(res.body.id)).toEqual([LINKS[0]]);
+    });
+
+    it('Alt-Client: PUT link_url ersetzt NUR den ersten Link, die anderen bleiben', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Drei Links', link_urls: LINKS });
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_url: 'https://konfi-quest.de/ersetzt' });
+      expect(res.status).toBe(200);
+
+      expect(await linksAus(materialId)).toEqual([
+        'https://konfi-quest.de/ersetzt',
+        LINKS[1],
+        LINKS[2],
+      ]);
+      expect(await spiegelAus(materialId)).toBe('https://konfi-quest.de/ersetzt');
+    });
+
+    it('Alt-Client: PUT link_url = "" loescht den ersten Link, der Spiegel rueckt nach', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Spiegel rueckt nach', link_urls: LINKS });
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ link_url: '' });
+      expect(res.status).toBe(200);
+
+      // Alte Apps sehen weiterhin einen Link: den bisherigen zweiten.
+      expect(await linksAus(materialId)).toEqual([LINKS[1], LINKS[2]]);
+      expect(await spiegelAus(materialId)).toBe(LINKS[1]);
+
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const eintrag = liste.body.find(m => m.id === materialId);
+      expect(eintrag.link_url).toBe(LINKS[1]);
+    });
+
+    it('DELETE des Materials raeumt die Links per CASCADE mit ab', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Wird geloescht', link_urls: LINKS });
+      const materialId = angelegt.body.id;
+      expect(await linksAus(materialId)).toHaveLength(3);
+
+      const res = await request(app)
+        .delete(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(await linksAus(materialId)).toEqual([]);
+    });
+
+    // ---------------- ERSTELLER-REGEL AUF DEM LINK-WEG ----------------
+    // Links laufen ueber PUT /:id -- die Ersteller-Regel vom 01.09.2026
+    // muss also auch hier greifen, sonst waere sie ueber den Link-Umweg
+    // ausgehebelt.
+
+    it('Ersteller-Regel: fremder admin kann ueber link_urls nichts aendern (403)', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache();
+
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Von der Leitung', link_urls: [LINKS[0]] });
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ link_urls: ['https://boese.example/umweg'] });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Nur wer das Material angelegt hat oder die Gemeindeleitung kann es ändern');
+
+      expect(await linksAus(materialId)).toEqual([LINKS[0]]);
+      expect(await spiegelAus(materialId)).toBe(LINKS[0]);
+    });
+
+    it('Ersteller-Regel: die erstellende Person aendert ihre Links (200)', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache();
+
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Vom Admin', link_urls: [LINKS[0]] });
+      expect(angelegt.status).toBe(201);
+      const materialId = angelegt.body.id;
+
+      const res = await request(app)
+        .put(`/api/material/${materialId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ link_urls: [LINKS[0], LINKS[1]] });
+      expect(res.status).toBe(200);
+      expect(await linksAus(materialId)).toEqual([LINKS[0], LINKS[1]]);
+    });
+  });
+
+  // ================================================================
+  // ABGELEITETE SICHTBARKEIT IM PUT + MIGRATION 142
+  // (Entscheidung Simon, 01.09.2026: "wenn kein Jahrgang dann global.
+  // Fertig. Sonst nur Jahrgang.")
+  // ================================================================
+  describe('Abgeleitete Sichtbarkeit beim Bearbeiten', () => {
+    it('PUT ohne ist_global: Jahrgaenge weg -> Flag wird true', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Erst gebunden', jahrgang_ids: [JAHRGAENGE.jahrgang1.id] });
+      expect(angelegt.body.ist_global).toBe(false);
+
+      const res = await request(app)
+        .put(`/api/material/${angelegt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_ids: [] });
+      expect(res.status).toBe(200);
+
+      const { rows: [zeile] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1', [angelegt.body.id]
+      );
+      expect(zeile.ist_global).toBe(true);
+    });
+
+    it('PUT ohne ist_global: Jahrgang dazu -> Flag wird false, Sichtbarkeit folgt dem Jahrgang', async () => {
+      const angelegt = await request(app)
+        .post('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Erst fuer alle' });
+      expect(angelegt.body.ist_global).toBe(true);
+
+      // teamer1 haengt an jahrgang1 (Seed) -- ein Material NUR fuer einen
+      // neuen, fremden Jahrgang darf er danach nicht mehr sehen.
+      const { rows: [jg2] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2027/2028', $1, '2028-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .put(`/api/material/${angelegt.body.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_ids: [jg2.id] });
+      expect(res.status).toBe(200);
+
+      const { rows: [zeile] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1', [angelegt.body.id]
+      );
+      expect(zeile.ist_global).toBe(false);
+
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(liste.status).toBe(200);
+      expect(liste.body.map(m => m.id)).not.toContain(angelegt.body.id);
+    });
+
+    it('PUT ohne ist_global und ohne jahrgang_ids laesst das Flag in Ruhe', async () => {
+      // Direkter Bestand wie aus der Zeit vor der Ableitung: ohne
+      // Jahrgang, ist_global = false.
+      const { rows: [m] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by, ist_global)
+         VALUES ('Bestand', $1, $2, false) RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.orgAdmin1.id]
+      );
+
+      const res = await request(app)
+        .put(`/api/material/${m.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ title: 'Nur der Titel' });
+      expect(res.status).toBe(200);
+
+      const { rows: [zeile] } = await db.query(
+        'SELECT ist_global FROM materials WHERE id = $1', [m.id]
+      );
+      // Formwaechter: Bestand ohne Jahrgang bleibt ist_global = false und
+      // ist trotzdem fuer alle sichtbar (mittlerer Zweig der Schranke).
+      expect(zeile.ist_global).toBe(false);
+
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(liste.body.map(x => x.id)).toContain(m.id);
+    });
+  });
+
+  describe('Migration 142: Bestand behaelt Link und Sichtbarkeit', () => {
+    it('Der Backfill traegt link_url als ersten Link ein und aendert die Zeile nicht', async () => {
+      // Nachgestellter Bestand wie in Produktion am 01.09.2026 (1 Zeile:
+      // ist_global = true, link_url gesetzt, 1 Jahrgangs-Zuordnung).
+      const { rows: [m] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by, ist_global, link_url)
+         VALUES ('Gebet', $1, $2, true, 'https://konfi-quest.de/gebet') RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.orgAdmin1.id]
+      );
+      await db.query(
+        'INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ($1, $2)',
+        [m.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      // Migration erneut ausfuehren -- sie ist idempotent (IF NOT EXISTS,
+      // NOT-EXISTS-Backfill) und muss den Bestand genau einmal uebertragen.
+      const fs = require('fs');
+      const path = require('path');
+      const sql = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'migrations', '142_material_mehrere_links.sql'),
+        'utf8'
+      );
+      await db.query(sql);
+      await db.query(sql);
+
+      const { rows: links } = await db.query(
+        'SELECT url FROM material_links WHERE material_id = $1 ORDER BY id', [m.id]
+      );
+      expect(links).toHaveLength(1);
+      expect(links[0].url).toBe('https://konfi-quest.de/gebet');
+
+      const { rows: [zeile] } = await db.query(
+        'SELECT link_url, ist_global FROM materials WHERE id = $1', [m.id]
+      );
+      expect(zeile.link_url).toBe('https://konfi-quest.de/gebet');
+      expect(zeile.ist_global).toBe(true);
+
+      // Sichtbarkeit unveraendert: ist_global = true -> auch eine
+      // Teamer:in ohne diesen Jahrgang saehe die Zeile; hier gemessen an
+      // teamer1, der die Zeile ueber die Liste bekommt.
+      const liste = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(liste.status).toBe(200);
+      const eintrag = liste.body.find(x => x.id === m.id);
+      expect(eintrag.link_url).toBe('https://konfi-quest.de/gebet');
+      expect(eintrag.link_count).toBe(1);
     });
   });
 

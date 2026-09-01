@@ -32,20 +32,21 @@ Versionsüberschrift.
   darauf hin. Ein Tipp öffnet die Store-Seite zum Aktualisieren; das X blendet
   den Hinweis für diese Version dauerhaft aus. Nichts wird erzwungen, ohne
   Internet erscheint der Hinweis nicht.
-- Material lässt sich ausdrücklich für alle Teamer:innen der Gemeinde
-  freigeben — unabhängig vom Jahrgang. Die Teamer:innen finden es in einem
-  eigenen Abschnitt ganz oben, in der Leitung ist es am Globus zu erkennen.
-  Freigeben und zurückziehen kann nur der Org-Admin. Konfis sehen Material
-  weiterhin grundsätzlich nicht. Bestehendes Material bleibt sichtbar wie
-  bisher.
+- Wer Material sieht, entscheidet allein die Jahrgangs-Zuordnung: mit
+  Jahrgang nur dessen Teamer:innen, ohne Jahrgang alle Teamer:innen der
+  Gemeinde. Material für alle steht bei den Teamer:innen in einem eigenen
+  Abschnitt ganz oben und ist in der Leitung am Globus zu erkennen. Ein
+  eigener Sichtbarkeits-Schalter ist dafür nicht mehr nötig. Konfis sehen
+  Material weiterhin grundsätzlich nicht; bestehendes Material bleibt
+  sichtbar wie bisher.
 - Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
   Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
   Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
   Admins ohne Zuweisung keine Konfis sehen.
-- Beim Material lässt sich statt Dateien auch eine Internetseite hinterlegen.
-  Teamer:innen erkennen sie am Link-Symbol; ein Tipp darauf öffnet sie im
-  Browser. Wer das Material sehen darf, entscheidet sich weiterhin über den
-  Jahrgang.
+- Material trägt Dateien und Links jetzt zusammen — zum Beispiel ein PDF
+  und dazu mehrere YouTube-Videos. Beide Bereiche stehen im Formular immer
+  offen, nichts muss vorher ausgewählt werden. Teamer:innen erkennen Links
+  am Link-Symbol; ein Tipp darauf öffnet sie im Browser.
 - Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
   Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
   ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.

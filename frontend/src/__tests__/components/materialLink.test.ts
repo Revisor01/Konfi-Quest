@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { istWebLink, hostAus } from '../../utils/linkDisplay';
+import { istWebLink, hostAus, materialLinks } from '../../utils/linkDisplay';
 
 // Material kann seit dem 31.08.2026 statt Dateien auch einen Link tragen
 // (Simons Entscheidung). Anlass: Fuer das inhaltliche Programm entstehen
@@ -26,28 +26,81 @@ const teamerDetail = lies('src/components/teamer/pages/TeamerMaterialDetailPage.
 const leitungTermin = lies('src/components/admin/views/EventDetailSections.tsx');
 const teamerTermin = lies('src/components/teamer/pages/TeamerEventsPage.tsx');
 
-describe('Material als Link: Anlegen (Leitung)', () => {
-  it('beim Anlegen wird zwischen Datei und Link gewaehlt', () => {
-    expect(formular).toContain("useState<'datei' | 'link'>");
-    expect(formular).toContain('<IonSegmentButton value="datei">');
-    expect(formular).toContain('<IonSegmentButton value="link">');
+// Seit dem 01.09.2026 gilt Simons Regel: Links und Dateien PARALLEL, mehrere
+// Links pro Material, kein Entweder-Oder-Umschalter mehr. Und: kein
+// Sichtbarkeits-Umschalter mehr -- die Sichtbarkeit haengt allein an der
+// Jahrgangs-Zuordnung, der Server leitet ist_global daraus ab.
+describe('Material anlegen: Links und Dateien parallel (Leitung)', () => {
+  it('es gibt KEINEN Datei-oder-Link-Umschalter mehr', () => {
+    expect(formular).not.toContain("useState<'datei' | 'link'>");
+    expect(formular).not.toContain('IonSegmentButton');
   });
 
-  it('ein bestehender Link waehlt die Link-Art vor', () => {
-    expect(formular).toContain("material?.link_url ? 'link' : 'datei'");
+  it('es gibt KEINEN Sichtbarkeits-Umschalter mehr und ist_global wird nicht gesendet', () => {
+    // Simons Regel vom 01.09.2026: "wenn kein Jahrgang dann global.
+    // Fertig. Sonst nur Jahrgang." Der Server leitet ist_global ab.
+    expect(formular).not.toContain('setIstGlobal');
+    expect(formular).not.toContain('ist_global: istGlobal');
+    expect(formular).not.toContain('ist_global:');
   });
 
-  it('der Link wird mitgeschickt, bei Art "Datei" geleert', () => {
-    expect(formular).toContain("link_url: art === 'link' ? linkUrl.trim() : ''");
+  it('mehrere Links werden als Liste gefuehrt und als link_urls gesendet', () => {
+    expect(formular).toContain('useState<string[]>');
+    expect(formular).toContain('link_urls: bereinigt');
+    expect(formular).toContain('Link hinzufügen');
+    expect(formular).toContain('aria-label="Link entfernen"');
   });
 
-  it('das Formular prueft die Adresse schon vor dem Absenden', () => {
-    expect(formular).toContain('istWebLink');
+  it('bestehende Links kommen aus dem Array, mit link_url als Rueckfall', () => {
+    expect(formular).toContain('material?.links?.map(l => l.url)');
+    expect(formular).toContain("material?.link_url ? [material.link_url] : []");
+  });
+
+  it('das Formular prueft jede Adresse schon vor dem Absenden', () => {
+    expect(formular).toContain('bereinigt.some(l => !istWebLink(l))');
     expect(formular).toContain('Der Link muss mit http:// oder https:// beginnen');
   });
 
-  it('bei Art "Link" werden keine Dateien hochgeladen', () => {
-    expect(formular).toContain("if (art === 'datei' && newFiles.length > 0 && materialId)");
+  it('Dateien werden unabhaengig von den Links hochgeladen', () => {
+    expect(formular).toContain('if (newFiles.length > 0 && materialId)');
+  });
+});
+
+describe('materialLinks buendelt neue und alte Antwortform', () => {
+  it('liefert alle Links des Arrays in Reihenfolge', () => {
+    const m = {
+      links: [
+        { url: 'https://konfi-quest.de/gottesbilder' },
+        { url: 'https://www.youtube.com/watch?v=abc' },
+        { url: 'https://www.youtube.com/watch?v=def' },
+      ],
+      link_url: 'https://konfi-quest.de/gottesbilder',
+    };
+    expect(materialLinks(m)).toEqual([
+      'https://konfi-quest.de/gottesbilder',
+      'https://www.youtube.com/watch?v=abc',
+      'https://www.youtube.com/watch?v=def',
+    ]);
+  });
+
+  it('faellt ohne Array auf das Alt-Feld link_url zurueck (gecachte Eintraege)', () => {
+    expect(materialLinks({ link_url: 'https://konfi-quest.de/seite' }))
+      .toEqual(['https://konfi-quest.de/seite']);
+  });
+
+  it('liefert ohne Links ein leeres Array', () => {
+    expect(materialLinks({})).toEqual([]);
+    expect(materialLinks({ links: [], link_url: null })).toEqual([]);
+  });
+
+  it('filtert alles heraus, was kein http/https ist', () => {
+    const m = {
+      links: [
+        { url: 'javascript:alert(1)' },
+        { url: 'https://konfi-quest.de/ok' },
+      ],
+    };
+    expect(materialLinks(m)).toEqual(['https://konfi-quest.de/ok']);
   });
 });
 

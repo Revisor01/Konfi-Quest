@@ -128,12 +128,11 @@ gelten, steht im Abzeichen-Kapitel.
 - **Bibelübersetzung** für die Tageslosung
 - **Material** — die Dokumente, die für dich freigegeben sind. Hängt ein
   Dokument an einem Jahrgang, sehen es nur die Teamer:innen dieses Jahrgangs.
-  Dokumente ohne Jahrgang sehen alle. Was die Leitung ausdrücklich **für
-  alle** freigegeben hat, steht in einem eigenen Abschnitt ganz oben und ist
-  am Globus zu erkennen — das sehen alle Teamer:innen der Gemeinde, egal
-  welchem Jahrgang sie zugeordnet sind. Statt Dateien kann auch eine
-  Internetseite hinterlegt sein; sie ist am Link-Symbol zu erkennen und
-  öffnet sich im Browser.
+  Dokumente ohne Jahrgang sehen **alle** Teamer:innen der Gemeinde — sie
+  stehen in einem eigenen Abschnitt ganz oben und sind am Globus zu
+  erkennen. Neben Dateien können auch Internetseiten hinterlegt sein,
+  auch mehrere; sie sind am Link-Symbol zu erkennen und öffnen sich im
+  Browser.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
 - **Deine Wrappeds** — dein [Jahresrückblick](95-wrapped.md#der-teamer-rueckblick-laeuft-anders) als Teamer:in

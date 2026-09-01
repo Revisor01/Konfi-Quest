@@ -86,7 +86,9 @@ describe('Formular: Schreibschutz ohne Bearbeitungsrecht', () => {
   });
 
   it('Datei-Upload und Datei-Loeschen fehlen im Lese-Modus', () => {
-    expect(formular).toContain("art === 'datei' && !nurLesen && (");
+    // Seit dem 01.09.2026 gibt es keine Datei-oder-Link-Art mehr -- der
+    // Upload-Bereich haengt nur noch am Lese-Modus.
+    expect(formular).toContain('{!nurLesen && (');
     expect(formular).toContain('aria-label="Datei löschen"');
   });
 });

@@ -829,7 +829,7 @@ Kapitel [Chat](90-chat.md#termin-chat).
 
 ## Material am Termin
 
-Hängt [Material](30-leitung.md#material-fuer-alle-teamer-innen) an einem
+Hängt [Material](30-leitung.md#wer-sieht-welches-material) an einem
 Termin, zeigen Terminliste und Detailansicht das für Leitung und
 Teamer:innen an. In der Detailansicht steht der Hinweis direkt bei den
 Eckdaten und ist klickbar: Bei einem einzelnen Material öffnet sich sofort
