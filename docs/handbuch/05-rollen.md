@@ -62,8 +62,9 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
   eigenen Jahrgang.
 - **Konfis löschen, befördern und ihr Passwort zurücksetzen** geht nur in
   seinen eigenen Jahrgängen — genau wie Punkte vergeben und zurücknehmen.
-- **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen; legt er
-  selbst einen neuen Jahrgang an, bekommt er ihn automatisch zugewiesen.
+- **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen. **Neue
+  Jahrgänge anlegen kann er nicht** — das ist Sache des Org-Admins, der dabei
+  gleich festlegt, welche Admins und Teamer:innen Zugriff bekommen.
 - **Den Jahresrückblick freigeben** kann er nur für seine eigenen Jahrgänge.
 - **Teamer:innen** sieht er dagegen alle — er kann ihnen seine Jahrgänge geben
   und sie daraus wieder entfernen. Jahrgänge, für die er nicht zuständig ist,
@@ -75,6 +76,9 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
 Die Gemeindeleitung. Kann alles, was ein Admin kann, und zusätzlich:
 
 - **Benutzer:innen verwalten** — anlegen, Rollen vergeben, Jahrgänge zuweisen
+- **Jahrgänge anlegen** — und dabei gleich auswählen, welche Admins und
+  Teamer:innen den neuen Jahrgang sehen und bearbeiten dürfen. Die Auswahl ist
+  freiwillig; zuweisen geht auch später unter **Mehr › Benutzer:innen**
 - **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
 - **Jahresrückblick freigeben** und wieder zurückziehen
 - **Material für alle Teamer:innen freigeben**
@@ -98,6 +102,8 @@ darf **alle Rollen der eigenen Gemeinde** verwalten, auch andere Org-Admins.
 | Challenges anlegen und begleiten | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Admins und Org-Admins anlegen | — | — | — | ja |
+| Jahrgänge anlegen | — | — | — | ja |
+| Jahrgänge bearbeiten und löschen | — | — | nur die eigenen | ja |
 | Jahrgänge zuweisen | — | — | nur die eigenen | ja |
 | Gemeinde-Einstellungen und Einladungen | — | — | — | ja |
 | Jahresrückblick freigeben | — | — | nur eigene Jahrgänge | ja |
