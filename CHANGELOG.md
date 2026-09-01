@@ -49,6 +49,15 @@ Versionsüberschrift.
   mit den Teamer:innen arbeitet.
 
 ### Behoben
+- Die Tageslosung verhält sich für Konfis und Teamer:innen wieder gleich. Bei
+  einer Störung der Losungs-Quelle griff nur auf einer der beiden Seiten der
+  Rückfall auf den zuletzt geladenen Vers.
+- Nach einem Passwortwechsel oder Passwort-Reset bekommen abgemeldete Geräte
+  keine Mitteilungen mehr für das Konto. Bisher liefen Push-Nachrichten —
+  auch Chat-Inhalte — dort unbegrenzt weiter, obwohl die Sitzung beendet war;
+  das eigene Gerät ist beim Passwortwechsel nicht betroffen. Auch wer sich
+  lange nicht anmeldet, bekommt nach Ablauf der Sitzung keine Mitteilungen
+  mehr aufs Gerät.
 - Wer einen bereits freigegebenen Jahresrückblick noch einmal erzeugt — etwa
   um eine Zahl richtigzustellen —, benachrichtigt den Jahrgang nicht ein
   zweites Mal. Beim ersten Freigeben kommt die Mitteilung wie bisher.

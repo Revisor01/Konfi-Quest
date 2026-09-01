@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
+const { beantworteTageslosung } = require('../services/losungService');
 const { getTeamerBadgeProgress } = require('../utils/teamerBadgeProgress');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 const { determineBookingStatus, zaehleBuchungen } = require('../utils/bookingUtils');
@@ -977,56 +977,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
   // TAGESLOSUNG (eigener Endpoint für Teamer)
   // ====================================================================
+  // Tageslosung: gemeinsame Logik in services/losungService.js
+  // (beantworteTageslosung), geteilt mit der Konfi-Route. Einziger
+  // Unterschied ist der Schluessel des Abschalters -- der Teamer-Schalter
+  // aus den Dashboard-Einstellungen.
+  // Antwortform unveraendert: ausgelieferte Apps lesen diese Route.
   router.get('/tageslosung', rbacVerifier, requireTeamer, async (req, res) => {
-    try {
-      // Bevorzugte Uebersetzung des Teamers (users.bible_translation, Default LUT).
-      // Wie in der Konfi-Route: abgeschaltete Losung wird nicht abgerufen.
-      // Hier gilt der Teamer-Schalter aus den Dashboard-Einstellungen.
-      const { rows: [losungSetting] } = await db.query(
-        "SELECT value FROM settings WHERE organization_id = $1 AND key = 'teamer_dashboard_show_losung'",
-        [req.user.organization_id]
-      );
-      if (losungSetting && (losungSetting.value === 'false' || losungSetting.value === '0')) {
-        return res.status(204).end();
-      }
-
-      const { rows: [u] } = await db.query('SELECT bible_translation FROM users WHERE id = $1', [req.user.id]);
-      const translation = u?.bible_translation || 'LUT';
-      const result = await fetchTageslosung(db, translation);
-      res.json({ success: true, ...result });
-    } catch (err) {
-      console.error('Tageslosung error:', err.message);
-
-      // Fallback wie in der Konfi-Route: letzte gecachte Losung ausliefern,
-      // statt die Karte mit einem 500er leer zu lassen.
-      try {
-        const { rows: [fallbackCached] } = await db.query(
-          'SELECT verse_data, translation FROM daily_verses ORDER BY date DESC LIMIT 1'
-        );
-        if (fallbackCached) {
-          return res.json({
-            success: true,
-            data: fallbackCached.verse_data,
-            translation: fallbackCached.translation,
-            fallback: true,
-            error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
-          });
-        }
-      } catch (fallbackErr) {
-        console.error('Fallback cache error:', fallbackErr.message);
-      }
-
-      // Statischer Fallback statt HTTP 500 -- dieselbe Stelle wie im Konfi-Weg
-      // (Befund M2, 27.08.2026: der Kommentar oben behauptete das schon, der
-      // Code loeste es aber nur zur Haelfte ein). Eine leere Startseite ist
-      // schlechter als ein bekannter Psalm.
-      res.json({
-        success: true,
-        data: tageslosungFallback(),
-        fallback: true,
-        error: 'Losungen API nicht erreichbar - Fallback verwendet'
-      });
-    }
+    return beantworteTageslosung(db, req, res, 'teamer_dashboard_show_losung');
   });
 
   // PUT /teamer/bible-translation — Bibeluebersetzung (Tageslosung) des Teamers setzen.

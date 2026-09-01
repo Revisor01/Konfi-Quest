@@ -464,6 +464,81 @@ describe('Auth Routes', () => {
       expect(rows[0].revoked_at).not.toBeNull();
     });
 
+    // Der Passwortwechsel beendet alle ANDEREN Sitzungen — deren Geraete
+    // duerfen danach keine Push-Nachrichten mehr bekommen. Der Versand haengt
+    // im pushService nur an user_id, nicht an einer gueltigen Sitzung; ohne
+    // Loeschung erhielte ein ausgesperrtes Geraet weiter Pushes (inkl.
+    // Chat-Inhalten) — genau der Fall "Passwort geaendert, weil jemand
+    // Zugriff hat" (LÜCKE N2, Push-Kanal).
+    it('loescht Push-Tokens der anderen Geraete, das eigene bleibt', async () => {
+      const token = generateToken('konfi1');
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-eigenes-geraet', 'ios', 'geraet-eigen'),
+                ($1, 'konfi', 'fcm-fremdes-geraet', 'android', 'geraet-fremd'),
+                ($2, 'konfi', 'fcm-anderer-user', 'ios', 'geraet-anderer-user')`,
+        [USERS.konfi1.id, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          currentPassword: PASSWORD,
+          newPassword: 'NeuesPasswort123!',
+          device_id: 'geraet-eigen',
+          platform: 'ios'
+        });
+      expect(res.status).toBe(200);
+
+      // Nur das Geraet der aktuellen Sitzung ueberlebt.
+      const { rows: eigene } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1 ORDER BY device_id',
+        [USERS.konfi1.id]
+      );
+      expect(eigene.map((r) => r.device_id)).toEqual(['geraet-eigen']);
+
+      // Fremde Nutzer sind nicht betroffen.
+      const { rows: fremde } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi2.id]
+      );
+      expect(fremde.map((r) => r.device_id)).toEqual(['geraet-anderer-user']);
+    });
+
+    // Alte App-Versionen schicken keine Geraete-Angabe mit. Dann laesst sich
+    // das eigene Geraet nicht verschonen — sicherer Default: alle Tokens des
+    // Users fallen. Das eigene Geraet registriert sich beim naechsten
+    // App-Start selbst neu (POST /device-token).
+    it('ohne Geraete-Angabe (alte App) fallen alle Push-Tokens des Users', async () => {
+      const token = generateToken('konfi1');
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-a', 'ios', 'geraet-a'),
+                ($1, 'konfi', 'fcm-b', 'android', 'geraet-b'),
+                ($2, 'konfi', 'fcm-anderer-user', 'ios', 'geraet-anderer-user')`,
+        [USERS.konfi1.id, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: PASSWORD, newPassword: 'NeuesPasswort123!' });
+      expect(res.status).toBe(200);
+
+      const { rows: eigene } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(eigene).toEqual([]);
+
+      const { rows: fremde } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi2.id]
+      );
+      expect(fremde.map((r) => r.device_id)).toEqual(['geraet-anderer-user']);
+    });
+
     it('Passwort aendern mit falschem altem Passwort gibt 400', async () => {
       const token = generateToken('konfi1');
 
@@ -562,6 +637,38 @@ describe('Auth Routes', () => {
         [USERS.konfi1.id, 'hash-vor-reset']
       );
       expect(rows[0].revoked_at).not.toBeNull();
+    });
+
+    // Beim Reset ueberlebt KEINE Sitzung (anders als beim Passwortwechsel,
+    // der die eigene fortsetzt). Also darf auch kein Geraet mehr Pushes
+    // bekommen — alle Push-Tokens des Users fallen; jedes Geraet registriert
+    // sich beim naechsten Login neu. Fremde Nutzer bleiben unberuehrt.
+    it('loescht alle Push-Tokens des Users', async () => {
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-a', 'ios', 'geraet-a'),
+                ($1, 'konfi', 'fcm-b', 'android', 'geraet-b'),
+                ($2, 'konfi', 'fcm-anderer-user', 'ios', 'geraet-anderer-user')`,
+        [USERS.konfi1.id, USERS.konfi2.id]
+      );
+      await legeResetTokenAn(USERS.konfi1.id, 'reset-token-push');
+
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-push', newPassword: 'GanzNeu123!' });
+      expect(res.status).toBe(200);
+
+      const { rows: eigene } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(eigene).toEqual([]);
+
+      const { rows: fremde } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi2.id]
+      );
+      expect(fremde.map((r) => r.device_id)).toEqual(['geraet-anderer-user']);
     });
 
     // Der Reset-Token lag bisher im Klartext in password_resets. Wer die DB

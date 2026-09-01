@@ -732,12 +732,31 @@ class BackgroundService {
         'DELETE FROM push_tokens WHERE user_id NOT IN (SELECT id FROM users) RETURNING id'
       );
 
-      const totalDeleted = errorTokens.length + inactiveTokens.length + orphanedTokens.length;
+      // 4. Tokens von Usern ohne eine einzige gueltige Sitzung (stiller
+      //    Sitzungsablauf). Laeuft der letzte Refresh-Token ab oder wird er
+      //    revoked, ohne dass die App den Push-Token abmelden konnte (der
+      //    DELETE verlangt Auth und scheitert nach dem Ablauf mit 401), blieb
+      //    der Token stehen — und Regel 2 griff nie, weil jede erfolgreiche
+      //    Zustellung updated_at auffrischt. Das Geraet bekam unbegrenzt
+      //    weiter Pushes fuer ein Konto, an dem niemand mehr angemeldet ist.
+      //    Jeder Login legt einen Refresh-Token an; wer noch irgendwo
+      //    angemeldet ist, hat immer mindestens eine gueltige Zeile.
+      const { rows: sessionlessTokens } = await db.query(
+        `DELETE FROM push_tokens pt
+         WHERE NOT EXISTS (
+           SELECT 1 FROM refresh_tokens rt
+           WHERE rt.user_id = pt.user_id
+             AND rt.revoked_at IS NULL
+             AND rt.expires_at > NOW()
+         ) RETURNING id`
+      );
+
+      const totalDeleted = errorTokens.length + inactiveTokens.length + orphanedTokens.length + sessionlessTokens.length;
       if (totalDeleted > 0) {
-        console.log(`Token cleanup: ${errorTokens.length} error tokens, ${inactiveTokens.length} inactive tokens, ${orphanedTokens.length} orphaned tokens deleted`);
+        console.log(`Token cleanup: ${errorTokens.length} error tokens, ${inactiveTokens.length} inactive tokens, ${orphanedTokens.length} orphaned tokens, ${sessionlessTokens.length} sessionless tokens deleted`);
       }
 
-      return { errorTokens: errorTokens.length, inactiveTokens: inactiveTokens.length, orphanedTokens: orphanedTokens.length };
+      return { errorTokens: errorTokens.length, inactiveTokens: inactiveTokens.length, orphanedTokens: orphanedTokens.length, sitzungsloseTokens: sessionlessTokens.length };
     } catch (error) {
       console.error('Error in cleanupStaleTokens:', error);
       throw error;
