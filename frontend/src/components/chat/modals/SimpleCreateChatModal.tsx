@@ -139,7 +139,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         // Admin/Teamer: Verwende bestehende Admin-APIs
         const [konfisRes, userJahrgangRes] = await Promise.all([
           api.get('/admin/konfis'),
-          api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] }))
+          // /users statt /admin/users -- gleicher Router, ein Praefix in der
+          // Oberflaeche (docs/api/ABRISS.md, Abschnitt D).
+          api.get('/users/me/jahrgaenge').catch(() => ({ data: [] }))
         ]);
 
         // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
@@ -175,7 +177,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           }));
 
         // Auch die anderen Team-Mitglieder (Admins, Org-Admins, Teamer:innen) laden.
-        // Bewusst über /chat/team-contacts statt /admin/users: Letztere ist mit
+        // Bewusst über /chat/team-contacts statt /users: Letztere ist mit
         // requireOrgAdmin geschuetzt, Teamer:innen liefen dort in einen 403 und
         // bekamen deshalb gar keine Team-Kontakte angezeigt.
         let adminUsers: ChatUser[] = [];

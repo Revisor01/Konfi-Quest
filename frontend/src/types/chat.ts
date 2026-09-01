@@ -64,7 +64,7 @@ export interface KonfiEintrag {
   badgeCount?: number;
 }
 
-/** Ein Eintrag aus GET /admin/users/me/jahrgaenge (users.js). */
+/** Ein Eintrag aus GET /users/me/jahrgaenge (users.js). */
 export interface EigenerJahrgang {
   id: number;
   name: string;

@@ -116,8 +116,12 @@ const MembersModal: React.FC<MembersModalProps> = ({
     try {
       const [konfisRes, userJahrgangRes, adminsRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] })),
-        api.get('/admin/users').catch(() => ({ data: [] }))
+        // /users statt /admin/users: createApp.js haengt denselben Router
+        // unter beiden Praefixen ein (:480 und :483). Die Oberflaeche nutzt
+        // durchgaengig /users; der zweite Mount bleibt nur fuer ausgelieferte
+        // Apps stehen (docs/api/ABRISS.md, Abschnitt D).
+        api.get('/users/me/jahrgaenge').catch(() => ({ data: [] })),
+        api.get('/users').catch(() => ({ data: [] }))
       ]);
 
       // Jahrgangs-Filter wie SimpleCreateChatModal
@@ -142,7 +146,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
           jahrgang_name: konfi.jahrgang_name ?? undefined
         }));
 
-      // GET /admin/users schliesst Konfis bereits serverseitig aus
+      // GET /users schliesst Konfis bereits serverseitig aus
       // (WHERE r.name NOT IN ('konfi', 'super_admin')).
       const adminUsers: ChatUser[] = (adminsRes.data as AdminUser[])
         .filter((u) => u.role_name !== 'konfi')
