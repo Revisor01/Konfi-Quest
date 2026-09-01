@@ -51,9 +51,22 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   const { refreshAllCounts } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
 
+  // Admin/Teamer ohne Jahrgangs-Zuweisung bekommt vom Server eine leere
+  // Liste -- gueltig (Simons Entscheidung 31.08.2026), aber ohne Erklaerung
+  // sah das nach kaputter App aus. Der Server meldet den Grund per Header
+  // (challenges.js GET /admin), dasselbe Muster wie die Konfi-Liste
+  // (AdminKonfisPage). Offline aus dem Cache laeuft diese Funktion nicht,
+  // der Hinweis erscheint dann bewusst nicht -- ein leerer Cache ist etwas
+  // anderes als "kein Jahrgang".
+  const [ohneJahrgang, setOhneJahrgang] = useState(false);
+
   const { data: challenges, loading, refresh: refreshChallenges, refreshLive: refreshChallengesLive } = useOfflineQuery<AdminChallenge[]>(
     cacheKey,
-    async () => { const res = await api.get('/challenges/admin'); return res.data; },
+    async () => {
+      const res = await api.get('/challenges/admin');
+      setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
+      return res.data;
+    },
     { ttl: CACHE_TTL.REQUESTS }
   );
 
@@ -200,6 +213,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
         ) : (
           <ChallengesManageView
             challenges={challenges || []}
+            ohneJahrgang={ohneJahrgang}
             marks={marks}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}

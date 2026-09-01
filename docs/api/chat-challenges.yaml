@@ -1333,9 +1333,22 @@ paths:
         plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
         org_admin sieht alle Challenges der Org.
         GEAENDERT 2026-08-31: admin war vorher org-weit.
+        GEAENDERT 2026-09-01: Ist die Liste leer, weil admin/teamer keine
+        Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den Header
+        X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt
+        ein Array). Die Oberflaeche erklaert damit den Grund der leeren
+        Liste — dasselbe Muster wie GET /api/admin/konfis.
       responses:
         '200':
           description: Challenge-Liste mit status (abgeleitet) und locked (nach Start)
+          headers:
+            X-Kein-Jahrgang-Zugewiesen:
+              schema: { type: string, enum: ["true"] }
+              description: >
+                Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem
+                aufrufenden admin/teamer kein Jahrgang zugewiesen ist
+                (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei
+                org_admin und bei einer Liste, die aus anderem Grund leer ist.
         '403': { description: requireTeamer }
         '500': { description: Datenbankfehler }
       x-berechtigung:

@@ -41,6 +41,12 @@ Versionsüberschrift.
   (vor/nach Beginn)".
 - Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
+- Ist einem Admin oder einer Teamer:in kein Jahrgang zugewiesen, sagen jetzt
+  auch die Challenge-Verwaltung und die Aktivitäts-Meldungen den Grund für die
+  leere Liste — wie es die Konfi-Liste schon tut. Vorher stand dort „keine
+  Challenges" bzw. „keine Aktivitäten", was nach einem Fehler aussah. Ein
+  Admin ohne Jahrgang ist weiterhin ausdrücklich erlaubt, etwa wenn er nur
+  mit den Teamer:innen arbeitet.
 
 ### Behoben
 - Wer einen bereits freigegebenen Jahresrückblick noch einmal erzeugt — etwa

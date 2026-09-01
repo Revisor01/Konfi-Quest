@@ -108,10 +108,23 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
+  // Admin ohne Jahrgangs-Zuweisung sieht keine Konfi-Antraege -- gueltig
+  // (Simons Entscheidung 31.08.2026), aber ohne Erklaerung sah die leere
+  // Liste nach kaputter App aus. Der Server meldet den Grund per Header
+  // (activities.js GET /requests), dasselbe Muster wie die Konfi-Liste
+  // (AdminKonfisPage). Offline aus dem Cache laeuft die Funktion nicht,
+  // der Hinweis erscheint dann bewusst nicht -- ein leerer Cache ist etwas
+  // anderes als "kein Jahrgang".
+  const [ohneJahrgang, setOhneJahrgang] = useState(false);
+
   // Offline-Query: Aktivitäten (aus AdminActivityRequestsPage uebernommen)
   const { data: requests, loading: requestsLoading, refresh: refreshRequests, refreshLive: refreshRequestsLive } = useOfflineQuery<ActivityRequest[]>(
     'admin:requests:' + user?.organization_id,
-    async () => { const res = await api.get('/admin/activities/requests'); return res.data; },
+    async () => {
+      const res = await api.get('/admin/activities/requests');
+      setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
+      return res.data;
+    },
     { ttl: CACHE_TTL.REQUESTS }
   );
 
@@ -670,6 +683,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           ) : (
             <ActivityRequestsView
               requests={requests || []}
+              ohneJahrgang={ohneJahrgang}
               onSelectRequest={handleSelectRequest}
               onResetRequest={handleResetRequest}
               headerSlot={mainSegmentSlot}

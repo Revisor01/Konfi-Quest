@@ -5734,11 +5734,22 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
-          "hinweis": "GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin. org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge; ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in jedem Fall ein Array). Anträge zu Teamer-Aktivitäten (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
+          "hinweis": "GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin. org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge; ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in jedem Fall ein Array). Anträge zu Teamer-Aktivitäten (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests). GEAENDERT 2026-09-01: Fehlt dem admin die Jahrgangs-Zuweisung, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array, Teamer-Antraege sind weiterhin enthalten). Die Oberflaeche erklaert damit, warum keine Konfi-Antraege kommen.\n"
         },
         "responses": {
           "200": {
-            "description": "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+            "description": "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)",
+            "headers": {
+              "X-Kein-Jahrgang-Zugewiesen": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "description": "Nur gesetzt, wenn dem aufrufenden admin kein Jahrgang zugewiesen ist und Konfi-Antraege deshalb ausgeblendet sind (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei org_admin und bei einer Liste, die aus anderem Grund leer ist.\n"
+              }
+            }
           },
           "400": {
             "description": "Unbekannter Wert fuer ?status="
@@ -6102,7 +6113,18 @@
         },
         "responses": {
           "200": {
-            "description": "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)"
+            "description": "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)",
+            "headers": {
+              "X-Kein-Jahrgang-Zugewiesen": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "description": "Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem aufrufenden admin/teamer kein Jahrgang zugewiesen ist (gueltiger Fall). Fehlt bei org_admin/super_admin und bei einer Liste, die aus anderem Grund leer ist.\n"
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -9005,10 +9027,21 @@
           "Challenges (Leitung)"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
-        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit.\n",
+        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit. GEAENDERT 2026-09-01: Ist die Liste leer, weil admin/teamer keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array). Die Oberflaeche erklaert damit den Grund der leeren Liste — dasselbe Muster wie GET /api/admin/konfis.\n",
         "responses": {
           "200": {
-            "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)"
+            "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)",
+            "headers": {
+              "X-Kein-Jahrgang-Zugewiesen": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                "description": "Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem aufrufenden admin/teamer kein Jahrgang zugewiesen ist (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei org_admin und bei einer Liste, die aus anderem Grund leer ist.\n"
+              }
+            }
           },
           "403": {
             "description": "requireTeamer"
