@@ -158,7 +158,6 @@ Stand der Nachprüfung: 01.09.2026, gegen Commit `4c46a3f2`.
 | `GET /api/events/user/bookings` | ersatzlos — die Buchung steht in der Terminliste (`booking_status`) | | 01.09.2026 |
 | `GET /api/teamer/konfis` | `GET /api/admin/konfis` | | 01.09.2026 |
 | `GET /api/teamer/:userId/certificates` | ersatzlos — die Nachweise stehen im Teamer-Dashboard | POST und DELETE auf demselben Pfad SIND in Benutzung (`CertificateAssignModal.tsx:50`, `KonfiDetailView.tsx:669`) — **nur das GET** ist gemeint | 01.09.2026 |
-| `POST /api/wrapped/generate-teamer` | ersatzlos — der Jahres-Cron ruft `generateTeamerSnapshot()` direkt in `wrapped.js:787`, nicht über HTTP | Am 01.09.2026 auf `server.godsapp.de` geprüft: keine Crontab-Zeile und kein Skript ruft den Endpunkt. Er ist der Hand-Auslöser für den Notfall ("Wrapped nochmal bauen") | 01.09.2026 |
 | `GET /api/notifications/preferences` | `GET /api/settings` | | 01.09.2026 |
 | `PUT /api/notifications/preferences` | `PUT /api/settings` | | 01.09.2026 |
 | `GET /api/roles/:id` | `GET /api/roles` liefert die Liste, aus der die Oberfläche auswählt | | 01.09.2026 |
@@ -183,6 +182,7 @@ Damit sie nicht bei der nächsten Prüfung wieder als „tot" auffallen:
 | `GET /api/konfi/points-history`, `GET /api/teamer/konfi-history` | Lebendig über die `apiEndpoint`-Prop (`PointsHistoryModal.tsx:72`, Override `TeamerKonfiStatsPage.tsx:94`) — sehen im grep tot aus, sind es nicht |
 | `POST /api/auth/refresh` | Lebendig im axios-Interceptor (`services/api.ts:89`) |
 | `GET /api/teamer/:userId/badges`, `GET /api/admin/konfis/:id/badges` | Lebendig über `KonfiBadgesSection.tsx:79-80` |
+| `POST /api/wrapped/generate-teamer` | **Kein Abrisskandidat, sondern ein Betriebswerkzeug.** Am 01.09.2026 auf `server.godsapp.de` geprüft: keine Crontab-Zeile ruft den Endpunkt, der Jahres-Cron nutzt den Funktionsexport (`backgroundService.js:761`). Die Route ist der Hand-Auslöser daneben — „Rückblick nochmal bauen", wenn der Cron ausgefallen ist oder Zahlen korrigiert wurden. Vier Tests sichern sie ab (`wrapped.test.js:181-218`). Stand vorher fälschlich in Tabelle B: „ohne Aufrufer in der Oberfläche" stimmt, „abreißen" folgt daraus hier nicht. Gilt genauso für `DELETE /api/wrapped/teamer` (seit 01.09.2026), den Löschweg dazu. |
 
 ### D — Doppelte Mounts
 

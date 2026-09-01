@@ -590,6 +590,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         const currentYear = new Date().getFullYear();
 
+        // Die Transaktion umschliesst NUR das Setzen der Freigabe unten, nicht
+        // die Snapshots: Die laufen bewusst parallel ueber eigene Pool-Clients
+        // (generateAndSaveKonfiSnapshot) und liegen damit ausserhalb. Bei einem
+        // ROLLBACK bleiben bereits geschriebene Snapshots stehen.
+        //
+        // Das ist gewollt und harmlos: Der Insert ist idempotent (ON CONFLICT
+        // DO UPDATE), ein erneuter Lauf erzeugt denselben Stand. Ohne die
+        // Freigabe sieht sie ohnehin niemand -- GET /me gibt fuer Konfis 403,
+        // solange wrapped_released_at nicht gesetzt ist.
+        //
+        // Alles in EINE Transaktion zu ziehen hiesse, die parallele
+        // Generierung aufzugeben (ein Client, seriell) -- teurer Umbau fuer
+        // einen Fall, der keine falschen Daten erzeugt.
         await client.query('BEGIN');
 
         // Alle Konfis des Jahrgangs laden

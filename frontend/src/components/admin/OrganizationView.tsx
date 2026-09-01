@@ -17,6 +17,7 @@ import {
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { triggerPullHaptic } from '../../utils/haptics';
+import { tageBis } from '../shared/eventFormatting';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -250,7 +251,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                                   return <><IonIcon icon={timeOutline} style={{ color: '#667eea' }} />unbegrenzt</>;
                                 }
                                 const end = new Date(organization.trial_ends_at);
-                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return (
                                   <>
                                     <IonIcon icon={timeOutline} style={{ color: days < 0 ? '#dc2626' : '#667eea' }} />

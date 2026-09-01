@@ -44,6 +44,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import QRCode from 'qrcode';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { tageBis } from '../../shared/eventFormatting';
 
 interface Jahrgang {
   id: number;
@@ -217,11 +218,12 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const formatExpiryDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // Kalendertage statt 24-Stunden-Bloecke: Ein Code, der heute Abend
+    // ablaeuft, ergab aufgerundet 1 und stand als "Laeuft morgen ab" da.
+    const diffDays = tageBis(new Date(dateString));
 
-    if (diffDays <= 0) return 'Abgelaufen';
+    if (diffDays < 0) return 'Abgelaufen';
+    if (diffDays === 0) return 'Läuft heute ab';
     if (diffDays === 1) return 'Läuft morgen ab';
     return `Noch ${diffDays} Tage gültig`;
   };

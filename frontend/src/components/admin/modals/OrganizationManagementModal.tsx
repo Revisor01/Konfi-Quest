@@ -61,6 +61,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import AdminPasswordResetModal from './AdminPasswordResetModal';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { tageBis } from '../../shared/eventFormatting';
 
 interface Organization {
   id: number;
@@ -741,7 +742,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           {organization.trial_ends_at
                             ? (() => {
                                 const end = new Date(organization.trial_ends_at);
-                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return days >= 0
                                   ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
                                   : <span style={{ color: '#dc2626' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
@@ -1326,7 +1327,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   {trialEndsAt
                     ? (() => {
                         const end = new Date(trialEndsAt);
-                        const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                         return days >= 0
                           ? <span><strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
                           : <span style={{ color: '#dc2626' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;

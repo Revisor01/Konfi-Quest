@@ -104,8 +104,13 @@ const EventsView: React.FC<EventsViewProps> = ({
             active: activeTab === 'aktuell'
           },
           {
+            // istVergangen statt event_date: Ein mehrtaegiger Termin ist erst
+            // nach seinem letzten Tag vorbei. Der Fallback wich damit von der
+            // Liste ab, die er zaehlt (AdminEventsPage.getVerbuchenEvents
+            // rechnet ueber das Terminende) -- bei einer laufenden Freizeit
+            // haette die Kachel sie schon als verbuchbar gefuehrt.
             value: eventCounts?.verbuchen ?? events.filter(e =>
-              new Date(e.event_date) < new Date() &&
+              istVergangen(e) &&
               (e.pending_bookings_count ?? 0) > 0
             ).length,
             label: 'Verbuchen',

@@ -61,7 +61,13 @@ Versionsüberschrift.
 - Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen —
   jetzt auch in der Anzeige, nicht nur im Hintergrund.
 - Termine am selben Tag stehen als „Heute" statt fälschlich als „Morgen". Ein
-  Termin am Abend wurde bisher schon auf den nächsten Tag gerechnet.
+  Termin am Abend wurde bisher schon auf den nächsten Tag gerechnet. Dasselbe
+  galt für Restlaufzeiten: Ein Einladungscode, der noch heute abläuft, stand
+  als „Läuft morgen ab" da, und auch die Anzeige der Testphase zählte einen
+  Tag zu viel.
+- Im Jahresrückblick der Teamer:innen erschien die Seite „Dein Engagement"
+  auch ohne hinterlegtes Eintrittsdatum — mit „0 Jahre als Teamer:in". Sie
+  wird jetzt nur noch gezeigt, wenn das Datum bekannt ist.
 - Der Zeitpunkt im Kopf eines Chat-Exports stimmt: Er stand zwei Stunden zu
   früh, während die Nachrichten darunter richtig waren.
 - Punkte und Anträge, die spätnachts eingetragen werden, tragen jetzt das

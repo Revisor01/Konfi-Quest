@@ -340,11 +340,17 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     });
     slideIndex++;
 
-    slides.push({
-      key: 'teamer-jahre',
-      content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
-    });
-    slideIndex++;
+    // Nur zeigen, wenn ein Eintrittsdatum hinterlegt ist. Ohne teamer_since
+    // rechnet das Backend 0 und die Seite sagte "0 Jahre als Teamer:in" --
+    // eine Aussage ueber eine fehlende Angabe, nicht ueber die Person
+    // (aufgefallen 01.09.2026 im Rueckblick der Demo-Gemeinde).
+    if (teamerData.slides.engagement.teamer_seit) {
+      slides.push({
+        key: 'teamer-jahre',
+        content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
+      });
+      slideIndex++;
+    }
 
     slides.push({
       key: 'teamer-abschluss',

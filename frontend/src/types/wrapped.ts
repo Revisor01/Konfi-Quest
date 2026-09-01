@@ -142,7 +142,10 @@ export interface TeamerZertifikateSlide {
 }
 
 export interface TeamerEngagementSlide {
-  teamer_seit: string;
+  // Nullbar: Das Backend liefert null, wenn users.teamer_since nicht gesetzt
+  // ist (wrapped.js:446). Der Typ behauptete string und verdeckte damit, dass
+  // die Seite "0 Jahre als Teamer:in" anzeigen konnte.
+  teamer_seit: string | null;
   jahre_aktiv: number;
 }
 

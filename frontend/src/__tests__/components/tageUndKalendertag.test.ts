@@ -119,12 +119,36 @@ describe('formatTimeUntil', () => {
   });
 });
 
+describe('Restlaufzeiten in Kalendertagen', () => {
+  it('nennt einen heute ablaufenden Einladungscode nicht "morgen"', () => {
+    // Der sichtbare Fehler: Ein Code mit Ablauf heute 23:00 ergab bei einer
+    // Anfrage um 08:00 aufgerundet 1 -> "Laeuft morgen ab".
+    const jetzt = new Date(2026, 8, 1, 8, 0);
+    const heuteAbend = new Date(2026, 8, 1, 23, 0);
+    expect(tageBis(heuteAbend, jetzt)).toBe(0);
+  });
+
+  it('zaehlt eine Testphase ueber die Zeitumstellung richtig', () => {
+    // 25.10.2026 ist der Umstellungstag (25 Stunden).
+    const jetzt = new Date(2026, 9, 24, 12, 0);
+    const ende = new Date(2026, 9, 26, 12, 0);
+    expect(tageBis(ende, jetzt)).toBe(2);
+  });
+});
+
 describe('Keine zweite Fassung der Rechnung mehr', () => {
   it('rechnet nirgends mehr in 24-Stunden-Bloecken', () => {
     const dateien = [
       'src/components/konfi/views/DashboardSections.tsx',
       'src/components/teamer/pages/TeamerDashboardPage.tsx',
       'src/components/wrapped/slides/KonfirmationsSlide.tsx',
+      // Restlaufzeiten (Testphase, Lizenz, Einladungscodes): dieselbe
+      // Rechnung, dieselbe Falle. Ein Einladungscode, der heute Abend
+      // ablaeuft, stand als "Laeuft morgen ab" da.
+      'src/components/shared/TrialBanner.tsx',
+      'src/components/admin/OrganizationView.tsx',
+      'src/components/admin/modals/OrganizationManagementModal.tsx',
+      'src/components/admin/pages/AdminInvitePage.tsx',
     ];
     for (const d of dateien) {
       const inhalt = readFileSync(resolve(process.cwd(), d), 'utf8');
