@@ -12,6 +12,7 @@ import EventsSlide from './slides/EventsSlide';
 import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChallengeMomenteSlide from './slides/ChallengeMomenteSlide';
+import HighlightSlide, { rendertHighlightSlide } from './slides/HighlightSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import KategorieSlide from './slides/KategorieSlide';
 import UeberDasZielSlide from './slides/UeberDasZielSlide';
@@ -159,6 +160,16 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
+        case 'highlight': {
+          const h = k.slides.highlight;
+          const highlightTexte: Record<string, string> = {
+            chat_star: `${h?.wert || 0} Chat-Nachrichten geschrieben`,
+            reaktions_magnet: `${h?.wert || 0} Reaktionen bekommen`,
+            challenge_fan: `${h?.wert || 0} Challenge-Beiträge eingereicht`,
+            verlaesslich: 'Nie abgesagt — auf mich war Verlass',
+          };
+          return { ...base, slideValue: highlightTexte[h?.type || ''] || 'Mein Highlight' };
+        }
         case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
         case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
         case 'konfirmation': return { ...base, slideValue: `Konfirmation: ${konfirmationsTermin(k) || ''}` };
@@ -196,6 +207,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     // Alle moeglichen Slide-Renderer
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
       'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} />,
+      'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
       'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
       'events': (a) => <EventsSlide isActive={a} events={konfiData.slides.events} />,
@@ -225,6 +237,16 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     if (version >= 2) {
       // --- Version 2: feste Reihenfolge ---
       addSlide('intro');
+
+      // Persoenliches Highlight (ab Version 3): Direkt nach dem Intro kommt
+      // die Seite, die DIESE Person besonders macht -- aber nur fuer die
+      // neuen Typen (chat_star, reaktions_magnet, challenge_fan,
+      // verlaesslich). Die klassischen Typen haben ihre eigenen Slides
+      // weiter unten; sie hier zu doppeln braechte nichts Neues.
+      // Version-2-Snapshots ohne highlight-Feld ueberspringen die Seite.
+      if (rendertHighlightSlide(konfiData)) {
+        addSlide('highlight');
+      }
 
       // Challenge-Momente nur, wenn der Konfi tatsaechlich etwas beigetragen hat.
       if ((konfiData.slides.challenge_momente?.length || 0) > 0) {

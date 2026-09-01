@@ -858,6 +858,314 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // PERSOENLICHE HIGHLIGHTS (Snapshot-Version 3, 01.09.2026)
+  // ================================================================
+  // Simons Wunsch: Der Rueckblick soll sich von Konfi zu Konfi dynamisch
+  // unterscheiden. Gewaehlt wird nicht mehr der groesste Rohwert, sondern
+  // das, worin jemand im Vergleich zum eigenen Jahrgang heraussticht.
+  describe('Persoenliche Highlights (Version 3)', () => {
+    const JAHR = new Date().getFullYear();
+    const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
+    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`;
+
+    async function termin(name, datum, opts = {}) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, $2::timestamp, $3, false, 0, $4, 1) RETURNING id`,
+        [name, `${datum} 10:00:00`, opts.orgId || ORGS.testGemeinde.id, opts.pointType || 'gemeinde']
+      );
+      await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [e.id, opts.jahrgangId || JAHRGAENGE.jahrgang1.id]);
+      return e.id;
+    }
+
+    async function buchung(userId, eventId, opts = {}) {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', NOW())`,
+        [userId, eventId, opts.orgId || ORGS.testGemeinde.id]
+      );
+    }
+
+    /** Chat-Nachricht in Raum 1 (Jahrgangs-Chat Org 1), Datum frei waehlbar. */
+    async function nachricht(userId, datum, opts = {}) {
+      const { rows: [m] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, created_at, deleted_at)
+         VALUES ($1, $2, 'konfi', 'text', $3, $4::timestamp, $5) RETURNING id`,
+        [opts.roomId || 1, userId, opts.content || 'Hallo', `${datum} 12:00:00`,
+         opts.geloescht ? `${datum} 13:00:00` : null]
+      );
+      return m.id;
+    }
+
+    async function reaktion(messageId, userId, datum, opts = {}) {
+      await db.query(
+        `INSERT INTO chat_message_reactions (message_id, user_id, user_type, emoji, created_at)
+         VALUES ($1, $2, $3, $4, $5::timestamp)`,
+        [messageId, userId, opts.userType || 'konfi', opts.emoji || ':like:', `${datum} 12:30:00`]
+      );
+    }
+
+    async function challenge(title) {
+      const { rows: [c] } = await db.query(
+        `INSERT INTO challenges (organization_id, title, description, challenge_type, badge_name, badge_icon, starts_at, ends_at, is_draft)
+         VALUES ($1, $2, 'Testbeschreibung', 'frei', $2, 'flag', NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year', false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, title]
+      );
+      return c.id;
+    }
+
+    async function beitrag(userId, challengeId, datum, opts = {}) {
+      await db.query(
+        `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content, moderation_status, created_at)
+         VALUES ($1, $2, $3, 'text', 'Mein Beitrag', $4, $5::timestamp)`,
+        [challengeId, userId, ORGS.testGemeinde.id, opts.status || 'approved', `${datum} 15:00:00`]
+      );
+    }
+
+    async function abmeldung(userId, eventId, datum) {
+      await db.query(
+        `INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id)
+         VALUES ($1, $2, 'Testgrund', $3::timestamp, $4)`,
+        [userId, eventId, `${datum} 09:00:00`, ORGS.testGemeinde.id]
+      );
+    }
+
+    /** Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot eines Konfis zurueck. */
+    async function snapshotVon(userId) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [userId]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    beforeEach(async () => {
+      // Bekannte Datenlage: Seed-Termine raus (wie im Zahlen-describe).
+      await db.query('DELETE FROM event_bookings');
+      await db.query('DELETE FROM event_jahrgang_assignments');
+      await db.query('DELETE FROM events');
+    });
+
+    // ------------------------------------------------------------
+    // chat_star
+    // ------------------------------------------------------------
+    it('Wer den Jahrgangs-Chat traegt, wird chat_star -- wer kaum schreibt, nicht', async () => {
+      for (let i = 0; i < 25; i++) await nachricht(USERS.konfi1.id, IM_ZEITRAUM);
+      for (let i = 0; i < 2; i++) await nachricht(USERS.konfi2.id, IM_ZEITRAUM);
+
+      const snap1 = await snapshotVon(USERS.konfi1.id);
+      expect(snap1.highlight_type).toBe('chat_star');
+      expect(snap1.slides.chat.nachrichten_gesendet).toBe(25);
+      expect(snap1.slides.highlight.type).toBe('chat_star');
+      expect(snap1.slides.highlight.wert).toBe(25);
+      // Jahrgangsschnitt: (25 + 2) / 2 Konfis = 13.5 -- anonym, keine Namen.
+      expect(snap1.slides.highlight.jahrgangsschnitt).toBe(13.5);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi2.id]
+      );
+      const snap2 = rows[0].data;
+      // 2 Nachrichten sind kein Highlight (Mindestwert 20) -> Default.
+      expect(snap2.highlight_type).toBe('events_held');
+      expect(snap2.slides.chat.nachrichten_gesendet).toBe(2);
+    });
+
+    it('Geloeschte Nachrichten zaehlen nicht, fremde Organisationen auch nicht', async () => {
+      await nachricht(USERS.konfi1.id, IM_ZEITRAUM);
+      await nachricht(USERS.konfi1.id, IM_ZEITRAUM, { geloescht: true });
+      // Raum 4 gehoert Org 2 -- die Nachricht darf nicht mitzaehlen.
+      await nachricht(USERS.konfi1.id, IM_ZEITRAUM, { roomId: 4 });
+
+      const snap = await snapshotVon(USERS.konfi1.id);
+      expect(snap.slides.chat.nachrichten_gesendet).toBe(1);
+    });
+
+    // ------------------------------------------------------------
+    // reaktions_magnet
+    // ------------------------------------------------------------
+    it('Viel Zustimmung BEKOMMEN macht den reaktions_magnet -- eigene Reaktionen zaehlen nicht', async () => {
+      // konfi1 schreibt 6 Nachrichten, konfi2 reagiert auf jede.
+      const ids = [];
+      for (let i = 0; i < 6; i++) ids.push(await nachricht(USERS.konfi1.id, IM_ZEITRAUM));
+      for (const id of ids) await reaktion(id, USERS.konfi2.id, IM_ZEITRAUM);
+      // Selbst-Reaktion auf die eigene Nachricht: zaehlt NICHT als bekommen.
+      await reaktion(ids[0], USERS.konfi1.id, IM_ZEITRAUM, { emoji: ':herz:' });
+
+      const snap1 = await snapshotVon(USERS.konfi1.id);
+      expect(snap1.highlight_type).toBe('reaktions_magnet');
+      expect(snap1.slides.chat.reaktionen_bekommen).toBe(6);
+      expect(snap1.slides.chat.reaktionen_gegeben).toBe(1);
+      expect(snap1.slides.highlight.wert).toBe(6);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi2.id]
+      );
+      const snap2 = rows[0].data;
+      expect(snap2.highlight_type).not.toBe('reaktions_magnet');
+      expect(snap2.slides.chat.reaktionen_bekommen).toBe(0);
+      expect(snap2.slides.chat.reaktionen_gegeben).toBe(6);
+    });
+
+    // ------------------------------------------------------------
+    // challenge_fan
+    // ------------------------------------------------------------
+    it('Viele Challenge-Beitraege machen den challenge_fan, samt Top-Challenge -- versteckte zaehlen nicht', async () => {
+      const foto = await challenge('Foto-Challenge');
+      const mut = await challenge('Mut-Challenge');
+      await beitrag(USERS.konfi1.id, foto, IM_ZEITRAUM);
+      await beitrag(USERS.konfi1.id, foto, IM_ZEITRAUM);
+      await beitrag(USERS.konfi1.id, mut, IM_ZEITRAUM);
+      // Versteckter Beitrag: von der Moderation aus dem Rueckblick genommen.
+      await beitrag(USERS.konfi1.id, mut, IM_ZEITRAUM, { status: 'hidden' });
+
+      const snap1 = await snapshotVon(USERS.konfi1.id);
+      expect(snap1.highlight_type).toBe('challenge_fan');
+      expect(snap1.slides.challenges.beitraege).toBe(3);
+      expect(snap1.slides.challenges.top_challenge.title).toBe('Foto-Challenge');
+      expect(snap1.slides.challenges.top_challenge.count).toBe(2);
+      expect(snap1.slides.highlight.wert).toBe(3);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi2.id]
+      );
+      const snap2 = rows[0].data;
+      expect(snap2.highlight_type).toBe('events_held');
+      expect(snap2.slides.challenges.beitraege).toBe(0);
+      expect(snap2.slides.challenges.top_challenge).toBe(null);
+    });
+
+    // ------------------------------------------------------------
+    // verlaesslich -- und Simons Kernszenario: zwei Konfis mit
+    // aehnlichem Verhalten bekommen NACHWEISLICH verschiedene Seiten.
+    // ------------------------------------------------------------
+    it('Nie abgesagt bei genug Buchungen wird verlaesslich -- wer abgesagt hat, bekommt ein anderes Highlight', async () => {
+      // Beide buchen dieselben 6 Termine; konfi2 meldet sich zweimal ab.
+      const termine = [];
+      for (let i = 0; i < 6; i++) termine.push(await termin(`Termin ${i}`, IM_ZEITRAUM));
+      for (const t of termine) {
+        await buchung(USERS.konfi1.id, t);
+        await buchung(USERS.konfi2.id, t);
+      }
+      await abmeldung(USERS.konfi2.id, termine[0], IM_ZEITRAUM);
+      await abmeldung(USERS.konfi2.id, termine[1], IM_ZEITRAUM);
+
+      const snap1 = await snapshotVon(USERS.konfi1.id);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi2.id]
+      );
+      const snap2 = rows[0].data;
+
+      // konfi1: 0 Absagen bei 6 Buchungen -> Fels in der Brandung.
+      expect(snap1.highlight_type).toBe('verlaesslich');
+      expect(snap1.slides.verlaesslichkeit.nie_abgesagt).toBe(true);
+      expect(snap1.slides.verlaesslichkeit.abmeldungen).toBe(0);
+
+      // konfi2: KEIN beschaemendes Absage-Highlight -- die Absagen stehen
+      // nur neutral im Snapshot, das Highlight ist das naechstbeste.
+      expect(snap2.highlight_type).toBe('events_held');
+      expect(snap2.slides.verlaesslichkeit.nie_abgesagt).toBe(false);
+      expect(snap2.slides.verlaesslichkeit.abmeldungen).toBe(2);
+
+      // Der eigentliche Test fuer Simons Wunsch: zwei Konfis, fast gleiches
+      // Verhalten, nachweislich verschiedene Highlights.
+      expect(snap1.highlight_type).not.toBe(snap2.highlight_type);
+    });
+
+    it('Wenige Buchungen sind keine Verlaesslichkeits-Aussage', async () => {
+      // 2 Buchungen ohne Absage: "nie abgesagt" waere eine Aussage ueber
+      // fehlende Gelegenheit, nicht ueber die Person.
+      const a = await termin('Termin A', IM_ZEITRAUM);
+      const b = await termin('Termin B', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, a);
+      await buchung(USERS.konfi1.id, b);
+
+      const snap = await snapshotVon(USERS.konfi1.id);
+      expect(snap.slides.verlaesslichkeit.nie_abgesagt).toBe(false);
+      expect(snap.highlight_type).not.toBe('verlaesslich');
+    });
+
+    // ------------------------------------------------------------
+    // Zeitraum-Grenze
+    // ------------------------------------------------------------
+    it('Chat-Nachrichten und Abmeldungen VOR dem Zeitraum zaehlen nicht', async () => {
+      await nachricht(USERS.konfi1.id, IM_ZEITRAUM);
+      await nachricht(USERS.konfi1.id, VOR_ZEITRAUM);
+      await nachricht(USERS.konfi1.id, VOR_ZEITRAUM);
+
+      const termine = [];
+      for (let i = 0; i < 5; i++) termine.push(await termin(`Termin ${i}`, IM_ZEITRAUM));
+      for (const t of termine) await buchung(USERS.konfi1.id, t);
+      // Abmeldung aus dem VORIGEN Konfi-Jahr: gehoert nicht in diesen Rueckblick.
+      await abmeldung(USERS.konfi1.id, termine[0], VOR_ZEITRAUM);
+
+      const snap = await snapshotVon(USERS.konfi1.id);
+      expect(snap.slides.chat.nachrichten_gesendet).toBe(1);
+      expect(snap.slides.verlaesslichkeit.abmeldungen).toBe(0);
+      expect(snap.slides.verlaesslichkeit.nie_abgesagt).toBe(true);
+    });
+
+    // ------------------------------------------------------------
+    // Formwaechter: Version 3 ist ADDITIV -- alle bisherigen Felder
+    // sind noch da und haben denselben Typ (ausgelieferte Apps!).
+    // ------------------------------------------------------------
+    it('Version 3 behaelt alle bisherigen Snapshot-Felder mit denselben Typen', async () => {
+      const a = await termin('Ein Termin', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, a);
+
+      const snap = await snapshotVon(USERS.konfi1.id);
+
+      expect(snap.version).toBe(3);
+      expect(typeof snap.highlight_type).toBe('string');
+      expect(typeof snap.formulierung_seed).toBe('number');
+
+      // Bestandsfelder (Version 2) -- Form und Typ unveraendert.
+      expect(typeof snap.slides.punkte.gottesdienst).toBe('number');
+      expect(typeof snap.slides.punkte.gemeinde).toBe('number');
+      expect(typeof snap.slides.punkte.total).toBe('number');
+      expect(typeof snap.slides.punkte.bonus).toBe('number');
+      expect(snap.slides.events.total_attended).toBe(1);
+      expect(typeof snap.slides.events.total_available).toBe('number');
+      expect(typeof snap.slides.events.abgesagt).toBe('number');
+      expect(snap.slides.events.lieblings_event.name).toBe('Ein Termin');
+      expect(typeof snap.slides.badges.total_earned).toBe('number');
+      expect(Array.isArray(snap.slides.badges.badges)).toBe(true);
+      expect(typeof snap.slides.pflicht.besucht).toBe('number');
+      expect(typeof snap.slides.pflicht.gesamt).toBe('number');
+      expect(typeof snap.slides.aktivster_monat.monat).toBe('number');
+      expect(typeof snap.slides.aktivster_monat.monat_name).toBe('string');
+      expect(typeof snap.slides.endspurt.aktiv).toBe('boolean');
+      expect(typeof snap.slides.endspurt.fehlende_punkte).toBe('number');
+      expect(typeof snap.slides.zeitraum.start).toBe('string');
+      expect(typeof snap.slides.zeitraum.ende).toBe('string');
+      expect(typeof snap.slides.gottesdienst.count).toBe('number');
+      expect(Array.isArray(snap.slides.kategorie.verteilung)).toBe(true);
+      expect(Array.isArray(snap.slides.challenge_momente)).toBe(true);
+
+      // Neue Felder (Version 3) -- vorhanden und richtig getypt.
+      expect(typeof snap.slides.chat.nachrichten_gesendet).toBe('number');
+      expect(typeof snap.slides.chat.reaktionen_gegeben).toBe('number');
+      expect(typeof snap.slides.chat.reaktionen_bekommen).toBe('number');
+      expect(typeof snap.slides.challenges.beitraege).toBe('number');
+      expect(typeof snap.slides.verlaesslichkeit.abmeldungen).toBe('number');
+      expect(typeof snap.slides.verlaesslichkeit.nie_abgesagt).toBe('boolean');
+      expect(snap.slides.highlight.type).toBe(snap.highlight_type);
+      expect(typeof snap.slides.highlight.wert).toBe('number');
+    });
+  });
+
+  // ================================================================
   // ORG-ISOLATION
   // ================================================================
   describe('Org-Isolation', () => {

@@ -763,13 +763,15 @@ ion-modal.wrapped-modal-fullscreen {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
-  max-height: 180px;
+  min-height: 140px;
+  /* Simons Nachtrag (01.09.2026): Fotos gross ausweisen, nicht als
+     Miniatur. Bei 1-2 Momenten noch groesser (--wenige unten). */
+  max-height: 240px;
 }
 
 .challenge-moment-foto img {
   width: 100%;
-  max-height: 180px;
+  max-height: 240px;
   object-fit: cover;
   display: block;
 }
@@ -802,3 +804,67 @@ ion-modal.wrapped-modal-fullscreen {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ========================================
+   Highlight Slide - persoenliches Highlight (ab Snapshot-Version 3)
+   ======================================== */
+
+.highlight-slide { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%); }
+
+.highlight-zahl {
+  font-size: 5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin: 8px 0 0 0;
+  color: #fff;
+}
+
+.highlight-detail {
+  margin-top: 16px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: inline-block;
+}
+
+.highlight-vergleich {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Wenige Challenge-Momente: die Fotos duerfen gross raus.
+   Bei 1-2 Beitraegen wirkt die 180px-Kachel verloren -- Simons Wunsch
+   (01.09.2026) war ausdruecklich, Bilder auszuweisen, wo vorhanden. */
+.challenge-momente-liste--wenige .challenge-moment-foto,
+.challenge-momente-liste--wenige .challenge-moment-foto img {
+  max-height: 300px;
+}
+
+/* Grosses Hintergrund-Symbol der Highlight-Seite (IonIcon, kein Emoji). */
+.highlight-bg-icon {
+  position: absolute;
+  font-size: 16rem;
+  color: rgba(255, 255, 255, 0.06);
+  bottom: -40px;
+  right: -50px;
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+/* Abschluss: Simons Motto, typo-driven in drei Zeilen. */
+.abschluss-motto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: clamp(1.4rem, 5.5vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.abschluss-motto span:nth-child(2) { color: rgba(255, 255, 255, 0.85); }
+.abschluss-motto span:nth-child(3) { color: #fbbf24; }

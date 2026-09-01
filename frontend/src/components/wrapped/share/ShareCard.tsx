@@ -296,6 +296,27 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'highlight': {
+          // Persoenliches Highlight (ab Snapshot-Version 3).
+          if (!konfi || !konfi.slides.highlight) return null;
+          const h = konfi.slides.highlight;
+          const texte: Record<string, { label: string; sub: string }> = {
+            chat_star: { label: 'Mein Ding: der Chat', sub: 'Nachrichten geschrieben' },
+            reaktions_magnet: { label: 'Meine Nachrichten kamen an', sub: 'Reaktionen bekommen' },
+            challenge_fan: { label: 'Mein Ding: Challenges', sub: 'Beiträge eingereicht' },
+            verlaesslich: { label: 'Auf mich war Verlass', sub: 'Anmeldungen, keine Absage' },
+          };
+          const t = texte[h.type];
+          if (!t) return null;
+          return (
+            <>
+              <div className="share-label">{t.label}</div>
+              <div className="share-big-number">{h.wert}</div>
+              <div className="share-subtitle">{t.sub}</div>
+            </>
+          );
+        }
+
         default:
           return null;
       }

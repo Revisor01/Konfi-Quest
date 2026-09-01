@@ -61,8 +61,19 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year })
         ))}
       </div>
 
+      {/* Simons Botschaft (01.09.2026), typo-driven: drei kurze Zeilen
+          statt Fliesstext, dann die Einladung. Einladend, nicht werbend --
+          es ist eine Kirchen-App. */}
+      <div className="wrapped-anim-fade wrapped-anim-delay-3" style={{ marginTop: '28px' }}>
+        <p className="abschluss-motto">
+          <span>Dein Weg.</span>
+          <span>Deine Zeit.</span>
+          <span>Dein Glaube.</span>
+        </p>
+      </div>
+
       {/* CTA */}
-      <div className="wrapped-anim-bounce wrapped-anim-delay-3" style={{ marginTop: '32px' }}>
+      <div className="wrapped-anim-bounce wrapped-anim-delay-3" style={{ marginTop: '20px' }}>
         <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IonIcon icon={heartOutline} style={{ fontSize: '1.3rem', color: '#f472b6' }} />
           <span className="wrapped-subtitle" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>Werde Teamer:in</span>
@@ -76,7 +87,7 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year })
           gap: '6px',
         }}>
           <IonIcon icon={peopleOutline} style={{ fontSize: '1rem' }} />
-          gestalte die nächste Generation mit
+          bleib dabei und gestalte das nächste Konfi-Jahr mit
         </p>
       </div>
     </SlideBase>

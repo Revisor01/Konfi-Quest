@@ -91,17 +91,39 @@ das Erzeugen des Teamer-Rückblicks selbst.
 
 ## Die Seiten des Konfi-Rückblicks
 
-Je nach Datenlage sind es sieben bis zehn Seiten. Vier davon erscheinen nur
+Je nach Datenlage sind es sieben bis elf Seiten. Fünf davon erscheinen nur
 unter bestimmten Bedingungen.
 
 **1. Begrüßung** — „Willkommen zu deinem Konfi-Jahr“, mit Name und Jahrgang.
 Erscheint immer.
 
-**2. Deine Momente** — *nur, wenn es Challenge-Beiträge gibt.* Zeigt bis zu
-sechs Beiträge aus dem Zeitraum: Challenge-Titel, ein Symbol für die Art des
-Beitrags und bei Fotos das Bild. Ausgeblendete Beiträge kommen nicht vor.
+**2. Dein Highlight** — *nur, wenn eine der neuen Auszeichnungen greift.* Die
+Seite, die diesen Konfi besonders macht: **Chat-Star** (viel im Jahrgangs-Chat
+geschrieben), **Reaktions-Magnet** (viel Zustimmung auf die eigenen Nachrichten
+bekommen), **Challenge-Fan** (viele Challenge-Beiträge, mit der Lieblings-
+Challenge) oder **Fels in der Brandung** (mindestens fünf Anmeldungen und keine
+einzige Absage). Ausgewählt wird nicht der größte Rohwert, sondern das, worin
+jemand **im Vergleich zum eigenen Jahrgang** heraussticht — so bekommen zwei
+Konfis mit unterschiedlichem Profil auch unterschiedliche Seiten. Der Vergleich
+bleibt anonym: Es erscheint höchstens der Jahrgangsdurchschnitt, nie ein Name,
+und nur dann, wenn der eigene Wert darüber liegt.
 
-**3. Deine Events** — Anzahl der besuchten Termine, dazu „von N verfügbaren“.
+> **Bewusst weggelassen:** Ein Highlight „am öftesten abgesagt“ gibt es nicht
+> und wird es nicht geben. Absagen haben bei Konfis oft Gründe außerhalb ihrer
+> Kontrolle — Familie, Krankheit, Fahrdienste. Ein Jahresrückblick, der einem
+> Kind „du hast am meisten abgesagt“ zeigt, beschämt statt zu ermutigen.
+> Der Gegenpol ist deshalb nur positiv gewendet: Wer nie abgesagt hat, wird
+> dafür gefeiert; wer abgesagt hat, bekommt einfach sein nächstbestes
+> Highlight. Die Absagen-Zahl selbst wird gespeichert, aber nirgends
+> hervorgehoben.
+
+**3. Deine Momente** — *nur, wenn es Challenge-Beiträge gibt.* Zeigt bis zu
+sechs Beiträge aus dem Zeitraum: Challenge-Titel, ein Symbol für die Art des
+Beitrags und bei Fotos das Bild — bei ein oder zwei Beiträgen besonders groß,
+damit die Fotos wirken und nicht als Miniatur untergehen. Ausgeblendete
+Beiträge kommen nicht vor.
+
+**4. Deine Events** — Anzahl der besuchten Termine, dazu „von N verfügbaren“.
 Erscheint immer. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte
 Event unter der Überschrift „Dein letztes Event“.
 
@@ -109,22 +131,22 @@ Event unter der Überschrift „Dein letztes Event“.
 > Absagen. Die Zahl ist im Programm fest eingetragen und wird nicht berechnet.
 > Ein bekannter Fehler, keine Aussage über den Konfi.
 
-**4. Dein Schwerpunkt** — *nur, wenn Aktivitäten vorhanden sind.* Die häufigste
+**5. Dein Schwerpunkt** — *nur, wenn Aktivitäten vorhanden sind.* Die häufigste
 Kategorie groß, darunter ein Balkendiagramm der fünf häufigsten. Grundlage sind
 die erledigten Aktivitäten, nicht die Termine.
 
-**5. Dein aktivster Monat** — der Monat mit den meisten Einträgen. Gezählt
+**6. Dein aktivster Monat** — der Monat mit den meisten Einträgen. Gezählt
 werden Aktivitäten und besuchte Termine zusammen. Erscheint immer.
 
 > Hat jemand weder Aktivitäten noch besuchte Termine, bleibt die
 > Monatsüberschrift **leer** und es steht nur „0 Aktivitaeten“. Die Seite wird
 > trotzdem gezeigt.
 
-**6. Deine Punkte** — Gesamtpunkte groß, darunter getrennt Gottesdienst und
+**7. Deine Punkte** — Gesamtpunkte groß, darunter getrennt Gottesdienst und
 Gemeinde. *Nur, wenn Bonuspunkte vergeben wurden*, zusätzlich „davon N
 Bonuspunkte“. Erscheint immer.
 
-**7. Endspurt ODER Über dem Ziel** — eine von beiden, nie beide:
+**8. Endspurt ODER Über dem Ziel** — eine von beiden, nie beide:
 
 - **Endspurt**, wenn das Ziel noch nicht erreicht ist: „N Punkte fehlen noch“
   mit Fortschrittsbalken und „Du schaffst das!“
@@ -133,10 +155,10 @@ Bonuspunkte“. Erscheint immer.
 
 Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.
 
-**8. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
+**9. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
 sechs Abzeichen als Symbole. Erscheint immer.
 
-**9. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
+**10. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
 Konfirmationstermin hinterlegt ist* — praktisch also fast immer, weil sonst ein
 Ersatzdatum greift. Ist die Konfirmation noch nicht gewesen, steht darunter „N
 Tage noch“.
@@ -144,9 +166,11 @@ Tage noch“.
 > Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite **immer** — auch
 > wenn die Konfirmation längst vorbei ist.
 
-**10. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dazu die
-Einladung „Werde Teamer:in — gestalte die nächste Generation mit“. Immer die
-letzte Seite.
+**11. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
+großen Lettern **„Dein Weg. Deine Zeit. Dein Glaube.“** und als Einladung
+„Werde Teamer:in — bleib dabei und gestalte das nächste Konfi-Jahr mit“. Immer
+die letzte Seite: Der Rückblick endet nicht mit einer Zahl, sondern mit einer
+Einladung.
 
 ### Woher die Zahlen kommen
 
@@ -160,9 +184,11 @@ letzte Seite.
 | Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
 | Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
 | Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
+| Highlight | Chat-Nachrichten und erhaltene Reaktionen aus dem [Chat](90-chat.md), Challenge-Beiträge, Anmeldungen und Absagen — alles nur aus dem eigenen Zeitraum und der eigenen Gemeinde, verglichen mit dem Durchschnitt des Jahrgangs |
 
 Der **Zeitraum** reicht vom 1. September des Vorjahres bis zur Konfirmation.
-Fehlt ein Konfirmationstermin, wird der 31. Juli als Ende angenommen.
+Fehlt ein Konfirmationstermin, wird der 31. August als Ende angenommen — das
+volle Konfi-Jahr.
 
 ## Die Seiten des Teamer-Rückblicks
 

@@ -33,6 +33,32 @@ export interface KonfiAktivsterMonatSlide {
 
 export interface KonfiChatSlide {
   nachrichten_gesendet: number;
+  /** Ab Version 3 (01.09.2026). In aelteren Snapshots nicht vorhanden. */
+  reaktionen_gegeben?: number;
+  reaktionen_bekommen?: number;
+}
+
+/** Challenge-Zahlen fuer das Highlight -- ab Version 3. */
+export interface KonfiChallengesSlide {
+  beitraege: number;
+  top_challenge: { title: string; badge_icon: string; count: number } | null;
+}
+
+/** Verlaesslichkeit (Selbst-Abmeldungen) -- ab Version 3. */
+export interface KonfiVerlaesslichkeitSlide {
+  abmeldungen: number;
+  nie_abgesagt: boolean;
+}
+
+/**
+ * Das persoenliche Highlight -- ab Version 3. Der Jahrgangsschnitt ist
+ * anonym (nur die Zahl, nie Namen) und wird im Frontend nur gezeigt,
+ * wenn der eigene Wert darueber liegt (freundliche Vergleiche only).
+ */
+export interface KonfiHighlight {
+  type: HighlightType;
+  wert: number;
+  jahrgangsschnitt: number | null;
 }
 
 export interface KonfiEndspurtSlide {
@@ -93,7 +119,13 @@ export type HighlightType =
   | 'chat_champion'
   | 'gottesdienst_treue'
   | 'gemeinde_aktiv'
-  | 'ueber_das_ziel';
+  | 'ueber_das_ziel'
+  // Ab Snapshot-Version 3 (01.09.2026): persoenliche Highlights aus
+  // Chat, Reaktionen, Challenges und Verlaesslichkeit.
+  | 'chat_star'
+  | 'reaktions_magnet'
+  | 'challenge_fan'
+  | 'verlaesslich';
 
 export interface KonfiWrappedData {
   /** 1 = Alt-Snapshots (History), ab 2 = Challenges-Wrapped. */
@@ -110,7 +142,17 @@ export interface KonfiWrappedData {
     kategorie: KonfiKategorieSlide;
     /** Ab Version 2. Bei Version-1-Snapshots nicht vorhanden. */
     challenge_momente?: KonfiChallengeMomenteSlide;
-    /** Nur noch Alt-Daten (Version 1), wird nicht mehr gerendert. */
+    /** Ab Version 3: das persoenliche Highlight dieser Person. */
+    highlight?: KonfiHighlight;
+    /** Ab Version 3: Challenge-Zahlen fuer die Highlight-Seite. */
+    challenges?: KonfiChallengesSlide;
+    /** Ab Version 3: Selbst-Abmeldungen (nur positiv/neutral verwendet). */
+    verlaesslichkeit?: KonfiVerlaesslichkeitSlide;
+    /**
+     * Version 1: nur nachrichten_gesendet, wurde nicht mehr gerendert.
+     * Ab Version 3 wieder befuellt (gleicher Typ, zwei Felder mehr) und
+     * von der Highlight-Seite verwendet.
+     */
     chat?: KonfiChatSlide;
     /** Nur noch Alt-Daten (Version 1), wird nicht mehr gerendert. */
     gottesdienst?: KonfiGottesdienstSlide;

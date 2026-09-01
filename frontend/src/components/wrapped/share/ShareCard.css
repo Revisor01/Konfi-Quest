@@ -135,3 +135,7 @@
 .share-card--teamer.share-card--teamer-abschluss {
   background: linear-gradient(135deg, #4c0519 0%, #0a0a0a 60%);
 }
+
+.share-card--highlight {
+  background: linear-gradient(135deg, #0c4a6e 0%, #0a0a0a 60%);
+}

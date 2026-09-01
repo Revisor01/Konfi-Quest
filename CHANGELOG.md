@@ -10,6 +10,16 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Der Jahresrückblick ist jetzt persönlich: Direkt nach der Begrüßung zeigt
+  eine eigene Seite, was diesen Konfi besonders macht — Chat-Star,
+  Reaktions-Magnet, Challenge-Fan oder Fels in der Brandung (nie abgesagt).
+  Ausgewählt wird, worin jemand im Vergleich zum eigenen Jahrgang
+  heraussticht; der Vergleich bleibt anonym und erscheint nur, wenn er
+  freundlich ist. Ein Highlight fürs Absagen gibt es bewusst nicht.
+- Fotos aus Challenge-Beiträgen erscheinen im Rückblick größer; bei ein oder
+  zwei Beiträgen füllen sie die Seite.
+- Die letzte Seite des Rückblicks endet mit „Dein Weg. Deine Zeit. Dein
+  Glaube.“ und der Einladung, Teamer:in zu werden.
 - Teamer:innen sagen zu Terminen ausdrücklich zu oder ab („Bin dabei" /
   „Bin nicht dabei") und können ihre Antwort jederzeit ändern — auch zurück
   zur Zusage. Ein Grund für die Absage ist freiwillig; wer nach einer Zusage
