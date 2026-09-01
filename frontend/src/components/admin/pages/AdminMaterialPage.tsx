@@ -92,6 +92,14 @@ const AdminMaterialPage: React.FC = () => {
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [nurGlobal, setNurGlobal] = useState(false);
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
+  // Ohne Jahrgangs-Zuweisung sieht ein Admin nur globales Material und
+  // solches ohne Jahrgang -- steht sonst nichts da, saehe die Liste kaputt
+  // aus. Der Server begruendet das per Header (material.js), damit die
+  // Antwort ein Array bleibt; der Leerzustand nennt dann den Grund
+  // (Nachzug 01.09.2026, Muster wie AdminKonfisPage). Offline laeuft die
+  // Query-Funktion nicht, der Hinweis erscheint dann bewusst nicht -- ein
+  // leerer Cache ist etwas anderes als "kein Jahrgang".
+  const [ohneJahrgang, setOhneJahrgang] = useState(false);
 
   useEffect(() => {
     setPresentingElement(pageRef.current);
@@ -114,6 +122,7 @@ const AdminMaterialPage: React.FC = () => {
           ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
         }
       });
+      setOhneJahrgang(res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
       return res.data;
     },
     { ttl: CACHE_TTL.PROFILE }
@@ -297,8 +306,18 @@ const AdminMaterialPage: React.FC = () => {
                   {filteredMaterials.length === 0 ? (
                     <EmptyState
                       icon={documentOutline}
-                      title="Keine Materialien"
-                      message="Erstelle dein erstes Material mit dem + Button"
+                      // Der Jahrgangs-Hinweis nur, wenn der Server die Leere
+                      // damit begruendet hat UND kein eigener Filter die
+                      // Liste geleert haben kann: Bei aktiver Suche erklaert
+                      // die Suche die Leere, bei "nur globales Material"
+                      // der Filter -- der Jahrgangs-Hinweis waere dort
+                      // falsch (Muster wie KonfisView, 01.09.2026).
+                      title={ohneJahrgang && !search && !nurGlobal ? 'Kein Jahrgang zugewiesen' : 'Keine Materialien'}
+                      message={
+                        ohneJahrgang && !search && !nurGlobal
+                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+                          : 'Erstelle dein erstes Material mit dem + Button'
+                      }
                       iconColor="var(--app-color-material)"
                     />
                   ) : (

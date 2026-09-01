@@ -120,3 +120,45 @@ describe('Die Seiten lesen den Header aus', () => {
     expect(activities).toContain("res.set('X-Kein-Jahrgang-Zugewiesen', 'true');");
   });
 });
+
+// Nachzug Material (01.09.2026): Ein Admin ohne Zuweisung sieht nur noch
+// globales Material und solches ohne Jahrgang -- gibt es davon keins, sah
+// die Liste kaputt aus. Die Seite hat kein separates View, der Leerzustand
+// steht inline -- deshalb Quelltext-Asserts wie in
+// adminOhneJahrgangHinweis.test.ts (Konfi-Liste).
+describe('AdminMaterialPage: Leerzustand erklaert fehlenden Jahrgang', () => {
+  const lies = (pfad: string) =>
+    readFileSync(resolve(process.cwd(), pfad), 'utf8');
+
+  const seite = lies('src/components/admin/pages/AdminMaterialPage.tsx');
+
+  it('die Seite liest den Header in der Query-Funktion aus', () => {
+    // Offline laeuft die Query-Funktion nicht, der Hinweis erscheint dann
+    // bewusst nicht -- ein leerer Cache ist etwas anderes als "kein
+    // Jahrgang".
+    expect(seite).toContain("res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true'");
+  });
+
+  it('mit Header-Grund: Hinweis statt "Keine Materialien"', () => {
+    expect(seite).toContain('Kein Jahrgang zugewiesen');
+    expect(seite).toContain('Dir ist noch kein Jahrgang zugewiesen');
+  });
+
+  it('eigene Filter behalten ihren eigenen Text', () => {
+    // Gegenprobe: Leert die Suche oder der "nur global"-Filter die Liste,
+    // erklaert der Filter die Leere -- nicht der Jahrgang.
+    expect(seite).toContain('ohneJahrgang && !search && !nurGlobal');
+  });
+
+  it('der urspruengliche Text bleibt fuer den echten Leerfall', () => {
+    // Gegenprobe: Ohne Header-Grund (wirklich kein Material, oder
+    // Zuweisung vorhanden) bleibt der bisherige Leerzustand stehen.
+    expect(seite).toContain("'Keine Materialien'");
+    expect(seite).toContain("'Erstelle dein erstes Material mit dem + Button'");
+  });
+
+  it('der Server setzt den Header in der Material-Liste', () => {
+    const material = readFileSync(resolve(process.cwd(), '../backend/routes/material.js'), 'utf8');
+    expect(material).toContain("res.set('X-Kein-Jahrgang-Zugewiesen', 'true');");
+  });
+});

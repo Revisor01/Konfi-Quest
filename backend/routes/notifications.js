@@ -68,6 +68,16 @@ module.exports = (db, verifyTokenRBAC) => {
       // sonst stuende eine rote Zahl am Reiter, hinter der eine leere Liste
       // wartet (dieselbe Fehlerklasse wie Befund H4, nur andersherum).
       // org_admin und is_super_admin-Flag bleiben org-weit.
+      //
+      // BEWUSST OHNE den Hinweis-Header X-Kein-Jahrgang-Zugewiesen
+      // (Entscheidung 01.09.2026): Ein Admin ohne Zuweisung bekommt hier
+      // ueberall 0 -- aber ein Zaehler von 0 ist der Normal- und
+      // Wunschzustand ("nichts offen") und wirkt, anders als eine leere
+      // Liste, nicht wie ein Fehler. Es gibt auch keine Stelle, an der die
+      // Oberflaeche den Grund zeigen koennte: Die Zahlen landen als rote
+      // Punkte an Reitern (BadgeContext), nicht in einer Ansicht mit
+      // Leerzustand. Die Listen HINTER den Zaehlern (Antraege, Challenges,
+      // Konfis) nennen den Grund bereits ueber ihre eigenen Routen.
       const istGebundenerAdmin = req.user.role_name === 'admin' && !req.user.is_super_admin;
 
       // Offene Challenge-Freigaben: org_admin org-weit; Teamer und gebundene

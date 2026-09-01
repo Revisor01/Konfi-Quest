@@ -47,7 +47,9 @@ angelegter Admin ohne Zuweisung sieht deshalb **keine einzige Konfi** — und
 auch keine jahrgangsgebundenen Challenges, keine Aktivitäts-Meldungen von
 Konfis, keine jahrgangsgebundenen Termine und kein jahrgangsgebundenes
 Material. Auch die Jahrgangs-Liste selbst zeigt ihm nur seine eigenen
-Jahrgänge. Das sieht nach einem Fehler aus, ist aber Absicht: Ein Admin ganz
+Jahrgänge, und die Meldungs-Zähler an den Reitern stehen bei ihm auf null,
+weil sie nur zählen, was er in seinen Listen auch sieht. Das sieht nach
+einem Fehler aus, ist aber Absicht: Ein Admin ganz
 ohne Jahrgang ist ein gültiger Fall, etwa wenn er nur mit den Teamer:innen
 arbeitet — die sieht er immer alle, genau wie Termine ohne Jahrgang und
 Teamer-Termine. Die App weist an den betroffenen Stellen darauf hin, dass die

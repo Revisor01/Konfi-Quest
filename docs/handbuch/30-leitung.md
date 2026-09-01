@@ -178,6 +178,13 @@ gedacht ist:
 „Für alle“ heißt immer: alle **Teamer:innen**. Konfis sehen Material
 grundsätzlich nicht.
 
+Auch Admins sind hier an ihre Jahrgänge gebunden: Ein Admin sieht
+jahrgangsgebundenes Material nur aus seinen eigenen Jahrgängen — dazu immer
+alles ohne Jahrgang und alles „für alle“. Hat er **gar keinen Jahrgang**
+zugewiesen und gibt es kein solches Material, bleibt seine Liste leer; sie
+nennt dann den Grund („Kein Jahrgang zugewiesen“), damit das nicht wie ein
+Fehler aussieht. Nur der Org-Admin sieht immer alles.
+
 Freigeben und die Freigabe zurückziehen kann nur der Org-Admin. Alle anderen
 in der Leitung sehen die Auswahl, können sie aber nicht ändern — bei eigenem
 Material dürfen sie Titel, Beschreibung und Dateien trotzdem bearbeiten.

@@ -119,6 +119,10 @@ Versionsüberschrift.
   Challenges" bzw. „keine Aktivitäten", was nach einem Fehler aussah. Ein
   Admin ohne Jahrgang ist weiterhin ausdrücklich erlaubt, etwa wenn er nur
   mit den Teamer:innen arbeitet.
+- Auch die Material-Liste nennt jetzt den Grund, wenn sie wegen fehlender
+  Jahrgangs-Zuweisung leer bleibt — Material „für alle“ und Material ohne
+  Jahrgang bleiben unverändert sichtbar. Vorher stand dort „keine
+  Materialien“, was nach einem Fehler aussah.
 
 ### Behoben
 - Team-Runden erscheinen jetzt auch dann in der Challenge-Verwaltung, wenn
