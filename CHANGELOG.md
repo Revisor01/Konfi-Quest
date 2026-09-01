@@ -43,6 +43,19 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Uhrzeiten in Mitteilungen und E-Mails stimmen wieder. Erinnerungen,
+  Terminabsagen und Änderungshinweise nannten die Zeit zwei Stunden zu früh —
+  eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt.
+- Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen.
+- Punkte und Anträge, die spätnachts eingetragen werden, tragen jetzt das
+  richtige Datum. Bisher landeten sie zwischen Mitternacht und zwei Uhr im
+  Vortag — und damit im falschen Tag der Punkte-Historie und des Rückblicks.
+- Abmeldezeiten in der Teilnehmerliste stimmen wieder. Wer sich um 12:34
+  abgemeldet hatte, stand dort mit 14:34.
+- Mehrtägige Termine bleiben während sie laufen in der Terminliste und auf der
+  Startseite der Konfis. Bisher verschwand ausgerechnet die Freizeit, an der
+  man gerade teilnahm, ab dem zweiten Tag aus der Liste, obwohl die Kachel sie
+  noch als laufend auswies.
 - Ein Antrag von Teamer:innen konnte mit einer Fehlermeldung enden, obwohl er
   längst eingereicht war: Brach die Verbindung ab und versuchte es die App
   erneut, kam beim zweiten Versuch ein Fehler statt des bereits gestellten
