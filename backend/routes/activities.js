@@ -5,6 +5,7 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { heuteBerlin } = require('../utils/zeitformat');
 const { decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
@@ -729,7 +730,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   router.post('/assign-activity', rbacVerifier, requireTeamer, validateAssignActivity, async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi-ID und Aktivitäts-ID sind erforderlich' });
-    const date = completed_date || new Date().toISOString().split('T')[0];
+    // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+    // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Eintrag ohne Datum sonst
+    // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
+    const date = completed_date || heuteBerlin();
 
     try {
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);

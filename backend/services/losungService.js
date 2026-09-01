@@ -23,6 +23,7 @@ const LOSUNG_ENDPUNKTE = process.env.LOSUNG_API_BASE_URL
 
 // Intern darf der Timeout knapp sein — kommt keine Antwort, ist der
 // Container nicht erreichbar und der oeffentliche Weg soll sofort greifen.
+const { formatDatum, heuteBerlin } = require('../utils/zeitformat');
 const TIMEOUT_INTERN_MS = 2000;
 const TIMEOUT_OEFFENTLICH_MS = 5000;
 
@@ -53,7 +54,9 @@ function istGesperrt(schluessel) {
 }
 
 async function fetchTageslosung(db, translation) {
-  const today = new Date().toISOString().split('T')[0];
+  // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag,
+  // die Tageslosung wechselte dadurch erst um 02:00 statt um Mitternacht.
+  const today = heuteBerlin();
   const schluessel = `${today}:${translation}`;
 
   const laufend = laufendeAbrufe.get(schluessel);
@@ -153,7 +156,7 @@ async function holeTageslosung(db, translation, today) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     await db.query(
       'DELETE FROM daily_verses WHERE date < $1',
-      [sevenDaysAgo.toISOString().split('T')[0]]
+      [heuteBerlin(sevenDaysAgo)]
     );
   } catch (cleanupErr) {
     console.error('Cleanup error:', cleanupErr.message);
@@ -180,7 +183,7 @@ async function holeTageslosung(db, translation, today) {
  */
 function tageslosungFallback() {
   return {
-    date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    date: formatDatum(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
     losung: { text: "Der HERR ist mein Hirte, mir wird nichts mangeln.", reference: "Psalm 23,1", testament: "AT" },
     lehrtext: { text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.", reference: "Johannes 10,11", testament: "NT" },
     translation: { code: "LUT", name: "Lutherbibel 2017", language: "German" },

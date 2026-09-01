@@ -1,6 +1,7 @@
 const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
 const { appIconSummeOderNull } = require('../utils/appIconBadge');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
+const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 
 /**
  * Push Notification Type Registry
@@ -773,7 +774,7 @@ class PushService {
   static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null, organizationId = null) {
     try {
 
-      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+      const dateFormatted = formatDatum(eventDate, {
         weekday: 'long',
         day: 'numeric',
         month: 'long'
@@ -782,13 +783,13 @@ class PushService {
       // Build time string - use timeslot time if available, otherwise event time
       let timeString = '';
       if (timeslot && timeslot.start_time) {
-        const startTime = new Date(timeslot.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const startTime = formatUhrzeit(timeslot.start_time);
         const endTime = timeslot.end_time
-          ? new Date(timeslot.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+          ? formatUhrzeit(timeslot.end_time)
           : null;
         timeString = endTime ? ` von ${startTime} - ${endTime} Uhr` : ` um ${startTime} Uhr`;
       } else {
-        const eventTime = new Date(eventDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const eventTime = formatUhrzeit(eventDate);
         timeString = ` um ${eventTime} Uhr`;
       }
 
@@ -1019,7 +1020,7 @@ class PushService {
       let dateInfo = '';
       if (eventDate) {
         const date = new Date(eventDate);
-        dateInfo = ` am ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+        dateInfo = ` am ${formatDatum(date, { day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
       }
 
       const notification = {
@@ -1060,7 +1061,7 @@ class PushService {
       let dateInfo = eventDate;
       if (eventDate) {
         const date = new Date(eventDate);
-        dateInfo = `${date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+        dateInfo = `${formatDatum(date, { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
       }
 
       const notification = {
@@ -1092,10 +1093,10 @@ class PushService {
 
       if (changes.newDate) {
         const date = new Date(changes.newDate);
-        let dateInfo = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        dateInfo += `, ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+        let dateInfo = formatDatum(date, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        dateInfo += `, ${formatUhrzeit(date)}`;
         if (changes.newEndTime) {
-          const endTime = new Date(changes.newEndTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          const endTime = formatUhrzeit(changes.newEndTime);
           dateInfo += ` - ${endTime} Uhr`;
         } else {
           dateInfo += ' Uhr';
@@ -1162,7 +1163,7 @@ class PushService {
         return { success: true, sent: 0 };
       }
 
-      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+      const dateFormatted = formatDatum(eventDate, {
         weekday: 'long',
         day: 'numeric',
         month: 'long'
@@ -1686,7 +1687,7 @@ class PushService {
 
       return await this.sendToMultipleUsers(db, userIds, {
         title: 'Neues Pflicht-Event',
-        body: `${eventName} am ${new Date(eventDate).toLocaleDateString('de-DE')}`,
+        body: `${eventName} am ${formatDatum(eventDate)}`,
         data: {
           type: 'mandatory_event_created',
           eventId: String(eventId),

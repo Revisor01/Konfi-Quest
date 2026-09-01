@@ -3,6 +3,7 @@
 // Herausgelöst aus der früheren routes/events.js (Aufteilung am 28.08.2026),
 // die API-Pfade sind unverändert.
 const express = require('express');
+const { formatUhrzeit } = require('../../utils/zeitformat');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
 const { promoteFromWaitlist, takeBackEventPoints } = require('../../utils/bookingUtils');
@@ -165,7 +166,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       client.release();
 
       const responseMessage = timeslot
-      ? `Teilnehmer:in zum Zeitslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? 'auf Warteliste gesetzt' : 'hinzugefügt'}`
+      ? `Teilnehmer:in zum Zeitslot ${formatUhrzeit(timeslot.start_time)} - ${formatUhrzeit(timeslot.end_time)} ${finalStatus === 'waitlist' ? 'auf Warteliste gesetzt' : 'hinzugefügt'}`
       : `Teilnehmer:in ${finalStatus === 'waitlist' ? 'auf Warteliste gesetzt' : 'hinzugefügt'}`;
 
       res.status(201).json({

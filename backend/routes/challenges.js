@@ -27,6 +27,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
@@ -1846,7 +1847,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         for (const row of rows) {
           const anonymous = isAnonymous(row, challenge);
           const name = anonymous ? 'Anonym' : row.display_name;
-          const datum = new Date(row.created_at).toLocaleDateString('de-DE');
+          const datum = formatDatum(row.created_at);
           lines.push(`--- ${name} (${datum}) ---`);
           if (row.text_content) {
             lines.push(row.text_content);

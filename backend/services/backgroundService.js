@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
+const { formatUhrzeit, heuteBerlin } = require('../utils/zeitformat');
 const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
@@ -506,13 +507,16 @@ class BackgroundService {
           )
       `;
 
-      const tomorrowDate = oneDayFromNow.toISOString().split('T')[0];
+      // heuteBerlin() statt toISOString(): Der Vergleich unten laeuft gegen
+      // e.event_date::date unter Berliner Sitzungszone. Mit dem UTC-Tag traf
+      // der nachts laufende Terminhinweis den falschen Kalendertag.
+      const tomorrowDate = heuteBerlin(oneDayFromNow);
       const { rows: oneDayEvents } = await db.query(oneDayQuery, [tomorrowDate]);
 
       for (const event of oneDayEvents) {
         try {
           // Extrahiere Zeit aus event_date
-          const eventTime = event.event_date ? new Date(event.event_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
+          const eventTime = event.event_date ? formatUhrzeit(event.event_date) : null;
           await PushService.sendEventReminderToKonfi(
             db,
             event.user_id,
@@ -557,7 +561,7 @@ class BackgroundService {
 
       for (const event of oneHourEvents) {
         try {
-          const eventTime = event.event_date ? new Date(event.event_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
+          const eventTime = event.event_date ? formatUhrzeit(event.event_date) : null;
           await PushService.sendEventReminderToKonfi(
             db,
             event.user_id,

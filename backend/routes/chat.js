@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
@@ -1322,7 +1323,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       let letzterTag = '';
       for (const m of messages) {
-        const tag = new Date(m.created_at).toLocaleDateString('de-DE', {
+        const tag = formatDatum(m.created_at, {
           weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
         });
         if (tag !== letzterTag) {
@@ -1331,9 +1332,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           letzterTag = tag;
         }
 
-        const uhrzeit = new Date(m.created_at).toLocaleTimeString('de-DE', {
-          hour: '2-digit', minute: '2-digit'
-        });
+        const uhrzeit = formatUhrzeit(m.created_at);
         const absender = m.absender || 'Unbekannt';
         const rolle = m.rolle ? ` (${m.rolle})` : '';
         let text;

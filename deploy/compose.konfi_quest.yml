@@ -51,6 +51,9 @@ services:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
+      # Ohne TZ laeuft der Node-Prozess in UTC. Der Anker gilt fuer
+      # backend, backend2 und backend-test gleichermassen.
+      TZ: Europe/Berlin
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
       QR_SECRET: ${QR_SECRET:?QR_SECRET fehlt}
       LOSUNG_API_KEY: ${LOSUNG_API_KEY:?LOSUNG_API_KEY fehlt}
