@@ -182,3 +182,97 @@ describe('Migration 138: angezeigte Zeitstempel tragen eine Zeitzone', () => {
     expect(rows[0].unregistered_at.toISOString()).toBe('2026-08-27T10:34:48.000Z');
   });
 });
+
+describe('Migration 139: in JavaScript verglichene Zeitstempel', () => {
+  let db;
+
+  beforeAll(() => { db = getTestPool(); });
+
+  const typVon = async (tabelle, spalte) => {
+    const { rows } = await db.query(
+      `SELECT data_type FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2`,
+      [tabelle, spalte]
+    );
+    return rows[0] && rows[0].data_type;
+  };
+
+  it('users.token_invalidated_at ist timestamptz', async () => {
+    expect(await typVon('users', 'token_invalidated_at'))
+      .toBe('timestamp with time zone');
+  });
+
+  it('invite_codes.expires_at ist timestamptz', async () => {
+    expect(await typVon('invite_codes', 'expires_at'))
+      .toBe('timestamp with time zone');
+  });
+
+  it('invite_codes.used_at ist timestamptz', async () => {
+    expect(await typVon('invite_codes', 'used_at'))
+      .toBe('timestamp with time zone');
+  });
+});
+
+describe('Soft-Revoke: der Widerruf wirkt sofort und zonenunabhaengig', () => {
+  let db;
+
+  beforeAll(() => { db = getTestPool(); });
+
+  // Die Auswertung aus middleware/rbac.js:106 / routes/chat.js:1634,
+  // Zeichen fuer Zeichen. Sie ist der eigentliche Pruefgegenstand.
+  const gesperrtAb = (wert) => Math.floor(new Date(wert).getTime() / 1000);
+
+  const widerrufJetztLesen = async () => {
+    await db.query('UPDATE users SET token_invalidated_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+    const { rows } = await db.query(
+      'SELECT token_invalidated_at FROM users WHERE id = $1', [USERS.konfi1.id]
+    );
+    return rows[0].token_invalidated_at;
+  };
+
+  beforeAll(async () => {
+    await truncateAll(db);
+    await seed(db);
+  });
+
+  it('sperrt ein Token, das vor dem Widerruf ausgestellt wurde', async () => {
+    const wert = await widerrufJetztLesen();
+    const iatVorher = Math.floor(Date.now() / 1000) - 10;
+    expect(iatVorher < gesperrtAb(wert)).toBe(true);
+  });
+
+  it('laesst ein Token durch, das nach dem Widerruf ausgestellt wurde', async () => {
+    // DER Fall, der unter TZ=UTC brach: Der Widerruf lag zwei Stunden in der
+    // Zukunft, deshalb war auch ein frisch ausgestelltes Token gesperrt --
+    // nach einem Passwortwechsel kam man zwei Stunden lang nicht wieder rein.
+    const wert = await widerrufJetztLesen();
+    const iatDanach = Math.floor(Date.now() / 1000) + 1;
+    expect(iatDanach < gesperrtAb(wert)).toBe(false);
+  });
+
+  it('datiert den Widerruf auf jetzt, nicht auf zwei Stunden spaeter', async () => {
+    // Der Kern: Der Versatz zwischen DB-Wert und Prozesszeit muss ~0 sein.
+    // Unter TZ=UTC mit zonenloser Spalte waren es gemessen 7200 Sekunden.
+    const wert = await widerrufJetztLesen();
+    const versatz = gesperrtAb(wert) - Math.floor(Date.now() / 1000);
+    expect(Math.abs(versatz)).toBeLessThan(5);
+  });
+
+  it('bleibt richtig, auch wenn der Prozess auf UTC gestellt wird', async () => {
+    // Die eigentliche Haertung: Mit timestamptz traegt der Wert seine Zone
+    // selbst. Die Prozess-Zeitzone darf das Ergebnis nicht mehr verschieben.
+    const vorher = process.env.TZ;
+    try {
+      process.env.TZ = 'UTC';
+      const wert = await widerrufJetztLesen();
+      const versatz = gesperrtAb(wert) - Math.floor(Date.now() / 1000);
+      expect(Math.abs(versatz)).toBeLessThan(5);
+    } finally {
+      process.env.TZ = vorher;
+    }
+  });
+
+  afterAll(async () => {
+    await db.query('UPDATE users SET token_invalidated_at = NULL WHERE id = $1', [USERS.konfi1.id]);
+  });
+});
