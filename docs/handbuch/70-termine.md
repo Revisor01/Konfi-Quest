@@ -335,6 +335,34 @@ Meldet sich eine Teamer:in an oder ab, bekommt die Leitung einen Push. Bei
 Konfi-Anmeldungen ist das nicht so — sonst wäre die Leitung mit Meldungen
 zugeschüttet.
 
+### Teamer:innen sagen zu oder ab
+
+Teamer:innen geben zu Team-Terminen eine klare Antwort: **„Ich bin dabei"**
+oder **„Ich bin nicht dabei"**. Jede Antwort lässt sich jederzeit ändern,
+auch von der Absage zurück zur Zusage. Eine Absage bleibt dabei als eigener
+Eintrag stehen — in der Detailansicht siehst du sie als „Abgemeldet", samt
+Grund. So ist eine Absage von „hat noch nicht reagiert" zu unterscheiden,
+und du musst nicht nachfragen.
+
+Für den **Grund** gilt:
+
+- Absage **ohne vorherige Zusage**: Grund freiwillig.
+- Absage **nach einer Zusage** (fester Platz oder Warteliste): Grund
+  **Pflicht** — die App lässt die Absage sonst nicht durch. Solche Absagen
+  sind in der Detailansicht eigens als **„Nach Zusage abgesagt"**
+  gekennzeichnet, denn dann musst du umplanen.
+
+Sagt jemand von einem festen Platz ab, wird der Platz frei und die nächste
+Person rückt aus der Team-Warteliste nach — mit Push an die Nachrückerin.
+Der Push über die Absage an dich nennt den Grund gleich mit.
+
+> **Zwei Arten von „weg vom Termin":** Eine **Absage** (Teamer:in, oder
+> Konfi bei einem [Pflicht-Event](#pflicht-event)) bleibt als Eintrag mit
+> Grund sichtbar stehen. Eine **Abmeldung** von einem freiwilligen Termin
+> entfernt dagegen die Anmeldung selbst; sie taucht in der Detailansicht
+> unter „Abmeldungen" auf. Für die Plätze zählt beides gleich: Wer absagt
+> oder sich abmeldet, belegt keinen Platz mehr.
+
 ---
 
 ## Zeitfenster (Timeslots)

@@ -25,13 +25,10 @@ describe('H2: Die Teamer-Buchung braucht eine Verbindung', () => {
   it('legt die Buchung NICHT mehr in die Warteschlange', () => {
     // Der alte Weg: enqueue auf /events/:id/book mit "wird gesendet".
     expect(quelle).not.toContain('Buchung wird gesendet sobald du wieder online bist');
-    // Gezielt auf das POST-enqueue der Buchung. Zwei Nachbarn duerfen
-    // ausdruecklich weiter offline laufen, weil bei ihnen nichts zu
-    // verpassen ist:
-    //   - die Zusage/Absage (/teamer/events/:id/zusage)
-    //   - die Abmeldung (DELETE auf derselben Buchungs-URL)
-    // Beide werten keine Server-Antwort aus; nur die Buchung tut das
-    // (waitlist ja/nein).
+    // Gezielt auf das POST-enqueue der Buchung. Die Zusage/Absage
+    // (/teamer/events/:id/zusage) darf ausdruecklich weiter offline laufen,
+    // weil bei ihr nichts zu verpassen ist: Sie wertet keine Server-Antwort
+    // aus; nur die Buchung tut das (waitlist ja/nein).
     const buchungsEnqueue =
       /enqueue\(\{\s*method: 'POST',\s*url: `\/events\/\$\{event\.id\}\/book`/.test(quelle);
     expect(buchungsEnqueue).toBe(false);
@@ -39,9 +36,16 @@ describe('H2: Die Teamer-Buchung braucht eine Verbindung', () => {
     // Gegenprobe, damit der Test nicht auch dann gruen waere, wenn jemand
     // versehentlich ALLE Offline-Wege der Seite entfernt:
     expect(quelle).toContain('url: `/teamer/events/' + '${event.id}' + '/zusage`');
+
+    // Die alte Abmeldung (DELETE auf der Buchungs-URL) ist seit 01.09.2026
+    // bewusst WEG: Sie loeschte die Buchung, ohne irgendetwas zu
+    // protokollieren — weder Absage-Status noch Pflicht-Grund. Jede Absage
+    // laeuft jetzt ueber die Zusage-Route (dabei=false); taucht das
+    // DELETE-enqueue wieder auf, umgeht es den Grund-Zwang.
     const abmeldeEnqueue =
       /enqueue\(\{\s*method: 'DELETE',\s*url: `\/events\/\$\{event\.id\}\/book`/.test(quelle);
-    expect(abmeldeEnqueue).toBe(true);
+    expect(abmeldeEnqueue).toBe(false);
+    expect(quelle).not.toContain("api.delete(`/events/${event.id}/book`)");
   });
 
   it('sagt offline, warum es nicht geht', () => {

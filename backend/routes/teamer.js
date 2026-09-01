@@ -5,7 +5,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { beantworteTageslosung } = require('../services/losungService');
 const { getTeamerBadgeProgress } = require('../utils/teamerBadgeProgress');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
-const { determineBookingStatus, zaehleBuchungen } = require('../utils/bookingUtils');
+const { setzeTeamerZusage } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
@@ -1070,11 +1070,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // werden. Jetzt ist eine Absage eine eigene, sichtbare Aussage
   // (Nutzerwunsch 25.08.2026: "wir wollen nur nicht nachfragen muessen").
   //
-  // BEWUSST OHNE Begruendungszwang — anders als bei Konfis auf Pflichtterminen
-  // (konfi.js POST /events/:id/opt-out, dort mind. 5 Zeichen plus Eltern-
-  // Hinweis). Teamer:innen arbeiten selbststaendig; es geht nur darum, dass
-  // die Rueckmeldung ueberhaupt da ist. Ein freiwilliger Grund wird gespeichert,
-  // wenn einer mitgeschickt wird.
+  // GRUND: freiwillig — AUSSER bei einer Absage NACH einer Zusage, dort
+  // Pflicht (Simons Anforderung 01.09.2026: "Eine Absage NACH Zusage
+  // erfordert einen Grund", damit die Leitung umplanen kann). Bis dahin war
+  // der Grund durchgehend freiwillig. Durchgesetzt wird die Regel im
+  // Buchungskern (utils/bookingUtils.js, setzeTeamerZusage), nicht hier und
+  // nicht nur in der Oberflaeche; ohne Grund kommt 400 mit error_code
+  // 'grund_erforderlich'. Anders bleibt es beim Konfi-Pflicht-Opt-out
+  // (konfi.js POST /events/:id/opt-out): dort IMMER mind. 5 Zeichen plus
+  // Eltern-Hinweis.
+  //
+  // Die fachliche Entscheidung (Zustandswechsel, Kontingent, Grund-Zwang,
+  // Nachruecken) liegt seit 01.09.2026 vollstaendig in setzeTeamerZusage —
+  // derselbe Baustein-Baukasten (zaehleBuchungen/determineBookingStatus/
+  // promoteFromWaitlist) wie beim regulaeren Buchungsweg. Hier bleibt die
+  // HUELLE: Statuscode, die Felder {status, message}, Chat, Live-Updates und
+  // Pushes. Die Antwortform ist unveraendert — ausgelieferte Apps lesen sie.
   router.post('/events/:id/zusage', rbacVerifier, requireTeamer,
     [param('id').isInt({ min: 1 }), handleValidationErrors],
     async (req, res) => {
@@ -1086,98 +1097,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       const client = await db.getClient();
+      let ergebnis;
       try {
         await client.query('BEGIN');
+        ergebnis = await setzeTeamerZusage(client, {
+          eventId,
+          userId: req.user.id,
+          orgId: req.user.organization_id,
+          dabei,
+          grund: reason
+        });
 
-        const { rows: [event] } = await client.query(
-          `SELECT id, name, event_date, teamer_needed, teamer_only, cancelled,
-                  teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
-             FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE`,
-          [eventId, req.user.organization_id]
-        );
-        if (!event) {
+        if (!ergebnis.ok) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Termin nicht gefunden' });
-        }
-        if (event.cancelled) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
-        }
-        // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
-        // Konfi-Terminen gibt es nichts zuzusagen.
-        if (!event.teamer_needed && !event.teamer_only) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Für diesen Termin werden keine Teamer:innen gesucht' });
-        }
-        if (new Date(event.event_date) <= new Date()) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Der Termin liegt bereits in der Vergangenheit' });
-        }
-
-        // Bei einer ZUSAGE gilt das Teamer-Kontingent genauso wie auf dem
-        // regulaeren Buchungsweg (events.js:1667). Bis 27.08.2026 setzte diese
-        // Route hart 'confirmed' -- ohne jede Pruefung von
-        // teamer_max_participants, teamer_waitlist_enabled oder
-        // teamer_max_waitlist_size (Befund M1). Ueber die App war der Weg nicht
-        // erreichbar (das Frontend ruft nur dabei=false auf), die Route stand
-        // aber offen und die Funktion ist parametrisiert: Ein kuenftiger Griff
-        // zur naheliegenden Zusage-Route haette das Kontingent ueberbucht.
-        //
-        // determineBookingStatus statt eigener Logik -- dieselbe Funktion, die
-        // der regulaere Weg benutzt. Eine dritte Kopie der Kapazitaetsregeln
-        // waere genau die Fehlerklasse, die dieses Projekt schon oft getroffen
-        // hat.
-        let status;
-        if (dabei) {
-          // Eine BESTEHENDE eigene Buchung zaehlt nicht als neuer Platz --
-          // sonst koennte man sich durch Absage und erneute Zusage selbst
-          // aussperren, obwohl der Platz noch einem gehoert.
-          //
-          // Gezaehlt wird die TEAM-Seite im Sinne von Migration 136 —
-          // Teamer:innen UND zugeordnete Leitung. Vorher filterte diese Stelle
-          // hart auf r.name = 'teamer'; eine zugeordnete Leitung fiel damit aus
-          // dem Kontingent heraus und das Team liess sich ueberbuchen.
-          const zahlen = await zaehleBuchungen(
-            client, { eventId }, 'team', { ausserUserId: req.user.id }
-          );
-          const ergebnis = determineBookingStatus(
-            event, zahlen.confirmed, zahlen.waitlist,
-            event.teamer_max_participants || 0,
-            { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
-          );
-          if (typeof ergebnis === 'object') {
-            await client.query('ROLLBACK');
-            return res.status(ergebnis.status).json({ error: ergebnis.error });
-          }
-          status = ergebnis; // 'confirmed' oder 'waitlist'
-        } else {
-          status = 'opted_out';
-        }
-        const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
-
-        // Vorhandene Buchung aktualisieren oder neu anlegen. Die Meinung darf
-        // jederzeit geaendert werden — auch von 'nicht dabei' zurueck auf
-        // 'dabei' (wie im Konfi-Zweig, konfi.js:1943).
-        const { rowCount } = await client.query(
-          `UPDATE event_bookings
-              SET status = $3,
-                  opt_out_reason = CASE WHEN $3 = 'opted_out' THEN $4 ELSE NULL END,
-                  opt_out_date   = CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END
-            WHERE user_id = $1 AND event_id = $2 AND organization_id = $5`,
-          [req.user.id, eventId, status, grund, req.user.organization_id]
-        );
-        if (rowCount === 0) {
-          await client.query(
-            `INSERT INTO event_bookings
-               (user_id, event_id, status, organization_id, opt_out_reason, opt_out_date)
-             VALUES ($1, $2, $3, $4, $5, CASE WHEN $3 = 'opted_out' THEN NOW() ELSE NULL END)`,
-            [req.user.id, eventId, status, req.user.organization_id, grund]
-          );
+          // error_code (derzeit nur 'grund_erforderlich') ist ADDITIV: alte
+          // Apps lesen nur error, neue erkennen daran den Pflicht-Grund.
+          const antwort = { error: ergebnis.error };
+          if (ergebnis.error_code) antwort.error_code = ergebnis.error_code;
+          return res.status(ergebnis.status).json(antwort);
         }
 
         await client.query('COMMIT');
         res.json({
-          status,
+          status: ergebnis.status,
           message: dabei ? 'Zusage gespeichert' : 'Absage gespeichert'
         });
 
@@ -1194,6 +1136,42 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
         liveUpdate.sendToUserByRole(req.user.id, 'events', 'update', { eventId });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_zusage' });
+
+        // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett: Der
+        // regulaere Buchungs-/Storno-Weg meldete sich, die Zusage-Route
+        // schwieg. Es sind bewusst die vorhandenen TEAMER-Typen
+        // (teamer_event_booking / teamer_event_cancellation), NICHT die
+        // Konfi-Typen event_unregistration/event_opt_out: Deren Texte und
+        // data-Felder (konfi_name) sind auf Konfis zugeschnitten, und die
+        // Leitungs-App behandelt Teamer-Meldungen ueber die eigenen Typen.
+        try {
+          if (dabei) {
+            await PushService.sendTeamerEventBookingToAdmins(
+              db, req.user.organization_id, req.user.display_name,
+              ergebnis.event.name, ergebnis.status, eventId
+            );
+          } else {
+            await PushService.sendTeamerEventCancellationToAdmins(
+              db, req.user.organization_id, req.user.display_name,
+              ergebnis.event.name, eventId,
+              typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null
+            );
+          }
+        } catch (pushErr) {
+          console.error('Push nach Teamer-Zusage/-Absage:', pushErr);
+        }
+
+        // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
+        // erfaehrt er das per Push — wie beim Storno-Weg.
+        if (ergebnis.promotedUserId) {
+          try {
+            await PushService.sendWaitlistPromotionToTeamer(
+              db, ergebnis.promotedUserId, ergebnis.event.name, null, eventId, req.user.organization_id
+            );
+          } catch (pushErr) {
+            console.error('Push an nachgerueckte Teamer:in:', pushErr);
+          }
+        }
       } catch (err) {
         try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
         console.error('Database error in POST /teamer/events/:id/zusage:', eventId, err);
