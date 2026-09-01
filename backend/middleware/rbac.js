@@ -277,96 +277,17 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 // JAHRGANG-ZUGRIFF
 // ============================================
 //
-// ACHTUNG — beide Helfer sind derzeit WIRKUNGSLOS (Stand 31.08.2026):
-// checkJahrgangAccess wird in keiner Route als Middleware eingehängt (es gibt
-// nur Kommentare, die auf die hier beschriebene Regel verweisen), und
-// filterByJahrgangAccess wird zwar über createApp.js an konfi-management
-// durchgereicht, dort aber nie aufgerufen. Die Rollen-Regel unten ist damit
-// die verbindliche Vorlage, nicht der wirksame Schutz: Wer eine Route
-// jahrgangs-gebunden machen will, muss den Helfer erst einhängen.
-// Wer hier vorbeikommt: Das ist NICHT erledigt, nur vorbereitet.
-
-const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Nicht angemeldet' });
-    }
-
-    // super_admin hat KEINEN Zugriff auf Jahrgangs-Daten
-    if (req.user.role_name === 'super_admin') {
-      return res.status(403).json({ error: 'Super-Admin hat keinen Zugriff auf Jahrgangs-Daten' });
-    }
-
-    // Nur der Org-Admin hat Zugriff auf ALLE Jahrgänge seiner Organisation.
-    // 'admin' ist seit 31.08.2026 an seine zugewiesenen Jahrgänge gebunden
-    // (Regel: org_admin/super_admin ausgenommen, admin gebunden — Ausnahme sind
-    // Teamer:innen, die ein admin weiterhin alle sieht; das betrifft die
-    // Personenlisten, nicht diesen Jahrgangs-Check) und läuft deshalb unten
-    // durch dieselbe Zuweisungs-Prüfung wie ein Teamer.
-    if (req.user.role_name === 'org_admin') {
-      return next();
-    }
-
-    const jahrgangId = parseInt(req.params[jahrgangIdParam] || req.body[jahrgangIdParam] || req.query[jahrgangIdParam]);
-
-    if (!jahrgangId) {
-      return res.status(400).json({ error: 'Jahrgang ID erforderlich' });
-    }
-
-    const assignedJahrgang = req.user.assigned_jahrgaenge.find(j => j.id === jahrgangId);
-
-    if (!assignedJahrgang) {
-      return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
-    }
-
-    if (requireEdit && !assignedJahrgang.can_edit) {
-      return res.status(403).json({ error: 'Keine Bearbeitungsrechte für diesen Jahrgang' });
-    }
-
-    if (!assignedJahrgang.can_view) {
-      return res.status(403).json({ error: 'Keine Leserechte für diesen Jahrgang' });
-    }
-
-    next();
-  };
-};
-
-// Filter für Jahrgang-basierte Queries
-const filterByJahrgangAccess = (req) => {
-  if (!req.user) {
-    return { where: 'WHERE 1=0', params: [] };
-  }
-
-  // super_admin hat KEINEN Zugriff auf Jahrgangs-Daten
-  if (req.user.role_name === 'super_admin') {
-    return { where: 'WHERE 1=0', params: [] };
-  }
-
-  // Nur der Org-Admin sieht alles in seiner Organisation.
-  // 'admin' fällt seit 31.08.2026 in den Jahrgangs-Filter unten (siehe
-  // checkJahrgangAccess).
-  if (req.user.role_name === 'org_admin') {
-    return {
-      where: 'WHERE organization_id = $1',
-      params: [req.user.organization_id]
-    };
-  }
-
-  // Admin und Teamer sehen nur zugewiesene Jahrgänge
-  const viewableJahrgaenge = req.user.assigned_jahrgaenge
-    .filter(j => j.can_view)
-    .map(j => j.id);
-
-  if (viewableJahrgaenge.length === 0) {
-    return { where: 'WHERE 1=0', params: [] };
-  }
-
-  const placeholders = viewableJahrgaenge.map((_, i) => `$${i + 2}`).join(',');
-  return {
-    where: `WHERE organization_id = $1 AND jahrgang_id IN (${placeholders})`,
-    params: [req.user.organization_id, ...viewableJahrgaenge]
-  };
-};
+// Hier standen bis zum 01.09.2026 zwei Helfer (checkJahrgangAccess,
+// filterByJahrgangAccess), die NIE eingehaengt waren: der eine in keiner
+// Route als Middleware, der andere zwar per createApp.js an konfi-management
+// durchgereicht, dort aber nie aufgerufen. Sie trugen ein eigenes Warnschild
+// ("nur vorbereitet, nicht erledigt") und sind GELOESCHT — nicht, weil die
+// Regel gestrichen waere, sondern weil sie inzwischen an anderer Stelle
+// wirksam ist: utils/jahrgangsZugriff.js (darfJahrgang/darfKonfi) ist die
+// eine Quelle der Semantik, und die Routen rufen sie direkt auf (Listen
+// filtern per assigned_jahrgaenge, Einzelzugriffe pruefen per darfJahrgang).
+// Wer eine Route jahrgangs-gebunden machen will: darfJahrgang nutzen, keinen
+// neuen Middleware-Helfer bauen.
 
 // ============================================
 // ORGANISATIONS-ISOLATION
@@ -400,9 +321,7 @@ module.exports = {
   requireOrgAdmin,
   requireAdmin,
   requireTeamer,
-  // Jahrgang-Zugriff
-  checkJahrgangAccess,
-  filterByJahrgangAccess,
+  // Jahrgang-Zugriff: siehe utils/jahrgangsZugriff.js (darfJahrgang/darfKonfi)
   // Organisation
   requireSameOrganization
 };

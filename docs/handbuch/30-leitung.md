@@ -45,7 +45,9 @@ schicken lassen kannst.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort) — erzeugt ein neues Einmalpasswort
 - **Zur Teamer:in befördern** — Punkte und Abzeichen bleiben als
-  Konfi-Historie erhalten
+  Konfi-Historie erhalten. Eine Jahrgangs-Zuweisung bekommt die neue
+  Teamer:in dabei nicht automatisch — die vergibst du danach unter
+  **Mehr › Benutzer:innen**, sobald klar ist, welchen Jahrgang sie begleitet
 
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind.

@@ -550,13 +550,15 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE j.organization_id = req.user.organization_id"
+        objekt-pruefung: "WHERE j.organization_id = req.user.organization_id; admin/teamer zusaetzlich AND j.id = ANY(zugewiesene Jahrgaenge mit can_view)"
         hinweis: >
-          KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgänge
-          der Organisation, nicht nur die ihm zugewiesenen
-          (filterByJahrgangAccess wird hier nicht verwendet). Die
-          Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne
-          eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.
+          Jahrgangs-Bindung seit 01.09.2026 (vorher als Befund vermerkt:
+          keine Einschraenkung): admin und teamer sehen nur ihre
+          zugewiesenen Jahrgänge, org_admin (und is_super_admin-Flag)
+          weiterhin alle. Ohne Zuweisung kommt ein leeres Array mit dem
+          Header X-Kein-Jahrgang-Zugewiesen. Die Punkte-Summen zählen
+          über konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei
+          org-eindeutigen jahrgang_id korrekt.
     post:
       tags: ["Jahrgänge"]
       summary: Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)
@@ -585,7 +587,13 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateJahrgang]
         org-scope: true
         objekt-pruefung: "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis"
-        hinweis: "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat"
+        hinweis: >
+          Ein Fehler beim Chat-Anlegen wird geloggt, laesst die
+          Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang
+          existiert dann ohne Chat. Seit 01.09.2026: Legt ein gebundener
+          'admin' den Jahrgang an, wird er automatisch zugewiesen
+          (can_view+can_edit), sonst waere der eigene neue Jahrgang fuer
+          ihn sofort unsichtbar und unbearbeitbar.
 
   /api/admin/jahrgaenge/{id}:
     put:
@@ -624,7 +632,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateJahrgang]
         org-scope: true
-        objekt-pruefung: "Vorab-Lookup und UPDATE beide mit organization_id"
+        objekt-pruefung: "Vorab-Lookup und UPDATE beide mit organization_id; danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung auf diesen Jahrgang (seit 01.09.2026, org_admin ausgenommen)"
         hinweis: "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
     delete:
       tags: ["Jahrgänge"]
@@ -656,12 +664,13 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
         org-scope: true
         objekt-pruefung: >
-          Das abschliessende DELETE ist mit organization_id gescopt. Die
-          vorgelagerten Prüfungen und Chat-Loeschungen laufen über
-          jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen
-          Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit:
-          faende der Handler den Jahrgang erst am Ende nicht in der eigenen
-          Org, wären die Chat-Daten bereits gelöscht.
+          Seit 01.09.2026 steht ein org-gescopter Existenz-Check samt
+          darfJahrgang(edit) VOR allen Loesch-Schritten — fremde Org 404,
+          admin ohne edit-Zuweisung 403 (org_admin ausgenommen). Damit ist
+          auch die fruehere Reihenfolgen-Abhaengigkeit entschaerft, bei der
+          Konfi-Zaehlung und Chat-Loeschung ueber jahrgang_id OHNE eigenen
+          Org-Filter liefen, bevor das abschliessende DELETE die Org
+          pruefte.
         hinweis: >
           S7: Die Chat-Löschung läuft NICHT in einer Transaktion
           (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab,
@@ -688,7 +697,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
         org-scope: true
-        objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
+        objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; zusaetzlich darfJahrgang(view) — 403 fuer admin ohne Zuweisung auf diesen Jahrgang (seit 01.09.2026, org_admin ausgenommen). Die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
         hinweis: "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
 
   /api/admin/jahrgaenge/{id}/sprueche:
@@ -721,7 +730,7 @@ paths:
           ODER organization_id = eigene Org) — der globale Spruch-Katalog
           ist bewusst org-uebergreifend lesbar, enthält aber nur
           Bibeltexte, keine personenbezogenen Daten.
-        hinweis: "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
+        hinweis: "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt. Seit 01.09.2026 zusaetzlich darfJahrgang(view): admin ohne Zuweisung auf diesen Jahrgang erhaelt 403 (org_admin ausgenommen)"
 
   /api/admin/jahrgaenge/{id}/matrix-email:
     post:
@@ -761,6 +770,8 @@ paths:
           ausschliesslich users.email der aufrufenden Person geladen und
           angeschrieben. Fehlt sie, bricht die Route mit 400 ab. Damit
           laesst sich die Route nicht als Versand-Relais missbrauchen.
+          Seit 01.09.2026 zusaetzlich darfJahrgang(view): admin ohne
+          Zuweisung auf diesen Jahrgang erhaelt 403 (org_admin ausgenommen).
         hinweis: "Kein eigener Rate-Limiter; nur der globale General-Limiter (2000/15min). Ein Admin kann sich also viele Mails schicken — Missbrauchspotenzial gegen Dritte besteht wegen S8 nicht"
 
   # ==========================================================================

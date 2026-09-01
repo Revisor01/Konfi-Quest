@@ -1330,14 +1330,16 @@ paths:
         Verwaltungsliste inkl. submission_count, pending_count, eigener
         Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung.
         admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge
-        plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
-        org_admin sieht alle Challenges der Org.
+        plus org-weite 'nur_team'-Challenges. org_admin sieht alle
+        Challenges der Org.
         GEAENDERT 2026-08-31: admin war vorher org-weit.
-        GEAENDERT 2026-09-01: Ist die Liste leer, weil admin/teamer keine
-        Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den Header
-        X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt
-        ein Array). Die Oberflaeche erklaert damit den Grund der leeren
-        Liste — dasselbe Muster wie GET /api/admin/konfis.
+        GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer
+        keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den
+        Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform
+        bleibt ein Array) — und die org-weiten 'nur_team'-Challenges bleiben
+        auch OHNE Zuweisung sichtbar (vorher kam grundlos ein leeres Array,
+        obwohl leadershipMayAccess und der Freigaben-Zaehler sie zugestehen;
+        Widerspruch behoben).
       responses:
         '200':
           description: Challenge-Liste mit status (abgeleitet) und locked (nach Start)
@@ -1345,9 +1347,9 @@ paths:
             X-Kein-Jahrgang-Zugewiesen:
               schema: { type: string, enum: ["true"] }
               description: >
-                Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem
-                aufrufenden admin/teamer kein Jahrgang zugewiesen ist
-                (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei
+                Nur gesetzt, wenn dem aufrufenden admin/teamer kein Jahrgang
+                zugewiesen ist (gueltiger Fall, Entscheidung 2026-08-31) —
+                die Liste enthaelt dann nur 'nur_team'-Challenges. Fehlt bei
                 org_admin und bei einer Liste, die aus anderem Grund leer ist.
         '403': { description: requireTeamer }
         '500': { description: Datenbankfehler }
@@ -1355,7 +1357,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -> leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
+        objekt-pruefung: "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (ohne Zuweisung bleibt der 'nur_team'-Anteil, seit 2026-09-01); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
     post:
       tags: ["Challenges (Leitung)"]
       summary: Challenge anlegen (Entwurf oder geplant)
@@ -1577,8 +1579,13 @@ paths:
       description: >
         Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET
         /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur
-        für Admin-Typen; pendingChallenges für Admins org-weit, für
-        Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0.
+        für Admin-Typen; pendingChallenges für org_admin org-weit, für
+        Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene
+        Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0.
+        Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer
+        die Rolle admin nur noch, was seine Listen zeigen: Antraege aus
+        zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem
+        Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit.
         Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen —
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie
@@ -1612,7 +1619,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert"
+        objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich)"
 
   /api/notifications/preferences:
     get:

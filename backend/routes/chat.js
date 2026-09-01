@@ -227,7 +227,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   //
   // Leitung (org_admin) und Admins erreichen alle Konfis der Organisation.
   // Teamer:innen NUR die Konfis ihrer zugewiesenen Jahrgänge — dieselbe
-  // Regel, die checkJahrgangAccess (rbac.js:280) im Rest des Systems
+  // Regel, die darfJahrgang (utils/jahrgangsZugriff.js) im Rest des Systems
   // durchsetzt. Der Chat war die einzige Stelle ohne diese Grenze: eine
   // Teamer:in konnte jeden Konfi der Organisation direkt anschreiben, auch
   // ohne einen einzigen zugewiesenen Jahrgang (Nutzerhinweis 23.08.2026).

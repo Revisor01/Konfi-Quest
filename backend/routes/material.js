@@ -11,11 +11,20 @@ const liveUpdate = require('../utils/liveUpdate');
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireAdmin } = roleHelpers;
 
-  // SICHTBARKEIT VON MATERIAL (Entscheidung Simon, 24.08.2026)
+  // SICHTBARKEIT VON MATERIAL (Entscheidung Simon, 24.08.2026;
+  // Jahrgangs-Bindung fuer 'admin' seit 01.09.2026)
   //
-  //   Material MIT Jahrgang  -> nur Teamer:innen dieser Jahrgänge
-  //   Material OHNE Jahrgang -> alle Teamer:innen der Gemeinde
-  //   Leitung (admin, org_admin) -> immer alles, sonst wäre es nicht verwaltbar
+  //   Material MIT Jahrgang  -> nur Teamer:innen und Admins dieser Jahrgänge
+  //   Material OHNE Jahrgang -> alle Teamer:innen und Admins der Gemeinde
+  //   org_admin -> immer alles, sonst wäre es nicht verwaltbar
+  //
+  // Bis 01.09.2026 sah die gesamte Leitung (admin UND org_admin) immer alles.
+  // Simons Regel vom 31.08. ("ein admin ist bis auf bei den teamern immer an
+  // seine jahrgaenge gebunden") bindet seither auch hier die Rolle 'admin':
+  // Er sieht sein jahrgangsgebundenes Material, alles Globale und alles ohne
+  // Jahrgang — verwaltbar bleibt es, nur eben im eigenen Zustaendigkeitsraum.
+  // Die SCHREIB-Routen (PUT/DELETE per ID) pruefen weiterhin nur die
+  // Organisation; die Liste bietet Unsichtbares aber nicht mehr an.
   //
   // GLOBALES MATERIAL (Entscheidung Simon, 31.08.2026)
   //
@@ -43,7 +52,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // Gibt eine SQL-Bedingung auf `m` zurück, oder null, wenn nicht
   // eingeschraenkt werden muss.
   const jahrgangsSchranke = (user, platzhalter) => {
-    if (user.type !== 'teamer') return null;
+    // org_admin (und is_super_admin-Flag) bleiben ungeschrankt; teamer und
+    // admin laufen durch dieselbe Zuweisungs-Pruefung (01.09.2026).
+    if (user.is_super_admin || user.role_name === 'org_admin') return null;
+    if (!['teamer', 'admin'].includes(user.role_name)) return null;
     return `(
       m.ist_global = true
       OR NOT EXISTS (SELECT 1 FROM material_jahrgaenge mj WHERE mj.material_id = m.id)

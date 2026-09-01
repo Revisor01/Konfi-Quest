@@ -27,6 +27,22 @@ describe('Events Routes', () => {
     konfiToken = generateToken('konfi1');
     konfi2Token = generateToken('konfi2');
     admin2Token = generateToken('admin2');
+
+    // Jahrgangs-Bindung (01.09.2026): Die Terminliste filtert seither auch
+    // fuer die Rolle 'admin' nach zugewiesenen Jahrgaengen — admin1 hat im
+    // Seed bewusst keine, und alle Seed-Termine haengen an jahrgang1. Fuer
+    // die Bestandstests bekommt er jahrgang1; der Fall OHNE Zuweisung steht
+    // in jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin2.id);
   });
 
   afterAll(async () => {

@@ -46,24 +46,27 @@
 #       requireOrgAdmin, kein Teamer-Zugriff.
 #
 # 2. JAHRGANGSGRENZE (assigned_jahrgaenge)
-#    GREIFT genau EINMAL in diesen drei Dateien:
-#    - GET /api/teamer/konfis: Rolle 'teamer' sieht nur Konfis der
-#      can_view-Jahrgänge; ohne Zuweisung kommt eine LEERE Liste. Für
-#      org_admin/admin entfaellt der Filter (alle Konfis der Org).
+#    Seit 01.09.2026 gilt Simons Regel vom 31.08. ("ein admin ist bis auf
+#    bei den teamern immer an seine jahrgaenge gebunden") auch in diesen
+#    Dateien; org_admin und is_super_admin-Flag sind stets ausgenommen:
+#    - GET /api/teamer/konfis: teamer UND admin sehen nur Konfis der
+#      can_view-Jahrgänge; ohne Zuweisung kommt eine LEERE Liste mit dem
+#      Header X-Kein-Jahrgang-Zugewiesen.
 #    - /api/material/*: BEHOBEN am 24.08.2026 (Befund M1). Die Zuordnung zu
 #      einem Jahrgang wirkt seitdem als Berechtigung: Material mit Jahrgang
-#      sehen nur dessen Teamer:innen (can_view), Material ohne Jahrgang alle.
+#      sehen nur zugewiesene teamer/admin (can_view; admin gebunden seit
+#      01.09.2026), Material ohne Jahrgang alle.
 #      Gilt für GET /api/material, GET /api/material/{id} und den
 #      Datei-Download GET /api/material/files/{fileRef}.
-#      ERWEITERT am 31.08.2026: Material mit ist_global = true sehen alle
-#      Teamer:innen der Gemeinde, unabhaengig von den Jahrgaengen. Der Zweig
+#      ERWEITERT am 31.08.2026: Material mit ist_global = true sehen alle,
+#      unabhaengig von den Jahrgaengen. Der Zweig
 #      kam ADDITIV dazu -- "ohne Jahrgang = fuer alle" bleibt bestehen, sonst
 #      verschwaende Bestandsmaterial.
-#    GREIFT SONST NIRGENDS. Insbesondere:
-#    - POST /api/wrapped/generate/{jahrgangId}: requireAdmin, Jahrgang nur
-#      org-geprüft. Ein 'admin' kann für JEDEN Jahrgang der Org Wrapped
-#      erzeugen und damit freigeben - passt zum Muster der uebrigen
-#      Admin-Routen, ist aber keine Jahrgangs-Beschraenkung.
+#    - POST /api/wrapped/generate/{jahrgangId}: seit 01.09.2026
+#      darfJahrgang(edit) — ein 'admin' kann nur noch fuer zugewiesene
+#      Jahrgaenge (can_edit) den Rueckblick erzeugen und freigeben.
+#    - GET /api/wrapped/history/{userId}: fuer Konfi-Ziele seit 01.09.2026
+#      darfKonfi(view); Teamer-Ziele bleiben frei (Teamer-Ausnahme).
 #
 # 3. ORG-SCOPE - WO ER FEHLT ODER ANDERS GREIFT
 #    Fast alle Routen filtern konsequent auf req.user.organization_id.
@@ -360,19 +363,20 @@ paths:
       tags: ["Teamer:innen"]
       summary: Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)
       description: >
-        Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden
-        nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung
-        kommt eine leere Liste. org_admin und admin erhalten alle Konfis der
+        Liste der Konfis für die Chat-Auswahl. Für teamer UND admin (seit
+        01.09.2026) werden nur Konfis der can_view-Jahrgänge geliefert; ohne
+        jede Zuweisung kommt eine leere Liste mit dem Header
+        X-Kein-Jahrgang-Zugewiesen. org_admin erhält alle Konfis der
         Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Rolle teamer: Jahrgangsgrenze über assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter"
+        objekt-pruefung: "teamer und admin: Jahrgangsgrenze über assigned_jahrgaenge mit can_view (admin seit 01.09.2026, Simons Regel vom 31.08.); org_admin/is_super_admin: kein Jahrgangsfilter"
         hinweis: >
-          Die einzige Route dieser drei Dateien, in der die Jahrgangsgrenze
-          tatsaechlich greift. Anders als bei GET /api/events greift sie hier
-          auch bei leerer Zuweisung (leere Liste statt Vollzugriff).
+          Greift auch bei leerer Zuweisung (leere Liste statt Vollzugriff);
+          der Grund kommt als Header X-Kein-Jahrgang-Zugewiesen mit,
+          dasselbe Muster wie GET /api/admin/konfis.
       responses:
         "200": { description: "Array (id, name, username, jahrgang_name, jahrgang_id)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1029,14 +1033,17 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "materials.organization_id UND Jahrgangs-Schranke für Teamer:innen"
+        objekt-pruefung: "materials.organization_id UND Jahrgangs-Schranke für teamer und admin (admin seit 01.09.2026)"
         hinweis: >
           # BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur
           Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind;
           Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich:
           Material mit ist_global = true sehen alle Teamer:innen der Gemeinde,
-          unabhaengig von den zugeordneten Jahrgaengen. Leitung (admin,
-          org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an
+          unabhaengig von den zugeordneten Jahrgaengen. Seit 01.09.2026 gilt
+          dieselbe Schranke auch fuer die Rolle admin (Simons Regel vom
+          31.08.); nur org_admin (und is_super_admin-Flag) sieht weiterhin
+          alles. Die Schreib-Routen (PUT/DELETE per ID) pruefen weiterhin nur
+          die Organisation. Die Bindung an
           einen Termin (material_events) bleibt bewusst reine Suchhilfe und
           grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die
           Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen
@@ -1133,7 +1140,7 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste"
-        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
+        hinweis: "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
       parameters:
         - name: eventId
           in: path
@@ -1155,7 +1162,7 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "Material org-gescopt (404 sonst)"
-        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
+        hinweis: "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "id, title, description, link_url, ist_global, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
@@ -1295,9 +1302,10 @@ paths:
         objekt-pruefung: "Datei wird über JOIN auf materials.organization_id geprüft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen"
         hinweis: >
           # BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben
-          Jahrgangs-Schranke wie die Liste - eine Teamer:in bekommt Dateien
-          eines fremden Jahrgangs mit 404 verweigert, auch bei bekanntem
-          stored_name. Die stored_name-Werte stehen in GET /api/material/{id}.
+          Jahrgangs-Schranke wie die Liste - eine Teamer:in (und seit
+          01.09.2026 auch ein admin) bekommt Dateien eines fremden Jahrgangs
+          mit 404 verweigert, auch bei bekanntem stored_name. Die
+          stored_name-Werte stehen in GET /api/material/{id}.
       parameters:
         - name: fileRef
           in: path
@@ -1405,11 +1413,11 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "param('jahrgangId').isInt", handleValidationErrors]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); organization_id der Snapshots kommt aus dem Token"
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung (seit 01.09.2026, org_admin ausgenommen); organization_id der Snapshots kommt aus dem Token"
         hinweis: >
-          Keine Jahrgangsgrenze: ein 'admin' kann für JEDEN Jahrgang der
-          Organisation den Rueckblick erzeugen und freigeben, auch außerhalb
-          der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).
+          Jahrgangsgrenze seit 01.09.2026 (vorher als Befund vermerkt: ein
+          'admin' konnte für JEDEN Jahrgang der Organisation freigeben und
+          den Push ausloesen). Teamer:innen haben keinen Zugriff (403).
       parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
       responses:
         "200": { description: "message, generated (Anzahl), errors (Anzahl), jahrgang (Name), year" }
@@ -1520,8 +1528,12 @@ paths:
         objekt-pruefung: >
           req.user.id === userId erlaubt immer; sonst muss role_name 'admin'
           oder 'org_admin' sein UND users.organization_id des Ziels der eigenen
-          organization_id entsprechen (403 sonst). Kein requireAdmin-Guard,
-          die Prüfung steht inline im Handler.
+          organization_id entsprechen (403 sonst). Seit 01.09.2026: Ist die
+          Zielperson ein Konfi, prueft darfKonfi(view) zusaetzlich den
+          Jahrgang — admin ohne Zuweisung erhaelt 403 (org_admin
+          ausgenommen); Teamer:innen als Ziel bleiben frei einsehbar
+          (Teamer-Ausnahme). Kein requireAdmin-Guard, die Prüfung steht
+          inline im Handler.
         hinweis: >
           # BEFUND W2: Die Org-Prüfung nutzt users.organization_id, also die
           PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem

@@ -4218,7 +4218,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
-        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste.\n",
+        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026, Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); ohne jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit. org_admin sieht alles. Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4230,7 +4230,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Teamer: Jahrgangs-Filter (nur wenn Zuweisungen vorhanden); Konfi: teamer_only ausgeblendet",
+          "objekt-pruefung": "teamer und admin: Jahrgangs-Filter über assigned_jahrgaenge mit can_view (admin seit 01.09.2026); org_admin/is_super_admin ungefiltert; Konfi: teamer_only ausgeblendet",
           "hinweis": "# BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt ausschliesslich über POST /api/events/:id/generate-qr, das die QR-Anzeige ohnehin nutzt. Vorher lag er in der Liste und war damit für jeden Konfi lesbar (Selbst-Checkin aus der Ferne). # BEHOBEN 22.08.2026 (war LÜCKE L5): Der Jahrgangs-Filter greift jetzt IMMER. Vorher entfiel er ohne jede Zuweisung und die Teamer:in sah alle Events der Organisation.\n"
         },
         "parameters": [
@@ -6438,7 +6438,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein"
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
         },
         "parameters": [
           {
@@ -6482,8 +6482,8 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org",
-          "hinweis": "Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort jedes Users der eigenen Organisation zurück, nicht nur von Konfis. Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt innerhalb der Leitungsrechte.\n"
+          "objekt-pruefung": "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org",
+          "hinweis": "BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen Organisation zurück, auch von Teamer:innen und Leitung, und ein admin konnte damit jedes Konfi-Konto der Gemeinde uebernehmen. Teamer-Passwoerter setzt die Benutzerverwaltung (routes/users.js) zurueck.\n"
         },
         "parameters": [
           {
@@ -6527,8 +6527,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org",
-          "hinweis": "Kein Jahrgangs-Check — wie bei GET /api/admin/konfis/{id}.\n"
+          "objekt-pruefung": "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil, 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org",
+          "hinweis": "Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner) — gleiche Stufe wie GET /api/admin/konfis/{id}.\n"
         },
         "parameters": [
           {
@@ -6544,6 +6544,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Konfi ohne Profil (seit 01.09.2026; vorher leeres Array)"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -6569,8 +6572,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein",
-          "hinweis": "Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Kein Jahrgangs-Check.\n"
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)",
+          "hinweis": "Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).\n"
         },
         "parameters": [
           {
@@ -6613,7 +6616,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt",
+          "objekt-pruefung": "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 fuer admin ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)",
           "hinweis": "Die Vorab-Abfrage auf konfi_profiles prüft NUR die user_id, nicht die Organisation. Für eine fremde ID wird der Jahrgang also ermittelt, die eigentliche Auswertung filtert danach aber auf die eigene Organisation und liefert deshalb Nullwerte statt fremder Daten. Teamer:innen haben hier keinen Zugriff.\n"
         },
         "parameters": [
@@ -6736,7 +6739,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org"
+          "objekt-pruefung": "SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 fuer admin ohne Zuweisung auf den Jahrgang, gleiche Stufe wie das Vergeben (org_admin ausgenommen)"
         },
         "parameters": [
           {
@@ -6790,7 +6793,7 @@
             "validateAddActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivität muss zur eigenen Organisation gehören; checkPointTypeEnabled bei Konfi-Aktivitäten",
+          "objekt-pruefung": "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ausgenommen: Teamer:innen sieht ein Admin alle); checkPointTypeEnabled bei Konfi-Aktivitäten",
           "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen über assign-activity nach.\n"
         },
         "parameters": [
@@ -6863,7 +6866,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "SELECT über JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi.\n"
+          "objekt-pruefung": "SELECT über JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi. Seit 01.09.2026 zusaetzlich darfKonfi(view) bei Konfi-Aktivitaeten — 403 fuer admin ohne Zuweisung auf den Jahrgang, gleiche Stufe wie das Vergeben (Teamer-Aktivitaeten und org_admin ausgenommen).\n"
         },
         "parameters": [
           {
@@ -6972,7 +6975,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Konfi zur Teamer:in befoerdern",
-        "description": "Setzt die Rolle auf teamer und teamer_since auf heute, löscht Event-Buchungen und offene Anträge und uebertraegt den Jahrgang aus konfi_profiles in user_jahrgang_assignments.\n",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute und löscht Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der Konfi-Jahrgang NICHT mehr automatisch nach user_jahrgang_assignments uebertragen: Die frisch befoerderte Person bekam dadurch view+edit auf ihren alten Jahrgang (die eigene Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne Jahrgang und die Zuweisung kommt bewusst spaeter ueber die Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6984,8 +6987,8 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400)",
-          "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL).\n"
+          "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400); seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)",
+          "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL). Ohne Zuweisung faellt die befoerderte Person beim naechsten Chat-Sync aus dem Jahrgangs-Chat ihres alten Jahrgangs — konsequent zur Regel.\n"
         },
         "parameters": [
           {
@@ -9059,7 +9062,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
-        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit. GEAENDERT 2026-09-01: Ist die Liste leer, weil admin/teamer keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array). Die Oberflaeche erklaert damit den Grund der leeren Liste — dasselbe Muster wie GET /api/admin/konfis.\n",
+        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit. GEAENDERT 2026-09-01: Ist die Liste ausgeduennt, weil admin/teamer keine Jahrgangs-Zuweisung hat, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array) — und die org-weiten 'nur_team'-Challenges bleiben auch OHNE Zuweisung sichtbar (vorher kam grundlos ein leeres Array, obwohl leadershipMayAccess und der Freigaben-Zaehler sie zugestehen; Widerspruch behoben).\n",
         "responses": {
           "200": {
             "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)",
@@ -9071,7 +9074,7 @@
                     "true"
                   ]
                 },
-                "description": "Nur gesetzt, wenn die leere Liste daher ruehrt, dass dem aufrufenden admin/teamer kein Jahrgang zugewiesen ist (gueltiger Fall, Entscheidung 2026-08-31). Fehlt bei org_admin und bei einer Liste, die aus anderem Grund leer ist.\n"
+                "description": "Nur gesetzt, wenn dem aufrufenden admin/teamer kein Jahrgang zugewiesen ist (gueltiger Fall, Entscheidung 2026-08-31) — die Liste enthaelt dann nur 'nur_team'-Challenges. Fehlt bei org_admin und bei einer Liste, die aus anderem Grund leer ist.\n"
               }
             }
           },
@@ -9093,7 +9096,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -> leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
+          "objekt-pruefung": "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (ohne Zuweisung bleibt der 'nur_team'-Anteil, seit 2026-09-01); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
         }
       },
       "post": {
@@ -9611,7 +9614,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage.\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage.\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -9666,7 +9669,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert"
+          "objekt-pruefung": "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich)"
         }
       }
     },
@@ -10073,7 +10076,7 @@
           "Teamer:innen"
         ],
         "summary": "Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)",
-        "description": "Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung kommt eine leere Liste. org_admin und admin erhalten alle Konfis der Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
+        "description": "Liste der Konfis für die Chat-Auswahl. Für teamer UND admin (seit 01.09.2026) werden nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung kommt eine leere Liste mit dem Header X-Kein-Jahrgang-Zugewiesen. org_admin erhält alle Konfis der Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10085,8 +10088,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Rolle teamer: Jahrgangsgrenze über assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter",
-          "hinweis": "Die einzige Route dieser drei Dateien, in der die Jahrgangsgrenze tatsaechlich greift. Anders als bei GET /api/events greift sie hier auch bei leerer Zuweisung (leere Liste statt Vollzugriff).\n"
+          "objekt-pruefung": "teamer und admin: Jahrgangsgrenze über assigned_jahrgaenge mit can_view (admin seit 01.09.2026, Simons Regel vom 31.08.); org_admin/is_super_admin: kein Jahrgangsfilter",
+          "hinweis": "Greift auch bei leerer Zuweisung (leere Liste statt Vollzugriff); der Grund kommt als Header X-Kein-Jahrgang-Zugewiesen mit, dasselbe Muster wie GET /api/admin/konfis.\n"
         },
         "responses": {
           "200": {
@@ -11167,8 +11170,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke für Teamer:innen",
-          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich: Material mit ist_global = true sehen alle Teamer:innen der Gemeinde, unabhaengig von den zugeordneten Jahrgaengen. Leitung (admin, org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
+          "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke für teamer und admin (admin seit 01.09.2026)",
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich: Material mit ist_global = true sehen alle Teamer:innen der Gemeinde, unabhaengig von den zugeordneten Jahrgaengen. Seit 01.09.2026 gilt dieselbe Schranke auch fuer die Rolle admin (Simons Regel vom 31.08.); nur org_admin (und is_super_admin-Flag) sieht weiterhin alles. Die Schreib-Routen (PUT/DELETE per ID) pruefen weiterhin nur die Organisation. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
         },
         "parameters": [
           {
@@ -11334,7 +11337,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste",
-          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
+          "hinweis": "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
         },
         "parameters": [
           {
@@ -11382,7 +11385,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Material org-gescopt (404 sonst)",
-          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
+          "hinweis": "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
         },
         "parameters": [
           {
@@ -11637,7 +11640,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Datei wird über JOIN auf materials.organization_id geprüft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen",
-          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben Jahrgangs-Schranke wie die Liste - eine Teamer:in bekommt Dateien eines fremden Jahrgangs mit 404 verweigert, auch bei bekanntem stored_name. Die stored_name-Werte stehen in GET /api/material/{id}.\n"
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben Jahrgangs-Schranke wie die Liste - eine Teamer:in (und seit 01.09.2026 auch ein admin) bekommt Dateien eines fremden Jahrgangs mit 404 verweigert, auch bei bekanntem stored_name. Die stored_name-Werte stehen in GET /api/material/{id}.\n"
         },
         "parameters": [
           {
@@ -11779,8 +11782,8 @@
             "handleValidationErrors"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); organization_id der Snapshots kommt aus dem Token",
-          "hinweis": "Keine Jahrgangsgrenze: ein 'admin' kann für JEDEN Jahrgang der Organisation den Rueckblick erzeugen und freigeben, auch außerhalb der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).\n"
+          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung (seit 01.09.2026, org_admin ausgenommen); organization_id der Snapshots kommt aus dem Token",
+          "hinweis": "Jahrgangsgrenze seit 01.09.2026 (vorher als Befund vermerkt: ein 'admin' konnte für JEDEN Jahrgang der Organisation freigeben und den Push ausloesen). Teamer:innen haben keinen Zugriff (403).\n"
         },
         "parameters": [
           {
@@ -11946,7 +11949,7 @@
             "Inline-Check Eigentuemer ODER admin/org_admin derselben Org"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.id === userId erlaubt immer; sonst muss role_name 'admin' oder 'org_admin' sein UND users.organization_id des Ziels der eigenen organization_id entsprechen (403 sonst). Kein requireAdmin-Guard, die Prüfung steht inline im Handler.\n",
+          "objekt-pruefung": "req.user.id === userId erlaubt immer; sonst muss role_name 'admin' oder 'org_admin' sein UND users.organization_id des Ziels der eigenen organization_id entsprechen (403 sonst). Seit 01.09.2026: Ist die Zielperson ein Konfi, prueft darfKonfi(view) zusaetzlich den Jahrgang — admin ohne Zuweisung erhaelt 403 (org_admin ausgenommen); Teamer:innen als Ziel bleiben frei einsehbar (Teamer-Ausnahme). Kein requireAdmin-Guard, die Prüfung steht inline im Handler.\n",
           "hinweis": "# BEFUND W2: Die Org-Prüfung nutzt users.organization_id, also die PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem Header X-Active-Organization. Die Snapshot-Abfrage selbst filtert ausserdem nur auf user_id, ohne organization_id - bei Multi-Org können also Snapshots aus einer anderen Organisation mitkommen. Teamer:innen erhalten für fremde userIds 403.\n"
         },
         "parameters": [
@@ -12901,8 +12904,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "WHERE j.organization_id = req.user.organization_id",
-          "hinweis": "KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgänge der Organisation, nicht nur die ihm zugewiesenen (filterByJahrgangAccess wird hier nicht verwendet). Die Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.\n"
+          "objekt-pruefung": "WHERE j.organization_id = req.user.organization_id; admin/teamer zusaetzlich AND j.id = ANY(zugewiesene Jahrgaenge mit can_view)",
+          "hinweis": "Jahrgangs-Bindung seit 01.09.2026 (vorher als Befund vermerkt: keine Einschraenkung): admin und teamer sehen nur ihre zugewiesenen Jahrgänge, org_admin (und is_super_admin-Flag) weiterhin alle. Ohne Zuweisung kommt ein leeres Array mit dem Header X-Kein-Jahrgang-Zugewiesen. Die Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.\n"
         }
       },
       "post": {
@@ -12981,7 +12984,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis",
-          "hinweis": "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat"
+          "hinweis": "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat. Seit 01.09.2026: Legt ein gebundener 'admin' den Jahrgang an, wird er automatisch zugewiesen (can_view+can_edit), sonst waere der eigene neue Jahrgang fuer ihn sofort unsichtbar und unbearbeitbar.\n"
         }
       }
     },
@@ -13073,7 +13076,7 @@
             "validateUpdateJahrgang"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Vorab-Lookup und UPDATE beide mit organization_id",
+          "objekt-pruefung": "Vorab-Lookup und UPDATE beide mit organization_id; danach darfJahrgang(edit) — 403 fuer admin ohne edit-Zuweisung auf diesen Jahrgang (seit 01.09.2026, org_admin ausgenommen)",
           "hinweis": "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
         }
       },
@@ -13134,7 +13137,7 @@
             "validateJahrgangId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Das abschliessende DELETE ist mit organization_id gescopt. Die vorgelagerten Prüfungen und Chat-Loeschungen laufen über jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit: faende der Handler den Jahrgang erst am Ende nicht in der eigenen Org, wären die Chat-Daten bereits gelöscht.\n",
+          "objekt-pruefung": "Seit 01.09.2026 steht ein org-gescopter Existenz-Check samt darfJahrgang(edit) VOR allen Loesch-Schritten — fremde Org 404, admin ohne edit-Zuweisung 403 (org_admin ausgenommen). Damit ist auch die fruehere Reihenfolgen-Abhaengigkeit entschaerft, bei der Konfi-Zaehlung und Chat-Loeschung ueber jahrgang_id OHNE eigenen Org-Filter liefen, bevor das abschliessende DELETE die Org pruefte.\n",
           "hinweis": "S7: Die Chat-Löschung läuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler werden nur geloggt.\n"
         }
       }
@@ -13182,7 +13185,7 @@
             "validateJahrgangId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt",
+          "objekt-pruefung": "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; zusaetzlich darfJahrgang(view) — 403 fuer admin ohne Zuweisung auf diesen Jahrgang (seit 01.09.2026, org_admin ausgenommen). Die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt",
           "hinweis": "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
         }
       }
@@ -13231,7 +13234,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Jahrgang und Konfis mit organization_id geprüft (u.deleted_at IS NULL, Rolle konfi). Die Konfispruch-Texte kommen aus konfsprueche mit is_active = true UND (organization_id IS NULL ODER organization_id = eigene Org) — der globale Spruch-Katalog ist bewusst org-uebergreifend lesbar, enthält aber nur Bibeltexte, keine personenbezogenen Daten.\n",
-          "hinweis": "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
+          "hinweis": "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt. Seit 01.09.2026 zusaetzlich darfJahrgang(view): admin ohne Zuweisung auf diesen Jahrgang erhaelt 403 (org_admin ausgenommen)"
         }
       }
     },
@@ -13309,7 +13312,7 @@
             "validateMatrixEmail"
           ],
           "org-scope": true,
-          "objekt-pruefung": "S8: Der Empfaenger ist NICHT frei waehlbar — es wird ausschliesslich users.email der aufrufenden Person geladen und angeschrieben. Fehlt sie, bricht die Route mit 400 ab. Damit laesst sich die Route nicht als Versand-Relais missbrauchen.\n",
+          "objekt-pruefung": "S8: Der Empfaenger ist NICHT frei waehlbar — es wird ausschliesslich users.email der aufrufenden Person geladen und angeschrieben. Fehlt sie, bricht die Route mit 400 ab. Damit laesst sich die Route nicht als Versand-Relais missbrauchen. Seit 01.09.2026 zusaetzlich darfJahrgang(view): admin ohne Zuweisung auf diesen Jahrgang erhaelt 403 (org_admin ausgenommen).\n",
           "hinweis": "Kein eigener Rate-Limiter; nur der globale General-Limiter (2000/15min). Ein Admin kann sich also viele Mails schicken — Missbrauchspotenzial gegen Dritte besteht wegen S8 nicht"
         }
       }

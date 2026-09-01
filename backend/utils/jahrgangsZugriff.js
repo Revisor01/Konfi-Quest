@@ -23,8 +23,10 @@
 // Teamer:innen"). Sie betrifft Personenlisten, nicht den Jahrgangszugriff —
 // wer Teamer:innen auflistet, ruft diesen Baustein schlicht nicht auf.
 //
-// Vorbild und Semantik-Quelle: middleware/rbac.js (checkJahrgangAccess,
-// filterByJahrgangAccess), utils/jahrgangChat.js:82-87, routes/chat.js:636-643.
+// Dieser Baustein IST die Semantik-Quelle (seit 01.09.2026): Die frueheren
+// rbac.js-Helfer (checkJahrgangAccess, filterByJahrgangAccess) waren nie
+// eingehaengt und sind geloescht. Gleiche Regel auch in utils/jahrgangChat.js
+// und routes/chat.js (dort als SQL-Filter).
 
 /**
  * Darf der Aufrufer auf diesen Jahrgang zugreifen?
@@ -43,10 +45,10 @@ function darfJahrgang(req, jahrgangId, { edit = false } = {}) {
   // Produktion 31.08.2026: org_admin|t = 2) -- ohne das Flag zu beachten
   // haetten sie ueber die Rolle ohnehin Vollzugriff, mit ihm bleibt es dabei.
   //
-  // ABWEICHUNG, bewusst und heute folgenlos: challenges.js:182 gibt der ROLLE
-  // super_admin ein leeres Array (= sieht nichts), rbac.js:288 weist sie bei
-  // Jahrgangs-Daten sogar ausdruecklich ab ("Super-Admin hat keinen Zugriff
-  // auf Jahrgangs-Daten"). Hier bekaeme sie true.
+  // ABWEICHUNG, bewusst und heute folgenlos: challenges.js
+  // (viewableJahrgangIds) gibt der ROLLE super_admin ein leeres Array
+  // (= sieht nichts); die etablierte Regel im Repo ist "super_admin hat auf
+  // Jahrgangs-Daten keinen Zugriff". Hier bekaeme sie true.
   // Folgenlos, weil requireRole (rbac.js:242) strikt den Rollennamen prueft
   // und 'super_admin' in KEINER der Listen requireAdmin/requireTeamer steht --
   // ein super_admin erreicht diese Pruefung also gar nicht.

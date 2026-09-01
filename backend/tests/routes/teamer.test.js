@@ -32,6 +32,16 @@ describe('Teamer Routes', () => {
     teamer2Token = generateToken('teamer2');
     admin2Token = generateToken('admin2');
     orgAdmin2Token = generateToken('orgAdmin2');
+
+    // Jahrgangs-Bindung (01.09.2026): GET /teamer/konfis filtert seither auch
+    // fuer die Rolle 'admin' nach zugewiesenen Jahrgaengen — admin1 hat im
+    // Seed bewusst keine. Fuer die Bestandstests bekommt er jahrgang1; der
+    // Fall OHNE Zuweisung steht in jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
   });
 
   afterAll(async () => {
@@ -101,14 +111,16 @@ describe('Teamer Routes', () => {
       expect(Array.isArray(res.body)).toBe(true);
     });
 
-    it('Admin bekommt 200 + alle Konfis der Org', async () => {
+    it('Admin bekommt 200 + Konfis seiner zugewiesenen Jahrgaenge', async () => {
+      // Seit 01.09.2026 ist auch die Rolle 'admin' hier an ihre Jahrgaenge
+      // gebunden; admin1 hat im beforeEach jahrgang1 (beide Seed-Konfis).
       const res = await request(app)
         .get('/api/teamer/konfis')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      // Org 1 hat 2 Konfis (konfi1, konfi2)
+      // Org 1 hat 2 Konfis (konfi1, konfi2), beide in jahrgang1
       expect(res.body.length).toBe(2);
     });
 

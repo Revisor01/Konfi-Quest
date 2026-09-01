@@ -60,8 +60,11 @@
 #      Multi-Org-Mitglieder verwalten (/:id/members), Passwort-Reset
 #      org-uebergreifend (PUT /users/:id/reset-password).
 #    - super_admin (Rolle) hat KEINE Organisation und ist von Org-/Trial-
-#      Sperren beim Login/Refresh ausgenommen; checkJahrgangAccess und
-#      filterByJahrgangAccess sperren ihn bewusst von Jahrgangs-Daten aus.
+#      Sperren beim Login/Refresh ausgenommen; von Jahrgangs-Daten bleibt er
+#      ausgesperrt (etablierte Regel; die frueheren rbac-Helfer
+#      checkJahrgangAccess/filterByJahrgangAccess waren nie eingehaengt und
+#      sind seit 01.09.2026 geloescht — die Regel setzt darfJahrgang in
+#      utils/jahrgangsZugriff.js zusammen mit requireAdmin/requireTeamer um).
 #    - Fachrouten (badges, levels, material, ...) nutzen requireAdmin/
 #      requireTeamer (Rollennamen-Whitelists) — die Rolle super_admin fällt
 #      dort durch (403), außer sie agiert via Multi-Org-Switch als org_admin.

@@ -947,10 +947,12 @@ paths:
         getrennt), Kategorien, Jahrgängen, registration_status und eigener
         Buchung (is_registered, booking_status, attendance_status).
         Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles).
-        Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen
-        jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine,
-        teamer_only- und teamer_needed-Events immer); Konfis sehen keine
-        teamer_only-Events.
+        Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026,
+        Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für
+        can_view-Jahrgänge (allgemeine, teamer_only- und
+        teamer_needed-Events immer); ohne jede Zuweisung kommt der Header
+        X-Kein-Jahrgang-Zugewiesen mit. org_admin sieht alles. Konfis sehen
+        keine teamer_only-Events.
         NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn
         die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe
         Regel wie in der Konfi-Liste.
@@ -958,7 +960,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Teamer: Jahrgangs-Filter (nur wenn Zuweisungen vorhanden); Konfi: teamer_only ausgeblendet"
+        objekt-pruefung: "teamer und admin: Jahrgangs-Filter über assigned_jahrgaenge mit can_view (admin seit 01.09.2026); org_admin/is_super_admin ungefiltert; Konfi: teamer_only ausgeblendet"
         hinweis: >
           # BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr
           ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt
@@ -2154,7 +2156,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein"
+        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Konfi geloescht }
@@ -2172,12 +2174,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "UPDATE ... WHERE id = :id AND organization_id = Token-Org"
+        objekt-pruefung: "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org"
         hinweis: >
-          Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort
-          jedes Users der eigenen Organisation zurück, nicht nur von Konfis.
-          Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt
-          innerhalb der Leitungsrechte.
+          BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das
+          Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen
+          Organisation zurück, auch von Teamer:innen und Leitung, und ein
+          admin konnte damit jedes Konfi-Konto der Gemeinde uebernehmen.
+          Teamer-Passwoerter setzt die Benutzerverwaltung (routes/users.js)
+          zurueck.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Neues Passwort (Klartext, einmalig)" }
@@ -2195,14 +2199,16 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org"
+        objekt-pruefung: "Seit 01.09.2026: darfKonfi(view) — 404 wenn kein Konfi-Profil, 403 fuer admin/teamer ohne Zuweisung auf den Jahrgang (org_admin ausgenommen); dann WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org"
         hinweis: >
-          Kein Jahrgangs-Check — wie bei GET /api/admin/konfis/{id}.
+          Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt:
+          keiner) — gleiche Stufe wie GET /api/admin/konfis/{id}.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array von Event-Punkten (leeres Array, wenn keine)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Konfi ohne Profil (seit 01.09.2026; vorher leeres Array)" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}/badges:
@@ -2216,10 +2222,10 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein"
+        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
         hinweis: >
           Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges.
-          Kein Jahrgangs-Check.
+          Jahrgangs-Check seit 01.09.2026 (vorher als Befund vermerkt: keiner).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Abzeichen mit Fortschritt }
@@ -2239,7 +2245,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt"
+        objekt-pruefung: "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 fuer admin ohne Zuweisung auf den Jahrgang (org_admin ausgenommen)"
         hinweis: >
           Die Vorab-Abfrage auf konfi_profiles prüft NUR die user_id, nicht
           die Organisation. Für eine fremde ID wird der Jahrgang also
@@ -2308,7 +2314,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org"
+        objekt-pruefung: "SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org; seit 01.09.2026 zusaetzlich darfKonfi(view) — 403 fuer admin ohne Zuweisung auf den Jahrgang, gleiche Stufe wie das Vergeben (org_admin ausgenommen)"
       parameters:
         - { $ref: '#/components/parameters/pathId' }
         - name: bonusId
@@ -2335,7 +2341,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateAddActivity]
         org-scope: true
-        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; checkPointTypeEnabled bei Konfi-Aktivitäten"
+        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; bei Konfi-Aktivitäten seit 01.09.2026 darfKonfi(view) — 404/403 wie assign-activity (Teamer-Aktivitaeten ausgenommen: Teamer:innen sieht ein Admin alle); checkPointTypeEnabled bei Konfi-Aktivitäten"
         hinweis: >
           Anders als POST /api/admin/activities/assign-activity verlangt diese
           Route requireAdmin — Teamer:innen tragen über assign-activity nach.
@@ -2372,6 +2378,9 @@ paths:
           SELECT über JOIN users mit organization_id — die Org-Bedingung
           wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde
           Eintraege und der Punktabzug lief auf einem fremden Konfi.
+          Seit 01.09.2026 zusaetzlich darfKonfi(view) bei Konfi-Aktivitaeten
+          — 403 fuer admin ohne Zuweisung auf den Jahrgang, gleiche Stufe
+          wie das Vergeben (Teamer-Aktivitaeten und org_admin ausgenommen).
       parameters:
         - { $ref: '#/components/parameters/pathId' }
         - name: activityId
@@ -2422,17 +2431,25 @@ paths:
       tags: ["Konfis (Verwaltung)"]
       summary: Konfi zur Teamer:in befoerdern
       description: >
-        Setzt die Rolle auf teamer und teamer_since auf heute, löscht
-        Event-Buchungen und offene Anträge und uebertraegt den Jahrgang aus
-        konfi_profiles in user_jahrgang_assignments.
+        Setzt die Rolle auf teamer und teamer_since auf heute und löscht
+        Event-Buchungen und offene Anträge. Seit 01.09.2026 wird der
+        Konfi-Jahrgang NICHT mehr automatisch nach
+        user_jahrgang_assignments uebertragen: Die frisch befoerderte Person
+        bekam dadurch view+edit auf ihren alten Jahrgang (die eigene
+        Peergroup) — Simons Regel sagt, Teamer:innen existieren auch ohne
+        Jahrgang und die Zuweisung kommt bewusst spaeter ueber die
+        Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben
+        davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400)"
+        objekt-pruefung: "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400); seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
         hinweis: >
           Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die
-          globale Rolle (organization_id IS NULL).
+          globale Rolle (organization_id IS NULL). Ohne Zuweisung faellt die
+          befoerderte Person beim naechsten Chat-Sync aus dem Jahrgangs-Chat
+          ihres alten Jahrgangs — konsequent zur Regel.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Konfi befoerdert }

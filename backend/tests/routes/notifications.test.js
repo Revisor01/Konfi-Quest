@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, ORGS } = require('../helpers/seed');
+const { seed, USERS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Notifications Routes', () => {
@@ -24,6 +24,17 @@ describe('Notifications Routes', () => {
     adminToken = generateToken('admin1');
     orgAdminToken = generateToken('orgAdmin1');
     teamerToken = generateToken('teamer1');
+
+    // Jahrgangs-Bindung (01.09.2026): Die pending-Zaehler in badge-counts
+    // zaehlen fuer die Rolle 'admin' seither nur noch, was seine Listen auch
+    // zeigen (zugewiesene Jahrgaenge) — admin1 hat im Seed bewusst keine.
+    // Fuer die Bestandstests bekommt er jahrgang1; die Faelle OHNE Zuweisung
+    // stehen in jahrgangsBindungAdmin.test.js.
+    await db.query(
+      'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+      [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+    );
+    require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
   });
 
   afterAll(async () => {
@@ -411,12 +422,31 @@ describe('Notifications Routes', () => {
         expect(await zaehler(teamerToken)).toBe(0);
       });
 
-      it('die Leitung zaehlt weiterhin org-weit', async () => {
-        // Gegenprobe: Der Admin-Zweig war korrekt und darf sich nicht aendern.
+      it('org_admin zaehlt weiterhin org-weit', async () => {
+        // Gegenprobe: Der org_admin-Zweig darf sich nicht aendern — er ist
+        // von der Jahrgangs-Bindung ausgenommen und zaehlt auch Challenges
+        // ohne Jahrgangs-Zuordnung mit.
         const team = await challengeAnlegen('nur_team');
         const konfis = await challengeAnlegen('konfis');
         await einreichung(team);
         await einreichung(konfis);
+        expect(await zaehler(orgAdminToken)).toBe(2);
+      });
+
+      it('gebundener Admin zaehlt wie seine Challenge-Liste (01.09.2026)', async () => {
+        // nur_team zaehlt immer (org-weit ueber die Rolle); eine konfis-
+        // Challenge nur mit zugewiesenem Jahrgang; eine ohne Jahrgangs-
+        // Zuordnung ist Sache des org_admin und zaehlt fuer den Admin nicht.
+        const team = await challengeAnlegen('nur_team');
+        const eigene = await challengeAnlegen('konfis');
+        await db.query(
+          'INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id) VALUES ($1, $2)',
+          [eigene, JAHRGAENGE.jahrgang1.id]
+        );
+        const ohneJahrgang = await challengeAnlegen('konfis');
+        await einreichung(team);
+        await einreichung(eigene);
+        await einreichung(ohneJahrgang);
         expect(await zaehler(adminToken)).toBe(2);
       });
     });

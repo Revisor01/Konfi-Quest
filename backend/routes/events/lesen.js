@@ -161,11 +161,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
 
       const { rows } = await db.query(query, [req.user.organization_id, req.user.id, req.user.type]);
 
-      // Für Teamer: nur Events anzeigen die mindestens einem zugewiesenen Jahrgang zugeordnet sind
+      // Für Teamer UND Admin: nur Events anzeigen die mindestens einem zugewiesenen Jahrgang zugeordnet sind
       // ODER die keinem Jahrgang zugeordnet sind (allgemeine Events)
       // ODER die teamer_only/teamer_needed sind (immer sichtbar für Teamer)
+      //
+      // Seit 01.09.2026 greift der Filter auch fuer die Rolle 'admin' (Simons
+      // Regel: an die zugewiesenen Jahrgaenge gebunden, org_admin/super_admin
+      // ausgenommen). Vorher sah ein Admin ohne Jahrgang die komplette
+      // Terminliste. Antwortform bleibt ein Array — nur die Auswahl schrumpft.
       let filteredRows = rows;
-      if (req.user.role_name === 'teamer') {
+      if (!req.user.is_super_admin
+          && ['teamer', 'admin'].includes(req.user.role_name)) {
         // Ohne jede Zuweisung griff der Filter früher gar nicht (die Bedingung
         // verlangte length > 0) — eine Teamer:in ohne Jahrgang sah damit ALLE
         // Events der Organisation statt keiner jahrgangsgebundenen (Audit
@@ -174,6 +180,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         const viewableJahrgaenge = (req.user.assigned_jahrgaenge || [])
           .filter(j => j.can_view)
           .map(j => j.id);
+        if (viewableJahrgaenge.length === 0) {
+          // Grund der ausgeduennten Liste mitliefern (dasselbe Muster wie
+          // GET /admin/konfis): keine Zuweisung — es bleiben nur allgemeine
+          // und Teamer-Termine uebrig. Header statt Rumpf-Feld, damit die
+          // Antwortform ein Array bleibt.
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+        }
         filteredRows = rows.filter(row => {
           // Reine Teamer-Events und Teamer-benötigte Events sind immer sichtbar
           if (row.teamer_only || row.teamer_needed) return true;

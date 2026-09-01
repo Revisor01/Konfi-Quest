@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -579,6 +580,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
         }
 
+        // Jahrgangs-Bindung (01.09.2026): Der Lauf ueberschreibt die Snapshots
+        // ALLER Konfis des Jahrgangs, setzt die Freigabe und loest beim ersten
+        // Mal einen Push an den ganzen Jahrgang aus. Das ist ein schreibender
+        // Eingriff in den Jahrgang — bisher genuegte requireAdmin plus Org,
+        // ein Admin konnte also den Rueckblick eines FREMDEN Jahrgangs
+        // freigeben. Jetzt gilt Simons Regel: nur mit edit-Zuweisung,
+        // org_admin/super_admin ausgenommen.
+        if (!darfJahrgang(req, jahrgangId, { edit: true })) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+        }
+
         // War der Rueckblick schon freigegeben, ist dieser Lauf eine
         // KORREKTUR und keine Freigabe. Der Push unten entfaellt dann --
         // sonst bekommt der ganze Jahrgang ein zweites Mal "Dein
@@ -821,10 +833,25 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           }
           // Admin: Pruefen ob User zur gleichen Org gehört
           const { rows: [targetUser] } = await db.query(
-            'SELECT organization_id FROM users WHERE id = $1', [targetUserId]
+            `SELECT u.organization_id, r.name AS role_name
+             FROM users u LEFT JOIN roles r ON u.role_id = r.id
+             WHERE u.id = $1`, [targetUserId]
           );
           if (!targetUser || targetUser.organization_id !== req.user.organization_id) {
             return res.status(403).json({ error: 'Keine Berechtigung' });
+          }
+
+          // Jahrgangs-Bindung (01.09.2026): Der Rueckblick eines Konfis ist
+          // Jahrgangs-Datenbestand — ein Admin sieht ihn nur mit view-
+          // Zuweisung auf den Jahrgang des Konfis (Simons Regel; org_admin/
+          // super_admin ausgenommen, darfKonfi steigt fuer sie vorher aus).
+          // Teamer:innen als Ziel bleiben frei einsehbar (Teamer-Ausnahme:
+          // die sieht ein Admin alle — ihr Wrapped haengt an keinem Jahrgang).
+          if (targetUser.role_name === 'konfi') {
+            const zugriff = await darfKonfi(db, req, targetUserId);
+            if (!zugriff.erlaubt) {
+              return res.status(403).json({ error: 'Keine Berechtigung' });
+            }
           }
         }
 

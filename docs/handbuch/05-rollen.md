@@ -44,11 +44,14 @@ Jahrgänge anderer Admins und der Org-Admins bleiben ihm verschlossen.
 **Wichtig:** Auch ein Admin braucht Jahrgangs-Zuweisungen. Bei der Konfi-Liste
 und im Chat sieht er nur die Jahrgänge, für die er eingetragen ist. Ein frisch
 angelegter Admin ohne Zuweisung sieht deshalb **keine einzige Konfi** — und
-auch keine jahrgangsgebundenen Challenges und keine Aktivitäts-Meldungen von
-Konfis. Das sieht nach einem Fehler aus, ist aber Absicht: Ein Admin ganz ohne
-Jahrgang ist ein gültiger Fall, etwa wenn er nur mit den Teamer:innen arbeitet
-— die sieht er immer alle. Die App weist an den betroffenen Stellen darauf
-hin, dass die Zuweisung fehlt. Setzen kann sie der Org-Admin unter
+auch keine jahrgangsgebundenen Challenges, keine Aktivitäts-Meldungen von
+Konfis, keine jahrgangsgebundenen Termine und kein jahrgangsgebundenes
+Material. Auch die Jahrgangs-Liste selbst zeigt ihm nur seine eigenen
+Jahrgänge. Das sieht nach einem Fehler aus, ist aber Absicht: Ein Admin ganz
+ohne Jahrgang ist ein gültiger Fall, etwa wenn er nur mit den Teamer:innen
+arbeitet — die sieht er immer alle, genau wie Termine ohne Jahrgang und
+Teamer-Termine. Die App weist an den betroffenen Stellen darauf hin, dass die
+Zuweisung fehlt. Setzen kann sie der Org-Admin unter
 **Mehr › Benutzer:innen**.
 
 Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
@@ -57,6 +60,11 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
 - **Konfis anlegen** geht nur in seinen eigenen Jahrgängen.
 - **Konfis verschieben** geht nur aus einem eigenen Jahrgang in einen anderen
   eigenen Jahrgang.
+- **Konfis löschen, befördern und ihr Passwort zurücksetzen** geht nur in
+  seinen eigenen Jahrgängen — genau wie Punkte vergeben und zurücknehmen.
+- **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen; legt er
+  selbst einen neuen Jahrgang an, bekommt er ihn automatisch zugewiesen.
+- **Den Jahresrückblick freigeben** kann er nur für seine eigenen Jahrgänge.
 - **Teamer:innen** sieht er dagegen alle — er kann ihnen seine Jahrgänge geben
   und sie daraus wieder entfernen. Jahrgänge, für die er nicht zuständig ist,
   bleiben dabei unangetastet: Sie verschwinden nicht, wenn er die Zuweisung
@@ -92,7 +100,7 @@ darf **alle Rollen der eigenen Gemeinde** verwalten, auch andere Org-Admins.
 | Admins und Org-Admins anlegen | — | — | — | ja |
 | Jahrgänge zuweisen | — | — | nur die eigenen | ja |
 | Gemeinde-Einstellungen und Einladungen | — | — | — | ja |
-| Jahresrückblick freigeben | — | — | — | ja |
+| Jahresrückblick freigeben | — | — | nur eigene Jahrgänge | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
 
 ## Wer wen anlegen darf
@@ -113,7 +121,7 @@ fragen. Ein Admin kann das nicht.
 |---|---|
 | **Konfi** | keine — ein Konfi gehört zu genau einem Jahrgang |
 | **Teamer:in** | entscheidet fast alles: Konfi-Liste, Chat, Termine, Challenges, Mitteilungen |
-| **Admin** | entscheidet über Konfi-Liste und Chat — und darüber, in welchen Jahrgängen er Konfis anlegen und wohin er sie verschieben darf. Verwaltung von Terminen, Abzeichen und Kategorien geht auch ohne. Teamer:innen sieht er alle |
+| **Admin** | entscheidet fast so viel wie bei Teamer:innen: Konfi-Liste, Chat, jahrgangsgebundene Termine, Material, Challenges, Meldungs-Zähler — und darüber, in welchen Jahrgängen er Konfis anlegen, verschieben, löschen und befördern darf. Abzeichen, Kategorien und Termine ohne Jahrgang gehen auch ohne. Teamer:innen sieht er alle |
 | **Org-Admin** | keine — er sieht immer die ganze Gemeinde |
 
 Die vollständige Liste dessen, was ohne passende Zuweisung nicht geht, steht im
@@ -122,8 +130,11 @@ Kapitel [Jahrgänge und Kategorien](45-jahrgaenge.md#was-die-jahrgangs-zuweisung
 ## Rollen ändern
 
 Ein Konfi lässt sich **zur Teamer:in befördern**. Punkte und Abzeichen bleiben
-dabei als Konfi-Historie erhalten, und der bisherige Jahrgang wird automatisch
-als Zuweisung übernommen. Wie das geht, steht im Kapitel
+dabei als Konfi-Historie erhalten. Eine Jahrgangs-Zuweisung bekommt die frisch
+beförderte Person dabei bewusst **nicht** automatisch: Teamer:innen dürfen
+auch ohne Jahrgang existieren — die Zuweisung vergibt die Leitung, sobald sie
+in einem Jahrgang aktiv sein soll, meist im neuen statt im eigenen alten. Wie
+das geht, steht im Kapitel
 [Für die Leitung](30-leitung.md#in-der-detailansicht-einer-person).
 
 Alle anderen Rollenwechsel macht der Org-Admin unter
