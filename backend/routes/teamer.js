@@ -10,6 +10,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
+const { getPunkteHistorie } = require('../utils/punkteHistorie');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -172,91 +173,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
 
   // GET /teamer/konfi-history - Punkte-Verlauf für ehemalige Konfis (jetzt Teamer)
+  // Berechnung in utils/punkteHistorie.js — dieselbe Quelle wie
+  // GET /konfi/points-history. Beide speisen dasselbe Frontend-Modal
+  // (PointsHistoryModal.tsx), muessen also dieselbe Form liefern.
+  //
+  // Verhaltensaenderung (01.09.2026): Der Gesamtstand aus konfi_profiles wird
+  // jetzt auch hier auf die eigene Organisation gefiltert. Vorher fehlte der
+  // Filter nur auf diesem Weg (Befund M1).
   router.get('/konfi-history', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
         return res.status(403).json({ error: 'Nur Teamer können die Konfi-Historie abrufen' });
       }
 
-      const userId = req.user.id;
-      const orgId = req.user.organization_id;
-
-      // Get activities (Gottesdienst & Gemeinde points)
-      const activitiesQuery = `
-        SELECT
-          ka.id,
-          a.name as title,
-          a.points,
-          a.type as category,
-          ka.completed_date as date,
-          ka.comment,
-          'activity' as source_type
-        FROM user_activities ka
-        JOIN activities a ON ka.activity_id = a.id
-        WHERE ka.user_id = $1 AND ka.organization_id = $2
-        ORDER BY ka.completed_date DESC
-      `;
-      const { rows: activities } = await db.query(activitiesQuery, [userId, orgId]);
-
-      // Get bonus points
-      const bonusQuery = `
-        SELECT
-          id,
-          description as title,
-          points,
-          type as category,
-          completed_date as date,
-          NULL as comment,
-          'bonus' as source_type
-        FROM bonus_points
-        WHERE konfi_id = $1 AND organization_id = $2
-        ORDER BY completed_date DESC
-      `;
-      const { rows: bonusPoints } = await db.query(bonusQuery, [userId, orgId]);
-
-      // Get event points
-      const eventPointsQuery = `
-        SELECT
-          ep.id,
-          e.name as title,
-          ep.points,
-          ep.point_type as category,
-          ep.awarded_date as date,
-          ep.description as comment,
-          'event' as source_type
-        FROM event_points ep
-        JOIN events e ON ep.event_id = e.id
-        WHERE ep.konfi_id = $1 AND ep.organization_id = $2
-        ORDER BY ep.awarded_date DESC
-      `;
-      const { rows: eventPoints } = await db.query(eventPointsQuery, [userId, orgId]);
-
-      // Combine and sort by date (newest first)
-      const allPoints = [...activities, ...bonusPoints, ...eventPoints].sort((a, b) => {
-        const dateA = new Date(a.date || 0);
-        const dateB = new Date(b.date || 0);
-        return dateB - dateA;
-      });
-
-      // Get konfi_profiles for accurate accumulated points
-      const { rows: [konfiProfile] } = await db.query(
-        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
-        [userId]
-      );
-
-      const gdPoints = parseInt(konfiProfile?.gottesdienst_points, 10) || 0;
-      const gmPoints = parseInt(konfiProfile?.gemeinde_points, 10) || 0;
-      const totals = {
-        gottesdienst: gdPoints,
-        gemeinde: gmPoints,
-        total: gdPoints + gmPoints
-      };
-
-      res.json({
-        history: allPoints,
-        totals
-      });
-
+      const { history, totals } = await getPunkteHistorie(db, req.user.id, req.user.organization_id);
+      res.json({ history, totals });
     } catch (err) {
       console.error('Database error in GET /teamer/konfi-history:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

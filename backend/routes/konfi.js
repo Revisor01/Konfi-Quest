@@ -16,6 +16,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 // Single Source of Truth: welche Events zählen für Konfi-Badges (kein Pflicht/Konfirmation).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
+const { getPunkteHistorie } = require('../utils/punkteHistorie');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -582,95 +583,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
   });
 
   // Get konfi's points history (all activities, bonus points, events with dates)
+  // Berechnung in utils/punkteHistorie.js — dieselbe Quelle wie
+  // GET /teamer/konfi-history, das dasselbe Frontend-Modal speist.
   router.get('/points-history', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
-      const konfiId = req.user.id;
-      const orgId = req.user.organization_id;
-
-      // Get activities (Gottesdienst & Gemeinde points)
-      const activitiesQuery = `
-        SELECT
-          ka.id,
-          a.name as title,
-          a.points,
-          a.type as category,
-          ka.completed_date as date,
-          ka.comment,
-          'activity' as source_type
-        FROM user_activities ka
-        JOIN activities a ON ka.activity_id = a.id
-        WHERE ka.user_id = $1 AND ka.organization_id = $2
-        ORDER BY ka.completed_date DESC
-      `;
-      const { rows: activities } = await db.query(activitiesQuery, [konfiId, orgId]);
-
-      // Get bonus points
-      const bonusQuery = `
-        SELECT
-          id,
-          description as title,
-          points,
-          type as category,
-          completed_date as date,
-          NULL as comment,
-          'bonus' as source_type
-        FROM bonus_points
-        WHERE konfi_id = $1 AND organization_id = $2
-        ORDER BY completed_date DESC
-      `;
-      const { rows: bonusPoints } = await db.query(bonusQuery, [konfiId, orgId]);
-
-      // Get event points
-      const eventPointsQuery = `
-        SELECT
-          ep.id,
-          e.name as title,
-          ep.points,
-          ep.point_type as category,
-          ep.awarded_date as date,
-          ep.description as comment,
-          'event' as source_type
-        FROM event_points ep
-        JOIN events e ON ep.event_id = e.id
-        WHERE ep.konfi_id = $1 AND ep.organization_id = $2
-        ORDER BY ep.awarded_date DESC
-      `;
-      const { rows: eventPoints } = await db.query(eventPointsQuery, [konfiId, orgId]);
-
-      // Combine and sort by date (newest first)
-      const allPoints = [...activities, ...bonusPoints, ...eventPoints].sort((a, b) => {
-        const dateA = new Date(a.date || 0);
-        const dateB = new Date(b.date || 0);
-        return dateB - dateA;
-      });
-
-      // Get konfi_profiles for accurate accumulated points (same as dashboard)
-      const { rows: [konfiProfile] } = await db.query(
-        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1 AND organization_id = $2',
-        [konfiId, orgId]
-      );
-
-      // konfi_profiles enthält bereits alle Punkte (Aktivitäten + Events + Bonus)
-      // Single Source of Truth - direkt verwenden
-      const gdPoints = parseInt(konfiProfile?.gottesdienst_points, 10) || 0;
-      const gmPoints = parseInt(konfiProfile?.gemeinde_points, 10) || 0;
-      const totals = {
-        gottesdienst: gdPoints,
-        gemeinde: gmPoints,
-        total: gdPoints + gmPoints
-      };
-
-      res.json({
-        history: allPoints,
-        totals
-      });
-
+      const { history, totals } = await getPunkteHistorie(db, req.user.id, req.user.organization_id);
+      res.json({ history, totals });
     } catch (err) {
- console.error('Database error in GET /points-history:', err);
+      console.error('Database error in GET /points-history:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1209,32 +1133,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                cats.category_ids,
                cats.category_names,
                event_chat.id as chat_room_id,
-               CASE
-                 WHEN e.cancelled = true THEN 'cancelled'
-                 -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026):
-                 -- Pflichttermine haben immer max=0 + Warteliste aus und fielen
-                 -- ohne diesen Zweig in den Ausgebucht-Fall ('closed').
-                 WHEN e.mandatory THEN 'mandatory'
-                 WHEN NOW() < e.registration_opens_at THEN 'upcoming'
-                 WHEN NOW() > e.registration_closes_at THEN 'closed'
-                 -- max_participants = 0 heißt unbegrenzt. Der > 0-Guard der
-                 -- Admin-Liste fehlte hier (Befund 1, 25.08.2026, Prod-Event
-                 -- 150): 0 >= 0 war immer wahr, unbegrenzte Events ohne
-                 -- Warteliste galten fälschlich als 'closed' und der
-                 -- Anmelden-Knopf verschwand.
-                 WHEN (
-                   CASE
-                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
-                     ELSE e.max_participants
-                   END
-                 ) > 0 AND bstats.registered_count >=
-                   CASE
-                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
-                     ELSE e.max_participants
-                   END AND
-                      (NOT e.waitlist_enabled OR bstats.waitlist_count >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
-                 ELSE 'open'
-               END as registration_status,
+               ${anmeldeStatusSql({
+                 kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
+                 bestaetigt: 'bstats.registered_count',
+                 warteliste: 'bstats.waitlist_count'
+               })} as registration_status,
                -- Konfi-specific data
                eb_konfi.status as booking_status,
                eb_konfi.attendance_status,
@@ -1396,30 +1299,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
                END as max_participants,
-               CASE
-                 -- 'cancelled' zuerst, wie in der Liste oben (Zeile ~1133):
-                 -- ein abgesagter Termin ist weder pflichtig noch offen noch
-                 -- ausgebucht. Fehlte hier bis 27.08.2026 -- der Endpunkt gab
-                 -- abgesagte Termine gar nicht erst heraus (Befund H6).
-                 WHEN e.cancelled = true THEN 'cancelled'
-                 -- 'mandatory' wie in der Admin-Liste (Befund 1, 25.08.2026)
-                 WHEN e.mandatory THEN 'mandatory'
-                 WHEN NOW() < e.registration_opens_at THEN 'upcoming'
-                 WHEN NOW() > e.registration_closes_at THEN 'closed'
-                 -- > 0-Guard: max=0 heißt unbegrenzt (Befund 1, 25.08.2026)
-                 WHEN (
-                   CASE
-                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
-                     ELSE e.max_participants
-                   END
-                 ) > 0 AND COALESCE(ebs.konfi_confirmed, 0) >=
-                   CASE 
-                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
-                     ELSE e.max_participants
-                   END AND 
-                      (NOT e.waitlist_enabled OR COALESCE(ebs.konfi_waitlist, 0) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
-                 ELSE 'open'
-               END as registration_status
+               ${anmeldeStatusSql({
+                 kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
+                 bestaetigt: 'COALESCE(ebs.konfi_confirmed, 0)',
+                 warteliste: 'COALESCE(ebs.konfi_waitlist, 0)'
+               })} as registration_status
         FROM events e
         LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
         LEFT JOIN (
@@ -1603,36 +1487,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
 
     try {
-      const eventId = req.params.id;
+      // Dieselbe Rechnung wie GET /events/:id/timeslots (events/lesen.js) —
+      // beide Routen rufen ladeZeitfenster, damit sie nicht auseinanderlaufen.
+      const zeitfenster = await ladeZeitfenster(db, req.params.id, req.user.organization_id);
 
-      // Verify event exists and belongs to organization
-      const { rows: [event] } = await db.query(
-        'SELECT id, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
-        [eventId, req.user.organization_id]
-      );
-
-      if (!event) {
+      if (zeitfenster === null) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      if (!event.has_timeslots) {
-        return res.json([]);
-      }
-
-      // Get timeslots with registration counts + Warteliste pro Slot
-      const timeslotsQuery = `
-        SELECT et.*,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as registered_count,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
-        FROM event_timeslots et
-        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id
-        WHERE et.event_id = $1 AND et.organization_id = $2
-        GROUP BY et.id
-        ORDER BY et.start_time ASC
-      `;
-      const { rows: timeslots } = await db.query(timeslotsQuery, [eventId, req.user.organization_id]);
-
-      res.json(timeslots);
+      res.json(zeitfenster);
     } catch (err) {
  console.error('Database error in GET /events/:id/timeslots:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
