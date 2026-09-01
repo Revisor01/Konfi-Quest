@@ -10,7 +10,10 @@ interface AbschlussSlideProps extends SlideProps {
 }
 
 const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year }) => {
-  const zeitraumEnde = data.slides.zeitraum?.ende;
+  // Siehe WrappedModal: `konfirmation` ist das echte Datum, `ende` nur der
+  // Rueckfall fuer Alt-Snapshots ohne das Feld.
+  const z = data.slides.zeitraum;
+  const zeitraumEnde = z ? (('konfirmation' in z) ? (z.konfirmation || null) : (z.ende || null)) : null;
 
   return (
     <SlideBase isActive={isActive} className="abschluss-slide">

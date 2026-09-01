@@ -147,6 +147,21 @@
 #   W2  GET /api/wrapped/history/{userId} prüft Primaer-Org statt aktiver Org.
 #   W3  DELETE /api/wrapped/{jahrgangId} erreicht Teamer-Snapshots nicht -
 #       Teamer-Wrapped ist nicht loeschbar.
+#   W4  BEHOBEN am 01.09.2026: Der Jahresrueckblick zaehlte Termine nach einer
+#       anderen Regel als das Konfi-Dashboard (fuer eine Konfi der Demo-Gemeinde
+#       1 statt 15) und filterte trotz ausgewiesenem Zeitraum keine einzige Zahl
+#       nach Jahr - nur die Challenge-Momente. Seitdem gilt fuer beide Ansichten
+#       dieselbe Zaehlregel (jede Buchung der Konfi in ihrer Organisation), und
+#       jede Zahl des Rueckblicks ist auf den Zeitraum begrenzt.
+#   W5  BEHOBEN am 01.09.2026: Die Absagen-Zahl im Rueckblick hatte KEINEN
+#       organization_id-Filter und zaehlte bei Multi-Org-Konten Absagen fremder
+#       Organisationen mit. Org- und Zeitfilter sind gesetzt.
+#   W6  BEHOBEN am 01.09.2026: Ohne is_konfirmation-Termin (drei von fuenf
+#       Jahrgaengen in Produktion) endete der Zeitraum fest am 31.7. - der
+#       August fehlte in jedem Rueckblick. Der Rueckfall ist jetzt das volle
+#       Konfi-Jahr 1.9. bis 31.8. Der Startpunkt rutschte zudem in Sommerzeit
+#       um einen Tag nach vorn (Ortszeit nach UTC gerechnet); die Datumsgrenzen
+#       werden nicht mehr ueber toISOString gebildet.
 #   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
 #   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Prüfung.
 #   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zählt
@@ -1389,6 +1404,14 @@ paths:
       responses:
         "200": { description: "message, generated (Anzahl), errors (Anzahl), jahrgang (Name), year" }
         "400": { description: Ungueltige jahrgangId }
+        # Zum Inhalt der erzeugten Snapshots (Befunde W4-W6, behoben am
+        # 01.09.2026): Alle Zahlen des Konfi-Rueckblicks sind auf den
+        # ausgewiesenen Zeitraum begrenzt, Termine werden nach derselben Regel
+        # gezaehlt wie im Konfi-Dashboard, und der Snapshot fuehrt seitdem
+        # zusaetzlich slides.zeitraum.konfirmation (der echte
+        # Konfirmationstermin, null wenn der Jahrgang keinen hat). Das Feld
+        # kommt hinzu, es verschwindet keines - die Antwortform bleibt
+        # unveraendert.
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: Jahrgang nicht gefunden (fremde Organisation) }

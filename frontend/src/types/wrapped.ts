@@ -45,6 +45,13 @@ export interface KonfiEndspurtSlide {
 export interface KonfiZeitraumSlide {
   start: string;
   ende: string;
+  /**
+   * Der echte Konfirmationstermin, null wenn der Jahrgang keinen hat.
+   * Ab Snapshot-Version 2.1 (01.09.2026). Bei aelteren Snapshots nicht
+   * vorhanden -- dort wurde `ende` als Konfirmationstermin gerendert, was
+   * ohne Konfirmations-Termin einen erfundenen Stichtag zeigte.
+   */
+  konfirmation?: string | null;
 }
 
 export interface KonfiGottesdienstSlide {

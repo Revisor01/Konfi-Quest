@@ -19,7 +19,57 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // HILFSFUNKTIONEN
   // ====================================================================
 
+  /**
+   * Konfi-Jahr als Datumsfenster [start, ende] (beide inklusive).
+   *
+   * Frueher wurde der Zeitraum erst am Ende der Funktion berechnet und nur auf
+   * die Challenge-Momente angewendet -- alle anderen Zahlen liefen ueber die
+   * gesamte Kontolebenszeit (Befund W-B, 01.09.2026). Jetzt steht er vorn und
+   * gilt fuer jede Zahl.
+   *
+   * Regeln:
+   * - Mit Konfirmationstermin: 1.9. des Vorjahres bis zum Termin.
+   * - Ohne Termin (3 von 5 Jahrgaengen in Produktion, Befund W-C): volles
+   *   Konfi-Jahr 1.9.(year-1) bis 31.8.(year). Der frueher fest verdrahtete
+   *   31.7. liess den August in jedem Fallback-Jahr verschwinden.
+   *
+   * Datumsstrings werden mit padStart gebaut, NICHT ueber
+   * new Date(y, 8, 1).toISOString() -- letzteres rechnet Ortszeit nach UTC und
+   * machte in Sommerzeit aus dem 1.9. den 31.8.
+   */
+  function berechneZeitraum(konfirmationTermin, year) {
+    const iso = (d) => {
+      const dt = (d instanceof Date) ? d : new Date(d);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    };
+    if (konfirmationTermin) {
+      const termin = new Date(konfirmationTermin);
+      const start = `${termin.getFullYear() - 1}-09-01`;
+      return { start, ende: iso(termin), konfirmation: iso(termin) };
+    }
+    return { start: `${year - 1}-09-01`, ende: `${year}-08-31`, konfirmation: null };
+  }
+
   async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year) {
+    // Konfirmationstermin je Jahrgang aus dem is_konfirmation-Event ableiten
+    // (frueheste nicht-cancelled Konfirmation, org-gescopt) -- ersetzt die alte
+    // Jahrgang-Stichtag-Spalte (D-04/D-05).
+    const { rows: [konfirmationRow] } = await client.query(
+      `SELECT MIN(e.event_date) AS termin
+         FROM events e
+         JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+        WHERE eja.jahrgang_id = $1
+          AND e.is_konfirmation = true
+          AND e.organization_id = $2
+          AND (e.cancelled IS NULL OR e.cancelled = false)`,
+      [jahrgangId, orgId]
+    );
+    const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
+
+    const zeitraum = berechneZeitraum(konfirmationTermin, year);
+    const zeitraumStart = zeitraum.start;
+    const zeitraumEnde = zeitraum.ende;
+
     // Punkte aus konfi_profiles
     const { rows: [profile] } = await client.query(
       `SELECT kp.gottesdienst_points, kp.gemeinde_points
@@ -37,24 +87,42 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const bonus = parseInt(bonusRow.total, 10) || 0;
 
-    // Events besucht
+    // Termine: DIESELBE Zaehlregel wie das Konfi-Dashboard
+    // (routes/konfi.js, eventCountSql) -- jede Buchung der Konfi, kein
+    // Anwesenheits- und kein Jahrgangsfilter, nur zusaetzlich auf den
+    // Wrapped-Zeitraum eingegrenzt.
+    //
+    // Befund W-A (01.09.2026): Wrapped zaehlte 'confirmed' + 'present' UND
+    // jahrgangszugeordnet, das Dashboard jede Buchung. Fuer demo.emilia
+    // (User 150, Org 4) ergab das 1 gegen 15. Gemessen in Produktion:
+    // 15 Buchungen, davon 2 mit attendance_status='present' -- die uebrigen
+    // 13 haben ihn schlicht auf NULL (8 liegen noch in der Zukunft, 5 sind
+    // vorbei ohne je gepflegte Anwesenheit). 'present' ist damit KEIN Mass
+    // fuer "besucht", sondern ein Mass dafuer, ob jemand die Liste gepflegt
+    // hat. Ein Rueckblick, der einer Konfi 1 statt 15 Terminen zeigt, waere
+    // schlicht falsch -- und sie hat das Jahr ueber 15 im Dashboard gesehen.
+    // Deshalb: eine Regel, die des Dashboards.
     const { rows: [eventCount] } = await client.query(
       `SELECT COUNT(*) as count FROM event_bookings eb
        JOIN events e ON eb.event_id = e.id
-       JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $3
-       WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-         AND e.organization_id = $2`,
-      [userId, orgId, jahrgangId]
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const totalAttended = parseInt(eventCount.count, 10) || 0;
 
     // Gottesdienst-Count (Events mit point_type = 'gottesdienst')
+    // Dieselbe Zaehlregel wie oben (frueher zaehlte diese Query in DERSELBEN
+    // Funktion nach einer dritten Regel: present, aber ohne Jahrgangs-JOIN).
     const { rows: [gdCountRow] } = await client.query(
       `SELECT COUNT(*) as count FROM event_bookings eb
        JOIN events e ON eb.event_id = e.id
-       WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-         AND e.organization_id = $2 AND e.point_type = 'gottesdienst'`,
-      [userId, orgId]
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.point_type = 'gottesdienst'
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const gottesdienstCount = parseInt(gdCountRow.count, 10) || 0;
 
@@ -64,9 +132,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        FROM user_activities ua
        JOIN activities a ON ua.activity_id = a.id
        WHERE ua.user_id = $1 AND ua.organization_id = $2
+         AND ua.completed_date >= $3::date
+         AND ua.completed_date < ($4::date + INTERVAL '1 day')
        GROUP BY COALESCE(a.category, a.type)
        ORDER BY count DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
     // Gesamt-Events verfuegbar für diesen Jahrgang
@@ -82,10 +152,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const { rows: favoriteRows } = await client.query(
       `SELECT e.name, e.event_date FROM event_bookings eb
        JOIN events e ON eb.event_id = e.id
-       WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-         AND e.organization_id = $2
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')
        ORDER BY e.event_date DESC LIMIT 1`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const lieblingsEvent = favoriteRows.length > 0
       ? { name: favoriteRows[0].name, date: favoriteRows[0].event_date }
@@ -96,8 +167,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
+         AND ub.awarded_date >= $3::date
+         AND ub.awarded_date < ($4::date + INTERVAL '1 day')
        ORDER BY ub.awarded_date DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const { rows: [totalBadgesRow] } = await client.query(
       `SELECT COUNT(*) as count FROM custom_badges WHERE organization_id = $1`,
@@ -113,36 +186,52 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        FROM events e
        JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $3
        LEFT JOIN event_bookings eb ON eb.event_id = e.id AND eb.user_id = $1
-       WHERE e.organization_id = $2 AND e.mandatory = true AND e.cancelled IS NOT TRUE`,
-      [userId, orgId, jahrgangId]
+       WHERE e.organization_id = $2 AND e.mandatory = true AND e.cancelled IS NOT TRUE
+         AND e.event_date >= $4::date
+         AND e.event_date < ($5::date + INTERVAL '1 day')`,
+      [userId, orgId, jahrgangId, zeitraumStart, zeitraumEnde]
     );
     const pflichtBesucht = parseInt(pflichtRow?.besucht || '0', 10);
     const pflichtGesamt = parseInt(pflichtRow?.gesamt || '0', 10);
 
-    // Absagen
+    // Absagen.
+    // Befund W-B (01.09.2026): Diese Query hatte WEDER Org-Filter noch
+    // Zeitfilter -- bei einem Konto in mehreren Organisationen zaehlte sie
+    // Absagen fremder Gemeinden mit. Das ist eine Mandantengrenze, beide
+    // Filter sind jetzt gesetzt.
     const { rows: [cancelRow] } = await client.query(
-      `SELECT COUNT(*) as count FROM event_bookings
-       WHERE user_id = $1 AND status = 'cancelled'`,
-      [userId]
+      `SELECT COUNT(*) as count FROM event_bookings eb
+       JOIN events e ON eb.event_id = e.id
+       WHERE eb.user_id = $1 AND eb.organization_id = $2 AND eb.status = 'cancelled'
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const eventAbgesagt = parseInt(cancelRow.count, 10) || 0;
 
     // Aktivster Monat (Aktivitäten + Events kombiniert)
+    // Befund W-B: EXTRACT(MONTH ...) ohne Jahresfilter warf Maerz 2026 und
+    // Maerz 2027 in denselben Topf -- "dein aktivster Monat" wurde mit jedem
+    // Jahr falscher. Jetzt auf den Wrapped-Zeitraum begrenzt.
     const { rows: monatRows } = await client.query(
       `SELECT monat, COUNT(*) as count FROM (
          SELECT EXTRACT(MONTH FROM completed_date)::int as monat
-         FROM user_activities WHERE user_id = $1 AND organization_id = $2
+         FROM user_activities
+         WHERE user_id = $1 AND organization_id = $2
+           AND completed_date >= $3::date
+           AND completed_date < ($4::date + INTERVAL '1 day')
          UNION ALL
          SELECT EXTRACT(MONTH FROM e.event_date)::int as monat
          FROM event_bookings eb
          JOIN events e ON eb.event_id = e.id
-         WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-           AND e.organization_id = $2
+         WHERE eb.user_id = $1 AND eb.organization_id = $2
+           AND e.event_date >= $3::date
+           AND e.event_date < ($4::date + INTERVAL '1 day')
        ) combined
        GROUP BY monat
        ORDER BY count DESC
        LIMIT 1`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const aktivsterMonat = monatRows.length > 0
       ? { monat: monatRows[0].monat, monat_name: MONAT_NAMEN[monatRows[0].monat] || '', aktivitaeten: parseInt(monatRows[0].count, 10) }
@@ -154,21 +243,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        FROM jahrgaenge WHERE id = $1`,
       [jahrgangId]
     );
-
-    // Konfirmationstermin je Jahrgang aus dem is_konfirmation-Event ableiten
-    // (frueheste nicht-cancelled Konfirmation, org-gescopt) -- ersetzt die alte
-    // Jahrgang-Stichtag-Spalte (D-04/D-05).
-    const { rows: [konfirmationRow] } = await client.query(
-      `SELECT MIN(e.event_date) AS termin
-         FROM events e
-         JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-        WHERE eja.jahrgang_id = $1
-          AND e.is_konfirmation = true
-          AND e.organization_id = $2
-          AND (e.cancelled IS NULL OR e.cancelled = false)`,
-      [jahrgangId, orgId]
-    );
-    const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
 
     let zielTotal = 0;
     let aktuellTotal = gottesdienst + gemeinde;
@@ -201,15 +275,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
     // Deterministischer Formulierung-Seed
     const formulierungSeed = (userId * 31 + year * 17) % 97;
-
-    // Zeitraum: aus dem Konfirmationstermin (is_konfirmation-Event) ableiten.
-    // Kein Termin -> Kalenderjahr-Fallback (year-1-09-01 .. year-07-31).
-    const zeitraumStart = konfirmationTermin
-      ? new Date(new Date(konfirmationTermin).getFullYear() - 1, 8, 1).toISOString().split('T')[0]
-      : `${year - 1}-09-01`;
-    const zeitraumEnde = konfirmationTermin
-      ? new Date(konfirmationTermin).toISOString().split('T')[0]
-      : `${year}-07-31`;
 
     // Challenge-Momente: eigene Beitraege im Wrapped-Zeitraum (max 12, neueste zuerst).
     // Defensiv: Auf Alt-Deployments ohne Challenge-Tabellen liefern wir ein leeres Array
@@ -293,7 +358,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         },
         zeitraum: {
           start: zeitraumStart,
-          ende: zeitraumEnde
+          ende: zeitraumEnde,
+          // Neues Feld (additiv, alte Apps ignorieren es): der ECHTE
+          // Konfirmationstermin, null wenn der Jahrgang keinen hat.
+          // Das Frontend rendert bisher `ende` als "Deine Konfirmation am ..."
+          // -- fuer die drei von fuenf Jahrgaengen ohne Konfirmations-Termin
+          // war das eine frei erfundene Zahl (das Fallback-Ende).
+          konfirmation: zeitraum.konfirmation
         },
         gottesdienst: {
           count: gottesdienstCount
