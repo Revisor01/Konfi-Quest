@@ -175,12 +175,42 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     filterRole: 'konfi'
   });
 
+  // Welcher Termin gerade gelten soll. Eine Antwort, die zu einer aelteren
+  // Anfrage gehoert, darf den Stand nicht mehr ueberschreiben (siehe unten).
+  const aktuelleEventId = useRef(eventId);
+
+  // Beim Wechsel des Termins den Stand des VORIGEN leeren.
+  //
+  // Nutzerhinweis 01.09.2026: In der Teilnehmerliste eines Termins standen
+  // Abmeldungen von Personen, die dort gar keine Buchung hatten. Gemessen an
+  // Produktionsdaten (Hennstedt, "Spendenlauf (Helfen)" und "Spendenlauf
+  // (Laufen)" — fast gleicher Name, selber Tag): Backend und API lieferten
+  // beide Male genau das Richtige. Es waren die Teilnehmer und Abmeldungen
+  // des zuvor geoeffneten Termins, die stehen geblieben waren.
+  //
+  // Ursache: Der IonRouterOutlet behaelt gemountete Seiten im Speicher, und
+  // ParamSeite (MainTabs.tsx) reicht die ID als Prop durch, ohne die Seite
+  // beim Wechsel neu einzuhaengen. Dieselbe Instanz bekommt also nur eine
+  // neue eventId — participants, unregistrations, eventData und die
+  // Materialien behielten die Werte des vorigen Termins. Online sah man sie,
+  // bis die neue Antwort eintraf; OFFLINE blieben sie dauerhaft stehen, denn
+  // der Offline-Zweig unten setzt Teilnehmer und Abmeldungen gar nicht.
+  useEffect(() => {
+    aktuelleEventId.current = eventId;
+    setParticipants([]);
+    setUnregistrations([]);
+    setEventData(null);
+    setEventMaterials([]);
+    setError('');
+    setLoading(true);
+  }, [eventId]);
+
   // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
   // aus dem Cache gezeigte Grundstand durch die vollen Detaildaten
   // (Teilnehmer, Abmeldungen) ersetzt werden. Ohne das bliebe die Seite auf
   // dem Offline-Stand stehen, bis man sie verlaesst und neu oeffnet.
   useEffect(() => {
-    loadEventData();
+    loadEventData(eventId);
   }, [eventId, isOnline]);
 
   useEffect(() => {
@@ -192,10 +222,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // QR-Check-in (events.js): Der Zaehler auf dem offenen QR-Code stand still
   // (Befund 25.08.2026).
   useLiveRefresh(['events', 'konfis'], useCallback(() => {
-    loadEventData();
+    loadEventData(eventId);
   }, [eventId]));
 
-  const loadEventData = async () => {
+  const loadEventData = async (fuerEventId: number = eventId) => {
+    // Eine Antwort gilt nur, solange sie zum aktuell geoeffneten Termin
+    // gehoert. Wechselt man schnell zwischen zwei Terminen, kann die Antwort
+    // fuer den ERSTEN nach der des zweiten eintreffen — ohne diesen Riegel
+    // schriebe sie dessen Teilnehmerliste wieder mit der falschen zu
+    // (dasselbe Bild wie der Fehler oben, nur seltener).
+    const gilt = () => aktuelleEventId.current === fuerEventId;
+
     // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
     // Listen-Cache zeigen. Vorher lief der Abruf ins Leere, eventData blieb
     // null und die Seite zeigte nur "Fehler beim Laden der Event-Daten" —
@@ -212,7 +249,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!isOnline) {
       try {
         const gecacht = await offlineCache.get<Event[]>('admin:events:' + user?.organization_id);
-        const ausListe = gecacht?.data?.find((e) => e.id === eventId) || null;
+        const ausListe = gecacht?.data?.find((e) => e.id === fuerEventId) || null;
+        if (!gilt()) return;
         if (ausListe) {
           setEventData(ausListe);
           setError('');
@@ -220,28 +258,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
         }
       } catch {
-        setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+        if (gilt()) setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
       } finally {
-        setLoading(false);
+        if (gilt()) setLoading(false);
       }
       return;
     }
 
     try {
-      const eventRes = await api.get(`/events/${eventId}`);
+      const eventRes = await api.get(`/events/${fuerEventId}`);
+      if (!gilt()) return;
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
       try {
-        const matRes = await api.get(`/material/by-event/${eventId}`);
-        setEventMaterials(matRes.data || []);
+        const matRes = await api.get(`/material/by-event/${fuerEventId}`);
+        if (gilt()) setEventMaterials(matRes.data || []);
       } catch {
-        setEventMaterials([]);
+        if (gilt()) setEventMaterials([]);
       }
     } catch {
-      setError('Fehler beim Laden der Event-Daten');
+      if (gilt()) setError('Fehler beim Laden der Event-Daten');
     } finally {
-      setLoading(false);
+      if (gilt()) setLoading(false);
     }
   };
 

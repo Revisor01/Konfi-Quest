@@ -43,6 +43,10 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Beim Wechsel von einem Termin zum nächsten standen kurz noch die
+  Teilnehmer:innen und Abmeldungen des vorherigen Termins — ohne Verbindung
+  blieben sie sogar dauerhaft stehen. Jetzt zeigt jeder Termin von Anfang an
+  nur seine eigenen Daten.
 - Uhrzeiten in Mitteilungen und E-Mails stimmen wieder. Erinnerungen,
   Terminabsagen und Änderungshinweise nannten die Zeit zwei Stunden zu früh —
   eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt.

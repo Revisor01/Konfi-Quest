@@ -245,6 +245,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // (Befund 25.08.2026).
   const [detailEpoch, setDetailEpoch] = useState(0);
 
+  // Welcher Termin gerade gelten soll. Antworten, die zu einem vorher
+  // geoeffneten Termin gehoeren, duerfen den Stand nicht mehr ueberschreiben.
+  const aktuelleEventId = useRef(eventId);
+
+  // Beim Wechsel des Termins den Stand des VORIGEN leeren.
+  //
+  // Dieselbe Ursache wie in der Leitungsansicht (admin/views/EventDetailView):
+  // Der IonRouterOutlet behaelt gemountete Seiten im Speicher, ParamSeite
+  // (MainTabs.tsx) reicht nur eine neue eventId in DIESELBE Instanz. eventData
+  // wird aus der Liste abgeleitet und stimmt sofort — die nachgeladenen Werte
+  // aber nicht: Zeitfenster, Teilnehmerliste und der Konfirmations-Check
+  // blieben die des vorigen Termins. Online sah man sie, bis die neue Antwort
+  // eintraf; OFFLINE dauerhaft, denn der Effekt unten bricht ohne Verbindung
+  // vor dem Laden ab und laesst die alten Werte stehen.
+  useEffect(() => {
+    aktuelleEventId.current = eventId;
+    setTimeslots([]);
+    setParticipants([]);
+    setHasExistingKonfirmation(false);
+    setTimeslotsLoadFailed(false);
+  }, [eventId]);
+
   useLiveRefresh(['events'], useCallback(() => {
     refreshEventsLive();
     setDetailEpoch((n) => n + 1);
@@ -256,6 +278,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // vorbeilaufen — der Konfi landete ohne Slot im Event (Audit 10.08.).
   useEffect(() => {
     if (!eventData) return;
+    const fuerEventId = eventId;
+    // Eine Antwort gilt nur, solange sie zum aktuell geoeffneten Termin
+    // gehoert. Bei schnellem Wechsel kann die Antwort fuer den ERSTEN nach der
+    // des zweiten eintreffen und dessen Liste sonst falsch ueberschreiben.
+    const gilt = () => aktuelleEventId.current === fuerEventId;
     const loadDetails = async () => {
       // Ohne Verbindung gar nicht erst anfragen: Der Abruf schluege fehl und
       // wuerde die vorhandenen Werte auf leer setzen. Zeitfenster und
@@ -272,32 +299,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
-          const tsRes = await api.get(`/konfi/events/${eventId}/timeslots`);
-          setTimeslots(tsRes.data || []);
-        } else {
+          const tsRes = await api.get(`/konfi/events/${fuerEventId}/timeslots`);
+          if (gilt()) setTimeslots(tsRes.data || []);
+        } else if (gilt()) {
           setTimeslots([]);
         }
       } catch {
-        setTimeslots([]);
-        setTimeslotsLoadFailed(true);
+        if (gilt()) {
+          setTimeslots([]);
+          setTimeslotsLoadFailed(true);
+        }
       }
       // Teilnehmerliste und Konfirmations-Check sind für die Anmeldung nicht
       // kritisch — sie duerfen weiterhin still fehlschlagen.
       try {
-        const partRes = await api.get(`/konfi/events/${eventId}/participants`);
-        setParticipants(partRes.data || []);
+        const partRes = await api.get(`/konfi/events/${fuerEventId}/participants`);
+        if (gilt()) setParticipants(partRes.data || []);
       } catch {
         // Teilnehmerliste ist nur Anzeige
       }
       try {
         const hasKonf = await checkExistingKonfirmation();
-        setHasExistingKonfirmation(hasKonf);
+        if (gilt()) setHasExistingKonfirmation(hasKonf);
       } catch {
         // Konfirmations-Check wird bei der Anmeldung erneut geprüft
       }
     };
     loadDetails();
-  }, [eventData?.id, detailEpoch]);
+  }, [eventData?.id, eventId, detailEpoch]);
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;
