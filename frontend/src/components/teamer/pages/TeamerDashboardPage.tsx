@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
@@ -30,6 +31,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import type { KonfiChallenge } from '../../../types/challenges';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { normalisiereTeamerBadges } from '../teamerBadges';
@@ -48,6 +50,7 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData, getBadgeColor } from '../../shared/BadgePopoverContent';
+import { formatTimeUntil, kalendertag } from '../../shared/eventFormatting';
 
 
 
@@ -237,11 +240,11 @@ const TeamerDashboardPage: React.FC = () => {
   // Schluessel mit v2: Im Zwischenspeicher koennen noch flache Arrays der
   // alten Antwortform liegen — die sollen nicht als neue Form gelesen werden.
   const { data: badgeData, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<TeamerBadgeResponse>(
-    'teamer:all-badges:v2:' + user?.id,
+    'teamer:all-badges:v3:' + user?.id,
     async () => {
-      const res = await api.get('/teamer/badges');
-      // Beide Antwortformen lesen — siehe teamerBadges.ts.
-      return normalisiereTeamerBadges<TeamerBadgeFull>(res.data, res.headers as any);
+      // Abzeichen-Generation v2 (31.08.2026) — gleiche Huelle wie beim Konfi.
+      const res = await api.get('/teamer/badges/v2');
+      return normalisiereTeamerBadges<TeamerBadgeFull>(res.data, res.headers);
     },
     { ttl: CACHE_TTL.BADGES }
   );
@@ -262,7 +265,7 @@ const TeamerDashboardPage: React.FC = () => {
   const losungAktiv = dashboardData?.config?.show_losung !== false;
 
   const { data: dailyVerse, loading: loadingVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse | null>(
-    'teamer:tageslosung:' + new Date().toISOString().split('T')[0],
+    'teamer:tageslosung:' + kalendertag(),
     async () => {
       const response = await api.get('/teamer/tageslosung');
       if (response.data && response.data.success) {
@@ -304,8 +307,8 @@ const TeamerDashboardPage: React.FC = () => {
         const liste = Array.isArray(res.data?.active) ? res.data.active : [];
         setActiveChallenges(
           liste
-            .filter((c: any) => c.ends_at)
-            .map((c: any) => ({
+            .filter((c: KonfiChallenge) => c.ends_at)
+            .map((c: KonfiChallenge) => ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
@@ -333,10 +336,10 @@ const TeamerDashboardPage: React.FC = () => {
       await api.put('/teamer/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await refreshVerse();
-    } catch (err: any) {
+    } catch (err) {
       // Siehe DashboardView (Konfi): stiller Fehlschlag bei bewusster Auswahl.
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
-      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
+      setError(fehlerText(err, 'Übersetzung konnte nicht gespeichert werden'));
     }
   };
 
@@ -393,24 +396,6 @@ const TeamerDashboardPage: React.FC = () => {
     return `Gute Nacht, ${firstName}!`;
   };
 
-  // 1:1 aus DashboardView.tsx
-  const formatTimeUntil = (dateString: string | undefined) => {
-    if (!dateString) return '';
-    const targetDate = new Date(dateString);
-    const now = new Date();
-    const diffTime = targetDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Heute';
-    if (diffDays === 1) return 'Morgen';
-    if (diffDays < 0) return 'Vorbei';
-    if (diffDays < 7) return `${diffDays} Tage`;
-    if (diffDays < 14) return '1 Woche';
-    if (diffDays < 21) return '2 Wochen';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} Wochen`;
-    if (diffDays < 365) return `${diffDays} Tage`;
-    return `${Math.floor(diffDays / 365)} Jahr${Math.floor(diffDays / 365) > 1 ? 'e' : ''}`;
-  };
 
   const formatEventTime = (dateString: string | undefined) => {
     if (!dateString) return '';
@@ -596,7 +581,7 @@ const TeamerDashboardPage: React.FC = () => {
                         className="app-cert-card"
                         onClick={(e) => {
                           certPopoverRef.current = cert;
-                          presentCertPopover({ event: e as any });
+                          presentCertPopover({ event: e.nativeEvent });
                         }}
                         style={{
                           borderRadius: '12px',
@@ -647,7 +632,7 @@ const TeamerDashboardPage: React.FC = () => {
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical' as any
+                          WebkitBoxOrient: 'vertical' as const
                         }}>
                           {cert.name}
                         </span>

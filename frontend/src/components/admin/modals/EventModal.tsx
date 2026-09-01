@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
-  IonItem, IonLabel, IonInput, IonDatetime, IonIcon, IonSpinner,
-  IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal,
-  IonDatetimeButton, IonRange
-} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonDatetime, IonIcon, IonSpinner, IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal, IonDatetimeButton, IonRange } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, time, calendar } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -19,6 +14,7 @@ import {
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
+import { fehlerDaten } from '../../../utils/fehler';
 
 interface EventModalProps {
   event?: Event | null;
@@ -31,7 +27,7 @@ interface EventModalProps {
 }
 
 const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -71,13 +67,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     if (initializedRef.current) setIsDirty(true);
   }, [formData]);
 
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-  };
-
   useEffect(() => {
     loadCategories();
     loadJahrgaenge();
@@ -116,7 +105,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       else setTeamerAccess('normal');
       if (event.has_timeslots) loadTimeslots(event.id);
     } else {
-      const now = new Date();
       const roundToHalfHour = (date: Date) => {
         const rounded = new Date(date);
         const minutes = rounded.getMinutes();
@@ -191,7 +179,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   };
 
   const removeTimeslot = (index: number) => { setTimeslots(timeslots.filter((_, i) => i !== index)); };
-  const updateTimeslot = (index: number, field: keyof Timeslot, value: any) => {
+  const updateTimeslot = (index: number, field: keyof Timeslot, value: string | number | boolean) => {
     const updated = [...timeslots]; updated[index] = { ...updated[index], [field]: value }; setTimeslots(updated);
   };
 
@@ -268,7 +256,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
       if (networkMonitor.isOnline) {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          // Serienfelder gehoeren nicht in ein Update einzelner Events.
+          const updatePayload = { ...payload } as Record<string, unknown>;
+          delete updatePayload.is_series;
+          delete updatePayload.series_count;
+          delete updatePayload.series_interval;
           await api.put(`/events/${event.id}`, updatePayload);
         } else {
           if (formData.is_series) {
@@ -280,7 +272,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         }
       } else {
         if (event && event.id && event.id > 0) {
-          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          const updatePayload = { ...payload } as Record<string, unknown>;
+          delete updatePayload.is_series;
+          delete updatePayload.series_count;
+          delete updatePayload.series_interval;
           await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event bearbeiten' } });
           setSuccess('Event wird aktualisiert sobald du wieder online bist');
         } else if (formData.is_series) {
@@ -294,16 +289,17 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose über
       // canDismiss schließt (sonst blockiert canDismiss -> Modal bleibt offen).
       setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
-    } catch (error: any) {
+    } catch (error) {
       // Validierungsfehler des Backends kommen als { error, details: [...] } —
       // ohne die details liest man nur "Validierungsfehler" und weiß nicht,
       // welches Feld gemeint ist.
-      const data = error.response?.data;
-      const details = Array.isArray(data?.details)
-        ? data.details.map((d: any) => d.message).filter(Boolean).join(', ')
-        : '';
+      const data = fehlerDaten(error);
+      const details = (Array.isArray(data?.details) ? data.details : [])
+        .map((d: unknown) => (typeof d === 'object' && d !== null ? (d as { message?: unknown }).message : undefined))
+        .filter((m): m is string => typeof m === 'string' && m !== '')
+        .join(', ');
       if (details) setError(details);
-      else if (data?.error) setError(data.error);
+      else if (typeof data?.error === 'string' && data.error) setError(data.error);
       else setError('Fehler beim Speichern des Events');
     } finally { setLoading(false); }
       });

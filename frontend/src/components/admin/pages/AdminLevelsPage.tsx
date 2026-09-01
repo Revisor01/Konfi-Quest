@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { fehlerText } from '../../../utils/fehler';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -37,6 +38,10 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 
 
 interface Level {
@@ -58,7 +63,7 @@ const AdminLevelsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-levels');
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
   // Offline-Query: Levels
@@ -107,11 +112,11 @@ const AdminLevelsPage: React.FC = () => {
             try {
               await api.delete(`/levels/${level.id}`);
               await refreshLevels();
-            } catch (error: any) {
+            } catch (error) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Levels');
+              setError(fehlerText(error, 'Fehler beim Löschen des Levels'));
             }
           }
         }

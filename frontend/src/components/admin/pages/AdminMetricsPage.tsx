@@ -1,3 +1,4 @@
+import { fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -16,7 +17,7 @@ import {
   IonSpinner,
   IonToggle
 } from '@ionic/react';
-import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline } from 'ionicons/icons';
+import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline, layersOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -28,12 +29,18 @@ interface RouteRow {
   avgMs: number;
   p95Ms: number;
   maxMs: number;
+  notModified?: number;
+  cacheQuote?: number;
 }
 interface TimelinePoint { t: string; requests: number; errors: number; avgMs: number; }
 interface ErrorRow { route: string; url: string; status: number; durationMs: number; at: string; }
 interface Snapshot {
   uptimeSeconds: number;
   totalRequests: number;
+  // Anfragen, die mit 304 beantwortet wurden: Der Client hatte die Daten
+  // schon, es ging nur die Rueckfrage ueber die Leitung.
+  totalNotModified?: number;
+  cacheQuote?: number;
   totalErrors: number;
   errorRate: number;
   inFlight: number;
@@ -113,12 +120,27 @@ const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ row
             ? <span style={{ fontWeight: 700, fontSize: '0.85rem', color: msColor(r.p95Ms), flexShrink: 0 }}>{r.p95Ms}ms</span>
             : <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#06b6d4', flexShrink: 0 }}>{r.count}×</span>}
         </div>
+        {/* Erste Zeile: was der SERVER gebraucht hat — die einzige Zahl, an
+            der eine Backend-Aenderung etwas dreht. */}
         <div style={{ display: 'flex', gap: '12px', marginTop: '3px', fontSize: '0.72rem', color: '#8e8e93' }}>
           <span>{r.count}× Aufrufe</span>
           <span>Ø {r.avgMs}ms</span>
           <span>p95 {r.p95Ms}ms</span>
           <span>max {r.maxMs}ms</span>
           {r.errors > 0 && <span style={{ color: '#dc3545', fontWeight: 600 }}>{r.errors} Fehler</span>}
+        </div>
+        {/* Die Zeiten laufen bis zur AUSLIEFERUNG beim Client und enthalten
+            damit die Verbindung des Geraets. Eine Trennung Server/Leitung
+            gab es hier kurzzeitig — sie war falsch gemessen (von
+            Middleware-Eintritt bis res.end, also inklusive Warten auf den
+            Client) und zeigte bei 20 von 20 Routen zweimal dieselbe Zahl.
+            Lieber eine ehrliche Zahl als zwei, von denen eine luegt. */}
+        <div style={{ display: 'flex', gap: '12px', marginTop: '2px', fontSize: '0.72rem', color: '#b0b0b5' }}>
+          {r.cacheQuote !== undefined && r.cacheQuote > 0 && (
+            <span style={{ color: r.cacheQuote >= 50 ? '#28a745' : '#b0b0b5' }}>
+              {r.cacheQuote}% aus dem Cache
+            </span>
+          )}
         </div>
       </div>
     ))}
@@ -136,14 +158,19 @@ const AdminMetricsPage: React.FC = () => {
 
   const load = useCallback(async (withHistory = false) => {
     try {
-      const reqs: Promise<any>[] = [api.get('/metrics')];
-      if (withHistory) reqs.push(api.get('/metrics/history?days=7'));
-      const [m, h] = await Promise.all(reqs);
+      // Zwei Endpunkte mit unterschiedlicher Antwortform: der zweite wird nur
+      // bei withHistory geholt, deshalb die Union statt eines gemeinsamen Typs.
+      const [m, h] = await Promise.all([
+        api.get<Snapshot>('/metrics'),
+        withHistory
+          ? api.get<{ snapshots?: HistorySnap[] }>('/metrics/history?days=7')
+          : Promise.resolve(null),
+      ]);
       setSnap(m.data);
       if (h) setHistory(h.data.snapshots || []);
       setError(null);
-    } catch (e: any) {
-      setError(e?.response?.status === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
+    } catch (e) {
+      setError(fehlerStatus(e) === 403 ? 'Nur für Super-Admins.' : 'Metrics konnten nicht geladen werden.');
     } finally {
       setLoading(false);
     }
@@ -219,6 +246,17 @@ const AdminMetricsPage: React.FC = () => {
               <Kpi icon={flashOutline} label="Parallel" value={String(snap.inFlight)} color="#7c3aed" sub={`max ${snap.maxInFlight}`} />
               <Kpi icon={speedometerOutline} label="Req/Sek" value={String(snap.rps)} color="#0891b2" sub="Ø letzte 10s" />
               <Kpi icon={alertCircleOutline} label="Fehlerrate" value={`${(snap.errorRate * 100).toFixed(1)}%`} color={snap.totalErrors ? '#dc3545' : '#28a745'} sub={`${snap.totalErrors} Fehler (5xx)`} />
+              {snap.cacheQuote !== undefined && (
+                /* Anteil 304: Der Client hatte die Daten schon. HOCH IST GUT —
+                   dann gingen keine Nutzdaten ueber die Leitung. Gruen ab 50 %. */
+                <Kpi
+                  icon={layersOutline}
+                  label="Aus dem Cache"
+                  value={`${snap.cacheQuote}%`}
+                  color={snap.cacheQuote >= 50 ? '#28a745' : snap.cacheQuote >= 25 ? '#f59e0b' : '#8e8e93'}
+                  sub={`${snap.totalNotModified ?? 0}× ohne Daten (304)`}
+                />
+              )}
             </div>
 
             {/* Lastverteilung ueber die Backend-Replicas (nur bei >1 Replica) */}
@@ -256,7 +294,7 @@ const AdminMetricsPage: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <IonSegment value={tab} onIonChange={(e) => setTab(e.detail.value as any)} style={{ marginBottom: '12px' }}>
+            <IonSegment value={tab} onIonChange={(e) => setTab(e.detail.value as 'slow' | 'busy' | 'errors' | 'history')} style={{ marginBottom: '12px' }}>
               <IonSegmentButton value="slow"><IonLabel>Langsam</IonLabel></IonSegmentButton>
               <IonSegmentButton value="busy"><IonLabel>Häufig</IonLabel></IonSegmentButton>
               <IonSegmentButton value="errors"><IonLabel>Fehler ({snap.recentErrors.length})</IonLabel></IonSegmentButton>

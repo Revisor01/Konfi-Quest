@@ -1,5 +1,7 @@
 const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
 const { appIconSummeOderNull } = require('../utils/appIconBadge');
+const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
+const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 
 /**
  * Push Notification Type Registry
@@ -34,6 +36,7 @@ const { appIconSummeOderNull } = require('../utils/appIconBadge');
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
  * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
+ * challenge_started (Feed)    | sendChallengeFeedToJahrgaenge        | Jahrgangs-Konfis| ja
  * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
  * challenge_submission_hidden | sendChallengeSubmissionHiddenToUser  | Einreichende:r  | ja
  *
@@ -771,7 +774,7 @@ class PushService {
   static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null, organizationId = null) {
     try {
 
-      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+      const dateFormatted = formatDatum(eventDate, {
         weekday: 'long',
         day: 'numeric',
         month: 'long'
@@ -780,13 +783,13 @@ class PushService {
       // Build time string - use timeslot time if available, otherwise event time
       let timeString = '';
       if (timeslot && timeslot.start_time) {
-        const startTime = new Date(timeslot.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const startTime = formatUhrzeit(timeslot.start_time);
         const endTime = timeslot.end_time
-          ? new Date(timeslot.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+          ? formatUhrzeit(timeslot.end_time)
           : null;
         timeString = endTime ? ` von ${startTime} - ${endTime} Uhr` : ` um ${startTime} Uhr`;
       } else {
-        const eventTime = new Date(eventDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const eventTime = formatUhrzeit(eventDate);
         timeString = ` um ${eventTime} Uhr`;
       }
 
@@ -922,13 +925,10 @@ class PushService {
       );
       if (levels.length === 0) return;
 
-      // 3. Hoechstes erreichtes Level berechnen
-      let newLevel = null;
-      for (const level of levels) {
-        if (totalPoints >= level.points_required) {
-          newLevel = level;
-        }
-      }
+      // 3. Hoechstes erreichtes Level berechnen — dieselbe Quelle wie das
+      //    Konfi-Dashboard und GET /levels/konfi/:userId (frueher drei
+      //    Kopien derselben Schleife, Befund M2).
+      const { currentLevel: newLevel } = berechneLevelFortschritt(totalPoints, levels);
 
       // 4. Vergleich mit gespeichertem Level — nur wenn Level AUFGESTIEGEN
       if (newLevel && newLevel.id !== profile.current_level_id) {
@@ -1020,7 +1020,7 @@ class PushService {
       let dateInfo = '';
       if (eventDate) {
         const date = new Date(eventDate);
-        dateInfo = ` am ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+        dateInfo = ` am ${formatDatum(date, { day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
       }
 
       const notification = {
@@ -1061,7 +1061,7 @@ class PushService {
       let dateInfo = eventDate;
       if (eventDate) {
         const date = new Date(eventDate);
-        dateInfo = `${date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+        dateInfo = `${formatDatum(date, { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
       }
 
       const notification = {
@@ -1093,10 +1093,10 @@ class PushService {
 
       if (changes.newDate) {
         const date = new Date(changes.newDate);
-        let dateInfo = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        dateInfo += `, ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+        let dateInfo = formatDatum(date, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        dateInfo += `, ${formatUhrzeit(date)}`;
         if (changes.newEndTime) {
-          const endTime = new Date(changes.newEndTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          const endTime = formatUhrzeit(changes.newEndTime);
           dateInfo += ` - ${endTime} Uhr`;
         } else {
           dateInfo += ' Uhr';
@@ -1163,7 +1163,7 @@ class PushService {
         return { success: true, sent: 0 };
       }
 
-      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+      const dateFormatted = formatDatum(eventDate, {
         weekday: 'long',
         day: 'numeric',
         month: 'long'
@@ -1259,6 +1259,63 @@ class PushService {
    * @param {number} challengeId - Challenge ID
    * @param {string} challengeTitle - Titel der Challenge
    */
+  /**
+   * Ein Beitrag ist im Feed sichtbar geworden -> Mitteilung an die Konfis der
+   * zugewiesenen Jahrgaenge (ohne die einreichende Person selbst).
+   *
+   * WANN: Genau in dem Moment, in dem der Beitrag oeffentlich wird — bei
+   * unmoderierten Challenges beim Einreichen, bei moderierten erst mit der
+   * Freigabe. Sonst kaeme die Mitteilung, bevor es etwas zu sehen gibt.
+   *
+   * ANONYMITAET: Bei konfi_consent = 'anonymous' darf der Name NICHT in die
+   * Mitteilung. Dann steht dort nur "Neuer Beitrag". Die Sichtbarkeitsregel
+   * ist dieselbe wie in der Galerie (PUBLIC_SUBMISSION_SQL in
+   * routes/challenges.js) — wer den Beitrag nicht sehen darf, erfaehrt auch
+   * nichts von ihm.
+   *
+   * @param {string|null} konfiName  null oder '' => anonym, kein Name im Text
+   * @param {string} medienArt       'image' | 'video' | 'audio' | 'text' ...
+   */
+  static async sendChallengeFeedToJahrgaenge(db, organizationId, challengeId, challengeTitle, submissionUserId, konfiName, medienArt) {
+    try {
+      // Empfaenger: Konfis der Jahrgaenge dieser Challenge, ohne die
+      // einreichende Person (die weiss es).
+      const { rows: konfis } = await db.query(
+        `SELECT DISTINCT u.id
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         JOIN konfi_profiles kp ON kp.user_id = u.id
+         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
+         WHERE r.name = 'konfi'
+           AND u.organization_id = $1
+           AND u.deleted_at IS NULL
+           AND cja.challenge_id = $2
+           AND u.id <> $3`,
+        [organizationId, challengeId, submissionUserId]
+      );
+      if (konfis.length === 0) return;
+
+      const { anhangText } = require('../utils/pushText');
+      // Art des Beitrags, damit man sieht, ob sich das Hinsehen lohnt.
+      // 'text' hat keinen Anhang -> dann nur der Challenge-Bezug.
+      const artText = (medienArt && medienArt !== 'text') ? ` (${anhangText(medienArt)})` : '';
+      const titel = konfiName ? `Neuer Beitrag von ${konfiName}` : 'Neuer Beitrag';
+
+      await this.sendToMultipleUsers(db, konfis.map(k => k.id), {
+        title: titel,
+        body: `bei "${challengeTitle}"${artText}`,
+        data: {
+          type: 'challenge_started',
+          anlass: 'challenge_feed',
+          challengeId: challengeId.toString(),
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (err) {
+      console.error('Fehler beim Feed-Push:', err.message);
+    }
+  }
+
   static async sendChallengeBadgeEarnedToKonfi(db, konfiId, challengeId, challengeTitle) {
     try {
       // Content-Org der Challenge (nicht der Empfänger) für den Org-Wechsel
@@ -1630,7 +1687,7 @@ class PushService {
 
       return await this.sendToMultipleUsers(db, userIds, {
         title: 'Neues Pflicht-Event',
-        body: `${eventName} am ${new Date(eventDate).toLocaleDateString('de-DE')}`,
+        body: `${eventName} am ${formatDatum(eventDate)}`,
         data: {
           type: 'mandatory_event_created',
           eventId: String(eventId),

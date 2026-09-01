@@ -3,17 +3,18 @@ import { IonIcon } from '@ionic/react';
 import { calendarOutline } from 'ionicons/icons';
 import SlideBase from './SlideBase';
 import type { SlideProps } from '../../../types/wrapped';
+import { tageBis } from '../../shared/eventFormatting';
 
 interface KonfirmationsSlideProps extends SlideProps {
   zeitraumEnde: string;
-  displayName: string;
 }
 
-const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitraumEnde, displayName }) => {
+const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitraumEnde }) => {
   const endeDate = new Date(zeitraumEnde);
-  const now = new Date();
-  const diffMs = endeDate.getTime() - now.getTime();
-  const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  // Kalendertage, nicht 24-Stunden-Bloecke: Sonst zaehlte ein Termin heute
+  // Abend als "1 Tag" und ueber eine Zeitumstellung hinweg verschob sich
+  // alles um einen Tag (siehe eventFormatting.ts).
+  const daysRemaining = Math.max(0, tageBis(endeDate));
 
   const formattedDate = endeDate.toLocaleDateString('de-DE', {
     day: 'numeric',

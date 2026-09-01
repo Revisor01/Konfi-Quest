@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
@@ -49,6 +50,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
+import type { ActionSheetButton } from '@ionic/core';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
@@ -57,7 +59,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
-import { Event, Category } from '../../../types/event';
+import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
@@ -135,8 +137,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
         await refreshEvents();
         triggerRefresh('events');
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler bei der Abmeldung'));
       }
     } else {
       await writeQueue.enqueue({
@@ -163,8 +165,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Wiederanmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Wiederanmeldung'));
     }
   };
 
@@ -174,25 +176,44 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       return;
     }
 
+    // Wie beim Opt-out: Ohne Verbindung in die Warteschlange, statt den Knopf
+    // zu sperren (30.08.2026). Eine Abmeldung gibt einen Platz FREI — es gibt
+    // nichts zu pruefen, was offline unbekannt waere. Das unterscheidet sie
+    // vom Anmelden, das wegen der begrenzten Plaetze gesperrt bleibt.
+    const clientId = safeUUID();
+
+    if (!networkMonitor.isOnline) {
+      await writeQueue.enqueue({
+        method: 'DELETE',
+        url: `/konfi/events/${eventData.id}/register`,
+        body: { reason: reason.trim(), client_id: clientId },
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'opt-out',
+          clientId,
+          label: `Abmeldung von "${eventData.name}"`,
+        },
+      });
+      setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+      return;
+    }
+
     try {
       await api.delete(`/konfi/events/${eventData.id}/register`, {
-        data: { reason: reason.trim() }
+        data: { reason: reason.trim(), client_id: clientId }
       });
 
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Abmeldung'));
     }
   };
 
   const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
-    onClose: () => {
-      dismissUnregisterModal();
-      refreshEvents();
-    },
     onUnregister: handleUnregister,
     dismiss: (data?: string, role?: string) => {
       dismissUnregisterModal(data, role);
@@ -203,9 +224,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [presentOptOutModal, dismissOptOutModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
     mandatory: true,
-    onClose: () => {
-      dismissOptOutModal();
-    },
     onUnregister: handleOptOut,
     dismiss: (data?: string, role?: string) => {
       dismissOptOutModal(data, role);
@@ -214,7 +232,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
     onClose: () => dismissScannerModal(),
-    onSuccess: (eventId: number, eventName: string) => {
+    onSuccess: (_eventId: number, _eventName: string) => {
       dismissScannerModal();
       refreshEvents();
       setSuccess('Erfolgreich eingecheckt!');
@@ -227,6 +245,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // (Befund 25.08.2026).
   const [detailEpoch, setDetailEpoch] = useState(0);
 
+  // Welcher Termin gerade gelten soll. Antworten, die zu einem vorher
+  // geoeffneten Termin gehoeren, duerfen den Stand nicht mehr ueberschreiben.
+  const aktuelleEventId = useRef(eventId);
+
+  // Beim Wechsel des Termins den Stand des VORIGEN leeren.
+  //
+  // Dieselbe Ursache wie in der Leitungsansicht (admin/views/EventDetailView):
+  // Der IonRouterOutlet behaelt gemountete Seiten im Speicher, ParamSeite
+  // (MainTabs.tsx) reicht nur eine neue eventId in DIESELBE Instanz. eventData
+  // wird aus der Liste abgeleitet und stimmt sofort — die nachgeladenen Werte
+  // aber nicht: Zeitfenster, Teilnehmerliste und der Konfirmations-Check
+  // blieben die des vorigen Termins. Online sah man sie, bis die neue Antwort
+  // eintraf; OFFLINE dauerhaft, denn der Effekt unten bricht ohne Verbindung
+  // vor dem Laden ab und laesst die alten Werte stehen.
+  useEffect(() => {
+    aktuelleEventId.current = eventId;
+    setTimeslots([]);
+    setParticipants([]);
+    setHasExistingKonfirmation(false);
+    setTimeslotsLoadFailed(false);
+  }, [eventId]);
+
   useLiveRefresh(['events'], useCallback(() => {
     refreshEventsLive();
     setDetailEpoch((n) => n + 1);
@@ -238,6 +278,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // vorbeilaufen — der Konfi landete ohne Slot im Event (Audit 10.08.).
   useEffect(() => {
     if (!eventData) return;
+    const fuerEventId = eventId;
+    // Eine Antwort gilt nur, solange sie zum aktuell geoeffneten Termin
+    // gehoert. Bei schnellem Wechsel kann die Antwort fuer den ERSTEN nach der
+    // des zweiten eintreffen und dessen Liste sonst falsch ueberschreiben.
+    const gilt = () => aktuelleEventId.current === fuerEventId;
     const loadDetails = async () => {
       // Ohne Verbindung gar nicht erst anfragen: Der Abruf schluege fehl und
       // wuerde die vorhandenen Werte auf leer setzen. Zeitfenster und
@@ -254,32 +299,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
-          const tsRes = await api.get(`/konfi/events/${eventId}/timeslots`);
-          setTimeslots(tsRes.data || []);
-        } else {
+          const tsRes = await api.get(`/konfi/events/${fuerEventId}/timeslots`);
+          if (gilt()) setTimeslots(tsRes.data || []);
+        } else if (gilt()) {
           setTimeslots([]);
         }
-      } catch (err) {
-        setTimeslots([]);
-        setTimeslotsLoadFailed(true);
+      } catch {
+        if (gilt()) {
+          setTimeslots([]);
+          setTimeslotsLoadFailed(true);
+        }
       }
       // Teilnehmerliste und Konfirmations-Check sind für die Anmeldung nicht
       // kritisch — sie duerfen weiterhin still fehlschlagen.
       try {
-        const partRes = await api.get(`/konfi/events/${eventId}/participants`);
-        setParticipants(partRes.data || []);
-      } catch (err) {
+        const partRes = await api.get(`/konfi/events/${fuerEventId}/participants`);
+        if (gilt()) setParticipants(partRes.data || []);
+      } catch {
         // Teilnehmerliste ist nur Anzeige
       }
       try {
         const hasKonf = await checkExistingKonfirmation();
-        setHasExistingKonfirmation(hasKonf);
-      } catch (err) {
+        if (gilt()) setHasExistingKonfirmation(hasKonf);
+      } catch {
         // Konfirmations-Check wird bei der Anmeldung erneut geprüft
       }
     };
     loadDetails();
-  }, [eventData?.id, detailEpoch]);
+  }, [eventData?.id, eventId, detailEpoch]);
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;
@@ -300,7 +347,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Andere, bereits gebuchte Konfirmation (nicht dieses Event selbst).
       const myEvents = response.data.filter((e: Event) => e.is_registered && e.id !== eventData?.id);
       return myEvents.some((e: Event) => isKonfirmationEvent(e));
-    } catch (err) {
+    } catch {
       return false;
     }
   };
@@ -309,7 +356,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!eventData) return;
 
     try {
-      const payload: any = {};
+      const payload: { timeslot_id?: number } = {};
       if (timeslotId) {
         payload.timeslot_id = timeslotId;
       }
@@ -327,8 +374,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
       await refreshEvents();
       triggerRefresh('events');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Anmeldung'));
     }
   };
 
@@ -365,7 +412,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const waitlistEnabled = !!eventData.waitlist_enabled;
       const maxWaitlist = eventData.max_waitlist_size || 0;
 
-      const timeslotButtons = timeslots.map((slot) => {
+      const timeslotButtons: ActionSheetButton[] = timeslots.map((slot) => {
         const isFull = slot.max_participants > 0 && parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
         const slotWaitlist = parseInt(String(slot.waitlist_count || 0));
         // Auf einen vollen Slot kann man sich auf die Warteliste setzen, solange
@@ -402,9 +449,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
       timeslotButtons.push({
         text: 'Abbrechen',
-        role: 'cancel' as any,
+        role: 'cancel',
         handler: () => {}
-      } as any);
+      });
 
       presentActionSheet({
         header: 'Zeitslot auswählen',
@@ -807,7 +854,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <div>
                     <div className="app-info-row__label">Check-in-Fenster</div>
                     <div className="app-info-row__value">
-                      QR-Code {eventData.checkin_window} Min. vor bis {eventData.checkin_window} Min. nach Beginn
+                      QR-Code {eventData.checkin_window} Min. (vor/nach Beginn)
                     </div>
                   </div>
                 </div>
@@ -934,13 +981,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       expand="block"
                       fill="outline"
                       color="danger"
-                      disabled={!isOnline}
                       onClick={() => presentOptOutModal({
                         presentingElement: pageRef.current || undefined
                       })}
                     >
                       <IonIcon icon={closeCircle} slot="start" />
-                      {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
+                      {/* NICHT offline gesperrt: handleOptOut legt die Abmeldung
+                          in die Warteschlange (Typ 'opt-out') und sendet sie
+                          nach, sobald Netz da ist. Der Knopf war bis zum
+                          30.08.2026 trotzdem `disabled` — der Offline-Pfad
+                          darunter war damit toter Code, und die Warteschlange
+                          versprach etwas, das die Oberflaeche nicht zuliess
+                          (Simons Einwand). Anders als beim Anmelden gibt es
+                          hier auch nichts zu pruefen: Ein Platz wird frei,
+                          nicht belegt. */}
+                      {!isOnline
+                        ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                        : 'Abmelden'}
                     </IonButton>
                   </div>
                 );
@@ -962,13 +1019,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   expand="block"
                   fill="outline"
                   color="danger"
-                  disabled={!isOnline}
                   onClick={() => presentUnregisterModal({
                     presentingElement: pageRef.current || undefined
                   })}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
-                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
+                  {!isOnline
+                    ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                    : 'Abmelden'}
                 </IonButton>
               ) : (
                 <IonButton

@@ -10,8 +10,8 @@ const revokeSpy = vi.fn();
 describe('compressForUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (URL as any).createObjectURL = createSpy;
-    (URL as any).revokeObjectURL = revokeSpy;
+    URL.createObjectURL = createSpy;
+    URL.revokeObjectURL = revokeSpy;
   });
 
   it('reicht Dateien unter dem Limit durch und gibt die Preview-URL frei', async () => {

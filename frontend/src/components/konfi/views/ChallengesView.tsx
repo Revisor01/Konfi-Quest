@@ -16,81 +16,19 @@ import {
   personOutline,
   ribbonOutline,
   archiveOutline,
-  checkmarkCircle,
-  paperPlaneOutline,
-  sparkles,
-  compass,
-  rocket,
-  flame,
-  trophy,
-  medal,
-  ribbon,
-  star,
-  diamond,
-  shield,
-  flash,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  calendar,
-  today,
-  time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  home,
-  business,
-  location,
-  navigate,
-  pin,
-  informationCircle,
-  helpCircle,
-  alertCircle,
-  hammer
+  paperPlaneOutline
 } from 'ionicons/icons';
 import { EmptyState, SectionHeader } from '../../shared';
 import type { KonfiChallenge, ChallengeMark } from '../../../types/challenges';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-// Icon-Vorrat der Challenge-Stempel. Bewusst als eigene, schlanke Map hier —
-// der Admin-Auswahldialog (ChallengeManageModal) haelt denselben Schlüssel-
-// Vorrat, aber ihn zu importieren wuerde das komplette Verwaltungs-Modal in das
-// Konfi-Bundle ziehen. Schlüssel müssen mit dem Admin-Vorrat uebereinstimmen.
-const CHALLENGE_BADGE_ICONS: Record<string, string> = {
-  flag, sparkles, compass, rocket, flame,
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flash, thumbsUp, heart, people, personAdd, chatbubbles, gift,
-  book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose,
-  calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon,
-  home, business, location, navigate, pin,
-  informationCircle, helpCircle, alertCircle, hammer
-};
-
-/** Loest den gespeicherten Icon-Namen einer Challenge auf (Fallback: Flagge). */
+/**
+ * Loest den gespeicherten Icon-Namen einer Challenge auf (Rueckfall: Flagge).
+ * Vorrat kommt aus utils/badgeIcons — dasselbe Modul, aus dem der
+ * Admin-Auswahldialog schoepft, damit beide Seiten nicht auseinanderlaufen.
+ */
 export const getChallengeBadgeIcon = (iconName?: string | null): string =>
-  CHALLENGE_BADGE_ICONS[iconName || ''] || flag;
+  getIconFromString(iconName, flag);
 
 // Konfi-Sicht der Challenges. Bewusst OHNE Zähler/Fortschritt/Rangliste — der
 // Kern des Features ist die eigene Deutung, nicht die Menge (siehe Konzept).
@@ -102,7 +40,6 @@ interface ChallengesViewProps {
   archive: KonfiChallenge[];
   marks: ChallengeMark[];
   onSelectChallenge: (challenge: KonfiChallenge) => void;
-  onSubmit: (challenge: KonfiChallenge) => void;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Leitungs-Sicht:
   // Verwalten|Mitmachen). Gleiches Muster wie EventsView/RequestsView.
   headerSlot?: React.ReactNode;
@@ -167,7 +104,6 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
   archive,
   marks,
   onSelectChallenge,
-  onSubmit,
   headerSlot
 }) => {
   // Aktive Challenges: die knappste Frist zuerst — was zuerst endet, steht oben.

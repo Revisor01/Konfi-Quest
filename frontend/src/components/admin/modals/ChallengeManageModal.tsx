@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -35,59 +36,7 @@ import {
   calendarOutline,
   chevronDownOutline,
   ribbonOutline,
-  schoolOutline,
-  // Icon-Auswahl (identische Auswahl wie im Badge-Modal)
-  trophy,
-  medal,
-  ribbon,
-  star,
-  checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
-  sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  calendar,
-  today,
-  time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  home,
-  business,
-  location,
-  navigate,
-  compass,
-  pin,
-  informationCircle,
-  helpCircle,
-  alertCircle,
-  hammer
+  schoolOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -99,6 +48,7 @@ import type {
   ChallengeMediaType
 } from '../../../types/challenges';
 import { getChallengeStatus } from '../views/ChallengesManageView';
+import { ICON_CHOICES, getIconFromString } from '../../../utils/badgeIcons';
 import {
   baueChallengePayload,
   istChallengeFormularGueltig,
@@ -106,73 +56,10 @@ import {
   zeitraumFehler
 } from '../../../utils/challengeForm';
 
-// Icon-Auswahl: identisches Pattern und identischer Vorrat wie BadgeManagementModal,
-// damit Challenge-Stempel und Abzeichen dieselbe Bildsprache haben.
-const CHALLENGE_ICONS: Record<string, { icon: string; name: string; category: string }> = {
-  flag: { icon: flag, name: 'Flagge', category: 'Challenge' },
-  sparkles: { icon: sparkles, name: 'Funken', category: 'Challenge' },
-  compass: { icon: compass, name: 'Kompass', category: 'Challenge' },
-  rocket: { icon: rocket, name: 'Rakete', category: 'Challenge' },
-  flame: { icon: flame, name: 'Flamme', category: 'Challenge' },
-
-  trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
-  medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },
-  ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
-  star: { icon: star, name: 'Stern', category: 'Erfolg' },
-  checkmarkCircle: { icon: checkmarkCircle, name: 'Bestanden', category: 'Erfolg' },
-  diamond: { icon: diamond, name: 'Diamant', category: 'Erfolg' },
-  shield: { icon: shield, name: 'Schild', category: 'Erfolg' },
-
-  flash: { icon: flash, name: 'Blitz', category: 'Engagement' },
-  thumbsUp: { icon: thumbsUp, name: 'Daumen hoch', category: 'Engagement' },
-  heart: { icon: heart, name: 'Herz', category: 'Gemeinschaft' },
-  people: { icon: people, name: 'Gruppe', category: 'Gemeinschaft' },
-  personAdd: { icon: personAdd, name: 'Neue Person', category: 'Gemeinschaft' },
-  chatbubbles: { icon: chatbubbles, name: 'Chat', category: 'Gemeinschaft' },
-  gift: { icon: gift, name: 'Geschenk', category: 'Gemeinschaft' },
-
-  book: { icon: book, name: 'Buch', category: 'Lernen' },
-  school: { icon: school, name: 'Schule', category: 'Lernen' },
-  construct: { icon: construct, name: 'Werkzeug', category: 'Lernen' },
-  brush: { icon: brush, name: 'Pinsel', category: 'Lernen' },
-  colorPalette: { icon: colorPalette, name: 'Farbpalette', category: 'Lernen' },
-
-  sunny: { icon: sunny, name: 'Sonne', category: 'Natur' },
-  moon: { icon: moon, name: 'Mond', category: 'Natur' },
-  leaf: { icon: leaf, name: 'Blatt', category: 'Natur' },
-  rose: { icon: rose, name: 'Rose', category: 'Natur' },
-
-  calendar: { icon: calendar, name: 'Kalender', category: 'Zeit' },
-  today: { icon: today, name: 'Heute', category: 'Zeit' },
-  time: { icon: time, name: 'Uhr', category: 'Zeit' },
-  timer: { icon: timer, name: 'Timer', category: 'Zeit' },
-  stopwatch: { icon: stopwatch, name: 'Stoppuhr', category: 'Zeit' },
-
-  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitäten' },
-  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitäten' },
-  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitäten' },
-  car: { icon: car, name: 'Auto', category: 'Aktivitäten' },
-  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitäten' },
-  boat: { icon: boat, name: 'Boot', category: 'Aktivitäten' },
-  camera: { icon: camera, name: 'Kamera', category: 'Aktivitäten' },
-  image: { icon: image, name: 'Bild', category: 'Aktivitäten' },
-  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitäten' },
-  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitäten' },
-
-  home: { icon: home, name: 'Zuhause', category: 'Orte' },
-  business: { icon: business, name: 'Gebäude', category: 'Orte' },
-  location: { icon: location, name: 'Standort', category: 'Orte' },
-  navigate: { icon: navigate, name: 'Navigation', category: 'Orte' },
-  pin: { icon: pin, name: 'Pin', category: 'Orte' },
-
-  informationCircle: { icon: informationCircle, name: 'Info', category: 'Sonstiges' },
-  helpCircle: { icon: helpCircle, name: 'Hilfe', category: 'Sonstiges' },
-  alertCircle: { icon: alertCircle, name: 'Warnung', category: 'Sonstiges' },
-  hammer: { icon: hammer, name: 'Hammer', category: 'Sonstiges' }
-};
-
-export const getChallengeIcon = (iconName?: string): string =>
-  CHALLENGE_ICONS[iconName || '']?.icon || flag;
+// Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
+// Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
+// Rueckfall bleibt die Flagge (frueher lokal in CHALLENGE_ICONS).
+export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, flag);
 
 // Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
 // das Team darf IMMER mitschreiben, deshalb gibt es bewusst KEINE Option
@@ -408,9 +295,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         // (sonst blockiert canDismiss das Schliessen -> doppeltes Anlegen).
         onDirtyChange?.(false);
         onSuccess();
-      } catch (err: any) {
+      } catch (err) {
         // 409 = nach Start gesperrtes Feld geändert (Backend erzwingt Konsens-Integritaet)
-        setError(err.response?.data?.error || 'Fehler beim Speichern der Challenge');
+        setError(fehlerText(err, 'Fehler beim Speichern der Challenge'));
       } finally {
         setLoading(false);
       }
@@ -421,9 +308,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     }
   };
 
-  const selectedIconMeta = CHALLENGE_ICONS[formData.badge_icon];
+  const selectedIconMeta = ICON_CHOICES[formData.badge_icon];
 
-  const iconGroups = Object.entries(CHALLENGE_ICONS).reduce<
+  const iconGroups = Object.entries(ICON_CHOICES).reduce<
     { category: string; icons: { key: string; data: { icon: string; name: string; category: string } }[] }[]
   >((acc, [key, data]) => {
     const group = acc.find((g) => g.category === data.category);

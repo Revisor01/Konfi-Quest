@@ -1,26 +1,7 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonButton,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonIcon,
-  IonSpinner,
-  IonList,
-  IonListHeader,
-  IonCard,
-  IonCardContent,
-  IonRange,
-  IonModal,
-  useIonAlert
-} from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag, checkmarkCircle, peopleOutline } from 'ionicons/icons';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonIcon, IonSpinner, IonList, IonListHeader, IonCard, IonCardContent, IonRange, useIonAlert } from '@ionic/react';
+import { checkmarkOutline, closeOutline, create, pricetag, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -32,7 +13,11 @@ interface Activity {
   id: number;
   name: string;
   points: number;
-  type: 'gottesdienst' | 'gemeinde';
+  // null ist moeglich und kommt vor: in Produktion tragen zwei Aktivitaeten
+  // keinen Punkttyp (nachgemessen 30.08.2026). Die Liste kannte den Fall
+  // laengst, dieses Modal nicht — Ionic 9 typisiert useIonModal strenger und
+  // hat den Widerspruch aufgedeckt.
+  type: 'gottesdienst' | 'gemeinde' | null;
   categories?: Category[];
   target_role?: 'konfi' | 'teamer';
 }
@@ -61,7 +46,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   onSuccess,
   dismiss
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -151,7 +136,11 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           setFormData({
             name: activity.name,
             points: activity.points,
-            type: activity.type,
+            // Das Formular kennt "kein Typ" als leeren String, die Daten als
+            // null (zwei Aktivitaeten in Produktion, nachgemessen 30.08.2026).
+            // Umgesetzt wird an der Grenze, damit das Select nicht auf null
+            // laeuft.
+            type: activity.type ?? '',
             category_ids: activity.categories?.map((cat: Category) => cat.id) || [],
             target_role: activity.target_role || targetRole
           });
@@ -201,7 +190,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     await guard(async () => {
     setLoading(true);
     try {
-      const payload: any = {
+      const payload = {
         name: formData.name.trim(),
         points: formData.target_role === 'teamer' ? 0 : formData.points,
         type: formData.target_role === 'teamer' ? null : formData.type,
@@ -243,12 +232,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
       setIsDirty(false);
       onSuccess();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Speichern der Aktivität');
-      }
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern der Aktivität'));
     } finally {
       setLoading(false);
     }

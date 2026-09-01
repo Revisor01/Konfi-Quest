@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import api from '../services/api';
 import { writeQueue } from '../services/writeQueue';
 import { networkMonitor } from '../services/networkMonitor';
-import { initializeWebSocket, getSocket } from '../services/websocket';
+import { initializeWebSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { removeDeliveredForChatRoom } from '../services/notifications';
 import { useApp } from './AppContext';

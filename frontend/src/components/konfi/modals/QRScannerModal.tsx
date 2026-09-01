@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -48,7 +49,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
 
     scannerRef.current = scanner;
 
-    scanner.start().catch((err: any) => {
+    scanner.start().catch((err: unknown) => {
       console.error('Scanner start error:', err);
       if (String(err).toLowerCase().includes('permission') || String(err).toLowerCase().includes('denied') || String(err).toLowerCase().includes('not allowed')) {
         setPermissionDenied(true);
@@ -89,8 +90,8 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
       } else {
         onSuccess(event_id, event_name);
       }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'QR-Code konnte nicht verarbeitet werden';
+    } catch (err) {
+      const errorMessage = fehlerText(err, 'QR-Code konnte nicht verarbeitet werden');
       setBanner({ type: 'error', message: errorMessage });
       setTimeout(() => {
         setBanner(null);

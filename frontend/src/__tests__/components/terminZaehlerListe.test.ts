@@ -11,13 +11,20 @@ import { describe, it, expect } from 'vitest';
 //
 // Die Subtraktion stand an neun Stellen in allen drei Komponentenbaeumen.
 
+// Alt-Antworten liefern die Zaehler nicht immer mit — deshalb optional.
+interface EventZaehler {
+  registered_count?: number;
+  teamer_count?: number;
+  waitlist_count?: number;
+}
+
 // So liefert das Backend die Zahlen (Konfi-Fahrt, Event 105):
-const event = { registered_count: 19, teamer_count: 4, waitlist_count: 0 };
+const event: EventZaehler = { registered_count: 19, teamer_count: 4, waitlist_count: 0 };
 
 // FALSCH (Altlast vor Migration 120)
-const alteRechnung = (e: typeof event) => e.registered_count - (e.teamer_count || 0);
+const alteRechnung = (e: EventZaehler) => (e.registered_count || 0) - (e.teamer_count || 0);
 // RICHTIG: registered_count IST die Konfi-Zahl
-const konfiZahl = (e: typeof event) => e.registered_count || 0;
+const konfiZahl = (e: EventZaehler) => e.registered_count || 0;
 
 describe('Terminliste: Konfi-Zahl', () => {
   it('nimmt registered_count unveraendert', () => {
@@ -34,10 +41,10 @@ describe('Terminliste: Konfi-Zahl', () => {
   });
 
   it('bleibt korrekt, wenn teamer_count fehlt (Alt-Antworten)', () => {
-    expect(konfiZahl({ registered_count: 7 } as any)).toBe(7);
+    expect(konfiZahl({ registered_count: 7 })).toBe(7);
   });
 
   it('faengt fehlendes registered_count ab', () => {
-    expect(konfiZahl({} as any)).toBe(0);
+    expect(konfiZahl({})).toBe(0);
   });
 });

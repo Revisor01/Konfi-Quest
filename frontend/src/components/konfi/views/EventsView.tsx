@@ -11,27 +11,8 @@ import {
   IonInput,
   useIonModal
 } from '@ionic/react';
-import {
-  calendar,
-  time,
-  location,
-  people,
-  checkmarkCircle,
-  hourglass,
-  close,
-  trophy,
-  listOutline,
-  calendarOutline,
-  lockOpenOutline,
-  shieldCheckmark,
-  bagHandle,
-  closeCircle,
-  search,
-  flame,
-  filterOutline,
-  infinite
-} from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
+import { calendar, time, location, people, checkmarkCircle, trophy, listOutline, calendarOutline, bagHandle, search, filterOutline, infinite } from 'ionicons/icons';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
@@ -40,7 +21,6 @@ interface EventsViewProps {
   activeTab: 'meine' | 'alle' | 'konfirmation';
   onTabChange: (tab: 'meine' | 'alle' | 'konfirmation') => void;
   onSelectEvent: (event: Event) => void;
-  onUpdate: () => void;
   // Für Card-Modal-Optik (Sheet über der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (für Highlighting).
@@ -55,7 +35,6 @@ const EventsView: React.FC<EventsViewProps> = ({
   activeTab,
   onTabChange,
   onSelectEvent,
-  onUpdate,
   presentingElement,
   selectedEventId,
   headerSlot
@@ -81,14 +60,17 @@ const EventsView: React.FC<EventsViewProps> = ({
     konfirmationEvents.some(e => e.is_registered),
   [konfirmationEvents]);
 
+  // istVergangen() statt eines Vergleichs auf event_date: Mehrtaegige Termine
+  // sind erst nach event_end_time vorbei. Am 12. einer Freizeit vom 10.-14.
+  // sagte das Abzeichen 'laeuft', die Liste zeigte sie aber nicht mehr an.
   const eventCounts = useMemo(() => ({
     all: events.length,
     meine: events.filter(e => e.is_registered || e.booking_status === 'opted_out').length,
-    alle: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
-    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) >= new Date()).length,
-    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) < new Date()).length,
+    alle: nonKonfirmationEvents.filter(e => !istVergangen(e)).length,
+    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && !istVergangen(e)).length,
+    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && istVergangen(e)).length,
     konfirmation: konfirmationEvents.length,
-    konfirmationUpcoming: konfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
+    konfirmationUpcoming: konfirmationEvents.filter(e => !istVergangen(e)).length,
     konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
   }), [events, konfirmationEvents, nonKonfirmationEvents]);
 
@@ -103,7 +85,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'alle':
         return [
           { label: 'Gesamt', count: eventCounts.alle, icon: calendar },
-          { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date() && !e.is_registered).length, icon: time },
+          { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => !istVergangen(e) && !e.is_registered).length, icon: time },
           { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: checkmarkCircle }
         ];
       case 'konfirmation':
@@ -176,7 +158,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       konfis: 'var(--app-color-konfis)',     // lila (Konfirmation)
       past: '#6c757d',                       // grau (vergangen) — kein Token
     };
-    let statusColor = C.bonus;
+    let statusColor: string;
     if (isCancelled) statusColor = C.danger;
     else if (isMandatory && isOptedOut) statusColor = C.events;
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
@@ -203,7 +185,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else statusColor = C.danger;
 
     // Bestimme Text (Pflicht ist separates Badge, nicht im Status-Text)
-    let statusText = 'Offen';
+    let statusText: string;
     if (isCancelled) statusText = 'Abgesagt';
     else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
@@ -238,7 +220,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'meine':
         return events.filter(e => e.is_registered || e.booking_status === 'opted_out');
       case 'alle':
-        return nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
+        return nonKonfirmationEvents.filter(e => !istVergangen(e));
       case 'konfirmation':
         return konfirmationEvents;
       default:
@@ -291,7 +273,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
-          onIonChange={(e) => onTabChange(e.detail.value as any)}
+          onIonChange={(e) => onTabChange(e.detail.value as 'meine' | 'alle' | 'konfirmation')}
         >
           <IonSegmentButton value="alle">
             <IonLabel>Alle</IonLabel>

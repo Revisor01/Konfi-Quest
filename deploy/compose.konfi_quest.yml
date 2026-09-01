@@ -51,6 +51,9 @@ services:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
+      # Ohne TZ laeuft der Node-Prozess in UTC. Der Anker gilt fuer
+      # backend, backend2 und backend-test gleichermassen.
+      TZ: Europe/Berlin
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
       QR_SECRET: ${QR_SECRET:?QR_SECRET fehlt}
       LOSUNG_API_KEY: ${LOSUNG_API_KEY:?LOSUNG_API_KEY fehlt}
@@ -164,9 +167,12 @@ services:
   #  2. RUN_BACKGROUND_JOBS=false — sonst laufen Auto-Loeschung, Erinnerungen
   #     und APM-Snapshots DOPPELT gegen die echten Daten.
   #  3. METRICS_PEERS leer — die Testmessung gehoert nicht in die Live-Zahlen.
-  #  4. CORS_ORIGINS gesetzt — die App kommt hier von einer ANDEREN Domain
-  #     als die API. Ohne das lehnt der Browser jede Anfrage ab. In
-  #     Produktion bleibt es leer (gleiche Domain, kein CORS noetig).
+  #  4. CORS macht ALLEIN der vHost (Apache). NICHT zusaetzlich im Backend
+  #     ueber CORS_ORIGINS setzen: Dann schreiben BEIDE den Header, er steht
+  #     DOPPELT in der Antwort, und der Browser verwirft sie als ungueltig.
+  #     Folge auf dem Geraet: Die App zeigt die erste Seite und danach nur
+  #     noch Weiss — Chatraeume laden nicht mehr (Simons Geraetetest mit
+  #     Build 153, 31.08.2026). Gegenprobe: Live liefert genau EINEN Header.
   #
   # Das Image traegt den Tag test-latest und wird NUR vom Workflow
   # test-backend.yml gebaut — 'latest' bleibt unberuehrt, der Live-Redeploy
@@ -182,7 +188,6 @@ services:
       <<: *backend_env
       RUN_BACKGROUND_JOBS: "false"
       METRICS_PEERS: ""
-      CORS_ORIGINS: "https://test-api.konfi-quest.de,https://konfi-quest.de,capacitor://localhost,https://localhost"
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro

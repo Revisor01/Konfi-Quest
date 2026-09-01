@@ -46,7 +46,6 @@ interface ActivityRequest {
 
 interface ActivityRequestsViewProps {
   requests: ActivityRequest[];
-  onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
@@ -56,7 +55,6 @@ interface ActivityRequestsViewProps {
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
-  onUpdate,
   onSelectRequest,
   onResetRequest,
   headerSlot
@@ -124,7 +122,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
           value={statusFilter}
-          onIonChange={(e) => setStatusFilter(e.detail.value as any)}
+          onIonChange={(e) => setStatusFilter(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
         >
           <IonSegmentButton value="pending">
             <IonLabel>Offen</IonLabel>

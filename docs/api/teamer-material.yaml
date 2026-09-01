@@ -3,7 +3,7 @@
 # Dokumentierte Dateien (Stand main, 23.08.2026, am Code verifiziert):
 #   backend/routes/teamer.js   -> Prefix /api/teamer   (21 Routen)
 #   backend/routes/material.js -> Prefix /api/material (13 Routen)
-#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (5 Routen)
+#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (6 Routen)
 #
 # Mount-Prefixe geprüft in backend/createApp.js (Zeilen 442-446):
 #   app.use('/api/teamer',   require('./routes/teamer')(...))
@@ -50,16 +50,16 @@
 #    - GET /api/teamer/konfis: Rolle 'teamer' sieht nur Konfis der
 #      can_view-Jahrgänge; ohne Zuweisung kommt eine LEERE Liste. Für
 #      org_admin/admin entfaellt der Filter (alle Konfis der Org).
-#    GREIFT NIRGENDS SONST. Insbesondere:
-#    - /api/material/* kennt überhaupt keine Jahrgangsgrenze. Material kann
-#      zwar Jahrgängen zugeordnet werden (material_jahrgaenge, Filter
-#      ?jahrgang_id), das ist aber reine Ablage-Struktur: GET /api/material
-#      liefert ohne Query-Filter ALLE Materialien der Organisation an jede
-#      Teamer:in, auch solche, die ausschliesslich fremden Jahrgängen
-#      zugeordnet sind. Gleiches gilt für GET /api/material/{id} und den
+#    - /api/material/*: BEHOBEN am 24.08.2026 (Befund M1). Die Zuordnung zu
+#      einem Jahrgang wirkt seitdem als Berechtigung: Material mit Jahrgang
+#      sehen nur dessen Teamer:innen (can_view), Material ohne Jahrgang alle.
+#      Gilt für GET /api/material, GET /api/material/{id} und den
 #      Datei-Download GET /api/material/files/{fileRef}.
-#      # HINWEIS M1: Wer Material als "nur für Jahrgang X" ablegt, sollte
-#      wissen, dass die Zuordnung nicht als Berechtigung wirkt.
+#      ERWEITERT am 31.08.2026: Material mit ist_global = true sehen alle
+#      Teamer:innen der Gemeinde, unabhaengig von den Jahrgaengen. Der Zweig
+#      kam ADDITIV dazu -- "ohne Jahrgang = fuer alle" bleibt bestehen, sonst
+#      verschwaende Bestandsmaterial.
+#    GREIFT SONST NIRGENDS. Insbesondere:
 #    - POST /api/wrapped/generate/{jahrgangId}: requireAdmin, Jahrgang nur
 #      org-geprüft. Ein 'admin' kann für JEDEN Jahrgang der Org Wrapped
 #      erzeugen und damit freigeben - passt zum Muster der uebrigen
@@ -79,11 +79,13 @@
 #      Header. Die Snapshot-Query selbst filtert ebenfalls nur auf user_id.
 #      Bei Multi-Org-Setups kann ein Admin damit Snapshots sehen, die in einer
 #      anderen Organisation entstanden sind.
-#    - # HINWEIS W3: DELETE /api/wrapped/{jahrgangId} löscht über
-#      `jahrgang_id = $1 AND organization_id = $2`. Teamer-Snapshots haben
-#      kein jahrgang_id (der Teamer-INSERT setzt die Spalte nicht) und werden
-#      deshalb von dieser Route nie gelöscht. Es gibt keinen Endpunkt, der
-#      Teamer-Wrapped wieder entfernt.
+#    - # HINWEIS W3 (BEHOBEN am 01.09.2026): DELETE /api/wrapped/{jahrgangId}
+#      löschte über `jahrgang_id = $1 AND organization_id = $2`.
+#      Teamer-Snapshots haben kein jahrgang_id und wurden deshalb von dieser
+#      Route nie erfasst - einmal erzeugt, blieben sie fuer immer stehen.
+#      Seitdem gibt es DELETE /api/wrapped/teamer (org_admin, loescht die
+#      Teamer-Snapshots der eigenen Organisation). Der Jahrgangs-Weg filtert
+#      zusaetzlich auf wrapped_type='konfi' und laesst Teamer-Zeilen stehen.
 #    - # HINWEIS T1: POST /api/teamer/requests prüft die Idempotenz-client_id
 #      per `WHERE client_id = $1` OHNE user_id/organization_id. Existiert die
 #      UUID bereits, wird der fremde Datensatz mit 200 zurueckgegeben (er
@@ -138,12 +140,31 @@
 #    PUT /api/admin/activities/requests/{id} (Block 2) genehmigt wird.
 #
 # ZUSAMMENFASSUNG DER BEFUNDE IN DIESEM BLOCK:
-#   M1  Material kennt keine Jahrgangsgrenze - jede Teamer:in sieht und laedt
-#       alles Material der Organisation, auch fremden Jahrgängen zugeordnetes.
+#   M1  BEHOBEN am 24.08.2026: Material kannte keine Jahrgangsgrenze - jede
+#       Teamer:in sah und lud alles Material der Organisation, auch fremden
+#       Jahrgängen zugeordnetes. Die Zuordnung wirkt seitdem als Berechtigung;
+#       am 31.08.2026 um die benannte Freigabe fuer alle Teamer:innen
+#       (ist_global) erweitert.
 #   W1  GET /api/wrapped/me ohne organization_id-Filter (Multi-Org).
 #   W2  GET /api/wrapped/history/{userId} prüft Primaer-Org statt aktiver Org.
-#   W3  DELETE /api/wrapped/{jahrgangId} erreicht Teamer-Snapshots nicht -
-#       Teamer-Wrapped ist nicht loeschbar.
+#   W3  BEHOBEN am 01.09.2026: DELETE /api/wrapped/{jahrgangId} erreichte
+#       Teamer-Snapshots nicht (kein jahrgang_id), Teamer-Wrapped war damit
+#       ueberhaupt nicht loeschbar. Neue Route DELETE /api/wrapped/teamer.
+#   W4  BEHOBEN am 01.09.2026: Der Jahresrueckblick zaehlte Termine nach einer
+#       anderen Regel als das Konfi-Dashboard (fuer eine Konfi der Demo-Gemeinde
+#       1 statt 15) und filterte trotz ausgewiesenem Zeitraum keine einzige Zahl
+#       nach Jahr - nur die Challenge-Momente. Seitdem gilt fuer beide Ansichten
+#       dieselbe Zaehlregel (jede Buchung der Konfi in ihrer Organisation), und
+#       jede Zahl des Rueckblicks ist auf den Zeitraum begrenzt.
+#   W5  BEHOBEN am 01.09.2026: Die Absagen-Zahl im Rueckblick hatte KEINEN
+#       organization_id-Filter und zaehlte bei Multi-Org-Konten Absagen fremder
+#       Organisationen mit. Org- und Zeitfilter sind gesetzt.
+#   W6  BEHOBEN am 01.09.2026: Ohne is_konfirmation-Termin (drei von fuenf
+#       Jahrgaengen in Produktion) endete der Zeitraum fest am 31.7. - der
+#       August fehlte in jedem Rueckblick. Der Rueckfall ist jetzt das volle
+#       Konfi-Jahr 1.9. bis 31.8. Der Startpunkt rutschte zudem in Sommerzeit
+#       um einen Tag nach vorn (Ortszeit nach UTC gerechnet); die Datumsgrenzen
+#       werden nicht mehr ueber toISOString gebildet.
 #   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
 #   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Prüfung.
 #   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zählt
@@ -366,6 +387,12 @@ paths:
         Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und
         Event-Punkte aus der Konfi-Zeit, nach Datum absteigend
         zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.
+        Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation
+        gefiltert (Befund M1, behoben): Der organization_id-Filter stand
+        vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl
+        beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in
+        backend/utils/punkteHistorie.js, von beiden Routen genutzt.
+        Antwortform unveraendert.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -408,16 +435,21 @@ paths:
         (2) Die Gesamtzahlen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten
         auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also
         je nach Rolle etwas anderes.
-        Seit 28.08.2026 (Handoff-Punkt 12, BEHOBEN): Die Antwortform ist an
-        GET /konfi/badges angeglichen — { available, earned, stats } statt
-        flachem Array plus Zaehlern in den Kopfzeilen X-Badges-Secret-Total /
-        X-Badges-Visible-Total. Die Kopfzeilen entfallen: Die Sichtbar-Zahl las
-        keine Ansicht, die Geheim-Zahl steht jetzt als stats.totalSecret im
-        Rumpf (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen).
+        ACHTUNG, ANTWORTFORM: Diese Route liefert ein ARRAY plus die Zaehler
+        in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total.
+        Am 28.08.2026 wurde sie auf die Konfi-Form { available, earned, stats }
+        umgestellt und am 29.08.2026 zurueckgenommen: Die ausgelieferten Apps
+        (iOS 2.0.0 / Android versionCode 81) rufen auf der Antwort .filter()
+        auf — auf einem Objekt ein TypeError, das Teamer-Dashboard stuerzte
+        sofort nach dem Login ab. Diese Route bleibt deshalb unveraendert.
+        Die Angleichung an den Konfi-Pfad steht seit 31.08.2026 in
+        GET /api/teamer/badges/v2. Diese Route hier faellt weg, sobald keine
+        App im Store sie mehr ruft — Bedingung und Pruefweg in
+        docs/api/ABRISS.md.
         Jedes Abzeichen traegt earned, earned_at, unreachable und progress
         ({ current, target, percentage }; percentage ungerundet wie beim
-        Konfi). Neu dabei: Unerreichbare Abzeichen zaehlen auch in stats nicht
-        mehr mit — wie beim Konfi seit 27.08.2026.
+        Konfi). Unerreichbare Abzeichen zaehlen in den Kopfzeilen nicht mit —
+        wie beim Konfi seit 27.08.2026.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -425,7 +457,46 @@ paths:
         objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
       responses:
         "200":
-          description: "{ available, earned, stats } wie bei GET /konfi/badges: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen. Die frueheren Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total entfallen seit 28.08.2026."
+          description: "ARRAY der anzeigbaren Abzeichen (nicht geheim ODER verdient; und verdient ODER erreichbar). Je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. Die Zaehler stehen in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total und zaehlen nur aktive, erreichbare Abzeichen."
+          headers:
+            X-Badges-Secret-Total:
+              schema: { type: integer }
+              description: "Anzahl aktiver, erreichbarer GEHEIMER Abzeichen"
+            X-Badges-Visible-Total:
+              schema: { type: integer }
+              description: "Anzahl aktiver, erreichbarer sichtbarer Abzeichen"
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/badges/v2:
+    get:
+      tags: ["Abzeichen"]
+      summary: Eigene Teamer-Abzeichen mit Fortschritt (Generation v2)
+      description: >
+        Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie
+        GET /api/konfi/badges/v2 — { available, earned, stats } —, damit Konfi
+        und Teamer denselben Vertrag haben: dieselben Feldnamen, dieselbe
+        Semantik, die Zaehler im RUMPF statt in Kopfzeilen (der
+        App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen).
+        Gerechnet wird in utils/teamerBadgeProgress.js — dieselbe Quelle wie
+        die alte Route GET /api/teamer/badges, die nur anders verpackt. So
+        koennen alte und neue Route nicht auseinanderlaufen.
+        Gegenueber der alten Route fehlen die Verwaltungsfelder created_at,
+        created_by, organization_id und target_role: Sie landen auf keinem
+        Bildschirm und kosten rund ein Viertel der Antwortgroesse
+        (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder).
+        Erhalten bleiben criteria_type, criteria_value, criteria_extra,
+        is_active, is_hidden und sort_order — die Ansichten gruppieren,
+        sortieren und filtern danach.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+      responses:
+        "200":
+          description: "{ available, earned, stats }: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen."
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -445,9 +516,11 @@ paths:
           Konfi-Abzeichen stecken.
           Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler
           kommt aus newBadges in GET /api/notifications/badge-counts, das
-          korrekt auf target_role filtert. Der Endpunkt bleibt vorerst fuer
-          ausgelieferte App-Versionen bestehen; ueber seine Abschaffung ist
-          noch nicht entschieden.
+          korrekt auf target_role filtert.
+          FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026): ersatzlos,
+          der Zaehler kommt aus badge-counts. Der Endpunkt bleibt nur stehen,
+          weil eine App im Store ihn noch rufen koennte — Abrissbedingung und
+          Pruefweg in docs/api/ABRISS.md.
       responses:
         "200": { description: "unseen (Anzahl)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -457,7 +530,31 @@ paths:
   /api/teamer/badges/mark-seen:
     put:
       tags: ["Abzeichen"]
-      summary: Eigene Abzeichen als gesehen markieren
+      summary: Eigene Abzeichen als gesehen markieren (alte Generation)
+      description: >
+        ALTE GENERATION: PUT, waehrend der Konfi-Pfad seit jeher POST nutzt —
+        dieselbe Handlung, zwei Verben. In v2 ist das aufgeloest: dieselbe
+        Route als POST (siehe unten). Diese Variante bleibt unveraendert, bis
+        keine App im Store sie mehr ruft (docs/api/ABRISS.md).
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "UPDATE nur auf eigene user_badges (user_id + organization_id)"
+      responses:
+        "200": { description: Abzeichen als gesehen markiert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: ["Abzeichen"]
+      summary: Eigene Abzeichen als gesehen markieren (Generation v2)
+      description: >
+        Verb-Angleichung an den Konfi-Pfad (31.08.2026). POST statt PUT, weil
+        hier weder eine adressierte Ressource noch ein mitgeschickter Zustand
+        vorliegt, sondern eine Handlung auf einer Menge eigener Datensaetze —
+        genau dafuer ist POST da. Wirkung identisch zur PUT-Variante: beide
+        rufen dasselbe UPDATE (eine Quelle in routes/teamer.js).
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -817,6 +914,11 @@ paths:
         Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis
         26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im
         Mitteilungscenter der Leitung (Befund M6, behoben).
+        Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check
+        und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert
+        dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3,
+        behoben). Der Konfi-Pfad hatte diesen Schutz seit jeher; beide nutzen
+        jetzt backend/utils/antragIdempotenz.js. Antwortformen unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateCreateTeamerRequest]
@@ -878,8 +980,34 @@ paths:
   # Lesen und Herunterladen: requireTeamer (org_admin, admin, teamer).
   # Alles Schreibende: requireAdmin (org_admin, admin).
   # Konfis haben auf keine dieser Routen Zugriff.
-  # Keine Route kennt eine Jahrgangsgrenze (Befund M1).
+  # Jahrgangsgrenze seit 24.08.2026 (Befund M1 behoben), erweitert um
+  # globales Material am 31.08.2026.
   # ===================================================================
+  # LINK STATT DATEI (seit 31.08.2026): materials traegt zusaetzlich das Feld
+  # link_url. ADDITIV -- die bisherige Antwortform bleibt unveraendert, das
+  # Feld kommt lediglich dazu und ist bei Altbestand null. Ausgelieferte
+  # App-Versionen lesen es nicht und sehen dieselbe Antwort wie zuvor.
+  # Geprueft wird das SCHEMA (nur http/https), damit kein javascript:-Link in
+  # ein href der App geraet.
+  #
+  # MATERIAL FUER ALLE (seit 31.08.2026): materials traegt zusaetzlich das
+  # Feld ist_global. ADDITIV -- die Antwortform bleibt unveraendert, das Feld
+  # kommt lediglich dazu und ist bei Altbestand false. Ausgelieferte
+  # App-Versionen lesen es nicht und sehen dieselbe Antwort wie zuvor.
+  #
+  # Die Sichtbarkeitsregel wurde ERWEITERT, nicht ersetzt: sichtbar ist
+  # Material, das global ist ODER keinem Jahrgang zugeordnet ist ODER einem
+  # Jahrgang der Teamer:in (mit can_view). Der mittlere Zweig bleibt, sonst
+  # verschwaende alles Bestandsmaterial ohne Jahrgang.
+  #
+  # "Fuer alle" heisst: alle TEAMER:INNEN der Gemeinde. Konfis kommen an
+  # keine Material-Route (requireTeamer).
+  #
+  # Setzen und Entziehen von ist_global darf NUR die Rolle org_admin (403
+  # sonst, Feld-Pruefung in routes/material.js). Die Routen selbst bleiben
+  # auf requireAdmin, damit ein 'admin' weiterhin normales Material anlegen
+  # und globales Material inhaltlich bearbeiten kann.
+  #
   # Die Tag-Routen (/api/material/tags, GET/POST/PUT/DELETE) wurden am
   # 27.08.2026 ENTFERNT (Simons Entscheidung). Sie boten ein vollstaendiges
   # CRUD, hatten aber keine Zeile Oberflaeche und kein Wort im Handbuch --
@@ -905,8 +1033,10 @@ paths:
         hinweis: >
           # BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur
           Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind;
-          Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht
-          weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an
+          Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich:
+          Material mit ist_global = true sehen alle Teamer:innen der Gemeinde,
+          unabhaengig von den zugeordneten Jahrgaengen. Leitung (admin,
+          org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an
           einen Termin (material_events) bleibt bewusst reine Suchhilfe und
           grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die
           Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen
@@ -933,7 +1063,7 @@ paths:
           schema: { type: integer }
           description: Nur Material dieses Jahrgangs
       responses:
-        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
+        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -949,7 +1079,12 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateMaterial]
         org-scope: true
-        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token"
+        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token; ist_global nur für org_admin (403 sonst)"
+        hinweis: >
+          Feld-Pruefung seit 31.08.2026: ist_global = true darf nur die Rolle
+          org_admin setzen. Ein 'admin' bekommt 403 und es entsteht KEIN
+          Material. Die Route bleibt bewusst auf requireAdmin, damit ein
+          'admin' normales Material weiterhin anlegen kann.
       requestBody:
         required: true
         content:
@@ -963,11 +1098,30 @@ paths:
                 event_ids: { type: array, items: { type: integer } }
                 jahrgang_ids: { type: array, items: { type: integer } }
                 tag_ids: { type: array, items: { type: integer } }
+                ist_global:
+                  type: boolean
+                  default: false
+                  description: >
+                    Material für ALLE Teamer:innen der Gemeinde freigeben
+                    (seit 31.08.2026), unabhängig von den zugeordneten
+                    Jahrgängen. Nur die Rolle org_admin darf das Feld auf true
+                    setzen; ein 'admin' bekommt 403. Ohne Angabe entsteht das
+                    Material nicht global. Konfis sehen Material grundsätzlich
+                    nicht (requireTeamer).
+                link_url:
+                  type: [string, "null"]
+                  maxLength: 2000
+                  description: >
+                    Optionaler Link statt Dateien (seit 31.08.2026). Nur http
+                    und https; geprueft wird das Schema ueber new URL(), alles
+                    andere (javascript:, data:, file:, ftp:, schemalose
+                    Adressen) gibt 400. Leerstring oder null bedeutet "kein
+                    Link". Umgebende Leerzeichen werden abgeschnitten.
       responses:
-        "201": { description: "id, title, description, created_at" }
-        "400": { description: Titel fehlt oder mindestens eine ID gehoert zu einer fremden Organisation }
+        "201": { description: "id, title, description, link_url, ist_global, created_at" }
+        "400": { description: "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Rolle nicht berechtigt, oder ist_global = true ohne die Rolle org_admin" }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/material/by-event/{eventId}:
@@ -979,7 +1133,7 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste"
-        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
+        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
       parameters:
         - name: eventId
           in: path
@@ -987,7 +1141,7 @@ paths:
           schema: { type: integer, minimum: 1 }
           description: "ID des Termins"
       responses:
-        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count)" }
+        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1001,10 +1155,10 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "Material org-gescopt (404 sonst)"
-        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
+        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "id, title, description, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
+        "200": { description: "id, title, description, link_url, ist_global, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1013,7 +1167,7 @@ paths:
       tags: ["Material"]
       summary: Material bearbeiten
       description: >
-        Teilaktualisierung von Titel und Beschreibung. Werden event_ids,
+        Teilaktualisierung von Titel, Beschreibung und Link. Werden event_ids,
         jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen
         komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder
         bleiben unverändert. Alle IDs werden gegen die eigene Organisation
@@ -1022,7 +1176,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateMaterial]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)"
+        hinweis: >
+          Feld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -> true) als
+          auch das Entziehen (true -> false) von ist_global ist der Rolle
+          org_admin vorbehalten; ein 'admin' bekommt 403 und das Flag bleibt
+          unveraendert. Schickt ein 'admin' den unveraenderten Wert mit (das
+          Formular sendet ihn immer mit), geht die Anfrage durch -- er darf
+          globales Material inhaltlich weiterhin bearbeiten.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1036,11 +1197,26 @@ paths:
                 event_ids: { type: array, items: { type: integer } }
                 jahrgang_ids: { type: array, items: { type: integer } }
                 tag_ids: { type: array, items: { type: integer } }
+                ist_global:
+                  type: boolean
+                  description: >
+                    Freigabe für ALLE Teamer:innen der Gemeinde (seit
+                    31.08.2026). Setzen UND Entziehen sind der Rolle org_admin
+                    vorbehalten, sonst 403. Wird das Feld gar nicht
+                    uebergeben, bleibt die gespeicherte Freigabe unveraendert.
+                link_url:
+                  type: [string, "null"]
+                  maxLength: 2000
+                  description: >
+                    Link statt Dateien (seit 31.08.2026). Nur http und https,
+                    sonst 400. Leerstring oder null entfernt einen gesetzten
+                    Link wieder; wird das Feld gar nicht uebergeben, bleibt der
+                    gespeicherte Link unveraendert.
       responses:
         "200": { description: Aktualisiert }
-        "400": { description: Mindestens eine ID gehoert zu einer fremden Organisation }
+        "400": { description: "Der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { $ref: '#/components/responses/Forbidden' }
+        "403": { description: "Rolle nicht berechtigt, oder Änderung von ist_global ohne die Rolle org_admin" }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
@@ -1213,11 +1389,18 @@ paths:
       summary: Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben
       description: >
         Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten
-        Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf
-        jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt
-        allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein
-        Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht
-        zurueckgerollt.
+        Konfis des Jahrgangs parallel und setzt jahrgaenge.wrapped_released_at
+        auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in
+        einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt
+        (errors), nicht zurueckgerollt.
+
+        Die Push-Nachricht geht nur bei der ERSTEN Freigabe raus (seit
+        01.09.2026, Befund W-D): War wrapped_released_at bereits gesetzt, gilt
+        der Lauf als Korrektur und benachrichtigt nicht erneut - sonst bekam
+        der ganze Jahrgang ein zweites Mal "Dein Konfi-Jahr ist da!", nur weil
+        jemand eine Zahl richtiggestellt hat. Das Antwortfeld `benachrichtigt`
+        sagt, welcher Fall eingetreten ist. Nach DELETE /api/wrapped/{jahrgangId}
+        (setzt die Marke auf NULL) benachrichtigt eine erneute Freigabe wieder.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "param('jahrgangId').isInt", handleValidationErrors]
@@ -1231,6 +1414,14 @@ paths:
       responses:
         "200": { description: "message, generated (Anzahl), errors (Anzahl), jahrgang (Name), year" }
         "400": { description: Ungueltige jahrgangId }
+        # Zum Inhalt der erzeugten Snapshots (Befunde W4-W6, behoben am
+        # 01.09.2026): Alle Zahlen des Konfi-Rueckblicks sind auf den
+        # ausgewiesenen Zeitraum begrenzt, Termine werden nach derselben Regel
+        # gezaehlt wie im Konfi-Dashboard, und der Snapshot fuehrt seitdem
+        # zusaetzlich slides.zeitraum.konfirmation (der echte
+        # Konfirmationstermin, null wenn der Jahrgang keinen hat). Das Feld
+        # kommt hinzu, es verschwindet keines - die Antwortform bleibt
+        # unveraendert.
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: Jahrgang nicht gefunden (fremde Organisation) }
@@ -1260,23 +1451,50 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
 
+  /api/wrapped/teamer:
+    delete:
+      tags: ["Wrapped"]
+      summary: Teamer-Jahresrueckblicke der Organisation löschen
+      description: >
+        Loescht alle Teamer-Snapshots der aktiven Organisation. Seit
+        01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id
+        gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal
+        erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte
+        Zahlen erzeugt hatte.
+
+        Eigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId},
+        weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation.
+        Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der
+        Teamer-Rueckblick kennt keine Freigabe-Markierung.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token"
+      responses:
+        "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
   /api/wrapped/{jahrgangId}:
     delete:
       tags: ["Wrapped"]
       summary: Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen
       description: >
-        Loescht alle Snapshots des Jahrgangs und setzt
+        Loescht die KONFI-Snapshots des Jahrgangs und setzt
         jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die
-        Konfis wieder verschwindet.
+        Konfis wieder verschwindet - und eine erneute Freigabe wieder
+        benachrichtigt.
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, "param('jahrgangId').isInt", handleValidationErrors]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id"
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id + wrapped_type='konfi'"
         hinweis: >
-          # BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und
-          von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des
-          Teamer-Rueckblicks gibt es nicht.
+          Loescht ausdruecklich nur Konfi-Snapshots. Teamer-Snapshots haben
+          kein jahrgang_id und werden hier nicht erfasst - dafuer gibt es seit
+          01.09.2026 DELETE /api/wrapped/teamer (Befund W3, behoben).
       parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }

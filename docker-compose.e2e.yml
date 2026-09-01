@@ -9,6 +9,18 @@ services:
       POSTGRES_DB: postgres
     tmpfs:
       - /var/lib/postgresql/data
+    # Schema beim Start einspielen. Ohne das startete die E2E-Datenbank leer,
+    # das Backend brach mit `relation "events" does not exist` ab und der
+    # ganze Stack kam nie hoch (gefunden 30.08.2026) — die E2E-Specs liefen
+    # deshalb faktisch nie.
+    #
+    # Genommen wird derselbe Produktions-Dump wie in den Backend-Tests
+    # (backend/tests/schema/prod-schema.sql, aktualisierbar mit
+    # backend/tests/schema/refresh-schema.sh). Aus den Migrationen bauen geht
+    # nicht: Die Kette beginnt erst bei 064, mehrere Objekte haben nirgends
+    # ein DDL — wer daraus baut, testet ein Schema, das es so nie gab.
+    volumes:
+      - ./backend/tests/schema/prod-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s

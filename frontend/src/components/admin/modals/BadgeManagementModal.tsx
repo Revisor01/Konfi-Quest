@@ -1,33 +1,7 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonPage,
-  IonButtons,
-  IonButton,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonTextarea,
-  IonSelect,
-  IonSelectOption,
-  IonToggle,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
-  IonIcon,
-  IonText,
-  IonSpinner,
-  IonList,
-  IonListHeader,
-  IonAccordion,
-  IonAccordionGroup,
-  IonRange
-} from '@ionic/react';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonTextarea, IonToggle, IonCard, IonCardContent, IonIcon, IonText, IonSpinner, IonList, IonListHeader, IonAccordion, IonAccordionGroup, IonRange } from '@ionic/react';
 import {
   checkmarkOutline,
   closeOutline,
@@ -44,24 +18,11 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
-import { ICON_CHOICES as BADGE_ICONS, getIconFromString } from '../../../utils/badgeIcons';
+import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
+import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
 
 
-
-interface Badge {
-  id: number;
-  name: string;
-  icon: string;
-  description?: string;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_extra?: string;
-  is_active: boolean;
-  is_hidden: boolean;
-  earned_count: number;
-  created_at: string;
-}
 
 interface Activity {
   id: number;
@@ -73,6 +34,30 @@ interface Activity {
 interface Category {
   id: number;
   name: string;
+}
+
+/**
+ * Ein waehlbarer Kriterientyp aus GET /admin/badges/criteria-types
+ * (CRITERIA_TYPES in backend/routes/badges.js): kurze Bezeichnung, ein Satz
+ * dazu und der ausfuehrliche Hilfetext mit Beispiel.
+ */
+interface KriteriumTyp {
+  label: string;
+  description: string;
+  help: string;
+}
+
+/**
+ * Die Zusatzangaben, WIE SIE IM FORMULAR stehen.
+ *
+ * Bewusst nicht BadgeKriteriumExtra: Das Formular arbeitet mit `weeks`,
+ * gespeichert wird daraus `days` (weeks * 7, siehe handleSubmit).
+ */
+interface ExtraKriteriumFormular {
+  activity_id?: number;
+  activity_ids?: number[];
+  required_category?: string;
+  weeks?: number;
 }
 
 interface BadgeManagementModalProps {
@@ -92,7 +77,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   onSuccess,
   onDirtyChange
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -137,10 +122,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // Available data for dropdowns
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [criteriaTypes, setCriteriaTypes] = useState<any>({});
+  const [criteriaTypes, setCriteriaTypes] = useState<Record<string, KriteriumTyp>>({});
 
   // Additional form fields for complex criteria
-  const [extraCriteria, setExtraCriteria] = useState<any>({});
+  const [extraCriteria, setExtraCriteria] = useState<ExtraKriteriumFormular>({});
 
   const isEditMode = !!badgeId;
 
@@ -192,7 +177,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       if (badge) {
         // Parse extra criteria FIRST (kann doppelt escaped sein: "{\"days\":30}")
-        let extra: any = {};
+        let extra: BadgeKriteriumExtra = {};
         try {
           let parsed = badge.criteria_extra;
           if (typeof parsed === 'string') {
@@ -354,8 +339,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // Speichern legt das Badge mehrfach an.
       onDirtyChange?.(false);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern des Badges');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Speichern des Badges'));
     } finally {
       setLoading(false);
     }
@@ -398,7 +383,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   const renderCriteriaSpecificFields = () => {
     switch (formData.criteria_type) {
-      case 'specific_activity':
+      case 'specific_activity': {
         const selectedActivity = activities.find(a => a.id === extraCriteria.activity_id);
         return (
           <div style={{ marginTop: '16px' }}>
@@ -456,8 +441,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
-      case 'category_activities':
+      case 'category_activities': {
         const selectedCategory = categories.find(c => c.name === extraCriteria.required_category);
         return (
           <div style={{ marginTop: '16px' }}>
@@ -509,6 +495,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
       case 'time_based':
         return (
@@ -529,7 +516,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           </IonItem>
         );
 
-      case 'activity_combination':
+      case 'activity_combination': {
         const selectedActivities = activities.filter(a => (extraCriteria.activity_ids || []).includes(a.id));
         return (
           <div style={{ marginTop: '16px' }}>
@@ -594,6 +581,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
           </div>
         );
+      }
 
       default:
         return null;
@@ -928,7 +916,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         if (value === 'teamer_year' && formData.target_role !== 'teamer') return false;
                         return true;
                       })
-                      .map(([value, type]: [string, any]) => {
+                      .map(([value, type]) => {
                       const isSelected = formData.criteria_type === value;
                       const typColor = getCategoryColor(value);
                       // Remove emojis from label

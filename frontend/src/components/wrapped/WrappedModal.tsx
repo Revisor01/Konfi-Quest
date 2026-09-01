@@ -89,6 +89,24 @@ function getFormulierung(key: string, seed: number): string {
   return variants[seed % variants.length];
 }
 
+/**
+ * Der Konfirmationstermin eines Konfi-Snapshots.
+ *
+ * Ab 01.09.2026 liefert das Backend ihn als eigenes Feld `zeitraum.konfirmation`
+ * (null, wenn der Jahrgang keinen Konfirmations-Termin hat). Vorher wurde
+ * `zeitraum.ende` dafuer verwendet -- das war bei Jahrgaengen ohne Termin das
+ * Ende des Fallback-Zeitraums und damit ein erfundenes Datum.
+ *
+ * Alt-Snapshots (ohne das Feld) fallen weiterhin auf `ende` zurueck, damit
+ * bereits erzeugte Rueckblicke unveraendert aussehen.
+ */
+const konfirmationsTermin = (data: KonfiWrappedData): string | null => {
+  const z = data.slides.zeitraum;
+  if (!z) return null;
+  if ('konfirmation' in z) return z.konfirmation || null;
+  return z.ende || null;
+};
+
 const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear }) => {
   const [data, setData] = useState<KonfiWrappedData | TeamerWrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,7 +161,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
         case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
         case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
-        case 'konfirmation': return { ...base, slideValue: `Konfirmation: ${k.slides.zeitraum?.ende || ''}` };
+        case 'konfirmation': return { ...base, slideValue: `Konfirmation: ${konfirmationsTermin(k) || ''}` };
         case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte über dem Ziel!` };
         case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
         default: return base;
@@ -186,7 +204,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
-      'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfiData.slides.zeitraum.ende} displayName={displayName} />,
+      'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
     };
 
@@ -202,7 +220,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
     const endspurt = konfiData.slides.endspurt;
     const hatKategorien = (konfiData.slides.kategorie?.verteilung?.length || 0) > 0;
-    const hatKonfirmation = !!konfiData.slides.zeitraum?.ende;
+    const hatKonfirmation = !!konfirmationsTermin(konfiData);
 
     if (version >= 2) {
       // --- Version 2: feste Reihenfolge ---
@@ -322,11 +340,17 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     });
     slideIndex++;
 
-    slides.push({
-      key: 'teamer-jahre',
-      content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
-    });
-    slideIndex++;
+    // Nur zeigen, wenn ein Eintrittsdatum hinterlegt ist. Ohne teamer_since
+    // rechnet das Backend 0 und die Seite sagte "0 Jahre als Teamer:in" --
+    // eine Aussage ueber eine fehlende Angabe, nicht ueber die Person
+    // (aufgefallen 01.09.2026 im Rueckblick der Demo-Gemeinde).
+    if (teamerData.slides.engagement.teamer_seit) {
+      slides.push({
+        key: 'teamer-jahre',
+        content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
+      });
+      slideIndex++;
+    }
 
     slides.push({
       key: 'teamer-abschluss',

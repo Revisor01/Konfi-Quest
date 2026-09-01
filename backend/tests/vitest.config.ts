@@ -16,11 +16,19 @@ export default defineConfig({
     setupFiles: ['./tests/setupTests.js'],
     include: ['tests/**/*.test.{js,ts}'],
     env: {
-      // UTC wie in CI und in den Prod-/Staging-Containern: event_date ist eine
-      // naive TIMESTAMP-Spalte — liest der pg-Treiber sie in einer anderen
-      // Prozess-Zeitzone (z.B. Europe/Berlin lokal), verschiebt sich der Wert
-      // beim Roundtrip und der Aenderungs-Vergleich im Events-PUT schlägt an.
-      TZ: 'UTC',
+      // Europe/Berlin wie in den Prod-Containern (portainer-stack.yml,
+      // deploy/compose.konfi_quest.yml). Bis zum 01.09.2026 stand hier 'UTC'
+      // und traf damit die Produktion nur ZUFAELLIG: Die Container liefen
+      // entgegen der Absicht ebenfalls in UTC, weil die Variable TZ im Stack
+      // nur beim Datenbank-Dienst stand. Die Tests konnten die zwei Stunden
+      // Versatz in Push- und E-Mail-Uhrzeiten deshalb nicht sehen.
+      //
+      // Der fruehere Kommentar begruendete UTC damit, event_date sei eine
+      // naive TIMESTAMP-Spalte — das stimmt nicht: In Produktion ist sie
+      // nachgemessen `timestamp with time zone`, und ein timestamptz kommt
+      // durch jeden Roundtrip unabhaengig von der Prozess-Zeitzone unveraendert
+      // zurueck.
+      TZ: 'Europe/Berlin',
       JWT_SECRET: 'test-secret-key-for-vitest',
       QR_SECRET: 'test-qr-secret-for-vitest',
       // 64 Hex-Zeichen (32 Byte) — fester Testschluessel für Medien-Verschluesselung

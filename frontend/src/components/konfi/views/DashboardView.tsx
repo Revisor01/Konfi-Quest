@@ -1,51 +1,26 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonIcon,
-  useIonAlert,
   useIonPopover,
   useIonModal,
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import ActivityRings from '../../admin/views/ActivityRings';
-import {
-  calendar,
-  location,
-  eyeOff,
-  helpCircle,
-  chevronForward,
-  time,
-  timeOutline,
-  eyeOutline,
-  megaphoneOutline,
-  constructOutline,
-  flagOutline
-} from 'ionicons/icons';
-import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
-import {
-  getIconFromString,
-  LevelPopoverContent,
-  DashboardBadgePopoverContent,
-  LevelPopoverData,
-  getGreeting,
-  getFirstName,
-  getInitials,
-  formatTimeUntil,
-  formatEventTime,
-  formatEventDate,
-  getBadgeColor,
-  EventCard,
-  RankingSection,
-  LevelIconsRow,
-  LevelProgress
-} from './DashboardSections';
+import { calendar, location, eyeOff, helpCircle, chevronForward, timeOutline, eyeOutline, megaphoneOutline, constructOutline, flagOutline } from 'ionicons/icons';
+import { AlleAbzeichen, ApiBadge, Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
+import { getIconFromString, LevelPopoverContent, DashboardBadgePopoverContent, LevelPopoverData, DashboardLevel, getGreeting, getFirstName, formatTimeUntil, formatEventTime, formatEventDate, getBadgeColor, EventCard, RankingSection, LevelIconsRow, LevelProgress } from './DashboardSections';
+import { kalendertag } from '../../shared/eventFormatting';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
+import type { KonfiChallenge } from '../../../types/challenges';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { istVergangen } from '../../shared';
 
 interface DashboardData {
   konfi: {
@@ -136,10 +111,6 @@ interface BadgeStats {
   secretEarned: number;
 }
 
-interface AllBadgesData {
-  available: Badge[];
-  earned: Badge[];
-}
 
 interface DashboardConfig {
   show_konfirmation: boolean;
@@ -169,7 +140,7 @@ interface DashboardViewProps {
   // die sie noch setzen.
   dailyVerse?: DailyVerse | null;
   badgeStats: BadgeStats;
-  allBadges: AllBadgesData;
+  allBadges: AlleAbzeichen;
   upcomingEvents: DashboardEvent[];
   targetGottesdienst: number;
   targetGemeinde: number;
@@ -183,7 +154,6 @@ interface DashboardViewProps {
 
 const DashboardView: React.FC<DashboardViewProps> = ({
   dashboardData,
-  dailyVerse,
   badgeStats,
   allBadges,
   upcomingEvents,
@@ -198,7 +168,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const router = useIonRouter();
   const { setError } = useApp();
-  const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
@@ -229,11 +198,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       await api.put('/konfi/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await reloadTageslosung();
-    } catch (err: any) {
+    } catch (err) {
       // Vorher nur console.error: Das Modal schloss, der Text blieb der alte —
       // eine bewusste Auswahl blieb sichtbar folgenlos (Audit 10.08.).
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
-      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
+      setError(fehlerText(err, 'Übersetzung konnte nicht gespeichert werden'));
     }
   };
 
@@ -261,7 +230,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const active = Array.isArray(res.data?.active) ? res.data.active : [];
         setActiveChallenges(
           active
-            .map((c: any) => ({
+            .map((c: KonfiChallenge) => ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
@@ -285,13 +254,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Level Popover via useIonPopover
   const levelPopoverRef = useRef<LevelPopoverData>({ level: null, isReached: false });
-  const [presentLevelPopover, dismissLevelPopover] = useIonPopover(LevelPopoverContent, {
+  const [presentLevelPopover] = useIonPopover(LevelPopoverContent, {
     dataRef: levelPopoverRef
   });
 
   // Badge Popover via useIonPopover
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null, isEarned: false });
-  const [presentBadgePopover, dismissBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
+  const [presentBadgePopover] = useIonPopover(DashboardBadgePopoverContent, {
     dataRef: badgePopoverRef
   });
 
@@ -304,7 +273,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   // zusaetzlich mit 204 ab.
   const losungAktiv = dashboardConfig?.show_losung !== false;
   const { data: gecachteLosung, loading: losungLaedt } = useOfflineQuery<DailyVerse | null>(
-    'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
+    'konfi:tageslosung:' + kalendertag(),
     async () => {
       const response = await api.get('/konfi/tageslosung');
       if (response.data && response.data.success) {
@@ -343,7 +312,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
   const myRegisteredEvents = useMemo(() => upcomingEvents
     .filter(e => e.is_registered || e.booking_status === 'waitlist')
-    .filter(e => new Date(e.event_date || e.date || '') >= new Date())
+    // istVergangen(): laufende mehrtaegige Termine bleiben sichtbar.
+    .filter(e => !istVergangen({ event_date: e.event_date || e.date || '', event_end_time: e.event_end_time }))
     .sort((a, b) => new Date(a.event_date || a.date || '').getTime() - new Date(b.event_date || b.date || '').getTime()),
   [upcomingEvents]);
 
@@ -363,19 +333,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const nextConfirmationEvent = confirmationEvents.length > 0 ? confirmationEvents[0] : null;
 
   // Badge-Berechnungen memoisiert
-  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: Badge) => b.id)), [allBadges.earned]);
+  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: ApiBadge) => b.id)), [allBadges.earned]);
   const recentBadgeIds = useMemo(() => new Set(dashboardData.recent_badges?.map((b: Badge) => b.id) || []), [dashboardData.recent_badges]);
 
   const visibleBadges = useMemo(() => [
-    ...allBadges.earned.filter((b: Badge) => !b.is_hidden),
-    ...allBadges.available.filter((b: Badge) => !earnedIds.has(b.id) && !b.is_hidden)
+    ...allBadges.earned.filter((b: ApiBadge) => !b.is_hidden),
+    ...allBadges.available.filter((b: ApiBadge) => !earnedIds.has(b.id) && !b.is_hidden)
   ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), [allBadges, earnedIds]);
 
-  const secretEarned = useMemo(() => allBadges.earned.filter((b: Badge) => b.is_hidden), [allBadges.earned]);
+  const secretEarned = useMemo(() => allBadges.earned.filter((b: ApiBadge) => b.is_hidden), [allBadges.earned]);
   const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
   const recentSecretCount = useMemo(() =>
-    secretEarned.filter((b: Badge) => recentBadgeIds.has(b.id)).length,
+    secretEarned.filter((b: ApiBadge) => recentBadgeIds.has(b.id)).length,
     [secretEarned, recentBadgeIds]
   );
   const recentVisibleCount = useMemo(() =>
@@ -383,10 +353,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     [dashboardData.recent_badges, recentSecretCount]
   );
 
-  const handleLevelClick = (e: React.MouseEvent, level: any, isReached: boolean) => {
+  const handleLevelClick = (e: React.MouseEvent, level: DashboardLevel, isReached: boolean) => {
     levelPopoverRef.current = { level, isReached };
     presentLevelPopover({
-      event: (e as any).nativeEvent,
+      event: e.nativeEvent,
       side: 'top',
       alignment: 'center'
     });

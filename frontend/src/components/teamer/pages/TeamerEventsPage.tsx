@@ -1,74 +1,28 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonRefresher,
-  IonRefresherContent,
-  IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonButton,
-  IonList,
-  IonListHeader,
-  IonCard,
-  IonCardContent,
-  IonFab,
-  IonFabButton,
-  IonItem,
-  IonItemGroup,
-  IonInput,
-  IonButtons,
-  IonBackButton,
-  useIonModal,
-  useIonAlert,
-  useIonViewWillEnter
-} from '@ionic/react';
+import { useAppLocation } from '../../../navigation/useAppLocation';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonFab, IonFabButton, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
-import { useLocation } from 'react-router-dom';
+
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
-import {
-  calendar,
-  time,
-  location,
-  people,
-  checkmarkCircle,
-  closeCircle,
-  hourglass,
-  calendarOutline,
-  arrowBack,
-  trophy,
-  bagHandle,
-  qrCodeOutline,
-  navigateOutline,
-  informationCircle,
-  informationCircleOutline,
-  closeOutline,
-  pricetag,
-  shieldCheckmark,
-  home,
-  document as documentIcon,
-  attachOutline,
-  search,
-  filterOutline,
-  lockOpenOutline,
-  lockOpen,
-  copy,
-  chatbubbleOutline,
-  personAdd,
-  infinite,
-  add,
-  listOutline,
-  ribbon,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, linkOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+
+/** Ein Eintrag aus GET /material/by-event/:eventId (material.js). */
+interface EventMaterial {
+  id: number;
+  title: string;
+  description?: string | null;
+  created_at: string;
+  created_by_name?: string | null;
+  /** Serverseitig bereits als Zahl geliefert. */
+  file_count: number;
+  /** Gesetzt, wenn das Material einen Link statt Dateien traegt (ab 31.08.2026). */
+  link_url?: string | null;
+}
 import { writeQueue } from '../../../services/writeQueue';
 import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../../shared/WartendeVorgaengeKarte';
@@ -76,9 +30,8 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
-import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import QRDisplayModal from '../../shared/QRDisplayModal';
@@ -89,29 +42,20 @@ import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+// Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
+// RequestDetailModal weiter, und zwei gleichnamige Typen mit
+// unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
+// der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
+import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
 
-interface ActivityRequest {
-  id: number;
-  activity_id: number;
-  activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
-  const routerLocation = useLocation();
+  const routerLocation = useAppLocation();
   const router = useIonRouter();
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
   const [presentAlert] = useIonAlert();
@@ -124,7 +68,7 @@ const TeamerEventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
-  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   const materialIdRef = useRef<number | null>(null);
 
@@ -138,7 +82,6 @@ const TeamerEventsPage: React.FC = () => {
       setMainSegment('events');
     }
   }, [routerLocation.search]);
-
 
   // Offline-Query: Events
   const { data: events, loading, refresh, refreshLive } = useOfflineQuery<Event[]>(
@@ -211,31 +154,6 @@ const TeamerEventsPage: React.FC = () => {
     });
   };
 
-  const getRequestStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getRequestStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Offen';
-      case 'approved': return 'Verbucht';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Unbekannt';
-    }
-  };
-
-  // RequestsView verlangt diese Props, nutzt sie im teamerMode aber NICHT —
-  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitäten nicht. Deshalb
-  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stünde
-  // hier kein falsches "Gemeinde".
-  const getRequestTypeIcon = (_type: string) => ribbon;
-  const getRequestTypeText = (_type: string) => 'Aktivität';
-
   const getFilteredRequests = () => {
     const allRequests = Array.isArray(requests) ? requests : [];
     switch (requestsTab) {
@@ -272,8 +190,8 @@ const TeamerEventsPage: React.FC = () => {
             try {
               await api.delete(`/teamer/requests/${request.id}`);
               refreshRequests();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen der Aktivität');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'));
             }
           }
         }
@@ -289,7 +207,9 @@ const TeamerEventsPage: React.FC = () => {
 
   // Material Detail Modal (useRef für dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
-    get materialId() { return materialIdRef.current; },
+    // Der Ref wird beim Antippen gesetzt (Zeile ~1054), BEVOR das Modal
+    // geoeffnet wird — beim Rendern ist er null, beim Anzeigen nie.
+    get materialId() { return materialIdRef.current as number; },
     onClose: () => dismissMaterialModal()
   });
 
@@ -472,8 +392,8 @@ const TeamerEventsPage: React.FC = () => {
         setSuccess('Wird gesendet, sobald du wieder online bist');
       }
       refreshLive();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Speichern'));
     } finally {
       setBookingLoading(false);
     }
@@ -583,8 +503,8 @@ const TeamerEventsPage: React.FC = () => {
         // spaeter einschraenken koennte.
         setError('Für die Buchung brauchst du eine Verbindung — sonst wüsstest du nicht, ob du einen Platz oder die Warteliste bekommst.');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Buchung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Buchung'));
     } finally {
       setBookingLoading(false);
     }
@@ -613,8 +533,8 @@ const TeamerEventsPage: React.FC = () => {
         });
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Stornieren');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Stornieren'));
     } finally {
       setBookingLoading(false);
     }
@@ -1004,7 +924,7 @@ const TeamerEventsPage: React.FC = () => {
                     <div>
                       <div className="app-info-row__label">Check-in-Fenster</div>
                       <div className="app-info-row__value">
-                        QR-Code {selectedEvent.checkin_window} Min. vor bis {selectedEvent.checkin_window} Min. nach Beginn
+                        QR-Code {selectedEvent.checkin_window} Min. (vor/nach Beginn)
                       </div>
                     </div>
                   </div>
@@ -1054,7 +974,7 @@ const TeamerEventsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
-                  {eventMaterials.map((mat: any) => (
+                  {eventMaterials.map((mat) => (
                     <div
                       key={mat.id}
                       className="app-list-item app-list-item--material"
@@ -1067,15 +987,22 @@ const TeamerEventsPage: React.FC = () => {
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
                           <div className="app-icon-circle app-icon-circle--material">
-                            <IonIcon icon={documentIcon} />
+                            <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                           </div>
                           <div className="app-list-item__content">
                             <div className="app-list-item__title">{mat.title}</div>
                             <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={attachOutline} className="app-icon-color--material" />
-                                {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
-                              </span>
+                              {mat.link_url ? (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={linkOutline} className="app-icon-color--material" />
+                                  Link
+                                </span>
+                              ) : (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={attachOutline} className="app-icon-color--material" />
+                                  {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1301,10 +1228,6 @@ const TeamerEventsPage: React.FC = () => {
               activeTab={requestsTab}
               onTabChange={setRequestsTab}
               formatDate={formatRequestDate}
-              getStatusColor={getRequestStatusColor}
-              getStatusText={getRequestStatusText}
-              getTypeIcon={getRequestTypeIcon}
-              getTypeText={getRequestTypeText}
               teamerMode={true}
               headerSlot={
                 <>
@@ -1360,7 +1283,7 @@ const TeamerEventsPage: React.FC = () => {
             <div className="app-segment-wrapper">
               <IonSegment
                 value={activeTab}
-                onIonChange={(e) => setActiveTab(e.detail.value as any)}
+                onIonChange={(e) => setActiveTab(e.detail.value as 'meine' | 'alle' | 'team')}
               >
                 <IonSegmentButton value="alle">
                   <IonLabel>Alle</IonLabel>

@@ -1,30 +1,12 @@
+import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonRefresher,
-  IonRefresherContent,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonList,
-  IonCard,
-  IonCardContent,
-  useIonModal,
-  useIonActionSheet,
-  useIonAlert,
-  useIonRouter
-} from '@ionic/react';
+import { useAppLocation } from '../../../navigation/useAppLocation';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { useLocation } from 'react-router-dom';
+
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
+import { add, ban } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -40,6 +22,21 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { eventEnde } from '../../shared';
+
+/**
+ * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
+ * Nennt konkret, was beim endgueltigen Löschen verloren geht — die Zahlen
+ * stehen in der zweiten Rueckfrage.
+ */
+interface EventLoeschKonflikt {
+  error?: string;
+  error_code?: string;
+  booking_count?: number;
+  message_count?: number;
+  points_count?: number;
+  points_total?: number;
+  [feld: string]: unknown;
+}
 
 interface ActivityRequest {
   id: number;
@@ -70,7 +67,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const router = useIonRouter();
-  const routerLocation = useLocation();
+  const routerLocation = useAppLocation();
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
@@ -89,7 +86,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     }
   }, [routerLocation.search]);
 
-
   // Offline-Query: Events
   const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
     'admin:events:' + user?.organization_id,
@@ -106,7 +102,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   );
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
+  const { data: jahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -128,7 +124,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // --- Aktivitäten-State ---
-  const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
@@ -155,12 +150,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     requestId: modalRequestId,
     onClose: () => {
       dismissRequestModalHook();
-      setSelectedRequest(null);
       setModalRequestId(null);
     },
     onSuccess: () => {
       dismissRequestModalHook();
-      setSelectedRequest(null);
       setModalRequestId(null);
       refreshRequests();
       // Genehmigen/Ablehnen ändert die Anzahl offener Anträge -> 'requests'
@@ -272,7 +265,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         );
 
         // Show action sheet for series deletion
-        const buttons: any[] = [
+        const buttons: ActionSheetButton[] = [
           {
             text: 'Nur diesen Termin löschen',
             icon: 'trash-outline',
@@ -316,7 +309,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Baut aus der 409-Antwort des Backends die konkrete Verlustliste
   // (Anmeldungen, Chat-Nachrichten, vergebene Punkte).
-  const buildVerlustText = (data: any): string => {
+  const buildVerlustText = (data: EventLoeschKonflikt | undefined): string => {
     const teile: string[] = [];
     const bookings = data?.booking_count || 0;
     const messages = data?.message_count || 0;
@@ -349,11 +342,11 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              if (error.response?.status === 409) {
-                confirmForceDelete(event, error.response.data);
+            } catch (error) {
+              if (fehlerStatus(error) === 409) {
+                confirmForceDelete(event, fehlerDaten(error));
               } else {
-                setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+                setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
             }
           }
@@ -363,7 +356,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   // Zweite, deutliche Rueckfrage nach 409: nennt konkret, was verloren geht.
-  const confirmForceDelete = (event: Event, data: any) => {
+  const confirmForceDelete = (event: Event, data: EventLoeschKonflikt | undefined) => {
     const verluste = buildVerlustText(data);
     presentAlert({
       header: 'Wirklich löschen?',
@@ -381,8 +374,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/events/${event.id}?force=true`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Löschen des Events'));
             }
           }
         }
@@ -411,12 +404,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshEvents();
             await refreshCancelled();
 
-            const konflikte: { event: Event; data: any }[] = [];
+            const konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[] = [];
             const fehler: PromiseRejectedResult[] = [];
             results.forEach((r, i) => {
               if (r.status === 'rejected') {
-                if ((r as PromiseRejectedResult).reason?.response?.status === 409) {
-                  konflikte.push({ event: seriesEvents[i], data: (r as PromiseRejectedResult).reason.response.data });
+                if (fehlerStatus(r.reason) === 409) {
+                  konflikte.push({ event: seriesEvents[i], data: fehlerDaten(r.reason) });
                 } else {
                   fehler.push(r as PromiseRejectedResult);
                 }
@@ -424,7 +417,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             });
 
             if (fehler.length > 0) {
-              const firstError = fehler[0].reason?.response?.data?.error;
+              const firstError = fehlerDaten(fehler[0].reason)?.error;
               setError(
                 `${fehler.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -441,8 +434,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Zweite Rueckfrage für Serien-Termine, die mit 409 geblockt haben:
   // aufsummierte Verluste über alle betroffenen Termine anzeigen.
-  const confirmForceDeleteSeries = (konflikte: { event: Event; data: any }[]) => {
-    const summe = (feld: string) => konflikte.reduce((s, k) => s + (k.data?.[feld] || 0), 0);
+  const confirmForceDeleteSeries = (konflikte: { event: Event; data: EventLoeschKonflikt | undefined }[]) => {
+    const summe = (feld: keyof EventLoeschKonflikt) =>
+      konflikte.reduce((s, k) => {
+        const wert = k.data?.[feld];
+        return s + (typeof wert === 'number' ? wert : 0);
+      }, 0);
     const verluste = buildVerlustText({
       booking_count: summe('booking_count'),
       message_count: summe('message_count'),
@@ -464,7 +461,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             await refreshCancelled();
             const failed = results.filter(r => r.status === 'rejected');
             if (failed.length > 0) {
-              const firstError = (failed[0] as PromiseRejectedResult).reason?.response?.data?.error;
+              const firstError = fehlerDaten((failed[0] as PromiseRejectedResult).reason)?.error;
               setError(
                 `${failed.length} von ${konflikte.length} Terminen konnten nicht gelöscht werden` +
                 (firstError ? `: ${firstError}` : '')
@@ -473,31 +470,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           }
         }
       ]
-    });
-  };
-
-  const handleCopyEvent = (event: Event) => {
-    // Create a copy of the event with modified name and reset dates
-    const eventCopy = {
-      ...event,
-      name: `${event.name} (Kopie)`
-    };
-
-    // Remove properties that shouldn't be copied
-    delete (eventCopy as any).id;
-    delete (eventCopy as any).registered_count;
-    delete (eventCopy as any).registration_status;
-    delete (eventCopy as any).created_at;
-    delete (eventCopy as any).event_date;
-    delete (eventCopy as any).event_end_time;
-    delete (eventCopy as any).registration_opens_at;
-    delete (eventCopy as any).registration_closes_at;
-
-    setEditEvent(eventCopy as Event);
-    presentEventModalHook({
-      presentingElement: presentingElement,
-      canDismiss: eventModalCanDismiss,
-      backdropDismiss: false
     });
   };
 
@@ -527,8 +499,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               setSuccess(`Event "${event.name}" wurde abgesagt`);
               await refreshEvents();
               await refreshCancelled();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Absagen'));
             }
           }
         },
@@ -605,8 +577,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               // hochzaehlen; Punkte werden zurückgenommen -> Konfi-Liste.
               triggerRefresh('requests');
               triggerRefresh('konfis');
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Zurücksetzen der Aktivität');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücksetzen der Aktivität'));
             }
           }
         }
@@ -615,7 +587,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const handleSelectRequest = (request: ActivityRequest) => {
-    setSelectedRequest(request);
     setModalRequestId(request.id);
     presentRequestModalHook({
       presentingElement: presentingElement
@@ -627,7 +598,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const canCreate = canManageEvents;
   const canEdit = canManageEvents;
   const canDelete = canManageEvents;
-  const canCopy = canCreate;
   const canCancel = canEdit;
 
   const isAntraege = mainSegment === 'antraege';
@@ -700,7 +670,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           ) : (
             <ActivityRequestsView
               requests={requests || []}
-              onUpdate={refreshRequests}
               onSelectRequest={handleSelectRequest}
               onResetRequest={handleResetRequest}
               headerSlot={mainSegmentSlot}
@@ -715,12 +684,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               activeTab === 'vergangen' ? applySearch(filterByJahrgang(getVergangenEvents())) :
               applySearch(filterByJahrgang(getAktuellEvents()))
             }
-            onUpdate={refreshEvents}
-            onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
             selectedEventId={selectedEventId}
             onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
-            onCopyEvent={canCopy ? handleCopyEvent : undefined}
             onCancelEvent={canCancel ? handleCancelEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}

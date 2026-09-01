@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n239 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n244 Operationen."
   },
   "servers": [
     {
@@ -1939,7 +1939,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('create')",
+            "userHierarchyMiddleware('create')",
             "validateCreateUser"
           ],
           "org-scope": true,
@@ -1983,7 +1983,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('view')"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
@@ -2067,7 +2067,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('update')",
+            "userHierarchyMiddleware('update')",
             "validateUpdateUser"
           ],
           "org-scope": true,
@@ -2116,7 +2116,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "checkUserHierarchy('delete')",
+            "userHierarchyMiddleware('delete')",
             "validateUserId"
           ],
           "org-scope": true,
@@ -2146,7 +2146,10 @@
             "description": "Array (jahrgang, can_view, can_edit, assigned_by_name)"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Hierarchie: Ziel-Rolle nicht einsehbar (canManageRole)"
+          },
+          "404": {
+            "description": "Ziel-User nicht in eigener Organisation"
           }
         },
         "x-berechtigung": {
@@ -2157,17 +2160,18 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "userHierarchyMiddleware"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgänge auf eigene Org gefiltert; Ziel-User über die Rollenhierarchie (canManageRole): admin darf nur teamer und konfi, org_admin alle Rollen der eigenen Gemeinde. Seit 31.08.2026 (PR #148)"
+          "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle); Jahrgänge auf eigene Org gefiltert",
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin. admin darf die Zuweisungen der von ihm verwalteten Personen (teamer, konfi) sehen — die von anderen Admins und von Org-Admins nicht (403), fremde Organisationen gar nicht (404). requireAdmin allein waere eine Rechteausweitung gewesen; die Grenze zieht checkUserHierarchy.\"\n"
         }
       },
       "post": {
         "tags": [
           "Benutzer & Rollen"
         ],
-        "summary": "Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)",
+        "summary": "Jahrgangs-Zuweisungen setzen (transaktional, Chat-Sync; fuer admin nur die eigenen Jahrgaenge)",
         "parameters": [
           {
             "name": "id",
@@ -2218,10 +2222,13 @@
         },
         "responses": {
           "200": {
-            "description": "Zuweisungen ersetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert"
+            "description": "Zuweisungen gesetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert. assignments_count zaehlt die uebergebenen Zuweisungen (Antwortform unveraendert)"
           },
           "400": {
             "description": "Jahrgang nicht in eigener Org"
+          },
+          "403": {
+            "description": "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole) ODER ein Jahrgang liegt ausserhalb der eigenen Zuweisungen"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -2235,12 +2242,12 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "userHierarchyMiddleware",
+            "userHierarchyMiddleware('update')",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
-          "objekt-pruefung": "User + alle Jahrgang-IDs müssen zur eigenen Org gehören",
-          "hinweis": "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
+          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole(eigene Rolle, Ziel-Rolle); alle Jahrgang-IDs müssen zur eigenen Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder Org-Admins (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden.\"\n"
         }
       }
     },
@@ -2557,6 +2564,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Ziel-User nicht in eigener Organisation"
           }
         },
         "x-berechtigung": {
@@ -2567,7 +2577,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "userHierarchyMiddleware"
+            "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
           "objekt-pruefung": "wie GET /users/{id}/jahrgaenge",
@@ -2600,6 +2610,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Ziel-User nicht in eigener Organisation"
           }
         },
         "x-berechtigung": {
@@ -2610,7 +2623,7 @@
           "middleware": [
             "verifyTokenRBAC",
             "requireAdmin",
-            "userHierarchyMiddleware",
+            "userHierarchyMiddleware('update')",
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
@@ -3516,7 +3529,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Badges mit Fortschritt",
-        "description": "Gemeinsame Berechnung mit der Admin-Sicht (utils/konfiBadgeProgress.js). Der Fortschritt selbst kommt seit 27.08.2026 aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen (Befund N2). Die Antwortform ist unveraendert: {available, earned, stats}. stats.totalVisible/totalSecret zaehlen NUR ERREICHBARE und AKTIVE Abzeichen. Vorher kamen sie aus einer eigenen organisationsweiten Query, die von der Ausblendung unerreichbarer Abzeichen nichts wusste — das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte. Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht.\n",
+        "description": "Gemeinsame Berechnung mit der Admin-Sicht (utils/konfiBadgeProgress.js). Der Fortschritt selbst kommt seit 27.08.2026 aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen (Befund N2). Die Antwortform ist unveraendert: {available, earned, stats}. stats.totalVisible/totalSecret zaehlen NUR ERREICHBARE und AKTIVE Abzeichen. Vorher kamen sie aus einer eigenen organisationsweiten Query, die von der Ausblendung unerreichbarer Abzeichen nichts wusste — das Dashboard nannte dann ein Ziel, das niemand vollmachen konnte. Verdiente Abzeichen bleiben in earned sichtbar, auch wenn sie inzwischen abgeschaltet sind; als offenes Ziel zaehlen sie nicht. Ersetzt durch GET /api/konfi/badges/v2 (31.08.2026), das dieselbe Huelle ohne die Verwaltungsfelder liefert. Diese Route bleibt unveraendert stehen, bis keine App im Store sie mehr ruft — Abrissbedingung und Pruefweg in docs/api/ABRISS.md.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3543,12 +3556,46 @@
         }
       }
     },
+    "/api/konfi/badges/v2": {
+      "get": {
+        "tags": [
+          "Abzeichen"
+        ],
+        "summary": "Eigene Badges mit Fortschritt (Generation v2)",
+        "description": "Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie GET /api/teamer/badges/v2 — { available, earned, stats } —, damit Konfi und Teamer denselben Vertrag haben. Fuer die Konfi-Rolle ist das dieselbe Form wie bisher; angeglichen wurde die Teamer-Seite, die vorher ein Array plus Kopfzeilen lieferte. Gerechnet wird unveraendert in utils/konfiBadgeProgress.js — dieselbe Quelle wie die alte Route und wie die Leitungs-Sicht GET /api/admin/konfis/{id}/badges. So koennen alte und neue Route nicht auseinanderlaufen. Neu ist allein, dass die Verwaltungsfelder wegfallen: created_at, created_by, organization_id und target_role landen auf keinem Bildschirm und kosten rund ein Viertel der Antwortgroesse (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder). Erhalten bleiben criteria_type, criteria_value, criteria_extra, is_active, is_hidden, sort_order und seen — die Ansichten gruppieren, sortieren und filtern danach; `seen` steuert, ob mark-seen ueberhaupt gerufen wird.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "konfi"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "nur eigene Daten"
+        },
+        "responses": {
+          "200": {
+            "description": "{ available, earned, stats }: je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, seen, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — nur erreichbare und aktive Abzeichen."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/api/konfi/badges/stats": {
       "get": {
         "tags": [
           "Abzeichen"
         ],
         "summary": "Eigene Badge-Statistik (total/earned)",
+        "description": "FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026): ersatzlos. Was sie liefert, steckt genauer in GET /api/konfi/badges/v2 (stats bzw. die Laenge von earned) — dort zaehlen unerreichbare Abzeichen nicht mit. Sie hatte nie einen Aufrufer in der Oberflaeche und bleibt nur stehen, weil eine App im Store sie noch rufen koennte. Abrissbedingung und Pruefweg in docs/api/ABRISS.md.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3613,7 +3660,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt.\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3741,6 +3788,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Zeitslots eines Events (Konfi-Sicht)",
+        "description": "Identische Antwort wie GET /api/events/{id}/timeslots. Seit 01.09.2026 rechnen beide Routen ueber utils/terminAnmeldeStatus.js (ladeZeitfenster); vorher lag dieselbe Query zweimal im Code. Unterschied bleibt allein der Rollen-Guard: hier nur Konfis.",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3781,7 +3829,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Für Event anmelden (primaere Konfi-Buchungsroute)",
-        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n",
+        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/events/{id}/book (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (200 mit message, registration_id, status, timeslot_id; kein error_code). Drei Fehler dieser Route sind dabei behoben: Zeitslot-Plaetze wurden ohne Rollen- und ohne deleted_at-Filter gezaehlt (geloeschte Konten belegten Plaetze), der Zeitslot wurde nicht gesperrt (zwei gleichzeitige Anmeldungen konnten denselben letzten Platz bekommen) und die Gemeinde des Zeitslots wurde nicht geprueft (jetzt 400 \"Ungueltiger Zeitslot\").\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3790,7 +3838,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt; nicht teamer_only, nicht cancelled",
+          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled",
           "hinweis": "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
         },
         "parameters": [
@@ -4546,6 +4594,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Zeitslots eines Events (alle Rollen)",
+        "description": "Identische Antwort wie GET /api/konfi/events/{id}/timeslots; beide Routen rechnen seit 01.09.2026 ueber utils/terminAnmeldeStatus.js (ladeZeitfenster). Sortierung nach start_time aufsteigend, Zaehler als Zahlen (nicht Strings).",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4743,7 +4792,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
-        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n",
+        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4846,7 +4895,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer manuell hinzufuegen (Leitung)",
-        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen.\n",
+        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen. Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern einer existiert — angelegt wird dabei keiner. GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz. Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen. Die Antwortform ist unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5685,7 +5734,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
-          "hinweis": "Kein Jahrgangs-Filter: org_admin und admin sehen die Anträge ALLER Jahrgänge der Organisation. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
+          "hinweis": "GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin. org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge; ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in jedem Fall ein Array). Anträge zu Teamer-Aktivitäten (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
         },
         "responses": {
           "200": {
@@ -5724,7 +5773,7 @@
             "validateRequestUpdate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag über JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
+          "objekt-pruefung": "Antrag über JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar. JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 \"Kein Zugriff auf diesen Konfi\"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.\n"
         },
         "parameters": [
           {
@@ -5794,7 +5843,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; nur status=rejected loeschbar"
+          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; nur status=rejected loeschbar. JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 \"Kein Zugriff auf diesen Konfi\"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.\n"
         },
         "parameters": [
           {
@@ -5841,7 +5890,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge ergeben 400"
+          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge ergeben 400. JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 \"Kein Zugriff auf diesen Konfi\"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.\n"
         },
         "parameters": [
           {
@@ -5886,7 +5935,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Vergleich der organization_id des antragstellenden Users mit der eigenen",
+          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Vergleich der organization_id des antragstellenden Users mit der eigenen. JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 \"Kein Zugriff auf diesen Konfi\"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.\n",
           "hinweis": "Bewusst KEIN requireAdmin, sondern ein Inline-Check — die Wirkung ist dieselbe Rollenmenge. Teamer:innen erhalten 403.\n"
         },
         "parameters": [
@@ -5936,7 +5985,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich über den antragstellenden User"
+          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich über den antragstellenden User. JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 \"Kein Zugriff auf diesen Konfi\"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.\n"
         },
         "parameters": [
           {
@@ -5981,7 +6030,7 @@
             "validateAssignActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivität UND Ziel-User müssen zur eigenen Organisation gehören (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit can_view liegen.\n"
+          "objekt-pruefung": "Aktivität UND Ziel-User müssen zur eigenen Organisation gehören (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Zusaetzlich muss der Jahrgang des Konfis in assigned_jahrgaenge mit can_view liegen — fuer Teamer:innen und, seit 2026-08-31, auch fuer die Rolle admin (403 \"Kein Zugriff auf diesen Konfi\"). org_admin/super_admin sind ausgenommen. Bei Aktivitäten mit target_role='teamer' entfaellt die Jahrgangs-Pruefung, weil die Zielperson keine Konfi ist.\n"
         },
         "requestBody": {
           "required": true,
@@ -6083,8 +6132,8 @@
             "validateCreateKonfi"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehören; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit",
-          "hinweis": "Teamer:innen können keine Konfis anlegen (requireAdmin).\n"
+          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehören; seit 31.08.2026 zusaetzlich zu den Jahrgaengen des Aufrufers (assigned_jahrgaenge mit can_edit) — sonst 403. org_admin und super_admin ausgenommen. Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit\n",
+          "hinweis": "Teamer:innen können keine Konfis anlegen (requireAdmin). BEHOBEN 31.08.2026: Vorher prüfte die Route nur die Organisation. Ein admin konnte damit Konfis in jeden Jahrgang der Gemeinde anlegen — und sah sie danach nicht mehr, weil die Liste sie ausblendet.\n"
         },
         "requestBody": {
           "required": true,
@@ -6174,6 +6223,43 @@
         }
       }
     },
+    "/api/admin/konfis/leitung": {
+      "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
+        "summary": "Liste der Leitung (Admins/Org-Admins) der Organisation",
+        "description": "Liefert alle User mit Rolle admin oder org_admin der aktiven Organisation. Zweck ist die Auswahl beim Zuordnen der Leitung zu einem Termin (POST /api/events/{id}/participants) — wer zugeordnet ist, kommt in den Chat zum Termin. Neu am 31.08.2026. Eigene Route statt eines Filters an /konfis/teamer: Deren Antwortform ist ein Vertrag der ausgelieferten Apps und bleibt unveraendert.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE r.name IN ('admin','org_admin') AND u.organization_id = Token-Org AND deleted_at IS NULL",
+          "hinweis": "Kein Jahrgangs-Filter (wie bei /konfis/teamer). Es werden keine Login-Daten ausser dem username ausgeliefert. Super-Admins ohne org_admin-Rolle stehen nicht in der Liste.\n"
+        },
+        "responses": {
+          "200": {
+            "description": "Array (id, name, username, role_name)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/api/admin/konfis/{id}": {
       "get": {
         "tags": [
@@ -6235,7 +6321,7 @@
             "validateUpdateKonfi"
           ],
           "org-scope": true,
-          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org; zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe Organisation (400 bei fremdem oder unbekanntem Jahrgang)\"\n"
+          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org; zusaetzlich seit 27.08.2026 der ZIEL-JAHRGANG gegen dieselbe Organisation (400 bei fremdem oder unbekanntem Jahrgang); BEHOBEN 31.08.2026: fuer admin muessen QUELL- UND ZIEL-Jahrgang in seinen eigenen Zuweisungen liegen (can_edit), sonst 403. org_admin und super_admin ausgenommen\"\n"
         },
         "parameters": [
           {
@@ -6519,8 +6605,8 @@
             "validateBonusPoints"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang; fuer Teamer:innen zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi",
-          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre zugewiesenen Jahrgaenge begrenzt (403 \"Kein Zugriff auf diesen Konfi\") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt, was zu assign-activity und zum Handbuch inkonsistent war. Die Leitung (admin/org_admin) bleibt org-weit berechtigt.\n"
+          "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang; zusaetzlich Jahrgangs-Zugriff auf die Ziel-Konfi fuer teamer UND admin (darfKonfi aus backend/utils/jahrgangsZugriff.js).\n",
+          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Teamer:innen sind seit 27.08.2026 auf ihre zugewiesenen Jahrgaenge begrenzt (403 \"Kein Zugriff auf diesen Konfi\") — vorher fand kein Jahrgangs-Check auf die Ziel-ID statt, was zu assign-activity und zum Handbuch inkonsistent war. GEAENDERT 2026-08-31: Dieselbe Grenze gilt jetzt auch fuer die Rolle admin (Simons Regel: ein Admin ist an seine Jahrgaenge gebunden). Nur org_admin/super_admin bleiben org-weit berechtigt.\n"
         },
         "parameters": [
           {
@@ -7125,7 +7211,7 @@
           "Chat"
         ],
         "summary": "Chat-Raum erstellen (group/direct/jahrgang)",
-        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt (409, wenn der Jahrgangs-Chat schon existiert). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\n",
+        "description": "Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei type='jahrgang' werden alle Konfis des Jahrgangs automatisch hinzugefuegt. Existiert der Jahrgangs-Chat schon, ist der Aufruf ein Beitritt: der vorhandene Raum kommt mit created=false zurueck und fehlende Konfis werden nachgetragen (BEHOBEN 30.08.2026 — vorher 409, wodurch spaeter angelegte Konfis nie in den Jahrgangschat kamen). participants werden org-gescopt validiert, user_type serverseitig aus der Rolle abgeleitet.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7170,7 +7256,7 @@
         },
         "responses": {
           "200": {
-            "description": "Raum erstellt",
+            "description": "Raum erstellt (created=true) oder bestehender Jahrgangs-Chat beigetreten (created=false)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7180,8 +7266,7 @@
                       "type": "integer"
                     },
                     "created": {
-                      "type": "boolean",
-                      "const": true
+                      "type": "boolean"
                     }
                   }
                 }
@@ -7194,9 +7279,6 @@
           },
           "403": {
             "description": "Konfi mit type != direct ODER Jahrgang nicht in eigener Org"
-          },
-          "409": {
-            "description": "Jahrgangs-Chat existiert bereits"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8503,7 +8585,7 @@
           "Challenges (Konfis)"
         ],
         "summary": "Aktive Challenges, Archiv und eigene Abzeichen",
-        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').\n",
+        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); admin/teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team'). GEAENDERT 2026-08-31: admin ist an seine Jahrgangs-Zuweisungen gebunden (vorher org-weit wie org_admin).\n",
         "responses": {
           "200": {
             "description": "Gruppierte Challenge-Listen",
@@ -8638,7 +8720,7 @@
             "rbacVerifier"
           ],
           "org-scope": true,
-          "objekt-pruefung": "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer",
+          "objekt-pruefung": "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; admin/teamer -> zugewiesener Jahrgang oder 'nur_team'; org_admin immer (geaendert 2026-08-31: admin jahrgangs-gebunden)",
           "hinweis": "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
         }
       }
@@ -8853,7 +8935,7 @@
             "manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
+          "objekt-pruefung": "Owner immer; org_admin org-weit; admin/teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge (admin seit 2026-08-31 ebenfalls jahrgangs-gebunden); konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
         }
       }
     },
@@ -8863,7 +8945,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Moegliche Urheber:innen einer Challenge",
-        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge; Team-Mitglieder sehen sie immer.\n",
+        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). admin und teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge (admin seit 2026-08-31, vorher org-weit), org_admin alle; Team-Mitglieder sehen sie immer.\n",
         "responses": {
           "200": {
             "description": "Liste (id, display_name, role_name), Konfis zuletzt",
@@ -8913,7 +8995,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
+          "objekt-pruefung": "Konfi-Eintraege auf die zugewiesenen Jahrgänge von admin bzw. teamer gefiltert (org_admin ungefiltert)"
         }
       }
     },
@@ -8923,7 +9005,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
-        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.\n",
+        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. admin und teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste. org_admin sieht alle Challenges der Org. GEAENDERT 2026-08-31: admin war vorher org-weit.\n",
         "responses": {
           "200": {
             "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)"
@@ -8946,7 +9028,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit"
+          "objekt-pruefung": "admin und teamer: Jahrgangs-Filter via viewableJahrgangIds (leere Liste -> leere Antwort); org_admin org-weit. Geaendert 2026-08-31: admin war vorher org-weit."
         }
       },
       "post": {
@@ -8954,7 +9036,7 @@
           "Challenges (Leitung)"
         ],
         "summary": "Challenge anlegen (Entwurf oder geplant)",
-        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen; Jahrgänge und Urheber werden org-gescopt validiert.\n",
+        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. admin und teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen (admin seit 2026-08-31), org_admin alle; Jahrgänge und Urheber werden org-gescopt validiert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -9079,7 +9161,7 @@
             "description": "Validierungsfehler / Ende vor Start / Urheber nicht gefunden"
           },
           "403": {
-            "description": "requireTeamer ODER fremde Jahrgaenge ODER Teamer ohne Zugriff auf gewaehlten Jahrgang"
+            "description": "requireTeamer ODER fremde Jahrgaenge ODER admin/teamer ohne Zugriff auf gewaehlten Jahrgang"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -9097,7 +9179,7 @@
             "validateCreate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
+          "objekt-pruefung": "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
         }
       }
     },
@@ -9163,7 +9245,7 @@
             "validateUpdate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
+          "objekt-pruefung": "leadershipMayAccess: org_admin immer; admin/teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit (admin seit 2026-08-31 jahrgangs-gebunden)"
         }
       },
       "delete": {
@@ -9963,7 +10045,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigene Punkte-Historie aus der Konfi-Zeit",
-        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.\n",
+        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles. Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation gefiltert (Befund M1, behoben): Der organization_id-Filter stand vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in backend/utils/punkteHistorie.js, von beiden Routen genutzt. Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9998,7 +10080,7 @@
           "Abzeichen"
         ],
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt",
-        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Seit 27.08.2026 (Befund N2): Der Fortschritt kommt aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen. Zwei Verhaltensaenderungen: (1) Abzeichen ohne hinterlegte Bedingung (specific_activity ohne required_activity_name, category_activities ohne required_category, activity_combination ohne required_activities, oder unlesbares criteria_extra) werden nicht mehr ausgeliefert — sie sind unerreichbar, weil die Wertung genau dieses Feld prueft. Verdiente Abzeichen bleiben immer sichtbar. Konfis hatten diese Ausblendung bereits. (2) Die Gesamtzahlen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also je nach Rolle etwas anderes. Seit 28.08.2026 (Handoff-Punkt 12, BEHOBEN): Die Antwortform ist an GET /konfi/badges angeglichen — { available, earned, stats } statt flachem Array plus Zaehlern in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total. Die Kopfzeilen entfallen: Die Sichtbar-Zahl las keine Ansicht, die Geheim-Zahl steht jetzt als stats.totalSecret im Rumpf (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen). Jedes Abzeichen traegt earned, earned_at, unreachable und progress ({ current, target, percentage }; percentage ungerundet wie beim Konfi). Neu dabei: Unerreichbare Abzeichen zaehlen auch in stats nicht mehr mit — wie beim Konfi seit 27.08.2026.\n",
+        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Seit 27.08.2026 (Befund N2): Der Fortschritt kommt aus dem gemeinsamen Rechenkern utils/badgeProgress.js, den sich Konfi- und Teamer-Pfad teilen. Zwei Verhaltensaenderungen: (1) Abzeichen ohne hinterlegte Bedingung (specific_activity ohne required_activity_name, category_activities ohne required_category, activity_combination ohne required_activities, oder unlesbares criteria_extra) werden nicht mehr ausgeliefert — sie sind unerreichbar, weil die Wertung genau dieses Feld prueft. Verdiente Abzeichen bleiben immer sichtbar. Konfis hatten diese Ausblendung bereits. (2) Die Gesamtzahlen zaehlen nur noch AKTIVE Abzeichen. Vorher zaehlten auch abgeschaltete mit, sofern verdient — dieselbe Zahl bedeutete also je nach Rolle etwas anderes. ACHTUNG, ANTWORTFORM: Diese Route liefert ein ARRAY plus die Zaehler in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total. Am 28.08.2026 wurde sie auf die Konfi-Form { available, earned, stats } umgestellt und am 29.08.2026 zurueckgenommen: Die ausgelieferten Apps (iOS 2.0.0 / Android versionCode 81) rufen auf der Antwort .filter() auf — auf einem Objekt ein TypeError, das Teamer-Dashboard stuerzte sofort nach dem Login ab. Diese Route bleibt deshalb unveraendert. Die Angleichung an den Konfi-Pfad steht seit 31.08.2026 in GET /api/teamer/badges/v2. Diese Route hier faellt weg, sobald keine App im Store sie mehr ruft — Bedingung und Pruefweg in docs/api/ABRISS.md. Jedes Abzeichen traegt earned, earned_at, unreachable und progress ({ current, target, percentage }; percentage ungerundet wie beim Konfi). Unerreichbare Abzeichen zaehlen in den Kopfzeilen nicht mit — wie beim Konfi seit 27.08.2026.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10013,7 +10095,56 @@
         },
         "responses": {
           "200": {
-            "description": "{ available, earned, stats } wie bei GET /konfi/badges: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen. Die frueheren Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total entfallen seit 28.08.2026."
+            "description": "ARRAY der anzeigbaren Abzeichen (nicht geheim ODER verdient; und verdient ODER erreichbar). Je Abzeichen custom_badges.* + earned, earned_at, unreachable, progress { current, target, percentage }. Die Zaehler stehen in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-Total und zaehlen nur aktive, erreichbare Abzeichen.",
+            "headers": {
+              "X-Badges-Secret-Total": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Anzahl aktiver, erreichbarer GEHEIMER Abzeichen"
+              },
+              "X-Badges-Visible-Total": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Anzahl aktiver, erreichbarer sichtbarer Abzeichen"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Aufrufer ist kein Teamer"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/api/teamer/badges/v2": {
+      "get": {
+        "tags": [
+          "Abzeichen"
+        ],
+        "summary": "Eigene Teamer-Abzeichen mit Fortschritt (Generation v2)",
+        "description": "Abzeichen-Generation v2 (31.08.2026). Gleiche Huelle wie GET /api/konfi/badges/v2 — { available, earned, stats } —, damit Konfi und Teamer denselben Vertrag haben: dieselben Feldnamen, dieselbe Semantik, die Zaehler im RUMPF statt in Kopfzeilen (der App-Zwischenspeicher sichert nur Daten, keine Kopfzeilen). Gerechnet wird in utils/teamerBadgeProgress.js — dieselbe Quelle wie die alte Route GET /api/teamer/badges, die nur anders verpackt. So koennen alte und neue Route nicht auseinanderlaufen. Gegenueber der alten Route fehlen die Verwaltungsfelder created_at, created_by, organization_id und target_role: Sie landen auf keinem Bildschirm und kosten rund ein Viertel der Antwortgroesse (gemessen: 27 Abzeichen = 13,4 kB, davon ~3,3 kB Verwaltungsfelder). Erhalten bleiben criteria_type, criteria_value, criteria_extra, is_active, is_hidden und sort_order — die Ansichten gruppieren, sortieren und filtern danach.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "Inline-Check role_name === 'teamer'"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+        },
+        "responses": {
+          "200": {
+            "description": "{ available, earned, stats }: available = offene, erreichbare, nicht geheime Abzeichen; earned = alle verdienten (auch geheime und abgeschaltete); je Abzeichen id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, is_active, sort_order, earned, earned_at, unreachable, progress { current, target, percentage }. stats = { totalVisible, totalSecret } — gezaehlt werden nur aktive, erreichbare Abzeichen."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -10044,7 +10175,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene user_badges (user_id + organization_id)",
-          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis können darin auch alte Konfi-Abzeichen stecken. Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler kommt aus newBadges in GET /api/notifications/badge-counts, das korrekt auf target_role filtert. Der Endpunkt bleibt vorerst fuer ausgelieferte App-Versionen bestehen; ueber seine Abschaffung ist noch nicht entschieden.\n"
+          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis können darin auch alte Konfi-Abzeichen stecken. Seit 27.08.2026 vom Web-Frontend NICHT mehr aufgerufen: Der Zaehler kommt aus newBadges in GET /api/notifications/badge-counts, das korrekt auf target_role filtert. FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026): ersatzlos, der Zaehler kommt aus badge-counts. Der Endpunkt bleibt nur stehen, weil eine App im Store ihn noch rufen koennte — Abrissbedingung und Pruefweg in docs/api/ABRISS.md.\n"
         },
         "responses": {
           "200": {
@@ -10067,7 +10198,41 @@
         "tags": [
           "Abzeichen"
         ],
-        "summary": "Eigene Abzeichen als gesehen markieren",
+        "summary": "Eigene Abzeichen als gesehen markieren (alte Generation)",
+        "description": "ALTE GENERATION: PUT, waehrend der Konfi-Pfad seit jeher POST nutzt — dieselbe Handlung, zwei Verben. In v2 ist das aufgeloest: dieselbe Route als POST (siehe unten). Diese Variante bleibt unveraendert, bis keine App im Store sie mehr ruft (docs/api/ABRISS.md).\n",
+        "x-berechtigung": {
+          "rollen": [
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "Inline-Check role_name === 'teamer'"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "UPDATE nur auf eigene user_badges (user_id + organization_id)"
+        },
+        "responses": {
+          "200": {
+            "description": "Abzeichen als gesehen markiert"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Aufrufer ist kein Teamer"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Abzeichen"
+        ],
+        "summary": "Eigene Abzeichen als gesehen markieren (Generation v2)",
+        "description": "Verb-Angleichung an den Konfi-Pfad (31.08.2026). POST statt PUT, weil hier weder eine adressierte Ressource noch ein mitgeschickter Zustand vorliegt, sondern eine Handlung auf einer Menge eigener Datensaetze — genau dafuer ist POST da. Wirkung identisch zur PUT-Variante: beide rufen dasselbe UPDATE (eine Quelle in routes/teamer.js).\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10790,7 +10955,7 @@
           "Teamer:innen"
         ],
         "summary": "Neuen Teamer-Antrag einreichen",
-        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine In-App-Mitteilung UND eine Push-Nachricht an die gesamte Leitung (Rollen admin und org_admin) sowie ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis 26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung (Befund M6, behoben).\n",
+        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine In-App-Mitteilung UND eine Push-Nachricht an die gesamte Leitung (Rollen admin und org_admin) sowie ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis 26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung (Befund M6, behoben). Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3, behoben). Der Konfi-Pfad hatte diesen Schutz seit jeher; beide nutzen jetzt backend/utils/antragIdempotenz.js. Antwortformen unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10938,7 +11103,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke für Teamer:innen",
-          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Seit dem 31.08.2026 zusaetzlich: Material mit ist_global = true sehen alle Teamer:innen der Gemeinde, unabhaengig von den zugeordneten Jahrgaengen. Leitung (admin, org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
         },
         "parameters": [
           {
@@ -10980,7 +11145,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array (id, title, description, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])"
+            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11010,7 +11175,8 @@
             "validateCreateMaterial"
           ],
           "org-scope": true,
-          "objekt-pruefung": "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token"
+          "objekt-pruefung": "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token; ist_global nur für org_admin (403 sonst)",
+          "hinweis": "Feld-Pruefung seit 31.08.2026: ist_global = true darf nur die Rolle org_admin setzen. Ein 'admin' bekommt 403 und es entsteht KEIN Material. Die Route bleibt bewusst auf requireAdmin, damit ein 'admin' normales Material weiterhin anlegen kann.\n"
         },
         "requestBody": {
           "required": true,
@@ -11047,6 +11213,19 @@
                     "items": {
                       "type": "integer"
                     }
+                  },
+                  "ist_global": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Material für ALLE Teamer:innen der Gemeinde freigeben (seit 31.08.2026), unabhängig von den zugeordneten Jahrgängen. Nur die Rolle org_admin darf das Feld auf true setzen; ein 'admin' bekommt 403. Ohne Angabe entsteht das Material nicht global. Konfis sehen Material grundsätzlich nicht (requireTeamer).\n"
+                  },
+                  "link_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000,
+                    "description": "Optionaler Link statt Dateien (seit 31.08.2026). Nur http und https; geprueft wird das Schema ueber new URL(), alles andere (javascript:, data:, file:, ftp:, schemalose Adressen) gibt 400. Leerstring oder null bedeutet \"kein Link\". Umgebende Leerzeichen werden abgeschnitten.\n"
                   }
                 }
               }
@@ -11055,16 +11234,16 @@
         },
         "responses": {
           "201": {
-            "description": "id, title, description, created_at"
+            "description": "id, title, description, link_url, ist_global, created_at"
           },
           "400": {
-            "description": "Titel fehlt oder mindestens eine ID gehoert zu einer fremden Organisation"
+            "description": "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle nicht berechtigt, oder ist_global = true ohne die Rolle org_admin"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -11090,7 +11269,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste",
-          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
+          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -11106,7 +11285,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array (id, title, description, created_at, created_by_name, file_count)"
+            "description": "Array (id, title, description, link_url, ist_global, created_at, created_by_name, file_count)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11138,7 +11317,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Material org-gescopt (404 sonst)",
-          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
+          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle Teamer:innen der Gemeinde; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -11147,7 +11326,7 @@
         ],
         "responses": {
           "200": {
-            "description": "id, title, description, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)"
+            "description": "id, title, description, link_url, ist_global, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11168,7 +11347,7 @@
           "Material"
         ],
         "summary": "Material bearbeiten",
-        "description": "Teilaktualisierung von Titel und Beschreibung. Werden event_ids, jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder bleiben unverändert. Alle IDs werden gegen die eigene Organisation geprüft.\n",
+        "description": "Teilaktualisierung von Titel, Beschreibung und Link. Werden event_ids, jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder bleiben unverändert. Alle IDs werden gegen die eigene Organisation geprüft.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11180,7 +11359,8 @@
             "validateUpdateMaterial"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst)"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)",
+          "hinweis": "Feld-Pruefung seit 31.08.2026: Sowohl das Setzen (false -> true) als auch das Entziehen (true -> false) von ist_global ist der Rolle org_admin vorbehalten; ein 'admin' bekommt 403 und das Flag bleibt unveraendert. Schickt ein 'admin' den unveraenderten Wert mit (das Formular sendet ihn immer mit), geht die Anfrage durch -- er darf globales Material inhaltlich weiterhin bearbeiten.\n"
         },
         "parameters": [
           {
@@ -11219,6 +11399,18 @@
                     "items": {
                       "type": "integer"
                     }
+                  },
+                  "ist_global": {
+                    "type": "boolean",
+                    "description": "Freigabe für ALLE Teamer:innen der Gemeinde (seit 31.08.2026). Setzen UND Entziehen sind der Rolle org_admin vorbehalten, sonst 403. Wird das Feld gar nicht uebergeben, bleibt die gespeicherte Freigabe unveraendert.\n"
+                  },
+                  "link_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000,
+                    "description": "Link statt Dateien (seit 31.08.2026). Nur http und https, sonst 400. Leerstring oder null entfernt einen gesetzten Link wieder; wird das Feld gar nicht uebergeben, bleibt der gespeicherte Link unveraendert.\n"
                   }
                 }
               }
@@ -11230,13 +11422,13 @@
             "description": "Aktualisiert"
           },
           "400": {
-            "description": "Mindestens eine ID gehoert zu einer fremden Organisation"
+            "description": "Der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle nicht berechtigt, oder Änderung von ist_global ohne die Rolle org_admin"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -11509,7 +11701,7 @@
           "Wrapped"
         ],
         "summary": "Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben",
-        "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\n",
+        "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel und setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\nDie Push-Nachricht geht nur bei der ERSTEN Freigabe raus (seit 01.09.2026, Befund W-D): War wrapped_released_at bereits gesetzt, gilt der Lauf als Korrektur und benachrichtigt nicht erneut - sonst bekam der ganze Jahrgang ein zweites Mal \"Dein Konfi-Jahr ist da!\", nur weil jemand eine Zahl richtiggestellt hat. Das Antwortfeld `benachrichtigt` sagt, welcher Fall eingetreten ist. Nach DELETE /api/wrapped/{jahrgangId} (setzt die Marke auf NULL) benachrichtigt eine erneute Freigabe wieder.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11587,13 +11779,47 @@
         }
       }
     },
+    "/api/wrapped/teamer": {
+      "delete": {
+        "tags": [
+          "Wrapped"
+        ],
+        "summary": "Teamer-Jahresrueckblicke der Organisation löschen",
+        "description": "Loescht alle Teamer-Snapshots der aktiven Organisation. Seit 01.09.2026 (Befund W3): Teamer-Snapshots werden ohne jahrgang_id gespeichert und waren ueber den Jahrgangs-Weg nie erreichbar - einmal erzeugt, blieben sie fuer immer stehen, auch wenn der Lauf fehlerhafte Zahlen erzeugt hatte.\nEigene Route statt Erweiterung von DELETE /api/wrapped/{jahrgangId}, weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation. Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der Teamer-Rueckblick kennt keine Freigabe-Markierung.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "DELETE mit wrapped_type='teamer' + organization_id aus dem Token"
+        },
+        "responses": {
+          "200": {
+            "description": "message, deleted (Anzahl geloeschter Snapshots)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/api/wrapped/{jahrgangId}": {
       "delete": {
         "tags": [
           "Wrapped"
         ],
         "summary": "Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen",
-        "description": "Loescht alle Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet.\n",
+        "description": "Loescht die KONFI-Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet - und eine erneute Freigabe wieder benachrichtigt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -11605,8 +11831,8 @@
             "handleValidationErrors"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id",
-          "hinweis": "# BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des Teamer-Rueckblicks gibt es nicht.\n"
+          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id + wrapped_type='konfi'",
+          "hinweis": "Loescht ausdruecklich nur Konfi-Snapshots. Teamer-Snapshots haben kein jahrgang_id und werden hier nicht erfasst - dafuer gibt es seit 01.09.2026 DELETE /api/wrapped/teamer (Befund W3, behoben).\n"
         },
         "parameters": [
           {
@@ -13157,13 +13383,13 @@
         "summary": "Alle Rollen der eigenen Organisation mit Nutzer-Zähler",
         "responses": {
           "200": {
-            "description": "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi"
+            "description": "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi. Fuer die Rolle admin auf die verwaltbaren Rollen (teamer, konfi) eingeschraenkt."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Rolle weder super_admin, org_admin noch admin"
+            "description": "Rolle nicht in [super_admin, org_admin, admin]"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -13179,9 +13405,9 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id",
+          "objekt-pruefung": "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id; danach filterRolesByHierarchy fuer admin",
           "seit": "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403.",
-          "hinweis": "Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
+          "hinweis": "GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl hier holt. Die Antwort wird fuer admin per filterRolesByHierarchy auf die Rollen reduziert, die canManageRole ihm erlaubt (teamer, konfi) — sonst boete der Dialog Rollen an, die POST /users danach mit 403 zurueckweist. super_admin und org_admin bekommen weiterhin alle Rollen der Organisation samt Nutzer-Zaehlern. Die Antwortform bleibt ein Array. Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
         }
       }
     },

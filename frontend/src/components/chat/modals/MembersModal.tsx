@@ -41,7 +41,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { ChatUser } from '../../../types/user';
+import { AdminUser, ChatUser } from '../../../types/user';
+import { EigenerJahrgang, KonfiEintrag } from '../../../types/chat';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istTeamTyp } from '../../../utils/chatRoles';
@@ -115,32 +116,41 @@ const MembersModal: React.FC<MembersModalProps> = ({
     try {
       const [konfisRes, userJahrgangRes, adminsRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] })),
-        api.get('/admin/users').catch(() => ({ data: [] }))
+        // /users statt /admin/users: createApp.js haengt denselben Router
+        // unter beiden Praefixen ein (:480 und :483). Die Oberflaeche nutzt
+        // durchgaengig /users; der zweite Mount bleibt nur fuer ausgelieferte
+        // Apps stehen (docs/api/ABRISS.md, Abschnitt D).
+        api.get('/users/me/jahrgaenge').catch(() => ({ data: [] })),
+        api.get('/users').catch(() => ({ data: [] }))
       ]);
 
       // Jahrgangs-Filter wie SimpleCreateChatModal
       let allowedJahrgangIds: number[] = [];
-      if (userJahrgangRes.data.length > 0) {
-        allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id ?? j.id);
+      const eigeneJahrgaenge = userJahrgangRes.data as EigenerJahrgang[];
+      if (eigeneJahrgaenge.length > 0) {
+        allowedJahrgangIds = eigeneJahrgaenge.map((j) => j.id);
       }
 
-      const konfis: ChatUser[] = konfisRes.data
-        .filter((konfi: any) => {
+      // GET /admin/konfis liefert den Jahrgang nur als jahrgang_name; der
+      // frühere Fallback auf konfi.jahrgang griff nie.
+      const konfis: ChatUser[] = (konfisRes.data as KonfiEintrag[])
+        .filter((konfi) => {
           if (allowedJahrgangIds.length > 0) {
-            return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
+            return Boolean(konfi.jahrgang_id) && allowedJahrgangIds.includes(konfi.jahrgang_id as number);
           }
           return true;
         })
-        .map((konfi: any) => ({
+        .map((konfi) => ({
           ...konfi,
           type: 'konfi' as const,
-          jahrgang_name: konfi.jahrgang_name || konfi.jahrgang
+          jahrgang_name: konfi.jahrgang_name ?? undefined
         }));
 
-      const adminUsers: ChatUser[] = adminsRes.data
-        .filter((u: any) => u.role_name !== 'konfi')
-        .map((admin: any) => ({
+      // GET /users schliesst Konfis bereits serverseitig aus
+      // (WHERE r.name NOT IN ('konfi', 'super_admin')).
+      const adminUsers: ChatUser[] = (adminsRes.data as AdminUser[])
+        .filter((u) => u.role_name !== 'konfi')
+        .map((admin) => ({
           ...admin,
           type: 'admin' as const,
           role_description: admin.role_title || admin.role_display_name

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   IonHeader,
@@ -26,32 +27,10 @@ import {
   useIonActionSheet,
   useIonModal
 } from '@ionic/react';
-import {
-  closeOutline,
-  createOutline,
-  flag,
-  shareOutline,
-  addOutline,
-  personOutline,
-  checkmarkCircleOutline,
-  eyeOffOutline,
-  eyeOutline,
-  documentTextOutline,
-  linkOutline,
-  imageOutline,
-  micOutline,
-  videocamOutline,
-  albumsOutline,
-  timeOutline,
-  checkmarkOutline,
-  lockClosedOutline,
-  removeCircleOutline,
-  chatbubbleEllipsesOutline,
-  trashOutline
-} from 'ionicons/icons';
+import { closeOutline, createOutline, flag, shareOutline, addOutline, personOutline, checkmarkCircleOutline, eyeOffOutline, eyeOutline, documentTextOutline, linkOutline, imageOutline, micOutline, videocamOutline, albumsOutline, timeOutline, checkmarkOutline, lockClosedOutline, removeCircleOutline, trashOutline } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
@@ -297,13 +276,15 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       // den Konfi-Namen aus display_name normalisieren.
       const raw = Array.isArray(res.data) ? res.data : (res.data?.submissions || []);
       setSubmissions(
-        raw.map((row: any) => ({
+        // display_name ist die Altform des Namensfeldes — deshalb hier
+        // zusaetzlich zum Typ des Beitrags aufgefuehrt.
+        raw.map((row: ChallengeSubmission & { display_name?: string | null }) => ({
           ...row,
           konfi_name: row.konfi_name ?? row.display_name ?? null
         }))
       );
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Laden der Beiträge');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Laden der Beiträge'));
     } finally {
       setLoading(false);
     }
@@ -365,7 +346,15 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
     // Ohne Freigabe-Pflicht bleiben nur zwei Kacheln — die Gesamtzahl fuellt
     // auf und beantwortet zugleich "wie viele Beitraege sind es insgesamt".
-    if (stats.length < 3) stats.splice(1, 0, { value: counts.total, label: 'Beiträge' });
+    // Einzahl korrekt: bei genau einem Beitrag hiess die Kachel "1 Beiträge"
+    // (User-Hinweis). Der Helfer entscheidet, das Label traegt nur das Wort —
+    // die Zahl steht schon als Kachelwert darueber.
+    if (stats.length < 3) {
+      stats.splice(1, 0, {
+        value: counts.total,
+        label: anzahlBeitraege(counts.total).replace(`${counts.total} `, '')
+      });
+    }
 
     // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Gesamt" hat
     // keinen eigenen Reiter (die Reiter sind disjunkt) und bleibt reine Anzeige.
@@ -387,7 +376,12 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       if (!ziel) return s;
       return { ...s, onClick: () => setStatusFilter(ziel), active: aktiverFilter === ziel };
     });
-  }, [challenge?.moderated, counts, statusFilter]);
+    // challenge?.visibility gehoert in die Abhaengigkeiten: Die Sichtbarkeit
+    // ist im OFFENEN Modal aenderbar (Bearbeiten-Knopf; die ChallengesPage
+    // spiegelt die frische Challenge zurueck). Ohne sie blieb die
+    // "Abgelehnt"-Kachel nach dem Umstellen auf "nur Leitung" stehen,
+    // solange sich counts und Filter nicht aenderten (Befund 30.08.2026).
+  }, [challenge?.moderated, challenge?.visibility, counts, statusFilter]);
 
   // Abgeleiteter Status — dieselbe Quelle wie die Liste. Vorher wurde hier nur
   // aktiv/inaktiv unterschieden, wodurch Entwürfe und Geplante fälschlich
@@ -451,8 +445,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       });
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Moderation');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Moderation'));
     } finally {
       setBusyId(null);
     }
@@ -480,8 +474,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       await api.delete(`/challenges/admin/submissions/${submission.id}`);
       await loadSubmissions();
       onChanged?.();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Löschen des Beitrags');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Löschen des Beitrags'));
     } finally {
       setBusyId(null);
     }
@@ -643,7 +637,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           path: fileName,
           data: text,
           directory: Directory.Cache,
-          encoding: 'utf8' as any
+          encoding: Encoding.UTF8
         });
         const uri = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
         await Share.share({ title: challenge.title, files: [uri.uri] });
@@ -659,10 +653,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         URL.revokeObjectURL(url);
         setSuccess('Export heruntergeladen');
       }
-    } catch (err: any) {
+    } catch (err) {
       // Abgebrochenes Share-Sheet ist kein Fehler
-      if (err?.message && /cancel/i.test(err.message)) return;
-      setError(err.response?.data?.error || 'Export fehlgeschlagen');
+      if (err instanceof Error && err.message && /cancel/i.test(err.message)) return;
+      setError(fehlerText(err, 'Export fehlgeschlagen'));
     }
   };
 

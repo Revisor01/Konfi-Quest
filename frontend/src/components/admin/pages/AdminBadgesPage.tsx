@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import { fehlerText } from '../../../utils/fehler';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -56,7 +57,6 @@ const AdminBadgesPage: React.FC = () => {
   );
 
   // Modal state
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
@@ -73,12 +73,10 @@ const AdminBadgesPage: React.FC = () => {
     onDirtyChange: (dirty: boolean) => { badgeModalDirtyRef.current = dirty; },
     onClose: () => {
       dismissBadgeModalHook();
-      setSelectedBadge(null);
       setModalBadgeId(null);
     },
     onSuccess: () => {
       dismissBadgeModalHook();
-      setSelectedBadge(null);
       setModalBadgeId(null);
       refreshBadges();
     }
@@ -122,12 +120,8 @@ const AdminBadgesPage: React.FC = () => {
             try {
               await api.delete(`/admin/badges/${badge.id}`);
               await refreshBadges();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Badges');
-              }
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen des Badges'));
             }
           }
         }
@@ -136,7 +130,6 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const handleSelectBadge = (badge: Badge) => {
-    setSelectedBadge(badge);
     setModalBadgeId(badge.id);
     presentBadgeModalHook({
       presentingElement: presentingElement,
@@ -146,7 +139,6 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const presentBadgeModal = () => {
-    setSelectedBadge(null);
     setModalBadgeId(null);
     presentBadgeModalHook({
       presentingElement: presentingElement,
@@ -195,8 +187,6 @@ const AdminBadgesPage: React.FC = () => {
         ) : (
           <BadgesView
             badges={badges || []}
-            onUpdate={refreshBadges}
-            onAddBadgeClick={presentBadgeModal}
             onSelectBadge={handleSelectBadge}
             onDeleteBadge={handleDeleteBadge}
             targetRole={selectedRole}

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -131,11 +132,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const nameAutomatisch = !isEditMode && !!festeRolle;
 
   // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
+  // Spiegelt canManageRole im Backend (utils/roleHierarchy.js) — durchgesetzt
+  // wird die Regel dort, hier geht es nur darum, keine Auswahl anzubieten, die
+  // der Server danach mit 403 zurueckweist.
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
 
     // Konfis werden über separate KonfiModal erstellt || Super-Admin kann via backend nicht vergeben werden, gibt immer 403
     if (roleName === 'konfi' || roleName === 'super_admin') return false;
+
+    // super_admin ist nie zuweisbar: canManageRole erlaubt diese Rolle
+    // niemandem, auch super_admin nicht sich selbst.
+    if (roleName === 'super_admin') return false;
 
     if (userRole === 'org_admin') {
       return roleName !== 'konfi';
@@ -164,7 +172,30 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         api.get('/admin/jahrgaenge')
       ]);
       setRoles(rolesResponse.data);
-      setJahrgaenge(jahrgaengeResponse.data);
+
+      // Ein 'admin' darf Jahrgaenge nur innerhalb SEINER eigenen zuordnen
+      // (Simons Regel 31.08.2026). Das Backend weist alles andere seit dem
+      // 01.09.2026 mit 403 ab -- vorher bot der Dialog trotzdem alle
+      // Jahrgaenge der Gemeinde an, und jede fremde Wahl lief in einen
+      // Fehler. Das Angebot folgt jetzt der Berechtigung.
+      //
+      // org_admin und super_admin bleiben ausgenommen: Sie sehen ohnehin die
+      // ganze Gemeinde, eine Einschraenkung waere dort falsch.
+      // Ein Admin OHNE Zuweisung bekommt eine leere Liste. Das ist ein
+      // gueltiger Fall (ein Admin, der nur mit den Teamer:innen spricht) --
+      // und ehrlicher als eine Auswahl, aus der jede Wahl scheitert.
+      // Hergeleitet wie in views/KonfiDetailView.tsx (eigeneJahrgangIds).
+      const alleJahrgaenge = jahrgaengeResponse.data;
+      if (currentUser?.role_name === 'admin') {
+        const eigene = new Set(
+          (currentUser.assigned_jahrgaenge || [])
+            .filter((j) => j.can_view !== false)
+            .map((j) => j.id)
+        );
+        setJahrgaenge(alleJahrgaenge.filter((j: Jahrgang) => eigene.has(j.id)));
+      } else {
+        setJahrgaenge(alleJahrgaenge);
+      }
 
       // Feste Rolle direkt setzen — der Dialog zeigt dann keine Auswahl mehr,
       // das Feld muss aber trotzdem befuellt sein (isValid prüft role_id > 0).
@@ -231,7 +262,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     await guard(async () => {
       try {
-        const userData: any = {
+        // password wird nur gesetzt, wenn eines eingegeben wurde — deshalb
+        // steht es hier als optionales Feld statt per any.
+        const userData: {
+          username?: string;
+          email: string | null;
+          display_name: string;
+          role_title: string | null;
+          role_id: number;
+          is_active: boolean;
+          password?: string;
+        } = {
           // Leer lassen, wenn der Server ihn erzeugen soll.
           username: nameAutomatisch ? undefined : formData.username.trim(),
           email: formData.email.trim() || null,
@@ -270,8 +311,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         setIsDirty(false);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern des Benutzers'));
       }
     });
   };
@@ -283,9 +324,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }));
   };
 
-  const getSelectedRole = () => {
-    return roles.find(role => role.id === formData.role_id);
-  };
 
   const getAllowedRoles = () => {
     return roles.filter(role => canAssignRole(role.name));
@@ -550,7 +588,16 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             {jahrgaenge.length === 0 ? (
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#999', margin: 0 }}>Keine Jahrgänge verfügbar</p>
+                  {/* Fuer einen Admin ohne eigene Jahrgaenge waere "keine
+                      verfuegbar" irrefuehrend -- es GIBT welche, er darf sie
+                      nur nicht vergeben. Derselbe Fehler wie frueher in der
+                      Konfi-Liste ("Noch keine Konfis angelegt"), Befund aus
+                      dem Rollen-Bericht vom 26.08.2026. */}
+                  <p style={{ color: '#999', margin: 0 }}>
+                    {currentUser?.role_name === 'admin'
+                      ? 'Dir ist kein Jahrgang zugewiesen. Zuweisen kann nur die Gemeindeleitung.'
+                      : 'Keine Jahrgänge verfügbar'}
+                  </p>
                 </IonLabel>
               </IonItem>
             ) : (

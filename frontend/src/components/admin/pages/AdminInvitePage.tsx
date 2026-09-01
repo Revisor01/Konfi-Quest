@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
@@ -43,6 +44,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import QRCode from 'qrcode';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { tageBis } from '../../shared/eventFormatting';
 
 interface Jahrgang {
   id: number;
@@ -75,7 +77,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+  const { data: jahrgaenge } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -156,8 +158,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setQrCodeDataUrl(qrDataUrl);
 
       await refreshInvites(); // Reload to show in existing invites
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Generieren des Codes'));
     } finally {
       setGeneratingCode(false);
     }
@@ -169,8 +171,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
       await refreshInvites();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Verlängern des Codes'));
     } finally {
       setExtendingInvite(null);
     }
@@ -194,8 +196,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 setQrCodeDataUrl(null);
               }
               await refreshInvites();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Löschen'));
             }
           }
         }
@@ -216,11 +218,12 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const formatExpiryDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // Kalendertage statt 24-Stunden-Bloecke: Ein Code, der heute Abend
+    // ablaeuft, ergab aufgerundet 1 und stand als "Laeuft morgen ab" da.
+    const diffDays = tageBis(new Date(dateString));
 
-    if (diffDays <= 0) return 'Abgelaufen';
+    if (diffDays < 0) return 'Abgelaufen';
+    if (diffDays === 0) return 'Läuft heute ab';
     if (diffDays === 1) return 'Läuft morgen ab';
     return `Noch ${diffDays} Tage gültig`;
   };
@@ -232,7 +235,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     try {
       await navigator.clipboard.writeText(registrationUrl);
       setSuccess('Link kopiert');
-    } catch (error) {
+    } catch {
       setError('Fehler beim Kopieren');
     }
   };
@@ -250,7 +253,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
           text: `Registriere dich für ${jahrgangName} bei Konfi Quest!`,
           url: registrationUrl
         });
-      } catch (error) {
+      } catch {
         // User cancelled share
       }
     } else {
@@ -400,13 +403,19 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                             </div>
                           </IonItem>
                           <IonItemOptions side="end" className="app-swipe-actions">
+                            {/* Solange verlaengert wird, den Spinner zeigen und
+                                die Aktion sperren - sonst wischt man ein
+                                zweites Mal, weil nichts passiert. */}
                             <IonItemOption
                               onClick={() => { closeOpenSlidingItems(); extendInvite(invite.id); }}
                               aria-label="Einladung verlängern"
                               className="app-swipe-action"
+                              disabled={extendingInvite === invite.id}
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
-                                <IonIcon icon={time} />
+                                {extendingInvite === invite.id
+                                  ? <IonSpinner name="crescent" />
+                                  : <IonIcon icon={time} />}
                               </div>
                             </IonItemOption>
                             <IonItemOption

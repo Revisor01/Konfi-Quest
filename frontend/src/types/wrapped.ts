@@ -45,6 +45,13 @@ export interface KonfiEndspurtSlide {
 export interface KonfiZeitraumSlide {
   start: string;
   ende: string;
+  /**
+   * Der echte Konfirmationstermin, null wenn der Jahrgang keinen hat.
+   * Ab Snapshot-Version 2.1 (01.09.2026). Bei aelteren Snapshots nicht
+   * vorhanden -- dort wurde `ende` als Konfirmationstermin gerendert, was
+   * ohne Konfirmations-Termin einen erfundenen Stichtag zeigte.
+   */
+  konfirmation?: string | null;
 }
 
 export interface KonfiGottesdienstSlide {
@@ -135,7 +142,10 @@ export interface TeamerZertifikateSlide {
 }
 
 export interface TeamerEngagementSlide {
-  teamer_seit: string;
+  // Nullbar: Das Backend liefert null, wenn users.teamer_since nicht gesetzt
+  // ist (wrapped.js:446). Der Typ behauptete string und verdeckte damit, dass
+  // die Seite "0 Jahre als Teamer:in" anzeigen konnte.
+  teamer_seit: string | null;
   jahre_aktiv: number;
 }
 

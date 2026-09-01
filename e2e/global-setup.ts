@@ -26,6 +26,25 @@ async function seedDatabase(): Promise<void> {
   const pool = new Pool({ connectionString: DB_URL });
   try {
     await seed(pool);
+
+    // Die Admins brauchen fuer die Oberflaeche eine Jahrgangs-Zuweisung:
+    // GET /admin/konfis verengt ueber die einsehbaren Jahrgaenge und liefert
+    // einem Admin OHNE Zuweisung bewusst eine leere Liste (Simons
+    // Entscheidung 26.08.2026, erkennbar am Header
+    // X-Kein-Jahrgang-Zugewiesen). Ohne diese Zeilen sah der E2E-Test eine
+    // leere Konfi-Verwaltung und meldete einen Fehler, den es in der App
+    // nicht gibt (geklaert 31.08.2026).
+    //
+    // BEWUSST HIER und nicht im gemeinsamen Seed: Die Backend-Tests pruefen
+    // genau den Fall "Admin ohne Zuweisung" und wuerden reihenweise
+    // fehlschlagen (nachgemessen: 92 gruen ohne, 140 rot mit der Aenderung
+    // im Seed).
+    await pool.query(
+      `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id)
+       VALUES (4, 1), (8, 2)
+       ON CONFLICT DO NOTHING`
+    );
+
     console.log('E2E: Datenbank erfolgreich geseeded');
   } finally {
     await pool.end();
@@ -34,9 +53,14 @@ async function seedDatabase(): Promise<void> {
 
 async function globalSetup(): Promise<void> {
   console.log('E2E: Starte Docker-Compose Stack...');
+  // 180 s reichten nicht: Der Frontend-Container baut die komplette App
+  // (npm ci + vite build), und allein das dauert auf einem kalten Cache
+  // laenger. Gemessen am 30.08.2026 — der Lauf brach mit ETIMEDOUT ab, BEVOR
+  // je ein Test lief. Zusammen mit der fehlenden Schema-Einspielung war das
+  // der Grund, warum die E2E-Specs faktisch nie durchliefen.
   execSync(`docker compose -f ${COMPOSE_FILE} up -d --build --wait`, {
     stdio: 'inherit',
-    timeout: 180_000,
+    timeout: 900_000,
   });
 
   console.log('E2E: Warte auf Backend Health...');

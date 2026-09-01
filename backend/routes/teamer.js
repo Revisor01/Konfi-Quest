@@ -3,13 +3,17 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
-const { computeCurrentStreak } = require('../utils/streakCalculation');
-const { berechneBadgeProgress, bedingungFehlt } = require('../utils/badgeProgress');
-const { determineBookingStatus } = require('../utils/bookingUtils');
+const { getTeamerBadgeProgress } = require('../utils/teamerBadgeProgress');
+const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
+const { determineBookingStatus, zaehleBuchungen } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
+const { getPunkteHistorie } = require('../utils/punkteHistorie');
+const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
+const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
+const { heuteBerlin } = require('../utils/zeitformat');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -172,91 +176,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
 
   // GET /teamer/konfi-history - Punkte-Verlauf für ehemalige Konfis (jetzt Teamer)
+  // Berechnung in utils/punkteHistorie.js — dieselbe Quelle wie
+  // GET /konfi/points-history. Beide speisen dasselbe Frontend-Modal
+  // (PointsHistoryModal.tsx), muessen also dieselbe Form liefern.
+  //
+  // Verhaltensaenderung (01.09.2026): Der Gesamtstand aus konfi_profiles wird
+  // jetzt auch hier auf die eigene Organisation gefiltert. Vorher fehlte der
+  // Filter nur auf diesem Weg (Befund M1).
   router.get('/konfi-history', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
         return res.status(403).json({ error: 'Nur Teamer können die Konfi-Historie abrufen' });
       }
 
-      const userId = req.user.id;
-      const orgId = req.user.organization_id;
-
-      // Get activities (Gottesdienst & Gemeinde points)
-      const activitiesQuery = `
-        SELECT
-          ka.id,
-          a.name as title,
-          a.points,
-          a.type as category,
-          ka.completed_date as date,
-          ka.comment,
-          'activity' as source_type
-        FROM user_activities ka
-        JOIN activities a ON ka.activity_id = a.id
-        WHERE ka.user_id = $1 AND ka.organization_id = $2
-        ORDER BY ka.completed_date DESC
-      `;
-      const { rows: activities } = await db.query(activitiesQuery, [userId, orgId]);
-
-      // Get bonus points
-      const bonusQuery = `
-        SELECT
-          id,
-          description as title,
-          points,
-          type as category,
-          completed_date as date,
-          NULL as comment,
-          'bonus' as source_type
-        FROM bonus_points
-        WHERE konfi_id = $1 AND organization_id = $2
-        ORDER BY completed_date DESC
-      `;
-      const { rows: bonusPoints } = await db.query(bonusQuery, [userId, orgId]);
-
-      // Get event points
-      const eventPointsQuery = `
-        SELECT
-          ep.id,
-          e.name as title,
-          ep.points,
-          ep.point_type as category,
-          ep.awarded_date as date,
-          ep.description as comment,
-          'event' as source_type
-        FROM event_points ep
-        JOIN events e ON ep.event_id = e.id
-        WHERE ep.konfi_id = $1 AND ep.organization_id = $2
-        ORDER BY ep.awarded_date DESC
-      `;
-      const { rows: eventPoints } = await db.query(eventPointsQuery, [userId, orgId]);
-
-      // Combine and sort by date (newest first)
-      const allPoints = [...activities, ...bonusPoints, ...eventPoints].sort((a, b) => {
-        const dateA = new Date(a.date || 0);
-        const dateB = new Date(b.date || 0);
-        return dateB - dateA;
-      });
-
-      // Get konfi_profiles for accurate accumulated points
-      const { rows: [konfiProfile] } = await db.query(
-        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
-        [userId]
-      );
-
-      const gdPoints = parseInt(konfiProfile?.gottesdienst_points, 10) || 0;
-      const gmPoints = parseInt(konfiProfile?.gemeinde_points, 10) || 0;
-      const totals = {
-        gottesdienst: gdPoints,
-        gemeinde: gmPoints,
-        total: gdPoints + gmPoints
-      };
-
-      res.json({
-        history: allPoints,
-        totals
-      });
-
+      const { history, totals } = await getPunkteHistorie(db, req.user.id, req.user.organization_id);
+      res.json({ history, totals });
     } catch (err) {
       console.error('Database error in GET /teamer/konfi-history:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -268,262 +202,48 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
 
   // GET /teamer/badges - Alle verfügbaren Teamer-Badges mit earned-Status und Fortschritt
+  //
+  // ==================== ALTE GENERATION — NICHT ANFASSEN ====================
+  // Diese Route liefert ein ARRAY plus die Kopfzeilen X-Badges-Secret-Total /
+  // X-Badges-Visible-Total. Das ist der Vertrag der AUSGELIEFERTEN Apps
+  // (iOS 2.0.0 / Android versionCode 81), und der laesst sich nicht
+  // mitdeployen.
+  //
+  // ZURUECK AUF ARRAY, 29.08.2026 — Vorfall am Abend des Rollouts.
+  // Die Route wurde am 28.08. still von diesem Array auf die Konfi-Form
+  // { available, earned, stats } umgestellt. Die Apps im Store rufen darauf
+  // `.filter()` auf — auf einem Objekt wirft das einen TypeError, das
+  // Teamer-Dashboard stuerzte SOFORT nach dem Login ab, auf beiden
+  // Plattformen. Im Browser fiel es nicht auf, dort lief die neue Oberflaeche.
+  // Die Backend-Tests waren gruen: Sie kannten nur die mitdeployte
+  // Oberflaeche, nicht die ausgelieferte App.
+  //
+  // Beide Formen in EINER Antwort gehen nicht: JSON kennt entweder Array oder
+  // Objekt, und JSON.stringify verwirft Zusatzfelder an einem Array
+  // (nachgemessen). Deshalb steht die Angleichung seit 31.08.2026 in einer
+  // eigenen, versionierten Route: GET /teamer/badges/v2 (weiter unten).
+  //
+  // Diese Route hier faellt weg, sobald keine App im Store sie mehr ruft —
+  // wann das ist und wie man es prueft, steht in docs/api/ABRISS.md.
+  // =========================================================================
   router.get('/badges', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
         return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
       }
 
-      const userId = req.user.id;
-      const orgId = req.user.organization_id;
+      // Gerechnet wird in utils/teamerBadgeProgress.js — EINE Quelle fuer
+      // diese Route und fuer /badges/v2. Hier steht nur noch die Verpackung.
+      const { alle, stats } = await getTeamerBadgeProgress(db, req.user.id, req.user.organization_id);
 
-      const badgesQuery = `
-        SELECT cb.*,
-          CASE WHEN ub.id IS NOT NULL THEN true ELSE false END as earned,
-          ub.awarded_date AS earned_at
-        FROM custom_badges cb
-        LEFT JOIN user_badges ub ON cb.id = ub.badge_id AND ub.user_id = $1
-        WHERE cb.organization_id = $2 AND cb.target_role = 'teamer' AND (cb.is_active = true OR ub.id IS NOT NULL)
-        ORDER BY ub.awarded_date DESC NULLS LAST, cb.name
-      `;
-      const { rows: badges } = await db.query(badgesQuery, [userId, orgId]);
-
-      // Hauptmetriken einmalig abfragen für Fortschrittsberechnung
-      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes, categoryCountsRes, actNamesRes, eventTitlesRes, allDatesRes] = await Promise.all([
-        // Teamer-Aktivitäten + Events
-        db.query(
-          `SELECT (
-            (SELECT COUNT(*) FROM user_activities ua
-             JOIN activities a ON ua.activity_id = a.id
-             WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer') +
-            (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
-          ) as count`,
-          [userId, orgId]
-        ),
-        // Nur Events
-        db.query(
-          "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
-          [userId, orgId]
-        ),
-        // Unique Activities
-        db.query(
-          `SELECT COUNT(DISTINCT ua.activity_id) as count FROM user_activities ua
-           JOIN activities a ON ua.activity_id = a.id
-           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`,
-          [userId, orgId]
-        ),
-        // Aktive Jahre (Jahre mit mind. 1 Teamer-Aktivität oder Event)
-        db.query(
-          `SELECT DISTINCT EXTRACT(YEAR FROM d.date)::int as year FROM (
-            SELECT ua.completed_date as date FROM user_activities ua
-            JOIN activities a ON ua.activity_id = a.id
-            WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'
-            UNION ALL
-            SELECT e.event_date as date FROM event_bookings eb
-            JOIN events e ON eb.event_id = e.id
-            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
-          ) d WHERE d.date IS NOT NULL`,
-          [userId, orgId]
-        ),
-        // Startjahr-Quelle (teamer_since, Migration 064) — konsistent zur Wertung (badges.js teamer_year)
-        db.query(
-          "SELECT teamer_since FROM users WHERE id = $1",
-          [userId]
-        ),
-        // Pro Kategorie: Anzahl Teamer-Aktivitäten + anwesende Events (für
-        // category_activities-Progress). Identische Logik wie die Wertung in
-        // badges.js (checkAndAwardTeamerBadges, case 'category_activities').
-        db.query(
-          `SELECT c.name AS category, COUNT(*) AS count FROM (
-            SELECT ac.category_id, ua.id FROM user_activities ua
-            JOIN activities a ON ua.activity_id = a.id
-            JOIN activity_categories ac ON a.id = ac.activity_id
-            WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'
-            UNION ALL
-            SELECT ec.category_id, eb.id FROM event_bookings eb
-            JOIN event_categories ec ON eb.event_id = ec.event_id
-            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
-          ) src
-          JOIN categories c ON src.category_id = c.id AND c.organization_id = $2
-          GROUP BY c.name`,
-          [userId, orgId]
-        ),
-        // Teamer-Aktivitaets-Namen + Anzahl (für specific_activity / activity_combination).
-        db.query(
-          `SELECT a.name, COUNT(*) AS count FROM user_activities ua
-           JOIN activities a ON ua.activity_id = a.id
-           WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'
-           GROUP BY a.name`,
-          [userId, orgId]
-        ),
-        // Besuchte Event-Namen (für activity_combination required_events).
-        // events-Spalte heißt 'name' (nicht 'title') -> als title aliasen.
-        db.query(
-          `SELECT DISTINCT e.name AS title FROM event_bookings eb
-           JOIN events e ON eb.event_id = e.id
-           WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
-          [userId, orgId]
-        ),
-        // Alle Aktivitaets-/Event-Daten (für streak / time_based).
-        db.query(
-          `SELECT ua.completed_date AS date FROM user_activities ua
-           JOIN activities a ON ua.activity_id = a.id
-           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'
-           UNION ALL
-           SELECT e.event_date AS date FROM event_bookings eb
-           JOIN events e ON eb.event_id = e.id
-           WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
-          [userId, orgId]
-        )
-      ]);
-
-      const activityCount = parseInt(actCountRes.rows[0].count);
-      const eventCount = parseInt(evCountRes.rows[0].count);
-      const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
-      // Map statt Plain Object: schuetzt vor Prototype-Keys als Kategorie- oder
-      // Aktivitaetsname. Eine Kategorie namens "constructor" haette hier sonst
-      // eine Funktion statt einer Zahl geliefert. Der Konfi-Pfad war so schon
-      // gehaertet, dieser nicht (Befund N2, 27.08.2026).
-      const categoryCounts = new Map(
-        categoryCountsRes.rows.map(r => [r.category, parseInt(r.count)])
-      );
-      const activityNameCounts = new Map(
-        actNamesRes.rows.map(r => [r.name, parseInt(r.count)])
-      );
-      // Set statt Array: activity_combination fragt nur nach Enthaltensein.
-      const attendedEventTitles = new Set(eventTitlesRes.rows.map(r => r.title));
-      // Datums-Liste (Strings/Dates) für streak / time_based.
-      const allDates = allDatesRes.rows.map(r => r.date).filter(Boolean);
-      // Array der aktiven Jahre (INTEGER) — für Startjahr-Filter im teamer_year-Case.
-      const activeYearValues = activeYearsRes.rows.map(r => r.year);
-      // Einmal vorberechnen: Der Wert haengt allein an allDates, wurde aber
-      // bisher je Abzeichen neu gerechnet (Befund N2). Der Konfi-Pfad macht
-      // es seit jeher einmal.
-      const currentStreak = computeCurrentStreak(allDates);
-
-      // Startjahr für teamer_year (konsistent zur Wertung badges.js):
-      // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivität).
-      let teamerStartYear = null;
-      const teamerSince = teamerSinceRes.rows[0]?.teamer_since;
-      if (teamerSince) {
-        teamerStartYear = new Date(teamerSince).getFullYear();
-      } else if (activeYearValues.length > 0) {
-        teamerStartYear = Math.min(...activeYearValues);
-      }
-
-      // Fortschritt aus dem gemeinsamen Kern (utils/badgeProgress.js), seit
-      // dem Zusammenlegen mit dem Konfi-Pfad (Befund N2 Teil 2). Die Zaehler
-      // oben bleiben teamer-spezifisch — der Kern rechnet nur.
-      //
-      // Antwortform seit 28.08.2026 angeglichen an den Konfi-Pfad
-      // (utils/konfiBadgeProgress.js): jedes Abzeichen traegt `earned`,
-      // `earned_at`, `unreachable` und `progress` ({ current, target,
-      // percentage }; percentage UNGERUNDET wie beim Konfi — die Ansicht
-      // rundet). Die frueheren Adapter-Felder progress_points /
-      // progress_percentage entfallen mit der neuen Huelle.
-      const enrichedBadges = badges.map(badge => {
-        // Wie beim Konfi: Verdiente Abzeichen sind nie "unerreichbar" —
-        // sie sind ja erreicht worden.
-        const unreachable = !badge.earned && bedingungFehlt(badge);
-        if (badge.earned) {
-          return {
-            ...badge,
-            unreachable,
-            progress: { current: badge.criteria_value, target: badge.criteria_value, percentage: 100 }
-          };
-        }
-
-        const progress = berechneBadgeProgress(badge, {
-          // Teamer:innen haben kein Punktekonto — alle Punkte-Kriterien
-          // bleiben 0. `beideKategorien: null` sagt dem Kern ausdruecklich
-          // "gibt es hier nicht", statt eine 0 vorzutaeuschen.
-          beideKategorien: null,
-          // ACHTUNG, Namensfalle: `activityCount` enthaelt hier Aktivitaeten
-          // UND anwesende Events (die Query addiert beides), beim Konfi nicht.
-          // Deshalb heisst das Feld im Kern `aktivitaetenUndEvents`.
-          // Deckungsgleich mit der Wertung (`badges.js:395`).
-          aktivitaetenUndEvents: activityCount,
-          events: eventCount,
-          verschiedeneAktivitaeten: uniqueActivities,
-          // Nur Jahre ab dem Startjahr (teamer_since) zaehlen — identisch zur
-          // Wertung, sonst zeigte die Anzeige mehr Jahre als angerechnet werden.
-          teamerJahre: teamerStartYear === null
-            ? 0
-            : activeYearValues.filter(y => y >= teamerStartYear).length,
-          proKategorie: categoryCounts,
-          proAktivitaetsname: activityNameCounts,
-          // Der Teamer-Pfad zaehlt bei activity_combination auch
-          // required_events mit (wie die Wertung in `badges.js:391`); der
-          // Konfi-Pfad liefert dieses Feld bewusst nicht.
-          erfuellteEventTitel: attendedEventTitles,
-          streak: currentStreak,
-          alleDaten: allDates
-        });
-
-        return { ...badge, unreachable, progress };
-      });
-
-      // Aufteilung wie beim Konfi (utils/konfiBadgeProgress.js):
-      // `earned` enthaelt ALLE verdienten Abzeichen — auch geheime und
-      // inzwischen abgeschaltete, denn verdient ist verdient. `available`
-      // enthaelt nur, was noch offen UND anzeigbar ist: keine unverdienten
-      // geheimen (die Ueberraschung bleibt gewahrt, Befund 24.08.2026) und
-      // keine unerreichbaren (Bedingung fehlt — die Wertung prueft genau
-      // dieses Feld, Befund N2, 27.08.2026).
-      //
-      // Die Punktearten-Haelfte der Konfi-Unerreichbarkeit
-      // (gottesdienst_enabled / gemeinde_enabled am Jahrgang) gilt hier
-      // NICHT: Teamer:innen haben kein Punktekonto, die Punkte-Kriterien
-      // sind fuer sie ohnehin immer 0.
-      const earned = enrichedBadges.filter(b => b.earned);
-      const available = enrichedBadges.filter(b => !b.earned && !b.is_hidden && !b.unreachable);
-
-      // Gesamtzahlen fuer die Anzeige "x von y" — jetzt im Rumpf (stats)
-      // statt in den Kopfzeilen X-Badges-Secret-Total / X-Badges-Visible-
-      // Total (Handoff-Punkt 12, 28.08.2026): Die Sichtbar-Kopfzeile las
-      // ohnehin niemand, und die Geheim-Zahl gehoert wie beim Konfi in den
-      // Rumpf — der Zwischenspeicher der App sichert nur Daten, keine
-      // Kopfzeilen, beide Ansichten mussten sie deshalb umstaendlich an die
-      // Liste heften.
-      //
-      // Gezaehlt wird identisch zum Konfi-Pfad: nur AKTIVE Abzeichen
-      // (Entscheidung 27.08.2026) und nur ERREICHBARE. Letzteres ist neu
-      // gegenueber den Kopfzeilen: Ein unerreichbares Abzeichen steht in
-      // keiner Liste — zaehlte es mit, stuende dort ein Ziel, das niemand
-      // vollmachen kann. Der Konfi-Pfad rechnet seit 27.08.2026 genau so.
-      const zaehlbar = enrichedBadges.filter(b => b.is_active && !b.unreachable);
-
-      // ZURUECK AUF ARRAY, 29.08.2026 — Vorfall am Abend des Rollouts.
-      //
-      // Diese Route lieferte bis zum 28.08. ein ARRAY und wurde auf die
-      // Konfi-Form { available, earned, stats } umgestellt (Handoff-Punkt 12).
-      // Die AUSGELIEFERTEN Apps (iOS 2.0.0 / Android versionCode 81) rufen
-      // darauf `.filter()` auf — auf einem Objekt wirft das einen TypeError,
-      // das Teamer-Dashboard stuerzte SOFORT nach dem Login ab, auf beiden
-      // Plattformen. Im Browser fiel es nicht auf, dort laeuft die neue
-      // Oberfläche, die die neue Form erwartet.
-      //
-      // Der Kommentar an der alten Fassung hatte genau davor gewarnt: "Die
-      // Antwort ist ein Array, und zwei Ansichten lesen sie so. Eine neue
-      // Huelle haette beide gebrochen." Uebersehen wurde, dass die Apps im
-      // Store ebenfalls Leser sind — die lassen sich nicht mitdeployen.
-      //
-      // Beide Formen in EINER Antwort gehen nicht: JSON kennt entweder Array
-      // oder Objekt, und JSON.stringify verwirft Zusatzfelder an einem Array
-      // (nachgemessen). Also bleibt die Route beim Array — dem Vertrag, den
-      // die ausgelieferten Apps kennen — und die Zahlen gehen wie vorher als
-      // Kopfzeilen mit. Die neue Oberflaeche liest beide Formen (siehe
-      // teamerBadges.ts im Frontend).
-      //
-      // Die Vereinheitlichung auf die Konfi-Form bleibt das Ziel; sie gehoert
-      // aber in eine versionierte Route, nicht in eine stille Aenderung an
-      // einer, die ausgelieferte Apps benutzen.
-      const sichtbareBadges = enrichedBadges.filter(
+      const sichtbareBadges = alle.filter(
         b => (!b.is_hidden || b.earned) && (b.earned || !b.unreachable)
       );
 
-      res.set('X-Badges-Secret-Total', String(zaehlbar.filter(b => b.is_hidden).length));
-      res.set('X-Badges-Visible-Total', String(zaehlbar.filter(b => !b.is_hidden).length));
+      // Die Zaehler gehen als Kopfzeilen mit — im Rumpf waere kein Platz,
+      // ohne die Array-Form zu brechen (siehe oben).
+      res.set('X-Badges-Secret-Total', String(stats.totalSecret));
+      res.set('X-Badges-Visible-Total', String(stats.totalVisible));
       res.json(sichtbareBadges);
     } catch (err) {
       console.error('Error loading teamer badges:', err);
@@ -531,7 +251,41 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
+  // GET /teamer/badges/v2 - Abzeichen-Generation v2 (Teamer-Haelfte)
+  //
+  // Gleiche Huelle wie GET /konfi/badges/v2: { available, earned, stats }.
+  // Bis auf die Rolle im Pfad ist die Antwort fuer Konfi und Teamer
+  // deckungsgleich — dieselben Feldnamen, dieselbe Semantik, die Zaehler im
+  // RUMPF statt in Kopfzeilen (der Zwischenspeicher der App sichert nur
+  // Daten, keine Kopfzeilen — beide Ansichten mussten sie bisher umstaendlich
+  // an die Liste heften).
+  //
+  // Gegenueber der alten Route fehlen die Verwaltungsfelder created_at,
+  // created_by, organization_id und target_role; sie landen auf keinem
+  // Bildschirm (Begruendung in utils/badgeAntwortV2.js). `seen` fuehrt der
+  // Teamer-Pfad ohnehin nicht — diese Seite markiert pauschal beim Oeffnen.
+  router.get('/badges/v2', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      if (req.user.role_name !== 'teamer') {
+        return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
+      }
+
+      const ergebnis = await getTeamerBadgeProgress(db, req.user.id, req.user.organization_id);
+      res.json(baueBadgeAntwortV2(ergebnis));
+    } catch (err) {
+      console.error('Error loading teamer badges (v2):', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Teamer-Badges' });
+    }
+  });
+
   // GET /teamer/badges/unseen - Anzahl ungesehener Badges
+  //
+  // FAELLT MIT DER v2-UMSTELLUNG WEG (vorgemerkt 31.08.2026).
+  // Keine Ansicht ruft sie mehr auf: Der Zaehler am Reiter kommt seit
+  // 27.08.2026 aus GET /notifications/badge-counts, das zusaetzlich korrekt
+  // auf target_role filtert (diese Query hier zaehlt bei befoerderten Konfis
+  // auch alte Konfi-Abzeichen mit). Sie bleibt nur stehen, weil eine App im
+  // Store sie noch rufen koennte — Abrissbedingung siehe docs/api/ABRISS.md.
   router.get('/badges/unseen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
@@ -550,16 +304,53 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // PUT /teamer/badges/mark-seen - Badges als gesehen markieren
+  //
+  // ALTE GENERATION: PUT, waehrend der Konfi-Pfad seit jeher POST nutzt —
+  // dieselbe Handlung, zwei Verben. In v2 ist das aufgeloest (POST, siehe
+  // unten). Diese Route bleibt unveraendert, bis keine App im Store sie mehr
+  // ruft (docs/api/ABRISS.md).
+  // Eine Quelle fuer beide Verben: die alte PUT-Route und die neue POST-Route
+  // machen exakt dasselbe UPDATE. Zweimal hingeschrieben liefen sie
+  // frueher oder spaeter auseinander.
+  const markiereAbzeichenGesehen = (userId, orgId) => db.query(
+    "UPDATE user_badges SET seen = true WHERE user_id = $1 AND organization_id = $2 AND seen = false",
+    [userId, orgId]
+  );
+
   router.put('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
         return res.status(403).json({ error: 'Nur Teamer können Badges als gesehen markieren' });
       }
 
-      await db.query(
-        "UPDATE user_badges SET seen = true WHERE user_id = $1 AND organization_id = $2 AND seen = false",
-        [req.user.id, req.user.organization_id]
-      );
+      await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
+      res.json({ message: 'Badges als gesehen markiert' });
+    } catch (err) {
+      console.error('Error marking badges as seen:', err);
+      res.status(500).json({ error: 'Fehler beim Aktualisieren des Badge-Status' });
+    }
+  });
+
+  // POST /teamer/badges/mark-seen - Abzeichen als gesehen markieren (v2)
+  //
+  // VERB-ENTSCHEIDUNG (31.08.2026): v2 nutzt POST, der Konfi-Pfad tat das
+  // seit jeher. Ein PUT verspricht "lege die Ressource unter diesem Pfad auf
+  // diesen Zustand" — hier gibt es aber weder eine adressierte Ressource noch
+  // einen mitgeschickten Zustand, sondern eine Handlung auf einer Menge
+  // eigener Datensaetze. Genau dafuer ist POST da. Praktisch faellt so auch
+  // die Konfi-Seite nicht um: sie ruft laengst POST, und die Teamer-Seite
+  // aendert nur das Verb.
+  //
+  // Bewusst NICHT versioniert im Pfad: Die Route ist neu, sie hat keinen
+  // alten Vertrag, den sie brechen koennte. Erst wenn die alte PUT-Route
+  // faellt (docs/api/ABRISS.md), bleibt hier nur noch dieses POST.
+  router.post('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      if (req.user.role_name !== 'teamer') {
+        return res.status(403).json({ error: 'Nur Teamer können Badges als gesehen markieren' });
+      }
+
+      await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
       res.json({ message: 'Badges als gesehen markiert' });
     } catch (err) {
       console.error('Error marking badges as seen:', err);
@@ -1242,13 +1033,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { translation } = req.body;
-      // RVR60 (Reina-Valera) am 27.08.2026 entfernt -- Entscheidung Simon.
-      // Wer sie noch gespeichert hat, faellt beim naechsten Setzen auf eine der
-      // uebrigen zurueck; ein bestehender Wert in der Datenbank stoert nicht,
-      // die Losungs-Schnittstelle wird damit nur nicht mehr neu angefragt.
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG'];
-      if (!validTranslations.includes(translation)) {
-        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: validTranslations });
+      // Liste in utils/konfspruch.js — eine Quelle fuer den Konfi- und den
+      // Teamer-Weg. Vorher lag sie doppelt im Code und musste bei jeder
+      // Aenderung an BEIDEN Stellen nachgezogen werden (Befund M4).
+      if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
+        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: BIBEL_UEBERSETZUNGEN });
       }
       await db.query('UPDATE users SET bible_translation = $1 WHERE id = $2', [translation, req.user.id]);
       res.json({ success: true, message: 'Bibelübersetzung erfolgreich aktualisiert', translation });
@@ -1386,17 +1175,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           // Eine BESTEHENDE eigene Buchung zaehlt nicht als neuer Platz --
           // sonst koennte man sich durch Absage und erneute Zusage selbst
           // aussperren, obwohl der Platz noch einem gehoert.
-          const { rows: [zahlen] } = await client.query(
-            `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.user_id <> $2)::int AS confirmed_count,
-                    COUNT(*) FILTER (WHERE eb.status = 'waitlist'  AND eb.user_id <> $2)::int AS waitlist_count
-               FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-              WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
-            [eventId, req.user.id]
+          //
+          // Gezaehlt wird die TEAM-Seite im Sinne von Migration 136 —
+          // Teamer:innen UND zugeordnete Leitung. Vorher filterte diese Stelle
+          // hart auf r.name = 'teamer'; eine zugeordnete Leitung fiel damit aus
+          // dem Kontingent heraus und das Team liess sich ueberbuchen.
+          const zahlen = await zaehleBuchungen(
+            client, { eventId }, 'team', { ausserUserId: req.user.id }
           );
           const ergebnis = determineBookingStatus(
-            event, zahlen.confirmed_count, zahlen.waitlist_count,
+            event, zahlen.confirmed, zahlen.waitlist,
             event.teamer_max_participants || 0,
             { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
           );
@@ -1463,16 +1251,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const userId = req.user.id;
       const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
 
-      // Idempotency
-      if (client_id) {
-        const { rows: [existing] } = await db.query(
-          'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1',
-          [client_id]
-        );
-        if (existing) return res.status(200).json(existing);
-      }
+      // Idempotency (Vorab-Check; den Race-Fall faengt der 23505-Catch unten ab)
+      const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
+      if (vorhanderAntrag) return res.status(200).json(vorhanderAntrag);
 
-      const date = requested_date || new Date().toISOString().split('T')[0];
+      // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+      // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Antrag ohne Datum sonst
+      // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
+      const date = requested_date || heuteBerlin();
 
       // Activity muss existieren und target_role='teamer' sein
       const { rows: [activity] } = await db.query(
@@ -1559,6 +1345,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
+      // Race Condition: Antrag wurde zwischen Check und Insert eingefügt.
+      // Fehlte hier bis 01.09.2026 (Befund M3) — ein Wiederholungsversuch
+      // nach Zeitueberschreitung lieferte Teamer:innen einen 500er, statt
+      // den bereits gestellten Antrag zurueckzugeben.
+      if (await behandleClientIdRace(db, err, req.body.client_id, res)) return;
       console.error('Database error in POST /teamer/requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }

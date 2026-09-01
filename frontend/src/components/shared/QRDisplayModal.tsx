@@ -1,3 +1,4 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -73,8 +74,8 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
       // Start polling
       fetchAttendance();
       pollRef.current = setInterval(fetchAttendance, 10000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'QR-Code konnte nicht generiert werden');
+    } catch (err) {
+      setError(fehlerText(err, 'QR-Code konnte nicht generiert werden'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
       const response = await api.get(`/events/${eventId}/attendance-count`);
       setCheckedIn(response.data.checked_in);
       setTotal(response.data.total);
-    } catch (err) {
+    } catch {
       // Polling-Fehler still ignorieren
     }
   };

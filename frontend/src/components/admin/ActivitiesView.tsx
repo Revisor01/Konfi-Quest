@@ -30,6 +30,10 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface Activity {
   id: number;
   name: string;
@@ -43,8 +47,6 @@ interface Activity {
 
 interface ActivitiesViewProps {
   activities: Activity[];
-  onUpdate: () => void;
-  onAddActivityClick: () => void;
   onSelectActivity: (activity: Activity) => void;
   onDeleteActivity: (activity: Activity) => void;
   canEdit: boolean;
@@ -55,8 +57,6 @@ interface ActivitiesViewProps {
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   activities,
-  onUpdate,
-  onAddActivityClick,
   onSelectActivity,
   onDeleteActivity,
   canEdit,
@@ -66,7 +66,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   const filteredAndSortedActivities = (() => {
     let result = filterBySearchTerm(activities, searchTerm, ['name', 'description']);
@@ -91,13 +91,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   };
 
 
-  const getTypeColor = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'primary';
-      case 'gemeinde': return 'primary';
-      default: return 'medium';
-    }
-  };
 
   const getTypeIcon = (type: string | null) => {
     switch (type) {
@@ -107,13 +100,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
   };
 
-  const getTypeText = (type: string | null) => {
-    switch (type) {
-      case 'gottesdienst': return 'Gottesdienst';
-      case 'gemeinde': return 'Gemeinde';
-      default: return 'Unbekannt';
-    }
-  };
 
   const handleDeleteWithSlideClose = async (activity: Activity) => {
     const slidingElement = slidingRefs.current.get(activity.id);
@@ -121,7 +107,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     try {
       await onDeleteActivity(activity);
       // Bei erfolgreichem Löschen schließt sich das Sliding automatisch durch den Re-render
-    } catch (error) {
+    } catch {
       // Bei Fehler: Sliding automatisch schließen für bessere UX
       if (slidingElement) {
         await slidingElement.close();

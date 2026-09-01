@@ -5,6 +5,7 @@
 // ACHTUNG Reihenfolge: GET /cancelled muss VOR GET /:id registriert bleiben,
 // sonst würde Express "cancelled" als :id Parameter interpretieren.
 const express = require('express');
+const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../utils/terminAnmeldeStatus');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -44,22 +45,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 jgs.jahrgang_ids,
                 jgs.jahrgang_names,
                 event_chat.id as chat_room_id,
-                CASE
-                  -- Abgesagt schlägt alles: sonst meldete ein abgesagtes Event
-                  -- weiterhin 'open'/'closed' und wurde in der Leitungssicht
-                  -- nicht als abgesagt erkannt (keine Durchstreichung, Fund
-                  -- 22.08.2026). Die Konfi-Sicht nutzt dafuer e.cancelled direkt.
-                  WHEN e.cancelled THEN 'cancelled'
-                  WHEN e.mandatory THEN 'mandatory'
-                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
-                  WHEN NOW() > e.registration_closes_at THEN 'closed'
-                  WHEN (
-                    CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
-                  ) > 0 AND bstats.registered_count >= (
-                    CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
-                  ) AND (NOT e.waitlist_enabled OR bstats.waitlist_count >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
-                  ELSE 'open'
-                END as registration_status,
+                ${anmeldeStatusSql({
+                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
+                  bestaetigt: 'bstats.registered_count',
+                  warteliste: 'bstats.waitlist_count'
+                })} as registration_status,
                 -- Eigener Status fuer das TEAMER-Kontingent (Migration 120).
                 -- registration_status daruber rechnet ausschliesslich mit
                 -- Konfi-Zahlen; ein voll belegtes Teamer-Kontingent stand in der
@@ -375,17 +365,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         return res.json([]); // Return empty array if event doesn't use timeslots
       }
 
-      const timeslotsQuery = `
-        SELECT et.*,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as registered_count,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
-        FROM event_timeslots et
-        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id
-        WHERE et.event_id = $1 AND et.organization_id = $2
-        GROUP BY et.id
-        ORDER BY et.start_time ASC
-      `;
-      const { rows: timeslots } = await db.query(timeslotsQuery, [eventId, req.user.organization_id]);
+      const { rows: timeslots } = await db.query(ZEITFENSTER_SQL, [eventId, req.user.organization_id]);
 
       res.json(timeslots);
 
@@ -514,12 +494,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // teamer_needed-Event mit Kapazität meldete das Detail "Ausgebucht",
       // während die Liste "Offen" zeigte. Teamer stehen getrennt in
       // teamer_count/teamer_waitlist_count (eigenes Kontingent, Migration 120).
-      const registeredCount = participants.filter(p => p.status === 'confirmed' && p.role_name !== 'teamer').length;
-      const pendingCount = participants.filter(p => p.status === 'waitlist' && p.role_name !== 'teamer').length;
+      const registeredCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'konfi').length;
+      const pendingCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'konfi').length;
 
       // Teamer-Kontingent: eigene Zähler, getrennt vom Konfi-Kontingent
-      const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'teamer').length;
-      const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'teamer').length;
+      // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026).
+      const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name !== 'konfi').length;
+      const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name !== 'konfi').length;
 
       // Buchungsstatus des eingeloggten Users (für Konfis UND Teamer:innen —
       // Teamer können seit dem Teamer-Kontingent ebenfalls 'waitlist' haben)

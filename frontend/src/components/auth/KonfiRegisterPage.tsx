@@ -1,4 +1,6 @@
+import { fehlerText, istNetzwerkfehler } from '../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
+import { useAppLocation } from '../../navigation/useAppLocation';
 import {
   IonPage,
   IonContent,
@@ -28,10 +30,10 @@ import {
   refreshOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+
 import api from '../../services/api';
 import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
-import { hasValidUsernameChars, USERNAME_RULES_MESSAGE } from '../../utils/usernameValidation';
+import { hasValidUsernameChars } from '../../utils/usernameValidation';
 import { useApp } from '../../contexts/AppContext';
 
 interface PasswordCheck {
@@ -43,7 +45,7 @@ interface PasswordCheck {
 }
 
 const KonfiRegisterPage: React.FC = () => {
-  const location = useLocation();
+  const location = useAppLocation();
   const router = useIonRouter();
   const { setUser, setSuccess: setAppSuccess, isOnline } = useApp();
 
@@ -154,7 +156,7 @@ const KonfiRegisterPage: React.FC = () => {
       hasUppercase: /[A-Z]/.test(pw),
       hasLowercase: /[a-z]/.test(pw),
       hasNumber: /[0-9]/.test(pw),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw)
     });
   }, [formData.password]);
 
@@ -169,20 +171,20 @@ const KonfiRegisterPage: React.FC = () => {
         organization_name: response.data.organization_name
       });
       setInviteCode(code);
-    } catch (err: any) {
+    } catch (err) {
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (istNetzwerkfehler(err)) {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Differenzierte Fehlermeldungen
-        const errorCode = err.response?.data?.error_code;
+        const errorCode = (err as { response?: { data?: { error_code?: string } } }).response?.data?.error_code;
         if (errorCode === 'not_found') {
           setError('Dieser Einladungscode existiert nicht. Bitte prüfe deine Eingabe.');
         } else if (errorCode === 'expired') {
           setError('Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.');
         } else {
-          setError(err.response?.data?.error || 'Fehler bei der Code-Validierung');
+          setError(fehlerText(err, 'Fehler bei der Code-Validierung'));
         }
       }
       setInviteInfo(null);
@@ -257,16 +259,17 @@ const KonfiRegisterPage: React.FC = () => {
         }, 1500);
       }
 
-    } catch (err: any) {
+    } catch (err) {
       // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      if (istNetzwerkfehler(err)) {
         setIsNetworkError(true);
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
       } else {
         // Validierungsfehler des Backends kommen als details-Array — die konkrete
         // Meldung anzeigen statt nur "Validierungsfehler".
-        const detailMessage = err.response?.data?.details?.[0]?.message;
-        setError(detailMessage || err.response?.data?.error || 'Fehler bei der Registrierung');
+        const detailMessage = (err as { response?: { data?: { details?: { message?: string }[] } } })
+          .response?.data?.details?.[0]?.message;
+        setError(detailMessage || fehlerText(err, 'Fehler bei der Registrierung'));
       }
       triggerShake();
     } finally {
@@ -448,7 +451,7 @@ const KonfiRegisterPage: React.FC = () => {
                       placeholder="z.B. max123"
                       disabled={registering}
                       autocapitalize="off"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       className="app-auth-input__value"
                     />
@@ -509,7 +512,7 @@ const KonfiRegisterPage: React.FC = () => {
                       placeholder="Sicheres Passwort"
                       disabled={registering}
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       className="app-auth-input__value"
                     />
@@ -546,7 +549,7 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, password_confirm: e.detail.value! })}
                       placeholder="Passwort wiederholen"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                       disabled={registering}
                       className="app-auth-input__value"

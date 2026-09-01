@@ -123,6 +123,60 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    // Jahrgangschat: der Raum aus dem Seed (id 1) gehoert zu Jahrgang 1 und
+    // fuehrt konfi1 + konfi2 als Teilnehmer. Ein spaeter angelegter Konfi
+    // wurde frueher nie eingetragen, weil die Route mit 409 abbrach.
+    it('Bestehender Jahrgangschat: neuer Konfi wird nachgetragen -> 200', async () => {
+      const { rows: [neuerKonfi] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('konfi.neu', 'Neue Konfirmandin', 'x', $1, $2) RETURNING id`,
+        [USERS.konfi1.role_id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES ($1, $2, 0, 0, $3)`,
+        [neuerKonfi.id, 1, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ type: 'jahrgang', name: 'Jahrgang 2025/2026', jahrgang_id: 1 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.room_id).toBe(CHAT_ROOMS.jahrgang.id);
+      expect(res.body.created).toBe(false);
+
+      const { rows } = await db.query(
+        'SELECT user_type FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.jahrgang.id, neuerKonfi.id]
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].user_type).toBe('konfi');
+    });
+
+    it('Bestehender Jahrgangschat: vorhandene Teilnehmer bleiben einfach -> keine Dubletten', async () => {
+      await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ type: 'jahrgang', name: 'Jahrgang 2025/2026', jahrgang_id: 1 });
+
+      const { rows } = await db.query(
+        'SELECT user_id FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.jahrgang.id, USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+    });
+
+    it('Jahrgangschat einer fremden Organisation bleibt zu -> 403', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ type: 'jahrgang', name: 'Fremd', jahrgang_id: 2 });
+
+      expect(res.status).toBe(403);
+    });
   });
 
   // ================================================================

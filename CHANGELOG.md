@@ -9,7 +9,95 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.1.1
 
+### Hinzugefügt
+- Material lässt sich ausdrücklich für alle Teamer:innen der Gemeinde
+  freigeben — unabhängig vom Jahrgang. Die Teamer:innen finden es in einem
+  eigenen Abschnitt ganz oben, in der Leitung ist es am Globus zu erkennen.
+  Freigeben und zurückziehen kann nur der Org-Admin. Konfis sehen Material
+  weiterhin grundsätzlich nicht. Bestehendes Material bleibt sichtbar wie
+  bisher.
+- Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
+  Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
+  Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
+  Admins ohne Zuweisung keine Konfis sehen.
+- Beim Material lässt sich statt Dateien auch eine Internetseite hinterlegen.
+  Teamer:innen erkennen sie am Link-Symbol; ein Tipp darauf öffnet sie im
+  Browser. Wer das Material sehen darf, entscheidet sich weiterhin über den
+  Jahrgang.
+- Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
+  Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
+  ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
+- Die Leitung lässt sich einem Termin zuordnen — genau wie Teamer:innen, über
+  „Leitung hinzufügen" in der Terminansicht. Wer zugeordnet ist, ist auch im
+  Chat zum Termin dabei. Das geschieht bewusst für jeden Termin einzeln;
+  niemand landet automatisch in einem Termin-Chat, und bestehende Chats
+  ändern sich dadurch nicht.
+
+### Geändert
+- Die Startseite der Konfis ist schneller da: Die Abzeichen laden erst, wenn
+  die Startseite steht, statt den Start mit auszubremsen. Sichtbar bleibt
+  alles wie bisher.
+- Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
+  (vor/nach Beginn)".
+- Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
+  „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
+
 ### Behoben
+- Wer einen bereits freigegebenen Jahresrückblick noch einmal erzeugt — etwa
+  um eine Zahl richtigzustellen —, benachrichtigt den Jahrgang nicht ein
+  zweites Mal. Beim ersten Freigeben kommt die Mitteilung wie bisher.
+- Der Jahresrückblick der Teamer:innen lässt sich wieder entfernen. Bisher
+  blieb er nach dem Erzeugen dauerhaft stehen, auch wenn er fehlerhafte Zahlen
+  enthielt.
+- Beim Wechsel von einem Termin zum nächsten standen kurz noch die
+  Teilnehmer:innen und Abmeldungen des vorherigen Termins — ohne Verbindung
+  blieben sie sogar dauerhaft stehen. Jetzt zeigt jeder Termin von Anfang an
+  nur seine eigenen Daten.
+- Uhrzeiten in Mitteilungen und E-Mails stimmen wieder. Erinnerungen,
+  Terminabsagen und Änderungshinweise nannten die Zeit zwei Stunden zu früh —
+  eine Konfirmation um 10 Uhr wurde als „08:00" angekündigt. Auch das Datum in
+  der Absage eines Termins stimmt jetzt: Bei einem Termin kurz nach Mitternacht
+  stand dort der Vortag.
+- Die Tageslosung wechselt wieder um Mitternacht statt erst am frühen Morgen —
+  jetzt auch in der Anzeige, nicht nur im Hintergrund.
+- Termine am selben Tag stehen als „Heute" statt fälschlich als „Morgen". Ein
+  Termin am Abend wurde bisher schon auf den nächsten Tag gerechnet. Dasselbe
+  galt für Restlaufzeiten: Ein Einladungscode, der noch heute abläuft, stand
+  als „Läuft morgen ab" da, und auch die Anzeige der Testphase zählte einen
+  Tag zu viel.
+- Im Jahresrückblick der Teamer:innen erschien die Seite „Dein Engagement"
+  auch ohne hinterlegtes Eintrittsdatum — mit „0 Jahre als Teamer:in". Sie
+  wird jetzt nur noch gezeigt, wenn das Datum bekannt ist.
+- Der Zeitpunkt im Kopf eines Chat-Exports stimmt: Er stand zwei Stunden zu
+  früh, während die Nachrichten darunter richtig waren.
+- Punkte und Anträge, die spätnachts eingetragen werden, tragen jetzt das
+  richtige Datum — die von Konfis wie die von Teamer:innen. Bisher landeten sie
+  zwischen Mitternacht und zwei Uhr im Vortag — und damit im falschen Tag der
+  Punkte-Historie und des Rückblicks.
+- Abmeldezeiten in der Teilnehmerliste stimmen wieder. Wer sich um 12:34
+  abgemeldet hatte, stand dort mit 14:34.
+- Mehrtägige Termine bleiben während sie laufen in der Terminliste und auf der
+  Startseite der Konfis. Bisher verschwand ausgerechnet die Freizeit, an der
+  man gerade teilnahm, ab dem zweiten Tag aus der Liste, obwohl die Kachel sie
+  noch als laufend auswies.
+- Plätze bei Terminen wurden teilweise falsch gezählt. Gelöschte Konten
+  belegten weiterhin einen Platz und hielten ihn sogar besetzt, wenn jemand
+  absagte — Wartende rückten dann nicht nach. Wer aus der Leitung einem
+  Termin zugeordnet war, zählte gegen die Plätze der Konfis statt gegen die
+  des Teams. Beides ist korrigiert; Termine, die deshalb zu früh als
+  ausgebucht galten, haben ihre freien Plätze zurück.
+- Bei Terminen mit Zeitfenstern konnte es passieren, dass zwei Konfis
+  gleichzeitig den letzten Platz eines Zeitfensters bekamen. Jetzt bekommt
+  ihn genau eine, die andere landet auf der Warteliste oder wird abgewiesen.
+- Eine Anmeldung zu einem abgesagten Termin ist jetzt auf allen Wegen
+  ausgeschlossen. Über einen der beiden Wege war sie bisher noch möglich.
+- Ein Antrag von Teamer:innen konnte mit einer Fehlermeldung enden, obwohl er
+  längst eingereicht war: Brach die Verbindung ab und versuchte es die App
+  erneut, kam beim zweiten Versuch ein Fehler statt des bereits gestellten
+  Antrags. Jetzt zeigt die App in diesem Fall den vorhandenen Antrag — wie es
+  bei Konfis schon immer war.
+- Im Punkte-Verlauf der Teamer:innen wird der Punktestand jetzt sicher auf die
+  eigene Gemeinde begrenzt. Angezeigte Punkte ändern sich dadurch nicht.
 - Sicherheitslücke geschlossen: In der Terminliste der Konfis wurde der
   Check-in-Code jedes Termins mitgeliefert. Damit hätte man sich von zu Hause
   als anwesend eintragen und Punkte gutschreiben können, ohne dagewesen zu
@@ -93,11 +181,6 @@ Versionsüberschrift.
   Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
   restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
   Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
-- Die Leitung konnte Teamer:innen anlegen, aber die Rollenauswahl im Dialog
-  blieb leer. Sie wird jetzt gefüllt, und der neuen Teamer:in lassen sich
-  dabei gleich Jahrgänge mitgeben. Wer dabei welche Personen bearbeiten darf,
-  richtet sich weiterhin nach der Rolle: Die Gemeindeleitung verwaltet alle,
-  ein Admin nur Teamer:innen und Konfis.
 
 ## [2.1.0] - 2026-08-29
 
@@ -143,6 +226,10 @@ iOS-Build 151
   zeigen dieselben Zahlen.
 
 ### Behoben
+- Von einem Termin abmelden geht jetzt auch ohne Verbindung — die Abmeldung
+  wird gesendet, sobald wieder Netz da ist. Bisher war der Knopf ausgegraut,
+  obwohl die Warteschlange das längst konnte. Anmelden bleibt online-pflichtig,
+  weil die Plätze begrenzt sind.
 - Ohne Verbindung sagt die App jetzt, was fehlt: Wo Teilnehmerliste,
   Zeitfenster oder Punkte-Historie nicht geladen werden konnten, steht ein
   Hinweis. Bisher verschwanden diese Abschnitte wortlos — man konnte nicht

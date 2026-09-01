@@ -95,7 +95,50 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci --legacy-peer-deps
+        # Kein --legacy-peer-deps mehr: Der Dauerkonflikt kam von
+        # @eslint/js@10 gegen eslint@9 und ist mit dem Sprung auf ESLint 10
+        # (30.08.2026) weg. Der Flag haette kuenftige ECHTE Peer-Konflikte
+        # stillschweigend durchgewunken — etwa eine react-router-Version, die
+        # Ionic nicht vertraegt.
+        run: npm ci
+
+      # Lint NUR fuer die im PR geaenderten Frontend-Dateien: Der Altbestand
+      # (273 Meldungen, Stand 31.08.2026 — von 1098 heruntergearbeitet) bleibt
+      # unangetastet, aber wer eine Datei anfasst, hinterlaesst sie sauber.
+      # Bewusst KEINE Baseline-Datei: die muesste bei jedem Fix neu erzeugt
+      # werden und produziert Dauer-Merge-Konflikte. Auch kein --max-warnings
+      # ueber alles: eine Gesamtzahl ortet den Verursacher nicht.
+      # SCHARF seit 31.08.2026: Ein Verstoss in einer geaenderten Datei laesst
+      # den Job fehlschlagen.
+      #
+      # Bewertet werden nur FEHLER, nicht Warnungen (kein --max-warnings 0).
+      # Grund: Die rund 230 react-hooks-Meldungen wurden einzeln durchgesehen
+      # und begruendet als harmlos eingestuft (siehe eslint.config.js); sie
+      # liegen in 84 der 235 Quelldateien, darunter jede der acht am
+      # haeufigsten angefassten. Mit --max-warnings 0 wuerde praktisch jeder
+      # PR an geprueftem Altbestand scheitern — und der schnellste Ausweg
+      # waere ein eslint-disable, also genau die falsche Gewohnheit.
+      #
+      # Neue Verstoesse gegen no-explicit-any und no-unused-vars sind FEHLER
+      # und blockieren weiterhin. Beide stehen aktuell auf null.
+      - name: Lint (nur im PR geaenderte Dateien)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          # HEAD ist bei pull_request der Merge-Commit von Base+PR — der
+          # Zwei-Punkt-Diff gegen die Base-Spitze ergibt genau die PR-Aenderungen.
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR \
+            "origin/${{ github.base_ref }}" HEAD -- \
+            'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' \
+            | sed 's|^frontend/||')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "Keine geaenderten Frontend-Quelldateien — Lint uebersprungen."
+            exit 0
+          fi
+          echo "Gelintet werden ${#files[@]} Datei(en):"
+          printf ' - %s\n' "${files[@]}"
+          cd frontend
+          npx eslint --no-error-on-unmatched-pattern "${files[@]}"
 
       # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
       # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
@@ -149,11 +192,51 @@ jobs:
         working-directory: frontend
         run: npx vitest run --passWithNoTests
 
+  e2e-test:
+    runs-on: ubuntu-latest
+    # SCHARF seit 31.08.2026: Die Suite steht auf 32/32 und haengt in den
+    # needs von build-and-push. Ab hier gilt: E2E rot -> kein Build -> kein
+    # Deploy, genauso wie bei den Unit-Tests.
+    #
+    # Die Beobachtungsphase davor war kurz. Sollte sich die Suite in der CI
+    # als unzuverlaessig erweisen (andere Maschine, andere Zeiten), gehoert
+    # der FLATTERNDE TEST repariert -- nicht das Gate wieder aufgemacht.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: Playwright-Browser
+        run: npx playwright install --with-deps chromium
+
+      # global-setup.ts startet den Docker-Stack (docker-compose.e2e.yml) und
+      # spielt das Schema samt Seed ein; ein eigener Service-Block ist deshalb
+      # nicht noetig.
+      - name: E2E-Tests
+        run: npx playwright test --reporter=line
+
+      - name: Bericht bei Fehlschlag sichern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-bericht
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
   build-and-push:
-    needs: [backend-test, frontend-test]
-    # KEIN always() — Build+Deploy laufen NUR wenn backend-test UND frontend-test
-    # gruen sind (Default-needs-Verhalten). Das ist das eigentliche Test-Gate:
-    # Tests rot -> kein Build -> kein Webhook -> kein Deploy.
+    needs: [backend-test, frontend-test, e2e-test]
+    # KEIN always() — Build+Deploy laufen NUR wenn backend-test, frontend-test
+    # UND e2e-test gruen sind (Default-needs-Verhalten). Das ist das
+    # eigentliche Test-Gate: Tests rot -> kein Build -> kein Webhook -> kein
+    # Deploy. E2E haengt seit dem 31.08.2026 mit drin.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
@@ -219,11 +302,20 @@ jobs:
     # WIEDER AKTIV seit 27.08.2026: 2.0.0 geht in den Store-Review, Produktion
     # zieht wieder mit jedem Push auf main nach.
     #
+    # ERNEUT PAUSIERT seit 01.09.2026 (Simons Entscheidung): Der Branch
+    # feat/ionic-9 geht nach main -- Ionic 9, react-router 6 und funf
+    # Migrationen (135-140) auf einmal. Getestet wird ZUERST ueber
+    # test-api.konfi-quest.de und einen TestFlight-Build; Produktion zieht
+    # erst nach, wenn das Geraet in Ordnung ist.
+    # WIEDER EINSCHALTEN: das "false &&" unten entfernen. Danach deployt der
+    # naechste Push auf main sofort -- also erst pruefen, welche Commits seit
+    # der Pause aufgelaufen sind.
+    #
     # ZUM PAUSIEREN: in der if-Zeile unten ein "false &&" voranstellen -- und
     # oben vermerken, seit wann und warum. Ein pausierter Deploy ohne Notiz
     # kostet beim naechsten Mal eine halbe Stunde Fehlersuche.
     needs: [build-and-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: false && github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)

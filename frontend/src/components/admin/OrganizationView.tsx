@@ -1,22 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonInput,
-  IonItemGroup,
-  IonSelect,
-  IonSelectOption,
-  IonRefresher,
-  IonRefresherContent
-} from '@ionic/react';
+import { IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonItemGroup, IonSelect, IonSelectOption, IonRefresher, IonRefresherContent } from '@ionic/react';
 import {
   trash,
   business,
@@ -34,6 +17,11 @@ import {
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { triggerPullHaptic } from '../../utils/haptics';
+import { tageBis } from '../shared/eventFormatting';
+
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
 
 interface Organization {
   id: number;
@@ -59,7 +47,6 @@ interface Organization {
 interface OrganizationViewProps {
   organizations: Organization[];
   onUpdate: () => void;
-  onAddOrganizationClick: () => void;
   onSelectOrganization: (organization: Organization) => void;
   onDeleteOrganization: (organization: Organization) => void;
 }
@@ -67,11 +54,10 @@ interface OrganizationViewProps {
 const OrganizationView: React.FC<OrganizationViewProps> = ({
   organizations,
   onUpdate,
-  onAddOrganizationClick,
   onSelectOrganization,
   onDeleteOrganization
 }) => {
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
@@ -93,7 +79,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
     return result;
   })();
 
-  const getActiveOrganizations = () => organizations.filter(org => org.is_active);
   const getTotalKonfis = () => organizations.reduce((sum, org) => sum + org.konfi_count, 0);
   const getTotalUsers = () => organizations.reduce((sum, org) => sum + org.user_count, 0);
 
@@ -266,7 +251,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                                   return <><IonIcon icon={timeOutline} style={{ color: '#667eea' }} />unbegrenzt</>;
                                 }
                                 const end = new Date(organization.trial_ends_at);
-                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return (
                                   <>
                                     <IonIcon icon={timeOutline} style={{ color: days < 0 ? '#dc2626' : '#667eea' }} />

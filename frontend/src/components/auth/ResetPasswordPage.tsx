@@ -1,5 +1,7 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useAppLocation } from '../../navigation/useAppLocation';
+
 import {
   IonPage,
   IonContent,
@@ -34,7 +36,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 
 const ResetPasswordPage: React.FC = () => {
   const router = useIonRouter();
-  const location = useLocation();
+  const location = useAppLocation();
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -67,7 +69,7 @@ const ResetPasswordPage: React.FC = () => {
     hasUppercase: /[A-Z]/.test(password),
     hasLowercase: /[a-z]/.test(password),
     hasNumber: /[0-9]/.test(password),
-    hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password)
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(password)
   };
 
   const isPasswordValid = Object.values(passwordChecks).every(Boolean);
@@ -98,8 +100,8 @@ const ResetPasswordPage: React.FC = () => {
         newPassword: password
       });
       setSuccess(true);
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts';
+    } catch (err) {
+      const message = fehlerText(err, 'Fehler beim Zurücksetzen des Passworts');
       if (message.includes('abgelaufen') || message.includes('expired') || message.includes('ungültig')) {
         setError('Dieser Link ist abgelaufen oder ungültig. Bitte fordere einen neuen an.');
       } else {
@@ -243,7 +245,7 @@ const ResetPasswordPage: React.FC = () => {
                       placeholder="Neues Passwort"
                       className="app-auth-input__value"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                     />
                     <IonIcon
@@ -279,7 +281,7 @@ const ResetPasswordPage: React.FC = () => {
                       placeholder="Passwort wiederholen"
                       className="app-auth-input__value"
                       autocapitalize="none"
-                      autocorrect="off"
+                      autocorrect={false}
                       spellcheck={false}
                     />
                     <IonIcon

@@ -16,8 +16,8 @@ const mockApiPost = vi.fn(async () => ({ data: {} }));
 const mockApiDelete = vi.fn(async () => ({ data: {} }));
 vi.mock('../../services/api', () => ({
   default: {
-    post: (...a: any[]) => mockApiPost(...(a as [])),
-    delete: (...a: any[]) => mockApiDelete(...(a as [])),
+    post: (...a: unknown[]) => mockApiPost(...(a as [])),
+    delete: (...a: unknown[]) => mockApiDelete(...(a as [])),
     get: vi.fn(),
   },
   API_URL: 'https://test.example/api',
@@ -27,7 +27,7 @@ vi.mock('../../services/api', () => ({
 // vorbei) — hier gemockt, um die Serverantwort zu steuern.
 const mockAxiosPost = vi.fn();
 vi.mock('axios', () => ({
-  default: { post: (...a: any[]) => mockAxiosPost(...(a as [])) },
+  default: { post: (...a: unknown[]) => mockAxiosPost(...(a as [])) },
 }));
 
 const mockSetToken = vi.fn(async () => undefined);
@@ -35,9 +35,9 @@ const mockSetRefreshToken = vi.fn(async () => undefined);
 const mockSetUser = vi.fn(async () => undefined);
 vi.mock('../../services/tokenStore', () => ({
   getUser: vi.fn(() => null),
-  setUser: (...a: any[]) => mockSetUser(...(a as [])),
-  setToken: (...a: any[]) => mockSetToken(...(a as [])),
-  setRefreshToken: (...a: any[]) => mockSetRefreshToken(...(a as [])),
+  setUser: (...a: unknown[]) => mockSetUser(...(a as [])),
+  setToken: (...a: unknown[]) => mockSetToken(...(a as [])),
+  setRefreshToken: (...a: unknown[]) => mockSetRefreshToken(...(a as [])),
   getRefreshToken: vi.fn(() => 'refresh-alt'),
   clearAuth: vi.fn(async () => undefined),
   getDeviceId: vi.fn(() => 'dev-1'),
@@ -71,10 +71,10 @@ const mockVergessen = vi.fn(async () => undefined);
 const mockAuffrischen = vi.fn(async () => undefined);
 const mockIstAktiv = vi.fn(async () => true);
 vi.mock('../../services/biometrics', () => ({
-  mitBiometrieEntsperren: (...a: any[]) => mockEntsperren(...(a as [])),
-  biometrieVergessen: (...a: any[]) => mockVergessen(...(a as [])),
-  gespeichertenTokenAuffrischen: (...a: any[]) => mockAuffrischen(...(a as [])),
-  istBiometrieAktiv: (...a: any[]) => mockIstAktiv(...(a as [])),
+  mitBiometrieEntsperren: (...a: unknown[]) => mockEntsperren(...(a as [])),
+  biometrieVergessen: (...a: unknown[]) => mockVergessen(...(a as [])),
+  gespeichertenTokenAuffrischen: (...a: unknown[]) => mockAuffrischen(...(a as [])),
+  istBiometrieAktiv: (...a: unknown[]) => mockIstAktiv(...(a as [])),
 }));
 
 beforeEach(() => {

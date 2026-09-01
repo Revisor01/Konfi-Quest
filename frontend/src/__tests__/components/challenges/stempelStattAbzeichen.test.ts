@@ -30,13 +30,19 @@ const challengeDateien: Array<[string, string]> = [
 describe('Challenge-Stempel: das alte Wort ist weg', () => {
   it.each(challengeDateien)('%s spricht nicht mehr von Abzeichen', (_name, pfad) => {
     // Erlaubt bleibt allein die bewusste Abgrenzung im Kommentar
-    // ("Challenge-Stempel und Abzeichen dieselbe Bildsprache") — sie erklaert,
-    // warum beide denselben Icon-Vorrat nutzen. Alles andere waere ein
-    // Rueckfall.
+    // ("Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache")
+    // — sie erklaert, warum sie denselben Icon-Vorrat nutzen. Alles andere
+    // waere ein Rueckfall.
+    //
+    // 31.08.2026: Die Ausnahme hing frueher am Wortlaut
+    // "Challenge-Stempel und Abzeichen". Als der Vorrat auch die Zertifikate
+    // aufnahm, wurde der Kommentar richtiger und der Test rot — die Ausnahme
+    // prueft deshalb jetzt auf "Bildsprache", also auf die BEGRUENDUNG statt
+    // auf eine bestimmte Aufzaehlung.
     const zeilen = lies(pfad)
       .split('\n')
       .filter((z) => z.includes('Abzeichen'))
-      .filter((z) => !z.includes('Challenge-Stempel und Abzeichen'));
+      .filter((z) => !z.includes('Bildsprache'));
     expect(zeilen).toEqual([]);
   });
 

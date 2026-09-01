@@ -32,10 +32,28 @@ function createApp(db, options = {}) {
     io = null,
     rateLimiters = {},
     uploadsDir = path.join(__dirname, 'uploads'),
+    corsOrigins = null,
   } = options;
 
   const app = express();
   app.set('trust proxy', 1); // Traefik Reverse Proxy
+
+  // CORS nur, wenn ausdruecklich Ursprünge uebergeben werden.
+  //
+  // In Produktion liegen Oberflaeche und API hinter DERSELBEN Domain
+  // (konfi-quest.de) — dort ist jede Anfrage gleichen Ursprungs und CORS
+  // schlicht nicht noetig. Deshalb stand hier nie etwas; nur Socket.IO hatte
+  // eine eigene Liste (server.js:42).
+  //
+  // Im E2E-Stack laufen sie auf zwei Ports (5556 und 5555). Der Browser
+  // verlangt dort einen Preflight, das Backend antwortete nicht darauf, und
+  // JEDER Test scheiterte am Anmelden — die Suite lief deshalb faktisch nie
+  // (gefunden 30.08.2026). Nichts aendert sich fuer Produktion: ohne
+  // corsOrigins bleibt die Kette wie bisher.
+  if (corsOrigins && corsOrigins.length > 0) {
+    const cors = require('cors');
+    app.use(cors({ origin: corsOrigins, credentials: true }));
+  }
 
   // NUR im Test: Jede Antwort schliesst ihre Verbindung.
   //

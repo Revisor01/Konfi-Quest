@@ -3,6 +3,7 @@
 // die API-Pfade sind unverändert.
 const express = require('express');
 const liveUpdate = require('../../utils/liveUpdate');
+const { formatDatum } = require('../../utils/zeitformat');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { validateTeamerQuota } = require('./validierung');
 
@@ -105,7 +106,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const lastDate = seriesDates[seriesDates.length - 1];
     if (lastDate >= spanLimit) {
       return res.status(400).json({
-        error: `Eine Serie darf höchstens ${SERIES_MAX_SPAN_MONTHS} Monate umfassen (letzter Termin wäre ${lastDate.toLocaleDateString('de-DE')})`
+        error: `Eine Serie darf höchstens ${SERIES_MAX_SPAN_MONTHS} Monate umfassen (letzter Termin wäre ${formatDatum(lastDate)})`
       });
     }
 

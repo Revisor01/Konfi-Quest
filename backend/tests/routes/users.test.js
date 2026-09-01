@@ -13,6 +13,7 @@ describe('Users Routes', () => {
   let orgAdmin2Token;
   let superAdminToken;
   let adminToken;
+  let admin2Token;
   let teamerToken;
   let konfiToken;
 
@@ -28,6 +29,7 @@ describe('Users Routes', () => {
     orgAdmin2Token = generateToken('orgAdmin2');
     superAdminToken = generateToken('superAdmin');
     adminToken = generateToken('admin1');
+    admin2Token = generateToken('admin2');
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
   });
@@ -671,6 +673,142 @@ describe('Users Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // Entscheidung 31.08.2026: Wer Teamer:innen anlegen darf, muss ihnen auch
+    // Jahrgaenge geben koennen. Die Rollen-Hierarchie bleibt die Grenze —
+    // deshalb hier immer der erlaubte UND der verbotene Fall.
+    it('Admin setzt Jahrgaenge einer TEAMERIN -> 200', async () => {
+      // Seit 31.08.2026 ist ein Admin an seine eigenen Jahrgaenge gebunden:
+      // ohne diese Zuweisung waere jahrgang1 fuer ihn ein fremder Jahrgang.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          jahrgang_assignments: [
+            { jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }
+          ]
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.assignments_count).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT jahrgang_id, can_edit, assigned_by FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.teamer1.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].jahrgang_id).toBe(JAHRGAENGE.jahrgang1.id);
+      expect(rows[0].can_edit).toBe(true);
+      expect(rows[0].assigned_by).toBe(USERS.admin1.id);
+    });
+
+    it('Admin darf Jahrgaenge eines ZWEITEN Admins NICHT setzen -> 403', async () => {
+      // Ein zweiter Admin derselben Organisation — der Fall, den ein blosses
+      // requireAdmin (ohne Hierarchie-Pruefung) durchgelassen haette.
+      const { rows: [zweiter] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
+         VALUES ('zweiter.admin.seed', 'Zweiter Admin', 'x', $1, $2, true) RETURNING id`,
+        [ROLES.admin.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/admin/users/${zweiter.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          jahrgang_assignments: [
+            { jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }
+          ]
+        });
+
+      expect(res.status).toBe(403);
+
+      const { rows: [gezaehlt] } = await db.query(
+        'SELECT count(*)::int c FROM user_jahrgang_assignments WHERE user_id = $1',
+        [zweiter.id]
+      );
+      expect(gezaehlt.c).toBe(0);
+    });
+
+    it('Admin darf Jahrgaenge eines ORG-ADMINS NICHT setzen -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.orgAdmin1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          jahrgang_assignments: [
+            { jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }
+          ]
+        });
+
+      expect(res.status).toBe(403);
+
+      const { rows: [gezaehlt] } = await db.query(
+        'SELECT count(*)::int c FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.orgAdmin1.id]
+      );
+      expect(gezaehlt.c).toBe(0);
+    });
+
+    it('Admin aus Org 1 darf Jahrgaenge einer Teamerin aus Org 2 NICHT setzen -> 404', async () => {
+      // Teamer2 hat per Seed genau eine Zuweisung (jahrgang2 in Org 2). Sie
+      // muss unveraendert bleiben — auch der Jahrgang darf nicht kippen.
+      const { rows: vorher } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.teamer2.id]
+      );
+      expect(vorher.length).toBe(1);
+      expect(vorher[0].jahrgang_id).toBe(JAHRGAENGE.jahrgang2.id);
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer2.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          jahrgang_assignments: [
+            { jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: true }
+          ]
+        });
+
+      expect(res.status).toBe(404);
+
+      const { rows: nachher } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.teamer2.id]
+      );
+      expect(nachher.length).toBe(1);
+      expect(nachher[0].jahrgang_id).toBe(JAHRGAENGE.jahrgang2.id);
+    });
+
+    it('Admin aus Org 2 darf Jahrgaenge der Teamerin aus Org 1 NICHT setzen -> 404', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ jahrgang_assignments: [] });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Teamer:in darf keine Jahrgaenge zuweisen -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ jahrgang_assignments: [] });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Konfi darf keine Jahrgaenge zuweisen -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ jahrgang_assignments: [] });
+
+      expect(res.status).toBe(403);
+    });
   });
 
   // ================================================================
@@ -705,6 +843,56 @@ describe('Users Routes', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('Admin sieht die Jahrgaenge einer TEAMERIN -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      // Teamer1 hat jahrgang1 per Seed
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].id).toBe(JAHRGAENGE.jahrgang1.id);
+    });
+
+    it('Admin sieht die Jahrgaenge eines ORG-ADMINS NICHT -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.orgAdmin1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin sieht die Jahrgaenge eines ZWEITEN Admins NICHT -> 403', async () => {
+      const { rows: [zweiter] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
+         VALUES ('zweiter.admin.lesen', 'Zweiter Admin', 'x', $1, $2, true) RETURNING id`,
+        [ROLES.admin.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/users/${zweiter.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin aus Org 2 sieht die Jahrgaenge der Teamerin aus Org 1 NICHT -> 404', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Teamer:in kommt nicht an fremde Jahrgangs-Zuweisungen -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -813,6 +1001,154 @@ describe('Users Routes', () => {
       expect(res.status).toBe(403);
     });
   });
+  // ================================================================
+  // Jahrgangs-Zuweisungen: ein Admin fasst nur seine eigenen an
+  // (Simons Regel 31.08.2026)
+  // ================================================================
+  describe('POST /api/admin/users/:id/jahrgaenge — Bindung an die eigenen Jahrgaenge', () => {
+    let jahrgangA; // der Jahrgang der Teamerin, dem Admin fremd
+    let jahrgangB; // der Jahrgang des Admins
+
+    beforeEach(async () => {
+      const { rows: [a] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [b] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2029/2030', $1, '2030-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      jahrgangA = a.id;
+      jahrgangB = b.id;
+
+      // admin1 ist NUR in Jahrgang B.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+        [USERS.admin1.id, jahrgangB]
+      );
+      // Die Zuweisungen haengen im rbac-Cache (30 s TTL) — ohne das Leeren
+      // sieht der naechste Request den Stand des vorigen Tests.
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+    });
+
+    const jahrgaengeVon = async (userId) => {
+      const { rows } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 ORDER BY jahrgang_id',
+        [userId]
+      );
+      return rows.map(r => r.jahrgang_id);
+    };
+
+    it('Simons Beispiel: Admin fuegt B hinzu, die fremde Zuweisung A bleibt', async () => {
+      // Ausgangslage: Teamerin in Jahrgang A (und per Seed in jahrgang1).
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, false)',
+        [USERS.teamer1.id, jahrgangA]
+      );
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([jahrgangA]);
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: jahrgangB, can_view: true, can_edit: false }] });
+
+      expect(res.status).toBe(200);
+      // A UND B — nicht nur B.
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([jahrgangA, jahrgangB].sort((x, y) => x - y));
+    });
+
+    it('Admin entfernt seinen EIGENEN Jahrgang wieder, der fremde bleibt', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, false), ($1, $3, true, false)',
+        [USERS.teamer1.id, jahrgangA, jahrgangB]
+      );
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ jahrgang_assignments: [] });
+
+      expect(res.status).toBe(200);
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([jahrgangA]);
+    });
+
+    it('Admin darf einen FREMDEN Jahrgang nicht zuweisen -> 403, nichts geaendert', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, false)',
+        [USERS.teamer1.id, jahrgangB]
+      );
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: jahrgangA, can_view: true, can_edit: false }] });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Kein Zugriff auf diesen Jahrgang');
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([jahrgangB]);
+    });
+
+    it('OrgAdmin ersetzt weiterhin ALLE Zuweisungen -> 200', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, false), ($1, $3, true, false)',
+        [USERS.teamer1.id, jahrgangA, jahrgangB]
+      );
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: jahrgangA, can_view: true, can_edit: true }] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.assignments_count).toBe(1);
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([jahrgangA]);
+    });
+
+    it('OrgAdmin raeumt alle Zuweisungen ab -> 200 und die Liste ist leer', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [] });
+
+      expect(res.status).toBe(200);
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([]);
+    });
+
+    it('Derselbe Jahrgang doppelt geschickt -> 400, nicht 500', async () => {
+      // Die Tabelle hat UNIQUE (user_id, jahrgang_id). Ein doppelter Eintrag
+      // muss sauber mit 400 abgewiesen werden und darf nicht am Index in
+      // einen 500er laufen.
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          jahrgang_assignments: [
+            { jahrgang_id: jahrgangA, can_view: true, can_edit: false },
+            { jahrgang_id: jahrgangA, can_view: true, can_edit: false }
+          ]
+        });
+
+      expect(res.status).toBe(400);
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([JAHRGAENGE.jahrgang1.id]);
+    });
+
+    it('Admin aus Org 2 kommt an einen Jahrgang aus Org 1 nicht heran -> 404', async () => {
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: jahrgangB, can_view: true, can_edit: false }] });
+
+      expect(res.status).toBe(404);
+      expect(await jahrgaengeVon(USERS.teamer1.id)).toEqual([JAHRGAENGE.jahrgang1.id]);
+    });
+  });
+
   // ==================================================================
   // Jahrgangs-Zuweisung: Hierarchie (31.08.2026)
   //
@@ -830,7 +1166,30 @@ describe('Users Routes', () => {
     const zuweisung = [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: false }];
 
     // --- erlaubt ---
-    it('Admin darf einer Teamer:in Jahrgaenge zuweisen', async () => {
+    //
+    // ANGEPASST beim Merge von main am 01.09.2026: Der Test stammt aus PR #148
+    // und erwartete 200 auch fuer einen Admin OHNE eigenen Jahrgang. Inzwischen
+    // gilt Simons Regel vom 31.08.2026 (utils/jahrgangsZugriff.js): "ein admin
+    // ist bis auf bei den teamern immer an seine jahrgaenge gebunden" — er darf
+    // also nur Jahrgaenge vergeben, in denen er selbst mit can_edit steht.
+    // admin1 hat im Seed KEINE Zuweisung, bekam deshalb 403.
+    //
+    // Der Test prueft jetzt beide Seiten der Regel: mit Jahrgang erlaubt,
+    // ohne Jahrgang abgewiesen. Die Rollenhierarchie aus PR #148 (ein Admin
+    // fasst nur teamer/konfi an) bleibt davon unberuehrt und wird unten
+    // weiterhin geprueft.
+    it('Admin MIT diesem Jahrgang darf ihn einer Teamer:in zuweisen', async () => {
+      await db.query(
+        `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit)
+         VALUES ($1, $2, true, true)
+         ON CONFLICT DO NOTHING`,
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // rbac cacht das User-Objekt samt assigned_jahrgaenge. Ohne das
+      // Verwerfen wirkte die frische Zuweisung erst im naechsten Test --
+      // und liess dort den 403-Fall faelschlich mit 200 durchgehen.
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
       const res = await request(app)
         .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -844,6 +1203,26 @@ describe('Users Routes', () => {
       );
       expect(rows).toHaveLength(1);
       expect(rows[0].jahrgang_id).toBe(JAHRGAENGE.jahrgang1.id);
+    });
+
+    it('Admin OHNE diesen Jahrgang darf ihn nicht vergeben -> 403', async () => {
+      // admin1 hat im Seed keine Zuweisung. Ohne diese Grenze koennte er
+      // Jahrgaenge verteilen, die er selbst nie zu Gesicht bekommt.
+      // Cache verwerfen, damit kein Stand aus einem frueheren Test nachwirkt.
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .post(`/api/admin/users/${USERS.teamer1.id}/jahrgaenge`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ jahrgang_assignments: zuweisung });
+
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.teamer1.id]
+      );
+      expect(rows.map(r => r.jahrgang_id)).toEqual([JAHRGAENGE.jahrgang1.id]);
     });
 
     it('Admin darf die Jahrgaenge einer Teamer:in lesen', async () => {

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -60,6 +61,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import AdminPasswordResetModal from './AdminPasswordResetModal';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { tageBis } from '../../shared/eventFormatting';
 
 interface Organization {
   id: number;
@@ -376,7 +378,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         : !/[A-Z]/.test(pw) ? 'Das Passwort muss einen Großbuchstaben enthalten'
         : !/[a-z]/.test(pw) ? 'Das Passwort muss einen Kleinbuchstaben enthalten'
         : !/[0-9]/.test(pw) ? 'Das Passwort muss eine Zahl enthalten'
-        : !/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/~`]/.test(pw) ? 'Das Passwort muss ein Sonderzeichen enthalten'
+        : !/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw) ? 'Das Passwort muss ein Sonderzeichen enthalten'
         : null;
 
       if (passwortFehler) {
@@ -412,7 +414,28 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           }
         }
 
-        const orgData: any = {
+        // Die optionalen Felder kommen erst weiter unten dazu: Testphase und
+        // Konfi-Limit nur fuer super_admin, die Admin-Zugangsdaten nur beim
+        // Anlegen einer neuen Organisation.
+        const orgData: {
+          name: string;
+          slug: string;
+          display_name: string;
+          description: string | null;
+          contact_name: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          address: string | null;
+          website_url: string | null;
+          kirchenkreis: string | null;
+          is_active: boolean;
+          trial_ends_at?: string | null;
+          is_trial?: boolean;
+          max_konfis?: number | null;
+          admin_username?: string;
+          admin_password?: string;
+          admin_display_name?: string;
+        } = {
           name: systemName,
           slug: systemName,
           display_name: formData.display_name.trim(),
@@ -456,8 +479,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
         setIsDirty(false);
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Speichern'));
       }
     });
   };
@@ -491,8 +514,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setOrgAdmins([...orgAdmins, response.data]);
       setNewAdminData({ display_name: '', username: '', password: '' });
       setShowAddAdmin(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Administrators');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Hinzufügen des Administrators'));
     } finally {
       setAddingAdmin(false);
     }
@@ -547,8 +570,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setMemberSearch('');
       setMemberSearchResults([]);
       await loadMembers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Mitglied konnte nicht hinzugefügt werden');
+    } catch (err) {
+      setError(fehlerText(err, 'Mitglied konnte nicht hinzugefügt werden'));
     } finally {
       setMemberAddingId(null);
     }
@@ -559,8 +582,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     try {
       await api.delete(`/organizations/${organizationId}/members/${member.id}`);
       await loadMembers();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Mitglied konnte nicht entfernt werden');
+    } catch (err) {
+      setError(fehlerText(err, 'Mitglied konnte nicht entfernt werden'));
     }
   };
 
@@ -719,7 +742,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           {organization.trial_ends_at
                             ? (() => {
                                 const end = new Date(organization.trial_ends_at);
-                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                                 return days >= 0
                                   ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
                                   : <span style={{ color: '#dc2626' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
@@ -1304,7 +1327,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   {trialEndsAt
                     ? (() => {
                         const end = new Date(trialEndsAt);
-                        const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        const days = tageBis(end); // Kalendertage, siehe eventFormatting.ts
                         return days >= 0
                           ? <span><strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
                           : <span style={{ color: '#dc2626' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;

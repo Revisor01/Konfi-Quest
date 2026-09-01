@@ -124,10 +124,30 @@ describe('Stammdaten bearbeiten: die Warnungen beim Jahrgangswechsel', () => {
 
 describe('Stammdaten bearbeiten: woher die Warnungen ihre Daten haben', () => {
   it('die Punktearten kommen aus der Jahrgangsliste', () => {
-    // GET /jahrgaenge liefert dank SELECT j.* die Punktearten mit — kein
+    // GET /admin/jahrgaenge liefert dank SELECT j.* die Punktearten mit — kein
     // zusaetzlicher Abruf noetig.
-    expect(detail).toContain("api.get('/jahrgaenge')");
+    //
+    // Der Pfad stand hier bis zum 31.08.2026 als '/jahrgaenge' — den gibt es
+    // nicht, gemessen gegen Produktion: HTTP 404. Dieser Test hat den falschen
+    // Pfad sogar festgehalten, statt ihn zu melden.
+    expect(detail).toContain("api.get('/admin/jahrgaenge')");
+    expect(detail).not.toContain("api.get('/jahrgaenge')");
     expect(modal).toContain('gottesdienst_enabled?: boolean;');
+  });
+
+  it('der Jahrgang der Konfi bleibt sichtbar, auch wenn die Liste ausfaellt', () => {
+    // Simons Hinweis 31.08.2026: Beim Bearbeiten muss der aktuelle Jahrgang zu
+    // sehen sein — auch wenn man ihn gar nicht wechseln will. Kommt die Liste
+    // nicht an (offline, Serverfehler), stand dort sonst "Keine Jahrgänge
+    // verfügbar", und speichern liess sich das Formular auch nicht, weil ohne
+    // Jahrgang nichts gueltig ist.
+    expect(detail).toContain('const jahrgaengeFuersModal =');
+    // Der eigene Jahrgang wird nur ergaenzt, wenn er nicht ohnehin drin ist —
+    // sonst stuende er doppelt in der Auswahl.
+    expect(detail).toContain('alleJahrgaenge.some((jg) => jg.id === eigenerId)');
+    expect(detail).toContain("currentKonfi?.jahrgang_name || 'Aktueller Jahrgang'");
+    // Und das Modal bekommt genau diese Liste, nicht mehr die rohe.
+    expect(detail).toContain('jahrgaenge: jahrgaengeFuersModal,');
   });
 
   it('die eigenen Zuweisungen kommen aus dem angemeldeten Konto', () => {

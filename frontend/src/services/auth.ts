@@ -2,7 +2,7 @@ import axios from 'axios';
 import api, { API_URL } from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId, setLoggingOut } from './tokenStore';
+import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
 import {
   mitBiometrieEntsperren,
   gespeichertenTokenAuffrischen,
@@ -41,7 +41,7 @@ export const loginWithAutoDetection = async (username: string, password: string)
       code: err.code,
       fullError: error
     });
-    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message));
+    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message), { cause: error });
   }
 };
 

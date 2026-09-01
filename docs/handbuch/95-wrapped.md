@@ -30,7 +30,9 @@ Punkte tauchen dort nicht auf.
 > zu den Zahlen in der App passt.
 
 Korrigieren lässt sich das, indem du den Rückblick **erneut freigibst** — dann
-wird er neu berechnet.
+wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis dabei
+nicht: Der Push geht nur beim ersten Freigeben raus. Erst wenn du den Rückblick
+zwischendurch ausgeschaltet hast, benachrichtigt das nächste Freigeben wieder.
 
 ## Freigabe pro Jahrgang
 
@@ -82,8 +84,10 @@ gespeicherten Rückblicke werden dabei **wirklich gelöscht**, nicht nur
 ausgeblendet. Nur ein erneutes Freigeben stellt sie wieder her — dann mit neu
 berechneten Zahlen.
 
-Teamer-Rückblicke sind davon nicht betroffen; für sie gibt es keine
-Löschmöglichkeit.
+Teamer-Rückblicke sind davon nicht betroffen — sie hängen an keinem Jahrgang.
+Löschen lassen sie sich trotzdem, allerdings nicht über die Oberfläche: Der
+Weg dafür ist ein Betriebswerkzeug und läuft über die Schnittstelle, so wie
+das Erzeugen des Teamer-Rückblicks selbst.
 
 ## Die Seiten des Konfi-Rückblicks
 

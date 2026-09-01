@@ -1,3 +1,4 @@
+import { fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonPage,
@@ -158,13 +159,13 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           });
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
-        } catch (err: any) {
+        } catch (err) {
           // WR-05: 404 = der gewaehlte Spruch ist nicht mehr verfuegbar -> klare Meldung
-          if (err.response?.status === 404) {
+          if (fehlerStatus(err) === 404) {
             setSelectedSpruchId(null);
             showError('Der gewählte Spruch ist nicht mehr verfügbar. Bitte wähle einen anderen.');
           } else {
-            showError(err.response?.data?.error || 'Der Konfispruch konnte nicht gespeichert werden');
+            showError(fehlerText(err, 'Der Konfispruch konnte nicht gespeichert werden'));
           }
         }
       });
@@ -187,8 +188,8 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           });
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
-        } catch (err: any) {
-          showError(err.response?.data?.error || 'Der Konfispruch konnte nicht gespeichert werden');
+        } catch (err) {
+          showError(fehlerText(err, 'Der Konfispruch konnte nicht gespeichert werden'));
         }
       });
     }

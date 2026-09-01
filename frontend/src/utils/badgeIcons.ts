@@ -140,11 +140,16 @@ export const ICON_MAP: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * Loest einen gespeicherten Icon-Namen auf. Fallback ist die Trophaee —
- * eine der neun alten Kopien fiel auf `ribbon` zurück (admin/BadgesView),
- * das war die einzige Abweichung und ist bewusst vereinheitlicht.
+ * Loest einen gespeicherten Icon-Namen auf. Standard-Rueckfall ist die
+ * Trophaee — eine der neun alten Kopien fiel auf `ribbon` zurück
+ * (admin/BadgesView), das war die einzige Abweichung und ist bewusst
+ * vereinheitlicht.
+ *
+ * Zertifikate und Challenges brauchen einen anderen Rueckfall (Band bzw.
+ * Flagge), sonst waere der Zusammenzug ihrer Icon-Listen eine sichtbare
+ * Aenderung. Deshalb `fallback` — sie geben ihr bisheriges Symbol mit.
  */
-export const getIconFromString = (iconName?: string | null): string => {
-  if (!iconName) return trophy;
-  return ICON_MAP[iconName] || trophy;
+export const getIconFromString = (iconName?: string | null, fallback: string = trophy): string => {
+  if (!iconName) return fallback;
+  return ICON_MAP[iconName] || fallback;
 };

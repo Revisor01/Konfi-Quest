@@ -27,6 +27,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
@@ -169,18 +170,30 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // HELFER
   // ====================================================================
 
-  // Jahrgänge, die ein Teamer sehen darf. org_admin/admin sehen alles (null =
-  // keine Einschraenkung), super_admin nichts (leeres Array).
+  // Jahrgänge, die eine Person aus der Leitung sehen darf.
+  //   org_admin -> alles (null = keine Einschraenkung)
+  //   super_admin -> nichts (leeres Array)
+  //   admin/teamer -> nur die zugewiesenen Jahrgänge
+  // Seit 31.08.2026 ist auch 'admin' an seine Zuweisungen gebunden (vorher
+  // null = alles). Gleiche Semantik wie utils/jahrgangChat.js und
+  // routes/chat.js. Ein admin ohne Zuweisung sieht damit keine jahrgangs-
+  // gebundenen Challenges mehr — org-weite 'nur_team'-Challenges bleiben ihm,
+  // die haengen an der Rolle, nicht am Jahrgang.
   function viewableJahrgangIds(req) {
     if (req.user.role_name === 'super_admin') return [];
-    if (['org_admin', 'admin'].includes(req.user.role_name)) return null;
+    if (req.user.role_name === 'org_admin') return null;
     return (req.user.assigned_jahrgaenge || []).filter(j => j.can_view).map(j => j.id);
   }
 
-  // Darf die Leitung diese Challenge sehen/bearbeiten? org_admin/admin immer,
-  // Teamer nur wenn mindestens ein zugewiesener Jahrgang zugeordnet ist.
+  // Darf die Leitung diese Challenge sehen/bearbeiten? org_admin immer,
+  // admin und Teamer nur, wenn mindestens ein zugewiesener Jahrgang zugeordnet
+  // ist (admin seit 31.08.2026 ebenfalls gebunden).
   // Challenges ohne Jahrgangs-Zuordnung sind reine Leitungs-Entwuerfe und nur
-  // für org_admin/admin sichtbar (sonst könnte ein Teamer fremde Entwuerfe sehen).
+  // für den org_admin sichtbar (sonst saehe die uebrige Leitung fremde
+  // Entwuerfe). Folge, die schon vor dem 31.08.2026 fuer Teamer galt und nun
+  // auch fuer admin gilt: Wer eine Challenge OHNE jahrgang_ids anlegt, kommt
+  // anschliessend selbst nicht mehr heran — nur noch der org_admin. Das
+  // Formular markiert eine leere Jahrgangs-Auswahl deshalb rot.
   async function leadershipMayAccess(req, challengeId) {
     const viewable = viewableJahrgangIds(req);
     if (viewable === null) return true;
@@ -217,8 +230,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   //   audience 'nur_team'        -> Team der Org, ORG-WEIT (keine Jahrgangspruefung)
   //   audience 'konfis*'         -> Jahrgangsbindung:
   //                                 Konfi über konfi_profiles.jahrgang_id,
-  //                                 Teamer über zugewiesene Jahrgänge,
-  //                                 org_admin/admin immer (sehen alles ihrer Org)
+  //                                 admin/Teamer über zugewiesene Jahrgänge,
+  //                                 org_admin immer (sieht alles seiner Org)
   // Gibt { allowed, reason } zurück, damit die Route 403 vs. 404 unterscheiden kann.
   async function participantMayAccess(req, challenge) {
     const role = req.user.role_name;
@@ -235,9 +248,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       return { allowed: jahrgangIds.includes(jahrgangId) };
     }
 
-    if (['org_admin', 'admin'].includes(role)) return { allowed: true };
-
-    if (role === 'teamer') {
+    // org_admin: immer (leadershipMayAccess gibt für ihn sofort true zurück).
+    // admin/teamer: nur bei zugewiesenem Jahrgang — derselbe Weg, damit die
+    // Teilnehmer-Sicht nicht weiter ist als die Leitungs-Sicht.
+    if (['org_admin', 'admin', 'teamer'].includes(role)) {
       return { allowed: await leadershipMayAccess(req, challenge.id) };
     }
 
@@ -431,8 +445,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
       }
 
-      // Konfi: genau ein Jahrgang. Teamer: zugewiesene Jahrgänge.
-      // org_admin/admin: alle Jahrgänge der Org (viewable === null).
+      // Konfi: genau ein Jahrgang. admin/Teamer: zugewiesene Jahrgänge.
+      // org_admin: alle Jahrgänge der Org (viewable === null).
       let jahrgangIds = null;
       if (role === 'konfi') {
         const jahrgangId = await konfiJahrgangId(req.user.id);
@@ -440,8 +454,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.json({ active: [], archive: [], marks: [] });
         }
         jahrgangIds = [jahrgangId];
-      } else if (role === 'teamer') {
-        jahrgangIds = viewableJahrgangIds(req) || [];
+      } else {
+        jahrgangIds = viewableJahrgangIds(req);
       }
 
       // Sichtbare Challenges: entweder über die Jahrgangs-Zuordnung
@@ -786,6 +800,34 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           }
 
           try {
+            // Feed-Push an die Jahrgangs-Konfis — NUR wenn der Beitrag jetzt
+            // schon oeffentlich ist. Bei moderierten Challenges ist er das
+            // nicht; dort feuert der Push erst mit der Freigabe (PUT
+            // /admin/submissions/:id/moderate).
+            //
+            // Dieselbe Sichtbarkeitsregel wie die Galerie (isSubmissionPublic):
+            // Wer den Beitrag nicht sehen darf, erfaehrt auch nichts von ihm.
+            const sichtbar = isSubmissionPublic(
+              { moderation_status: moderationStatus, konfi_consent },
+              challenge
+            );
+            if (sichtbar) {
+              const anonym = isAnonymous({ konfi_consent }, challenge);
+              await PushService.sendChallengeFeedToJahrgaenge(
+                db,
+                req.user.organization_id,
+                challengeId,
+                challenge.title,
+                req.user.id,
+                anonym ? null : req.user.display_name,
+                media_type
+              );
+            }
+          } catch (pushErr) {
+            console.error('Feed-Push fehlgeschlagen:', pushErr.message);
+          }
+
+          try {
             if (moderationStatus === 'approved') {
               const { rows: [{ count: approvedCount }] } = await db.query(
                 `SELECT COUNT(*)::int AS count FROM challenge_submissions
@@ -913,10 +955,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         requester.role_name = membership.role_name;
       }
 
-      // Für Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG nachladen —
-      // gebraucht, um leadershipMayAccess/viewableJahrgangIds unten identisch
-      // zur rbacVerifier-Logik im Rest der Datei anzuwenden.
-      if (requester.role_name === 'teamer') {
+      // Für admin und Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG
+      // nachladen — gebraucht, um leadershipMayAccess/viewableJahrgangIds unten
+      // identisch zur rbacVerifier-Logik im Rest der Datei anzuwenden.
+      // (admin ist seit 31.08.2026 ebenfalls jahrgangs-gebunden.)
+      if (['admin', 'teamer'].includes(requester.role_name)) {
         const { rows: assigned } = await db.query(
           `SELECT j.id, uja.can_view
            FROM user_jahrgang_assignments uja
@@ -942,21 +985,21 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       const isOwner = row.user_id === requester.id;
       let mayAccess = isOwner;
 
-      if (!mayAccess && ['org_admin', 'admin'].includes(requester.role_name)) {
-        // org_admin/admin sehen alle Dateien ihrer (aktiven) Org, ohne
+      if (!mayAccess && requester.role_name === 'org_admin') {
+        // org_admin sieht alle Dateien seiner (aktiven) Org, ohne
         // Jahrgangs-Einschraenkung — identisch zu leadershipMayAccess().
         mayAccess = true;
-      } else if (!mayAccess && requester.role_name === 'teamer') {
+      } else if (!mayAccess && ['admin', 'teamer'].includes(requester.role_name)) {
         // 'nur_team'-Challenges sind org-weit (keine Jahrgangs-Zuordnung) —
-        // dort darf jeder Teamer der Org die Dateien sehen, sonst könnte er
-        // seine eigene Team-Runde nicht anschauen (Migration 121).
+        // dort darf jede:r aus dem Team der Org die Dateien sehen, sonst könnte
+        // sie/er die eigene Team-Runde nicht anschauen (Migration 121).
         if (row.audience === 'nur_team') {
           mayAccess = true;
         } else {
-          // Sonst nur für Submissions aus einem seiner zugewiesenen Jahrgänge —
+          // Sonst nur für Submissions aus einem der zugewiesenen Jahrgänge —
           // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
           // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
-          // Leitungs-Endpunkte, über die der Teamer die Challenge erst findet).
+          // Leitungs-Endpunkte, über die die Challenge erst gefunden wird).
           const viewable = (requester.assigned_jahrgaenge || [])
             .filter(j => j.can_view)
             .map(j => j.id);
@@ -1542,9 +1585,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: [submission] } = await db.query(
           `SELECT cs.id, cs.challenge_id, cs.user_id, cs.moderation_status,
-                  cs.konfi_consent, c.visibility, c.title AS challenge_title
+                  cs.konfi_consent, cs.media_type, c.visibility, c.title AS challenge_title,
+                  u.display_name AS einreicher_name
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
+           JOIN users u ON u.id = cs.user_id
            WHERE cs.id = $1 AND cs.organization_id = $2`,
           [submissionId, req.user.organization_id]
         );
@@ -1629,6 +1674,33 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             // Challenge, ist das Abzeichen jetzt verdient -> Push. Bewusst nur
             // bei 'approve' (nicht 'unhide'): ein wieder eingeblendeter
             // Beitrag war schon einmal freigegeben.
+            // Erst mit der Freigabe wird der Beitrag im Feed sichtbar —
+            // hier feuert deshalb der Feed-Push fuer moderierte Challenges.
+            // Bewusst NUR bei 'approve': Ein wieder eingeblendeter Beitrag
+            // ('unhide') war schon einmal sichtbar, dafuer gaebe es sonst eine
+            // zweite Mitteilung.
+            if (action === 'approve') {
+              const sichtbar = isSubmissionPublic(
+                { moderation_status: 'approved', konfi_consent: submission.konfi_consent },
+                { visibility: submission.visibility }
+              );
+              if (sichtbar) {
+                const anonym = isAnonymous(
+                  { konfi_consent: submission.konfi_consent },
+                  { visibility: submission.visibility }
+                );
+                await PushService.sendChallengeFeedToJahrgaenge(
+                  db,
+                  req.user.organization_id,
+                  submission.challenge_id,
+                  submission.challenge_title,
+                  submission.user_id,
+                  anonym ? null : submission.einreicher_name,
+                  submission.media_type
+                );
+              }
+            }
+
             if (action === 'approve') {
               const { rows: [{ count: approvedCount }] } = await db.query(
                 `SELECT COUNT(*)::int AS count FROM challenge_submissions
@@ -1775,7 +1847,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         for (const row of rows) {
           const anonymous = isAnonymous(row, challenge);
           const name = anonymous ? 'Anonym' : row.display_name;
-          const datum = new Date(row.created_at).toLocaleDateString('de-DE');
+          const datum = formatDatum(row.created_at);
           lines.push(`--- ${name} (${datum}) ---`);
           if (row.text_content) {
             lines.push(row.text_content);

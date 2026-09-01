@@ -31,12 +31,14 @@ import {
   trash,
   document as documentIcon,
   attachOutline,
+  linkOutline,
   cloudOfflineOutline,
   lockOpen,
   qrCodeOutline
 } from 'ionicons/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -69,7 +71,7 @@ export interface EventData {
   registered_count: number;
   registration_status: 'upcoming' | 'open' | 'closed';
   available_spots: number;
-  participants: any[];
+  participants: Participant[];
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;
   has_timeslots?: boolean;
   mandatory?: boolean;
@@ -83,7 +85,12 @@ export interface EventData {
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
   is_series?: boolean;
-  series_id?: string;
+  // Erster Termin der Serie -- die id des ersten Events (events.series_id),
+  // also eine Zahl. In der Datenbank bigint (nachgemessen 30.08.2026 an
+  // Produktion). Bis dahin stand hier string: der Vergleich
+  // e.series_id === event.series_id waere zwischen den beiden Fassungen nie
+  // wahr geworden, weil 12 !== "12".
+  series_id?: number;
   series_events?: EventData[];
   created_at: string;
   chat_room_id?: number | null;
@@ -92,29 +99,10 @@ export interface EventData {
   max_waitlist_size?: number;
 }
 
-export interface Participant {
-  id: number;
-  user_id?: number;
-  participant_name: string;
-  jahrgang_name?: string;
-  role_name?: string;
-  created_at: string;
-  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
-  attendance_status?: 'present' | 'absent' | null;
-  timeslot_id?: number;
-  timeslot_start_time?: string;
-  timeslot_end_time?: string;
-  opt_out_reason?: string;
-  opt_out_date?: string;
-}
-
-export interface Unregistration {
-  id: number;
-  user_id: number;
-  konfi_name: string;
-  reason?: string;
-  unregistered_at: string;
-}
+// Participant und Unregistration stehen zentral in types/event — bis zum
+// 30.08.2026 gab es sie hier UND im ParticipantManagementModal, mit
+// unterschiedlichen Statuswerten.
+export type { Participant, Unregistration } from '../../../types/event';
 
 // ---- EventInfoCard ----
 
@@ -206,8 +194,10 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
 
         {/* TN gesamt - Konfis und Teamer getrennt */}
         {(() => {
-          const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
-          const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+          // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026) —
+          // sonst zaehlt zugeordnete Leitung als Konfi mit.
+          const konfiOnly = participants.filter(p => p.role_name === 'konfi');
+          const teamerOnly = participants.filter(p => p.role_name !== 'konfi');
           const teamerConfirmed = teamerOnly.filter(p => p.status === 'confirmed');
           const teamerWaitlistCount = eventData.teamer_waitlist_count !== undefined
             ? eventData.teamer_waitlist_count
@@ -285,13 +275,13 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
 
         {/* Warteliste (Konfis) \u2014 entfaellt bei "Nur Teamer:innen" und bei
             unbegrenzten Plaetzen (dann kann niemand warten) */}
-        {(eventData as any)?.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
+        {eventData.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
             <div>
               <div className="app-info-row__label">Warteliste</div>
               <div className="app-info-row__value">
-                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
+                {participants.filter(p => p.role_name === 'konfi' && p.status === 'waitlist').length} / {eventData.max_waitlist_size || 10}
               </div>
             </div>
           </div>
@@ -390,7 +380,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             <div>
               <div className="app-info-row__label">Check-in-Fenster</div>
               <div className="app-info-row__value">
-                QR-Code {eventData.checkin_window} Min. vor bis {eventData.checkin_window} Min. nach Beginn
+                QR-Code {eventData.checkin_window} Min. (vor/nach Beginn)
               </div>
             </div>
           </div>
@@ -565,7 +555,7 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
 // ---- EventMaterialSection ----
 
 interface EventMaterialSectionProps {
-  eventMaterials: any[];
+  eventMaterials: EventMaterial[];
   onMaterialClick: (materialId: number) => void;
 }
 
@@ -583,7 +573,7 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
     <IonCard className="app-card">
       <IonCardContent style={{ padding: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {eventMaterials.map((mat: any) => (
+        {eventMaterials.map((mat) => (
           <div
             key={mat.id}
             className="app-list-item app-list-item--material"
@@ -593,15 +583,22 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
             <div className="app-list-item__row">
               <div className="app-list-item__main">
                 <div className="app-icon-circle app-icon-circle--material">
-                  <IonIcon icon={documentIcon} />
+                  <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
                 </div>
                 <div className="app-list-item__content">
                   <div className="app-list-item__title">{mat.title}</div>
                   <div className="app-list-item__meta">
-                    <span className="app-list-item__meta-item">
-                      <IonIcon icon={attachOutline} className="app-icon-color--material" />
-                      {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
-                    </span>
+                    {mat.link_url ? (
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={linkOutline} className="app-icon-color--material" />
+                        Link
+                      </span>
+                    ) : (
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={attachOutline} className="app-icon-color--material" />
+                        {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -694,7 +691,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
           const slotEndFormatted = formatTime(timeslot.end_time);
           // Teilnehmer diesem Slot zuordnen (per timeslot_id, Fallback über Zeit).
           const matchesSlot = (p: Participant) => {
-            if ((p as any).timeslot_id && (timeslot as any).id) return (p as any).timeslot_id === (timeslot as any).id;
+            if (p.timeslot_id && timeslot.id) return p.timeslot_id === timeslot.id;
             if (p.timeslot_start_time && p.timeslot_end_time) {
               return formatTime(p.timeslot_start_time) === slotStartFormatted &&
                      formatTime(p.timeslot_end_time) === slotEndFormatted;

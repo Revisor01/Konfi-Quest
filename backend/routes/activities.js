@@ -5,9 +5,11 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { heuteBerlin } = require('../utils/zeitformat');
 const { decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
+const { darfKonfi } = require('../utils/jahrgangsZugriff');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -342,6 +344,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         statusFilter = ` AND ar.status = $${params.length}`;
       }
 
+      // Jahrgangs-Bindung (31.08.2026) als FILTER, nicht als 403: Die Liste
+      // ist org-weit und mischt viele Konfis: Ein Admin soll die Anträge aus
+      // seinen Jahrgängen sehen, statt die ganze Seite verweigert zu bekommen.
+      // Ein Admin ohne Zuweisung sieht entsprechend keine Konfi-Anträge.
+      //
+      // Antwortform bleibt ein Array (auch leer) — die Store-Apps rufen
+      // .filter() darauf.
+      //
+      // Teamer-Anträge (a.target_role = 'teamer') bleiben immer sichtbar:
+      // Teamer:innen sieht ein Admin laut Regel alle, und sie haben keinen
+      // Jahrgang, über den gefiltert werden könnte.
+      let jahrgangFilter = '';
+      const vollzugriff = req.user.is_super_admin
+        || ['super_admin', 'org_admin'].includes(req.user.role_name);
+      if (!vollzugriff) {
+        const sichtbare = (req.user.assigned_jahrgaenge || [])
+          .filter(j => j.can_view)
+          .map(j => j.id);
+        if (sichtbare.length === 0) {
+          jahrgangFilter = ` AND a.target_role = 'teamer'`;
+        } else {
+          params.push(sichtbare);
+          jahrgangFilter = ` AND (a.target_role = 'teamer' OR kp.jahrgang_id = ANY($${params.length}::int[]))`;
+        }
+      }
+
       const query = `
         SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
                a.target_role as activity_target_role,
@@ -349,8 +377,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         FROM activity_requests ar
         JOIN users u_konfi ON ar.user_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
+        LEFT JOIN konfi_profiles kp ON kp.user_id = ar.user_id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
-        WHERE a.organization_id = $1${statusFilter}
+        WHERE a.organization_id = $1${statusFilter}${jahrgangFilter}
         ORDER BY ar.created_at DESC
       `;
 
@@ -380,13 +409,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const requestId = req.params.id;
       try {
         const { rows: [antrag] } = await db.query(
-          `SELECT ar.id, ar.status, ar.photo_filename
+          `SELECT ar.id, ar.status, ar.photo_filename, ar.user_id, a.target_role
              FROM activity_requests ar
              JOIN activities a ON ar.activity_id = a.id
             WHERE ar.id = $1 AND a.organization_id = $2`,
           [requestId, req.user.organization_id]
         );
         if (!antrag) return res.status(404).json({ error: 'Antrag nicht gefunden' });
+
+        // Jahrgangs-Bindung (31.08.2026): Löschen entfernt den Antrag samt
+        // Nachweisfoto einer Konfi endgültig. Wer die Konfi nicht sehen darf,
+        // darf auch ihre Anträge nicht wegräumen.
+        if (antrag.target_role !== 'teamer') {
+          const zugriff = await darfKonfi(db, req, antrag.user_id);
+          if (!zugriff.erlaubt) {
+            return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+          }
+        }
 
         if (antrag.status !== 'rejected') {
           const grund = antrag.status === 'pending'
@@ -427,6 +466,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       if (oldStatus === 'pending') return res.status(400).json({ error: 'Antrag ist bereits ausstehend' });
 
       const isTeamerActivity = request.target_role === 'teamer';
+
+      // Jahrgangs-Bindung (31.08.2026): Zurücksetzen ENTZIEHT Punkte und
+      // löscht den Aktivitäts-Eintrag — ein Eingriff in die Punktegeschichte
+      // einer Konfi, also dieselbe Grenze wie beim Genehmigen.
+      if (!isTeamerActivity) {
+        const zugriff = await darfKonfi(db, req, request.user_id);
+        if (!zugriff.erlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
+      }
 
       const client = await db.getClient();
       try {
@@ -512,6 +561,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       const isTeamerActivity = request.target_role === 'teamer';
+
+      // Jahrgangs-Bindung (31.08.2026): Genehmigen/Ablehnen vergibt bzw.
+      // verweigert Punkte — dieselbe Wirkung wie assign-activity, also
+      // dieselbe Grenze. Ein Admin entscheidet nur über Anträge von Konfis
+      // aus seinen Jahrgängen; org_admin/super_admin über alle.
+      // Teamer-Anträge bleiben ausgenommen (keine konfi_profiles, und
+      // Teamer:innen sieht ein Admin laut Regel ohnehin alle).
+      if (!isTeamerActivity) {
+        const zugriff = await darfKonfi(db, req, request.user_id);
+        if (!zugriff.erlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
+      }
 
       // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist (nur für Konfi-Activities)
       if (status === 'approved' && !isTeamerActivity) {
@@ -668,7 +730,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   router.post('/assign-activity', rbacVerifier, requireTeamer, validateAssignActivity, async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi-ID und Aktivitäts-ID sind erforderlich' });
-    const date = completed_date || new Date().toISOString().split('T')[0];
+    // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+    // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Eintrag ohne Datum sonst
+    // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
+    const date = completed_date || heuteBerlin();
 
     try {
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
@@ -688,24 +753,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(404).json({ error: 'Konfi nicht gefunden' });
       }
 
-      // Jahrgang-Zugriff prüfen für Teamer
-      if (req.user.role_name === 'teamer') {
-        const { rows: [konfiProfile] } = await db.query(
-          'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [konfiId]
-        );
-        if (!konfiProfile) {
+      // Teamer-Aktivitäten: Keine Punkte-Vergabe und keinen pointTypeGuard-Check
+      const isTeamerActivity = activity.target_role === 'teamer';
+
+      // Jahrgangs-Zugriff auf die Zielperson prüfen.
+      //
+      // Bis 31.08.2026 lief diese Prüfung nur gegen 'teamer' — ein Admin
+      // konnte jeder Konfi seiner Organisation Punkte geben, auch ausserhalb
+      // seiner Jahrgänge. Seit Simons Regel vom 31.08.2026 ist ein Admin an
+      // seine zugewiesenen Jahrgänge gebunden; org_admin/super_admin bleiben
+      // ausgenommen. Die Rollen-Unterscheidung steckt jetzt komplett in
+      // darfKonfi (utils/jahrgangsZugriff.js) statt hier kopiert.
+      //
+      // NUR für Konfi-Aktivitäten: Bei target_role='teamer' ist die Zielperson
+      // eine Teamer:in ohne konfi_profiles-Eintrag. Ein Jahrgangs-Check würde
+      // dort ins Leere greifen (kein Profil -> 404) und die Teamer-Vergabe
+      // brechen. Ausserdem gilt für Teamer:innen ohnehin die Ausnahme der
+      // Regel: die sieht ein Admin alle.
+      if (!isTeamerActivity) {
+        const zugriff = await darfKonfi(db, req, konfiId);
+        if (!zugriff.gefunden) {
           return res.status(404).json({ error: 'Konfi nicht gefunden' });
         }
-        const hasAccess = req.user.assigned_jahrgaenge.some(
-          j => j.id === konfiProfile.jahrgang_id && j.can_view
-        );
-        if (!hasAccess) {
+        if (!zugriff.erlaubt) {
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
         }
       }
-
-      // Teamer-Aktivitäten: Keine Punkte-Vergabe und keinen pointTypeGuard-Check
-      const isTeamerActivity = activity.target_role === 'teamer';
 
       if (!isTeamerActivity) {
         // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
@@ -773,9 +846,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Get request with photo filename and check organization
       const { rows: [request] } = await db.query(
-        `SELECT ar.photo_filename, ar.user_id, u.organization_id
+        `SELECT ar.photo_filename, ar.user_id, u.organization_id, a.target_role
          FROM activity_requests ar
          JOIN users u ON ar.user_id = u.id
+         JOIN activities a ON ar.activity_id = a.id
          WHERE ar.id = $1`,
         [requestId]
       );
@@ -787,6 +861,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Organization check
       if (request.organization_id !== req.user.organization_id) {
         return res.status(403).json({ error: 'Keine Berechtigung für diese Organisation' });
+      }
+
+      // Jahrgangs-Bindung (31.08.2026): Ein Nachweisfoto ist das persönlichste
+      // Datum an einem Antrag (die Route trägt nicht umsonst den Hinweis
+      // "NUR Admin (Datenschutz!)" im Dateikopf). Wer die Konfi nicht sehen
+      // darf, darf ihr Foto erst recht nicht sehen.
+      if (request.target_role !== 'teamer') {
+        const zugriff = await darfKonfi(db, req, request.user_id);
+        if (!zugriff.erlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
       }
 
       if (!request.photo_filename) {
@@ -832,9 +917,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       const { rows: [request] } = await db.query(
-        `SELECT ar.photo_filename, u.organization_id
+        `SELECT ar.photo_filename, ar.user_id, u.organization_id, a.target_role
          FROM activity_requests ar
          JOIN users u ON ar.user_id = u.id
+         JOIN activities a ON ar.activity_id = a.id
          WHERE ar.id = $1`,
         [requestId]
       );
@@ -845,6 +931,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       if (request.organization_id !== req.user.organization_id) {
         return res.status(403).json({ error: 'Keine Berechtigung für diese Organisation' });
+      }
+
+      // Jahrgangs-Bindung (31.08.2026): analog zur GET-Foto-Route — das Foto
+      // gehört zur Konfi, nicht zur Organisation.
+      if (request.target_role !== 'teamer') {
+        const zugriff = await darfKonfi(db, req, request.user_id);
+        if (!zugriff.erlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
       }
 
       if (!request.photo_filename) {

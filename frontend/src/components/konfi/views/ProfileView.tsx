@@ -1,45 +1,10 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
-import {
-  IonButton,
-  IonButtons,
-  IonCard,
-  IonCardContent,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonPage,
-  IonProgressBar,
-  IonTitle,
-  IonToolbar,
-  useIonModal,
-  useIonAlert
-} from '@ionic/react';
-import {
-  personOutline,
-  calendarOutline,
-  starOutline,
-  trophy,
-  checkmark,
-  flash,
-  logOutOutline,
-  trashOutline,
-  rocket,
-  keyOutline,
-  bookOutline,
-  locationOutline,
-  mailOutline,
-  timeOutline,
-  compassOutline,
-  imagesOutline,
-  sparklesOutline,
-  chevronForwardOutline
-} from 'ionicons/icons';
+import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader, IonProgressBar, useIonModal, useIonAlert } from '@ionic/react';
+import { personOutline, calendarOutline, starOutline, trophy, checkmark, flash, logOutOutline, trashOutline, rocket, keyOutline, bookOutline, locationOutline, mailOutline, timeOutline, compassOutline, imagesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import type { BadgeUebersicht } from '../../../types/dashboard';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -170,9 +135,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   React.useEffect(() => {
     const loadBadges = async () => {
       try {
-        const response = await api.get('/konfi/badges');
-        const badges = [...(response.data.available || []), ...(response.data.earned || [])];
-        const earnedCount = badges.filter((badge: any) => badge.earned || badge.is_earned).length;
+        const response = await api.get('/konfi/badges/v2');
+        const uebersicht = response.data as BadgeUebersicht;
+        // GET /konfi/badges fuehrt den Status als `earned`; `is_earned` gibt es
+        // nur in der Anzeige-Form der Abzeichen-Seite.
+        const badges = [...(uebersicht.available || []), ...(uebersicht.earned || [])];
+        const earnedCount = badges.filter((badge) => badge.earned).length;
         setEarnedBadgesCount(earnedCount);
       } catch (err) {
  console.warn('Could not load badges for count:', err);
@@ -211,8 +179,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       setSelectedTranslation(translation);
       // Update profile to reflect the change
       await onReload();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }
   };
 
@@ -309,15 +277,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     } : undefined
   });
 
-  const getInitials = (name: string | undefined) => {
-    if (!name) return '??';
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
 
   const getActivityIcon = (activity: RecentActivity) => {
     switch (activity.type) {
@@ -329,15 +288,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     }
   };
 
-  const getActivityColor = (activity: RecentActivity) => {
-    switch (activity.type) {
-      case 'badge': return '#ffd700';
-      case 'event': return '#3880ff';
-      case 'activity': return '#2dd36f';
-      case 'request': return '#ffcc00';
-      default: return '#667eea';
-    }
-  };
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unbekannt';

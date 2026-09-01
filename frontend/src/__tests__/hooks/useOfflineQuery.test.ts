@@ -9,9 +9,9 @@ const mockCacheIsStale = vi.fn();
 
 vi.mock('../../services/offlineCache', () => ({
   offlineCache: {
-    get: (...args: any[]) => mockCacheGet(...args),
-    set: (...args: any[]) => mockCacheSet(...args),
-    isStale: (...args: any[]) => mockCacheIsStale(...args),
+    get: (...args: unknown[]) => mockCacheGet(...args),
+    set: (...args: unknown[]) => mockCacheSet(...args),
+    isStale: (...args: unknown[]) => mockCacheIsStale(...args),
   },
 }));
 
@@ -175,7 +175,7 @@ describe('useOfflineQuery', () => {
     mockCacheIsStale.mockReturnValue(false);
 
     // Fetcher resolves nach Verzoegerung, damit Cache zuerst geladen wird
-    let resolveFetcher!: (value: any) => void;
+    let resolveFetcher!: (value: unknown) => void;
     const fetcher = vi.fn().mockImplementation(() => new Promise((resolve) => {
       resolveFetcher = resolve;
     }));
@@ -249,7 +249,7 @@ describe('useOfflineQuery', () => {
   // Rollen doppelt. Verbotener Fall: zweiter identischer Request während der
   // erste noch läuft. Erlaubter Fall: sequentielles refresh() lädt erneut.
   it('paralleles refresh() während laufendem Fetch startet KEINEN zweiten Request', async () => {
-    let resolveFetch: (v: any) => void;
+    let resolveFetch: (v: unknown) => void;
     const fetcher = vi.fn().mockImplementation(
       () => new Promise((resolve) => { resolveFetch = resolve; })
     );
@@ -277,7 +277,7 @@ describe('useOfflineQuery', () => {
   it('Initial-Load ueberspringt Revalidierung, wenn refresh() gerade erst geladen hat', async () => {
     // cache.get langsam -> refresh() gewinnt das Rennen und ist fertig,
     // bevor der Initial-Load seinen Zweig waehlt
-    let resolveCacheGet: (v: any) => void;
+    let resolveCacheGet: (v: unknown) => void;
     mockCacheGet.mockImplementation(
       () => new Promise((resolve) => { resolveCacheGet = resolve; })
     );
@@ -308,7 +308,7 @@ describe('useOfflineQuery', () => {
   // Verbotener Fall: nach dem Dedupe bleibt der veraltete Stand stehen.
   // Erlaubter Fall (Test darueber): Mount-Load + useIonViewWillEnter bleiben dedupt.
   it('refreshLive() waehrend laufendem Fetch laedt danach den NEUEN Stand nach', async () => {
-    let resolveErster: (v: any) => void;
+    let resolveErster: (v: unknown) => void;
     const fetcher = vi.fn()
       .mockImplementationOnce(() => new Promise((resolve) => { resolveErster = resolve; }))
       .mockResolvedValueOnce({ v: 'NEU' });
@@ -331,7 +331,7 @@ describe('useOfflineQuery', () => {
   });
 
   it('mehrere Live-Ereignisse waehrend eines Abrufs loesen nur EINEN Nachfolge-Abruf aus', async () => {
-    let resolveErster: (v: any) => void;
+    let resolveErster: (v: unknown) => void;
     const fetcher = vi.fn()
       .mockImplementationOnce(() => new Promise((resolve) => { resolveErster = resolve; }))
       .mockResolvedValueOnce({ v: 'NEU' });

@@ -2,6 +2,7 @@ import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { timeOutline, alertCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
+import { tageBis } from './eventFormatting';
 
 /**
  * Hinweis-Banner für laufende Testphasen.
@@ -17,7 +18,10 @@ const TrialBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   if (!user?.trial_ends_at || user?.is_trial !== true) return null;
 
   const end = new Date(user.trial_ends_at);
-  const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  // Kalendertage, nicht 24-Stunden-Bloecke: Sonst zeigt ein Ende heute Abend
+  // "1 Tag" statt "heute", und ueber eine Zeitumstellung verschiebt sich alles
+  // um einen Tag (siehe eventFormatting.ts).
+  const days = tageBis(end);
 
   // Abgelaufen wird serverseitig per Login/Refresh gesperrt — hier nur laufende Trials
   if (days < 0) return null;

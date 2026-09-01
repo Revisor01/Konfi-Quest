@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -21,26 +22,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import {
-  mailOutline,
-  keyOutline,
-  briefcaseOutline,
-  calendarOutline,
-  settingsOutline,
-  trophy,
-  logOutOutline,
-  trashOutline,
-  ribbon,
-  schoolOutline,
-  timeOutline,
-  arrowBack,
-  imagesOutline,
-  bookOutline,
-  compassOutline,
-  sparklesOutline,
-  chevronForwardOutline,
-  document as documentIcon
-} from 'ionicons/icons';
+import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, arrowBack, imagesOutline, bookOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -92,7 +74,7 @@ interface TeamerProfile {
 }
 
 const TeamerProfilePage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('profile');
+  const { pageRef } = useModalPage('profile');
   const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
@@ -136,8 +118,8 @@ const TeamerProfilePage: React.FC = () => {
     try {
       await api.put('/teamer/bible-translation', { translation });
       refresh();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));
     }
   };
 
@@ -372,7 +354,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentRoleTitleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -399,7 +381,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentEmailModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -426,7 +408,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentPasswordModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -451,7 +433,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentBibleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -479,7 +461,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={itemStyle as any}
+                  style={itemStyle as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">

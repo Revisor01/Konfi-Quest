@@ -276,6 +276,15 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 // ============================================
 // JAHRGANG-ZUGRIFF
 // ============================================
+//
+// ACHTUNG — beide Helfer sind derzeit WIRKUNGSLOS (Stand 31.08.2026):
+// checkJahrgangAccess wird in keiner Route als Middleware eingehängt (es gibt
+// nur Kommentare, die auf die hier beschriebene Regel verweisen), und
+// filterByJahrgangAccess wird zwar über createApp.js an konfi-management
+// durchgereicht, dort aber nie aufgerufen. Die Rollen-Regel unten ist damit
+// die verbindliche Vorlage, nicht der wirksame Schutz: Wer eine Route
+// jahrgangs-gebunden machen will, muss den Helfer erst einhängen.
+// Wer hier vorbeikommt: Das ist NICHT erledigt, nur vorbereitet.
 
 const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false) => {
   return (req, res, next) => {
@@ -288,8 +297,13 @@ const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false
       return res.status(403).json({ error: 'Super-Admin hat keinen Zugriff auf Jahrgangs-Daten' });
     }
 
-    // Org-Admin und Admin haben Zugriff auf alle Jahrgänge ihrer Organisation
-    if (['org_admin', 'admin'].includes(req.user.role_name)) {
+    // Nur der Org-Admin hat Zugriff auf ALLE Jahrgänge seiner Organisation.
+    // 'admin' ist seit 31.08.2026 an seine zugewiesenen Jahrgänge gebunden
+    // (Regel: org_admin/super_admin ausgenommen, admin gebunden — Ausnahme sind
+    // Teamer:innen, die ein admin weiterhin alle sieht; das betrifft die
+    // Personenlisten, nicht diesen Jahrgangs-Check) und läuft deshalb unten
+    // durch dieselbe Zuweisungs-Prüfung wie ein Teamer.
+    if (req.user.role_name === 'org_admin') {
       return next();
     }
 
@@ -328,15 +342,17 @@ const filterByJahrgangAccess = (req) => {
     return { where: 'WHERE 1=0', params: [] };
   }
 
-  // Org-Admin und Admin sehen alles in ihrer Organisation
-  if (['org_admin', 'admin'].includes(req.user.role_name)) {
+  // Nur der Org-Admin sieht alles in seiner Organisation.
+  // 'admin' fällt seit 31.08.2026 in den Jahrgangs-Filter unten (siehe
+  // checkJahrgangAccess).
+  if (req.user.role_name === 'org_admin') {
     return {
       where: 'WHERE organization_id = $1',
       params: [req.user.organization_id]
     };
   }
 
-  // Teamer sehen nur zugewiesene Jahrgänge
+  // Admin und Teamer sehen nur zugewiesene Jahrgänge
   const viewableJahrgaenge = req.user.assigned_jahrgaenge
     .filter(j => j.can_view)
     .map(j => j.id);

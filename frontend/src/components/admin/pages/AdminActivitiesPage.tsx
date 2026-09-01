@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import { fehlerText } from '../../../utils/fehler';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -39,7 +40,7 @@ interface Activity {
 
 const AdminActivitiesPage: React.FC = () => {
   const { user, setError, isOnline } = useApp();
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
+  const { pageRef, presentingElement } = useModalPage('admin-activities');
   
   // State
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
@@ -86,8 +87,8 @@ const AdminActivitiesPage: React.FC = () => {
             try {
               await api.delete(`/admin/activities/${activity.id}`);
               await refreshActivities();
-            } catch (err: any) {
-              const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
+            } catch (err) {
+              const errorMessage = fehlerText(err, 'Fehler beim Löschen der Aktivität');
               setError(errorMessage);
             }
           }
@@ -160,8 +161,6 @@ const AdminActivitiesPage: React.FC = () => {
         ) : (
           <ActivitiesView
             activities={activities || []}
-            onUpdate={refreshActivities}
-            onAddActivityClick={presentActivityModal}
             onSelectActivity={handleSelectActivity}
             onDeleteActivity={handleDeleteActivity}
             canEdit={canEdit}

@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import {
   IonHeader,
@@ -21,14 +22,7 @@ import {
   IonAccordionGroup,
   IonRange
 } from '@ionic/react';
-import {
-  checkmarkOutline,
-  closeOutline,
-  create,
-  trophy,
-  pin,
-  chevronDownOutline
-} from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, chevronDownOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -67,7 +61,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       onClose();
     }
   };
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const [formData, setFormData] = useState<Level>({
     name: '',
     title: '',
@@ -150,8 +144,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       }
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Speichern');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Speichern'));
     } finally {
       setLoading(false);
     }

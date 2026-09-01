@@ -8,6 +8,7 @@ const { validatePassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { deletePhotoFile, deleteChallengeFile, deleteChatFile } = require('../utils/photoStorage');
@@ -605,17 +606,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Assign jahrgaenge to user
-  // requireAdmin, weil fuers Anlegen von Teamer:innen eine Jahrgangs-Zuweisung
-  // sinnvoll ist -- sonst entsteht eine Teamer:in ohne Zuweisung, und das
-  // Frontend bietet die Zuweisung an (aus PR #148, Ron31).
-  //
-  // userHierarchyMiddleware ERGAENZT seit dem 31.08.2026 (die offene Frage aus
-  // demselben PR): requireAdmin allein prueft NICHT, ob der Ziel-User ueberhaupt
-  // vom aufrufenden Admin verwaltet werden darf. Ohne die Middleware koennte ein
-  // 'admin' die Jahrgangs-Rechte anderer Admins und sogar von Org-Admins
-  // aendern -- eine Rechteausweitung. canManageRole (utils/roleHierarchy.js)
-  // laesst 'admin' genau 'teamer' und 'konfi' zu, 'org_admin' alle Rollen der
-  // eigenen Gemeinde. Dasselbe Muster wie bei create/update/delete oben.
+  // requireAdmin + Hierarchie statt requireOrgAdmin (Entscheidung 31.08.2026):
+  // Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen —
+  // sonst ist die neue Teamer:in fuer niemanden zustaendig.
+  // requireAdmin ALLEIN waere eine Rechteausweitung: ein Admin koennte damit
+  // die Jahrgangs-Rechte anderer Admins und sogar von Org-Admins aendern.
+  // userHierarchyMiddleware('update') zieht dieselbe Grenze wie bei Anlegen,
+  // Bearbeiten und Loeschen: canManageRole laesst 'admin' nur teamer und konfi
+  // zu (roleHierarchy.js:36-38) und antwortet sonst mit 403 — bei Zielbenutzern
+  // aus einer fremden Organisation mit 404.
   router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('update'), validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
@@ -642,23 +641,71 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             [userId]
         );
         const currentJahrgangIds = currentAssignments.map(a => a.jahrgang_id);
-        const newJahrgangIds = jahrgang_assignments.map(a => a.jahrgang_id);
+        const newJahrgangIds = jahrgang_assignments.map(a => parseInt(a.jahrgang_id, 10));
+
+        // Welche Jahrgaenge darf der Aufrufer ueberhaupt anfassen?
+        //
+        // Simons Regel (31.08.2026): org_admin und super_admin sind von allen
+        // Jahrgangsbeschraenkungen ausgenommen. Ein Admin darf Teamer:innen
+        // seinen eigenen Jahrgaengen zuordnen und sie nur aus SEINEN
+        // Jahrgaengen wieder entfernen — fremde Zuweisungen bleiben
+        // unberuehrt.
+        //
+        // Bis 31.08. loeschte die Route stumpf ALLE Zuweisungen und schrieb
+        // die geschickte Liste neu. Simons Beispiel: Eine Teamerin steckt in
+        // Jahrgang 26, der Admin nur in 29. Schickt er [29], verliert die
+        // Teamerin den Jahrgang 26 — still, ohne dass irgendeine Pruefung
+        // anschlug.
+        //
+        // Die Frage "darf dieser Aufrufer in diesem Jahrgang?" beantwortet der
+        // gemeinsame Baustein utils/jahrgangsZugriff.js. { edit: true }, weil
+        // das Setzen einer Zuweisung ein Schreibweg ist.
+        const darfDiesenJahrgang = (id) => darfJahrgang(req, id, { edit: true });
+
+        // Verlangt der Aufrufer einen Jahrgang, den er selbst nicht bearbeiten
+        // darf, ist das ein 403 — nicht ein stilles Weglassen.
+        const fremdesZiel = newJahrgangIds.filter(id => !darfDiesenJahrgang(id));
+        if (fremdesZiel.length > 0) {
+            await client.query('ROLLBACK');
+            client.release();
+            return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+        }
+
+        // Bestehende Zuweisungen ausserhalb der eigenen Jahrgaenge bleiben
+        // stehen: Nur die eigenen werden ersetzt.
+        const behaltenIds = currentJahrgangIds.filter(id => !darfDiesenJahrgang(id));
 
         // Alle betroffenen Jahrgänge (alt + neu) — für diese wird nach dem
         // Setzen der Zuweisungen der Chat synchronisiert (Beitritt bei neuer
         // Zuweisung, Entfernung bei Entzug — Org-Admins bleiben immer drin).
         const affectedJahrgangIds = Array.from(new Set([...currentJahrgangIds, ...newJahrgangIds]));
 
-        // Delete existing assignments for this user
-        await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
+        // Delete existing assignments for this user — aber nur die, die der
+        // Aufrufer selbst verantworten darf.
+        if (behaltenIds.length > 0) {
+            await client.query(
+                "DELETE FROM user_jahrgang_assignments WHERE user_id = $1 AND NOT (jahrgang_id = ANY($2::bigint[]))",
+                [userId, behaltenIds]
+            );
+        } else {
+            await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
+        }
 
-        if (jahrgang_assignments.length > 0) {
+        // Alle uebergebenen Zuweisungen werden geschrieben: Ein Jahrgang aus
+        // behaltenIds kann hier nicht mehr auftauchen (er haette oben den 403
+        // ausgeloest), die Mengen sind also disjunkt.
+        const einzufuegen = jahrgang_assignments;
+
+        if (einzufuegen.length > 0) {
             // First, verify all jahrgaenge exist in the organization
-            const jahrgangIds = jahrgang_assignments.map(a => a.jahrgang_id);
+            const jahrgangIds = einzufuegen.map(a => a.jahrgang_id);
             const placeholders = jahrgangIds.map((_, i) => `$${i + 2}`).join(',');
             const verifyQuery = `SELECT id FROM jahrgaenge WHERE organization_id = $1 AND id IN (${placeholders})`;
             const { rows: validJahrgaenge } = await client.query(verifyQuery, [organizationId, ...jahrgangIds]);
 
+            // Laengenvergleich (nicht Set): Ein doppelt geschickter Jahrgang
+            // wird so weiterhin mit 400 abgewiesen statt am UNIQUE-Index
+            // (user_id, jahrgang_id) mit 500 zu scheitern.
             if (validJahrgaenge.length !== jahrgangIds.length) {
                 await client.query('ROLLBACK');
                 client.release();
@@ -666,7 +713,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             }
 
             // Now, insert all new assignments
-            for (const assignment of jahrgang_assignments) {
+            for (const assignment of einzufuegen) {
                 const { jahrgang_id, can_view = true, can_edit = false } = assignment;
                 const insertQuery = `
                     INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, assigned_by)
@@ -687,6 +734,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
         await client.query('COMMIT');
         client.release();
+
+        // Die Zuweisungen haengen im rbac-Cache des betroffenen Benutzers
+        // (30 s TTL, rbac.js:180-192). Ohne diese Zeile wirkt eine frisch
+        // gegebene oder entzogene Zuweisung bis zu eine halbe Minute lang
+        // nicht — seit sie ueber Schreibrechte entscheidet (31.08.2026) ist
+        // das nicht mehr nur eine Anzeigefrage.
+        invalidateUserCache(parseInt(userId));
 
         res.json({
             message: jahrgang_assignments.length > 0 ? 'Jahrgangs-Zuweisungen aktualisiert' : 'Alle Jahrgangs-Zuweisungen entfernt',
@@ -735,8 +789,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   });
 
   // Get user's jahrgang assignments
-  // Analog zum POST: requireAdmin plus Hierarchie-Pruefung ('view'), damit die
-  // Lese-Route nicht mehr verraet als die Schreib-Route erlaubt.
+  // Wie POST /:id/jahrgaenge: requireAdmin + Hierarchie ('view'), damit die
+  // Leitung die Zuweisungen der von ihr verwalteten Teamer:innen sehen kann,
+  // die von Admins/Org-Admins aber nicht.
   router.get('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('view'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -18,17 +18,7 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import {
-  personOutline,
-  keyOutline,
-  mailOutline,
-  arrowBack,
-  briefcaseOutline,
-  settingsOutline,
-  calendarOutline,
-  trashOutline,
-  imagesOutline
-} from 'ionicons/icons';
+import { keyOutline, mailOutline, arrowBack, briefcaseOutline, settingsOutline, calendarOutline, trashOutline, imagesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -44,7 +34,7 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
-  const { user, setUser, setSuccess, setError } = useApp();
+  const { user, setUser } = useApp();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
 
   // Offline-Query: Profile (user-spezifisch)
@@ -68,7 +58,7 @@ const AdminProfilePage: React.FC = () => {
           await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
-      } catch (err) {
+      } catch {
         // Profile bereits via refreshProfile aktualisiert
       }
     },

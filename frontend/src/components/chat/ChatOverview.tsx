@@ -1,4 +1,6 @@
+import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
+import { useAppLocation } from '../../navigation/useAppLocation';
 import {
   IonPage,
   IonHeader,
@@ -40,7 +42,7 @@ import {
   filterOutline,
   calendar
 } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -72,7 +74,7 @@ interface ChatOverviewRef {
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, selectedRoomId }, ref) => {
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
-  const { chatUnreadByRoom, refreshAllCounts } = useBadge();
+  const { chatUnreadByRoom } = useBadge();
   // socketEpoch: nach Reconnect-mit-neuem-Token ist getSocket() ein anderes
   // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
   // BadgeContext).
@@ -118,10 +120,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   // Nutze den useModalPage Hook, um die Seite zu registrieren
-  const location = useLocation();
+  const location = useAppLocation();
   // Bestimme die korrekte Tab-ID basierend auf dem Pfad
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
-  const { pageRef, presentingElement } = useModalPage(tabId);
+  const { pageRef } = useModalPage(tabId);
 
   // --- useOfflineQuery: Chat Rooms ---
   // Defensiver select-Transform (Incident 13.06.2026): gecachte rooms-Responses
@@ -257,13 +259,16 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               .then(() => {
                 refresh();
               })
-              .catch((error: any) => {
-                if (error.response?.data?.canForceDelete) {
+              .catch((error: unknown) => {
+                const data = typeof error === 'object' && error !== null
+                  ? (error as { response?: { data?: { canForceDelete?: boolean; error?: string } } }).response?.data
+                  : undefined;
+                if (data?.canForceDelete) {
                   // Hat Nachrichten - Force Delete nötig
                   setTimeout(() => {
                     presentAlert({
                       header: 'Chat hat Nachrichten',
-                      message: `${error.response.data.error}\n\nTrotzdem löschen?`,
+                      message: `${data.error}\n\nTrotzdem löschen?`,
                       buttons: [
                         { text: 'Abbrechen', role: 'cancel' },
                         {
@@ -281,7 +286,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     });
                   }, 300);
                 } else {
-                  setError(error.response?.data?.error || 'Fehler beim Löschen');
+                  setError(fehlerText(error, 'Fehler beim Löschen'));
                 }
               });
           }
@@ -512,7 +517,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {filteredRooms.map((room, index) => {
+                  {filteredRooms.map((room) => {
                     const colorClass = getRoomColorClass(room);
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');

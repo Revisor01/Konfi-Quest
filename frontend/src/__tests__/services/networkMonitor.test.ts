@@ -71,14 +71,14 @@ describe('networkMonitor', () => {
     // Nativer Pfad: Plugin meldet connected=false bei connectionType=unknown,
     // obwohl Netz da ist (typisch Android-Emulator) -> muss online bleiben.
     const { Capacitor } = await import('@capacitor/core');
-    (Capacitor.isNativePlatform as any).mockReturnValue(true);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'unknown' });
 
     const { networkMonitor } = await import('../../services/networkMonitor');
     await networkMonitor.init();
 
     expect(networkMonitor.isOnline).toBe(true);
-    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
   it('connectionType "none" wird als online gewertet (optimistischer Login-Schutz)', async () => {
@@ -89,21 +89,21 @@ describe('networkMonitor', () => {
     // ersten Request und fuehrte zu Play-Rejections. Ein echter Fehler fällt
     // ohnehin in den Request-Fehler-Handler.
     const { Capacitor } = await import('@capacitor/core');
-    (Capacitor.isNativePlatform as any).mockReturnValue(true);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'none' });
 
     const { networkMonitor } = await import('../../services/networkMonitor');
     await networkMonitor.init();
 
     expect(networkMonitor.isOnline).toBe(true);
-    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
   it('subscribe liefert Status-Updates nach init und Event', async () => {
     // Web-Fallback-Pfad explizit erzwingen (nicht auf Reset-Reihenfolge
     // vorheriger Tests verlassen) -> registriert die window online/offline-Handler.
     const { Capacitor } = await import('@capacitor/core');
-    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
 
     vi.useFakeTimers();
     const { networkMonitor } = await import('../../services/networkMonitor');

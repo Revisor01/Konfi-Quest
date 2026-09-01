@@ -29,21 +29,12 @@ import {
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+// Gemeinsamer Typ statt eigener Kopie — siehe RequestDetailModal. Sieben
+// gleichnamige ActivityRequest-Definitionen lagen in der App verstreut, mit
+// unterschiedlicher Nullbarkeit; Ionic 9 typisiert useIonModal strenger und
+// hat die Widersprueche aufgedeckt.
+import type { ActivityRequest } from '../modals/RequestDetailModal';
 
-interface ActivityRequest {
-  id: number;
-  activity_id: number;
-  activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface RequestsViewProps {
   requests: ActivityRequest[];
@@ -52,10 +43,6 @@ interface RequestsViewProps {
   activeTab: 'all' | 'pending' | 'approved' | 'rejected';
   onTabChange: (tab: 'all' | 'pending' | 'approved' | 'rejected') => void;
   formatDate: (dateString: string) => string;
-  getStatusColor: (status: string) => string;
-  getStatusText: (status: string) => string;
-  getTypeIcon: (type: string) => string;
-  getTypeText: (type: string) => string;
   // Teamer-Aktivitäten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
   teamerMode?: boolean;
@@ -71,10 +58,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   activeTab,
   onTabChange,
   formatDate,
-  getStatusColor,
-  getStatusText,
-  getTypeIcon,
-  getTypeText,
   teamerMode = false,
   headerSlot
 }) => {
@@ -103,9 +86,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
     return { statusColor, statusText, statusIcon, isPending, isApproved, isRejected };
   };
 
-  const getTypeColor = (type: string) => {
-    return type === 'gottesdienst' ? '#007aff' : '#059669';
-  };
 
   return (
     <div>
@@ -148,7 +128,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
-          onIonChange={(e) => onTabChange(e.detail.value as any)}
+          onIonChange={(e) => onTabChange(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
         >
           <IonSegmentButton value="pending">
             <IonLabel>Offen</IonLabel>
@@ -174,8 +154,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         emptyMessage="Noch keine Aktivitäten gemeldet"
         emptyIconColor="#059669"
       >
-        {filteredRequests.map((request, index) => {
-          const { statusColor, statusText, statusIcon, isPending, isApproved, isRejected } = getRequestStatusInfo(request);
+        {filteredRequests.map((request) => {
+          const { statusColor, statusText, statusIcon, isPending, isRejected } = getRequestStatusInfo(request);
 
           return (
             <IonItemSliding key={request.id}>

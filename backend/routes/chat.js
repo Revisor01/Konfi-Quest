@@ -3,10 +3,12 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
+const { chatPushText } = require('../utils/pushText');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
@@ -459,7 +461,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
-          return res.status(409).json({ error: 'Jahrgangs-Chat existiert bereits' });
+          // Der Raum steht schon: dann ist das hier ein Beitritt, kein Fehler.
+          // Frueher kam an dieser Stelle 409 zurueck, ohne irgendwen einzutragen.
+          // Konfis, die nach dem Anlegen des Jahrgangs dazukamen, landeten
+          // deshalb nie in chat_participants und sahen den Chat nie.
+          const { rows: konfis } = await db.query(
+            `SELECT u.id FROM users u
+               JOIN roles r ON u.role_id = r.id
+               JOIN konfi_profiles kp ON u.id = kp.user_id
+              WHERE r.name = 'konfi' AND kp.jahrgang_id = $1
+                AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+            [jahrgang_id, organizationId]
+          );
+          for (const konfi of konfis) {
+            await db.query(
+              "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi') ON CONFLICT DO NOTHING",
+              [existing.id, konfi.id]
+            );
+          }
+          res.json({ room_id: existing.id, created: false });
+
+          try {
+            const { rows: currentParticipants } = await db.query(
+              'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+              [existing.id]
+            );
+            emitRoomsChanged(currentParticipants);
+          } catch (notifyErr) {
+            console.error('Failed to emit roomsChanged (join jahrgang chat):', notifyErr);
+          }
+          return;
         }
       }
       
@@ -1080,9 +1111,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           const roomName = room?.name || 'Chat';
           const isDirectChat = room?.type === 'direct';
           const pushTitle = isDirectChat ? message.sender_name : roomName;
-          const pushBody = isDirectChat
-          ? (content || '[Anhang]')
-          : `${message.sender_name}: ${content || '[Anhang]'}`;
+          // Text der Mitteilung: siehe utils/pushText.js — dort steht auch,
+          // warum es KEINE echte Bildvorschau gibt.
+          const pushBody = chatPushText({
+            content,
+            messageType: message.message_type,
+            fileName: message.file_name,
+            senderName: message.sender_name,
+            isDirectChat,
+          });
           
           for (const p of participants) {
             const badgeQuery = `
@@ -1273,20 +1310,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Textformat: für Menschen zum Lesen und Weiterverarbeiten.
-      const zeit = (d) => new Date(d).toLocaleString('de-DE', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-
+      // Ueber die Helfer aus utils/zeitformat, nicht ueber ein eigenes
+      // toLocaleString ohne Zone: Der Container laeuft in UTC, der Kopf des
+      // Exports nannte die Uhrzeit sonst zwei Stunden zu frueh -- waehrend
+      // die Nachrichten darunter (formatDatum/formatUhrzeit) korrekt in
+      // Berliner Zeit standen. Zwei Zeitrechnungen in einer Datei.
       const zeilen = [];
       zeilen.push(`Chat-Verlauf: ${raumName}`);
-      zeilen.push(`Exportiert am ${zeit(new Date())} — ${messages.length} Nachrichten`);
+      const jetzt = new Date();
+      zeilen.push(`Exportiert am ${formatDatum(jetzt)} ${formatUhrzeit(jetzt)} — ${messages.length} Nachrichten`);
       zeilen.push('='.repeat(60));
       zeilen.push('');
 
       let letzterTag = '';
       for (const m of messages) {
-        const tag = new Date(m.created_at).toLocaleDateString('de-DE', {
+        const tag = formatDatum(m.created_at, {
           weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
         });
         if (tag !== letzterTag) {
@@ -1295,9 +1333,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           letzterTag = tag;
         }
 
-        const uhrzeit = new Date(m.created_at).toLocaleTimeString('de-DE', {
-          hour: '2-digit', minute: '2-digit'
-        });
+        const uhrzeit = formatUhrzeit(m.created_at);
         const absender = m.absender || 'Unbekannt';
         const rolle = m.rolle ? ` (${m.rolle})` : '';
         let text;

@@ -11,6 +11,7 @@
  *   node scripts/screenshots.mjs --url http://localhost:5173
  *   node scripts/screenshots.mjs --rolle konfi      (nur eine Rolle)
  *   node scripts/screenshots.mjs --geraet ipad
+ *   node scripts/screenshots.mjs --geraet play      (Google Play, 1080x2160)
  *
  * Ergebnis liegt in docs/screenshots/<geraet>/<rolle>-<name>.png
  *
@@ -42,9 +43,17 @@ if (!PASSWORT) {
   process.exit(1);
 }
 
-/** Bildschirmgrössen. Die iPhone-Grösse entspricht dem, was die Stores erwarten. */
+/**
+ * Bildschirmgrössen. Die iPhone-Grösse entspricht dem, was die Stores erwarten.
+ *
+ * "play" liefert 1080x2160 — genau 1:2.0. Google Play zeigt Bilder mit einem
+ * längeren Seitenverhältnis gestaucht an, obwohl die Datei selbst in Ordnung
+ * ist. Deshalb wird hier gleich im richtigen Verhältnis aufgenommen und nicht
+ * nachträglich skaliert; damit kann auch nichts verzerren.
+ */
 const GERAETE = {
   iphone: { width: 393, height: 852, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  play: { width: 360, height: 720, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
   ipad: { width: 1024, height: 1366, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   desktop: { width: 1440, height: 900, deviceScaleFactor: 2, isMobile: false, hasTouch: false },
 };
@@ -84,12 +93,73 @@ const AUFNAHMEN = {
       { name: 'startseite', pfad: '/konfi/dashboard' },
       { name: 'mitmachen', pfad: '/konfi/events' },
       { name: 'challenges', pfad: '/konfi/challenges' },
+      {
+        name: 'challenge-detail',
+        pfad: '/konfi/challenges',
+        aktion: (page) => challengeOeffnen(page, 'Dein Lieblingsort in der Kirche'),
+      },
+      {
+        // Bewusst eine andere Challenge als beim Detail: hier stehen drei
+        // freigegebene Beitraege im Feed, davon zwei anonym — das zeigt, wie
+        // die Gruppe sich zeigt, ohne dass jemand seinen Namen nennen muss.
+        name: 'challenge-feed',
+        pfad: '/konfi/challenges',
+        aktion: async (page) => {
+          await challengeOeffnen(page, 'Was glaubst du eigentlich?');
+          await zumFeedScrollen(page);
+        },
+      },
       { name: 'abzeichen', pfad: '/konfi/badges' },
       { name: 'chat', pfad: '/konfi/chat' },
       { name: 'profil', pfad: '/konfi/profile' },
     ],
   },
 };
+
+/**
+ * Eine Challenge aus der Liste antippen und warten, bis das Detail steht.
+ * Das Detail ist ein Modal ohne eigene Adresse — es gibt also keinen Weg,
+ * es direkt anzusteuern.
+ */
+async function challengeOeffnen(page, titel) {
+  const karte = page.locator(`.app-list-item--challenges:has-text("${titel}")`).first();
+  await karte.waitFor({ state: 'visible', timeout: 15_000 });
+  await karte.click();
+  await page.locator('ion-modal ion-segment-button').first().waitFor({ state: 'visible', timeout: 15_000 });
+  await page.waitForTimeout(1_200);
+}
+
+/**
+ * Im geöffneten Detail so weit nach unten rollen, dass die Beiträge im Bild
+ * sind. Der Feed ist der voreingestellte Reiter, muss also nicht erst
+ * angetippt werden. Angesetzt wird an der Überschrift "Aus deiner Gruppe" —
+ * so steht der Feed oben im Bild, statt dass der Farbbanner angeschnitten
+ * mitläuft.
+ */
+async function zumFeedScrollen(page) {
+  await page.evaluate(async () => {
+    const inhalt = document.querySelector('ion-modal ion-content');
+    if (!inhalt) return;
+    const flaeche = await inhalt.getScrollElement();
+    const kopf = [...inhalt.querySelectorAll('ion-list-header')].find((h) =>
+      (h.innerText || '').includes('Aus deiner Gruppe')
+    );
+    if (!kopf) {
+      flaeche.scrollTop = flaeche.scrollHeight;
+      return;
+    }
+    const banner = inhalt.querySelector('.app-header-banner') || inhalt.firstElementChild;
+    const bannerHoehe = banner ? banner.getBoundingClientRect().height + 16 : 0;
+    const versatz = kopf.getBoundingClientRect().top - flaeche.getBoundingClientRect().top;
+    const gewuenscht = flaeche.scrollTop + versatz - 24;
+    const moeglich = flaeche.scrollHeight - flaeche.clientHeight;
+    // Reicht der Weg nicht, um den Farbbanner ganz hinauszuschieben, dann
+    // lieber oben stehenbleiben: ein angeschnittener Banner sieht schlechter
+    // aus als der ganze.
+    flaeche.scrollTop = Math.min(gewuenscht, moeglich) >= bannerHoehe ? Math.min(gewuenscht, moeglich) : 0;
+  });
+  await page.waitForTimeout(900);
+}
 
 async function anmelden(page, benutzer) {
   await page.goto(`${BASIS}/login`, { waitUntil: 'networkidle' });
@@ -135,6 +205,14 @@ async function stoererSchliessen(page) {
       await page.waitForTimeout(400);
     }
   }
+}
+
+/** Ein offenes Detail wieder zumachen, damit das nächste Bild sauber anfängt. */
+async function modalSchliessen(page) {
+  const modal = page.locator('ion-modal').first();
+  if (!(await modal.isVisible().catch(() => false))) return;
+  await page.locator('ion-modal .app-modal-close-btn').first().click().catch(() => {});
+  await modal.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
 }
 
 async function main() {
@@ -184,7 +262,9 @@ async function main() {
             await page.goto(`${BASIS}${seite.pfad}`, { waitUntil: 'networkidle' });
             await beruhigen(page);
             await stoererSchliessen(page);
+            if (seite.aktion) await seite.aktion(page);
             await page.screenshot({ path: datei });
+            await modalSchliessen(page);
             console.log(`  ${rolle}-${seite.name}.png`);
             geschossen++;
           } catch (fehler) {

@@ -8,8 +8,8 @@ const mockApiGet = vi.fn().mockResolvedValue({ data: {} });
 const mockApiPost = vi.fn().mockResolvedValue({});
 vi.mock('../../services/api', () => ({
   default: {
-    get: (...args: any[]) => mockApiGet(...args),
-    post: (...args: any[]) => mockApiPost(...args),
+    get: (...args: unknown[]) => mockApiGet(...args),
+    post: (...args: unknown[]) => mockApiPost(...args),
   },
 }));
 
@@ -40,8 +40,16 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
   useLiveRefresh: vi.fn(),
 }));
 
+// Nur die Felder, die der mark-seen-Effekt liest. KonfiBadgesPage exportiert
+// seinen BadgeData-Typ nicht, und die Tests liefern bewusst Teil-Badges.
+interface TestBadgeData {
+  earned: { id: number; seen: boolean }[];
+  available: unknown[];
+  stats: { totalVisible: number; totalSecret: number };
+}
+
 // useOfflineQuery steuerbar mocken: badgeData wird pro Render von außen gesetzt
-let currentBadgeData: any = null;
+let currentBadgeData: TestBadgeData | null = null;
 vi.mock('../../hooks/useOfflineQuery', () => ({
   useOfflineQuery: (key: string) => {
     if (key.startsWith('konfi:badges')) {
@@ -76,8 +84,8 @@ vi.mock('@ionic/react', async () => {
 
 import KonfiBadgesPage from '../../components/konfi/pages/KonfiBadgesPage';
 
-const badgeDataMit = (unseenIds: number[]) => ({
-  earned: unseenIds.map(id => ({ id, seen: false })).concat([{ id: 99, seen: true } as any]),
+const badgeDataMit = (unseenIds: number[]): TestBadgeData => ({
+  earned: [...unseenIds.map(id => ({ id, seen: false })), { id: 99, seen: true }],
   available: [],
   stats: { totalVisible: 1, totalSecret: 0 },
 });

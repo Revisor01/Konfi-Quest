@@ -38,6 +38,11 @@ describe('Konfi-Management Routes', () => {
       'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
       [USERS.admin2.id, JAHRGAENGE.jahrgang2.id]
     );
+    // Die Zuweisungen haengen im rbac-Cache (30 s TTL). Ohne das Leeren
+    // sieht der naechste Request die Zuweisungen des vorigen Tests.
+    const { invalidateUserCache } = require('../../middleware/rbac');
+    invalidateUserCache(USERS.admin1.id);
+    invalidateUserCache(USERS.admin2.id);
   });
 
   afterAll(async () => {
@@ -203,6 +208,97 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // GET /api/admin/konfis/leitung — Auswahlliste fuer die Zuordnung der
+  // Leitung zu einem Termin (31.08.2026). Eigene Route, damit die Antwort
+  // von /teamer unveraendert bleibt (Vertrag der ausgelieferten Apps).
+  // ================================================================
+  describe('GET /api/admin/konfis/leitung', () => {
+    it('Erlaubter Fall: Admin bekommt 200 + genau die Admins/Org-Admins der eigenen Org', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      // Org 1 fuehrt admin1, orgAdmin1, superAdmin (role_id 5 = super_admin,
+      // also NICHT enthalten) und orgAdminSuper (org_admin-Rolle).
+      const ids = res.body.map((u) => u.id).sort((a, b) => a - b);
+      expect(ids).toEqual([USERS.admin1.id, USERS.orgAdmin1.id, USERS.orgAdminSuper.id].sort((a, b) => a - b));
+
+      // Keine Konfis, keine Teamer:innen in der Liste.
+      expect(ids).not.toContain(USERS.konfi1.id);
+      expect(ids).not.toContain(USERS.teamer1.id);
+    });
+
+    it('role_name wird echt ausgeliefert (die Auswahl unterscheidet danach)', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const gefunden = res.body.find((u) => u.id === USERS.orgAdmin1.id);
+      expect(gefunden.role_name).toBe('org_admin');
+      expect(gefunden.name).toBe(USERS.orgAdmin1.display_name);
+    });
+
+    it('Keine Login-Daten ausser dem username', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      for (const u of res.body) {
+        expect(u.password_hash).toBeUndefined();
+        expect(u.email).toBeUndefined();
+      }
+    });
+
+    it('Erlaubter Fall: Teamer:in darf die Liste sehen (sie darf auch zuordnen)', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Verbotener Fall: Konfi bekommt 403', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Verbotener Fall: ohne Token 401', async () => {
+      const res = await request(app).get('/api/admin/konfis/leitung');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('Mandantengrenze: Admin aus Org 2 sieht ausschliesslich die Leitung von Org 2', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map((u) => u.id).sort((a, b) => a - b);
+      expect(ids).toEqual([USERS.admin2.id, USERS.orgAdmin2.id].sort((a, b) => a - b));
+      expect(ids).not.toContain(USERS.admin1.id);
+      expect(ids).not.toContain(USERS.orgAdmin1.id);
+    });
+
+    it('Geloeschte Konten stehen nicht in der Liste', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.orgAdmin1.id]);
+
+      const res = await request(app)
+        .get('/api/admin/konfis/leitung')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const ids = res.body.map((u) => u.id);
+      expect(ids).not.toContain(USERS.orgAdmin1.id);
     });
   });
 
@@ -1287,6 +1383,14 @@ describe('Konfi-Management Routes', () => {
          VALUES ('2027/2028', $1, '2028-05-01') RETURNING id`,
         [ORGS.testGemeinde.id]
       );
+      // Seit 31.08.2026 muss der Ziel-Jahrgang dem Admin auch zugewiesen
+      // sein — hier geht es um die Organisationsgrenze, nicht um die
+      // Jahrgangsbindung (die hat ihren eigenen Block).
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+        [USERS.admin1.id, eigener.id]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
 
       const res = await request(app)
         .put(`/api/admin/konfis/${USERS.konfi1.id}`)
@@ -1605,6 +1709,153 @@ describe('Konfi-Management Routes', () => {
       expect(res.status).toBe(200);
 
       expect(await buchung(vergangen, USERS.konfi1.id)).not.toBeNull();
+    });
+  });
+  // ================================================================
+  // Konfis nur in den EIGENEN Jahrgaengen (Simons Regel 31.08.2026)
+  // ================================================================
+  // admin1 ist per beforeEach nur jahrgang1 zugewiesen. Ein zweiter Jahrgang
+  // derselben Organisation, den er NICHT zugewiesen bekommt, ist der fremde
+  // Fall. Der gemeinsame Seed bleibt unberuehrt — die Fixture entsteht hier.
+  describe('Konfi-Schreibwege sind an die Jahrgaenge des Admins gebunden', () => {
+    let fremderJahrgang;
+
+    beforeEach(async () => {
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2027/2028', $1, '2028-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      fremderJahrgang = jg.id;
+    });
+
+    const anzahlKonfis = async (jahrgangId) => {
+      const { rows: [r] } = await db.query(
+        'SELECT count(*)::int c FROM konfi_profiles WHERE jahrgang_id = $1',
+        [jahrgangId]
+      );
+      return r.c;
+    };
+
+    const jahrgangVon = async (userId) => {
+      const { rows: [r] } = await db.query(
+        'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+        [userId]
+      );
+      return r ? r.jahrgang_id : null;
+    };
+
+    // ---------- Anlegen ----------
+    it('Admin legt Konfi im EIGENEN Jahrgang an -> 201', async () => {
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Erlaubte Konfi', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(201);
+      expect(await jahrgangVon(res.body.id)).toBe(JAHRGAENGE.jahrgang1.id);
+    });
+
+    it('Admin legt Konfi im FREMDEN Jahrgang NICHT an -> 403 und kein Datensatz', async () => {
+      expect(await anzahlKonfis(fremderJahrgang)).toBe(0);
+
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Verbotene Konfi', jahrgang_id: fremderJahrgang });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Kein Zugriff auf diesen Jahrgang');
+      expect(await anzahlKonfis(fremderJahrgang)).toBe(0);
+
+      // Auch kein halb angelegter Benutzer (das INSERT auf users lief frueher
+      // vor der Pruefung — der ROLLBACK muss ihn mitnehmen).
+      const { rows: [u] } = await db.query(
+        `SELECT count(*)::int c FROM users WHERE display_name = 'Verbotene Konfi'`
+      );
+      expect(u.c).toBe(0);
+    });
+
+    it('OrgAdmin legt Konfi auch in einem Jahrgang OHNE Zuweisung an -> 201', async () => {
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: 'OrgAdmin-Konfi', jahrgang_id: fremderJahrgang });
+
+      expect(res.status).toBe(201);
+      expect(await anzahlKonfis(fremderJahrgang)).toBe(1);
+    });
+
+    // ---------- Verschieben ----------
+    it('Admin verschiebt Konfi aus eigenem in eigenen Jahrgang -> 200', async () => {
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+        [USERS.admin1.id, fremderJahrgang]
+      );
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test Konfi 1', jahrgang_id: fremderJahrgang });
+
+      expect(res.status).toBe(200);
+      expect(await jahrgangVon(USERS.konfi1.id)).toBe(fremderJahrgang);
+    });
+
+    it('Admin verschiebt NICHT in ein fremdes Ziel -> 403, Zuordnung bleibt', async () => {
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Umbenannt', jahrgang_id: fremderJahrgang });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Kein Zugriff auf diesen Jahrgang');
+      expect(await jahrgangVon(USERS.konfi1.id)).toBe(JAHRGAENGE.jahrgang1.id);
+
+      // Der Name darf ebenfalls nicht kippen — das UPDATE auf users lief vor
+      // der Pruefung, der ROLLBACK muss es zuruecknehmen.
+      const { rows: [u] } = await db.query(
+        'SELECT display_name FROM users WHERE id = $1', [USERS.konfi1.id]
+      );
+      expect(u.display_name).toBe('Test Konfi 1');
+    });
+
+    it('Admin verschiebt NICHT aus einem fremden Jahrgang heraus -> 403', async () => {
+      // konfi2 sitzt im fremden Jahrgang, admin1 hat darauf keinen Zugriff.
+      await db.query(
+        'UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2',
+        [fremderJahrgang, USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi2.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test Konfi 2', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Kein Zugriff auf diesen Jahrgang');
+      expect(await jahrgangVon(USERS.konfi2.id)).toBe(fremderJahrgang);
+    });
+
+    it('OrgAdmin verschiebt auch zwischen Jahrgaengen ohne Zuweisung -> 200', async () => {
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: 'Test Konfi 1', jahrgang_id: fremderJahrgang });
+
+      expect(res.status).toBe(200);
+      expect(await jahrgangVon(USERS.konfi1.id)).toBe(fremderJahrgang);
+    });
+
+    it('Admin aus Org 2 kommt an den Jahrgang aus Org 1 nicht heran -> 404', async () => {
+      const res = await request(app)
+        .put(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ name: 'Fremdzugriff', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(404);
+      expect(await jahrgangVon(USERS.konfi1.id)).toBe(JAHRGAENGE.jahrgang1.id);
     });
   });
 });

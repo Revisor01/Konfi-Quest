@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { fehlerDaten, fehlerText } from '../../../utils/fehler';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -56,6 +57,10 @@ import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
 
 interface Jahrgang {
   id: number;
@@ -163,12 +168,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
         onSuccess();
         handleClose();
-      } catch (error: any) {
-        if (error.response?.data?.error) {
-          setError(error.response.data.error);
-        } else {
-          setError('Fehler beim Speichern des Jahrgangs');
-        }
+      } catch (error) {
+        setError(fehlerText(error, 'Fehler beim Speichern des Jahrgangs'));
       } finally {
         setLoading(false);
       }
@@ -199,8 +200,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       setWrappedReleasedAt(new Date().toISOString());
       setSuccess('Wrapped wurde freigegeben und die Konfis wurden benachrichtigt');
       onRefresh?.();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Freigeben von Wrapped');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Freigeben von Wrapped'));
     } finally {
       setWrappedLoading(false);
     }
@@ -213,8 +214,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       await api.delete(`/wrapped/${jahrgang.id}`);
       setWrappedReleasedAt(null);
       onRefresh?.();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Löschen von Wrapped');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Löschen von Wrapped'));
     } finally {
       setWrappedLoading(false);
     }
@@ -443,7 +444,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 };
 
 const AdminJahrgaengeePage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
+  const { pageRef, presentingElement } = useModalPage('admin-jahrgaenge');
   const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Jahrgänge
@@ -454,7 +455,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   );
 
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
@@ -487,16 +488,16 @@ const AdminJahrgaengeePage: React.FC = () => {
         const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
         await api.delete(url);
         refreshJahrgaenge();
-      } catch (error: any) {
+      } catch (error) {
         if (slidingElement) {
           await slidingElement.close();
         }
 
-        if (error.response?.data?.canForceDelete) {
+        if (fehlerDaten(error)?.canForceDelete) {
           // Org Admin kann trotzdem löschen
           presentAlert({
             header: 'Chat-Nachrichten vorhanden',
-            message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            message: `${fehlerText(error, 'Der Jahrgang enthält Chat-Nachrichten.')}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
             buttons: [
               { text: 'Abbrechen', role: 'cancel' },
               {
@@ -507,8 +508,7 @@ const AdminJahrgaengeePage: React.FC = () => {
             ]
           });
         } else {
-          const errorMessage = error.response?.data?.error || 'Fehler beim Löschen des Jahrgangs';
-          setError(errorMessage);
+          setError(fehlerText(error, 'Fehler beim Löschen des Jahrgangs'));
         }
       }
     };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -42,7 +43,8 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
+import { writeQueue, QueueBody } from '../../../services/writeQueue';
+import { AktivitaetMelden } from '../../../types/request';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { compressForUpload } from '../../../services/mediaCompression';
@@ -67,7 +69,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline, user } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const [presentAlert] = useIonAlert();
 
   const { isSubmitting, guard } = useActionGuard();
@@ -120,8 +122,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         setPhotoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(prepared);
-    } catch (err: any) {
-      setError(err?.message || 'Foto konnte nicht verarbeitet werden');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Foto konnte nicht verarbeitet werden');
     }
   };
 
@@ -147,8 +149,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       });
 
       return response.data.filename;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Fehler beim Hochladen des Fotos');
+    } catch (error) {
+      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'), { cause: error });
     }
   };
 
@@ -188,7 +190,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             photoFilename = await uploadPhoto();
           }
 
-          const requestData: any = {
+          const requestData: AktivitaetMelden = {
             activity_id: parseInt(formData.activity_id),
             description: formData.description.trim(),
             requested_date: formData.requested_date,
@@ -200,15 +202,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
           setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
-        } catch (error: any) {
-          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen der Aktivität');
+        } catch (error) {
+          setError(fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
         } finally {
           setUploadProgress(0);
         }
       } else {
         // Offline-Pfad: Queue-Fallback
         let hasFileUpload = false;
-        const queueBody: any = {
+        const queueBody: QueueBody & AktivitaetMelden = {
           activity_id: parseInt(formData.activity_id),
           description: formData.description.trim(),
           requested_date: formData.requested_date,
@@ -233,7 +235,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             });
             queueBody._localPhotoPath = `queue-uploads/${fileName}`;
             queueBody._photoFileName = formData.photo_file.name;
-          } catch (err) {
+          } catch {
             setError('Foto konnte nicht lokal gespeichert werden');
             return;
           }

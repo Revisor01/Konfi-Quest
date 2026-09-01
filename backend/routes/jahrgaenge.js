@@ -404,21 +404,50 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       ORDER BY u.display_name ASC
     `, [jahrgangId, organizationId]);
 
+    // Alle Listen-Sprueche der Konfis in EINER Abfrage holen statt pro Konfi
+    // einzeln (N+1). Vorbild: material.js laedt Events/Jahrgaenge fuer alle
+    // Materialien gebuendelt und ordnet sie danach im Speicher zu.
+    // Die Uebersetzung haengt am Konfi, nicht am Spruch -> das Paar
+    // (spruch_id, translation) ist der Schluessel; deshalb wird das
+    // Uebersetzungs-JOIN ueber genau die vorkommenden Paare gefuehrt.
+    const spruchPaare = [];
+    const paarGesehen = new Set();
+    for (const konfi of konfis) {
+      if (!konfi.konfspruch_id) continue;
+      const translation = konfi.konfspruch_translation || 'luther2017';
+      const schluessel = `${konfi.konfspruch_id}|${translation}`;
+      if (paarGesehen.has(schluessel)) continue;
+      paarGesehen.add(schluessel);
+      spruchPaare.push({ id: konfi.konfspruch_id, translation });
+    }
+
+    const spruecheNachSchluessel = new Map();
+    if (spruchPaare.length > 0) {
+      const { rows: geladeneSprueche } = await db.query(`
+        SELECT ks.id, ks.reference, ku.text, paar.translation
+        FROM unnest($1::int[], $2::text[]) AS paar(spruch_id, translation)
+        JOIN konfsprueche ks ON ks.id = paar.spruch_id
+        LEFT JOIN konfspruch_uebersetzungen ku
+          ON ku.spruch_id = ks.id AND ku.translation = paar.translation
+        WHERE ks.is_active = true
+          AND (ks.organization_id IS NULL OR ks.organization_id = $3)
+      `, [
+        spruchPaare.map(p => p.id),
+        spruchPaare.map(p => p.translation),
+        organizationId
+      ]);
+      for (const spruch of geladeneSprueche) {
+        spruecheNachSchluessel.set(`${spruch.id}|${spruch.translation}`, spruch);
+      }
+    }
+
     const result = [];
     for (const konfi of konfis) {
       let konfspruch = null;
       if (konfi.konfspruch_id) {
-        // Listen-Wahl: gewaehlte Konfispruch-Uebersetzung nachladen (org-gescopt, is_active).
+        // Listen-Wahl: gewaehlte Konfispruch-Uebersetzung aus der Sammel-Abfrage.
         const spruchTranslation = konfi.konfspruch_translation || 'luther2017';
-        const { rows: [spruch] } = await db.query(`
-          SELECT ks.id, ks.reference, ku.text
-          FROM konfsprueche ks
-          LEFT JOIN konfspruch_uebersetzungen ku
-            ON ku.spruch_id = ks.id AND ku.translation = $2
-          WHERE ks.id = $1
-            AND ks.is_active = true
-            AND (ks.organization_id IS NULL OR ks.organization_id = $3)
-        `, [konfi.konfspruch_id, spruchTranslation, organizationId]);
+        const spruch = spruecheNachSchluessel.get(`${konfi.konfspruch_id}|${spruchTranslation}`);
         if (spruch) {
           konfspruch = {
             source: 'liste',

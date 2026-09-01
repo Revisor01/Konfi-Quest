@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -85,7 +86,7 @@ const generateStrongPassword = (length = 14): string => {
   const all = upper + lower + digits + special;
   // Mindestens je ein Zeichen aus jeder Kategorie
   const pick = (set: string) => set[randomInt(set.length)];
-  let chars = [pick(upper), pick(lower), pick(digits), pick(special)];
+  const chars = [pick(upper), pick(lower), pick(digits), pick(special)];
   for (let i = chars.length; i < length; i++) {
     chars.push(pick(all));
   }
@@ -118,7 +119,7 @@ const AdminPasswordResetModal: React.FC<AdminPasswordResetModalProps> = ({ admin
       hasUppercase: /[A-Z]/.test(newPassword),
       hasLowercase: /[a-z]/.test(newPassword),
       hasNumber: /[0-9]/.test(newPassword),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(newPassword)
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(newPassword)
     });
   }, [newPassword]);
 
@@ -148,8 +149,8 @@ const AdminPasswordResetModal: React.FC<AdminPasswordResetModalProps> = ({ admin
         await api.put(`/users/${adminId}/reset-password`, { password: newPassword });
         setSuccess('Passwort erfolgreich zurückgesetzt');
         onSuccess();
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts');
+      } catch (err) {
+        setError(fehlerText(err, 'Fehler beim Zurücksetzen des Passworts'));
       }
     });
   };

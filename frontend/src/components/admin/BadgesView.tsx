@@ -31,10 +31,10 @@ import api from '../../services/api';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 
-import { star } from 'ionicons/icons';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
+import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
 
 
 
@@ -55,8 +55,6 @@ interface Badge {
 
 interface BadgesViewProps {
   badges: Badge[];
-  onUpdate: () => void;
-  onAddBadgeClick: () => void;
   onSelectBadge: (badge: Badge) => void;
   onDeleteBadge: (badge: Badge) => void;
   targetRole?: 'konfi' | 'teamer';
@@ -65,8 +63,6 @@ interface BadgesViewProps {
 
 const BadgesView: React.FC<BadgesViewProps> = ({
   badges,
-  onUpdate,
-  onAddBadgeClick,
   onSelectBadge,
   onDeleteBadge,
   targetRole = 'konfi',
@@ -125,13 +121,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return badges.filter(badge => badge.is_active && !badge.is_hidden);
   };
 
-  const getHiddenBadges = () => {
-    return badges.filter(badge => badge.is_hidden);
-  };
 
-  const getInactiveBadges = () => {
-    return badges.filter(badge => !badge.is_active);
-  };
 
   const getTotalEarnedCount = () => {
     return badges.reduce((sum, badge) => sum + (badge.earned_count || 0), 0);
@@ -159,7 +149,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   };
 
   const getCriteriaDetail = (badge: Badge): string | null => {
-    let extra: any = {};
+    let extra: BadgeKriteriumExtra = {};
     try {
       if (badge.criteria_extra) {
         let parsed = typeof badge.criteria_extra === 'string'
@@ -213,9 +203,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       }
       case 'category_activities':
         return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
-      case 'time_based':
+      case 'time_based': {
         const weeks = extra.days ? Math.round(extra.days / 7) : (extra.weeks || '?');
         return `${badge.criteria_value} in ${weeks} Wochen`;
+      }
       case 'activity_count':
         return `${badge.criteria_value} Aktivitäten`;
       case 'event_count':
@@ -231,17 +222,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
   };
 
-  const getBadgeStatusColor = (badge: Badge) => {
-    if (!badge.is_active) return 'danger';
-    if (badge.is_hidden) return 'warning';
-    return 'success';
-  };
 
-  const getBadgeStatusText = (badge: Badge) => {
-    if (!badge.is_active) return 'Inaktiv';
-    if (badge.is_hidden) return 'Versteckt';
-    return 'Aktiv';
-  };
 
   return (
     <>

@@ -5,8 +5,9 @@ farbe: "#667eea"
 ---
 
 Konfi Quest begleitet die Konfizeit: [Termine](70-termine.md), [Punkte](40-punkte.md),
-[Abzeichen](60-badges.md), [Challenges](80-challenges.md) und ein geschützter [Chat](90-chat.md). Drei Rollen arbeiten darin, jede sieht ihre eigene
-Ansicht.
+[Abzeichen](60-badges.md), [Challenges](80-challenges.md) und ein geschützter [Chat](90-chat.md). Vier Rollen arbeiten darin — Konfis, Teamer:innen,
+Admins und Org-Admins —, und jede sieht ihre eigene Ansicht. Wer genau was
+darf, steht im Kapitel [Rollen und Rechte](05-rollen.md).
 
 ## Für wen ist welcher Teil?
 
@@ -15,7 +16,9 @@ Ansicht.
 - **Teamer:innen** begleiten ihre Jahrgänge, melden sich zu Terminen an,
   stellen Challenges und sehen ihre Zertifikate.
 - **Die Leitung** verwaltet Konfis, Termine, Punkte, Jahrgänge und alles,
-  was die Gemeinde betrifft.
+  was die Gemeinde betrifft. Sie hat zwei Stufen: **Admins** kümmern sich um
+  den laufenden Betrieb, **Org-Admins** zusätzlich um Benutzer:innen,
+  Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde.
 
 ## Die Grundidee: Punkte statt Laufzettel
 

@@ -17,6 +17,21 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   //   Material OHNE Jahrgang -> alle Teamer:innen der Gemeinde
   //   Leitung (admin, org_admin) -> immer alles, sonst wäre es nicht verwaltbar
   //
+  // GLOBALES MATERIAL (Entscheidung Simon, 31.08.2026)
+  //
+  //   materials.ist_global = true -> alle Teamer:innen der Gemeinde, egal
+  //   welche Jahrgänge zugeordnet sind.
+  //
+  // Der Zweig kam ADDITIV dazu (Migration 137). Der mittlere Zweig ("kein
+  // Jahrgang zugeordnet") MUSS bleiben: Bestandsmaterial ohne Jahrgang hat
+  // ist_global = false und würde sonst schlagartig für alle Teamer:innen
+  // verschwinden. Die Spalte macht die Absicht sichtbar -- vorher war
+  // "ohne Jahrgang = für alle" ein unbenannter Nebeneffekt und nicht davon
+  // zu unterscheiden, dass jemand die Zuordnung schlicht vergessen hatte.
+  //
+  // "Für alle" heißt immer: alle TEAMER:INNEN. Konfis kommen an keine
+  // Material-Route (requireTeamer).
+  //
   // Vorher war die Jahrgangs-Bindung reine Suchhilfe: Gelesen wurde nur die
   // Organisation, also sah jede Teamer:in jedes Material. Zum Zeitpunkt der
   // Umstellung gab es in Produktion noch kein einziges Material — es kann
@@ -30,7 +45,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const jahrgangsSchranke = (user, platzhalter) => {
     if (user.type !== 'teamer') return null;
     return `(
-      NOT EXISTS (SELECT 1 FROM material_jahrgaenge mj WHERE mj.material_id = m.id)
+      m.ist_global = true
+      OR NOT EXISTS (SELECT 1 FROM material_jahrgaenge mj WHERE mj.material_id = m.id)
       OR EXISTS (
         SELECT 1 FROM material_jahrgaenge mj
         JOIN user_jahrgang_assignments uja ON uja.jahrgang_id = mj.jahrgang_id
@@ -38,6 +54,52 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       )
     )`;
   };
+
+  // LINK STATT DATEI (Entscheidung Simon, 31.08.2026)
+  //
+  // Ein Material traegt entweder Dateien ODER einen Link. Die Spalte
+  // materials.link_url kam ADDITIV dazu (Migration 135): Bestehendes Material
+  // hat NULL, die Antwortform bleibt sonst unveraendert -- ausgelieferte
+  // App-Versionen lesen das neue Feld einfach nicht.
+  //
+  // Geprueft wird ueber new URL() und das SCHEMA, nie per String-Suche:
+  // `javascript:alert(1)`, `data:text/html,...` und `file:///etc/passwd`
+  // fallen damit alle durch. Bewusst NICHT auf eine Host-Erlaubnisliste
+  // verengt (anders als die Musikdienste bei den Challenge-Beitraegen) --
+  // die Leitung verlinkt hier eigene Seiten und beliebige Fremdquellen.
+  const ERLAUBTE_SCHEMATA = ['http:', 'https:'];
+
+  const pruefeLink = (wert) => {
+    if (wert === undefined || wert === null || wert === '') return { ok: true, wert: null };
+    if (typeof wert !== 'string') return { ok: false };
+    const getrimmt = wert.trim();
+    if (!getrimmt) return { ok: true, wert: null };
+    if (getrimmt.length > 2000) return { ok: false };
+    let url;
+    try {
+      url = new URL(getrimmt);
+    } catch {
+      return { ok: false };
+    }
+    if (!ERLAUBTE_SCHEMATA.includes(url.protocol)) return { ok: false };
+    return { ok: true, wert: getrimmt };
+  };
+
+  const LINK_FEHLER = 'Der Link muss mit http:// oder https:// beginnen';
+
+  // WER DARF "für alle" SETZEN? (Entscheidung Simon, 31.08.2026)
+  //
+  // Nur die Rolle org_admin. Die Routen bleiben bewusst auf requireAdmin --
+  // würde man sie auf requireOrgAdmin heben, verlöre ein 'admin' das Anlegen
+  // von ganz normalem Material, und das wäre ein Rückschritt.
+  //
+  // Ein 'admin' sieht und bearbeitet globales Material also weiterhin
+  // (Titel, Beschreibung, Dateien, Link) -- nur das Flag selbst kann er
+  // weder setzen noch entziehen. Geprüft wird beides: das Setzen (false ->
+  // true) und das Entziehen (true -> false).
+  const GLOBAL_FEHLER = 'Nur die Gemeindeleitung kann Material für alle Teamer:innen freigeben';
+
+  const darfGlobalSetzen = (user) => user.role_name === 'org_admin';
 
   // Validierungsregeln
   const validateCreateMaterial = [
@@ -64,7 +126,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const { search, event_id, jahrgang_id } = req.query;
 
       let query = `
-        SELECT m.id, m.title, m.description,
+        SELECT m.id, m.title, m.description, m.link_url, m.ist_global,
                m.created_at, u.display_name as created_by_name,
                (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count,
                (SELECT COUNT(*) FROM material_events me WHERE me.material_id = m.id) as event_count,
@@ -164,7 +226,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: materials } = await db.query(
-        `SELECT m.id, m.title, m.description, m.created_at,
+        `SELECT m.id, m.title, m.description, m.link_url, m.ist_global, m.created_at,
                 u.display_name as created_by_name,
                 (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
          FROM materials m
@@ -194,7 +256,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: [material] } = await db.query(
-        `SELECT m.id, m.title, m.description,
+        `SELECT m.id, m.title, m.description, m.link_url, m.ist_global,
                 m.created_at, u.display_name as created_by_name
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
@@ -251,10 +313,21 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireAdmin, validateCreateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url, ist_global: global } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
+      }
+
+      // Vor dem INSERT abweisen, damit kein Material entsteht, das dann doch
+      // nicht global ist.
+      if (global === true && !darfGlobalSetzen(req.user)) {
+        return res.status(403).json({ error: GLOBAL_FEHLER });
+      }
+
+      const link = pruefeLink(link_url);
+      if (!link.ok) {
+        return res.status(400).json({ error: LINK_FEHLER });
       }
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
@@ -266,10 +339,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       const { rows: [material] } = await db.query(
-        `INSERT INTO materials (title, description, organization_id, created_by)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, title, description, created_at`,
-        [title.trim(), description || null, req.user.organization_id, req.user.id]
+        `INSERT INTO materials (title, description, link_url, ist_global, organization_id, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, title, description, link_url, ist_global, created_at`,
+        [title.trim(), description || null, link.wert, global === true, req.user.organization_id, req.user.id]
       );
 
       // Events zuordnen (Many-to-Many)
@@ -307,18 +380,32 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url, ist_global: global } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
+      const link = pruefeLink(link_url);
+      if (!link.ok) {
+        return res.status(400).json({ error: LINK_FEHLER });
+      }
+
       // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [existing] } = await db.query(
-        'SELECT id FROM materials WHERE id = $1 AND organization_id = $2',
+        'SELECT id, ist_global FROM materials WHERE id = $1 AND organization_id = $2',
         [materialId, orgId]
       );
 
       if (!existing) {
         return res.status(404).json({ error: 'Material nicht gefunden' });
+      }
+
+      // Setzen UND Entziehen sind der Leitung vorbehalten. Schickt ein
+      // 'admin' den unveraenderten Wert mit (das Formular sendet ihn immer
+      // mit), aendert sich nichts und die Anfrage geht durch -- sonst
+      // koennte er globales Material gar nicht mehr bearbeiten.
+      const globalGewuenscht = global === undefined ? existing.ist_global : global === true;
+      if (globalGewuenscht !== existing.ist_global && !darfGlobalSetzen(req.user)) {
+        return res.status(403).json({ error: GLOBAL_FEHLER });
       }
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
@@ -341,6 +428,19 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       if (description !== undefined) {
         updates.push(`description = $${paramIndex}`);
         params.push(description);
+        paramIndex++;
+      }
+      // Leerer String bzw. null loescht den Link wieder (pruefeLink gibt dann
+      // null zurueck) -- so laesst sich ein Material vom Link auf Dateien
+      // umstellen, ohne es neu anzulegen.
+      if (link_url !== undefined) {
+        updates.push(`link_url = $${paramIndex}`);
+        params.push(link.wert);
+        paramIndex++;
+      }
+      if (global !== undefined) {
+        updates.push(`ist_global = $${paramIndex}`);
+        params.push(globalGewuenscht);
         paramIndex++;
       }
 

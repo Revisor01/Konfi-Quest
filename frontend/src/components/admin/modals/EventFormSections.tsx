@@ -220,7 +220,7 @@ export const CheckinSection = React.memo<CheckinSectionProps>(({
           </div>
         </IonItem>
         <p style={{ fontSize: '0.8rem', color: '#888', margin: '4px 16px 8px 16px', lineHeight: '1.4' }}>
-          QR-Code Check-in ist {formData.checkin_window} Min. vor bis {formData.checkin_window} Min. nach Event-Start möglich
+          QR-Code Check-in: {formData.checkin_window} Min. vor und nach dem Start
         </p>
       </IonList>
     </IonCardContent>

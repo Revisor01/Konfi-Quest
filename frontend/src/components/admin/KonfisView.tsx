@@ -1,41 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemGroup,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonItem,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
-  IonSegment,
-  IonSegmentButton
-} from '@ionic/react';
-import {
-  trash,
-  swapVertical,
-  star,
-  calendar,
-  people,
-  peopleOutline,
-  ribbonOutline,
-  filterOutline,
-  search,
-  calendarOutline,
-  ribbon,
-  documentOutline
-} from 'ionicons/icons';
+import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
+  IonSpinner} from '@ionic/react';
+import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import type { TeamerListenEintrag } from '../../types/user';
 
 interface Konfi {
   id: number;
@@ -62,26 +34,22 @@ interface Jahrgang {
   name: string;
 }
 
-interface Settings {
-  target_gottesdienst?: string;
-  target_gemeinde?: string;
-}
-
 interface KonfisViewProps {
   konfis: Konfi[];
   jahrgaenge: Jahrgang[];
-  settings: Settings;
-  onUpdate: () => void;
-  onAddKonfiClick: () => void;
   onSelectKonfi: (konfi: Konfi) => void;
   onDeleteKonfi: (konfi: Konfi) => void;
-  onDeleteTeamer: (teamer: any) => void | Promise<void>;
+  onDeleteTeamer: (teamer: TeamerListenEintrag) => void | Promise<void>;
   // Im iPad-Split-View aktuell rechts geoeffneter Konfi (für Highlighting).
   selectedKonfiId?: number | null;
   // Meldet den Umschalter nach oben: der Plus-Button in der Kopfzeile gehört
   // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
   // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
   onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
+  // Startsegment. Nur der Erstwert — die Umschaltung bleibt interner State.
+  // (JSDOM reicht ionChange nicht an den React-Handler durch; ueber diesen
+  // Erstwert ist das Teamer-Segment auch im Test erreichbar.)
+  initialViewMode?: 'konfis' | 'teamer';
   /**
    * Der angemeldete Admin hat KEINEN Jahrgang zugewiesen (Header vom Server).
    * Dann ist die leere Liste kein "es gibt keine Konfis", sondern "du darfst
@@ -94,25 +62,23 @@ interface KonfisViewProps {
 const KonfisView: React.FC<KonfisViewProps> = ({
   konfis,
   jahrgaenge,
-  settings,
-  onUpdate,
-  onAddKonfiClick,
   onSelectKonfi,
   onDeleteKonfi,
   onDeleteTeamer,
   selectedKonfiId,
   ohneJahrgang = false,
-  onViewModeChange
+  onViewModeChange,
+  initialViewMode = 'konfis'
 }) => {
   const { user, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
-  const [teamers, setTeamers] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
+  const [teamers, setTeamers] = useState<TeamerListenEintrag[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
   // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
-  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
+  const [, setKonfiLimit] = useState<number | null>(null);
 
   // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
   useEffect(() => {
@@ -125,7 +91,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           const mk = response.data?.max_konfis;
           setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) setKonfiLimit(null);
       }
     };
@@ -317,8 +283,16 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Teamer-Liste */}
-      {viewMode === 'teamer' ? (
+      {/* Teamer-Liste. Waehrend des Ladens KEIN Leerzustand: "Noch keine
+          Teamer:innen vorhanden" waere hier schlicht falsch — dieselbe
+          Fehlerklasse wie der Audit-Befund vom 10.08. (Fehler nicht als
+          Leerzustand ausgeben). teamerLoading wurde gepflegt, aber nie
+          gerendert (Befund 30.08.2026). */}
+      {viewMode === 'teamer' && teamerLoading && teamers.length === 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+          <IonSpinner name="crescent" />
+        </div>
+      ) : viewMode === 'teamer' ? (
         <ListSection
           icon={ribbon}
           title="Teamer:innen"
@@ -330,7 +304,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
           emptyIconColor="var(--app-color-teamer)"
         >
-          {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
+          {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer, index, arr) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
               <IonItem
                 button
@@ -443,7 +417,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const percentTotal = targetTotal > 0 ? Math.round((totalPoints / targetTotal) * 100) : 0;
                   const percentGodi = targetGodi > 0 ? Math.round((godiPoints / targetGodi) * 100) : 0;
                   const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
-                  const isComplete = percentTotal >= 100;
 
                   return (
                     <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? '8px' : '0' }}>

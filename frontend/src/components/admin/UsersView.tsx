@@ -1,46 +1,18 @@
 import React, { useState, useRef } from 'react';
-import {
-  IonIcon,
-  IonItem,
-  IonItemGroup,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonInput,
-  IonSegment,
-  IonSegmentButton,
-  IonCard,
-  IonCardContent,
-  IonRefresher,
-  IonRefresherContent
-} from '@ionic/react';
-import {
-  trash,
-  people,
-  person,
-  personOutline,
-  shield,
-  createOutline,
-  at,
-  school,
-  time,
-  briefcase,
-  filterOutline,
-  peopleOutline,
-  search
-} from 'ionicons/icons';
+import { IonIcon, IonItem, IonItemGroup, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonSegment, IonSegmentButton, IonRefresher, IonRefresherContent } from '@ionic/react';
+import { trash, people, person, personOutline, shield, at, school, time, briefcase, filterOutline, peopleOutline, search } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
 
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
+
 interface UsersViewProps {
   users: AdminUser[];
   onUpdate: () => void;
-  onAddUserClick: () => void;
   onSelectUser: (user: AdminUser) => void;
   onDeleteUser: (user: AdminUser) => void;
   // Befund 16 aus dem Rollen-Bericht (26.08.2026): Der Loesch-Wisch haing
@@ -55,12 +27,11 @@ interface UsersViewProps {
 const UsersView: React.FC<UsersViewProps> = ({
   users,
   onUpdate,
-  onAddUserClick,
   onSelectUser,
   darfVerwalten,
   onDeleteUser
 }) => {
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
@@ -91,7 +62,6 @@ const UsersView: React.FC<UsersViewProps> = ({
     return result;
   })();
 
-  const getActiveUsers = () => users.filter(user => user.is_active);
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
@@ -104,14 +74,6 @@ const UsersView: React.FC<UsersViewProps> = ({
     }
   };
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName) {
-      case 'org_admin': return 'primary';
-      case 'admin': return 'primary';
-      case 'teamer': return 'warning';
-      default: return 'medium';
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -121,14 +83,6 @@ const UsersView: React.FC<UsersViewProps> = ({
     });
   };
 
-  const getInitials = (displayName: string) => {
-    return displayName
-      .split(' ')
-      .map(name => name.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
 
   const closeAllSlidingItems = () => {
     slidingRefs.current.forEach(ref => ref?.close());

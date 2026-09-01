@@ -1,3 +1,4 @@
+import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import React, { useState } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import {
@@ -58,11 +59,11 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
         onDeleted?.();
         onClose();
         await signOut();
-      } catch (err: any) {
-        if (err.response?.status === 400) {
+      } catch (err) {
+        if (fehlerStatus(err) === 400) {
           setInlineError('Passwort ist falsch');
         } else {
-          setError(err.response?.data?.error || 'Fehler beim Löschen des Accounts');
+          setError(fehlerText(err, 'Fehler beim Löschen des Accounts'));
         }
       }
     });

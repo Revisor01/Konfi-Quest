@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
@@ -40,10 +41,27 @@ import {
 } from './KonfiDetailSections';
 import KonfiModal from '../modals/KonfiModal';
 import type { Konfi, Activity } from './KonfiDetailSections';
+import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+
+/**
+ * Ein Aktivitaets-Antrag aus GET /admin/activities/requests, soweit diese
+ * Ansicht ihn liest: Die offenen Antraege der Konfi werden als "wartende"
+ * Aktivitaeten unter die verbuchten gemischt.
+ */
+interface OffenerAntrag {
+  id: number;
+  konfi_id: number;
+  status: 'pending' | 'approved' | 'rejected';
+  activity_name: string;
+  activity_points: number;
+  requested_date: string;
+  photo_filename?: string;
+}
 import KonfiBadgesSection from './KonfiBadgesSection';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface KonfiDetailViewProps {
   konfiId: number;
@@ -61,8 +79,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [bonusEntries, setBonusEntries] = useState<any[]>([]);
-  const [eventPoints, setEventPoints] = useState<any[]>([]);
+  const [bonusEntries, setBonusEntries] = useState<BonusEintrag[]>([]);
+  const [eventPoints, setEventPoints] = useState<EventPunkteEintrag[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetRole, setTargetRole] = useState<string>('konfi');
@@ -272,8 +290,28 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Bearbeiten-Modal. Dasselbe Modal wie beim Anlegen, nur mit `konfi`
   // vorbelegt — zwei Dateien waeren genau die Kopie, die in diesem Projekt
   // regelmaessig auseinanderlaeuft.
+  // Der Jahrgang der Konfi muss beim Bearbeiten IMMER sichtbar sein — auch
+  // wenn man ihn gar nicht wechseln will. Kommt die Liste nicht an (offline,
+  // Serverfehler), stand hier sonst "Keine Jahrgänge verfügbar" und der
+  // bestehende Jahrgang war nirgends zu sehen; das Formular liess sich dann
+  // nicht einmal speichern, weil ohne Jahrgang nichts gueltig ist.
+  //
+  // Ist der Jahrgang schon in der geladenen Liste, bleibt es bei der Liste —
+  // sonst wird er vorne ergaenzt. Die Punktearten fehlen dem Ersatzeintrag;
+  // das ist unschaedlich, weil die Warnung nur beim WECHSEL in einen anderen
+  // Jahrgang greift und der eigene nie der Wechsel-Zielwert ist.
+  const jahrgaengeFuersModal = (() => {
+    const eigenerId = currentKonfi?.jahrgang_id;
+    if (!eigenerId) return alleJahrgaenge;
+    if (alleJahrgaenge.some((jg) => jg.id === eigenerId)) return alleJahrgaenge;
+    return [
+      { id: eigenerId, name: currentKonfi?.jahrgang_name || 'Aktueller Jahrgang' },
+      ...alleJahrgaenge
+    ];
+  })();
+
   const [presentBearbeitenModal, dismissBearbeitenModal] = useIonModal(KonfiModal, {
-    jahrgaenge: alleJahrgaenge,
+    jahrgaenge: jahrgaengeFuersModal,
     konfi: currentKonfi ? {
       id: currentKonfi.id,
       display_name: currentKonfi.display_name || currentKonfi.name,
@@ -306,12 +344,20 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
   // Jahrgaenge fuer das Bearbeiten-Modal. Einmal beim Oeffnen der Seite; die
   // Liste enthaelt dank SELECT j.* auch die Punktearten, aus denen die Warnung
-  // beim Wechsel gebaut wird. Faellt der Abruf aus, bleibt die Liste leer und
-  // das Modal zeigt "Keine Jahrgänge verfügbar" — die Seite selbst stoert das
-  // nicht.
+  // beim Wechsel gebaut wird.
+  //
+  // Der Pfad lautet /admin/jahrgaenge. Hier stand bis zum 31.08.2026
+  // /jahrgaenge — gemessen gegen Produktion: HTTP 404. Der Abruf lief still in
+  // den .catch()-Zweig, die Liste blieb leer, und das Bearbeiten-Modal zeigte
+  // "Keine Jahrgänge verfügbar", obwohl es welche gibt. Die Route filtert NICHT
+  // nach zugewiesenen Jahrgaengen (jahrgaenge.js: WHERE j.organization_id),
+  // der Fehler lag allein im Pfad.
+  //
+  // Faellt der Abruf trotzdem aus (offline, Serverfehler), faellt die Liste auf
+  // den Jahrgang der Konfi zurueck — siehe jahrgaengeFuersModal.
   useEffect(() => {
     if (isTeamer) return;
-    api.get('/jahrgaenge')
+    api.get('/admin/jahrgaenge')
       .then((res) => setAlleJahrgaenge(res.data || []))
       .catch(() => setAlleJahrgaenge([]));
   }, [isTeamer]);
@@ -325,14 +371,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Punkte vergeben werden. Vergab eine zweite Person Punkte oder gab einen
   // Antrag frei, blieb hier der alte Stand stehen (Befund 25.08.2026).
   useLiveRefresh(['konfis', 'points', 'requests', 'badges'], useCallback(() => {
-    loadKonfiData(true);
+    loadKonfiData();
   }, [konfiId]));
 
-  const loadKonfiData = async (stillLaden = false) => {
-    // stillLaden: bei Live-Ereignissen NICHT den Ladebalken zeigen — die
-    // Ansicht wuerde bei jeder fremden Punktvergabe kurz leer flackern.
-    if (!stillLaden) setLoading(true);
-
+  const loadKonfiData = async () => {
     // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
     // Listen-Cache zeigen. Vorher lief der Abruf ins Leere und die Ansicht
     // zeigte nur "Fehler beim Laden der Konfi-Daten" — obwohl die Person in
@@ -353,15 +395,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         const ausListe = gecacht?.data?.find((k) => k.id === konfiId) || null;
         if (ausListe) {
           setCurrentKonfi({ ...ausListe });
-          setTargetRole((ausListe as any).role_name || 'konfi');
+          // GET /admin/konfis liefert kein role_name (und enthaelt nur
+          // Konfis) — der fruehere (as any)-Zugriff war IMMER undefined und
+          // fiel still auf 'konfi' zurueck. Ehrlich hingeschrieben:
+          setTargetRole('konfi');
           setError('');
         } else {
           setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
         }
       } catch {
         setError('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
       return;
     }
 
@@ -417,25 +463,25 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       try {
         const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
         setEventPoints(eventPointsRes.data || []);
-      } catch (eventPointsError) {
+      } catch {
         setEventPoints([]);
       }
 
       try {
         const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
         setAttendanceStats(attendanceRes.data);
-      } catch (attendanceError) {
+      } catch {
         setAttendanceStats(null);
       }
 
-      const enhancedActivities = allActivities.map((activity: any) => ({
+      const enhancedActivities: Activity[] = allActivities.map((activity: Activity) => ({
         ...activity,
         hasPhoto: false
       }));
 
-      const pendingRequests = (requestsRes.data || [])
-        .filter((req: any) => req.konfi_id === konfiId && req.status === 'pending')
-        .map((req: any) => ({
+      const pendingRequests: Activity[] = (requestsRes.data || [])
+        .filter((req: OffenerAntrag) => req.konfi_id === konfiId && req.status === 'pending')
+        .map((req: OffenerAntrag) => ({
           id: `request-${req.id}`,
           name: `${req.activity_name} (gemeldet)`,
           points: req.activity_points,
@@ -449,7 +495,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         }));
 
       setActivities([...enhancedActivities, ...pendingRequests]);
-    } catch (err) {
+    } catch {
       setError('Fehler beim Laden der Konfi-Daten');
     } finally {
       setLoading(false);
@@ -515,7 +561,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
               await loadKonfiData();
               triggerRefresh('konfis');
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen der Aktivität');
             }
           }
@@ -524,7 +570,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     });
   };
 
-  const handleDeleteBonus = async (bonus: any) => {
+  const handleDeleteBonus = async (bonus: BonusEintrag) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
       header: 'Bonuspunkte löschen',
@@ -539,7 +585,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
               await loadKonfiData();
               triggerRefresh('konfis');
-            } catch (err) {
+            } catch {
               setError('Fehler beim Löschen der Bonuspunkte');
             }
           }
@@ -569,7 +615,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         ]
       });
       triggerRefresh('konfis');
-    } catch (err) {
+    } catch {
       setError('Fehler beim Zurücksetzen des Passworts');
     }
   };
@@ -584,14 +630,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         // Vorherige Blob-URL freigeben, falls direkt ein weiteres Foto geoeffnet wird
         setSelectedPhoto((prev) => {
           if (prev && prev.startsWith('blob:')) {
-            try { URL.revokeObjectURL(prev); } catch {}
+            try { URL.revokeObjectURL(prev); } catch { /* Freigeben darf scheitern: die URL war schon ungueltig. Das neue Foto trotzdem zeigen. */ }
           }
           return photoUrl;
         });
         presentPhotoModalHook({
           presentingElement: presentingElement || undefined
         });
-      } catch (error) {
+      } catch {
         setError('Foto konnte nicht geladen werden');
       }
     }
@@ -622,8 +668,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             try {
               await api.delete(`/teamer/${konfiId}/certificates/${cert.id}`);
               await loadKonfiData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Entfernen');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Entfernen'));
             }
           }
         }
@@ -652,14 +698,38 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               setSuccess(`${currentKonfi.name} wurde zur Teamer:in befördert`);
               triggerRefresh('konfis');
               onBack();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Befördern');
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Befördern'));
             }
           }
         }
       ]
     });
   };
+
+  // Solange geladen wird, den Spinner zeigen statt Kacheln auf 0 und den
+  // Platzhaltertitel - dasselbe Muster wie in der Event-Detailansicht.
+  if (loading) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}>
+                  <IonIcon icon={arrowBack} />
+                </IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>{isTeamer ? 'Teamer:in Details' : 'Konfi Details'}</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+          <LoadingSpinner message={isTeamer ? 'Teamer:in wird geladen...' : 'Konfi wird geladen...'} />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
@@ -713,7 +783,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           getGemeindePoints={getGemeindePoints}
           certificates={certificates}
           teamerEvents={teamerEvents}
-          activities={activities}
         />
 
         {/* Punkte-Historie, Aktivitaeten und Anwesenheit haengen an

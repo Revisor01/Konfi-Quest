@@ -1,8 +1,9 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const PushService = require('../../services/pushService');
 
 describe('Wrapped Routes', () => {
   let app;
@@ -185,8 +186,12 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.generated).toBeDefined();
-      expect(res.body.year).toBeDefined();
+      // Harte Zahl statt toBeDefined: Der Seed legt zwei Teamer:innen in Org 1
+      // an (teamer1, teamer2 gehoert zu Org 2). Ein stiller Fehlschlag der
+      // Generierung liefe sonst als "definiert" durch.
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(0);
+      expect(res.body.year).toBe(new Date().getFullYear());
     });
 
     it('Admin (nicht OrgAdmin) bekommt 403', async () => {
@@ -229,7 +234,10 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.deleted).toBeDefined();
+      // Der Seed hat zwei Konfis in Jahrgang 1 (konfi1, konfi2) -- genau deren
+      // Snapshots muessen weg sein. `toBeDefined()` haette auch bei 0 gegruent,
+      // also gerade dann, wenn das Loeschen gar nichts trifft.
+      expect(res.body.deleted).toBe(2);
     });
 
     it('Konfi bekommt 403', async () => {
@@ -246,6 +254,217 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // Befund W-D (01.09.2026): Schluessel, Push und Loeschweg
+  // ================================================================
+  describe('Snapshot-Schluessel, Push und Loeschweg (W-D)', () => {
+    it('haelt fuer zwei Jahrgaenge im selben Jahr zwei Snapshots', async () => {
+      // Der Schluessel lautete UNIQUE(user_id, wrapped_type, year) -- ohne
+      // Jahrgang. Gehoerte eine Konfi im selben Jahr zu zwei Jahrgaengen,
+      // ueberschrieb der zweite Lauf den ersten still: kein Fehler, der
+      // Zaehler meldete trotzdem Erfolg, und der erste Jahrgang verlor
+      // seinen Rueckblick. Migration 140 nimmt den Jahrgang in den Schluessel.
+      const zweiterJahrgang = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id) VALUES ($1, $2) RETURNING id`,
+        ['Zweiter Jahrgang', ORGS.testGemeinde.id]
+      );
+      const jgZwei = zweiterJahrgang.rows[0].id;
+
+      const jahr = new Date().getFullYear();
+      const daten = JSON.stringify({ version: 1 });
+
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data)
+         VALUES ($1, $2, 'konfi', $3, $4, $5)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id, jahr, daten]
+      );
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data)
+         VALUES ($1, $2, 'konfi', $3, $4, $5)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id, jgZwei, jahr, daten]
+      );
+
+      const { rows } = await db.query(
+        `SELECT jahrgang_id FROM wrapped_snapshots
+         WHERE user_id = $1 AND wrapped_type = 'konfi' AND year = $2
+         ORDER BY jahrgang_id`,
+        [USERS.konfi1.id, jahr]
+      );
+
+      // Vor der Migration stand hier genau eine Zeile.
+      expect(rows).toHaveLength(2);
+      expect(rows.map(r => r.jahrgang_id).sort((a, b) => a - b))
+        .toEqual([JAHRGAENGE.jahrgang1.id, jgZwei].sort((a, b) => a - b));
+    });
+
+    it('haelt Teamer-Snapshots weiterhin eindeutig pro Person und Jahr', async () => {
+      // Der neue Schluessel benutzt COALESCE(jahrgang_id, 0). Ohne das waeren
+      // Teamer-Snapshots (jahrgang_id IS NULL) gar nicht mehr eindeutig --
+      // in einem UNIQUE-Index gelten zwei NULL als verschieden, jeder Lauf
+      // legte eine neue Zeile an und das ON CONFLICT liefe ins Leere.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+         WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    // Der Push wird am echten Versand geprueft, nicht an der Antwortmarke:
+    // Wer den Aufruf aendert und `benachrichtigt` stehen laesst, wuerde sonst
+    // nicht auffallen. (Beim Schreiben dieser Tests genau so passiert -- die
+    // Gegenprobe blieb gruen, bis auch die Marke zurueckgedreht war.)
+    it('benachrichtigt bei der ersten Freigabe', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      // An beide Konfis des Jahrgangs, als Konfi-Wrapped.
+      const [, userIds, typ] = spy.mock.calls[0];
+      expect([...userIds].sort((a, b) => a - b)).toEqual([USERS.konfi1.id, USERS.konfi2.id]);
+      expect(typ).toBe('konfi');
+
+      spy.mockRestore();
+    });
+
+    it('benachrichtigt beim erneuten Generieren NICHT noch einmal', async () => {
+      // Wer nach einer Korrektur neu generiert, schickte dem ganzen Jahrgang
+      // ein zweites Mal "Dein Konfi-Jahr ist da!".
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const zweiter = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(zweiter.status).toBe(200);
+      expect(zweiter.body.benachrichtigt).toBe(false);
+      expect(spy).not.toHaveBeenCalled();
+      // Die Snapshots werden trotzdem erneuert -- nur eben still.
+      expect(zweiter.body.generated).toBe(2);
+      expect(zweiter.body.errors).toBe(0);
+
+      spy.mockRestore();
+    });
+
+    it('benachrichtigt wieder, nachdem die Freigabe zurueckgenommen wurde', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app)
+        .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const erneut = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(erneut.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+    });
+
+    it('loescht Teamer-Snapshots ueber DELETE /teamer', async () => {
+      // Teamer-Snapshots haben keinen Jahrgang. DELETE /:jahrgangId filtert
+      // auf jahrgang_id und traf sie deshalb nie -- einmal erzeugt, blieben
+      // sie fuer immer stehen.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const vorher = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(vorher.rows[0].anzahl).toBe(1);
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.deleted).toBe(1);
+
+      const nachher = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(nachher.rows[0].anzahl).toBe(0);
+    });
+
+    it('laesst beim Loeschen eines Jahrgangs die Teamer-Snapshots stehen', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const res = await request(app)
+        .delete(`/api/wrapped/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      // Nur die beiden Konfi-Zeilen des Jahrgangs, nicht die Teamer-Zeile.
+      expect(res.body.deleted).toBe(2);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    it('loescht keine Teamer-Snapshots einer fremden Organisation', async () => {
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.body.deleted).toBe(1);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+         WHERE wrapped_type = 'teamer' AND organization_id = $1`,
+        [ORGS.andereGemeinde.id]
+      );
+      expect(rows[0].anzahl).toBe(1);
+    });
+
+    it('laesst Admin und Konfi nicht an DELETE /teamer', async () => {
+      const alsAdmin = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(alsAdmin.status).toBe(403);
+
+      const alsKonfi = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(alsKonfi.status).toBe(403);
     });
   });
 
@@ -407,6 +626,222 @@ describe('Wrapped Routes', () => {
           .set('Authorization', `Bearer ${orgAdmin2Token}`);
         expect(res.status).toBe(403);
       });
+    });
+  });
+
+  // ================================================================
+  // ZAHLEN (Befunde W-A / W-B / W-C, 01.09.2026)
+  //
+  // Die Suite prueft bis hier ausschliesslich Rechte, Isolation und
+  // Freigabe -- keine einzige Zahl. Genau deshalb standen W-A und W-B
+  // bei gruenen Tests im Code. Alles hier prueft konkrete Werte.
+  // ================================================================
+  describe('Zahlen im Konfi-Snapshot', () => {
+    const JAHR = new Date().getFullYear();
+
+    // Zeitraum ohne Konfirmations-Termin: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
+    const AUGUST = `${JAHR}-08-15`;          // frueher aus dem Fallback gefallen
+    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`; // liegt davor
+    const NACH_ZEITRAUM = `${JAHR}-10-15`;    // liegt danach
+
+    /** Termin anlegen und dem Jahrgang zuordnen; gibt die Event-ID zurueck. */
+    async function termin(name, datum, opts = {}) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, $2::timestamp, $3, $4, 0, $5, 1) RETURNING id`,
+        [name, `${datum} 10:00:00`, opts.orgId || ORGS.testGemeinde.id, opts.mandatory || false, opts.pointType || 'gemeinde']
+      );
+      const jgId = opts.jahrgangId === null ? null : (opts.jahrgangId || JAHRGAENGE.jahrgang1.id);
+      if (jgId !== null) {
+        await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)', [e.id, jgId]);
+      }
+      return e.id;
+    }
+
+    async function buchung(userId, eventId, opts = {}) {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status, booking_date)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [userId, eventId, opts.orgId || ORGS.testGemeinde.id, opts.status || 'confirmed', opts.attendance || null]
+      );
+    }
+
+    /** Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot von konfi1 zurueck. */
+    async function snapshotVonKonfi1() {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    beforeEach(async () => {
+      // Der Seed legt vier Termine 7 Tage in der Zukunft an und bucht nichts.
+      // Fuer die Zahlen-Tests raeumen wir das Feld leer und stellen eine
+      // bekannte Datenlage her.
+      await db.query('DELETE FROM event_bookings');
+      await db.query('DELETE FROM event_jahrgang_assignments');
+      await db.query('DELETE FROM events');
+    });
+
+    // ------------------------------------------------------------
+    // W-A: Wrapped und Dashboard zaehlen dieselbe Sache gleich.
+    // ------------------------------------------------------------
+    it('Wrapped und Dashboard liefern fuer dieselbe Person dieselbe Terminzahl', async () => {
+      // Genau die Mischung, die in Produktion den Faktor 15 erzeugte:
+      // gebucht ohne gepflegte Anwesenheit, gebucht + present, und ein
+      // Termin OHNE Jahrgangszuordnung.
+      const a = await termin('Gebucht ohne Anwesenheit', IM_ZEITRAUM);
+      const b = await termin('Gebucht und anwesend', IM_ZEITRAUM);
+      const c = await termin('Ohne Jahrgangszuordnung', IM_ZEITRAUM, { jahrgangId: null });
+      await buchung(USERS.konfi1.id, a);
+      await buchung(USERS.konfi1.id, b, { attendance: 'present' });
+      await buchung(USERS.konfi1.id, c);
+
+      const dash = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(dash.status).toBe(200);
+      expect(dash.body.event_count).toBe(3);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.events.total_attended).toBe(3);
+      expect(snap.slides.events.total_attended).toBe(dash.body.event_count);
+    });
+
+    it('gottesdienst_count zaehlt nach derselben Regel wie die Termine', async () => {
+      // Frueher zaehlte gottesdienst_count in DERSELBEN Funktion nach einer
+      // dritten Regel (present, aber ohne Jahrgangs-JOIN).
+      const gd1 = await termin('Gottesdienst gebucht', IM_ZEITRAUM, { pointType: 'gottesdienst' });
+      const gd2 = await termin('Gottesdienst anwesend', IM_ZEITRAUM, { pointType: 'gottesdienst' });
+      const gem = await termin('Gemeindeabend', IM_ZEITRAUM, { pointType: 'gemeinde' });
+      await buchung(USERS.konfi1.id, gd1);
+      await buchung(USERS.konfi1.id, gd2, { attendance: 'present' });
+      await buchung(USERS.konfi1.id, gem);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.gottesdienst.count).toBe(2);
+      expect(snap.slides.events.total_attended).toBe(3);
+    });
+
+    // ------------------------------------------------------------
+    // W-B: Der Jahresrueckblick filtert nach Jahr.
+    // ------------------------------------------------------------
+    it('Ein Termin AUSSERHALB des Zeitraums zaehlt nicht mit', async () => {
+      const drin = await termin('Im Zeitraum', IM_ZEITRAUM);
+      const davor = await termin('Vor dem Zeitraum', VOR_ZEITRAUM);
+      const danach = await termin('Nach dem Zeitraum', NACH_ZEITRAUM);
+      await buchung(USERS.konfi1.id, drin);
+      await buchung(USERS.konfi1.id, davor);
+      await buchung(USERS.konfi1.id, danach);
+
+      const snap = await snapshotVonKonfi1();
+      // Das Dashboard zaehlt weiterhin alle drei -- es kennt keinen Zeitraum.
+      expect(snap.slides.events.total_attended).toBe(1);
+      expect(snap.slides.events.lieblings_event.name).toBe('Im Zeitraum');
+    });
+
+    it('Absagen ausserhalb des Zeitraums zaehlen nicht mit', async () => {
+      const drin = await termin('Abgesagt im Zeitraum', IM_ZEITRAUM);
+      const davor = await termin('Abgesagt davor', VOR_ZEITRAUM);
+      await buchung(USERS.konfi1.id, drin, { status: 'cancelled' });
+      await buchung(USERS.konfi1.id, davor, { status: 'cancelled' });
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.events.abgesagt).toBe(1);
+    });
+
+    it('aktivster_monat mittelt nicht ueber mehrere Jahre', async () => {
+      // Zwei Termine im November des VORJAHRES (im Zeitraum) und drei im
+      // Dezember eines noch frueheren Jahres (ausserhalb). Ohne Zeitfilter
+      // gewaenne der Dezember mit 3 -- obwohl er gar nicht zum Rueckblick
+      // gehoert.
+      const nov1 = await termin('November A', `${JAHR - 1}-11-05`);
+      const nov2 = await termin('November B', `${JAHR - 1}-11-20`);
+      const dez1 = await termin('Dezember alt A', `${JAHR - 3}-12-05`);
+      const dez2 = await termin('Dezember alt B', `${JAHR - 3}-12-10`);
+      const dez3 = await termin('Dezember alt C', `${JAHR - 3}-12-15`);
+      for (const id of [nov1, nov2, dez1, dez2, dez3]) {
+        await buchung(USERS.konfi1.id, id);
+      }
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.aktivster_monat.monat).toBe(11);
+      expect(snap.slides.aktivster_monat.monat_name).toBe('November');
+      expect(snap.slides.aktivster_monat.aktivitaeten).toBe(2);
+    });
+
+    // ------------------------------------------------------------
+    // W-C: Fallback-Zeitraum, und der August fehlt nicht.
+    // ------------------------------------------------------------
+    it('Ein Jahrgang OHNE Konfirmationstermin bekommt 1.9. bis 31.8. -- der August fehlt nicht', async () => {
+      const { rows: [k] } = await db.query(
+        'SELECT COUNT(*)::int AS anzahl FROM events WHERE is_konfirmation = true'
+      );
+      expect(k.anzahl).toBe(0);
+
+      const imAugust = await termin('Sommerfreizeit im August', AUGUST);
+      await buchung(USERS.konfi1.id, imAugust);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
+      // Ohne Konfirmations-Termin gibt es KEINEN Konfirmationstermin --
+      // frueher wurde dafuer das Zeitraum-Ende als Datum angezeigt.
+      expect(snap.slides.zeitraum.konfirmation).toBe(null);
+      // Und der August zaehlt mit.
+      expect(snap.slides.events.total_attended).toBe(1);
+    });
+
+    it('Mit Konfirmationstermin endet der Zeitraum am Termin, ohne Zeitzonen-Verschiebung', async () => {
+      // Der 1.9. als Startdatum rutschte per new Date(y,8,1).toISOString()
+      // in Sommerzeit auf den 31.8.
+      const konf = await termin('Konfirmation', `${JAHR}-05-10`);
+      await db.query('UPDATE events SET is_konfirmation = true WHERE id = $1', [konf]);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-05-10`);
+      expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR}-05-10`);
+    });
+
+    // ------------------------------------------------------------
+    // Mandantengrenze: die Absagen-Query hatte keinen Org-Filter.
+    // ------------------------------------------------------------
+    it('Die Absagen-Query liefert nichts aus einer fremden Organisation', async () => {
+      // konfi1 gehoert zu Org 1, bekommt aber zusaetzlich eine abgesagte
+      // Buchung in Org 2 -- genau die Konstellation eines Kontos, das in
+      // mehreren Gemeinden auftaucht.
+      const eigen = await termin('Eigene Org abgesagt', IM_ZEITRAUM);
+      const fremd = await termin('Fremde Org abgesagt', IM_ZEITRAUM, {
+        orgId: ORGS.andereGemeinde.id,
+        jahrgangId: JAHRGAENGE.jahrgang2.id
+      });
+      await buchung(USERS.konfi1.id, eigen, { status: 'cancelled' });
+      await buchung(USERS.konfi1.id, fremd, { status: 'cancelled', orgId: ORGS.andereGemeinde.id });
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.events.abgesagt).toBe(1);
+    });
+
+    it('Auch die Terminzahl zaehlt keine fremde Organisation mit', async () => {
+      const eigen = await termin('Eigene Org', IM_ZEITRAUM);
+      const fremd = await termin('Fremde Org', IM_ZEITRAUM, {
+        orgId: ORGS.andereGemeinde.id,
+        jahrgangId: JAHRGAENGE.jahrgang2.id
+      });
+      await buchung(USERS.konfi1.id, eigen);
+      await buchung(USERS.konfi1.id, fremd, { orgId: ORGS.andereGemeinde.id });
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.events.total_attended).toBe(1);
     });
   });
 

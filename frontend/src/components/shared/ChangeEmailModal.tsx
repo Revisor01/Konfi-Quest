@@ -1,3 +1,4 @@
+import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import {
@@ -94,9 +95,9 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         });
         setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
         onSuccess();
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.error;
-        if (errorMsg?.includes('bereits verwendet') || err.response?.status === 409) {
+      } catch (err) {
+        const errorMsg = fehlerText(err, '');
+        if (errorMsg.includes('bereits verwendet') || fehlerStatus(err) === 409) {
           setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
         } else {
           setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');

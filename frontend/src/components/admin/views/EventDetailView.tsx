@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
@@ -7,6 +8,7 @@ import {
   IonItemSliding, IonItemOptions, IonItemOption,
   useIonActionSheet, useIonAlert, useIonRouter
 } from '@ionic/react';
+import type { ActionSheetButton } from '@ionic/react';
 import {
   arrowBack, createOutline, calendar, people, ban,
   personAdd, checkmarkCircle, closeCircle, checkmark, trash,
@@ -29,66 +31,22 @@ import {
   UnregistrationsSection, EventMaterialSection, EventActionsSection,
   TimeslotsSection
 } from './EventDetailSections';
-import type { Participant, Unregistration } from './EventDetailSections';
+import type { Participant, Unregistration, EventData } from './EventDetailSections';
+import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
-interface Category {
-  id: number;
-  name: string;
-}
+// Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
+// mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
+type SlidingRef = { close: () => Promise<void> };
 
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  point_type?: 'gottesdienst' | 'gemeinde';
-  categories?: Category[];
-  jahrgaenge?: Jahrgang[];
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed';
-  available_spots: number;
-  participants: Participant[];
-  timeslots?: Timeslot[];
-  has_timeslots?: boolean;
-  mandatory?: boolean;
-  is_konfirmation?: boolean;
-  bring_items?: string;
-  teamer_needed?: boolean;
-  teamer_only?: boolean;
-  teamer_max_participants?: number;
-  teamer_waitlist_enabled?: boolean;
-  teamer_max_waitlist_size?: number;
-  teamer_waitlist_count?: number;
-  is_series?: boolean;
-  series_id?: string;
-  series_events?: Event[];
-  created_at: string;
-  chat_room_id?: number | null;
-  cancelled?: boolean;
-}
-
-interface Jahrgang {
-  id: number;
-  name: string;
-}
-
-interface Timeslot {
-  id: number;
-  start_time: string;
-  end_time: string;
-  max_participants: number;
-  registered_count: number;
-}
+// Die Termin-Form dieser Ansicht ist dieselbe, die die Abschnitte erwarten
+// (EventData). Bis zum 30.08.2026 stand hier eine zweite, fast gleiche
+// Fassung -- ihr fehlten waitlist_enabled, max_waitlist_size und
+// checkin_window, obwohl der Code sie liest. Genau deshalb standen an den
+// Uebergabestellen `as any`-Casts, die den Unterschied verdeckten.
+type Event = EventData;
 
 interface EventDetailViewProps {
   eventId: number;
@@ -100,7 +58,7 @@ interface EventDetailViewProps {
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
-  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+  const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const { user, setSuccess, setError, isOnline } = useApp();
   const router = useIonRouter();
   const { triggerRefresh } = useLiveUpdate();
@@ -111,13 +69,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
-  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   // Material Detail Modal (wie Teamer)
   const materialIdRef = useRef<number | null>(null);
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
-    get materialId() { return materialIdRef.current; },
+    // Der Ref wird in handleMaterialClick gesetzt, BEVOR das Modal geoeffnet
+    // wird — beim Rendern ist er null, beim Anzeigen nie. Ionic 9 typisiert
+    // useIonModal strenger und sieht nur die Deklaration.
+    get materialId() { return materialIdRef.current as number; },
     onClose: () => dismissMaterialModal()
   });
 
@@ -166,7 +127,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Participant Management Modal
-  const [presentParticipantModalHook, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
+  const [, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
     onClose: () => dismissParticipantModalHook(),
     onSuccess: () => {
@@ -188,6 +149,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     filterRole: 'teamer'
   });
 
+  // Leitungs-Modal (filterRole: 'leitung') — Admins/Org-Admins bewusst pro
+  // Termin zuordnen. Wer zugeordnet ist, kommt in den Chat zum Termin; ein
+  // automatisches Hineinrutschen in jeden Event-Chat gibt es ausdruecklich nicht.
+  const [presentLeitungModal, dismissLeitungModal] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    onClose: () => dismissLeitungModal(),
+    onSuccess: () => {
+      dismissLeitungModal();
+      loadEventData();
+    },
+    dismiss: () => dismissLeitungModal(),
+    filterRole: 'leitung'
+  });
+
   // Konfi Modal (filterRole: 'konfi')
   const [presentKonfiModal, dismissKonfiModal] = useIonModal(ParticipantManagementModal, {
     eventId: eventId,
@@ -200,12 +175,42 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     filterRole: 'konfi'
   });
 
+  // Welcher Termin gerade gelten soll. Eine Antwort, die zu einer aelteren
+  // Anfrage gehoert, darf den Stand nicht mehr ueberschreiben (siehe unten).
+  const aktuelleEventId = useRef(eventId);
+
+  // Beim Wechsel des Termins den Stand des VORIGEN leeren.
+  //
+  // Nutzerhinweis 01.09.2026: In der Teilnehmerliste eines Termins standen
+  // Abmeldungen von Personen, die dort gar keine Buchung hatten. Gemessen an
+  // Produktionsdaten (Hennstedt, "Spendenlauf (Helfen)" und "Spendenlauf
+  // (Laufen)" — fast gleicher Name, selber Tag): Backend und API lieferten
+  // beide Male genau das Richtige. Es waren die Teilnehmer und Abmeldungen
+  // des zuvor geoeffneten Termins, die stehen geblieben waren.
+  //
+  // Ursache: Der IonRouterOutlet behaelt gemountete Seiten im Speicher, und
+  // ParamSeite (MainTabs.tsx) reicht die ID als Prop durch, ohne die Seite
+  // beim Wechsel neu einzuhaengen. Dieselbe Instanz bekommt also nur eine
+  // neue eventId — participants, unregistrations, eventData und die
+  // Materialien behielten die Werte des vorigen Termins. Online sah man sie,
+  // bis die neue Antwort eintraf; OFFLINE blieben sie dauerhaft stehen, denn
+  // der Offline-Zweig unten setzt Teilnehmer und Abmeldungen gar nicht.
+  useEffect(() => {
+    aktuelleEventId.current = eventId;
+    setParticipants([]);
+    setUnregistrations([]);
+    setEventData(null);
+    setEventMaterials([]);
+    setError('');
+    setLoading(true);
+  }, [eventId]);
+
   // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
   // aus dem Cache gezeigte Grundstand durch die vollen Detaildaten
   // (Teilnehmer, Abmeldungen) ersetzt werden. Ohne das bliebe die Seite auf
   // dem Offline-Stand stehen, bis man sie verlaesst und neu oeffnet.
   useEffect(() => {
-    loadEventData();
+    loadEventData(eventId);
   }, [eventId, isOnline]);
 
   useEffect(() => {
@@ -217,13 +222,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // QR-Check-in (events.js): Der Zaehler auf dem offenen QR-Code stand still
   // (Befund 25.08.2026).
   useLiveRefresh(['events', 'konfis'], useCallback(() => {
-    loadEventData(true);
+    loadEventData(eventId);
   }, [eventId]));
 
-  const loadEventData = async (stillLaden = false) => {
-    // stillLaden: bei Live-Ereignissen ohne Ladebalken nachladen, sonst
-    // flackert die Teilnehmerliste bei jedem QR-Scan.
-    if (!stillLaden) setLoading(true);
+  const loadEventData = async (fuerEventId: number = eventId) => {
+    // Eine Antwort gilt nur, solange sie zum aktuell geoeffneten Termin
+    // gehoert. Wechselt man schnell zwischen zwei Terminen, kann die Antwort
+    // fuer den ERSTEN nach der des zweiten eintreffen — ohne diesen Riegel
+    // schriebe sie dessen Teilnehmerliste wieder mit der falschen zu
+    // (dasselbe Bild wie der Fehler oben, nur seltener).
+    const gilt = () => aktuelleEventId.current === fuerEventId;
 
     // Ohne Verbindung gar nicht erst anfragen, sondern den Grundstand aus dem
     // Listen-Cache zeigen. Vorher lief der Abruf ins Leere, eventData blieb
@@ -241,7 +249,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!isOnline) {
       try {
         const gecacht = await offlineCache.get<Event[]>('admin:events:' + user?.organization_id);
-        const ausListe = gecacht?.data?.find((e) => e.id === eventId) || null;
+        const ausListe = gecacht?.data?.find((e) => e.id === fuerEventId) || null;
+        if (!gilt()) return;
         if (ausListe) {
           setEventData(ausListe);
           setError('');
@@ -249,27 +258,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
         }
       } catch {
-        setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+        if (gilt()) setError('Dieser Termin wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+      } finally {
+        if (gilt()) setLoading(false);
       }
-      setLoading(false);
       return;
     }
 
     try {
-      const eventRes = await api.get(`/events/${eventId}`);
+      const eventRes = await api.get(`/events/${fuerEventId}`);
+      if (!gilt()) return;
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
       try {
-        const matRes = await api.get(`/material/by-event/${eventId}`);
-        setEventMaterials(matRes.data || []);
+        const matRes = await api.get(`/material/by-event/${fuerEventId}`);
+        if (gilt()) setEventMaterials(matRes.data || []);
       } catch {
-        setEventMaterials([]);
+        if (gilt()) setEventMaterials([]);
       }
-    } catch (error) {
-      setError('Fehler beim Laden der Event-Daten');
+    } catch {
+      if (gilt()) setError('Fehler beim Laden der Event-Daten');
     } finally {
-      setLoading(false);
+      if (gilt()) setLoading(false);
     }
   };
 
@@ -321,7 +332,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // meldet bei freier Warteliste weiterhin 'open' (`events.js:129-131`).
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
-    if (istVoll && (eventData as any).waitlist_enabled) return waitlist;
+    if (istVoll && eventData.waitlist_enabled) return waitlist;
     if (istVoll) return danger;
     if (regStatus === 'open') return success;
     if (regStatus === 'upcoming') return upcoming;
@@ -345,7 +356,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (regStatus === 'mandatory') return 'Pflichttermin';
     const istVoll = eventData.max_participants > 0
       && eventData.registered_count >= eventData.max_participants;
-    if (istVoll && (eventData as any).waitlist_enabled) return 'Warteliste';
+    if (istVoll && eventData.waitlist_enabled) return 'Warteliste';
     if (istVoll) return 'Ausgebucht';
     if (regStatus === 'open') return 'Offen';
     if (regStatus === 'upcoming') return 'Bald';
@@ -358,11 +369,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       p.id === participant.id ? { ...p, attendance_status: status } : p
     ));
     try {
-      const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
+      await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
       triggerRefresh('events');
-    } catch (error) {
+    } catch {
       setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
       ));
@@ -372,7 +383,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const showAttendanceActionSheet = (participant: Participant) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    const buttons: any[] = [];
+    const buttons: ActionSheetButton[] = [];
     if (participant.attendance_status !== 'present') {
       buttons.push({ text: 'Anwesend', icon: checkmarkCircle, handler: () => handleAttendanceUpdate(participant, 'present') });
     }
@@ -463,9 +474,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Demote participant error:', error);
-      setError(error.response?.data?.error || 'Fehler beim Verschieben auf Warteliste');
+      setError(fehlerText(error, 'Fehler beim Verschieben auf Warteliste'));
     }
   };
 
@@ -490,9 +501,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Delete participant error:', error);
-      setError(error.response?.data?.error || 'Fehler beim Entfernen des Teilnehmers');
+      setError(fehlerText(error, 'Fehler beim Entfernen des Teilnehmers'));
     }
   };
 
@@ -516,7 +527,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const eventDate = new Date(eventData.event_date).toLocaleDateString('de-DE', {
       weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
     });
-    const konfiCount = participants.filter(p => p.role_name !== 'teamer').length;
+    const konfiCount = participants.filter(p => p.role_name === 'konfi').length;
     presentActionSheet({
       header: `"${eventData.name}" absagen?`,
       subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
@@ -532,8 +543,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               });
               setSuccess('Event wurde abgesagt');
               onBack();
-            } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            } catch (error) {
+              setError(fehlerText(error, 'Fehler beim Absagen'));
             }
           }
         },
@@ -548,8 +559,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const res = await api.post(`/events/${eventData?.id}/chat`);
       setSuccess('Chat erstellt');
       router.push(`/admin/chat/room/${res.data.chat_room_id}`, 'root');
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Erstellen des Chats');
+    } catch (error) {
+      setError(fehlerText(error, 'Fehler beim Erstellen des Chats'));
     }
   };
 
@@ -578,6 +589,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     materialIdRef.current = materialId;
     presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
+
+  // Zugeordnete Leitung (Admin/Org-Admin). Sie steht in der Team-Liste,
+  // hat aber keinen Jahrgang und ist deshalb eigens zu kennzeichnen.
+  const istLeitung = (p: Participant) =>
+    p.role_name === 'admin' || p.role_name === 'org_admin';
 
   // Helper: Einzelnen Teilnehmer rendern
   const renderParticipant = (participant: Participant) => {
@@ -640,9 +656,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {participant.participant_name}
                   </div>
                   <div className="app-list-item__subtitle">
-                    {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                    {/* Zugeordnete Leitung steht in derselben Liste wie die
+                        Teamer:innen und hat keinen Jahrgang — ohne Label
+                        bliebe die Zeile ohne Unterzeile und waere von einer
+                        Teamer:in nicht zu unterscheiden. */}
+                    {istLeitung(participant) && <>Leitung</>}
+                    {!istLeitung(participant) && participant.jahrgang_name && <>{participant.jahrgang_name}</>}
                     {participant.timeslot_start_time && participant.timeslot_end_time && (
-                      <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                      <>{(istLeitung(participant) || participant.jahrgang_name) ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
                     )}
                   </div>
                   {isOptedOut && participant.opt_out_reason && (
@@ -655,9 +676,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </div>
           </div>
         </IonItem>
-        {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
+        {(participant.role_name !== 'konfi' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
-          {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
+          {participant.role_name === 'konfi' && participant.status === 'confirmed' && (
             <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                 <IonIcon icon={returnUpBack} />
@@ -674,6 +695,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       </IonItemSliding>
     );
   };
+
+  // Solange geladen wird, den Spinner zeigen statt ein leeres Geruest mit
+  // Platzhaltertitel - so wie es die Konfi-Ansicht desselben Events macht.
+  if (loading) {
+    return (
+      <IonPage ref={pageRef}>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>Event Details</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+          <LoadingSpinner message="Event wird geladen..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
@@ -717,8 +760,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           icon={calendar}
           colors={getStatusColors()}
           stats={(() => {
-            const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
-            const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+            const konfiOnly = participants.filter(p => p.role_name === 'konfi');
+            // Team-Seite: Teamer:innen UND zugeordnete Leitung (31.08.2026).
+            const teamerOnly = participants.filter(p => p.role_name !== 'konfi');
             const teamerConfirmedCount = teamerOnly.filter(p => p.status === 'confirmed').length;
             const teamerWaitlistCount = teamerOnly.filter(p => p.status === 'waitlist').length;
             // Teamer-Kontingent gilt, sobald das Event Teamer zulaesst \u2014 NICHT
@@ -779,7 +823,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Event Details */}
         {eventData && (
           <EventInfoCard
-            eventData={eventData as any}
+            eventData={eventData}
             participants={participants}
             formatDate={formatDate}
             formatTime={formatTime}
@@ -816,7 +860,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Series Events */}
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
           <SeriesEventsSection
-            seriesEvents={eventData.series_events as any}
+            seriesEvents={eventData.series_events}
             formatDate={formatDate}
             formatTime={formatTime}
             onNavigate={(eventId) => router.push(`/admin/events/${eventId}`, 'forward')}
@@ -825,21 +869,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
         {/* Participants List */}
         {(() => {
-          const konfiParticipants = participants.filter(p => p.role_name !== 'teamer');
-          const teamerParticipants = participants.filter(p => p.role_name === 'teamer');
+          const konfiParticipants = participants.filter(p => p.role_name === 'konfi');
+          // Team-Seite: Teamer:innen UND zugeordnete Leitung. Ein '!== konfi'
+          // statt '=== teamer', sonst landet zugeordnete Leitung in der
+          // Konfi-Liste und wird als Kind gezaehlt.
+          const teamerParticipants = participants.filter(p => p.role_name !== 'konfi');
           const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
           const allWaitlistParticipants = konfiParticipants.filter(p => p.status === 'waitlist');
           const unassignedParticipants = eventData?.has_timeslots
-            ? confirmedParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time) : [];
+            ? confirmedParticipants.filter(p => !p.timeslot_id && !p.timeslot_start_time) : [];
           // Bei Timeslot-Events werden slot-zugeordnete Wartelistler bereits in der
           // TimeslotsSection unter ihrem Slot angezeigt -> hier nur die OHNE Slot,
           // damit sie nicht doppelt erscheinen.
           const waitlistParticipants = eventData?.has_timeslots
-            ? allWaitlistParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time)
+            ? allWaitlistParticipants.filter(p => !p.timeslot_id && !p.timeslot_start_time)
             : allWaitlistParticipants;
           const displayParticipants = eventData?.has_timeslots
             ? [...unassignedParticipants, ...waitlistParticipants] : konfiParticipants;
-          const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
+          const hasWaitlist = eventData?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
           // Noch niemand angemeldet: nur die Hinzufuegen-Buttons zeigen — aber
@@ -866,13 +913,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         Teamer:in hinzufügen
                       </IonButton>
                     )}
+                    {/* Leitung laeuft ueber dasselbe Team-Kontingent wie die
+                        Teamer:innen — deshalb auch dieselbe Bedingung. */}
+                    {teamerErlaubt && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Leitung hinzufügen
+                      </IonButton>
+                    )}
                   </IonCardContent>
                 </IonCard>
               </IonList>
             );
           }
 
-          let konfiHeaderText = '';
+          // Ohne Initialisierer: Beide Ketten enden auf einem nackten else,
+          // jeder Zweig weist zu. tsc bestaetigt die definitive Zuweisung.
+          let konfiHeaderText: string;
           if (eventData?.has_timeslots) {
             if (hasUnassigned && hasWaitlist) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
             else if (hasUnassigned) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;
@@ -972,6 +1030,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                           Teamer:in hinzufügen
                         </IonButton>
+                        <IonButton expand="block" fill="outline"
+                          onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
+                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          Leitung hinzufügen
+                        </IonButton>
                       </div>
                     </IonCardContent>
                   </IonCard>
@@ -1010,7 +1073,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {/* Event absagen */}
         {eventData && (
           <EventActionsSection
-            eventData={eventData as any}
+            eventData={eventData}
             isCancelled={!!isCancelled}
             isOnline={isOnline}
             handleCancelEvent={handleCancelEvent}

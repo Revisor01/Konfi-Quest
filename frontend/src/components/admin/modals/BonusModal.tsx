@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -51,7 +52,7 @@ interface BonusModalProps {
 }
 
 const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss, punkteartFlags }) => {
-  const { isOnline, setError } = useApp();
+  const { setError } = useApp();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -93,9 +94,9 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           await api.post(`/admin/konfis/${konfiId}/bonus-points`, body);
           await onSave();
           handleClose();
-        } catch (err: any) {
+        } catch (err) {
           console.error('Error saving bonus points:', err);
-          setError(err?.response?.data?.error || 'Bonus-Punkte konnten nicht gespeichert werden');
+          setError(fehlerText(err, 'Bonus-Punkte konnten nicht gespeichert werden'));
         }
       } else {
         await writeQueue.enqueue({
@@ -196,7 +197,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     '--bar-background-active': 'var(--app-color-bonus)',
                     '--knob-background': 'var(--app-color-bonus)',
                     '--pin-background': 'var(--app-color-bonus)',
-                  } as any}
+                  } as React.CSSProperties}
                 />
                 <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
               </div>

@@ -11,6 +11,10 @@ const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
+// Ein Ort fuer "darf dieser Aufrufer in diesem Jahrgang?" — org_admin und
+// super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
+// Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
+const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
@@ -147,6 +151,40 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // GET alle Admins/Org-Admins der Organisation (31.08.2026).
+    //
+    // Zweck: Die Leitung soll sich einem Termin ZUORDNEN koennen — wie eine
+    // Teamer:in, bewusst und pro Termin — und kommt dadurch in den Chat zum
+    // Termin. Ein automatisches Hineinrutschen in jeden Event-Chat ist
+    // ausdruecklich NICHT gewollt.
+    //
+    // Eigene Route statt eines Filter-Parameters an /teamer: Deren Antwort ist
+    // ein Vertrag der ausgelieferten Apps (Teamer-Verwaltung), und ein
+    // zusaetzlicher Query-Parameter haette dort stillschweigend Admins in
+    // Listen gespuelt, die "Teamer:innen" ueberschrieben sind.
+    //
+    // Keine Zaehler (Abzeichen/Zertifikate): Die Liste dient nur der Auswahl.
+    // Ausgeliefert wird nur, was die Auswahl braucht — keine Login-Daten
+    // ausser dem username, wie bei /teamer.
+    router.get('/leitung', rbacVerifier, requireTeamer, async (req, res) => {
+        try {
+            const { rows } = await db.query(
+                `SELECT u.id, u.display_name as name, u.username, r.name as role_name
+                   FROM users u
+                   JOIN roles r ON u.role_id = r.id
+                  WHERE r.name IN ('admin', 'org_admin')
+                    AND u.organization_id = $1
+                    AND u.deleted_at IS NULL
+                  ORDER BY u.display_name`,
+                [req.user.organization_id]
+            );
+            res.json(rows);
+        } catch (err) {
+            console.error('Database error in GET /konfis/leitung:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        }
+    });
+
     // GET a single konfi/teamer by ID - weiterleiten an zweiten Handler
 
     // POST (create) a new konfi
@@ -175,6 +213,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!jahrgangExists) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+            }
+
+            // Ein Admin darf Konfis NUR in seinen eigenen Jahrgaengen anlegen
+            // (Simons Regel 31.08.2026). Bis 31.08. pruefte die Route nur die
+            // Organisation: Ein Admin konnte eine Konfi in einen fremden
+            // Jahrgang anlegen — und sah sie danach nie wieder, weil die Liste
+            // (GET / oben) nach `assigned_jahrgaenge` filtert. Anlegen ja,
+            // sehen nein.
+            // org_admin und super_admin bleiben von allen
+            // Jahrgangsbeschraenkungen ausgenommen.
+            if (!darfJahrgang(req, jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
             }
 
             const roleQuery = "SELECT id FROM roles WHERE name = 'konfi' AND organization_id = $1";
@@ -321,6 +372,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!zielJahrgang) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+            }
+
+            // Verschieben ist an die eigenen Jahrgaenge gebunden (Simons Regel
+            // 31.08.2026): Die Konfi muss aus einem eigenen Jahrgang kommen UND
+            // das Ziel muss ein eigener sein. Bis 31.08. pruefte die Route nur
+            // die Organisation — ein Admin konnte jede Konfi der Gemeinde in
+            // jeden Jahrgang der Gemeinde schieben, auch aus Jahrgaengen, die
+            // er gar nicht sehen darf. Das Frontend warnte davor nur
+            // (KonfiDetailView.tsx), erzwungen hat es niemand.
+            // org_admin und super_admin bleiben ausgenommen.
+            if (currentProfile && currentProfile.jahrgang_id
+                && !darfJahrgang(req, currentProfile.jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+            }
+            if (!darfJahrgang(req, jahrgang_id, { edit: true })) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
             }
 
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
@@ -823,19 +892,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // Oberflaeche nicht erreichbar, weil die Teamer-Ansicht gar keine
             // Punktevergabe hat — bekommt sie eine, waere die Luecke sofort
             // real.
-            if (req.user.role_name === 'teamer') {
-                const { rows: [konfiProfile] } = await db.query(
-                    'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [req.params.id]
-                );
-                if (!konfiProfile) {
-                    return res.status(404).json({ error: 'Konfi nicht gefunden' });
-                }
-                const hasAccess = req.user.assigned_jahrgaenge.some(
-                    j => j.id === konfiProfile.jahrgang_id && j.can_view
-                );
-                if (!hasAccess) {
-                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
-                }
+            //
+            // Seit 31.08.2026 gilt die Prüfung nicht mehr nur für Teamer:innen:
+            // Ein Admin ist an seine zugewiesenen Jahrgänge gebunden und kann
+            // Bonuspunkte nur an Konfis dort vergeben (Simons Regel).
+            // org_admin/super_admin bleiben ausgenommen. Die Rollen-Logik
+            // steckt jetzt in darfKonfi (utils/jahrgangsZugriff.js).
+            const zugriff = await darfKonfi(db, req, req.params.id);
+            if (!zugriff.gefunden) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+            if (!zugriff.erlaubt) {
+                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
             // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein

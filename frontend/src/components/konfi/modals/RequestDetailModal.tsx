@@ -25,10 +25,9 @@ import {
   hourglass,
   trashOutline
 } from 'ionicons/icons';
-import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
-interface ActivityRequest {
+export interface ActivityRequest {
   id: number;
   activity_id: number;
   activity_name: string;
@@ -58,7 +57,6 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   onClose,
   onDelete
 }) => {
-  const { setError } = useApp();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false);
   const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
@@ -67,17 +65,6 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   // Teamer-Anträge haben weder Punkte noch Gottesdienst/Gemeinde — die Rolle
   // kommt aus den Daten, damit die Aufrufer nichts setzen müssen.
   const isTeamerRequest = request?.activity_target_role === 'teamer';
-
-  useEffect(() => {
-    if (request?.photo_filename && request.status === 'pending') {
-      loadPhoto(request.id);
-    }
-    return () => {
-      if (photoUrl) {
-        URL.revokeObjectURL(photoUrl);
-      }
-    };
-  }, [request]);
 
   const loadPhoto = async (id: number) => {
     setLoadingPhoto(true);
@@ -98,6 +85,27 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       setLoadingPhoto(false);
     }
   };
+
+  // Beim Antragswechsel den Foto-Zustand zuruecksetzen — sonst bleibt das
+  // Bild des VORHERIGEN Antrags stehen, wenn der neue keins hat.
+  useEffect(() => {
+    setPhotoUrl(null);
+    setPhotoLoadFailed(false);
+    if (request?.photo_filename && request.status === 'pending') {
+      loadPhoto(request.id);
+    }
+  }, [request]);
+
+  // Freigabe an photoUrl koppeln, NICHT an request: Das fruehere Cleanup im
+  // [request]-Effekt las photoUrl aus der Closure des Effekt-Laufs — dort war
+  // es noch null, die Blob-URL wurde nie freigegeben (Leck pro Foto-Ansicht).
+  useEffect(() => {
+    if (!photoUrl) return;
+    return () => {
+      URL.revokeObjectURL(photoUrl);
+    };
+  }, [photoUrl]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {

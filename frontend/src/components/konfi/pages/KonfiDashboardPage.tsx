@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -30,9 +30,10 @@ import PointsHistoryModal from '../modals/PointsHistoryModal';
 import KonfispruchSelectModal from '../modals/KonfispruchSelectModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
+import type { AlleAbzeichen, Badge, BadgeUebersicht, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
-import { TrialBanner } from '../../shared';
+import { TrialBanner, istVergangen } from '../../shared';
 import { track } from '../../../services/analytics';
 
 interface PointConfig {
@@ -63,11 +64,11 @@ interface DashboardData {
     confirmation_location?: string;
   };
   total_points: number;
-  recent_badges: any[];
+  recent_badges: Badge[];
   badge_count: number;
-  recent_events: any[];
+  recent_events: DashboardEvent[];
   event_count: number;
-  ranking: any[];
+  ranking: RankingEntry[];
   days_to_confirmation?: number;
   confirmation_date?: string;
   point_config?: PointConfig;
@@ -102,26 +103,11 @@ interface BadgeStats {
   secretEarned: number;
 }
 
-interface AllBadgesData {
-  available: any[];
-  earned: any[];
-}
 
-interface DailyVerse {
-  losungstext: string;
-  losungsvers: string;
-  lehrtext: string;
-  lehrtextvers: string;
-  date?: string;
-  translation?: string;
-  fallback?: boolean;
-  cached?: boolean;
-}
 
 const KonfiDashboardPage: React.FC = () => {
-  const { user, setError } = useApp();
+  const { user } = useApp();
   const router = useIonRouter();
-  const [showLehrtext, setShowLehrtext] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
 
   // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
@@ -130,7 +116,9 @@ const KonfiDashboardPage: React.FC = () => {
   const scrollMarken = useRef<Set<number>>(new Set());
   const handleScrollTiefe = useCallback((ev: CustomEvent) => {
     const el = ev.target as HTMLIonContentElement & { scrollHeight?: number; clientHeight?: number };
-    const detail: any = ev.detail || {};
+    // ion-content liefert im scroll-Ereignis { scrollTop, scrollLeft };
+    // ein eigener Ionic-Typ dafuer ist nicht exportiert.
+    const detail = (ev.detail || {}) as { scrollTop?: number };
     const hoehe = (el?.scrollHeight || 0) - (el?.clientHeight || 0);
     if (hoehe <= 0) return;
     const anteil = Math.round(((detail.scrollTop || 0) / hoehe) * 100);
@@ -170,32 +158,56 @@ const KonfiDashboardPage: React.FC = () => {
     () => api.get('/konfi/events').then(r => r.data),
     {
       ttl: CACHE_TTL.EVENTS,
-      select: (events) => events.filter((event: any) =>
-        new Date(event.event_date || event.date) >= new Date() &&
+      // istVergangen(): Ein laufender mehrtaegiger Termin bleibt im Teaser,
+      // bis er wirklich vorbei ist (event_end_time), nicht nur bis zum Start.
+      select: (events) => events.filter((event) =>
+        !istVergangen({ event_date: event.event_date || event.date || '', event_end_time: event.event_end_time }) &&
         (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
       )
     }
   );
 
-  // --- useOfflineQuery: Badges ---
-  const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<any>(
-    'konfi:badges:' + user?.id,
-    () => api.get('/konfi/badges').then(r => r.data),
-    { ttl: CACHE_TTL.BADGES }
+  // --- useOfflineQuery: Badges (NACHGELAGERT) ---
+  // Die Abzeichen sind mit Abstand die dickste und langsamste Startanfrage
+  // (gemessen 31.08.2026 gegen Produktion: 402 ms / 13,4 kB gegenueber 152 ms /
+  // 3,2 kB fuer die Startseite selbst). Beim Start feuert die App rund 25
+  // Anfragen gleichzeitig; ueber Mobilfunk stehen die letzten in der
+  // Warteschlange des Geraets und ziehen die gefuehlte Startzeit hoch.
+  //
+  // Die Abzeichen-Sektion der Startseite braucht die Daten wirklich (sie
+  // zeichnet jedes Abzeichen als Kreis, nicht nur eine Zahl) — ersatzlos
+  // streichen geht also nicht. Stattdessen wartet die Anfrage, bis die
+  // Startseite steht: `enabled` springt erst nach dem ersten Rendern der
+  // fertigen Startseite auf true. Aus dem Cache (30 Min TTL) ist die Sektion
+  // beim naechsten Oeffnen ohnehin sofort da; nur beim allerersten Start
+  // erscheint sie einen Wimpernschlag spaeter.
+  const [abzeichenAktiv, setAbzeichenAktiv] = useState(false);
+  const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
+    // Abzeichen-Generation v2 (31.08.2026) — siehe KonfiBadgesPage.
+    'konfi:badges:v2:' + user?.id,
+    () => api.get('/konfi/badges/v2').then(r => r.data),
+    { ttl: CACHE_TTL.BADGES, enabled: abzeichenAktiv }
   );
+
+  // Erst wenn die Startseite ihre eigenen Daten hat, die Abzeichen nachholen.
+  // dashboardData ist der Marker: bis dahin zeigt die Seite den Ladebildschirm,
+  // die Abzeichen-Sektion ist also noch gar nicht sichtbar.
+  useEffect(() => {
+    if (dashboardData && !abzeichenAktiv) setAbzeichenAktiv(true);
+  }, [dashboardData, abzeichenAktiv]);
 
   // Derived state from badges
   const badgeStats: BadgeStats = (() => {
     if (!badgesRaw) return { totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 };
-    const { available, earned, stats } = badgesRaw;
-    const visibleEarned = earned?.filter((badge: any) => !badge.is_hidden).length || 0;
+    const { earned, stats } = badgesRaw;
+    const visibleEarned = earned?.filter((badge) => !badge.is_hidden).length || 0;
     const visibleTotal = stats?.totalVisible || 0;
-    const secretEarned = earned?.filter((badge: any) => badge.is_hidden === true).length || 0;
+    const secretEarned = earned?.filter((badge) => badge.is_hidden === true).length || 0;
     const secretTotal = stats?.totalSecret || 0;
     return { totalAvailable: visibleTotal, totalEarned: visibleEarned, secretAvailable: secretTotal, secretEarned: secretEarned };
   })();
 
-  const allBadges: AllBadgesData = {
+  const allBadges: AlleAbzeichen = {
     available: badgesRaw?.available || [],
     earned: badgesRaw?.earned || []
   };

@@ -1,3 +1,4 @@
+import { fehlerStatus, istNetzwerkfehler } from '../../utils/fehler';
 import React, { useState } from 'react';
 import {
   IonPage,
@@ -45,11 +46,11 @@ const ForgotPasswordPage: React.FC = () => {
     try {
       await api.post('/auth/request-password-reset', { email: email.trim() });
       setSent(true);
-    } catch (err: any) {
-      const status = err.response?.status;
+    } catch (err) {
+      const status = fehlerStatus(err);
       if (status === 500) {
         setError('E-Mail konnte nicht gesendet werden. Bitte versuche es später erneut.');
-      } else if (!err.response) {
+      } else if (istNetzwerkfehler(err)) {
         setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
         setIsNetworkError(true);
       } else {

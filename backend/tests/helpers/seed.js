@@ -242,6 +242,24 @@ async function seed(db) {
     );
   }
 
+  // 12b. Termin -> Jahrgang. OHNE diese Zuordnung sieht ein Konfi KEINEN
+  // Termin: GET /konfi/events verengt ueber
+  // `INNER JOIN event_jahrgang_assignments` auf den eigenen Jahrgang
+  // (konfi.js). Der Seed legte sie nie an — die drei E2E-Specs zu Buchung,
+  // Punktevergabe und Chat scheiterten deshalb daran, dass die Terminliste
+  // leer blieb (gefunden 30.08.2026, als die E2E-Suite zum ersten Mal lief).
+  //
+  // Jeder Termin bekommt den Jahrgang seiner Organisation — genau wie in
+  // Produktion, wo ein Termin fuer einen oder mehrere Jahrgaenge gilt.
+  for (const event of Object.values(EVENTS)) {
+    const jahrgang = Object.values(JAHRGAENGE).find(j => j.org_id === event.org_id);
+    if (!jahrgang) continue;
+    await db.query(
+      `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)`,
+      [event.id, jahrgang.id]
+    );
+  }
+
   // 13. Event-Timeslots (für timeslotEvent)
   await db.query(
     `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)

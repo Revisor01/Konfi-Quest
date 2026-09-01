@@ -5,8 +5,19 @@ farbe: "#047857"
 ---
 
 Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: **Admins**
-können fast alles, **Org-Admins** zusätzlich die Benutzerverwaltung, die
-Einladungen und die Dashboard-Einstellungen.
+kümmern sich um den laufenden Betrieb, **Org-Admins** zusätzlich um
+Benutzer:innen, Jahrgangs-Zuweisungen und die Einstellungen der Gemeinde.
+Was die beiden Stufen genau unterscheidet, steht im Kapitel
+[Rollen und Rechte](05-rollen.md).
+
+Ein Punkt vorweg, weil er oft für Verwirrung sorgt: Auch als **Admin** brauchst
+du Jahrgangs-Zuweisungen. Konfi-Liste und Chat zeigen dir nur die Jahrgänge,
+für die du eingetragen bist — ohne Zuweisung bleibt die Konfi-Liste leer. Und
+sie begrenzt auch, was du ändern darfst: Konfis legst du nur in deinen
+Jahrgängen an und verschiebst sie nur zwischen ihnen. Teamer:innen siehst du
+dagegen alle; änderst du ihre Jahrgänge, bleiben die Zuweisungen, für die du
+nicht zuständig bist, unangetastet. Nur der Org-Admin sieht und ändert immer
+die ganze Gemeinde.
 
 ## Konfis
 
@@ -39,8 +50,10 @@ schicken lassen kannst.
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind.
 
-Teamer:innen anlegen, bearbeiten und löschen darf die ganze Leitung. Nur
-Org-Admins lassen sich ausschließlich von anderen Org-Admins verwalten.
+Teamer:innen anlegen, bearbeiten und löschen darf die ganze Leitung. Weitere
+Admins und Org-Admins anlegen darf nur der Org-Admin — die
+[Übersicht dazu](05-rollen.md#wer-wen-anlegen-darf) steht im Kapitel Rollen und
+Rechte.
 
 ## Chat
 
@@ -139,13 +152,32 @@ stehen im Kapitel [Challenges](80-challenges.md).
 | **Jahrgänge** | [Punkteziele, Konfispruch- und Wrapped-Freigabe](45-jahrgaenge.md) |
 | **Kategorien** | Für Aktivitäten und Termine |
 | **Level** | [Punkteschwellen](40-punkte.md#level) und ihre Titel |
-| **Material** | Dokumente für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle |
+| **Material** | Dateien oder ein Link für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle. Ausdrücklich „für alle“ geht ebenfalls |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
+
+### Material für alle Teamer:innen
+
+Beim Anlegen von Material wählst du unter **Sichtbarkeit**, für wen es
+gedacht ist:
+
+- **Nach Jahrgang** — hängt das Material an einem Jahrgang, sehen es nur
+  dessen Teamer:innen. Ohne Jahrgang sehen es alle.
+- **Für alle** — alle Teamer:innen der Gemeinde sehen es, unabhängig vom
+  Jahrgang. In der Liste steht ein Globus daneben, bei den Teamer:innen
+  erscheint es in einem eigenen Abschnitt ganz oben.
+
+„Für alle“ heißt immer: alle **Teamer:innen**. Konfis sehen Material
+grundsätzlich nicht.
+
+Freigeben und die Freigabe zurückziehen kann nur der Org-Admin. Alle anderen
+in der Leitung sehen die Auswahl, können sie aber nicht ändern — Titel,
+Beschreibung und Dateien dürfen sie trotzdem bearbeiten.
 
 ### Verwaltung (nur Org-Admin)
 
-- **Benutzer:innen** — Rollen vergeben, Jahrgänge zuweisen. Die Zuweisung
-  entscheidet, welche Konfis eine Teamer:in erreicht und sieht.
+- **Benutzer:innen** — [Rollen](05-rollen.md) vergeben, Jahrgänge zuweisen. Die
+  Zuweisung entscheidet, welche Konfis eine Teamer:in oder ein Admin erreicht
+  und sieht.
 - **Dashboard** — welche Bereiche Konfis und Teamer:innen auf ihrer
   Startseite sehen, und in welcher Reihenfolge
 - **Konfis einladen** — QR-Code und Einladungscode zur Selbstregistrierung,

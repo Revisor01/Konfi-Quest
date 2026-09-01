@@ -1,3 +1,4 @@
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
@@ -67,7 +68,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
@@ -75,12 +76,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<'approve' | 'reject' | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
-
-  useEffect(() => {
-    if (requestId) {
-      loadRequest();
-    }
-  }, [requestId]);
 
   const loadRequest = async () => {
     if (!requestId) return;
@@ -122,14 +117,29 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (requestId) {
+      loadRequest();
+    }
+  }, [requestId]);
+
+  // Blob-URL des Nachweisfotos beim Wechsel/Unmount freigeben — an photoUrl
+  // gekoppelt, damit das Cleanup die AKTUELLE URL sieht (Lint-Durchsicht
+  // 30.08.2026, gleiches Muster wie RequestDetailModal).
+  useEffect(() => {
+    if (!photoUrl) return;
+    return () => {
+      URL.revokeObjectURL(photoUrl);
+    };
+  }, [photoUrl]);
+
+
   const handleDeletePhoto = async () => {
     if (!request) return;
     setDeletingPhoto(true);
     try {
       await api.delete(`/admin/activities/requests/${request.id}/photo`);
-      if (photoUrl) {
-        URL.revokeObjectURL(photoUrl);
-      }
+      // Freigabe der Blob-URL uebernimmt der photoUrl-Effekt beim Wechsel auf null.
       setPhotoUrl(null);
       setRequest({ ...request, photo_filename: undefined });
       setSuccess('Foto erfolgreich gelöscht');
@@ -161,8 +171,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           // Parent-Page refresht via onSuccess + useLiveRefresh
           onSuccess();
           onClose();
-        } catch (err: any) {
-          setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`);
+        } catch (err) {
+          setError(fehlerText(err, `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`));
         }
       } else {
         await writeQueue.enqueue({
@@ -205,7 +215,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const isPending = request?.status === 'pending';
   const isApproved = request?.status === 'approved';
-  const isRejected = request?.status === 'rejected';
 
   if (!request) {
     return (

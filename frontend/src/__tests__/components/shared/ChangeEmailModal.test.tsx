@@ -11,8 +11,8 @@ const mockApiGet = vi.fn();
 const mockApiPost = vi.fn();
 vi.mock('../../../services/api', () => ({
   default: {
-    get: (...args: any[]) => mockApiGet(...args),
-    post: (...args: any[]) => mockApiPost(...args),
+    get: (...args: unknown[]) => mockApiGet(...args),
+    post: (...args: unknown[]) => mockApiPost(...args),
   },
 }));
 
@@ -27,7 +27,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 
 vi.mock('../../../hooks/useActionGuard', () => ({
-  useActionGuard: () => ({ isSubmitting: false, guard: (fn: any) => fn() }),
+  useActionGuard: () => ({ isSubmitting: false, guard: <T,>(fn: () => Promise<T>) => fn() }),
 }));
 
 import ChangeEmailModal from '../../../components/shared/ChangeEmailModal';

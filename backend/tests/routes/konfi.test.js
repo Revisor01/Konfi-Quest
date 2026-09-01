@@ -1298,9 +1298,16 @@ describe('Konfi Routes', () => {
     });
 
     it('Konfi bekommt Events nach Jahrgang-Assignment', async () => {
+      // ON CONFLICT DO NOTHING seit 01.09.2026: Der Seed legt die Zuordnung
+      // Termin -> Jahrgang seit dem 30.08.2026 selbst an (seed.js:245ff, fuer
+      // die E2E-Suite ergaenzt). Diese Tests fuegten sie danach ein zweites
+      // Mal ein und liefen in den Unique-Index -- vier Tests in dieser Datei
+      // waren seitdem dauerhaft rot, unabhaengig vom uebrigen Code.
+      // Die Zeile hier bleibt trotzdem stehen: Sie macht die Voraussetzung
+      // des Tests sichtbar, statt sie stillschweigend vom Seed zu leihen.
       // event_jahrgang_assignments manuell setzen
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
       );
 
@@ -1316,7 +1323,7 @@ describe('Konfi Routes', () => {
     it('Konfi3 sieht keine Events aus Org 1', async () => {
       // Event von Org 1 dem Jahrgang 1 zuweisen
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
       );
 
@@ -1340,7 +1347,7 @@ describe('Konfi Routes', () => {
       );
       const eventId = rows[0].id;
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [eventId, JAHRGAENGE.jahrgang1.id]
       );
       return eventId;
@@ -1372,7 +1379,7 @@ describe('Konfi Routes', () => {
 
     it('Response-Shape: Kernfelder + Konfi-spezifische Felder stabil (Query-Restrukturierung)', async () => {
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
       );
 
@@ -1414,7 +1421,7 @@ describe('Konfi Routes', () => {
         [name, ORGS.testGemeinde.id]
       );
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [event.id, JAHRGAENGE.jahrgang1.id]
       );
       return event.id;
@@ -1527,7 +1534,7 @@ describe('Konfi Routes', () => {
       );
       const eventId = rows[0].id;
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [eventId, JAHRGAENGE.jahrgang1.id]
       );
       return eventId;
@@ -1548,7 +1555,7 @@ describe('Konfi Routes', () => {
 
     it('GET /konfi/events: Pflicht-Event meldet mandatory wie die Admin-Liste', async () => {
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [EVENTS.pflichtEvent.id, JAHRGAENGE.jahrgang1.id]
       );
 
@@ -1602,7 +1609,7 @@ describe('Konfi Routes', () => {
         );
         const eventId = rows[0].id;
         await db.query(
-          'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+          'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
           [eventId, JAHRGAENGE.jahrgang1.id]
         );
         return eventId;
@@ -1667,7 +1674,7 @@ describe('Konfi Routes', () => {
       );
       const eventId = rows[0].id;
       await db.query(
-        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [eventId, JAHRGAENGE.jahrgang1.id]
       );
       await db.query(

@@ -17,21 +17,7 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import {
-  document as documentIcon,
-  imageOutline,
-  videocamOutline,
-  musicalNotesOutline,
-  documentOutline,
-  calendar,
-  people,
-  person,
-  time,
-  closeOutline,
-  informationCircle,
-  textOutline,
-  create
-} from 'ionicons/icons';
+import { document as documentIcon, imageOutline, videocamOutline, musicalNotesOutline, documentOutline, calendar, people, person, closeOutline, informationCircle, textOutline, create, globeOutline, linkOutline, openOutline } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
@@ -44,6 +30,7 @@ import EmptyState from '../../shared/EmptyState';
 import { SectionHeader } from '../../shared';
 import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { istWebLink, hostAus } from '../../../utils/linkDisplay';
 
 interface MaterialFile {
   id: number;
@@ -63,6 +50,10 @@ interface MaterialDetail {
   jahrgang_name?: string;
   admin_name?: string;
   files?: MaterialFile[];
+  link_url?: string | null;
+  // Material fuer alle Teamer:innen (seit 31.08.2026). Ein gecachter Eintrag
+  // von vorher liefert das Feld nicht -- dann gilt "nicht global".
+  ist_global?: boolean;
   created_at: string;
 }
 
@@ -147,6 +138,19 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     }
   };
 
+  // Links oeffnen extern im Browser — derselbe Weg wie bei Kartenlinks und
+  // Links in Chatnachrichten (window.open mit _blank). istWebLink haelt alles
+  // ab, was kein http/https ist; der Server laesst zwar ohnehin nichts anderes
+  // durch, aber der Waechter steht dort, wo das href entsteht.
+  const openLink = async (url: string) => {
+    if (!istWebLink(url)) {
+      setError('Der Link konnte nicht geöffnet werden');
+      return;
+    }
+    await Haptics.impact({ style: ImpactStyle.Medium });
+    window.open(url, '_blank');
+  };
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader>
@@ -217,6 +221,15 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
+                  {material.ist_global && (
+                    <div className="app-info-row">
+                      <IonIcon icon={globeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
+                      <div>
+                        <div className="app-info-row__label">Sichtbar für</div>
+                        <div className="app-info-row__value">Alle Teamer:innen der Gemeinde</div>
+                      </div>
+                    </div>
+                  )}
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
@@ -255,6 +268,46 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               </IonCard>
             </IonList>
 
+            {/* Link (Entscheidung Simon, 31.08.2026): Material traegt Dateien
+                ODER einen Link. Eigenes Icon, damit er sich vom Dateianhang
+                unterscheidet; er oeffnet extern im Browser. */}
+            {istWebLink(material.link_url) && (
+              <IonList inset={true} className="app-segment-wrapper">
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--material">
+                    <IonIcon icon={linkOutline} />
+                  </div>
+                  <IonLabel>Link</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
+                  <IonCardContent>
+                    <div
+                      className="app-list-item"
+                      style={{ borderLeftColor: 'var(--app-color-material)', cursor: 'pointer' }}
+                      onClick={() => openLink(material.link_url as string)}
+                    >
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
+                            <IonIcon icon={linkOutline} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">{hostAus(material.link_url as string)}</div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={openOutline} style={{ color: 'var(--app-color-material)' }} />
+                                Im Browser öffnen
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            )}
+
             {/* Dateien */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
@@ -274,7 +327,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {material.files.map((file, index) => (
+                    {material.files.map((file) => (
                       <div
                         key={file.id}
                         className="app-list-item"

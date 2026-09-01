@@ -43,22 +43,7 @@ import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopover
 
 
 
-interface Badge {
-  id: number;
-  name: string;
-  description?: string;
-  icon: string;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_extra?: string;
-  is_hidden: boolean;
-  is_active: boolean;
-  color?: string;
-  is_earned: boolean;
-  earned_at?: string;
-  progress_points?: number;
-  progress_percentage?: number;
-}
+import type { AnzeigeBadge as Badge } from '../../../types/dashboard';
 
 interface BadgesViewProps {
   badges: Badge[];
@@ -81,7 +66,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   // Badges nach Kategorien gruppieren
   const getBadgeCategories = () => {
-    let filtered = badges;
+    let filtered: Badge[];
     switch (selectedFilter) {
       case 'nicht_erhalten':
         filtered = badges.filter(badge => !badge.is_earned);
@@ -142,7 +127,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return '#667eea';
   };
 
-  const [presentBadgePopover, dismissBadgePopover] = useIonPopover(BadgePopoverContent, {
+  const [presentBadgePopover] = useIonPopover(BadgePopoverContent, {
     dataRef: badgePopoverRef
   });
 
