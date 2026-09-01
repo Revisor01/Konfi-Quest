@@ -827,6 +827,17 @@ Kapitel [Chat](90-chat.md#termin-chat).
 
 ---
 
+## Material am Termin
+
+Hängt [Material](30-leitung.md#material-fuer-alle-teamer-innen) an einem
+Termin, zeigen Terminliste und Detailansicht das für Leitung und
+Teamer:innen an. In der Detailansicht steht der Hinweis direkt bei den
+Eckdaten und ist klickbar: Bei einem einzelnen Material öffnet sich sofort
+dessen Ansicht, bei mehreren springt die Seite zur Materialliste weiter
+unten. Konfis sehen Material grundsätzlich nicht — auch nicht am Termin.
+
+---
+
 ## Teilnehmende von Hand hinzufügen
 
 In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle,

@@ -46,6 +46,12 @@ Versionsüberschrift.
   ändern sich dadurch nicht.
 
 ### Geändert
+- Material an einem Termin steht für Leitung und Teamer:innen jetzt direkt
+  bei den Eckdaten der Detailansicht und ist dort klickbar: Ein einzelnes
+  Material öffnet sich sofort, bei mehreren springt die Seite zur
+  Materialliste weiter unten — die bleibt unverändert bestehen.
+- Der Kopf der Materialseite zählt neben Material und Dateien jetzt auch die
+  hinterlegten Links — bei Leitung und Teamer:innen gleichermaßen.
 - Die Jahrgangs-Bindung für Admins gilt jetzt auch im Direktchat: Ein Admin
   kann nur noch Konfis seiner zugewiesenen Jahrgänge anschreiben oder in
   Gruppenchats aufnehmen — wie Teamer:innen. Der Org-Admin erreicht

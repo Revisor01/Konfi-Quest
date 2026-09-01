@@ -590,6 +590,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
+  // Klick auf den Material-Hinweis in den Eckdaten (Simons Wunsch
+  // 01.09.2026): Bei genau EINEM Material direkt dessen Modal oeffnen --
+  // es gibt nichts auszuwaehlen. Bei mehreren zum Material-Abschnitt unten
+  // scrollen: dort ist jeder Eintrag einzeln waehlbar; das erste zu oeffnen
+  // waere Willkuer, und ein eigenes Auswahlmenue verdoppelte nur die Liste,
+  // die es schon gibt.
+  const handleMaterialHinweisClick = () => {
+    if (eventMaterials.length === 1) {
+      handleMaterialClick(eventMaterials[0].id);
+      return;
+    }
+    document.getElementById('event-material-abschnitt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Zugeordnete Leitung (Admin/Org-Admin). Sie steht in der Team-Liste,
   // hat aber keinen Jahrgang und ist deshalb eigens zu kennzeichnen.
   const istLeitung = (p: Participant) =>
@@ -834,6 +848,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             participants={participants}
             formatDate={formatDate}
             formatTime={formatTime}
+            eventMaterials={eventMaterials}
+            onMaterialHinweisClick={handleMaterialHinweisClick}
           />
         )}
 

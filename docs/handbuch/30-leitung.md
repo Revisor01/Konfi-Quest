@@ -196,6 +196,10 @@ Neues Material **anlegen** darf unverändert die ganze Leitung. Wer welches
 Material *sieht*, regelt weiterhin die Sichtbarkeit oben — die
 Bearbeiten-Regel kommt dazu, sie ersetzt nichts.
 
+Hängt Material an einem Termin, steht es in dessen Detailansicht direkt bei
+den Eckdaten und lässt sich von dort öffnen — mehr dazu im Kapitel
+[Termine](70-termine.md#material-am-termin).
+
 ### Verwaltung (nur Org-Admin)
 
 - **Benutzer:innen** — [Rollen](05-rollen.md) vergeben, Jahrgänge zuweisen. Die

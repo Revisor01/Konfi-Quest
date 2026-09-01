@@ -54,6 +54,7 @@ import MaterialFormModal from '../modals/MaterialFormModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
+import { materialStats } from '../../../utils/materialStats';
 
 
 interface Material {
@@ -226,10 +227,18 @@ const AdminMaterialPage: React.FC = () => {
               subtitle="Dokumente und Dateien"
               icon={documentIcon}
               colors={{ primary: 'var(--app-color-material)', secondary: '#b45309' }}
-              stats={[
-                { value: (materials || []).length, label: 'Material' },
-                { value: (materials || []).reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
-              ]}
+              stats={(() => {
+                // Dritte Kachel "Links" (Simons Wunsch 01.09.2026): seit ein
+                // Material statt Dateien einen Link tragen kann, fehlten die
+                // Links in der Zaehlung. Drei Werte passen: die Stats-Zeile
+                // bleibt bis vier Eintraege einzeilig (SectionHeader.tsx:100).
+                const s = materialStats(materials || []);
+                return [
+                  { value: s.material, label: 'Material' },
+                  { value: s.dateien, label: 'Dateien' },
+                  { value: s.links, label: 'Links' }
+                ];
+              })()}
             />
 
             {/* Suche & Filter */}

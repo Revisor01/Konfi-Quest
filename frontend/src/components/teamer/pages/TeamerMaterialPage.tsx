@@ -37,6 +37,7 @@ import FileViewerModal from '../../shared/FileViewerModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { istWebLink, hostAus } from '../../../utils/linkDisplay';
+import { materialStats } from '../../../utils/materialStats';
 
 interface Material {
   id: number;
@@ -576,10 +577,16 @@ const TeamerMaterialPage: React.FC = () => {
               subtitle="Dokumente und Dateien"
               icon={documentIcon}
               colors={{ primary: 'var(--app-color-material)', secondary: '#b45309' }}
-              stats={[
-                { value: materials.length, label: 'Material' },
-                { value: materials.reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
-              ]}
+              stats={(() => {
+                // Dritte Kachel "Links" wie auf der Leitungsseite (Simons
+                // Wunsch 01.09.2026) -- beide Rollen sehen dieselben Zahlen.
+                const s = materialStats(materials);
+                return [
+                  { value: s.material, label: 'Material' },
+                  { value: s.dateien, label: 'Dateien' },
+                  { value: s.links, label: 'Links' }
+                ];
+              })()}
             />
 
             {/* Suche & Filter */}
