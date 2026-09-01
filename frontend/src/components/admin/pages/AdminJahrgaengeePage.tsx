@@ -77,6 +77,17 @@ interface Jahrgang {
   gemeinde_points_total?: number;
 }
 
+// Personen, die beim Anlegen direkt Zugriff auf den neuen Jahrgang bekommen
+// koennen (Simons Entscheidung 01.09.2026: nur der Org-Admin legt Jahrgaenge
+// an und weist dabei direkt zu). Angeboten werden Admins und Teamer:innen —
+// Org-Admins sehen ohnehin alle Jahrgaenge, Konfis gehoeren zu einem Jahrgang
+// statt ihm zugewiesen zu werden.
+interface ZuweisbarePerson {
+  id: number;
+  display_name: string;
+  role_name: string;
+}
+
 interface JahrgangModalProps {
   jahrgang?: Jahrgang | null;
   onClose: () => void;
@@ -99,9 +110,16 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       onClose();
     }
   };
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
   const [wrappedLoading, setWrappedLoading] = useState(false);
+
+  // Direkt-Zuweisung beim Anlegen: Auswahl der Personen, die Zugriff auf den
+  // neuen Jahrgang bekommen. Optional — niemand MUSS zugewiesen werden.
+  // Nur im Anlege-Modus relevant (beim Bearbeiten laeuft die Zuweisung wie
+  // gehabt ueber Mehr > Benutzer:innen).
+  const [zuweisbare, setZuweisbare] = useState<ZuweisbarePerson[]>([]);
+  const [ausgewaehlt, setAusgewaehlt] = useState<{ [id: number]: boolean }>({});
   const [presentAlert] = useIonAlert();
   // Lokaler Zustand des Wrapped-Releases, damit der Toggle nach generate/delete
   // sofort den neuen Stand zeigt (das Modal bleibt offen).
@@ -140,7 +158,31 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       });
       setWrappedReleasedAt(null);
     }
+    // Auswahl der Direkt-Zuweisung gehoert zum Anlege-Vorgang — beim Wechsel
+    // des bearbeiteten Jahrgangs darf keine alte Auswahl haengen bleiben.
+    setAusgewaehlt({});
   }, [jahrgang]);
+
+  // Personenliste nur laden, wenn wirklich angelegt wird und der Aufrufer
+  // org_admin ist — nur er darf anlegen und zuweisen. Fehler hier blockieren
+  // das Anlegen nicht; die Zuweisung ist optional und geht auch spaeter.
+  useEffect(() => {
+    if (jahrgang || user?.role_name !== 'org_admin' || !networkMonitor.isOnline) return;
+    let aktiv = true;
+    (async () => {
+      try {
+        const res = await api.get('/users');
+        if (!aktiv) return;
+        const personen = (res.data as ZuweisbarePerson[]).filter(
+          (p) => p.role_name === 'admin' || p.role_name === 'teamer'
+        );
+        setZuweisbare(personen);
+      } catch {
+        // still: Abschnitt bleibt leer, das Anlegen funktioniert trotzdem
+      }
+    })();
+    return () => { aktiv = false; };
+  }, [jahrgang, user?.role_name]);
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
@@ -148,7 +190,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       return;
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: formData.name.trim(),
       gottesdienst_enabled: formData.gottesdienst_enabled,
       gemeinde_enabled: formData.gemeinde_enabled,
@@ -156,6 +198,21 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       target_gemeinde: formData.target_gemeinde,
       konfspruch_enabled: formData.konfspruch_enabled
     };
+
+    // Direkt-Zuweisung nur beim Anlegen und nur, wenn jemand ausgewaehlt ist —
+    // ohne Auswahl bleibt das Feld weg und der Server verhaelt sich wie bisher.
+    // view+edit wie bei der Zuweisung ueber die Benutzerverwaltung
+    // (UserManagementModal schickt dort ebenfalls beide Rechte).
+    const zugewieseneIds = Object.entries(ausgewaehlt)
+      .filter(([, gewaehlt]) => gewaehlt)
+      .map(([id]) => parseInt(id, 10));
+    if (!jahrgang && zugewieseneIds.length > 0) {
+      payload.user_assignments = zugewieseneIds.map((id) => ({
+        user_id: id,
+        can_view: true,
+        can_edit: true
+      }));
+    }
 
     if (networkMonitor.isOnline) {
       setLoading(true);
@@ -438,6 +495,57 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Direkt-Zuweisung beim Anlegen (nur Org-Admin, nur im Anlege-Modus).
+            Optional: Ohne Auswahl entsteht der Jahrgang wie bisher ohne
+            Zuweisungen — nachtraeglich geht es weiter ueber die
+            Benutzerverwaltung. */}
+        {!jahrgang && user?.role_name === 'org_admin' && zuweisbare.length > 0 && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--jahrgang">
+                <IonIcon icon={people} />
+              </div>
+              <IonLabel>Zugriff für Admins & Teamer:innen</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {zuweisbare.map((person, index) => {
+                    const istGewaehlt = ausgewaehlt[person.id] || false;
+                    return (
+                      <div
+                        key={person.id}
+                        className="app-list-item app-list-item--jahrgang"
+                        onClick={() => !loading && setAusgewaehlt(prev => ({ ...prev, [person.id]: !istGewaehlt }))}
+                        style={{
+                          cursor: loading ? 'default' : 'pointer',
+                          opacity: loading ? 0.6 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: index < zuweisbare.length - 1 ? '8px' : '0',
+                          background: istGewaehlt ? 'rgba(102, 126, 234, 0.08)' : undefined
+                        }}
+                      >
+                        <span style={{ fontWeight: '500', color: '#333' }}>{person.display_name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--app-text-sub-color, #8e8e93)' }}>
+                            {person.role_name === 'admin' ? 'Admin' : 'Teamer:in'}
+                          </span>
+                          {istGewaehlt && <IonIcon icon={checkmarkCircle} style={{ color: '#34c759' }} />}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', margin: '12px 4px 0', lineHeight: 1.4 }}>
+                  Ausgewählte Personen sehen und bearbeiten den neuen Jahrgang sofort. Ohne Auswahl kannst du die Zuweisung später unter „Benutzer:innen" vergeben.
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
       </IonContent>
     </IonPage>
   );
@@ -541,9 +649,13 @@ const AdminJahrgaengeePage: React.FC = () => {
     presentJahrgangModalHook({ presentingElement });
   };
 
-  // Rollen-basierte Berechtigungen (org_admin und admin dürfen alles)
+  // Rollen-basierte Berechtigungen: Anlegen darf seit 01.09.2026 NUR der
+  // org_admin (der Server antwortet einem admin mit 403) — der Knopf wird
+  // dem Admin deshalb gar nicht mehr angeboten. Bearbeiten und Loeschen
+  // bleiben fuer Admins moeglich, aber jahrgangsgebunden (Server prueft die
+  // Zuweisung; die Liste zeigt ihm ohnehin nur seine eigenen Jahrgaenge).
   const isAdmin = ['org_admin', 'admin'].includes(user?.role_name || '');
-  const canCreate = isAdmin;
+  const canCreate = user?.role_name === 'org_admin';
   const canEdit = isAdmin;
   const canDelete = isAdmin;
 

@@ -57,8 +57,13 @@ Versionsüberschrift.
   Aktivitäten zurücknehmen sowie Anwesenheits- und Spruchlisten abrufen geht
   für Admins nur noch in den eigenen Jahrgängen; auch Jahrgänge bearbeiten
   oder löschen und den Jahresrückblick freigeben ist an die eigene Zuweisung
-  gebunden. Wer einen Jahrgang selbst anlegt, bekommt ihn automatisch
-  zugewiesen.
+  gebunden.
+- Neue Jahrgänge legt nur noch der Org-Admin an — Admins sehen den
+  Anlege-Knopf nicht mehr. Dafür wählt der Org-Admin schon beim Anlegen aus,
+  welche Admins und Teamer:innen den neuen Jahrgang sehen und bearbeiten
+  sollen; die Ausgewählten sind sofort zuständig und im Jahrgangs-Chat. Die
+  Auswahl ist freiwillig, zuweisen geht weiterhin auch später über die
+  Benutzerverwaltung.
 - Beim Befördern eines Konfis zur Teamer:in wird der alte Jahrgang nicht mehr
   automatisch als Zuweisung übernommen. Die frisch beförderte Person hatte
   dadurch sofort vollen Blick auf ihre bisherige Gruppe samt Bearbeitungsrecht

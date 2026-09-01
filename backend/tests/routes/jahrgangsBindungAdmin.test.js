@@ -727,17 +727,43 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       expect(rows[0].c).toBe(1);
     });
 
-    it('POST + DELETE: Admin legt Jahrgang an, wird automatisch zugewiesen und darf ihn wieder loeschen', async () => {
+    it('POST: Admin darf KEINEN Jahrgang anlegen — 403, nichts entsteht (01.09.2026: nur org_admin)', async () => {
+      // Bis 01.09.2026 durfte ein gebundener Admin anlegen und bekam eine
+      // Auto-Selbstzuweisung. Simons Entscheidung vom selben Tag dreht das um:
+      // "Admin darf keine Jahrgänge anlegen. Das darf nur org Admin. Der
+      // weist dann direkt zu." — Erwartung deshalb 403 statt 201.
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminMitJgToken}`)
         .send({ name: '2027/2028 C' });
 
+      expect(createRes.status).toBe(403);
+      const { rows: jgRows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028 C'"
+      );
+      expect(jgRows[0].c).toBe(0);
+      // Auch keine liegen gebliebene (Selbst-)Zuweisung.
+      const { rows: zuRows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM user_jahrgang_assignments WHERE user_id = $1 AND jahrgang_id != $2',
+        [ADMIN_MIT_JG, JG_A]
+      );
+      expect(zuRows[0].c).toBe(0);
+    });
+
+    it('POST als org_admin mit Direkt-Zuweisung: Admin darf den neuen Jahrgang sofort loeschen', async () => {
+      // Ersetzt den frueheren Auto-Selbstzuweisungs-Fall: Der org_admin weist
+      // beim Anlegen direkt zu, danach hat der Admin view+edit und darf loeschen.
+      const createRes = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028 C',
+          user_assignments: [{ user_id: ADMIN_MIT_JG, can_view: true, can_edit: true }]
+        });
+
       expect(createRes.status).toBe(201);
       const neueId = createRes.body.id;
 
-      // Auto-Zuweisung mit view+edit — sonst waere der eigene neue Jahrgang
-      // sofort unsichtbar und unbearbeitbar.
       const { rows: [zuweisung] } = await db.query(
         'SELECT can_view, can_edit FROM user_jahrgang_assignments WHERE user_id = $1 AND jahrgang_id = $2',
         [ADMIN_MIT_JG, neueId]

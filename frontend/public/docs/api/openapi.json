@@ -12983,7 +12983,7 @@
         "tags": [
           "Jahrgänge"
         ],
-        "summary": "Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)",
+        "summary": "Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an; optional mit Direkt-Zuweisungen)",
         "requestBody": {
           "required": true,
           "content": {
@@ -13020,6 +13020,30 @@
                     "type": "integer",
                     "minimum": 0,
                     "default": 10
+                  },
+                  "user_assignments": {
+                    "type": "array",
+                    "description": "OPTIONAL (seit 01.09.2026): Personen, die beim Anlegen direkt eine Jahrgangs-Zuweisung (user_jahrgang_assignments) bekommen. Fehlt das Feld, verhaelt sich die Route exakt wie vorher — ausgelieferte Apps senden es nicht. Defaults wie bei POST /users/{id}/jahrgaenge: can_view=true, can_edit=false; assigned_by = Aufrufer.\n",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "user_id"
+                      ],
+                      "properties": {
+                        "user_id": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "can_view": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "can_edit": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -13028,16 +13052,19 @@
         },
         "responses": {
           "201": {
-            "description": "Angelegter Jahrgang (vollstaendige Zeile); Live-Update an Org-Admins"
+            "description": "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an Org-Admins"
           },
           "400": {
-            "description": "Name fehlt / Validierung verletzt"
+            "description": "Name fehlt / Validierung verletzt / Person doppelt in user_assignments"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Rolle unterhalb org_admin — oder eine Zuweisung an eine Person, die canManageRole dem Aufrufer verbietet (fuer org_admin: super_admin)"
+          },
+          "404": {
+            "description": "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert"
           },
           "409": {
             "description": "Jahrgang-Name existiert bereits in dieser Organisation"
@@ -13045,17 +13072,16 @@
         },
         "x-berechtigung": {
           "rollen": [
-            "org_admin",
-            "admin"
+            "org_admin"
           ],
           "middleware": [
             "verifyTokenRBAC",
-            "requireAdmin",
+            "requireOrgAdmin",
             "validateCreateJahrgang"
           ],
           "org-scope": true,
-          "objekt-pruefung": "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis",
-          "hinweis": "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat. Seit 01.09.2026: Legt ein gebundener 'admin' den Jahrgang an, wird er automatisch zugewiesen (can_view+can_edit), sonst waere der eigene neue Jahrgang fuer ihn sofort unsichtbar und unbearbeitbar.\n"
+          "objekt-pruefung": "organization_id aus dem Token; Zielpersonen der user_assignments werden org-gescopt geladen (fremde Org 404) und gegen canManageRole geprueft (roleHierarchy.js — dieselbe Grenze wie POST /users/{id}/jahrgaenge, 403 bei Verstoss). Anlage + Zuweisungen in EINER Transaktion: Bei einer abgewiesenen Zuweisung bleibt kein halb angelegter Jahrgang zurueck. syncJahrgangChat legt danach den Chat an und nimmt die direkt zugewiesenen Admins/Teamer sofort mit auf.\n",
+          "hinweis": "Seit 01.09.2026 nur noch org_admin (vorher requireAdmin — Simons Entscheidung: \"Admin darf keine Jahrgänge anlegen. Das darf nur org Admin. Der weist dann direkt zu.\"). Die kurzlebige Auto-Selbstzuweisung fuer 'admin' vom selben Tag ist damit entfernt; org_admin braucht keine Zuweisung. Ausgelieferte Apps zeigen einem Admin zwar noch den Anlege-Knopf, fangen den 403 aber als normale Fehlermeldung ab (kein Absturz). Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat.\n"
         }
       }
     },

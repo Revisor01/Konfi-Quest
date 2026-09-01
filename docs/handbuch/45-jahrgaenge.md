@@ -13,6 +13,18 @@ Jahresrückblick freigegeben ist.
 Kategorien sind davon unabhängig — sie gelten für die ganze Gemeinde und
 sortieren Aktivitäten und Termine.
 
+## Wer Jahrgänge anlegt
+
+**Neue Jahrgänge legt nur der Org-Admin an.** Admins sehen den Anlege-Knopf
+nicht; sie bearbeiten und löschen nur die Jahrgänge, die ihnen zugewiesen sind.
+
+Beim Anlegen wählt der Org-Admin direkt aus, welche **Admins und
+Teamer:innen** Zugriff auf den neuen Jahrgang bekommen sollen. Die
+ausgewählten Personen sehen und bearbeiten den Jahrgang sofort und sind auch
+gleich im Jahrgangs-Chat. Die Auswahl ist freiwillig — ohne sie entsteht der
+Jahrgang zunächst ohne Zuweisungen, und der Org-Admin vergibt sie später unter
+**Mehr › Benutzer:innen**.
+
 ## Punkteziele
 
 Für jede der beiden Punktarten stellst du getrennt ein Ziel ein. Der

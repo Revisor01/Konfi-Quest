@@ -14,6 +14,7 @@ describe('Jahrgaenge Routes', () => {
   let app;
   let db;
   let adminToken;
+  let orgAdminToken;
   let teamerToken;
   let konfiToken;
   let admin2Token;
@@ -27,6 +28,7 @@ describe('Jahrgaenge Routes', () => {
     await truncateAll(db);
     await seed(db);
     adminToken = generateToken('admin1');
+    orgAdminToken = generateToken('orgAdmin1');
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
     admin2Token = generateToken('admin2');
@@ -110,30 +112,65 @@ describe('Jahrgaenge Routes', () => {
   // POST /api/admin/jahrgaenge
   // ================================================================
   describe('POST /api/admin/jahrgaenge', () => {
-    it('Admin erstellt Jahrgang -> 201', async () => {
+    // Anlegen ist seit 01.09.2026 dem org_admin vorbehalten (Simons
+    // Entscheidung: "Admin darf keine Jahrgänge anlegen. Das darf nur org
+    // Admin. Der weist dann direkt zu."). Die frueheren 201-Erwartungen fuer
+    // die Rolle 'admin' sind deshalb zu 403 umgedreht — neue Regel, kein
+    // aufgeweichter Test.
+    it('Org-Admin erstellt Jahrgang -> 201', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
+
+      expect(res.status).toBe(201);
+      expect(typeof res.body.id).toBe('number');
+      expect(res.body.name).toBe('2026/2027');
+    });
+
+    it('Admin bekommt 403 auf POST, es entsteht KEIN Jahrgang', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
 
-      expect(res.status).toBe(201);
-      expect(res.body.id).toBeDefined();
-      expect(res.body.name).toBe('2026/2027');
+      expect(res.status).toBe(403);
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2026/2027' AND organization_id = 1"
+      );
+      expect(rows[0].c).toBe(0);
     });
 
-    it('Teamer bekommt 403 auf POST', async () => {
+    it('Teamer bekommt 403 auf POST, es entsteht KEIN Jahrgang', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${teamerToken}`)
         .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
 
       expect(res.status).toBe(403);
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2026/2027' AND organization_id = 1"
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
+    it('Konfi bekommt 403 auf POST, es entsteht KEIN Jahrgang', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2026/2027' AND organization_id = 1"
+      );
+      expect(rows[0].c).toBe(0);
     });
 
     it('Leerer Name gibt 400', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: '', confirmation_date: '2027-05-01' });
 
       expect(res.status).toBe(400);
@@ -144,18 +181,18 @@ describe('Jahrgaenge Routes', () => {
       // auch im Prod-Schema funktionieren (Migration 094 droppt den NOT-NULL-Constraint).
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: '2026/2027' });
 
       expect(res.status).toBe(201);
-      expect(res.body.id).toBeDefined();
+      expect(typeof res.body.id).toBe('number');
       expect(res.body.name).toBe('2026/2027');
     });
 
     it('Jahrgang mit optionalen Feldern erstellen', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
           name: '2026/2027',
           gottesdienst_enabled: true,
@@ -172,7 +209,7 @@ describe('Jahrgaenge Routes', () => {
     it('Ohne konfspruch_enabled -> 201, defaultet auf true (D-03)', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: '2026/2027' });
 
       expect(res.status).toBe(201);
@@ -182,7 +219,7 @@ describe('Jahrgaenge Routes', () => {
     it('Mit konfspruch_enabled=false -> 201, persistiert false (D-01)', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: '2026/2027', konfspruch_enabled: false });
 
       expect(res.status).toBe(201);
@@ -192,8 +229,158 @@ describe('Jahrgaenge Routes', () => {
     it('konfspruch_enabled als Nicht-Boolean -> 400', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: '2026/2027', konfspruch_enabled: 'ja' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // ================================================================
+  // POST /api/admin/jahrgaenge — Direkt-Zuweisung beim Anlegen
+  // (user_assignments, Simons Entscheidung 01.09.2026: "Der weist dann
+  // direkt zu.")
+  // ================================================================
+  describe('POST /api/admin/jahrgaenge mit user_assignments', () => {
+    it('Zuweisungen werden geschrieben — Defaults can_view=true/can_edit=false wie bei POST /users/:id/jahrgaenge', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028',
+          user_assignments: [
+            { user_id: USERS.admin1.id, can_view: true, can_edit: true },
+            { user_id: USERS.teamer1.id } // ohne Rechte-Angabe -> Defaults
+          ]
+        });
+
+      expect(res.status).toBe(201);
+      // Antwortform: bestehende Felder unveraendert, assigned_user_ids ADDITIV.
+      expect(res.body.name).toBe('2027/2028');
+      expect(res.body.assigned_user_ids).toEqual([USERS.admin1.id, USERS.teamer1.id]);
+
+      const { rows } = await db.query(
+        `SELECT user_id, can_view, can_edit, assigned_by
+         FROM user_jahrgang_assignments WHERE jahrgang_id = $1 ORDER BY user_id`,
+        [res.body.id]
+      );
+      expect(rows.length).toBe(2);
+      expect(rows[0].user_id).toBe(USERS.teamer1.id);
+      expect(rows[0].can_view).toBe(true);
+      expect(rows[0].can_edit).toBe(false);
+      expect(rows[0].assigned_by).toBe(USERS.orgAdmin1.id);
+      expect(rows[1].user_id).toBe(USERS.admin1.id);
+      expect(rows[1].can_view).toBe(true);
+      expect(rows[1].can_edit).toBe(true);
+      expect(rows[1].assigned_by).toBe(USERS.orgAdmin1.id);
+    });
+
+    it('Ohne das Feld verhaelt sich die Route wie bisher — keine Zuweisung entsteht', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: '2027/2028' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.assigned_user_ids).toEqual([]);
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM user_jahrgang_assignments WHERE jahrgang_id = $1',
+        [res.body.id]
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
+    it('Zugewiesener Admin sieht den neuen Jahrgang sofort in seiner Liste', async () => {
+      // admin1 hat im beforeEach nur jahrgang1 — nach der Direkt-Zuweisung
+      // muss der neue Jahrgang OHNE Cache-Wartezeit auftauchen
+      // (invalidateUserCache in der Route).
+      const createRes = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028',
+          user_assignments: [{ user_id: USERS.admin1.id, can_view: true, can_edit: true }]
+        });
+      expect(createRes.status).toBe(201);
+
+      const listRes = await request(app)
+        .get('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.map(j => j.id).sort((a, b) => a - b))
+        .toEqual([JAHRGAENGE.jahrgang1.id, createRes.body.id].sort((a, b) => a - b));
+    });
+
+    it('super_admin als Ziel -> 403 (canManageRole verbietet es) und der Jahrgang bleibt KOMPLETT aus (Transaktion)', async () => {
+      // canManageRole('org_admin', 'super_admin') ist false — der superAdmin
+      // (Seed-User 10) sitzt in Org 1, die Org-Pruefung greift also nicht,
+      // sondern wirklich die Rollen-Grenze.
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028',
+          user_assignments: [
+            { user_id: USERS.admin1.id, can_view: true, can_edit: true },
+            { user_id: USERS.superAdmin.id, can_view: true, can_edit: true }
+          ]
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("Du kannst Benutzer mit der Rolle 'super_admin' nicht bearbeiten.");
+      const { rows: jgRows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028'"
+      );
+      expect(jgRows[0].c).toBe(0);
+      // Auch die gueltige erste Zuweisung darf nicht liegen geblieben sein.
+      const { rows: zuRows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM user_jahrgang_assignments WHERE user_id = $1 AND jahrgang_id != $2',
+        [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      expect(zuRows[0].c).toBe(0);
+    });
+
+    it('Person aus fremder Organisation -> 404, kein Jahrgang entsteht', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028',
+          user_assignments: [{ user_id: USERS.admin2.id, can_view: true, can_edit: true }]
+        });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Benutzer in dieser Organisation nicht gefunden');
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028'"
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
+    it('Doppelt angegebene Person -> 400, kein Jahrgang entsteht', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: '2027/2028',
+          user_assignments: [
+            { user_id: USERS.teamer1.id },
+            { user_id: USERS.teamer1.id }
+          ]
+        });
+
+      expect(res.status).toBe(400);
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS c FROM jahrgaenge WHERE name = '2027/2028'"
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
+    it('user_assignments ohne user_id -> 400 (Validierung)', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: '2027/2028', user_assignments: [{ can_view: true }] });
 
       expect(res.status).toBe(400);
     });
@@ -292,11 +479,16 @@ describe('Jahrgaenge Routes', () => {
     });
 
     it('Admin loescht leeren Jahrgang -> 200', async () => {
-      // Neuen leeren Jahrgang erstellen
+      // Neuen leeren Jahrgang erstellen — Anlegen darf nur der org_admin
+      // (01.09.2026); admin1 bekommt per Direkt-Zuweisung das Bearbeitungsrecht,
+      // damit er anschliessend loeschen darf.
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Leerer Jahrgang', confirmation_date: '2027-05-01' });
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: 'Leerer Jahrgang', confirmation_date: '2027-05-01',
+          user_assignments: [{ user_id: USERS.admin1.id, can_view: true, can_edit: true }]
+        });
 
       const newId = createRes.body.id;
 
@@ -317,11 +509,15 @@ describe('Jahrgaenge Routes', () => {
     });
 
     it('Befoerderter Ex-Konfi (Rolle teamer) blockiert die Loeschung NICHT', async () => {
-      // Neuer leerer Jahrgang
+      // Neuer leerer Jahrgang — angelegt vom org_admin (nur er darf das seit
+      // 01.09.2026), admin1 per Direkt-Zuweisung mit Bearbeitungsrecht.
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Befoerderungs-Jahrgang', confirmation_date: '2027-05-01' });
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: 'Befoerderungs-Jahrgang', confirmation_date: '2027-05-01',
+          user_assignments: [{ user_id: USERS.admin1.id, can_view: true, can_edit: true }]
+        });
       const newId = createRes.body.id;
 
       // teamer1 (id 3, Rolle teamer) bekommt ein konfi_profiles an diesem Jahrgang
@@ -354,8 +550,11 @@ describe('Jahrgaenge Routes', () => {
     it('AKTIVER Konfi blockiert die Loeschung weiterhin (409)', async () => {
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Aktiv-Konfi-Jahrgang', confirmation_date: '2027-05-01' });
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: 'Aktiv-Konfi-Jahrgang', confirmation_date: '2027-05-01',
+          user_assignments: [{ user_id: USERS.admin1.id, can_view: true, can_edit: true }]
+        });
       const newId = createRes.body.id;
 
       // konfi1 (id 1, Rolle konfi) an den Jahrgang -> muss blockieren
@@ -368,10 +567,10 @@ describe('Jahrgaenge Routes', () => {
     });
 
     it('Admin aus Org 2 kann Jahrgang aus Org 1 NICHT loeschen', async () => {
-      // Neuen leeren Jahrgang in Org 1 erstellen
+      // Neuen leeren Jahrgang in Org 1 erstellen (org_admin, s.o.)
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ name: 'Org1 Jahrgang', confirmation_date: '2027-05-01' });
 
       const res = await request(app)
