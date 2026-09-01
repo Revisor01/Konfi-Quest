@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { kalendertag, tageBis, formatTimeUntil } from '../../components/shared/eventFormatting';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 // Zwei Fehler mit derselben Wurzel: gerechnet wurde in Millisekunden, nicht
 // in Kalendertagen.
@@ -118,9 +120,7 @@ describe('formatTimeUntil', () => {
 });
 
 describe('Keine zweite Fassung der Rechnung mehr', () => {
-  it('rechnet nirgends mehr in 24-Stunden-Bloecken', async () => {
-    const { readFileSync } = await import('fs');
-    const { resolve } = await import('path');
+  it('rechnet nirgends mehr in 24-Stunden-Bloecken', () => {
     const dateien = [
       'src/components/konfi/views/DashboardSections.tsx',
       'src/components/teamer/pages/TeamerDashboardPage.tsx',
@@ -133,8 +133,6 @@ describe('Keine zweite Fassung der Rechnung mehr', () => {
   });
 
   it('bildet den Losungs-Schluessel nicht mehr als UTC-Tag', () => {
-    const { readFileSync } = require('fs');
-    const { resolve } = require('path');
     for (const d of [
       'src/components/konfi/views/DashboardView.tsx',
       'src/components/teamer/pages/TeamerDashboardPage.tsx',
