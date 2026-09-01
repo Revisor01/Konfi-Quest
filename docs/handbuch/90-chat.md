@@ -93,15 +93,16 @@ abmeldet, fliegt wieder heraus.
 
 ## Wer wen anschreiben darf
 
-Das ist die wichtigste Tabelle des Kapitels. **Stand 23.08.2026:**
+Das ist die wichtigste Tabelle des Kapitels. **Stand 01.09.2026:**
 
-| ↓ schreibt an → | Konfi | Teamer:in | Leitung / Admin |
-|---|---|---|---|
-| **Konfi** | **nie** | nur bei **gemeinsamem Jahrgang** | immer |
-| **Teamer:in** | nur bei **gemeinsamem Jahrgang** | ja | ja |
-| **Leitung / Admin** | immer | ja | ja |
+| ↓ schreibt an → | Konfi | Teamer:in | Admin | Leitung (Org-Admin) |
+|---|---|---|---|---|
+| **Konfi** | **nie** | nur bei **gemeinsamem Jahrgang** | immer | immer |
+| **Teamer:in** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
+| **Admin** | nur bei **zugewiesenem Jahrgang** | ja | ja | ja |
+| **Leitung (Org-Admin)** | immer | ja | ja | ja |
 
-Drei Regeln stecken darin:
+Vier Regeln stecken darin:
 
 **1. Konfis erreichen einander nie.** Konfi-zu-Konfi-Direktnachrichten gibt es
 nicht, und Konfis können auch keine Gruppen anlegen. Sie können ausschließlich
@@ -113,23 +114,34 @@ Jahrgang — in beide Richtungen.** Eine Teamer:in sieht in ihrer Kontaktliste
 nur die Konfis der Jahrgänge, die ihr zugewiesen sind, und umgekehrt sehen
 Konfis nur die Teamer:innen, die für ihren Jahrgang zuständig sind.
 
+**3. Auch Admins erreichen Konfis nur über ihre zugewiesenen Jahrgänge** —
+das gilt fürs Anschreiben und fürs Aufnehmen in Gruppenchats gleichermaßen
+(seit 01.09.2026, vorher erreichte ein Admin jeden Konfi der Gemeinde).
+Umgekehrt bleibt es offen: **Ein Konfi darf jeden Admin anschreiben**, auch
+einen, der für seinen Jahrgang nicht zuständig ist. Das ist Absicht — die
+Jahrgangs-Bindung schützt die Konfis, nicht das Team, und ein Jahrgang ohne
+zugewiesenen Admin ließe die Konfis sonst ohne Ansprechperson zurück.
+Bestehende Gespräche sperrt die Regel nicht: Ein Direktchat, der vor einer
+Zuweisungs-Änderung entstanden ist, bleibt für beide Seiten offen.
+
 Die Fehlermeldungen, wenn es doch jemand versucht:
 
 - *„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben"*
 - *„Diese Teamer:in ist nicht für deinen Jahrgang zuständig"*
 
-**3. Leitung und Admins erreichen alle und sind für alle erreichbar.** Sie
-verantworten die Gemeinde als Ganzes und haben ohnehin Zugriff auf alle
-Jahrgänge.
+**4. Die Leitung (Org-Admin) erreicht alle und ist für alle erreichbar.** Sie
+verantwortet die Gemeinde als Ganzes und ist als Einzige nicht an die
+Jahrgangs-Grenze gebunden.
 
-> **Achtung, häufiger Anruf:** Eine Teamer:in **ohne zugewiesenen Jahrgang** ist
-> für Konfis unsichtbar — und erreicht ihrerseits keinen einzigen Konfi. Wenn
-> jemand meldet „ich sehe meine Konfis nicht im Chat", ist fast immer die
+> **Achtung, häufiger Anruf:** Eine Teamer:in oder ein Admin **ohne
+> zugewiesenen Jahrgang** erreicht keinen einzigen Konfi. Wenn jemand meldet
+> „ich sehe meine Konfis nicht im Chat", ist fast immer die
 > [Jahrgangs-Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
 > die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.
 
-> **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für Leitung und Admins
-> erreichbar. Bis der Jahrgang gesetzt ist, kommt keine Teamer:in an ihn heran.
+> **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für die Leitung (Org-Admin)
+> erreichbar. Bis der Jahrgang gesetzt ist, kommt weder eine Teamer:in noch
+> ein Admin an ihn heran.
 
 ---
 
@@ -418,12 +430,14 @@ Nur Personen aus der eigenen Organisation lassen sich hinzufügen.
 > ermittelt, nicht aus der Anfrage. Niemand landet dadurch mit falschen
 > Rechten in einer Gruppe.
 
-> **Achtung:** Beim **nachträglichen** Hinzufügen zu einer Gruppe gelten die
-> Jahrgangsgrenzen aus der Tabelle oben **nicht**. Die Leitung kann also einen
-> Konfi und eine fachfremde Teamer:in in dieselbe Gruppe setzen, obwohl die
-> beiden einander nicht direkt anschreiben könnten. Beim Anlegen einer Gruppe
-> wird das dagegen geprüft. Wer eine Gruppe zusammenstellt, sollte also selbst
-> hinschauen, wer dort zusammentrifft.
+> **Achtung:** Beim **nachträglichen** Hinzufügen zu einer Gruppe gilt nur
+> eine der Jahrgangsgrenzen aus der Tabelle oben: Ein **Admin** kann seit dem
+> 01.09.2026 nur Konfis seiner eigenen Jahrgänge eintragen — genau wie beim
+> Anlegen einer Gruppe. Alles andere bleibt ungeprüft: Die Leitung
+> (Org-Admin) kann einen Konfi und eine fachfremde Teamer:in in dieselbe
+> Gruppe setzen, obwohl die beiden einander nicht direkt anschreiben könnten.
+> Wer eine Gruppe zusammenstellt, sollte also selbst hinschauen, wer dort
+> zusammentrifft.
 
 Die Mitgliederliste öffnet sich über das Personen-Symbol oben im Chat.
 

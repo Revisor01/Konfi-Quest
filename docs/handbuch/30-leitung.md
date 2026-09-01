@@ -61,9 +61,12 @@ Rechte.
 
 ![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
 
-Du erreichst **jeden** in deiner Gemeinde — alle Konfis, alle Teamer:innen,
-die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft
-dich nicht.
+Als **Org-Admin** erreichst du **jeden** in deiner Gemeinde — alle Konfis,
+alle Teamer:innen, die ganze Leitung. Als **Admin** gilt seit dem 01.09.2026
+auch im Chat deine Jahrgangs-Zuweisung: Du kannst nur Konfis deiner eigenen
+Jahrgänge anschreiben oder in Gruppen aufnehmen — genau wie Teamer:innen.
+Umgekehrt dürfen dich alle Konfis weiterhin anschreiben, und bestehende
+Gespräche bleiben offen.
 
 Nur die Leitung kann:
 

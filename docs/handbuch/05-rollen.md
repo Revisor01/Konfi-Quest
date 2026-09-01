@@ -62,6 +62,9 @@ Die Zuweisung begrenzt beim Admin nicht nur, was er sieht, sondern auch, was er
   eigenen Jahrgang.
 - **Konfis löschen, befördern und ihr Passwort zurücksetzen** geht nur in
   seinen eigenen Jahrgängen — genau wie Punkte vergeben und zurücknehmen.
+- **Konfis direkt anschreiben** und in Gruppenchats aufnehmen geht nur in
+  seinen eigenen Jahrgängen. Umgekehrt darf jeder Konfi ihn weiterhin
+  anschreiben, und bestehende Gespräche bleiben offen.
 - **Jahrgänge bearbeiten oder löschen** geht nur bei den eigenen. **Neue
   Jahrgänge anlegen kann er nicht** — das ist Sache des Org-Admins, der dabei
   gleich festlegt, welche Admins und Teamer:innen Zugriff bekommen.
@@ -116,6 +119,7 @@ darf **alle Rollen der eigenen Gemeinde** verwalten, auch andere Org-Admins.
 | Jahrgänge zuweisen | — | — | nur die eigenen | ja |
 | Gemeinde-Einstellungen und Einladungen | — | — | — | ja |
 | Jahresrückblick freigeben | — | — | nur eigene Jahrgänge | ja |
+| Konfis direkt anschreiben | — | nur eigene Jahrgänge | nur eigene Jahrgänge | ja |
 | Ganze Gemeinde sehen, ohne Zuweisung | — | — | — | ja |
 
 ## Wer wen anlegen darf
