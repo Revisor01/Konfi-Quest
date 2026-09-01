@@ -20,6 +20,7 @@ const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/terminAnmeldeStatus');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
+const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -240,25 +241,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Calculate correct current level based on total points (NOT from DB!)
-      let currentLevel = null;
-      let nextLevel = null;
-      let levelIndex = 0;
-
-      for (let i = 0; i < allLevels.length; i++) {
-        if (totalPoints >= allLevels[i].points_required) {
-          currentLevel = allLevels[i];
-          levelIndex = i + 1; // 1-based index for stars
-        } else {
-          nextLevel = allLevels[i];
-          break;
-        }
-      }
-
-      // If user reached max level, no next level
-      if (!nextLevel && currentLevel) {
-        // User is at max level
-        nextLevel = null;
-      }
+      // Berechnung in utils/levelFortschritt.js — dieselbe Quelle wie
+      // GET /levels/konfi/:userId und der Level-Push.
+      const { currentLevel, nextLevel, levelIndex, levelProgress, pointsToNextLevel } =
+        berechneLevelFortschritt(totalPoints, allLevels);
 
       // Update current_level_id in DB if it's wrong
       if (currentLevel && konfi.current_level_id !== currentLevel.id) {
@@ -266,21 +252,6 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
           [currentLevel.id, konfiId]
         );
-      }
-
-      // Calculate progress to next level
-      let levelProgress = 100;
-      let pointsToNextLevel = 0;
-
-      if (nextLevel && currentLevel) {
-        const pointsNeeded = nextLevel.points_required - currentLevel.points_required;
-        const pointsAchieved = totalPoints - currentLevel.points_required;
-        levelProgress = Math.max(0, Math.min(100, (pointsAchieved / pointsNeeded) * 100));
-        pointsToNextLevel = nextLevel.points_required - totalPoints;
-      } else if (nextLevel && !currentLevel) {
-        // User hasn't reached first level yet
-        levelProgress = (totalPoints / nextLevel.points_required) * 100;
-        pointsToNextLevel = nextLevel.points_required - totalPoints;
       }
 
       // Point config aus Jahrgang-Daten

@@ -1,5 +1,6 @@
 const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
 const { appIconSummeOderNull } = require('../utils/appIconBadge');
+const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 
 /**
  * Push Notification Type Registry
@@ -923,13 +924,10 @@ class PushService {
       );
       if (levels.length === 0) return;
 
-      // 3. Hoechstes erreichtes Level berechnen
-      let newLevel = null;
-      for (const level of levels) {
-        if (totalPoints >= level.points_required) {
-          newLevel = level;
-        }
-      }
+      // 3. Hoechstes erreichtes Level berechnen — dieselbe Quelle wie das
+      //    Konfi-Dashboard und GET /levels/konfi/:userId (frueher drei
+      //    Kopien derselben Schleife, Befund M2).
+      const { currentLevel: newLevel } = berechneLevelFortschritt(totalPoints, levels);
 
       // 4. Vergleich mit gespeichertem Level — nur wenn Level AUFGESTIEGEN
       if (newLevel && newLevel.id !== profile.current_level_id) {
