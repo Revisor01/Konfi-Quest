@@ -1060,10 +1060,28 @@ paths:
   # "Fuer alle" heisst: alle TEAMER:INNEN der Gemeinde. Konfis kommen an
   # keine Material-Route (requireTeamer).
   #
-  # Setzen und Entziehen von ist_global darf NUR die Rolle org_admin (403
-  # sonst, Feld-Pruefung in routes/material.js). Die Routen selbst bleiben
-  # auf requireAdmin, damit ein 'admin' weiterhin normales Material anlegen
-  # und globales Material inhaltlich bearbeiten kann.
+  # ABGELEITETES ist_global (seit 01.09.2026, Simons Entscheidung "wenn
+  # kein Jahrgang dann global. Fertig. Sonst nur Jahrgang."): Schickt ein
+  # Client das Feld ist_global NICHT mit (das aktuelle Formular tut das
+  # nicht mehr), leitet der Server es aus der Jahrgangs-Zuordnung ab --
+  # keine Jahrgaenge -> true, Jahrgaenge -> false. Die Ableitung braucht
+  # KEINE Rolle, denn sie benennt nur die Sichtbarkeit, die die Zuordnung
+  # ohnehin ergibt. Wird das Feld dagegen EXPLIZIT mitgeschickt (alte
+  # App-Versionen), gilt weiter die Regel vom 31.08.: Setzen und Entziehen
+  # nur fuer org_admin (403 sonst, Feld-Pruefung in routes/material.js).
+  # Die Routen selbst bleiben auf requireAdmin, damit ein 'admin'
+  # weiterhin normales Material anlegen und bearbeiten kann.
+  #
+  # MEHRERE LINKS UND DATEIEN PARALLEL (seit 01.09.2026, Migration 142):
+  # Das Entweder-Oder vom 31.08. ist aufgehoben. Ein Material traegt
+  # beliebig viele Dateien UND bis zu 20 Links (Tabelle material_links).
+  # ADDITIV: Die Antworten bekommen das Array `links` (id, url,
+  # created_at) und die Liste das Feld link_count dazu; materials.link_url
+  # BLEIBT und spiegelt immer den ERSTEN Link -- ausgelieferte Apps kennen
+  # nur dieses Feld und sehen so weiterhin einen Link, solange es welche
+  # gibt. Schreibt ein alter Client link_url (statt link_urls), aendert er
+  # NUR den ersten Link; weitere Links, die sein Formular nie angezeigt
+  # hat, bleiben stehen.
   #
   # Die Tag-Routen (/api/material/tags, GET/POST/PUT/DELETE) wurden am
   # 27.08.2026 ENTFERNT (Simons Entscheidung). Sie boten ein vollstaendiges
@@ -1123,7 +1141,7 @@ paths:
           schema: { type: integer }
           description: Nur Material dieses Jahrgangs
       responses:
-        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
+        "200": { description: "Array (id, title, description, link_url, ist_global, created_at, created_by, created_by_name, file_count, link_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1139,12 +1157,14 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateMaterial]
         org-scope: true
-        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token; ist_global nur für org_admin (403 sonst)"
+        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token; EXPLIZITES ist_global nur für org_admin (403 sonst); ohne das Feld wird ist_global aus jahrgang_ids abgeleitet (01.09.2026)"
         hinweis: >
-          Feld-Pruefung seit 31.08.2026: ist_global = true darf nur die Rolle
-          org_admin setzen. Ein 'admin' bekommt 403 und es entsteht KEIN
-          Material. Die Route bleibt bewusst auf requireAdmin, damit ein
-          'admin' normales Material weiterhin anlegen kann.
+          Feld-Pruefung seit 31.08.2026: EXPLIZITES ist_global = true darf nur
+          die Rolle org_admin setzen. Ein 'admin' bekommt 403 und es entsteht
+          KEIN Material. Ohne das Feld greift seit dem 01.09.2026 die
+          rollenfreie Ableitung aus jahrgang_ids (keine Jahrgaenge -> true).
+          Die Route bleibt bewusst auf requireAdmin, damit ein 'admin'
+          normales Material weiterhin anlegen kann.
       requestBody:
         required: true
         content:
@@ -1160,26 +1180,42 @@ paths:
                 tag_ids: { type: array, items: { type: integer } }
                 ist_global:
                   type: boolean
-                  default: false
                   description: >
                     Material für ALLE Teamer:innen der Gemeinde freigeben
                     (seit 31.08.2026), unabhängig von den zugeordneten
                     Jahrgängen. Nur die Rolle org_admin darf das Feld auf true
-                    setzen; ein 'admin' bekommt 403. Ohne Angabe entsteht das
-                    Material nicht global. Konfis sehen Material grundsätzlich
-                    nicht (requireTeamer).
+                    setzen; ein 'admin' bekommt 403. Seit dem 01.09.2026 wird
+                    das Feld OHNE Angabe aus der Jahrgangs-Zuordnung
+                    abgeleitet (keine jahrgang_ids -> true, sonst false) —
+                    das aktuelle Formular schickt es nicht mehr mit; die
+                    Ableitung ist rollenfrei, weil sie nur die ohnehin
+                    geltende Sichtbarkeit benennt. Konfis sehen Material
+                    grundsätzlich nicht (requireTeamer).
                 link_url:
                   type: [string, "null"]
                   maxLength: 2000
                   description: >
-                    Optionaler Link statt Dateien (seit 31.08.2026). Nur http
+                    Einzelner Link (seit 31.08.2026, Alt-App-Weg). Nur http
                     und https; geprueft wird das Schema ueber new URL(), alles
                     andere (javascript:, data:, file:, ftp:, schemalose
                     Adressen) gibt 400. Leerstring oder null bedeutet "kein
-                    Link". Umgebende Leerzeichen werden abgeschnitten.
+                    Link". Umgebende Leerzeichen werden abgeschnitten. Wird
+                    link_urls mitgeschickt, hat das Array Vorrang.
+                link_urls:
+                  type: array
+                  maxItems: 20
+                  items: { type: string, maxLength: 2000 }
+                  description: >
+                    Mehrere Links (seit 01.09.2026, Tabelle material_links).
+                    Jede Adresse wird wie link_url geprueft (nur http/https,
+                    sonst 400 für die ganze Anfrage); leere Einträge fallen
+                    still heraus, mehr als 20 Links geben 400. Der erste Link
+                    wird zusätzlich in materials.link_url gespiegelt, damit
+                    ausgelieferte Apps weiterhin einen Link sehen. Links und
+                    Dateien sind parallel erlaubt.
       responses:
-        "201": { description: "id, title, description, link_url, ist_global, created_at, created_by" }
-        "400": { description: "Titel fehlt, der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
+        "201": { description: "id, title, description, link_url, ist_global, created_at, created_by, links[] (id, url, created_at)" }
+        "400": { description: "Titel fehlt, ein Link ist kein http/https-Link, mehr als 20 Links, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Rolle nicht berechtigt, oder ist_global = true ohne die Rolle org_admin" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1218,7 +1254,7 @@ paths:
         hinweis: "Jahrgangs-Schranke für teamer und admin (Befund M1 behoben am 24.08.2026, admin gebunden seit 01.09.2026): Material mit Jahrgang nur für zugewiesene teamer/admin, ohne Jahrgang für alle; seit 31.08.2026 zusätzlich ist_global = true für alle; nur org_admin sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "id, title, description, link_url, ist_global, created_at, created_by, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
+        "200": { description: "id, title, description, link_url, ist_global, created_at, created_by, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at), links[] (id, url, created_at)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1227,16 +1263,16 @@ paths:
       tags: ["Material"]
       summary: Material bearbeiten
       description: >
-        Teilaktualisierung von Titel, Beschreibung und Link. Werden event_ids,
-        jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen
-        komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder
-        bleiben unverändert. Alle IDs werden gegen die eigene Organisation
-        geprüft.
+        Teilaktualisierung von Titel, Beschreibung und Links. Werden
+        event_ids, jahrgang_ids, tag_ids oder link_urls uebergeben, werden
+        die jeweiligen Zuordnungen komplett ersetzt (löschen und neu setzen);
+        nicht uebergebene Felder bleiben unverändert. Alle IDs werden gegen
+        die eigene Organisation geprüft.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateMaterial]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); Änderung von ist_global nur für org_admin (403 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); danach Ersteller-Regel: created_by = eigene id, sonst 403 (org_admin und is_super_admin-Flag ausgenommen); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst); EXPLIZITE Änderung von ist_global nur für org_admin (403 sonst); ohne das Feld folgt ist_global den mitgeschickten jahrgang_ids (Ableitung, 01.09.2026)"
         hinweis: >
           Ersteller-Regel seit 01.09.2026 (Simons Entscheidung: "Material
           bearbeiten kann nur der Ersteller!"): Ein 'admin' darf nur Material
@@ -1274,20 +1310,39 @@ paths:
                   type: boolean
                   description: >
                     Freigabe für ALLE Teamer:innen der Gemeinde (seit
-                    31.08.2026). Setzen UND Entziehen sind der Rolle org_admin
-                    vorbehalten, sonst 403. Wird das Feld gar nicht
-                    uebergeben, bleibt die gespeicherte Freigabe unveraendert.
+                    31.08.2026). EXPLIZITES Setzen UND Entziehen sind der
+                    Rolle org_admin vorbehalten, sonst 403. Seit dem
+                    01.09.2026 gilt OHNE dieses Feld die Ableitung: Werden
+                    jahrgang_ids mitgeschickt, folgt das Flag der Zuordnung
+                    (leer -> true, sonst false), rollenfrei; werden beide
+                    Felder nicht uebergeben, bleibt die gespeicherte Freigabe
+                    unveraendert.
                 link_url:
                   type: [string, "null"]
                   maxLength: 2000
                   description: >
-                    Link statt Dateien (seit 31.08.2026). Nur http und https,
-                    sonst 400. Leerstring oder null entfernt einen gesetzten
-                    Link wieder; wird das Feld gar nicht uebergeben, bleibt der
-                    gespeicherte Link unveraendert.
+                    Alt-App-Weg (seit 31.08.2026): aendert seit dem
+                    01.09.2026 NUR den ERSTEN Link des Materials. Nur http
+                    und https, sonst 400. Leerstring oder null entfernt den
+                    ersten Link; weitere Links bleiben stehen und der
+                    Spiegel link_url rueckt auf den naechsten Link nach.
+                    Wird das Feld gar nicht uebergeben, bleiben die Links
+                    unveraendert. Wird link_urls mitgeschickt, hat das
+                    Array Vorrang.
+                link_urls:
+                  type: array
+                  maxItems: 20
+                  items: { type: string, maxLength: 2000 }
+                  description: >
+                    Ersetzt ALLE Links des Materials (seit 01.09.2026,
+                    loeschen und neu setzen wie bei jahrgang_ids). Jede
+                    Adresse nur http/https, sonst 400 und nichts aendert
+                    sich; leeres Array entfernt alle Links (link_url wird
+                    null). Der erste Link wird in materials.link_url
+                    gespiegelt.
       responses:
         "200": { description: Aktualisiert }
-        "400": { description: "Der Link ist kein http/https-Link, oder mindestens eine ID gehoert zu einer fremden Organisation" }
+        "400": { description: "Ein Link ist kein http/https-Link, mehr als 20 Links, oder mindestens eine ID gehoert zu einer fremden Organisation" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Rolle nicht berechtigt, nicht die erstellende Person (Ersteller-Regel seit 01.09.2026), oder Änderung von ist_global ohne die Rolle org_admin" }
         "404": { $ref: '#/components/responses/NotFound' }

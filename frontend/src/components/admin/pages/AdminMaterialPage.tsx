@@ -68,6 +68,9 @@ interface Material {
   link_url?: string | null;
   // Kommt seit dem 31.08.2026 mit. Aeltere Eintraege aus dem Offline-Cache
   // liefern das Feld nicht -- dann gilt "nicht global", nie ein Fehler.
+  // Anzahl der Links (seit 01.09.2026, Tabelle material_links). Gecachte
+  // Eintraege von vorher liefern das Feld nicht -- dann zaehlt link_url.
+  link_count?: number;
   ist_global?: boolean;
   // Kommen seit dem 01.09.2026 mit (Ersteller-Regel). created_by ist null,
   // wenn das Konto der erstellenden Person geloescht wurde; bei Eintraegen
@@ -334,10 +337,10 @@ const AdminMaterialPage: React.FC = () => {
                                           Für alle
                                         </span>
                                       )}
-                                      {mat.link_url && (
+                                      {((mat.link_count ?? (mat.link_url ? 1 : 0)) > 0) && (
                                         <span className="app-list-item__meta-item">
                                           <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
-                                          Link
+                                          {(mat.link_count ?? 1) === 1 ? 'Link' : `${mat.link_count} Links`}
                                         </span>
                                       )}
                                       {mat.file_count !== undefined && mat.file_count > 0 && (

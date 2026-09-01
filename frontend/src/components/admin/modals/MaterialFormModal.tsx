@@ -23,8 +23,6 @@ import {
   IonCardContent,
   IonAccordion,
   IonAccordionGroup,
-  IonSegment,
-  IonSegmentButton,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -39,8 +37,7 @@ import {
   videocamOutline,
   musicalNotesOutline,
   linkOutline,
-  globeOutline,
-  peopleOutline,
+  addOutline,
   chevronDownOutline
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -89,6 +86,9 @@ interface Material {
   jahrgaenge?: { id: number; name: string }[];
   files?: MaterialFile[];
   link_url?: string | null;
+  // Mehrere Links (seit 01.09.2026, Tabelle material_links). link_url bleibt
+  // als Alt-Feld der Spiegel des ersten Links.
+  links?: { id: number; url: string; created_at?: string }[];
   ist_global?: boolean;
   created_by?: number | null;
   created_by_name?: string | null;
@@ -108,7 +108,7 @@ interface MaterialFormModalProps {
 }
 
 const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLesen = false, onClose, onSuccess }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -123,22 +123,20 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
   );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
-  // Datei ODER Link (Entscheidung Simon, 31.08.2026). Beim Bearbeiten
-  // entscheidet der gespeicherte Link, welche Art vorausgewaehlt ist.
-  const [art, setArt] = useState<'datei' | 'link'>(material?.link_url ? 'link' : 'datei');
-  // SICHTBARKEIT (Entscheidung Simon, 31.08.2026)
+  // MEHRERE LINKS UND DATEIEN PARALLEL (Entscheidung Simon, 01.09.2026):
+  // Das Entweder-Oder vom 31.08. ist weg, beide Bereiche sind immer
+  // sichtbar und beide optional. Ein gecachter Eintrag von vorher traegt
+  // nur link_url (Spiegel des ersten Links) -- dann startet die Liste mit
+  // diesem einen Link.
   //
-  // Vorher war "keinen Jahrgang zuordnen" der einzige Weg zu Material fuer
-  // alle -- ein Nebeneffekt, den niemand als Absicht lesen konnte. Jetzt
-  // steht der Zustand hier benannt. Ein gecachter Eintrag ohne das Feld gilt
-  // als nicht global.
-  const [istGlobal, setIstGlobal] = useState(material?.ist_global === true);
-  // Freigeben und Zurueckziehen darf nur die Gemeindeleitung (org_admin).
-  // Der Server weist alles andere mit 403 ab; hier wird die Auswahl nur
-  // gesperrt, nicht versteckt -- sonst waere unklar, warum das Material
-  // fuer alle sichtbar ist.
-  const darfGlobalSetzen = user?.role_name === 'org_admin';
-  const [linkUrl, setLinkUrl] = useState(material?.link_url || '');
+  // Der Sichtbarkeits-Umschalter vom 31.08. ist ebenfalls weg (Simon,
+  // 01.09.2026: "wenn kein Jahrgang dann global. Fertig. Sonst nur
+  // Jahrgang."). ist_global wird nicht mehr mitgeschickt; der Server
+  // leitet es aus der Jahrgangs-Zuordnung ab.
+  const [linkUrls, setLinkUrls] = useState<string[]>(
+    material?.links?.map(l => l.url)
+    ?? (material?.link_url ? [material.link_url] : [])
+  );
   const { isSubmitting, guard } = useActionGuard();
 
   const [events, setEvents] = useState<EventOption[]>([]);
@@ -290,7 +288,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
 
     // Vorab-Pruefung im Formular, damit der Fehler ohne Netz sichtbar wird.
     // Die verbindliche Pruefung macht der Server (routes/material.js).
-    if (art === 'link' && linkUrl.trim() && !istWebLink(linkUrl.trim())) {
+    // Leere Eingabefelder fallen still heraus, sie sind kein Fehler.
+    const bereinigt = linkUrls.map(l => l.trim()).filter(l => l !== '');
+    if (bereinigt.some(l => !istWebLink(l))) {
       setError('Der Link muss mit http:// oder https:// beginnen');
       return;
     }
@@ -302,10 +302,13 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           description: description.trim() || null,
           event_ids: eventIds,
           jahrgang_ids: jahrgangIds,
-          // Bei "Datei" wird ein zuvor gesetzter Link geleert und umgekehrt --
-          // ein Material traegt entweder das eine oder das andere.
-          link_url: art === 'link' ? linkUrl.trim() : '',
-          ist_global: istGlobal
+          // Mehrere Links (01.09.2026). Das Alt-Feld link_url pflegt der
+          // Server als Spiegel des ersten Links selbst.
+          //
+          // ist_global wird bewusst NICHT mehr mitgeschickt: Der Server
+          // leitet die Sichtbarkeit aus der Jahrgangs-Zuordnung ab (keine
+          // Jahrgaenge -> fuer alle Teamer:innen).
+          link_urls: bereinigt
         };
 
         if (networkMonitor.isOnline) {
@@ -319,8 +322,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             materialId = res.data.id;
           }
 
-          // Neue Dateien hochladen
-          if (art === 'datei' && newFiles.length > 0 && materialId) {
+          // Neue Dateien hochladen -- unabhaengig von den Links, beides
+          // ist parallel erlaubt (01.09.2026).
+          if (newFiles.length > 0 && materialId) {
             const formData = new FormData();
             newFiles.forEach(file => {
               formData.append('files', file);
@@ -431,52 +435,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           </IonCard>
         </IonList>
 
-        {/* Sichtbarkeit: benannte Zustaende statt Nebeneffekt
-            (Entscheidung Simon, 31.08.2026). Steht bewusst UEBER der
-            Zuordnung -- die Jahrgaenge lesen sich sonst wie die einzige
-            Stellschraube fuer die Sichtbarkeit. */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--material">
-              <IonIcon icon={globeOutline} />
-            </div>
-            <IonLabel>Sichtbarkeit</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px 16px 16px' }}>
-              <IonSegment
-                value={istGlobal ? 'global' : 'jahrgang'}
-                onIonChange={(e) => {
-                  if (!darfGlobalSetzen || nurLesen) return;
-                  setIstGlobal(e.detail.value === 'global');
-                }}
-                disabled={!darfGlobalSetzen || nurLesen}
-              >
-                <IonSegmentButton value="jahrgang">
-                  <IonIcon icon={peopleOutline} />
-                  <IonLabel>Nach Jahrgang</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="global">
-                  <IonIcon icon={globeOutline} />
-                  <IonLabel>Für alle</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '10px 0 0 0' }}>
-                {istGlobal
-                  ? 'Alle Teamer:innen der Gemeinde sehen das Material, unabhängig vom Jahrgang. Konfis sehen Material grundsätzlich nicht.'
-                  : 'Ohne zugeordneten Jahrgang sehen alle Teamer:innen das Material. Mit Jahrgang nur dessen Teamer:innen. Konfis sehen Material grundsätzlich nicht.'}
-              </p>
-              {/* Der Zusatz "kannst du trotzdem aendern" stimmt im
-                  Lese-Modus nicht -- dort erklaert schon der Hinweis oben,
-                  wer bearbeiten darf. */}
-              {!darfGlobalSetzen && !nurLesen && (
-                <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '6px 0 0 0' }}>
-                  Nur die Gemeindeleitung kann Material für alle Teamer:innen freigeben oder die Freigabe zurückziehen. Titel, Beschreibung und Dateien kannst du trotzdem ändern.
-                </p>
-              )}
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+        {/* Der Sichtbarkeits-Umschalter vom 31.08. stand hier -- weg seit
+            dem 01.09.2026 (Simon: "Sichtbarkeit ist auch ueberfluessig.
+            Denn: wenn kein Jahrgang dann global. Fertig. Sonst nur
+            Jahrgang."). Er verdoppelte nur die Jahrgangs-Zuordnung; die
+            Sichtbarkeit steht jetzt direkt am Jahrgangs-Abschnitt und der
+            Server leitet ist_global daraus ab. */}
 
         {/* Events zuordnen */}
         <IonList inset={true} className="app-segment-wrapper">
@@ -553,11 +517,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                         Jahrgänge
                       </h3>
                       <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
-                        {istGlobal
-                          ? 'Wirkt als Suchhilfe — sehen können es alle Teamer:innen'
-                          : jahrgangIds.length > 0
-                            ? `Nur Teamer:innen dieser ${jahrgangIds.length === 1 ? 'Jahrgang' : 'Jahrgänge'} sehen das Material`
-                            : 'Ohne Zuordnung sehen alle Teamer:innen das Material'}
+                        {jahrgangIds.length > 0
+                          ? `Nur Teamer:innen ${jahrgangIds.length === 1 ? 'dieses Jahrgangs' : 'dieser Jahrgänge'} sehen das Material`
+                          : 'Ohne Zuordnung sehen alle Teamer:innen das Material'}
                       </p>
                     </IonLabel>
                   </IonItem>
@@ -602,73 +564,76 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           </IonCard>
         </IonList>
 
-        {/* Art des Materials: Datei ODER Link (Entscheidung Simon, 31.08.2026) */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--material">
-              <IonIcon icon={attachOutline} />
-            </div>
-            <IonLabel>Anhang</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <IonSegment
-                value={art}
-                onIonChange={(e) => {
-                  if (nurLesen) return;
-                  setArt((e.detail.value as 'datei' | 'link') || 'datei');
-                }}
-                disabled={nurLesen}
-              >
-                <IonSegmentButton value="datei">
-                  <IonIcon icon={attachOutline} />
-                  <IonLabel>Dateien</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="link">
-                  <IonIcon icon={linkOutline} />
-                  <IonLabel>Link</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-              <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '10px 2px 0' }}>
-                {art === 'link'
-                  ? 'Statt Dateien wird eine Internetseite verknüpft. Sie öffnet sich im Browser.'
-                  : 'Dateien werden verschlüsselt in der App abgelegt.'}
-              </p>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-
-        {/* Link */}
-        {art === 'link' && (
+        {/* Links (Entscheidung Simon, 01.09.2026): Der Datei-oder-Link-
+            Umschalter vom 31.08. stand hier -- weg. Links und Dateien sind
+            parallel erlaubt, beide Bereiche immer sichtbar, beide optional.
+            Leere Eingabefelder fallen beim Speichern still heraus. */}
+        {(!nurLesen || linkUrls.length > 0) && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--material">
                 <IonIcon icon={linkOutline} />
               </div>
-              <IonLabel>Link</IonLabel>
+              <IonLabel>Links</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonInput
-                    label="Adresse"
-                    labelPlacement="stacked"
-                    type="url"
-                    inputmode="url"
-                    autocapitalize="off"
-                    value={linkUrl}
-                    onIonInput={(e) => setLinkUrl(e.detail.value || '')}
-                    placeholder="https://konfi-quest.de/gottesbilder"
-                    readonly={nurLesen}
-                  />
-                </IonItem>
+                {linkUrls.map((url, index) => (
+                  <IonItem
+                    key={index}
+                    lines={index < linkUrls.length - 1 ? 'full' : 'none'}
+                    style={{ '--background': 'transparent' }}
+                  >
+                    <IonInput
+                      label={`Adresse ${linkUrls.length > 1 ? index + 1 : ''}`.trim()}
+                      labelPlacement="stacked"
+                      type="url"
+                      inputmode="url"
+                      autocapitalize="off"
+                      value={url}
+                      onIonInput={(e) => {
+                        const wert = e.detail.value || '';
+                        setLinkUrls(prev => prev.map((l, i) => (i === index ? wert : l)));
+                      }}
+                      placeholder="https://konfi-quest.de/gottesbilder"
+                      readonly={nurLesen}
+                    />
+                    {!nurLesen && (
+                      <IonButton
+                        slot="end"
+                        fill="clear"
+                        color="danger"
+                        onClick={() => setLinkUrls(prev => prev.filter((_, i) => i !== index))}
+                        aria-label="Link entfernen"
+                      >
+                        <IonIcon icon={trash} slot="icon-only" />
+                      </IonButton>
+                    )}
+                  </IonItem>
+                ))}
+                {linkUrls.length === 0 && (
+                  <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 4px 0' }}>
+                    Verknüpfte Internetseiten öffnen sich im Browser — zum Beispiel eine eigene Seite oder ein YouTube-Video.
+                  </p>
+                )}
+                {!nurLesen && (
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    onClick={() => setLinkUrls(prev => [...prev, ''])}
+                    style={{ marginTop: '8px' }}
+                  >
+                    <IonIcon icon={addOutline} slot="start" />
+                    Link hinzufügen
+                  </IonButton>
+                )}
               </IonCardContent>
             </IonCard>
           </IonList>
         )}
 
         {/* Bestehende Dateien */}
-        {art === 'datei' && existingFiles.length > 0 && (
+        {existingFiles.length > 0 && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--material">
@@ -733,7 +698,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         {/* Neue Dateien. Dateien anhaengen zaehlt als Bearbeitung des
             Materials (Entscheidung Simon, 01.09.2026) -- im Lese-Modus fehlt
             der ganze Abschnitt. */}
-        {art === 'datei' && !nurLesen && (
+        {!nurLesen && (
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">

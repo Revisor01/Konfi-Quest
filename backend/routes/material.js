@@ -67,12 +67,50 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     )`;
   };
 
-  // LINK STATT DATEI (Entscheidung Simon, 31.08.2026)
+  // ABGELEITETE SICHTBARKEIT (Entscheidung Simon, 01.09.2026)
   //
-  // Ein Material traegt entweder Dateien ODER einen Link. Die Spalte
-  // materials.link_url kam ADDITIV dazu (Migration 135): Bestehendes Material
-  // hat NULL, die Antwortform bleibt sonst unveraendert -- ausgelieferte
-  // App-Versionen lesen das neue Feld einfach nicht.
+  //   "Sichtbarkeit ist auch ueberfluessig. Denn: wenn kein Jahrgang dann
+  //    global. Fertig. Sonst nur Jahrgang."
+  //
+  // Der Sichtbarkeits-Umschalter ist aus dem Formular verschwunden. Die
+  // Spalte materials.ist_global (Migration 137) BLEIBT -- ausgelieferte
+  // Apps lesen das Feld -- aber sie wird jetzt ABGELEITET: Schickt ein
+  // Client das Feld ist_global NICHT mit (das neue Formular tut das nicht
+  // mehr), gilt beim Anlegen und beim Bearbeiten der Jahrgaenge:
+  //
+  //   keine Jahrgaenge zugeordnet -> ist_global = true
+  //   Jahrgaenge zugeordnet       -> ist_global = false
+  //
+  // Das aendert an der Lese-Schranke (jahrgangsSchranke oben) NICHTS:
+  // Material ohne Jahrgang war schon ueber den mittleren Zweig fuer alle
+  // sichtbar, das abgeleitete true benennt denselben Zustand nur. Deshalb
+  // braucht die Ableitung auch KEINE org_admin-Pruefung -- sie kann nie
+  // mehr Sichtbarkeit gewaehren, als die Jahrgangs-Zuordnung ohnehin
+  // ergibt. Schickt ein ALTER Client das Feld dagegen explizit mit, gilt
+  // weiter die Regel vom 31.08.: setzen und entziehen nur org_admin
+  // (darfGlobalSetzen unten). So verhalten sich Store-Apps mit dem alten
+  // Formular exakt wie bisher.
+  //
+  // Bestand: Altes Material ohne Jahrgang mit ist_global = false bleibt
+  // ueber den mittleren Zweig fuer alle sichtbar -- unveraendert. Erst ein
+  // Bearbeiten unter der neuen Regel schreibt das Flag passend um.
+
+  // LINKS UND DATEIEN, BEIDES UND MEHRERE (Entscheidung Simon, 01.09.2026)
+  //
+  //   "Vielleicht will ich ein pdf und ein oder mehrere YouTube Videos.
+  //    Also mehr links und beides moeglich."
+  //
+  // Das Entweder-Oder vom 31.08. ist aufgehoben: Ein Material traegt
+  // beliebig viele Dateien UND beliebig viele Links (Tabelle
+  // material_links, Migration 142, nach dem Muster von material_files).
+  //
+  // ALT-APP-VERTRAG: materials.link_url (Migration 135) bleibt bestehen
+  // und spiegelt immer den ERSTEN Link (kleinste id). Ausgelieferte Apps
+  // kennen nur dieses Feld und sehen so weiterhin einen Link, solange es
+  // welche gibt. Schreibt ein alter Client link_url (statt link_urls),
+  // aendert er NUR den ersten Link -- weitere Links, die sein Formular
+  // nie angezeigt hat, darf er nicht stillschweigend mitloeschen.
+  // Das Array `links` kommt ADDITIV in die Antworten.
   //
   // Geprueft wird ueber new URL() und das SCHEMA, nie per String-Suche:
   // `javascript:alert(1)`, `data:text/html,...` und `file:///etc/passwd`
@@ -98,6 +136,54 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   };
 
   const LINK_FEHLER = 'Der Link muss mit http:// oder https:// beginnen';
+
+  // Obergrenze gegen Missbrauch (ein Formular mit hunderten Links waere
+  // ohnehin unbenutzbar). Gleiche Groessenordnung wie die 10 Dateien pro
+  // Upload-Anfrage.
+  const MAX_LINKS = 20;
+  const LINK_ANZAHL_FEHLER = `Hoechstens ${MAX_LINKS} Links pro Material`;
+
+  // Prueft ein link_urls-Array: jede Adresse einzeln ueber pruefeLink,
+  // leere Eintraege fallen still heraus (das Formular schickt keine mit,
+  // aber ein leeres Eingabefeld soll kein 400 ausloesen).
+  // undefined heisst: Feld nicht geschickt, Links nicht anfassen.
+  const pruefeLinkListe = (werte) => {
+    if (werte === undefined) return { ok: true, liste: undefined };
+    if (!Array.isArray(werte)) return { ok: false, fehler: LINK_FEHLER };
+    if (werte.length > MAX_LINKS) return { ok: false, fehler: LINK_ANZAHL_FEHLER };
+    const liste = [];
+    for (const wert of werte) {
+      const geprueft = pruefeLink(wert);
+      if (!geprueft.ok) return { ok: false, fehler: LINK_FEHLER };
+      if (geprueft.wert !== null) liste.push(geprueft.wert);
+    }
+    return { ok: true, liste };
+  };
+
+  // Ersetzt alle Links eines Materials (DELETE + INSERT, wie die
+  // Jahrgangs-Zuordnung) und haelt den Alt-App-Spiegel materials.link_url
+  // auf dem ersten Link.
+  const schreibeAlleLinks = async (materialId, liste) => {
+    await db.query('DELETE FROM material_links WHERE material_id = $1', [materialId]);
+    for (const url of liste) {
+      await db.query(
+        'INSERT INTO material_links (material_id, url) VALUES ($1, $2)',
+        [materialId, url]
+      );
+    }
+    await db.query(
+      'UPDATE materials SET link_url = $1, updated_at = NOW() WHERE id = $2',
+      [liste[0] || null, materialId]
+    );
+  };
+
+  const ladeLinks = async (materialId) => {
+    const { rows } = await db.query(
+      'SELECT id, url, created_at FROM material_links WHERE material_id = $1 ORDER BY id',
+      [materialId]
+    );
+    return rows;
+  };
 
   // WER DARF "für alle" SETZEN? (Entscheidung Simon, 31.08.2026)
   //
@@ -180,6 +266,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         SELECT m.id, m.title, m.description, m.link_url, m.ist_global,
                m.created_at, m.created_by, u.display_name as created_by_name,
                (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count,
+               (SELECT COUNT(*) FROM material_links ml WHERE ml.material_id = m.id) as link_count,
                (SELECT COUNT(*) FROM material_events me WHERE me.material_id = m.id) as event_count,
                (SELECT COUNT(*) FROM material_jahrgaenge mj WHERE mj.material_id = m.id) as jahrgang_count
         FROM materials m
@@ -257,6 +344,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           material.events = eventsByMaterial[material.id] || [];
           material.jahrgaenge = jahrgaengeByMaterial[material.id] || [];
           material.file_count = parseInt(material.file_count, 10);
+          material.link_count = parseInt(material.link_count, 10);
           material.event_count = parseInt(material.event_count, 10);
           material.jahrgang_count = parseInt(material.jahrgang_count, 10);
         }
@@ -354,6 +442,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       );
       material.files = files;
 
+      // Links laden (Migration 142). ADDITIV: link_url oben bleibt der
+      // Spiegel des ersten Links fuer ausgelieferte Apps.
+      material.links = await ladeLinks(material.id);
+
       res.json(material);
     } catch (err) {
       console.error('Fehler beim Laden des Materials:', err.message);
@@ -364,21 +456,41 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireAdmin, validateCreateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids, link_url, ist_global: global } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url, link_urls, ist_global: global } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
       }
 
       // Vor dem INSERT abweisen, damit kein Material entsteht, das dann doch
-      // nicht global ist.
+      // nicht global ist. Gilt nur fuer den EXPLIZITEN Alt-Weg -- die
+      // Ableitung aus den Jahrgaengen (unten) braucht keine Rolle, weil sie
+      // die Sichtbarkeit der Jahrgangs-Zuordnung nur benennt.
       if (global === true && !darfGlobalSetzen(req.user)) {
         return res.status(403).json({ error: GLOBAL_FEHLER });
       }
 
-      const link = pruefeLink(link_url);
-      if (!link.ok) {
-        return res.status(400).json({ error: LINK_FEHLER });
+      // Abgeleitete Sichtbarkeit (01.09.2026): Ohne explizites Feld folgt
+      // ist_global der Jahrgangs-Zuordnung.
+      const istGlobalWert = global !== undefined
+        ? global === true
+        : (jahrgang_ids || []).length === 0;
+
+      // Links: neue Clients schicken link_urls (Array), alte weiterhin
+      // link_url (ein Wert). Beide Wege muenden in dieselbe Liste.
+      const linkPruefung = pruefeLinkListe(link_urls);
+      if (!linkPruefung.ok) {
+        return res.status(400).json({ error: linkPruefung.fehler });
+      }
+      let linkListe;
+      if (linkPruefung.liste !== undefined) {
+        linkListe = linkPruefung.liste;
+      } else {
+        const link = pruefeLink(link_url);
+        if (!link.ok) {
+          return res.status(400).json({ error: LINK_FEHLER });
+        }
+        linkListe = link.wert ? [link.wert] : [];
       }
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
@@ -393,8 +505,19 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         `INSERT INTO materials (title, description, link_url, ist_global, organization_id, created_by)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id, title, description, link_url, ist_global, created_at, created_by`,
-        [title.trim(), description || null, link.wert, global === true, req.user.organization_id, req.user.id]
+        [title.trim(), description || null, linkListe[0] || null, istGlobalWert, req.user.organization_id, req.user.id]
       );
+
+      // Alle Links in material_links; link_url oben ist bereits der Spiegel
+      // des ersten.
+      for (const url of linkListe) {
+        await db.query(
+          'INSERT INTO material_links (material_id, url) VALUES ($1, $2)',
+          [material.id, url]
+        );
+      }
+      // ADDITIV in der Antwort: das vollstaendige Link-Array.
+      material.links = await ladeLinks(material.id);
 
       // Events zuordnen (Many-to-Many)
       const resolvedEventIds = event_ids || [];
@@ -431,10 +554,14 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateMaterial, async (req, res) => {
     try {
-      const { title, description, event_ids, jahrgang_ids, link_url, ist_global: global } = req.body;
+      const { title, description, event_ids, jahrgang_ids, link_url, link_urls, ist_global: global } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
+      const linkPruefung = pruefeLinkListe(link_urls);
+      if (!linkPruefung.ok) {
+        return res.status(400).json({ error: linkPruefung.fehler });
+      }
       const link = pruefeLink(link_url);
       if (!link.ok) {
         return res.status(400).json({ error: LINK_FEHLER });
@@ -457,13 +584,26 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(403).json({ error: ERSTELLER_FEHLER });
       }
 
-      // Setzen UND Entziehen sind der Leitung vorbehalten. Schickt ein
-      // 'admin' den unveraenderten Wert mit (das Formular sendet ihn immer
-      // mit), aendert sich nichts und die Anfrage geht durch -- sonst
-      // koennte er globales Material gar nicht mehr bearbeiten.
+      // Setzen UND Entziehen sind beim EXPLIZITEN Feld der Leitung
+      // vorbehalten (Alt-Formular, Store-Apps). Schickt ein 'admin' den
+      // unveraenderten Wert mit (das alte Formular sendet ihn immer mit),
+      // aendert sich nichts und die Anfrage geht durch -- sonst koennte er
+      // globales Material gar nicht mehr bearbeiten.
       const globalGewuenscht = global === undefined ? existing.ist_global : global === true;
       if (globalGewuenscht !== existing.ist_global && !darfGlobalSetzen(req.user)) {
         return res.status(403).json({ error: GLOBAL_FEHLER });
+      }
+
+      // Abgeleitete Sichtbarkeit (01.09.2026): Ohne explizites ist_global
+      // folgt das Flag der Jahrgangs-Zuordnung, sobald sie mitgeschickt
+      // wird. Keine Rollen-Pruefung noetig -- die Ableitung benennt nur die
+      // Sichtbarkeit, die die Zuordnung ohnehin ergibt. Wird beides nicht
+      // geschickt, bleibt das Flag unveraendert.
+      let istGlobalNeu;
+      if (global !== undefined) {
+        istGlobalNeu = globalGewuenscht;
+      } else if (jahrgang_ids !== undefined) {
+        istGlobalNeu = jahrgang_ids.length === 0;
       }
 
       // Org-Isolation: fremde IDs abweisen (Cross-Org-Referenzen)
@@ -488,17 +628,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         params.push(description);
         paramIndex++;
       }
-      // Leerer String bzw. null loescht den Link wieder (pruefeLink gibt dann
-      // null zurueck) -- so laesst sich ein Material vom Link auf Dateien
-      // umstellen, ohne es neu anzulegen.
-      if (link_url !== undefined) {
-        updates.push(`link_url = $${paramIndex}`);
-        params.push(link.wert);
-        paramIndex++;
-      }
-      if (global !== undefined) {
+      if (istGlobalNeu !== undefined) {
         updates.push(`ist_global = $${paramIndex}`);
-        params.push(globalGewuenscht);
+        params.push(istGlobalNeu);
         paramIndex++;
       }
 
@@ -509,6 +641,46 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           `UPDATE materials SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
           params
         );
+      }
+
+      // Links aktualisieren. Zwei Wege:
+      //
+      //   link_urls (neues Formular) -> ALLE Links ersetzen, Spiegel
+      //   link_url auf den ersten setzen (schreibeAlleLinks).
+      //
+      //   link_url allein (Alt-App-Vertrag) -> NUR den ersten Link
+      //   ersetzen bzw. loeschen. Ein alter Client hat weitere Links nie
+      //   angezeigt und darf sie deshalb auch nicht stillschweigend
+      //   mitloeschen. Leerer String/null loescht den ersten Link; der
+      //   Spiegel rueckt auf den naechsten Link nach, damit alte Apps
+      //   weiterhin einen Link sehen, solange es welche gibt.
+      if (linkPruefung.liste !== undefined) {
+        await schreibeAlleLinks(materialId, linkPruefung.liste);
+      } else if (link_url !== undefined) {
+        const { rows: vorhandene } = await db.query(
+          'SELECT id, url FROM material_links WHERE material_id = $1 ORDER BY id',
+          [materialId]
+        );
+        if (link.wert === null) {
+          if (vorhandene.length > 0) {
+            await db.query('DELETE FROM material_links WHERE id = $1', [vorhandene[0].id]);
+          }
+          const neuerErster = vorhandene.length > 1 ? vorhandene[1].url : null;
+          await db.query(
+            'UPDATE materials SET link_url = $1, updated_at = NOW() WHERE id = $2',
+            [neuerErster, materialId]
+          );
+        } else {
+          if (vorhandene.length > 0) {
+            await db.query('UPDATE material_links SET url = $1 WHERE id = $2', [link.wert, vorhandene[0].id]);
+          } else {
+            await db.query('INSERT INTO material_links (material_id, url) VALUES ($1, $2)', [materialId, link.wert]);
+          }
+          await db.query(
+            'UPDATE materials SET link_url = $1, updated_at = NOW() WHERE id = $2',
+            [link.wert, materialId]
+          );
+        }
       }
 
       // Events aktualisieren (DELETE + INSERT)

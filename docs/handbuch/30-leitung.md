@@ -161,26 +161,29 @@ stehen im Kapitel [Challenges](80-challenges.md).
 | **Jahrgänge** | [Punkteziele, Konfispruch- und Wrapped-Freigabe](45-jahrgaenge.md) |
 | **Kategorien** | Für Aktivitäten und Termine |
 | **Level** | [Punkteschwellen](40-punkte.md#level) und ihre Titel |
-| **Material** | Dateien oder ein Link für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle. Ausdrücklich „für alle“ geht ebenfalls |
+| **Material** | Dateien und Links für Termine und Jahrgänge — beides zusammen, auch mehrere Links. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
-### Material für alle Teamer:innen
+### Wer sieht welches Material?
 
-Beim Anlegen von Material wählst du unter **Sichtbarkeit**, für wen es
-gedacht ist:
+Die Sichtbarkeit hängt allein an der **Jahrgangs-Zuordnung** — einen
+eigenen Schalter dafür gibt es nicht:
 
-- **Nach Jahrgang** — hängt das Material an einem Jahrgang, sehen es nur
-  dessen Teamer:innen. Ohne Jahrgang sehen es alle.
-- **Für alle** — alle Teamer:innen der Gemeinde sehen es, unabhängig vom
-  Jahrgang. In der Liste steht ein Globus daneben, bei den Teamer:innen
-  erscheint es in einem eigenen Abschnitt ganz oben.
+- **Mit Jahrgang** — nur die Teamer:innen der zugeordneten Jahrgänge sehen
+  das Material. Weitere Jahrgänge lassen sich jederzeit ergänzen.
+- **Ohne Jahrgang** — alle Teamer:innen der Gemeinde sehen es. In der
+  Liste steht ein Globus daneben, bei den Teamer:innen erscheint es in
+  einem eigenen Abschnitt ganz oben.
 
-„Für alle“ heißt immer: alle **Teamer:innen**. Konfis sehen Material
+„Alle“ heißt immer: alle **Teamer:innen**. Konfis sehen Material
 grundsätzlich nicht.
 
-Freigeben und die Freigabe zurückziehen kann nur der Org-Admin. Alle anderen
-in der Leitung sehen die Auswahl, können sie aber nicht ändern — bei eigenem
-Material dürfen sie Titel, Beschreibung und Dateien trotzdem bearbeiten.
+### Dateien und Links
+
+Ein Material trägt **Dateien und Links zugleich** — zum Beispiel ein PDF
+und dazu mehrere YouTube-Videos. Beide Bereiche stehen im Formular immer
+offen, beide sind freiwillig. Dateien werden verschlüsselt in der App
+abgelegt; Links öffnen sich im Browser.
 
 ### Wer darf Material bearbeiten?
 
@@ -193,7 +196,7 @@ Material verwaltbar, wenn die erstellende Person die Gemeinde verlässt —
 wurde ihr Konto gelöscht, kommt nur noch der Org-Admin an das Material.
 
 Neues Material **anlegen** darf unverändert die ganze Leitung. Wer welches
-Material *sieht*, regelt weiterhin die Sichtbarkeit oben — die
+Material *sieht*, regelt weiterhin die Jahrgangs-Zuordnung oben — die
 Bearbeiten-Regel kommt dazu, sie ersetzt nichts.
 
 ### Verwaltung (nur Org-Admin)
