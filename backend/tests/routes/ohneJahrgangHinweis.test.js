@@ -15,6 +15,7 @@
 // Hier abgedeckt:
 //   - GET /api/challenges/admin        (challenges.js)
 //   - GET /api/admin/activities/requests (activities.js)
+//   - GET /api/material                (material.js, Nachzug 01.09.2026)
 //
 // Je Route drei Faelle: ohne Zuweisung -> Header; mit Zuweisung -> KEIN
 // Header; org_admin -> KEIN Header. Dazu die Gegenprobe, die den ganzen
@@ -289,6 +290,143 @@ describe('Hinweis-Header X-Kein-Jahrgang-Zugewiesen (01.09.2026)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+  });
+
+  // ================================================================
+  // GET /api/material (Nachzug 01.09.2026)
+  // ================================================================
+  // Besonderheit gegenueber den Listen oben: Ohne Zuweisung ist die Liste
+  // nicht zwingend LEER -- globales Material und Material ohne Jahrgang
+  // bleiben sichtbar. Der Header sagt trotzdem "dir fehlt die Zuweisung"
+  // (wie bei den Teamer-Antraegen oben); die Oberflaeche zeigt den Hinweis
+  // nur im Leerzustand an.
+  describe('GET /api/material', () => {
+    // Material mit Jahrgangs-Bindung an jahrgang1 anlegen.
+    async function materialMitJahrgangAnlegen() {
+      const { rows: [row] } = await db.query(
+        `INSERT INTO materials (organization_id, title, created_by)
+         VALUES (1, 'Jahrgangs-Material', $1) RETURNING id`,
+        [USERS.orgAdmin1.id]
+      );
+      await db.query(
+        `INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ($1, $2)`,
+        [row.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return row.id;
+    }
+
+    it('Admin OHNE Zuweisung: leeres Array UND Header', async () => {
+      await materialMitJahrgangAnlegen();
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBe('true');
+    });
+
+    it('Admin OHNE Zuweisung: globales Material bleibt sichtbar, Header trotzdem gesetzt', async () => {
+      // Globales Material sehen alle Teamer:innen der Gemeinde -- der
+      // Header sagt trotzdem, dass jahrgangsgebundenes Material wegen
+      // fehlender Zuweisung fehlt. Der Hinweistext erscheint im Frontend
+      // ohnehin nur, wenn die Liste leer ist.
+      await materialMitJahrgangAnlegen();
+      await db.query(
+        `INSERT INTO materials (organization_id, title, created_by, ist_global)
+         VALUES (1, 'Globales Material', $1, true)`,
+        [USERS.orgAdmin1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].title).toBe('Globales Material');
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBe('true');
+    });
+
+    it('Teamer OHNE Zuweisung bekommt den Header ebenfalls', async () => {
+      // jahrgangsSchranke bindet teamer und admin gleich -- der Grund der
+      // leeren Liste ist derselbe.
+      await materialMitJahrgangAnlegen();
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${teamerOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBe('true');
+    });
+
+    it('Admin MIT Zuweisung: Material sichtbar, KEIN Header', async () => {
+      await materialMitJahrgangAnlegen();
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].title).toBe('Jahrgangs-Material');
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('Admin MIT Zuweisung und ohne Material: leer, aber KEIN Header', async () => {
+      // Gegenprobe: Es gibt wirklich kein Material -- der Jahrgangs-Hinweis
+      // waere hier falsch.
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('org_admin bekommt den Header nie', async () => {
+      // org_admin sieht org-weit -- auch ganz ohne Zuweisungen (er hat im
+      // Seed keine).
+      await materialMitJahrgangAnlegen();
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('super_admin bekommt den Header nie', async () => {
+      // requireTeamer laesst super_admin nicht durch -- er darf erst recht
+      // keinen Jahrgangs-Hinweis bekommen, der Grund waere falsch.
+      await materialMitJahrgangAnlegen();
+
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`);
+
+      expect(res.status).toBe(403);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('GET /by-event bleibt bewusst ohne Header', async () => {
+      // Entscheidung 01.09.2026 (Kommentar an der Route): "kein Material an
+      // diesem Termin" ist der Normalzustand einer Termin-Unterliste, der
+      // Jahrgangs-Hinweis erklaerte dort meist etwas Falsches.
+      const res = await request(app)
+        .get('/api/material/by-event/999')
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
       expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
     });
   });

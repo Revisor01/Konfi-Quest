@@ -212,6 +212,23 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         query += ` AND ${schranke}`;
         params.push(req.user.id);
         paramIndex++;
+
+        // Hinweis-Header (Nachzug 01.09.2026): Ein admin oder teamer OHNE
+        // can_view-Zuweisung sieht hier nur noch globales Material und
+        // solches ohne Jahrgang -- gibt es davon keins, wirkt die leere
+        // Liste wie ein Fehler. Der Fall ist GUELTIG (Simons Entscheidung
+        // 31.08.2026: kein Zwang zur Jahrgangs-Zuweisung), deshalb meldet
+        // der Server den GRUND als Header statt im Rumpf -- dasselbe Muster
+        // wie GET /admin/konfis (konfi-management.js): Die Antwortform
+        // bleibt ein Array, ausgelieferte Apps ignorieren unbekannte Header.
+        // Der Header kommt auch, wenn globales Material sichtbar bleibt
+        // (wie bei den Teamer-Antraegen in activities.js) -- die Oberflaeche
+        // zeigt den Hinweis nur im Leerzustand an. org_admin und
+        // is_super_admin kommen hier nicht an (jahrgangsSchranke liefert
+        // fuer sie null); deren leere Liste hat einen anderen Grund.
+        if (!(req.user.assigned_jahrgaenge || []).some(j => j.can_view)) {
+          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+        }
       }
 
       query += ' ORDER BY m.created_at DESC';
@@ -270,6 +287,15 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // GET /by-event/:eventId - Material zu einem bestimmten Event
+  //
+  // BEWUSST OHNE den Hinweis-Header X-Kein-Jahrgang-Zugewiesen (Entscheidung
+  // 01.09.2026): Diese Liste ist eine Unterliste EINES Termins, und "kein
+  // Material an diesem Termin" ist dort der Normalzustand -- auch fuer
+  // Admins mit Zuweisung. Ein Jahrgangs-Hinweis an jeder leeren
+  // Termin-Materialliste erklaerte also meist etwas Falsches. Der Grund
+  // "keine Zuweisung" wird ausserdem schon eine Ebene hoeher genannt: Die
+  // Terminliste selbst (events/lesen.js) traegt den Header, ein Admin ohne
+  // Zuweisung sieht ihre Termine in der Regel gar nicht erst.
   router.get('/by-event/:eventId', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
