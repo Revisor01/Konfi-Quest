@@ -191,8 +191,88 @@ function tageslosungFallback() {
   };
 }
 
+/**
+ * Die Tageslosung fuer eine Route beantworten -- EINE Quelle fuer Konfis und
+ * Teamer:innen.
+ *
+ * Vorher stand dieselbe Logik zweimal im Repo (konfi.js und teamer.js), rund
+ * 50 Zeilen wortgleich. Die Drift war schon da: Die Konfi-Route protokollierte
+ * `console.error('Error fetching Tageslosung:', err)` mit dem ganzen Fehler,
+ * die Teamer-Route nur `err.message`. Und der doppelte Fallback-Zweig war beim
+ * Teamer-Weg erst am 27.08.2026 nachgezogen worden (Befund M2) -- ein halbes
+ * Jahr lang beantwortete dieselbe Frage in zwei Ansichten unterschiedlich.
+ *
+ * Was sich je Rolle WIRKLICH unterscheidet, ist genau eins: der Schluessel des
+ * Abschalters in `settings`. Deshalb ist er der einzige Parameter.
+ *
+ * ANTWORTFORM UNVERAENDERT. Ausgelieferte Store-Apps lesen beide Routen; die
+ * Felder (success, data, translation, fallback, error) und der 204er bei
+ * abgeschalteter Losung bleiben exakt wie bisher.
+ *
+ * @param {object} db
+ * @param {object} req  Express-Request mit req.user (aus rbacVerifier)
+ * @param {object} res
+ * @param {string} einstellungsSchluessel  Zeile in `settings`, die die Losung
+ *   fuer diese Rolle abschaltet ('dashboard_show_losung' fuer Konfis,
+ *   'teamer_dashboard_show_losung' fuer Teamer:innen).
+ */
+async function beantworteTageslosung(db, req, res, einstellungsSchluessel) {
+  try {
+    // Ist die Losung fuer diese Gemeinde abgeschaltet, gar nicht erst abrufen
+    // (Nutzerwunsch 23.08.2026). Vorher hing das allein am Frontend -- und
+    // dort prueften nicht alle Aufrufer den Schalter, sodass trotz "aus"
+    // weiterhin die externe API befragt wurde.
+    const { rows: [losungSetting] } = await db.query(
+      'SELECT value FROM settings WHERE organization_id = $1 AND key = $2',
+      [req.user.organization_id, einstellungsSchluessel]
+    );
+    if (losungSetting && (losungSetting.value === 'false' || losungSetting.value === '0')) {
+      return res.status(204).end();
+    }
+
+    const { rows: [nutzer] } = await db.query(
+      'SELECT bible_translation FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const translation = nutzer?.bible_translation || 'LUT';
+    const result = await fetchTageslosung(db, translation);
+
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('Tageslosung fehlgeschlagen:', err);
+
+    // Erste Rueckfallebene: die zuletzt gecachte Losung aus der Datenbank.
+    try {
+      const { rows: [gecacht] } = await db.query(
+        'SELECT verse_data, translation FROM daily_verses ORDER BY date DESC LIMIT 1'
+      );
+      if (gecacht) {
+        return res.json({
+          success: true,
+          data: gecacht.verse_data,
+          translation: gecacht.translation,
+          fallback: true,
+          error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
+        });
+      }
+    } catch (fallbackErr) {
+      console.error('Fallback cache error:', fallbackErr.message);
+    }
+
+    // Zweite Rueckfallebene: ein fester Psalm statt HTTP 500. Eine leere
+    // Startseite ist schlechter als ein bekannter Vers.
+    return res.json({
+      success: true,
+      data: tageslosungFallback(),
+      fallback: true,
+      error: 'Losungen API nicht erreichbar - Fallback verwendet'
+    });
+  }
+}
+
 module.exports = {
   fetchTageslosung,
   tageslosungFallback,
+  beantworteTageslosung,
   _resetNegativCache: () => gescheiterteAbrufe.clear()
 };

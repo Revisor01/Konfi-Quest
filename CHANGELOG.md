@@ -43,6 +43,9 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Die Tageslosung verhält sich für Konfis und Teamer:innen wieder gleich. Bei
+  einer Störung der Losungs-Quelle griff nur auf einer der beiden Seiten der
+  Rückfall auf den zuletzt geladenen Vers.
 - Nach einem Passwortwechsel oder Passwort-Reset bekommen abgemeldete Geräte
   keine Mitteilungen mehr für das Konto. Bisher liefen Push-Nachrichten —
   auch Chat-Inhalte — dort unbegrenzt weiter, obwohl die Sitzung beendet war;

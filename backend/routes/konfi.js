@@ -7,7 +7,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { heuteBerlin } = require('../utils/zeitformat');
-const { fetchTageslosung, tageslosungFallback } = require('../services/losungService');
+const { beantworteTageslosung } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist } = require('../utils/bookingUtils');
@@ -1355,66 +1355,16 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
   });
 
   // Get daily verse (Tageslosung) with caching
+  // Tageslosung: gemeinsame Logik in services/losungService.js
+  // (beantworteTageslosung). Vorher stand hier dieselbe Fassung wie in
+  // teamer.js, rund 50 Zeilen wortgleich -- inklusive einer bereits
+  // eingetretenen Drift bei der Fehlerprotokollierung.
+  // Antwortform unveraendert: ausgelieferte Apps lesen diese Route.
   router.get('/tageslosung', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
-
-    try {
-      const konfiId = req.user.id;
-
-      // Get konfi's preferred translation
-      const { rows: [konfi] } = await db.query(
-        'SELECT bible_translation FROM users WHERE id = $1',
-        [konfiId]
-      );
-
-      // Ist die Losung für diese Gemeinde abgeschaltet, gar nicht erst
-      // abrufen (Nutzerwunsch 23.08.2026). Vorher haing das allein am
-      // Frontend — und dort prueften nicht alle Aufrufer den Schalter, sodass
-      // trotz "aus" weiterhin die externe API befragt wurde.
-      const { rows: [losungSetting] } = await db.query(
-        "SELECT value FROM settings WHERE organization_id = $1 AND key = 'dashboard_show_losung'",
-        [req.user.organization_id]
-      );
-      if (losungSetting && (losungSetting.value === 'false' || losungSetting.value === '0')) {
-        return res.status(204).end();
-      }
-
-      const translation = konfi?.bible_translation || 'LUT';
-      const result = await fetchTageslosung(db, translation);
-
-      res.json({ success: true, ...result });
-    } catch (err) {
-      console.error('Error fetching Tageslosung:', err);
-
-      // Fallback: letzte gecachte Losung aus DB
-      try {
-        const { rows: [fallbackCached] } = await db.query(
-          'SELECT verse_data, translation FROM daily_verses ORDER BY date DESC LIMIT 1'
-        );
-
-        if (fallbackCached) {
-          return res.json({
-            success: true,
-            data: fallbackCached.verse_data,
-            translation: fallbackCached.translation,
-            fallback: true,
-            error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
-          });
-        }
-      } catch (fallbackErr) {
-        console.error('Fallback cache error:', fallbackErr.message);
-      }
-
-      // Statischer Fallback
-      res.json({
-        success: true,
-        data: tageslosungFallback(),
-        fallback: true,
-        error: 'Losungen API nicht erreichbar - Fallback verwendet'
-      });
-    }
+    return beantworteTageslosung(db, req, res, 'dashboard_show_losung');
   });
 
   // Get timeslots for a specific event (Konfi access)
