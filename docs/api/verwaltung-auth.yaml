@@ -212,6 +212,8 @@ paths:
               properties:
                 currentPassword: { type: string }
                 newPassword: { type: string, description: "Policy: min 8, Gross/Klein/Zahl/Sonderzeichen, keine Leerzeichen" }
+                device_id: { type: string, description: "Optional: Geraet der aktuellen Sitzung — sein Push-Token wird beim Aufraeumen verschont" }
+                platform: { type: string, description: "Optional, zusammen mit device_id (ios/android/web)" }
       responses:
         "200": { description: "Passwort geaendert" }
         "400": { description: "Aktuelles Passwort falsch / Policy verletzt" }
@@ -225,6 +227,12 @@ paths:
         # revoziert alle offenen Refresh-Tokens. Die Antwort enthält ein
         # frisches Token-Paar für die aufrufende Sitzung, damit der eigene
         # Client nicht mitfliegt.
+        # BEHOBEN 01.09.2026 (Rest von N2): Push-Tokens der beendeten
+        # Sitzungen werden mitgeloescht — vorher bekam ein ausgesperrtes
+        # Geraet weiter Push-Nachrichten (Versand haengt nur an user_id).
+        # Mit device_id+platform bleibt das eigene Geraet verschont; ohne
+        # (alte Apps) fallen alle Tokens des Users und das eigene Geraet
+        # registriert sich beim naechsten App-Start neu.
 
   /api/auth/delete-account:
     post:
@@ -539,6 +547,10 @@ paths:
         # revoziert und token_invalidated_at gesetzt. Reset-Tokens liegen
         # ausserdem nur noch gehasht in der DB. HINWEIS (war N3): bestehende Refresh-Tokens des Users werden NICHT
         # revoziert; kein eigener Rate-Limiter (Token allerdings 32 Byte Hex).
+        # BEHOBEN 01.09.2026 (Rest von N2): alle Push-Tokens des Users werden
+        # geloescht — beim Reset ueberlebt keine Sitzung, kein Geraet darf
+        # weiter Push-Nachrichten fuer das Konto bekommen. Jedes Geraet
+        # registriert sich beim naechsten Login neu.
 
   /api/auth/refresh:
     post:
