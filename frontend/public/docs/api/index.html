@@ -717,7 +717,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/konfi/events/{id}/register</code></div>
         <p class="summary">Für Event anmelden (primaere Konfi-Buchungsroute)</p>
-        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event + Timeslot org-gescopt; nicht teamer_only, nicht cancelled</div><div class="hinweis">Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis).</div>
+        <div class="zugriff"><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled</div><div class="hinweis">Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis).</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/events/{id}/status</code></div>
         <p class="summary">Eigener Anmeldestatus für ein Event</p>

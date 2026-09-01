@@ -3829,7 +3829,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Für Event anmelden (primaere Konfi-Buchungsroute)",
-        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n",
+        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n\nSeit 27.08.2026 zusaetzlich: reine Teamer-Termine (teamer_only) werden mit 403 abgelehnt, abgesagte Termine (cancelled) mit 400. Beide Pruefungen fehlten hier, waehrend der regulaere Weg sie hatte (Befund N1, behoben). Das ABMELDEN von einem abgesagten Termin bleibt bewusst moeglich (DELETE, siehe unten) — sonst waeren bereits Angemeldete eingesperrt.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/events/{id}/book (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (200 mit message, registration_id, status, timeslot_id; kein error_code). Drei Fehler dieser Route sind dabei behoben: Zeitslot-Plaetze wurden ohne Rollen- und ohne deleted_at-Filter gezaehlt (geloeschte Konten belegten Plaetze), der Zeitslot wurde nicht gesperrt (zwei gleichzeitige Anmeldungen konnten denselben letzten Platz bekommen) und die Gemeinde des Zeitslots wurde nicht geprueft (jetzt 400 \"Ungueltiger Zeitslot\").\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3838,7 +3838,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt; nicht teamer_only, nicht cancelled",
+          "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt (Slot mit FOR UPDATE); nicht teamer_only, nicht cancelled",
           "hinweis": "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
         },
         "parameters": [
@@ -4792,7 +4792,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
-        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n",
+        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -10045,7 +10045,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigene Punkte-Historie aus der Konfi-Zeit",
-        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.\n",
+        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles. Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation gefiltert (Befund M1, behoben): Der organization_id-Filter stand vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in backend/utils/punkteHistorie.js, von beiden Routen genutzt. Antwortform unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10955,7 +10955,7 @@
           "Teamer:innen"
         ],
         "summary": "Neuen Teamer-Antrag einreichen",
-        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine In-App-Mitteilung UND eine Push-Nachricht an die gesamte Leitung (Rollen admin und org_admin) sowie ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis 26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung (Befund M6, behoben).\n",
+        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine In-App-Mitteilung UND eine Push-Nachricht an die gesamte Leitung (Rollen admin und org_admin) sowie ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis 26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung (Befund M6, behoben). Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3, behoben). Der Konfi-Pfad hatte diesen Schutz seit jeher; beide nutzen jetzt backend/utils/antragIdempotenz.js. Antwortformen unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",

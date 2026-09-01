@@ -369,6 +369,12 @@ paths:
         Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und
         Event-Punkte aus der Konfi-Zeit, nach Datum absteigend
         zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.
+        Seit 01.09.2026 werden auch diese Summen auf die eigene Organisation
+        gefiltert (Befund M1, behoben): Der organization_id-Filter stand
+        vorher nur im Konfi-Pfad (GET /api/konfi/points-history), obwohl
+        beide Routen dasselbe Frontend-Modal speisen. Berechnung seitdem in
+        backend/utils/punkteHistorie.js, von beiden Routen genutzt.
+        Antwortform unveraendert.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -890,6 +896,11 @@ paths:
         Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht. Bis
         26.08.2026 gab es hier nur Push — Teamer-Antraege fehlten damit im
         Mitteilungscenter der Leitung (Befund M6, behoben).
+        Seit 01.09.2026 faengt die Route auch die Race zwischen Vorab-Check
+        und Insert ab (Unique-Verletzung 23505 auf client_id) und liefert
+        dann 200 mit dem vorhandenen Antrag statt eines 500ers (Befund M3,
+        behoben). Der Konfi-Pfad hatte diesen Schutz seit jeher; beide nutzen
+        jetzt backend/utils/antragIdempotenz.js. Antwortformen unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateCreateTeamerRequest]
