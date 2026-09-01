@@ -43,6 +43,10 @@ Versionsüberschrift.
   „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
 
 ### Behoben
+- Beim Zuweisen von Jahrgängen bot die App einem Admin auch Jahrgänge an, für
+  die er gar nicht zuständig ist — beim Speichern kam dann eine Fehlermeldung.
+  Die Auswahl zeigt jetzt nur die eigenen Jahrgänge. Wer selbst keinen
+  zugewiesen hat, sieht das jetzt im Klartext statt „keine verfügbar".
 - Ein Admin konnte Konfis Punkte geben, Bonuspunkte vergeben und ihre Anträge
   genehmigen, zurücksetzen oder löschen, auch wenn sie zu einem Jahrgang
   gehörten, für den er gar nicht zuständig ist. Das ist jetzt auf seine

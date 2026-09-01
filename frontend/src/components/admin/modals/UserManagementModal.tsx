@@ -172,7 +172,30 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         api.get('/admin/jahrgaenge')
       ]);
       setRoles(rolesResponse.data);
-      setJahrgaenge(jahrgaengeResponse.data);
+
+      // Ein 'admin' darf Jahrgaenge nur innerhalb SEINER eigenen zuordnen
+      // (Simons Regel 31.08.2026). Das Backend weist alles andere seit dem
+      // 01.09.2026 mit 403 ab -- vorher bot der Dialog trotzdem alle
+      // Jahrgaenge der Gemeinde an, und jede fremde Wahl lief in einen
+      // Fehler. Das Angebot folgt jetzt der Berechtigung.
+      //
+      // org_admin und super_admin bleiben ausgenommen: Sie sehen ohnehin die
+      // ganze Gemeinde, eine Einschraenkung waere dort falsch.
+      // Ein Admin OHNE Zuweisung bekommt eine leere Liste. Das ist ein
+      // gueltiger Fall (ein Admin, der nur mit den Teamer:innen spricht) --
+      // und ehrlicher als eine Auswahl, aus der jede Wahl scheitert.
+      // Hergeleitet wie in views/KonfiDetailView.tsx (eigeneJahrgangIds).
+      const alleJahrgaenge = jahrgaengeResponse.data;
+      if (currentUser?.role_name === 'admin') {
+        const eigene = new Set(
+          (currentUser.assigned_jahrgaenge || [])
+            .filter((j) => j.can_view !== false)
+            .map((j) => j.id)
+        );
+        setJahrgaenge(alleJahrgaenge.filter((j: Jahrgang) => eigene.has(j.id)));
+      } else {
+        setJahrgaenge(alleJahrgaenge);
+      }
 
       // Feste Rolle direkt setzen — der Dialog zeigt dann keine Auswahl mehr,
       // das Feld muss aber trotzdem befuellt sein (isValid prüft role_id > 0).
@@ -565,7 +588,16 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             {jahrgaenge.length === 0 ? (
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#999', margin: 0 }}>Keine Jahrgänge verfügbar</p>
+                  {/* Fuer einen Admin ohne eigene Jahrgaenge waere "keine
+                      verfuegbar" irrefuehrend -- es GIBT welche, er darf sie
+                      nur nicht vergeben. Derselbe Fehler wie frueher in der
+                      Konfi-Liste ("Noch keine Konfis angelegt"), Befund aus
+                      dem Rollen-Bericht vom 26.08.2026. */}
+                  <p style={{ color: '#999', margin: 0 }}>
+                    {currentUser?.role_name === 'admin'
+                      ? 'Dir ist kein Jahrgang zugewiesen. Zuweisen kann nur die Gemeindeleitung.'
+                      : 'Keine Jahrgänge verfügbar'}
+                  </p>
                 </IonLabel>
               </IonItem>
             ) : (
