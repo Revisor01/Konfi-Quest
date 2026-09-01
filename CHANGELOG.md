@@ -10,6 +10,89 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Behoben
+- Sicherheitslücke geschlossen: In der Terminliste der Konfis wurde der
+  Check-in-Code jedes Termins mitgeliefert. Damit hätte man sich von zu Hause
+  als anwesend eintragen und Punkte gutschreiben können, ohne dagewesen zu
+  sein. Der Code verlässt den Server jetzt nicht mehr.
+- Beim Zuweisen von Jahrgängen bot die App einem Admin auch Jahrgänge an, für
+  die er gar nicht zuständig ist — beim Speichern kam dann eine Fehlermeldung.
+  Die Auswahl zeigt jetzt nur die eigenen Jahrgänge. Wer selbst keinen
+  zugewiesen hat, sieht das jetzt im Klartext statt „keine verfügbar".
+- Ein Admin konnte Konfis Punkte geben, Bonuspunkte vergeben und ihre Anträge
+  genehmigen, zurücksetzen oder löschen, auch wenn sie zu einem Jahrgang
+  gehörten, für den er gar nicht zuständig ist. Das ist jetzt auf seine
+  eigenen Jahrgänge begrenzt. In der Antragsliste sieht er nur noch Anträge
+  aus seinen Jahrgängen, und die Nachweisfotos fremder Konfis bleiben ihm
+  verschlossen. Der Org-Admin darf weiterhin alles; Anträge und Aktivitäten
+  von Teamer:innen bleiben für die ganze Leitung sichtbar.
+- Ein Admin konnte Konfis in Jahrgängen anlegen und in Jahrgänge verschieben,
+  für die er gar nicht zuständig ist — und sah sie danach nicht mehr, weil
+  seine Liste nur die eigenen Jahrgänge zeigt. Anlegen und Verschieben sind
+  jetzt auf die eigenen Jahrgänge begrenzt. Der Org-Admin darf weiterhin
+  alles.
+- Wies ein Admin einer Teamer:in einen Jahrgang zu, verlor sie dabei still
+  alle Jahrgänge, für die dieser Admin nicht zuständig ist. Zuweisungen
+  fremder Jahrgänge bleiben jetzt erhalten; ein Admin ändert nur seine
+  eigenen. Der Org-Admin verwaltet weiterhin alle.
+- Eine frisch gegebene oder entzogene Jahrgangs-Zuweisung wirkte bis zu eine
+  halbe Minute lang nicht. Sie greift jetzt sofort.
+- Ein Admin sah und bearbeitete Challenges aller Jahrgänge — auch derer, für
+  die er nicht zuständig ist, samt Beiträgen der Konfis. Challenges,
+  Beiträge und deren Moderation richten sich jetzt nach seinen Jahrgängen. Der
+  Org-Admin sieht weiterhin alles, Challenges für das ganze Team bleiben für
+  die gesamte Leitung sichtbar.
+- In der Leitung konnte man den Knopf „Neue Teamer:in anlegen" zwar antippen,
+  das Formular blieb aber ohne Auswahl und liess sich nicht abschicken.
+  Teamer:innen anlegen und ihnen Jahrgänge geben klappt jetzt für die ganze
+  Leitung. Personen mit mehr Rechten bleiben unangetastet: Wer sie bisher nicht
+  bearbeiten durfte, kann auch ihre Jahrgänge nicht ändern.
+- Trug die Leitung sich selbst oder eine andere Person aus der Leitung in einen
+  Termin ein, belegte sie einen Platz der Konfis und tauchte in deren Liste
+  auf. Bei Terminen nur für Teamer:innen wurde sie ganz abgewiesen. Die Leitung
+  zählt jetzt zum Team.
+- In der Material-Übersicht der Teamer:innen lieferte der Jahrgangs-Filter
+  immer eine leere Liste. Er zeigt jetzt das Material des gewählten Jahrgangs.
+- Beim Bearbeiten einer Konfi stand beim Jahrgang "Keine Jahrgänge verfügbar",
+  obwohl es welche gibt. Die Auswahl ist wieder da, und der Jahrgang der Konfi
+  bleibt sichtbar und vorausgewählt — auch ohne Verbindung.
+- Beim ersten Aufruf einer Seite blieb sie weiß; erst beim zweiten Anlauf
+  erschien der Inhalt. Betraf jede Seite, auch Detailansichten und Chaträume.
+- Öffnete man einen Chat über eine Push-Nachricht, war der Zurück-Knopf ohne
+  Funktion — man kam aus dem Raum nicht mehr heraus. Das galt auch für
+  Termine und Konfi-Profile, die über eine Benachrichtigung geöffnet wurden.
+- Beim Ansehen von Foto-Nachweisen (bei Meldungen und in der Antragsprüfung
+  der Leitung) wurde der Bildspeicher nie wieder freigegeben — er wuchs mit
+  jedem angesehenen Foto, bis die App neu gestartet wurde.
+- Wechselte man von einer Meldung mit Foto zu einer ohne, blieb das Foto der
+  vorherigen Meldung stehen.
+- Beim Wechsel auf das Teamer-Segment in der Konfi-Verwaltung stand während
+  des Ladens fälschlich "Noch keine Teamer:innen vorhanden". Jetzt dreht sich
+  dort ein Ladekreis, bis die Liste da ist.
+- Bei einer beendeten Challenge ohne eigenen Beitrag riet die App, "oben auf
+  das Plus" zu tippen — den Knopf gibt es bei beendeten Challenges gar nicht.
+  Jetzt steht dort, dass die Challenge beendet ist.
+- Wurde eine Challenge im geöffneten Beitrags-Fenster auf "nur Leitung"
+  umgestellt, blieb die Kachel "Abgelehnt" stehen, obwohl es dann keine
+  Gruppen-Galerie mehr gibt. Die Kachelleiste folgt jetzt der Sichtbarkeit.
+- Beim Löschen eines Termins, der zu einer Serie gehört, fragt die App wieder
+  zuverlässig nach, ob nur dieser oder die ganze Serie gelöscht werden soll.
+- Bei den Bonuspunkten einer Konfi steht jetzt der Name der Person, die sie
+  vergeben hat. Bisher stand dort immer nur „Admin".
+- Bei den Aktivitäten einer Konfi steht jetzt der Name der Person, die sie
+  eingetragen hat. Bisher blieb die Zeile dort leer.
+- Wer etwas eingetragen oder vergeben hat, steht in der Konfi-Ansicht der
+  Leitung jetzt überall mit einem Personen-Symbol davor — bei Aktivitäten,
+  Bonuspunkten und Terminen gleich.
+- Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
+  Bisher stand dort „Konfi "undefined" erstellt".
+
+## [Unreleased] - 2.2.0
+
+### Geändert
+- Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
+  Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
+  restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
+  Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
 - Die Leitung konnte Teamer:innen anlegen, aber die Rollenauswahl im Dialog
   blieb leer. Sie wird jetzt gefüllt, und der neuen Teamer:in lassen sich
   dabei gleich Jahrgänge mitgeben. Wer dabei welche Personen bearbeiten darf,
