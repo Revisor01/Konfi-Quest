@@ -20,7 +20,12 @@ import AdminInvitePage from './AdminInvitePage';
 import { people, shield, business, pricetag, school, person, trophy, ribbon, logOut, flash, notifications, qrCode, appsOutline, pulseOutline, informationCircleOutline, schoolOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
-import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
+// 2.1.1-Fassung, NICHT die alte 2.0 (Befund Simon, 03.09.2026: "Im Profil
+// sehe ich zwar 2.1, aber dann den Whats-new-Walkthrough von 2.0").
+// Diese Seite war die einzige der sechs Einbindungen, die beim Update auf
+// 2.1.1 nicht mitgezogen wurde -- Dashboard, Profil und Konfis-Seite zeigten
+// laengst den neuen.
+import AdminUpdate211WalkthroughModal from '../modals/AdminUpdate211WalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -500,7 +505,7 @@ const AdminSettingsPage: React.FC = () => {
       )}
 
       {showUpdateWalkthrough && (
-        <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <AdminUpdate211WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

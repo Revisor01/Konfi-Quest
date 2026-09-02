@@ -27,6 +27,22 @@ Versionsüberschrift.
 - Neue Gemeinden starten mit einem erweiterten Satz an Kategorien, der die
   Arbeit vor Ort besser abbildet.
 
+- Ein Jahrgang kann jetzt mehrere Rückblicke haben, jeder mit eigenem Namen —
+  etwa „Dein erstes Jahr", „Zwischenstand" und „Dein Abschluss". Frühere
+  Ausgaben bleiben erhalten, wenn eine neue dazukommt, und Konfis wie
+  Teamer:innen sehen sie alle unter ihrem jeweiligen Namen.
+- Einzelne Rückblick-Ausgaben lassen sich gezielt löschen, ohne die anderen
+  anzurühren.
+- Die Leitung sieht im Profil einer Konfi oder Teamer:in alle Rückblicke —
+  auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
+
+### Behoben
+- Die Ungelesen-Markierung im Chat verschwindet jetzt zuverlässig. Der Zähler
+  wurde bisher direkt nach dem Lesen wieder mit dem alten Stand überschrieben,
+  weil die App die Zahlen abfragte, bevor der Server das Lesen verbucht hatte.
+- Unter „Einstellungen" öffnete „Was ist neu" noch den Rückblick der
+  vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
+
 ### Geändert
 - Der Rückblick zeigt endlich die tatsächlichen Kategorien der Termine und
   Aktivitäten. Bisher stand dort nur eine grobe Einteilung, weil die

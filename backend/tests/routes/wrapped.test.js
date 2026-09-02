@@ -312,25 +312,52 @@ describe('Wrapped Routes', () => {
         .toEqual([JAHRGAENGE.jahrgang1.id, jgZwei].sort((a, b) => a - b));
     });
 
-    it('haelt Teamer-Snapshots weiterhin eindeutig pro Person und Jahr', async () => {
-      // Der neue Schluessel benutzt COALESCE(jahrgang_id, 0). Ohne das waeren
-      // Teamer-Snapshots (jahrgang_id IS NULL) gar nicht mehr eindeutig --
-      // in einem UNIQUE-Index gelten zwei NULL als verschieden, jeder Lauf
-      // legte eine neue Zeile an und das ON CONFLICT liefe ins Leere.
+    it('haelt Teamer-Snapshots eindeutig INNERHALB einer Ausgabe', async () => {
+      // GEAENDERT AM 03.09.2026 (Migration 144, Simons Mehrfach-Ausgaben):
+      // Frueher pruefte dieser Test "genau eine Zeile pro Person und Jahr" --
+      // richtig fuer das alte Modell, in dem es je Jahr nur EINEN Rueckblick
+      // gab. Seit es Ausgaben gibt ("Zwischenstand", "Abschluss"), sind zwei
+      // Laeufe zwei Ausgaben und damit bewusst zwei Zeilen.
+      //
+      // Die Eigenschaft, die WEITER gelten muss: Innerhalb EINER Ausgabe
+      // bleibt es bei einer Zeile pro Person -- ein erneuter Lauf auf
+      // dieselbe Ausgabe korrigiert, statt zu doppeln. Und COALESCE
+      // (jahrgang_id, 0) muss weiter greifen, sonst waeren Teamer-Snapshots
+      // (jahrgang_id IS NULL) gar nicht mehr eindeutig.
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`);
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Erster Lauf' });
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`);
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Zweiter Lauf' });
 
+      // Zwei Ausgaben -> zwei Zeilen, aber je Ausgabe genau eine.
       const { rows } = await db.query(
-        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
-         WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        `SELECT ausgabe_id, COUNT(*)::int AS anzahl FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          GROUP BY ausgabe_id`,
         [USERS.teamer1.id]
       );
 
-      expect(rows[0].anzahl).toBe(1);
+      expect(rows).toHaveLength(2);
+      for (const zeile of rows) expect(zeile.anzahl).toBe(1);
+    });
+
+    it('ein erneuter Lauf auf DIESELBE Ausgabe doppelt nicht', async () => {
+      // Die Idempotenz, die der ON-CONFLICT-Schluessel sichern muss.
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Einmal' });
+
+      const { rows: [vorher] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        [USERS.konfi1.id]
+      );
+      expect(vorher.anzahl).toBe(1);
     });
 
     // Der Push wird am echten Versand geprueft, nicht an der Antwortmarke:
@@ -1236,6 +1263,251 @@ describe('Wrapped Routes', () => {
       expect(typeof snap.slides.verlaesslichkeit.nie_abgesagt).toBe('boolean');
       expect(snap.slides.highlight.type).toBe(snap.highlight_type);
       expect(typeof snap.slides.highlight.wert).toBe('number');
+    });
+  });
+
+  // ================================================================
+  // AUSGABEN (Migration 143, Simons Vorgabe: mehrfach freigeben + benennen)
+  // ================================================================
+  describe('Rueckblick-Ausgaben', () => {
+    it('jeder Lauf legt eine EIGENE Ausgabe an -- der zweite ueberschreibt den ersten nicht', async () => {
+      // Der Kern von Simons Anforderung: Ein Jahrgang laeuft ueber mehrere
+      // Jahre ("Dein erstes Jahr", "Dein Abschluss"). Vorher gab es genau
+      // EINEN Stand pro Jahrgang, der zweite Lauf ueberschrieb den ersten.
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Dein erstes Jahr' });
+
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Dein Abschluss' });
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const titel = res.body.map(a => a.titel);
+      expect(titel).toContain('Dein erstes Jahr');
+      expect(titel).toContain('Dein Abschluss');
+    });
+
+    it('ohne Titel entsteht ein Vorschlag statt eines leeren Namens', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].titel).toBeTruthy();
+      expect(res.body[0].titel.length).toBeGreaterThan(3);
+    });
+
+    it('eine erzeugte Ausgabe ist freigegeben und traegt ihre Snapshots', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Zwischenstand' });
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      const ausgabe = res.body.find(a => a.titel === 'Zwischenstand');
+      expect(ausgabe).toBeDefined();
+      expect(ausgabe.freigegeben).toBe(true);
+      expect(ausgabe.snapshots).toBeGreaterThan(0);
+      expect(ausgabe.jahrgang_id).toBe(JAHRGAENGE.jahrgang1.id);
+    });
+
+    it('die Teamer-Ausgabe laesst sich benennen', async () => {
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Teamer-Jahr 2026' });
+
+      expect(gen.status).toBe(200);
+      expect(gen.body.titel).toBe('Teamer-Jahr 2026');
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben?typ=teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(a => a.titel)).toContain('Teamer-Jahr 2026');
+    });
+
+    it('Teamer-Ausgaben sieht ein einfacher Admin NICHT', async () => {
+      // Simons Rechte-Entscheidung: Teamer-Ausgaben nur org_admin.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Nur fuer die Leitung' });
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben?typ=teamer')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('ein Admin sieht nur Ausgaben SEINER Jahrgaenge', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Jahrgang 1' });
+
+      const admin2Token = generateToken('admin2');
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(a => a.titel)).not.toContain('Jahrgang 1');
+    });
+
+    it('Konfis kommen an die Ausgaben-Liste nicht heran', async () => {
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('die Leitung sieht die mehreren Ausgaben im Profil eines Konfis', async () => {
+      // Simon (03.09.2026): "Auch der Admin soll die mehreren im Profil von
+      // Konfis und Teamern sehen koennen."
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Dein erstes Jahr' });
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Dein Abschluss' });
+
+      const res = await request(app)
+        .get(`/api/wrapped/history/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      const titel = res.body.map(r => r.titel);
+      expect(titel).toContain('Dein Abschluss');
+    });
+
+    it('history bleibt ein Array mit den bisherigen Feldern (Alt-App-Vertrag)', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const res = await request(app)
+        .get(`/api/wrapped/history/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      // Die Felder, auf die ausgelieferte App-Versionen zugreifen.
+      for (const feld of ['id', 'wrapped_type', 'year', 'data', 'computed_at']) {
+        expect(res.body[0]).toHaveProperty(feld);
+      }
+    });
+
+    it('ein Konfi sieht seine eigenen Ausgaben mit Titel', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Zwischenstand Januar' });
+
+      const res = await request(app)
+        .get('/api/wrapped/meine')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(r => r.titel)).toContain('Zwischenstand Januar');
+    });
+
+    it('eine einzelne Ausgabe laesst sich loeschen, ohne die anderen mitzunehmen', async () => {
+      // Simon: "Ich will auch alle Wrapped eines Zustandes loeschen koennen."
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Erster Stand' });
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Zweiter Stand' });
+
+      const liste = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const ersteId = liste.body.find(a => a.titel === 'Erster Stand').id;
+
+      const del = await request(app)
+        .delete(`/api/wrapped/ausgabe/${ersteId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(del.status).toBe(200);
+      expect(del.body.deleted).toBeGreaterThan(0);
+
+      const danach = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const titelDanach = danach.body.map(a => a.titel);
+      expect(titelDanach).not.toContain('Erster Stand');
+      expect(titelDanach).toContain('Zweiter Stand');
+    });
+
+    it('ein Konfi darf keine Ausgabe loeschen', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Nicht loeschbar' });
+      const liste = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const id = liste.body[0].id;
+
+      const res = await request(app)
+        .delete(`/api/wrapped/ausgabe/${id}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('eine Ausgabe fremder Organisation ist nicht loeschbar -> 404', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Org1' });
+      const liste = await request(app)
+        .get('/api/wrapped/ausgaben?typ=konfi')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const id = liste.body[0].id;
+
+      const res = await request(app)
+        .delete(`/api/wrapped/ausgabe/${id}`)
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('Ausgaben einer fremden Organisation sind unsichtbar', async () => {
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Org1 Ausgabe' });
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${orgAdmin2Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(a => a.titel)).not.toContain('Org1 Ausgabe');
     });
   });
 

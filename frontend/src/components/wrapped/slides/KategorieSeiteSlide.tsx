@@ -63,8 +63,22 @@ const KategorieSeiteSlide: React.FC<Props> = ({ isActive, kachel, anzahl, ausTer
   // Unbekannter Schluessel: lieber gar nichts zeigen als eine leere Seite.
   if (!text) return null;
 
+  // Eigene Farbklasse je Seite ('kategorie:fest' -> 'k-fest',
+  // 'datum:advent' -> 'd-advent'). Ohne sie liefen alle Seiten im selben
+  // Standard-Verlauf -- SlideBase liest den Verlauf aus dem CSS und legt ihn
+  // als Schleier ueber das Foto, Farbe und Bild gehoeren also zusammen.
+  const farbklasse = kachel.startsWith('datum:')
+    ? `d-${kachel.slice('datum:'.length)}`
+    : kachel.startsWith('kategorie:')
+      ? `k-${kachel.slice('kategorie:'.length)}`
+      : 'k-allgemein';
+
   return (
-    <SlideBase isActive={isActive} className="kategorie-seite-slide" kachel={kachel}>
+    <SlideBase
+      isActive={isActive}
+      className={`kategorie-seite-slide ${farbklasse}`}
+      kachel={kachel}
+    >
       <div className="w-label">{text.titel}</div>
       <div className="w-zahl">{anzahl}</div>
       <div className="w-text">{text.zeile(anzahl)}</div>

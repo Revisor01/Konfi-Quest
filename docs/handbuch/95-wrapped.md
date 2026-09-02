@@ -55,6 +55,59 @@ freigegeben“.
 > Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da,
 > nur hat niemand eine Benachrichtigung bekommen.
 
+## Mehrere Rückblicke pro Jahrgang: die Ausgaben
+
+Ein Konfi-Jahrgang läuft über zwei oder drei Jahre. Ein einziger Rückblick am
+Ende wird dem nicht gerecht — deshalb kannst du **mehrere Ausgaben** anlegen
+und jeder einen eigenen Namen geben:
+
+- „Dein erstes Jahr"
+- „Zwischenstand"
+- „Dein Abschluss"
+
+**So legst du eine an:** Du gibst den Rückblick frei wie bisher und vergibst
+dabei einen Titel. Lässt du das Feld leer, schlägt die App einen Namen aus dem
+Jahrgang vor — du musst also nichts eintippen.
+
+Jede Freigabe erzeugt eine **neue** Ausgabe. Die vorherige bleibt bestehen:
+Der Zwischenstand von Januar verschwindet nicht, wenn du im Mai den Abschluss
+freigibst. Die Konfis sehen beide, jeden unter seinem Namen.
+
+> Gibst du dieselbe Ausgabe erneut frei, werden ihre Zahlen **korrigiert**
+> statt gedoppelt. Das ist der Weg, wenn nachträglich Punkte dazugekommen
+> sind.
+
+### Eine einzelne Ausgabe löschen
+
+Du kannst eine Ausgabe gezielt entfernen, ohne die anderen anzurühren — etwa
+einen Zwischenstand, der nicht mehr gebraucht wird. Die Rückblicke aller
+Konfis dieser Ausgabe verschwinden mit ihr; die übrigen Ausgaben bleiben
+unberührt.
+
+War es die letzte freigegebene Ausgabe des Jahrgangs, steht in der
+Jahrgangsliste wieder „Wrapped nicht freigegeben".
+
+### Wer was darf
+
+| | Eigene Jahrgänge | Alle Jahrgänge | Teamer-Rückblicke |
+|---|---|---|---|
+| **Admin** | ja | nein | nein |
+| **Leitung (org_admin)** | ja | ja | ja |
+
+Ein Admin sieht und verwaltet also die Ausgaben **seiner** Jahrgänge. Die
+Leitung sieht alle Jahrgänge und ist zusätzlich die einzige Rolle, die
+Teamer-Rückblicke freigeben und löschen darf — die betreffen die ganze
+Gemeinde und hängen an keinem Jahrgang.
+
+### Im Profil der Konfis und Teamer:innen
+
+Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
+Rückblicke** mit Namen und Datum — auch die, die du noch nicht freigegeben
+hast. So kannst du hineinsehen, bevor du sie sichtbar machst, und bei
+Rückfragen nachvollziehen, was die Person selbst sieht.
+
+Die Person selbst sieht nur die **freigegebenen** Ausgaben.
+
 ### Was seit Version 2.1 dazugekommen ist
 
 **Der Rückblick ist persönlich geworden.** Gleich nach der Begrüßung steht eine
@@ -190,6 +243,52 @@ großen Lettern **„Dein Weg. Deine Zeit. Dein Glaube.“** und als Einladung
 „Werde Teamer:in — bleib dabei und gestalte das nächste Konfi-Jahr mit“. Immer
 die letzte Seite: Der Rückblick endet nicht mit einer Zahl, sondern mit einer
 Einladung.
+
+### Die Seiten zu den Bereichen
+
+Seit Version 2.1.1 zeigt der Rückblick, **worin** jemand unterwegs war. Für
+jede der Standardkategorien gibt es eine eigene Seite mit eigenem Bild und
+eigenem Text:
+
+Fest · Senior:innen · Jugend · Öffentlichkeitsarbeit · Freizeit · Weihnachten ·
+Konzert · Kinder · Kreativ · Seelsorge · Kasualien · Gottesdienst · Gemeinde
+
+Eine Seite erscheint nur, wenn die Person darin tatsächlich etwas getan hat.
+Wer nie bei einem Konzert war, bekommt keine Konzert-Seite mit einer Null
+darauf.
+
+**Gezählt werden Termine und Aktivitäten zusammen.** Beides trägt eine
+Kategorie; der Rückblick fasst sie in derselben Seite zusammen und nennt
+zusätzlich, wie viele davon Termine waren.
+
+> **Eigene Kategorien:** Habt ihr eine Kategorie selbst angelegt, die nicht in
+> der Liste oben steht, bekommt sie keine eigene Seite. Sie zählt aber auf der
+> allgemeinen Seite „Dein Schwerpunkt" mit — niemand geht leer aus. Wollt ihr
+> eine eigene Seite dafür, benennt die Kategorie wie eine der Standardnamen.
+
+### Seiten, die sich nach dem Datum richten
+
+Manche Seiten hängen **nicht** an der Kategorie, sondern am Datum des Termins:
+
+| Seite | Zeitraum |
+|---|---|
+| Advent | 1. Advent bis 23. Dezember |
+| Weihnachten | 24. bis 26. Dezember |
+| Jahreswechsel | 27. Dezember bis 6. Januar |
+| Passion und Ostern | Aschermittwoch bis Ostermontag |
+| Erntedank | erster Sonntag im Oktober |
+| Sommer | Juli und August |
+
+Das ist Absicht: Ein Gottesdienst am 24. Dezember ist Heiligabend, ganz gleich
+ob eure Kategorie „Gottesdienst", „Advent" oder „Christvesper" heißt. Das
+Datum stimmt immer, der Name nicht unbedingt.
+
+Ostern und der 1. Advent wandern jedes Jahr — die App rechnet sie aus, du
+musst nichts pflegen.
+
+**Trifft beides zu**, gewinnt das Datum: Ein Termin am 24. Dezember erscheint
+auf der Weihnachtsseite, nicht zusätzlich auf der Gottesdienst-Seite. Niemand
+bekommt zwei Seiten über denselben Termin.
 
 ### Woher die Zahlen kommen
 

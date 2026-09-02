@@ -303,10 +303,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const markRoomAsRead = async () => {
     if (!room) return;
     try {
-      // BadgeContext macht optimistisches Update + API Call
-      badgeMarkRoomAsRead(room.id);
+      // ERST das Lesen beim Server verbuchen lassen, DANN die Zaehler holen.
+      //
+      // Befund 03.09.2026: Ohne das await lief refreshAllCounts() gegen den
+      // Stand VOR dem Lesen und schrieb den alten Zaehler zurueck --
+      // setChatUnreadTotal setzt hart auf den Serverwert. Der Badge kam
+      // dadurch sofort wieder, egal wie oft man den Raum oeffnete.
+      await badgeMarkRoomAsRead(room.id);
 
-      // Badge Context neu laden für genaue Counts
+      // Jetzt stimmen die Zahlen auf dem Server, das Nachladen bestaetigt sie.
       await refreshAllCounts();
 
     } catch (err) {

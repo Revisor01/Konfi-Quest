@@ -1074,3 +1074,52 @@ ion-modal.wrapped-modal-fullscreen {
 .wrapped-bildplatz-reihe--eins .wrapped-bildplatz { aspect-ratio: 4 / 3; }
 .wrapped-bildplatz-reihe--zwei .wrapped-bildplatz { aspect-ratio: 3 / 4; }
 .wrapped-bildplatz-reihe .wrapped-bildplatz { aspect-ratio: 1 / 1; }
+
+/* ========================================
+   Farbverlaeufe der Kategorie- und Datums-Seiten
+
+   Muster aus Simons Entwurf uebernommen: dreistufiger 135-Grad-Verlauf
+   (0% / 55% / 100%), wie in den acht Artboards. Die Farbwahl folgt dem
+   Anlass -- Kasualien ruhig und dunkel, Fest und Konzert warm und laut.
+
+   WARUM JE SEITE EIGENE FARBEN: Ohne sie liefen alle 20 neuen Seiten im
+   selben Standard-Verlauf und der Rueckblick saehe monoton aus. SlideBase
+   liest den Verlauf aus dem CSS und legt ihn als Schleier ueber die Fotos
+   -- Farbe und Bild gehoeren damit zusammen.
+   ======================================== */
+
+.kategorie-seite-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 32px;
+  /* Standard, falls eine Seite keinen eigenen Verlauf hat. */
+  background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a78bfa 100%);
+}
+
+/* --- Kategorien --- */
+.kategorie-seite-slide.k-fest            { background-image: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%); }
+.kategorie-seite-slide.k-senioren        { background-image: linear-gradient(135deg, #0ea5e9 0%, #0284c7 55%, #075985 100%); }
+.kategorie-seite-slide.k-jugend          { background-image: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #9f1239 100%); }
+.kategorie-seite-slide.k-oeffentlichkeit { background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); }
+.kategorie-seite-slide.k-freizeit        { background-image: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); }
+.kategorie-seite-slide.k-weihnachten     { background-image: linear-gradient(135deg, #b91c1c 0%, #991b1b 55%, #7f1d1d 100%); }
+.kategorie-seite-slide.k-konzert         { background-image: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); }
+.kategorie-seite-slide.k-kinder          { background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%); }
+.kategorie-seite-slide.k-kreativ         { background-image: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #9d174d 100%); }
+.kategorie-seite-slide.k-seelsorge       { background-image: linear-gradient(135deg, #64748b 0%, #475569 55%, #334155 100%); }
+/* Kasualien bewusst ruhig und dunkel: Taufe, Trauung, Abschied sind kein
+   Anlass fuer laute Farben. */
+.kategorie-seite-slide.k-kasualien       { background-image: linear-gradient(135deg, #475569 0%, #334155 55%, #1e293b 100%); }
+.kategorie-seite-slide.k-gottesdienst    { background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%); }
+.kategorie-seite-slide.k-gemeinde        { background-image: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%); }
+
+/* --- Datums-Seiten --- */
+.kategorie-seite-slide.d-weihnachten     { background-image: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #450a0a 100%); }
+.kategorie-seite-slide.d-advent          { background-image: linear-gradient(135deg, #5b21b6 0%, #4c1d95 55%, #2e1065 100%); }
+.kategorie-seite-slide.d-jahreswechsel   { background-image: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #172554 100%); }
+.kategorie-seite-slide.d-ostern          { background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #b45309 100%); }
+.kategorie-seite-slide.d-erntedank       { background-image: linear-gradient(135deg, #ca8a04 0%, #a16207 55%, #713f12 100%); }
+.kategorie-seite-slide.d-sommer          { background-image: linear-gradient(135deg, #06b6d4 0%, #0891b2 55%, #155e75 100%); }

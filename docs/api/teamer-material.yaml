@@ -1613,10 +1613,118 @@ paths:
           Die Teamer-Auswahl filtert nicht auf deleted_at (anders als die
           Konfi-Variante). Geloeschte Teamer:innen bekaemen also weiterhin
           einen Snapshot, sofern die Zeile noch existiert.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                titel:
+                  type: string
+                  maxLength: 120
+                  description: >
+                    Name der Ausgabe (seit 03.09.2026). Ohne Angabe entsteht
+                    ein Vorschlag aus dem Jahr.
       responses:
-        "200": { description: "message, generated (Anzahl), errors (Anzahl), year" }
+        "200": { description: "message, generated (Anzahl), errors (Anzahl), year, ausgabe_id, titel" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/ausgaben:
+    get:
+      tags: ["Wrapped"]
+      summary: Rueckblick-Ausgaben der Organisation auflisten
+      description: >
+        Seit 03.09.2026 (Migration 143/144). Ein Jahrgang laeuft ueber
+        mehrere Jahre und braucht mehrere Rueckblicke - "Dein erstes Jahr",
+        "Zwischenstand", "Dein Abschluss". Jede Freigabe erzeugt eine eigene
+        AUSGABE mit frei waehlbarem Titel; die vorherige bleibt bestehen.
+
+        Angelegt werden Ausgaben ueber die bestehenden Routen
+        POST /api/wrapped/generate/{jahrgangId} und
+        POST /api/wrapped/generate-teamer (beide nehmen optional `titel`
+        entgegen). Diese Route listet sie nur - es gibt bewusst keine eigene
+        Anlege-Route, weil das Anlegen derselbe Vorgang wie das Erzeugen ist.
+      parameters:
+        - name: typ
+          in: query
+          required: false
+          schema: { type: string, enum: [konfi, teamer] }
+      x-berechtigung:
+        rollen: [admin, org_admin, super_admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: >
+          Admin sieht nur Ausgaben von Jahrgaengen mit eigener Zuweisung
+          (user_jahrgang_assignments). org_admin und super_admin sehen alle
+          Jahrgaenge. Teamer-Ausgaben sind organisationsweit und deshalb NUR
+          fuer org_admin/super_admin sichtbar - dieselbe Grenze wie beim
+          Erzeugen.
+      responses:
+        "200": { description: "Array: id, typ, jahrgang_id, jahrgang_name, titel, zeitraum_start, zeitraum_ende, freigegeben, freigegeben_at, snapshots, created_at" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/ausgabe/{id}:
+    delete:
+      tags: ["Wrapped"]
+      summary: Eine einzelne Rueckblick-Ausgabe samt ihrer Snapshots loeschen
+      description: >
+        Seit 03.09.2026. Die bestehenden Loeschwege raeumen pauschal auf
+        (DELETE /api/wrapped/{jahrgangId} alles eines Jahrgangs, DELETE
+        /api/wrapped/teamer alle Teamer-Snapshots). Mit mehreren Ausgaben je
+        Jahrgang braucht es den gezielten Weg - sonst nimmt das Loeschen eines
+        Zwischenstands den Abschluss mit.
+
+        Die Snapshots haengen per ON DELETE CASCADE an der Ausgabe und
+        verschwinden mit ihr. War es die letzte freigegebene Konfi-Ausgabe des
+        Jahrgangs, wird jahrgaenge.wrapped_released_at auf NULL
+        zurueckgesetzt - sonst zeigten alte App-Versionen weiter einen
+        Rueckblick an, den es nicht mehr gibt.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      x-berechtigung:
+        rollen: [admin, org_admin, super_admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: >
+          Ausgabe muss zur aktiven Org gehoeren (sonst 404). Teamer-Ausgaben
+          nur org_admin/super_admin (sonst 403). Konfi-Ausgaben: Admin
+          braucht eine Zuweisung auf den Jahrgang (sonst 403).
+      responses:
+        "200": { description: "message, deleted (Anzahl geloeschter Rueckblicke)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Ausgabe nicht gefunden oder fremde Organisation" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/meine:
+    get:
+      tags: ["Wrapped"]
+      summary: Alle eigenen Rueckblicke mit Titel
+      description: >
+        Seit 03.09.2026. GET /api/wrapped/me liefert nur den NEUESTEN
+        Rueckblick - bei mehreren Ausgaben ("Dein erstes Jahr",
+        "Zwischenstand", "Dein Abschluss") saehe eine Konfi die aelteren sonst
+        nie. Diese Route listet alle.
+
+        Zeigt ausschliesslich FREIGEGEBENE Ausgaben. Was die Leitung noch
+        nicht freigegeben hat, bleibt unsichtbar - die Leitung selbst sieht
+        auch unfreigegebene ueber GET /api/wrapped/history/{userId}.
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin, super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Snapshots (user_id = req.user.id)"
+      responses:
+        "200": { description: "Array: snapshot_id, ausgabe_id, titel, year, zeitraum_start, zeitraum_ende, computed_at" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/wrapped/teamer:

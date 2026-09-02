@@ -30,7 +30,12 @@ interface BadgeContextType {
   totalBadgeCount: number;
   // Actions
   refreshAllCounts: () => Promise<void>;
-  markRoomAsRead: (roomId: number) => void;
+  /**
+   * Meldet einen Raum als gelesen. Das Promise wird erfuellt, wenn der
+   * Server den Lesevorgang verbucht hat -- WER DANACH ZAEHLER NEU LAEDT,
+   * MUSS DARAUF WARTEN. Sonst liest er den Stand von vor dem Lesen.
+   */
+  markRoomAsRead: (roomId: number) => Promise<void>;
   // Legacy Alias (Abwaertskompatibilitaet)
   badgeCount: number;
   refreshFromAPI: () => Promise<void>;
@@ -125,7 +130,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   }, [user, isAdmin, isLeadership]);
 
   // markRoomAsRead: Optimistisch + API Call
-  const markRoomAsRead = useCallback((roomId: number) => {
+  const markRoomAsRead = useCallback(async (roomId: number): Promise<void> => {
     // Zugestellte Chat-Notifications dieses Raums aus dem Mitteilungszentrum
     // entfernen (Bereich wurde geoeffnet/gelesen). Fire-and-forget.
     removeDeliveredForChatRoom(roomId);
@@ -163,7 +168,18 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       });
       return;
     }
-    api.post(`/chat/rooms/${roomId}/mark-read`)
+    // AWAIT, NICHT FIRE-AND-FORGET (Befund 03.09.2026).
+    //
+    // Simon: "Ich gehe in den Chats, Badge wird nie geloescht." Der Grund war
+    // ein Wettlauf, den der Fix vom 02.09.2026 nicht erfasst hat:
+    // ChatRoom.markRoomAsRead() rief diese Funktion und direkt danach
+    // refreshAllCounts(). Weil der POST hier nur angestossen und nicht
+    // abgewartet wurde, fragte refreshAllCounts die Zaehler ab, BEVOR der
+    // Server das Lesen verbucht hatte. Es bekam den alten Stand zurueck --
+    // und setChatUnreadTotal setzt HART auf den Serverwert, nicht relativ.
+    // Die optimistische Null wurde also zuverlaessig wieder ueberschrieben.
+    // Sichtbar als: Badge blinkt kurz weg und ist sofort wieder da.
+    await api.post(`/chat/rooms/${roomId}/mark-read`)
       .then(() => {
         // Den zwischengespeicherten Raum-Stand verwerfen.
         //

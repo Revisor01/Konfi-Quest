@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { param, query } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { waehleKacheln } = require('../utils/wrappedKacheln');
@@ -905,16 +905,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Parallele Hilfsfunktion: Generiert und speichert einen Konfi-Snapshot.
    * Holt eigenen DB-Client aus dem Pool (kein geteilter Client für parallele Queries).
    */
-  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year) {
+  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year, ausgabeId = null) {
     const konfiClient = await dbRef.getClient();
     try {
       const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year);
+      // Der Schluessel schliesst seit Migration 144 die AUSGABE ein: Je
+      // Ausgabe ein Snapshot pro Person. Innerhalb einer Ausgabe bleibt der
+      // Lauf idempotent (Korrektur ueberschreibt), zwei Ausgaben stehen
+      // nebeneinander -- vorher ueberschrieb "Dein Abschluss" still "Dein
+      // erstes Jahr".
       await konfiClient.query(
-        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
-         VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
-         ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, ausgabe_id, data, computed_at)
+         VALUES ($1, $2, 'konfi', $3, $4, $5, $6, NOW())
+         ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0), COALESCE(ausgabe_id, 0))
          DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
-        [userId, orgId, jahrgangId, year, JSON.stringify(snapshot)]
+        [userId, orgId, jahrgangId, year, ausgabeId, JSON.stringify(snapshot)]
       );
       return { userId, ok: true };
     } catch (err) {
@@ -936,10 +941,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const wrappedType = (roleName === 'teamer') ? 'teamer' : 'konfi';
       const currentYear = new Date().getFullYear();
 
+      // Den zuletzt FREIGEGEBENEN Rueckblick holen -- samt Titel seiner
+      // Ausgabe. Der Titel ist neu (Simon, 03.09.2026: "Damit man etwa auch
+      // einen Zwischenstand mit Titel machen kann. Und das muss dann auch
+      // entsprechend bei Konfis und Teamern angezeigt werden.").
+      //
+      // Alt-Snapshots haben keine ausgabe_id -- fuer sie bleibt titel null
+      // und die App zeigt wie bisher ihre eigene Ueberschrift.
       const { rows } = await db.query(
-        `SELECT data, computed_at, year FROM wrapped_snapshots
-         WHERE user_id = $1 AND wrapped_type = $2
-         ORDER BY year DESC LIMIT 1`,
+        `SELECT s.data, s.computed_at, s.year,
+                a.id AS ausgabe_id, a.titel, a.freigegeben_at
+           FROM wrapped_snapshots s
+           LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+          WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
+          ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC, s.year DESC
+          LIMIT 1`,
         [req.user.id, wrappedType]
       );
 
@@ -974,7 +991,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         data: rows[0].data,
         computed_at: rows[0].computed_at,
         year: rows[0].year,
-        wrapped_type: wrappedType
+        wrapped_type: wrappedType,
+        // Additiv -- alte Apps ignorieren die Felder und zeigen wie bisher.
+        ausgabe_id: rows[0].ausgabe_id || null,
+        titel: rows[0].titel || null
       });
     } catch (err) {
       console.error('Error loading wrapped snapshot:', err);
@@ -983,10 +1003,27 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /generate/:jahrgangId - Konfi-Snapshots für alle Konfis eines Jahrgangs generieren
+  // Erzeugt (und gibt frei) den Rueckblick eines Jahrgangs.
+  //
+  // AUSGABEN (Migration 143, Simons Vorgabe 02.09.2026): Ein Jahrgang laeuft
+  // ueber mehrere Jahre und braucht mehrere Rueckblicke -- "Dein erstes
+  // Jahr", "Zwischenstand", "Dein Abschluss". Diese Route legt deshalb bei
+  // jedem Lauf eine AUSGABE an, statt einen einzigen Stand pro Jahrgang zu
+  // ueberschreiben.
+  //
+  // BEWUSST KEINE ZWEITE ROUTE: Das Anlegen einer Ausgabe ist derselbe
+  // Vorgang wie das Erzeugen des Rueckblicks -- eine eigene Route waere ein
+  // zweiter Weg zum selben Ziel und liefe irgendwann auseinander.
+  //
+  // Der Titel ist optional. Ohne ihn entsteht ein Vorschlag aus dem
+  // Jahrgangsnamen, damit niemand etwas eingeben MUSS.
   router.post('/generate/:jahrgangId',
     rbacVerifier,
     requireAdmin,
     param('jahrgangId').isInt({ min: 1 }),
+    body('titel').optional({ nullable: true }).isString().trim().isLength({ min: 1, max: 120 }),
+    body('zeitraum_start').optional({ nullable: true }).isISO8601(),
+    body('zeitraum_ende').optional({ nullable: true }).isISO8601(),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
@@ -1037,6 +1074,37 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Alles in EINE Transaktion zu ziehen hiesse, die parallele
         // Generierung aufzugeben (ein Client, seriell) -- teurer Umbau fuer
         // einen Fall, der keine falschen Daten erzeugt.
+        // Die AUSGABE zuerst und AUSSERHALB der Transaktion.
+        //
+        // Zwei Gruende, beide gemessen:
+        // 1. Die Snapshots brauchen ihre id als Teil des Schluessels
+        //    (Migration 144) -- ohne sie ueberschreibt der zweite Lauf den
+        //    ersten still.
+        // 2. Die Snapshot-Generierung laeuft ueber EIGENE Pool-Clients
+        //    (generateAndSaveKonfiSnapshot, parallel). Steckte die Ausgabe
+        //    in dieser Transaktion, saehen die anderen Verbindungen sie
+        //    nicht -- der Fremdschluessel schlug fehl:
+        //    "violates foreign key constraint wrapped_snapshots_ausgabe_id_fkey".
+        //
+        // Bleibt der Lauf danach stecken, steht eine leere Ausgabe herum.
+        // Das ist die harmlosere Seite: Sie ist sichtbar und loeschbar
+        // (DELETE /wrapped/ausgabe/:id), waehrend ein Fremdschluesselfehler
+        // gar keine Snapshots erzeugt haette.
+        const titel = (req.body?.titel || '').trim()
+          || `Rueckblick ${jahrgang.name || currentYear}`;
+        const { rows: [ausgabe] } = await client.query(
+          `INSERT INTO wrapped_ausgaben
+             (organization_id, wrapped_type, jahrgang_id, titel,
+              zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von,
+              erstellt_von)
+           VALUES ($1, 'konfi', $2, $3, $4::date, $5::date, NOW(), $6, $6)
+           RETURNING id, titel`,
+          [req.user.organization_id, jahrgangId, titel,
+           req.body?.zeitraum_start || `${currentYear - 1}-09-01`,
+           req.body?.zeitraum_ende || `${currentYear}-08-31`,
+           req.user.id]
+        );
+
         await client.query('BEGIN');
 
         // Alle Konfis des Jahrgangs laden
@@ -1050,12 +1118,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
         const results = await Promise.allSettled(
-          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear))
+          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id))
         );
         const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
         const errors = results.length - generated;
 
-        // wrapped_released_at setzen (auch bei erneutem Generieren)
+        // ALT-APP-VERTRAG: wrapped_released_at bleibt gesetzt. Ausgelieferte
+        // App-Versionen lesen diese Spalte ueber das Konfi-Dashboard --
+        // verschwaende sie, braeche der Rueckblick auf den Geraeten.
         await client.query(
           `UPDATE jahrgaenge SET wrapped_released_at = NOW() WHERE id = $1`,
           [jahrgangId]
@@ -1094,9 +1164,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   );
 
   // POST /generate-teamer - Teamer-Snapshots für alle Teamer der Organisation generieren
+  // Erzeugt und GIBT FREI: die Teamer-Ausgabe.
+  //
+  // Auch hier eine Ausgabe je Lauf (Simons Vorgabe: mehrfach freigeben,
+  // frei benennen). Rechte bewusst enger als bei den Konfis: nur org_admin,
+  // weil eine Teamer-Ausgabe die ganze Organisation betrifft und nicht an
+  // einem Jahrgang haengt.
   router.post('/generate-teamer',
     rbacVerifier,
     requireOrgAdmin,
+    body('titel').optional({ nullable: true }).isString().trim().isLength({ min: 1, max: 120 }),
+    handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
       try {
@@ -1112,6 +1190,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [req.user.organization_id]
         );
 
+        // Die Ausgabe zuerst -- ihre id gehoert seit Migration 144 zum
+        // Schluessel der Snapshots. Sonst ueberschreibt jeder Lauf den
+        // vorigen (derselbe Fehler wie bei den Konfis).
+        const teamerTitel = (req.body?.titel || '').trim()
+          || `Teamer-Rueckblick ${currentYear}`;
+        const { rows: [teamerAusgabe] } = await client.query(
+          `INSERT INTO wrapped_ausgaben
+             (organization_id, wrapped_type, jahrgang_id, titel,
+              zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von,
+              erstellt_von)
+           VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)
+           RETURNING id, titel`,
+          [req.user.organization_id, teamerTitel,
+           `${currentYear - 1}-09-01`, `${currentYear}-08-31`, req.user.id]
+        );
+
         let generated = 0;
         let errors = 0;
 
@@ -1120,11 +1214,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear);
 
             await client.query(
-              `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
-               VALUES ($1, $2, 'teamer', $3, $4, NOW())
-               ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
+              `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, ausgabe_id, data, computed_at)
+               VALUES ($1, $2, 'teamer', $3, $4, $5, NOW())
+               ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0), COALESCE(ausgabe_id, 0))
                DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
-              [teamer.user_id, req.user.organization_id, currentYear, JSON.stringify(snapshot)]
+              [teamer.user_id, req.user.organization_id, currentYear, teamerAusgabe.id, JSON.stringify(snapshot)]
             );
             generated++;
           } catch (err) {
@@ -1147,7 +1241,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           message: `Wrapped f\u00fcr ${generated} Teamer:innen generiert`,
           generated,
           errors,
-          year: currentYear
+          year: currentYear,
+          // Additiv: alte Clients ignorieren die Felder.
+          ausgabe_id: teamerAusgabe.id,
+          titel: teamerAusgabe.titel
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -1155,6 +1252,184 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.status(500).json({ error: 'Fehler beim Generieren der Teamer-Wrapped-Snapshots' });
       } finally {
         client.release();
+      }
+    }
+  );
+
+  // GET /meine - alle eigenen Rueckblicke, mit Titel.
+  //
+  // Simon (03.09.2026): "Volle Flexibilitaet fuer Wrapped ... und das muss
+  // dann auch entsprechend bei Konfis und Teamern angezeigt werden."
+  // GET /me liefert nur den NEUESTEN -- bei mehreren Ausgaben ("Dein erstes
+  // Jahr", "Zwischenstand", "Dein Abschluss") saehe eine Konfi die aelteren
+  // sonst nie. Diese Route listet sie alle.
+  //
+  // Zeigt ausschliesslich FREIGEGEBENE Ausgaben: Was die Leitung noch nicht
+  // freigegeben hat, bleibt unsichtbar.
+  router.get('/meine', rbacVerifier, async (req, res) => {
+    try {
+      const wrappedType = (req.user.role_name === 'teamer') ? 'teamer' : 'konfi';
+      const { rows } = await db.query(
+        `SELECT s.id, s.year, s.computed_at,
+                a.id AS ausgabe_id, a.titel, a.freigegeben_at,
+                a.zeitraum_start, a.zeitraum_ende
+           FROM wrapped_snapshots s
+           LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+          WHERE s.user_id = $1 AND s.wrapped_type = $2
+            AND (a.id IS NULL OR a.freigegeben_at IS NOT NULL)
+          ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC`,
+        [req.user.id, wrappedType]
+      );
+      res.json(rows.map(r => ({
+        snapshot_id: r.id,
+        ausgabe_id: r.ausgabe_id,
+        titel: r.titel || `Dein Rueckblick ${r.year}`,
+        year: r.year,
+        zeitraum_start: r.zeitraum_start,
+        zeitraum_ende: r.zeitraum_ende,
+        computed_at: r.computed_at
+      })));
+    } catch (err) {
+      console.error('Error loading own wrapped list:', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Rueckblicke' });
+    }
+  });
+
+  // DELETE /ausgabe/:id - eine EINZELNE Ausgabe samt ihrer Snapshots.
+  //
+  // Simon (03.09.2026): "Ich will auch alle Wrapped eines Zustandes loeschen
+  // koennen." Die bestehenden Loeschwege raeumen pauschal auf (alles eines
+  // Jahrgangs bzw. alle Teamer-Snapshots) -- mit mehreren Ausgaben je
+  // Jahrgang braucht es den gezielten Weg, sonst nimmt das Loeschen eines
+  // Zwischenstands den Abschluss mit.
+  //
+  // Die Snapshots haengen per ON DELETE CASCADE an der Ausgabe (Migration
+  // 143) und verschwinden mit.
+  router.delete('/ausgabe/:id',
+    rbacVerifier,
+    requireAdmin,
+    param('id').isInt({ min: 1 }),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id, 10);
+        const istOrgAdmin = ['org_admin', 'super_admin'].includes(req.user.role_name);
+
+        const { rows: [ausgabe] } = await db.query(
+          `SELECT id, wrapped_type, jahrgang_id FROM wrapped_ausgaben
+            WHERE id = $1 AND organization_id = $2`,
+          [id, req.user.organization_id]
+        );
+        if (!ausgabe) {
+          return res.status(404).json({ error: 'Ausgabe nicht gefunden' });
+        }
+
+        // Dieselbe Rechte-Grenze wie beim Anlegen und Anzeigen:
+        // Teamer-Ausgaben nur org_admin, Konfi-Ausgaben nur eigene Jahrgaenge.
+        if (ausgabe.wrapped_type === 'teamer' && !istOrgAdmin) {
+          return res.status(403).json({ error: 'Nur die Leitung darf Teamer-Ausgaben loeschen' });
+        }
+        if (ausgabe.wrapped_type === 'konfi' && !istOrgAdmin) {
+          const { rows: [zugriff] } = await db.query(
+            `SELECT 1 FROM user_jahrgang_assignments
+              WHERE user_id = $1 AND jahrgang_id = $2`,
+            [req.user.id, ausgabe.jahrgang_id]
+          );
+          if (!zugriff) {
+            return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+          }
+        }
+
+        const { rows: [{ anzahl }] } = await db.query(
+          `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE ausgabe_id = $1`,
+          [id]
+        );
+        await db.query(`DELETE FROM wrapped_ausgaben WHERE id = $1`, [id]);
+
+        // Die Alt-Marke am Jahrgang nachziehen: Bleibt keine freigegebene
+        // Konfi-Ausgabe uebrig, darf auch wrapped_released_at nicht stehen
+        // bleiben -- sonst zeigte das Dashboard alter App-Versionen weiter
+        // einen Rueckblick an, den es nicht mehr gibt.
+        if (ausgabe.wrapped_type === 'konfi' && ausgabe.jahrgang_id) {
+          await db.query(
+            `UPDATE jahrgaenge SET wrapped_released_at = NULL
+              WHERE id = $1 AND NOT EXISTS (
+                SELECT 1 FROM wrapped_ausgaben
+                 WHERE jahrgang_id = $1 AND freigegeben_at IS NOT NULL)`,
+            [ausgabe.jahrgang_id]
+          );
+        }
+
+        res.json({ message: `Ausgabe geloescht (${anzahl} Rueckblicke)`, deleted: anzahl });
+      } catch (err) {
+        console.error('Error deleting wrapped ausgabe:', err);
+        res.status(500).json({ error: 'Fehler beim Loeschen der Ausgabe' });
+      }
+    }
+  );
+
+  // GET /ausgaben - die Rueckblick-Ausgaben der Organisation.
+  //
+  // DIE EINZIGE WIRKLICH NEUE ROUTE (Simon, 03.09.2026: "Routen die wir
+  // brauchen sollst du bauen, aber nicht was Neues einfuehren, wenn wir es
+  // schon woanders haben"). Geprueft: Es gibt keinen bestehenden Ort dafuer.
+  // GET /history/:userId liefert die Rueckblicke EINER PERSON, nicht die
+  // Ausgaben der Gemeinde -- das Anlegen und Freigeben laeuft dagegen ueber
+  // die bestehenden generate-Routen, die dafuer nur erweitert wurden.
+  //
+  // RECHTE (Simons Entscheidung): Ein Admin sieht nur Ausgaben SEINER
+  // Jahrgaenge, org_admin und super_admin sehen alle. Teamer-Ausgaben sind
+  // organisationsweit und deshalb nur fuer org_admin sichtbar -- dieselbe
+  // Grenze wie beim Erzeugen.
+  router.get('/ausgaben',
+    rbacVerifier,
+    requireAdmin,
+    query('typ').optional().isIn(['konfi', 'teamer']),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const istOrgAdmin = ['org_admin', 'super_admin'].includes(req.user.role_name);
+        const typ = req.query.typ || null;
+
+        const { rows } = await db.query(
+          `SELECT a.id, a.wrapped_type, a.jahrgang_id, j.name AS jahrgang_name,
+                  a.titel, a.zeitraum_start, a.zeitraum_ende,
+                  a.freigegeben_at, a.created_at,
+                  COUNT(s.id)::int AS snapshots
+             FROM wrapped_ausgaben a
+             LEFT JOIN jahrgaenge j ON j.id = a.jahrgang_id
+             LEFT JOIN wrapped_snapshots s ON s.ausgabe_id = a.id
+            WHERE a.organization_id = $1
+              AND ($2::text IS NULL OR a.wrapped_type = $2::text)
+              AND (
+                -- Teamer-Ausgaben nur fuer org_admin.
+                (a.wrapped_type = 'teamer' AND $3::boolean)
+                -- Konfi-Ausgaben: org_admin alle, Admin nur eigene Jahrgaenge.
+                OR (a.wrapped_type = 'konfi' AND ($3::boolean OR EXISTS (
+                      SELECT 1 FROM user_jahrgang_assignments uja
+                       WHERE uja.user_id = $4 AND uja.jahrgang_id = a.jahrgang_id)))
+              )
+            GROUP BY a.id, j.name
+            ORDER BY a.created_at DESC`,
+          [req.user.organization_id, typ, istOrgAdmin, req.user.id]
+        );
+
+        res.json(rows.map(r => ({
+          id: r.id,
+          typ: r.wrapped_type,
+          jahrgang_id: r.jahrgang_id,
+          jahrgang_name: r.jahrgang_name,
+          titel: r.titel,
+          zeitraum_start: r.zeitraum_start,
+          zeitraum_ende: r.zeitraum_ende,
+          freigegeben: r.freigegeben_at !== null,
+          freigegeben_at: r.freigegeben_at,
+          snapshots: r.snapshots,
+          created_at: r.created_at
+        })));
+      } catch (err) {
+        console.error('Error listing wrapped ausgaben:', err);
+        res.status(500).json({ error: 'Fehler beim Laden der Rueckblick-Ausgaben' });
       }
     }
   );
@@ -1292,11 +1567,35 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           }
         }
 
+        // MIT AUSGABE-TITEL (Simon, 03.09.2026: "Auch der Admin soll die
+        // mehreren im Profil von Konfis und Teamern sehen koennen").
+        //
+        // Die Route liefert schon immer ALLE Snapshots einer Person -- mit
+        // mehreren Ausgaben je Jahrgang waren die aber nicht mehr
+        // auseinanderzuhalten: "2026" stand dann dreimal da. Der Titel macht
+        // sie unterscheidbar ("Dein erstes Jahr", "Zwischenstand").
+        //
+        // Die Leitung sieht hier bewusst AUCH nicht freigegebene Ausgaben --
+        // sie muss vor dem Freigeben hineinsehen koennen. Fuer die Person
+        // selbst filtert GET /meine auf freigegeben.
+        //
+        // Rechte bleiben unveraendert (Pruefung oben): Admin nur eigene
+        // Jahrgaenge, Teamer:innen frei, org_admin alles.
+        //
+        // ANTWORTFORM: weiterhin ein ARRAY mit denselben Feldern, nur zwei
+        // additive dazu. Die ausgelieferte Leitungsansicht ruft .map()
+        // darauf -- eine Umstellung auf ein Objekt haette sie zerlegt
+        // (dieselbe Fehlerklasse wie GET /teamer/badges am 29.08.2026).
         const { rows } = await db.query(
-          `SELECT id, wrapped_type, year, data, computed_at
-           FROM wrapped_snapshots
-           WHERE user_id = $1
-           ORDER BY year DESC, wrapped_type`,
+          `SELECT s.id, s.wrapped_type, s.year, s.data, s.computed_at,
+                  a.id AS ausgabe_id,
+                  COALESCE(a.titel, 'Rueckblick ' || s.year::text) AS titel,
+                  a.freigegeben_at
+             FROM wrapped_snapshots s
+             LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+            WHERE s.user_id = $1
+            ORDER BY COALESCE(a.freigegeben_at, s.computed_at) DESC,
+                     s.year DESC, s.wrapped_type`,
           [targetUserId]
         );
 
@@ -1386,7 +1685,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           await client.query(
             `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
              VALUES ($1, $2, 'teamer', $3, $4, NOW())
-             ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0))
+             ON CONFLICT (user_id, wrapped_type, year, COALESCE(jahrgang_id, 0), COALESCE(ausgabe_id, 0))
              DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
             [teamer.user_id, orgId, year, JSON.stringify(snapshot)]
           );
