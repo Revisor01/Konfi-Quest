@@ -5,7 +5,19 @@ nachgemessen wurde — damit die nächste Sitzung nicht bei null anfängt.
 
 ---
 
-## 1. Chat: Ungelesen-Markierung verschwindet nicht (02.09.2026)
+## 1. Chat: Ungelesen-Markierung verschwindet nicht (02.09.2026) — BEHOBEN
+
+> **Behoben am 02.09.2026.** Zwei Fehler in
+> `BadgeContext.markRoomAsRead`, beide im Frontend:
+>
+> 1. Der Cache der Raumliste (`chat:rooms:<userId>`) wurde nach dem Lesen nie
+>    verworfen. Beim nächsten App-Start kam das alte `unread_count` zurück und
+>    erzeugte erneut Badge und roten Trenner.
+> 2. `setChatUnreadTotal` las den abzuziehenden Wert aus der Closure statt aus
+>    dem aktuellen Zustand — deshalb blieb der Badge auch live stehen.
+>
+> Fünf Tests halten beides fest. Der Befund unten bleibt als Beschreibung
+> stehen, damit die Messung nachvollziehbar ist.
 
 **Simons Beobachtung**, in Organisation 4 (Review-Gemeinde) reproduzierbar:
 

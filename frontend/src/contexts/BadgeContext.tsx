@@ -7,6 +7,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { initializeWebSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { removeDeliveredForChatRoom } from '../services/notifications';
+import { offlineCache } from '../services/offlineCache';
 import { useApp } from './AppContext';
 import { useLiveRefresh, useLiveUpdate, LiveUpdateType } from './LiveUpdateContext';
 
@@ -129,15 +130,27 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     // entfernen (Bereich wurde geoeffnet/gelesen). Fire-and-forget.
     removeDeliveredForChatRoom(roomId);
 
+    // Beide Zaehler aus DERSELBEN Quelle bedienen.
+    //
+    // Befund vom 02.09.2026 (Simon: "Warum wird der Badge-Count nicht
+    // geloescht, wenn ich live im System bin?"): setChatUnreadTotal las
+    // `chatUnreadByRoom[roomId]` aus der Closure -- also aus dem Stand, den
+    // die Funktion beim Erzeugen gesehen hat. Kommt eine Nachricht herein und
+    // der Chat wird sofort geoeffnet, ist dieser Wert veraltet (meist 0, weil
+    // der Raum vorher gelesen war). Die Gesamtzahl wurde dann um den falschen
+    // Betrag verringert -- und der Badge an der Tab-Leiste blieb stehen,
+    // obwohl der Raum selbst auf 0 sprang.
+    //
+    // Jetzt merkt sich der erste Setter den tatsaechlich abgezogenen Wert und
+    // der zweite rechnet damit. React fuehrt beide Updater nacheinander mit
+    // dem jeweils aktuellen Zustand aus, deshalb stimmt die Reihenfolge.
+    let abgezogen = 0;
     setChatUnreadByRoom(prev => {
-      const currentUnread = prev[roomId] || 0;
-      if (currentUnread === 0) return prev;
+      abgezogen = prev[roomId] || 0;
+      if (abgezogen === 0) return prev;
       return { ...prev, [roomId]: 0 };
     });
-    setChatUnreadTotal(prev => {
-      const currentUnread = chatUnreadByRoom[roomId] || 0;
-      return Math.max(0, prev - currentUnread);
-    });
+    setChatUnreadTotal(prev => Math.max(0, prev - abgezogen));
 
     // API Call im Hintergrund — offline: Queue-Fallback
     if (!networkMonitor.isOnline) {
@@ -150,10 +163,33 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       });
       return;
     }
-    api.post(`/chat/rooms/${roomId}/mark-read`).catch(err => {
-      console.error('BadgeContext: markRoomAsRead API fehlgeschlagen:', err);
-    });
-  }, [chatUnreadByRoom]);
+    api.post(`/chat/rooms/${roomId}/mark-read`)
+      .then(() => {
+        // Den zwischengespeicherten Raum-Stand verwerfen.
+        //
+        // Befund vom 02.09.2026 (Simon: "Mach ich aus und wieder an, ist sogar
+        // die rote Linie im Chat da" / "Auch der Badge-Count bleibt immer
+        // drin"): Die Chat-Uebersicht laedt ihre Raeume ueber useOfflineQuery
+        // aus dem Cache ('chat:rooms:<userId>'). Jeder Raum bringt dort sein
+        // unread_count MIT. Nach dem Lesen wurde dieser Cache nirgends
+        // aktualisiert -- beim naechsten App-Start kam der ALTE Stand zurueck,
+        // und daraus baute die Oberflaeche erneut Badge UND den roten
+        // "Neue Nachrichten"-Trenner auf (useChatSocket friert
+        // room.unread_count als initialUnreadRef ein).
+        //
+        // Die Datenbank war dabei die ganze Zeit richtig: Fuer Simons
+        // Jahrgangschat stand dort last_read_at von gestern und 0 ungelesen.
+        // Der Fehler lag allein im veralteten Zwischenspeicher.
+        //
+        // remove() statt set(): Der naechste Aufruf der Uebersicht holt die
+        // Raeume frisch vom Server, statt dass wir hier eine zweite Wahrheit
+        // pflegen, die wieder auseinanderlaufen kann.
+        if (user?.id) offlineCache.remove(`chat:rooms:${user.id}`);
+      })
+      .catch(err => {
+        console.error('BadgeContext: markRoomAsRead API fehlgeschlagen:', err);
+      });
+  }, [chatUnreadByRoom, user?.id]);
 
   // Sync Device Badge bei Änderung von totalBadgeCount.
   // Nur auf nativen Plattformen: im Desktop-Browser existiert navigator.setAppBadge/

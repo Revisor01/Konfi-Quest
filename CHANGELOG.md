@@ -285,6 +285,9 @@ Versionsüberschrift.
   den Store, das X blendet ihn dauerhaft aus.
 
 ### Behoben
+- Ein geöffneter Chat gilt jetzt zuverlässig als gelesen: Die Zahl am Chat
+  verschwindet sofort, und nach einem Neustart der App sind weder die Zahl
+  noch der rote Strich „Neue Nachrichten" wieder da.
 - Abzeichen zeigen wieder ihr eigenes Symbol. Rund 40 Prozent von ihnen
   erschienen überall als Pokal — im Jahresrückblick, in der Abzeichen-Liste
   und in der Verwaltung.
