@@ -10,6 +10,27 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Der Jahresrückblick erzählt jetzt eine Geschichte statt einer festen Liste:
+  Auftakt, Chat, Termine, die eigenen Schwerpunkte, Challenges, Punkte,
+  Abzeichen und Abschluss. Wie viele Seiten jemand sieht, hängt davon ab, was
+  er im Jahr getan hat — wer viel erlebt hat, bekommt mehr zu sehen; leere
+  Seiten mit einer Null darauf gibt es nicht.
+- Neue Seiten im Rückblick zeigen die eigenen Schwerpunkte: Fest, Freizeit,
+  Jugend, Kinder, Konzert, Kreativ, Seelsorge, Senior:innen,
+  Öffentlichkeitsarbeit, Weihnachten, Kasualien, Gottesdienst und Gemeinde.
+  Jede Seite hat ihr eigenes Bild und ihren eigenen Ton.
+- Besondere Zeiten im Kirchenjahr bekommen eigene Seiten — Advent,
+  Weihnachten, der Jahreswechsel, Passion und Ostern, Erntedank und der
+  Sommer. Sie richten sich nach dem Datum des Termins, nicht nach seinem
+  Namen: Ein Gottesdienst am 24. Dezember ist Heiligabend, ganz gleich wie
+  die Kategorie in der Gemeinde heißt.
+- Neue Gemeinden starten mit einem erweiterten Satz an Kategorien, der die
+  Arbeit vor Ort besser abbildet.
+
+### Geändert
+- Der Rückblick zeigt endlich die tatsächlichen Kategorien der Termine und
+  Aktivitäten. Bisher stand dort nur eine grobe Einteilung, weil die
+  Auswertung an der falschen Stelle nachsah.
 - Der Jahresrückblick ist jetzt persönlich: Direkt nach der Begrüßung zeigt
   eine eigene Seite, was diesen Konfi besonders macht — Chat-Star,
   Reaktions-Magnet, Challenge-Fan oder Fels in der Brandung (nie abgesagt).

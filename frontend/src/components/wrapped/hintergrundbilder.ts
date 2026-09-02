@@ -78,15 +78,44 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   verlaesslich: 'turm',
   'aktivster-monat': 'feld',
   kategorie: 'fenster',
+  'kategorie-allgemein': 'fenster',
   konfirmation: 'kerzen',
   zeitraum: 'weite',
   gottesdienst: 'kerzen',
   gemeinde: 'weg',
   'jahrgang-vergleich': 'watt',
+  challenges: 'luftschlangen',
 
-  // Bewusst OHNE Bild (die Zahl trägt die Seite):
+  // Die 14 Kategorie-Seiten (Simons Standardkategorien, 03.09.2026).
+  // Jede bekommt ein Motiv, das zum Anlass passt -- ohne Eintrag hier
+  // rendert die Seite nackt, ohne Fehler und ohne dass es jemandem
+  // auffaellt. Genau diese Art stiller Luecke soll es nicht mehr geben.
+  'kategorie:fest': 'konfetti',
+  'kategorie:senioren': 'fenster',
+  'kategorie:jugend': 'gitarre',
+  'kategorie:oeffentlichkeit': 'turm',
+  'kategorie:freizeit': 'deich',
+  'kategorie:weihnachten': 'kerzen',
+  'kategorie:konzert': 'gitarre',
+  'kategorie:kinder': 'feld',
+  'kategorie:kreativ': 'luftschlangen',
+  'kategorie:seelsorge': 'weg',
+  'kategorie:kasualien': 'kerzen',
+  'kategorie:gottesdienst': 'kirchenschiff',
+  'kategorie:gemeinde': 'weg',
+
+  // Die Datums-Seiten. Sie haengen nicht an der Kategorie, sondern am
+  // event_date -- deshalb eigene Motive.
+  'datum:weihnachten': 'kerzen',
+  'datum:advent': 'kerzen',
+  'datum:jahreswechsel': 'feuerwerk',
+  'datum:ostern': 'fenster',
+  'datum:erntedank': 'feld',
+  'datum:sommer': 'watt',
+
+  // Bewusst OHNE Bild (die Zahl traegt die Seite):
   //   punkte, abschluss, endspurt, ueber-das-ziel, bonus, pflicht,
-  //   challenge-momente (zeigt eigene Fotos), challenges
+  //   challenge-momente (zeigt eigene Fotos)
 };
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
@@ -109,11 +138,34 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   verlaesslich: 'feld',
   'aktivster-monat': 'himmel',
   kategorie: 'kirchenschiff',
+  'kategorie-allgemein': 'kirchenschiff',
   konfirmation: 'fenster',
   zeitraum: 'deich',
   gottesdienst: 'kirchenschiff',
   gemeinde: 'watt',
   'jahrgang-vergleich': 'weite',
+  challenges: 'konfetti',
+
+  'kategorie:fest': 'luftschlangen',
+  'kategorie:senioren': 'wald',
+  'kategorie:jugend': 'wald',
+  'kategorie:oeffentlichkeit': 'himmel',
+  'kategorie:freizeit': 'watt',
+  'kategorie:weihnachten': 'fenster',
+  'kategorie:konzert': 'luftschlangen',
+  'kategorie:kinder': 'himmel',
+  'kategorie:kreativ': 'konfetti',
+  'kategorie:seelsorge': 'wald',
+  'kategorie:kasualien': 'kirchenschiff',
+  'kategorie:gottesdienst': 'fenster',
+  'kategorie:gemeinde': 'watt',
+
+  'datum:weihnachten': 'kirchenschiff',
+  'datum:advent': 'fenster',
+  'datum:jahreswechsel': 'himmel',
+  'datum:ostern': 'weite',
+  'datum:erntedank': 'wald',
+  'datum:sommer': 'deich',
 };
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.

@@ -1,258 +1,189 @@
-// wrappedKacheln.js — welche Kacheln ein Rückblick zeigt.
+// wrappedKacheln.js -- welche Seiten ein Rueckblick zeigt und in welcher
+// Reihenfolge.
 //
-// Simons Vorgabe (02.09.2026): "Im Grunde brauchen wir so 20 oder 25 Kacheln,
-// jeder bekommt aber nur 8. Davon 4 immer, die anderen dynamisch. Wer nicht
-// viel geschrieben hat, braucht keine Chat-Kachel."
+// SIMONS MODELL (02./03.09.2026): Keine Sammlung aus "vier festen plus vier
+// zufaelligen", sondern eine ERZAEHLUNG mit fester Dramaturgie, in die sich
+// dynamische Seiten einschieben:
 //
-// Die Regel dahinter ist die schon bestehende Highlight-Logik, nur auf alle
-// Kacheln ausgeweitet: Gezeigt wird, was diese Person tatsächlich getan hat.
-// Eine Kachel mit einer Null darauf ist keine Erinnerung, sondern ein Vorwurf.
+//   Opener - Chat - Events - Kategorie - Challenges - Challenges Special -
+//   Punkte - Badges - Konfi - Abschluss
 //
-// KEINE Negativ-Kacheln: Absagen, Fehlzeiten und Ähnliches tauchen nicht auf
-// (Simons Entscheidung 01.09.2026, gilt unverändert weiter). Verlässlichkeit
-// erscheint nur in ihrer positiven Wendung ("nie abgesagt").
+// Rund zehn Seiten fuer eine sehr aktive Person. Die Zahl ergibt sich aus
+// dem, was jemand getan hat, nicht aus einer festen Obergrenze.
 //
-// Vergleiche mit dem Jahrgang bleiben anonym und nur nach oben: Wer unter dem
-// Schnitt liegt, bekommt die Kachel gar nicht erst -- nicht die Kachel mit
-// einem schlechten Vergleich.
+// WAS DABEI GILT (Simons Regeln, nicht aufweichen):
+//   - KEINE Negativ-Seiten. Kein Highlight fuers Absagen, keine Fehlzeiten.
+//   - Vergleiche nur nach oben und anonym. Wer unter dem Schnitt liegt,
+//     bekommt die Seite gar nicht erst.
+//   - Challenges ohne Punkte, ohne Zaehler, ohne Rangliste (Migration 118).
+//   - Wer wenig getan hat, bekommt keine leere Seite. Eine Kachel mit einer
+//     Null darauf ist keine Erinnerung.
+//
+// WARUM DIESE DATEI FRUEHER NICHTS TAT: Sie existierte seit dem 02.09.2026,
+// wurde aber von KEINEM Aufrufer benutzt -- WrappedModal.tsx stellte die
+// Seiten fest verdrahtet zusammen. Zwanzig gruene Tests bewiesen nur, dass
+// das Modul isoliert funktioniert. Seit dem 03.09.2026 ruft
+// generateKonfiSnapshot() waehleKacheln() auf und legt das Ergebnis als
+// `kacheln` in den Snapshot.
 
-// Die vier festen Kacheln. Sie erscheinen bei jeder Person, auch mit kleinen
-// Zahlen: Sie tragen die Erzählung (Auftakt, Mitte, Schluss) und ohne sie
-// entstünde bei einer stillen Konfi gar kein Rückblick.
-const FESTE_KACHELN = ['intro', 'punkte', 'events', 'abschluss'];
-
-// Wie viele Kacheln eine Person insgesamt sieht.
-const KACHELN_PRO_PERSON = 8;
+const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKategorien');
 
 /**
- * Alle dynamischen Kacheln mit ihrer Bedingung und ihrem Gewicht.
- *
- * `relevanz` entscheidet die Reihenfolge, wenn mehr Kacheln in Frage kommen
- * als Plätze da sind: Je persönlicher und seltener eine Kachel, desto höher.
- * Ein Foto aus einer Challenge sagt mehr über ein Jahr aus als die Zahl der
- * gesammelten Punkte -- deshalb steht es oben.
- *
- * `bedingung` bekommt die Slides des Snapshots und den Jahrgangsschnitt.
+ * Die feste Dramaturgie. Diese Seiten tragen die Erzaehlung (Auftakt, Mitte,
+ * Schluss) und erscheinen bei jeder Person -- ohne sie entstuende bei einer
+ * stillen Konfi gar kein Rueckblick.
  */
-const DYNAMISCHE_KACHELN = [
-  {
-    key: 'challenge-momente',
-    relevanz: 100,
-    thema: 'challenges',
-    bedingung: (s) => (s.challenge_momente?.length || 0) > 0
-  },
-  {
-    key: 'highlight',
-    relevanz: 95,
-    thema: 'person',
-    // Das persönliche Highlight (Chat-Star, Reaktions-Magnet, ...). Nur wenn
-    // das Backend eines bestimmt hat und ein Wert dahintersteht.
-    bedingung: (s) => Boolean(s.highlight?.type) && (s.highlight?.wert || 0) > 0
-  },
-  {
-    key: 'challenges',
-    relevanz: 85,
-    thema: 'challenges',
-    bedingung: (s) => (s.challenges?.beitraege || 0) > 0
-  },
-  {
-    key: 'verlaesslich',
-    relevanz: 80,
-    thema: 'haltung',
-    // Nur die positive Wendung. `nie_abgesagt` allein reicht nicht: Wer bei
-    // nichts war, hat auch nichts abgesagt -- das ist keine Leistung.
-    bedingung: (s) => s.verlaesslichkeit?.nie_abgesagt === true
-      && (s.events?.total_attended || 0) >= 3
-  },
-  {
-    key: 'chat',
-    relevanz: 70,
-    thema: 'gemeinschaft',
-    // Simons Regel wörtlich: "Wer nicht viel geschrieben hat, braucht keine
-    // Chat-Kachel." Eine einzelne Nachricht ist keine Geschichte -- die
-    // Schwelle liegt bei 5 UND mindestens dem Jahrgangsschnitt.
-    bedingung: (s, schnitt) => {
-      const eigene = s.chat?.nachrichten_gesendet || 0;
-      if (eigene < 5) return false;
-      const mittel = schnitt?.chat;
-      return typeof mittel !== 'number' || eigene >= mittel;
-    }
-  },
-  {
-    key: 'reaktionen',
-    relevanz: 68,
-    thema: 'gemeinschaft',
-    bedingung: (s) => (s.chat?.reaktionen_bekommen || 0) >= 5
-  },
-  {
-    key: 'badges',
-    relevanz: 60,
-    thema: 'sammeln',
-    bedingung: (s) => (s.badges?.total_earned || 0) > 0
-  },
-  {
-    key: 'aktivster-monat',
-    relevanz: 55,
-    thema: 'rhythmus',
-    bedingung: (s) => (s.aktivster_monat?.aktivitaeten || 0) > 0
-  },
-  {
-    key: 'kategorie',
-    relevanz: 50,
-    thema: 'rhythmus',
-    bedingung: (s) => (s.kategorie?.verteilung?.length || 0) > 1
-  },
-  {
-    key: 'lieblings-event',
-    relevanz: 45,
-    thema: 'termine',
-    bedingung: (s) => Boolean(s.events?.lieblings_event?.name)
-  },
-  {
-    key: 'ueber-das-ziel',
-    relevanz: 40,
-    thema: 'ziel',
-    bedingung: (s) => {
-      const e = s.endspurt;
-      return Boolean(e) && e.ziel_total > 0 && e.aktuell_total >= e.ziel_total;
-    }
-  },
-  {
-    key: 'endspurt',
-    relevanz: 38,
-    thema: 'ziel',
-    // Gegenstück zu 'ueber-das-ziel' -- nie beide zusammen.
-    bedingung: (s) => s.endspurt?.aktiv === true
-  },
-  {
-    key: 'gottesdienst',
-    relevanz: 35,
-    thema: 'punkte',
-    bedingung: (s) => (s.punkte?.gottesdienst || 0) > 0
-  },
-  {
-    key: 'gemeinde',
-    relevanz: 34,
-    thema: 'punkte',
-    bedingung: (s) => (s.punkte?.gemeinde || 0) > 0
-  },
-  {
-    key: 'bonus',
-    relevanz: 30,
-    thema: 'punkte',
-    bedingung: (s) => (s.punkte?.bonus || 0) > 0
-  },
-  {
-    key: 'konfirmation',
-    relevanz: 25,
-    thema: 'weg',
-    bedingung: (s) => Boolean(s.zeitraum?.konfirmation)
-  },
-  {
-    key: 'pflicht',
-    relevanz: 20,
-    thema: 'termine',
-    bedingung: (s) => (s.pflicht?.besucht || 0) > 0
-  },
-  {
-    key: 'zeitraum',
-    relevanz: 15,
-    thema: 'weg',
-    bedingung: (s) => Boolean(s.zeitraum?.start)
-  },
-  {
-    key: 'stempel',
-    relevanz: 90,
-    thema: 'challenges',
-    // Die Challenge-Abzeichen als eigene Seite. Anders als 'badges' (Punkte-
-    // Abzeichen) hängen sie an abgegebenen Beiträgen.
-    bedingung: (s) => (s.challenges?.beitraege || 0) > 0
-      && Boolean(s.challenges?.top_challenge)
-  },
-  {
-    key: 'jahrgang-vergleich',
-    relevanz: 10,
-    thema: 'gemeinschaft',
-    // Nur wenn es überhaupt einen Schnitt gibt UND die Person darüber liegt.
-    bedingung: (s, schnitt) => {
-      if (!schnitt || typeof schnitt.events !== 'number') return false;
-      return (s.events?.total_attended || 0) > schnitt.events;
-    }
-  }
+const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss'];
+
+/**
+ * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
+ * hier ihren Platz. Was nicht zutrifft, faellt heraus; die Reihenfolge der
+ * uebrigen bleibt.
+ *
+ * Simons Tabelle vom 02.09.2026, um die Kategorie- und Datums-Seiten
+ * erweitert (die stehen an Position 4, "der eigene Schwerpunkt").
+ */
+const DRAMATURGIE = [
+  'intro',              // 1  Auftakt
+  'chat',               // 2  nur wer wirklich geschrieben hat
+  'events',             // 3  Termine des Jahres
+  'kategorie',          // 4  der eigene Schwerpunkt (mehrere moeglich)
+  'challenges',         // 5  zwei Momente und Stempel
+  'challenge-momente',  // 6  Challenges Special: die Bilder, gross
+  'punkte',             // 7
+  'badges',             // 8  mit dem seltensten Abzeichen
+  'konfirmation',       // 9  "Konfi"
+  'abschluss'           // 10 Uebersicht
 ];
 
 /**
- * Wählt die Kacheln für einen Snapshot.
- *
- * @param {object} slides   die `slides` des Snapshots
- * @param {object} [schnitt] anonyme Jahrgangsmittelwerte ({chat, events, ...})
- * @param {number} [anzahl]  wie viele Kacheln insgesamt (Standard 8)
- * @returns {string[]} Kachel-Schlüssel in Anzeigereihenfolge
+ * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
+ * plus Kategorie-Seiten, die mehrfach vorkommen duerfen. 14 ist die harte
+ * Grenze, ab der niemand mehr durchblaettert.
  */
-function waehleKacheln(slides, schnitt = null, anzahl = KACHELN_PRO_PERSON) {
+const MAX_KACHELN = 14;
+
+// Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
+// Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
+// (Weihnachten, Advent, Ostern) saemtliche Kategorie-Seiten -- eine Konfi
+// mit 8 Gottesdiensten und 3 Kasualien sah davon keine einzige. Die beiden
+// erzaehlen Verschiedenes und duerfen sich nicht gegenseitig auffressen.
+const MAX_DATUM_SEITEN = 2;
+const MAX_KATEGORIE_SEITEN = 2;
+
+/**
+ * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
+ * Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern --
+ * deshalb faengt waehleKacheln() Fehler ab.
+ */
+const BEDINGUNGEN = {
+  // Simons Regel woertlich: "Wer nicht viel geschrieben hat, braucht keine
+  // Chat-Kachel." Eine einzelne Nachricht ist keine Geschichte.
+  chat: (s, schnitt) => {
+    const eigene = s.chat?.nachrichten_gesendet || 0;
+    if (eigene < 5) return false;
+    const mittel = schnitt?.chat;
+    // Vergleich nur nach oben: unter dem Schnitt gibt es die Seite nicht.
+    return typeof mittel !== 'number' || eigene >= mittel;
+  },
+  challenges: (s) => (s.challenges?.beitraege || 0) > 0,
+  'challenge-momente': (s) => (s.challenge_momente?.length || 0) > 0,
+  konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
+};
+
+/**
+ * Waehlt die Kategorie- und Datums-Seiten.
+ *
+ * VORRANG DATUM VOR KATEGORIE (Simon, 02.09.2026): "Gottesdienst im
+ * Dezember ist ja immer auch Advent." Ein Termin am 24.12. ist Christvesper,
+ * ganz gleich wie die Kategorie heisst. Trifft beides zu, gewinnt das Datum.
+ *
+ * @param {object} slides
+ * @returns {string[]} z. B. ['datum:weihnachten', 'kategorie:freizeit']
+ */
+function waehleKategorieSeiten(slides) {
+  const seiten = [];
+
+  // 1. Datums-Seiten aus den Terminen -- sie gehen vor.
+  const datumsTreffer = new Map();
+  for (const t of (slides.termine_daten || [])) {
+    const fenster = datumsFenster(t);
+    if (!fenster) continue;
+    datumsTreffer.set(fenster, (datumsTreffer.get(fenster) || 0) + 1);
+  }
+  const datumsSeiten = [...datumsTreffer.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_DATUM_SEITEN)
+    .map(([fenster]) => `datum:${fenster}`);
+
+  // 2. Kategorie-Seiten -- nur unsere Standardnamen, alles andere faellt auf
+  //    die allgemeine Schwerpunkt-Seite (siehe unten).
+  const verteilung = slides.kategorie?.verteilung || [];
+  const kategorieSeiten = [];
+  let fremde = 0;
+  for (const eintrag of verteilung) {
+    const seite = seiteFuerKategorie(eintrag.kategorie);
+    if (!seite) { fremde += eintrag.count || 0; continue; }
+    if (NUR_TEAMER.has(seite)) continue; // Teamtreff nur im Teamer-Rueckblick
+    const key = `kategorie:${seite}`;
+    if (!kategorieSeiten.includes(key)) kategorieSeiten.push(key);
+  }
+  seiten.push(...datumsSeiten, ...kategorieSeiten.slice(0, MAX_KATEGORIE_SEITEN));
+
+  // 3. Auffangnetz: Wer ueberwiegend eigene Kategorien nutzt, bekommt die
+  //    allgemeine Seite "Deine haeufigste Kategorie: ..." statt gar nichts.
+  //    Simons Regel: "Oder es wird allgemein: deine haeufigste Kategorie."
+  if (seiten.length === 0 && fremde > 0 && slides.kategorie?.top_kategorie) {
+    seiten.push('kategorie-allgemein');
+  }
+
+  return seiten;
+}
+
+/**
+ * Waehlt die Seiten eines Konfi-Rueckblicks in Anzeigereihenfolge.
+ *
+ * @param {object} slides    die `slides` des Snapshots
+ * @param {object} [schnitt] anonyme Jahrgangsmittelwerte ({chat, events})
+ * @returns {string[]} Seiten-Schluessel in Anzeigereihenfolge
+ */
+function waehleKacheln(slides, schnitt = null) {
   if (!slides || typeof slides !== 'object') return [...FESTE_KACHELN];
 
-  const passend = DYNAMISCHE_KACHELN
-    .filter(k => {
-      try {
-        return k.bedingung(slides, schnitt) === true;
-      } catch {
-        // Eine kaputte Bedingung darf nie den ganzen Rückblick verhindern.
-        return false;
-      }
-    })
-    .sort((a, b) => b.relevanz - a.relevanz);
+  const kategorieSeiten = (() => {
+    try { return waehleKategorieSeiten(slides); } catch { return []; }
+  })();
 
-  // 'endspurt' und 'ueber-das-ziel' schließen einander aus: Beides zugleich
-  // wäre widersprüchlich ("fast geschafft" neben "geschafft").
-  const gefiltert = [];
-  let zielGesetzt = false;
-  for (const k of passend) {
-    if (k.key === 'endspurt' || k.key === 'ueber-das-ziel') {
-      if (zielGesetzt) continue;
-      zielGesetzt = true;
+  const gewaehlt = [];
+  for (const key of DRAMATURGIE) {
+    if (key === 'kategorie') {
+      gewaehlt.push(...kategorieSeiten);
+      continue;
     }
-    gefiltert.push(k);
+    if (FESTE_KACHELN.includes(key)) { gewaehlt.push(key); continue; }
+    const bedingung = BEDINGUNGEN[key];
+    if (!bedingung) continue;
+    let trifft = false;
+    try { trifft = bedingung(slides, schnitt) === true; } catch { trifft = false; }
+    if (trifft) gewaehlt.push(key);
   }
 
-  const freiePlaetze = Math.max(0, anzahl - FESTE_KACHELN.length);
+  // Doppelte raus (Reihenfolge bleibt), dann deckeln. Der Abschluss ist
+  // IMMER die letzte Seite -- auch wenn der Deckel vorher greift.
+  const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
+  if (ohneDoppelte.length <= MAX_KACHELN) return ohneDoppelte;
 
-  // Nach Themen streuen. Ohne diesen Schritt gewinnen bei einer aktiven
-  // Person die vier obersten Plätze ALLE das Thema "challenges"
-  // (challenge-momente 100, stempel 90, challenges 85 -- gemessen am
-  // 02.09.2026): vier Kacheln über dasselbe, während Chat und
-  // Verlässlichkeit ganz herausfielen. In der ersten Runde bekommt jedes
-  // Thema höchstens eine Kachel, erst danach wird aufgefüllt.
-  const dynamisch = [];
-  const themenVergeben = new Set();
-  for (const k of gefiltert) {
-    if (dynamisch.length >= freiePlaetze) break;
-    const thema = k.thema || k.key;
-    if (themenVergeben.has(thema)) continue;
-    themenVergeben.add(thema);
-    dynamisch.push(k.key);
-  }
-  // Zweite Runde: verbleibende Plätze mit dem Nächstbesten füllen.
-  for (const k of gefiltert) {
-    if (dynamisch.length >= freiePlaetze) break;
-    if (dynamisch.includes(k.key)) continue;
-    dynamisch.push(k.key);
-  }
-
-  // Reihenfolge der Erzählung: Auftakt, dann das Persönliche, dann die
-  // Zahlen, zum Schluss der Abschluss.
-  return [
-    'intro',
-    ...dynamisch,
-    'punkte',
-    'events',
-    'abschluss'
-  ].filter((k, i, arr) => arr.indexOf(k) === i);
+  const ohneAbschluss = ohneDoppelte.filter(k => k !== 'abschluss');
+  return [...ohneAbschluss.slice(0, MAX_KACHELN - 1), 'abschluss'];
 }
 
 module.exports = {
   waehleKacheln,
+  waehleKategorieSeiten,
   FESTE_KACHELN,
-  KACHELN_PRO_PERSON,
-  DYNAMISCHE_KACHELN
+  DRAMATURGIE,
+  MAX_KACHELN,
+  MAX_DATUM_SEITEN,
+  MAX_KATEGORIE_SEITEN,
+  BEDINGUNGEN
 };

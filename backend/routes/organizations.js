@@ -442,19 +442,50 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
       // 7. Create default categories (Startpunkt zum Anpassen). type:
       // 'activity' | 'event' | 'both'. key dient nur der Verknuepfung unten.
+      //
+      // NEU SORTIERT AM 03.09.2026 (Simons Entscheidung). Zwei Aenderungen:
+      //
+      // 1. "Unterricht" ist RAUS. Woertlich: "Es heisst bewusst Konfi Zeit!"
+      //    Konfi-Arbeit ist keine Schule. Der Begriff wird auch nicht ersetzt,
+      //    er faellt ersatzlos weg.
+      //
+      // 2. "Gottesdienst" und "Gemeinde" sind RAUS als Kategorie. Sie sind der
+      //    TYP einer Aktivitaet (activities.type -- die Punkte-Achse
+      //    gottesdienst/gemeinde), nicht die Art des Anlasses. Als Kategorie
+      //    waren sie eine Doppelung: Jede Aktivitaet ist ohnehin das eine oder
+      //    das andere, das steht schon auf der Punkte-Seite des Rueckblicks.
+      //    Kategorien beantworten eine andere Frage -- WAS FUER EIN ANLASS war
+      //    das (Fest, Konzert, Freizeit) -- und nur die traegt eigene Seiten.
+      //
+      // BESTAND BLEIBT UNANGETASTET: Diese Liste gilt nur beim ANLEGEN einer
+      // neuen Gemeinde. Bestehende Organisationen behalten jede Kategorie, die
+      // sie haben, inklusive "Gottesdienst", "Gemeinde" und "Unterricht".
+      // Niemandes Daten aendern sich durch diese Zeilen.
       const defaultCategories = [
-        { key: 'gottesdienst', name: 'Gottesdienst', description: '', type: 'both' },
-        { key: 'gemeinde', name: 'Gemeinde', description: '', type: 'both' },
-        { key: 'unterricht', name: 'Unterricht', description: '', type: 'both' },
-        { key: 'kasualien', name: 'Kasualien', description: 'Taufe, Hochzeit, Beerdigung', type: 'activity' },
-        { key: 'freizeit', name: 'Freizeit', description: '', type: 'both' },
-        // Drei weitere ab 02.09.2026 (Simons Vorgabe fuer die Kategorie-Seiten
-        // im Jahresrueckblick): Eine Gemeinde kann eine Kategorie nur nutzen,
-        // wenn es sie gibt -- deshalb hier als Startpunkt. Loeschen kann sie
-        // jede Gemeinde selbst, die Namen sind frei aenderbar.
-        { key: 'advent', name: 'Advent und Weihnachten', description: 'Adventszeit, Christvesper, Krippenspiel', type: 'both' },
+        { key: 'fest', name: 'Fest', description: 'Gemeindefest, Feiern', type: 'both' },
+        { key: 'senioren', name: 'Senior:innen', description: 'Besuche, Seniorenkreis', type: 'both' },
         { key: 'jugend', name: 'Jugend', description: 'Jugendgruppe, Jugendtreff', type: 'both' },
-        { key: 'oeffentlichkeit', name: 'Öffentlichkeitsarbeit', description: 'Gemeindebrief, Aushang, Social Media', type: 'both' }
+        { key: 'oeffentlichkeit', name: 'Öffentlichkeitsarbeit', description: 'Gemeindebrief, Aushang, Social Media', type: 'both' },
+        { key: 'freizeit', name: 'Freizeit', description: 'Fahrten und Freizeiten', type: 'both' },
+        { key: 'weihnachten', name: 'Weihnachten', description: 'Adventszeit, Christvesper, Krippenspiel', type: 'both' },
+        // Fuer die Teamer:innen -- taucht im Teamer-Rueckblick auf, nicht im
+        // Konfi-Rueckblick.
+        { key: 'teamtreff', name: 'Teamtreff', description: 'Treffen des Teams', type: 'both' },
+        { key: 'konzert', name: 'Konzert', description: 'Konzerte und Musik', type: 'both' },
+        { key: 'kinder', name: 'Kinder', description: 'Kindergottesdienst, Kindergruppe', type: 'both' },
+        { key: 'kreativ', name: 'Kreativ', description: 'Basteln, Gestalten, Werkstatt', type: 'both' },
+        { key: 'seelsorge', name: 'Seelsorge', description: 'Besuche, Gespraeche, Begleitung', type: 'both' },
+        // Kasualien bleibt: Die Standard-Aktivitaeten Taufe, Hochzeit und
+        // Beerdigung haengen daran (defaultActivities unten). Ohne diese
+        // Kategorie liefe das Anlegen einer Gemeinde auf einen leeren
+        // Kategorie-Verweis.
+        { key: 'kasualien', name: 'Kasualien', description: 'Taufe, Hochzeit, Beerdigung', type: 'activity' },
+        // Gottesdienst und Gemeinde bleiben als Kategorie erhalten -- sie
+        // schaden hier nicht und viele Gemeinden erwarten sie. Sie tragen nur
+        // KEINE eigene Wrapped-Seite, weil sie die Punkte-Achse doppeln
+        // (activities.type). Siehe utils/wrappedKategorien.js.
+        { key: 'gottesdienst', name: 'Gottesdienst', description: '', type: 'both' },
+        { key: 'gemeinde', name: 'Gemeinde', description: '', type: 'both' }
       ];
 
       const categoryIdByKey = {};

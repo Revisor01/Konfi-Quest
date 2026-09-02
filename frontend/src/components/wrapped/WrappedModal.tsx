@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
 import { closeOutline, shareOutline } from 'ionicons/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCreative } from 'swiper/modules';
+import { EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import api from '../../services/api';
 import type { KonfiWrappedData, TeamerWrappedData, WrappedResponse } from '../../types/wrapped';
@@ -18,6 +18,7 @@ import KategorieSlide from './slides/KategorieSlide';
 import UeberDasZielSlide from './slides/UeberDasZielSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
+import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
 import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
@@ -200,6 +201,33 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   // dabei einfach ignoriert und fuehren zu keinem Fehler.
   const buildKonfiSlides = (konfiData: KonfiWrappedData, slideYear: number) => {
     const slideKeys: Array<{ key: string; render: (isActive: boolean) => React.ReactNode }> = [];
+
+    // Wie viel Inhalt steckt hinter einer Kategorie-/Datums-Seite?
+    // Fuer 'kategorie:freizeit' die Zahl aus der Verteilung, fuer
+    // 'datum:advent' die Zahl der Termine in diesem Fenster.
+    const kategorieZahl = (kachel: string) => {
+      const verteilung = konfiData.slides.kategorie?.verteilung || [];
+      if (kachel.startsWith('datum:')) {
+        const fenster = (konfiData.slides as { datums_fenster?: Record<string, number> }).datums_fenster || {};
+        return fenster[kachel.slice('datum:'.length)] || 0;
+      }
+      if (kachel === 'kategorie-allgemein') {
+        return verteilung[0]?.count || 0;
+      }
+      // Der Schluessel traegt den Seitennamen, die Verteilung den echten
+      // Kategorienamen -- die Zuordnung hat das Backend schon gemacht,
+      // hier zaehlen wir nur zusammen, was auf dieselbe Seite zeigt.
+      // `seite` liefert das Backend mit (wrapped.js) -- die Zuordnung
+      // Name -> Seite wird bewusst NICHT hier nachgebaut.
+      const treffer = verteilung.filter(v => (v as { seite?: string | null }).seite === kachel);
+      return treffer.reduce((n, v) => n + (v.count || 0), 0);
+    };
+    const kategorieTermine = (kachel: string) => {
+      const verteilung = konfiData.slides.kategorie?.verteilung || [];
+      return verteilung
+        .filter(v => (v as { seite?: string }).seite === kachel)
+        .reduce((n, v) => n + ((v as { aus_terminen?: number }).aus_terminen || 0), 0);
+    };
     const highlightType = konfiData.highlight_type || 'events_held';
     const seed = konfiData.formulierung_seed || 0;
     const version = konfiData.version || 1;
@@ -220,6 +248,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
     };
 
+    // Die vom Backend gewaehlten Seiten (Simons Dramaturgie). Ab
+    // Snapshot-Version 3 liefert das Backend `kacheln`; aeltere Snapshots
+    // haben das Feld nicht und laufen weiter ueber die feste Reihenfolge
+    // unten -- so aendert sich an bereits erzeugten Rueckblicken nichts.
+    const kachelListe = (konfiData as { kacheln?: string[] }).kacheln;
+
     const shown = new Set<string>();
 
     const addSlide = (key: string) => {
@@ -234,7 +268,25 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     const hatKategorien = (konfiData.slides.kategorie?.verteilung?.length || 0) > 0;
     const hatKonfirmation = !!konfirmationsTermin(konfiData);
 
-    if (version >= 2) {
+    if (Array.isArray(kachelListe) && kachelListe.length > 0) {
+      // --- Ab Version 3: das Backend bestimmt die Seiten ---
+      for (const kachel of kachelListe) {
+        if (kachel.startsWith('kategorie:') || kachel.startsWith('datum:') || kachel === 'kategorie-allgemein') {
+          const anzahl = kategorieZahl(kachel);
+          if (anzahl <= 0) continue; // Eine Seite mit einer Null ist keine Erinnerung.
+          if (shown.has(kachel)) continue;
+          shown.add(kachel);
+          slideKeys.push({
+            key: kachel,
+            render: (a: boolean) => (
+              <KategorieSeiteSlide isActive={a} kachel={kachel} anzahl={anzahl} ausTerminen={kategorieTermine(kachel)} />
+            )
+          });
+          continue;
+        }
+        if (renderers[kachel]) addSlide(kachel);
+      }
+    } else if (version >= 2) {
       // --- Version 2: feste Reihenfolge ---
       addSlide('intro');
 
@@ -410,7 +462,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   return (
     <div className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}>
       <div className="wrapped-header">
-        <div className="wrapped-pagination" />
+        {/* Fortschrittsleiste aus Simons Entwurf: ein Segment je Seite.
+            Ersetzt die runden Swiper-Punkte -- bei 13 Seiten sagen Punkte
+            nichts mehr ueber den Fortschritt, Segmente schon. */}
+        {slides.length > 0 ? (
+          <div className="wrapped-fortschritt">
+            {slides.map((s, i) => (
+              <span key={s.key} className={i <= activeIndex ? 'ist-aktiv' : undefined} />
+            ))}
+          </div>
+        ) : (
+          <div className="wrapped-pagination" />
+        )}
         {data && (
           <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
             <IonIcon icon={shareOutline} />
@@ -429,13 +492,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         </div>
       ) : (
         <Swiper
-          modules={[Pagination, EffectCreative]}
+          modules={[EffectCreative]}
           effect="creative"
           creativeEffect={{
             prev: { translate: ['-120%', 0, -500], rotate: [0, 0, -5], scale: 0.8, opacity: 0 },
             next: { translate: ['120%', 0, -500], rotate: [0, 0, 5], scale: 0.8, opacity: 0 },
           }}
-          pagination={{ clickable: true, el: '.wrapped-pagination' }}
           onSlideChange={handleSlideChange}
           speed={500}
           className="wrapped-swiper"

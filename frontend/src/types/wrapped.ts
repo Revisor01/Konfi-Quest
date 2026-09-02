@@ -85,7 +85,20 @@ export interface KonfiGottesdienstSlide {
 }
 
 export interface KonfiKategorieSlide {
-  verteilung: Array<{ kategorie: string; count: number }>;
+  verteilung: Array<{
+    kategorie: string;
+    count: number;
+    /**
+     * Auf welche feste Seite dieser Name zeigt ('kategorie:freizeit'), oder
+     * null bei einem eigenen Namen der Gemeinde. Ab 03.09.2026 -- das
+     * Backend liefert die Zuordnung mit, damit sie nicht an zwei Stellen
+     * gepflegt werden muss.
+     */
+    seite?: string | null;
+    /** Getrennt gezaehlt ab 03.09.2026 (Termine vs. Aktivitaeten). */
+    aus_terminen?: number;
+    aus_aktivitaeten?: number;
+  }>;
   top_kategorie: string | null;
 }
 
@@ -130,6 +143,13 @@ export type HighlightType =
 export interface KonfiWrappedData {
   /** 1 = Alt-Snapshots (History), ab 2 = Challenges-Wrapped. */
   version: number;
+  /**
+   * Die Seiten dieses Rueckblicks in Anzeigereihenfolge, vom Backend
+   * gewaehlt (utils/wrappedKacheln.js, Simons Dramaturgie). Ab 03.09.2026.
+   * Fehlt bei aelteren Snapshots -- dann rendert das Frontend wie bisher
+   * ueber seine eigene feste Reihenfolge.
+   */
+  kacheln?: string[];
   highlight_type: HighlightType;
   formulierung_seed: number;
   slides: {

@@ -3,6 +3,8 @@ const router = express.Router();
 const { param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
+const { waehleKacheln } = require('../utils/wrappedKacheln');
+const { seiteFuerKategorie, datumsFenster } = require('../utils/wrappedKategorien');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -127,18 +129,107 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const gottesdienstCount = parseInt(gdCountRow.count, 10) || 0;
 
-    // Kategorie-Verteilung (Aktivitäten nach Kategorie)
+    // Kategorie-Verteilung (Aktivitaeten nach Kategorie)
+    //
+    // GEMESSEN AM 02.09.2026 IN PRODUKTION -- der Grund fuer diese Abfrage:
+    // Frueher stand hier COALESCE(a.category, a.type). Das Textfeld
+    // activities.category ist aber bei ALLEN 48 Aktivitaeten NULL und wird
+    // nirgends im Code befuellt. Die Abfrage fiel damit ausnahmslos auf
+    // a.type zurueck, und das kennt nur 'gottesdienst', 'gemeinde' und NULL.
+    // Der Rueckblick zeigte also nie die echte Kategorie, sondern den Typ --
+    // und die geplanten Kategorie-Seiten haetten nie greifen koennen.
+    //
+    // Die echten Zuordnungen stehen in der Junction-Tabelle
+    // activity_categories (35 Zuordnungen in Produktion), die ueber
+    // categories.name die frei vergebenen Namen der Gemeinde traegt
+    // ("Sonntag", "Kasualien", "Gottesdienst an Weihnachten", ...).
+    //
+    // FALLBACK BLEIBT: Eine Aktivitaet ohne jede Zuordnung faellt weiterhin
+    // auf a.type zurueck. Sonst verloeren Gemeinden, die ihre Kategorien nie
+    // gepflegt haben, ihre Schwerpunkt-Seite ersatzlos -- der Rueckblick
+    // wuerde fuer sie aermer statt richtiger.
+    //
+    // MEHRFACHZUORDNUNG: Eine Aktivitaet darf in mehreren Kategorien liegen.
+    // Sie zaehlt dann in jeder -- das ist gewollt: Wer bei einem Termin war,
+    // der Kasualie UND Gottesdienst ist, war in beiden Bereichen unterwegs.
+    //
+    // BEIDE QUELLEN (Simons Einwand 03.09.2026): "Die Kategorien, die wir in
+    // Events nutzen, koennen wir doch auch benutzen!" -- richtig, und sie
+    // sind sogar die kraeftigere Quelle. Gemessen in Produktion:
+    //   activity_categories: 35 Zuordnungen
+    //   event_categories:    76 Zuordnungen auf 69 von 111 Terminen
+    // Und die Namen unterscheiden sich stark. Bei Terminen fuehren
+    // "Gruppen/ Treffen" (17), "Aktion" (16) und "Konfitreff" (9) -- alles
+    // Namen, die bei den Aktivitaeten praktisch nicht vorkommen. Haette der
+    // Rueckblick nur Aktivitaeten gelesen, waeren genau die Seiten leer
+    // geblieben, die eine Gemeinde am ehesten erwartet (Jugend, Freizeit,
+    // Oeffentlichkeitsarbeit).
+    //
+    // event_categories ist gebaut wie activity_categories (event_id,
+    // category_id) und zeigt auf dieselbe categories-Tabelle -- die
+    // Erkennungsliste in utils/wrappedKategorien.js gilt deshalb fuer beide
+    // Quellen unveraendert.
+    //
+    // GETRENNT GEZAEHLT: 'aus_terminen' und 'aus_aktivitaeten' bleiben
+    // einzeln erhalten, damit die Seite "du warst bei 4 Terminen" sagen kann
+    // statt einer aufgeblaehten Gesamtsumme. 'count' ist die Summe fuer die
+    // Sortierung und bleibt formgleich zu frueher (Alt-App-Vertrag: das Feld
+    // existierte schon und behaelt Name und Typ).
     const { rows: kategorieVerteilung } = await client.query(
-      `SELECT COALESCE(a.category, a.type) as kategorie, COUNT(*) as count
-       FROM user_activities ua
-       JOIN activities a ON ua.activity_id = a.id
-       WHERE ua.user_id = $1 AND ua.organization_id = $2
-         AND ua.completed_date >= $3::date
-         AND ua.completed_date < ($4::date + INTERVAL '1 day')
-       GROUP BY COALESCE(a.category, a.type)
-       ORDER BY count DESC`,
+      `WITH aus_aktivitaeten AS (
+         SELECT COALESCE(c.name, a.type) AS kategorie, COUNT(*) AS anzahl
+           FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           LEFT JOIN activity_categories ac ON ac.activity_id = a.id
+           LEFT JOIN categories c ON c.id = ac.category_id
+          WHERE ua.user_id = $1 AND ua.organization_id = $2
+            AND ua.completed_date >= $3::date
+            AND ua.completed_date < ($4::date + INTERVAL '1 day')
+            AND COALESCE(c.name, a.type) IS NOT NULL
+          GROUP BY COALESCE(c.name, a.type)
+       ),
+       aus_terminen AS (
+         -- Dieselbe Zaehlregel wie die Termin-Zahl weiter oben: jede Buchung
+         -- der Person, kein Anwesenheitsfilter (attendance_status ist in
+         -- Produktion ueberwiegend NULL und waere ein Mass dafuer, ob jemand
+         -- die Liste gepflegt hat, nicht dafuer, ob die Konfi da war).
+         SELECT c.name AS kategorie, COUNT(*) AS anzahl
+           FROM event_bookings eb
+           JOIN events e ON eb.event_id = e.id
+           JOIN event_categories ec ON ec.event_id = e.id
+           JOIN categories c ON c.id = ec.category_id
+          WHERE eb.user_id = $1 AND eb.organization_id = $2
+            AND e.event_date >= $3::date
+            AND e.event_date < ($4::date + INTERVAL '1 day')
+          GROUP BY c.name
+       )
+       SELECT kategorie,
+              SUM(anzahl)::int                       AS count,
+              SUM(aus_akt)::int                      AS aus_aktivitaeten,
+              SUM(aus_ev)::int                       AS aus_terminen
+         FROM (
+           SELECT kategorie, anzahl, anzahl AS aus_akt, 0 AS aus_ev FROM aus_aktivitaeten
+           UNION ALL
+           SELECT kategorie, anzahl, 0 AS aus_akt, anzahl AS aus_ev FROM aus_terminen
+         ) vereint
+        GROUP BY kategorie
+        ORDER BY count DESC`,
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
+
+    // Die DATEN der besuchten Termine -- Grundlage der Datums-Seiten
+    // (Advent, Weihnachten, Ostern ...). Simons Vorrang-Regel: "Gottesdienst
+    // im Dezember ist ja immer auch Advent." Ohne diese Liste koennte
+    // waehleKacheln() die Datums-Seiten gar nicht bestimmen.
+    const { rows: termineDatenRows } = await client.query(
+      `SELECT e.event_date FROM event_bookings eb
+       JOIN events e ON eb.event_id = e.id
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const termineDaten = termineDatenRows.map(r => r.event_date);
 
     // Gesamt-Events verfuegbar für diesen Jahrgang
     const { rows: [totalEventsRow] } = await client.query(
@@ -578,7 +669,20 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       challengeMomente = [];
     }
 
-    return {
+    // ---------------------------------------------------------------
+    // Bis hier die Zahlen. Ab hier die AUSWAHL DER SEITEN -- der Punkt, an
+    // dem utils/wrappedKacheln.js an seinem Aufrufer haengt.
+    //
+    // Bis zum 03.09.2026 tat das Modul nichts: Es existierte, war mit 20
+    // Tests gruen und wurde von NIEMANDEM gerufen; WrappedModal.tsx stellte
+    // die Seiten fest verdrahtet zusammen. Ein Modul ohne Aufrufer besteht
+    // jeden Test und aendert trotzdem nichts.
+    //
+    // Die Auswahl wird IM Snapshot gespeichert statt bei jedem Ansehen neu
+    // gerechnet: Ein Rueckblick wird geteilt und mehrfach geoeffnet -- er
+    // muss jedes Mal gleich aussehen.
+    // ---------------------------------------------------------------
+    const schnappschuss = {
       // Version 3 (01.09.2026): persoenliche Highlights + Chat-/Challenge-/
       // Verlaesslichkeits-Zahlen. Rein ADDITIV zu Version 2 -- kein Feld
       // wurde entfernt, umbenannt oder umtypisiert. Ausgelieferte Apps
@@ -655,11 +759,45 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           count: gottesdienstCount
         },
         kategorie: {
-          verteilung: kategorieVerteilung.map(k => ({ kategorie: k.kategorie, count: parseInt(k.count, 10) })),
+          verteilung: kategorieVerteilung.map(k => ({
+            kategorie: k.kategorie,
+            // Auf welche Seite zeigt dieser Name? Das Backend entscheidet
+            // das ohnehin schon fuer die Seitenauswahl -- es hier
+            // mitzuliefern erspart dem Frontend, dieselbe Zuordnung ein
+            // zweites Mal (und irgendwann abweichend) zu bauen.
+            // null = eigener Name der Gemeinde, faellt auf die allgemeine
+            // Schwerpunkt-Seite.
+            seite: (() => {
+              const s = seiteFuerKategorie(k.kategorie);
+              return s ? `kategorie:${s}` : null;
+            })(),
+            count: parseInt(k.count, 10),
+            // Getrennt, damit eine Seite "bei 4 Terminen" sagen kann statt
+            // einer aufgeblaehten Gesamtsumme.
+            aus_terminen: parseInt(k.aus_terminen, 10) || 0,
+            aus_aktivitaeten: parseInt(k.aus_aktivitaeten, 10) || 0
+          })),
           top_kategorie: kategorieVerteilung.length > 0 ? kategorieVerteilung[0].kategorie : null
-        }
+        },
+        // Rohdaten fuer die Datums-Seiten. Bewusst nur die Daten, keine
+        // Namen -- die Seite sagt "du warst bei drei Advents-Terminen", nicht
+        // welche das waren.
+        termine_daten: termineDaten,
+        // Wie viele Termine je Zeitfenster. Das Frontend braucht die Zahl
+        // fuer die Datums-Seiten und soll die Fenster nicht selbst
+        // ausrechnen -- die Osterformel gehoert an EINE Stelle.
+        datums_fenster: termineDaten.reduce((acc, d) => {
+          const f = datumsFenster(d);
+          if (f) acc[f] = (acc[f] || 0) + 1;
+          return acc;
+        }, {})
       }
     };
+
+    // Additives Feld: Alte App-Versionen kennen `kacheln` nicht und rendern
+    // weiter ueber ihre eigene feste Reihenfolge. Der Vertrag bleibt gewahrt.
+    schnappschuss.kacheln = waehleKacheln(schnappschuss.slides, jahrgangsSchnitt);
+    return schnappschuss;
   }
 
   async function generateTeamerSnapshot(client, userId, orgId, year) {

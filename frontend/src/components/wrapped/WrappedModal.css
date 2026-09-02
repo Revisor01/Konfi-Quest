@@ -1,4 +1,93 @@
 /* ========================================
+   Design-Token aus Simons Entwurf
+   (Claude-Design "Konfi Wrapped", 8 Artboards, ausgelesen 03.09.2026)
+
+   Die Werte sind NICHT geschaetzt, sondern aus dem Entwurf uebernommen:
+   Typo-Skala 104/76/40/20/12/11 px, Zeilenhoehe 0.85-0.9 bei den grossen
+   Zahlen, Bebas Neue als Akzent, Laufweite 0.13em bei den Labels.
+
+   Warum als Token und nicht direkt in den Seiten: Die Skala gilt fuer
+   ALLE Seiten, auch die 20 neuen. Zwei Pflegestellen liefen sonst
+   auseinander -- genau wie es beim Farbverlauf schon passiert ist.
+   ======================================== */
+
+.wrapped-overlay {
+  /* Grosse Zahl -- traegt die Seite (Entwurf: 104px) */
+  --w-zahl: clamp(72px, 22vw, 104px);
+  --w-zahl-lh: 0.85;
+  /* Grosse Wortmarke ("DEIN KONFI-JAHR", Bebas, 76px) */
+  --w-schlagzeile: clamp(52px, 16vw, 76px);
+  --w-schlagzeile-lh: 0.88;
+  /* Mittlere Zahl (40px) */
+  --w-zahl-klein: clamp(32px, 10vw, 40px);
+  /* Fliesstext und Labels */
+  --w-text: 17px;
+  --w-label: 12px;
+  --w-marke: 11px;
+  --w-label-ls: 0.13em;
+  --w-akzent: 'Bebas Neue', system-ui, sans-serif;
+}
+
+/* Die grosse Zahl einer Seite. */
+.w-zahl {
+  font-family: var(--w-akzent);
+  font-size: var(--w-zahl);
+  line-height: var(--w-zahl-lh);
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+
+.w-schlagzeile {
+  font-family: var(--w-akzent);
+  font-size: var(--w-schlagzeile);
+  line-height: var(--w-schlagzeile-lh);
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/* Kleines Label ueber oder unter der Zahl. */
+.w-label {
+  font-size: var(--w-label);
+  font-weight: 600;
+  letter-spacing: var(--w-label-ls);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.w-text {
+  font-size: var(--w-text);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ========================================
+   Fortschrittsleiste (Entwurf: Segmente, 3px, radius 99px)
+
+   Ersetzt die runden Swiper-Punkte: Bei 13 Seiten sagen Punkte nichts
+   mehr ueber den Fortschritt, Segmente schon.
+   ======================================== */
+
+.wrapped-fortschritt {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  align-items: center;
+}
+
+.wrapped-fortschritt span {
+  flex: 1;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.3s ease;
+}
+
+.wrapped-fortschritt span.ist-aktiv {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ========================================
    Wrapped Modal - Ionic Modal Fullscreen
    ======================================== */
 
