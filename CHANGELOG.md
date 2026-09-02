@@ -273,6 +273,11 @@ Versionsüberschrift.
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 
+### Sonstiges
+- Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
+  schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und
+  zwei Uhr fehl, obwohl die Erinnerungen selbst korrekt verschickt wurden.
+
 ## [Unreleased] - 2.2.0
 
 ### Geändert

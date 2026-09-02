@@ -7,8 +7,24 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+      # Wie in Produktion (portainer-stack.yml, deploy/compose.konfi_quest.yml):
+      # dort traegt der Datenbank-Dienst TZ UND PGTZ auf Europe/Berlin. Ohne die
+      # beiden Zeilen lief die Test-Datenbank in UTC, waehrend der Node-Prozess
+      # (vitest.config.ts) auf Europe/Berlin steht. Zwischen 00:00 und 02:00
+      # Berliner Zeit zeigte CURRENT_DATE deshalb noch auf gestern, heuteBerlin()
+      # im Code aber schon auf heute -- Termin-Fixtures und Service-Query trafen
+      # verschiedene Kalendertage, und die Erinnerungs-Tests fielen nachts um.
+      TZ: Europe/Berlin
+      PGTZ: Europe/Berlin
     tmpfs:
-      - /var/lib/postgresql/data
+      # nr_inodes explizit erhoehen: Die tmpfs kam mit dem Standard-Budget von
+      # rund 500.000 Inodes. Jeder Test macht TRUNCATE ... RESTART IDENTITY ueber
+      # ~45 Tabellen, und jedes TRUNCATE legt neue Relationsdateien an. Ueber die
+      # 2062 Tests der 69 Dateien lief der Zaehler auf exakt 100 % (gemessen
+      # 02.09.2026: 499.955 Inodes bei nur 464 MB belegtem Platz). Postgres
+      # meldete daraufhin "No space left on device", obwohl df noch 1,5 GB frei
+      # zeigte -- die Suite brach ab Datei ~58 reihenweise ab.
+      - /var/lib/postgresql/data:size=2g,nr_inodes=4000000
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s

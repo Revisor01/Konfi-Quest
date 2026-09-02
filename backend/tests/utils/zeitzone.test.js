@@ -341,3 +341,53 @@ describe('Terminabsage: das Datum in der Push-Nachricht traegt die Zeitzone', ()
     expect(formatDatum(new Date('2026-09-01T22:30:00Z'))).toBe('2.9.2026');
   });
 });
+
+describe('Test-Datenbank rechnet im selben Kalender wie die Anwendung', () => {
+  // Befund vom 02.09.2026: Die Terminhinweis-Tests (eventReminders.test.js)
+  // fielen zwischen 00:00 und 02:00 Berliner Zeit um -- und NUR dann.
+  //
+  // Der Code war dabei die ganze Zeit richtig: sendEventReminders sucht den
+  // Termin ueber heuteBerlin(), also im Berliner Kalender. Die Tests legen ihre
+  // Termine aber ueber CURRENT_DATE der Datenbank an, und die Test-Datenbank
+  // lief in UTC. Um 01:00 Berliner Zeit stand CURRENT_DATE deshalb noch auf
+  // gestern: Der Termin landete auf dem 03., der Dienst suchte am 04. --
+  // kein Treffer, Test rot, obwohl in Produktion nichts kaputt war.
+  //
+  // In Produktion traegt der Datenbank-Dienst TZ UND PGTZ auf Europe/Berlin
+  // (portainer-stack.yml, deploy/compose.konfi_quest.yml). Die Testumgebung
+  // muss denselben Kalender benutzen, sonst misst sie an der Produktion vorbei.
+  let db;
+
+  beforeAll(() => {
+    db = getTestPool();
+  });
+
+  it('die Sitzung der Test-Datenbank steht auf Europe/Berlin', async () => {
+    const { rows } = await db.query('SHOW timezone');
+    expect(rows[0].TimeZone).toBe('Europe/Berlin');
+  });
+
+  it('CURRENT_DATE der Datenbank und heuteBerlin() nennen denselben Tag', async () => {
+    const { rows } = await db.query('SELECT CURRENT_DATE::text AS tag');
+    expect(rows[0].tag).toBe(heuteBerlin());
+  });
+
+  it('um 01:00 Berliner Zeit liegt der Termin-Fixture auf dem Tag, den der Dienst sucht', async () => {
+    // Der Fehlerfall Zeichen fuer Zeichen, ohne gefaelschte Uhren: Beide Seiten
+    // werden fuer den festen Zeitpunkt 03.09.2026 01:00 Berlin ausgerechnet.
+    const zeitpunkt = new Date('2026-09-02T23:00:00Z');
+
+    // So legt createEventWithBooking den Termin an (CURRENT_DATE + 1 Tag):
+    const { rows } = await db.query(
+      `SELECT ((($1::timestamptz AT TIME ZONE current_setting('TimeZone'))::date
+                + INTERVAL '1 day')::date)::text AS fixture_tag`,
+      [zeitpunkt]
+    );
+
+    // So sucht sendEventReminders den Termin (heuteBerlin von jetzt + 24h):
+    const serviceTag = heuteBerlin(new Date(zeitpunkt.getTime() + 24 * 60 * 60 * 1000));
+
+    expect(rows[0].fixture_tag).toBe(serviceTag);
+    expect(serviceTag).toBe('2026-09-04');
+  });
+});

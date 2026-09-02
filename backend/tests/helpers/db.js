@@ -24,7 +24,20 @@ let pool = null;
  */
 function getTestPool() {
   if (!pool) {
-    pool = new Pool({ connectionString: TEST_DB_URL, max: 5 });
+    // Sitzungszone fest auf Europe/Berlin: In Produktion traegt der
+    // Datenbank-Dienst TZ und PGTZ auf Europe/Berlin (portainer-stack.yml,
+    // deploy/compose.konfi_quest.yml), der Node-Prozess ebenso. Die Test-DB
+    // (docker-compose.test.yml) und die Postgres-Instanz der CI liefen dagegen
+    // in UTC. Zwischen 00:00 und 02:00 Berliner Zeit lieferte CURRENT_DATE
+    // deshalb noch den Vortag, waehrend heuteBerlin() im Code bereits den neuen
+    // Tag nannte -- Fixtures und Service-Query trafen verschiedene Kalendertage
+    // (Terminhinweis-Tests, 02.09.2026). Hier gesetzt statt nur im Compose,
+    // damit es AUCH in der CI gilt, die ihren eigenen Postgres-Dienst startet.
+    pool = new Pool({
+      connectionString: TEST_DB_URL,
+      max: 5,
+      options: '-c timezone=Europe/Berlin',
+    });
   }
   return {
     query: (text, params) => pool.query(text, params),
