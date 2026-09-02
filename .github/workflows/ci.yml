@@ -220,6 +220,18 @@ jobs:
       - name: Abhaengigkeiten
         run: npm ci
 
+      # global-setup.ts seedet ueber backend/tests/helpers/seed.js, und das
+      # Modul verlangt bcrypt. bcrypt steht in backend/package.json, nicht in
+      # der Wurzel -- ohne diesen Schritt bricht der Seed mit "Cannot find
+      # module 'bcrypt'" ab, noch bevor ein einziger E2E-Test laeuft (CI rot
+      # seit 01.09.2026). Lokal fiel es nicht auf, weil backend/node_modules
+      # dort vom Backend-Testlauf schon liegt.
+      # --ignore-scripts spart den Quellcode-Build von bcrypt; das mitgelieferte
+      # Prebuild reicht, und die E2E-Tests brauchen aus dem Backend nur seed.js.
+      - name: Backend-Abhaengigkeiten (fuer den E2E-Seed)
+        working-directory: backend
+        run: npm ci --ignore-scripts
+
       - name: Playwright-Browser
         run: npx playwright install --with-deps chromium
 
