@@ -241,6 +241,51 @@ und das Osterdatum sind beweglich und müssen berechnet werden (Gauß'sche
 Osterformel bzw. vierter Sonntag vor dem 25.12.) — kein Hardcoding von
 Jahreszahlen.
 
+#### Gelöschte Kategorien dürfen das Wrapped nicht brechen (Simon, 02.09.2026)
+
+Simons Einwand: Eine Gemeinde darf jede Standardkategorie löschen — dann darf
+der Rückblick trotzdem nicht kaputtgehen.
+
+**Geprüft am 02.09.2026, die Lage ist gutartig:**
+
+`activity_categories` und `event_categories` hängen mit `ON DELETE CASCADE`
+an `categories`. Wird eine Kategorie gelöscht, verschwinden nur die
+*Zuordnungen* — die Aktivitäten und Termine selbst bleiben unverändert
+bestehen. Es gibt keine verwaisten Fremdschlüssel.
+
+**Regeln für den Umbau:**
+
+1. Eine Kategorie-Seite prüft, ob sie **Inhalt** hat, nicht ob die Kategorie
+   existiert. Keine Zuordnungen -> Seite erscheint nicht. Das ist derselbe
+   Grundsatz wie überall: Eine Kachel mit einer Null darauf ist keine
+   Erinnerung.
+2. Die **datumsbasierten** Seiten (Advent, Weihnachten, Ostern) hängen gar
+   nicht an der Kategorie — sie lesen `event_date`. Löscht eine Gemeinde
+   „Advent und Weihnachten", funktioniert die Advent-Seite weiter. Das ist
+   der zweite Grund, warum Simons Datums-Idee der bessere Weg ist.
+3. Die allgemeine Schwerpunkt-Seite bleibt als Auffangnetz für alles, was
+   keiner festen Seite entspricht.
+4. Ein Test muss den Fall abdecken: Kategorie löschen, Wrapped erzeugen,
+   Snapshot ist gültig und enthält die Seite schlicht nicht.
+
+#### ACHTUNG: Das Wrapped liest heute die falsche Quelle
+
+**Gemessen am 02.09.2026 — das muss vor den Kategorie-Seiten behoben werden:**
+
+`routes/wrapped.js` liest die Kategorie über
+`COALESCE(a.category, a.type)` — also das **Textfeld** `activities.category`.
+Dieses Feld ist bei **allen 48 Aktivitäten NULL**; es wird nirgends befüllt.
+Der Rückblick fällt deshalb immer auf `a.type` zurück und kennt nur
+„gottesdienst" und „gemeinde".
+
+Die echten Zuordnungen stehen in der Tabelle `activity_categories`
+(35 Zuordnungen: Kasualien 12, Gottesdienst 6, Gemeinde 5, Sonntag 5,
+Konfitreff 2).
+
+**Folge:** Die Kategorie-Seiten würden nie greifen, solange die Abfrage nicht
+auf `activity_categories` umgestellt ist. Die vorhandene Seite „Dein
+Schwerpunkt" zeigt heute ebenfalls nur den Typ, nicht die echte Kategorie.
+
 #### Wie die Zuordnung funktioniert
 
 Der Kategoriename in der Datenbank ist frei. Damit die Seite trotzdem
