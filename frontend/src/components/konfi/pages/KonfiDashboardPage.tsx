@@ -15,7 +15,7 @@ import {
 } from '@ionic/react';
 import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
+import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -441,7 +441,7 @@ const KonfiDashboardPage: React.FC = () => {
 
       {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
-        <KonfiUpdateWalkthroughModal
+        <KonfiUpdate211WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}

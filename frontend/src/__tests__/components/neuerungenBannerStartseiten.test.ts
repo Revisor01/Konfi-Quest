@@ -64,7 +64,10 @@ describe('Neuerungs-Karten stehen auf ALLEN drei Startseiten', () => {
     // Eine Karte, die nichts oeffnet, ist eine Sackgasse. Jede Rolle hat einen
     // eigenen Walkthrough; die Mitmachen-Erklaerung ist fuer alle dieselbe.
     expect(quelle).toMatch(/setShowUpdateWalkthrough\(true\)/);
-    expect(quelle).toMatch(/UpdateWalkthroughModal/);
+    // Der Walkthrough traegt seit 2.1.1 die Version im Namen
+    // (KonfiUpdate211WalkthroughModal). Das Muster nimmt beide Formen mit,
+    // damit die naechste Version hier nicht wieder haengen bleibt.
+    expect(quelle).toMatch(/Update\d*WalkthroughModal/);
     expect(quelle).toContain('MitmachenErklaerungModal');
     expect(quelle).toMatch(/setShowMitmachenErklaerung\(true\)/);
   });

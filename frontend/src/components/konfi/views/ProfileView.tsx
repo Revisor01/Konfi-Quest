@@ -18,7 +18,7 @@ import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
+import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -768,7 +768,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
       {/* "Was ist neu?" — derselbe Walkthrough wie nach dem Update */}
       {showUpdateWalkthrough && (
-        <KonfiUpdateWalkthroughModal
+        <KonfiUpdate211WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
           displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
         />

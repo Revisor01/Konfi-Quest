@@ -55,6 +55,25 @@ freigegeben“.
 > Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da,
 > nur hat niemand eine Benachrichtigung bekommen.
 
+### Was seit Version 2.1 dazugekommen ist
+
+**Der Rückblick ist persönlich geworden.** Gleich nach der Begrüßung steht eine
+Seite, die zeigt, was diese Konfi besonders macht — Chat-Star,
+Reaktions-Magnet, Challenge-Fan oder verlässlich dabei. Ausgewählt wird, worin
+jemand im Vergleich zum eigenen Jahrgang heraussticht. Der Vergleich ist
+anonym (nur die Zahl, nie ein Name) und erscheint **nur, wenn er freundlich
+ausfällt**: Wer unter dem Schnitt liegt, bekommt die Seite gar nicht erst.
+
+Eine Seite fürs Absagen gibt es bewusst nicht und wird es nicht geben.
+
+**Fotos sind größer.** Beiträge aus Challenges füllen jetzt die Seite statt als
+Miniatur zu erscheinen. Bei ein oder zwei Beiträgen werden sie noch größer.
+
+**Der Rückblick der Teamer:innen ist auch für dich sichtbar.** In der Ansicht
+einer Teamer:in findest du ihren Rückblick genauso wie bei einer Konfi. Anders
+als bei Konfis kommt für Teamer:innen **jedes Jahr ein neuer dazu**, und die
+alten bleiben stehen — in der Liste stehen sie mit Jahreszahl untereinander.
+
 ### Der Teamer-Rückblick läuft anders
 
 | | Konfis | Teamer:innen |

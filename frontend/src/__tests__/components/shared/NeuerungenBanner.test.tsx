@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import NeuerungenBanner from '../../../components/shared/NeuerungenBanner';
 
-const UPDATE = 'Was ist neu in Version 2.0? Die Neuerungen ansehen';
+const UPDATE = 'Was ist neu in Version 2.1? Die Neuerungen ansehen';
 const MITMACHEN = 'Events und Aktivitäten: So funktioniert der Mitmachen-Tab';
 
 describe('NeuerungenBanner', () => {

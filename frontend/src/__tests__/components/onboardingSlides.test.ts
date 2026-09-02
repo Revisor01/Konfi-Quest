@@ -95,3 +95,73 @@ describe('Onboarding- und Walkthrough-Texte: Mitmachen-Tab', () => {
     expect(text).toContain('Konfis · Chat · Mitmachen · Challenges · Mehr');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Update-Walkthrough 2.1.1 (02.09.2026)
+// ---------------------------------------------------------------------------
+// Aus 73 CHANGELOG-Einträgen seit 2.1.0 wurde ausgewählt, was die jeweilige
+// Rolle in der App auch merkt. Diese Tests halten fest, dass die Texte an der
+// Wirklichkeit bleiben — und dass die Zusagen, die wir den Konfis geben,
+// nicht stillschweigend verschwinden.
+import { SLIDES as konfi211 } from '../../components/konfi/modals/KonfiUpdate211WalkthroughModal';
+import { SLIDES as teamer211 } from '../../components/teamer/modals/TeamerUpdate211WalkthroughModal';
+import { SLIDES as admin211 } from '../../components/admin/modals/AdminUpdate211WalkthroughModal';
+
+const WALKTHROUGHS_211: [string, Slide[]][] = [
+  ['Konfi 2.1.1', konfi211],
+  ['Teamer 2.1.1', teamer211],
+  ['Leitung 2.1.1', admin211],
+];
+
+describe('Update-Walkthrough 2.1.1', () => {
+  it.each(WALKTHROUGHS_211)('%s hat Folien mit Titel und Text', (_name, slides) => {
+    expect(slides.length).toBeGreaterThanOrEqual(3);
+    for (const s of slides) {
+      expect(s.title.trim().length).toBeGreaterThan(0);
+      expect(s.text.trim().length).toBeGreaterThan(40);
+    }
+  });
+
+  it.each(WALKTHROUGHS_211)('%s bleibt kurz genug zum Lesen', (_name, slides) => {
+    // Ein Hinweis, der alles aufzählt, wird nicht gelesen. Fünf Folien sind
+    // die Grenze, ab der man wegtippt.
+    expect(slides.length).toBeLessThanOrEqual(5);
+    for (const s of slides) {
+      expect(s.text.length).toBeLessThanOrEqual(520);
+    }
+  });
+
+  it('Konfi-Folien erklären den persönlichen Rückblick ohne Rangliste', () => {
+    const text = konfi211.map(s => s.text).join(' ');
+    expect(text).toContain('Jahrgang');
+    // Der Vergleich ist anonym und nur nach oben — diese Zusage steht im
+    // Code (routes/wrapped.js) und muss auch im Hinweis stehen.
+    expect(text).toMatch(/ohne Namen|anonym/);
+    expect(text).not.toMatch(/Rangliste|Platz \d|besser als/);
+  });
+
+  it('Teamer-Folien nennen die Pflicht zum Grund nur nach einer Zusage', () => {
+    const text = teamer211.map(s => s.text).join(' ');
+    expect(text).toContain('Bin dabei');
+    expect(text).toContain('freiwillig');
+    // Der Grund ist NUR nach einer vorherigen Zusage Pflicht. Stünde das
+    // falsch da, klänge die Absage nach einer Hürde, die sie nicht ist.
+    expect(text).toMatch(/nach einer Zusage|nach einer vorherigen Zusage/);
+  });
+
+  it('Leitungs-Folien erklären die leere Liste als Grenze, nicht als Fehler', () => {
+    const text = admin211.map(s => s.text).join(' ');
+    expect(text).toContain('Jahrgang');
+    expect(text).toContain('kein Fehler');
+    // Teamer:innen sind von der Jahrgangs-Bindung ausgenommen.
+    expect(text).toMatch(/Teamer:innen bleiben davon ausgenommen|erreichst du alle/);
+  });
+
+  it('keine Folie verspricht Punkte für Challenges', () => {
+    // Challenges sind bewusst ohne Punkte und ohne Zähler (Migration 118).
+    for (const [name, slides] of WALKTHROUGHS_211) {
+      const text = slides.map(s => s.text).join(' ');
+      expect(text, name).not.toMatch(/Punkte für (Challenges|Beiträge)/);
+    }
+  });
+});

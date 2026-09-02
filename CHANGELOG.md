@@ -273,6 +273,12 @@ Versionsüberschrift.
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 
+### Hinzugefügt
+- Nach dem Update erklärt ein Hinweis auf der Startseite, was in Version 2.1
+  neu ist — für Konfis, Teamer:innen und die Leitung jeweils das, was ihre
+  Rolle betrifft. Einmal weggeklickt, kommt er nicht wieder; im Profil bleibt
+  er dauerhaft erreichbar.
+
 ### Geändert
 - Der Hinweis auf eine neue App-Version sieht jetzt aus wie die anderen
   Hinweise auf der Startseite, nur in Blau. Ein Tippen führt weiterhin in

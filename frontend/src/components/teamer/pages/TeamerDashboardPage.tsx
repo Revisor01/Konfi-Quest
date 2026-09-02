@@ -44,7 +44,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
+import TeamerUpdate211WalkthroughModal from '../modals/TeamerUpdate211WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -1144,7 +1144,7 @@ const TeamerDashboardPage: React.FC = () => {
 
       {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
-        <TeamerUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <TeamerUpdate211WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

@@ -15,7 +15,13 @@ import { Preferences } from '@capacitor/preferences';
 // 1. Hier die Version hochsetzen (z.B. '2_1').
 // 2. Texte der Banner und den Walkthrough der jeweiligen Rolle anpassen.
 // Mehr ist nicht noetig — die Banner haengen ueberall an denselben Flags.
-export const NEUERUNGEN_VERSION = '2_0';
+// 02.09.2026 von '2_0' auf '2_1' gesetzt: Version 2.1.1 bringt den
+// persoenlichen Jahresrueckblick, Zusage/Absage fuer Teamer:innen, Material
+// mit Dateien UND Links sowie die Jahrgangs-Bindung fuer Admins. Damit
+// entstehen neue Schluessel, und die Neuerungs-Karte erscheint bei allen
+// wieder -- auch bei denen, die die 2.0-Karte weggeklickt hatten. Die alten
+// Flags bleiben liegen und stoeren nicht.
+export const NEUERUNGEN_VERSION = '2_1';
 
 export const UPDATE_WALKTHROUGH_KEY = `update_walkthrough_${NEUERUNGEN_VERSION}_gesehen`;
 
