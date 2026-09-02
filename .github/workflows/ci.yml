@@ -322,20 +322,23 @@ jobs:
     # WIEDER AKTIV seit 27.08.2026: 2.0.0 geht in den Store-Review, Produktion
     # zieht wieder mit jedem Push auf main nach.
     #
-    # ERNEUT PAUSIERT seit 01.09.2026 (Simons Entscheidung): Der Branch
-    # feat/ionic-9 geht nach main -- Ionic 9, react-router 6 und funf
-    # Migrationen (135-140) auf einmal. Getestet wird ZUERST ueber
-    # test-api.konfi-quest.de und einen TestFlight-Build; Produktion zieht
-    # erst nach, wenn das Geraet in Ordnung ist.
-    # WIEDER EINSCHALTEN: das "false &&" unten entfernen. Danach deployt der
-    # naechste Push auf main sofort -- also erst pruefen, welche Commits seit
-    # der Pause aufgelaufen sind.
+    # WAR PAUSIERT (01.09.2026 bis 02.09.2026): Der Branch feat/ionic-9 ging
+    # nach main -- Ionic 9, react-router 6 und funf Migrationen (135-140) auf
+    # einmal. Getestet wurde ZUERST ueber test-api.konfi-quest.de und einen
+    # TestFlight-Build.
+    #
+    # WIEDER AKTIV seit 02.09.2026 (Simons Entscheidung): Test-Backend laeuft
+    # auf dem Stand von main, Migration 142 ist ausgerollt und nachgemessen
+    # (material_links: 1 Zeile aus dem Backfill, materials.link_url unveraendert
+    # -- der Vertrag der Store-Apps bleibt). Die Datenbank traegt bereits ALLE
+    # 72 Migrationen des Repos; ein Live-Deploy tauscht also nur noch den Code
+    # und fuehrt keine Migration mehr aus.
     #
     # ZUM PAUSIEREN: in der if-Zeile unten ein "false &&" voranstellen -- und
     # oben vermerken, seit wann und warum. Ein pausierter Deploy ohne Notiz
     # kostet beim naechsten Mal eine halbe Stunde Fehlersuche.
     needs: [build-and-push]
-    if: false && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)
