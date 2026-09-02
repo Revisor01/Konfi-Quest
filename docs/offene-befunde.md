@@ -37,7 +37,44 @@ Jahresrückblick). Der Befund ist davon unabhängig — die Lesestände vom
 3. August und die 29/32 ungelesenen Nachrichten der beiden anderen Konten
 sind älter als dieser Eingriff.
 
-### Wo im Code zu suchen ist
+### WICHTIG: Der Fehler sitzt im Frontend, nicht im Backend
+
+Simon hat es live gegengeprüft (02.09.2026, angemeldet als `simonluthe`,
+Nutzer 41, Organisation 1 — die echte Gemeinde, nicht die Demo):
+
+> „Ich gehe in den Jahrgangschat und es ändert sich nicht."
+
+Dazu die Datenbank in genau diesem Moment:
+
+| Raum | last_read_at | ungelesen laut Datenbank |
+|---|---|---|
+| 62 „Jahrgang 2026/27" | 01.09.2026 22:53 | **0** |
+
+**Das Backend hält den Lesestand also korrekt.** Der Server meldet null
+ungelesene Nachrichten, die Oberfläche zeigt trotzdem eine Markierung. Der
+Fehler liegt damit in der Anzeige: Sie räumt das Badge nicht ab bzw. holt
+den Stand nicht neu.
+
+Das verschiebt die Suche: **Zuerst im Frontend nachsehen**, nicht in den
+SQL-Abfragen. Die früher gemessenen alten Lesestände der Review-Konten
+(3. August) sind eine andere Sache — dort wurden die Chats vermutlich
+schlicht nie geöffnet.
+
+Die vier Dateien, die den Ungelesen-Zustand anfassen:
+
+- `frontend/src/contexts/BadgeContext.tsx` — die Zahl an der Tab-Leiste
+- `frontend/src/components/chat/ChatOverview.tsx` — die Zahl pro Chat in der
+  Liste
+- `frontend/src/components/chat/ChatRoom.tsx` — hier müsste das Markieren
+  als gelesen ausgelöst werden
+- `frontend/src/components/chat/useChatScroll.ts` — der rote Trenner „Neue
+  Nachrichten"
+
+Zu klären: Ruft `ChatRoom` beim Öffnen den Endpunkt auf, der `last_read_at`
+setzt? Und falls ja — wird danach der `BadgeContext` bzw. die Übersicht neu
+geladen, oder behält die Oberfläche ihren alten Stand im Speicher?
+
+### Wo im Backend zu suchen ist (nachrangig)
 
 - `backend/routes/chat.js:1287` — der einzige `INSERT INTO chat_read_status`.
   Prüfen: Wird er beim Öffnen eines Raums wirklich aufgerufen, und
