@@ -32,24 +32,32 @@
  * und die App verarbeitet WebP im Chat bereits.
  */
 export type Motiv =
-  | 'kirchenschiff'
-  | 'fenster'
-  | 'weite'
-  | 'wald'
-  | 'himmel'
-  | 'wasser'
-  | 'weg';
+  // ruhig, kirchlich
+  | 'kirchenschiff' | 'fenster' | 'kerzen' | 'turm' | 'weg'
+  // Landschaft Dithmarschen und Weite
+  | 'deich' | 'watt' | 'feld' | 'weite' | 'wald' | 'wasser' | 'himmel'
+  // fröhlich und feiernd (Simons Wunsch: "gerne auch ein bisschen
+  // verrückte Bilder oder was lustiges")
+  | 'konfetti' | 'luftschlangen' | 'feuerwerk' | 'gitarre';
 
 const MOTIV_DATEI: Record<Motiv, string> = {
   kirchenschiff: '/assets/wrapped/kirchenschiff.webp',
   fenster: '/assets/wrapped/fenster.webp',
+  kerzen: '/assets/wrapped/kerzen.webp',
+  turm: '/assets/wrapped/turm.webp',
+  weg: '/assets/wrapped/weg.webp',
+  deich: '/assets/wrapped/deich.webp',
+  watt: '/assets/wrapped/watt.webp',
+  feld: '/assets/wrapped/feld.webp',
   weite: '/assets/wrapped/weite.webp',
   wald: '/assets/wrapped/wald.webp',
-  himmel: '/assets/wrapped/himmel.webp',
   wasser: '/assets/wrapped/wasser.webp',
-  weg: '/assets/wrapped/weg.webp',
+  himmel: '/assets/wrapped/himmel.webp',
+  konfetti: '/assets/wrapped/konfetti.webp',
+  luftschlangen: '/assets/wrapped/luftschlangen.webp',
+  feuerwerk: '/assets/wrapped/feuerwerk.webp',
+  gitarre: '/assets/wrapped/gitarre.webp',
 };
-
 /**
  * Kachel -> Motiv. Was hier fehlt, bekommt bewusst kein Bild.
  *
@@ -59,28 +67,27 @@ const MOTIV_DATEI: Record<Motiv, string> = {
  * Zahl darauf steht und nicht dagegen.
  */
 const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
-  intro: 'weite',
-  highlight: 'fenster',
+  intro: 'watt',
+  highlight: 'konfetti',
   events: 'kirchenschiff',
-  'lieblings-event': 'wasser',
-  badges: 'himmel',
-  stempel: 'kirchenschiff',
-  chat: 'weg',
-  reaktionen: 'weg',
-  verlaesslich: 'wald',
-  'aktivster-monat': 'wald',
+  'lieblings-event': 'deich',
+  badges: 'feuerwerk',
+  stempel: 'luftschlangen',
+  chat: 'gitarre',
+  reaktionen: 'konfetti',
+  verlaesslich: 'turm',
+  'aktivster-monat': 'feld',
   kategorie: 'fenster',
-  konfirmation: 'kirchenschiff',
+  konfirmation: 'kerzen',
   zeitraum: 'weite',
-  gottesdienst: 'kirchenschiff',
+  gottesdienst: 'kerzen',
   gemeinde: 'weg',
-  'jahrgang-vergleich': 'weite',
+  'jahrgang-vergleich': 'watt',
 
   // Bewusst OHNE Bild (die Zahl trägt die Seite):
   //   punkte, abschluss, endspurt, ueber-das-ziel, bonus, pflicht,
   //   challenge-momente (zeigt eigene Fotos), challenges
 };
-
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
  * Bildformen übereinander -- eine große oben rechts (Deckkraft 0.85), eine
@@ -91,24 +98,23 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
  * Fehler, nicht wie Absicht.
  */
 const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
-  intro: 'kirchenschiff',
-  highlight: 'weite',
-  events: 'wasser',
-  'lieblings-event': 'weite',
-  badges: 'fenster',
-  stempel: 'wald',
-  chat: 'himmel',
-  reaktionen: 'himmel',
-  verlaesslich: 'weg',
+  intro: 'himmel',
+  highlight: 'luftschlangen',
+  events: 'turm',
+  'lieblings-event': 'wasser',
+  badges: 'konfetti',
+  stempel: 'feuerwerk',
+  chat: 'wald',
+  reaktionen: 'luftschlangen',
+  verlaesslich: 'feld',
   'aktivster-monat': 'himmel',
-  kategorie: 'wald',
-  konfirmation: 'weite',
-  zeitraum: 'kirchenschiff',
-  gottesdienst: 'fenster',
-  gemeinde: 'wald',
-  'jahrgang-vergleich': 'wasser',
+  kategorie: 'kirchenschiff',
+  konfirmation: 'fenster',
+  zeitraum: 'deich',
+  gottesdienst: 'kirchenschiff',
+  gemeinde: 'watt',
+  'jahrgang-vergleich': 'weite',
 };
-
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.
  */
