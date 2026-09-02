@@ -12,7 +12,13 @@
 // In-Memory-Logik. Als "nicht erreichbare API" dient ein nicht aufloesbarer
 // Host; gemessen wird die Antwortzeit, denn genau die Wartezeit war das Problem.
 
-const HEUTE = new Date().toISOString().split('T')[0];
+// heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
+// Zwischen Mitternacht und 02:00 Berliner Zeit ist das noch der Vortag --
+// der Test schlug dann fehl, obwohl der Code (der heuteBerlin nutzt) richtig
+// lag. Am 02.09.2026 um 00:27 genau so passiert: Der Test trug die Falle,
+// gegen die er selbst schuetzen soll.
+const { heuteBerlin } = require('../../utils/zeitformat');
+const HEUTE = heuteBerlin();
 
 // Fake-DB: Cache-Lookup liefert nichts (kalter Cache), Schreibvorgaenge no-op.
 function createFakeDb() {
