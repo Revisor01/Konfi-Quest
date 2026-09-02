@@ -868,3 +868,120 @@ ion-modal.wrapped-modal-fullscreen {
 }
 .abschluss-motto span:nth-child(2) { color: rgba(255, 255, 255, 0.85); }
 .abschluss-motto span:nth-child(3) { color: #fbbf24; }
+
+
+/* ========================================
+   Hintergrundbilder — Technik aus Simons Entwurf (02.09.2026)
+   ========================================
+   Simons Wunsch: "Es sollten auch Stockbilder im Hintergrund sein. Mehr
+   Bilder, mehr Design."
+
+   Der Entwurf löst das klüger als ein flächiges Foto: Die Bilder liegen
+   NICHT über die ganze Seite, sondern als zwei weich maskierte, unscharfe
+   Formen in gegenüberliegenden Ecken, die langsam driften. Darüber der
+   Farbschleier der Seite (rund 0.86) und ein Lichtfleck.
+
+   Warum das besser ist: Ein flächiges Foto zwingt zu einer harten
+   Abdunklung, sonst wird weißer Text auf hellen Stellen unlesbar — und dann
+   sieht man vom Bild ohnehin nichts mehr. Als maskierte Form in der Ecke
+   trägt das Bild Textur und Tiefe, ohne je hinter den Text zu geraten.
+
+   Reihenfolge (z-index): Bildformen -1 -> Schleier -> Lichtfleck -> Inhalt. */
+
+.wrapped-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+/* Die beiden Bildformen. Groß, weich, angeschnitten. */
+.wrapped-bg-form {
+  position: absolute;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.wrapped-bg-form--oben {
+  top: -60px;
+  right: -60px;
+  width: 340px;
+  height: 340px;
+  border-radius: 70px;
+  opacity: 0.85;
+  filter: blur(10px);
+  /* Weicher Rand statt harter Kante: Die Form franst zum Verlauf hin aus. */
+  mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+  animation: wrapped-drift 19s ease-in-out infinite;
+}
+
+.wrapped-bg-form--unten {
+  bottom: -40px;
+  left: -70px;
+  width: 320px;
+  height: 320px;
+  border-radius: 80px;
+  opacity: 0.32;
+  filter: blur(2px);
+  animation: wrapped-drift 26s ease-in-out infinite reverse;
+}
+
+/* Farbschleier: derselbe Verlauf wie die Seite, nur transparent. Er hält
+   den Text lesbar und bindet die Bilder farblich ein. */
+.wrapped-bg-schleier,
+.wrapped-bg-licht {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Lichtfleck in der oberen Bildmitte — gibt der Fläche Tiefe. */
+.wrapped-bg-licht {
+  background: radial-gradient(120% 70% at 50% 40%, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0) 65%);
+}
+
+@keyframes wrapped-drift {
+  0%, 100% { transform: translate(0, 0) scale(1.08); }
+  50% { transform: translate(-10px, -14px) scale(1.14); }
+}
+
+/* Wer Bewegung reduziert haben will, bekommt die Bilder ruhig gestellt.
+   Die Drift ist Zierde, kein Inhalt. */
+@media (prefers-reduced-motion: reduce) {
+  .wrapped-bg-form--oben,
+  .wrapped-bg-form--unten {
+    animation: none;
+  }
+}
+
+/* Bildplätze für die Momente-Fotos (image-slot im Entwurf). */
+.wrapped-bildplatz {
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+.wrapped-bildplatz img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wrapped-bildplatz-reihe {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.wrapped-bildplatz-reihe--eins { grid-template-columns: 1fr; }
+.wrapped-bildplatz-reihe--zwei { grid-template-columns: repeat(2, 1fr); }
+
+.wrapped-bildplatz-reihe--eins .wrapped-bildplatz { aspect-ratio: 4 / 3; }
+.wrapped-bildplatz-reihe--zwei .wrapped-bildplatz { aspect-ratio: 3 / 4; }
+.wrapped-bildplatz-reihe .wrapped-bildplatz { aspect-ratio: 1 / 1; }
