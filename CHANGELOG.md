@@ -273,6 +273,15 @@ Versionsüberschrift.
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 
+### Behoben
+- Die Leitung kann den Jahresrückblick einer Teamer:in jetzt auch ansehen —
+  bisher ging das nur bei Konfis, obwohl die Berechtigung dafür längst
+  bestand. In der Personenansicht stehen alle Rückblicke mit ihrem Jahr
+  untereinander.
+- Beim Löschen der Teamer-Rückblicke lässt sich jetzt ein einzelnes Jahr
+  auswählen. Vorher verschwanden immer alle Jahre auf einmal, sodass beim
+  nächsten Erzeugen die gesamte Historie weg gewesen wäre.
+
 ### Sonstiges
 - Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
   schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und

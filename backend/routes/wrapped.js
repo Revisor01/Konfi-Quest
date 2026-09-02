@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { param } = require('express-validator');
+const { param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 
@@ -1033,15 +1033,30 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Eigene Route statt Erweiterung von DELETE /:jahrgangId: Dort ist der
   // Jahrgang die Bezugsgroesse, hier die Organisation. Das mit einem
   // Sonderwert im selben Pfad zu mischen, machte beide Wege unklar.
+  //
+  // Optionaler Query-Parameter `year`: löscht nur den Rückblick DIESES
+  // Jahres. Teamer:innen bekommen jedes Jahr einen neuen, und die alten
+  // bleiben erhalten (Simons Regel 02.09.2026) — bei den Konfis leistet das
+  // der Jahrgangsfilter in DELETE /:jahrgangId, Teamer haben keinen Jahrgang,
+  // dort ist das Jahr die einzige Trennlinie.
+  //
+  // OHNE `year` bleibt es beim bisherigen Verhalten (alle Jahre): Die
+  // ausgelieferte Leitungsansicht ruft die Route ohne Parameter auf, und ein
+  // stillschweigend geänderter Umfang wäre genau die Art Bruch, die man
+  // erst bemerkt, wenn die Daten weg sind.
   router.delete('/teamer',
     rbacVerifier,
     requireOrgAdmin,
+    query('year').optional().isInt({ min: 2000, max: 2100 }),
+    handleValidationErrors,
     async (req, res) => {
       try {
+        const jahr = req.query.year ? parseInt(req.query.year, 10) : null;
         const { rowCount } = await db.query(
           `DELETE FROM wrapped_snapshots
-           WHERE wrapped_type = 'teamer' AND organization_id = $1`,
-          [req.user.organization_id]
+           WHERE wrapped_type = 'teamer' AND organization_id = $1
+             AND ($2::int IS NULL OR year = $2::int)`,
+          [req.user.organization_id, jahr]
         );
         res.json({ message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`, deleted: rowCount });
       } catch (err) {

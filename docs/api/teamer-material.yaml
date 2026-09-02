@@ -1634,13 +1634,30 @@ paths:
         weil dort der Jahrgang die Bezugsgroesse ist und hier die Organisation.
         Anders als beim Jahrgangs-Weg gibt es nichts zurueckzunehmen: Der
         Teamer-Rueckblick kennt keine Freigabe-Markierung.
+
+        Seit 02.09.2026 optionaler Query-Parameter `year`: löscht nur den
+        Rückblick DIESES Jahres. Teamer:innen bekommen jedes Jahr einen neuen,
+        die alten bleiben erhalten — bei den Konfis leistet das der
+        Jahrgangsfilter, Teamer haben keinen Jahrgang, dort ist das Jahr die
+        einzige Trennlinie. OHNE `year` bleibt es beim bisherigen Verhalten
+        (alle Jahre), damit der Aufruf der ausgelieferten Oberfläche gültig
+        bleibt.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema: { type: integer, minimum: 2000, maximum: 2100 }
+          description: >
+            Nur dieses Jahr löschen. Fehlt der Parameter, werden alle Jahre
+            der Organisation gelöscht (bisheriges Verhalten).
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
-        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token"
+        objekt-pruefung: "DELETE mit wrapped_type='teamer' + organization_id aus dem Token, optional year"
       responses:
         "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }
+        "400": { description: "year ist keine gültige Jahreszahl" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }

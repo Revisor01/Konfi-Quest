@@ -27,8 +27,11 @@ describe('Leitung kann den Jahresrueckblick einer Konfi ansehen (N5)', () => {
     expect(konfiDetail).toContain('api.get(`/wrapped/history/${konfiId}`)');
   });
 
-  it('waehlt den Konfi-Snapshot aus der Liste', () => {
-    expect(konfiDetail).toContain("e.wrapped_type === 'konfi'");
+  it('waehlt den zur Rolle passenden Snapshot aus der Liste', () => {
+    // Ein Mensch kann beides haben (befoerderte Konfi). Gezeigt wird, was zur
+    // Rolle in DIESER Ansicht gehört — sonst sähe man in der Teamer-Ansicht
+    // den Konfi-Rückblick von früher.
+    expect(konfiDetail).toContain("e.wrapped_type === (isTeamer ? 'teamer' : 'konfi')");
   });
 
   it('oeffnet das WrappedModal mit den geladenen Daten', () => {
@@ -37,7 +40,7 @@ describe('Leitung kann den Jahresrueckblick einer Konfi ansehen (N5)', () => {
     // (leeren) Rueckblick statt dem der Konfi.
     expect(konfiDetail).toContain('initialData: wrappedModalData?.data');
     expect(konfiDetail).toContain('initialYear: wrappedModalData?.year');
-    expect(konfiDetail).toContain("wrappedType: 'konfi' as const");
+    expect(konfiDetail).toContain("wrappedType: (isTeamer ? 'teamer' : 'konfi')");
   });
 
   it('zeigt den Namen der Konfi im Modal, nicht den der Leitung', () => {
@@ -47,25 +50,36 @@ describe('Leitung kann den Jahresrueckblick einer Konfi ansehen (N5)', () => {
   it('blendet die Karte ohne vorhandenen Rueckblick aus', () => {
     // Gegenprobe: Ohne Snapshot (Jahrgang noch nicht freigegeben, oder
     // offline) darf keine leere Karte stehenbleiben.
-    expect(konfiDetail).toContain('{!isTeamer && konfiWrapped && (');
+    expect(konfiDetail).toContain('{wrappedListe.length > 0 && (');
   });
 
-  it('laedt bei Teamer:innen gar nicht erst', () => {
-    // Die Detailseite dient beiden Rollen. Teamer-Wrapped hat eine eigene
-    // Stelle; hier waere der Abruf nur ein 404 pro Seitenaufruf.
+  // Bis zum 02.09.2026 stieg der Effekt bei Teamer:innen sofort aus
+  // ("setKonfiWrapped(null)"). Die Leitung konnte den Teamer-Rückblick
+  // deshalb NIRGENDS ansehen, obwohl das Backend ihn ausdrücklich freigibt
+  // ("Teamer:innen als Ziel bleiben frei einsehbar", wrapped.js) und die
+  // Route als Leitung mit HTTP 200 antwortet. Simons Befund.
+  it('lädt den Rückblick auch bei Teamer:innen', () => {
     const effekt = konfiDetail.slice(
-      konfiDetail.indexOf('const [konfiWrapped'),
+      konfiDetail.indexOf('const [wrappedListe'),
       konfiDetail.indexOf('const [wrappedModalData')
     );
-    expect(effekt).toContain('if (isTeamer)');
-    expect(effekt).toContain('setKonfiWrapped(null)');
+    expect(effekt).not.toContain('if (isTeamer) {');
+    expect(effekt).toContain('api.get(`/wrapped/history/${konfiId}`)');
+  });
+
+  it('zeigt ALLE Jahre, nicht nur eines', () => {
+    // Teamer:innen bekommen jedes Jahr einen neuen Rückblick, die alten
+    // bleiben erhalten. Ein einzelner Eintrag (.find) hätte die Historie
+    // stillschweigend auf ein Jahr zusammengestrichen.
+    expect(konfiDetail).toContain('wrappedListe.map((eintrag, i) =>');
+    expect(konfiDetail).toContain('Jahresrückblick {eintrag.year}');
   });
 
   it('bricht den Abruf beim Wechsel der Konfi ab', () => {
     // Ohne das Abbruch-Flag koennte die Antwort zu Konfi A den Rueckblick
     // von Konfi B ueberschreiben, wenn man schnell weiterblaettert.
     const effekt = konfiDetail.slice(
-      konfiDetail.indexOf('const [konfiWrapped'),
+      konfiDetail.indexOf('const [wrappedListe'),
       konfiDetail.indexOf('const [wrappedModalData')
     );
     expect(effekt).toContain('abgebrochen');

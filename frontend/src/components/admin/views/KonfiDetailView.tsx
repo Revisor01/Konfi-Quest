@@ -237,24 +237,29 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // wrapped_released_at laufen in derselben Transaktion (wrapped.js:513-537),
   // ein Konfi-Snapshot existiert also nie vor der Freigabe. Die Leitung sieht
   // hier nichts, was die Konfi nicht selbst schon sehen kann.
-  const [konfiWrapped, setKonfiWrapped] = useState<WrappedHistoryEntry | null>(null);
+  // Teamer:innen bekommen JEDES Jahr einen neuen Rückblick und die alten
+  // bleiben stehen — deshalb eine Liste statt eines einzelnen Eintrags.
+  // Bei Konfis hängt der Rückblick am Jahrgang und es ist praktisch einer;
+  // dieselbe Liste trägt beide Fälle, ohne zwei Codewege zu bauen.
+  const [wrappedListe, setWrappedListe] = useState<WrappedHistoryEntry[]>([]);
 
   useEffect(() => {
-    if (isTeamer) {
-      setKonfiWrapped(null);
-      return;
-    }
     let abgebrochen = false;
     api.get(`/wrapped/history/${konfiId}`)
       .then(res => {
         if (abgebrochen) return;
         const entries: WrappedHistoryEntry[] = res.data || [];
-        const konfiEntry = entries.find(e => e.wrapped_type === 'konfi');
-        setKonfiWrapped(konfiEntry || null);
+        // Für Teamer:innen die Teamer-Rückblicke, sonst die der Konfi.
+        // Ein Mensch kann beides haben (beförderte Konfi) — gezeigt wird,
+        // was zur Rolle in DIESER Ansicht passt.
+        const passend = entries.filter(e =>
+          e.wrapped_type === (isTeamer ? 'teamer' : 'konfi')
+        );
+        setWrappedListe(passend);
       })
       .catch(() => {
         // Kein Wrapped vorhanden oder offline: Die Karte bleibt einfach weg.
-        if (!abgebrochen) setKonfiWrapped(null);
+        if (!abgebrochen) setWrappedListe([]);
       });
     return () => { abgebrochen = true; };
   }, [konfiId, isTeamer]);
@@ -266,7 +271,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       dismissWrappedModal();
     },
     displayName: currentKonfi?.display_name || currentKonfi?.name || '',
-    wrappedType: 'konfi' as const,
+    wrappedType: (isTeamer ? 'teamer' : 'konfi') as 'teamer' | 'konfi',
     initialData: wrappedModalData?.data,
     initialYear: wrappedModalData?.year
   });
@@ -826,33 +831,41 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
         {/* Jahresrueckblick der Konfi (Befund N5). Erscheint nur, wenn ein
             freigegebener Snapshot existiert — sonst bleibt die Karte weg. */}
-        {!isTeamer && konfiWrapped && (
+        {wrappedListe.length > 0 && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
+                {wrappedListe.map((eintrag, i) => (
                 <div
+                  key={eintrag.id}
                   className="app-list-item"
-                  style={{ width: '100%', cursor: 'pointer', borderLeftColor: 'var(--app-color-konfis)' }}
-                  onClick={() => setWrappedModalData(konfiWrapped)}
+                  style={{
+                    width: '100%',
+                    cursor: 'pointer',
+                    borderLeftColor: isTeamer ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
+                    marginBottom: i < wrappedListe.length - 1 ? '8px' : '0'
+                  }}
+                  onClick={() => setWrappedModalData(eintrag)}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-konfis)' }}>
+                      <div className="app-icon-circle" style={{ backgroundColor: isTeamer ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)' }}>
                         <IonIcon icon={timeOutline} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">
-                          Jahresrückblick {konfiWrapped.year}
+                          Jahresrückblick {eintrag.year}
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            Der Rückblick, den diese Konfi sieht
+                            {isTeamer ? 'Der Rückblick, den diese Teamer:in sieht' : 'Der Rückblick, den diese Konfi sieht'}
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                ))}
               </IonCardContent>
             </IonCard>
           </IonList>

@@ -467,6 +467,80 @@ describe('Wrapped Routes', () => {
       expect(rows[0].anzahl).toBe(1);
     });
 
+    it('loescht nur das angefragte Jahr und laesst aeltere Teamer-Wrappeds stehen', async () => {
+      // Teamer bekommen JEDES Jahr einen neuen Rückblick, und die alten
+      // müssen erhalten bleiben (Simons Regel 02.09.2026). Bei den Konfis
+      // leistet das der Jahrgangsfilter in DELETE /:jahrgangId — Teamer haben
+      // keinen Jahrgang, dort ist das Jahr die einzige Trennlinie.
+      //
+      // Ohne den Filter löschte die Route ALLE Jahre der Organisation auf
+      // einmal: Ein "neu erzeugen" im nächsten Jahr hätte die gesamte
+      // Historie aller Teamer:innen vernichtet, ohne Rückfrage und ohne Spur.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      // Einen Snapshot aus dem Vorjahr danebenlegen (so entsteht er im echten
+      // Betrieb: der Lauf des letzten Jahres).
+      const { rows: [vorhanden] } = await db.query(
+        `SELECT user_id, organization_id, data FROM wrapped_snapshots
+         WHERE wrapped_type = 'teamer' LIMIT 1`
+      );
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
+         VALUES ($1, $2, 'teamer', 2025, $3, NOW())`,
+        [vorhanden.user_id, vorhanden.organization_id, vorhanden.data]
+      );
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer?year=2026')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.deleted).toBe(1);
+
+      const { rows } = await db.query(
+        `SELECT year FROM wrapped_snapshots WHERE wrapped_type = 'teamer' ORDER BY year`
+      );
+      expect(rows.map(r => r.year)).toEqual([2025]);
+    });
+
+    it('loescht ohne Jahresangabe weiterhin alle Jahre (bisheriges Verhalten)', async () => {
+      // Der Vertrag der ausgelieferten Oberfläche: Ein DELETE ohne year
+      // räumt wie bisher komplett auf. Nur so bleibt der vorhandene
+      // Aufruf in der Leitungsansicht gültig.
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const { rows: [vorhanden] } = await db.query(
+        `SELECT user_id, organization_id, data FROM wrapped_snapshots
+         WHERE wrapped_type = 'teamer' LIMIT 1`
+      );
+      await db.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
+         VALUES ($1, $2, 'teamer', 2025, $3, NOW())`,
+        [vorhanden.user_id, vorhanden.organization_id, vorhanden.data]
+      );
+
+      const res = await request(app)
+        .delete('/api/wrapped/teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.body.deleted).toBe(2);
+
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots WHERE wrapped_type = 'teamer'`
+      );
+      expect(rows[0].anzahl).toBe(0);
+    });
+
+    it('weist ein unsinniges Jahr ab', async () => {
+      const res = await request(app)
+        .delete('/api/wrapped/teamer?year=abc')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(400);
+    });
+
     it('laesst Admin und Konfi nicht an DELETE /teamer', async () => {
       const alsAdmin = await request(app)
         .delete('/api/wrapped/teamer')
