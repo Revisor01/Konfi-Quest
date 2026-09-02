@@ -285,6 +285,11 @@ Versionsüberschrift.
   den Store, das X blendet ihn dauerhaft aus.
 
 ### Behoben
+- Abzeichen zeigen wieder ihr eigenes Symbol. Rund 40 Prozent von ihnen
+  erschienen überall als Pokal — im Jahresrückblick, in der Abzeichen-Liste
+  und in der Verwaltung.
+- Die Seiten des Jahresrückblicks haben jetzt tatsächlich Bilder im
+  Hintergrund.
 - Die Leitung kann den Jahresrückblick einer Teamer:in jetzt auch ansehen —
   bisher ging das nur bei Konfis, obwohl die Berechtigung dafür längst
   bestand. In der Personenansicht stehen alle Rückblicke mit ihrem Jahr

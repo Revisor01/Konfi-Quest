@@ -151,5 +151,23 @@ export const ICON_MAP: Record<string, string> = Object.fromEntries(
  */
 export const getIconFromString = (iconName?: string | null, fallback: string = trophy): string => {
   if (!iconName) return fallback;
-  return ICON_MAP[iconName] || fallback;
+  const treffer = ICON_MAP[iconName];
+  if (treffer) return treffer;
+  // "-outline" abschneiden und erneut suchen.
+  //
+  // Gemessen am 02.09.2026: 74 der 174 Abzeichen in der Datenbank heissen
+  // "sunny-outline", "musical-notes-outline" und so weiter -- die Map kennt
+  // aber NUR die Kurzform ("sunny"). Alle diese Abzeichen fielen deshalb
+  // stillschweigend auf die Trophaee zurueck und sahen identisch aus, im
+  // Jahresrueckblick wie in jeder anderen Liste. Kein Fehler im Log, nur ein
+  // falsches Bild.
+  //
+  // Hier statt in den Daten korrigiert: Die Namen stehen in custom_badges
+  // ueber alle Gemeinden verteilt, und aeltere App-Versionen lesen dieselben
+  // Werte. Ein Umbenennen in der Datenbank wuerde die brechen.
+  if (iconName.endsWith('-outline')) {
+    const kurz = ICON_MAP[iconName.slice(0, -'-outline'.length)];
+    if (kurz) return kurz;
+  }
+  return fallback;
 };
