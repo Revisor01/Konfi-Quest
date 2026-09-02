@@ -447,7 +447,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { key: 'gemeinde', name: 'Gemeinde', description: '', type: 'both' },
         { key: 'unterricht', name: 'Unterricht', description: '', type: 'both' },
         { key: 'kasualien', name: 'Kasualien', description: 'Taufe, Hochzeit, Beerdigung', type: 'activity' },
-        { key: 'freizeit', name: 'Freizeit', description: '', type: 'both' }
+        { key: 'freizeit', name: 'Freizeit', description: '', type: 'both' },
+        // Drei weitere ab 02.09.2026 (Simons Vorgabe fuer die Kategorie-Seiten
+        // im Jahresrueckblick): Eine Gemeinde kann eine Kategorie nur nutzen,
+        // wenn es sie gibt -- deshalb hier als Startpunkt. Loeschen kann sie
+        // jede Gemeinde selbst, die Namen sind frei aenderbar.
+        { key: 'advent', name: 'Advent und Weihnachten', description: 'Adventszeit, Christvesper, Krippenspiel', type: 'both' },
+        { key: 'jugend', name: 'Jugend', description: 'Jugendgruppe, Jugendtreff', type: 'both' },
+        { key: 'oeffentlichkeit', name: 'Öffentlichkeitsarbeit', description: 'Gemeindebrief, Aushang, Social Media', type: 'both' }
       ];
 
       const categoryIdByKey = {};

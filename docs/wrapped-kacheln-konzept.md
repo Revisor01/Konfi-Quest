@@ -170,10 +170,94 @@ gebrochen wurde.
 - **Die erste Antwort** — „Bei der Challenge … warst du die Erste, die
   geantwortet hat."
 
-### Kategorien und Schwerpunkt
-- **Dein Schwerpunkt** — vorhanden (z. B. Jugend).
-- **Advent** — Kategorie-Sonderseite. *(Simons Idee; Kategorien sind pro
-  Gemeinde frei benennbar)*
+### Kategorie-Seiten (Simons Vorgabe, 02.09.2026)
+
+**Nicht eine Seite mit wechselndem Inhalt, sondern mehrere feste, benannte
+Seiten.** Jede hat ihr eigenes Bild, ihre eigene Farbe und ihren eigenen
+Text. Eine Seite erscheint nur, wenn die Gemeinde die Kategorie überhaupt
+nutzt **und** die Person darin etwas getan hat.
+
+Simon: „Wir setzen 6 oder 8 Kategorien, die dann vorkommen als möglicher
+Slide."
+
+#### Warum das trägt — gemessen am 02.09.2026
+
+Kategorien sind pro Gemeinde frei benannt, aber einige Namen wiederholen
+sich über die Organisationen hinweg:
+
+| Kategorie | in wie vielen Gemeinden |
+|---|---|
+| Freizeit | 4 von 5 |
+| Kasualien | 4 von 5 |
+| Gemeinde | 3 |
+| Gottesdienst | 3 |
+| Unterricht | 3 |
+| Jugend, Kinder, Fest, Kreativ, Öffentlichkeitsarbeit, Urlauberseelsorge | je 1 |
+
+Es lohnt sich also, für die häufigen Namen feste Seiten zu bauen. Für
+seltene bleibt eine allgemeine Schwerpunkt-Seite als Auffangnetz.
+
+#### Die festen Kategorie-Seiten (Vorschlag: 8)
+
+| Kategorie | Seite | Ton |
+|---|---|---|
+| **Kasualien** | „Du warst dabei, wenn es zählte" | Taufe, Trauung, Beerdigung — die Kategorie, in der Konfis den Ernstfall des Glaubens erleben. Ruhiges Bild (Kerzen, Kirchenschiff), zurückhaltender Ton. |
+| **Gottesdienst** | „Sonntagstreu" | Die klassische Kategorie. Kirchenschiff, Fenster. |
+| **Freizeit** | „Unterwegs" | Fahrten und Freizeiten. Deich, Watt, Wasser. |
+| **Unterricht** | „Dranbleiben" | Die Konfistunden. Buch, Fenster. |
+| **Gemeinde** | „Mit angepackt" | Gemeindefest, Helfen. Luftschlangen, Konfetti. |
+| **Jugend** | „Deine Leute" | Jugendgruppe, Jugendtreff. Gitarre, Lagerfeuer-Stimmung. |
+| **Advent / Weihnachten** | „Zwischen den Lichtern" | Simons Idee. Kerzen, Sternenhimmel. **Voraussetzung:** Die Kategorie muss angelegt sein — heute hat nur Org 5 „Gottesdienst an Weihnachten". Vorschlag: als empfohlene Standardkategorie beim Anlegen einer Gemeinde vorschlagen, dann können alle sie nutzen. |
+| **Öffentlichkeitsarbeit** | „Du hast es nach draußen getragen" | Simons Idee. Heute nur in Org 1. Gemeindebrief, Social Media, Infoscreen. |
+
+#### Über das DATUM statt nur über die Kategorie (Simon, 02.09.2026)
+
+Simons Nachtrag, und er ist der bessere Weg: **„Gottesdienst im Dezember ist
+ja immer auch Advent/Weihnachten. Und Neujahr können wir auch übers Datum
+machen."**
+
+Das löst das Problem, dass Gemeinden ihre Kategorien frei benennen: Ein
+Gottesdienst am 24. Dezember ist Christvesper, ganz gleich ob die Kategorie
+„Gottesdienst", „Advent" oder „Heiligabend" heißt. Das Datum lügt nicht.
+
+Die Zeitfenster (`event_date` bzw. `user_activities.completed_date`):
+
+| Seite | Zeitraum | Text-Idee |
+|---|---|---|
+| **Advent** | 1. Advent bis 23.12. | „Vier Kerzen, und du warst bei drei Terminen dabei." |
+| **Weihnachten** | 24.12. bis 26.12. | „Heiligabend in der Kirche — du warst da." |
+| **Jahreswechsel** | 27.12. bis 6.1. | „Zwischen den Jahren." |
+| **Passion / Ostern** | Aschermittwoch bis Ostermontag | beweglich, aus dem Osterdatum berechnet |
+| **Sommer** | Juli/August | „Die Freizeit im Sommer." |
+| **Erntedank** | erster Sonntag im Oktober | |
+
+**Vorrang:** Trifft beides zu (Kategorie *und* Datum), gewinnt das Datum —
+es ist das konkretere Ereignis. Eine Person bekommt nie zwei Seiten über
+denselben Termin.
+
+**Datenlage geprüft:** `events.event_date` ist `timestamptz`, die Berliner
+Zeitzone steht seit dem 02.09.2026 in Test und Betrieb gleich. Der 1. Advent
+und das Osterdatum sind beweglich und müssen berechnet werden (Gauß'sche
+Osterformel bzw. vierter Sonntag vor dem 25.12.) — kein Hardcoding von
+Jahreszahlen.
+
+#### Wie die Zuordnung funktioniert
+
+Der Kategoriename in der Datenbank ist frei. Damit die Seite trotzdem
+greift, braucht es eine **Erkennungsliste** je Seite — mehrere Schreibweisen
+zeigen auf dieselbe Seite:
+
+```
+advent      -> "Advent", "Weihnachten", "Gottesdienst an Weihnachten",
+               "Adventszeit", "Christvesper"
+kasualien   -> "Kasualien", "Taufe", "Trauung", "Beerdigung", "Amtshandlungen"
+oeffentlich -> "Öffentlichkeitsarbeit", "Presse", "Gemeindebrief"
+```
+
+Trifft kein Name, greift die allgemeine Schwerpunkt-Seite („Dein Bereich:
+Kreativ") — so geht keine Gemeinde leer aus, auch mit eigenen Namen.
+
+#### Weitere Kategorie-Kacheln
 - **Der Allrounder** — „Du warst in allen fünf Bereichen unterwegs."
 - **Die Entdeckerin** — „Du hast eine Kategorie ausprobiert, in der sonst
   kaum jemand war."
