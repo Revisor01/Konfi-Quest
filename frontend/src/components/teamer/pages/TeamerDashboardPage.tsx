@@ -478,7 +478,7 @@ const TeamerDashboardPage: React.FC = () => {
 
         {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
             Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
-        <StoreUpdateBanner style={{ marginTop: '8px' }} />
+        <StoreUpdateBanner style={{ margin: '8px 16px 0' }} />
 
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft

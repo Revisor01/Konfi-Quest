@@ -2981,6 +2981,19 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-whatsnew--challenges {
   background: linear-gradient(135deg, #ec4899 0%, var(--app-color-challenges) 60%, #9d174d 100%);
 }
+/* Blaue Variante: "Neue Version verfügbar". Gleiche Form wie "Was ist neu",
+   andere Farbe (Simons Wunsch 02.09.2026) — ein Tippen führt in den Store.
+   Blau, weil es sich weder mit dem Rosa der Neuerungen noch mit dem Grün des
+   Mitmachen-Hinweises beißt und in Stores die übliche Update-Farbe ist.
+   Beide Hinweise können gleichzeitig stehen; sie müssen auf einen Blick
+   unterscheidbar bleiben. */
+.app-whatsnew--store {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 60%, #1d4ed8 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+}
+.app-whatsnew--store:active {
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
 
 .app-whatsnew:active {
   transform: scale(0.985);

@@ -273,6 +273,11 @@ Versionsüberschrift.
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 
+### Geändert
+- Der Hinweis auf eine neue App-Version sieht jetzt aus wie die anderen
+  Hinweise auf der Startseite, nur in Blau. Ein Tippen führt weiterhin in
+  den Store, das X blendet ihn dauerhaft aus.
+
 ### Behoben
 - Die Leitung kann den Jahresrückblick einer Teamer:in jetzt auch ansehen —
   bisher ging das nur bei Konfis, obwohl die Berechtigung dafür längst

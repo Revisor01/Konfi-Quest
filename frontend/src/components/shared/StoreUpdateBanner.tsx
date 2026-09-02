@@ -9,10 +9,16 @@ import {
 } from '../../services/updateCheck';
 
 /**
- * Dezenter Hinweis "Neue Version im Store" fuer die drei Dashboards.
+ * Hinweis "Neue Version im Store" fuer die drei Dashboards.
  * Selbsttragend wie TrialBanner: prueft selbst (services/updateCheck) und
  * rendert nichts, wenn es nichts zu sagen gibt — die Seiten setzen ihn
  * einfach neben den TrialBanner, ohne eigene Logik.
+ *
+ * FORM: dieselbe Karte wie "Was ist neu?" (.app-whatsnew), nur in Blau
+ * (.app-whatsnew--store). Simons Wunsch vom 02.09.2026 — vorher war das ein
+ * eigener, blasser Streifen, der neben den kraeftigen Neuerungs-Karten wie
+ * ein Fremdkoerper wirkte. Eine Form fuer alle Hinweise, die Farbe
+ * unterscheidet sie: rosa "Was ist neu", gruen Mitmachen, blau Store.
  *
  * BEWUSST NUR EIN HINWEIS, KEINE BLOCKADE: Tippen oeffnet die Store-Seite
  * der App (App Store bzw. Google Play), das X blendet den Hinweis dauerhaft
@@ -36,65 +42,43 @@ const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({ style })
 
   if (!info) return null;
 
-  const accent = '#667eea'; // wie der ruhige Zustand des TrialBanners
+  const oeffneStore = () => window.open(info.url, '_blank');
 
   return (
     <div
+      className="app-whatsnew app-whatsnew--store"
       role="button"
       tabIndex={0}
+      style={style}
       aria-label={`Version ${info.version} ist verfügbar. Im Store ansehen`}
-      onClick={() => window.open(info.url, '_blank')}
+      onClick={oeffneStore}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          window.open(info.url, '_blank');
+          oeffneStore();
         }
-      }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        margin: '0 16px 12px',
-        padding: '12px 14px',
-        background: 'rgba(102, 126, 234, 0.08)',
-        border: `1px solid ${accent}33`,
-        borderRadius: '12px',
-        cursor: 'pointer',
-        ...style
       }}
     >
       <IonIcon
         icon={arrowUpCircleOutline}
+        className="app-whatsnew__icon"
         aria-hidden="true"
-        style={{ color: accent, fontSize: '1.3rem', flexShrink: 0 }}
       />
-      <div style={{ fontSize: '0.88rem', color: '#333', lineHeight: 1.35, flex: 1 }}>
-        <strong style={{ color: accent }}>
-          Version {info.version} ist da
-        </strong>
-        <div style={{ color: '#666', fontSize: '0.82rem' }}>
-          Tippen, um das Update im Store zu laden.
-        </div>
+      <div className="app-whatsnew__text">
+        <span className="app-whatsnew__title">Version {info.version} ist da</span>
+        <span className="app-whatsnew__sub">
+          Hier tippen, um das Update im Store zu laden.
+        </span>
       </div>
       <button
         type="button"
+        className="app-whatsnew__close"
         aria-label="Hinweis ausblenden"
         onClick={(e) => {
           // Das X blendet nur aus — es darf NICHT gleichzeitig den Store oeffnen.
           e.stopPropagation();
           merkeHinweisWeggeklickt(info.version);
           setInfo(null);
-        }}
-        style={{
-          background: 'none',
-          border: 'none',
-          padding: '4px',
-          color: '#999',
-          fontSize: '1.1rem',
-          display: 'flex',
-          alignItems: 'center',
-          flexShrink: 0,
-          cursor: 'pointer'
         }}
       >
         <IonIcon icon={closeOutline} aria-hidden="true" />
