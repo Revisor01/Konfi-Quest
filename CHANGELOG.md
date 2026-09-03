@@ -64,6 +64,9 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im
+  einzelnen Termin. Bei Pflichtterminen, der Konfirmation und reinen
+  Team-Terminen bleibt die Punkteart weg — dort gibt es keine Punkte zu holen.
 - Der Rückblick zeigt endlich die tatsächlichen Kategorien der Termine und
   Aktivitäten. Bisher stand dort nur eine grobe Einteilung, weil die
   Auswertung an der falschen Stelle nachsah.

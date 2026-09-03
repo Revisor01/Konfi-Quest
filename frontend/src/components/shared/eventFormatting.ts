@@ -108,3 +108,40 @@ export const formatTimeUntil = (dateString: string | undefined): string => {
   const jahre = Math.floor(tage / 365);
   return `${jahre} Jahr${jahre > 1 ? 'e' : ''}`;
 };
+
+// Kategorienamen eines Termins als ein Text ("Freizeit, Musik").
+// Die Listen-Antwort (GET /events) liefert beides: categories[] aus dem
+// Transform und category_names als fertigen String. Die Detail-Antwort
+// kennt nur categories[]. Beide Formen werden hier bedient, damit die
+// Karten unabhaengig davon funktionieren, aus welcher Route sie kommen.
+export const kategorienText = (event: {
+  categories?: Array<{ name: string }>;
+  category_names?: string;
+}): string => {
+  if (event.categories && event.categories.length > 0) {
+    return event.categories.map(c => c.name).join(', ');
+  }
+  return (event.category_names || '').trim();
+};
+
+// Zeigt der Termin ueberhaupt eine Punkteart an?
+// Gleiche Regel wie im Detail (EventDetailSections, TeamerEventsPage,
+// Konfi-EventDetailView): Bei Pflicht-, Konfirmations- und reinen
+// Team-Terminen gibt es keine Konfi-Punkte -- dort stand sonst
+// irrefuehrend "Gemeinde", obwohl niemand Punkte bekommt.
+export const zeigtPunkteart = (event: {
+  mandatory?: boolean;
+  teamer_only?: boolean;
+  is_konfirmation?: boolean;
+  points?: number;
+}): boolean =>
+  !event.mandatory
+  && !event.teamer_only
+  && !event.is_konfirmation
+  && (event.points || 0) > 0;
+
+// Anzeigename der Punkteart. point_type (Gottesdienst/Gemeinde), NICHT
+// type -- das ist die Event-Art (Termin vs. Aktivitaet) und war schon
+// einmal die Ursache dafuer, dass ueberall "Gemeinde" stand.
+export const punkteartText = (event: { point_type?: string }): string =>
+  event.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';

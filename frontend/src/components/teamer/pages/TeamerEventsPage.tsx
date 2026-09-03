@@ -30,7 +30,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -1500,6 +1500,18 @@ const TeamerEventsPage: React.FC = () => {
                                         {event.points}P
                                       </span>
                                     )}
+                                    {/* Punkteart direkt hinter den Punkten.
+                                        Gleiche Regel wie im Detail: keine
+                                        Konfi-Punkte, keine Art. */}
+                                    {zeigtPunkteart(event) && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon
+                                          icon={event.point_type === 'gottesdienst' ? home : people}
+                                          className={shouldGrayOut ? 'app-icon-color--muted' : (event.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde')}
+                                        />
+                                        {punkteartText(event)}
+                                      </span>
+                                    )}
                                   </>
                                 )}
                               </div>
@@ -1522,6 +1534,16 @@ const TeamerEventsPage: React.FC = () => {
                                   <span className="app-list-item__meta-item">
                                     <IonIcon icon={location} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--location'} />
                                     {event.location}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Kategorien */}
+                              {kategorienText(event) && (
+                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                  <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
+                                    <IonIcon icon={pricetag} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--category'} />
+                                    {kategorienText(event)}
                                   </span>
                                 </div>
                               )}

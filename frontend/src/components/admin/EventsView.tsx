@@ -1,7 +1,7 @@
 import React from 'react';
 import { IonIcon, IonItem, IonLabel, IonInput, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonList, IonListHeader, useIonModal } from '@ionic/react';
-import { people, calendar, time, location, copy, ban, trash, trophy, listOutline, calendarOutline, bagHandle, attachOutline, filterOutline, search } from 'ionicons/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde } from '../shared';
+import { people, calendar, time, location, copy, ban, trash, trophy, listOutline, calendarOutline, bagHandle, attachOutline, filterOutline, search, pricetag, home } from 'ionicons/icons';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde, kategorienText, zeigtPunkteart, punkteartText } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -363,6 +363,19 @@ const EventsView: React.FC<EventsViewProps> = ({
                                 {event.points}P
                               </span>
                             )}
+                            {/* Punkteart direkt hinter den Punkten — die beiden
+                                gehoeren zusammen. Gleiche Regel wie im Detail:
+                                bei Pflicht-, Konfirmations- und Team-Terminen
+                                gibt es keine Konfi-Punkte, dann auch keine Art. */}
+                            {zeigtPunkteart(event) && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon
+                                  icon={event.point_type === 'gottesdienst' ? home : people}
+                                  className={shouldGrayOut ? 'app-icon-color--muted' : (event.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde')}
+                                />
+                                {punkteartText(event)}
+                              </span>
+                            )}
                           </div>
 
                           {/* Zeile 3: Datum + Uhrzeit */}
@@ -386,7 +399,16 @@ const EventsView: React.FC<EventsViewProps> = ({
                               </span>
                             </div>
                           )}
-                          {/* Zeile 5: Was mitbringen */}
+                          {/* Zeile 5: Kategorien */}
+                          {kategorienText(event) && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
+                                <IonIcon icon={pricetag} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--category'} />
+                                {kategorienText(event)}
+                              </span>
+                            </div>
+                          )}
+                          {/* Zeile 6: Was mitbringen */}
                           {event.bring_items && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                               <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
@@ -395,7 +417,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                               </span>
                             </div>
                           )}
-                          {/* Zeile 6: Material */}
+                          {/* Zeile 7: Material */}
                           {(event.material_count || 0) > 0 && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                               <span className="app-list-item__meta-item">
