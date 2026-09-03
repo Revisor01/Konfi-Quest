@@ -1,94 +1,70 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { heartOutline, peopleOutline, trophyOutline, calendarOutline, ribbonOutline } from 'ionicons/icons';
+import { heartOutline, trophyOutline, calendarOutline, ribbonOutline } from 'ionicons/icons';
 import type { SlideProps, KonfiWrappedData } from '../../../types/wrapped';
 import SlideBase from './SlideBase';
 
 interface AbschlussSlideProps extends SlideProps {
   data: KonfiWrappedData;
   year: number;
+  /** Name der Ausgabe -- steht in der Ueberschrift statt "Konfi-Jahr {Jahr}". */
+  titel?: string | null;
 }
 
-const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year }) => {
+/**
+ * Die Abschluss-Seite -- auf die Slogan-Gestaltung umgezogen (03.09.2026).
+ *
+ * Simons Botschaft "Dein Weg. Deine Zeit. Dein Glaube." (01.09.2026) bleibt
+ * unveraendert -- sie ist der Schluss des Rueckblicks. Neu ist nur, dass sie
+ * die Typo der uebrigen Seiten traegt: Sie IST der Slogan dieser Seite und
+ * steht damit gross, statt als kleiner Nachsatz unter einer Statistikliste.
+ *
+ * Die drei Zahlen bleiben als Zeile darunter -- hier gehoert die Uebersicht
+ * hin, das ist der Sinn der Seite.
+ */
+const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year, titel }) => {
   // Siehe WrappedModal: `konfirmation` ist das echte Datum, `ende` nur der
   // Rueckfall fuer Alt-Snapshots ohne das Feld.
   const z = data.slides.zeitraum;
   const zeitraumEnde = z ? (('konfirmation' in z) ? (z.konfirmation || null) : (z.ende || null)) : null;
 
+  const zahlen = [
+    { icon: trophyOutline, wert: data.slides.punkte.total, label: 'Punkte' },
+    { icon: calendarOutline, wert: data.slides.events.total_attended, label: 'Termine' },
+    { icon: ribbonOutline, wert: data.slides.badges.total_earned, label: 'Abzeichen' },
+  ];
+
   return (
-    <SlideBase isActive={isActive} className="abschluss-slide">
-      <div className="wrapped-anim-fly-left">
-        <p className="wrapped-label">Dein Konfi-Jahr {year}</p>
-        <p className="wrapped-hero-text" style={{ fontSize: 'clamp(1.8rem, 7vw, 3rem)' }}>
-          Auf einen<br />Blick
-        </p>
+    <SlideBase isActive={isActive} className="abschluss-slide" kachel="abschluss">
+      <div className="kat-auge">{titel?.trim() || `Dein Konfi-Jahr ${year}`}</div>
+
+      {/* Simons Botschaft traegt die Seite. */}
+      <div className="kat-slogan">
+        <span style={{ display: 'block' }}>Dein Weg.</span>
+        <span style={{ display: 'block' }}>Deine Zeit.</span>
+        <span style={{ display: 'block' }}>Dein Glaube.</span>
       </div>
 
-      {/* Konfirmations-Countdown */}
-      {zeitraumEnde && (
-        <div className="wrapped-anim-fade wrapped-anim-delay-1" style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-            <IonIcon icon={calendarOutline} style={{ fontSize: '1.1rem' }} />
-            <span>
-              Konfirmation am {new Date(zeitraumEnde).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Summary Stats - linksbuendig gestapelt */}
-      <div className="wrapped-anim-fly-left wrapped-anim-delay-2" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        marginTop: '24px',
-        width: '100%',
-      }}>
-        {[
-          { icon: trophyOutline, value: data.slides.punkte.total, label: 'Punkte' },
-          { icon: calendarOutline, value: data.slides.events.total_attended, label: 'Events' },
-          { icon: ribbonOutline, value: data.slides.badges.total_earned, label: 'Badges' },
-        ].map((stat, i) => (
-          <div key={i} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-          }}>
-            <IonIcon icon={stat.icon} style={{ fontSize: '1.2rem', color: '#a78bfa', flexShrink: 0 }} />
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', minWidth: '48px' }}>{stat.value}</span>
-            <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)' }}>{stat.label}</span>
+      <div className="w-bilanz">
+        {zahlen.map((s, i) => (
+          <div key={i} className="w-bilanz__zeile">
+            <IonIcon icon={s.icon} />
+            <b>{s.wert}</b>
+            <span>{s.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Simons Botschaft (01.09.2026), typo-driven: drei kurze Zeilen
-          statt Fliesstext, dann die Einladung. Einladend, nicht werbend --
-          es ist eine Kirchen-App. */}
-      <div className="wrapped-anim-fade wrapped-anim-delay-3" style={{ marginTop: '28px' }}>
-        <p className="abschluss-motto">
-          <span>Dein Weg.</span>
-          <span>Deine Zeit.</span>
-          <span>Dein Glaube.</span>
-        </p>
-      </div>
+      {zeitraumEnde && (
+        <div className="kat-fussnote">
+          Konfirmation am {new Date(zeitraumEnde).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </div>
+      )}
 
-      {/* CTA */}
-      <div className="wrapped-anim-bounce wrapped-anim-delay-3" style={{ marginTop: '20px' }}>
-        <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IonIcon icon={heartOutline} style={{ fontSize: '1.3rem', color: '#f472b6' }} />
-          <span className="wrapped-subtitle" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>Werde Teamer:in</span>
-        </p>
-        <p style={{
-          color: 'rgba(255,255,255,0.6)',
-          fontSize: '0.85rem',
-          marginTop: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <IonIcon icon={peopleOutline} style={{ fontSize: '1rem' }} />
-          bleib dabei und gestalte das nächste Konfi-Jahr mit
-        </p>
+      {/* Einladend, nicht werbend -- es ist eine Kirchen-App. */}
+      <div className="w-einladung">
+        <IonIcon icon={heartOutline} />
+        <span>Werde Teamer:in und gestalte das nächste Jahr mit</span>
       </div>
     </SlideBase>
   );

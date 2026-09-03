@@ -1101,7 +1101,12 @@ ion-modal.wrapped-modal-fullscreen {
    -- Farbe und Bild gehoeren damit zusammen.
    ======================================== */
 
-.kategorie-seite-slide {
+.kategorie-seite-slide,
+.punkte-slide,
+.events-slide,
+.badges-slide,
+.abschluss-slide,
+.konfirmation-slide {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -1114,7 +1119,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 /* Kleines Label ganz oben ueber der Zahl. */
-.kategorie-seite-slide .kat-auge {
+.kat-auge {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1125,7 +1130,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 /* Die Zahl: bewusst KLEIN. Sie ordnet ein, sie traegt nicht.
    Simon: "nur Zahlen sind ultra uninteressant". */
-.kategorie-seite-slide .kat-zahl {
+.kat-zahl {
   font-family: var(--w-akzent);
   font-size: 40px;
   line-height: 0.9;
@@ -1133,14 +1138,14 @@ ion-modal.wrapped-modal-fullscreen {
   margin-bottom: 6px;
 }
 
-.kategorie-seite-slide .kat-zahl__mal {
+.kat-zahl__mal {
   font-size: 22px;
   opacity: 0.65;
   margin-left: 3px;
 }
 
 /* Der Slogan traegt die Seite. Zeilenumbrueche kommen aus dem Text. */
-.kategorie-seite-slide .kat-slogan {
+.kat-slogan {
   font-family: var(--w-akzent);
   font-size: clamp(38px, 12vw, 58px);
   line-height: 0.96;
@@ -1151,14 +1156,14 @@ ion-modal.wrapped-modal-fullscreen {
   margin-bottom: 16px;
 }
 
-.kategorie-seite-slide .kat-nachsatz {
+.kat-nachsatz {
   font-size: 17px;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.93);
   max-width: 22em;
 }
 
-.kategorie-seite-slide .kat-fussnote {
+.kat-fussnote {
   margin-top: 10px;
   font-size: 12px;
   font-weight: 600;
@@ -1288,4 +1293,125 @@ ion-modal.wrapped-modal-fullscreen {
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.9);
   max-width: 20em;
+}
+
+
+/* ========================================
+   Bausteine der uebrigen Seiten (03.09.2026)
+
+   Punkte, Termine, Abzeichen und Abschluss tragen seit heute dieselbe
+   Gestaltung wie die Bereichsseiten: Slogan gross, Zahl klein. Diese
+   Bausteine ergaenzen, was nur dort vorkommt.
+   ======================================== */
+
+/* Aufteilung der Punkte (Gottesdienst / Gemeinde / Bonus). */
+.w-aufteilung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.w-aufteilung b {
+  font-family: var(--w-akzent);
+  font-size: 22px;
+  margin-right: 5px;
+  color: #fff;
+}
+
+/* Ein hervorgehobener Einzelwert, z. B. der letzte Termin. */
+.w-merkzettel {
+  margin-top: 18px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+  max-width: 100%;
+}
+
+.w-merkzettel__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.w-merkzettel__wert {
+  display: block;
+  margin-top: 3px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Die Abzeichen als Reihe -- sie sind Bilder und tragen mit. */
+.w-abzeichenreihe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.w-abzeichen {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.26);
+}
+
+.w-abzeichen ion-icon {
+  font-size: 24px;
+  color: #fff;
+}
+
+/* Die Bilanz auf der Abschluss-Seite. */
+.w-bilanz {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.w-bilanz__zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 15px;
+}
+
+.w-bilanz__zeile ion-icon {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.w-bilanz__zeile b {
+  font-family: var(--w-akzent);
+  font-size: 30px;
+  color: #fff;
+  min-width: 46px;
+}
+
+.w-einladung {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 20px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.w-einladung ion-icon {
+  font-size: 20px;
+  color: #f9a8d4;
+  flex-shrink: 0;
 }

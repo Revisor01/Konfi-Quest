@@ -1,6 +1,4 @@
 import React from 'react';
-import { IonIcon } from '@ionic/react';
-import { calendarOutline, closeCircleOutline } from 'ionicons/icons';
 import SlideBase from './SlideBase';
 import { useCountUp } from '../../../hooks/useCountUp';
 import type { SlideProps, KonfiEventsSlide } from '../../../types/wrapped';
@@ -9,46 +7,78 @@ interface EventsSlideProps extends SlideProps {
   events: KonfiEventsSlide;
 }
 
+/**
+ * Die Termin-Seite -- auf die Slogan-Gestaltung umgezogen (03.09.2026).
+ *
+ * DABEI ENTFERNT: Die Zeile "0 mal abgesagt" stand hier FEST VERDRAHTET --
+ * eine Null, die bei jeder Person erschien, unabhaengig von den Daten. Das
+ * ist genau die Art Zeile, die Simons Regel verbietet ("keine
+ * Negativ-Seiten"): Sie macht das Absagen zum Thema, obwohl niemand danach
+ * gefragt hat, und war obendrein nicht mal gerechnet.
+ */
+
+function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz: string } {
+  if (besucht >= 20) {
+    return {
+      auge: 'Deine Termine',
+      slogan: ['Du warst', 'öfter da', 'als manche', 'Möbel.'],
+      nachsatz: 'Ein Jahr, in dem du kaum etwas verpasst hast.'
+    };
+  }
+  if (besucht >= 10) {
+    return {
+      auge: 'Deine Termine',
+      slogan: ['Immer wieder', 'aufgetaucht.'],
+      nachsatz: 'Nicht einmal, nicht zweimal — immer wieder.'
+    };
+  }
+  if (besucht >= 2) {
+    return {
+      auge: 'Deine Termine',
+      slogan: ['Du warst', 'dabei.'],
+      nachsatz: 'Und darum geht es.'
+    };
+  }
+  if (besucht === 1) {
+    return {
+      auge: 'Dein Termin',
+      slogan: ['Einmal', 'hingegangen.'],
+      nachsatz: 'Aller Anfang ist genau das.'
+    };
+  }
+  return {
+    auge: 'Deine Termine',
+    slogan: ['Der erste', 'Termin', 'wartet noch.'],
+    nachsatz: 'Es ist immer Platz für dich.'
+  };
+}
+
 const EventsSlide: React.FC<EventsSlideProps> = ({ isActive, events }) => {
   const animatedCount = useCountUp(events.total_attended, isActive);
+  const text = spruchFuer(events.total_attended);
 
   return (
-    <SlideBase isActive={isActive} className="events-slide">
-      <div className="wrapped-anim-fly-left">
-        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <IonIcon icon={calendarOutline} style={{ fontSize: '1rem' }} />
-          Deine Events
-        </p>
+    <SlideBase isActive={isActive} className="events-slide" kachel="events">
+      <div className="kat-auge">{text.auge}</div>
+
+      {events.total_attended > 0 && (
+        <div className="kat-zahl">
+          {animatedCount}<span className="kat-zahl__mal">×</span>
+        </div>
+      )}
+
+      <div className="kat-slogan">
+        {text.slogan.map((zeile, i) => (
+          <span key={i} style={{ display: 'block' }}>{zeile}</span>
+        ))}
       </div>
-      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
-        <p className="wrapped-big-number">{animatedCount}</p>
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-subtitle">Events besucht</p>
-        {events.total_available > 0 && (
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '4px' }}>
-            von {events.total_available} verfügbaren
-          </p>
-        )}
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-        <IonIcon icon={closeCircleOutline} style={{ fontSize: '1.1rem' }} />
-        <span>0 mal abgesagt</span>
-      </div>
-      {events.lieblings_event && (
-        <div className="wrapped-anim-fly-left wrapped-anim-delay-3">
-          <div style={{
-            marginTop: '24px',
-            padding: '16px 20px',
-            background: 'rgba(255,255,255,0.15)',
-            borderRadius: '16px',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dein letztes Event</p>
-            <p style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 700, margin: '4px 0 0 0' }}>
-              {events.lieblings_event.name}
-            </p>
-          </div>
+
+      <div className="kat-nachsatz">{text.nachsatz}</div>
+
+      {events.lieblings_event?.name && (
+        <div className="w-merkzettel">
+          <span className="w-merkzettel__label">Dein letzter Termin</span>
+          <span className="w-merkzettel__wert">{events.lieblings_event.name}</span>
         </div>
       )}
     </SlideBase>

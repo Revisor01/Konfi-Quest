@@ -43,8 +43,15 @@ Versionsüberschrift.
   Rückblick abbilden.
 - Im Profil einer Konfi oder Teamer:in steht jetzt der Name der Ausgabe
   („Zwischenstand") statt mehrfach derselben Jahreszahl.
-- Die Seiten zu den Bereichen zeigen jetzt einen Spruch statt einer nackten
-  Zahl — mit passendem Bild und eigener Farbe.
+- Der Jahresrückblick sieht durchgehend gleich aus: Jede Seite trägt einen
+  Spruch statt einer nackten Zahl, hat ein Hintergrundbild und eine eigene
+  Farbe. Der Text richtet sich nach dem, was jemand erlebt hat — wer wenig
+  dabei war, bekommt einen Satz, der trägt, statt eines mageren Vergleichs.
+- Neu ist die Seite zum seltensten Abzeichen: „Das haben nur x %." Die
+  Prozentzahl steht groß — sie sagt als einzige Zahl im Rückblick, wie
+  besonders etwas ist.
+- Die erste Seite trägt den Namen der Ausgabe: „Willkommen zu deinem
+  Zwischenstand" statt immer „Konfi-Jahr".
 - Ungelesene Nachrichten mit einem Datum in der Zukunft lassen den
   Chat-Zähler nicht mehr stehen.
 - Die Ungelesen-Markierung im Chat verschwindet jetzt zuverlässig. Der Zähler

@@ -254,7 +254,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
-      'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
+      'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} titel={titel} />,
       'seltenstes': (a) => {
         const selt = (konfiData.slides.badges as { seltenstes?: { name: string; icon: string; color: string; haben_es: number; konfis: number; prozent: number } })?.seltenstes;
         return selt ? <SeltenstesAbzeichenSlide isActive={a} abzeichen={selt} /> : null;
