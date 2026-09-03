@@ -65,8 +65,16 @@ und jeder einen eigenen Namen geben:
 - „Zwischenstand"
 - „Dein Abschluss"
 
-**So legst du eine an:** Du gibst den Rückblick frei wie bisher und vergibst
-dabei einen Titel. Lässt du das Feld leer, schlägt die App einen Namen aus dem
+**Wo du das findest:** Unter **Mehr → Jahresrückblick**. Dort siehst du alle
+Ausgaben mit Namen, Zeitraum und der Zahl der Rückblicke darin. Über das Plus
+oben rechts legst du eine neue an.
+
+> Der frühere Schalter „Wrapped freigeben" im Jahrgang ist entfallen. Ein
+> Schalter kann nur an oder aus — er konnte weder benennen noch eine einzelne
+> Ausgabe löschen.
+
+**So legst du eine an:** Jahrgang wählen, Namen vergeben, „Erstellen und
+freigeben". Lässt du das Feld leer, schlägt die App einen Namen aus dem
 Jahrgang vor — du musst also nichts eintippen.
 
 Jede Freigabe erzeugt eine **neue** Ausgabe. Die vorherige bleibt bestehen:

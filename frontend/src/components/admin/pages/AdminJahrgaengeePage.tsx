@@ -112,7 +112,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   };
   const { user, setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
-  const [wrappedLoading, setWrappedLoading] = useState(false);
 
   // Direkt-Zuweisung beim Anlegen: Auswahl der Personen, die Zugriff auf den
   // neuen Jahrgang bekommen. Optional — niemand MUSS zugewiesen werden.
@@ -123,9 +122,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   const [presentAlert] = useIonAlert();
   // Lokaler Zustand des Wrapped-Releases, damit der Toggle nach generate/delete
   // sofort den neuen Stand zeigt (das Modal bleibt offen).
-  const [wrappedReleasedAt, setWrappedReleasedAt] = useState<string | null>(
-    jahrgang?.wrapped_released_at ?? null
-  );
 
   const [formData, setFormData] = useState({
     name: '',
@@ -146,7 +142,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         target_gemeinde: jahrgang.target_gemeinde ?? 10,
         konfspruch_enabled: jahrgang.konfspruch_enabled ?? true
       });
-      setWrappedReleasedAt(jahrgang.wrapped_released_at ?? null);
     } else {
       setFormData({
         name: '',
@@ -156,7 +151,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         target_gemeinde: 10,
         konfspruch_enabled: true
       });
-      setWrappedReleasedAt(null);
     }
     // Auswahl der Direkt-Zuweisung gehoert zum Anlege-Vorgang — beim Wechsel
     // des bearbeiteten Jahrgangs darf keine alte Auswahl haengen bleiben.
@@ -249,61 +243,12 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     }
   };
 
-  const generateWrapped = async () => {
-    if (!jahrgang) return;
-    setWrappedLoading(true);
-    try {
-      await api.post(`/wrapped/generate/${jahrgang.id}`);
-      setWrappedReleasedAt(new Date().toISOString());
-      setSuccess('Wrapped wurde freigegeben und die Konfis wurden benachrichtigt');
-      onRefresh?.();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Freigeben von Wrapped'));
-    } finally {
-      setWrappedLoading(false);
-    }
-  };
+  // generateWrapped / deleteWrapped / handleWrappedToggle sind am
+  // 03.09.2026 entfallen: Der Rueckblick wird nicht mehr ueber einen Schalter
+  // im Jahrgang freigegeben, sondern unter Mehr > Jahresrueckblick verwaltet
+  // (AdminWrappedPage) -- dort mit Namen, mehreren Ausgaben und gezieltem
+  // Loeschen. Die Routen dahinter sind dieselben.
 
-  const deleteWrapped = async () => {
-    if (!jahrgang) return;
-    setWrappedLoading(true);
-    try {
-      await api.delete(`/wrapped/${jahrgang.id}`);
-      setWrappedReleasedAt(null);
-      onRefresh?.();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Löschen von Wrapped'));
-    } finally {
-      setWrappedLoading(false);
-    }
-  };
-
-  const handleWrappedToggle = (checked: boolean) => {
-    if (!jahrgang) return;
-    // Nur reagieren, wenn sich der Zustand tatsächlich ändert.
-    const isReleased = !!wrappedReleasedAt;
-    if (checked === isReleased) return;
-
-    if (checked) {
-      presentAlert({
-        header: 'Wrapped freigeben',
-        message: 'Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?',
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Freigeben', handler: () => generateWrapped() }
-        ]
-      });
-    } else {
-      presentAlert({
-        header: 'Wrapped löschen',
-        message: 'Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.',
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Löschen', role: 'destructive', handler: () => deleteWrapped() }
-        ]
-      });
-    }
-  };
 
   return (
     <IonPage>
@@ -468,29 +413,17 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                     disabled={loading}
                   />
                 </IonItem>
-                {jahrgang && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel>
-                      <h3 style={{ margin: 0 }}>Wrapped freigeben</h3>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', whiteSpace: 'normal' }}>
-                        {wrappedReleasedAt
-                          ? `Freigegeben am ${new Date(wrappedReleasedAt).toLocaleDateString('de-DE')}`
-                          : 'Generiert den Rückblick und benachrichtigt die Konfis.'}
-                      </p>
-                    </IonLabel>
-                    {wrappedLoading ? (
-                      <IonSpinner slot="end" name="crescent" />
-                    ) : (
-                      <IonToggle
-                        slot="end"
-                        className="app-toggle--jahrgang"
-                        checked={!!wrappedReleasedAt}
-                        onIonChange={(e) => handleWrappedToggle(e.detail.checked)}
-                        disabled={loading}
-                      />
-                    )}
-                  </IonItem>
-                )}
+                {/* Der Wrapped-Schalter ist am 03.09.2026 hierher VERSCHWUNDEN
+                    (Simon: "es ist immer noch im Jahrgang ein Switch drin, der
+                    sollte da doch weg, eigene Sektion fuer alle Admins mit den
+                    Regeln fuer Zugriffe").
+
+                    Warum: Ein Schalter kann nur EINEN Zustand abbilden, an
+                    oder aus. Seit es mehrere Ausgaben je Jahrgang gibt
+                    ("Zwischenstand", "Dein Abschluss"), passt das nicht mehr --
+                    er koennte weder benennen noch eine einzelne Ausgabe
+                    loeschen. Das liegt jetzt unter Mehr > Jahresrueckblick
+                    (AdminWrappedPage). */}
               </IonList>
             </IonCardContent>
           </IonCard>

@@ -2082,4 +2082,91 @@ describe('Chat Routes', () => {
       expect(await reaktionenAus(msg.id)).toEqual([]);
     });
   });
+
+  // ================================================================
+  // UNGELESEN-ZAEHLUNG GEGEN ZUKUNFTSDATEN
+  // ================================================================
+  describe('Ungelesen-Zaehlung ignoriert Nachrichten aus der Zukunft', () => {
+    // SIMONS BEFUND (02./03.09.2026): "Ich gehe in die Chats, Badge wird nie
+    // geloescht. Bleibt immer da." Zwei Frontend-Fixes spaeter im Browser
+    // gemessen: Der Badge verhielt sich KORREKT. In der Demo-Gemeinde lagen
+    // 16 Chat-Nachrichten mit Datum bis zum 20.11.2026, Stichtag war der
+    // 03.09. mark-read setzt last_read_at auf NOW() -- alles Spaetere galt
+    // damit zu Recht als ungelesen.
+    //
+    // Die Daten waren falsch, nicht der Code. Gekostet hat es einen Tag
+    // Fehlersuche an der falschen Stelle. Diese Tests halten die Haertung
+    // fest, damit dieselbe Datenlage nie wieder als Programmfehler erscheint.
+
+    it('eine Nachricht aus der Zukunft macht den Raum nicht ungelesen', async () => {
+      const raum = CHAT_ROOMS.jahrgang.id;
+
+      // Nachricht von jemand anderem, ein Jahr in der Zukunft.
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type, created_at)
+         VALUES ($1, $2, 'admin', 'Aus der Zukunft', 'text', NOW() + INTERVAL '1 year')`,
+        [raum, USERS.admin1.id]
+      );
+
+      // Konfi liest den Raum.
+      await request(app)
+        .post(`/api/chat/rooms/${raum}/mark-read`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body?.chat?.byRoom?.[raum] || 0).toBe(0);
+    });
+
+    it('eine Nachricht aus der Vergangenheit zaehlt weiterhin', async () => {
+      // Gegenprobe: Die Haertung darf echte ungelesene Nachrichten nicht
+      // verschlucken -- sonst waere der Badge immer 0 und der Test oben
+      // gruen aus dem falschen Grund.
+      const raum = CHAT_ROOMS.jahrgang.id;
+
+      await request(app)
+        .post(`/api/chat/rooms/${raum}/mark-read`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      // Danach schreibt jemand anderes -- jetzt, also in der Vergangenheit
+      // relativ zur naechsten Abfrage.
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type, created_at)
+         VALUES ($1, $2, 'admin', 'Ganz normal', 'text', NOW() + INTERVAL '1 second')`,
+        [raum, USERS.admin1.id]
+      );
+      await new Promise(r => setTimeout(r, 1200));
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body?.chat?.byRoom?.[raum] || 0).toBe(1);
+    });
+
+    it('die Raumliste zaehlt Zukunftsnachrichten ebenfalls nicht', async () => {
+      const raum = CHAT_ROOMS.jahrgang.id;
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content, message_type, created_at)
+         VALUES ($1, $2, 'admin', 'Spaeter mal', 'text', NOW() + INTERVAL '3 months')`,
+        [raum, USERS.admin1.id]
+      );
+      await request(app)
+        .post(`/api/chat/rooms/${raum}/mark-read`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      const res = await request(app)
+        .get('/api/chat/rooms')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      const eintrag = res.body.find(r => r.id === raum);
+      expect(eintrag).toBeDefined();
+      expect(eintrag.unread_count || 0).toBe(0);
+    });
+  });
 });

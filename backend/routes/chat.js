@@ -788,6 +788,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               WHERE m.room_id = r.id
               AND m.deleted_at IS NULL
               AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+            AND m.created_at <= NOW()
           ) as unread_count,
           (
               SELECT json_build_object(
@@ -1220,6 +1221,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             WHERE cp.user_id = $1
             AND cp.user_type = $2
             AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+            AND cm.created_at <= NOW()
             AND cm.deleted_at IS NULL
             AND NOT (cm.user_id = $1 AND cm.user_type = $2)
           `;
@@ -2031,6 +2033,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               WHERE cp.user_id = $1
               AND cp.user_type = $2
               AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+            AND cm.created_at <= NOW()
               AND cm.deleted_at IS NULL
               AND NOT (cm.user_id = $1 AND cm.user_type = $2)
             `;

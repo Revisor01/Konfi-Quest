@@ -244,6 +244,14 @@ export interface WrappedHistoryEntry {
   year: number;
   data: KonfiWrappedData | TeamerWrappedData;
   computed_at: string;
+  /**
+   * Name der Ausgabe ("Zwischenstand", "Dein Abschluss"). Ab 03.09.2026 --
+   * das Backend liefert ihn mit, damit mehrere Ausgaben desselben Jahres
+   * unterscheidbar sind. Bei Alt-Snapshots ohne Ausgabe nicht gesetzt.
+   */
+  titel?: string | null;
+  ausgabe_id?: number | null;
+  freigegeben_at?: string | null;
 }
 
 // --- Slide-Props Basis ---

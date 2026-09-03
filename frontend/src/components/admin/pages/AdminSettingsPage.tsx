@@ -17,7 +17,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
-import { people, shield, business, pricetag, school, person, trophy, ribbon, logOut, flash, notifications, qrCode, appsOutline, pulseOutline, informationCircleOutline, schoolOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
+import { people, shield, business, pricetag, school, person, trophy, ribbon, logOut, flash, notifications, qrCode, appsOutline, pulseOutline, informationCircleOutline, schoolOutline, compassOutline, sparklesOutline, document as documentIcon } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 // 2.1.1-Fassung, NICHT die alte 2.0 (Befund Simon, 03.09.2026: "Im Profil
@@ -143,6 +143,15 @@ const AdminSettingsPage: React.FC = () => {
         'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
         'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sehen es nur dessen Teamer:innen — oder ausdrücklich für alle, dann sehen es alle Teamer:innen der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
         'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: alle Teamer:innen.',
+      ],
+    },
+    wrapped: {
+      title: 'Jahresrückblick', icon: sparklesOutline, color: 'var(--app-color-wrapped, #7c3aed)',
+      paragraphs: [
+        'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Termine, Punkte, Abzeichen, ihre Schwerpunkte und die Momente aus den Challenges.',
+        'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
+        'Jede Ausgabe wird beim Erstellen sofort freigegeben, und alle Betroffenen bekommen eine Mitteilung. Einzelne Ausgaben lassen sich gezielt löschen, ohne die anderen anzurühren.',
+        'Als Admin verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke der Teamer:innen.',
       ],
     },
     certificates: {
@@ -453,6 +462,22 @@ const AdminSettingsPage: React.FC = () => {
                     <p className="app-settings-item__subtitle">Materialien und Dokumente verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
+                </div>
+
+                <div
+                  className="app-list-item app-settings-item"
+                  onClick={() => router.push('/admin/wrapped')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped, #7c3aed)' }}>
+                    <IonIcon icon={sparklesOutline} style={{ color: '#fff' }} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Jahresrückblick</h2>
+                    <p className="app-settings-item__subtitle">Ausgaben anlegen, benennen und freigeben</p>
+                  </div>
+                  <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped, #7c3aed)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
                   </IonButton>
                 </div>

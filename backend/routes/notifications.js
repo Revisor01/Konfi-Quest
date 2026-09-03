@@ -44,6 +44,7 @@ module.exports = (db, verifyTokenRBAC) => {
                  WHERE m.room_id = r.id
                  AND m.deleted_at IS NULL
                  AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+                 AND m.created_at <= NOW()
                  -- Eigene Nachrichten zählen nicht als ungelesen. Ohne diese
                  -- Zeile stand nach der eigenen letzten Nachricht eine Eins am
                  -- Reiter, die erst beim Oeffnen des Raums verschwand — und wer

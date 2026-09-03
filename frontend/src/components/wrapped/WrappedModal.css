@@ -1091,12 +1091,67 @@ ion-modal.wrapped-modal-fullscreen {
 .kategorie-seite-slide {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-start;
-  gap: 10px;
-  padding: 0 32px;
-  /* Standard, falls eine Seite keinen eigenen Verlauf hat. */
+  /* Unten schwerer als oben -- der Blick faellt auf den Slogan, das Bild
+     darueber bekommt Luft. Ein zentrierter Block sah aus wie eine
+     Statistikkachel (Simons Kritik am ersten Anlauf). */
+  padding: 0 30px calc(90px + env(safe-area-inset-bottom, 0px));
   background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a78bfa 100%);
+}
+
+/* Kleines Label ganz oben ueber der Zahl. */
+.kategorie-seite-slide .kat-auge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 14px;
+}
+
+/* Die Zahl: bewusst KLEIN. Sie ordnet ein, sie traegt nicht.
+   Simon: "nur Zahlen sind ultra uninteressant". */
+.kategorie-seite-slide .kat-zahl {
+  font-family: var(--w-akzent);
+  font-size: 40px;
+  line-height: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 6px;
+}
+
+.kategorie-seite-slide .kat-zahl__mal {
+  font-size: 22px;
+  opacity: 0.65;
+  margin-left: 3px;
+}
+
+/* Der Slogan traegt die Seite. Zeilenumbrueche kommen aus dem Text. */
+.kategorie-seite-slide .kat-slogan {
+  font-family: var(--w-akzent);
+  font-size: clamp(38px, 12vw, 58px);
+  line-height: 0.96;
+  letter-spacing: 0.005em;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.28);
+  margin-bottom: 16px;
+}
+
+.kategorie-seite-slide .kat-nachsatz {
+  font-size: 17px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.93);
+  max-width: 22em;
+}
+
+.kategorie-seite-slide .kat-fussnote {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
 }
 
 /* --- Kategorien --- */

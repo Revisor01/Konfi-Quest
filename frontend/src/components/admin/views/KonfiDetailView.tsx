@@ -854,7 +854,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">
-                          Jahresrückblick {eintrag.year}
+                          {/* Den NAMEN der Ausgabe zeigen, nicht das Jahr
+                              (Simon 03.09.2026: "als Admin in den Profilen
+                              steht jetzt zweimal Jahresrueckblick 2026 und
+                              nicht Zwischenstand"). Mit mehreren Ausgaben je
+                              Jahrgang war die Jahreszahl nicht mehr
+                              unterscheidbar -- drei Ausgaben hiessen alle
+                              gleich. Alt-Snapshots ohne Ausgabe fallen auf die
+                              bisherige Beschriftung zurueck. */}
+                          {eintrag.titel || `Jahresrückblick ${eintrag.year}`}
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">

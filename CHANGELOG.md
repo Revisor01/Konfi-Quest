@@ -37,6 +37,16 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Der Jahresrückblick lässt sich jetzt unter „Mehr → Jahresrückblick"
+  verwalten: Ausgaben anlegen, benennen, freigeben und einzeln löschen. Der
+  frühere Schalter im Jahrgang ist entfallen — er konnte immer nur einen
+  Rückblick abbilden.
+- Im Profil einer Konfi oder Teamer:in steht jetzt der Name der Ausgabe
+  („Zwischenstand") statt mehrfach derselben Jahreszahl.
+- Die Seiten zu den Bereichen zeigen jetzt einen Spruch statt einer nackten
+  Zahl — mit passendem Bild und eigener Farbe.
+- Ungelesene Nachrichten mit einem Datum in der Zukunft lassen den
+  Chat-Zähler nicht mehr stehen.
 - Die Ungelesen-Markierung im Chat verschwindet jetzt zuverlässig. Der Zähler
   wurde bisher direkt nach dem Lesen wieder mit dem alten Stand überschrieben,
   weil die App die Zahlen abfragte, bevor der Server das Lesen verbucht hatte.

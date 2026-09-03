@@ -142,6 +142,7 @@ const AdminMetricsPage = faul(() => import('../components/admin/pages/AdminMetri
 const AdminProfilePage = faul(() => import('../components/admin/pages/AdminProfilePage'));
 const AdminSettingsPage = faul(() => import('../components/admin/pages/AdminSettingsPage'));
 const AdminMaterialPage = faul(() => import('../components/admin/pages/AdminMaterialPage'));
+const AdminWrappedPage = faul(() => import('../components/admin/pages/AdminWrappedPage'));
 const AdminCertificatesPage = faul(() => import('../components/admin/pages/AdminCertificatesPage'));
 const AdminDashboardSettingsPage = faul(() => import('../components/admin/pages/AdminDashboardSettingsPage'));
 const AdminLevelsPage = faul(() => import('../components/admin/pages/AdminLevelsPage'));
@@ -192,6 +193,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/admin/users', page: AdminUsersPage },
       { path: '/admin/organizations', page: AdminOrganizationsPage },
       { path: '/admin/material', page: AdminMaterialPage },
+      { path: '/admin/wrapped', page: AdminWrappedPage },
       { path: '/admin/profile', page: AdminProfilePage },
       // Auch im normalen Admin-Outlet: super_admins haben meist
       // role_name=org_admin (is_super_admin=true). Die Seite prüft die

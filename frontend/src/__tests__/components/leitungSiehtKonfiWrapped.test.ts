@@ -72,7 +72,13 @@ describe('Leitung kann den Jahresrueckblick einer Konfi ansehen (N5)', () => {
     // bleiben erhalten. Ein einzelner Eintrag (.find) hätte die Historie
     // stillschweigend auf ein Jahr zusammengestrichen.
     expect(konfiDetail).toContain('wrappedListe.map((eintrag, i) =>');
-    expect(konfiDetail).toContain('Jahresrückblick {eintrag.year}');
+    // GEAENDERT AM 03.09.2026: Frueher stand hier fest "Jahresrückblick
+    // {eintrag.year}". Seit es mehrere Ausgaben je Jahrgang gibt
+    // ("Zwischenstand", "Dein Abschluss"), war das nicht mehr
+    // unterscheidbar -- im Profil stand zweimal dasselbe (Simons Befund).
+    // Jetzt traegt der Titel der Ausgabe, mit der Jahreszahl als Rueckfall
+    // fuer Alt-Snapshots ohne Ausgabe.
+    expect(konfiDetail).toContain('eintrag.titel || `Jahresrückblick ${eintrag.year}`');
   });
 
   it('bricht den Abruf beim Wechsel der Konfi ab', () => {

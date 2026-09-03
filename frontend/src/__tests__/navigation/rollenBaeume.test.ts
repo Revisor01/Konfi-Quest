@@ -151,7 +151,7 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
   // nicht erst beim Nutzer. Die Zahlen sind die deduplizierten Seiten je
   // Rolle: teamer hat 11 Routen, aber Badges/Material doppelt verdrahtet.
   // Zeitgrenze bewusst hochgesetzt (31.08.2026): Diese vier Tests laden die
-  // Seiten-Module WIRKLICH -- zwischen 2 und 21 Stueck. Auf einer ausgelasteten
+  // Seiten-Module WIRKLICH -- zwischen 2 und 22 Stueck. Auf einer ausgelasteten
   // Maschine dauert das laenger als die 5 s, die vitest voreinstellt; gemessen
   // 4,6 s im Leerlauf gegen einen Zeitueberlauf bei Lastdurchschnitt 27.
   // Der Test wuerde also flattern, ohne dass am Code etwas falsch waere -- und
@@ -168,8 +168,10 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
     await expect(ladeRolleVor('teamer')).resolves.toBe(9);
   }, LADE_GRENZE);
 
-  it('admin: ladeRolleVor laedt alle 21 Seiten-Module', async () => {
-    await expect(ladeRolleVor('admin')).resolves.toBe(21);
+  // 22 seit dem 03.09.2026: AdminWrappedPage ist dazugekommen (Verwaltung
+  // der Rueckblick-Ausgaben, ersetzt den Schalter im Jahrgang).
+  it('admin: ladeRolleVor laedt alle 22 Seiten-Module', async () => {
+    await expect(ladeRolleVor('admin')).resolves.toBe(22);
   }, LADE_GRENZE);
 
   it('super_admin: ladeRolleVor laedt alle 2 Seiten-Module', async () => {

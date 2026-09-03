@@ -3,14 +3,16 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 /**
- * Der Wettlauf zwischen mark-read und dem Nachladen der Zaehler.
+ * Die Reihenfolge von mark-read und dem Nachladen der Zaehler.
  *
- * SIMONS BEFUND (03.09.2026, nach Build 160): "Ich gehe in den Chats, Badge
- * wird nie geloescht. Bleibt immer da. Nach komplettem Neustart ist auch die
- * rote Linie wieder da."
+ * WICHTIG FUER DIE EINORDNUNG (03.09.2026): Simons Befund "Badge wird nie
+ * geloescht" hatte eine ANDERE Ursache -- in der Demo-Gemeinde lagen 16
+ * Chat-Nachrichten mit Datum in der Zukunft, und die galten zu Recht als
+ * ungelesen. Der Badge verhielt sich korrekt, die Daten waren falsch
+ * (siehe tests/routes/chat.test.js, "Ungelesen-Zaehlung ignoriert
+ * Nachrichten aus der Zukunft").
  *
- * Der Fix vom 02.09.2026 hatte zwei echte Fehler behoben (Cache und
- * Closure-Wert), aber den eigentlichen Ablauf nicht:
+ * Der hier festgehaltene Wettlauf ist davon unabhaengig und trotzdem echt:
  *
  *   ChatRoom.markRoomAsRead()
  *     -> badgeMarkRoomAsRead(room.id)   // POST lief im HINTERGRUND
@@ -38,8 +40,7 @@ const chatRoomQuelle = readFileSync(
 
 describe('mark-read vor dem Nachladen der Zaehler', () => {
   it('markRoomAsRead gibt ein Promise zurueck', () => {
-    // Ohne Rueckgabewert kann kein Aufrufer warten -- der Wettlauf waere
-    // gar nicht vermeidbar.
+    // Ohne Rueckgabewert kann kein Aufrufer warten.
     expect(badgeQuelle).toMatch(
       /markRoomAsRead:\s*\(roomId: number\)\s*=>\s*Promise<void>/
     );
