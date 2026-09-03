@@ -71,6 +71,8 @@ Versionsüberschrift.
   Gelöscht wird durch Wischen statt über einen Knopf in der Zeile.
 - Überschriften in Listen werden nicht mehr früh abgeschnitten, sondern
   laufen aus.
+- Links im Material entfernt man jetzt durch Wischen, wie die Dateien
+  darunter.
 - Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
   die übrigen Knöpfe der Seite.
 - Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im

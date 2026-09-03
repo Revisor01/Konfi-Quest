@@ -164,3 +164,56 @@ describe('istWebLink bleibt der Waechter vor dem Oeffnen', () => {
     expect(hostAus('https://www.konfi-quest.de/gottesbilder')).toBe('konfi-quest.de');
   });
 });
+
+describe('Link-Zeilen im Material-Modal: entfernen per Wischen', () => {
+  // Simons Hinweis 03.09.2026: Im Material-Modal stand als letzte Stelle
+  // noch ein Muelleimer-Knopf direkt in der Link-Zeile. Ueberall sonst in
+  // der App -- auch bei den Dateien im selben Modal -- liegt das Loeschen
+  // unter der Wischgeste. Ein Loeschknopf neben dem Eingabefeld trifft man
+  // zu leicht.
+  const linkAbschnitt = formular.slice(
+    formular.indexOf('<IonLabel>Links</IonLabel>'),
+    formular.indexOf('Dateien hinzufügen') > 0
+      ? formular.indexOf('Dateien hinzufügen')
+      : formular.length
+  );
+
+  it('die Link-Zeile liegt in einer Wischzeile', () => {
+    expect(linkAbschnitt).toContain('<IonItemSliding');
+    expect(linkAbschnitt).toContain('IonItemOptions');
+  });
+
+  it('das Entfernen haengt an der Wisch-Option', () => {
+    expect(linkAbschnitt).toContain('aria-label="Link entfernen"');
+    const option = linkAbschnitt.slice(
+      linkAbschnitt.indexOf('<IonItemOption'),
+      linkAbschnitt.indexOf('</IonItemOption>')
+    );
+    expect(option).toContain('setLinkUrls');
+    expect(option).toContain('closeOpenSlidingItems');
+  });
+
+  it('in der Zeile steht kein Loeschknopf mehr', () => {
+    // Gegenprobe: Der alte Muelleimer sass als IonButton mit slot="end"
+    // direkt neben dem Eingabefeld.
+    const zeile = linkAbschnitt.slice(
+      linkAbschnitt.indexOf('<IonItem\n'),
+      linkAbschnitt.indexOf('</IonItem>')
+    );
+    expect(zeile).not.toContain('slot="end"');
+    expect(zeile).not.toContain('icon={trash}');
+  });
+
+  it('nutzt dieselbe Darstellung wie die Datei-Zeilen darunter', () => {
+    // app-swipe-actions/app-swipe-action und der rote Kreis -- nicht
+    // selbstgebaut.
+    expect(linkAbschnitt).toContain('app-swipe-actions');
+    expect(linkAbschnitt).toContain('app-swipe-action');
+    expect(linkAbschnitt).toContain('app-icon-circle--danger');
+  });
+
+  it('im Lese-Modus laesst sich nicht gewischt werden', () => {
+    // Ohne Bearbeitungsrecht gibt es nichts zu entfernen.
+    expect(linkAbschnitt).toContain('disabled={nurLesen}');
+  });
+});

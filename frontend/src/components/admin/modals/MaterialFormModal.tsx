@@ -578,38 +578,52 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
+                {/* Entfernen per Wischen wie bei den Dateien darunter
+                    (Simons Hinweis 03.09.2026) -- der Muelleimer neben dem
+                    Feld war die letzte Stelle im Modal mit einem Loeschknopf
+                    in der Zeile.
+                    Die Geste liegt bewusst auf der ganzen Zeile, nicht nur
+                    auf dem Eingabefeld: Ionic gibt einem Wisch, der IM Feld
+                    beginnt, weiterhin der Textmarkierung -- gewischt wird
+                    vom Rand her, wie ueberall sonst. */}
                 {linkUrls.map((url, index) => (
-                  <IonItem
-                    key={index}
-                    lines={index < linkUrls.length - 1 ? 'full' : 'none'}
-                    style={{ '--background': 'transparent' }}
-                  >
-                    <IonInput
-                      label={`Adresse ${linkUrls.length > 1 ? index + 1 : ''}`.trim()}
-                      labelPlacement="stacked"
-                      type="url"
-                      inputmode="url"
-                      autocapitalize="off"
-                      value={url}
-                      onIonInput={(e) => {
-                        const wert = e.detail.value || '';
-                        setLinkUrls(prev => prev.map((l, i) => (i === index ? wert : l)));
-                      }}
-                      placeholder="https://konfi-quest.de/gottesbilder"
-                      readonly={nurLesen}
-                    />
+                  <IonItemSliding key={index} disabled={nurLesen}>
+                    <IonItem
+                      lines={index < linkUrls.length - 1 ? 'full' : 'none'}
+                      style={{ '--background': 'transparent' }}
+                    >
+                      <IonInput
+                        label={`Adresse ${linkUrls.length > 1 ? index + 1 : ''}`.trim()}
+                        labelPlacement="stacked"
+                        type="url"
+                        inputmode="url"
+                        autocapitalize="off"
+                        value={url}
+                        onIonInput={(e) => {
+                          const wert = e.detail.value || '';
+                          setLinkUrls(prev => prev.map((l, i) => (i === index ? wert : l)));
+                        }}
+                        placeholder="https://konfi-quest.de/gottesbilder"
+                        readonly={nurLesen}
+                      />
+                    </IonItem>
                     {!nurLesen && (
-                      <IonButton
-                        slot="end"
-                        fill="clear"
-                        color="danger"
-                        onClick={() => setLinkUrls(prev => prev.filter((_, i) => i !== index))}
-                        aria-label="Link entfernen"
-                      >
-                        <IonIcon icon={trash} slot="icon-only" />
-                      </IonButton>
+                      <IonItemOptions className="app-swipe-actions" side="end">
+                        <IonItemOption
+                          className="app-swipe-action"
+                          onClick={() => {
+                            closeOpenSlidingItems();
+                            setLinkUrls(prev => prev.filter((_, i) => i !== index));
+                          }}
+                          aria-label="Link entfernen"
+                        >
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                            <IonIcon icon={trash} />
+                          </div>
+                        </IonItemOption>
+                      </IonItemOptions>
                     )}
-                  </IonItem>
+                  </IonItemSliding>
                 ))}
                 {linkUrls.length === 0 && (
                   <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 4px 0' }}>
