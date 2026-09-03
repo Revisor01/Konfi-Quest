@@ -990,9 +990,29 @@ const TeamerEventsPage: React.FC = () => {
             </IonCard>
           </IonList>
 
+          {/* Beschreibung - eigene Card wie Konfi */}
+          {selectedEvent.description && (
+            <IonList className="app-section-inset" inset={true}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--events">
+                  <IonIcon icon={informationCircle} />
+                </div>
+                <IonLabel>Beschreibung</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent className="app-card-content">
+                  <div className="app-description-text">
+                    {selectedEvent.description}
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+          )}
+
           {/* ZUSAGE-LEISTE (Simon, 03.09.2026): eigene weisse Karte im
-              Muster der uebrigen Abschnitte (app-card) und direkt nach den
-              Details -- vorher stand sie als freistehende Knopfleiste ganz
+              Muster der uebrigen Abschnitte (app-card) und nach der
+              Beschreibung (Simons Reihenfolge 03.09.2026: erst lesen, worum
+              es geht, dann zusagen) -- vorher stand sie als freistehende Knopfleiste ganz
               unten, unterhalb von Beschreibung und Material, und sah anders
               aus als bei Konfis und Leitung. */}
           <IonList className="app-section-inset" inset={true}>
@@ -1149,25 +1169,6 @@ const TeamerEventsPage: React.FC = () => {
               </IonCardContent>
             </IonCard>
           </IonList>
-
-          {/* Beschreibung - eigene Card wie Konfi */}
-          {selectedEvent.description && (
-            <IonList className="app-section-inset" inset={true}>
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--events">
-                  <IonIcon icon={informationCircle} />
-                </div>
-                <IonLabel>Beschreibung</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent className="app-card-content">
-                  <div className="app-description-text">
-                    {selectedEvent.description}
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            </IonList>
-          )}
 
           {/* Material — die id ist das Sprungziel des Material-Hinweises in
               den Eckdaten (01.09.2026): bei mehreren Materialien scrollt der

@@ -77,6 +77,8 @@ Versionsüberschrift.
   Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
   Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
   Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
+- Beim Termin steht die Beschreibung jetzt vor der Zusage — erst lesen,
+  worum es geht, dann zusagen.
 - Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
   die übrigen Knöpfe der Seite.
 - Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im

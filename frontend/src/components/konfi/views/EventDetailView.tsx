@@ -876,8 +876,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           </IonCard>
         </IonList>
 
+        {/* Beschreibung - eigene Card mit rotem Icon */}
+        {eventData.description && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={informationCircle} />
+              </div>
+              <IonLabel>Beschreibung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <div className="app-description-text">
+                  {eventData.description}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* AN-/ABMELDUNG (Simon, 03.09.2026): eigene weisse Karte im Muster
-            der uebrigen Abschnitte (app-card) und direkt nach den Details --
+            der uebrigen Abschnitte (app-card) und nach der Beschreibung (Simons
+            Reihenfolge 03.09.2026: erst lesen, worum es geht, dann zusagen) --
             vorher stand die Knopfleiste freistehend ganz unten, unterhalb von
             Beschreibung und Teilnehmerliste, und sah anders aus als bei Teamern
             und Leitung. Je nach Zustand ist es hier nur EIN Knopf (anmelden
@@ -1045,25 +1065,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </IonCardContent>
           </IonCard>
         </IonList>
-
-        {/* Beschreibung - eigene Card mit rotem Icon */}
-        {eventData.description && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={informationCircle} />
-              </div>
-              <IonLabel>Beschreibung</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                <div className="app-description-text">
-                  {eventData.description}
-                </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
 
         {/* Teilnehmer-Liste */}
         {participants.length === 0 && !isOnline && (

@@ -906,11 +906,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           />
         )}
 
+        {/* Teilnehmer, Abmeldungen und Anwesenheit haengen an GET /events/:id
+            und fehlen offline — der Grundstand kommt aus dem Listen-Cache.
+            Ohne diesen Hinweis saehe die Seite aus, als gaebe es keine
+            Teilnehmer (Simons Kritik vom 29.08.2026). */}
+        {eventData && participants.length === 0 && !isOnline && (
+          <OfflinePlatzhalter was="Die Teilnehmerliste" />
+        )}
+
+        {/* Beschreibung */}
+        {eventData?.description && (
+          <DescriptionSection description={eventData.description} />
+        )}
+
         {/* EIGENE AN-/ABMELDUNG (Simon, 03.09.2026): Auch Admins, Org-Admins
             und Super-Admins melden sich hier selbst an oder ab. Vorher gab es
             das nur unter /teamer/events -- wer Admin ist, kam da nie hin und
             konnte sich nicht melden, obwohl das Backend es erlaubt haette.
-            Steht direkt nach den Details und im Karten-Muster der uebrigen
+            Steht nach der Beschreibung (Simons Reihenfolge 03.09.2026 --
+            erst lesen, worum es geht, dann zusagen) und im Karten-Muster der uebrigen
             Abschnitte (app-card), damit die Leiste an allen drei Stellen --
             Konfi, Teamer, Leitung -- gleich aussieht und gleich sitzt. */}
         {darfSichMelden && (
@@ -966,19 +980,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               </IonCardContent>
             </IonCard>
           </IonList>
-        )}
-
-        {/* Teilnehmer, Abmeldungen und Anwesenheit haengen an GET /events/:id
-            und fehlen offline — der Grundstand kommt aus dem Listen-Cache.
-            Ohne diesen Hinweis saehe die Seite aus, als gaebe es keine
-            Teilnehmer (Simons Kritik vom 29.08.2026). */}
-        {eventData && participants.length === 0 && !isOnline && (
-          <OfflinePlatzhalter was="Die Teilnehmerliste" />
-        )}
-
-        {/* Beschreibung */}
-        {eventData?.description && (
-          <DescriptionSection description={eventData.description} />
         )}
 
         {/* Timeslots mit Teilnehmern */}

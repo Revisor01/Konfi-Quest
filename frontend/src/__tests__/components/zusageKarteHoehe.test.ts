@@ -66,3 +66,33 @@ describe('Die Zusage-Knoepfe der Leitung bleiben auf Nachbar-Hoehe', () => {
     expect(abschnitt).toContain('Bin nicht dabei');
   });
 });
+
+describe('Beschreibung steht vor der Zusage-Karte', () => {
+  // Simons Reihenfolge 03.09.2026: erst lesen, worum es geht, dann zusagen.
+  // Vorher sass die Zusage direkt hinter den Eckdaten -- man sagte zu, bevor
+  // die Beschreibung ueberhaupt sichtbar war.
+  const konfiDetail = lies('src/components/konfi/views/EventDetailView.tsx');
+
+  const reihenfolge = (quelle: string, beschreibung: string, zusage: string) => {
+    const b = quelle.indexOf(beschreibung);
+    const z = quelle.indexOf(zusage);
+    expect(b, `Beschreibung nicht gefunden: ${beschreibung}`).toBeGreaterThan(-1);
+    expect(z, `Zusage nicht gefunden: ${zusage}`).toBeGreaterThan(-1);
+    return { b, z };
+  };
+
+  it('Leitung: Beschreibung vor "Bist du dabei?"', () => {
+    const { b, z } = reihenfolge(adminDetail, '{/* Beschreibung */}', 'Bist du dabei?');
+    expect(b).toBeLessThan(z);
+  });
+
+  it('Konfi: Beschreibung vor "Bist du dabei?"', () => {
+    const { b, z } = reihenfolge(konfiDetail, '{/* Beschreibung - eigene Card', 'Bist du dabei?');
+    expect(b).toBeLessThan(z);
+  });
+
+  it('Team: Beschreibung vor "Bist du dabei?"', () => {
+    const { b, z } = reihenfolge(teamerSeite, '{/* Beschreibung - eigene Card', 'Bist du dabei?');
+    expect(b).toBeLessThan(z);
+  });
+});
