@@ -990,6 +990,164 @@ const TeamerEventsPage: React.FC = () => {
             </IonCard>
           </IonList>
 
+          {/* ZUSAGE-LEISTE (Simon, 03.09.2026): eigene weisse Karte im
+              Muster der uebrigen Abschnitte (app-card) und direkt nach den
+              Details -- vorher stand sie als freistehende Knopfleiste ganz
+              unten, unterhalb von Beschreibung und Material, und sah anders
+              aus als bei Konfis und Leitung. */}
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={people} />
+              </div>
+              <IonLabel>Bist du dabei?</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {isPast ? (
+                  selectedEvent.is_registered ? (
+                    <div style={{ textAlign: 'center' }}>
+                      {selectedEvent.attendance_status === 'present' && (
+                        <div className="app-status-box app-status-box--success">
+                          <IonIcon icon={checkmarkCircle} />
+                          Anwesend
+                        </div>
+                      )}
+                      {selectedEvent.attendance_status === 'absent' && (
+                        <div className="app-status-box app-status-box--danger">
+                          <IonIcon icon={closeCircle} />
+                          Abwesend
+                        </div>
+                      )}
+                      {!selectedEvent.attendance_status && (
+                        <div className="app-status-box app-status-box--bonus">
+                          <IonIcon icon={hourglass} />
+                          Anwesenheit ausstehend
+                        </div>
+                      )}
+                    </div>
+                  ) : null
+                ) : (
+                  selectedEvent.is_registered ? (
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      fill="outline"
+                      color="danger"
+                      onClick={oeffneAbsage}
+                      disabled={bookingLoading}
+                    >
+                      <IonIcon icon={closeCircle} slot="start" />
+                      {bookingLoading
+                        ? 'Wird verarbeitet...'
+                        : selectedEvent.booking_status === 'waitlist'
+                          ? 'Von der Warteliste austragen'
+                          : 'Nicht mehr dabei'}
+                    </IonButton>
+                  ) : teamerCanRegister(selectedEvent) ? (
+                    (() => {
+                      const teamerMax = selectedEvent.teamer_max_participants || 0;
+                      const teamerCount = selectedEvent.teamer_count || 0;
+                      const teamerFull = teamerMax > 0 && teamerCount >= teamerMax;
+
+                      if (!teamerFull) {
+                        // Kontingent frei (oder unbegrenzt) -> normaler Buchen-Button.
+                        return (
+                          // Zwei gleich breite Knoepfe nebeneinander (Simon,
+                          // 03.09.2026): gleiche Reihe statt untereinander
+                          // gestapelt.
+                          <div className="app-button-row">
+                            <IonButton
+                              className="app-action-button"
+                              expand="block"
+                              color="success"
+                              onClick={() => handleBook(selectedEvent)}
+                              disabled={bookingLoading || !isOnline}
+                            >
+                              <IonIcon icon={bookingLoading || isOnline ? checkmarkCircle : cloudOfflineOutline} slot="start" />
+                              {bookingLoading
+                                ? 'Wird verarbeitet...'
+                                : !isOnline ? 'Du bist offline' : 'Ich bin dabei'}
+                            </IonButton>
+                            {/* Gegenknopf: Ohne ihn war eine Absage nicht von
+                                "hat noch nicht reagiert" zu unterscheiden. Bei
+                                bereits abgesagten Terminen entfaellt er.
+                                Der Dialog fragt einen freiwilligen Grund ab
+                                (aus "offen" heraus ohne Zwang). */}
+                            {selectedEvent.booking_status !== 'opted_out' && (
+                              <IonButton
+                                className="app-action-button"
+                                expand="block"
+                                fill="outline"
+                                color="medium"
+                                onClick={oeffneAbsage}
+                                disabled={bookingLoading}
+                              >
+                                <IonIcon icon={closeCircle} slot="start" />
+                                Ich bin nicht dabei
+                              </IonButton>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      const teamerWaitlistMax = selectedEvent.teamer_max_waitlist_size || 0;
+                      const teamerWaitlistCount = selectedEvent.teamer_waitlist_count || 0;
+                      const waitlistOpen = !!selectedEvent.teamer_waitlist_enabled &&
+                        (teamerWaitlistMax === 0 || teamerWaitlistCount < teamerWaitlistMax);
+
+                      if (waitlistOpen) {
+                        // Kontingent voll, aber Warteliste offen -> Warteliste-Button.
+                        return (
+                          <IonButton
+                            className="app-action-button"
+                            expand="block"
+                            color="warning"
+                            onClick={() => handleBook(selectedEvent)}
+                            disabled={bookingLoading || !isOnline}
+                          >
+                            <IonIcon icon={bookingLoading || isOnline ? hourglass : cloudOfflineOutline} slot="start" />
+                            {bookingLoading
+                              ? 'Wird verarbeitet...'
+                              : !isOnline
+                                ? 'Du bist offline'
+                                : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
+                          </IonButton>
+                        );
+                      }
+
+                      // Kontingent voll und Warteliste voll/deaktiviert -> nur Hinweis.
+                      return (
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          disabled
+                          color="medium"
+                        >
+                          <IonIcon icon={informationCircle} slot="start" />
+                          Kein Platz mehr frei
+                        </IonButton>
+                      );
+                    })()
+                  ) : (
+                    // Reines Konfi-Event: Teamer kann sich NICHT anmelden -> nur Hinweis.
+                    <div
+                      className="app-status-box"
+                      style={{
+                        backgroundColor: 'rgba(156, 163, 175, 0.12)',
+                        color: '#6b7280',
+                        borderColor: 'rgba(156, 163, 175, 0.35)'
+                      }}
+                    >
+                      <IonIcon icon={informationCircle} />
+                      Nur zur Info - keine Anmeldung
+                    </div>
+                  )
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+
           {/* Beschreibung - eigene Card wie Konfi */}
           {selectedEvent.description && (
             <IonList className="app-section-inset" inset={true}>
@@ -1062,146 +1220,6 @@ const TeamerEventsPage: React.FC = () => {
             </IonList>
           )}
 
-          {/* Action Buttons */}
-          <div className="app-event-detail__action-area">
-            {isPast ? (
-              selectedEvent.is_registered ? (
-                <div style={{ textAlign: 'center', padding: '12px 16px' }}>
-                  {selectedEvent.attendance_status === 'present' && (
-                    <div className="app-status-box app-status-box--success">
-                      <IonIcon icon={checkmarkCircle} />
-                      Anwesend
-                    </div>
-                  )}
-                  {selectedEvent.attendance_status === 'absent' && (
-                    <div className="app-status-box app-status-box--danger">
-                      <IonIcon icon={closeCircle} />
-                      Abwesend
-                    </div>
-                  )}
-                  {!selectedEvent.attendance_status && (
-                    <div className="app-status-box app-status-box--bonus">
-                      <IonIcon icon={hourglass} />
-                      Anwesenheit ausstehend
-                    </div>
-                  )}
-                </div>
-              ) : null
-            ) : (
-              selectedEvent.is_registered ? (
-                <IonButton
-                  className="app-action-button"
-                  expand="block"
-                  fill="outline"
-                  color="danger"
-                  onClick={oeffneAbsage}
-                  disabled={bookingLoading}
-                >
-                  <IonIcon icon={closeCircle} slot="start" />
-                  {bookingLoading
-                    ? 'Wird verarbeitet...'
-                    : selectedEvent.booking_status === 'waitlist'
-                      ? 'Von der Warteliste austragen'
-                      : 'Nicht mehr dabei'}
-                </IonButton>
-              ) : teamerCanRegister(selectedEvent) ? (
-                (() => {
-                  const teamerMax = selectedEvent.teamer_max_participants || 0;
-                  const teamerCount = selectedEvent.teamer_count || 0;
-                  const teamerFull = teamerMax > 0 && teamerCount >= teamerMax;
-
-                  if (!teamerFull) {
-                    // Kontingent frei (oder unbegrenzt) -> normaler Buchen-Button.
-                    return (
-                      <>
-                        <IonButton
-                          className="app-action-button"
-                          expand="block"
-                          color="success"
-                          onClick={() => handleBook(selectedEvent)}
-                          disabled={bookingLoading || !isOnline}
-                        >
-                          <IonIcon icon={bookingLoading || isOnline ? checkmarkCircle : cloudOfflineOutline} slot="start" />
-                          {bookingLoading
-                            ? 'Wird verarbeitet...'
-                            : !isOnline ? 'Du bist offline' : 'Ich bin dabei'}
-                        </IonButton>
-                        {/* Gegenknopf: Ohne ihn war eine Absage nicht von
-                            "hat noch nicht reagiert" zu unterscheiden. Bei
-                            bereits abgesagten Terminen entfaellt er.
-                            Der Dialog fragt einen freiwilligen Grund ab
-                            (aus "offen" heraus ohne Zwang). */}
-                        {selectedEvent.booking_status !== 'opted_out' && (
-                          <IonButton
-                            className="app-action-button"
-                            expand="block"
-                            fill="outline"
-                            color="medium"
-                            onClick={oeffneAbsage}
-                            disabled={bookingLoading}
-                          >
-                            <IonIcon icon={closeCircle} slot="start" />
-                            Ich bin nicht dabei
-                          </IonButton>
-                        )}
-                      </>
-                    );
-                  }
-
-                  const teamerWaitlistMax = selectedEvent.teamer_max_waitlist_size || 0;
-                  const teamerWaitlistCount = selectedEvent.teamer_waitlist_count || 0;
-                  const waitlistOpen = !!selectedEvent.teamer_waitlist_enabled &&
-                    (teamerWaitlistMax === 0 || teamerWaitlistCount < teamerWaitlistMax);
-
-                  if (waitlistOpen) {
-                    // Kontingent voll, aber Warteliste offen -> Warteliste-Button.
-                    return (
-                      <IonButton
-                        className="app-action-button"
-                        expand="block"
-                        color="warning"
-                        onClick={() => handleBook(selectedEvent)}
-                        disabled={bookingLoading || !isOnline}
-                      >
-                        <IonIcon icon={bookingLoading || isOnline ? hourglass : cloudOfflineOutline} slot="start" />
-                        {bookingLoading
-                          ? 'Wird verarbeitet...'
-                          : !isOnline
-                            ? 'Du bist offline'
-                            : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
-                      </IonButton>
-                    );
-                  }
-
-                  // Kontingent voll und Warteliste voll/deaktiviert -> nur Hinweis.
-                  return (
-                    <IonButton
-                      className="app-action-button"
-                      expand="block"
-                      disabled
-                      color="medium"
-                    >
-                      <IonIcon icon={informationCircle} slot="start" />
-                      Kein Platz mehr frei
-                    </IonButton>
-                  );
-                })()
-              ) : (
-                // Reines Konfi-Event: Teamer kann sich NICHT anmelden -> nur Hinweis.
-                <div
-                  className="app-status-box"
-                  style={{
-                    backgroundColor: 'rgba(156, 163, 175, 0.12)',
-                    color: '#6b7280',
-                    borderColor: 'rgba(156, 163, 175, 0.35)'
-                  }}
-                >
-                  <IonIcon icon={informationCircle} />
-                  Nur zur Info - keine Anmeldung
-                </div>
-              )
-            )}
-          </div>
         </IonContent>
       </IonPage>
     );

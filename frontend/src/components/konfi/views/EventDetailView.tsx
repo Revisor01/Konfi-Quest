@@ -876,6 +876,176 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           </IonCard>
         </IonList>
 
+        {/* AN-/ABMELDUNG (Simon, 03.09.2026): eigene weisse Karte im Muster
+            der uebrigen Abschnitte (app-card) und direkt nach den Details --
+            vorher stand die Knopfleiste freistehend ganz unten, unterhalb von
+            Beschreibung und Teilnehmerliste, und sah anders aus als bei Teamern
+            und Leitung. Je nach Zustand ist es hier nur EIN Knopf (anmelden
+            ODER abmelden), der dann die volle Breite bekommt. */}
+        <IonList className="app-section-inset" inset={true}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={people} />
+            </div>
+            <IonLabel>Bist du dabei?</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent className="app-card-content">
+              {eventData.mandatory ? (
+                (() => {
+                  const isPastEvent = istVergangen(eventData);
+                  const isOptedOut = eventData.is_opted_out || eventData.booking_status === 'opted_out';
+
+                  if (isPastEvent) {
+                    return (
+                      <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: '0.95rem' }}>
+                        <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                        Pflicht-Event (vergangen)
+                      </IonNote>
+                    );
+                  }
+
+                  if (isOptedOut) {
+                    return (
+                      <div style={{ textAlign: 'center' }}>
+                        <div className="app-status-box app-status-box--events" style={{ marginBottom: '12px' }}>
+                          <IonIcon icon={closeCircle} />
+                          Du hast dich abgemeldet
+                        </div>
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          color="success"
+                          onClick={handleOptIn}
+                        >
+                          <IonIcon icon={checkmarkCircle} slot="start" />
+                          Wieder anmelden
+                        </IonButton>
+                      </div>
+                    );
+                  }
+
+                  if (eventData.is_registered) {
+                    return (
+                      <div style={{ textAlign: 'center' }}>
+                        <IonNote color="medium" style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem' }}>
+                          <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                          Du bist automatisch angemeldet
+                        </IonNote>
+                        <IonButton
+                          className="app-action-button"
+                          expand="block"
+                          fill="outline"
+                          color="danger"
+                          onClick={() => presentOptOutModal({
+                            presentingElement: pageRef.current || undefined
+                          })}
+                        >
+                          <IonIcon icon={closeCircle} slot="start" />
+                          {/* NICHT offline gesperrt: handleOptOut legt die Abmeldung
+                              in die Warteschlange (Typ 'opt-out') und sendet sie
+                              nach, sobald Netz da ist. Der Knopf war bis zum
+                              30.08.2026 trotzdem `disabled` — der Offline-Pfad
+                              darunter war damit toter Code, und die Warteschlange
+                              versprach etwas, das die Oberflaeche nicht zuliess
+                              (Simons Einwand). Anders als beim Anmelden gibt es
+                              hier auch nichts zu pruefen: Ein Platz wird frei,
+                              nicht belegt. */}
+                          {!isOnline
+                            ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                            : 'Abmelden'}
+                        </IonButton>
+                      </div>
+                    );
+                  }
+
+                  // Nicht angemeldet bei Pflicht-Event -- nur Hinweis, kein Button
+                  return (
+                    <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: '0.95rem' }}>
+                      <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                      Pflicht-Event
+                    </IonNote>
+                  );
+                })()
+              ) : eventData.is_registered ? (
+                <div>
+                  {canUnregister(eventData) ? (
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      fill="outline"
+                      color="danger"
+                      onClick={() => presentUnregisterModal({
+                        presentingElement: pageRef.current || undefined
+                      })}
+                    >
+                      <IonIcon icon={closeCircle} slot="start" />
+                      {!isOnline
+                        ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
+                        : 'Abmelden'}
+                    </IonButton>
+                  ) : (
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      fill="outline"
+                      color="medium"
+                      disabled
+                    >
+                      <IonIcon icon={warning} slot="start" />
+                      {/* Grund nennen statt nur zu sperren: abmelden geht bis
+                          2 Tage vor dem Termin (siehe canUnregister). */}
+                      Abmelden geht nur bis 2 Tage vorher
+                    </IonButton>
+                  )}
+                </div>
+              ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
+                <IonButton
+                  className="app-action-button"
+                  expand="block"
+                  disabled
+                  color="medium"
+                >
+                  <IonIcon icon={warning} slot="start" />
+                  Konfirmationstermin bereits gebucht
+                </IonButton>
+              ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || eventData.registered_count < eventData.max_participants) ? (
+                <IonButton
+                  className="app-action-button"
+                  expand="block"
+                  color="success"
+                  disabled={!isOnline}
+                  onClick={handleRegister}
+                >
+                  <IonIcon icon={checkmarkCircle} slot="start" />
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
+                </IonButton>
+              ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
+                <IonButton
+                  className="app-action-button"
+                  expand="block"
+                  color="warning"
+                  disabled={!isOnline}
+                  onClick={handleRegister}
+                >
+                  <IonIcon icon={hourglass} slot="start" />
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Warteliste offen (${eventData.waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
+                </IonButton>
+              ) : (
+                <IonButton
+                  className="app-action-button"
+                  expand="block"
+                  disabled
+                  color="medium"
+                >
+                  <IonIcon icon={informationCircle} slot="start" />
+                  {eventData.registration_status === 'closed' ? 'Anmeldung geschlossen' : 'Nicht verfügbar'}
+                </IonButton>
+              )}
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
         {/* Beschreibung - eigene Card mit rotem Icon */}
         {eventData.description && (
           <IonList className="app-section-inset" inset={true}>
@@ -933,160 +1103,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           </IonList>
         )}
 
-        {/* Action Buttons */}
-        <div className="app-event-detail__action-area">
-          {eventData.mandatory ? (
-            (() => {
-              const isPastEvent = istVergangen(eventData);
-              const isOptedOut = eventData.is_opted_out || eventData.booking_status === 'opted_out';
-
-              if (isPastEvent) {
-                return (
-                  <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
-                    <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                    Pflicht-Event (vergangen)
-                  </IonNote>
-                );
-              }
-
-              if (isOptedOut) {
-                return (
-                  <div style={{ textAlign: 'center', padding: '12px 16px' }}>
-                    <div className="app-status-box app-status-box--events" style={{ marginBottom: '12px' }}>
-                      <IonIcon icon={closeCircle} />
-                      Du hast dich abgemeldet
-                    </div>
-                    <IonButton
-                      className="app-action-button"
-                      expand="block"
-                      color="success"
-                      onClick={handleOptIn}
-                    >
-                      <IonIcon icon={checkmarkCircle} slot="start" />
-                      Wieder anmelden
-                    </IonButton>
-                  </div>
-                );
-              }
-
-              if (eventData.is_registered) {
-                return (
-                  <div style={{ textAlign: 'center', padding: '12px 16px' }}>
-                    <IonNote color="medium" style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem' }}>
-                      <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                      Du bist automatisch angemeldet
-                    </IonNote>
-                    <IonButton
-                      className="app-action-button"
-                      expand="block"
-                      fill="outline"
-                      color="danger"
-                      onClick={() => presentOptOutModal({
-                        presentingElement: pageRef.current || undefined
-                      })}
-                    >
-                      <IonIcon icon={closeCircle} slot="start" />
-                      {/* NICHT offline gesperrt: handleOptOut legt die Abmeldung
-                          in die Warteschlange (Typ 'opt-out') und sendet sie
-                          nach, sobald Netz da ist. Der Knopf war bis zum
-                          30.08.2026 trotzdem `disabled` — der Offline-Pfad
-                          darunter war damit toter Code, und die Warteschlange
-                          versprach etwas, das die Oberflaeche nicht zuliess
-                          (Simons Einwand). Anders als beim Anmelden gibt es
-                          hier auch nichts zu pruefen: Ein Platz wird frei,
-                          nicht belegt. */}
-                      {!isOnline
-                        ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
-                        : 'Abmelden'}
-                    </IonButton>
-                  </div>
-                );
-              }
-
-              // Nicht angemeldet bei Pflicht-Event -- nur Hinweis, kein Button
-              return (
-                <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
-                  <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                  Pflicht-Event
-                </IonNote>
-              );
-            })()
-          ) : eventData.is_registered ? (
-            <div>
-              {canUnregister(eventData) ? (
-                <IonButton
-                  className="app-action-button"
-                  expand="block"
-                  fill="outline"
-                  color="danger"
-                  onClick={() => presentUnregisterModal({
-                    presentingElement: pageRef.current || undefined
-                  })}
-                >
-                  <IonIcon icon={closeCircle} slot="start" />
-                  {!isOnline
-                    ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Abmelden (wird gesendet)</>
-                    : 'Abmelden'}
-                </IonButton>
-              ) : (
-                <IonButton
-                  className="app-action-button"
-                  expand="block"
-                  fill="outline"
-                  color="medium"
-                  disabled
-                >
-                  <IonIcon icon={warning} slot="start" />
-                  {/* Grund nennen statt nur zu sperren: abmelden geht bis
-                      2 Tage vor dem Termin (siehe canUnregister). */}
-                  Abmelden geht nur bis 2 Tage vorher
-                </IonButton>
-              )}
-            </div>
-          ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
-            <IonButton
-              className="app-action-button"
-              expand="block"
-              disabled
-              color="medium"
-            >
-              <IonIcon icon={warning} slot="start" />
-              Konfirmationstermin bereits gebucht
-            </IonButton>
-          ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || eventData.registered_count < eventData.max_participants) ? (
-            <IonButton
-              className="app-action-button"
-              expand="block"
-              color="success"
-              disabled={!isOnline}
-              onClick={handleRegister}
-            >
-              <IonIcon icon={checkmarkCircle} slot="start" />
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
-            </IonButton>
-          ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
-            <IonButton
-              className="app-action-button"
-              expand="block"
-              color="warning"
-              disabled={!isOnline}
-              onClick={handleRegister}
-            >
-              <IonIcon icon={hourglass} slot="start" />
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Warteliste offen (${eventData.waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
-            </IonButton>
-          ) : (
-            <IonButton
-              className="app-action-button"
-              expand="block"
-              disabled
-              color="medium"
-            >
-              <IonIcon icon={informationCircle} slot="start" />
-              {eventData.registration_status === 'closed' ? 'Anmeldung geschlossen' : 'Nicht verfügbar'}
-            </IonButton>
-          )}
-        </div>
 
       </IonContent>
     </IonPage>

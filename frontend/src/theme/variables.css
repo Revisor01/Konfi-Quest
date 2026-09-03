@@ -1694,11 +1694,6 @@ ion-toggle.app-toggle--events {
 .app-event-detail__reason-indent { margin-left: 32px; }
 
 /* Action-Buttons Bereich */
-.app-event-detail__action-area {
-  padding: 16px;
-  padding-bottom: 32px;
-}
-
 /* === Stepper === */
 /* Plus/Minus-Stepper für Punkte-Eingabe */
 .app-stepper {

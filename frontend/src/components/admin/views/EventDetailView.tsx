@@ -906,6 +906,63 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           />
         )}
 
+        {/* EIGENE AN-/ABMELDUNG (Simon, 03.09.2026): Auch Admins, Org-Admins
+            und Super-Admins melden sich hier selbst an oder ab. Vorher gab es
+            das nur unter /teamer/events -- wer Admin ist, kam da nie hin und
+            konnte sich nicht melden, obwohl das Backend es erlaubt haette.
+            Steht direkt nach den Details und im Karten-Muster der uebrigen
+            Abschnitte (app-card), damit die Leiste an allen drei Stellen --
+            Konfi, Teamer, Leitung -- gleich aussieht und gleich sitzt. */}
+        {darfSichMelden && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
+              <IonLabel>Bist du dabei?</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {/* Zwei gleich breite Knoepfe nebeneinander (Simon, 03.09.2026) */}
+                <div className="app-button-row">
+                  <IonButton
+                    expand="block"
+                    fill={eigeneTeilnahme?.status === 'confirmed' ? 'solid' : 'outline'}
+                    color="success"
+                    disabled={zusageLaeuft || !isOnline}
+                    onClick={() => setzeEigeneZusage(true)}
+                  >
+                    {eigeneTeilnahme?.status === 'confirmed' ? 'Du bist dabei' : 'Bin dabei'}
+                  </IonButton>
+                  <IonButton
+                    expand="block"
+                    fill={eigeneTeilnahme?.status === 'opted_out' ? 'solid' : 'outline'}
+                    color="danger"
+                    disabled={zusageLaeuft || !isOnline}
+                    onClick={() => {
+                      // Nach einer Zusage verlangt das Backend einen
+                      // Grund -- danach fragen, statt in den Fehler zu
+                      // laufen.
+                      if (eigeneTeilnahme?.status === 'confirmed') {
+                        const grund = window.prompt('Warum kannst du nicht? (Die Leitung muss umplanen)');
+                        if (grund === null) return;
+                        setzeEigeneZusage(false, grund);
+                      } else {
+                        setzeEigeneZusage(false);
+                      }
+                    }}
+                  >
+                    {eigeneTeilnahme?.status === 'opted_out' ? 'Abgesagt' : 'Bin nicht dabei'}
+                  </IonButton>
+                </div>
+                {!isOnline && (
+                  <p className="app-text-sub" style={{ marginTop: '12px', marginBottom: 0 }}>
+                    Ohne Netz nicht möglich — versuch es später nochmal.
+                  </p>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Teilnehmer, Abmeldungen und Anwesenheit haengen an GET /events/:id
             und fehlen offline — der Grundstand kommt aus dem Listen-Cache.
             Ohne diesen Hinweis saehe die Seite aus, als gaebe es keine
@@ -1074,58 +1131,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   </IonCard>
                 </IonList>
               )}
-                {/* EIGENE AN-/ABMELDUNG (Simon, 03.09.2026): Auch Admins,
-                    Org-Admins und Super-Admins melden sich hier selbst an
-                    oder ab. Vorher gab es das nur unter /teamer/events --
-                    wer Admin ist, kam da nie hin und konnte sich nicht
-                    melden, obwohl das Backend es erlaubt haette. */}
-                {darfSichMelden && (
-                  <IonList className="app-section-inset" inset={true}>
-                    <IonListHeader>
-                      <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
-                      <IonLabel>Bist du dabei?</IonLabel>
-                    </IonListHeader>
-                    <div style={{ display: 'flex', gap: 10, padding: '4px 16px 14px' }}>
-                      <IonButton
-                        expand="block"
-                        fill={eigeneTeilnahme?.status === 'confirmed' ? 'solid' : 'outline'}
-                        color="success"
-                        disabled={zusageLaeuft || !isOnline}
-                        onClick={() => setzeEigeneZusage(true)}
-                        style={{ flex: 1, margin: 0 }}
-                      >
-                        {eigeneTeilnahme?.status === 'confirmed' ? 'Du bist dabei' : 'Bin dabei'}
-                      </IonButton>
-                      <IonButton
-                        expand="block"
-                        fill={eigeneTeilnahme?.status === 'opted_out' ? 'solid' : 'outline'}
-                        color="danger"
-                        disabled={zusageLaeuft || !isOnline}
-                        onClick={() => {
-                          // Nach einer Zusage verlangt das Backend einen
-                          // Grund -- danach fragen, statt in den Fehler zu
-                          // laufen.
-                          if (eigeneTeilnahme?.status === 'confirmed') {
-                            const grund = window.prompt('Warum kannst du nicht? (Die Leitung muss umplanen)');
-                            if (grund === null) return;
-                            setzeEigeneZusage(false, grund);
-                          } else {
-                            setzeEigeneZusage(false);
-                          }
-                        }}
-                        style={{ flex: 1, margin: 0 }}
-                      >
-                        {eigeneTeilnahme?.status === 'opted_out' ? 'Abgesagt' : 'Bin nicht dabei'}
-                      </IonButton>
-                    </div>
-                    {!isOnline && (
-                      <div style={{ padding: '0 16px 12px', fontSize: '0.82rem', color: 'var(--app-text-sub-color, #8e8e93)' }}>
-                        Ohne Netz nicht möglich — versuch es später nochmal.
-                      </div>
-                    )}
-                  </IonList>
-                )}
-
               {(teamerParticipants.length > 0 || eventData?.teamer_needed || eventData?.teamer_only) && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
