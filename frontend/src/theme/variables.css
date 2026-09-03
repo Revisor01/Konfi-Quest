@@ -1534,6 +1534,16 @@ ion-toggle.app-toggle--events {
 .app-button-row ion-button {
   flex: 1;
 }
+/* In einer Karte: Ionics eigenen ion-button-Rand (4px oben/unten) ausgleichen,
+   sonst polstert die Karte doppelt -- ihr Padding UND der Button-Rand. Die
+   Zusage-Reihe stand dadurch 8px hoeher als jeder andere Knopf in einer Karte
+   (Simons Hinweis 03.09.2026). Gleiche Absicht wie
+   .app-event-detail__add-button-wrapper, nur fuer eine Reihe statt einen
+   einzelnen Knopf. */
+.app-button-row--in-card {
+  margin-top: -4px;
+  margin-bottom: -4px;
+}
 
 /* === Flex-Fill (flex: 1) === */
 .app-flex-fill {

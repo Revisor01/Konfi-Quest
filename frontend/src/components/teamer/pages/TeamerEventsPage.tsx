@@ -1055,8 +1055,10 @@ const TeamerEventsPage: React.FC = () => {
                         return (
                           // Zwei gleich breite Knoepfe nebeneinander (Simon,
                           // 03.09.2026): gleiche Reihe statt untereinander
-                          // gestapelt.
-                          <div className="app-button-row">
+                          // gestapelt. --in-card nimmt Ionics eigenen
+                          // Button-Rand zurueck, sonst polstert die Karte
+                          // doppelt (Simons Hinweis 03.09.2026).
+                          <div className="app-button-row app-button-row--in-card">
                             <IonButton
                               className="app-action-button"
                               expand="block"

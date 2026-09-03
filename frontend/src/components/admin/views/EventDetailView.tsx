@@ -921,8 +921,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
-                {/* Zwei gleich breite Knoepfe nebeneinander (Simon, 03.09.2026) */}
-                <div className="app-button-row">
+                {/* Zwei gleich breite Knoepfe nebeneinander (Simon, 03.09.2026).
+                    --in-card nimmt Ionics eigenen Button-Rand zurueck, sonst
+                    polstert die Karte doppelt und die Reihe steht hoeher als
+                    "Event absagen" weiter unten (Simons Hinweis 03.09.2026).
+                    Bewusst OHNE app-action-button (48px): die Nachbarknoepfe
+                    dieser Seite sind 40px hoch. */}
+                <div className="app-button-row app-button-row--in-card">
                   <IonButton
                     expand="block"
                     fill={eigeneTeilnahme?.status === 'confirmed' ? 'solid' : 'outline'}

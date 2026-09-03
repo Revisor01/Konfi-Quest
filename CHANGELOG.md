@@ -64,6 +64,8 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
+  die übrigen Knöpfe der Seite.
 - Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im
   einzelnen Termin. Bei Pflichtterminen, der Konfirmation und reinen
   Team-Terminen bleibt die Punkteart weg — dort gibt es keine Punkte zu holen.
