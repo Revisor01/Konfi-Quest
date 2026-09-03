@@ -73,6 +73,10 @@ Versionsüberschrift.
   laufen aus.
 - Links im Material entfernt man jetzt durch Wischen, wie die Dateien
   darunter.
+- Die Profile von Konfis und Teamer:innen sind neu sortiert: erst die
+  Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
+  Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
+  Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
 - Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
   die übrigen Knöpfe der Seite.
 - Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im

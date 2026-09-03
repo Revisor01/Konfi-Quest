@@ -801,8 +801,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           <OfflinePlatzhalter was="Die Aktivitäten- und Punkte-Historie" />
         )}
 
-        {/* Konfirmation (Termin + Spruch + Pflicht-Events, read-only) - nur für Konfis */}
-        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
+        {/* Konfirmation (Termin + Spruch + Pflicht-Events, read-only).
+            Auch bei Teamer:innen, sofern etwas eingetragen ist (Simons
+            Reihenfolge 03.09.2026): Wer als Konfi uebernommen wurde, behaelt
+            sein konfi_profiles-Eintrag -- Spruch und Konfirmationstermin
+            stehen also weiterhin zur Verfuegung. Ohne Eintrag bleibt die
+            Karte weg, statt leer dazustehen. */}
+        {((!isTeamer && currentKonfi?.role_name === 'konfi')
+          || (isTeamer && (currentKonfi?.konfspruch || currentKonfi?.confirmation_date))) && (
           <KonfispruchSection
             konfspruch={currentKonfi.konfspruch}
             confirmationDate={currentKonfi.confirmation_date}
@@ -812,24 +818,23 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           />
         )}
 
-        {/* Bonuspunkte - nur für Konfis */}
-        {!isTeamer && (
-          <BonusSection
-            bonusEntries={bonusEntries}
+        {/* Teamer: Aktiv-seit bearbeiten -- steht bei Simons Reihenfolge
+            (03.09.2026) oben bei der Konfirmation, nicht ganz unten. */}
+        {isTeamer && (
+          <TeamerSinceSection
             currentKonfi={currentKonfi}
-            getBonusPoints={getBonusPoints}
-            formatDate={formatDate}
-            handleDeleteBonus={handleDeleteBonus}
-            presentBonusModal={presentBonusModalHook}
-            presentingElement={presentingElement}
+            konfiId={konfiId}
+            api={api}
+            setCurrentKonfi={setCurrentKonfi}
+            setError={setError}
           />
         )}
 
-        {/* Event Points - nur für Konfis */}
-        {!isTeamer && (
-          <EventPointsSection
-            eventPoints={eventPoints}
-            currentKonfi={currentKonfi}
+        {/* Konfi-Historie - nur für promoted Teamer */}
+        {isTeamer && konfiHistory && (
+          <KonfiHistorySection
+            konfiHistory={konfiHistory}
+            formatDate={formatDate}
           />
         )}
 
@@ -883,10 +888,36 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           </IonList>
         )}
 
-        {/* Badges der Konfis — bei Teamer:innen steht der Abschnitt weiter
-            unten, nach Events und Aktivitaeten (User-Hinweis 11.08.). */}
-        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
-          <KonfiBadgesSection konfiId={konfiId} />
+        {/* Zertifikate - nur für Teamer */}
+        {isTeamer && (
+          <CertificatesSection
+            certificates={certificates}
+            isOnline={isOnline}
+            formatDate={formatDate}
+            handleAssignCertificate={handleAssignCertificate}
+            handleDeleteCertificate={handleDeleteCertificate}
+          />
+        )}
+
+        {/* Bonuspunkte - nur für Konfis */}
+        {!isTeamer && (
+          <BonusSection
+            bonusEntries={bonusEntries}
+            currentKonfi={currentKonfi}
+            getBonusPoints={getBonusPoints}
+            formatDate={formatDate}
+            handleDeleteBonus={handleDeleteBonus}
+            presentBonusModal={presentBonusModalHook}
+            presentingElement={presentingElement}
+          />
+        )}
+
+        {/* Event Points - nur für Konfis */}
+        {!isTeamer && (
+          <EventPointsSection
+            eventPoints={eventPoints}
+            currentKonfi={currentKonfi}
+          />
         )}
 
         {/* Teamer Events — auch leer anzeigen: sonst ist "war bei keinem
@@ -912,40 +943,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           presentingElement={presentingElement}
         />
 
-        {/* Badges der Teamer:innen — nach Events und Aktivitaeten, so wie
-            die Konfi-Badges auch unter ihren Listen stehen. */}
+        {/* Badges — bei beiden Rollen am Ende der Listen, nach Events und
+            Aktivitaeten (Simons Reihenfolge 03.09.2026). */}
+        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
+          <KonfiBadgesSection konfiId={konfiId} />
+        )}
+
+        {/* Badges der Teamer:innen — gleiche Stelle wie bei den Konfis. */}
         {isTeamer && (
           <KonfiBadgesSection konfiId={konfiId} role="teamer" />
-        )}
-
-        {/* Zertifikate - nur für Teamer */}
-        {isTeamer && (
-          <CertificatesSection
-            certificates={certificates}
-            isOnline={isOnline}
-            formatDate={formatDate}
-            handleAssignCertificate={handleAssignCertificate}
-            handleDeleteCertificate={handleDeleteCertificate}
-          />
-        )}
-
-        {/* Teamer: Aktiv-seit bearbeiten */}
-        {isTeamer && (
-          <TeamerSinceSection
-            currentKonfi={currentKonfi}
-            konfiId={konfiId}
-            api={api}
-            setCurrentKonfi={setCurrentKonfi}
-            setError={setError}
-          />
-        )}
-
-        {/* Konfi-Historie - nur für promoted Teamer */}
-        {isTeamer && konfiHistory && (
-          <KonfiHistorySection
-            konfiHistory={konfiHistory}
-            formatDate={formatDate}
-          />
         )}
 
         {/* Teamer-Beförderung - nur für Konfis */}
