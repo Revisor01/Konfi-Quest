@@ -1700,6 +1700,69 @@ ion-modal.wrapped-modal-fullscreen {
    Die Farbe der Seite kommt weiterhin an -- aus dem Schleier INNERHALB des
    Containers (WrappedHintergrund liest --seiten-verlauf).
    ======================================== */
+/* Die Einladung ins Team -- letzte Seite eines Konfi-Rueckblicks. */
+.werde-teamer-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 0 30px calc(90px + env(safe-area-inset-bottom, 0px));
+  --seiten-verlauf: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #9d174d 100%);
+  background: var(--seiten-verlauf);
+}
+
+.teamer-pfeil {
+  margin-top: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  animation: teamer-winken 2.6s ease-in-out infinite;
+}
+
+.teamer-pfeil ion-icon {
+  font-size: 22px;
+  color: #fff;
+}
+
+@keyframes teamer-winken {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teamer-pfeil { animation: none; }
+}
+
+/* Teamer-Rueckblick: dieselbe Gestaltung wie beim Konfi-Rueckblick,
+   eigene Farben (03.09.2026, Simons "Teamer sich umbauen"). */
+.teamer-intro-slide,
+.teamer-events-slide,
+.teamer-konfis-slide,
+.teamer-badges-slide,
+.teamer-zertifikate-slide,
+.teamer-jahre-slide,
+.teamer-abschluss-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 0 30px calc(90px + env(safe-area-inset-bottom, 0px));
+}
+
+.teamer-intro-slide      { --seiten-verlauf: linear-gradient(135deg, #0891b2 0%, #0e7490 55%, #155e75 100%); background: var(--seiten-verlauf); }
+.teamer-events-slide     { --seiten-verlauf: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%); background: var(--seiten-verlauf); }
+.teamer-konfis-slide     { --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%); background: var(--seiten-verlauf); }
+.teamer-badges-slide     { --seiten-verlauf: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); background: var(--seiten-verlauf); }
+.teamer-zertifikate-slide{ --seiten-verlauf: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); background: var(--seiten-verlauf); }
+.teamer-jahre-slide      { --seiten-verlauf: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); background: var(--seiten-verlauf); }
+.teamer-abschluss-slide  { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%); background: var(--seiten-verlauf); }
+
 .wrapped-slide:has(.wrapped-bg-form),
 .wrapped-slide.wrapped-slide--active:has(.wrapped-bg-form) {
   background: none !important;

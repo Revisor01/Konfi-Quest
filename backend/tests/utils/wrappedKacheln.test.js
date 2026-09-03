@@ -57,9 +57,17 @@ describe('Dramaturgie', () => {
     for (const fest of FESTE_KACHELN) expect(kacheln).toContain(fest);
   });
 
-  test('der Abschluss ist immer die letzte Seite', () => {
-    expect(waehleKacheln(aktiverSnapshot()).slice(-1)[0]).toBe('abschluss');
-    expect(waehleKacheln(stillerSnapshot()).slice(-1)[0]).toBe('abschluss');
+  test('die Einladung ins Team ist immer die letzte Seite', () => {
+    // GEAENDERT AM 03.09.2026: Simon wollte "eine letzte Seite bei Konfis:
+    // Werde Teamerin". Sie steht NACH dem Abschluss -- erst der Rueckblick,
+    // dann der Blick nach vorn.
+    expect(waehleKacheln(aktiverSnapshot()).slice(-1)[0]).toBe('werde-teamer');
+    expect(waehleKacheln(stillerSnapshot()).slice(-1)[0]).toBe('werde-teamer');
+  });
+
+  test('der Abschluss steht direkt davor', () => {
+    const k = waehleKacheln(aktiverSnapshot());
+    expect(k[k.length - 2]).toBe('abschluss');
   });
 
   test('das Intro ist immer die erste Seite', () => {
@@ -110,7 +118,8 @@ describe('Dramaturgie', () => {
     ];
     const kacheln = waehleKacheln(viel, { chat: 10 });
     expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
-    expect(kacheln.slice(-1)[0]).toBe('abschluss');
+    // Abschluss und Einladung ueberleben den Deckel immer.
+    expect(kacheln.slice(-2)).toEqual(['abschluss', 'werde-teamer']);
   });
 });
 
@@ -247,7 +256,9 @@ describe('Robustheit', () => {
     // unerreichbar macht.
     const s = aktiverSnapshot();
     const kacheln = waehleKacheln(s, { chat: 1 });
-    const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie');
+    // 'kategorie' ist ein Platzhalter, 'konfirmation' braucht einen Termin --
+    // beide werden in eigenen Tests geprueft.
+    const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie' && k !== 'konfirmation');
     for (const k of erwartet) expect(kacheln).toContain(k);
   });
 });

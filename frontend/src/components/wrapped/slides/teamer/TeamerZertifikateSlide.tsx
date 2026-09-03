@@ -1,36 +1,32 @@
 import React from 'react';
 import SlideBase from '../SlideBase';
-import { useCountUp } from '../../../../hooks/useCountUp';
-import type { SlideProps, TeamerZertifikateSlide as TeamerZertifikateSlideType } from '../../../../types/wrapped';
+import type { SlideProps, TeamerZertifikateSlide as Zert } from '../../../../types/wrapped';
 
-interface TeamerZertifikateSlideProps extends SlideProps {
-  zertifikate: TeamerZertifikateSlideType;
-}
+interface Props extends SlideProps { zertifikate: Zert; }
 
-const TeamerZertifikateSlide: React.FC<TeamerZertifikateSlideProps> = ({ isActive, zertifikate }) => {
-  const animatedCount = useCountUp(zertifikate.total, isActive);
+const TeamerZertifikateSlide: React.FC<Props> = ({ isActive, zertifikate }) => {
+  const n = zertifikate.total;
+  const slogan = n >= 3
+    ? ['Schwarz', 'auf weiss.']
+    : n >= 1
+      ? ['Das hast du', 'schriftlich.']
+      : ['Dein erstes', 'Zertifikat', 'kommt noch.'];
+  const nachsatz = n >= 1
+    ? `${n} ${n === 1 ? 'Zertifikat' : 'Zertifikate'} fuer deine Ausbildung — das zaehlt auch ausserhalb der Gemeinde.`
+    : 'Zertifikate gibt es fuer Schulungen und Kurse.';
 
   return (
-    <SlideBase isActive={isActive} className="teamer-zertifikate-slide">
-      <div className="wrapped-anim-fly-left">
-        <p className="wrapped-label">Deine Zertifikate</p>
+    <SlideBase isActive={isActive} className="teamer-zertifikate-slide" kachel="teamer-zertifikate">
+      <div className="kat-auge">Deine Zertifikate</div>
+      {n > 0 && <div className="kat-zahl">{n}</div>}
+      <div className="kat-slogan">
+        {slogan.map((z, i) => <span key={i} style={{ display: 'block' }}>{z}</span>)}
       </div>
-      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
-        <p className="wrapped-big-number">{animatedCount}</p>
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-subtitle">Zertifikate erhalten</p>
-      </div>
-      {zertifikate.zertifikate.length > 0 && (
-        <div className="teamer-zertifikat-list wrapped-anim-fade wrapped-anim-delay-2">
-          {zertifikate.zertifikate.map((z, i) => (
-            <div key={i} className="teamer-zertifikat-item">
-              <span className="teamer-zertifikat-name">{z.name}</span>
-              <span className="teamer-zertifikat-date">
-                {new Date(z.issued_date).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-          ))}
+      <div className="kat-nachsatz">{nachsatz}</div>
+      {zertifikate.zertifikate?.length > 0 && (
+        <div className="w-merkzettel">
+          <span className="w-merkzettel__label">Zuletzt</span>
+          <span className="w-merkzettel__wert">{zertifikate.zertifikate[0].name}</span>
         </div>
       )}
     </SlideBase>

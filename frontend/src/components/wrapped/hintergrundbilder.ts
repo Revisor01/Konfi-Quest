@@ -127,6 +127,16 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'challenge-momente': 'wald',
   // Das seltenste Abzeichen -- Feuerwerk, weil es ein Moment ist.
   seltenstes: 'feuerwerk',
+  'werde-teamer': 'gitarre',
+
+  // Teamer-Rueckblick (03.09.2026).
+  'teamer-intro': 'weite',
+  'teamer-events': 'kirchenschiff',
+  'teamer-konfis': 'konfetti',
+  'teamer-badges': 'feuerwerk',
+  'teamer-zertifikate': 'fenster',
+  'teamer-jahre': 'weg',
+  'teamer-abschluss': 'himmel',
 };
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
@@ -189,6 +199,15 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   pflicht: 'kirchenschiff',
   'challenge-momente': 'wasser',
   seltenstes: 'konfetti',
+  'werde-teamer': 'weg',
+
+  'teamer-intro': 'himmel',
+  'teamer-events': 'turm',
+  'teamer-konfis': 'luftschlangen',
+  'teamer-badges': 'konfetti',
+  'teamer-zertifikate': 'kirchenschiff',
+  'teamer-jahre': 'wald',
+  'teamer-abschluss': 'watt',
 };
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.
@@ -215,3 +234,87 @@ export function alleMotive(): string[] {
 }
 
 export { KACHEL_MOTIV, KACHEL_ZWEITMOTIV, MOTIV_DATEI };
+
+/**
+ * MOTIVE OHNE WIEDERHOLUNG VERGEBEN (Simon, 03.09.2026: "Es duerfen niemals
+ * zweimal die gleichen Bilder im bg sein bei einem Konfi").
+ *
+ * WARUM DIE FESTE ZUORDNUNG DAS NICHT KONNTE: Ein Rueckblick hat bis zu
+ * 14 Seiten mit je zwei Motiven -- also bis zu 28 Bildplaetze -- bei nur
+ * 16 Motiven. Gemessen am 03.09.2026 kam `watt` bei einem einzigen Konfi
+ * DREIMAL vor (intro, freizeit, abschluss), fuenf weitere Motive doppelt.
+ *
+ * Diese Funktion verteilt stattdessen: Jede Seite bekommt ihr Wunschmotiv,
+ * wenn es noch frei ist -- sonst das naechste freie aus derselben Stimmung.
+ * Erst wenn alle 16 vergeben sind, faengt die Vergabe von vorn an (bei mehr
+ * als 8 Seiten unvermeidlich, dann aber mit groesstmoeglichem Abstand).
+ *
+ * DIE REIHENFOLGE DER SEITEN ENTSCHEIDET, nicht der Zufall: Derselbe
+ * Rueckblick sieht bei jedem Oeffnen gleich aus. Das ist dieselbe
+ * Ueberlegung wie bei der Pinnwand -- eine geteilte Erinnerung darf sich
+ * nicht bei jedem Ansehen veraendern.
+ */
+
+/** Motive nach Stimmung -- fuer den Ersatz, wenn das Wunschmotiv weg ist. */
+const STIMMUNG: Record<string, Motiv[]> = {
+  // ruhig, kirchlich
+  ruhig: ['kirchenschiff', 'fenster', 'kerzen', 'turm', 'weg'],
+  // Weite und Landschaft
+  weite: ['deich', 'watt', 'feld', 'weite', 'wald', 'wasser', 'himmel'],
+  // feiern
+  feier: ['konfetti', 'luftschlangen', 'feuerwerk', 'gitarre'],
+};
+
+/** Welche Stimmung passt zu einer Seite? */
+function stimmungFuer(kachel: string): keyof typeof STIMMUNG {
+  if (/badges|seltenstes|challenges|stempel|fest|konzert|kreativ|jugend|ueber-das-ziel|bonus/.test(kachel)) return 'feier';
+  if (/gottesdienst|kasualien|konfirmation|advent|weihnachten|ostern|seelsorge|senioren|erntedank|pflicht/.test(kachel)) return 'ruhig';
+  return 'weite';
+}
+
+/**
+ * Vergibt Haupt- und Zweitmotiv fuer eine ganze Seitenfolge, ohne dass sich
+ * ein Motiv innerhalb dieses Rueckblicks wiederholt.
+ *
+ * @param kacheln die Seiten in Anzeigereihenfolge
+ * @returns Map von Kachel -> { haupt, zweit } als Dateipfade
+ */
+export function verteileMotive(kacheln: string[]): Record<string, { haupt: string; zweit: string }> {
+  const vergeben = new Set<Motiv>();
+  const ergebnis: Record<string, { haupt: string; zweit: string }> = {};
+  const alle = Object.keys(MOTIV_DATEI) as Motiv[];
+
+  const nimm = (wunsch: Motiv | undefined, kachel: string): Motiv => {
+    if (wunsch && !vergeben.has(wunsch)) { vergeben.add(wunsch); return wunsch; }
+    const passend = STIMMUNG[stimmungFuer(kachel)];
+    const ausStimmung = passend.find(m => !vergeben.has(m));
+    if (ausStimmung) { vergeben.add(ausStimmung); return ausStimmung; }
+    const frei = alle.find(m => !vergeben.has(m));
+    if (frei) { vergeben.add(frei); return frei; }
+    // Alle 16 verbraucht (ab 17 Seiten): von vorn beginnen. Die
+    // Wiederholung liegt dann so weit auseinander wie moeglich.
+    vergeben.clear();
+    const start = wunsch || alle[0];
+    vergeben.add(start);
+    return start;
+  };
+
+  for (const kachel of kacheln) {
+    // NUR EIN MOTIV JE SEITE (Simon, 03.09.2026: "Es duerfen niemals
+    // zweimal die gleichen Bilder im bg sein bei einem Konfi").
+    //
+    // Der erste Anlauf vergab zwei Motive je Seite -- Haupt- und
+    // Zweitbild. Bei 13 Seiten sind das 26 Bildplaetze auf 16 Motive:
+    // Wiederholung ist dann mathematisch unvermeidlich, und der Test hat
+    // das sofort gezeigt (10 doppelte Motive).
+    //
+    // Das Zweitmotiv war ohnehin nur ein schwacher Akzent (28 % Deckkraft,
+    // 6 px Weichzeichner) -- es aufzugeben kostet fast nichts und macht
+    // Simons Regel ueberhaupt erst erfuellbar. Beide Felder bleiben in der
+    // Rueckgabe, damit die Aufrufer unveraendert bleiben; `zweit` ist jetzt
+    // schlicht leer.
+    const haupt = nimm(KACHEL_MOTIV[kachel], kachel);
+    ergebnis[kachel] = { haupt: MOTIV_DATEI[haupt], zweit: '' };
+  }
+  return ergebnis;
+}

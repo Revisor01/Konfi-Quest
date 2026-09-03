@@ -5,22 +5,27 @@ import type { SlideProps } from '../../../../types/wrapped';
 interface TeamerIntroSlideProps extends SlideProps {
   displayName: string;
   year: number;
+  /** Name der Ausgabe -- wie beim Konfi-Rueckblick. */
+  titel?: string | null;
 }
 
-const TeamerIntroSlide: React.FC<TeamerIntroSlideProps> = ({ isActive, displayName, year }) => {
+/** Ueberschrift in bis zu drei Zeilen brechen. */
+function zeilen(titel: string): string[] {
+  const w = titel.trim().split(/\s+/);
+  if (w.length <= 2) return w;
+  return [w[0], w.slice(1).join(' ')];
+}
+
+const TeamerIntroSlide: React.FC<TeamerIntroSlideProps> = ({ isActive, displayName, year, titel }) => {
+  const ueberschrift = titel && titel.trim() ? zeilen(titel) : ['Teamer-', 'Jahr', String(year)];
+
   return (
-    <SlideBase isActive={isActive} className="teamer-intro-slide">
-      <div className="wrapped-anim-fly-left">
-        <p className="wrapped-label">Willkommen zu deinem</p>
+    <SlideBase isActive={isActive} className="teamer-intro-slide" kachel="teamer-intro">
+      <div className="kat-auge">Willkommen zu deinem</div>
+      <div className="kat-slogan">
+        {ueberschrift.map((z, i) => <span key={i} style={{ display: 'block' }}>{z}</span>)}
       </div>
-      <div className="wrapped-anim-fly-left wrapped-anim-delay-1">
-        <h1 className="wrapped-hero-text">
-          Teamer-<br />Jahr<br />{year}
-        </h1>
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2">
-        <p className="wrapped-subtitle" style={{ marginTop: '16px' }}>{displayName}</p>
-      </div>
+      <div className="kat-nachsatz" style={{ fontWeight: 700, fontSize: 20 }}>{displayName}</div>
     </SlideBase>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import WrappedHintergrund from '../WrappedHintergrund';
 import { hintergrundFuer } from '../hintergrundbilder';
+import { useMotive } from '../MotivKontext';
 
 interface SlideBaseProps {
   isActive: boolean;
@@ -34,7 +35,15 @@ const SlideBase: React.FC<SlideBaseProps> = ({ isActive, children, className, ka
   // beiden Angaben können nicht auseinanderlaufen.
   const abgeleitet = kachel
     || (className ? className.replace(/-slide$/, '') : undefined);
-  const hatBild = abgeleitet ? Boolean(hintergrundFuer(abgeleitet)) : false;
+
+  // Die Motive kommen aus der Verteilung des ganzen Rueckblicks -- so
+  // wiederholt sich keines. Fehlt der Kontext (Alt-Aufrufe, Tests), greift
+  // die feste Zuordnung wie bisher.
+  const verteilung = useMotive();
+  const zugewiesen = abgeleitet ? verteilung?.[abgeleitet] : undefined;
+  const hatBild = abgeleitet
+    ? Boolean(zugewiesen?.haupt || hintergrundFuer(abgeleitet))
+    : false;
 
   // Den Verlauf der Seite aus dem CSS lesen, statt ihn hier zu doppeln.
   // Sonst müsste jede Farbe an zwei Stellen gepflegt werden und liefe
@@ -60,7 +69,12 @@ const SlideBase: React.FC<SlideBaseProps> = ({ isActive, children, className, ka
       className={`wrapped-slide${isActive ? ' wrapped-slide--active' : ''}${className ? ` ${className}` : ''}`}
     >
       {isActive && hatBild && verlauf && (
-        <WrappedHintergrund kachel={abgeleitet as string} verlauf={verlauf} />
+        <WrappedHintergrund
+          kachel={abgeleitet as string}
+          verlauf={verlauf}
+          haupt={zugewiesen?.haupt}
+          zweit={zugewiesen?.zweit}
+        />
       )}
       {isActive && children}
     </div>

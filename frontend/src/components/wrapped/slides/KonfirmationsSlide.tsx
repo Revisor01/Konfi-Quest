@@ -26,19 +26,30 @@ const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitr
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  // SIMONS VORGABE (03.09.2026): "Da will jemand konfirmiert werden -- ist
+  // es nicht. Bis 30 Tage vor der Konfi sagen wir nur, wie viele Tage noch.
+  // Ab 30 Tage vorher: Bald ist es soweit."
+  //
+  // Der Grund: Ein Rueckblick kann zu jedem Zeitpunkt erzeugt werden -- als
+  // Zwischenstand im ersten Jahr oder als Abschluss kurz vor der Feier.
+  // "Bald ist es soweit" ueber 240 Tagen ist schlicht falsch, und der alte
+  // Text stand in JEDEM Fall da.
   const slogan = vorbei
     ? ['Du bist', 'konfirmiert.']
     : tage === 0
       ? ['Heute', 'ist es', 'so weit.']
       : tage <= 30
-        ? ['Es wird', 'ernst.']
-        : ['Da will', 'jemand', 'konfirmiert', 'werden.'];
+        ? ['Bald', 'ist es', 'so weit.']
+        // Weiter weg: nur die Zahl, ohne Versprechen.
+        : ['Noch', `${tage}`, tage === 1 ? 'Tag.' : 'Tage.'];
 
   const nachsatz = vorbei
     ? `Am ${datum} war es so weit.`
     : tage === 0
       ? 'Heute. Genau heute.'
-      : `Noch ${tage} ${tage === 1 ? 'Tag' : 'Tage'} bis zum ${datum}.`;
+      : tage <= 30
+        ? `Noch ${tage} ${tage === 1 ? 'Tag' : 'Tage'} bis zum ${datum}.`
+        : `Deine Konfirmation ist am ${datum}.`;
 
   return (
     <SlideBase isActive={isActive} className="konfirmation-slide" kachel="konfirmation">

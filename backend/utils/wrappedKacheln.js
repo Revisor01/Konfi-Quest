@@ -33,7 +33,7 @@ const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKate
  * Schluss) und erscheinen bei jeder Person -- ohne sie entstuende bei einer
  * stillen Konfi gar kein Rueckblick.
  */
-const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss'];
+const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss', 'werde-teamer'];
 
 /**
  * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
@@ -54,7 +54,11 @@ const DRAMATURGIE = [
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
-  'abschluss'           // 10 Uebersicht
+  'abschluss',          // 10 Uebersicht
+  // 11: Die Einladung ins Team -- Simons Vorgabe 03.09.2026, "eine letzte
+  // Seite bei Konfis: Werde Teamerin". Steht bewusst NACH dem Abschluss:
+  // erst der Rueckblick, dann der Blick nach vorn.
+  'werde-teamer'
 ];
 
 /**
@@ -178,8 +182,11 @@ function waehleKacheln(slides, schnitt = null) {
   const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
   if (ohneDoppelte.length <= MAX_KACHELN) return ohneDoppelte;
 
-  const ohneAbschluss = ohneDoppelte.filter(k => k !== 'abschluss');
-  return [...ohneAbschluss.slice(0, MAX_KACHELN - 1), 'abschluss'];
+  // Abschluss und Einladung stehen IMMER am Ende, auch wenn der Deckel
+  // vorher greift.
+  const schluss = ohneDoppelte.filter(k => k === 'abschluss' || k === 'werde-teamer');
+  const rest = ohneDoppelte.filter(k => k !== 'abschluss' && k !== 'werde-teamer');
+  return [...rest.slice(0, MAX_KACHELN - schluss.length), ...schluss];
 }
 
 module.exports = {

@@ -19,6 +19,7 @@ import UeberDasZielSlide from './slides/UeberDasZielSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
 import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
+import WerdeTeamerSlide from './slides/WerdeTeamerSlide';
 import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
@@ -27,6 +28,8 @@ import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
 import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
 import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
 import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
+import { MotivKontext } from './MotivKontext';
+import { verteileMotive } from './hintergrundbilder';
 import ShareCard from './share/ShareCard';
 import { shareSlide } from './share/shareUtils';
 import type { ShareTextData } from './share/shareUtils';
@@ -255,6 +258,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} titel={titel} />,
+      'werde-teamer': (a) => <WerdeTeamerSlide isActive={a} />,
       'seltenstes': (a) => {
         const selt = (konfiData.slides.badges as { seltenstes?: { name: string; icon: string; color: string; haben_es: number; konfis: number; prozent: number } })?.seltenstes;
         return selt ? <SeltenstesAbzeichenSlide isActive={a} abzeichen={selt} /> : null;
@@ -399,7 +403,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
     slides.push({
       key: 'teamer-intro',
-      content: <TeamerIntroSlide isActive={activeIndex === slideIndex} displayName={displayName} year={slideYear} />,
+      content: <TeamerIntroSlide isActive={activeIndex === slideIndex} displayName={displayName} year={slideYear} titel={titel} />,
     });
     slideIndex++;
 
@@ -441,7 +445,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
     slides.push({
       key: 'teamer-abschluss',
-      content: <TeamerAbschlussSlide isActive={activeIndex === slideIndex} data={teamerData} year={slideYear} />,
+      content: <TeamerAbschlussSlide isActive={activeIndex === slideIndex} data={teamerData} year={slideYear} titel={titel} />,
     });
 
     return slides;
@@ -458,6 +462,15 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   };
 
   const slides = data ? buildSlides() : [];
+
+  // Motive EINMAL fuer den ganzen Rueckblick verteilen, damit sich keines
+  // wiederholt (Simon, 03.09.2026). useMemo: Die Verteilung darf sich beim
+  // Blaettern nicht aendern -- sonst wechselten die Bilder unter der Hand.
+  const motive = React.useMemo(
+    () => verteileMotive(slides.map(s => s.key)),
+    // Nur neu verteilen, wenn sich die Seitenfolge wirklich aendert.
+    [slides.map(s => s.key).join('|')]
+  );
 
   // Share-Handler (nach slides-Deklaration)
   const handleShare = async () => {
@@ -504,6 +517,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           <IonSpinner />
         </div>
       ) : (
+        <MotivKontext.Provider value={motive}>
         <Swiper
           modules={[EffectCreative]}
           effect="creative"
@@ -519,6 +533,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
             <SwiperSlide key={slide.key}>{slide.content}</SwiperSlide>
           ))}
         </Swiper>
+        </MotivKontext.Provider>
       )}
 
       {data && year && (

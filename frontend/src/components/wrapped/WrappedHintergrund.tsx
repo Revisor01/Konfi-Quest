@@ -10,6 +10,10 @@ interface Props {
    * Fotos farblich zur Seite gehören.
    */
   verlauf: string;
+  /** Zugewiesenes Hauptmotiv (aus der Verteilung). Ohne Angabe die feste Zuordnung. */
+  haupt?: string;
+  /** Zugewiesenes Zweitmotiv. */
+  zweit?: string;
 }
 
 /**
@@ -29,9 +33,11 @@ interface Props {
  * Verlauf: Dort trägt die große Zahl die Seite, ein Bild würde mit ihr um
  * dieselbe Aufmerksamkeit konkurrieren.
  */
-const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf }) => {
-  const bild = hintergrundFuer(kachel);
-  const zweit = zweitbildFuer(kachel);
+const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf, haupt, zweit: zweitProp }) => {
+  // Die Verteilung hat Vorrang -- sie stellt sicher, dass sich innerhalb
+  // eines Rueckblicks kein Motiv wiederholt.
+  const bild = haupt || hintergrundFuer(kachel);
+  const zweit = zweitProp || zweitbildFuer(kachel);
 
   return (
     <div className="wrapped-bg" aria-hidden="true">
