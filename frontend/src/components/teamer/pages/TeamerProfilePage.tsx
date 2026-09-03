@@ -337,6 +337,52 @@ const TeamerProfilePage: React.FC = () => {
         onMitmachenOeffnen={() => setShowMitmachenErklaerung(true)}
       />
 
+        {/* Meine Wrappeds -- steht nach den aktuellen Meldungen und direkt
+            vor den Einstellungen (Simons Reihenfolge 03.09.2026). Vorher hing
+            der Block ganz unten, hinter Einstellungen und Inhalt. */}
+        {wrappedHistory.length > 0 && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--teamer">
+                <IonIcon icon={timeOutline} />
+              </div>
+              <IonLabel>Meine Rückblicke</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                {wrappedHistory.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="app-list-item"
+                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', borderLeftColor: 'var(--app-color-teamer)' }}
+                    onClick={() => {
+                      setWrappedModalData(entry);
+                    }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--teamer">
+                          <IonIcon icon={timeOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">
+                            {entry.titel || `Jahresrückblick ${entry.year}`}
+                          </div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* B. Konto-Einstellungen */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
@@ -556,50 +602,6 @@ const TeamerProfilePage: React.FC = () => {
             </IonCardContent>
           </IonCard>
         </IonList>
-
-        {/* Meine Wrappeds */}
-        {wrappedHistory.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--teamer">
-                <IonIcon icon={timeOutline} />
-              </div>
-              <IonLabel>Meine Wrappeds</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                {wrappedHistory.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="app-list-item"
-                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', borderLeftColor: 'var(--app-color-teamer)' }}
-                    onClick={() => {
-                      setWrappedModalData(entry);
-                    }}
-                  >
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={timeOutline} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">
-                            {entry.wrapped_type === 'konfi' ? 'Konfi-Wrapped' : 'Teamer-Wrapped'} {entry.year}
-                          </div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
 
         {/* D. Logout-Button */}
         <div style={{ padding: '0 16px', marginTop: '16px' }}>

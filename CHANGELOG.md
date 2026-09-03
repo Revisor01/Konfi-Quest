@@ -77,6 +77,11 @@ Versionsüberschrift.
   Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
   Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
   Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
+- Der Jahresrückblick steht im Profil jetzt direkt über den Einstellungen.
+- Der Hinweis auf einen neuen Jahresrückblick lässt sich auf der Startseite
+  wegklicken; im Profil bleibt er erreichbar. Er trägt den Namen, den die
+  Gemeinde der Ausgabe gegeben hat.
+- Ohne gebuchten Konfirmationstermin steht im Profil keine leere Karte mehr.
 - Beim Termin steht die Beschreibung jetzt vor der Zusage — erst lesen,
   worum es geht, dann zusagen.
 - Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie

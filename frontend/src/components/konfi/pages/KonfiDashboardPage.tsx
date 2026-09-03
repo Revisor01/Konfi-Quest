@@ -13,12 +13,13 @@ import {
   useIonModal,
   useIonRouter
 } from '@ionic/react';
-import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
+import { sparkles, chevronForward, personCircleOutline, closeOutline } from 'ionicons/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import { Preferences } from '@capacitor/preferences';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -74,6 +75,11 @@ interface DashboardData {
   point_config?: PointConfig;
   dashboard_config?: DashboardConfig;
   has_wrapped?: boolean;
+  // Seit 03.09.2026: Name der Ausgabe und ihre Id — fuer den Hinweis auf der
+  // Startseite (richtiger Name, wegklickbar pro Ausgabe). Aeltere Antworten
+  // liefern beide nicht, dann greift der allgemeine Text.
+  wrapped_ausgabe_id?: number | null;
+  wrapped_titel?: string | null;
   konfspruch_visible?: boolean;
   konfspruch?: {
     source: 'liste' | 'freitext';
@@ -239,6 +245,25 @@ const KonfiDashboardPage: React.FC = () => {
     presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
   };
 
+  // Weggeklickter Rueckblick-Hinweis, gemerkt PRO AUSGABE: Der naechste
+  // Rueckblick meldet sich wieder. Alt-Snapshots ohne Ausgabe-Id bekommen
+  // den Schluessel "alt", damit auch sie sich wegklicken lassen.
+  const [wrappedHinweisWeg, setWrappedHinweisWeg] = useState(false);
+  const wrappedHinweisKey = `wrapped_hinweis_${user?.id ?? 'x'}_${dashboardData?.wrapped_ausgabe_id ?? 'alt'}`;
+
+  useEffect(() => {
+    if (!dashboardData?.has_wrapped) return;
+    Preferences.get({ key: wrappedHinweisKey })
+      .then(({ value }) => setWrappedHinweisWeg(value === '1'))
+      .catch(() => { /* Preferences nicht verfuegbar -> Hinweis zeigen */ });
+  }, [wrappedHinweisKey, dashboardData?.has_wrapped]);
+
+  const wrappedHinweisAusblenden = () => {
+    setWrappedHinweisWeg(true);
+    Preferences.set({ key: wrappedHinweisKey, value: '1' })
+      .catch(() => { /* beim naechsten Start erneut */ });
+  };
+
   // Konfispruch Modal
   const [presentKonfispruchModal, dismissKonfispruchModal] = useIonModal(KonfispruchSelectModal, {
     onClose: () => dismissKonfispruchModal(),
@@ -393,7 +418,16 @@ const KonfiDashboardPage: React.FC = () => {
           onMitmachenAusblenden={markMitmachenHinweisGesehen}
         />
 
-        {dashboardData.has_wrapped && (
+        {/* Hinweis auf den Jahresrueckblick (Simon, 03.09.2026):
+            - "Wrapped" heisst in der Oberflaeche ueberall "Jahresrueckblick";
+              der Name der Ausgabe ("Zwischenstand September") kommt aus
+              wrapped_titel, den die Leitung vergibt. Fehlt er (Alt-Snapshots
+              ohne Ausgabe), bleibt es beim allgemeinen Text.
+            - Wegklickbar wie die uebrigen Hinweiskarten. Gemerkt wird PRO
+              AUSGABE (wrapped_ausgabe_id): Der naechste Rueckblick meldet
+              sich wieder, ein weggeklickter bleibt weg. Erreichbar bleibt er
+              im Profil unter "Meine Rueckblicke". */}
+        {dashboardData.has_wrapped && !wrappedHinweisWeg && (
           <div onClick={openWrapped} style={{
             margin: '0 16px 16px',
             padding: '20px',
@@ -406,11 +440,37 @@ const KonfiDashboardPage: React.FC = () => {
           }}>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <IonIcon icon={sparkles} style={{ fontSize: '2rem' }} />
-              <div>
-                <h3 className="app-headline" style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Wrapped ist da!</h3>
-                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>Schau dir deinen Konfi-Jahresrückblick an</p>
+              <div style={{ minWidth: 0 }}>
+                <h3 className="app-headline" style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>
+                  {dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>
+                  {dashboardData.wrapped_titel
+                    ? 'Dein Jahresrückblick — hier tippen'
+                    : 'Schau ihn dir an'}
+                </p>
               </div>
-              <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', marginLeft: 'auto' }} />
+              <button
+                type="button"
+                aria-label="Hinweis ausblenden"
+                onClick={(e) => { e.stopPropagation(); wrappedHinweisAusblenden(); }}
+                style={{
+                  marginLeft: 'auto',
+                  background: 'rgba(255,255,255,0.18)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                <IonIcon icon={closeOutline} style={{ fontSize: '1.1rem' }} aria-hidden="true" />
+              </button>
             </div>
           </div>
         )}

@@ -227,6 +227,80 @@ describe('Konfi Routes', () => {
         expect(await hasWrapped()).toBe(false);
       });
 
+      // Seit 03.09.2026 liefert das Dashboard zusaetzlich die Ausgabe-Id und
+      // ihren Titel: Der Hinweis auf der Startseite nennt damit den Namen,
+      // den die Leitung vergeben hat, und laesst sich PRO AUSGABE wegklicken.
+      // has_wrapped bleibt unveraendert -- ausgelieferte App-Versionen lesen
+      // weiterhin genau dieses Feld.
+      describe('Ausgabe-Id und Titel fuer den Startseiten-Hinweis', () => {
+        const ausgabeAnlegen = async (titel) => {
+          const { rows } = await db.query(
+            `INSERT INTO wrapped_ausgaben
+               (organization_id, jahrgang_id, wrapped_type, titel, zeitraum_start, zeitraum_ende, freigegeben_at, erstellt_von)
+             VALUES ($1, $2, 'konfi', $3, '2025-09-01', '2026-08-31', NOW(), $4)
+             RETURNING id`,
+            [ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id, titel, USERS.admin1.id]
+          );
+          return rows[0].id;
+        };
+
+        const dashboard = async () => {
+          const res = await request(app)
+            .get('/api/konfi/dashboard')
+            .set('Authorization', `Bearer ${konfiToken}`);
+          expect(res.status).toBe(200);
+          return res.body;
+        };
+
+        it('nennt den Titel der Ausgabe', async () => {
+          await freigeben();
+          const ausgabeId = await ausgabeAnlegen('Zwischenstand September');
+          await db.query(
+            `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at, ausgabe_id)
+             VALUES ($1, $2, 'konfi', $3, 2026, '{}'::jsonb, NOW(), $4)`,
+            [USERS.konfi1.id, ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id, ausgabeId]
+          );
+
+          const body = await dashboard();
+          expect(body.has_wrapped).toBe(true);
+          expect(body.wrapped_titel).toBe('Zwischenstand September');
+          expect(body.wrapped_ausgabe_id).toBe(ausgabeId);
+        });
+
+        it('Alt-Snapshots ohne Ausgabe liefern null statt eines erfundenen Titels', async () => {
+          // Dann faellt die Startseite auf ihren allgemeinen Text zurueck.
+          await freigeben();
+          await snapshotAnlegen(USERS.konfi1.id);
+
+          const body = await dashboard();
+          expect(body.has_wrapped).toBe(true);
+          expect(body.wrapped_titel).toBeNull();
+          expect(body.wrapped_ausgabe_id).toBeNull();
+        });
+
+        it('ohne Rueckblick bleiben beide Felder leer', async () => {
+          const body = await dashboard();
+          expect(body.has_wrapped).toBe(false);
+          expect(body.wrapped_titel).toBeNull();
+          expect(body.wrapped_ausgabe_id).toBeNull();
+        });
+
+        it('has_wrapped bleibt ein Boolean -- alte Apps lesen weiter dieses Feld', async () => {
+          // Vertrag gegenueber den Store-Apps: Feld bleibt, Typ bleibt.
+          await freigeben();
+          const ausgabeId = await ausgabeAnlegen('Dein Abschluss');
+          await db.query(
+            `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at, ausgabe_id)
+             VALUES ($1, $2, 'konfi', $3, 2026, '{}'::jsonb, NOW(), $4)`,
+            [USERS.konfi1.id, ORGS.testGemeinde.id, JAHRGAENGE.jahrgang1.id, ausgabeId]
+          );
+
+          const body = await dashboard();
+          expect(typeof body.has_wrapped).toBe('boolean');
+          expect(body.has_wrapped).toBe(true);
+        });
+      });
+
       it('deckt sich mit dem, was /wrapped/me liefert', async () => {
         // Die eigentliche Zusicherung: Wo der Einstieg steht, muss auch etwas
         // abrufbar sein.

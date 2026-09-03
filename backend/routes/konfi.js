@@ -186,6 +186,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       //
       // Jetzt muessen beide Bedingungen gelten -- dieselbe Kombination, die
       // auch GET /wrapped/me prueft.
+      // Zusaetzlich zur Ja/Nein-Auskunft kommen ausgabe_id und titel mit
+      // (03.09.2026): Der Hinweis auf der Startseite laesst sich damit pro
+      // AUSGABE wegklicken statt ein fuer alle Mal, und er nennt den Namen,
+      // den die Leitung vergeben hat ("Zwischenstand September") statt eines
+      // pauschalen "Wrapped".
+      //
+      // has_wrapped bleibt unveraendert im selben Feld — ausgelieferte
+      // App-Versionen lesen genau das weiter, die beiden neuen Felder kommen
+      // nur dazu.
       const wrappedSql = `SELECT EXISTS(
           SELECT 1 FROM jahrgaenge j
           JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
@@ -194,7 +203,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           WHERE kp.user_id = $1
             AND j.wrapped_released_at IS NOT NULL
             AND j.wrapped_released_at <= NOW()
-        ) as has_wrapped`;
+        ) as has_wrapped,
+        (
+          SELECT a.id FROM wrapped_snapshots ws
+          JOIN wrapped_ausgaben a ON a.id = ws.ausgabe_id
+          WHERE ws.user_id = $1 AND ws.wrapped_type = 'konfi'
+            AND a.freigegeben_at IS NOT NULL
+          ORDER BY a.freigegeben_at DESC LIMIT 1
+        ) as wrapped_ausgabe_id,
+        (
+          SELECT a.titel FROM wrapped_snapshots ws
+          JOIN wrapped_ausgaben a ON a.id = ws.ausgabe_id
+          WHERE ws.user_id = $1 AND ws.wrapped_type = 'konfi'
+            AND a.freigegeben_at IS NOT NULL
+          ORDER BY a.freigegeben_at DESC LIMIT 1
+        ) as wrapped_titel`;
 
       const [
         badgeCountRes,
@@ -303,6 +326,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Wrapped-Verfuegbarkeit (über wrapped_released_at auf Jahrgang) — bereits
       // im Promise.all oben geladen.
       const has_wrapped = wrappedRes.rows[0]?.has_wrapped || false;
+      // Alt-Snapshots haben keine ausgabe_id — dann bleiben beide Felder null
+      // und die Startseite faellt auf ihren bisherigen Text zurueck.
+      const wrapped_ausgabe_id = wrappedRes.rows[0]?.wrapped_ausgabe_id ?? null;
+      const wrapped_titel = wrappedRes.rows[0]?.wrapped_titel ?? null;
 
       // Konfispruch-Sichtbarkeit (Backend-Gate, SPRUCH-07): Flag aus
       // jahrgaenge.konfspruch_enabled UND dem Dashboard-Schalter der Leitung
@@ -329,6 +356,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
         confirmation_date: konfi.confirmation_event_date || null,
         has_wrapped,
+        wrapped_ausgabe_id,
+        wrapped_titel,
         konfspruch_visible,
         level_info: {
           current_level: currentLevel ? {
