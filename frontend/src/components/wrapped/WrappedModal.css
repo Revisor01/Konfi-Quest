@@ -1415,3 +1415,214 @@ ion-modal.wrapped-modal-fullscreen {
   color: #f9a8d4;
   flex-shrink: 0;
 }
+
+/* ========================================
+   Momente als PINNWAND (03.09.2026)
+
+   Simon: "Moments soll eher aussehen wie ne Pinnwand. Übereinander mit
+   Effekt, Bewegung. Jetzt sieht es aus wie eine Liste von einem Lehrer."
+
+   Er hatte recht: Vorher lagen die Beiträge als gleich große Kärtchen
+   untereinander in einer scrollenden Spalte — eine Tabelle mit runden Ecken.
+   Jetzt liegen sie übereinander, leicht gedreht, mit Klebestreifen: wie
+   Fotos, die jemand an eine Wand gepinnt hat.
+
+   Die Drehung hängt an der Position (feste Werte in der Komponente), nicht
+   am Zufall — ein geteilter Rückblick muss jedes Mal gleich aussehen.
+   ======================================== */
+
+.challenge-momente-slide {
+  justify-content: flex-start;
+  padding-top: calc(54px + env(safe-area-inset-top, 0px));
+}
+
+.momente-pinnwand {
+  position: relative;
+  width: 100%;
+  /* Die Karten überlappen sich: negativer Abstand statt Liste. */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  margin-top: 6px;
+  perspective: 900px;
+}
+
+.moment-polaroid {
+  position: relative;
+  width: 46%;
+  max-width: 190px;
+  margin: -10px -14px;
+  padding: 9px 9px 0;
+  background: #fdfcf8;
+  border-radius: 3px;
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.34),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+  transform: rotate(var(--dreh)) translate(var(--versatz-x), var(--versatz-y));
+  /* Erst ankommen, dann leicht schweben. */
+  animation:
+    moment-ankommen 0.5s cubic-bezier(0.2, 1.1, 0.4, 1) var(--auftritt) both,
+    moment-schweben 7s ease-in-out infinite;
+}
+
+/* Die Karte fliegt an die Wand: von unten, größer, gerade — und dreht sich
+   dabei in ihre endgültige Schräglage. */
+@keyframes moment-ankommen {
+  from {
+    opacity: 0;
+    transform: rotate(0deg) translate(0, 26px) scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--dreh)) translate(var(--versatz-x), var(--versatz-y)) scale(1);
+  }
+}
+
+/* Danach ein ruhiges Atmen — die Wand lebt, ohne zu zappeln. */
+@keyframes moment-schweben {
+  0%, 100% {
+    transform: rotate(var(--dreh)) translate(var(--versatz-x), var(--versatz-y));
+  }
+  50% {
+    transform:
+      rotate(calc(var(--dreh) + 1.2deg))
+      translate(var(--versatz-x), calc(var(--versatz-y) - 5px));
+  }
+}
+
+/* Klebestreifen oben in der Mitte. */
+.moment-klebeband {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 52px;
+  height: 18px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: rgba(255, 255, 255, 0.42);
+  border-left: 1px solid rgba(255, 255, 255, 0.55);
+  border-right: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+.moment-polaroid__bild {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #e8e4dc;
+}
+
+.moment-polaroid__bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ChallengeFoto rendert einen eigenen Wrapper (.challenge-moment-foto) --
+   der muss die Flaeche fuellen, sonst behaelt er seine alten Listenmasse. */
+.moment-polaroid__bild .challenge-moment-foto {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+  max-height: none;
+}
+
+.moment-polaroid__bild .challenge-moment-foto--laedt,
+.moment-polaroid__bild .challenge-moment-foto--leer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e4dc;
+  color: rgba(0, 0, 0, 0.3);
+  font-size: 24px;
+}
+
+/* Beiträge ohne Foto (Text, Audio, Link) bekommen dieselbe Fläche --
+   sonst stünden Polaroids und Zettel unterschiedlich hoch auf der Wand. */
+.moment-polaroid__inhalt {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px;
+  background: linear-gradient(150deg, #fef9c3 0%, #fef08a 100%);
+  text-align: center;
+}
+
+.moment-polaroid__medienicon {
+  font-size: 26px;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.moment-polaroid__text {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: rgba(0, 0, 0, 0.72);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.moment-polaroid__link {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.6);
+  word-break: break-word;
+}
+
+/* Der weiße Rand unten, wie beim echten Polaroid. */
+.moment-polaroid__fuss {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 2px 9px;
+}
+
+.moment-polaroid__abzeichen {
+  width: 19px;
+  height: 19px;
+  min-width: 19px;
+  border-radius: 50%;
+  background: var(--app-color-challenges, #be185d);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.moment-polaroid__titel {
+  flex: 1;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.66);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Handschrift-Anmutung ohne zusätzliche Schriftdatei. */
+  letter-spacing: 0.01em;
+}
+
+/* Bei nur ein oder zwei Beiträgen dürfen sie größer sein -- dann trägt
+   das einzelne Bild die Seite. */
+.momente-pinnwand:has(.moment-polaroid:nth-child(2):last-child) .moment-polaroid,
+.momente-pinnwand:has(.moment-polaroid:only-child) .moment-polaroid {
+  width: 62%;
+  max-width: 240px;
+  margin: -6px -8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moment-polaroid {
+    animation: moment-ankommen 0.4s ease-out var(--auftritt) both;
+  }
+}

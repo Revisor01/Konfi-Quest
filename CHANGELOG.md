@@ -47,6 +47,9 @@ Versionsüberschrift.
   Spruch statt einer nackten Zahl, hat ein Hintergrundbild und eine eigene
   Farbe. Der Text richtet sich nach dem, was jemand erlebt hat — wer wenig
   dabei war, bekommt einen Satz, der trägt, statt eines mageren Vergleichs.
+- Die Seite mit den Challenge-Momenten sieht jetzt aus wie eine Pinnwand:
+  Die Beiträge liegen als Polaroids übereinander, leicht schief, mit
+  Klebestreifen — statt untereinander in einer Liste.
 - Neu ist die Seite zum seltensten Abzeichen: „Das haben nur x %." Die
   Prozentzahl steht groß — sie sagt als einzige Zahl im Rückblick, wie
   besonders etwas ist.
