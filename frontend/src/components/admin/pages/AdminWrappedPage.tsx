@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
   IonLabel, IonButton, IonIcon, IonSpinner, IonRefresher, IonRefresherContent,
   IonModal, IonInput, IonSelect, IonSelectOption, IonButtons,
-  IonSegment, IonSegmentButton, useIonAlert
+  IonSegment, IonSegmentButton, useIonAlert,
+  IonItemSliding, IonItemOptions, IonItemOption, IonListHeader,
+  IonCard, IonCardContent
 } from '@ionic/react';
-import { addOutline, trashOutline, closeOutline, sparklesOutline, peopleOutline, eyeOutline, schoolOutline, calendarOutline, checkmarkCircleOutline } from 'ionicons/icons';
+// Solid-Icons wie in der Events-Liste (dort: people, calendar, trophy,
+// pricetag) -- die Outline-Varianten wichen hier als einzige Liste ab.
+import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, arrowBack, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
+import { SectionHeader } from '../../shared';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 /**
  * Die Rueckblick-Ausgaben verwalten.
@@ -54,6 +60,11 @@ const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const [zeigeAlert] = useIonAlert();
 
+  // Fuer die Card-Modal-Optik (Sheet ueber der zurueckweichenden Seite),
+  // wie auf den uebrigen Admin-Seiten.
+  const pageRef = useRef<HTMLElement>(null);
+  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+
   const [ausgaben, setAusgaben] = useState<Ausgabe[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [laedt, setLaedt] = useState(true);
@@ -84,6 +95,7 @@ const AdminWrappedPage: React.FC = () => {
   }, [setError]);
 
   useEffect(() => { laden(); }, [laden]);
+  useEffect(() => { setPresentingElement(pageRef.current); }, []);
 
   const erzeugen = async () => {
     if (segment === 'konfi' && !neuerJahrgang) {
@@ -140,22 +152,51 @@ const AdminWrappedPage: React.FC = () => {
   const sichtbar = ausgaben.filter(a => a.typ === segment);
 
   return (
-    <IonPage>
-      <IonHeader>
+    <IonPage ref={pageRef}>
+      <IonHeader translucent={true}>
         <IonToolbar>
+          {/* Zurueck-Knopf und grosser Titel beim Hochscrollen fehlten hier
+              als einziger Admin-Seite (Simons Hinweis 03.09.2026) -- die
+              Seite hing ohne Rueckweg da. Gleicher Aufbau wie
+              AdminMaterialPage und die uebrigen Seiten. */}
+          <IonButtons slot="start">
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Jahresrückblick</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
+            <IonButton aria-label="Neuen Rückblick anlegen" onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
               <IonIcon icon={addOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="app-gradient-background">
+      <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Jahresrückblick</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
         <IonRefresher slot="fixed" onIonRefresh={async (e) => { await laden(); e.detail.complete(); }}>
           <IonRefresherContent />
         </IonRefresher>
+
+        {/* Stats-Kopf wie auf jeder anderen Seite: Wie viele Ausgaben gibt es,
+            wie viele sind freigegeben, wie viele Rueckblicke stecken darin. */}
+        <SectionHeader
+          title="Jahresrückblick"
+          subtitle="Ausgaben verwalten"
+          icon={sparklesOutline}
+          colors={{ primary: 'var(--app-color-wrapped)', secondary: '#6d28d9' }}
+          stats={[
+            { value: sichtbar.length, label: sichtbar.length === 1 ? 'Ausgabe' : 'Ausgaben' },
+            { value: sichtbar.filter(a => a.freigegeben).length, label: 'Freigegeben' },
+            { value: sichtbar.reduce((summe, a) => summe + (a.snapshots || 0), 0), label: 'Rückblicke' },
+          ]}
+        />
 
         <div style={{ padding: '16px 16px 0' }}>
           <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as 'konfi' | 'teamer')}>
@@ -184,72 +225,101 @@ const AdminWrappedPage: React.FC = () => {
               // UNSER Listen-Muster (app-list-item), nicht selbstgebaut:
               // Farbstreifen links, Icon im farbigen Kreis, Corner-Badge oben
               // rechts, Meta-Zeile mit farbigen Icons -- wie bei Events,
-              // Chats und der Punkte-Historie. Der erste Anlauf hatte
-              // eigene Inline-Styles und sah dadurch fremd aus.
-              <div
-                key={a.id}
-                className="app-list-item app-list-item--wrapped"
-                style={{ position: 'relative', overflow: 'hidden' }}
-              >
-                <div className="app-corner-badges">
+              // Chats und der Punkte-Historie.
+              //
+              // Geloescht wird per Wischen (Simons Hinweis 03.09.2026), nicht
+              // ueber einen Knopf in der Zeile: Ein Loeschknopf direkt neben
+              // dem Titel trifft man zu leicht, und ueberall sonst in der App
+              // liegt das Loeschen unter der Wischgeste.
+              //
+              // Icons und Farben folgen der Events-Liste: Solid-Varianten mit
+              // den app-icon-color--*-Klassen, keine Inline-Farben und keine
+              // Outline-Icons -- vorher wich diese Liste als einzige ab.
+              <IonItemSliding key={a.id} style={{ marginBottom: '8px' }}>
+                <IonItem
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto'
+                  }}
+                >
                   <div
-                    className="app-corner-badge"
-                    style={{ backgroundColor: 'var(--app-color-wrapped)' }}
+                    className="app-list-item app-list-item--wrapped"
+                    style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                   >
-                    {a.snapshots}
-                  </div>
-                  {a.freigegeben && (
-                    <>
-                      <div className="app-corner-badges__separator" />
-                      <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: 'var(--app-color-success)' }}
-                      >
-                        <IonIcon icon={eyeOutline} />
+                    {a.freigegeben && (
+                      <div className="app-corner-badges">
+                        <div
+                          className="app-corner-badge"
+                          style={{ backgroundColor: 'var(--app-color-success)' }}
+                          title="Freigegeben"
+                        >
+                          <IonIcon icon={eye} />
+                        </div>
                       </div>
-                    </>
-                  )}
-                </div>
+                    )}
 
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--wrapped">
-                      <IonIcon icon={a.typ === 'teamer' ? peopleOutline : sparklesOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title" style={{ paddingRight: '96px' }}>
-                        {a.titel}
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--wrapped">
+                          <IonIcon icon={a.typ === 'teamer' ? people : sparkles} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title" style={{ paddingRight: a.freigegeben ? '48px' : '0' }}>
+                            {a.titel}
+                          </div>
+                          <div className="app-list-item__meta">
+                            {/* Wie viele Rueckblicke in der Ausgabe stecken --
+                                gehoert in die Zeile, nicht in eine Ecke. */}
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={people} className="app-icon-color--participants" />
+                              {a.snapshots}
+                            </span>
+                            {a.jahrgang_name && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={school} className="app-icon-color--konfis" />
+                                {a.jahrgang_name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={calendar} className="app-icon-color--events" />
+                              {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
+                            </span>
+                          </div>
+                          {a.freigegeben_at && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={checkmarkCircle} className="app-icon-color--success" />
+                                freigegeben {datum(a.freigegeben_at)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="app-list-item__meta">
-                        {a.jahrgang_name && (
-                          <span className="app-list-item__meta-item">
-                            <IonIcon icon={schoolOutline} style={{ color: 'var(--app-color-konfis)' }} />
-                            {a.jahrgang_name}
-                          </span>
-                        )}
-                        <span className="app-list-item__meta-item">
-                          <IonIcon icon={calendarOutline} style={{ color: 'var(--app-color-events)' }} />
-                          {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
-                        </span>
-                        {a.freigegeben_at && (
-                          <span className="app-list-item__meta-item">
-                            <IonIcon icon={checkmarkCircleOutline} style={{ color: 'var(--app-color-success)' }} />
-                            freigegeben {datum(a.freigegeben_at)}
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    <IonButton
-                      fill="clear"
-                      aria-label={`${a.titel} löschen`}
-                      onClick={() => loeschen(a)}
-                      style={{ '--color': 'var(--ion-color-danger)', margin: 0 }}
-                    >
-                      <IonIcon icon={trashOutline} slot="icon-only" />
-                    </IonButton>
                   </div>
-                </div>
-              </div>
+                </IonItem>
+
+                <IonItemOptions side="end" className="app-swipe-actions">
+                  <IonItemOption
+                    onClick={() => { closeOpenSlidingItems(); loeschen(a); }}
+                    aria-label={`${a.titel} löschen`}
+                    className="app-swipe-action"
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                      <IonIcon icon={trash} />
+                    </div>
+                  </IonItemOption>
+                </IonItemOptions>
+              </IonItemSliding>
             ))}
           </IonList>
         )}
@@ -262,52 +332,75 @@ const AdminWrappedPage: React.FC = () => {
             : 'Du siehst die Rückblicke deiner eigenen Jahrgänge. Teamer-Rückblicke verwaltet die Leitung.'}
         </div>
 
-        <IonModal isOpen={modalOffen} onDidDismiss={() => setModalOffen(false)}>
+        {/* Card-Modal wie ueberall sonst (Simons Hinweis 03.09.2026):
+            presentingElement gibt die Sheet-Optik mit der zurueckweichenden
+            Seite dahinter -- vorher lag das Modal ohne diesen Effekt ueber
+            der Seite. Aufbau innen wie MaterialFormModal: Schliessen links,
+            Speichern-Haken rechts, IonListHeader mit Section-Icon je
+            Abschnitt, Felder in einer app-card. */}
+        <IonModal
+          isOpen={modalOffen}
+          onDidDismiss={() => setModalOffen(false)}
+          presentingElement={presentingElement || undefined}
+        >
           <IonHeader>
             <IonToolbar>
+              <IonButtons slot="start">
+                <IonButton onClick={() => setModalOffen(false)} aria-label="Schließen">
+                  <IonIcon icon={closeOutline} slot="icon-only" />
+                </IonButton>
+              </IonButtons>
               <IonTitle>Neuer Rückblick</IonTitle>
               <IonButtons slot="end">
-                <IonButton onClick={() => setModalOffen(false)}>
-                  <IonIcon icon={closeOutline} slot="icon-only" />
+                <IonButton onClick={erzeugen} disabled={erzeugt} aria-label="Rückblick erstellen und freigeben">
+                  {erzeugt ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
                 </IonButton>
               </IonButtons>
             </IonToolbar>
           </IonHeader>
-          <IonContent>
-            <IonList style={{ padding: 16 }}>
-              {segment === 'konfi' && (
-                <IonItem>
-                  <IonSelect
-                    label="Jahrgang"
-                    labelPlacement="stacked"
-                    placeholder="Jahrgang wählen"
-                    value={neuerJahrgang}
-                    onIonChange={(e) => setNeuerJahrgang(e.detail.value)}
-                  >
-                    {jahrgaenge.map(j => (
-                      <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
-              )}
-              <IonItem>
-                <IonInput
-                  label="Name"
-                  labelPlacement="stacked"
-                  placeholder="z. B. Zwischenstand"
-                  value={neuerTitel}
-                  maxlength={120}
-                  onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
-                />
-              </IonItem>
-              <p style={{ padding: '4px 16px', fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', lineHeight: 1.5 }}>
-                Ohne Namen schlagen wir einen vor. Der Rückblick wird sofort
-                erstellt und freigegeben; alle bekommen eine Mitteilung.
-                Frühere Ausgaben bleiben erhalten.
-              </p>
-              <IonButton expand="block" onClick={erzeugen} disabled={erzeugt} style={{ marginTop: 8 }}>
-                {erzeugt ? <IonSpinner name="crescent" /> : 'Erstellen und freigeben'}
-              </IonButton>
+          <IonContent className="app-gradient-background">
+            <IonList inset={true} className="app-segment-wrapper">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--wrapped">
+                  <IonIcon icon={sparklesOutline} />
+                </div>
+                <IonLabel>Grunddaten</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent className="app-card-content">
+                  {segment === 'konfi' && (
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonSelect
+                        label="Jahrgang"
+                        labelPlacement="stacked"
+                        placeholder="Jahrgang wählen"
+                        interface="popover"
+                        value={neuerJahrgang}
+                        onIonChange={(e) => setNeuerJahrgang(e.detail.value)}
+                      >
+                        {jahrgaenge.map(j => (
+                          <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonItem>
+                  )}
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonInput
+                      label="Name"
+                      labelPlacement="stacked"
+                      placeholder="z. B. Zwischenstand"
+                      value={neuerTitel}
+                      maxlength={120}
+                      onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
+                    />
+                  </IonItem>
+                  <p className="app-text-sub" style={{ marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+                    Ohne Namen schlagen wir einen vor. Der Rückblick wird sofort
+                    erstellt und freigegeben; alle bekommen eine Mitteilung.
+                    Frühere Ausgaben bleiben erhalten.
+                  </p>
+                </IonCardContent>
+              </IonCard>
             </IonList>
           </IonContent>
         </IonModal>

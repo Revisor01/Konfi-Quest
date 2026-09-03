@@ -1,5 +1,5 @@
 import React from 'react';
-import { sparklesOutline, imagesOutline, linkOutline } from 'ionicons/icons';
+import { sparklesOutline, imagesOutline, linkOutline, flagOutline } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
 interface Props {
@@ -17,23 +17,30 @@ interface Props {
 // SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
 export const SLIDES: OnboardingSlide[] = [
   {
-    icon: sparklesOutline,
+    icon: flagOutline,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
+    title: 'Was Challenges sind',
+    text: 'Challenges sind Aufgaben, die dich eine Zeit lang begleiten — du schickst ein Foto, einen Text, eine Aufnahme oder einen Link. Es gibt keine Punkte, keine Rangliste, keinen Vergleich: nur einen Stempel fürs Mitmachen. Die Idee ist, dass du dich mitten in deinem Alltag eine Weile mit einem Thema beschäftigst. Du findest sie im eigenen Challenges-Tab.',
+  },
+  {
+    icon: sparklesOutline,
+    color: 'var(--app-color-wrapped)',
+    rgb: '--app-color-wrapped-rgb',
     title: 'Dein Jahresrückblick ist persönlich',
     text: 'Gleich nach der Begrüßung kommt eine Seite, die zeigt, was dich in diesem Jahr besonders macht — ob du den Chat am Leben hältst, viele Reaktionen bekommst oder bei allem dabei warst. Verglichen wird nur mit dem Durchschnitt deines Jahrgangs, ohne Namen und nur, wenn der Vergleich freundlich ausfällt.',
   },
   {
     icon: imagesOutline,
-    color: 'var(--app-color-challenges)',
-    rgb: '--app-color-challenges-rgb',
+    color: 'var(--app-color-wrapped)',
+    rgb: '--app-color-wrapped-rgb',
     title: 'Deine Fotos, größer',
     text: 'Deine Beiträge aus den Challenges erscheinen im Rückblick jetzt groß statt als Briefmarke. Hast du nur ein oder zwei, füllen sie die ganze Seite. Am Ende steht: „Dein Weg. Deine Zeit. Dein Glaube."',
   },
   {
     icon: linkOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
+    color: 'var(--app-color-material)',
+    rgb: '--app-color-material-rgb',
     title: 'Material mit Links',
     text: 'Wenn dein Team Material teilt, kann jetzt beides zusammen dabei sein: eine Datei zum Herunterladen und Links, zum Beispiel zu einem Video. Und wo ein Termin Material hat, kommst du direkt aus dem Termin dorthin.',
   },

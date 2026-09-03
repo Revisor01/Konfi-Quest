@@ -137,7 +137,12 @@ describe('Update-Walkthrough 2.1.1', () => {
     // Der Vergleich ist anonym und nur nach oben — diese Zusage steht im
     // Code (routes/wrapped.js) und muss auch im Hinweis stehen.
     expect(text).toMatch(/ohne Namen|anonym/);
-    expect(text).not.toMatch(/Rangliste|Platz \d|besser als/);
+    // "keine Rangliste" ist die Zusage, "eine Rangliste" waere der Bruch.
+    // Seit der Challenges-Folie (03.09.2026) kommt das Wort verneint vor --
+    // gepruefte Absicht bleibt, dass NIRGENDS eine Rangliste versprochen
+    // wird, nicht dass das Wort fehlt.
+    expect(text).not.toMatch(/(?<!keine )Rangliste/);
+    expect(text).not.toMatch(/Platz \d|besser als/);
   });
 
   it('Teamer-Folien nennen die Pflicht zum Grund nur nach einer Zusage', () => {

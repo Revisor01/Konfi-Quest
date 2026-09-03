@@ -64,6 +64,13 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Der Willkommensrundgang erklärt jetzt zu Beginn noch einmal, was Challenges
+  eigentlich sind, und jede Seite trägt die Farbe ihres Bereichs.
+- Die Seite für den Jahresrückblick ist aufgebaut wie die übrigen Seiten:
+  mit Zurück-Weg, Kennzahlen im Kopf und den gewohnten Listen-Symbolen.
+  Gelöscht wird durch Wischen statt über einen Knopf in der Zeile.
+- Überschriften in Listen werden nicht mehr früh abgeschnitten, sondern
+  laufen aus.
 - Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
   die übrigen Knöpfe der Seite.
 - Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im

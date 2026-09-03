@@ -628,25 +628,25 @@ ion-list[inset] ion-list-header {
   min-width: 0;
   overflow: hidden;
 }
+/* Titel duerfen umbrechen statt frueh mit "..." zu enden (Simons Hinweis
+   03.09.2026: "Die duerfen einfach rechts aussen rauslaufen, muessen gar
+   nicht abgeschnitten sein"). Vorher schnitt nowrap + ellipsis schon nach
+   einer knappen Zeile ab -- besonders stoerend auf iOS, wo das
+   padding-right fuer die Eck-Badges die nutzbare Breite zusaetzlich
+   verkleinert. Die Sonderregel --events tat genau das bereits, aber nur
+   fuer zwei der Listen; jetzt gilt es ueberall. */
 .app-list-item__title {
   font-weight: 600;
   font-size: 0.95rem;
   color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding-top: 4px;
 }
-/* Event-Titel duerfen bis ans Zeilenende laufen und bei Bedarf auf 2 Zeilen
-   umbrechen (statt frueh mit "..." gekuerzt zu werden, v.a. auf iOS wegen des
-   Badge-padding-right). */
+/* Bleibt als eigener Name bestehen (zwei Listen setzen ihn), verhaelt sich
+   aber nicht mehr anders als der Standard. */
 .app-list-item__title--events {
   white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .app-list-item__subtitle {
   font-size: 0.8rem;
@@ -1563,6 +1563,7 @@ ion-toggle.app-toggle--events {
 .app-icon-color--activities { color: var(--app-color-activities); }
 .app-icon-color--organizations { color: var(--app-color-users); }
 .app-icon-color--jahrgang { color: var(--app-color-jahrgang); }
+.app-icon-color--wrapped { color: var(--app-color-wrapped); }
 .app-icon-color--success { color: var(--app-color-success); }
 .app-icon-color--danger { color: var(--app-color-danger); }
 /* Semantische Aliase für Events-Listen */
