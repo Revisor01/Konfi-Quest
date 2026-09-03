@@ -55,7 +55,7 @@ describe('Alle bestätigen: auch für Teamer:innen', () => {
   it('die Rueckfrage nennt bei Teamer:innen keine Punktevergabe', () => {
     // Teamer:innen bekommen Abzeichen, aber keine Punkte. Stuende dort
     // "inkl. Punktevergabe", erwartete die Leitung etwas, das ausbleibt.
-    expect(quelle).toContain('Teamer:innen bekommen dabei keine Punkte.');
+    expect(quelle).toContain('Das Team bekommt dabei keine Punkte.');
   });
 
   it('die Teamer-Sektion erscheint auch bei reinen Teamer-Terminen', () => {

@@ -69,6 +69,59 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
+
+  // ====================================================================
+  // EIGENE AN-/ABMELDUNG (Simon, 03.09.2026)
+  // ====================================================================
+  //
+  // "Ich hab Teamer die auch Admins sind. Die muessen sich auch an oder
+  // abmelden koennen fuer Events. Eigentlich sollten das einfach alle machen
+  // koennen die einem Jahrgang zugeordnet sind. Ob Admin, orgadmin oder
+  // Teamer."
+  //
+  // DAS BACKEND KONNTE DAS SCHON: POST /teamer/events/:id/zusage haengt an
+  // requireTeamer, und das erlaubt org_admin, admin UND teamer
+  // (rbac.js:274). Die Platzzaehlung unterscheidet ohnehin nur 'konfi' gegen
+  // 'team', wobei team = "alles ausser konfi" ist (bookingUtils.js,
+  // rollenBedingung) -- Admins zaehlen also laengst zur Team-Seite.
+  //
+  // ES FEHLTE ALLEIN DIE OBERFLAECHE: Die Zusage gab es nur unter
+  // /teamer/events. Wer Admin ist, landet auf /admin/events und sah dort nur
+  // die Absagen ANDERER, ohne sich selbst melden zu koennen.
+  //
+  // WARUM NICHT "nur mit Jahrgangszuordnung": Gemessen am 03.09.2026 in
+  // Kirchspiel West haben alle 4 Admins und der org_admin eine Zuordnung --
+  // aber 2 von 11 Teamer:innen NICHT. Eine strenge Auslegung haette denen
+  // ihre bisherige Anmeldung weggenommen. Deshalb dieselbe Regel wie im
+  // Backend: alle ausser Konfis.
+  const [zusageLaeuft, setZusageLaeuft] = useState(false);
+
+  /** Eigene Teilnahme am Team-Kontingent, falls vorhanden. */
+  const eigeneTeilnahme = participants.find(p => p.user_id === user?.id);
+
+  /** Nimmt dieses Event ueberhaupt Team-Anmeldungen? */
+  const nimmtTeamAn = !!(eventData?.teamer_needed || eventData?.teamer_only);
+
+  /** Darf die angemeldete Person sich selbst melden? Alle ausser Konfis. */
+  const darfSichMelden = user?.role_name !== 'konfi' && nimmtTeamAn
+    && !eventData?.cancelled && !istVergangen(eventData);
+
+  const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
+    if (!eventData || zusageLaeuft) return;
+    setZusageLaeuft(true);
+    const body = grund && grund.trim() ? { dabei, reason: grund.trim() } : { dabei };
+    try {
+      await api.post(`/teamer/events/${eventData.id}/zusage`, body);
+      setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
+      loadEventData();
+    } catch (err) {
+      // Das Backend lehnt eine Absage nach Zusage ohne Grund mit
+      // error_code 'grund_erforderlich' ab -- die Meldung durchreichen.
+      setError(fehlerText(err, 'Anmeldung fehlgeschlagen'));
+    } finally {
+      setZusageLaeuft(false);
+    }
+  };
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
@@ -438,11 +491,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const waitlistHint = waitlistCount > 0
       ? ` Die Warteliste (${waitlistCount}) bleibt unberührt.`
       : '';
-    const wen = rolle === 'teamer' ? 'Teamer:in(nen)' : 'Teilnehmer:in(nen)';
+    const wen = rolle === 'teamer' ? 'Team' : 'Teilnehmer:in(nen)';
     // Punkte gibt es nur bei Konfis -- das gehoert in die Rueckfrage, sonst
     // erwartet die Leitung bei Teamer:innen eine Punktevergabe, die ausbleibt.
     const punkteHinweis = rolle === 'teamer'
-      ? ' Teamer:innen bekommen dabei keine Punkte.'
+      ? ' Das Team bekommt dabei keine Punkte.'
       : ' (inkl. Punktevergabe)';
     presentAlert({
       header: 'Alle bestätigen?',
@@ -933,7 +986,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
                         <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                        Teamer:in hinzufügen
+                        Team hinzufügen
                       </IonButton>
                     )}
                     {/* Leitung laeuft ueber dasselbe Team-Kontingent wie die
@@ -971,7 +1024,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           // von "hat noch nicht reagiert" unterscheidbar sein, sonst muss die
           // Leitung weiter nachfragen (Nutzerwunsch 25.08.2026).
           const teamerAbgesagt = teamerParticipants.filter(p => p.status === 'opted_out');
-          const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}`
+          // UEBERSCHRIFT "Team", nicht "Teamer:innen" (Simon, 03.09.2026):
+          // Die Sektion umfasst ohnehin Teamer:innen UND zugeordnete Leitung
+          // (Filter '!== konfi'), der alte Titel war also schon falsch.
+          const teamerHeaderText = `Team (${teamerConfirmed.length}`
             + (teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : '')
             + (teamerAbgesagt.length > 0 ? `, ${teamerAbgesagt.length} abgesagt` : '')
             + ')';
@@ -1018,6 +1074,58 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   </IonCard>
                 </IonList>
               )}
+                {/* EIGENE AN-/ABMELDUNG (Simon, 03.09.2026): Auch Admins,
+                    Org-Admins und Super-Admins melden sich hier selbst an
+                    oder ab. Vorher gab es das nur unter /teamer/events --
+                    wer Admin ist, kam da nie hin und konnte sich nicht
+                    melden, obwohl das Backend es erlaubt haette. */}
+                {darfSichMelden && (
+                  <IonList className="app-section-inset" inset={true}>
+                    <IonListHeader>
+                      <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
+                      <IonLabel>Bist du dabei?</IonLabel>
+                    </IonListHeader>
+                    <div style={{ display: 'flex', gap: 10, padding: '4px 16px 14px' }}>
+                      <IonButton
+                        expand="block"
+                        fill={eigeneTeilnahme?.status === 'confirmed' ? 'solid' : 'outline'}
+                        color="success"
+                        disabled={zusageLaeuft || !isOnline}
+                        onClick={() => setzeEigeneZusage(true)}
+                        style={{ flex: 1, margin: 0 }}
+                      >
+                        {eigeneTeilnahme?.status === 'confirmed' ? 'Du bist dabei' : 'Bin dabei'}
+                      </IonButton>
+                      <IonButton
+                        expand="block"
+                        fill={eigeneTeilnahme?.status === 'opted_out' ? 'solid' : 'outline'}
+                        color="danger"
+                        disabled={zusageLaeuft || !isOnline}
+                        onClick={() => {
+                          // Nach einer Zusage verlangt das Backend einen
+                          // Grund -- danach fragen, statt in den Fehler zu
+                          // laufen.
+                          if (eigeneTeilnahme?.status === 'confirmed') {
+                            const grund = window.prompt('Warum kannst du nicht? (Die Leitung muss umplanen)');
+                            if (grund === null) return;
+                            setzeEigeneZusage(false, grund);
+                          } else {
+                            setzeEigeneZusage(false);
+                          }
+                        }}
+                        style={{ flex: 1, margin: 0 }}
+                      >
+                        {eigeneTeilnahme?.status === 'opted_out' ? 'Abgesagt' : 'Bin nicht dabei'}
+                      </IonButton>
+                    </div>
+                    {!isOnline && (
+                      <div style={{ padding: '0 16px 12px', fontSize: '0.82rem', color: 'var(--app-text-sub-color, #8e8e93)' }}>
+                        Ohne Netz nicht möglich — versuch es später nochmal.
+                      </div>
+                    )}
+                  </IonList>
+                )}
+
               {(teamerParticipants.length > 0 || eventData?.teamer_needed || eventData?.teamer_only) && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
@@ -1051,7 +1159,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                          Teamer:in hinzufügen
+                          Team hinzufügen
                         </IonButton>
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
