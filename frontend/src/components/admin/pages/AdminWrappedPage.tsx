@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
   IonLabel, IonButton, IonIcon, IonSpinner, IonRefresher, IonRefresherContent,
-  IonModal, IonInput, IonSelect, IonSelectOption, IonButtons, IonBadge,
+  IonModal, IonInput, IonSelect, IonSelectOption, IonButtons,
   IonSegment, IonSegmentButton, useIonAlert
 } from '@ionic/react';
-import { addOutline, trashOutline, closeOutline, sparklesOutline, peopleOutline } from 'ionicons/icons';
+import { addOutline, trashOutline, closeOutline, sparklesOutline, peopleOutline, eyeOutline, schoolOutline, calendarOutline, checkmarkCircleOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -181,38 +181,75 @@ const AdminWrappedPage: React.FC = () => {
         ) : (
           <IonList style={{ background: 'transparent', padding: '8px 16px 24px' }}>
             {sichtbar.map((a) => (
-              <IonItem
+              // UNSER Listen-Muster (app-list-item), nicht selbstgebaut:
+              // Farbstreifen links, Icon im farbigen Kreis, Corner-Badge oben
+              // rechts, Meta-Zeile mit farbigen Icons -- wie bei Events,
+              // Chats und der Punkte-Historie. Der erste Anlauf hatte
+              // eigene Inline-Styles und sah dadurch fremd aus.
+              <div
                 key={a.id}
-                className="app-list-item"
-                style={{ '--background': 'var(--app-card-background, #fff)', marginBottom: 10, borderRadius: 14 }}
+                className="app-list-item app-list-item--wrapped"
+                style={{ position: 'relative', overflow: 'hidden' }}
               >
-                <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped, #7c3aed)' }}>
-                  <IonIcon icon={a.typ === 'teamer' ? peopleOutline : sparklesOutline} style={{ color: '#fff' }} />
+                <div className="app-corner-badges">
+                  <div
+                    className="app-corner-badge"
+                    style={{ backgroundColor: 'var(--app-color-wrapped)' }}
+                  >
+                    {a.snapshots}
+                  </div>
+                  {a.freigegeben && (
+                    <>
+                      <div className="app-corner-badges__separator" />
+                      <div
+                        className="app-corner-badge"
+                        style={{ backgroundColor: 'var(--app-color-success)' }}
+                      >
+                        <IonIcon icon={eyeOutline} />
+                      </div>
+                    </>
+                  )}
                 </div>
-                <IonLabel style={{ marginLeft: 12 }}>
-                  <h2 style={{ fontWeight: 600, margin: 0 }}>{a.titel}</h2>
-                  <p style={{ fontSize: '0.82rem', margin: '2px 0 0', whiteSpace: 'normal' }}>
-                    {a.jahrgang_name ? `${a.jahrgang_name} · ` : ''}
-                    {a.snapshots} {a.snapshots === 1 ? 'Rückblick' : 'Rückblicke'}
-                    {a.freigegeben_at ? ` · freigegeben am ${datum(a.freigegeben_at)}` : ''}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', margin: '2px 0 0', opacity: 0.7, whiteSpace: 'normal' }}>
-                    Zeitraum {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
-                  </p>
-                </IonLabel>
-                {a.freigegeben && (
-                  <IonBadge slot="end" color="success" style={{ marginRight: 6 }}>sichtbar</IonBadge>
-                )}
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  aria-label={`${a.titel} löschen`}
-                  onClick={() => loeschen(a)}
-                  style={{ '--color': 'var(--ion-color-danger)' }}
-                >
-                  <IonIcon icon={trashOutline} slot="icon-only" />
-                </IonButton>
-              </IonItem>
+
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--wrapped">
+                      <IonIcon icon={a.typ === 'teamer' ? peopleOutline : sparklesOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title" style={{ paddingRight: '96px' }}>
+                        {a.titel}
+                      </div>
+                      <div className="app-list-item__meta">
+                        {a.jahrgang_name && (
+                          <span className="app-list-item__meta-item">
+                            <IonIcon icon={schoolOutline} style={{ color: 'var(--app-color-konfis)' }} />
+                            {a.jahrgang_name}
+                          </span>
+                        )}
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={calendarOutline} style={{ color: 'var(--app-color-events)' }} />
+                          {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
+                        </span>
+                        {a.freigegeben_at && (
+                          <span className="app-list-item__meta-item">
+                            <IonIcon icon={checkmarkCircleOutline} style={{ color: 'var(--app-color-success)' }} />
+                            freigegeben {datum(a.freigegeben_at)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <IonButton
+                      fill="clear"
+                      aria-label={`${a.titel} löschen`}
+                      onClick={() => loeschen(a)}
+                      style={{ '--color': 'var(--ion-color-danger)', margin: 0 }}
+                    >
+                      <IonIcon icon={trashOutline} slot="icon-only" />
+                    </IonButton>
+                  </div>
+                </div>
+              </div>
             ))}
           </IonList>
         )}

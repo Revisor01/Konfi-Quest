@@ -985,36 +985,49 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 /* Die beiden Bildformen. Groß, weich, angeschnitten. */
+/* VOLLBILD statt Eckenform (03.09.2026).
+
+   Simons Kritik: "Wir wollten doch pro Seite ein Hintergrundbild sehen.
+   Warum ist das nicht da? Das ist einfach nicht sichtbar."
+
+   Er hatte recht, und der Grund stand im CSS: Das Motiv lag als 340px grosse
+   Form in der Ecke, mit 10px Weichzeichner, darunter ein Farbschleier mit
+   86 % Deckkraft. Technisch war das Bild geladen (im Browser nachgewiesen),
+   zu sehen war praktisch nichts.
+
+   Jetzt fuellt das Foto die ganze Seite. Lesbarkeit kommt nicht mehr aus
+   einer flaechigen Abdunklung, sondern aus einem Verlauf, der nach unten
+   dichter wird -- genau dort, wo Slogan und Text stehen. Oben bleibt das
+   Bild offen. */
 .wrapped-bg-form {
   position: absolute;
-  overflow: hidden;
   background-size: cover;
   background-position: center;
 }
 
 .wrapped-bg-form--oben {
-  top: -60px;
-  right: -60px;
-  width: 340px;
-  height: 340px;
-  border-radius: 70px;
-  opacity: 0.85;
-  filter: blur(10px);
-  /* Weicher Rand statt harter Kante: Die Form franst zum Verlauf hin aus. */
-  mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
-  -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
-  animation: wrapped-drift 19s ease-in-out infinite;
+  inset: 0;
+  opacity: 1;
+  /* Leichter Weichzeichner: Das Motiv bleibt erkennbar, konkurriert aber
+     nicht mit der Schrift um die Schaerfe. */
+  filter: blur(1.5px) saturate(1.05);
+  transform: scale(1.06);
+  animation: wrapped-drift 24s ease-in-out infinite;
 }
 
+/* Das zweite Motiv als ruhiger Akzent oben rechts -- gibt Tiefe, ohne dem
+   Hauptbild die Flaeche zu nehmen. */
 .wrapped-bg-form--unten {
-  bottom: -40px;
-  left: -70px;
-  width: 320px;
-  height: 320px;
-  border-radius: 80px;
-  opacity: 0.32;
-  filter: blur(2px);
-  animation: wrapped-drift 26s ease-in-out infinite reverse;
+  top: -40px;
+  right: -50px;
+  width: 300px;
+  height: 300px;
+  border-radius: 64px;
+  opacity: 0.28;
+  filter: blur(6px);
+  mask-image: radial-gradient(closest-side, #000 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 40%, transparent 100%);
+  animation: wrapped-drift 30s ease-in-out infinite reverse;
 }
 
 /* Farbschleier: derselbe Verlauf wie die Seite, nur transparent. Er hält
@@ -1178,3 +1191,101 @@ ion-modal.wrapped-modal-fullscreen {
 .kategorie-seite-slide.d-ostern          { background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #b45309 100%); }
 .kategorie-seite-slide.d-erntedank       { background-image: linear-gradient(135deg, #ca8a04 0%, #a16207 55%, #713f12 100%); }
 .kategorie-seite-slide.d-sommer          { background-image: linear-gradient(135deg, #06b6d4 0%, #0891b2 55%, #155e75 100%); }
+
+/* ========================================
+   Das seltenste Abzeichen — die Seite zum Teilen
+
+   Simon (03.09.2026): "Es muss wirklich so sein, dass die Lust haben, das
+   zu teilen, dass das was richtig Besonderes ist."
+
+   Deshalb ist diese Seite mittig aufgebaut statt unten ausgerichtet wie die
+   Bereichsseiten: Das Abzeichen steht in der Mitte, die Prozentzahl
+   darunter. Wer davon einen Screenshot macht, hat ein Bild mit einem
+   Mittelpunkt — kein Textblock am unteren Rand.
+   ======================================== */
+
+.seltenstes-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 28px calc(60px + env(safe-area-inset-bottom, 0px));
+  background-image: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+}
+
+.seltenstes-slide .selt-auge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 22px;
+}
+
+/* Das Abzeichen als Held der Seite. */
+.seltenstes-slide .selt-abzeichen {
+  width: 104px;
+  height: 104px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.32);
+  margin-bottom: 16px;
+}
+
+.seltenstes-slide .selt-abzeichen ion-icon {
+  font-size: 54px;
+  color: #fff;
+}
+
+.seltenstes-slide .selt-name {
+  font-family: var(--w-akzent);
+  font-size: clamp(28px, 8vw, 38px);
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 26px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* Die Prozentzahl traegt die Aussage. */
+.seltenstes-slide .selt-prozent {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 3px 26px rgba(0, 0, 0, 0.34);
+}
+
+.seltenstes-slide .selt-prozent__zahl {
+  font-family: var(--w-akzent);
+  font-size: clamp(88px, 30vw, 132px);
+  line-height: 0.82;
+  letter-spacing: 0.01em;
+}
+
+.seltenstes-slide .selt-prozent__zeichen {
+  font-family: var(--w-akzent);
+  font-size: clamp(38px, 12vw, 54px);
+  margin-left: 4px;
+  opacity: 0.85;
+}
+
+.seltenstes-slide .selt-satz {
+  font-family: var(--w-akzent);
+  font-size: clamp(22px, 7vw, 30px);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 2px;
+  margin-bottom: 18px;
+}
+
+.seltenstes-slide .selt-nachsatz {
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 20em;
+}

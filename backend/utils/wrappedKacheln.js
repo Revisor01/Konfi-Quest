@@ -51,7 +51,8 @@ const DRAMATURGIE = [
   'challenges',         // 5  zwei Momente und Stempel
   'challenge-momente',  // 6  Challenges Special: die Bilder, gross
   'punkte',             // 7
-  'badges',             // 8  mit dem seltensten Abzeichen
+  'badges',             // 8
+  'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
   'abschluss'           // 10 Uebersicht
 ];
@@ -87,6 +88,10 @@ const BEDINGUNGEN = {
     return typeof mittel !== 'number' || eigene >= mittel;
   },
   challenges: (s) => (s.challenges?.beitraege || 0) > 0,
+  // Nur wenn das Backend ein seltenstes Abzeichen bestimmt hat. Das setzt
+  // mindestens 5 Konfis in der Gemeinde voraus -- bei zweien waere "50 %"
+  // eine Zahl ohne Aussage.
+  seltenstes: (s) => Boolean(s.badges?.seltenstes?.name),
   'challenge-momente': (s) => (s.challenge_momente?.length || 0) > 0,
   konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
 };

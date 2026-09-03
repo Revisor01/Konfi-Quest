@@ -270,6 +270,60 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const totalBadgesAvailable = parseInt(totalBadgesRow.count, 10) || 0;
 
+    // DAS SELTENSTE ABZEICHEN -- Simons Idee vom 02.09.2026, ausdruecklich
+    // gewuenscht: "Das haben nur x %."
+    //
+    // Warum das eine besondere Seite ist: Es ist die einzige Stelle im
+    // Rueckblick, die etwas ueber die SELTENHEIT einer Leistung sagt. Alle
+    // anderen Zahlen sind absolut ("8 Termine") -- diese hier setzt sie ins
+    // Verhaeltnis und macht sie damit teilenswert.
+    //
+    // KEINE RANGLISTE UEBER MENSCHEN (Simons Regel, Migration 118): Die
+    // Aussage gilt dem ABZEICHEN, nicht der Person. "Das haben nur 8 %"
+    // sagt nichts darueber, wer sonst noch was hat.
+    //
+    // Gezaehlt wird gegen die Konfis der ganzen Organisation, nicht des
+    // Jahrgangs: Bei 13 Konfis im Jahrgang waeren die Prozente grob
+    // gerastert (jede Person = 7,7 Punkte) und wenig aussagekraeftig.
+    const { rows: [seltenstes] } = await client.query(
+      `WITH konfis_gesamt AS (
+         SELECT COUNT(*)::int AS n
+           FROM users u
+           JOIN roles r ON r.id = u.role_id
+          WHERE r.name = 'konfi' AND u.organization_id = $2
+            AND u.deleted_at IS NULL
+       )
+       SELECT cb.name, cb.icon, cb.color,
+              COUNT(DISTINCT alle.user_id)::int AS haben_es,
+              (SELECT n FROM konfis_gesamt) AS konfis
+         FROM user_badges meins
+         JOIN custom_badges cb ON cb.id = meins.badge_id
+         LEFT JOIN user_badges alle ON alle.badge_id = cb.id
+        WHERE meins.user_id = $1
+          AND meins.organization_id = $2
+          AND meins.awarded_date >= $3::date
+          AND meins.awarded_date < ($4::date + INTERVAL '1 day')
+        GROUP BY cb.id, cb.name, cb.icon, cb.color
+        -- Das seltenste zuerst; bei Gleichstand das zuletzt verliehene,
+        -- damit die Seite nicht bei jedem Lauf ein anderes zeigt.
+        ORDER BY haben_es ASC, cb.id ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+
+    // Prozent nur, wenn es ueberhaupt Konfis gibt und die Zahl etwas
+    // bedeutet. Bei 2 Konfis waere "50 %" eine Zahl ohne Aussage.
+    const seltenstesAbzeichen = (seltenstes && seltenstes.konfis >= 5)
+      ? {
+          name: seltenstes.name,
+          icon: seltenstes.icon,
+          color: seltenstes.color,
+          haben_es: seltenstes.haben_es,
+          konfis: seltenstes.konfis,
+          prozent: Math.max(1, Math.round((seltenstes.haben_es / seltenstes.konfis) * 100))
+        }
+      : null;
+
     // Pflicht-Events
     const { rows: [pflichtRow] } = await client.query(
       `SELECT
@@ -732,7 +786,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         badges: {
           total_earned: badgeRows.length,
           total_available: totalBadgesAvailable,
-          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color }))
+          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color })),
+          // Additiv (ab 03.09.2026): alte Apps ignorieren das Feld.
+          seltenstes: seltenstesAbzeichen
         },
         pflicht: {
           besucht: pflichtBesucht,

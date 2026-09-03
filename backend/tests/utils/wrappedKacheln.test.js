@@ -24,6 +24,11 @@ const aktiverSnapshot = () => ({
   chat: { nachrichten_gesendet: 18, reaktionen_bekommen: 12 },
   challenges: { beitraege: 4, top_challenge: { title: 'Foto' } },
   challenge_momente: [{}, {}, {}],
+  badges: {
+    total_earned: 7,
+    seltenstes: { name: 'Bonuspunkte-Gewinner', icon: 'trophy', color: '#f59e0b',
+                  haben_es: 5, konfis: 13, prozent: 38 }
+  },
   zeitraum: { start: '2025-09-01', ende: '2026-04-12', konfirmation: '2026-04-12' },
   kategorie: {
     verteilung: [
@@ -197,6 +202,27 @@ describe('Kategorie- und Datums-Seiten', () => {
       top_kategorie: 'Teamtreff'
     };
     expect(waehleKategorieSeiten(s)).not.toContain('kategorie:teamtreff');
+  });
+});
+
+describe('Das seltenste Abzeichen (Simons Idee)', () => {
+  test('erscheint, wenn das Backend eines bestimmt hat', () => {
+    expect(waehleKacheln(aktiverSnapshot(), { chat: 1 })).toContain('seltenstes');
+  });
+
+  test('erscheint NICHT ohne bestimmtes Abzeichen', () => {
+    // Das Backend liefert null, wenn die Gemeinde weniger als 5 Konfis hat --
+    // "50 %" bei zwei Personen waere eine Zahl ohne Aussage.
+    const s = aktiverSnapshot();
+    s.badges = { total_earned: 7, seltenstes: null };
+    expect(waehleKacheln(s, { chat: 1 })).not.toContain('seltenstes');
+  });
+
+  test('steht direkt nach der Badges-Seite', () => {
+    // Die Reihenfolge traegt die Erzaehlung: erst die Sammlung, dann das
+    // Besondere daraus.
+    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 1 });
+    expect(kacheln.indexOf('seltenstes')).toBe(kacheln.indexOf('badges') + 1);
   });
 });
 

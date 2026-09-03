@@ -51,12 +51,36 @@ const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf }) => {
         />
       )}
 
-      {/* Schleier in der Farbe der Seite. Ohne Bild wäre er überflüssig --
-          er kostet nichts und hält die Seiten optisch gleich. */}
-      <div
-        className="wrapped-bg-schleier"
-        style={{ background: verlauf, opacity: bild ? 0.86 : 0 }}
-      />
+      {/* Farbschleier -- ABGESTUFT, nicht flaechig (03.09.2026).
+
+          Vorher lag der Verlauf mit 86 % Deckkraft ueber dem ganzen Bild.
+          Das machte den Text lesbar und das Foto unsichtbar; Simon sah
+          zu Recht "kein Hintergrundbild". Jetzt deckt der Schleier nur
+          unten ab, wo der Text steht, und laesst das Motiv oben frei.
+
+          Zwei Schichten: der Farbschleier der Seite (unten dicht, oben
+          fast durchsichtig) und darueber ein neutraler Abdunkler fuer den
+          Textbereich. So bleibt weisse Schrift auch auf einem hellen
+          Himmel lesbar, ohne das Bild wegzunehmen. */}
+      {bild && (
+        <>
+          <div
+            className="wrapped-bg-schleier"
+            style={{
+              background: verlauf,
+              opacity: 0.72,
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, #000 78%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, #000 78%)',
+            }}
+          />
+          <div
+            className="wrapped-bg-schleier"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.28) 62%, rgba(0,0,0,0.55) 100%)',
+            }}
+          />
+        </>
+      )}
       <div className="wrapped-bg-licht" />
     </div>
   );

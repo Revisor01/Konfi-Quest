@@ -19,6 +19,7 @@ import UeberDasZielSlide from './slides/UeberDasZielSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
 import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
+import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
 import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
@@ -43,6 +44,8 @@ interface WrappedModalProps {
   // Für Wiederansicht — wenn gesetzt, wird NICHT /api/wrapped/me geladen
   initialData?: KonfiWrappedData | TeamerWrappedData;
   initialYear?: number;
+  /** Name der Ausgabe -- steht auf der ersten Seite. */
+  initialTitel?: string | null;
 }
 
 // Formulierungs-Varianten pro Slide-Typ, Auswahl per seed
@@ -109,11 +112,15 @@ const konfirmationsTermin = (data: KonfiWrappedData): string | null => {
   return z.ende || null;
 };
 
-const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear }) => {
+const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear, initialTitel }) => {
   const [data, setData] = useState<KonfiWrappedData | TeamerWrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [year, setYear] = useState<number | null>(null);
+  // Der Name der Ausgabe fuer die erste Seite ("Willkommen zu deinem
+  // Zwischenstand"). Kommt bei der Wiederansicht als Prop, sonst von
+  // GET /wrapped/me.
+  const [titel, setTitel] = useState<string | null>(initialTitel ?? null);
   const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
   const [isSharing, setIsSharing] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
@@ -123,6 +130,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     if (initialData && initialYear) {
       setData(initialData);
       setYear(initialYear);
+      if (initialTitel !== undefined) setTitel(initialTitel);
       if (initialType) setWrappedType(initialType);
       return;
     }
@@ -132,6 +140,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         setData(response.data);
         setYear(response.year);
         setWrappedType(response.wrapped_type);
+        setTitel((response as WrappedResponse & { titel?: string | null }).titel ?? null);
       })
       .catch((err) => {
         if (err.response?.status === 404) {
@@ -234,7 +243,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
     // Alle moeglichen Slide-Renderer
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
-      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} />,
+      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} titel={titel} />,
       'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
       'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
@@ -246,6 +255,10 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
+      'seltenstes': (a) => {
+        const selt = (konfiData.slides.badges as { seltenstes?: { name: string; icon: string; color: string; haben_es: number; konfis: number; prozent: number } })?.seltenstes;
+        return selt ? <SeltenstesAbzeichenSlide isActive={a} abzeichen={selt} /> : null;
+      },
     };
 
     // Die vom Backend gewaehlten Seiten (Simons Dramaturgie). Ab

@@ -273,7 +273,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     displayName: currentKonfi?.display_name || currentKonfi?.name || '',
     wrappedType: (isTeamer ? 'teamer' : 'konfi') as 'teamer' | 'konfi',
     initialData: wrappedModalData?.data,
-    initialYear: wrappedModalData?.year
+    initialYear: wrappedModalData?.year,
+    // Der Ausgaben-Titel steht auf der ersten Seite ("Willkommen zu deinem
+    // Zwischenstand"). Ohne ihn hiesse dort auch ein Zwischenstand
+    // "Konfi-Jahr".
+    initialTitel: wrappedModalData?.titel ?? null
   });
 
   useEffect(() => {

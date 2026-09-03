@@ -23,6 +23,19 @@ export interface KonfiBadgesSlide {
   total_earned: number;
   total_available: number;
   badges: Array<{ name: string; icon: string; color: string }>;
+  /**
+   * Das seltenste Abzeichen dieser Person ("das haben nur x %").
+   * Ab 03.09.2026; null, wenn die Gemeinde weniger als 5 Konfis hat --
+   * dort waere eine Prozentzahl ohne Aussage.
+   */
+  seltenstes?: {
+    name: string;
+    icon: string;
+    color: string;
+    haben_es: number;
+    konfis: number;
+    prozent: number;
+  } | null;
 }
 
 export interface KonfiAktivsterMonatSlide {
@@ -234,6 +247,9 @@ export interface WrappedResponse {
   computed_at: string;
   year: number;
   wrapped_type: 'konfi' | 'teamer';
+  /** Name der Ausgabe -- steht auf der ersten Seite. Ab 03.09.2026. */
+  titel?: string | null;
+  ausgabe_id?: number | null;
 }
 
 // --- History ---

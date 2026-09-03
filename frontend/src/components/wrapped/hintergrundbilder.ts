@@ -113,9 +113,20 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'datum:erntedank': 'feld',
   'datum:sommer': 'watt',
 
-  // Bewusst OHNE Bild (die Zahl traegt die Seite):
-  //   punkte, abschluss, endspurt, ueber-das-ziel, bonus, pflicht,
-  //   challenge-momente (zeigt eigene Fotos)
+  // JEDE Seite bekommt ein Bild (Simon, 03.09.2026: "pro Wrapped-Seite").
+  // Frueher blieben punkte/abschluss bewusst ohne Motiv -- die Begruendung
+  // war, dass die grosse Zahl sonst mit dem Bild konkurriert. Seit der
+  // Schleier abgestuft ist (unten dicht, oben offen) gilt das nicht mehr:
+  // Die Zahl steht im abgedunkelten Bereich, das Motiv darueber.
+  punkte: 'weite',
+  abschluss: 'himmel',
+  endspurt: 'weg',
+  'ueber-das-ziel': 'feuerwerk',
+  bonus: 'konfetti',
+  pflicht: 'turm',
+  'challenge-momente': 'wald',
+  // Das seltenste Abzeichen -- Feuerwerk, weil es ein Moment ist.
+  seltenstes: 'feuerwerk',
 };
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
@@ -166,6 +177,18 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'datum:ostern': 'weite',
   'datum:erntedank': 'wald',
   'datum:sommer': 'deich',
+
+  // Auch hier jede Seite -- das Zweitmotiv gibt der Flaeche Tiefe.
+  // Bewusst ein ANDERES Motiv als oben: zweimal dasselbe Bild wirkt wie
+  // ein Fehler, nicht wie Absicht.
+  punkte: 'feld',
+  abschluss: 'watt',
+  endspurt: 'himmel',
+  'ueber-das-ziel': 'konfetti',
+  bonus: 'luftschlangen',
+  pflicht: 'kirchenschiff',
+  'challenge-momente': 'wasser',
+  seltenstes: 'konfetti',
 };
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.

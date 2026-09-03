@@ -25,14 +25,20 @@ describe('Hintergrundbilder des Jahresrückblicks', () => {
     expect(hintergrundFuer('events')).toBeTruthy();
   });
 
-  it('lässt Zahlen-Kacheln bewusst ohne Bild', () => {
-    // Dort trägt die große Zahl die Seite. Ein Bild würde mit ihr um
-    // dieselbe Aufmerksamkeit konkurrieren.
-    expect(hintergrundFuer('punkte')).toBeNull();
-    expect(hintergrundFuer('abschluss')).toBeNull();
-    // Die Momente-Seite zeigt echte Fotos der Konfis -- die brauchen keinen
-    // zweiten Bildhintergrund.
-    expect(hintergrundFuer('challenge-momente')).toBeNull();
+  it('JEDE Seite hat ein Bild — auch die Zahlen-Seiten', () => {
+    // GEDREHT AM 03.09.2026 (Simon: "Wir wollten doch pro Seite ein
+    // Hintergrundbild sehen. Ich verstehe das nicht: pro Wrapped-Seite.").
+    //
+    // Vorher blieben punkte, abschluss und challenge-momente bewusst ohne
+    // Motiv — meine Begründung war, dass die große Zahl sonst mit dem Bild
+    // konkurriert. Seit der Schleier abgestuft ist (unten dicht, oben
+    // offen) trägt das nicht mehr: Die Zahl steht im abgedunkelten Bereich,
+    // das Motiv darüber.
+    for (const kachel of ['punkte', 'abschluss', 'challenge-momente',
+      'endspurt', 'ueber-das-ziel', 'bonus', 'pflicht', 'seltenstes']) {
+      expect(hintergrundFuer(kachel), `${kachel} ohne Hauptmotiv`).toBeTruthy();
+      expect(zweitbildFuer(kachel), `${kachel} ohne Zweitmotiv`).toBeTruthy();
+    }
   });
 
   it('gibt unbekannten Kacheln kein Bild, statt zu werfen', () => {

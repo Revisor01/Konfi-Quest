@@ -72,6 +72,10 @@ ion-list-header ion-label {
   --app-color-users-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
   --app-color-badges-rgb: 245, 158, 11;
+  /* Jahresrueckblick -- eigene Farbe im System, damit die Seite nicht mit
+     Inline-Werten arbeitet (03.09.2026). */
+  --app-color-wrapped: #7c3aed;
+  --app-color-wrapped-rgb: 124, 58, 237;
   --app-color-bonus: #f97316;
   --app-color-bonus-rgb: 249, 115, 22;
   --app-color-jahrgang: #007aff;
@@ -257,6 +261,7 @@ ion-item-sliding:last-child {
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: var(--app-color-level); }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: var(--app-color-users); }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: var(--app-color-badges); }
+.app-list-item--wrapped, ion-item.app-list-item--wrapped { border-left-color: var(--app-color-wrapped); }
 .app-list-item--categories, ion-item.app-list-item--categories { border-left-color: var(--app-color-categories); }
 .app-list-item--material, ion-item.app-list-item--material { border-left-color: var(--app-color-material); }
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: var(--app-color-activities); }
@@ -468,6 +473,7 @@ ion-item-sliding:last-child {
 .app-section-icon--level { background-color: var(--app-color-level); }
 .app-section-icon--organizations { background-color: var(--app-color-users); }
 .app-section-icon--badges { background-color: var(--app-color-badges); }
+.app-section-icon--wrapped { background-color: var(--app-color-wrapped); }
 .app-section-icon--categories { background-color: var(--app-color-categories); }
 .app-section-icon--requests { background-color: var(--app-color-activities); }
 .app-section-icon--jahrgang { background-color: var(--app-color-jahrgang); }
@@ -532,6 +538,7 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--danger { background-color: var(--app-color-danger); }
 .app-icon-circle--info { background-color: var(--app-color-info); }
 .app-icon-circle--purple { background-color: var(--app-color-konfis); }
+.app-icon-circle--wrapped { background-color: var(--app-color-wrapped); }
 .app-icon-circle--trophy { background-color: var(--app-color-warning); }
 .app-icon-circle--primary { background-color: var(--app-color-konfis); }
 .app-icon-circle--bonus { background-color: var(--app-color-bonus); }
