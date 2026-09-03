@@ -19,7 +19,13 @@ interface PunkteSlideProps extends SlideProps {
  * Simons Regel: keine Negativ-Aussagen, kein Vergleich nach unten.
  */
 
+/**
+ * Fuenf Stufen plus Null (Simons Vorgabe 03.09.2026). Die Schwellen richten
+ * sich an den Punktezielen aus: Die meisten Jahrgaenge setzen 20 Punkte als
+ * Ziel, deshalb liegt dort eine Grenze.
+ */
 function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: string } {
+  // 1) Weit ueber dem Ziel
   if (total >= 40) {
     return {
       auge: 'Deine Punkte',
@@ -27,6 +33,7 @@ function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: 
       nachsatz: 'Das ist eine Menge Konfi-Zeit.'
     };
   }
+  // 2) Ziel erreicht
   if (total >= 20) {
     return {
       auge: 'Deine Punkte',
@@ -34,14 +41,31 @@ function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: 
       nachsatz: 'Jeder Punkt steht für einen Termin, an dem du da warst.'
     };
   }
-  if (total >= 1) {
+  // 3) Auf dem Weg
+  if (total >= 10) {
+    return {
+      auge: 'Deine Punkte',
+      slogan: ['Der Stapel', 'wächst.'],
+      nachsatz: 'Zweistellig — und das Jahr ist noch nicht vorbei.'
+    };
+  }
+  // 4) Angefangen
+  if (total >= 3) {
     return {
       auge: 'Deine Punkte',
       slogan: ['Jeder Punkt', 'ist ein Mal', 'dabei.'],
       nachsatz: 'Und dabei sein ist der ganze Punkt.'
     };
   }
-  // Null Punkte: keine Zahl gross zeigen, keinen Vergleich, kein Vorwurf.
+  // 5) Ganz am Anfang
+  if (total >= 1) {
+    return {
+      auge: 'Deine Punkte',
+      slogan: ['Der Anfang', 'ist', 'gemacht.'],
+      nachsatz: total === 1 ? 'Ein Punkt. Der erste zählt am meisten.' : `${total} Punkte stehen schon auf deinem Konto.`
+    };
+  }
+  // Null: keine Zahl, kein Vergleich, kein Vorwurf.
   return {
     auge: 'Deine Punkte',
     slogan: ['Dein Jahr', 'fängt', 'gerade erst', 'an.'],

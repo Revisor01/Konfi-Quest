@@ -17,7 +17,17 @@ interface EventsSlideProps extends SlideProps {
  * gefragt hat, und war obendrein nicht mal gerechnet.
  */
 
+/**
+ * FUENF STUFEN je Seite (Simon, 03.09.2026: "die Sprueche brauchen
+ * Unterschiede. Immer mal aufgetaucht bei weniger als 5, bei mehr als 10
+ * das. Also pro Seite 5 Optionen.").
+ *
+ * Die Schwellen sind eng genug, dass sich 3 Termine anders anfuehlen als 12.
+ * Vorher lag alles zwischen 2 und 9 im selben Topf -- "Du warst dabei" stand
+ * damit ueber einer 3 wie ueber einer 9.
+ */
 function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz: string } {
+  // 1) Sehr viel: 20 und mehr
   if (besucht >= 20) {
     return {
       auge: 'Deine Termine',
@@ -25,6 +35,7 @@ function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz
       nachsatz: 'Ein Jahr, in dem du kaum etwas verpasst hast.'
     };
   }
+  // 2) Viel: 10 bis 19
   if (besucht >= 10) {
     return {
       auge: 'Deine Termine',
@@ -32,6 +43,15 @@ function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz
       nachsatz: 'Nicht einmal, nicht zweimal — immer wieder.'
     };
   }
+  // 3) Solide: 5 bis 9
+  if (besucht >= 5) {
+    return {
+      auge: 'Deine Termine',
+      slogan: ['Auf dich', 'war', 'Verlass.'],
+      nachsatz: 'Immer wieder hast du dir die Zeit genommen.'
+    };
+  }
+  // 4) Wenig, aber da: 2 bis 4
   if (besucht >= 2) {
     return {
       auge: 'Deine Termine',
@@ -39,6 +59,7 @@ function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz
       nachsatz: 'Und darum geht es.'
     };
   }
+  // 5) Einmal oder gar nicht
   if (besucht === 1) {
     return {
       auge: 'Dein Termin',

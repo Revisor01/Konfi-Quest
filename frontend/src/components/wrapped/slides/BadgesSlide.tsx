@@ -17,7 +17,13 @@ interface BadgesSlideProps extends SlideProps {
  * statt als Untertitel unter einer Riesenzahl.
  */
 
+/**
+ * Fuenf Stufen plus Null (Simons Vorgabe 03.09.2026). Hier zaehlt zusaetzlich
+ * das VERHAELTNIS: Wer alle hat, bekommt einen eigenen Text -- das ist die
+ * seltenste Lage ueberhaupt und darf sich nicht wie "viele" anfuehlen.
+ */
 function spruchFuer(verdient: number, gesamt: number): { auge: string; slogan: string[]; nachsatz: string } {
+  // 1) Alle -- die Ausnahme
   if (gesamt > 0 && verdient >= gesamt) {
     return {
       auge: 'Deine Abzeichen',
@@ -25,13 +31,23 @@ function spruchFuer(verdient: number, gesamt: number): { auge: string; slogan: s
       nachsatz: 'Da geht nichts mehr — du hast jedes eingesammelt.'
     };
   }
-  if (verdient >= 10) {
+  // 2) Sehr viele
+  if (verdient >= 15) {
+    return {
+      auge: 'Deine Abzeichen',
+      slogan: ['Die Wand', 'wird', 'langsam', 'voll.'],
+      nachsatz: `${verdient} Stück — das sammelt nicht jede.`
+    };
+  }
+  // 3) Viele
+  if (verdient >= 8) {
     return {
       auge: 'Deine Abzeichen',
       slogan: ['Deine', 'Sammlung', 'kann sich', 'sehen lassen.'],
       nachsatz: `${verdient} Stück hast du dir verdient.`
     };
   }
+  // 4) Einige
   if (verdient >= 3) {
     return {
       auge: 'Deine Abzeichen',
@@ -39,9 +55,10 @@ function spruchFuer(verdient: number, gesamt: number): { auge: string; slogan: s
       nachsatz: `${verdient} Abzeichen tragen deinen Namen.`
     };
   }
+  // 5) Die ersten
   if (verdient >= 1) {
     return {
-      auge: 'Dein Abzeichen',
+      auge: verdient === 1 ? 'Dein Abzeichen' : 'Deine Abzeichen',
       slogan: ['Das erste', 'ist das', 'schönste.'],
       nachsatz: verdient === 1 ? 'Eins hast du — und das zählt.' : `${verdient} hast du schon.`
     };
