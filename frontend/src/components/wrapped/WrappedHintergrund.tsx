@@ -35,7 +35,10 @@ const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf }) => {
 
   return (
     <div className="wrapped-bg" aria-hidden="true">
-      {/* Grundverlauf -- immer da, auch ohne Bild. */}
+      {/* Grundverlauf GANZ UNTEN im Container -- nicht auf dem Slide selbst.
+          Der Slide darf keinen eigenen Hintergrund haben, weil dieser
+          Container auf z-index:-1 dahinter liegt und jede Farbe dort das
+          Foto uebermalen wuerde. */}
       <div style={{ position: 'absolute', inset: 0, background: verlauf }} />
 
       {bild && (

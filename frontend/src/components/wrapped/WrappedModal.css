@@ -240,8 +240,26 @@ ion-modal.wrapped-modal-fullscreen {
   color: #fff;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+  --seiten-verlauf: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+  background: var(--seiten-verlauf);
 }
+
+/* DER GRUND, WARUM DIE FOTOS NICHT ZU SEHEN WAREN (03.09.2026, dritter
+   Anlauf -- Simon: "bilder im bg sind immer noch nicht zu sehen").
+      Jede Seite traegt ihren Farbverlauf als `background` auf .wrapped-slide.
+   Der ist VOLL DECKEND. Der Bild-Container (.wrapped-bg) liegt auf
+   z-index: -1, also DAHINTER -- das Foto war die ganze Zeit korrekt geladen
+   und wurde vom eigenen Verlauf der Seite vollstaendig verdeckt.
+      Mit Playwright nachgewiesen: elementsFromPoint() liefert an einem Punkt
+   im oberen Drittel .wrapped-slide UEBER .wrapped-bg-form--oben.
+      Meine beiden vorherigen Anlaeufe (Bild vergroessern, Schleier abstufen)
+   konnten deshalb nichts bewirken -- sie haben an Schichten gearbeitet, die
+   gar nicht oben lagen.
+      Loesung: Sobald eine Seite ein Foto hat, wird ihr eigener Verlauf
+   ausgeblendet. Die Farbe kommt dann aus dem Schleier IM Bild-Container
+   (WrappedHintergrund), der den Verlauf der Seite ohnehin ausliest und
+   abgestuft darueberlegt. */
+
 
 /* ========================================
    Dekorative Elemente
@@ -461,6 +479,7 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .intro-slide {
+  --seiten-verlauf: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
 }
 
@@ -555,7 +574,8 @@ ion-modal.wrapped-modal-fullscreen {
    AktivsterMonat Slide - Hintergrund + Balken
    ======================================== */
 
-.monat-slide { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
+.monat-slide { --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
 
 .monat-bar-container { width: 100%; max-width: 300px; margin-top: 32px; }
 .monat-bar { height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; }
@@ -570,7 +590,8 @@ ion-modal.wrapped-modal-fullscreen {
    Endspurt Slide - Progress-Bar
    ======================================== */
 
-.endspurt-slide { background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); }
+.endspurt-slide { --seiten-verlauf: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); }
 
 .endspurt-progress { width: 100%; max-width: 300px; margin-top: 24px; }
 .endspurt-progress-bar { height: 12px; background: rgba(255,255,255,0.25); border-radius: 6px; overflow: hidden; }
@@ -585,7 +606,8 @@ ion-modal.wrapped-modal-fullscreen {
    Abschluss Slide - Zusammenfassung
    ======================================== */
 
-.abschluss-slide { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%); }
+.abschluss-slide { --seiten-verlauf: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%); }
 
 .abschluss-summary {
   display: flex;
@@ -620,11 +642,16 @@ ion-modal.wrapped-modal-fullscreen {
    Teamer Slides - Rosa Farbschema
    ======================================== */
 
-.teamer-intro-slide { background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
-.teamer-konfis-slide { background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
-.teamer-zertifikate-slide { background: linear-gradient(135deg, #db2777 0%, #be185d 50%, #9d174d 100%); }
-.teamer-jahre-slide { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%); }
-.teamer-abschluss-slide { background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
+.teamer-intro-slide { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
+.teamer-konfis-slide { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
+.teamer-zertifikate-slide { --seiten-verlauf: linear-gradient(135deg, #db2777 0%, #be185d 50%, #9d174d 100%);
+  background: linear-gradient(135deg, #db2777 0%, #be185d 50%, #9d174d 100%); }
+.teamer-jahre-slide { --seiten-verlauf: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%);
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%); }
+.teamer-abschluss-slide { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%); }
 
 /* Teamer Abschluss Summary */
 .teamer-abschluss-summary {
@@ -690,7 +717,8 @@ ion-modal.wrapped-modal-fullscreen {
    Kategorie Slide - Balkendiagramm
    ======================================== */
 
-.kategorie-slide { background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); }
+.kategorie-slide { --seiten-verlauf: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); }
 .kategorie-bars { width: 100%; max-width: 340px; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
 .kategorie-bar-row { display: flex; align-items: center; gap: 8px; }
 .kategorie-bar-name { font-size: 0.85rem; color: rgba(255,255,255,0.8); min-width: 80px; text-align: left; }
@@ -703,6 +731,7 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .ueber-das-ziel-slide {
+  --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #ca8a04 100%);
   background: linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #ca8a04 100%);
   position: relative;
   overflow: hidden;
@@ -764,11 +793,14 @@ ion-modal.wrapped-modal-fullscreen {
 .konfetti-piece:nth-child(30) { left: 98%; width: 13px; height: 13px; animation-duration: 3.4s; animation-delay: 1.4s; background: #f472b6; }
 
 /* Events + Badges Slide Hintergr. */
-.events-slide { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%); }
-.badges-slide { background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #7c3aed 100%); }
+.events-slide { --seiten-verlauf: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%); }
+.badges-slide { --seiten-verlauf: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #7c3aed 100%);
+  background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #7c3aed 100%); }
 
 /* Neue Slide Backgrounds */
-.konfirmation-slide { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%); }
+.konfirmation-slide { --seiten-verlauf: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%); }
 
 /* ========================================
    Challenge-Momente Slide
@@ -776,6 +808,7 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .challenge-momente-slide {
+  --seiten-verlauf: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #9d174d 50%, #831843 100%);
   background: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #9d174d 50%, #831843 100%);
   justify-content: flex-start;
 }
@@ -898,7 +931,8 @@ ion-modal.wrapped-modal-fullscreen {
    Highlight Slide - persoenliches Highlight (ab Snapshot-Version 3)
    ======================================== */
 
-.highlight-slide { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%); }
+.highlight-slide { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%); }
 
 .highlight-zahl {
   font-size: 5rem;
@@ -1173,29 +1207,48 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 /* --- Kategorien --- */
-.kategorie-seite-slide.k-fest            { background-image: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%); }
-.kategorie-seite-slide.k-senioren        { background-image: linear-gradient(135deg, #0ea5e9 0%, #0284c7 55%, #075985 100%); }
-.kategorie-seite-slide.k-jugend          { background-image: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #9f1239 100%); }
-.kategorie-seite-slide.k-oeffentlichkeit { background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); }
-.kategorie-seite-slide.k-freizeit        { background-image: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); }
-.kategorie-seite-slide.k-weihnachten     { background-image: linear-gradient(135deg, #b91c1c 0%, #991b1b 55%, #7f1d1d 100%); }
-.kategorie-seite-slide.k-konzert         { background-image: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); }
-.kategorie-seite-slide.k-kinder          { background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%); }
-.kategorie-seite-slide.k-kreativ         { background-image: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #9d174d 100%); }
-.kategorie-seite-slide.k-seelsorge       { background-image: linear-gradient(135deg, #64748b 0%, #475569 55%, #334155 100%); }
+.kategorie-seite-slide.k-fest            { --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+  background-image: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%); }
+.kategorie-seite-slide.k-senioren        { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0284c7 55%, #075985 100%);
+  background-image: linear-gradient(135deg, #0ea5e9 0%, #0284c7 55%, #075985 100%); }
+.kategorie-seite-slide.k-jugend          { --seiten-verlauf: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #9f1239 100%);
+  background-image: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #9f1239 100%); }
+.kategorie-seite-slide.k-oeffentlichkeit { --seiten-verlauf: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%);
+  background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); }
+.kategorie-seite-slide.k-freizeit        { --seiten-verlauf: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
+  background-image: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); }
+.kategorie-seite-slide.k-weihnachten     { --seiten-verlauf: linear-gradient(135deg, #b91c1c 0%, #991b1b 55%, #7f1d1d 100%);
+  background-image: linear-gradient(135deg, #b91c1c 0%, #991b1b 55%, #7f1d1d 100%); }
+.kategorie-seite-slide.k-konzert         { --seiten-verlauf: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%);
+  background-image: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); }
+.kategorie-seite-slide.k-kinder          { --seiten-verlauf: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%);
+  background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%); }
+.kategorie-seite-slide.k-kreativ         { --seiten-verlauf: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #9d174d 100%);
+  background-image: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #9d174d 100%); }
+.kategorie-seite-slide.k-seelsorge       { --seiten-verlauf: linear-gradient(135deg, #64748b 0%, #475569 55%, #334155 100%);
+  background-image: linear-gradient(135deg, #64748b 0%, #475569 55%, #334155 100%); }
 /* Kasualien bewusst ruhig und dunkel: Taufe, Trauung, Abschied sind kein
    Anlass fuer laute Farben. */
-.kategorie-seite-slide.k-kasualien       { background-image: linear-gradient(135deg, #475569 0%, #334155 55%, #1e293b 100%); }
-.kategorie-seite-slide.k-gottesdienst    { background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%); }
-.kategorie-seite-slide.k-gemeinde        { background-image: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%); }
+.kategorie-seite-slide.k-kasualien       { --seiten-verlauf: linear-gradient(135deg, #475569 0%, #334155 55%, #1e293b 100%);
+  background-image: linear-gradient(135deg, #475569 0%, #334155 55%, #1e293b 100%); }
+.kategorie-seite-slide.k-gottesdienst    { --seiten-verlauf: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%);
+  background-image: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%); }
+.kategorie-seite-slide.k-gemeinde        { --seiten-verlauf: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+  background-image: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%); }
 
 /* --- Datums-Seiten --- */
-.kategorie-seite-slide.d-weihnachten     { background-image: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #450a0a 100%); }
-.kategorie-seite-slide.d-advent          { background-image: linear-gradient(135deg, #5b21b6 0%, #4c1d95 55%, #2e1065 100%); }
-.kategorie-seite-slide.d-jahreswechsel   { background-image: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #172554 100%); }
-.kategorie-seite-slide.d-ostern          { background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #b45309 100%); }
-.kategorie-seite-slide.d-erntedank       { background-image: linear-gradient(135deg, #ca8a04 0%, #a16207 55%, #713f12 100%); }
-.kategorie-seite-slide.d-sommer          { background-image: linear-gradient(135deg, #06b6d4 0%, #0891b2 55%, #155e75 100%); }
+.kategorie-seite-slide.d-weihnachten     { --seiten-verlauf: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #450a0a 100%);
+  background-image: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #450a0a 100%); }
+.kategorie-seite-slide.d-advent          { --seiten-verlauf: linear-gradient(135deg, #5b21b6 0%, #4c1d95 55%, #2e1065 100%);
+  background-image: linear-gradient(135deg, #5b21b6 0%, #4c1d95 55%, #2e1065 100%); }
+.kategorie-seite-slide.d-jahreswechsel   { --seiten-verlauf: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #172554 100%);
+  background-image: linear-gradient(135deg, #1e3a8a 0%, #1e40af 55%, #172554 100%); }
+.kategorie-seite-slide.d-ostern          { --seiten-verlauf: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #b45309 100%);
+  background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #b45309 100%); }
+.kategorie-seite-slide.d-erntedank       { --seiten-verlauf: linear-gradient(135deg, #ca8a04 0%, #a16207 55%, #713f12 100%);
+  background-image: linear-gradient(135deg, #ca8a04 0%, #a16207 55%, #713f12 100%); }
+.kategorie-seite-slide.d-sommer          { --seiten-verlauf: linear-gradient(135deg, #06b6d4 0%, #0891b2 55%, #155e75 100%);
+  background-image: linear-gradient(135deg, #06b6d4 0%, #0891b2 55%, #155e75 100%); }
 
 /* ========================================
    Das seltenste Abzeichen — die Seite zum Teilen
@@ -1625,4 +1678,29 @@ ion-modal.wrapped-modal-fullscreen {
   .moment-polaroid {
     animation: moment-ankommen 0.4s ease-out var(--auftritt) both;
   }
+}
+
+
+/* ========================================
+   GANZ AM ENDE: Seiten mit Foto bekommen KEINEN eigenen Hintergrund
+
+   Diese Regel muss die LETZTE der Datei sein. Beim ersten Versuch stand sie
+   oben bei .wrapped-slide -- die Verlaeufe der einzelnen Seiten
+   (.intro-slide, .kategorie-seite-slide.k-gottesdienst, ...) stehen weiter
+   unten und haben sie damit ueberschrieben. Ergebnis: Die Intro-Seite zeigte
+   ihr Foto, die Kategorie-Seiten nicht. Gleiche Spezifitaet -> die spaetere
+   Regel gewinnt.
+
+   WARUM UEBERHAUPT: Der Bild-Container (.wrapped-bg) liegt auf z-index:-1,
+   also HINTER dem Element. Jeder Hintergrund auf dem Element selbst --
+   Verlauf ODER Farbe -- uebermalt das Foto vollstaendig. Genau daran sind
+   drei Anlaeufe gescheitert: Ich habe das Bild vergroessert und den Schleier
+   abgestuft, aber an Schichten gearbeitet, die gar nicht oben lagen.
+
+   Die Farbe der Seite kommt weiterhin an -- aus dem Schleier INNERHALB des
+   Containers (WrappedHintergrund liest --seiten-verlauf).
+   ======================================== */
+.wrapped-slide:has(.wrapped-bg-form),
+.wrapped-slide.wrapped-slide--active:has(.wrapped-bg-form) {
+  background: none !important;
 }
