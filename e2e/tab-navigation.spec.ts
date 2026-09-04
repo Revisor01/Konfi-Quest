@@ -16,9 +16,12 @@ const TABS = {
   teamer: [
     ['teamer-dashboard', '/teamer/dashboard'],
     ['teamer-chat', '/teamer/chat'],
-    ['teamer-events', '/teamer/events'],
+    // Reihenfolge und Inhalt wie in rollenBaeume.ts (04.09.2026): Challenges
+    // vor Mitmachen, und Material statt Badges -- Badges liegen jetzt im
+    // Profil, nicht mehr in der Tab-Leiste.
     ['teamer-challenges', '/teamer/challenges'],
-    ['teamer-badges', '/teamer/badges'],
+    ['teamer-events', '/teamer/events'],
+    ['teamer-material', '/teamer/profile/material'],
   ],
   konfi: [
     ['dashboard', '/konfi/dashboard'],

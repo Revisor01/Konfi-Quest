@@ -392,6 +392,8 @@ Versionsüberschrift.
 - Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
   schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und
   zwei Uhr fehl, obwohl die Erinnerungen selbst korrekt verschickt wurden.
+- Die Prüfung der Tab-Leiste im Team-Bereich folgt wieder der tatsächlichen
+  Reihenfolge. Sie blockierte sonst die Auslieferung.
 
 ## [Unreleased] - 2.2.0
 
