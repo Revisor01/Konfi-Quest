@@ -162,3 +162,4 @@ docs/agenten-berichte/
 # Reine Laufzeit-Artefakte, gehoeren nicht ins Repo.
 test-results/
 playwright-report/
+AppStore/

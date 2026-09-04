@@ -120,7 +120,9 @@ im Kapitel [Abzeichen](60-badges.md).
   Gemeinde das freigegeben hat
 - **Bibelübersetzung** — welche Übersetzung du bei der Tageslosung siehst
 - **E-Mail und Passwort ändern**
-- **Deine Wrappeds** — dein [Jahresrückblick](95-wrapped.md), sobald er freigegeben ist
+- **Meine Rückblicke** — dein [Jahresrückblick](95-wrapped.md), sobald er
+  freigegeben ist. Jede Ausgabe steht unter dem Namen, den deine Gemeinde ihr
+  gegeben hat
 - **App-Tour** — die Einführung noch einmal ansehen
 
 Ganz unten kannst du dich abmelden oder dein Konto löschen.

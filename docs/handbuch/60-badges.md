@@ -18,7 +18,10 @@ wird. Ab dann prüft das System selbst — bei jeder
 Ein Abzeichen besteht aus vier Dingen:
 
 - **Name und Beschreibung** — was drauf steht
-- **Symbol und Farbe** — wie es aussieht
+- **Symbol und Farbe** — wie es aussieht. Die Farbe richtet sich zunächst nach
+  der Bedingung, damit verwandte Abzeichen zusammen wirken: Punkte-Abzeichen
+  sind golden, Gottesdienst-Abzeichen orange, Gemeinde-Abzeichen grün. Du
+  kannst jede Farbe von Hand ändern.
 - **Bedingung** — wofür es vergeben wird (die 15 Möglichkeiten unten)
 - **Zielgruppe** — für Konfis oder für Teamer:innen
 

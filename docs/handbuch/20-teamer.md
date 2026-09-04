@@ -135,4 +135,6 @@ gelten, steht im Abzeichen-Kapitel.
   Browser.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
-- **Deine Wrappeds** — dein [Jahresrückblick](95-wrapped.md#der-teamer-rueckblick-laeuft-anders) als Teamer:in
+- **Meine Rückblicke** — dein [Jahresrückblick](95-wrapped.md#der-teamer-rueckblick-laeuft-anders)
+  als Teamer:in. Jede Ausgabe steht unter dem Namen, den die Gemeinde ihr
+  gegeben hat
