@@ -765,7 +765,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
         }
       });
-      config.section_order = teamerSectionOrder || ['zertifikate', 'challenges', 'konfispruch', 'events', 'badges', 'losung'];
+      config.section_order = teamerSectionOrder || ['losung', 'challenges', 'events', 'konfispruch', 'zertifikate', 'badges'];
 
       // 6. Konfispruch: aus konfi_profiles — beförderte Teamer:innen haben ihn
       // aus ihrer Konfi-Zeit, direkt angelegte können ihn über PATCH /profile

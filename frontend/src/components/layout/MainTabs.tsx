@@ -249,8 +249,16 @@ const MainTabs: React.FC = () => {
     return () => { abgebrochen = true; };
   }, [rolle, user?.id]);
 
+  // NIEMALS null (Simons Befund 04.09.2026: "Nach dem Ausschalten und wieder
+  // Starten ist es weiss, wenn man eingeloggt ist"). Beim Kaltstart mit
+  // gespeicherter Sitzung ist user fuer einen Moment noch nicht geladen --
+  // ein null hier haengt eine LEERE Seite in den IonRouterOutlet, und Ionic
+  // bemerkt den spaeteren Tausch nicht (dasselbe Muster wie beim Platzhalter
+  // aus Build 153/154). Ergebnis: weisse Seite, bis man einen Tab antippt.
+  // Ohne gespeicherte Sitzung greift der Login-Zweig in App.tsx, deshalb kam
+  // die Anmeldeseite immer -- weiss wurde es nur im angemeldeten Fall.
   if (!user) {
-    return null;
+    return <SeiteLaedt />;
   }
 
   // Bis die Seiten-Chunks da sind: der bekannte Startbildschirm. Danach

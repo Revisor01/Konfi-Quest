@@ -54,3 +54,24 @@ describe('IonRouterOutlet: kein Platzhalter zwischen Outlet und Seite', () => {
     expect(mainTabs).toMatch(/if \(!seitenBereit\)/);
   });
 });
+
+describe('MainTabs rendert nie null (weisse Seite beim Kaltstart)', () => {
+  // Simons Befund 04.09.2026: "Anmeldeseite kommt immer. Nach dem
+  // Ausschalten und wieder Starten ist es weiss, wenn man eingeloggt ist."
+  //
+  // MainTabs gab `null` zurueck, solange user noch nicht geladen war. Beim
+  // KALTSTART mit gespeicherter Sitzung ist das ein Moment lang der Fall --
+  // und ein null haengt eine LEERE Seite in den IonRouterOutlet. Ionic
+  // registriert sie beim Einhaengen und bemerkt den spaeteren Tausch nicht
+  // (dasselbe Muster wie beim Platzhalter oben). Ohne gespeicherte Sitzung
+  // greift der Login-Zweig in App.tsx -- deshalb kam die Anmeldeseite immer
+  // und weiss wurde es nur im angemeldeten Fall.
+  it('gibt bei fehlendem user einen Ladezustand statt null zurueck', () => {
+    const block = mainTabs.slice(
+      mainTabs.indexOf('if (!user) {'),
+      mainTabs.indexOf('}', mainTabs.indexOf('if (!user) {')) + 1
+    );
+    expect(block).not.toMatch(/return null/);
+    expect(block).toContain('SeiteLaedt');
+  });
+});
