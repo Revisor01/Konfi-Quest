@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useRef } from 'react';
 import {
@@ -21,8 +22,7 @@ import {
 import {
   add,
   trophy,
-  trash,
-  arrowBack
+  trash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
@@ -135,7 +135,7 @@ const AdminLevelsPage: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+              <IonIcon icon={ICON_ZURUECK} />
             </IonButton>
           </IonButtons>
           <IonTitle>Level</IonTitle>

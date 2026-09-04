@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../shared/icons';
 import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -16,7 +17,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle, arrowBack } from 'ionicons/icons';
+import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle } from 'ionicons/icons';
 import api from '../../services/api';
 
 const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
@@ -324,7 +325,7 @@ const ResetPasswordPage: React.FC = () => {
 
                   <div className="app-auth-footer">
                     <span onClick={() => router.push('/login')} className="app-auth-link">
-                      <IonIcon icon={arrowBack} />
+                      <IonIcon icon={ICON_ZURUECK} />
                       Zurück zum Login
                     </span>
                   </div>

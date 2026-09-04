@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   IonPage,
@@ -22,8 +23,7 @@ import {
   trophy,
   schoolOutline,
   checkmark,
-  checkmarkCircle,
-  arrowBack
+  checkmarkCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -145,7 +145,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-                <IonIcon icon={arrowBack} slot="icon-only" />
+                <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
               </IonButton>
             </IonButtons>
             <IonTitle>Konfi-Historie</IonTitle>
@@ -168,7 +168,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={arrowBack} slot="icon-only" />
+              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Konfi-Historie</IonTitle>

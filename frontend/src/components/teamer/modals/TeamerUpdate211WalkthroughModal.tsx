@@ -23,8 +23,10 @@ export const SLIDES: OnboardingSlide[] = [
   },
   {
     icon: checkmarkCircleOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
+    // Termin-Rot, nicht Aktivitaeten-Gruen (Simon, 04.09.2026): Die Folie
+    // handelt vom Zusagen zu TERMINEN -- Gruen gehoert den Aktivitaeten.
+    color: 'var(--app-color-events)',
+    rgb: '--app-color-events-rgb',
     title: 'Zusagen und absagen',
     text: 'Bei einem Termin sagst du jetzt ausdrücklich zu oder ab — „Bin dabei" oder „Bin nicht dabei". Du kannst deine Antwort jederzeit ändern, auch zurück zur Zusage. Ein Grund ist freiwillig; nur wenn du nach einer Zusage doch absagst, brauchen wir einen, damit die Leitung umplanen kann. Bei einer Absage wird dein Platz frei und die Warteliste rückt nach.',
   },

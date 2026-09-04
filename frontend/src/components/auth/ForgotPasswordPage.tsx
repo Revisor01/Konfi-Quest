@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../shared/icons';
 import { fehlerStatus, istNetzwerkfehler } from '../../utils/fehler';
 import React, { useState } from 'react';
 import {
@@ -202,7 +203,7 @@ const ForgotPasswordPage: React.FC = () => {
                       onClick={() => router.push('/login')}
                       className="app-auth-link"
                     >
-                      <IonIcon icon={arrowBack} />
+                      <IonIcon icon={ICON_ZURUECK} />
                       Zurück zum Login
                     </span>
                   </div>

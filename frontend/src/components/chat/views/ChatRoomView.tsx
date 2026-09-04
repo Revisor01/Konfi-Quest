@@ -1,6 +1,7 @@
 // ChatRoomView.tsx
 
 // 1. Benötigte Imports hinzufügen
+import { ICON_ZURUECK } from '../../shared/icons';
 import React from 'react'; // useRef hinzufügen
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import {
@@ -61,7 +62,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={arrowBack} />
+                <IonIcon icon={ICON_ZURUECK} />
               </IonButton>
             </IonButtons>
             <IonTitle>Fehler</IonTitle>

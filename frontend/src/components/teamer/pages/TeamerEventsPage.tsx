@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
@@ -635,7 +636,7 @@ const TeamerEventsPage: React.FC = () => {
             {!hideBackButton && (
               <IonButtons slot="start">
                 <IonButton onClick={() => setSelectedEvent(null)} aria-label="Zurück zur Event-Liste">
-                  <IonIcon icon={arrowBack} slot="icon-only" />
+                  <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
                 </IonButton>
               </IonButtons>
             )}

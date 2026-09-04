@@ -23,8 +23,10 @@ export const SLIDES: OnboardingSlide[] = [
   },
   {
     icon: checkmarkCircleOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
+    // Termin-Rot, nicht Aktivitaeten-Gruen (Simon, 04.09.2026): Die Folie
+    // handelt vom Zusagen zu TERMINEN -- Gruen gehoert den Aktivitaeten.
+    color: 'var(--app-color-events)',
+    rgb: '--app-color-events-rgb',
     title: 'Wer kommt, wer nicht',
     text: 'Teamer:innen sagen zu Terminen jetzt ausdrücklich zu oder ab. In der Terminansicht siehst du, wer abgesagt hat und warum — eine Absage nach vorheriger Zusage ist eigens gekennzeichnet, denn dann hast du mit dieser Person schon geplant. Bei einer Absage wird der Platz frei und die Warteliste rückt nach.',
   },

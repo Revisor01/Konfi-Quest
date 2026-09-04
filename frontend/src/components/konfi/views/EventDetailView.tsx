@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -529,7 +530,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             {!hideBackButton && (
               <IonButtons slot="start">
                 <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={arrowBack} />
+                  <IonIcon icon={ICON_ZURUECK} />
                 </IonButton>
               </IonButtons>
             )}
@@ -551,7 +552,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             {!hideBackButton && (
               <IonButtons slot="start">
                 <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={arrowBack} />
+                  <IonIcon icon={ICON_ZURUECK} />
                 </IonButton>
               </IonButtons>
             )}
@@ -577,7 +578,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           {!hideBackButton && (
             <IonButtons slot="start">
               <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={arrowBack} />
+                <IonIcon icon={ICON_ZURUECK} />
               </IonButton>
             </IonButtons>
           )}

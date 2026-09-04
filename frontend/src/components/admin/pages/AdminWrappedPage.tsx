@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
@@ -12,7 +13,7 @@ import {
 import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, arrowBack, calendarOutline, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
-import { SectionHeader } from '../../shared';
+import { SectionHeader, EmptyState } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 /**
@@ -161,7 +162,7 @@ const AdminWrappedPage: React.FC = () => {
               AdminMaterialPage und die uebrigen Seiten. */}
           <IonButtons slot="start">
             <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+              <IonIcon icon={ICON_ZURUECK} />
             </IonButton>
           </IonButtons>
           <IonTitle>Jahresrückblick</IonTitle>
@@ -211,14 +212,30 @@ const AdminWrappedPage: React.FC = () => {
             <IonSpinner name="crescent" />
           </div>
         ) : sichtbar.length === 0 ? (
-          <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--app-text-sub-color, #8e8e93)' }}>
-            <IonIcon icon={sparklesOutline} style={{ fontSize: '2.4rem', marginBottom: 12, opacity: 0.5 }} />
-            <p style={{ margin: 0, lineHeight: 1.5 }}>
-              {segment === 'konfi'
-                ? 'Noch kein Rückblick erstellt. Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
-                : 'Noch kein Teamer-Rückblick erstellt.'}
-            </p>
-          </div>
+          // Leerzustand im Muster aller anderen Seiten (Simon, 04.09.2026):
+          // die geteilte EmptyState-Komponente in einer weissen Karte, mit
+          // farbigem Icon -- vorher stand hier ein selbstgebauter grauer
+          // Block ohne Karte.
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--wrapped">
+                <IonIcon icon={sparklesOutline} />
+              </div>
+              <IonLabel>{segment === 'konfi' ? 'Konfis' : 'Team'}</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent>
+                <EmptyState
+                  icon={sparklesOutline}
+                  title="Noch kein Rückblick"
+                  message={segment === 'konfi'
+                    ? 'Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
+                    : 'Für das Team ist noch kein Rückblick erstellt.'}
+                  iconColor="var(--app-color-wrapped)"
+                />
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         ) : (
           // Karten-Muster wie auf jeder anderen Seite (Simons Hinweis
           // 04.09.2026: "Listenelemente gehoeren in einen Card-Container wie

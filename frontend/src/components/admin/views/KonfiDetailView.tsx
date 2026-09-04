@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -727,7 +728,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             {!hideBackButton && (
               <IonButtons slot="start">
                 <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={arrowBack} />
+                  <IonIcon icon={ICON_ZURUECK} />
                 </IonButton>
               </IonButtons>
             )}
@@ -748,7 +749,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           {!hideBackButton && (
             <IonButtons slot="start">
               <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={arrowBack} />
+                <IonIcon icon={ICON_ZURUECK} />
               </IonButton>
             </IonButtons>
           )}

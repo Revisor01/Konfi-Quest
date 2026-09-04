@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerDaten, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -599,7 +600,7 @@ const AdminJahrgaengeePage: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+              <IonIcon icon={ICON_ZURUECK} />
             </IonButton>
           </IonButtons>
           <IonTitle>Jahrgänge</IonTitle>

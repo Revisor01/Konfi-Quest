@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   IonPage,
@@ -153,7 +154,7 @@ const TeamerBadgesPage: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={arrowBack} slot="icon-only" />
+              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Teamer-Badges</IonTitle>

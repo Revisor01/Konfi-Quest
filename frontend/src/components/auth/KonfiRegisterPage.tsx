@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../shared/icons';
 import { fehlerText, istNetzwerkfehler } from '../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -404,7 +405,7 @@ const KonfiRegisterPage: React.FC = () => {
                       onClick={() => router.push('/login')}
                       className="app-auth-link"
                     >
-                      <IonIcon icon={arrowBack} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                      <IonIcon icon={ICON_ZURUECK} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                       Zurück zur Anmeldung
                     </span>
                   </div>

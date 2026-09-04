@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -206,7 +207,7 @@ const AdminMetricsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}><IonIcon icon={arrowBack} /></IonButton>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}><IonIcon icon={ICON_ZURUECK} /></IonButton>
           </IonButtons>
           <IonTitle>Performance</IonTitle>
           <IonButtons slot="end">

@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import {
@@ -14,7 +15,7 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add, arrowBack } from 'ionicons/icons';
+import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -105,7 +106,7 @@ const AdminUsersPage: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start">
           <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-            <IonIcon icon={arrowBack} />
+            <IonIcon icon={ICON_ZURUECK} />
           </IonButton>
         </IonButtons>
           <IonTitle>Benutzer:innen</IonTitle>

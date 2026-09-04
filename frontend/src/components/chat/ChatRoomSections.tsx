@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../shared/icons';
 import React from 'react';
 import {
   IonHeader,
@@ -70,7 +71,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
       <IonToolbar>
         <IonButtons slot="start">
           <IonButton aria-label="Zurück" onClick={onBack}>
-            <IonIcon icon={arrowBack} />
+            <IonIcon icon={ICON_ZURUECK} />
           </IonButton>
         </IonButtons>
         <IonTitle>{roomName}</IonTitle>

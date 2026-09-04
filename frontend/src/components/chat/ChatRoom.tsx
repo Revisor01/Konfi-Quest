@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../shared/icons';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -561,7 +562,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={arrowBack} />
+                <IonIcon icon={ICON_ZURUECK} />
               </IonButton>
             </IonButtons>
             <IonTitle>Chat wird geladen...</IonTitle>

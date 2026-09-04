@@ -1,3 +1,4 @@
+import { ICON_ZURUECK } from '../../shared/icons';
 import React, { useState, useMemo, useRef } from 'react';
 import {
   IonPage,
@@ -247,7 +248,7 @@ const TeamerMaterialPage: React.FC = () => {
             {!hideBackButton && (
               <IonButtons slot="start">
                 <IonButton onClick={() => setSelectedMaterial(null)} aria-label="Zurück zur Material-Liste">
-                  <IonIcon icon={arrowBack} slot="icon-only" />
+                  <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
                 </IonButton>
               </IonButtons>
             )}
@@ -556,7 +557,7 @@ const TeamerMaterialPage: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={arrowBack} slot="icon-only" />
+              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Material</IonTitle>
