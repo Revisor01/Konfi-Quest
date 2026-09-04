@@ -8,6 +8,36 @@ const { computeCurrentStreak } = require('../utils/streakCalculation');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 
+// Farbe je Kriterientyp -- Gegenstueck zu CRITERIA_COLORS im Frontend
+// (frontend/src/utils/badgeCriteria.ts). Wird gebraucht, wenn beim Anlegen
+// oder Bearbeiten keine Farbe mitkommt.
+//
+// Vorher stand dort pauschal '#667eea' (Blau). Das Ergebnis (04.09.2026
+// gemessen): 94 von 174 Badges hatten dieselbe blaue Farbe, in einer
+// Gemeinde alle 31 -- die Badge-Seite war einfarbig, obwohl die Oberflaeche
+// je Kategorie eine eigene Farbe vorsieht.
+const CRITERIA_COLORS = {
+  total_points: '#ffd700',
+  gottesdienst_points: '#ff9500',
+  gemeinde_points: '#059669',
+  bonus_points: '#ff6b9d',
+  both_categories: '#5856d6',
+  activity_count: '#3880ff',
+  unique_activities: '#10dc60',
+  activity_combination: '#7044ff',
+  category_activities: '#0cd1e8',
+  specific_activity: '#ffce00',
+  streak: '#eb445a',
+  time_based: '#8e8e93',
+  event_count: '#e63946',
+  mandatory_event_count: '#b91c1c',
+  teamer_year: '#5b21b6'
+};
+
+/** Farbe fuer ein Badge: die gewaehlte, sonst die des Kriteriums, sonst Blau. */
+const farbeFuerBadge = (color, criteriaType) =>
+  color || CRITERIA_COLORS[criteriaType] || '#667eea';
+
 // Badge criteria types
 const CRITERIA_TYPES = {
   // === PUNKTE-BASIERTE KRITERIEN (Einfach & häufig verwendet) ===
@@ -803,7 +833,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     RETURNING id`;
 
-      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, color || '#667eea', req.user.id, req.user.organization_id, badgeTargetRole];
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, farbeFuerBadge(color, criteria_type), req.user.id, req.user.organization_id, badgeTargetRole];
       const { rows: [newBadge] } = await db.query(query, params);
       
       res.status(201).json({ id: newBadge.id, message: 'Badge erfolgreich erstellt' });
@@ -836,7 +866,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
                     SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = COALESCE($7, is_active), is_hidden = COALESCE($8, is_hidden), color = $9 
                     WHERE id = $10 AND organization_id = $11`;
       
-      const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, color || '#667eea', req.params.id, req.user.organization_id];
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, farbeFuerBadge(color, criteria_type), req.params.id, req.user.organization_id];
       const { rowCount } = await db.query(query, params);
       
       if (rowCount === 0) {

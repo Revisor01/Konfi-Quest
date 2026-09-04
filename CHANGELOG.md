@@ -77,6 +77,8 @@ Versionsüberschrift.
   Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
   Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
   Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
+- Abzeichen tragen wieder die Farbe ihrer Kategorie statt durchgehend
+  Blau. Eine eigens gewählte Farbe bleibt erhalten.
 - Der Jahresrückblick steht im Profil jetzt direkt über den Einstellungen.
 - Der Hinweis auf einen neuen Jahresrückblick lässt sich auf der Startseite
   wegklicken; im Profil bleibt er erreichbar. Er trägt den Namen, den die

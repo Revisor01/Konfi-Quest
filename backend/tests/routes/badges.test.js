@@ -216,6 +216,69 @@ describe('Badges Routes', () => {
       expect(res.body.message).toBeDefined();
     });
 
+    // Simons Hinweis 04.09.2026: "Alle Badges sind blau. Warum?"
+    // Gemessen: 94 von 174 Badges standen auf '#667eea', in einer Gemeinde
+    // alle 31. Ursache war der pauschale Fallback beim Anlegen -- schickt
+    // das Formular keine Farbe, bekam jedes Badge dasselbe Blau, obwohl die
+    // Oberflaeche je Kategorie eine eigene Farbe vorsieht.
+    describe('Farbe ohne Angabe: die des Kriteriums, nicht pauschal Blau', () => {
+      const farbeVon = async (badgeId) => {
+        const { rows } = await db.query('SELECT color FROM custom_badges WHERE id = $1', [badgeId]);
+        return rows[0].color;
+      };
+
+      const anlegen = async (criteria_type, extra = {}) => {
+        const res = await request(app)
+          .post('/api/admin/badges')
+          .set('Authorization', `Bearer ${generateToken('admin1')}`)
+          .send({ name: `Farbtest ${criteria_type}`, criteria_type, criteria_value: 5, icon: 'star', ...extra });
+        expect(res.status).toBe(201);
+        return res.body.id;
+      };
+
+      it.each([
+        ['total_points', '#ffd700'],
+        ['gottesdienst_points', '#ff9500'],
+        ['gemeinde_points', '#059669'],
+        ['streak', '#eb445a'],
+        ['event_count', '#e63946'],
+        ['teamer_year', '#5b21b6'],
+      ])('%s bekommt %s', async (criteriaType, erwartet) => {
+        const id = await anlegen(criteriaType);
+        expect(await farbeVon(id)).toBe(erwartet);
+      });
+
+      it('eine ausdruecklich gewaehlte Farbe hat Vorrang', async () => {
+        // Gegenprobe: Die Vorbelegung darf die bewusste Wahl nicht ueberschreiben.
+        const id = await anlegen('total_points', { color: '#123456' });
+        expect(await farbeVon(id)).toBe('#123456');
+      });
+
+      it('unbekanntes Kriterium faellt weiterhin auf Blau zurueck', async () => {
+        // Es bleibt ein Fallback -- er greift nur nicht mehr fuer alles.
+        const res = await request(app)
+          .post('/api/admin/badges')
+          .set('Authorization', `Bearer ${generateToken('admin1')}`)
+          .send({ name: 'Farbtest unbekannt', criteria_type: 'gibt_es_nicht', criteria_value: 5, icon: 'star' });
+        if (res.status === 201) {
+          expect(await farbeVon(res.body.id)).toBe('#667eea');
+        } else {
+          // Wird der Typ validiert, ist das ebenso richtig.
+          expect(res.status).toBeGreaterThanOrEqual(400);
+        }
+      });
+
+      it('beim Bearbeiten gilt dieselbe Regel', async () => {
+        const id = await anlegen('total_points', { color: '#123456' });
+        const res = await request(app)
+          .put(`/api/admin/badges/${id}`)
+          .set('Authorization', `Bearer ${generateToken('admin1')}`)
+          .send({ name: 'Farbtest geaendert', criteria_type: 'streak', criteria_value: 3, icon: 'flame' });
+        expect(res.status).toBe(200);
+        expect(await farbeVon(id)).toBe('#eb445a');
+      });
+    });
+
     it('Teamer bekommt 403 (nur requireAdmin)', async () => {
       const token = generateToken('teamer1');
       const res = await request(app)
