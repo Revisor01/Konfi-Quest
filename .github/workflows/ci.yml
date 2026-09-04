@@ -16,6 +16,13 @@ on:
       - 'scripts/**'
       - 'docs/api/**'
       - 'docs/handbuch/**'
+      # Die E2E-Specs selbst: Eine Aenderung nur hier loeste bis 05.09.2026
+      # KEINEN Lauf aus. Aufgefallen, als der Fix fuer einen roten E2E-Test
+      # (Teamer-Tabs) gepusht wurde und schlicht nichts passierte -- waehrend
+      # der rote Lauf davor Build und Deploy uebersprungen hatte. Damit blieb
+      # der Betrieb still auf einem alten Stand.
+      - 'e2e/**'
+      - 'playwright.config.ts'
   pull_request:
     branches:
       - main
