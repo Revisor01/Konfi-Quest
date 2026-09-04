@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type React from 'react';
-import { home, people, chatbubbles, calendar, flash, flag, star, ellipsisHorizontal } from 'ionicons/icons';
+import { home, people, chatbubbles, calendar, flash, flag, star, ellipsisHorizontal, document as documentIcon } from 'ionicons/icons';
 import type { Rolle, RollenBaum } from './routes';
 
 // Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
@@ -241,7 +241,10 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // Mitmachen -- beide Rollen sollen dieselbe Tab-Folge haben.
       { tab: 'teamer-challenges', href: '/teamer/challenges', icon: flag, label: 'Challenges', badge: 'challenges' },
       { tab: 'teamer-events', href: '/teamer/events', icon: calendar, label: 'Mitmachen' },
-      { tab: 'teamer-badges', href: '/teamer/badges', icon: star, label: 'Badges', badge: 'badges' },
+      // Material in der Tab-Leiste, Badges dafuer im Profil (Simon,
+      // 04.09.2026): Material braucht das Team im Alltag, Badges schaut man
+      // gelegentlich an.
+      { tab: 'teamer-material', href: '/teamer/profile/material', icon: documentIcon, label: 'Material' },
     ],
   },
 

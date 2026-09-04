@@ -31,16 +31,27 @@ describe('Abzeichen-Zaehler gilt auch fuer Teamer:innen', () => {
       expect(mainTabs).not.toContain("api.get('/konfi/badges')");
     });
 
-    it('der Teamer-Reiter zeigt den Zaehler an', () => {
-      // Vorher hatte dieser Tab-Button gar kein IonBadge. Seit dem Umbau auf
-      // die Routen-Konfiguration (30.08.2026) steht die Verdrahtung als
-      // `badge: 'badges'` in navigation/rollenBaeume.ts; der eine Renderer in
-      // MainTabs macht daraus fuer JEDE Rolle ein IonBadge — die frueher
-      // moegliche Luecke, dass ein Tab den Zaehler vergisst, gibt es nicht mehr.
+    it('der Renderer macht aus badge: \'badges\' ueberall ein IonBadge', () => {
+      // Seit dem Umbau auf die Routen-Konfiguration (30.08.2026) steht die
+      // Verdrahtung als `badge: 'badges'` in navigation/rollenBaeume.ts; der
+      // eine Renderer in MainTabs macht daraus fuer JEDE Rolle ein IonBadge --
+      // die frueher moegliche Luecke, dass ein Tab den Zaehler vergisst, gibt
+      // es nicht mehr.
+      //
+      // Der Teamer-Reiter "Badges" ist am 04.09.2026 aus der Tab-Leiste ins
+      // Profil gewandert (Material sitzt jetzt dort). Geprueft wird deshalb
+      // der Mechanismus an der Konfi-Leiste, wo der Reiter weiter steht.
       const baeume = lies('src/navigation/rollenBaeume.ts');
-      const zeile = baeume.split('\n').find(z => z.includes("tab: 'teamer-badges'")) || '';
+      const zeile = baeume.split('\n').find(z => z.includes("tab: 'badges'")) || '';
       expect(zeile).toContain("badge: 'badges'");
       expect(mainTabs).toContain('<IonBadge color="danger">');
+    });
+
+    it('der Teamer hat Material statt Badges in der Leiste', () => {
+      // Gegenprobe zum Umbau: Material im Tab, Badges nicht mehr.
+      const baeume = lies('src/navigation/rollenBaeume.ts');
+      expect(baeume).toContain("tab: 'teamer-material'");
+      expect(baeume).not.toContain("tab: 'teamer-badges'");
     });
   });
 

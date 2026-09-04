@@ -527,25 +527,6 @@ const TeamerProfilePage: React.FC = () => {
                   </div>
                 </IonItem>
               </div>
-              <div
-                className="app-list-item app-list-item--material"
-                onClick={() => router.push('/teamer/profile/material')}
-              >
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--material">
-                      <IonIcon icon={documentIcon} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">Material</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Materialien und Dateien</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
               <div
                 className="app-list-item app-list-item--teamer"
@@ -591,7 +572,7 @@ const TeamerProfilePage: React.FC = () => {
                       <IonIcon icon={star} />
                     </div>
                     <div className="app-list-item__content">
-                      <div className="app-list-item__title">Abzeichen</div>
+                      <div className="app-list-item__title">Badges</div>
                       <div className="app-list-item__meta">
                         <span className="app-list-item__meta-item">Was du gesammelt hast</span>
                       </div>
