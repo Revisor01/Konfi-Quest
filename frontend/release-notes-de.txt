@@ -4,4 +4,6 @@ Beim Termin sagst du ausdrücklich zu oder ab. In der Terminliste stehen jetzt a
 
 Material trägt Dateien und Links zusammen. Abzeichen haben wieder die Farbe ihrer Kategorie.
 
+Behoben: Beim Material lassen sich wieder Dateien anhängen.
+
 Dazu viele kleine Verbesserungen in Profil, Rundgang und Terminansicht.
