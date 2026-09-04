@@ -85,6 +85,16 @@ def call(method, url, data=None, ctype="application/json"):
 with open(NOTES_FILE) as f:
     notes = f.read().strip()
 
+# Google Play erlaubt hoechstens 500 Zeichen je Sprache. Wird das ueberschritten,
+# laufen Upload UND Track-Zuweisung durch und erst der :commit scheitert -- mit
+# "403 PERMISSION_DENIED", was nach einem Rechteproblem aussieht und keines ist
+# (Befund 04.09.2026: 517 Zeichen, zwei Builds verloren). Deshalb hier pruefen,
+# bevor ueberhaupt ein Edit angelegt wird.
+if len(notes) > 500:
+    print(f"FEHLER: Release-Notes sind {len(notes)} Zeichen lang, Google Play "
+          f"erlaubt hoechstens 500. Bitte {NOTES_FILE} kuerzen.", file=sys.stderr)
+    sys.exit(1)
+
 edit = call("POST", f"{API}/edits", b"")["id"]
 print(f"Edit: {edit}")
 try:

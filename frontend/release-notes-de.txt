@@ -1,9 +1,5 @@
 Der Jahresrückblick erzählt jetzt eine Geschichte statt einer Liste — mit eigenen Seiten für das, was du erlebt hast.
 
-Beim Termin sagst du ausdrücklich zu oder ab. In der Terminliste stehen jetzt auch Kategorie und Punkteart.
+Beim Termin sagst du ausdrücklich zu oder ab. Die Terminliste zeigt Kategorie und Punkteart. Abzeichen haben wieder die Farbe ihrer Kategorie.
 
-Material trägt Dateien und Links zusammen. Abzeichen haben wieder die Farbe ihrer Kategorie.
-
-Behoben: Beim Material lassen sich wieder Dateien anhängen. Und beim Öffnen der App bleibt der Bildschirm nicht mehr weiß.
-
-Dazu viele kleine Verbesserungen in Profil, Rundgang und Terminansicht.
+Behoben: Beim Material lassen sich wieder Dateien anhängen. Beim Öffnen bleibt der Bildschirm nicht mehr weiß. Abmelden beendet die Sitzung zuverlässig.
