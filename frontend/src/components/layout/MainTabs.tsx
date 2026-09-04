@@ -299,6 +299,18 @@ const MainTabs: React.FC = () => {
       ))}
       <Route path="/login" element={<Navigate to={baum.home} replace />} />
       <Route path="/" element={<Navigate to={baum.home} replace />} />
+      {/* Catch-all fuer angemeldete Nutzer:innen (Simons Befund 04.09.2026:
+          "App zu. Ich oeffne, weisser Screen. Hin und her, alles da.").
+          Beim Kaltstart stellt das WebView die zuletzt besuchte URL wieder
+          her. Passt die zu KEINER Route dieser Rolle -- eine Adresse aus
+          einer frueheren Version, eine Detailseite, deren Eltern-Route sich
+          geaendert hat, oder eine Route einer anderen Rolle -- matcht im
+          Outlet nichts und es wird gar nichts gerendert: weisse Seite. Ein
+          Tab-Antippen navigiert auf eine gueltige Route, darum war danach
+          "alles wieder da".
+          Der ausgeloggte Zweig in App.tsx hat diesen Fallback laengst, mit
+          derselben Begruendung im Kommentar -- hier fehlte er. */}
+      <Route path="*" element={<Navigate to={baum.home} replace />} />
     </IonRouterOutlet>
   );
 

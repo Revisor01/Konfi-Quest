@@ -445,8 +445,11 @@ const KonfiDashboardPage: React.FC = () => {
                   {dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>
+                  {/* "Dein Rückblick - bis jetzt!" statt "Jahresrückblick"
+                      (Simon, 04.09.2026): Eine Ausgabe kann ein Zwischenstand
+                      mitten im Jahr sein, kein Jahresabschluss. */}
                   {dashboardData.wrapped_titel
-                    ? 'Dein Jahresrückblick — hier tippen'
+                    ? 'Dein Rückblick - bis jetzt! Hier tippen.'
                     : 'Schau ihn dir an'}
                 </p>
               </div>

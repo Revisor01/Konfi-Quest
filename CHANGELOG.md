@@ -38,6 +38,7 @@ Versionsüberschrift.
 
 ### Behoben
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
+- Beim Öffnen der App bleibt der Bildschirm nicht mehr weiß, wenn zuletzt eine Seite offen war, die es so nicht mehr gibt.
 - Der Jahresrückblick lässt sich jetzt unter „Mehr → Jahresrückblick"
   verwalten: Ausgaben anlegen, benennen, freigeben und einzeln löschen. Der
   frühere Schalter im Jahrgang ist entfallen — er konnte immer nur einen
