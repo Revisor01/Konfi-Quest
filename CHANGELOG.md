@@ -37,6 +37,7 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
 - Der Jahresrückblick lässt sich jetzt unter „Mehr → Jahresrückblick"
   verwalten: Ausgaben anlegen, benennen, freigeben und einzeln löschen. Der
   frühere Schalter im Jahrgang ist entfallen — er konnte immer nur einen

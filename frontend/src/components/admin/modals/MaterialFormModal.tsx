@@ -242,10 +242,22 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setNewFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    // Die Dateiliste SOFORT auslesen, bevor der Input geleert wird
+    // (Simons Befund 04.09.2026: "es passiert gar nichts", im Netz-Mitschnitt
+    // fehlte der POST auf /material/:id/files).
+    //
+    // Vorher stand Array.from(e.target.files) INNERHALB des
+    // setNewFiles(prev => ...)-Updaters. React ruft diesen Updater verzoegert
+    // auf -- zu diesem Zeitpunkt hatte die Zeile darunter den Input laengst
+    // geleert, und die Datei kam nie im State an. Gemessen: files.length
+    // 1 -> 1 -> 0 ueber das change-Event hinweg.
+    //
+    // Das Leeren selbst bleibt noetig, damit dieselbe Datei ein zweites Mal
+    // gewaehlt werden kann (ohne Wertwechsel feuert change nicht).
+    const gewaehlt = e.target.files ? Array.from(e.target.files) : [];
+    if (gewaehlt.length > 0) {
+      setNewFiles(prev => [...prev, ...gewaehlt]);
     }
-    // Input zurücksetzen
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
