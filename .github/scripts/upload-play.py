@@ -65,9 +65,21 @@ def call(method, url, data=None, ctype="application/json"):
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization", f"Bearer {TOKEN}")
     req.add_header("Content-Type", ctype)
-    with urllib.request.urlopen(req) as r:
-        body = r.read()
-        return json.loads(body) if body else {}
+    try:
+        with urllib.request.urlopen(req) as r:
+            body = r.read()
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as e:
+        # Google legt den GRUND in den Antwortkoerper; urllib zeigt nur den
+        # Status. Ohne diese Zeilen stand im Log nur "HTTP Error 403:
+        # Forbidden" -- ohne zu sagen, WAS verboten ist (Befund 04.09.2026,
+        # versionCode 85 scheiterte zweimal am :commit).
+        try:
+            details = e.read().decode("utf-8", "replace")[:2000]
+        except Exception:
+            details = "(kein Antwortkoerper)"
+        print(f"FEHLER {e.code} bei {method} {url}\n{details}", file=sys.stderr)
+        raise
 
 
 with open(NOTES_FILE) as f:
