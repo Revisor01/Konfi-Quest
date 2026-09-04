@@ -39,6 +39,7 @@ Versionsüberschrift.
 ### Behoben
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
 - Beim Öffnen der App bleibt der Bildschirm nicht mehr weiß, wenn zuletzt eine Seite offen war, die es so nicht mehr gibt.
+- Abmelden beendet die Sitzung jetzt zuverlässig. Vorher konnte man nach dem Neustart wieder im alten Konto landen, und ein Kontowechsel mischte die Ansichten beider Konten.
 - Der Jahresrückblick lässt sich jetzt unter „Mehr → Jahresrückblick"
   verwalten: Ausgaben anlegen, benennen, freigeben und einzeln löschen. Der
   frühere Schalter im Jahrgang ist entfallen — er konnte immer nur einen

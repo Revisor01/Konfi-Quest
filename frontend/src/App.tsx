@@ -146,7 +146,15 @@ const AppContent: React.FC = () => {
   // mit dem neuen aktiven-Org-Header neu. Ersetzt den fragilen location-Reload.
   return (
     <IonApp>
-      <IonReactRouter key={orgVersion}>
+      {/* key aus Org UND Benutzer (Simons Befund 04.09.2026: "Mein Admin
+          Login zeigt einmal kurz alles. Die Tab-Leiste zeigt aber Konfi.").
+          Vorher hing der Schluessel nur an orgVersion -- bei einem
+          BENUTZERWECHSEL (abmelden, anderes Konto anmelden) blieb der ganze
+          Router-Subtree stehen: MainTabs behielt die Tab-Leiste der alten
+          Rolle, waehrend die Seiten schon zur neuen gehoerten. Mit der
+          Benutzer-ID im Schluessel montiert der Baum bei jedem Kontowechsel
+          frisch. */}
+      <IonReactRouter key={`${orgVersion}-${user?.id ?? 'anon'}`}>
         <IonRouterOutlet>
           {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
           <Route path="/*" element={<MainTabs />} />

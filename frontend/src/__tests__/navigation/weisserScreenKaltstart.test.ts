@@ -57,3 +57,26 @@ describe('Kaltstart auf einer unbekannten Route bleibt nicht weiss', () => {
     }
   });
 });
+
+describe('Kontowechsel baut den Router neu auf', () => {
+  // Simons Befund 04.09.2026: "Mein Admin Login zeigt einmal kurz alles.
+  // Die Tab-Leiste zeigt aber Konfi. Startseite kann nach navigieren nicht
+  // geladen werden."
+  //
+  // Der key des IonReactRouter hing nur an orgVersion. Bei einem
+  // BENUTZERWECHSEL (abmelden, anderes Konto anmelden) blieb der ganze
+  // Subtree montiert: MainTabs behielt die Tab-Leiste der alten Rolle,
+  // waehrend die Routen schon zur neuen gehoerten -- Tabs und Inhalt
+  // zeigten verschiedene Rollen.
+  const zeile = app.split('\n').find(z => z.includes('<IonReactRouter key='));
+
+  it('der Router-Schluessel enthaelt die Benutzer-ID', () => {
+    expect(zeile, 'IonReactRouter-Zeile nicht gefunden').toBeTruthy();
+    expect(zeile!).toContain('user?.id');
+  });
+
+  it('und weiterhin die Org-Version', () => {
+    // Der Org-Wechsel muss genauso weiter remounten wie bisher.
+    expect(zeile!).toContain('orgVersion');
+  });
+});

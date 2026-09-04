@@ -103,4 +103,49 @@ describe('auth.logout — Queue gehoert zum Konto, nicht zum Geraet', () => {
     expect(mockClearAuth).toHaveBeenCalledTimes(1);
     expect(mockQueueClear).toHaveBeenCalledTimes(1);
   });
+  // Simons Befund 04.09.2026, drei Symptome aus EINER Ursache:
+  //   "Nach Logout, App beenden, App starten -> wieder im alten Account."
+  //   "Dann ausloggen zeigt die Anmeldeseite. Ich melde mich an. Alles
+  //    bricht zusammen: Tab-Leiste zeigt Konfi, Inhalt Admin."
+  //
+  // logoutInProgress wurde am ENDE der Funktion zurueckgesetzt, ohne
+  // try/finally, und clearAuth() lief voellig ungeschuetzt. Warf einer der
+  // Schritte, blieb das Flag fuer immer true -- und JEDER weitere Logout
+  // kehrte in Zeile 1 wirkungslos zurueck, ohne die Sitzung zu raeumen.
+  it('ein Fehler in clearAuth blockiert den naechsten Logout NICHT', async () => {
+    mockClearAuth.mockRejectedValueOnce(new Error('Preferences kaputt'));
+    const { logout } = await import('../../services/auth');
+
+    // Erster Logout: clearAuth wirft.
+    await logout();
+    expect(mockClearAuth).toHaveBeenCalledTimes(1);
+
+    // Zweiter Logout MUSS wieder aufraeumen -- vorher kehrte er
+    // wirkungslos zurueck und der Token blieb liegen.
+    await logout();
+    expect(mockClearAuth).toHaveBeenCalledTimes(2);
+  });
+
+  it('isLoggingOut faellt auch nach einem Fehler zurueck', async () => {
+    mockClearAuth.mockRejectedValueOnce(new Error('kaputt'));
+    const { logout, isLoggingOut } = await import('../../services/auth');
+
+    await logout();
+
+    // Sonst haelt der 401-Interceptor die Sitzung dauerhaft fuer
+    // "wird gerade abgemeldet" und meldet echte Abläufe nicht mehr.
+    expect(isLoggingOut()).toBe(false);
+  });
+
+  it('raeumt nach einem Fehler in clearAuth trotzdem Queue und Cache', async () => {
+    mockClearAuth.mockRejectedValueOnce(new Error('kaputt'));
+    const { logout } = await import('../../services/auth');
+
+    await logout();
+
+    // Vorher brach die Funktion an der ungeschuetzten Zeile ab -- Queue und
+    // Cache des alten Kontos blieben liegen und wurden nach dem naechsten
+    // Login unter fremder Identitaet gesendet.
+    expect(mockQueueClear).toHaveBeenCalledTimes(1);
+  });
 });
