@@ -467,7 +467,7 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-settings-item"
+                  className="app-list-item app-list-item--wrapped app-settings-item"
                   onClick={() => router.push('/admin/wrapped')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped, #7c3aed)' }}>

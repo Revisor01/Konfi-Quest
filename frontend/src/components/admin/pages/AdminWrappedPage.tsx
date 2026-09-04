@@ -9,7 +9,7 @@ import {
 } from '@ionic/react';
 // Solid-Icons wie in der Events-Liste (dort: people, calendar, trophy,
 // pricetag) -- die Outline-Varianten wichen hier als einzige Liste ab.
-import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, arrowBack, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
+import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, arrowBack, calendarOutline, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader } from '../../shared';
@@ -220,107 +220,122 @@ const AdminWrappedPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <IonList style={{ background: 'transparent', padding: '8px 16px 24px' }}>
-            {sichtbar.map((a) => (
-              // UNSER Listen-Muster (app-list-item), nicht selbstgebaut:
-              // Farbstreifen links, Icon im farbigen Kreis, Corner-Badge oben
-              // rechts, Meta-Zeile mit farbigen Icons -- wie bei Events,
-              // Chats und der Punkte-Historie.
-              //
-              // Geloescht wird per Wischen (Simons Hinweis 03.09.2026), nicht
-              // ueber einen Knopf in der Zeile: Ein Loeschknopf direkt neben
-              // dem Titel trifft man zu leicht, und ueberall sonst in der App
-              // liegt das Loeschen unter der Wischgeste.
-              //
-              // Icons und Farben folgen der Events-Liste: Solid-Varianten mit
-              // den app-icon-color--*-Klassen, keine Inline-Farben und keine
-              // Outline-Icons -- vorher wich diese Liste als einzige ab.
-              <IonItemSliding key={a.id} style={{ marginBottom: '8px' }}>
-                <IonItem
-                  detail={false}
-                  lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto'
-                  }}
-                >
-                  <div
-                    className="app-list-item app-list-item--wrapped"
-                    style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
-                  >
-                    {a.freigegeben && (
-                      <div className="app-corner-badges">
-                        <div
-                          className="app-corner-badge"
-                          style={{ backgroundColor: 'var(--app-color-success)' }}
-                          title="Freigegeben"
-                        >
-                          <IonIcon icon={eye} />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--wrapped">
-                          <IonIcon icon={a.typ === 'teamer' ? people : sparkles} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title" style={{ paddingRight: a.freigegeben ? '48px' : '0' }}>
-                            {a.titel}
-                          </div>
-                          <div className="app-list-item__meta">
-                            {/* Wie viele Rueckblicke in der Ausgabe stecken --
-                                gehoert in die Zeile, nicht in eine Ecke. */}
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={people} className="app-icon-color--participants" />
-                              {a.snapshots}
-                            </span>
-                            {a.jahrgang_name && (
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={school} className="app-icon-color--konfis" />
-                                {a.jahrgang_name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={calendar} className="app-icon-color--events" />
-                              {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
-                            </span>
-                          </div>
-                          {a.freigegeben_at && (
-                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={checkmarkCircle} className="app-icon-color--success" />
-                                freigegeben {datum(a.freigegeben_at)}
-                              </span>
+          // Karten-Muster wie auf jeder anderen Seite (Simons Hinweis
+          // 04.09.2026: "Listenelemente gehoeren in einen Card-Container wie
+          // bei allen anderen"): IonList inset -> IonListHeader ->
+          // IonCard.app-card -> IonCardContent. Vorher lag die Liste
+          // freistehend auf transparentem Grund.
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--wrapped">
+                <IonIcon icon={sparklesOutline} />
+              </div>
+              <IonLabel>{segment === 'konfi' ? 'Konfis' : 'Team'} ({sichtbar.length})</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {sichtbar.map((a) => (
+                  // UNSER Listen-Muster (app-list-item), nicht selbstgebaut:
+                  // Farbstreifen links, Icon im farbigen Kreis, Corner-Badge oben
+                  // rechts, Meta-Zeile mit farbigen Icons -- wie bei Events,
+                  // Chats und der Punkte-Historie.
+                  //
+                  // Geloescht wird per Wischen (Simons Hinweis 03.09.2026), nicht
+                  // ueber einen Knopf in der Zeile: Ein Loeschknopf direkt neben
+                  // dem Titel trifft man zu leicht, und ueberall sonst in der App
+                  // liegt das Loeschen unter der Wischgeste.
+                  //
+                  // Icons und Farben folgen der Events-Liste: Solid-Varianten mit
+                  // den app-icon-color--*-Klassen, keine Inline-Farben und keine
+                  // Outline-Icons -- vorher wich diese Liste als einzige ab.
+                  <IonItemSliding key={a.id} style={{ marginBottom: '8px' }}>
+                    <IonItem
+                      detail={false}
+                      lines="none"
+                      style={{
+                        '--background': 'transparent',
+                        '--padding-start': '0',
+                        '--padding-end': '0',
+                        '--inner-padding-end': '0',
+                        '--inner-border-width': '0',
+                        '--border-style': 'none',
+                        '--min-height': 'auto'
+                      }}
+                    >
+                      <div
+                        className="app-list-item app-list-item--wrapped"
+                        style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
+                      >
+                        {a.freigegeben && (
+                          <div className="app-corner-badges">
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: 'var(--app-color-success)' }}
+                              title="Freigegeben"
+                            >
+                              <IonIcon icon={eye} />
                             </div>
-                          )}
+                          </div>
+                        )}
+
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--wrapped">
+                              <IonIcon icon={a.typ === 'teamer' ? people : sparkles} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title" style={{ paddingRight: a.freigegeben ? '48px' : '0' }}>
+                                {a.titel}
+                              </div>
+                              <div className="app-list-item__meta">
+                                {/* Wie viele Rueckblicke in der Ausgabe stecken --
+                                    gehoert in die Zeile, nicht in eine Ecke. */}
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={people} className="app-icon-color--participants" />
+                                  {a.snapshots}
+                                </span>
+                                {a.jahrgang_name && (
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={school} className="app-icon-color--konfis" />
+                                    {a.jahrgang_name}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={calendar} className="app-icon-color--events" />
+                                  {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
+                                </span>
+                              </div>
+                              {a.freigegeben_at && (
+                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={checkmarkCircle} className="app-icon-color--success" />
+                                    freigegeben {datum(a.freigegeben_at)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </IonItem>
+                    </IonItem>
 
-                <IonItemOptions side="end" className="app-swipe-actions">
-                  <IonItemOption
-                    onClick={() => { closeOpenSlidingItems(); loeschen(a); }}
-                    aria-label={`${a.titel} löschen`}
-                    className="app-swipe-action"
-                  >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                      <IonIcon icon={trash} />
-                    </div>
-                  </IonItemOption>
-                </IonItemOptions>
-              </IonItemSliding>
-            ))}
+                    <IonItemOptions side="end" className="app-swipe-actions">
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); loeschen(a); }}
+                        aria-label={`${a.titel} löschen`}
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                          <IonIcon icon={trash} />
+                        </div>
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                ))}
+              </IonCardContent>
+            </IonCard>
           </IonList>
         )}
 
@@ -368,13 +383,17 @@ const AdminWrappedPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
+                  {/* Jahrgangs-Auswahl im Muster des Filters aus der
+                      Konfi-Liste (Simons Hinweis 04.09.2026): Icon links per
+                      slot="start", kein gestapeltes Label, Popover, volle
+                      Breite. */}
                   {segment === 'konfi' && (
                     <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                       <IonSelect
-                        label="Jahrgang"
-                        labelPlacement="stacked"
-                        placeholder="Jahrgang wählen"
+                        placeholder="Jahrgang"
                         interface="popover"
+                        style={{ width: '100%' }}
                         value={neuerJahrgang}
                         onIonChange={(e) => setNeuerJahrgang(e.detail.value)}
                       >
