@@ -146,15 +146,18 @@ const AppContent: React.FC = () => {
   // mit dem neuen aktiven-Org-Header neu. Ersetzt den fragilen location-Reload.
   return (
     <IonApp>
-      {/* key aus Org UND Benutzer (Simons Befund 04.09.2026: "Mein Admin
-          Login zeigt einmal kurz alles. Die Tab-Leiste zeigt aber Konfi.").
-          Vorher hing der Schluessel nur an orgVersion -- bei einem
-          BENUTZERWECHSEL (abmelden, anderes Konto anmelden) blieb der ganze
-          Router-Subtree stehen: MainTabs behielt die Tab-Leiste der alten
-          Rolle, waehrend die Seiten schon zur neuen gehoerten. Mit der
-          Benutzer-ID im Schluessel montiert der Baum bei jedem Kontowechsel
-          frisch. */}
-      <IonReactRouter key={`${orgVersion}-${user?.id ?? 'anon'}`}>
+      {/* key NUR aus orgVersion (Simons Befund 04.09.2026, zweiter Teil:
+          "Teamer und Konfi Dashboard zeigen eine weisse Seite beim ersten
+          Laden"). Mit der Benutzer-ID im Schluessel montierte der ganze
+          Baum bei JEDEM Anmelden neu -- MainTabs setzte seinen
+          seitenBereit-Zustand zurueck und der IonRouterOutlet bekam beim
+          ersten Rendern einen Platzhalter statt einer fertigen Seite.
+          Genau das Muster aus Build 153/154 (siehe
+          keinPlatzhalterImOutlet.test.ts): Ionic registriert die Seite beim
+          Einhaengen und bemerkt den spaeteren Tausch nicht -- weisse Seite.
+          Die Rolle wird stattdessen in MainTabs selbst behandelt (dort haengt
+          der Baum an `rolle`, nicht an der Montage). */}
+      <IonReactRouter key={orgVersion}>
         <IonRouterOutlet>
           {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
           <Route path="/*" element={<MainTabs />} />

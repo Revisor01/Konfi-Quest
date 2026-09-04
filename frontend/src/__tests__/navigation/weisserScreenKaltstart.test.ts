@@ -58,25 +58,34 @@ describe('Kaltstart auf einer unbekannten Route bleibt nicht weiss', () => {
   });
 });
 
-describe('Kontowechsel baut den Router neu auf', () => {
+describe('Rollenwechsel baut das Outlet neu auf', () => {
   // Simons Befund 04.09.2026: "Mein Admin Login zeigt einmal kurz alles.
-  // Die Tab-Leiste zeigt aber Konfi. Startseite kann nach navigieren nicht
-  // geladen werden."
+  // Die Tab-Leiste zeigt aber Konfi."
   //
-  // Der key des IonReactRouter hing nur an orgVersion. Bei einem
-  // BENUTZERWECHSEL (abmelden, anderes Konto anmelden) blieb der ganze
-  // Subtree montiert: MainTabs behielt die Tab-Leiste der alten Rolle,
-  // waehrend die Routen schon zur neuen gehoerten -- Tabs und Inhalt
-  // zeigten verschiedene Rollen.
-  const zeile = app.split('\n').find(z => z.includes('<IonReactRouter key='));
-
-  it('der Router-Schluessel enthaelt die Benutzer-ID', () => {
-    expect(zeile, 'IonReactRouter-Zeile nicht gefunden').toBeTruthy();
-    expect(zeile!).toContain('user?.id');
+  // Erster Versuch war die Benutzer-ID im key des IonReactRouter -- das
+  // erzeugte einen ZWEITEN Fehler: Jede Anmeldung montierte den ganzen
+  // Baum neu, MainTabs setzte seitenBereit zurueck und das Outlet bekam
+  // beim ersten Rendern einen Platzhalter statt einer fertigen Seite
+  // (Muster aus Build 153/154, siehe keinPlatzhalterImOutlet.test.ts) --
+  // weisse Seite auf Konfi- und Teamer-Dashboard.
+  //
+  // Richtig ist der Schluessel an der ROLLE, am Outlet: Er wechselt nur,
+  // wenn sich der Routen-Satz wirklich aendert.
+  it('das Outlet haengt an der Rolle', () => {
+    const zeile = mainTabs.split('\n')
+      .filter(z => !z.trim().startsWith('//'))
+      .find(z => z.includes('<IonRouterOutlet'));
+    expect(zeile, 'IonRouterOutlet nicht gefunden').toBeTruthy();
+    expect(zeile!).toContain('key={rolle}');
   });
 
-  it('und weiterhin die Org-Version', () => {
-    // Der Org-Wechsel muss genauso weiter remounten wie bisher.
+  it('der Router haengt NICHT an der Benutzer-ID', () => {
+    // Sonst montiert jede Anmeldung neu -> Platzhalter im Outlet -> weiss.
+    const zeile = app.split('\n')
+      .filter(z => !z.trim().startsWith('{/*') && !z.trim().startsWith('*'))
+      .find(z => z.includes('<IonReactRouter key='));
+    expect(zeile, 'IonReactRouter nicht gefunden').toBeTruthy();
+    expect(zeile!).not.toContain('user?.id');
     expect(zeile!).toContain('orgVersion');
   });
 });

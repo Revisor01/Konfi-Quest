@@ -279,7 +279,15 @@ const MainTabs: React.FC = () => {
 
   // Die Routen des Baums plus die Einstiege von "/" und "/login".
   const outlet = (
-    <IonRouterOutlet>
+    // key an der ROLLE (Simon, 04.09.2026): Meldet sich nach einem Konfi
+    // eine Leitung an, wechselt der Routen-Satz komplett -- ohne frischen
+    // Baum behielte das Outlet Seiten der alten Rolle (Tab-Leiste Konfi,
+    // Inhalt Admin). Bewusst NICHT am IonReactRouter und NICHT an der
+    // Benutzer-ID: dort montierte jede Anmeldung neu, seitenBereit fiel auf
+    // false zurueck und das Outlet bekam einen Platzhalter -- weisse Seite
+    // beim ersten Laden. An der Rolle wechselt der Schluessel nur, wenn sich
+    // wirklich der Routen-Satz aendert.
+    <IonRouterOutlet key={rolle}>
       {baum.routes.map(({ path, page: Seite, param, propName }) => (
         <Route
           key={path}
