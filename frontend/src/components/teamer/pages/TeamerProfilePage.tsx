@@ -22,7 +22,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, arrowBack, imagesOutline, bookOutline, compassOutline, document as documentIcon } from 'ionicons/icons';
+import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, arrowBack, imagesOutline, bookOutline, compassOutline, star, document as documentIcon } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -526,6 +526,44 @@ const TeamerProfilePage: React.FC = () => {
                   </div>
                 </IonItem>
               </div>
+              <div
+                className="app-list-item app-list-item--material"
+                onClick={() => router.push('/teamer/profile/material')}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--material">
+                      <IonIcon icon={documentIcon} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Material</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Materialien und Dateien</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
+              <div
+                className="app-list-item app-list-item--teamer"
+                onClick={() => setShowOnboarding(true)}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--teamer">
+                      <IonIcon icon={compassOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">App-Tour ansehen</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -540,19 +578,21 @@ const TeamerProfilePage: React.FC = () => {
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
+              {/* Abzeichen (Simon, 04.09.2026): Aus der Tab-Leiste ins
+                  Profil geholt -- unter "Inhalt" steht danach nur noch das. */}
               <div
-                className="app-list-item app-list-item--material"
-                onClick={() => router.push('/teamer/profile/material')}
+                className="app-list-item app-list-item--badges"
+                onClick={() => router.push('/teamer/badges')}
               >
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--material">
-                      <IonIcon icon={documentIcon} />
+                    <div className="app-icon-circle app-icon-circle--badges">
+                      <IonIcon icon={star} />
                     </div>
                     <div className="app-list-item__content">
-                      <div className="app-list-item__title">Material</div>
+                      <div className="app-list-item__title">Abzeichen</div>
                       <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Materialien und Dateien</span>
+                        <span className="app-list-item__meta-item">Was du gesammelt hast</span>
                       </div>
                     </div>
                   </div>
@@ -580,25 +620,6 @@ const TeamerProfilePage: React.FC = () => {
                 </div>
               )}
 
-              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
-              <div
-                className="app-list-item app-list-item--teamer"
-                onClick={() => setShowOnboarding(true)}
-              >
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--teamer">
-                      <IonIcon icon={compassOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">App-Tour ansehen</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </IonCardContent>
           </IonCard>
         </IonList>

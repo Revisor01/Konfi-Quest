@@ -25,10 +25,12 @@ import {
   helpCircle,
   location,
   chevronForward,
+  closeOutline,
   bagHandle,
   eyeOff
 } from 'ionicons/icons';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
+import { Preferences } from '@capacitor/preferences';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import type { KonfiChallenge } from '../../../types/challenges';
@@ -151,6 +153,9 @@ interface DashboardData {
   badges: { recent: Badge[]; earned_count: number; total_count: number };
   config: DashboardConfig;
   has_wrapped?: boolean;
+  // Wie im Konfi-Dashboard: Id der Ausgabe, damit sich der Hinweis PRO
+  // Ausgabe wegklicken laesst. Aeltere Antworten liefern sie nicht.
+  wrapped_ausgabe_id?: number | null;
   konfspruch?: Konfspruch | null;
 }
 
@@ -359,6 +364,24 @@ const TeamerDashboardPage: React.FC = () => {
     wrappedType: 'teamer' as const
   });
 
+  // Weggeklickter Rueckblick-Hinweis, gemerkt PRO AUSGABE -- wie im
+  // Konfi-Dashboard: Der naechste Rueckblick meldet sich wieder.
+  const [wrappedHinweisWeg, setWrappedHinweisWeg] = useState(false);
+  const wrappedHinweisKey = `wrapped_hinweis_t_${user?.id ?? 'x'}_${dashboardData?.wrapped_ausgabe_id ?? 'alt'}`;
+
+  useEffect(() => {
+    if (!dashboardData?.has_wrapped) return;
+    Preferences.get({ key: wrappedHinweisKey })
+      .then(({ value }) => setWrappedHinweisWeg(value === '1'))
+      .catch(() => { /* Preferences nicht verfuegbar -> Hinweis zeigen */ });
+  }, [wrappedHinweisKey, dashboardData?.has_wrapped]);
+
+  const wrappedHinweisAusblenden = () => {
+    setWrappedHinweisWeg(true);
+    Preferences.set({ key: wrappedHinweisKey, value: '1' })
+      .catch(() => { /* beim naechsten Start erneut */ });
+  };
+
   const openWrapped = () => {
     presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
   };
@@ -523,7 +546,7 @@ const TeamerDashboardPage: React.FC = () => {
           )}
 
           {/* Wrapped Card */}
-          {dashboardData?.has_wrapped && (
+          {dashboardData?.has_wrapped && !wrappedHinweisWeg && (
             <div onClick={openWrapped} style={{
               marginBottom: '16px',
               padding: '20px',
@@ -540,7 +563,30 @@ const TeamerDashboardPage: React.FC = () => {
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Teamer-Jahr ist da!</h3>
                   <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>Schau dir deinen Jahresrückblick an</p>
                 </div>
-                <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', marginLeft: 'auto' }} />
+                {/* X statt Chevron (Simon, 04.09.2026): Das Chevron verdeckte
+                    den Ausblenden-Knopf. Jetzt wie die uebrigen Info-Karten --
+                    nur in der Farbe dieser Karte. */}
+                <button
+                  type="button"
+                  aria-label="Hinweis ausblenden"
+                  onClick={(e) => { e.stopPropagation(); wrappedHinweisAusblenden(); }}
+                  style={{
+                    marginLeft: 'auto',
+                    background: 'rgba(255,255,255,0.18)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  <IonIcon icon={closeOutline} style={{ fontSize: '1.1rem' }} aria-hidden="true" />
+                </button>
               </div>
             </div>
           )}

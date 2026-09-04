@@ -237,8 +237,10 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     tabs: [
       { tab: 'teamer-dashboard', href: '/teamer/dashboard', icon: home, label: 'Start' },
       { tab: 'teamer-chat', href: '/teamer/chat', icon: chatbubbles, label: 'Chat', badge: 'chat' },
-      { tab: 'teamer-events', href: '/teamer/events', icon: calendar, label: 'Mitmachen' },
+      // Reihenfolge wie beim Konfi (Simon, 04.09.2026): Challenges vor
+      // Mitmachen -- beide Rollen sollen dieselbe Tab-Folge haben.
       { tab: 'teamer-challenges', href: '/teamer/challenges', icon: flag, label: 'Challenges', badge: 'challenges' },
+      { tab: 'teamer-events', href: '/teamer/events', icon: calendar, label: 'Mitmachen' },
       { tab: 'teamer-badges', href: '/teamer/badges', icon: star, label: 'Badges', badge: 'badges' },
     ],
   },

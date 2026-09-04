@@ -883,15 +883,11 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
       <IonLabel>Zertifikate</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: certificates.length === 0 ? '16px' : '12px' }}>
-        {certificates.length === 0 ? (
-          <EmptyState
-            icon={documentOutline}
-            title="Keine Zertifikate"
-            message="Noch keine Zertifikate zugewiesen"
-            iconColor="var(--app-color-teamer)"
-          />
-        ) : (
+      {/* Der Abschnitt wird nur noch gerendert, wenn es Zertifikate GIBT
+          (KonfiDetailView, Simon 04.09.2026) -- ein Leerzustand kann hier
+          also nicht mehr auftreten. */}
+      <IonCardContent style={{ padding: '12px' }}>
+        {(
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {certificates.map((cert, index) => (
               <IonItemSliding key={cert.id} style={{ marginBottom: index < certificates.length - 1 ? '8px' : '0' }}>

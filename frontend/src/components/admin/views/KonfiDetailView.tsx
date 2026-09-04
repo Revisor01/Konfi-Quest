@@ -22,7 +22,8 @@ import {
   key,
   close,
   timeOutline,
-  createOutline
+  createOutline,
+  ribbonOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -764,6 +765,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
                 <IonIcon icon={createOutline} />
               </IonButton>
             )}
+            {/* Zertifikat zuweisen (Simon, 04.09.2026): Der Zertifikats-Block
+                erscheint nur noch, wenn es welche GIBT -- der Knopf sass aber
+                darin. Ohne diesen Weg gaebe es keine Moeglichkeit mehr, das
+                erste Zertifikat zuzuweisen. */}
+            {isTeamer && (
+              <IonButton aria-label="Zertifikat zuweisen" disabled={!isOnline} onClick={handleAssignCertificate}>
+                <IonIcon icon={ribbonOutline} />
+              </IonButton>
+            )}
             <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={key} />
             </IonButton>
@@ -888,8 +898,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           </IonList>
         )}
 
-        {/* Zertifikate - nur für Teamer */}
-        {isTeamer && (
+        {/* Zertifikate - nur fuer Teamer, und nur wenn es welche gibt
+            (Simon, 04.09.2026: "Wenn kein Zertifikat da ist, soll der Block
+            nicht angezeigt werden"). Zugewiesen wird ueber den Knopf in der
+            Kopfzeile. */}
+        {isTeamer && certificates.length > 0 && (
           <CertificatesSection
             certificates={certificates}
             isOnline={isOnline}
