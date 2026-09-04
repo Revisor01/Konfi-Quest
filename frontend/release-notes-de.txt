@@ -1,7 +1,7 @@
-Diese Version räumt auf: viele kleine Fehler sind weg, und einiges läuft verlässlicher.
+Der Jahresrückblick erzählt jetzt eine Geschichte statt einer Liste — mit eigenen Seiten für das, was du erlebt hast.
 
-Beim Konfispruch steht jetzt der Wortlaut da, in Luther 2017 und Gute Nachricht.
+Beim Termin sagst du ausdrücklich zu oder ab. In der Terminliste stehen jetzt auch Kategorie und Punkteart.
 
-Ohne Netz seht ihr überall, was noch aussteht — und was nicht rausging, verschwindet nicht mehr unbemerkt.
+Material trägt Dateien und Links zusammen. Abzeichen haben wieder die Farbe ihrer Kategorie.
 
-Mitteilungen kommen auch nach längerer Pause wieder an. Bei Terminreihen öffnet die Anmeldung rechtzeitig, und überbuchen geht nicht mehr.
+Dazu viele kleine Verbesserungen in Profil, Rundgang und Terminansicht.
