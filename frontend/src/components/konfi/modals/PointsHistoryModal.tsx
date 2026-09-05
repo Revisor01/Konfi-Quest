@@ -16,15 +16,16 @@ import {
   IonLabel
 } from '@ionic/react';
 import {
-  closeOutline,
-  starOutline,
-  flashOutline,
-  giftOutline,
-  calendar,
-  calendarOutline,
-  timeOutline,
-  trophyOutline
-} from 'ionicons/icons';
+  ICON_BONUS,
+  ICON_POKAL,
+  ICON_SCHLIESSEN,
+  ICON_GEMEINDE_GEFUELLT,
+  ICON_GOTTESDIENST_GEFUELLT,
+  ICON_STERN,
+  ICON_TERMIN,
+  ICON_TERMIN_GEFUELLT,
+  ICON_UHRZEIT,
+} from '../../shared/icons';
 import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
@@ -113,20 +114,25 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
   // Farbe basierend auf category (gottesdienst=blau, gemeinde=grün)
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'gottesdienst': return '#3b82f6';
-      case 'gemeinde': return '#059669';
+      case 'gottesdienst': return 'var(--app-color-gottesdienst)';
+      case 'gemeinde': return 'var(--app-color-gemeinde)';
       default: return 'var(--app-color-konfis)';
     }
   };
 
   // Icon basierend auf category und source_type
   const getCategoryIcon = (category: string, sourceType?: string) => {
-    if (sourceType === 'bonus') return giftOutline;
-    if (sourceType === 'event') return calendarOutline;
+    if (sourceType === 'bonus') return ICON_BONUS;
+    if (sourceType === 'event') return ICON_TERMIN;
     switch (category) {
-      case 'gottesdienst': return starOutline;
-      case 'gemeinde': return flashOutline;
-      default: return starOutline;
+      // Haus wie in allen Terminlisten (Simon, 05.09.2026): Die Kategorie
+      // trug drei Zeichen -- Haus in den Listen, Stern hier, Schulhut in
+      // der Admin-Aktivitaetenliste. Das Haus ist die Mehrheit.
+      case 'gottesdienst': return ICON_GOTTESDIENST_GEFUELLT;
+      // Gruppe wie in der Leitungsansicht (05.09.2026): Hier stand als
+      // einziger Stelle der Blitz, direkt neben dem Gottesdienst-Haus.
+      case 'gemeinde': return ICON_GEMEINDE_GEFUELLT;
+      default: return ICON_STERN;
     }
   };
 
@@ -142,8 +148,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
   // Typ-Badge Icon (Event/Bonus zeigen nur Icon, kein Text)
   const getTypeBadgeIcon = (sourceType: string) => {
     switch (sourceType) {
-      case 'bonus': return giftOutline;
-      case 'event': return calendarOutline;
+      case 'bonus': return ICON_BONUS;
+      case 'event': return ICON_TERMIN;
       default: return null;
     }
   };
@@ -161,7 +167,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
           <IonTitle>Punkte-Übersicht</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -169,7 +175,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
 
       <IonContent className="app-gradient-background">
         {loading ? (
-          <div className="app-settings-item" style={{ justifyContent: 'center', padding: '40px' }}>
+          <div className="app-settings-item" style={{ justifyContent: 'center', padding: 'var(--app-abstand-riesig)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
@@ -177,7 +183,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
             <SectionHeader
               title="Deine Punkte"
               subtitle="Übersicht aller gesammelten Punkte"
-              icon={trophyOutline}
+              icon={ICON_POKAL}
               preset="konfis"
               stats={[
                 ...(showBothTypes ? [{ value: filteredTotals.total, label: 'GESAMT' }] : []),
@@ -193,15 +199,15 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--purple">
-                  <IonIcon icon={timeOutline} />
+                  <IonIcon icon={ICON_UHRZEIT} />
                 </div>
                 <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '8px' : '12px' }}>
+                <IonCardContent style={{ padding: filteredHistory.length === 0 ? 'var(--app-abstand-eng)' : 'var(--app-abstand-mittel)' }}>
                   {filteredHistory.length === 0 ? (
                     <EmptyState
-                      icon={timeOutline}
+                      icon={ICON_UHRZEIT}
                       title="Noch keine Einträge"
                       message="Hier erscheinen deine Punkte, sobald du welche erhalten hast."
                       iconColor="var(--app-color-konfis)"
@@ -213,8 +219,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
 
                         // Farbe basiert auf category (blau/gruen)
-                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities';
-                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--activities';
+                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--gottesdienst' : 'app-list-item--activities';
+                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--gottesdienst' : 'app-icon-circle--activities';
 
                         return (
                           <div
@@ -245,10 +251,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <IonIcon icon={getCategoryIcon(entry.category, entry.source_type)} />
                                 </div>
                                 <div className="app-list-item__content">
-                                  <div className="app-list-item__title" style={{ paddingRight: typeBadgeColor ? '120px' : '70px' }}>{entry.title}</div>
+                                  <div className="app-list-item__title" style={{ paddingRight: typeBadgeColor ? 'var(--app-freiraum-aktion-xxxl)' : 'var(--app-freiraum-aktion-l)' }}>{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
                                       {formatDate(entry.date)}
                                     </span>
                                   </div>

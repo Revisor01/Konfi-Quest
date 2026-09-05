@@ -23,7 +23,7 @@ describe('Einladung verlaengern: Rueckmeldung waehrend des Aufrufs', () => {
   });
 
   it('zeigt an ihrer Stelle den Spinner statt des Uhr-Symbols', () => {
-    expect(seite).toContain('extendingInvite === invite.id\n                                  ? <IonSpinner name="crescent" />\n                                  : <IonIcon icon={time} />');
+    expect(seite).toContain('extendingInvite === invite.id\n                                  ? <IonSpinner name="crescent" />\n                                  : <IonIcon icon={ICON_UHRZEIT_GEFUELLT} />');
   });
 
   it('sperrt nur die laufende Einladung, nicht die ganze Liste', () => {

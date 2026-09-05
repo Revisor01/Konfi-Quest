@@ -9,6 +9,7 @@
 //   ICON_CHOICES — mit Name und Kategorie, für die Auswahl-Dialoge
 //   ICON_MAP     — flach (Name -> Icon), zum Rendern
 // ICON_MAP wird aus ICON_CHOICES abgeleitet, damit sie nicht auseinanderlaufen.
+import * as alleIonicons from 'ionicons/icons';
 import {
   airplane,
   alertCircle,
@@ -170,4 +171,22 @@ export const getIconFromString = (iconName?: string | null, fallback: string = t
     if (kurz) return kurz;
   }
   return fallback;
+};
+
+/**
+ * Ionicon-Namen aus der Datenbank gegen den VOLLEN Ionicons-Namensraum
+ * aufloesen ('ribbon-outline' -> ribbonOutline), nicht nur gegen ICON_MAP.
+ *
+ * Hierher gezogen am 05.09.2026 (Icon-Konsolidierung): Der Jahresrueckblick
+ * (SeltenstesAbzeichenSlide) hielt sich dafuer einen eigenen
+ * `import * as icons from 'ionicons/icons'` — der einzige Namespace-Import
+ * im Baum. Seit der Konsolidierung importieren Komponenten Icons nur noch
+ * aus components/shared/icons; die Aufloesung GESPEICHERTER Namen gehoert
+ * aber hierher, zu ICON_MAP und getIconFromString. Verhalten unveraendert:
+ * voller Vorrat, Rueckfall auf die Trophaee.
+ */
+export const getIconFromIoniconsName = (name?: string | null, fallback: string = trophy): string => {
+  const sauber = (name || '').trim();
+  const alsCamel = sauber.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  return (alleIonicons as Record<string, string>)[alsCamel] || fallback;
 };

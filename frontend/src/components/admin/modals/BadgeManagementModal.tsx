@@ -3,16 +3,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonTextarea, IonToggle, IonCard, IonCardContent, IonIcon, IonText, IonSpinner, IonList, IonListHeader, IonAccordion, IonAccordionGroup, IonRange } from '@ionic/react';
 import {
-  checkmarkOutline,
-  closeOutline,
-  ribbon,
-  settings,
-  home,
-  people,
-  pricetag,
-  peopleOutline,
-  chevronDownOutline
-} from 'ionicons/icons';
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_AUFKLAPPEN,
+  ICON_EINSTELLUNGEN_GEFUELLT,
+  ICON_GEMEINDE_GEFUELLT,
+  ICON_GOTTESDIENST_GEFUELLT,
+  ICON_GRUPPE,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN,
+  ICON_KATEGORIE_GEFUELLT,
+  ICON_SCHLIESSEN,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -365,7 +366,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         ? 'var(--app-color-gottesdienst)'
         : 'var(--app-color-gemeinde)';
   const activityIcon = (activity: Activity) =>
-    isTeamerBadge ? people : activity.type === 'gottesdienst' ? home : people;
+    isTeamerBadge ? ICON_GRUPPE_GEFUELLT : activity.type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT : ICON_GEMEINDE_GEFUELLT;
   const activitySubtitle = (activity: Activity): string | null =>
     isTeamerBadge ? null : activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
 
@@ -386,24 +387,24 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'specific_activity': {
         const selectedActivity = activities.find(a => a.id === extraCriteria.activity_id);
         return (
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
             <IonAccordionGroup>
-              <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+              <IonAccordion value="activity-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                    <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                       Aktivität auswählen
                     </h3>
                     {selectedActivity && (
-                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
                         {selectedActivity.name}
                         {activitySubtitle(selectedActivity) && ` (${activitySubtitle(selectedActivity)})`}
                       </p>
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {activities.map(activity => {
                       const isSelected = extraCriteria.activity_id === activity.id;
                       return (
@@ -446,23 +447,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'category_activities': {
         const selectedCategory = categories.find(c => c.name === extraCriteria.required_category);
         return (
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
             <IonAccordionGroup>
-              <IonAccordion value="category-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+              <IonAccordion value="category-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                    <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                       Kategorie auswählen
                     </h3>
                     {selectedCategory && (
-                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
                         {selectedCategory.name}
                       </p>
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {categories.map(category => {
                       const isSelected = extraCriteria.required_category === category.name;
                       return (
@@ -479,7 +480,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               <div className="app-icon-circle app-icon-circle--categories">
-                                <IonIcon icon={pricetag} />
+                                <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
                               </div>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title">{category.name}</div>
@@ -499,10 +500,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'time_based':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
-            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen) <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
+          <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-basis)' }}>
+            <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Zeitraum (Wochen) <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
+              <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
               <IonRange
                 min={1} max={26} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
@@ -511,7 +512,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 disabled={loading}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
+              <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>26</span>
             </div>
           </IonItem>
         );
@@ -519,23 +520,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'activity_combination': {
         const selectedActivities = activities.filter(a => (extraCriteria.activity_ids || []).includes(a.id));
         return (
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
             <IonAccordionGroup>
-              <IonAccordion value="activity-combination-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+              <IonAccordion value="activity-combination-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                    <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                       Aktivitäten kombinieren (mehrere auswählbar)
                     </h3>
                     {selectedActivities.length > 0 && (
-                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
                         {selectedActivities.map(a => a.name).join(', ')}
                       </p>
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {activities.map(activity => {
                       const activityIds = extraCriteria.activity_ids || [];
                       const isSelected = activityIds.includes(activity.id);
@@ -639,7 +640,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 Swipe zu verlassen. Die Rueckfrage bei ungespeicherten
                 Aenderungen laeuft ohnehin ueber canDismiss der Seite. */}
             <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn">
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
@@ -648,7 +649,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               disabled={loading || isSubmitting || !formData.name.trim()}
               className="app-modal-submit-btn app-modal-submit-btn--badges"
             >
-              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -656,11 +657,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {initialDataLoading && !isEditMode ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
@@ -670,13 +671,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--badges">
-              <IonIcon icon={peopleOutline} />
+              <IonIcon icon={ICON_GRUPPE} />
             </div>
             <IonLabel>Zielgruppe</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                 {/* Jede Zielgruppe in IHRER Farbe (Konfi-Lila, Teamer-Pink)
                     statt beide in Orange — wie ueberall sonst in der App. */}
                 <div
@@ -690,7 +691,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--purple">
-                        <IonIcon icon={people} />
+                        <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">Konfis</div>
@@ -709,7 +710,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--teamer">
-                        <IonIcon icon={ribbon} />
+                        <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">Teamer:innen</div>
@@ -727,7 +728,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--badges">
-              <IonIcon icon={ribbon} />
+              <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
             </div>
             <IonLabel>Badge-Informationen</IonLabel>
           </IonListHeader>
@@ -757,22 +758,22 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <div style={{ marginTop: '16px' }}>
+              <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
                 <IonAccordionGroup>
-                  <IonAccordion value="icon-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+                  <IonAccordion value="icon-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                     <IonItem slot="header" lines="none">
                       <IonLabel>
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                        <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                           Icon *
                         </h3>
                         {formData.icon && BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS] && (
-                          <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                          <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
                             {BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS].name} ({BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS].category})
                           </p>
                         )}
                       </IonLabel>
                     </IonItem>
-                    <div slot="content" style={{ padding: '16px' }}>
+                    <div slot="content" style={{ padding: 'var(--app-abstand-basis)' }}>
                       {Object.entries(BADGE_ICONS).reduce<{ category: string; icons: { key: string; data: typeof BADGE_ICONS[keyof typeof BADGE_ICONS] }[] }[]>((acc, [key, data]) => {
                         const categoryIndex = acc.findIndex((group) => group.category === data.category);
                         if (categoryIndex === -1) {
@@ -782,11 +783,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         }
                         return acc;
                       }, []).map((group) => (
-                        <div key={group.category} style={{ marginBottom: '16px' }}>
-                          <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                        <div key={group.category} style={{ marginBottom: 'var(--app-abstand-basis)' }}>
+                          <IonText style={{ fontSize: 'var(--app-text-sekundaer)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
                             {group.category}
                           </IonText>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                             {group.icons.map(({ key, data }) => (
                               <div
                                 key={key}
@@ -794,23 +795,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                                 style={{
                                   width: '100%',
                                   aspectRatio: '1',
-                                  backgroundColor: formData.icon === key ? formData.color : '#f8f9fa',
-                                  borderRadius: '12px',
+                                  backgroundColor: formData.icon === key ? formData.color : 'var(--app-surface-soft)',
+                                  borderRadius: 'var(--app-radius-karte)',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   cursor: 'pointer',
                                   border: '1px solid rgba(0,0,0,0.06)',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  boxShadow: 'var(--app-schatten-flach)',
                                   transition: 'all 0.2s'
                                 }}
                               >
                                 <IonIcon
                                   icon={data.icon}
                                   style={{
-                                    fontSize: '1.5rem',
-                                    color: formData.icon === key ? 'white' : '#666'
+                                    fontSize: 'var(--app-text-ueberschrift)',
+                                    color: formData.icon === key ? 'white' : 'var(--app-text-secondary)'
                                   }}
                                 />
                               </div>
@@ -825,8 +826,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <IonItem lines="none">
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
-                <div style={{ marginTop: '8px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                <div style={{ marginTop: 'var(--app-abstand-eng)', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)', alignItems: 'stretch' }}>
                     <input
                       type="color"
                       value={formData.color}
@@ -836,7 +837,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         flex: 1,
                         height: '60px',
                         border: '2px solid rgba(0,0,0,0.12)',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--app-radius-karte)',
                         cursor: 'pointer'
                       }}
                     />
@@ -845,24 +846,24 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         onClick={() => setFormData({ ...formData, color: getCategoryColor(formData.criteria_type) })}
                         disabled={loading}
                         style={{
-                          padding: '8px 12px',
-                          borderRadius: '12px',
+                          padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
+                          borderRadius: 'var(--app-radius-karte)',
                           border: `2px solid ${getCategoryColor(formData.criteria_type)}`,
                           backgroundColor: 'transparent',
                           color: getCategoryColor(formData.criteria_type),
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
+                          fontSize: 'var(--app-text-klein)',
+                          fontWeight: 'var(--app-schrift-halbfett)',
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px'
+                          gap: 'var(--app-abstand-kompakt)'
                         }}
                       >
                         <div style={{
                           width: '16px',
                           height: '16px',
-                          borderRadius: '50%',
+                          borderRadius: 'var(--app-radius-kreis)',
                           backgroundColor: getCategoryColor(formData.criteria_type),
                           flexShrink: 0
                         }} />
@@ -881,33 +882,33 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--badges">
-              <IonIcon icon={settings} />
+              <IonIcon icon={ICON_EINSTELLUNGEN_GEFUELLT} />
             </div>
             <IonLabel>Badge-Kriterien</IonLabel>
           </IonListHeader>
         <IonCard className="app-card">
           <IonCardContent>
             <IonAccordionGroup>
-              <IonAccordion value="criteria-types" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+              <IonAccordion value="criteria-types" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                    <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                       Kriterium-Typ
                     </h3>
                     {formData.criteria_type && criteriaTypes[formData.criteria_type] && (
                       <>
-                        <p style={{ fontSize: '0.85rem', color: '#333', margin: '0 0 2px 0', fontWeight: '500' }}>
+                        <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0', fontWeight: 'var(--app-schrift-mittel)' }}>
                           {criteriaTypes[formData.criteria_type].label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()}
                         </p>
-                        <p style={{ fontSize: '0.75rem', color: '#999', margin: '0', whiteSpace: 'normal' }}>
+                        <p style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-muted)', margin: '0', whiteSpace: 'normal' }}>
                           {criteriaTypes[formData.criteria_type].description}
                         </p>
                       </>
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {Object.entries(criteriaTypes)
                       .filter(([value]) => {
                         // Bei Teamer: Punkte-basierte Kriterien ausblenden
@@ -979,12 +980,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>
-                  {getValueLabel()} <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.criteria_value}</span>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-basis)' }}>
+                <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>
+                  {getValueLabel()} <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.criteria_value}</span>
                 </IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
+                  <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                   <IonRange
                     min={1} max={reglerMax} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}
@@ -993,7 +994,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     disabled={loading}
                     style={{ flex: 1 }}
                   />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>{reglerMax}</span>
+                  <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>{reglerMax}</span>
                 </div>
               </IonItem>
 
@@ -1007,7 +1008,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--badges">
-              <IonIcon icon={ribbon} />
+              <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
             </div>
             <IonLabel>Badge-Status</IonLabel>
           </IonListHeader>
@@ -1016,8 +1017,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonList>
               <IonItem lines="inset">
                 <IonLabel>
-                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
-                  <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
+                  <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Aktiv</h3>
+                  <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge kann verliehen werden</p>
                 </IonLabel>
                 <IonToggle
                   slot="end"
@@ -1029,8 +1030,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <IonItem lines="none">
                 <IonLabel>
-                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Geheim</h3>
-                  <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
+                  <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>Geheim</h3>
+                  <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
                 </IonLabel>
                 <IonToggle
                   slot="end"

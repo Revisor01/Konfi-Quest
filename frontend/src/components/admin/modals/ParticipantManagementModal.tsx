@@ -18,7 +18,15 @@ import {
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
-import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, cloudOfflineOutline } from 'ionicons/icons';
+import {
+  ICON_FILTER,
+  ICON_HAKEN,
+  ICON_OFFLINE,
+  ICON_PERSON_GEFUELLT,
+  ICON_PERSON_HINZUFUEGEN_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_SUCHE_GEFUELLT,
+} from '../../shared/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -272,13 +280,13 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                 Die Rueckfrage bei ungespeicherten Aenderungen laeuft
                 ueber canDismiss der Seite. */}
             <IonButton onClick={handleClose} className="app-modal-close-btn" aria-label="Schließen">
-              <IonIcon icon={closeOutline} slot="icon-only" />
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
               <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--events" aria-label="Teilnehmer:innen hinzufügen">
-                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}
               </IonButton>
             )}
           </IonButtons>
@@ -291,7 +299,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={filterOutline} />
+                <IonIcon icon={ICON_FILTER} />
               </div>
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
@@ -374,7 +382,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={personAdd} />
+                <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} />
               </div>
               <IonLabel>Personen ({filteredKonfis.length})</IonLabel>
               {filteredKonfis.length > 0 && (
@@ -396,15 +404,15 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               <IonCardContent>
                 {filteredKonfis.length === 0 ? (
                   <div style={{
-                    padding: '40px 20px',
+                    padding: 'var(--app-abstand-riesig) var(--app-abstand-gross)',
                     textAlign: 'center',
-                    color: '#666'
+                    color: 'var(--app-text-secondary)'
                   }}>
-                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
+                    <IonIcon icon={ICON_SUCHE_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-riesig)', opacity: 0.3, marginBottom: 'var(--app-abstand-basis)' }} />
+                    <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>Keine Personen gefunden</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {filteredKonfis.map((konfi) => {
                       const isSelected = selectedKonfis.includes(konfi.id);
 
@@ -419,12 +427,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
+                            background: isSelected ? 'rgba(var(--app-color-events-rgb), 0.08)' : undefined
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)', flex: 1, minWidth: 0 }}>
                             <div className="app-icon-circle app-icon-circle--events">
-                              <IonIcon icon={person} />
+                              <IonIcon icon={ICON_PERSON_GEFUELLT} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{konfi.name}</div>

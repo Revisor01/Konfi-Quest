@@ -25,18 +25,18 @@ import {
   IonPopover
 } from '@ionic/react';
 import {
-  closeOutline,
-  checkmarkCircle,
-  closeCircle,
-  ellipseOutline,
-  removeCircle,
-  peopleOutline,
-  calendarOutline,
-  filterOutline,
-  search,
-  mailOutline,
-  bookOutline
-} from 'ionicons/icons';
+  ICON_ABSAGE,
+  ICON_BUCH,
+  ICON_ENTFERNEN_GEFUELLT,
+  ICON_FILTER,
+  ICON_GRUPPE,
+  ICON_KREIS_LEER,
+  ICON_MAIL,
+  ICON_SCHLIESSEN,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import EmptyState from '../../shared/EmptyState';
@@ -231,7 +231,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
-              <IonIcon icon={closeOutline} slot="icon-only" />
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{viewMode === 'sprueche' ? 'Konfisprüche' : 'Anwesenheit'}</IonTitle>
@@ -244,7 +244,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             >
               {sending
                 ? <IonSpinner name="crescent" />
-                : <IonIcon icon={mailOutline} slot="icon-only" />}
+                : <IonIcon icon={ICON_MAIL} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -255,14 +255,14 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={filterOutline} />
+              <IonIcon icon={ICON_FILTER} />
             </div>
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
           <IonItemGroup>
             {/* Suchfeld */}
             <IonItem>
-              <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
               <IonInput
                 value={searchTerm}
                 onIonInput={(e) => setSearchTerm(e.detail.value!)}
@@ -271,7 +271,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             </IonItem>
             {/* Jahrgang Filter */}
             <IonItem>
-              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
               <IonSelect
                 value={jahrgangId}
                 onIonChange={(e) => setJahrgangId(e.detail.value)}
@@ -305,12 +305,12 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         {/* Konfispruch-Ansicht: Liste Konfi -> gewaehlter Spruch */}
         {viewMode === 'sprueche' ? (
           spruecheLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-extraweit)' }}>
               <IonSpinner name="crescent" />
             </div>
           ) : !sprueche || filteredSprueche.length === 0 ? (
             <EmptyState
-              icon={bookOutline}
+              icon={ICON_BUCH}
               title="Keine Konfisprüche"
               message="Für diesen Jahrgang gibt es noch keine Konfis oder keine Treffer."
             />
@@ -318,7 +318,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--events">
-                  <IonIcon icon={bookOutline} />
+                  <IonIcon icon={ICON_BUCH} />
                 </div>
                 <IonLabel>
                   {filteredSprueche.length} Konfi{filteredSprueche.length === 1 ? '' : 's'}
@@ -342,15 +342,15 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                           <td className="attendance-matrix__td-cell">
                             {s.konfirmation_date
                               ? `${new Date(s.konfirmation_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${new Date(s.konfirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
-                              : <span style={{ color: '#999', fontStyle: 'italic' }}>nicht gebucht</span>}
+                              : <span style={{ color: 'var(--app-text-muted)', fontStyle: 'italic' }}>nicht gebucht</span>}
                           </td>
                           <td className="attendance-matrix__td-cell">
-                            {s.konfspruch?.reference || <span style={{ color: '#999' }}>—</span>}
+                            {s.konfspruch?.reference || <span style={{ color: 'var(--app-text-muted)' }}>—</span>}
                           </td>
                           <td className="attendance-matrix__td-cell">
                             {s.konfspruch?.text
                               ? s.konfspruch.text
-                              : <span style={{ color: '#999', fontStyle: 'italic' }}>{s.konfspruch ? '(Übersetzung fehlt)' : 'noch keiner'}</span>}
+                              : <span style={{ color: 'var(--app-text-muted)', fontStyle: 'italic' }}>{s.konfspruch ? '(Übersetzung fehlt)' : 'noch keiner'}</span>}
                           </td>
                         </tr>
                       ))}
@@ -361,24 +361,24 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             </IonList>
           )
         ) : loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-extraweit)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : !data ? (
           <EmptyState
-            icon={calendarOutline}
+            icon={ICON_TERMIN}
             title="Keine Daten"
             message="Wähle einen Jahrgang."
           />
         ) : data.events.length === 0 ? (
           <EmptyState
-            icon={calendarOutline}
+            icon={ICON_TERMIN}
             title="Keine Pflichtevents"
             message="Für diesen Jahrgang gibt es keine Pflichtevents."
           />
         ) : data.konfis.length === 0 ? (
           <EmptyState
-            icon={peopleOutline}
+            icon={ICON_GRUPPE}
             title="Keine Konfis"
             message="Dieser Jahrgang hat noch keine Konfis."
           />
@@ -386,7 +386,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={calendarOutline} />
+                <IonIcon icon={ICON_TERMIN} />
               </div>
               <IonLabel>
                 {data.events.length} Pflichtevent{data.events.length === 1 ? '' : 's'} · {filteredKonfis.length} Konfi{filteredKonfis.length === 1 ? '' : 's'}
@@ -425,10 +425,10 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                                 <span className={`attendance-matrix__dot attendance-matrix__dot--${s}`}>
                                   <IonIcon
                                     icon={
-                                      s === 'present' ? checkmarkCircle
-                                      : s === 'absent' ? closeCircle
-                                      : s === 'opted_out' ? removeCircle
-                                      : ellipseOutline
+                                      s === 'present' ? ICON_ZUSAGE_GEFUELLT
+                                      : s === 'absent' ? ICON_ABSAGE
+                                      : s === 'opted_out' ? ICON_ENTFERNEN_GEFUELLT
+                                      : ICON_KREIS_LEER
                                     }
                                   />
                                 </span>
@@ -459,25 +459,25 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                 <div className="attendance-matrix__legend">
                   <div className="attendance-matrix__legend-item">
                     <span className="attendance-matrix__dot attendance-matrix__dot--present">
-                      <IonIcon icon={checkmarkCircle} />
+                      <IonIcon icon={ICON_ZUSAGE_GEFUELLT} />
                     </span>
                     <span>Anwesend</span>
                   </div>
                   <div className="attendance-matrix__legend-item">
                     <span className="attendance-matrix__dot attendance-matrix__dot--absent">
-                      <IonIcon icon={closeCircle} />
+                      <IonIcon icon={ICON_ABSAGE} />
                     </span>
                     <span>Fehlt</span>
                   </div>
                   <div className="attendance-matrix__legend-item">
                     <span className="attendance-matrix__dot attendance-matrix__dot--opted_out">
-                      <IonIcon icon={removeCircle} />
+                      <IonIcon icon={ICON_ENTFERNEN_GEFUELLT} />
                     </span>
                     <span>Abgemeldet</span>
                   </div>
                   <div className="attendance-matrix__legend-item">
                     <span className="attendance-matrix__dot attendance-matrix__dot--open">
-                      <IonIcon icon={ellipseOutline} />
+                      <IonIcon icon={ICON_KREIS_LEER} />
                     </span>
                     <span>Offen</span>
                   </div>
@@ -492,9 +492,9 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
           event={eventPopover?.anchor}
           onDidDismiss={() => setEventPopover(null)}
         >
-          <div style={{ padding: '10px 14px' }}>
-            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{eventPopover?.event.name}</div>
-            <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+          <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittelweit)' }}>
+            <div style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-basis)' }}>{eventPopover?.event.name}</div>
+            <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
               {eventPopover
                 ? new Date(eventPopover.event.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
                 : ''}

@@ -27,19 +27,19 @@ import {
   useIonModal
 } from '@ionic/react';
 import {
-  checkmarkOutline,
-  closeOutline,
-  trash,
-  attachOutline,
-  cloudUploadOutline,
-  document as documentIcon,
-  imageOutline,
-  videocamOutline,
-  musicalNotesOutline,
-  linkOutline,
-  addOutline,
-  chevronDownOutline
-} from 'ionicons/icons';
+  ICON_ANHANG,
+  ICON_AUFKLAPPEN,
+  ICON_BILD,
+  ICON_DATEI_GEFUELLT,
+  ICON_HAKEN,
+  ICON_HINZUFUEGEN,
+  ICON_HOCHLADEN,
+  ICON_LINK,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_MUSIK,
+  ICON_SCHLIESSEN,
+  ICON_VIDEO,
+} from '../../shared/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
@@ -181,10 +181,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
   };
 
   const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return imageOutline;
-    if (mimeType.startsWith('video/')) return videocamOutline;
-    if (mimeType.startsWith('audio/')) return musicalNotesOutline;
-    return documentIcon;
+    if (mimeType.startsWith('image/')) return ICON_BILD;
+    if (mimeType.startsWith('video/')) return ICON_VIDEO;
+    if (mimeType.startsWith('audio/')) return ICON_MUSIK;
+    return ICON_DATEI_GEFUELLT;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -377,7 +377,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={onClose} aria-label="Schließen">
-              <IonIcon icon={closeOutline} slot="icon-only" />
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{nurLesen ? 'Material ansehen' : material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
@@ -386,7 +386,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           {!nurLesen && (
             <IonButtons slot="end">
               <IonButton onClick={handleSave} disabled={isSubmitting} aria-label="Material speichern">
-                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}
               </IonButton>
             </IonButtons>
           )}
@@ -400,7 +400,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           <IonList inset={true} className="app-segment-wrapper">
             <IonCard className="app-card">
               <IonCardContent>
-                <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>
+                <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-neutral)', margin: 0 }}>
                   {material?.created_by_name
                     ? `Angelegt von ${material.created_by_name}. Bearbeiten und löschen kann nur diese Person oder die Gemeindeleitung.`
                     : 'Das Konto der erstellenden Person wurde gelöscht. Bearbeiten und löschen kann nur noch die Gemeindeleitung.'}
@@ -414,7 +414,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">
-              <IonIcon icon={documentIcon} />
+              <IonIcon icon={ICON_DATEI_GEFUELLT} />
             </div>
             <IonLabel>Grunddaten</IonLabel>
           </IonListHeader>
@@ -458,28 +458,28 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">
-              <IonIcon icon={documentIcon} />
+              <IonIcon icon={ICON_DATEI_GEFUELLT} />
             </div>
             <IonLabel>Zuordnung</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup>
-                <IonAccordion value="events" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+                <IonAccordion value="events" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
-                      <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>
+                      <h3 style={{ fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0' }}>
                         Events
                       </h3>
-                      <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-neutral)', margin: '0', fontWeight: 'var(--app-schrift-normal)' }}>
                         {eventIds.length > 0
                           ? `${eventIds.length} ${eventIds.length === 1 ? 'Event' : 'Events'} ausgewählt`
                           : 'Keine Events zugeordnet'}
                       </p>
                     </IonLabel>
                   </IonItem>
-                  <div slot="content" style={{ padding: '4px 16px 12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div slot="content" style={{ padding: 'var(--app-abstand-mini) var(--app-abstand-basis) var(--app-abstand-mittel)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-kompakt)' }}>
                       {events
                         .filter(ev => new Date(ev.event_date || '') >= new Date(new Date().toDateString()) || eventIds.includes(ev.id))
                         .map(ev => {
@@ -499,8 +499,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                               style={{
                                 cursor: 'pointer',
                                 marginBottom: '0',
-                                borderLeftColor: isSelected ? '#d97706' : '#e5e7eb',
-                                backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                                borderLeftColor: isSelected ? 'var(--app-color-material)' : 'var(--app-border-soft)',
+                                backgroundColor: isSelected ? 'rgba(var(--app-color-material-rgb), 0.08)' : undefined
                               }}
                             >
                               <div className="app-list-item__row">
@@ -522,21 +522,21 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                   </div>
                 </IonAccordion>
 
-                <IonAccordion value="jahrgaenge" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+                <IonAccordion value="jahrgaenge" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
-                      <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>
+                      <h3 style={{ fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0' }}>
                         Jahrgänge
                       </h3>
-                      <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-neutral)', margin: '0', fontWeight: 'var(--app-schrift-normal)' }}>
                         {jahrgangIds.length > 0
                           ? `Nur Teamer:innen ${jahrgangIds.length === 1 ? 'dieses Jahrgangs' : 'dieser Jahrgänge'} sehen das Material`
                           : 'Ohne Zuordnung sehen alle Teamer:innen das Material'}
                       </p>
                     </IonLabel>
                   </IonItem>
-                  <div slot="content" style={{ padding: '4px 16px 12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div slot="content" style={{ padding: 'var(--app-abstand-mini) var(--app-abstand-basis) var(--app-abstand-mittel)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-kompakt)' }}>
                       {jahrgaenge.map(jg => {
                         const isSelected = jahrgangIds.includes(jg.id);
                         return (
@@ -554,8 +554,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                             style={{
                               cursor: 'pointer',
                               marginBottom: '0',
-                              borderLeftColor: isSelected ? '#d97706' : '#e5e7eb',
-                              backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                              borderLeftColor: isSelected ? 'var(--app-color-material)' : 'var(--app-border-soft)',
+                              backgroundColor: isSelected ? 'rgba(var(--app-color-material-rgb), 0.08)' : undefined
                             }}
                           >
                             <div className="app-list-item__row">
@@ -584,7 +584,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--material">
-                <IonIcon icon={linkOutline} />
+                <IonIcon icon={ICON_LINK} />
               </div>
               <IonLabel>Links</IonLabel>
             </IonListHeader>
@@ -630,7 +630,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                           aria-label="Link entfernen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
+                            <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                           </div>
                         </IonItemOption>
                       </IonItemOptions>
@@ -638,7 +638,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                   </IonItemSliding>
                 ))}
                 {linkUrls.length === 0 && (
-                  <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 4px 0' }}>
+                  <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-neutral)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                     Verknüpfte Internetseiten öffnen sich im Browser — zum Beispiel eine eigene Seite oder ein YouTube-Video.
                   </p>
                 )}
@@ -647,9 +647,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                     expand="block"
                     fill="outline"
                     onClick={() => setLinkUrls(prev => [...prev, ''])}
-                    style={{ marginTop: '8px' }}
+                    style={{ marginTop: 'var(--app-abstand-eng)' }}
                   >
-                    <IonIcon icon={addOutline} slot="start" />
+                    <IonIcon icon={ICON_HINZUFUEGEN} slot="start" />
                     Link hinzufügen
                   </IonButton>
                 )}
@@ -663,7 +663,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--material">
-                <IonIcon icon={attachOutline} />
+                <IonIcon icon={ICON_ANHANG} />
               </div>
               <IonLabel>Vorhandene Dateien</IonLabel>
             </IonListHeader>
@@ -671,7 +671,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
               <IonCardContent>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {existingFiles.map((file, index) => (
-                    <IonItemSliding key={file.id} style={{ marginBottom: index < existingFiles.length - 1 ? '8px' : '0' }}>
+                    <IonItemSliding key={file.id} style={{ marginBottom: index < existingFiles.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                       <IonItem
                         button
                         detail={false}
@@ -679,10 +679,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                         className="app-item-transparent"
                         onClick={() => openFile(file)}
                       >
-                        <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>
+                        <div className="app-list-item" style={{ borderLeftColor: 'var(--app-color-material)' }}>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
-                              <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                              <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
                                 <IonIcon icon={getFileIcon(file.mime_type)} />
                               </div>
                               <div className="app-list-item__content">
@@ -708,7 +708,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                             aria-label="Datei löschen"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                              <IonIcon icon={trash} />
+                              <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                             </div>
                           </IonItemOption>
                         </IonItemOptions>
@@ -728,16 +728,16 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--material">
-              <IonIcon icon={cloudUploadOutline} />
+              <IonIcon icon={ICON_HOCHLADEN} />
             </div>
             <IonLabel>Dateien hinzufügen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
               {newFiles.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 'var(--app-abstand-mittel)' }}>
                   {newFiles.map((file, index) => (
-                    <IonItemSliding key={index} style={{ marginBottom: index < newFiles.length - 1 ? '8px' : '0' }}>
+                    <IonItemSliding key={index} style={{ marginBottom: index < newFiles.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                       <IonItem
                         button
                         detail={false}
@@ -747,11 +747,11 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                           openInAppViewer(file, file.name, file.type);
                         }}
                       >
-                        <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>
+                        <div className="app-list-item" style={{ borderLeftColor: 'var(--app-color-material)' }}>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
-                              <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
-                                <IonIcon icon={attachOutline} />
+                              <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
+                                <IonIcon icon={ICON_ANHANG} />
                               </div>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title">{file.name}</div>
@@ -772,7 +772,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                           aria-label="Datei entfernen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
+                            <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                           </div>
                         </IonItemOption>
                       </IonItemOptions>
@@ -794,11 +794,11 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   '--background': 'var(--ion-color-primary)',
-                  marginTop: '16px',
-                  padding: '0 16px'
+                  marginTop: 'var(--app-abstand-basis)',
+                  padding: '0 var(--app-abstand-basis)'
                 }}
               >
-                <IonIcon icon={cloudUploadOutline} slot="start" />
+                <IonIcon icon={ICON_HOCHLADEN} slot="start" />
                 Datei auswählen
               </IonButton>
             </IonCardContent>

@@ -1,4 +1,11 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_ABZEICHEN,
+  ICON_BEARBEITEN,
+  ICON_SCHLIESSEN_GEFUELLT,
+  ICON_SCHLUESSEL_GEFUELLT,
+  ICON_UHRZEIT,
+  ICON_ZURUECK,
+} from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -18,14 +25,6 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import {
-  arrowBack,
-  key,
-  close,
-  timeOutline,
-  createOutline,
-  ribbonOutline
-} from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
@@ -183,13 +182,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           <IonTitle>Foto</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={onClose}>
-              <IonIcon icon={close} />
+              <IonIcon icon={ICON_SCHLIESSEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <div style={{ padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div style={{ padding: 'var(--app-abstand-basis)', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <img
             src={photoUrl}
             alt="Aktivitätsfoto"
@@ -197,7 +196,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               maxWidth: '100%',
               maxHeight: '100%',
               objectFit: 'contain',
-              borderRadius: '8px'
+              borderRadius: 'var(--app-radius-klein)'
             }}
           />
         </div>
@@ -763,7 +762,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
                 disabled={!isOnline || !currentKonfi}
                 onClick={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
               >
-                <IonIcon icon={createOutline} />
+                <IonIcon icon={ICON_BEARBEITEN} />
               </IonButton>
             )}
             {/* Zertifikat zuweisen (Simon, 04.09.2026): Der Zertifikats-Block
@@ -772,11 +771,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
                 erste Zertifikat zuzuweisen. */}
             {isTeamer && (
               <IonButton aria-label="Zertifikat zuweisen" disabled={!isOnline} onClick={handleAssignCertificate}>
-                <IonIcon icon={ribbonOutline} />
+                <IonIcon icon={ICON_ABZEICHEN} />
               </IonButton>
             )}
             <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
-              <IonIcon icon={key} />
+              <IonIcon icon={ICON_SCHLUESSEL_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -852,9 +851,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         {/* Jahresrueckblick der Konfi (Befund N5). Erscheint nur, wenn ein
             freigegebener Snapshot existiert — sonst bleibt die Karte weg. */}
         {wrappedListe.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {wrappedListe.map((eintrag, i) => (
                 <div
                   key={eintrag.id}
@@ -863,14 +862,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
                     width: '100%',
                     cursor: 'pointer',
                     borderLeftColor: isTeamer ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
-                    marginBottom: i < wrappedListe.length - 1 ? '8px' : '0'
+                    marginBottom: i < wrappedListe.length - 1 ? 'var(--app-abstand-eng)' : '0'
                   }}
                   onClick={() => setWrappedModalData(eintrag)}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle" style={{ backgroundColor: isTeamer ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)' }}>
-                        <IonIcon icon={timeOutline} />
+                        <IonIcon icon={ICON_UHRZEIT} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">

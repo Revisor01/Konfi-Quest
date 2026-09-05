@@ -1,6 +1,7 @@
 import { fehlerText } from '../../utils/fehler';
 import React, { useState, useEffect } from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
+import { FARBEN } from '../../theme/colors';
 import {
   IonPage,
   IonHeader,
@@ -30,18 +31,18 @@ import {
   useIonViewWillEnter
 } from '@ionic/react';
 import {
-  chatbubbles,
-  chatbubblesOutline,
-  people,
-  person,
-  settings,
-  add,
-  time,
-  trash,
-  search,
-  filterOutline,
-  calendar
-} from 'ionicons/icons';
+  ICON_CHATS,
+  ICON_CHATS_GEFUELLT,
+  ICON_EINSTELLUNGEN_GEFUELLT,
+  ICON_FILTER,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HINZUFUEGEN_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_PERSON_GEFUELLT,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+  ICON_UHRZEIT_GEFUELLT,
+} from '../shared/icons';
 
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
@@ -372,18 +373,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   const getRoomIcon = (room: ChatRoomOverview) => {
-    if (room.event_id) return calendar;
+    if (room.event_id) return ICON_TERMIN_GEFUELLT;
     switch (room.type) {
       case 'admin':
-        return settings;
+        return ICON_EINSTELLUNGEN_GEFUELLT;
       case 'jahrgang':
-        return people;
+        return ICON_GRUPPE_GEFUELLT;
       case 'group':
-        return chatbubbles;
+        return ICON_CHATS_GEFUELLT;
       case 'direct':
-        return person;
+        return ICON_PERSON_GEFUELLT;
       default:
-        return chatbubbles;
+        return ICON_CHATS_GEFUELLT;
     }
   };
 
@@ -396,11 +397,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   const getRoomTypeIcon = (room: ChatRoomOverview) => {
-    if (room.event_id) return calendar;
-    if (room.type === 'jahrgang') return people;
-    if (room.type === 'admin' || room.type === 'group') return chatbubbles;
-    if (room.type === 'direct') return person;
-    return chatbubbles;
+    if (room.event_id) return ICON_TERMIN_GEFUELLT;
+    if (room.type === 'jahrgang') return ICON_GRUPPE_GEFUELLT;
+    if (room.type === 'admin' || room.type === 'group') return ICON_CHATS_GEFUELLT;
+    if (room.type === 'direct') return ICON_PERSON_GEFUELLT;
+    return ICON_CHATS_GEFUELLT;
   };
 
   if (loading) {
@@ -414,7 +415,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neuen Chat starten" onClick={handleCreateNewChat}>
-              <IonIcon icon={add} />
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -437,8 +438,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <SectionHeader
           title="Deine Chats"
           subtitle="Nachrichten und Gruppen"
-          icon={chatbubbles}
-          colors={{ primary: '#06b6d4', secondary: '#0891b2' }}
+          icon={ICON_CHATS_GEFUELLT}
+          colors={{ primary: FARBEN.chat, secondary: FARBEN.chatDunkel }}
           stats={[
             // CHATS und UNGELESEN entsprechen je einem Reiter und schalten
             // dorthin (gleiches Muster wie Challenges/Anfragen/Nutzende).
@@ -460,21 +461,21 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         />
 
         {/* Suche & Filter */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--chat">
-              <IonIcon icon={filterOutline} />
+              <IonIcon icon={ICON_FILTER} />
             </div>
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
           <IonItemGroup>
             <IonItem>
               <IonIcon
-                icon={search}
+                icon={ICON_SUCHE_GEFUELLT}
                 slot="start"
                 style={{
-                  color: '#8e8e93',
-                  fontSize: '1rem'
+                  color: 'var(--app-text-system)',
+                  fontSize: 'var(--app-text-standard)'
                 }}
               />
               <IonInput
@@ -499,21 +500,21 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         </div>
 
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--chat">
-              <IonIcon icon={chatbubblesOutline} />
+              <IonIcon icon={ICON_CHATS} />
             </div>
             <IonLabel>Chats ({filteredRooms.length})</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: filteredRooms.length === 0 ? '16px' : '12px' }}>
+            <IonCardContent style={{ padding: filteredRooms.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
               {filteredRooms.length === 0 ? (
                 <EmptyState
-                  icon={chatbubbles}
+                  icon={ICON_CHATS_GEFUELLT}
                   title="Keine Chaträume gefunden"
                   message="Erstelle deinen ersten Chat!"
-                  iconColor="#06b6d4"
+                  iconColor="var(--app-color-chat)"
                 />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -550,10 +551,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             <div className="app-corner-badges">
                               <div
                                 className={`app-corner-badge app-corner-badge--${colorClass}`}
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                 title={getRoomSubtitle(room)}
                               >
-                                <IonIcon icon={getRoomTypeIcon(room)} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                                <IonIcon icon={getRoomTypeIcon(room)} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                               </div>
                             </div>
 
@@ -573,17 +574,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                         position: 'absolute',
                                         top: '0px',
                                         right: '0px',
-                                        fontSize: '0.55rem',
+                                        fontSize: 'var(--app-text-winzig)',
                                         color: 'white',
-                                        fontWeight: '700',
-                                        backgroundColor: '#dc3545',
+                                        fontWeight: 'var(--app-schrift-fett)',
+                                        backgroundColor: 'var(--app-color-danger)',
                                         width: unread > 9 ? '18px' : '16px',
                                         height: '16px',
-                                        borderRadius: '50%',
+                                        borderRadius: 'var(--app-radius-kreis)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                        boxShadow: 'var(--app-schatten-flach-stark)',
                                         border: '2px solid white',
                                         zIndex: 2
                                       }}>
@@ -598,7 +599,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   <div
                                     className="app-list-item__title"
                                     style={{
-                                      paddingRight: '40px',
+                                      paddingRight: 'var(--app-abstand-riesig)',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
                                       whiteSpace: 'nowrap'
@@ -609,13 +610,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   <div className="app-list-item__meta">
                                     {room.last_message?.created_at && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={time} style={{ color: 'var(--app-color-events)' }} />
+                                        <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
                                         {formatLastMessageTime(room.last_message.created_at)}
                                       </span>
                                     )}
                                     {room.type !== 'direct' && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={people} style={{ color: 'var(--app-color-success)' }} />
+                                        <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-color-success)' }} />
                                         {room.participant_count || 0}
                                       </span>
                                     )}
@@ -628,10 +629,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                       whiteSpace: 'nowrap',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      gap: '4px'
+                                      gap: 'var(--app-abstand-mini)'
                                     }}>
-                                      <IonIcon icon={chatbubbles} style={{ fontSize: '0.75rem', color: '#8e8e93', flexShrink: 0 }} />
-                                      <span style={{ fontWeight: '600', color: '#333' }}>
+                                      <IonIcon icon={ICON_CHATS_GEFUELLT} style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', flexShrink: 0 }} />
+                                      <span style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>
                                         {room.last_message.sender_name}:
                                       </span>{' '}
                                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -654,7 +655,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                <IonIcon icon={trash} />
+                                <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                               </div>
                             </IonItemOption>
                           </IonItemOptions>

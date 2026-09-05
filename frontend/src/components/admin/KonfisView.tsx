@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
   IonSpinner} from '@ionic/react';
-import { trash, swapVertical, calendar, people, peopleOutline, ribbonOutline, filterOutline, search, calendarOutline, ribbon, documentOutline } from 'ionicons/icons';
+import {
+  ICON_ABZEICHEN,
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_DATEI,
+  ICON_FILTER,
+  ICON_GRUPPE,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_SORTIEREN,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN,
+  ICON_TERMIN_GEFUELLT,
+} from '../shared/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../shared';
 import api from '../../services/api';
@@ -182,7 +194,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     const { targetTotal } = getKonfiTargets(konfi);
     const total = getTotalPoints(konfi);
     const percent = targetTotal > 0 ? (total / targetTotal) * 100 : 0;
-    if (percent >= 100) return '#059669'; // Dunkelgruen - Ziel erreicht
+    if (percent >= 100) return 'var(--app-color-success-strong)'; // Dunkelgruen - Ziel erreicht
     return 'var(--app-color-konfis)'; // Lila - Auf dem Weg (Sektionsfarbe)
   };
 
@@ -197,7 +209,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       <SectionHeader
         title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
         subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfis verwalten'}
-        icon={viewMode === 'teamer' ? ribbon : people}
+        icon={viewMode === 'teamer' ? ICON_ABZEICHEN_GEFUELLT : ICON_GRUPPE_GEFUELLT}
         preset={viewMode === 'teamer' ? 'teamer' : 'konfis'}
         stats={viewMode === 'teamer' ? [
           { value: teamers.length, label: 'Team' },
@@ -222,7 +234,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           setViewMode(mode);
           onViewModeChange?.(mode);
         }}
-        style={{ margin: '0 16px 8px', maxWidth: 'calc(100% - 32px)' }}
+        style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
       >
         <IonSegmentButton value="konfis">
           <IonLabel>Konfis</IonLabel>
@@ -233,17 +245,17 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       </IonSegment>
 
       {/* Suche & Filter */}
-      <IonList inset={true} style={{ margin: '16px' }}>
+      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
         <IonListHeader>
           <div className={`app-section-icon app-section-icon--${viewMode === 'teamer' ? 'teamer' : 'primary'}`}>
-            <IonIcon icon={filterOutline} />
+            <IonIcon icon={ICON_FILTER} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonItemGroup>
           {/* Suchfeld */}
           <IonItem>
-            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
             <IonInput
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
@@ -253,7 +265,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {/* Jahrgang Filter - nur für Konfis */}
           {viewMode === 'konfis' && (
             <IonItem>
-              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
               <IonSelect
                 value={selectedJahrgang}
                 onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
@@ -271,7 +283,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           {/* Sortierung - nur für Konfis */}
           {viewMode === 'konfis' && (
             <IonItem>
-              <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={ICON_SORTIEREN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
               <IonSelect
                 value={sortBy}
                 onIonChange={(e) => setSortBy(e.detail.value)}
@@ -293,23 +305,23 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           Leerzustand ausgeben). teamerLoading wurde gepflegt, aber nie
           gerendert (Befund 30.08.2026). */}
       {viewMode === 'teamer' && teamerLoading && teamers.length === 0 ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-extraweit)' }}>
           <IonSpinner name="crescent" />
         </div>
       ) : viewMode === 'teamer' ? (
         <ListSection
-          icon={ribbon}
+          icon={ICON_ABZEICHEN_GEFUELLT}
           title="Teamer:innen"
           count={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length}
           iconColorClass="teamer"
           isEmpty={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length === 0}
-          emptyIcon={ribbon}
+          emptyIcon={ICON_ABZEICHEN_GEFUELLT}
           emptyTitle="Keine Teamer:innen gefunden"
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
           emptyIconColor="var(--app-color-teamer)"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer, index, arr) => (
-            <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
+            <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
               <IonItem
                 button
                 onClick={() => onSelectKonfi(teamer)}
@@ -337,7 +349,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     <div className="app-list-item__main">
                       <div
                         className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer"
-                        style={{ color: 'white', fontWeight: '600' }}
+                        style={{ color: 'white', fontWeight: 'var(--app-schrift-halbfett)' }}
                       >
                         {(teamer.display_name || teamer.name || '??').trim().split(/\s+/).length === 1
                           ? (teamer.display_name || teamer.name || '??').substring(0, 2).toUpperCase()
@@ -351,16 +363,16 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={ribbonOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                            <IonIcon icon={ICON_ABZEICHEN} style={{ color: 'var(--app-color-teamer)' }} />
                             {teamer.badge_count || 0} Badges
                           </span>
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={documentOutline} style={{ color: '#059669' }} />
+                            <IonIcon icon={ICON_DATEI} style={{ color: 'var(--app-color-success-strong)' }} />
                             {teamer.cert_count || 0} Zertifikate
                           </span>
                           {teamer.teamer_since && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={calendarOutline} style={{ color: '#6b7280' }} />
+                              <IonIcon icon={ICON_TERMIN} style={{ color: 'var(--app-color-neutral)' }} />
                               seit {new Date(teamer.teamer_since).getFullYear()}
                             </span>
                           )}
@@ -382,7 +394,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                      <IonIcon icon={trash} />
+                      <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                     </div>
                   </IonItemOption>
                 </IonItemOptions>
@@ -393,12 +405,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       ) : (
       /* Konfis Liste */
       <ListSection
-        icon={peopleOutline}
+        icon={ICON_GRUPPE}
         title="Konfis"
         count={filteredAndSortedKonfis.length}
         iconColorClass="primary"
         isEmpty={filteredAndSortedKonfis.length === 0}
-        emptyIcon={peopleOutline}
+        emptyIcon={ICON_GRUPPE}
         emptyTitle={ohneJahrgang && !searchTerm ? 'Kein Jahrgang zugewiesen' : 'Keine Konfis gefunden'}
         emptyMessage={
           searchTerm
@@ -410,7 +422,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               ? 'Dir ist noch kein Jahrgang zugewiesen. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
               : 'Noch keine Konfis angelegt'
         }
-        emptyIconColor="#5b21b6"
+        emptyIconColor="var(--app-color-konfis)"
       >
         {filteredAndSortedKonfis.map((konfi, index) => {
                   const statusColor = getStatusColor(konfi);
@@ -423,7 +435,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
 
                   return (
-                    <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? '8px' : '0' }}>
+                    <IonItemSliding key={konfi.id} style={{ marginBottom: index < filteredAndSortedKonfis.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                       <IonItem
                         button
                         onClick={() => onSelectKonfi(konfi)}
@@ -454,7 +466,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                               {/* Avatar */}
                               <div
                                 className="app-icon-circle app-icon-circle--lg"
-                                style={{ backgroundColor: statusColor, color: 'white', fontWeight: '600' }}
+                                style={{ backgroundColor: statusColor, color: 'white', fontWeight: 'var(--app-schrift-halbfett)' }}
                               >
                                 {getInitials(konfi.name)}
                               </div>
@@ -469,11 +481,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 {/* Zeile 2: Jahrgang + Badges */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
+                                    <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
                                     {konfi.jahrgang_name || konfi.jahrgang || 'Kein Jahrgang'}
                                   </span>
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={ribbonOutline} style={{ color: '#fbbf24' }} />
+                                    <IonIcon icon={ICON_ABZEICHEN} style={{ color: 'var(--app-wrapped-gold)' }} />
                                     {konfi.badgeCount || 0} Badges
                                   </span>
                                 </div>
@@ -492,45 +504,45 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                           </div>
 
                           {/* Progress Bars - nur aktive Typen */}
-                          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ marginTop: 'var(--app-abstand-mittel)', display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                             {godiEnabled && gemEnabled ? (
                               <>
                                 {/* Gottesdienst + Gemeinde nebeneinander */}
-                                <div style={{ display: 'flex', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)' }}>
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                      <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
-                                      <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGodi}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-gottesdienst)', fontWeight: 'var(--app-schrift-halbfett)' }}>Godi</span>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{godiPoints}/{targetGodi}</span>
                                     </div>
                                     <div className="app-progress-bar">
-                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
-                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-gottesdienst-rgb), 0.15)' }}>
+                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: 'var(--app-color-gottesdienst)' }} />
                                       </div>
                                     </div>
                                   </div>
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                      <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
-                                      <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGem}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-color-gemeinde)', fontWeight: 'var(--app-schrift-halbfett)' }}>Gemeinde</span>
+                                      <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{gemPoints}/{targetGem}</span>
                                     </div>
                                     <div className="app-progress-bar">
-                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
-                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-success-rgb), 0.15)' }}>
+                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: 'var(--app-color-gemeinde)' }} />
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                                 {/* Gesamt */}
                                 <div>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--app-color-konfis)', fontWeight: '700' }}>Gesamt</span>
-                                    <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
+                                    <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-color-konfis)', fontWeight: 'var(--app-schrift-fett)' }}>Gesamt</span>
+                                    <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-secondary)', fontWeight: 'var(--app-schrift-halbfett)' }}>
                                       {totalPoints}/{targetTotal}
-                                      {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
+                                      {percentTotal > 100 && <span style={{ color: 'var(--app-color-success-strong)', marginLeft: 'var(--app-abstand-mini)' }}>({percentTotal}%)</span>}
                                     </span>
                                   </div>
                                   <div className="app-progress-bar app-progress-bar--thick">
-                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
+                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-konfis-rgb), 0.12)' }}>
                                       <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: 'var(--app-color-konfis)' }} />
                                     </div>
                                   </div>
@@ -539,19 +551,19 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             ) : (
                               /* Ein breiter Balken für den aktiven Typ */
                               <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                  <span style={{ fontSize: '0.7rem', color: godiEnabled ? '#3b82f6' : '#059669', fontWeight: '700' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--app-abstand-winzig)' }}>
+                                  <span style={{ fontSize: 'var(--app-text-meta)', color: godiEnabled ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)', fontWeight: 'var(--app-schrift-fett)' }}>
                                     {godiEnabled ? 'Gottesdienst' : 'Gemeinde'}
                                   </span>
-                                  <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
+                                  <span style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-secondary)', fontWeight: 'var(--app-schrift-halbfett)' }}>
                                     {godiEnabled ? godiPoints : gemPoints}/{godiEnabled ? targetGodi : targetGem}
                                   </span>
                                 </div>
                                 <div className="app-progress-bar app-progress-bar--thick">
-                                  <div className="app-progress-bar__track" style={{ backgroundColor: godiEnabled ? 'rgba(59, 130, 246, 0.15)' : 'rgba(34, 197, 94, 0.15)' }}>
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: godiEnabled ? 'rgba(var(--app-color-gottesdienst-rgb), 0.15)' : 'rgba(var(--app-color-success-rgb), 0.15)' }}>
                                     <div className="app-progress-bar__fill" style={{
                                       width: `${Math.min(100, godiEnabled ? percentGodi : percentGem)}%`,
-                                      backgroundColor: godiEnabled ? '#3b82f6' : '#059669'
+                                      backgroundColor: godiEnabled ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)'
                                     }} />
                                   </div>
                                 </div>
@@ -568,7 +580,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                           className="app-swipe-action"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
+                            <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                           </div>
                         </IonItemOption>
                       </IonItemOptions>

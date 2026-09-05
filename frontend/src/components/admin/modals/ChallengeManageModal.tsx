@@ -27,17 +27,17 @@ import {
   IonModal
 } from '@ionic/react';
 import {
-  checkmarkOutline,
-  closeOutline,
-  flag,
-  eyeOutline,
-  imagesOutline,
-  peopleOutline,
-  calendarOutline,
-  chevronDownOutline,
-  ribbonOutline,
-  schoolOutline
-} from 'ionicons/icons';
+  ICON_ABZEICHEN,
+  ICON_AUFKLAPPEN,
+  ICON_CHALLENGE_GEFUELLT,
+  ICON_GALERIE,
+  ICON_GRUPPE,
+  ICON_HAKEN,
+  ICON_JAHRGANG,
+  ICON_SCHLIESSEN,
+  ICON_SICHTBAR,
+  ICON_TERMIN,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -59,7 +59,7 @@ import {
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
 // Rueckfall bleibt die Flagge (frueher lokal in CHALLENGE_ICONS).
-export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, flag);
+export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, ICON_CHALLENGE_GEFUELLT);
 
 // Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
 // das Team darf IMMER mitschreiben, deshalb gibt es bewusst KEINE Option
@@ -330,7 +330,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                 Die Rueckfrage bei ungespeicherten Aenderungen laeuft
                 ueber canDismiss der Seite. */}
             <IonButton aria-label="Schließen" onClick={onClose} className="app-modal-close-btn">
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
@@ -339,7 +339,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               disabled={loading || isSubmitting || !isFormValid}
               className="app-modal-submit-btn app-modal-submit-btn--challenges"
             >
-              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -347,7 +347,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {initialLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
@@ -356,7 +356,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={flag} />
+                  <IonIcon icon={ICON_CHALLENGE_GEFUELLT} />
                 </div>
                 <IonLabel>Die Challenge</IonLabel>
               </IonListHeader>
@@ -409,13 +409,13 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={peopleOutline} />
+                  <IonIcon icon={ICON_GRUPPE} />
                 </div>
                 <IonLabel>Wer macht mit?</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {AUDIENCE_OPTIONS.map((option) => (
                       <div
                         key={option.value}
@@ -444,23 +444,23 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={imagesOutline} />
+                  <IonIcon icon={ICON_GALERIE} />
                 </div>
                 <IonLabel>Erlaubte Medienarten</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
-                    <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.allowed_media.length === 0 ? '#dc3545' : '#666' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: 'var(--app-abstand-eng)' }}>
+                    <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.allowed_media.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Mehrere möglich *
                       {formData.allowed_media.length > 0 && (
-                        <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: 'var(--app-color-challenges)', fontWeight: 'normal' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-challenges)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.allowed_media.length} ausgewählt)
                         </span>
                       )}
                     </IonLabel>
                   </IonItem>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {MEDIA_OPTIONS.map((option) => {
                       const isSelected = formData.allowed_media.includes(option.value);
                       return (
@@ -492,7 +492,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={eyeOutline} />
+                  <IonIcon icon={ICON_SICHTBAR} />
                 </div>
                 <IonLabel>Sichtbarkeit der Beiträge</IonLabel>
               </IonListHeader>
@@ -502,7 +502,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       sind, steht im Handbuch (Kapitel Challenges, "Was nach dem
                       Start gesperrt ist") — nicht mehr als Hinweis-Kasten hier
                       (Nutzerentscheid 24.08.2026). */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {VISIBILITY_OPTIONS.map((option) => (
                       <div
                         key={option.value}
@@ -524,12 +524,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     ))}
                   </div>
 
-                  <IonItem lines="none" style={{ marginTop: '16px' }}>
+                  <IonItem lines="none" style={{ marginTop: 'var(--app-abstand-basis)' }}>
                     <IonLabel>
-                      <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                      <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>
                         Beiträge erst nach Freigabe zeigen
                       </h3>
-                      <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                      <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)', whiteSpace: 'normal' }}>
                         Ist das aus, erscheinen Beiträge sofort in der Galerie. Ausblenden geht
                         immer noch nachträglich.
                       </p>
@@ -545,10 +545,10 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
                   <IonItem lines="none">
                     <IonLabel>
-                      <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                      <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>
                         Mehrere Beiträge erlauben
                       </h3>
-                      <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                      <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)', whiteSpace: 'normal' }}>
                         Konfis können mehr als einen Beitrag zu dieser Challenge einreichen.
                       </p>
                     </IonLabel>
@@ -568,7 +568,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={ribbonOutline} />
+                  <IonIcon icon={ICON_ABZEICHEN} />
                 </div>
                 <IonLabel>Stempel</IonLabel>
               </IonListHeader>
@@ -588,28 +588,28 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonItem>
                   </IonList>
 
-                  <div style={{ marginTop: '16px' }}>
+                  <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
                     <IonAccordionGroup>
-                      <IonAccordion value="icon-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+                      <IonAccordion value="icon-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
                         <IonItem slot="header" lines="none">
                           <IonLabel>
-                            <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                            <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
                               Icon *
                             </h3>
                             {selectedIconMeta && (
-                              <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                              <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
                                 {selectedIconMeta.name} ({selectedIconMeta.category})
                               </p>
                             )}
                           </IonLabel>
                         </IonItem>
-                        <div slot="content" style={{ padding: '16px' }}>
+                        <div slot="content" style={{ padding: 'var(--app-abstand-basis)' }}>
                           {iconGroups.map((group) => (
-                            <div key={group.category} style={{ marginBottom: '16px' }}>
-                              <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                            <div key={group.category} style={{ marginBottom: 'var(--app-abstand-basis)' }}>
+                              <IonText style={{ fontSize: 'var(--app-text-sekundaer)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
                                 {group.category}
                               </IonText>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>
                                 {group.icons.map(({ key, data }) => (
                                   <div
                                     key={key}
@@ -617,22 +617,22 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                                     style={{
                                       width: '100%',
                                       aspectRatio: '1',
-                                      backgroundColor: formData.badge_icon === key ? 'var(--app-color-challenges)' : '#f8f9fa',
-                                      borderRadius: '12px',
+                                      backgroundColor: formData.badge_icon === key ? 'var(--app-color-challenges)' : 'var(--app-surface-soft)',
+                                      borderRadius: 'var(--app-radius-karte)',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                       cursor: 'pointer',
-                                      border: '1px solid #e0e0e0',
-                                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                      border: '1px solid var(--app-border)',
+                                      boxShadow: 'var(--app-schatten-flach)',
                                       transition: 'all 0.2s'
                                     }}
                                   >
                                     <IonIcon
                                       icon={data.icon}
                                       style={{
-                                        fontSize: '1.5rem',
-                                        color: formData.badge_icon === key ? 'white' : '#666'
+                                        fontSize: 'var(--app-text-ueberschrift)',
+                                        color: formData.badge_icon === key ? 'white' : 'var(--app-text-secondary)'
                                       }}
                                     />
                                   </div>
@@ -656,23 +656,23 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={schoolOutline} />
+                  <IonIcon icon={ICON_JAHRGANG} />
                 </div>
                 <IonLabel>Zielgruppe</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
-                    <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.jahrgang_ids.length === 0 ? '#dc3545' : '#666' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: 'var(--app-abstand-eng)' }}>
+                    <IonLabel style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: formData.jahrgang_ids.length === 0 ? 'var(--app-color-danger)' : 'var(--app-text-secondary)' }}>
                       Jahrgänge (mehrere möglich) *
                       {formData.jahrgang_ids.length > 0 && (
-                        <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: 'var(--app-color-jahrgang)', fontWeight: 'normal' }}>
+                        <span style={{ marginLeft: 'var(--app-abstand-eng)', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-color-jahrgang)', fontWeight: 'var(--app-schrift-normal)' }}>
                           ({formData.jahrgang_ids.length} ausgewählt)
                         </span>
                       )}
                     </IonLabel>
                   </IonItem>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {jahrgaenge.map((jahrgang) => {
                       const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
                       return (
@@ -688,12 +688,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                             marginBottom: '0'
                           }}
                         >
-                          <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
+                          <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{jahrgang.name}</span>
                         </div>
                       );
                     })}
                     {jahrgaenge.length === 0 && (
-                      <div style={{ padding: '8px', color: '#999', fontSize: '0.85rem' }}>
+                      <div style={{ padding: 'var(--app-abstand-eng)', color: 'var(--app-text-muted)', fontSize: 'var(--app-text-sekundaer)' }}>
                         Keine Jahrgänge verfügbar
                       </div>
                     )}
@@ -707,7 +707,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={calendarOutline} />
+                  <IonIcon icon={ICON_TERMIN} />
                 </div>
                 {/* Beim Entwurf gibt es keinen Zeitraum zu sehen — dann
                     trägt der Abschnitt den Namen dessen, was er zeigt. */}
@@ -741,12 +741,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   {/* Entwurf-Haken statt eigener Footer-Buttons: gespeichert wird
                       ausschliesslich ueber den Bestätigen-Button oben rechts. */}
                   {!isStarted && (
-                    <IonItem lines="none" style={{ marginTop: '8px' }}>
+                    <IonItem lines="none" style={{ marginTop: 'var(--app-abstand-eng)' }}>
                       <IonLabel>
-                        <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                        <h3 style={{ color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-mini) 0', fontWeight: 'var(--app-schrift-halbfett)' }}>
                           Als Entwurf speichern
                         </h3>
-                        <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                        <p style={{ color: 'var(--app-text-secondary)', margin: '0', fontSize: 'var(--app-text-sekundaer)', whiteSpace: 'normal' }}>
                           Entwürfe sehen nur du und dein Team.
                         </p>
                       </IonLabel>
@@ -777,7 +777,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           minuteValues="0,15,30,45"
           firstDayOfWeek={1}
           onIonChange={(e) => setFormData({ ...formData, starts_at: e.detail.value as string })}
-          style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
+          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
         />
       </IonModal>
       <IonModal keepContentsMounted={true}>
@@ -788,7 +788,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           minuteValues="0,15,30,45"
           firstDayOfWeek={1}
           onIonChange={(e) => setFormData({ ...formData, ends_at: e.detail.value as string })}
-          style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
+          style={{ '--background': 'var(--app-surface-soft)', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }}
         />
       </IonModal>
     </IonPage>

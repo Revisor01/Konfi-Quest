@@ -13,7 +13,7 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add } from 'ionicons/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT } from './icons';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useModalPage } from '../../contexts/ModalContext';
 import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
@@ -188,7 +188,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
           <IonTitle>Challenges</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge">
-              <IonIcon icon={add} />
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>

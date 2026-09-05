@@ -23,7 +23,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { qrCodeOutline, add } from 'ionicons/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT, ICON_QRCODE } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -319,11 +319,11 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
           <IonButtons slot="end">
             {isAntraege ? (
               <IonButton onClick={handleAddRequest} aria-label="Neue Aktivität melden">
-                <IonIcon icon={add} />
+                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
               </IonButton>
             ) : (
               <IonButton onClick={() => presentScannerModal()} aria-label="QR-Code scannen">
-                <IonIcon icon={qrCodeOutline} />
+                <IonIcon icon={ICON_QRCODE} />
               </IonButton>
             )}
           </IonButtons>

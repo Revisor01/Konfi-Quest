@@ -101,7 +101,7 @@ const BadgesSlide: React.FC<BadgesSlideProps> = ({ isActive, badges }) => {
             <div
               key={i}
               className="w-abzeichen wrapped-anim-bounce"
-              style={{ background: badge.color || '#7c3aed', animationDelay: `${0.3 + i * 0.1}s` }}
+              style={{ background: badge.color || 'var(--app-color-wrapped)', animationDelay: `${0.3 + i * 0.1}s` }}
               title={badge.name}
             >
               <IonIcon icon={getIconFromString(badge.icon)} />

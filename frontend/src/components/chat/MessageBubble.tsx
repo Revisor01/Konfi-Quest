@@ -1,21 +1,21 @@
 import React from 'react';
 import { IonIcon, IonAvatar } from '@ionic/react';
 import {
-  barChart,
-  checkmark,
-  chatbubbles,
-  people,
-  time,
-  document,
-  attach,
-  chevronForward,
-  addOutline,
-  arrowUndoOutline,
-  shareOutline,
-  trashOutline,
-  timeOutline,
-  alertCircleOutline
-} from 'ionicons/icons';
+  ICON_ANHANG_GEFUELLT,
+  ICON_CHATS_GEFUELLT,
+  ICON_DATEI_GEFUELLT,
+  ICON_DIAGRAMM,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN_GEFUELLT,
+  ICON_HINZUFUEGEN,
+  ICON_LOESCHEN,
+  ICON_RUECKGAENGIG,
+  ICON_TEILEN,
+  ICON_UHRZEIT,
+  ICON_UHRZEIT_GEFUELLT,
+  ICON_WARNHINWEIS,
+  ICON_WEITER_GEFUELLT,
+} from '../shared/icons';
 import { Message, Reaction, ChatRoomBase } from '../../types/chat';
 import { REACTION_EMOJIS } from './constants';
 import { formatFileSize } from '../../utils/helpers';
@@ -143,9 +143,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       <div key={message.id} style={{
         display: 'flex',
         justifyContent: 'center',
-        margin: '8px 16px'
+        margin: 'var(--app-abstand-eng) var(--app-abstand-basis)'
       }}>
-        <span style={{ fontSize: '1.05rem', fontStyle: 'italic', whiteSpace: 'nowrap', color: '#8e8e93' }}>
+        <span style={{ fontSize: 'var(--app-text-standard)', fontStyle: 'italic', whiteSpace: 'nowrap', color: 'var(--app-text-system)' }}>
           Diese Nachricht wurde gelöscht
         </span>
       </div>
@@ -156,7 +156,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     <div key={message.id} id={`msg-${message.id}`} style={{
       display: 'flex',
       flexDirection: isOwnMessage ? 'row-reverse' : 'row',
-      margin: '8px 16px',
+      margin: 'var(--app-abstand-eng) var(--app-abstand-basis)',
       alignItems: 'flex-end',
       transition: 'background-color 0.3s ease'
     }}>
@@ -164,13 +164,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         <IonAvatar style={{
           width: '32px',
           height: '32px',
-          marginRight: '8px',
-          backgroundColor: '#06b6d4'
+          marginRight: 'var(--app-abstand-eng)',
+          backgroundColor: 'var(--app-color-chat)'
         }}>
           <div style={{
             color: 'white',
-            fontSize: '0.8rem',
-            fontWeight: 'bold',
+            fontSize: 'var(--app-text-hinweis)',
+            fontWeight: 'var(--app-schrift-fett)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -184,14 +184,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       <div
         style={{
           maxWidth: '70%',
-          backgroundColor: isOwnMessage ? '#06b6d4' : '#f8f9fa',
-          color: isOwnMessage ? 'white' : '#1a1a1a',
-          borderRadius: '18px',
-          padding: '10px 14px',
+          backgroundColor: isOwnMessage ? 'var(--app-color-chat)' : 'var(--app-surface-soft)',
+          color: isOwnMessage ? 'white' : 'var(--app-text-emphasis)',
+          borderRadius: 'var(--app-radius-gross)',
+          padding: 'var(--app-abstand-schmal) var(--app-abstand-mittelweit)',
           position: 'relative',
           cursor: 'pointer',
           boxShadow: isOwnMessage
-            ? '0 2px 8px rgba(6, 182, 212, 0.25)'
+            ? '0 2px 8px rgba(var(--app-color-chat-rgb), 0.25)'
             : '0 1px 4px rgba(0,0,0,0.08)',
           ...(message.queueStatus === 'pending' ? { opacity: 0.7 } : {})
         }}
@@ -235,18 +235,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       >
         {!isOwnMessage && room.type !== 'direct' && (
           <div style={{
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            marginBottom: '4px',
-            color: '#06b6d4'
+            fontSize: 'var(--app-text-klein)',
+            fontWeight: 'var(--app-schrift-halbfett)',
+            marginBottom: 'var(--app-abstand-mini)',
+            color: 'var(--app-color-chat)'
           }}>
             {message.sender_name || 'Unbekannter User'}
             {(message.sender_role_title || message.sender_role_display_name) && (
               <span style={{
-                fontWeight: 'normal',
-                color: '#8e8e93',
-                marginLeft: '6px',
-                fontSize: '0.7rem'
+                fontWeight: 'var(--app-schrift-normal)',
+                color: 'var(--app-text-system)',
+                marginLeft: 'var(--app-abstand-kompakt)',
+                fontSize: 'var(--app-text-meta)'
               }}>
                 ({message.sender_role_title || message.sender_role_display_name})
               </span>
@@ -262,32 +262,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
               if (replyElement) {
                 replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                replyElement.style.backgroundColor = 'rgba(6, 182, 212, 0.15)';
+                replyElement.style.backgroundColor = 'rgba(var(--app-color-chat-rgb), 0.15)';
                 setTimeout(() => {
                   replyElement.style.backgroundColor = '';
                 }, 1500);
               }
             }}
             style={{
-              padding: '6px 10px',
-              marginBottom: '6px',
-              backgroundColor: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.08)',
-              borderRadius: '8px',
-              borderLeft: '3px solid #06b6d4',
+              padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
+              marginBottom: 'var(--app-abstand-kompakt)',
+              backgroundColor: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.08)',
+              borderRadius: 'var(--app-radius-klein)',
+              borderLeft: '3px solid var(--app-color-chat)',
               cursor: 'pointer'
             }}
           >
             <div style={{
-              fontSize: '0.7rem',
-              fontWeight: '600',
-              color: '#06b6d4',
-              marginBottom: '2px'
+              fontSize: 'var(--app-text-meta)',
+              fontWeight: 'var(--app-schrift-halbfett)',
+              color: 'var(--app-color-chat)',
+              marginBottom: 'var(--app-abstand-winzig)'
             }}>
               {message.reply_to_sender_name}
             </div>
             <div style={{
-              fontSize: '0.8rem',
-              color: '#666',
+              fontSize: 'var(--app-text-hinweis)',
+              color: 'var(--app-text-secondary)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
@@ -307,7 +307,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div style={{
             fontStyle: 'italic',
             opacity: 0.6,
-            fontSize: '0.90rem',
+            fontSize: 'var(--app-text-basis)',
             whiteSpace: 'nowrap',
             color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
           }}>
@@ -315,33 +315,33 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         ) : message.message_type === 'poll' && message.question && message.options ? (
           <div style={{
-            background: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.06)',
-            borderRadius: '14px',
-            padding: '16px',
-            marginTop: '4px',
-            border: isOwnMessage ? '1px solid rgba(6, 182, 212, 0.15)' : '1px solid rgba(6, 182, 212, 0.15)',
+            background: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.06)',
+            borderRadius: 'var(--app-radius-weich)',
+            padding: 'var(--app-abstand-basis)',
+            marginTop: 'var(--app-abstand-mini)',
+            border: isOwnMessage ? '1px solid rgba(var(--app-color-chat-rgb), 0.15)' : '1px solid rgba(var(--app-color-chat-rgb), 0.15)',
           }}>
             {/* Frage mit Icon */}
             <div style={{
-              fontWeight: '600',
-              marginBottom: '12px',
-              fontSize: '1rem',
+              fontWeight: 'var(--app-schrift-halbfett)',
+              marginBottom: 'var(--app-abstand-mittel)',
+              fontSize: 'var(--app-text-standard)',
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '8px',
-              color: '#1a1a1a'
+              gap: 'var(--app-abstand-eng)',
+              color: 'var(--app-text-emphasis)'
             }}>
               <div style={{
                 width: '24px',
                 height: '24px',
-                borderRadius: '50%',
-                backgroundColor: '#06b6d4',
+                borderRadius: 'var(--app-radius-kreis)',
+                backgroundColor: 'var(--app-color-chat)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <IonIcon icon={barChart} style={{ color: 'white', fontSize: '0.8rem' }} />
+                <IonIcon icon={ICON_DIAGRAMM} style={{ color: 'white', fontSize: 'var(--app-text-hinweis)' }} />
               </div>
               <span>{message.question}</span>
             </div>
@@ -357,19 +357,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
               return (
                 <div style={{
-                  fontSize: '0.8rem',
-                  marginBottom: '12px',
-                  padding: '8px 12px',
-                  background: isExpired ? 'rgba(220,53,69,0.12)' : 'rgba(6, 182, 212, 0.1)',
-                  borderRadius: '8px',
-                  color: isExpired ? '#dc3545' : '#06b6d4',
+                  fontSize: 'var(--app-text-hinweis)',
+                  marginBottom: 'var(--app-abstand-mittel)',
+                  padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
+                  background: isExpired ? 'rgba(var(--app-color-danger-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.1)',
+                  borderRadius: 'var(--app-radius-klein)',
+                  color: isExpired ? 'var(--app-color-danger)' : 'var(--app-color-chat)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: 'var(--app-abstand-kompakt)'
                 }}>
-                  <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                  <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ fontSize: 'var(--app-text-basis)' }} />
                   {isExpired ? (
-                    <span style={{ fontWeight: '500' }}>Beendet</span>
+                    <span style={{ fontWeight: 'var(--app-schrift-mittel)' }}>Beendet</span>
                   ) : (
                     <span>
                       Endet: {expiresDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
@@ -401,11 +401,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   key={index}
                   onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
                   style={{
-                    background: userVoted ? 'rgba(6, 182, 212, 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
-                    border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.08)',
-                    borderRadius: '10px',
-                    padding: '12px',
-                    marginBottom: '8px',
+                    background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
+                    border: userVoted ? '2px solid var(--app-color-chat)' : '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 'var(--app-radius-knopf)',
+                    padding: 'var(--app-abstand-mittel)',
+                    marginBottom: 'var(--app-abstand-eng)',
                     cursor: takenByOther ? 'not-allowed' : 'pointer',
                     opacity: takenByOther ? 0.7 : 1,
                     position: 'relative',
@@ -421,9 +421,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       top: 0,
                       height: '100%',
                       width: `${percentage}%`,
-                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
+                      background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.06)',
                       transition: 'width 0.4s ease',
-                      borderRadius: '8px'
+                      borderRadius: 'var(--app-radius-klein)'
                     }} />
                   )}
 
@@ -434,37 +434,37 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', minWidth: 0 }}>
                       {userVoted && (
                         <div style={{
                           width: '18px',
                           height: '18px',
-                          borderRadius: '50%',
-                          backgroundColor: '#06b6d4',
+                          borderRadius: 'var(--app-radius-kreis)',
+                          backgroundColor: 'var(--app-color-chat)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0
                         }}>
-                          <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
+                          <IonIcon icon={ICON_HAKEN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-klein)' }} />
                         </div>
                       )}
                       <span style={{
-                        fontWeight: userVoted ? '600' : '500',
-                        color: '#1a1a1a',
-                        fontSize: '0.9rem'
+                        fontWeight: userVoted ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
+                        color: 'var(--app-text-emphasis)',
+                        fontSize: 'var(--app-text-basis)'
                       }}>
                         {option}
                       </span>
                     </div>
 
                     <div style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '600',
-                      color: takenByOther ? '#8e8e93' : '#06b6d4',
+                      fontSize: 'var(--app-text-hinweis)',
+                      fontWeight: 'var(--app-schrift-halbfett)',
+                      color: takenByOther ? 'var(--app-text-system)' : 'var(--app-color-chat)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
+                      gap: 'var(--app-abstand-mini)',
                       flexShrink: 0
                     }}>
                       {isExclusive ? (
@@ -484,9 +484,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <div style={{
                       position: 'relative',
                       zIndex: 1,
-                      marginTop: '6px',
-                      fontSize: '0.75rem',
-                      color: '#6b7280',
+                      marginTop: 'var(--app-abstand-kompakt)',
+                      fontSize: 'var(--app-text-klein)',
+                      color: 'var(--app-color-neutral)',
                       lineHeight: 1.4
                     }}>
                       {voterNames.join(', ')}
@@ -498,15 +498,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Info Footer */}
             <div style={{
-              marginTop: '8px',
+              marginTop: 'var(--app-abstand-eng)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              fontSize: '0.75rem',
-              color: '#8e8e93'
+              fontSize: 'var(--app-text-klein)',
+              color: 'var(--app-text-system)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <IonIcon icon={message.multiple_choice ? checkmark : chatbubbles} style={{ fontSize: '0.8rem' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}>
+                <IonIcon icon={message.multiple_choice ? ICON_HAKEN_GEFUELLT : ICON_CHATS_GEFUELLT} style={{ fontSize: 'var(--app-text-hinweis)' }} />
                 <span>
                   {message.exclusive_options
                     ? 'Exklusiv-Wahl'
@@ -514,8 +514,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   {message.anonymous === false ? ' · mit Namen' : ''}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <IonIcon icon={people} style={{ fontSize: '0.8rem' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}>
+                <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ fontSize: 'var(--app-text-hinweis)' }} />
                 <span>{message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}</span>
               </div>
             </div>
@@ -523,10 +523,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         ) : message.file_path ? (
           <div>
             {message.content && (
-              <div style={{ marginBottom: '8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{linkifyText(message.content)}</div>
+              <div style={{ marginBottom: 'var(--app-abstand-eng)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{linkifyText(message.content)}</div>
             )}
             {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-              <div style={{ marginBottom: '8px' }}>
+              <div style={{ marginBottom: 'var(--app-abstand-eng)' }}>
                 <LazyImage
                   filePath={message.file_path}
                   fileName={message.file_name}
@@ -537,7 +537,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     }
                   }}
                 />
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
+                <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.7, marginTop: 'var(--app-abstand-mini)' }}>
                   {message.file_name} {message.file_size ? `\u2022 ${formatFileSize(message.file_size)}` : ''}
                 </div>
               </div>
@@ -550,11 +550,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               <div
                 style={{
                   border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  padding: '8px',
+                  borderRadius: 'var(--app-radius-klein)',
+                  padding: 'var(--app-abstand-eng)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: 'var(--app-abstand-eng)',
                   cursor: 'pointer',
                   transition: 'background-color 0.2s ease'
                 }}
@@ -566,22 +566,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 }}
               >
                 <IonIcon
-                  icon={message.file_name?.includes('.pdf') ? document : attach}
+                  icon={message.file_name?.includes('.pdf') ? ICON_DATEI_GEFUELLT : ICON_ANHANG_GEFUELLT}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-fett)' }}>
                     {message.file_name}
                   </div>
                   {message.file_size && (
-                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                    <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.8 }}>
                       {formatFileSize(message.file_size)}
                     </div>
                   )}
                 </div>
                 <IonIcon
-                  icon={chevronForward}
+                  icon={ICON_WEITER_GEFUELLT}
                   style={{
-                    fontSize: '1.2rem',
+                    fontSize: 'var(--app-text-untertitel)',
                     opacity: 0.7
                   }}
                 />
@@ -593,22 +593,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <div style={{
-          fontSize: '0.7rem',
+          fontSize: 'var(--app-text-meta)',
           opacity: 0.7,
-          marginTop: '4px',
+          marginTop: 'var(--app-abstand-mini)',
           textAlign: 'right'
         }}>
           {formatMessageTime(message.created_at)}
           {message.queueStatus === 'pending' && (
-            <IonIcon icon={timeOutline} style={{ fontSize: '0.75rem', marginLeft: '4px', verticalAlign: 'middle' }} />
+            <IonIcon icon={ICON_UHRZEIT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle' }} />
           )}
           {isOwnMessage && !message.queueStatus && (
-            <IonIcon icon={checkmark} style={{ fontSize: '0.75rem', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.7 }} />
+            <IonIcon icon={ICON_HAKEN_GEFUELLT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle', opacity: 0.7 }} />
           )}
           {message.queueStatus === 'error' && (
             <IonIcon
-              icon={alertCircleOutline}
-              style={{ fontSize: '0.75rem', marginLeft: '4px', color: '#dc3545', verticalAlign: 'middle', cursor: 'pointer' }}
+              icon={ICON_WARNHINWEIS}
+              style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', color: 'var(--app-color-danger)', verticalAlign: 'middle', cursor: 'pointer' }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onRetry) onRetry(message);
@@ -622,8 +622,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div style={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '4px',
-            marginTop: '6px'
+            gap: 'var(--app-abstand-mini)',
+            marginTop: 'var(--app-abstand-kompakt)'
           }}>
             {Object.entries(
               message.reactions.reduce((acc, r) => {
@@ -646,17 +646,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '3px',
-                    padding: '3px 8px',
-                    borderRadius: '12px',
+                    gap: 'var(--app-abstand-mini)',
+                    padding: 'var(--app-abstand-mini) var(--app-abstand-eng)',
+                    borderRadius: 'var(--app-radius-karte)',
                     backgroundColor: userHasReacted
-                      ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.12)')
+                      ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(var(--app-color-chat-rgb), 0.12)')
                       : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)'),
                     border: userHasReacted
-                      ? `1.5px solid ${emojiData?.color || '#06b6d4'}`
+                      ? `1.5px solid ${emojiData?.color || 'var(--app-color-chat)'}`
                       : '1px solid transparent',
                     cursor: 'pointer',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--app-text-klein)',
                     transition: 'all 0.2s ease'
                   }}
                   title={reactions.map(r => r.user_name).join(', ')}
@@ -664,12 +664,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   <IonIcon
                     icon={userHasReacted ? emojiData?.filled : emojiData?.outline}
                     style={{
-                      fontSize: '0.9rem',
-                      color: emojiData?.color || '#06b6d4'
+                      fontSize: 'var(--app-text-basis)',
+                      color: emojiData?.color || 'var(--app-color-chat)'
                     }}
                   />
                   <span style={{
-                    fontWeight: userHasReacted ? '600' : '500',
+                    fontWeight: userHasReacted ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
                     color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)'
                   }}>
                     {reactions.length}
@@ -685,8 +685,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div
             style={{
               display: 'flex',
-              gap: '4px',
-              marginTop: '8px',
+              gap: 'var(--app-abstand-mini)',
+              marginTop: 'var(--app-abstand-eng)',
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -696,7 +696,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%',
+                borderRadius: 'var(--app-radius-kreis)',
                 backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
                 display: 'flex',
                 alignItems: 'center',
@@ -704,7 +704,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 cursor: 'pointer'
               }}
             >
-              <IonIcon icon={addOutline} style={{ fontSize: '1.1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              <IonIcon icon={ICON_HINZUFUEGEN} style={{ fontSize: 'var(--app-text-gross)', color: isOwnMessage ? 'white' : 'var(--app-text-secondary)' }} />
             </div>
             <div
               onClick={() => {
@@ -715,7 +715,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%',
+                borderRadius: 'var(--app-radius-kreis)',
                 backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
                 display: 'flex',
                 alignItems: 'center',
@@ -723,14 +723,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 cursor: 'pointer'
               }}
             >
-              <IonIcon icon={arrowUndoOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              <IonIcon icon={ICON_RUECKGAENGIG} style={{ fontSize: 'var(--app-text-standard)', color: isOwnMessage ? 'white' : 'var(--app-text-secondary)' }} />
             </div>
             <div
               onClick={() => onShare(message)}
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%',
+                borderRadius: 'var(--app-radius-kreis)',
                 backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
                 display: 'flex',
                 alignItems: 'center',
@@ -738,7 +738,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 cursor: 'pointer'
               }}
             >
-              <IonIcon icon={shareOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              <IonIcon icon={ICON_TEILEN} style={{ fontSize: 'var(--app-text-standard)', color: isOwnMessage ? 'white' : 'var(--app-text-secondary)' }} />
             </div>
             {/* Loeschen: Admins duerfen jede Nachricht der Organisation loeschen,
                 Teamer:innen nur ihre EIGENEN. Vorher hing der Button allein an der
@@ -757,15 +757,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 style={{
                   width: '32px',
                   height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(220, 53, 69, 0.15)',
+                  borderRadius: 'var(--app-radius-kreis)',
+                  backgroundColor: 'rgba(var(--app-color-danger-rgb), 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer'
                 }}
               >
-                <IonIcon icon={trashOutline} style={{ fontSize: '1rem', color: '#dc3545' }} />
+                <IonIcon icon={ICON_LOESCHEN} style={{ fontSize: 'var(--app-text-standard)', color: 'var(--app-color-danger)' }} />
               </div>
             )}
           </div>
@@ -776,12 +776,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div
             style={{
               display: 'flex',
-              gap: '2px',
-              marginTop: '8px',
-              padding: '6px 10px',
+              gap: 'var(--app-abstand-winzig)',
+              marginTop: 'var(--app-abstand-eng)',
+              padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
               backgroundColor: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              borderRadius: 'var(--app-radius-gross)',
+              boxShadow: 'var(--app-schatten-schwebend-stark)',
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -797,7 +797,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   style={{
                     width: '36px',
                     height: '36px',
-                    borderRadius: '50%',
+                    borderRadius: 'var(--app-radius-kreis)',
                     cursor: 'pointer',
                     backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
                     border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
@@ -809,7 +809,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 >
                   <IonIcon
                     icon={userHasThisReaction ? data.filled : data.outline}
-                    style={{ fontSize: '1.2rem', color: data.color }}
+                    style={{ fontSize: 'var(--app-text-untertitel)', color: data.color }}
                   />
                 </div>
               );

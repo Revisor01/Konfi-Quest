@@ -78,8 +78,8 @@ const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf, haupt, zweit: zw
             style={{
               background: verlauf,
               opacity: 0.72,
-              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, #000 78%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, #000 78%)',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, black 78%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, black 78%)',
             }}
           />
           <div

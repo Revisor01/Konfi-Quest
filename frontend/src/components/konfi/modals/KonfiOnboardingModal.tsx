@@ -1,8 +1,13 @@
 import React from 'react';
 import {
-  sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  starOutline, documentTextOutline, flagOutline
-} from 'ionicons/icons';
+  ICON_CHALLENGE,
+  ICON_CHATS,
+  ICON_FUNKELN,
+  ICON_STARTSEITE,
+  ICON_ABZEICHEN,
+  ICON_TERMIN,
+  ICON_TEXTDOKUMENT,
+} from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
 interface KonfiOnboardingModalProps {
@@ -23,49 +28,49 @@ interface KonfiOnboardingModalProps {
 // Benennung des Mitmachen-Tabs über alle Rollen hinweg absichert.
 export const SLIDES: OnboardingSlide[] = [
   {
-    icon: sparklesOutline,
+    icon: ICON_FUNKELN,
     color: 'var(--app-color-konfis)',
     rgb: '--app-color-konfis-rgb',
     title: 'Konfi Quest',
     text: 'Herzlich willkommen bei deiner Konfi-Zeit! Dein Abenteuer in der Gemeinde beginnt jetzt. Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Komm mit, wir zeigen dir alles.',
   },
   {
-    icon: homeOutline,
+    icon: ICON_STARTSEITE,
     color: 'var(--app-color-konfis)',
     rgb: '--app-color-konfis-rgb',
     title: 'Dein Start',
     text: 'Hier landest du immer als Erstes. Du siehst auf einen Blick deine Punkte, dein aktuelles Level und was als Nächstes für dich ansteht.',
   },
   {
-    icon: chatbubblesOutline,
+    icon: ICON_CHATS,
     color: 'var(--app-color-chat)',
     rgb: '--app-color-chat-rgb',
     title: 'Dein Chat',
     text: 'Schreib mit deinem Jahrgang und deinen Teamer:innen. Hier bekommst du auch wichtige Infos und Ankündigungen direkt mit.',
   },
   {
-    icon: calendarOutline,
+    icon: ICON_TERMIN,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Mitmachen: Events',
     text: 'Unten in der Tab-Leiste findest du "Mitmachen" — mit zwei Reitern: Events und Aktivitäten. Events sind Termine, zu denen du dich vorher anmeldest — bis hin zu deiner Konfirmation. Bei manchen wählst du einen Platz oder ein Zeitfenster: einfach tippen und buchen.',
   },
   {
-    icon: documentTextOutline,
+    icon: ICON_TEXTDOKUMENT,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
     title: 'Mitmachen: Aktivitäten',
     text: 'Der zweite Reiter im Mitmachen-Tab: Aktivitäten sind Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Hier meldest du dich nicht vorher an, sondern erzählst hinterher davon. Dein Team bestätigt und du bekommst deine Punkte.',
   },
   {
-    icon: starOutline,
+    icon: ICON_ABZEICHEN,
     color: 'var(--app-color-badges)',
     rgb: '--app-color-badges-rgb',
     title: 'Deine Badges',
     text: 'Für deine Aktivitäten bekommst du Abzeichen. Sammle Badges und steig im Level auf — je mehr du machst, desto mehr schaltest du frei.',
   },
   {
-    icon: flagOutline,
+    icon: ICON_CHALLENGE,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Deine Challenges',

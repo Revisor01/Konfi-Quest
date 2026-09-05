@@ -25,7 +25,7 @@ const TeamerIntroSlide: React.FC<TeamerIntroSlideProps> = ({ isActive, displayNa
       <div className="kat-slogan">
         {ueberschrift.map((z, i) => <span key={i} style={{ display: 'block' }}>{z}</span>)}
       </div>
-      <div className="kat-nachsatz" style={{ fontWeight: 700, fontSize: 20 }}>{displayName}</div>
+      <div className="kat-nachsatz" style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-untertitel)' }}>{displayName}</div>
     </SlideBase>
   );
 };

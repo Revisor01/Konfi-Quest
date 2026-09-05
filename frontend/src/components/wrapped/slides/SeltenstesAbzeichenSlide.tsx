@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import * as icons from 'ionicons/icons';
+import { getIconFromIoniconsName } from '../../../utils/badgeIcons';
 import SlideBase from './SlideBase';
 
 /**
@@ -64,13 +64,9 @@ function tonFuer(prozent: number): { auge: string; nachsatz: string } {
   };
 }
 
-/** Ionicon-Namen aus der Datenbank in das echte Symbol aufloesen. */
-function symbolFuer(name: string): string {
-  const sauber = (name || '').trim();
-  // Die Datenbank haelt Namen wie 'trophy' oder 'ribbon-outline'.
-  const alsCamel = sauber.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-  return (icons as Record<string, string>)[alsCamel] || icons.trophy;
-}
+// Die Datenbank haelt Namen wie 'trophy' oder 'ribbon-outline'; die
+// Aufloesung wohnt seit 05.09.2026 zentral in utils/badgeIcons
+// (getIconFromIoniconsName), nicht mehr hier im Slide.
 
 const SeltenstesAbzeichenSlide: React.FC<Props> = ({ isActive, abzeichen }) => {
   const ton = tonFuer(abzeichen.prozent);
@@ -81,8 +77,8 @@ const SeltenstesAbzeichenSlide: React.FC<Props> = ({ isActive, abzeichen }) => {
 
       {/* Das Abzeichen selbst, gross und in seiner eigenen Farbe --
           es ist der Held der Seite, nicht eine Statistikzeile. */}
-      <div className="selt-abzeichen" style={{ backgroundColor: abzeichen.color || '#f59e0b' }}>
-        <IonIcon icon={symbolFuer(abzeichen.icon)} />
+      <div className="selt-abzeichen" style={{ backgroundColor: abzeichen.color || 'var(--app-color-badges)' }}>
+        <IonIcon icon={getIconFromIoniconsName(abzeichen.icon)} />
       </div>
 
       <div className="selt-name">{abzeichen.name}</div>

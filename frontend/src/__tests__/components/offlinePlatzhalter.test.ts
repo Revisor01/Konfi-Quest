@@ -56,8 +56,8 @@ describe('Der Platzhalter selbst', () => {
 
   it('ist als Information gestaltet, nicht als Fehler', () => {
     // Wolken-Symbol, kein Warndreieck.
-    expect(platzhalter).toContain('cloudOfflineOutline');
-    expect(platzhalter).not.toContain('alertCircle');
+    expect(platzhalter).toContain('ICON_OFFLINE');
+    expect(platzhalter).not.toContain('ICON_WARNHINWEIS');
   });
 
   it('blendet das Symbol fuer Screenreader aus — der Text spricht', () => {

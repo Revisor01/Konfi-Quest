@@ -55,16 +55,16 @@ describe('Symbol-Zuordnung', () => {
 });
 
 describe('Icon der Antraege', () => {
-  it('nutzt documentTextOutline wie die Termin-Detailansicht', () => {
+  it('nutzt das Textdokument-Symbol wie die Termin-Detailansicht', () => {
     const ansicht = lies('components/admin/ActivityRequestsView.tsx');
-    expect(ansicht).toContain('documentTextOutline');
-    expect(ansicht).not.toContain('documentOutline');
+    expect(ansicht).toContain('ICON_TEXTDOKUMENT');
+    expect(ansicht).not.toMatch(/\bICON_DATEI\b/);
   });
 
   it('laesst die Zertifikate in der Konfi-Liste unberuehrt', () => {
-    // Dort steht documentOutline fuer ZERTIFIKATE — ein anderer Gegenstand,
-    // der bewusst sein eigenes Symbol behaelt.
+    // Dort steht ICON_DATEI (frueher documentOutline) fuer ZERTIFIKATE — ein
+    // anderer Gegenstand, der bewusst sein eigenes Symbol behaelt.
     const konfis = lies('components/admin/KonfisView.tsx');
-    expect(konfis).toContain('documentOutline');
+    expect(konfis).toMatch(/\bICON_DATEI\b/);
   });
 });

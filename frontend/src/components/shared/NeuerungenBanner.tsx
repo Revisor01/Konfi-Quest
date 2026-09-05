@@ -43,7 +43,7 @@ const NeuerungenBanner: React.FC<NeuerungenBannerProps> = ({
   onMitmachenAusblenden,
   updateSichtbar = true,
   mitmachenSichtbar = true,
-  style = { margin: '16px' },
+  style = { margin: 'var(--app-abstand-basis)' },
 }) => (
   <>
     {updateSichtbar && (

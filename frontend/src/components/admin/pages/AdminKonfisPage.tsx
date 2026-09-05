@@ -16,7 +16,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { add, checkboxOutline } from 'ionicons/icons';
+import { ICON_CHECKBOX, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -376,7 +376,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             {['org_admin', 'admin'].includes(user?.role_name || '') && (
               <>
                 <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
-                  <IonIcon icon={checkboxOutline} />
+                  <IonIcon icon={ICON_CHECKBOX} />
                 </IonButton>
                 <IonButton
                   aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
@@ -384,7 +384,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
                     ? presentTeamerModalHook({ presentingElement: presentingElement })
                     : presentKonfiModal()}
                 >
-                  <IonIcon icon={add} />
+                  <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
                 </IonButton>
               </>
             )}
@@ -409,7 +409,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             aus. Die Leitung hatte hier bislang nur die "Was ist neu"-Karte --
             die Mitmachen-Karte gab es fuer sie nur unter "Mehr". */}
         <NeuerungenBanner
-          style={{ margin: '8px 16px 12px' }}
+          style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) var(--app-abstand-mittel)' }}
           updateSichtbar={showUpdateHinweis}
           mitmachenSichtbar={showMitmachenHinweis}
           onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}

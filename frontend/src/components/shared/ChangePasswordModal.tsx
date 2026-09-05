@@ -23,17 +23,17 @@ import {
   IonText
 } from '@ionic/react';
 import {
-  closeOutline,
-  checkmarkOutline,
-  keyOutline,
-  lockClosedOutline,
-  eyeOutline,
-  eyeOffOutline,
-  shieldCheckmarkOutline,
-  checkmarkCircle,
-  alertCircle,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+  ICON_HAKEN,
+  ICON_OFFLINE,
+  ICON_SCHLIESSEN,
+  ICON_SCHLUESSEL,
+  ICON_SCHUTZ,
+  ICON_SICHTBAR,
+  ICON_SPERRE,
+  ICON_VERBORGEN,
+  ICON_WARNHINWEIS_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+} from './icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
@@ -61,13 +61,13 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
   <div style={{
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    color: checked ? '#10b981' : '#9ca3af',
-    fontSize: '0.8rem'
+    gap: 'var(--app-abstand-kompakt)',
+    color: checked ? 'var(--app-color-success-fresh)' : 'var(--app-color-neutral-hell)',
+    fontSize: 'var(--app-text-hinweis)'
   }}>
     <IonIcon
-      icon={checked ? checkmarkCircle : alertCircle}
-      style={{ fontSize: '0.9rem' }}
+      icon={checked ? ICON_ZUSAGE_GEFUELLT : ICON_WARNHINWEIS_GEFUELLT}
+      style={{ fontSize: 'var(--app-text-basis)' }}
     />
     <span>{label}</span>
   </div>
@@ -170,12 +170,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             <IonButton aria-label="Passwort speichern" className={`app-modal-submit-btn ${stil.submitBtn}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -186,7 +186,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className={`app-section-icon ${stil.sectionIcon}`}>
-              <IonIcon icon={lockClosedOutline} />
+              <IonIcon icon={ICON_SPERRE} />
             </div>
             <IonLabel>Aktuelles Passwort</IonLabel>
           </IonListHeader>
@@ -207,7 +207,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
                   >
-                    <IonIcon icon={showPasswords.current ? eyeOffOutline : eyeOutline} />
+                    <IonIcon icon={showPasswords.current ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
                 </IonItem>
               </IonList>
@@ -219,7 +219,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className={`app-section-icon ${stil.sectionIcon}`}>
-              <IonIcon icon={keyOutline} />
+              <IonIcon icon={ICON_SCHLUESSEL} />
             </div>
             <IonLabel>Neues Passwort</IonLabel>
           </IonListHeader>
@@ -240,7 +240,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
                   >
-                    <IonIcon icon={showPasswords.new ? eyeOffOutline : eyeOutline} />
+                    <IonIcon icon={showPasswords.new ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
                 </IonItem>
 
@@ -258,7 +258,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
                   >
-                    <IonIcon icon={showPasswords.confirm ? eyeOffOutline : eyeOutline} />
+                    <IonIcon icon={showPasswords.confirm ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
                 </IonItem>
               </IonList>
@@ -270,13 +270,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className={`app-section-icon ${stil.sectionIcon}`}>
-              <IonIcon icon={shieldCheckmarkOutline} />
+              <IonIcon icon={ICON_SCHUTZ} />
             </div>
             <IonLabel>Passwort-Anforderungen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--app-abstand-eng)' }}>
                 <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
                 <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
                 <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
@@ -290,10 +290,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* Validierungs-Hinweis - Passwörter stimmen nicht überein */}
         {passwordData.new_password && passwordData.confirm_password && !passwordsMatch && (
           <IonList inset={true} className="app-modal-section">
-            <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-              <IonCardContent style={{ padding: '12px 16px' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-danger-rgb), 0.08)', border: '1px solid rgba(var(--app-color-danger-rgb), 0.2)' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis)' }}>
                 <IonText color="danger">
-                  <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                  <p style={{ margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
                     Die Passwörter stimmen nicht überein.
                   </p>
                 </IonText>
@@ -305,11 +305,11 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* Bestätigung wenn alles passt */}
         {isValid && (
           <IonList inset={true} className="app-modal-section">
-            <IonCard className="app-card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <IonCardContent style={{ padding: '12px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
-                  <IonIcon icon={checkmarkCircle} />
-                  <span style={{ fontSize: '0.85rem' }}>Alle Anforderungen erfüllt - bereit zum Speichern</span>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-success-fresh-rgb), 0.08)', border: '1px solid rgba(var(--app-color-success-fresh-rgb), 0.2)' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', color: 'var(--app-color-success-fresh)' }}>
+                  <IonIcon icon={ICON_ZUSAGE_GEFUELLT} />
+                  <span style={{ fontSize: 'var(--app-text-sekundaer)' }}>Alle Anforderungen erfüllt - bereit zum Speichern</span>
                 </div>
               </IonCardContent>
             </IonCard>

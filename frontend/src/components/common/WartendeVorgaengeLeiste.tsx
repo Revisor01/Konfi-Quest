@@ -9,7 +9,7 @@ import {
   IonButton,
   IonContent,
 } from '@ionic/react';
-import { timeOutline, alertCircleOutline } from 'ionicons/icons';
+import { ICON_UHRZEIT, ICON_WARNHINWEIS } from '../shared/icons';
 import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../shared/WartendeVorgaengeKarte';
 
@@ -65,7 +65,7 @@ const WartendeVorgaengeLeiste: React.FC = () => {
         onClick={() => setOffen(true)}
         aria-label={`${text} — antippen zeigt die Liste`}
       >
-        <IonIcon icon={nurGescheitert ? alertCircleOutline : timeOutline} aria-hidden="true" />
+        <IonIcon icon={nurGescheitert ? ICON_WARNHINWEIS : ICON_UHRZEIT} aria-hidden="true" />
         <span className="app-wartende-leiste__zahl" aria-hidden="true">{anzahl}</span>
       </button>
 
@@ -85,7 +85,7 @@ const WartendeVorgaengeLeiste: React.FC = () => {
             onVergessen={vergessen}
           />
           {gescheitert.length > 1 && (
-            <div style={{ padding: '0 16px 16px' }}>
+            <div style={{ padding: '0 var(--app-abstand-basis) var(--app-abstand-basis)' }}>
               <IonButton expand="block" fill="clear" onClick={alleVergessen}>
                 Alle Fehlschläge wegwischen
               </IonButton>

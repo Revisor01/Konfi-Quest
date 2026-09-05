@@ -30,7 +30,7 @@ const TeamerBadgesSlide: React.FC<Props> = ({ isActive, badges }) => {
         <div className="w-abzeichenreihe">
           {badges.badges.slice(0, 6).map((b, i) => (
             <div key={i} className="w-abzeichen wrapped-anim-bounce"
-                 style={{ background: b.color || '#7c3aed', animationDelay: `${0.3 + i * 0.1}s` }} title={b.name}>
+                 style={{ background: b.color || 'var(--app-color-wrapped)', animationDelay: `${0.3 + i * 0.1}s` }} title={b.name}>
               <IonIcon icon={getIconFromString(b.icon)} />
             </div>
           ))}

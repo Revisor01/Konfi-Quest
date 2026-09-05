@@ -1,4 +1,20 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_ABMELDEN,
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_AKTENTASCHE,
+  ICON_BUCH,
+  ICON_EINSTELLUNGEN,
+  ICON_GALERIE,
+  ICON_JAHRGANG,
+  ICON_KOMPASS,
+  ICON_LOESCHEN,
+  ICON_MAIL,
+  ICON_SCHLUESSEL,
+  ICON_STERN_GEFUELLT,
+  ICON_TERMIN,
+  ICON_UHRZEIT,
+  ICON_ZURUECK,
+} from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
@@ -23,7 +39,6 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, imagesOutline, bookOutline, compassOutline, star } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -242,16 +257,16 @@ const TeamerProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent className="ion-padding">
-          <div style={{ textAlign: 'center', marginTop: '80px' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <p>Fehler beim Laden des Profils</p>
             <IonButton
               expand="block"
               fill="outline"
               color="danger"
               onClick={handleLogout}
-              style={{ marginTop: '24px', height: '48px', borderRadius: '12px', fontWeight: '600' }}
+              style={{ marginTop: 'var(--app-abstand-weit)', height: '48px', borderRadius: 'var(--app-radius-karte)', fontWeight: 'var(--app-schrift-halbfett)' }}
             >
-              <IonIcon icon={logOutOutline} slot="start" />
+              <IonIcon icon={ICON_ABMELDEN} slot="start" />
               Abmelden
             </IonButton>
           </div>
@@ -289,6 +304,7 @@ const TeamerProfilePage: React.FC = () => {
         {/* A. Detail-Header mit Bubble-Effekt */}
         <div className="app-detail-header" style={{
           background: 'var(--app-gradient-teamer)',
+          // Marken-Glow des Teamer-Hero — bleibt bewusst inline (05.09.2026, Token-Konsolidierung)
           boxShadow: '0 20px 40px rgba(var(--app-color-teamer-rgb), 0.35)',
           position: 'relative',
           overflow: 'hidden'
@@ -299,12 +315,12 @@ const TeamerProfilePage: React.FC = () => {
           <div className="app-dashboard-header__circle" style={{ bottom: '-30px', left: '-30px', width: '100px', height: '100px' }} />
           <div className="app-dashboard-header__circle" style={{ bottom: '40px', left: '40px', width: '40px', height: '40px' }} />
 
-          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <div className="app-detail-header__content" style={{ padding: 'var(--app-freiraum-kopf-l) var(--app-abstand-weit) var(--app-abstand-weit) var(--app-abstand-weit)', alignItems: 'center', textAlign: 'center', position: 'relative', zIndex: 1 }}>
             <div className="app-icon-circle" style={{
               width: '80px', height: '80px',
               background: 'rgba(255, 255, 255, 0.2)',
-              marginBottom: '16px',
-              color: 'white', fontSize: '2rem', fontWeight: '600',
+              marginBottom: 'var(--app-abstand-basis)',
+              color: 'white', fontSize: 'var(--app-anzeige-zahl)', fontWeight: 'var(--app-schrift-halbfett)',
               border: '3px solid rgba(255, 255, 255, 0.3)'
             }}>
               {profile.user.display_name?.charAt(0)?.toUpperCase() || 'T'}
@@ -316,13 +332,13 @@ const TeamerProfilePage: React.FC = () => {
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
               {profile.user.email && (
                 <div className="app-detail-header__info-chip">
-                  <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
+                  <IonIcon icon={ICON_MAIL} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
                   {profile.user.email}
                 </div>
               )}
               {profile.user.teamer_since && (
                 <div className="app-detail-header__info-chip">
-                  <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
+                  <IonIcon icon={ICON_TERMIN} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
                   Dabei seit {new Date(profile.user.teamer_since).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
               )}
@@ -342,20 +358,20 @@ const TeamerProfilePage: React.FC = () => {
             vor den Einstellungen (Simons Reihenfolge 03.09.2026). Vorher hing
             der Block ganz unten, hinter Einstellungen und Inhalt. */}
         {wrappedHistory.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--teamer">
-                <IonIcon icon={timeOutline} />
+                <IonIcon icon={ICON_UHRZEIT} />
               </div>
               <IonLabel>Meine Rückblicke</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {wrappedHistory.map((entry) => (
                   <div
                     key={entry.id}
                     className="app-list-item"
-                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', borderLeftColor: 'var(--app-color-teamer)' }}
+                    style={{ width: '100%', cursor: 'pointer', marginBottom: 'var(--app-abstand-eng)', borderLeftColor: 'var(--app-color-teamer)' }}
                     onClick={() => {
                       setWrappedModalData(entry);
                     }}
@@ -363,7 +379,7 @@ const TeamerProfilePage: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={timeOutline} />
+                          <IonIcon icon={ICON_UHRZEIT} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">
@@ -385,15 +401,15 @@ const TeamerProfilePage: React.FC = () => {
         )}
 
         {/* B. Konto-Einstellungen */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--teamer">
-              <IonIcon icon={settingsOutline} />
+              <IonIcon icon={ICON_EINSTELLUNGEN} />
             </div>
             <IonLabel>Konto-Einstellungen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {/* Funktionsbeschreibung */}
                 <IonItem
@@ -401,13 +417,13 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentRoleTitleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={briefcaseOutline} />
+                          <IonIcon icon={ICON_AKTENTASCHE} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Funktionsbeschreibung</div>
@@ -428,13 +444,13 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentEmailModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={mailOutline} />
+                          <IonIcon icon={ICON_MAIL} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">E-Mail-Adresse ändern</div>
@@ -455,13 +471,13 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentPasswordModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={keyOutline} />
+                          <IonIcon icon={ICON_SCHLUESSEL} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Passwort ändern</div>
@@ -480,13 +496,13 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentBibleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={bookOutline} />
+                          <IonIcon icon={ICON_BUCH} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Bibelübersetzung</div>
@@ -509,12 +525,12 @@ const TeamerProfilePage: React.FC = () => {
                 <div
                   className="app-list-item app-list-item--teamer"
                   onClick={() => setShowOnboarding(true)}
-                  style={{ marginBottom: '8px' }}
+                  style={{ marginBottom: 'var(--app-abstand-eng)' }}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--teamer">
-                        <IonIcon icon={compassOutline} />
+                        <IonIcon icon={ICON_KOMPASS} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">App-Tour ansehen</div>
@@ -532,13 +548,13 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--teamer">
-                          <IonIcon icon={imagesOutline} />
+                          <IonIcon icon={ICON_GALERIE} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Medien-Cache leeren</div>
@@ -557,10 +573,10 @@ const TeamerProfilePage: React.FC = () => {
         </IonList>
 
         {/* C. Inhalt */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--teamer">
-              <IonIcon icon={ribbon} />
+              <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
             </div>
             <IonLabel>Inhalt</IonLabel>
           </IonListHeader>
@@ -575,7 +591,7 @@ const TeamerProfilePage: React.FC = () => {
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--badges">
-                      <IonIcon icon={star} />
+                      <IonIcon icon={ICON_STERN_GEFUELLT} />
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title">Badges</div>
@@ -595,7 +611,7 @@ const TeamerProfilePage: React.FC = () => {
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--konfi">
-                        <IonIcon icon={schoolOutline} />
+                        <IonIcon icon={ICON_JAHRGANG} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">Konfi-Historie</div>
@@ -613,7 +629,7 @@ const TeamerProfilePage: React.FC = () => {
         </IonList>
 
         {/* D. Logout-Button */}
-        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+        <div style={{ padding: '0 var(--app-abstand-basis)', marginTop: 'var(--app-abstand-basis)' }}>
           <IonButton
             expand="block"
             fill="outline"
@@ -621,11 +637,11 @@ const TeamerProfilePage: React.FC = () => {
             onClick={handleLogout}
             style={{
               height: '48px',
-              borderRadius: '12px',
-              fontWeight: '600'
+              borderRadius: 'var(--app-radius-karte)',
+              fontWeight: 'var(--app-schrift-halbfett)'
             }}
           >
-            <IonIcon icon={logOutOutline} slot="start" />
+            <IonIcon icon={ICON_ABMELDEN} slot="start" />
             Abmelden
           </IonButton>
 
@@ -636,12 +652,12 @@ const TeamerProfilePage: React.FC = () => {
             onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
             style={{
               height: '48px',
-              marginTop: '8px',
-              borderRadius: '12px',
-              fontWeight: '600'
+              marginTop: 'var(--app-abstand-eng)',
+              borderRadius: 'var(--app-radius-karte)',
+              fontWeight: 'var(--app-schrift-halbfett)'
             }}
           >
-            <IonIcon icon={trashOutline} slot="start" />
+            <IonIcon icon={ICON_LOESCHEN} slot="start" />
             Account löschen
           </IonButton>
         </div>

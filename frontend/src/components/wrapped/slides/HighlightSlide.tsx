@@ -1,11 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import {
-  chatbubblesOutline,
-  heartOutline,
-  flagOutline,
-  shieldCheckmarkOutline,
-} from 'ionicons/icons';
+import { ICON_CHALLENGE, ICON_CHATS, ICON_HERZ, ICON_SCHUTZ } from '../../shared/icons';
 import type { SlideProps, KonfiWrappedData } from '../../../types/wrapped';
 import { useCountUp } from '../../../hooks/useCountUp';
 import SlideBase from './SlideBase';
@@ -53,10 +48,10 @@ const VARIANTEN: Record<string, Array<{ label: string; hero: string; sub: string
 };
 
 const ICONS: Record<string, string> = {
-  chat_star: chatbubblesOutline,
-  reaktions_magnet: heartOutline,
-  challenge_fan: flagOutline,
-  verlaesslich: shieldCheckmarkOutline,
+  chat_star: ICON_CHATS,
+  reaktions_magnet: ICON_HERZ,
+  challenge_fan: ICON_CHALLENGE,
+  verlaesslich: ICON_SCHUTZ,
 };
 
 /** Sagt dem Modal, ob dieser Snapshot eine eigene Highlight-Seite bekommt. */
@@ -94,8 +89,8 @@ const HighlightSlide: React.FC<HighlightSlideProps> = ({ isActive, data }) => {
       <div className="wrapped-slide-decoration wrapped-slide-decoration--2" />
       <IonIcon icon={ICONS[highlight.type]} className="highlight-bg-icon" aria-hidden="true" />
       <div className="wrapped-anim-fly-left" style={{ opacity: 0 }}>
-        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-          <IonIcon icon={ICONS[highlight.type]} style={{ fontSize: '1rem' }} />
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)', justifyContent: 'center' }}>
+          <IonIcon icon={ICONS[highlight.type]} style={{ fontSize: 'var(--app-text-standard)' }} />
           {v.label}
         </p>
       </div>

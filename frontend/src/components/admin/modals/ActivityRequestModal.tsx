@@ -20,14 +20,14 @@ import {
   IonCardContent,
 } from '@ionic/react';
 import {
-  closeOutline,
-  documentText,
-  camera,
-  checkmarkCircle,
-  checkmarkOutline,
-  closeCircle,
-  trash
-} from 'ionicons/icons';
+  ICON_ABSAGE,
+  ICON_HAKEN,
+  ICON_KAMERA_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_TEXTDOKUMENT_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -224,13 +224,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonTitle>Aktivität laden...</IonTitle>
             <IonButtons slot="start">
               <IonButton aria-label="Schließen" onClick={onClose} className="app-modal-close-btn">
-                <IonIcon icon={closeOutline} />
+                <IonIcon icon={ICON_SCHLIESSEN} />
               </IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <div style={{ padding: 'var(--app-abstand-riesig) var(--app-abstand-gross)', textAlign: 'center' }}>
             <IonSpinner name="crescent" />
           </div>
         </IonContent>
@@ -245,13 +245,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonTitle>Aktivität prüfen</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
               <IonButton aria-label="Entscheidung speichern" onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
-                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
               </IonButton>
             </IonButtons>
           )}
@@ -263,7 +263,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--requests">
-              <IonIcon icon={documentText} />
+              <IonIcon icon={ICON_TEXTDOKUMENT_GEFUELLT} />
             </div>
             <IonLabel>Daten zur Aktivität</IonLabel>
           </IonListHeader>
@@ -277,7 +277,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <h2>
                       {request.konfi_name}
                       {request.jahrgang_name && (
-                        <span style={{ color: '#666', fontWeight: '400', marginLeft: '8px' }}>
+                        <span style={{ color: 'var(--app-text-secondary)', fontWeight: 'var(--app-schrift-normal)', marginLeft: 'var(--app-abstand-eng)' }}>
                           ({request.jahrgang_name})
                         </span>
                       )}
@@ -340,32 +340,32 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--requests">
-                <IonIcon icon={camera} />
+                <IonIcon icon={ICON_KAMERA_GEFUELLT} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 {photoUrl ? (
                   <img
                     src={photoUrl}
                     alt="Foto zur Aktivität"
                     style={{
                       maxWidth: '100%',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      borderRadius: 'var(--app-radius-klein)',
+                      boxShadow: 'var(--app-schatten-karte)',
                       display: 'block'
                     }}
                   />
                 ) : (
                   <div style={{
-                    background: '#f5f5f5',
-                    borderRadius: '12px',
-                    padding: '24px 16px',
+                    background: 'var(--app-surface-muted)',
+                    borderRadius: 'var(--app-radius-karte)',
+                    padding: 'var(--app-abstand-weit) var(--app-abstand-basis)',
                     textAlign: 'center'
                   }}>
                     <IonSpinner name="crescent" />
-                    <p style={{ margin: '12px 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+                    <p style={{ margin: 'var(--app-abstand-mittel) 0 0 0', fontSize: 'var(--app-text-basis)', color: 'var(--app-text-secondary)' }}>
                       Lade Foto...
                     </p>
                   </div>
@@ -377,14 +377,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   onClick={handleDeletePhoto}
                   disabled={deletingPhoto}
                   style={{
-                    marginTop: '16px',
-                    '--border-color': '#dc3545',
-                    '--color': '#dc3545',
+                    marginTop: 'var(--app-abstand-basis)',
+                    '--border-color': 'var(--app-color-danger)',
+                    '--color': 'var(--app-color-danger)',
                     '--border-width': '2px',
-                    fontWeight: '600'
+                    fontWeight: 'var(--app-schrift-halbfett)'
                   }}
                 >
-                  <IonIcon icon={trash} slot="start" />
+                  <IonIcon icon={ICON_LOESCHEN_GEFUELLT} slot="start" />
                   {deletingPhoto ? 'Lösche...' : 'Foto löschen'}
                 </IonButton>
               </IonCardContent>
@@ -398,9 +398,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonListHeader>
               <div
                 className="app-section-icon"
-                style={{ backgroundColor: isApproved ? '#059669' : '#dc3545' }}
+                style={{ backgroundColor: isApproved ? 'var(--app-color-success-strong)' : 'var(--app-color-danger)' }}
               >
-                <IonIcon icon={isApproved ? checkmarkCircle : closeCircle} />
+                <IonIcon icon={isApproved ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE} />
               </div>
               <IonLabel>Bearbeitungsstatus</IonLabel>
             </IonListHeader>
@@ -410,7 +410,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <IonItem lines="inset">
                     <IonLabel className="ion-text-wrap">
                       <p>Status</p>
-                      <h2 style={{ color: isApproved ? '#059669' : '#dc3545' }}>
+                      <h2 style={{ color: isApproved ? 'var(--app-color-success-strong)' : 'var(--app-color-danger)' }}>
                         {isApproved ? 'Verbucht' : 'Abgelehnt'} {request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
                       </h2>
                     </IonLabel>
@@ -421,7 +421,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <IonItem lines="none">
                       <IonLabel className="ion-text-wrap">
                         <p>{isApproved ? 'Kommentar' : 'Begründung'}</p>
-                        <h2 style={{ color: isApproved ? '#333' : '#dc3545', whiteSpace: 'pre-wrap' }}>
+                        <h2 style={{ color: isApproved ? 'var(--app-text-primary)' : 'var(--app-color-danger)', whiteSpace: 'pre-wrap' }}>
                           {request.admin_comment}
                         </h2>
                       </IonLabel>
@@ -438,13 +438,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--requests">
-                <IonIcon icon={checkmarkCircle} />
+                <IonIcon icon={ICON_ZUSAGE_GEFUELLT} />
               </div>
               <IonLabel>Entscheidung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
+                <div style={{ display: 'flex', gap: 'var(--app-abstand-mittel)' }}>
                   <IonButton
                     fill="outline"
                     onClick={() => !loading && setSelectedAction('approve')}
@@ -452,15 +452,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     style={{
                       flex: 1,
                       minWidth: 0,
-                      '--border-color': '#059669',
-                      '--color': selectedAction === 'approve' ? 'white' : '#059669',
-                      '--background': selectedAction === 'approve' ? '#059669' : 'transparent',
+                      '--border-color': 'var(--app-color-success-strong)',
+                      '--color': selectedAction === 'approve' ? 'white' : 'var(--app-color-success-strong)',
+                      '--background': selectedAction === 'approve' ? 'var(--app-color-success-strong)' : 'transparent',
                       '--border-width': '2px',
                       '--border-radius': '12px',
-                      fontWeight: '600'
+                      fontWeight: 'var(--app-schrift-halbfett)'
                     }}
                   >
-                    <IonIcon icon={checkmarkCircle} slot="start" />
+                    <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
                     Genehmigen
                   </IonButton>
                   <IonButton
@@ -470,23 +470,23 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     style={{
                       flex: 1,
                       minWidth: 0,
-                      '--border-color': '#dc3545',
-                      '--color': selectedAction === 'reject' ? 'white' : '#dc3545',
-                      '--background': selectedAction === 'reject' ? '#dc3545' : 'transparent',
+                      '--border-color': 'var(--app-color-danger)',
+                      '--color': selectedAction === 'reject' ? 'white' : 'var(--app-color-danger)',
+                      '--background': selectedAction === 'reject' ? 'var(--app-color-danger)' : 'transparent',
                       '--border-width': '2px',
                       '--border-radius': '12px',
-                      fontWeight: '600'
+                      fontWeight: 'var(--app-schrift-halbfett)'
                     }}
                   >
-                    <IonIcon icon={closeCircle} slot="start" />
+                    <IonIcon icon={ICON_ABSAGE} slot="start" />
                     Ablehnen
                   </IonButton>
                 </div>
 
                 {/* Ablehnungsgrund - nur wenn Ablehnen gewählt */}
                 {selectedAction === 'reject' && (
-                  <div style={{ marginTop: '16px' }}>
-                    <IonLabel style={{ fontSize: '0.85rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                  <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
+                    <IonLabel style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
                       Grund für die Ablehnung *
                     </IonLabel>
                     <IonTextarea
@@ -497,9 +497,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       disabled={loading}
                       style={{
                         width: '100%',
-                        background: '#f5f5f5',
-                        borderRadius: '8px',
-                        padding: '8px',
+                        background: 'var(--app-surface-muted)',
+                        borderRadius: 'var(--app-radius-klein)',
+                        padding: 'var(--app-abstand-eng)',
                         '--padding-start': '12px',
                         '--padding-end': '12px'
                       }}

@@ -103,6 +103,10 @@ describe('Eck-Zeichen der eigenen Absage', () => {
     // die Text-Variante zurueck, waehrend jeder andere Zustand ein Symbol
     // zeigt (Simon, 05.09.2026).
     const badge = lies('src/components/shared/StatusBadge.tsx');
-    expect(badge).toContain("'Abgesagt von dir': closeCircle");
+    // Seit der Icon-Konsolidierung (05.09.2026) steht in der Zuordnung die
+    // semantische Konstante ICON_ABSAGE statt des ionicons-Namens closeCircle.
+    // Die Aussage bleibt: Der Zustand hat ein Symbol, keinen ausgeschriebenen
+    // Text -- und zwar dasselbe wie 'Abgesagt' und 'Abgemeldet'.
+    expect(badge).toContain("'Abgesagt von dir': ICON_ABSAGE");
   });
 });

@@ -1,4 +1,13 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_AKTENTASCHE,
+  ICON_EINSTELLUNGEN,
+  ICON_GALERIE,
+  ICON_LOESCHEN,
+  ICON_MAIL,
+  ICON_SCHLUESSEL,
+  ICON_TERMIN,
+  ICON_ZURUECK,
+} from '../../shared/icons';
 import React from 'react';
 import {
   IonPage,
@@ -19,7 +28,6 @@ import {
   IonRefresherContent,
   useIonModal
 } from '@ionic/react';
-import { keyOutline, mailOutline, arrowBack, briefcaseOutline, settingsOutline, calendarOutline, trashOutline, imagesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -140,8 +148,9 @@ const AdminProfilePage: React.FC = () => {
 
         {/* Header - Dashboard-Style mit Blasen-Effekt */}
         <div className="app-detail-header" style={{
-          background: 'linear-gradient(135deg, #818cf8 0%, #667eea 50%, #4f46e5 100%)',
-          boxShadow: '0 20px 40px rgba(102, 126, 234, 0.35)',
+          background: 'var(--app-gradient-admin)',
+          // Marken-Glow des Admin-Hero — bleibt bewusst inline (05.09.2026, Token-Konsolidierung)
+          boxShadow: '0 20px 40px rgba(var(--app-color-users-rgb), 0.35)',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -151,13 +160,13 @@ const AdminProfilePage: React.FC = () => {
           <div className="app-dashboard-header__circle" style={{ bottom: '-30px', left: '-30px', width: '100px', height: '100px' }} />
           <div className="app-dashboard-header__circle" style={{ bottom: '40px', left: '40px', width: '40px', height: '40px' }} />
 
-          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <div className="app-detail-header__content" style={{ padding: 'var(--app-freiraum-kopf-l) var(--app-abstand-weit) var(--app-abstand-weit) var(--app-abstand-weit)', alignItems: 'center', textAlign: 'center', position: 'relative', zIndex: 1 }}>
             {/* Avatar */}
             <div className="app-icon-circle" style={{
               width: '80px', height: '80px',
               background: 'rgba(255, 255, 255, 0.2)',
-              marginBottom: '16px',
-              color: 'white', fontSize: '2rem', fontWeight: '600',
+              marginBottom: 'var(--app-abstand-basis)',
+              color: 'white', fontSize: 'var(--app-anzeige-zahl)', fontWeight: 'var(--app-schrift-halbfett)',
               border: '3px solid rgba(255, 255, 255, 0.3)'
             }}>
               {user?.display_name?.charAt(0)?.toUpperCase() || 'A'}
@@ -171,13 +180,13 @@ const AdminProfilePage: React.FC = () => {
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
               {(profileData?.email || user?.email) && (
                 <div className="app-detail-header__info-chip">
-                  <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
+                  <IonIcon icon={ICON_MAIL} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
                   {profileData?.email || user?.email}
                 </div>
               )}
               {profileData?.created_at && (
                 <div className="app-detail-header__info-chip">
-                  <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
+                  <IonIcon icon={ICON_TERMIN} style={{ fontSize: 'var(--app-text-sekundaer)' }} />
                   Seit {new Date(profileData?.created_at || '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
               )}
@@ -186,15 +195,15 @@ const AdminProfilePage: React.FC = () => {
         </div>
 
         {/* Konto-Einstellungen - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
-              <IonIcon icon={settingsOutline} />
+              <IonIcon icon={ICON_EINSTELLUNGEN} />
             </div>
             <IonLabel>Konto-Einstellungen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {/* Funktionsbeschreibung */}
                 <IonItem
@@ -210,7 +219,7 @@ const AdminProfilePage: React.FC = () => {
                     '--inner-border-width': '0',
                     '--border-style': 'none',
                     '--min-height': 'auto',
-                    marginBottom: '8px'
+                    marginBottom: 'var(--app-abstand-eng)'
                   }}
                 >
                   <div
@@ -220,7 +229,7 @@ const AdminProfilePage: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--users">
-                          <IonIcon icon={briefcaseOutline} />
+                          <IonIcon icon={ICON_AKTENTASCHE} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Funktionsbeschreibung</div>
@@ -249,7 +258,7 @@ const AdminProfilePage: React.FC = () => {
                     '--inner-border-width': '0',
                     '--border-style': 'none',
                     '--min-height': 'auto',
-                    marginBottom: '8px'
+                    marginBottom: 'var(--app-abstand-eng)'
                   }}
                 >
                   <div
@@ -259,7 +268,7 @@ const AdminProfilePage: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--users">
-                          <IonIcon icon={mailOutline} />
+                          <IonIcon icon={ICON_MAIL} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">E-Mail-Adresse ändern</div>
@@ -288,7 +297,7 @@ const AdminProfilePage: React.FC = () => {
                     '--inner-border-width': '0',
                     '--border-style': 'none',
                     '--min-height': 'auto',
-                    marginBottom: '8px'
+                    marginBottom: 'var(--app-abstand-eng)'
                   }}
                 >
                   <div
@@ -298,7 +307,7 @@ const AdminProfilePage: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--users">
-                          <IonIcon icon={keyOutline} />
+                          <IonIcon icon={ICON_SCHLUESSEL} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Passwort ändern</div>
@@ -337,7 +346,7 @@ const AdminProfilePage: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--users">
-                          <IonIcon icon={imagesOutline} />
+                          <IonIcon icon={ICON_GALERIE} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">Medien-Cache leeren</div>
@@ -354,7 +363,7 @@ const AdminProfilePage: React.FC = () => {
           </IonCard>
         </IonList>
 
-        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+        <div style={{ padding: '0 var(--app-abstand-basis)', marginTop: 'var(--app-abstand-basis)' }}>
           <IonButton
             expand="block"
             fill="outline"
@@ -362,11 +371,11 @@ const AdminProfilePage: React.FC = () => {
             onClick={handleOpenDeleteAccount}
             style={{
               height: '48px',
-              borderRadius: '12px',
-              fontWeight: '600'
+              borderRadius: 'var(--app-radius-karte)',
+              fontWeight: 'var(--app-schrift-halbfett)'
             }}
           >
-            <IonIcon icon={trashOutline} slot="start" />
+            <IonIcon icon={ICON_LOESCHEN} slot="start" />
             Account löschen
           </IonButton>
         </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { cloudOfflineOutline } from 'ionicons/icons';
+import { ICON_OFFLINE } from './icons';
 
 /**
  * Eine Zeile, die sagt, was gerade fehlt — statt einen Abschnitt kommentarlos
@@ -24,7 +24,7 @@ interface Props {
 
 const OfflinePlatzhalter: React.FC<Props> = ({ was }) => (
   <div className="app-offline-platzhalter">
-    <IonIcon icon={cloudOfflineOutline} aria-hidden="true" />
+    <IonIcon icon={ICON_OFFLINE} aria-hidden="true" />
     <span>{was} ist offline nicht verfügbar.</span>
   </div>
 );

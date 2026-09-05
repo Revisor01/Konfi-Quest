@@ -20,12 +20,12 @@ import {
   IonSpinner
 } from '@ionic/react';
 import {
-  closeOutline,
-  checkmarkOutline,
-  briefcaseOutline,
-  informationCircleOutline,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+  ICON_AKTENTASCHE,
+  ICON_HAKEN,
+  ICON_INFO,
+  ICON_OFFLINE,
+  ICON_SCHLIESSEN,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -88,12 +88,12 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
           <IonTitle>Funktionsbeschreibung</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             <IonButton aria-label="Rollentitel speichern" onClick={handleSave} disabled={isSubmitting || !isOnline} className={`app-modal-submit-btn ${submitBtnClass}`}>
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -101,10 +101,10 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* Funktionsbeschreibung Sektion - iOS26 Pattern */}
-        <IonList inset={true} className="app-segment-wrapper" style={{ marginTop: '8px' }}>
+        <IonList inset={true} className="app-segment-wrapper" style={{ marginTop: 'var(--app-abstand-eng)' }}>
           <IonListHeader>
             <div className={`app-section-icon ${sectionIconClass}`}>
-              <IonIcon icon={briefcaseOutline} />
+              <IonIcon icon={ICON_AKTENTASCHE} />
             </div>
             <IonLabel>Deine Funktion</IonLabel>
           </IonListHeader>
@@ -130,7 +130,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className={`app-section-icon ${sectionIconClass}`}>
-              <IonIcon icon={informationCircleOutline} />
+              <IonIcon icon={ICON_INFO} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
@@ -140,7 +140,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
                 Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
                 Sie ersetzt nicht deine Rolle (Admin, Teamer:in), sondern ergänzt sie.
               </p>
-              <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+              <p style={{ margin: 'var(--app-abstand-mittel) 0 0 0', fontSize: 'var(--app-text-sekundaer)', fontStyle: 'italic' }}>
                 Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
               </p>
             </IonCardContent>

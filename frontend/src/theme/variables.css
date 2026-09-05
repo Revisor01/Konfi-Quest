@@ -1,6 +1,31 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
 
+/* ===================================================================
+   WO LIEGT WAS? (Wegweiser, 05.09.2026)
+
+   Diese Datei ist der Einstieg. Sie enthaelt die FARBEN und die
+   Ionic-Integration und laedt die uebrigen Skalen per @import:
+
+     theme/farben         -> stehen (noch) hier unten in dieser Datei
+     theme/typografie.css -> Schriftgroessen und -schnitte
+     theme/abstaende.css  -> Abstaende, Eckradien, Schatten
+     theme/icons.ts       -> gibt es nicht; Icons liegen in
+                             components/shared/icons.ts
+     theme/colors.ts      -> Spiegel der Farben fuer JS-Kontexte, in denen
+                             CSS-Variablen technisch nicht gehen (SVG-
+                             Attribute, QR-Bibliothek, Alpha-Rechnungen).
+                             Der Test farbTokens.test.ts haelt ihn mit den
+                             Tokens hier deckungsgleich.
+
+   Wer den Look aendern will, aendert eine Zeile in der passenden Datei --
+   nicht mehr hunderte Fundstellen in den Komponenten. Abgesichert durch
+   vier Tests: farbTokens, typografieTokens, abstaendeTokens, zentraleIcons.
+   =================================================================== */
+
+/* Abstands-, Radius- und Schatten-Skalen (05.09.2026, Konsolidierung der Inline-Styles) */
+@import './abstaende.css';
+
 /* iOS26 Theme - kann durch Entfernen dieser Imports deaktiviert werden */
 @import '@rdlabo/ionic-theme-ios26/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-ios26/dist/css/ionic-theme-ios26.css';
@@ -9,6 +34,10 @@ http://ionicframework.com/docs/theming/ */
 /* Material Design 3 Theme - für Android */
 @import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css';
+
+/* Typografie-Skala (Schriftgroessen + Schnitte) — seit 05.09.2026 die eine
+   Stelle fuer alle Textgroessen, so wie diese Datei fuer die Farben. */
+@import './typografie.css';
 
 /* Headline-Schrift: Plus Jakarta Sans (wie Landing-Page) */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
@@ -30,26 +59,26 @@ ion-list-header ion-label,
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 .app-header-banner__title {
-  font-weight: 800;
+  font-weight: var(--app-schrift-extrafett);
   letter-spacing: -0.03em;
 }
 ion-list-header ion-label {
-  font-weight: 700;
+  font-weight: var(--app-schrift-fett);
   letter-spacing: -0.02em;
 }
 .app-stats-row__value {
-  font-weight: 800;
+  font-weight: var(--app-schrift-extrafett);
   letter-spacing: -0.03em;
 }
 .app-list-item__title,
 .app-dashboard-glass-card h1,
 .app-dashboard-glass-card h2,
 .app-dashboard-glass-card h3 {
-  font-weight: 700;
+  font-weight: var(--app-schrift-fett);
   letter-spacing: -0.01em;
 }
 .app-text-main {
-  font-weight: 700;
+  font-weight: var(--app-schrift-fett);
 }
 
 /* iOS26 Required Color Brightness Variables */
@@ -66,8 +95,13 @@ ion-list-header ion-label {
   --app-color-konfis-rgb: 91, 33, 182;
   --app-color-teamer: #be185d;
   --app-color-teamer-rgb: 190, 24, 93;
-  --app-color-challenges: #be185d;
-  --app-color-challenges-rgb: 190, 24, 93;
+  /* Indigo statt Beerenrot (Simon, 05.09.2026): Challenges trugen exakt die
+     Teamer-Farbe #be185d und hatten damit keine eigene Identitaet. Das Indigo
+     ist fast gleich hell (0,117 gegen 0,124 relative Helligkeit), der Umbau
+     aendert also die Gewichtung der Oberflaeche nicht -- nur den Ton.
+     Weisser Text darauf: Kontrast 6,3 (AA erfuellt). */
+  --app-color-challenges: #4f46e5;
+  --app-color-challenges-rgb: 79, 70, 229;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
@@ -97,6 +131,52 @@ ion-list-header ion-label {
      Profil-Header und Wrapped-Kachel pink statt beerenrot wirken (Simon).
      Erster Stopp ist jetzt --app-color-teamer (#be185d), von dort ins Dunkle. */
   --app-gradient-teamer: linear-gradient(135deg, #be185d 0%, #9d174d 55%, #831843 100%);
+  /* Rollen-Verlaeufe: je Rolle GENAU EINER. Konfi (Profilkopf, Konfi-Detail)
+     und Admin (Profilkopf) standen bis 05.09.2026 als Inline-Verlaeufe in den
+     Komponenten — derselbe Fehlertyp, der beim Teamer-Pink dreimal passierte.
+     Ein Test prueft jetzt, dass kein Rollen-Verlauf mehr inline lebt. */
+  --app-gradient-konfi: linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%);
+  --app-gradient-admin: linear-gradient(135deg, #818cf8 0%, #667eea 50%, #4f46e5 100%);
+  /* Profilkopf ohne Konfirmationsdatum: neutraler Schieferverlauf */
+  --app-gradient-neutral: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  /* Wrapped-Hinweiskachel im Konfi-Dashboard */
+  --app-gradient-wrapped: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+  /* Gold-Abzeichen-Kachel (Konfi- und Teamer-Dashboard identisch) */
+  --app-gradient-badges: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  /* "Neu"-Punkt an frisch verliehenen Abzeichen */
+  --app-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* Noch nicht erreichte Abzeichen (Grau-Verlauf) */
+  --app-gradient-badge-gesperrt: linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%);
+  /* Rosa Fehler-Kachel der Passwort-Zuruecksetzen-Seite (Cosmic-Look der
+     Anmeldeseiten, bewusst heller als der Teamer-Verlauf) */
+  --app-gradient-auth-fehler: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+  /* Raketen-Countdown bis zur Konfirmation (Konfi-Profil, Geheim-Abzeichen) */
+  --app-gradient-rakete: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  --app-gradient-rakete-quer: linear-gradient(90deg, #ff6b35, #f7931e);
+
+  /* Dunkle Partnertoene der Domaenen-Farben (Verlaufs-/Hover-Stufen).
+     Vorher als lose Hexwerte in SectionHeader & Co. verstreut (05.09.2026). */
+  --app-color-events-dunkel: #b91c1c;
+  --app-color-activities-dunkel: #065f46;
+  --app-color-konfis-dunkel: #4c1d95;
+  --app-color-teamer-dunkel: #831843;
+  --app-color-teamer-mittel: #9d174d; /* Zwischenton des Teamer-Verlaufs */
+  --app-color-users-dunkel: #5a67d8;
+  --app-color-badges-dunkel: #d97706;
+  --app-color-jahrgang-dunkel: #0066d6;
+  --app-color-categories-dunkel: #0284c7;
+  --app-color-level-dunkel: #db2777;
+  /* Verlaufsende der Challenge-Detailkoepfe. Weicht vom
+     SectionHeader-Partner der Challenges (#831843) ab — als moegliche
+     Inkonsistenz gemeldet, Wert bewusst unveraendert (05.09.2026). */
+  --app-color-challenges-akzent: #4338ca;  /* dunkleres Indigo, Verlaufsende */
+  --app-color-material-dunkel: #b45309;
+  --app-color-chat-dunkel: #0891b2;
+  --app-color-wrapped-dunkel: #6d28d9;
+  --app-color-wrapped-hell: #a78bfa; /* helle Akzente auf Wrapped-Dunkelgrund */
+  /* Zertifikats-Akzent (Zuweisungs-Modal); Wert bewusst gleich level-dunkel */
+  --app-color-zertifikate: #db2777;
+  --app-color-zertifikate-rgb: 219, 39, 119;
 
   /* Punkte-Typen */
   --app-color-gottesdienst: #3b82f6;
@@ -117,6 +197,55 @@ ion-list-header ion-label {
   --app-color-danger-rgb: 220, 53, 69;
   --app-color-info: #007aff;
   --app-color-info-rgb: 0, 122, 255;
+  /* Frisches Smaragdgruen: "Neu"-Ring an Abzeichen, erfuellte
+     Passwort-Regeln. Heller als success-strong, dunkler als success. */
+  --app-color-success-fresh: #10b981;
+  --app-color-success-fresh-rgb: 16, 185, 129;
+  /* Warteliste / "bald anmeldbar" bei Events; auch fuer versteckte Abzeichen
+     in der Admin-Liste (gleiches Orange, 05.09.2026 konsolidiert) */
+  /* Neutral: vergangene Events, inaktive/unbestimmte Zustaende */
+  --app-color-neutral: #6c757d;
+  --app-color-neutral-rgb: 108, 117, 125;
+  --app-color-neutral-hell: #9ca3af;
+  --app-color-neutral-hell-rgb: 156, 163, 175;
+
+  /* Medaillen-Stufen der Abzeichen (Bronze bis 5, Silber bis 15, sonst Gold).
+     JS-Spiegel in theme/colors.ts (Alpha-Suffix-Rechnungen). */
+  --app-color-gold: #ffd700;
+  --app-color-gold-hell: #ffed4e;
+  --app-color-silber: #c0c0c0;
+  --app-color-silber-hell: #e8e8e8;
+  --app-color-bronze: #cd7f32;
+  --app-color-bronze-hell: #deb887;
+
+  /* Akzent des Konfirmations-Countdowns (Rakete) */
+  --app-color-rakete: #ff6b35;
+  --app-color-rakete-hell: #f7931e;
+
+  /* Aus dem zweiten :root-Block hierher geholt (05.09.2026): variables.css
+     hatte zwei Farbbloecke, 24 Tokens waren doppelt definiert (mit gleichen
+     Werten, aber beim Nachschlagen fand man mal den einen, mal den anderen).
+     Diese sieben gab es nur unten. */
+  --app-color-purple: #5b21b6;          /* Alias von --app-color-konfis */
+  --app-color-purple-rgb: 91, 33, 182;
+  --app-color-trophy: #ff9500;
+  --app-color-organizations: #667eea;
+  --app-color-organizations-rgb: 102, 126, 234;
+  --app-color-requests: #5b21b6;
+  --app-color-requests-rgb: 91, 33, 182;
+
+  /* Anmeldeseiten (dunkler "Cosmic"-Hintergrund, helle Akzente) */
+  --app-auth-akzent: #67e8f9;
+  --app-auth-rosa: #f9a8d4;
+  --app-auth-rosa-hell: #fce7f3;
+
+  /* Wrapped-Folien: helle Akzente auf dunklem Grund (dekorativ, kein
+     Semantik-Token — die Folien sind eigenstaendig gestaltet) */
+  --app-wrapped-gold: #fbbf24;
+  --app-wrapped-gold-rgb: 251, 191, 36;
+  --app-wrapped-gold-hell: #fcd34d;
+  --app-wrapped-orange: #fb923c;
+  --app-wrapped-rose: #fb7185;
 
   --ion-color-primary-brightness: #96FEFF;
   --ion-color-primary-brightness-rgb: 150, 254, 255;
@@ -137,7 +266,7 @@ ion-list-header ion-label {
   --ion-color-dark-brightness: #666666;
   --ion-color-dark-brightness-rgb: 102, 102, 102;
 
-  --app-description-font-size: 0.85rem;
+  --app-description-font-size: var(--app-text-sekundaer);
 
   /* Generische Textfarben — Single source of truth für Inline-Style colors */
   --app-text-primary: #333;
@@ -145,6 +274,20 @@ ion-list-header ion-label {
   --app-text-tertiary: #888;
   --app-text-muted: #999;
   --app-text-system: #8e8e93;
+  /* Ergaenzungen 05.09.2026 — vorher lose Hexwerte in den Komponenten: */
+  --app-text-emphasis: #1a1a1a; /* kraeftige Titel/Werte (Chat, Legenden) */
+  --app-text-body: #4a4a4a; /* Fliesstext in Legenden-Karten */
+  --app-text-ios: #3c3c43; /* iOS-Sekundaerton (Beschreibungen) */
+  --app-text-faint: #b0b0b5; /* blasse Nebenwerte (Metrikseite) */
+
+  /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
+  --app-surface-soft: #f8f9fa; /* heller Kartengrund (fremde Chat-Blase, Icon-Raster) */
+  --app-surface-muted: #f5f5f5; /* Platzhalterflaechen, Kommentar-Kaesten */
+  --app-surface-dim: #f0f0f0; /* Ladeflaechen, helle Trennlinien */
+  --app-surface-dark: #1e1e1e; /* Video-Platzhalter */
+  --app-border: #e0e0e0; /* Standard-Rahmen */
+  --app-border-soft: #eee; /* zarte Trennlinien */
+  --app-border-strong: #c7c7cc; /* iOS-Trennerton, gestrichelte Upload-Rahmen */
 }
 
 /* Custom App Styles */
@@ -161,7 +304,7 @@ ion-card.app-card {
 }
 
 ion-card.app-card ion-card-content {
-  padding: 16px;
+  padding: var(--app-abstand-basis);
 }
 
 ion-card.app-card ion-card-content ion-list {
@@ -177,14 +320,14 @@ ion-card.app-card ion-item {
 
 /* Kleinere Texte in app-card IonItems für kompakteres Layout */
 ion-card.app-card ion-item ion-label p {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
   color: #8e8e93;
-  margin-bottom: 2px;
+  margin-bottom: var(--app-abstand-winzig);
 }
 
 ion-card.app-card ion-item ion-label h2 {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-mittel);
 }
 
 /* ============================================
@@ -199,10 +342,10 @@ ion-card.app-card ion-item ion-label h2 {
   border-bottom: 1px solid rgba(0,0,0,0.06);
   border-left-width: 3px;
   border-left-style: solid;
-  border-radius: 10px;
-  padding: 12px 16px;
+  border-radius: var(--app-radius-knopf);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
   background: white;
-  margin-bottom: 8px;
+  margin-bottom: var(--app-abstand-eng);
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -220,17 +363,17 @@ ion-item.app-list-item {
   border-bottom: 1px solid rgba(0,0,0,0.06);
   border-left-width: 3px;
   border-left-style: solid;
-  border-radius: 10px;
-  margin-bottom: 8px;
+  border-radius: var(--app-radius-knopf);
+  margin-bottom: var(--app-abstand-eng);
   overflow: hidden;
 }
 ion-item.app-list-item::part(native) {
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-radius: var(--app-radius-knopf);
 }
 /* Abstände: IonItemSliding Wrapper bekommt auch margin-bottom */
 ion-item-sliding:has(.app-list-item) {
-  margin-bottom: 8px;
+  margin-bottom: var(--app-abstand-eng);
 }
 ion-item-sliding:has(.app-list-item) .app-list-item,
 ion-item-sliding:has(.app-list-item) ion-item.app-list-item {
@@ -306,10 +449,10 @@ ion-item-sliding:last-child {
 /* Kein eigener linker Farbbalken: Reason-Boxen sitzen in app-list-item,
    das bereits einen farbigen border-left hat (sonst Doppelung) */
 .app-reason-box {
-  margin-top: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  margin-top: var(--app-abstand-eng);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  font-size: var(--app-text-sekundaer);
   line-height: 1.4;
 }
 .app-reason-box--danger {
@@ -325,7 +468,7 @@ ion-item-sliding:last-child {
   color: #666;
 }
 .app-reason-box__label {
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
 }
 .app-reason-box--danger .app-reason-box__label { color: #dc3545; }
 .app-reason-box--warning .app-reason-box__label { color: #ff9500; }
@@ -334,13 +477,13 @@ ion-item-sliding:last-child {
 /* === Status Chips === */
 /* App Status Chip - für Status-Anzeigen */
 .app-chip {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+  padding: var(--app-abstand-winzig) var(--app-abstand-eng);
+  border-radius: var(--app-radius-knopf);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--app-abstand-mini);
 }
 .app-chip--events {
   background-color: rgba(220, 38, 38, 0.15);
@@ -396,9 +539,9 @@ ion-item-sliding:last-child {
 }
 /* Einzelner Badge (ohne Positionierung — Container uebernimmt) */
 .app-corner-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 4px 10px;
+  font-size: var(--app-text-mini);
+  font-weight: var(--app-schrift-fett);
+  padding: var(--app-abstand-mini) var(--app-abstand-schmal);
   color: white;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -408,10 +551,10 @@ ion-item-sliding:last-child {
   border-radius: 0 0 10px 10px;
 }
 .app-corner-badges .app-corner-badge:last-child {
-  border-radius: 0 10px 0 10px;
+  border-radius: var(--app-radius-band);
 }
 .app-corner-badges .app-corner-badge:only-child {
-  border-radius: 0 10px 0 10px;
+  border-radius: var(--app-radius-band);
 }
 /* Bestehende Farb-Varianten */
 .app-corner-badge--events { background-color: var(--app-color-events); }
@@ -434,19 +577,19 @@ ion-item-sliding:last-child {
 /* Queue-Badge (orange, Icon-only, schmaler Padding) */
 .app-corner-badge--queue {
   background-color: #ff9500;
-  padding: 4px 6px;
+  padding: var(--app-abstand-mini) var(--app-abstand-kompakt);
 }
 .app-corner-badge--queue ion-icon {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
 }
 /* Fehler-Badge (rot, Icon-only, klickbar) */
 .app-corner-badge--error {
   background-color: #dc3545;
-  padding: 4px 6px;
+  padding: var(--app-abstand-mini) var(--app-abstand-kompakt);
   cursor: pointer;
 }
 .app-corner-badge--error ion-icon {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
 }
 
 /* === Section Header Icons === */
@@ -454,11 +597,11 @@ ion-item-sliding:last-child {
 .app-section-icon {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  margin-right: var(--app-abstand-eng);
 }
 .app-section-icon--events { background-color: var(--app-color-events); }
 .app-section-icon--chat { background-color: var(--app-color-chat); }
@@ -485,7 +628,7 @@ ion-item-sliding:last-child {
 .app-section-icon--challenges { background-color: var(--app-color-challenges); }
 .app-section-icon ion-icon {
   color: white;
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
 }
 
 /* IonListHeader in inset IonList: Einrueckung reduzieren */
@@ -499,22 +642,22 @@ ion-list[inset] ion-list-header {
 .app-info-row {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: var(--app-abstand-mittel);
 }
 .app-info-row:last-child {
   margin-bottom: 0;
 }
 .app-info-row__icon {
-  margin-right: 12px;
-  font-size: 1.2rem;
+  margin-right: var(--app-abstand-mittel);
+  font-size: var(--app-text-untertitel);
   flex-shrink: 0;
 }
 .app-info-row__content {
-  font-size: 1rem;
+  font-size: var(--app-text-standard);
   color: #333;
 }
 .app-info-row__sublabel {
-  font-size: 0.9rem;
+  font-size: var(--app-text-basis);
   color: #666;
 }
 
@@ -523,12 +666,12 @@ ion-list[inset] ion-list-header {
 .app-icon-circle {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 4px;
+  margin-top: var(--app-abstand-mini);
 }
 .app-icon-circle--lg {
   width: 32px;
@@ -546,6 +689,10 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--primary { background-color: var(--app-color-konfis); }
 .app-icon-circle--bonus { background-color: var(--app-color-bonus); }
 .app-icon-circle--activities { background-color: var(--app-color-activities); }
+/* Gottesdienst hat eine eigene Farbe (#3b82f6). Bis 05.09.2026 nutzten drei
+   Stellen ersatzweise --info (iOS-Blau #007aff) -- sichtbar anders, und im
+   Punkteverlauf standen sogar beide Varianten in derselben Datei. */
+.app-icon-circle--gottesdienst { background-color: var(--app-color-gottesdienst); }
 .app-icon-circle--teamer { background-color: var(--app-color-teamer); }
 .app-icon-circle--team { background-color: var(--app-color-teamer); }
 .app-icon-circle--challenges { background-color: var(--app-color-challenges); }
@@ -563,10 +710,10 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--jahrgang { background-color: #007aff; }
 .app-icon-circle ion-icon {
   color: white;
-  font-size: 0.9rem;
+  font-size: var(--app-text-basis);
 }
 .app-icon-circle--lg ion-icon {
-  font-size: 1rem;
+  font-size: var(--app-text-standard);
 }
 
 /* === Tags === */
@@ -574,13 +721,13 @@ ion-list[inset] ion-list-header {
 .app-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 12px;
-  margin-right: 6px;
-  margin-bottom: 6px;
+  gap: var(--app-abstand-mini);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-mittel);
+  padding: var(--app-abstand-mini) var(--app-abstand-schmal);
+  border-radius: var(--app-radius-karte);
+  margin-right: var(--app-abstand-kompakt);
+  margin-bottom: var(--app-abstand-kompakt);
 }
 .app-tag--events {
   background-color: rgba(220, 38, 38, 0.12);
@@ -618,7 +765,7 @@ ion-list[inset] ion-list-header {
 .app-list-item__main {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--app-abstand-mittel);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -639,12 +786,12 @@ ion-list[inset] ion-list-header {
    verkleinert. Die Sonderregel --events tat genau das bereits, aber nur
    fuer zwei der Listen; jetzt gilt es ueberall. */
 .app-list-item__title {
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: var(--app-schrift-halbfett);
+  font-size: var(--app-text-betont);
   color: #333;
   white-space: normal;
   overflow-wrap: anywhere;
-  padding-top: 4px;
+  padding-top: var(--app-abstand-mini);
 }
 /* Bleibt als eigener Name bestehen (zwei Listen setzen ihn), verhaelt sich
    aber nicht mehr anders als der Standard. */
@@ -652,26 +799,26 @@ ion-list[inset] ion-list-header {
   white-space: normal;
 }
 .app-list-item__subtitle {
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
   color: #666;
-  margin-top: 2px;
+  margin-top: var(--app-abstand-winzig);
 }
 .app-list-item__meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-klein);
   color: #666;
-  margin-top: 4px;
+  margin-top: var(--app-abstand-mini);
   flex-wrap: wrap;
 }
 .app-list-item__meta-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--app-abstand-mini);
 }
 .app-list-item__meta-item ion-icon {
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
   flex-shrink: 0;
 }
 /* Multiline-Variante: Icon oben buendig statt mittig (für lange Texte wie "Mitbringen") */
@@ -679,43 +826,10 @@ ion-list[inset] ion-list-header {
   align-items: flex-start;
 }
 .app-list-item__meta-item--multiline ion-icon {
-  margin-top: 2px;
+  margin-top: var(--app-abstand-winzig);
 }
 
-/* === App Farbvariablen === */
-:root {
-  --app-color-events: #dc2626;
-  --app-color-events-rgb: 220, 38, 38;
-  --app-color-chat: #06b6d4;
-  --app-color-chat-rgb: 6, 182, 212;
-  --app-color-success: #34c759;
-  --app-color-success-rgb: 52, 199, 89;
-  --app-color-warning: #ff9500;
-  --app-color-warning-rgb: 255, 149, 0;
-  --app-color-danger: #dc3545;
-  --app-color-danger-rgb: 220, 53, 69;
-  --app-color-info: #007aff;
-  --app-color-info-rgb: 0, 122, 255;
-  --app-color-purple: #5b21b6;
-  --app-color-purple-rgb: 91, 33, 182;
-  --app-color-trophy: #ff9500;
-  --app-color-activities: #047857;
-  --app-color-activities-rgb: 4, 120, 87;
-  --app-color-users: #667eea;
-  --app-color-users-rgb: 102, 126, 234;
-  --app-color-organizations: #667eea;
-  --app-color-organizations-rgb: 102, 126, 234;
-  --app-color-badges: #f59e0b;
-  --app-color-badges-rgb: 245, 158, 11;
-  --app-color-requests: #5b21b6;
-  --app-color-requests-rgb: 91, 33, 182;
-  --app-color-jahrgang: #007aff;
-  --app-color-jahrgang-rgb: 0, 122, 255;
-  --app-color-konfis: #5b21b6;
-  --app-color-konfis-rgb: 91, 33, 182;
-  --app-color-bonus: #f97316;
-  --app-color-bonus-rgb: 249, 115, 22;
-}
+
 
 /* iOS 26 TabBar: Verstärkter Blur-Effekt (näher am nativen iOS 26 Look) */
 /* Die Library setzt blur(2px) saturate(360%) -- wir erhöhen für realistischeren Glass-Effekt */
@@ -748,13 +862,13 @@ ion-tab-bar.md {
 /* Aeussere Tab-Buttons leicht einruecken, damit lange Labels (Aktivitäten)
    nicht am Bildschirmrand abgeschnitten werden. */
 ion-tab-bar.md ion-tab-button {
-  padding-left: 1px !important;
-  padding-right: 1px !important;
+  padding-left: var(--app-abstand-haar) !important;
+  padding-right: var(--app-abstand-haar) !important;
 }
 
 ion-tab-bar.md ion-tab-button ion-label,
 ion-tab-bar.md ion-tab-button .tab-button-text {
-  font-size: 0.6rem !important;
+  font-size: var(--app-text-winzig) !important;
   white-space: nowrap !important;
   /* Frueher overflow: visible — damit lief eine zu lange Beschriftung über
      den Reiter hinaus, statt sich zu kuerzen, und schob die Nachbarn optisch
@@ -784,7 +898,7 @@ ion-popover::part(backdrop) {
 }
 
 ion-popover::part(content) {
-  border-radius: 14px;
+  border-radius: var(--app-radius-weich);
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: #ffffff;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -810,7 +924,7 @@ ion-checkbox {
   --border-color-checked: var(--ion-color-primary, #3880ff);
 }
 ion-checkbox::part(container) {
-  border-radius: 4px;
+  border-radius: var(--app-radius-fein);
 }
 /* Fokus-Outline bei Items und Checkboxen entfernen */
 ion-item::part(native):focus,
@@ -834,10 +948,10 @@ ion-item {
 
 /* === Header Banner === */
 .app-header-banner {
-  border-radius: 20px;
-  padding: 24px;
-  margin: 16px;
-  margin-bottom: 16px;
+  border-radius: var(--app-radius-gross);
+  padding: var(--app-abstand-weit);
+  margin: var(--app-abstand-basis);
+  margin-bottom: var(--app-abstand-basis);
   position: relative;
   overflow: hidden;
 }
@@ -848,7 +962,7 @@ ion-item {
   right: -30px;
   width: 120px;
   height: 120px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -858,7 +972,7 @@ ion-item {
   left: -20px;
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -869,7 +983,7 @@ ion-item {
   z-index: 2;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   border: none;
   background: rgba(255, 255, 255, 0.22);
   display: flex;
@@ -881,7 +995,7 @@ ion-item {
 }
 
 .app-header-banner__info-btn ion-icon {
-  font-size: 1.35rem;
+  font-size: var(--app-text-titel);
   color: white;
 }
 
@@ -892,8 +1006,8 @@ ion-item {
 .app-header-banner__header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--app-abstand-mittel);
+  margin-bottom: var(--app-abstand-gross);
   position: relative;
   z-index: 1;
 }
@@ -901,7 +1015,7 @@ ion-item {
 .app-header-banner__icon {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--app-radius-weich);
   background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
@@ -909,20 +1023,20 @@ ion-item {
 }
 
 .app-header-banner__icon ion-icon {
-  font-size: 1.6rem;
+  font-size: var(--app-text-ueberschrift-gross);
   color: white;
 }
 
 .app-header-banner__title {
   margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: var(--app-text-titel-gross);
+  font-weight: var(--app-schrift-fett);
   color: white;
 }
 
 .app-header-banner__subtitle {
-  margin: 2px 0 0 0;
-  font-size: 0.85rem;
+  margin: var(--app-abstand-winzig) 0 0 0;
+  font-size: var(--app-text-sekundaer);
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -940,7 +1054,7 @@ ion-item {
 .app-stats-row {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: var(--app-abstand-eng);
   position: relative;
   z-index: 1;
   flex-wrap: wrap;
@@ -960,8 +1074,8 @@ ion-item {
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  border-radius: 12px;
-  padding: 10px 12px !important;
+  border-radius: var(--app-radius-karte);
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel) !important;
   text-align: center;
   font-family: inherit;
   line-height: normal !important;
@@ -997,8 +1111,8 @@ ion-item {
 .app-stats-row--grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 0 16px;
+  gap: var(--app-abstand-eng);
+  padding: 0 var(--app-abstand-basis);
 }
 
 .app-stats-row--grid .app-stats-row__item {
@@ -1010,9 +1124,9 @@ ion-item {
 .app-stats-row__value {
   /* Skaliert mit, damit auch drei- bis vierstellige Werte (oder "∞") in der
      schmalsten Kachel einzeilig bleiben. */
-  font-size: 1.3rem;
+  font-size: var(--app-text-titel);
   font-size: clamp(1rem, 28cqi, 1.3rem);
-  font-weight: 800;
+  font-weight: var(--app-schrift-extrafett);
   color: white;
   white-space: nowrap;
 }
@@ -1025,10 +1139,10 @@ ion-item {
      auf die volle Kachel. Faktor so gewaehlt, dass "CHALLENGES" (laengstes
      Label) auch in der schmalsten Kachel mit Reserve einzeilig passt.
      Die erste Zeile ist der Fallback fuer Engines ohne Container-Queries. */
-  font-size: 0.65rem;
+  font-size: var(--app-text-mini);
   font-size: clamp(0.48rem, 12cqi, 0.68rem);
   color: rgba(255, 255, 255, 0.85);
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
   letter-spacing: 0.3px;
   text-transform: uppercase;
   /* Lange Labels (z.B. CHALLENGES) duerfen nie zweizeilig werden */
@@ -1041,12 +1155,12 @@ ion-item {
 /* === Empty States === */
 .app-empty-state {
   text-align: center;
-  padding: 32px;
+  padding: var(--app-abstand-extraweit);
 }
 
 .app-empty-state__icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
+  font-size: var(--app-anzeige-riesig);
+  margin-bottom: var(--app-abstand-basis);
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -1054,26 +1168,26 @@ ion-item {
 
 .app-empty-state__title {
   color: #666;
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  margin: 0 0 var(--app-abstand-eng) 0;
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
 }
 
 .app-empty-state__text {
   color: #999;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--app-text-basis);
 }
 
 /* === Status Chips === */
 .app-status-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  gap: var(--app-abstand-mini);
+  padding: var(--app-abstand-mini) var(--app-abstand-schmal);
+  border-radius: var(--app-radius-karte);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
   white-space: nowrap;
 }
 .app-status-chip--success { background: rgba(52, 199, 89, 0.15); color: #34c759; }
@@ -1087,12 +1201,12 @@ ion-item {
 .app-search-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-basis);
 }
 .app-search-bar__icon {
   color: #8e8e93;
-  font-size: 1.2rem;
+  font-size: var(--app-text-untertitel);
   flex-shrink: 0;
 }
 
@@ -1101,18 +1215,18 @@ ion-item {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--app-abstand-mittel);
 }
 .app-settings-item__title {
-  font-weight: 500;
-  font-size: 0.95rem;
+  font-weight: var(--app-schrift-mittel);
+  font-size: var(--app-text-betont);
   margin: 0;
   color: #333;
 }
 .app-settings-item__subtitle {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
   color: #8e8e93;
-  margin: 2px 0 0 0;
+  margin: var(--app-abstand-winzig) 0 0 0;
 }
 
 /* === Schalter mit Erklärungstext (Muster aus "Challenge erstellen") ===
@@ -1121,27 +1235,27 @@ ion-item {
    Einstellungs-Schalter verwenden, statt white-space inline zu setzen. */
 .app-toggle-item__title {
   color: #333;
-  margin: 0 0 4px 0;
-  font-weight: 600;
+  margin: 0 0 var(--app-abstand-mini) 0;
+  font-weight: var(--app-schrift-halbfett);
   white-space: normal;
 }
 .app-toggle-item__hint {
   color: #666;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   line-height: 1.35;
   white-space: normal;
 }
 
 /* === Segment Tabs === */
 .app-segment-wrapper {
-  margin: 16px;
+  margin: var(--app-abstand-basis);
 }
 
 /* === Info Box === */
 .app-info-box {
-  padding: 16px;
-  font-size: 0.9rem;
+  padding: var(--app-abstand-basis);
+  font-size: var(--app-text-basis);
   line-height: 1.5;
   margin: 0;
 }
@@ -1174,7 +1288,7 @@ ion-item {
 /* === Progress Bars === */
 .app-progress-bar {
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--app-radius-fein);
   overflow: hidden;
 }
 .app-progress-bar--thick {
@@ -1201,20 +1315,20 @@ ion-item {
   min-width: 50px;
 }
 .app-points-display__value {
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: var(--app-text-titel-gross);
+  font-weight: var(--app-schrift-extrafett);
 }
 .app-points-display__target {
-  font-size: 0.7rem;
+  font-size: var(--app-text-meta);
   color: #999;
 }
 
 /* === Detail Header === */
 .app-detail-header {
-  border-radius: 24px;
+  border-radius: var(--app-radius-modal);
   padding: 0;
-  margin: 16px;
-  margin-bottom: 16px;
+  margin: var(--app-abstand-basis);
+  margin-bottom: var(--app-abstand-basis);
   position: relative;
   overflow: hidden;
   min-height: 200px;
@@ -1224,38 +1338,38 @@ ion-item {
 .app-detail-header__content {
   position: relative;
   z-index: 2;
-  padding: 24px;
+  padding: var(--app-abstand-weit);
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
 }
 .app-detail-header__title {
-  margin: 0 0 8px 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  margin: 0 0 var(--app-abstand-eng) 0;
+  font-size: var(--app-text-ueberschrift);
+  font-weight: var(--app-schrift-halbfett);
   color: white;
 }
 .app-detail-header__subtitle {
   margin: 0;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+  font-size: var(--app-text-basis);
 }
 .app-detail-header__info-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--app-abstand-eng);
+  margin-top: var(--app-abstand-mittel);
 }
 .app-detail-header__info-chip {
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.75rem;
+  border-radius: var(--app-radius-klein);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-schmal);
+  font-size: var(--app-text-klein);
   color: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--app-abstand-mini);
 }
 
 /* === Transparentes IonItem Wrapper === */
@@ -1305,7 +1419,7 @@ ion-item-option.app-swipe-action {
 /* Sicherung: inneren native-Part direkt auf das enge Padding zwingen
  * (falls die --padding-Variablen vom Theme ueberschrieben werden). */
 ion-item-option.app-swipe-action::part(native) {
-  padding-left: 10px;
+  padding-left: var(--app-abstand-schmal);
   padding-right: 0;
 }
 /* Innerer Icon-Kreis im Swipe-Button: einheitliche Größe/Form ueberall.
@@ -1317,18 +1431,18 @@ ion-item-option.app-swipe-action::part(native) {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.25);
 }
 .app-swipe-action .app-icon-circle ion-icon {
-  font-size: 1.2rem;
+  font-size: var(--app-text-untertitel);
 }
 
 /* === List-Item Title mit Corner-Badge Platz === */
 .app-list-item__title--badge-space {
-  padding-right: 50px;
+  padding-right: var(--app-freiraum-aktion-s);
 }
 .app-list-item__title--badge-space-md {
-  padding-right: 60px;
+  padding-right: var(--app-freiraum-aktion-m);
 }
 .app-list-item__title--badge-space-lg {
-  padding-right: 80px;
+  padding-right: var(--app-freiraum-aktion-xl);
 }
 
 /* === Info-Row Modifier === */
@@ -1338,18 +1452,18 @@ ion-item-option.app-swipe-action::part(native) {
 
 /* === Section-Inset (margin: 16px für IonList inset) === */
 ion-list.app-section-inset {
-  margin: 16px;
+  margin: var(--app-abstand-basis);
 }
 ion-card-content.app-card-content {
-  padding: 16px;
+  padding: var(--app-abstand-basis);
 }
 
 /* === Globale Text-Klassen (ueberall wiederverwendbar) === */
 
 /* Haupttext — Titel, Labels, primaere Info (1rem, fett) */
 .app-text-main {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
   color: #333;
   line-height: 1.4;
   margin: 0;
@@ -1357,7 +1471,7 @@ ion-card-content.app-card-content {
 
 /* Subtext — sekundaere Info, Zeitangaben, Kategorien (0.85rem) */
 .app-text-sub {
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   color: #666;
   line-height: 1.4;
   margin: 0;
@@ -1374,22 +1488,22 @@ ion-card-content.app-card-content {
    </div>
 */
 .app-info-row__label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
   color: #8e8e93;
   line-height: 1.3;
-  margin: 0 0 2px 0;
+  margin: 0 0 var(--app-abstand-winzig) 0;
 }
 .app-info-row__value {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
   color: #333;
   line-height: 1.35;
   margin: 0;
 }
 .app-info-row__value--multi > div {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
   color: #333;
   line-height: 1.35;
 }
@@ -1401,15 +1515,15 @@ ion-card-content.app-card-content {
   color: #374151;
   white-space: pre-wrap;
   margin: 0;
-  padding: 0 4px;
+  padding: 0 var(--app-abstand-mini);
 }
 
 /* === Titel mit Corner-Badge Platz (paddingRight für app-corner-badge) === */
 .app-list-item__title--with-badge {
-  padding-right: 70px;
+  padding-right: var(--app-freiraum-aktion-l);
 }
 .app-list-item__title--with-dual-badge {
-  padding-right: 120px;
+  padding-right: var(--app-freiraum-aktion-xxxl);
 }
 
 /* === Toolbar-Grundfarbe gegen System-Dark-Mode festnageln ===
@@ -1444,7 +1558,7 @@ ion-list.app-list-inner {
 ion-button.app-action-button {
   height: 48px;
   --border-radius: 12px;
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
 }
 
 /* === Range-Slider Wrapper (Min-Label, Slider, Wert) === */
@@ -1458,11 +1572,11 @@ ion-button.app-action-button {
 .app-range-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--app-abstand-eng);
   width: 100%;
 }
 .app-range-row__min {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
   color: #8e8e93;
   min-width: 24px;
   text-align: center;
@@ -1472,7 +1586,7 @@ ion-button.app-action-button {
    sogar der fest verdrahtete Hoechstwert in Farbe): beides sah aus wie der
    eingestellte Wert. Die Skalenenden gehoeren in Grau, der echte Wert in Farbe. */
 .app-range-row__max {
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
   color: #8e8e93;
   min-width: 24px;
   text-align: center;
@@ -1480,25 +1594,25 @@ ion-button.app-action-button {
 /* Der eingestellte Wert — farbig und fett, deutlich vom Skalenende abgesetzt.
    Sitzt bei der Beschriftung ueber dem Regler, nicht am Skalenende. */
 .app-range-row__value {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
   min-width: 28px;
   text-align: center;
 }
 .app-range-label {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--app-abstand-kompakt);
+  margin-bottom: var(--app-abstand-eng);
 }
 .app-range-label__wert {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-fett);
   color: var(--ion-color-primary);
 }
 ion-range.app-range {
   flex: 1;
-  padding: 8px 0;
+  padding: var(--app-abstand-eng) 0;
 }
 /* Farb-Varianten via CSS-Token (gleiches Konzept = gleiche Farbe) */
 ion-range.app-range--events {
@@ -1532,7 +1646,7 @@ ion-toggle.app-toggle--events {
 /* === Button-Reihe (flex, gleiche Breite) === */
 .app-button-row {
   display: flex;
-  gap: 8px;
+  gap: var(--app-abstand-eng);
 }
 .app-button-row ion-button {
   flex: 1;
@@ -1592,16 +1706,16 @@ ion-toggle.app-toggle--events {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.95rem;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-radius: var(--app-radius-karte);
+  font-weight: var(--app-schrift-halbfett);
+  font-size: var(--app-text-betont);
   border-width: 1px;
   border-style: solid;
 }
 .app-status-box ion-icon {
-  font-size: 1.2rem;
+  font-size: var(--app-text-untertitel);
 }
 .app-status-box--success {
   background-color: rgba(var(--app-color-success-rgb), 0.12);
@@ -1643,9 +1757,9 @@ ion-toggle.app-toggle--events {
 
 /* Hervorgehobener gebuchter Zeitslot */
 .app-event-detail__booked-slot {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-top: 8px;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+  margin-top: var(--app-abstand-eng);
 }
 
 /* Klickbarer Ort-Link */
@@ -1665,8 +1779,8 @@ ion-toggle.app-toggle--events {
 
 /* Beschreibung-Sektion mit Trennlinie */
 .app-event-detail__description-divider {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--app-abstand-basis);
+  padding-top: var(--app-abstand-basis);
   border-top: 1px solid #e0e0e0;
 }
 
@@ -1676,13 +1790,13 @@ ion-toggle.app-toggle--events {
 
 /* Eingerueckte Teilnehmer-Liste (unter Timeslots) */
 .app-event-detail__slot-participants {
-  margin-left: 16px;
-  margin-top: 8px;
+  margin-left: var(--app-abstand-basis);
+  margin-top: var(--app-abstand-eng);
 }
 
 /* Item-Sliding Reset (kein Border, nur Spacing) */
 .app-event-detail__sliding-item {
-  margin-bottom: 8px;
+  margin-bottom: var(--app-abstand-eng);
   --border-width: 0;
   --inner-border-width: 0;
 }
@@ -1702,7 +1816,7 @@ ion-toggle.app-toggle--events {
 .app-event-detail__add-button-wrapper { margin-top: 12px; margin-bottom: -7px; }
 
 /* Icon etwas größer (z.B. Abmeldungs-Icon) */
-.app-event-detail__icon-lg { font-size: 1.2rem; }
+.app-event-detail__icon-lg { font-size: var(--app-text-untertitel); }
 
 /* Reason-Box Einrueckung */
 .app-event-detail__reason-indent { margin-left: 32px; }
@@ -1714,12 +1828,12 @@ ion-toggle.app-toggle--events {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 8px 0;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-eng) 0;
 }
 .app-stepper__value {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: var(--app-anzeige-gross);
+  font-weight: var(--app-schrift-fett);
   color: #333;
   min-width: 80px;
   text-align: center;
@@ -1729,7 +1843,7 @@ ion-toggle.app-toggle--events {
   height: 48px;
 }
 .app-stepper__button ion-icon {
-  font-size: 1.5rem;
+  font-size: var(--app-text-ueberschrift);
 }
 
 /* === Avatar Initialen === */
@@ -1737,17 +1851,17 @@ ion-toggle.app-toggle--events {
 .app-avatar-initials {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-weight: var(--app-schrift-fett);
+  font-size: var(--app-text-gross);
   color: white;
   flex-shrink: 0;
 }
-.app-avatar-initials--sm { width: 32px; height: 32px; font-size: 0.9rem; }
-.app-avatar-initials--lg { width: 48px; height: 48px; font-size: 1.3rem; }
+.app-avatar-initials--sm { width: 32px; height: 32px; font-size: var(--app-text-basis); }
+.app-avatar-initials--lg { width: 48px; height: 48px; font-size: var(--app-text-titel); }
 
 /* ============================================
    MODAL KOMPONENTEN
@@ -1756,7 +1870,7 @@ ion-toggle.app-toggle--events {
 /* === Modal Section === */
 /* Container für eine Formular-Sektion in einem Modal */
 .app-modal-section {
-  margin: 16px;
+  margin: var(--app-abstand-basis);
 }
 
 /* === Modal Section Header === */
@@ -1764,26 +1878,26 @@ ion-toggle.app-toggle--events {
 .app-modal-section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  margin-bottom: 8px;
+  gap: var(--app-abstand-eng);
+  padding: 0 var(--app-abstand-basis);
+  margin-bottom: var(--app-abstand-eng);
 }
 .app-modal-section-header h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
   color: #333;
 }
 
 /* === Modal Footer === */
 /* Footer-Bereich für Modal-Buttons */
 .app-modal-footer {
-  padding: 16px;
+  padding: var(--app-abstand-basis);
   background: var(--ion-background-color, #f4f5f8);
 }
 .app-modal-footer ion-button {
   --border-radius: 12px;
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
 }
 
 /* === Modal Close Button === */
@@ -1846,7 +1960,7 @@ ion-button.app-modal-submit-btn--bonus {
 /* === Modal Info Text === */
 /* Info-Text innerhalb von Modal-Sektionen */
 .app-modal-info-text {
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   color: #666;
   line-height: 1.4;
   margin: 0;
@@ -1887,7 +2001,7 @@ ion-button.app-modal-submit-btn--bonus {
 /* Dekorative Bubbles im Hintergrund — hell/luftig, asymmetrisch verstreut */
 .app-auth-bubble {
   position: absolute;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.10);
   pointer-events: none;
   z-index: 0;
@@ -1905,7 +2019,7 @@ ion-button.app-modal-submit-btn--bonus {
 /* Legacy: alte Floating Deko-Kreise (Register-Page) */
 .app-auth-bg-circle {
   position: fixed;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.06);
   pointer-events: none;
   z-index: 0;
@@ -1917,7 +2031,7 @@ ion-button.app-modal-submit-btn--bonus {
   justify-content: center;
   align-items: center;
   min-height: 100%;
-  padding: 20px;
+  padding: var(--app-abstand-gross);
   padding-bottom: env(safe-area-inset-bottom, 20px);
   position: relative;
   z-index: 1;
@@ -1925,7 +2039,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-hero {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--app-abstand-extraweit);
   color: white;
 }
 
@@ -1933,19 +2047,19 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-hero__logo {
   width: 112px;
   height: 112px;
-  border-radius: 28px;
+  border-radius: var(--app-radius-modal);
   display: block;
-  margin: 0 auto 24px auto;
+  margin: 0 auto var(--app-abstand-weit) auto;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 /* Hero-Title — weiß auf dem Verlauf-BG */
 .app-auth-hero__title--cosmic {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 5.8rem;
+  font-size: var(--app-anzeige-marke);
   line-height: 0.9;
   letter-spacing: 6px;
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--app-abstand-mittel) 0;
   color: #ffffff;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
@@ -1955,8 +2069,8 @@ ion-button.app-modal-submit-btn--bonus {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 16px auto 14px;
+  gap: var(--app-abstand-mittel);
+  margin: var(--app-abstand-basis) auto var(--app-abstand-mittelweit);
   width: 60%;
 }
 .app-auth-hero__divider::before,
@@ -1976,7 +2090,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-hero__subtitle--cosmic {
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   opacity: 0.9;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -1986,33 +2100,33 @@ ion-button.app-modal-submit-btn--bonus {
 
 /* Legacy: bunte Icons-Reihe (für Register-Page noch in Nutzung) */
 .app-auth-hero__icons {
-  font-size: 4rem;
-  margin-bottom: 16px;
+  font-size: var(--app-anzeige-maximal);
+  margin-bottom: var(--app-abstand-basis);
   display: flex;
-  gap: 8px;
+  gap: var(--app-abstand-eng);
   justify-content: center;
 }
 
 .app-auth-hero__icons--small {
-  font-size: 3.5rem;
-  margin-bottom: 12px;
+  font-size: var(--app-anzeige-maximal);
+  margin-bottom: var(--app-abstand-mittel);
 }
 
 .app-auth-hero__title {
-  font-size: 3rem;
+  font-size: var(--app-anzeige-riesig);
   font-family: 'Bebas Neue', sans-serif;
-  font-weight: 400;
-  margin: 0 0 8px 0;
+  font-weight: var(--app-schrift-normal);
+  margin: 0 0 var(--app-abstand-eng) 0;
   text-shadow: 0 2px 12px rgba(0,0,0,0.25);
   letter-spacing: 4px;
 }
 
 .app-auth-hero__title--small {
-  font-size: 3rem;
+  font-size: var(--app-anzeige-riesig);
 }
 
 .app-auth-hero__subtitle {
-  font-size: 1rem;
+  font-size: var(--app-text-standard);
   opacity: 0.85;
   margin: 0;
   text-shadow: 0 1px 4px rgba(0,0,0,0.2);
@@ -2020,34 +2134,34 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-hero__subtitle--small {
-  font-size: 1rem;
+  font-size: var(--app-text-standard);
 }
 
 .app-auth-hero__circle {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px auto;
+  margin: 0 auto var(--app-abstand-gross) auto;
 }
 
 .app-auth-hero__circle-icon {
-  font-size: 2.5rem;
+  font-size: var(--app-anzeige-gross);
   color: white;
 }
 
 .app-auth-card {
   width: 100%;
   max-width: 420px;
-  border-radius: 20px;
+  border-radius: var(--app-radius-gross);
   overflow: hidden;
   /* Solider App-Card-Stil (keine Glasoptik) — passend zum Rest der App */
   background: #ffffff;
   border: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--app-schatten-hoch);
   --background: #ffffff;
   --color: #1c1c1e;
 }
@@ -2068,7 +2182,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-card__content--compact {
-  padding: 24px;
+  padding: var(--app-abstand-weit);
 }
 
 .app-auth-card__heading {
@@ -2078,8 +2192,8 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-card__heading h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.7rem;
-  font-weight: 400;
+  font-size: var(--app-anzeige-basis);
+  font-weight: var(--app-schrift-normal);
   letter-spacing: 3px;
   margin: 0;
   color: #5b21b6;
@@ -2087,8 +2201,8 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-card__heading p {
   color: rgba(0, 0, 0, 0.65);
-  margin: 8px 0 0 0;
-  font-size: 0.85rem;
+  margin: var(--app-abstand-eng) 0 0 0;
+  font-size: var(--app-text-sekundaer);
 }
 
 .app-auth-input {
@@ -2102,8 +2216,8 @@ ion-button.app-modal-submit-btn--bonus {
   --padding-end: 14px;
   background: #f2f2f7;
   border: 1px solid #e5e5ea;
-  border-radius: 14px;
-  margin-bottom: 14px;
+  border-radius: var(--app-radius-weich);
+  margin-bottom: var(--app-abstand-mittelweit);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -2114,15 +2228,15 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-input--compact {
-  margin-bottom: 12px;
+  margin-bottom: var(--app-abstand-mittel);
 }
 
 .app-auth-input__label {
   color: #5b21b6;
-  font-weight: 700;
+  font-weight: var(--app-schrift-fett);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: var(--app-text-klein);
 }
 
 .app-auth-input__value {
@@ -2133,9 +2247,9 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-input__toggle {
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: var(--app-text-untertitel);
   color: #7c3aed;
-  margin-top: 20px;
+  margin-top: var(--app-abstand-gross);
 }
 /* Eye-Toggle sitzt auf dem hellen Input -> lila bleibt lesbar */
 
@@ -2149,49 +2263,49 @@ ion-button.app-modal-submit-btn--bonus {
   --box-shadow: 0 10px 28px rgba(91, 33, 182, 0.4);
   height: 52px;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 400;
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-normal);
   letter-spacing: 4px;
   margin: 0;
 }
 
 .app-auth-error {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 12px;
+  margin-bottom: var(--app-abstand-basis);
+  padding: var(--app-abstand-mittel) var(--app-abstand-mittelweit);
+  border-radius: var(--app-radius-karte);
   background: #fef2f2;
   border: 1px solid #fecaca;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--app-abstand-schmal);
 }
 
 .app-auth-error__icon {
-  font-size: 1.2rem;
+  font-size: var(--app-text-untertitel);
   color: #dc2626;
   flex-shrink: 0;
 }
 
 .app-auth-error__text {
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   color: #991b1b;
   flex: 1;
 }
 
 .app-auth-error__close {
-  font-size: 1.1rem;
+  font-size: var(--app-text-gross);
   color: #b91c1c;
   cursor: pointer;
 }
 
 .app-auth-error--with-badge {
-  margin-top: 16px;
+  margin-top: var(--app-abstand-basis);
 }
 
 .app-auth-error__badge {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   display: flex;
   align-items: center;
@@ -2201,19 +2315,19 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-error__badge-icon {
-  font-size: 1.3rem;
+  font-size: var(--app-text-titel);
   color: white;
 }
 
 .app-auth-error__title {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
   color: #991b1b;
-  margin-bottom: 2px;
+  margin-bottom: var(--app-abstand-winzig);
 }
 
 .app-auth-error__detail {
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
   color: #b91c1c;
 }
 
@@ -2221,26 +2335,26 @@ ion-button.app-modal-submit-btn--bonus {
   /* Links liegen auf der weissen Card -> Lila statt Weiss (sonst unsichtbar) */
   color: #5b21b6;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
 }
 
 .app-auth-link--muted {
   color: rgba(91, 33, 182, 0.7);
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
 }
 
 .app-auth-link--strong {
-  font-weight: 700;
+  font-weight: var(--app-schrift-fett);
 }
 
 .app-auth-footer {
   text-align: center;
-  margin-top: 16px;
+  margin-top: var(--app-abstand-basis);
 }
 
 .app-auth-footer--separator {
-  padding-top: 16px;
+  padding-top: var(--app-abstand-basis);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -2254,67 +2368,67 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-invite-info {
   background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 20px;
+  border-radius: var(--app-radius-weich);
+  padding: var(--app-abstand-basis);
+  margin-bottom: var(--app-abstand-gross);
   color: white;
   text-align: center;
   box-shadow: 0 8px 24px rgba(91, 33, 182, 0.28);
 }
 
 .app-auth-invite-info__icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: var(--app-anzeige-zahl);
+  margin-bottom: var(--app-abstand-eng);
   color: #fff;
 }
 
 .app-auth-invite-info__title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 400;
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-normal);
   letter-spacing: 2px;
 }
 
 .app-auth-invite-info__subtitle {
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   opacity: 0.9;
 }
 
 .app-auth-password-checks {
   background: #f8f9fa;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--app-radius-karte);
+  padding: var(--app-abstand-mittel);
+  margin-bottom: var(--app-abstand-mittel);
+  font-size: var(--app-text-hinweis);
 }
 
 .app-auth-password-checks__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: var(--app-abstand-kompakt);
 }
 
 .app-auth-password-match-error {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  margin-bottom: var(--app-abstand-mittel);
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-karte);
   background: #fef2f2;
   border: 1px solid #fecaca;
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
   color: #991b1b;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--app-abstand-eng);
 }
 
 .app-auth-username-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 0.8rem;
-  margin-bottom: 12px;
+  gap: var(--app-abstand-kompakt);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-knopf);
+  font-size: var(--app-text-hinweis);
+  margin-bottom: var(--app-abstand-mittel);
   border: 1px solid transparent;
 }
 
@@ -2344,8 +2458,8 @@ ion-button.app-modal-submit-btn--bonus {
   --border-width: 1px;
   --border-style: solid;
   height: 38px;
-  font-size: 0.85rem;
-  margin-top: 8px;
+  font-size: var(--app-text-sekundaer);
+  margin-top: var(--app-abstand-eng);
 }
 
 /* Knopf für die biometrische Anmeldung (Face ID / Touch ID / Fingerabdruck).
@@ -2358,15 +2472,15 @@ ion-button.app-modal-submit-btn--bonus {
   --border-width: 1px;
   --border-style: solid;
   height: 44px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
 }
 
 /* Lila Glass-Circle für Auth-Header-Icons (z.B. Mail/Lock) */
 .app-auth-hero__cosmic-circle {
   width: 84px;
   height: 84px;
-  border-radius: 24px;
+  border-radius: var(--app-radius-modal);
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(12px);
@@ -2374,43 +2488,43 @@ ion-button.app-modal-submit-btn--bonus {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px auto;
+  margin: 0 auto var(--app-abstand-gross) auto;
   box-shadow: 0 12px 28px rgba(91, 33, 182, 0.35);
 }
 
 .app-auth-hero__cosmic-circle-icon {
-  font-size: 2.4rem;
+  font-size: var(--app-anzeige-gross);
   color: #fff;
 }
 
 .app-auth-success-circle {
   width: 100px;
   height: 100px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px auto;
+  margin: 0 auto var(--app-abstand-weit) auto;
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
 }
 
 .app-auth-success-circle--small {
   width: 72px;
   height: 72px;
-  border-radius: 22px;
+  border-radius: var(--app-radius-modal);
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  margin-bottom: 20px;
+  margin-bottom: var(--app-abstand-gross);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
 }
 
 .app-auth-success-circle__icon {
-  font-size: 3.5rem;
+  font-size: var(--app-anzeige-maximal);
   color: white;
 }
 
 .app-auth-success-circle__icon--small {
-  font-size: 2rem;
+  font-size: var(--app-anzeige-zahl);
 }
 
 /* Shake Animation für Auth-Seiten */
@@ -2427,30 +2541,30 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-konfi-hint {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 0.8rem;
+  border-radius: var(--app-radius-karte);
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel);
+  font-size: var(--app-text-hinweis);
   color: #0369a1;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-basis);
   line-height: 1.4;
 }
 
 .app-auth-konfi-hint ion-icon {
-  font-size: 1.1rem;
+  font-size: var(--app-text-gross);
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: var(--app-abstand-haar);
   color: #0284c7;
 }
 
 /* === Dashboard Sektionen === */
 /* Gemeinsame Sektion-Basis */
 .app-dashboard-section {
-  border-radius: 20px;
+  border-radius: var(--app-radius-gross);
   padding: 0;
-  margin-bottom: 16px;
+  margin-bottom: var(--app-abstand-basis);
   position: relative;
   overflow: hidden;
   min-height: 160px;
@@ -2466,8 +2580,8 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-dashboard-section__bg-label {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 2.9rem;
-  font-weight: 800;
+  font-size: var(--app-anzeige-riesig);
+  font-weight: var(--app-schrift-extrafett);
   color: rgba(255, 255, 255, 0.08);
   margin: 0;
   line-height: 0.9;
@@ -2478,11 +2592,11 @@ ion-button.app-modal-submit-btn--bonus {
 .app-dashboard-section__content {
   position: relative;
   z-index: 2;
-  padding: 60px 24px 24px 24px;
+  padding: var(--app-freiraum-kopf-m) var(--app-abstand-weit) var(--app-abstand-weit) var(--app-abstand-weit);
 }
 
 .app-dashboard-section__content--compact {
-  padding: 60px 20px 20px 20px;
+  padding: var(--app-freiraum-kopf-m) var(--app-abstand-gross) var(--app-abstand-gross) var(--app-abstand-gross);
 }
 
 /* Sektion-Farben als Box-Shadow */
@@ -2531,9 +2645,9 @@ ion-button.app-modal-submit-btn--bonus {
 /* Dashboard Header Card */
 .app-dashboard-header {
   background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
-  border-radius: 24px;
-  padding: 24px;
-  margin-bottom: 16px;
+  border-radius: var(--app-radius-modal);
+  padding: var(--app-abstand-weit);
+  margin-bottom: var(--app-abstand-basis);
   box-shadow: 0 10px 40px rgba(91, 33, 182, 0.35);
   position: relative;
   overflow: hidden;
@@ -2542,22 +2656,22 @@ ion-button.app-modal-submit-btn--bonus {
 /* Dekorative Kreise im Header */
 .app-dashboard-header__circle {
   position: absolute;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.06);
 }
 
 /* Dashboard Begruessing */
 .app-dashboard-greeting {
-  font-size: 1.8rem;
-  font-weight: 800;
-  margin: 0 0 4px 0;
+  font-size: var(--app-anzeige-basis);
+  font-weight: var(--app-schrift-extrafett);
+  margin: 0 0 var(--app-abstand-mini) 0;
   color: white;
   text-align: center;
 }
 
 .app-dashboard-subtitle {
-  font-size: 1rem;
-  margin: 0 0 20px 0;
+  font-size: var(--app-text-standard);
+  margin: 0 0 var(--app-abstand-gross) 0;
   color: rgba(255, 255, 255, 0.8);
   text-align: center;
 }
@@ -2567,58 +2681,58 @@ ion-button.app-modal-submit-btn--bonus {
   display: inline-block;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  border-radius: 8px;
-  padding: 6px 16px;
-  font-size: 0.9rem;
+  border-radius: var(--app-radius-klein);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-basis);
+  font-size: var(--app-text-basis);
   color: white;
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
 }
 
 /* Glass-Card für innere Elemente (Ranking-Header, Event-Items) */
 .app-dashboard-glass-card {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 12px 16px;
+  border-radius: var(--app-radius-karte);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
 }
 
 /* Tageslosung Zitat */
 .app-dashboard-quote {
-  font-size: 1.25rem;
+  font-size: var(--app-text-untertitel);
   line-height: 1.5;
   font-style: normal;
   color: white;
-  font-weight: 500;
-  margin: 0 0 16px 0;
+  font-weight: var(--app-schrift-mittel);
+  margin: 0 0 var(--app-abstand-basis) 0;
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  padding-left: 16px;
+  padding-left: var(--app-abstand-basis);
   border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
 
 .app-dashboard-cite {
-  font-size: 0.9rem;
+  font-size: var(--app-text-basis);
   color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
+  font-weight: var(--app-schrift-mittel);
   display: block;
   font-style: normal;
-  padding-left: 16px;
+  padding-left: var(--app-abstand-basis);
 }
 
 /* Kleiner Hinweis auf die gewaehlte Bibeluebersetzung (klickbar -> Auswahl) */
 .app-dashboard-translation-hint {
-  font-size: 0.72rem;
+  font-size: var(--app-text-meta);
   color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  margin-top: 10px;
-  padding-left: 16px;
+  font-weight: var(--app-schrift-mittel);
+  margin-top: var(--app-abstand-schmal);
+  padding-left: var(--app-abstand-basis);
 }
 
 /* Meta-Info Zeile (Datum, Ort, Zeit) */
 .app-dashboard-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
+  gap: var(--app-abstand-mini);
+  font-size: var(--app-text-hinweis);
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -2630,10 +2744,10 @@ ion-button.app-modal-submit-btn--bonus {
 .app-dashboard-dot {
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.4);
   display: inline-block;
-  margin: 0 6px;
+  margin: 0 var(--app-abstand-kompakt);
 }
 
 /* Tab-Badge Overflow Fix */
@@ -2645,12 +2759,12 @@ ion-tab-button ion-badge {
   top: 4px;
   right: calc(50% - 24px);
   z-index: 10;
-  font-size: 0.65rem;
+  font-size: var(--app-text-mini);
   min-width: 16px;
   height: 16px;
   line-height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
+  padding: 0 var(--app-abstand-mini);
+  border-radius: var(--app-radius-klein);
 }
 
 /* === Zertifikat-Karten === */
@@ -2668,7 +2782,7 @@ ion-tab-button ion-badge {
 .app-badge-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: var(--app-abstand-mittel);
 }
 
 .app-badge-grid__item {
@@ -2676,8 +2790,8 @@ ion-tab-button ion-badge {
 }
 
 .app-badge-grid__name {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
   text-align: center;
   line-height: 1.2;
   max-width: 100%;
@@ -2689,7 +2803,7 @@ ion-tab-button ion-badge {
 /* === Accordion Toggle-Icon: schmaler als Default === */
 ion-accordion ion-icon[slot="toggle-icon"],
 ion-accordion .ion-accordion-toggle-icon {
-  font-size: 18px;
+  font-size: var(--app-icon-accordion);
   color: var(--ion-color-medium, #92949c);
   opacity: 0.7;
 }
@@ -2724,11 +2838,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   width: max-content;
   min-width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
 }
 .attendance-matrix th,
 .attendance-matrix td {
-  padding: 8px 6px;
+  padding: var(--app-abstand-eng) var(--app-abstand-kompakt);
   text-align: center;
   border-bottom: 1px solid #eee;
   vertical-align: middle;
@@ -2756,7 +2870,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   position: sticky;
   top: 0;
   background: #fafafa;
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
   color: #555;
   border-bottom: 2px solid #ddd;
   z-index: 1;
@@ -2778,7 +2892,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-left: 12px;
+  padding-left: var(--app-abstand-mittel);
   /* fixierte Konfi-Spalte: rechte Trennkante beim horizontalen Scrollen */
   box-shadow: 1px 0 0 #eee;
 }
@@ -2797,22 +2911,22 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .attendance-matrix--sprueche .attendance-matrix__td-cell {
   text-align: left;
   white-space: nowrap;
-  padding-right: 16px;
+  padding-right: var(--app-abstand-basis);
 }
 .attendance-matrix__event-date {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
   color: #333;
   white-space: nowrap;
 }
 .attendance-matrix__th-summary,
 .attendance-matrix__td-summary {
   min-width: 50px;
-  font-weight: 600;
+  font-weight: var(--app-schrift-halbfett);
   background: #fafafa;
 }
 .attendance-matrix__summary-text {
-  font-size: 0.8rem;
+  font-size: var(--app-text-hinweis);
   color: #333;
 }
 .attendance-matrix__dot {
@@ -2821,15 +2935,15 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  font-size: 1.25rem;
+  border-radius: var(--app-radius-kreis);
+  font-size: var(--app-text-untertitel);
   /* vertical-align middle verhindert die Baseline-Lücke, die ein inline-flex
      in der Tabellenzelle sonst erzeugt (sonst ist die Anwesenheits-Zeile ein
      paar px höher als die reine Text-Zeile der Sprüche). */
   vertical-align: middle;
 }
 .attendance-matrix__dot ion-icon {
-  font-size: 1.25rem;
+  font-size: var(--app-text-untertitel);
 }
 .attendance-matrix__dot--present {
   color: #22c55e;
@@ -2849,14 +2963,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .attendance-matrix__legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--app-abstand-basis);
   justify-content: center;
 }
 .attendance-matrix__legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: var(--app-abstand-kompakt);
+  font-size: var(--app-text-sekundaer);
   color: #555;
 }
 
@@ -2885,9 +2999,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   text-transform: none;
 }
 .app-org-switcher-btn .app-org-switcher-btn__name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-left: 4px;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  margin-left: var(--app-abstand-mini);
   white-space: nowrap;
 }
 
@@ -2920,14 +3034,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-audio-seekbar {
   -webkit-appearance: none;
   appearance: none;
-  border-radius: 2px;
+  border-radius: var(--app-radius-fein);
   outline: none;
 }
 .app-audio-seekbar::-webkit-slider-runnable-track {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--app-radius-fein);
   background: transparent;
 }
 .app-audio-seekbar::-webkit-slider-thumb {
@@ -2935,7 +3049,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   appearance: none;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: var(--app-audio-seek-color, var(--app-color-challenges));
   border: 2px solid #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
@@ -2944,13 +3058,13 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 }
 .app-audio-seekbar::-moz-range-track {
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--app-radius-fein);
   background: transparent;
 }
 .app-audio-seekbar::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: var(--app-audio-seek-color, var(--app-color-challenges));
   border: 2px solid #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
@@ -2977,9 +3091,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-whatsnew {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--app-abstand-mittelweit);
   padding: 16px 18px;
-  border-radius: 16px;
+  border-radius: var(--app-radius-gross);
   cursor: pointer;
   background: linear-gradient(135deg, #ec4899 0%, var(--app-color-challenges) 60%, #9d174d 100%);
   box-shadow: 0 4px 14px rgba(var(--app-color-challenges-rgb), 0.28);
@@ -3021,7 +3135,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 }
 .app-whatsnew__icon {
   flex-shrink: 0;
-  font-size: 1.5rem;
+  font-size: var(--app-text-ueberschrift);
   color: #fff;
 }
 .app-whatsnew__text {
@@ -3029,22 +3143,22 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--app-abstand-winzig);
 }
 .app-whatsnew__title {
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: var(--app-schrift-fett);
+  font-size: var(--app-text-standard);
   color: #fff;
   line-height: 1.25;
 }
 .app-whatsnew__sub {
-  font-size: 0.82rem;
+  font-size: var(--app-text-hinweis);
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.3;
 }
 .app-whatsnew__chevron {
   flex-shrink: 0;
-  font-size: 1.1rem;
+  font-size: var(--app-text-gross);
   color: rgba(255, 255, 255, 0.75);
 }
 /* X der Neuigkeiten-Karte auf der Startseite (UpdateHinweisKarte) */
@@ -3058,10 +3172,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   margin: -4px -6px -4px 0;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
-  font-size: 1.15rem;
+  font-size: var(--app-text-gross);
   cursor: pointer;
 }
 .app-whatsnew__close:focus-visible {
@@ -3108,7 +3222,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   height: 48px;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--app-radius-kreis);
 
   /* Neutraler Grund, Farbe traegt nur das Badge: Wartend ist Information,
      kein Alarm. Bis zum 30.08.2026 war die ganze Flaeche orange und
@@ -3131,13 +3245,13 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   right: -2px;
   min-width: 20px;
   height: 20px;
-  padding: 0 5px;
+  padding: 0 var(--app-abstand-mini);
   box-sizing: border-box;
-  border-radius: 10px;
+  border-radius: var(--app-radius-knopf);
   background: var(--app-color-warning);
   color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-fett);
   line-height: 20px;
   text-align: center;
 }
@@ -3148,7 +3262,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   color: var(--app-color-danger);
 }
 .app-wartende-leiste ion-icon {
-  font-size: 1.35rem;
+  font-size: var(--app-text-titel);
 }
 .app-wartende-leiste:active {
   transform: scale(0.94);
@@ -3174,12 +3288,12 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-offline-platzhalter {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-schmal) var(--app-abstand-basis);
   color: var(--ion-color-medium, #92949c);
-  font-size: 0.85rem;
+  font-size: var(--app-text-sekundaer);
 }
 .app-offline-platzhalter ion-icon {
   flex-shrink: 0;
-  font-size: 1.05rem;
+  font-size: var(--app-text-standard);
 }

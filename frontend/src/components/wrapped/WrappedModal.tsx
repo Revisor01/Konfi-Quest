@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
-import { closeOutline, shareOutline } from 'ionicons/icons';
+import { ICON_SCHLIESSEN, ICON_TEILEN } from '../shared/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -466,10 +466,17 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   // Motive EINMAL fuer den ganzen Rueckblick verteilen, damit sich keines
   // wiederholt (Simon, 03.09.2026). useMemo: Die Verteilung darf sich beim
   // Blaettern nicht aendern -- sonst wechselten die Bilder unter der Hand.
+  // Nur neu verteilen, wenn sich die Seitenfolge wirklich aendert. Der
+  // Vergleichsschluessel steht seit 05.09.2026 in einer eigenen Konstante:
+  // Ein Ausdruck DIREKT in der Abhaengigkeitsliste ist fuer den Linter nicht
+  // nachvollziehbar (react-hooks/use-memo) -- am Verhalten aendert das nichts.
+  const seitenfolge = slides.map(s => s.key).join('|');
   const motive = React.useMemo(
     () => verteileMotive(slides.map(s => s.key)),
-    // Nur neu verteilen, wenn sich die Seitenfolge wirklich aendert.
-    [slides.map(s => s.key).join('|')]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur die
+    // Seitenfolge: `slides` ist bei jedem Rendern ein neues Array, haenge der
+    // Memo daran, verteilte er die Motive bei jedem Blaettern neu.
+    [seitenfolge]
   );
 
   // Share-Handler (nach slides-Deklaration)
@@ -502,11 +509,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         )}
         {data && (
           <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
-            <IonIcon icon={shareOutline} />
+            <IonIcon icon={ICON_TEILEN} />
           </button>
         )}
         <button className="wrapped-close-btn" onClick={onClose} aria-label="Schließen">
-          <IonIcon icon={closeOutline} />
+          <IonIcon icon={ICON_SCHLIESSEN} />
         </button>
       </div>
 

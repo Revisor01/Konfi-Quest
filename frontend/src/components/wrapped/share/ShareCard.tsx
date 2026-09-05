@@ -11,6 +11,11 @@ interface ShareCardProps {
   year: number;
 }
 
+// Typografie-Konsolidierung 05.09.2026: Dieses Bauteil bleibt bewusst bei
+// absoluten Pixeln (24-96px) statt der Skala aus theme/typografie.css.
+// Es wird per html-to-image als festes 1080px-Teilen-Bild gerendert --
+// hinge es an rem, veraenderte die Systemschriftgroesse des Geraets das
+// exportierte Bild.
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   ({ slideKey, data, wrappedType, displayName, jahrgangName, year }, ref) => {
     const isTeamer = wrappedType === 'teamer';
@@ -47,12 +52,12 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               <div className="share-subtitle">Punkte gesammelt</div>
               <div style={{ display: 'flex', gap: 48, marginTop: 48 }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#a78bfa' }}>{konfi.slides.punkte.gottesdienst}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.punkte.gottesdienst}</div>
                   <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Gottesdienst</div>
                 </div>
                 <div style={{ width: 2, height: 80, background: 'rgba(255,255,255,0.2)', alignSelf: 'center' }} />
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#a78bfa' }}>{konfi.slides.punkte.gemeinde}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.punkte.gemeinde}</div>
                   <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Gemeinde</div>
                 </div>
               </div>
@@ -67,7 +72,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               <div className="share-big-number">{konfi.slides.events.total_attended}</div>
               <div className="share-subtitle">Events besucht</div>
               {konfi.slides.events.lieblings_event && (
-                <div style={{ marginTop: 48, padding: '24px 36px', background: 'rgba(124,58,237,0.15)', borderRadius: 24, border: '1px solid rgba(124,58,237,0.3)' }}>
+                <div style={{ marginTop: 48, padding: '24px 36px', background: 'rgba(var(--app-color-wrapped-rgb), 0.15)', borderRadius: 24, border: '1px solid rgba(var(--app-color-wrapped-rgb), 0.3)' }}>
                   <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)' }}>Lieblings-Event</div>
                   <div style={{ fontSize: 36, fontWeight: 600, marginTop: 8 }}>{konfi.slides.events.lieblings_event.name}</div>
                 </div>
@@ -85,7 +90,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               {konfi.slides.badges.badges.length > 0 && (
                 <div style={{ display: 'flex', gap: 24, marginTop: 48, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 600 }}>
                   {konfi.slides.badges.badges.slice(0, 6).map((b, i) => (
-                    <div key={i} style={{ width: 80, height: 80, borderRadius: '50%', background: b.color || 'rgba(124,58,237,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div key={i} style={{ width: 80, height: 80, borderRadius: '50%', background: b.color || 'rgba(var(--app-color-wrapped-rgb), 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ fontSize: 28, fontWeight: 700 }}>{b.name.charAt(0)}</span>
                     </div>
                   ))}
@@ -121,8 +126,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                       key={i}
                       style={{
                         padding: '24px 32px',
-                        background: 'rgba(190,24,93,0.18)',
-                        border: '1px solid rgba(190,24,93,0.4)',
+                        background: 'rgba(var(--app-color-teamer-rgb), 0.18)',
+                        border: '1px solid rgba(var(--app-color-teamer-rgb), 0.4)',
                         borderRadius: 24,
                         textAlign: 'left',
                       }}
@@ -155,7 +160,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                   <div style={{
                     height: '100%',
                     width: `${Math.min(100, (konfi.slides.endspurt.aktuell_total / Math.max(1, konfi.slides.endspurt.ziel_total)) * 100)}%`,
-                    background: 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+                    background: 'linear-gradient(90deg, var(--app-color-wrapped), var(--app-color-wrapped-hell))',
                     borderRadius: 10,
                   }} />
                 </div>
@@ -172,15 +177,15 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               </div>
               <div style={{ display: 'flex', gap: 48 }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#a78bfa' }}>{konfi.slides.punkte.total}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.punkte.total}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Punkte</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#a78bfa' }}>{konfi.slides.events.total_attended}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.events.total_attended}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Events</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#a78bfa' }}>{konfi.slides.badges.total_earned}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.badges.total_earned}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Badges</div>
                 </div>
               </div>
@@ -281,15 +286,15 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               </div>
               <div style={{ display: 'flex', gap: 48 }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#fb7185' }}>{teamer.slides.events_geleitet.total}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-wrapped-rose)' }}>{teamer.slides.events_geleitet.total}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Events</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#fb7185' }}>{teamer.slides.konfis_betreut.total_konfis}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-wrapped-rose)' }}>{teamer.slides.konfis_betreut.total_konfis}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Konfis</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: '#fb7185' }}>{teamer.slides.badges.total_earned}</div>
+                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-wrapped-rose)' }}>{teamer.slides.badges.total_earned}</div>
                   <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Badges</div>
                 </div>
               </div>

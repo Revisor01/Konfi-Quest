@@ -28,10 +28,14 @@ describe('EmptyState', () => {
     expect(ionIcon?.getAttribute('style')).toContain('color: rgb(255, 0, 0)');
   });
 
-  it('nutzt Standard-iconColor #999 wenn nicht angegeben', () => {
+  it('nutzt die gedaempfte Standardfarbe, wenn keine angegeben ist', () => {
+    // Seit der Token-Konsolidierung (05.09.2026) steht hier
+    // var(--app-text-muted) statt des Literals #999. Der Wert ist derselbe
+    // (variables.css: --app-text-muted: #999), nur zentral aenderbar --
+    // deshalb prueft der Test jetzt das Token, nicht die aufgeloeste Farbe.
     const { container } = render(<EmptyState {...defaultProps} />);
     const ionIcon = container.querySelector('ion-icon');
     expect(ionIcon).toBeTruthy();
-    expect(ionIcon?.getAttribute('style')).toContain('color: rgb(153, 153, 153)');
+    expect(ionIcon?.getAttribute('style')).toContain('var(--app-text-muted)');
   });
 });

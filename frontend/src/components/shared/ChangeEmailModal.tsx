@@ -20,12 +20,12 @@ import {
   IonSpinner
 } from '@ionic/react';
 import {
-  closeOutline,
-  checkmarkOutline,
-  mailOutline,
-  informationCircleOutline,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+  ICON_HAKEN,
+  ICON_INFO,
+  ICON_MAIL,
+  ICON_OFFLINE,
+  ICON_SCHLIESSEN,
+} from './icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 
@@ -113,12 +113,12 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           <IonTitle>E-Mail ändern</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             <IonButton aria-label="E-Mail-Adresse speichern" className={`app-modal-submit-btn ${stil.submitBtn}`} onClick={handleSave} disabled={isSubmitting || loading || !isOnline}>
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -129,7 +129,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className={`app-section-icon ${stil.sectionIcon}`}>
-              <IonIcon icon={mailOutline} />
+              <IonIcon icon={ICON_MAIL} />
             </div>
             <IonLabel>E-Mail-Adresse</IonLabel>
           </IonListHeader>
@@ -139,7 +139,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail-Adresse (optional)</IonLabel>
                   {loading ? (
-                    <div style={{ padding: '12px 0' }}>
+                    <div style={{ padding: 'var(--app-abstand-mittel) 0' }}>
                       <IonSpinner name="crescent" style={{ width: '20px', height: '20px' }} />
                     </div>
                   ) : (
@@ -162,7 +162,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className={`app-section-icon ${stil.sectionIcon}`}>
-              <IonIcon icon={informationCircleOutline} />
+              <IonIcon icon={ICON_INFO} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>

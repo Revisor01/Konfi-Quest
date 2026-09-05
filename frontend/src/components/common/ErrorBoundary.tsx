@@ -78,7 +78,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
 
             <div className="app-auth-container">
-              <div className="app-auth-hero" style={{ marginTop: '90px' }}>
+              <div className="app-auth-hero" style={{ marginTop: 'var(--app-freiraum-kopf-m)' }}>
                 <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
                   KONFI<br />QUEST
                 </h1>
@@ -90,7 +90,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 </p>
               </div>
 
-              <div style={{ padding: '0 32px', marginTop: '32px' }}>
+              <div style={{ padding: '0 var(--app-abstand-extraweit)', marginTop: 'var(--app-abstand-extraweit)' }}>
                 <IonButton
                   expand="block"
                   className="app-auth-button"

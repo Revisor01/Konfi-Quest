@@ -6,7 +6,7 @@ import type { ActionSheetButton } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
-import { add, ban } from 'ionicons/icons';
+import { ICON_GESPERRT, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -503,7 +503,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         {
           text: 'Event absagen',
           role: 'destructive',
-          icon: ban,
+          icon: ICON_GESPERRT,
           handler: async () => {
             try {
               await api.put(`/events/${event.id}/cancel`, {
@@ -648,7 +648,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           <IonButtons slot="end">
             {!isAntraege && canCreate && (
               <IonButton aria-label="Neues Event anlegen" onClick={handleAddEventClick}>
-                <IonIcon icon={add} />
+                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
               </IonButton>
             )}
           </IonButtons>

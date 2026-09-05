@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "live:ios": "cap run ios --live-reload --external",
+    "live:android": "cap run android --live-reload --external",
     "build": "tsc && vite build",
     "docs:api": "node ../scripts/build-api-docs.mjs",
     "docs:handbuch": "node ../scripts/build-handbuch.mjs",
