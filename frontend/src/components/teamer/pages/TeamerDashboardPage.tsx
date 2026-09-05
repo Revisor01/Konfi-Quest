@@ -519,8 +519,12 @@ const TeamerDashboardPage: React.FC = () => {
         <div style={{ padding: '16px' }}>
           {/* Begruessung */}
           {dashboardData && (
+            // Der gemeinsame Teamer-Verlauf statt eines eigenen: Auch dieser
+            // Kopf startete auf einem helleren Rot (#e11d48) und stach heraus
+            // (Simon, 05.09.2026). Damit ziehen Kopf, Profil und
+            // Wrapped-Kachel aus derselben Variablen.
             <div className="app-dashboard-header" style={{
-              background: 'linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9f1239 100%)'
+              background: 'var(--app-gradient-teamer)'
             }}>
               <div className="app-dashboard-header__circle" style={{
                 top: '-40px', right: '-40px', width: '140px', height: '140px',
@@ -599,7 +603,22 @@ const TeamerDashboardPage: React.FC = () => {
           {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {
             // Zertifikate
             if (sectionKey === 'zertifikate') {
-              if (!(config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0)) return null;
+              // Nur die WIRKLICH erhaltenen zeigen (Simon, 05.09.2026).
+              //
+              // Die Route liefert per LEFT JOIN alle aktiven Zertifikatstypen
+              // der Gemeinde, auch die nicht erworbenen ('not_earned'). Damit
+              // war certificates.length nie 0, sobald die Gemeinde ueberhaupt
+              // Typen angelegt hat -- der Block stand mit lauter leeren
+              // Platzhaltern da. Auf Produktion nachgemessen: 15 von 17
+              // Teamer:innen haben null Zertifikate, sehen aber vier
+              // Platzhalter, weil ihre Gemeinde vier Typen fuehrt.
+              //
+              // Hier gefiltert, NICHT in der Route: Die Antwortform bleibt so
+              // unveraendert, und ausgelieferte App-Versionen zeigen ihre
+              // gewohnte Ansicht weiter.
+              const erhalteneZertifikate = (dashboardData?.certificates ?? [])
+                .filter(c => c.status !== 'not_earned');
+              if (!(config?.show_zertifikate !== false && erhalteneZertifikate.length > 0)) return null;
               return (
             <div key="zertifikate" className="app-dashboard-section app-dashboard-section--zertifikate">
               <div className="app-dashboard-section__bg-text">
@@ -615,16 +634,24 @@ const TeamerDashboardPage: React.FC = () => {
                 fontWeight: '700',
                 zIndex: 3
               }}>
-                {dashboardData.certificates.filter(c => c.status === 'valid').length}/{dashboardData.certificates.length} ERHALTEN
+                {/* Ohne die nicht erworbenen ergibt "1/1 ERHALTEN" keinen
+                    Sinn mehr. Der Bruch bleibt nur, wenn etwas abgelaufen ist
+                    -- dann sagt er etwas aus. */}
+                {erhalteneZertifikate.some(c => c.status === 'expired')
+                  ? `${erhalteneZertifikate.filter(c => c.status === 'valid').length}/${erhalteneZertifikate.length} GÜLTIG`
+                  : `${erhalteneZertifikate.length} ERHALTEN`}
               </div>
 
               <div className="app-dashboard-section__content" style={{ padding: '60px 16px 20px 16px' }}>
+                {/* Bei genau einem Zertifikat eine Spalte statt zwei: Sonst
+                    stand die Karte auf halber Breite neben einer leeren
+                    Haelfte (Simon, 05.09.2026). */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateColumns: erhalteneZertifikate.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                   gap: '10px'
                 }}>
-                  {dashboardData.certificates.map((cert) => {
+                  {erhalteneZertifikate.map((cert) => {
                     const isValid = cert.status === 'valid';
                     const isExpired = cert.status === 'expired';
                     const isNotEarned = cert.status === 'not_earned';

@@ -45,6 +45,11 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Abwesend': closeCircle,
   'Gefehlt': closeCircle,
   'Abgemeldet': closeCircle,
+  // Eigene Absage der Teamer:innen. Fehlte hier, deshalb fiel das Badge auf
+  // die Text-Variante zurueck und schrieb "Abgesagt von dir" lang aus, waehrend
+  // jeder andere Zustand ein Symbol zeigt (Simon, 05.09.2026). Gleiches Zeichen
+  // wie 'Abgesagt' und 'Abgemeldet' -- es ist dieselbe Aussage.
+  'Abgesagt von dir': closeCircle,
   'Verpasst': closeCircle,
   'Ausstehend': hourglassOutline,
   // Gemeldete Aktivitäten

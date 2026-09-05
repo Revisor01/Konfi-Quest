@@ -31,12 +31,15 @@ describe('Teamer-Absage: Grund-Abfrage in der Oberflaeche', () => {
     expect(brauchtGrund).toBe(true);
   });
 
-  it('beide Absage-Knoepfe oeffnen den Dialog statt direkt zu senden', () => {
-    // "Nicht mehr dabei" (nach Zusage) und "Ich bin nicht dabei" (aus offen)
-    // laufen beide ueber oeffneAbsage -> TeamerAbsageModal.
+  it('jede Absage oeffnet den Dialog statt direkt zu senden', () => {
+    // Seit dem 05.09.2026 steht das Knopfpaar EINMAL in der Komponente
+    // ZusageKnoepfe, die alle vier Faelle bedient (frei, Warteliste, kein
+    // Platz, bereits dabei) -- vorher war es viermal ins JSX kopiert.
+    // Geprueft wird deshalb: Es gibt genau einen Absage-Weg, und der geht
+    // ueber den Dialog. Eine Zahl >1 waere wieder eine Kopie.
     const oeffner = [...seite.matchAll(/onClick=\{oeffneAbsage\}/g)];
-    expect(oeffner.length).toBe(2);
-    // Kein Knopf sendet die Absage mehr ohne Dialog ab.
+    expect(oeffner.length).toBe(1);
+    // Kein Knopf sendet die Absage ohne Dialog ab.
     expect(seite).not.toContain('handleZusage(selectedEvent, false)');
   });
 

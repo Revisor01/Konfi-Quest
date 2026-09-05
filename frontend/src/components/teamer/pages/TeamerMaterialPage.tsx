@@ -23,9 +23,10 @@ import {
   IonSelectOption,
   useIonModal
 } from '@ionic/react';
-import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, globeOutline, search as searchIcon, arrowBack, people, person, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
+import { document as documentIcon, documentOutline, imageOutline, videocamOutline, musicalNotesOutline, attachOutline, calendar, calendarOutline, filterOutline, globeOutline, search as searchIcon, people, person, informationCircle, textOutline, create, linkOutline, openOutline } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -86,6 +87,15 @@ interface MaterialDetail {
 const TeamerMaterialPage: React.FC = () => {
   const { user, setError } = useApp();
   useModalPage('teamer-material');
+
+  // Die Seite haengt an ZWEI Routen: '/teamer/profile/material' ist seit dem
+  // 04.09.2026 ein eigener Tab, '/teamer/material' die Altroute (Deep-Links
+  // und ausgelieferte App-Versionen -- im Repo navigiert niemand mehr dahin).
+  // Im Tab ist ein Zurueck-Weg sinnlos: window.history.back() springt aus dem
+  // Reiter heraus, irgendwohin (Simon, 05.09.2026). Auf der Altroute bleibt
+  // der Knopf, sonst sitzt man dort fest.
+  const pfad = useLocation().pathname;
+  const istEigenerTab = pfad.startsWith('/teamer/profile/material');
 
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
@@ -555,11 +565,13 @@ const TeamerMaterialPage: React.FC = () => {
     <IonPage>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()} aria-label="Zurück">
-              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
+          {!istEigenerTab && (
+            <IonButtons slot="start">
+              <IonButton onClick={() => window.history.back()} aria-label="Zurück">
+                <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
+          )}
           <IonTitle>Material</IonTitle>
         </IonToolbar>
       </IonHeader>

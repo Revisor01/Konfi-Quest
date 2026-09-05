@@ -6,7 +6,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, Ion
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
-import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, arrowBack, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, linkOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { calendar, time, location, people, checkmarkCircle, closeCircle, hourglass, calendarOutline, trophy, bagHandle, qrCodeOutline, informationCircle, pricetag, shieldCheckmark, home, document as documentIcon, attachOutline, linkOutline, search, filterOutline, lockOpen, copy, chatbubbleOutline, infinite, add, listOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -427,6 +427,83 @@ const TeamerEventsPage: React.FC = () => {
 
   const oeffneAbsage = () => {
     presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
+  };
+
+  /**
+   * Die Zusage/Absage-Knoepfe. EINE Stelle fuer alle vier Faelle, in denen
+   * sie vorkommen (frei, Warteliste offen, kein Platz mehr, bereits dabei) --
+   * vorher stand die Logik viermal im JSX und lief auseinander.
+   *
+   * SIMONS REGEL (05.09.2026), woertlich:
+   *   "wenn ich noch nichts gesagt habe, beide knoepfe einer rot einer gruen
+   *    in line. wenn ich dann gruen gewaehlt habe, dann machst du doch nur
+   *    einen button. und zwar einen roten ich bin doch nicht dabei und
+   *    andersrum auch ich bin doch dabei. ... und immer immer immer nur line
+   *    buttons."
+   *
+   * Also:
+   *   noch nichts gewaehlt -> zwei Knoepfe: "Dabei" (gruen) / "Nicht dabei" (rot)
+   *   zugesagt             -> EIN Knopf, rot:  "Nicht mehr dabei"
+   *   abgesagt             -> EIN Knopf, gruen: "Doch dabei"
+   *
+   * Immer fill="outline". Der eigene Stand steht im Eck-Zeichen der Karte und
+   * in den Eckdaten, nicht in einem gefuellten Knopf.
+   */
+  const ZusageKnoepfe: React.FC<{
+    event: Event;
+    /** Beschriftung der Zusage, wenn es um die Warteliste geht. */
+    zusageText?: string;
+    /** Kein Platz mehr frei: Zusagen geht nicht, absagen schon. */
+    zusageMoeglich?: boolean;
+  }> = ({ event, zusageText, zusageMoeglich = true }) => {
+    const abgesagt = event.booking_status === 'opted_out';
+    const zugesagt = event.is_registered;
+
+    const zusageKnopf = (
+      <IonButton
+        className="app-action-button"
+        expand="block"
+        fill="outline"
+        color="success"
+        onClick={() => handleBook(event)}
+        disabled={bookingLoading || !isOnline || !zusageMoeglich}
+      >
+        <IonIcon icon={bookingLoading || isOnline ? checkmarkCircle : cloudOfflineOutline} slot="start" />
+        {bookingLoading
+          ? 'Wird verarbeitet...'
+          : !isOnline
+            ? 'Du bist offline'
+            : abgesagt ? 'Doch dabei' : (zusageText || 'Dabei')}
+      </IonButton>
+    );
+
+    const absageKnopf = (
+      <IonButton
+        className="app-action-button"
+        expand="block"
+        fill="outline"
+        color="danger"
+        onClick={oeffneAbsage}
+        disabled={bookingLoading}
+      >
+        <IonIcon icon={closeCircle} slot="start" />
+        {bookingLoading
+          ? 'Wird verarbeitet...'
+          : zugesagt ? 'Nicht mehr dabei' : 'Nicht dabei'}
+      </IonButton>
+    );
+
+    // Bereits entschieden -> nur der Gegenknopf.
+    if (zugesagt) return <div className="app-button-row app-button-row--in-card">{absageKnopf}</div>;
+    if (abgesagt) return <div className="app-button-row app-button-row--in-card">{zusageKnopf}</div>;
+
+    // Noch nichts gesagt -> beide nebeneinander.
+    return (
+      <div className="app-button-row app-button-row--in-card">
+        {zusageKnopf}
+        {absageKnopf}
+      </div>
+    );
   };
 
   // Status-Infos für Event-Karten
@@ -1050,21 +1127,7 @@ const TeamerEventsPage: React.FC = () => {
                   ) : null
                 ) : (
                   selectedEvent.is_registered ? (
-                    <IonButton
-                      className="app-action-button"
-                      expand="block"
-                      fill="outline"
-                      color="danger"
-                      onClick={oeffneAbsage}
-                      disabled={bookingLoading}
-                    >
-                      <IonIcon icon={closeCircle} slot="start" />
-                      {bookingLoading
-                        ? 'Wird verarbeitet...'
-                        : selectedEvent.booking_status === 'waitlist'
-                          ? 'Von der Warteliste austragen'
-                          : 'Nicht mehr dabei'}
-                    </IonButton>
+                    <ZusageKnoepfe event={selectedEvent} />
                   ) : teamerCanRegister(selectedEvent) ? (
                     (() => {
                       const teamerMax = selectedEvent.teamer_max_participants || 0;
@@ -1072,46 +1135,8 @@ const TeamerEventsPage: React.FC = () => {
                       const teamerFull = teamerMax > 0 && teamerCount >= teamerMax;
 
                       if (!teamerFull) {
-                        // Kontingent frei (oder unbegrenzt) -> normaler Buchen-Button.
-                        return (
-                          // Zwei gleich breite Knoepfe nebeneinander (Simon,
-                          // 03.09.2026): gleiche Reihe statt untereinander
-                          // gestapelt. --in-card nimmt Ionics eigenen
-                          // Button-Rand zurueck, sonst polstert die Karte
-                          // doppelt (Simons Hinweis 03.09.2026).
-                          <div className="app-button-row app-button-row--in-card">
-                            <IonButton
-                              className="app-action-button"
-                              expand="block"
-                              color="success"
-                              onClick={() => handleBook(selectedEvent)}
-                              disabled={bookingLoading || !isOnline}
-                            >
-                              <IonIcon icon={bookingLoading || isOnline ? checkmarkCircle : cloudOfflineOutline} slot="start" />
-                              {bookingLoading
-                                ? 'Wird verarbeitet...'
-                                : !isOnline ? 'Du bist offline' : 'Ich bin dabei'}
-                            </IonButton>
-                            {/* Gegenknopf: Ohne ihn war eine Absage nicht von
-                                "hat noch nicht reagiert" zu unterscheiden. Bei
-                                bereits abgesagten Terminen entfaellt er.
-                                Der Dialog fragt einen freiwilligen Grund ab
-                                (aus "offen" heraus ohne Zwang). */}
-                            {selectedEvent.booking_status !== 'opted_out' && (
-                              <IonButton
-                                className="app-action-button"
-                                expand="block"
-                                fill="outline"
-                                color="medium"
-                                onClick={oeffneAbsage}
-                                disabled={bookingLoading}
-                              >
-                                <IonIcon icon={closeCircle} slot="start" />
-                                Ich bin nicht dabei
-                              </IonButton>
-                            )}
-                          </div>
-                        );
+                        // Kontingent frei (oder unbegrenzt).
+                        return <ZusageKnoepfe event={selectedEvent} />;
                       }
 
                       const teamerWaitlistMax = selectedEvent.teamer_max_waitlist_size || 0;
@@ -1120,37 +1145,23 @@ const TeamerEventsPage: React.FC = () => {
                         (teamerWaitlistMax === 0 || teamerWaitlistCount < teamerWaitlistMax);
 
                       if (waitlistOpen) {
-                        // Kontingent voll, aber Warteliste offen -> Warteliste-Button.
+                        // Kontingent voll, aber Warteliste offen. Der
+                        // Absage-Knopf gehoert AUCH hierher: Gerade wenn kein
+                        // Platz frei ist, will die Leitung wissen, wer
+                        // nachruecken wuerde und wer nicht (Simon, 05.09.2026).
                         return (
-                          <IonButton
-                            className="app-action-button"
-                            expand="block"
-                            color="warning"
-                            onClick={() => handleBook(selectedEvent)}
-                            disabled={bookingLoading || !isOnline}
-                          >
-                            <IonIcon icon={bookingLoading || isOnline ? hourglass : cloudOfflineOutline} slot="start" />
-                            {bookingLoading
-                              ? 'Wird verarbeitet...'
-                              : !isOnline
-                                ? 'Du bist offline'
-                                : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
-                          </IonButton>
+                          <ZusageKnoepfe
+                            event={selectedEvent}
+                            zusageText={`Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
+                          />
                         );
                       }
 
-                      // Kontingent voll und Warteliste voll/deaktiviert -> nur Hinweis.
-                      return (
-                        <IonButton
-                          className="app-action-button"
-                          expand="block"
-                          disabled
-                          color="medium"
-                        >
-                          <IonIcon icon={informationCircle} slot="start" />
-                          Kein Platz mehr frei
-                        </IonButton>
-                      );
+                      // Kontingent voll und Warteliste voll/deaktiviert. Zusagen
+                      // geht nicht mehr -- absagen schon: Die Leitung sieht so,
+                      // dass diese Person auch bei einem frei werdenden Platz
+                      // nicht einspringt.
+                      return <ZusageKnoepfe event={selectedEvent} zusageMoeglich={false} />;
                     })()
                   ) : (
                     // Reines Konfi-Event: Teamer kann sich NICHT anmelden -> nur Hinweis.

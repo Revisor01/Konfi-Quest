@@ -38,6 +38,13 @@ Versionsüberschrift.
 
 ### Behoben
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
+- Auf der Startseite des Teams stehen unter „Zertifikate" nur noch die
+  wirklich erhaltenen. Wer keine hat, sieht den Block gar nicht mehr statt
+  einer Reihe leerer Platzhalter; bei einem einzelnen füllt es die Breite.
+- Die eigene Absage zeigt in der Terminliste jetzt ein Symbol wie alle
+  anderen Zustände, statt den Text auszuschreiben.
+- Auf der Material-Seite des Teams ist der überflüssige Zurück-Pfeil
+  verschwunden — sie ist ein eigener Reiter.
 - Im Jahresrückblick der Leitung sind die Hinweise überarbeitet: Der Satz
   darüber, wer was sieht, ist entfallen, der Hinweis beim Anlegen steht im
   gewohnten Kasten, und die Hinweise auf beiden Reitern sind gleich hoch.
@@ -70,6 +77,11 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Zu- und Absage zu einem Termin stehen für das Team jetzt von Anfang an
+  nebeneinander. Wer geantwortet hat, sieht nur noch den Gegenknopf —
+  „Nicht mehr dabei" nach einer Zusage, „Doch dabei" nach einer Absage.
+  Absagen geht jetzt auch, wenn kein Platz mehr frei ist oder man auf der
+  Warteliste steht.
 - Der Zurück-Pfeil ist feiner gezeichnet und wirkt dadurch leichter.
 - Das Rot im Team-Bereich ist durchgehend dunkler statt pink — im Profilkopf
   wie auf der Rückblick-Kachel des Startbildschirms.

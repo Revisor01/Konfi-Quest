@@ -52,13 +52,13 @@ describe('H2: Die Teamer-Buchung braucht eine Verbindung', () => {
     expect(quelle).toContain('Für die Buchung brauchst du eine Verbindung');
   });
 
-  it('deaktiviert beide Buchungsknoepfe offline', () => {
-    // "Ich bin dabei" und "Auf die Warteliste" haengen beide an handleBook.
-    const knoepfe = [...quelle.matchAll(/onClick=\{\(\) => handleBook\(selectedEvent\)\}\s*\n\s*disabled=\{([^}]*)\}/g)];
-    expect(knoepfe.length).toBe(2);
-    for (const [, bedingung] of knoepfe) {
-      expect(bedingung).toContain('!isOnline');
-    }
+  it('deaktiviert den Zusage-Knopf offline', () => {
+    // Seit dem 05.09.2026 gibt es EINEN Zusage-Knopf in der Komponente
+    // ZusageKnoepfe -- er bedient Anmeldung wie Warteliste (die Beschriftung
+    // kommt per zusageText). Vorher standen dafuer zwei Kopien im JSX.
+    const knoepfe = [...quelle.matchAll(/onClick=\{\(\) => handleBook\(event\)\}\s*\n\s*disabled=\{([^}]*)\}/g)];
+    expect(knoepfe.length).toBe(1);
+    expect(knoepfe[0][1]).toContain('!isOnline');
   });
 
   it('die Warteliste-Rueckmeldung im Online-Zweig bleibt erhalten', () => {
