@@ -16,10 +16,10 @@ import {
   IonLabel
 } from '@ionic/react';
 import {
-  ICON_AKTION,
   ICON_BONUS,
   ICON_POKAL,
   ICON_SCHLIESSEN,
+  ICON_GEMEINDE_GEFUELLT,
   ICON_GOTTESDIENST_GEFUELLT,
   ICON_STERN,
   ICON_TERMIN,
@@ -129,7 +129,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
       // trug drei Zeichen -- Haus in den Listen, Stern hier, Schulhut in
       // der Admin-Aktivitaetenliste. Das Haus ist die Mehrheit.
       case 'gottesdienst': return ICON_GOTTESDIENST_GEFUELLT;
-      case 'gemeinde': return ICON_AKTION;
+      // Gruppe wie in der Leitungsansicht (05.09.2026): Hier stand als
+      // einziger Stelle der Blitz, direkt neben dem Gottesdienst-Haus.
+      case 'gemeinde': return ICON_GEMEINDE_GEFUELLT;
       default: return ICON_STERN;
     }
   };

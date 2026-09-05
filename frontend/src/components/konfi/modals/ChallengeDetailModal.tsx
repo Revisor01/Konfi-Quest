@@ -31,10 +31,10 @@ import {
   ICON_PERSON,
   ICON_SCHLIESSEN_GEFUELLT,
   ICON_SICHTBAR,
+  ICON_VERBORGEN,
   ICON_SPERRE,
   ICON_TEXTDOKUMENT,
   ICON_UHRZEIT,
-  ICON_VERBORGEN,
   ICON_VIDEO,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -481,7 +481,10 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                     erscheinen (Nutzerentscheid 24.08.2026). */}
                 <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)' }}>
                   <IonIcon
-                    icon={current.visibility === 'private' ? ICON_SPERRE : ICON_SICHTBAR}
+                    // Durchgestrichenes Auge wie in der Leitungsansicht (05.09.2026): Es geht
+                    // um Sichtbarkeit, nicht um eine Sperre -- und ICON_SICHTBAR
+                    // daneben ist ja auch ein Auge.
+                    icon={current.visibility === 'private' ? ICON_VERBORGEN : ICON_SICHTBAR}
                     className="app-icon-color--challenges"
                   />
                   {visibilityShort}
