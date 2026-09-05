@@ -346,7 +346,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       const activeText = badge.is_active ? 'Aktiv' : 'Inaktiv';
 
                       // Sichtbarkeits-Farbe und Text (Sichtbar/Geheim)
-                      const visibilityColor = badge.is_hidden ? 'var(--app-color-warteliste)' : 'var(--app-color-info)';
+                      const visibilityColor = badge.is_hidden ? 'var(--app-color-bonus)' : 'var(--app-color-info)';
                       const visibilityText = badge.is_hidden ? 'Geheim' : 'Sichtbar';
 
                       return (

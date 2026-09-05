@@ -26,7 +26,7 @@ export const FARBEN = {
   konfisDunkel: '#4c1d95', // --app-color-konfis-dunkel
   teamer: '#be185d', // --app-color-teamer
   teamerDunkel: '#831843', // --app-color-teamer-dunkel
-  challenges: '#be185d', // --app-color-challenges (Wert == teamer)
+  challenges: '#4f46e5', // --app-color-challenges (Indigo seit 05.09.2026)
   users: '#667eea', // --app-color-users
   usersDunkel: '#5a67d8', // --app-color-users-dunkel
   badges: '#f59e0b', // --app-color-badges
@@ -54,7 +54,6 @@ export const FARBEN = {
   success: '#34c759', // --app-color-success
   successStrong: '#059669', // --app-color-success-strong
   successFresh: '#10b981', // --app-color-success-fresh
-  warteliste: '#fd7e14', // --app-color-warteliste
   neutral: '#6c757d', // --app-color-neutral (vergangene/neutrale Zustaende)
   neutralHell: '#9ca3af', // --app-color-neutral-hell
   textSystem: '#8e8e93', // --app-text-system
@@ -114,7 +113,9 @@ export const WRAPPED_KONFETTI = [
 export const METRIK_AMPEL = {
   gut: '#28a745',
   maessig: '#f0ad4e',
-  erhoeht: '#fd7e14', // == --app-color-warteliste
+  erhoeht: '#fd7e14', // eigener Ampel-Ton; das gleichlautende
+                      // --app-color-warteliste ist am 05.09.2026 in
+                      // --app-color-bonus aufgegangen
   kritisch: '#dc3545', // == --app-color-danger
   blass: '#b0b0b5', // gedaempfte Nebenwerte
 } as const;

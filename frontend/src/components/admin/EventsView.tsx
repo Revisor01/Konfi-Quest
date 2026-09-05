@@ -257,10 +257,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 // auf Rot durch). Anmeldbar = open ODER mandatory.
                 const regStatus = calculateRegistrationStatus(event);
                 const isAnmeldbar = regStatus === 'open' || regStatus === 'mandatory';
-                if (isAnmeldbar && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'var(--app-color-warteliste)'; // Orange - Warteliste
+                if (isAnmeldbar && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'var(--app-color-bonus)'; // Orange - Warteliste
                 if (isAnmeldbar && event.max_participants > 0 && event.registered_count >= event.max_participants) return 'var(--app-color-danger)'; // Rot - Ausgebucht
                 if (isAnmeldbar) return 'var(--app-color-success)'; // Grün - offen/anmeldbar
-                if (regStatus === 'upcoming') return 'var(--app-color-warteliste)'; // Orange für Bald
+                if (regStatus === 'upcoming') return 'var(--app-color-bonus)'; // Orange für Bald
                 return 'var(--app-color-danger)';
               })();
 

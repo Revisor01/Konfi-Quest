@@ -381,7 +381,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
                                   {/* Icon — gottesdienst=info(blau), gemeinde=activities(gruen) */}
-                                  <div className={`app-icon-circle app-icon-circle--${activity.type === 'gottesdienst' ? 'info' : 'activities'}`}>
+                                  <div className={`app-icon-circle app-icon-circle--${activity.type === 'gottesdienst' ? 'gottesdienst' : 'activities'}`}>
                                     <IonIcon icon={activity.type === 'gottesdienst' ? ICON_GOTTESDIENST : ICON_GEMEINDE} />
                                   </div>
 

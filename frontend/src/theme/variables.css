@@ -95,8 +95,13 @@ ion-list-header ion-label {
   --app-color-konfis-rgb: 91, 33, 182;
   --app-color-teamer: #be185d;
   --app-color-teamer-rgb: 190, 24, 93;
-  --app-color-challenges: #be185d;
-  --app-color-challenges-rgb: 190, 24, 93;
+  /* Indigo statt Beerenrot (Simon, 05.09.2026): Challenges trugen exakt die
+     Teamer-Farbe #be185d und hatten damit keine eigene Identitaet. Das Indigo
+     ist fast gleich hell (0,117 gegen 0,124 relative Helligkeit), der Umbau
+     aendert also die Gewichtung der Oberflaeche nicht -- nur den Ton.
+     Weisser Text darauf: Kontrast 6,3 (AA erfuellt). */
+  --app-color-challenges: #4f46e5;
+  --app-color-challenges-rgb: 79, 70, 229;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
@@ -164,7 +169,7 @@ ion-list-header ion-label {
   /* Verlaufsende der Challenge-Detailkoepfe. Weicht vom
      SectionHeader-Partner der Challenges (#831843) ab — als moegliche
      Inkonsistenz gemeldet, Wert bewusst unveraendert (05.09.2026). */
-  --app-color-challenges-akzent: #be123c;
+  --app-color-challenges-akzent: #4338ca;  /* dunkleres Indigo, Verlaufsende */
   --app-color-material-dunkel: #b45309;
   --app-color-chat-dunkel: #0891b2;
   --app-color-wrapped-dunkel: #6d28d9;
@@ -198,8 +203,6 @@ ion-list-header ion-label {
   --app-color-success-fresh-rgb: 16, 185, 129;
   /* Warteliste / "bald anmeldbar" bei Events; auch fuer versteckte Abzeichen
      in der Admin-Liste (gleiches Orange, 05.09.2026 konsolidiert) */
-  --app-color-warteliste: #fd7e14;
-  --app-color-warteliste-rgb: 253, 126, 20;
   /* Neutral: vergangene Events, inaktive/unbestimmte Zustaende */
   --app-color-neutral: #6c757d;
   --app-color-neutral-rgb: 108, 117, 125;
@@ -218,6 +221,18 @@ ion-list-header ion-label {
   /* Akzent des Konfirmations-Countdowns (Rakete) */
   --app-color-rakete: #ff6b35;
   --app-color-rakete-hell: #f7931e;
+
+  /* Aus dem zweiten :root-Block hierher geholt (05.09.2026): variables.css
+     hatte zwei Farbbloecke, 24 Tokens waren doppelt definiert (mit gleichen
+     Werten, aber beim Nachschlagen fand man mal den einen, mal den anderen).
+     Diese sieben gab es nur unten. */
+  --app-color-purple: #5b21b6;          /* Alias von --app-color-konfis */
+  --app-color-purple-rgb: 91, 33, 182;
+  --app-color-trophy: #ff9500;
+  --app-color-organizations: #667eea;
+  --app-color-organizations-rgb: 102, 126, 234;
+  --app-color-requests: #5b21b6;
+  --app-color-requests-rgb: 91, 33, 182;
 
   /* Anmeldeseiten (dunkler "Cosmic"-Hintergrund, helle Akzente) */
   --app-auth-akzent: #67e8f9;
@@ -674,6 +689,10 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--primary { background-color: var(--app-color-konfis); }
 .app-icon-circle--bonus { background-color: var(--app-color-bonus); }
 .app-icon-circle--activities { background-color: var(--app-color-activities); }
+/* Gottesdienst hat eine eigene Farbe (#3b82f6). Bis 05.09.2026 nutzten drei
+   Stellen ersatzweise --info (iOS-Blau #007aff) -- sichtbar anders, und im
+   Punkteverlauf standen sogar beide Varianten in derselben Datei. */
+.app-icon-circle--gottesdienst { background-color: var(--app-color-gottesdienst); }
 .app-icon-circle--teamer { background-color: var(--app-color-teamer); }
 .app-icon-circle--team { background-color: var(--app-color-teamer); }
 .app-icon-circle--challenges { background-color: var(--app-color-challenges); }
@@ -810,40 +829,7 @@ ion-list[inset] ion-list-header {
   margin-top: var(--app-abstand-winzig);
 }
 
-/* === App Farbvariablen === */
-:root {
-  --app-color-events: #dc2626;
-  --app-color-events-rgb: 220, 38, 38;
-  --app-color-chat: #06b6d4;
-  --app-color-chat-rgb: 6, 182, 212;
-  --app-color-success: #34c759;
-  --app-color-success-rgb: 52, 199, 89;
-  --app-color-warning: #ff9500;
-  --app-color-warning-rgb: 255, 149, 0;
-  --app-color-danger: #dc3545;
-  --app-color-danger-rgb: 220, 53, 69;
-  --app-color-info: #007aff;
-  --app-color-info-rgb: 0, 122, 255;
-  --app-color-purple: #5b21b6;
-  --app-color-purple-rgb: 91, 33, 182;
-  --app-color-trophy: #ff9500;
-  --app-color-activities: #047857;
-  --app-color-activities-rgb: 4, 120, 87;
-  --app-color-users: #667eea;
-  --app-color-users-rgb: 102, 126, 234;
-  --app-color-organizations: #667eea;
-  --app-color-organizations-rgb: 102, 126, 234;
-  --app-color-badges: #f59e0b;
-  --app-color-badges-rgb: 245, 158, 11;
-  --app-color-requests: #5b21b6;
-  --app-color-requests-rgb: 91, 33, 182;
-  --app-color-jahrgang: #007aff;
-  --app-color-jahrgang-rgb: 0, 122, 255;
-  --app-color-konfis: #5b21b6;
-  --app-color-konfis-rgb: 91, 33, 182;
-  --app-color-bonus: #f97316;
-  --app-color-bonus-rgb: 249, 115, 22;
-}
+
 
 /* iOS 26 TabBar: Verstärkter Blur-Effekt (näher am nativen iOS 26 Look) */
 /* Die Library setzt blur(2px) saturate(360%) -- wir erhöhen für realistischeren Glass-Effekt */

@@ -165,7 +165,6 @@ describe('theme/colors.ts spiegelt variables.css', () => {
     ['success', 'app-color-success'],
     ['successStrong', 'app-color-success-strong'],
     ['successFresh', 'app-color-success-fresh'],
-    ['warteliste', 'app-color-warteliste'],
     ['neutral', 'app-color-neutral'],
     ['neutralHell', 'app-color-neutral-hell'],
     ['textSystem', 'app-text-system'],
