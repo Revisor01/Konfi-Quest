@@ -11,7 +11,7 @@ interface Props extends SlideProps { engagement: TeamerEngagementSlide; }
 const TeamerJahreSlide: React.FC<Props> = ({ isActive, engagement }) => {
   const j = engagement.jahre_aktiv;
   const slogan = j >= 5
-    ? ['Du gehoerst', 'zum', 'Inventar.']
+    ? ['Du gehörst', 'zum', 'Inventar.']
     : j >= 3
       ? ['Ein alter', 'Hase.']
       : j >= 2
@@ -19,7 +19,7 @@ const TeamerJahreSlide: React.FC<Props> = ({ isActive, engagement }) => {
         : ['Dein erstes', 'Jahr im', 'Team.'];
   const nachsatz = j >= 2
     ? `${j} Jahre begleitest du jetzt schon Konfis.`
-    : 'Willkommen im Team — schoen, dass du da bist.';
+    : 'Willkommen im Team — schön, dass du da bist.';
 
   return (
     <SlideBase isActive={isActive} className="teamer-jahre-slide" kachel="teamer-jahre">

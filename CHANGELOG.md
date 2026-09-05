@@ -38,6 +38,9 @@ Versionsüberschrift.
 
 ### Behoben
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
+- Im Jahresrückblick der Leitung sind die Hinweise überarbeitet: Der Satz
+  darüber, wer was sieht, ist entfallen, der Hinweis beim Anlegen steht im
+  gewohnten Kasten, und die Hinweise auf beiden Reitern sind gleich hoch.
 - Beim Öffnen der App bleibt der Bildschirm nicht mehr weiß, wenn zuletzt eine Seite offen war, die es so nicht mehr gibt.
 - Abmelden beendet die Sitzung jetzt zuverlässig. Vorher konnte man nach dem Neustart wieder im alten Konto landen, und ein Kontowechsel mischte die Ansichten beider Konten.
 - Der Jahresrückblick lässt sich jetzt unter „Mehr → Jahresrückblick"
@@ -67,6 +70,13 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Der Zurück-Pfeil ist feiner gezeichnet und wirkt dadurch leichter.
+- Das Rot im Team-Bereich ist durchgehend dunkler statt pink — im Profilkopf
+  wie auf der Rückblick-Kachel des Startbildschirms.
+- Umlaute stehen in den Rückblick-Seiten und in den vorgeschlagenen Titeln
+  jetzt überall richtig.
+- Im Team-Profil steht die App-Tour zwischen Bibelübersetzung und
+  Medien-Cache und hat wieder Abstand zum Eintrag darüber.
 - Der Willkommensrundgang erklärt jetzt zu Beginn noch einmal, was Challenges
   eigentlich sind, und jede Seite trägt die Farbe ihres Bereichs.
 - Die Seite für den Jahresrückblick ist aufgebaut wie die übrigen Seiten:

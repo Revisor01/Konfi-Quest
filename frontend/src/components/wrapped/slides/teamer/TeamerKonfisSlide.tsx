@@ -14,10 +14,10 @@ interface TeamerKonfisSlideProps extends SlideProps {
 function spruchFuer(n: number): { slogan: string[]; nachsatz: string } {
   if (n >= 40) return { slogan: ['Ein ganzer', 'Jahrgang', 'kennt dich.'], nachsatz: `${n} Konfis hast du begleitet.` };
   if (n >= 20) return { slogan: ['Du kennst', 'sie alle', 'beim Namen.'], nachsatz: `${n} Konfis waren in deinen Gruppen.` };
-  if (n >= 8) return { slogan: ['Fuer die', 'warst du', 'da.'], nachsatz: `${n} Konfis hast du begleitet.` };
+  if (n >= 8) return { slogan: ['Für die', 'warst du', 'da.'], nachsatz: `${n} Konfis hast du begleitet.` };
   if (n >= 2) return { slogan: ['Du hast sie', 'begleitet.'], nachsatz: `${n} Konfis — jede einzeln.` };
-  if (n === 1) return { slogan: ['Eine Konfi.', 'Ganz', 'persoenlich.'], nachsatz: 'Manchmal ist eine genug.' };
-  return { slogan: ['Deine Konfis', 'kommen', 'noch.'], nachsatz: 'Das naechste Jahr wartet.' };
+  if (n === 1) return { slogan: ['Eine Konfi.', 'Ganz', 'persönlich.'], nachsatz: 'Manchmal ist eine genug.' };
+  return { slogan: ['Deine Konfis', 'kommen', 'noch.'], nachsatz: 'Das nächste Jahr wartet.' };
 }
 
 const TeamerKonfisSlide: React.FC<TeamerKonfisSlideProps> = ({ isActive, konfis }) => {
@@ -34,7 +34,7 @@ const TeamerKonfisSlide: React.FC<TeamerKonfisSlideProps> = ({ isActive, konfis 
       <div className="kat-nachsatz">{t.nachsatz}</div>
       {konfis.jahrgaenge?.length > 0 && (
         <div className="kat-fussnote">
-          {konfis.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgaenge'} {konfis.jahrgaenge.join(', ')}
+          {konfis.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'} {konfis.jahrgaenge.join(', ')}
         </div>
       )}
     </SlideBase>

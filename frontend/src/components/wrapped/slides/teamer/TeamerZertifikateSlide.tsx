@@ -13,7 +13,7 @@ const TeamerZertifikateSlide: React.FC<Props> = ({ isActive, zertifikate }) => {
       : ['Dein erstes', 'Zertifikat', 'kommt noch.'];
   const nachsatz = n >= 1
     ? `${n} ${n === 1 ? 'Zertifikat' : 'Zertifikate'} fuer deine Ausbildung — das zaehlt auch ausserhalb der Gemeinde.`
-    : 'Zertifikate gibt es fuer Schulungen und Kurse.';
+    : 'Zertifikate gibt es für Schulungen und Kurse.';
 
   return (
     <SlideBase isActive={isActive} className="teamer-zertifikate-slide" kachel="teamer-zertifikate">

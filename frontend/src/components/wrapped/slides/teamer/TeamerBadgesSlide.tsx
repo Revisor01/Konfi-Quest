@@ -8,10 +8,10 @@ import type { SlideProps, TeamerBadgesSlide as TeamerBadges } from '../../../../
 interface Props extends SlideProps { badges: TeamerBadges; }
 
 function spruchFuer(n: number): { slogan: string[]; nachsatz: string } {
-  if (n >= 10) return { slogan: ['Deine Wand', 'ist', 'voll.'], nachsatz: `${n} Abzeichen fuer deine Arbeit.` };
+  if (n >= 10) return { slogan: ['Deine Wand', 'ist', 'voll.'], nachsatz: `${n} Abzeichen für deine Arbeit.` };
   if (n >= 4) return { slogan: ['Man sieht,', 'was du', 'tust.'], nachsatz: `${n} Abzeichen hast du bekommen.` };
-  if (n >= 1) return { slogan: ['Anerkannt.'], nachsatz: n === 1 ? 'Ein Abzeichen fuer deinen Einsatz.' : `${n} Abzeichen fuer deinen Einsatz.` };
-  return { slogan: ['Deine Arbeit', 'zaehlt', 'trotzdem.'], nachsatz: 'Nicht alles bekommt ein Abzeichen.' };
+  if (n >= 1) return { slogan: ['Anerkannt.'], nachsatz: n === 1 ? 'Ein Abzeichen für deinen Einsatz.' : `${n} Abzeichen für deinen Einsatz.` };
+  return { slogan: ['Deine Arbeit', 'zählt', 'trotzdem.'], nachsatz: 'Nicht alles bekommt ein Abzeichen.' };
 }
 
 const TeamerBadgesSlide: React.FC<Props> = ({ isActive, badges }) => {

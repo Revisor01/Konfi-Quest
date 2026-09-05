@@ -551,7 +551,11 @@ const TeamerDashboardPage: React.FC = () => {
               marginBottom: '16px',
               padding: '20px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, #db2777 0%, #ec4899 50%, #f472b6 100%)',
+              // Der gemeinsame Teamer-Verlauf statt eines eigenen, helleren:
+              // Diese Kachel war als einzige beim Vereinheitlichen am
+              // 11.08.2026 uebersehen worden und stach pink heraus
+              // (Simon, 05.09.2026).
+              background: 'var(--app-gradient-teamer)',
               color: 'white',
               cursor: 'pointer',
               position: 'relative',

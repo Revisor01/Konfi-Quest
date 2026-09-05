@@ -23,7 +23,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, arrowBack, imagesOutline, bookOutline, compassOutline, star, document as documentIcon } from 'ionicons/icons';
+import { mailOutline, keyOutline, briefcaseOutline, calendarOutline, settingsOutline, logOutOutline, trashOutline, ribbon, schoolOutline, timeOutline, imagesOutline, bookOutline, compassOutline, star } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -502,13 +502,37 @@ const TeamerProfilePage: React.FC = () => {
                 {/* Biometrische Anmeldung (blendet sich selbst aus, wenn das
                     Geraet keine eingerichtete Biometrie hat) */}
 
+                {/* App-Tour: zwischen Bibeluebersetzung und Medien-Cache
+                    (Simon, 05.09.2026). Stand vorher ausserhalb des
+                    Flex-Containers und hing deshalb ohne Abstand am
+                    vorherigen Eintrag. */}
+                <div
+                  className="app-list-item app-list-item--teamer"
+                  onClick={() => setShowOnboarding(true)}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--teamer">
+                        <IonIcon icon={compassOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">App-Tour ansehen</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Medien-Cache leeren */}
                 <IonItem
                   button
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={itemStyle as React.CSSProperties}
+                  style={{ ...itemStyle, marginBottom: '8px' } as React.CSSProperties}
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -526,25 +550,7 @@ const TeamerProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </IonItem>
-              </div>
-              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
-              <div
-                className="app-list-item app-list-item--teamer"
-                onClick={() => setShowOnboarding(true)}
-              >
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--teamer">
-                      <IonIcon icon={compassOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">App-Tour ansehen</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             </IonCardContent>
           </IonCard>

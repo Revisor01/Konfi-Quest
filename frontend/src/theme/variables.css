@@ -92,8 +92,11 @@ ion-list-header ion-label {
   --app-color-group-rgb: 249, 115, 22;
   /* Verlauf der Teamer-Kopfbereiche. Es gab drei verschiedene "Teamer-Pink"-
      Verlaeufe an drei Stellen (Profil, Detail-Header, Dashboard-Kachel) —
-     seit 11.08. dieser eine. Mittlerer Stopp ist --app-color-teamer. */
-  --app-gradient-teamer: linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%);
+     seit 11.08. dieser eine.
+     Seit 05.09.2026 durchgehend dunkler: Der helle Startpunkt #ec4899 liess
+     Profil-Header und Wrapped-Kachel pink statt beerenrot wirken (Simon).
+     Erster Stopp ist jetzt --app-color-teamer (#be185d), von dort ins Dunkle. */
+  --app-gradient-teamer: linear-gradient(135deg, #be185d 0%, #9d174d 55%, #831843 100%);
 
   /* Punkte-Typen */
   --app-color-gottesdienst: #3b82f6;

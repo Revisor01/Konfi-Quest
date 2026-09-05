@@ -20,11 +20,11 @@ interface TeamerEventsSlideProps extends SlideProps {
  */
 function spruchFuer(n: number): { auge: string; slogan: string[]; nachsatz: string } {
   if (n >= 30) return { auge: 'Deine Termine', slogan: ['Du warst', 'fast', 'immer da.'], nachsatz: `${n} Termine — das ist ein zweites Ehrenamt.` };
-  if (n >= 15) return { auge: 'Deine Termine', slogan: ['Ohne dich', 'waer das', 'nicht gegangen.'], nachsatz: `${n} Mal hast du deine Zeit gegeben.` };
-  if (n >= 6) return { auge: 'Deine Termine', slogan: ['Verlaesslich', 'dabei.'], nachsatz: `${n} Termine, bei denen du gebraucht wurdest.` };
+  if (n >= 15) return { auge: 'Deine Termine', slogan: ['Ohne dich', 'wär das', 'nicht gegangen.'], nachsatz: `${n} Mal hast du deine Zeit gegeben.` };
+  if (n >= 6) return { auge: 'Deine Termine', slogan: ['Verlässlich', 'dabei.'], nachsatz: `${n} Termine, bei denen du gebraucht wurdest.` };
   if (n >= 2) return { auge: 'Deine Termine', slogan: ['Du hast', 'mitgetragen.'], nachsatz: `${n} Mal warst du dabei.` };
-  if (n === 1) return { auge: 'Dein Termin', slogan: ['Einmal', 'mitgetragen.'], nachsatz: 'Und das zaehlt.' };
-  return { auge: 'Deine Termine', slogan: ['Dein Jahr', 'faengt', 'gerade an.'], nachsatz: 'Die Termine kommen.' };
+  if (n === 1) return { auge: 'Dein Termin', slogan: ['Einmal', 'mitgetragen.'], nachsatz: 'Und das zählt.' };
+  return { auge: 'Deine Termine', slogan: ['Dein Jahr', 'fängt', 'gerade an.'], nachsatz: 'Die Termine kommen.' };
 }
 
 const TeamerEventsSlide: React.FC<TeamerEventsSlideProps> = ({ isActive, events }) => {
@@ -41,7 +41,7 @@ const TeamerEventsSlide: React.FC<TeamerEventsSlideProps> = ({ isActive, events 
       <div className="kat-nachsatz">{t.nachsatz}</div>
       {events.meiste_teilnehmer_event?.name && (
         <div className="w-merkzettel">
-          <span className="w-merkzettel__label">Dein groesster Termin</span>
+          <span className="w-merkzettel__label">Dein größter Termin</span>
           <span className="w-merkzettel__wert">{events.meiste_teilnehmer_event.name}</span>
         </div>
       )}

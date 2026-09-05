@@ -10,7 +10,7 @@ import {
 } from '@ionic/react';
 // Solid-Icons wie in der Events-Liste (dort: people, calendar, trophy,
 // pricetag) -- die Outline-Varianten wichen hier als einzige Liste ab.
-import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, arrowBack, calendarOutline, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
+import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, calendarOutline, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader, EmptyState } from '../../shared';
@@ -228,9 +228,16 @@ const AdminWrappedPage: React.FC = () => {
                 <EmptyState
                   icon={sparklesOutline}
                   title="Noch kein Rückblick"
+                  // Beide Texte etwa gleich lang, damit der Leerzustand auf
+                  // beiden Reitern gleich hoch steht (Simon, 05.09.2026).
+                  // Der Team-Text richtet sich nach der Berechtigung: Das
+                  // Plus ist fuer Admins ohne Leitungsrecht gesperrt, ein
+                  // "lege einen an" waere dort eine Sackgasse.
                   message={segment === 'konfi'
                     ? 'Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
-                    : 'Für das Team ist noch kein Rückblick erstellt.'}
+                    : istLeitung
+                      ? 'Über das Plus oben legst du einen an — für alle Teamer:innen gemeinsam, mit eigenem Namen.'
+                      : 'Für das Team ist noch keiner erstellt. Rückblicke für Teamer:innen legt die Leitung deiner Gemeinde an.'}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>
@@ -356,14 +363,6 @@ const AdminWrappedPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* Wer was darf -- die Regel steht in der Oberflaeche, nicht nur im
-            Handbuch. Sonst raetselt ein Admin, warum er weniger sieht. */}
-        <div style={{ padding: '0 20px 32px', fontSize: '0.78rem', color: 'var(--app-text-sub-color, #8e8e93)', lineHeight: 1.5 }}>
-          {istLeitung
-            ? 'Als Leitung siehst du alle Jahrgänge und die Rückblicke der Teamer:innen.'
-            : 'Du siehst die Rückblicke deiner eigenen Jahrgänge. Teamer-Rückblicke verwaltet die Leitung.'}
-        </div>
-
         {/* Card-Modal wie ueberall sonst (Simons Hinweis 03.09.2026):
             presentingElement gibt die Sheet-Optik mit der zurueckweichenden
             Seite dahinter -- vorher lag das Modal ohne diesen Effekt ueber
@@ -430,11 +429,14 @@ const AdminWrappedPage: React.FC = () => {
                       onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
                     />
                   </IonItem>
-                  <p className="app-text-sub" style={{ marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
-                    Ohne Namen schlagen wir einen vor. Der Rückblick wird sofort
-                    erstellt und freigegeben; alle bekommen eine Mitteilung.
-                    Frühere Ausgaben bleiben erhalten.
-                  </p>
+                  {/* Hinweis im gemeinsamen Muster statt als loser Absatz
+                      (Simon, 05.09.2026). Der Satz "Ohne Namen schlagen wir
+                      einen vor" ist raus: Er nannte den Vorschlag nicht und
+                      liess offen, was passiert. */}
+                  <div className="app-info-box app-info-box--blue" style={{ marginTop: 12, borderRadius: 12 }}>
+                    Der Rückblick wird sofort erstellt und freigegeben; alle
+                    bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>

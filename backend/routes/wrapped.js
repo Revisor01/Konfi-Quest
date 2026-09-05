@@ -1147,7 +1147,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // (DELETE /wrapped/ausgabe/:id), waehrend ein Fremdschluesselfehler
         // gar keine Snapshots erzeugt haette.
         const titel = (req.body?.titel || '').trim()
-          || `Rueckblick ${jahrgang.name || currentYear}`;
+          || `Rückblick ${jahrgang.name || currentYear}`;
         const { rows: [ausgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1250,7 +1250,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Schluessel der Snapshots. Sonst ueberschreibt jeder Lauf den
         // vorigen (derselbe Fehler wie bei den Konfis).
         const teamerTitel = (req.body?.titel || '').trim()
-          || `Teamer-Rueckblick ${currentYear}`;
+          || `Teamer-Rückblick ${currentYear}`;
         const { rows: [teamerAusgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1339,7 +1339,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.json(rows.map(r => ({
         snapshot_id: r.id,
         ausgabe_id: r.ausgabe_id,
-        titel: r.titel || `Dein Rueckblick ${r.year}`,
+        titel: r.titel || `Dein Rückblick ${r.year}`,
         year: r.year,
         zeitraum_start: r.zeitraum_start,
         zeitraum_ende: r.zeitraum_ende,
@@ -1347,7 +1347,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       })));
     } catch (err) {
       console.error('Error loading own wrapped list:', err);
-      res.status(500).json({ error: 'Fehler beim Laden der Rueckblicke' });
+      res.status(500).json({ error: 'Fehler beim Laden der Rückblicke' });
     }
   });
 
@@ -1416,7 +1416,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           );
         }
 
-        res.json({ message: `Ausgabe geloescht (${anzahl} Rueckblicke)`, deleted: anzahl });
+        res.json({ message: `Ausgabe gelöscht (${anzahl} Rückblicke)`, deleted: anzahl });
       } catch (err) {
         console.error('Error deleting wrapped ausgabe:', err);
         res.status(500).json({ error: 'Fehler beim Loeschen der Ausgabe' });
@@ -1485,7 +1485,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         })));
       } catch (err) {
         console.error('Error listing wrapped ausgaben:', err);
-        res.status(500).json({ error: 'Fehler beim Laden der Rueckblick-Ausgaben' });
+        res.status(500).json({ error: 'Fehler beim Laden der Rückblick-Ausgaben' });
       }
     }
   );
@@ -1645,7 +1645,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         const { rows } = await db.query(
           `SELECT s.id, s.wrapped_type, s.year, s.data, s.computed_at,
                   a.id AS ausgabe_id,
-                  COALESCE(a.titel, 'Rueckblick ' || s.year::text) AS titel,
+                  COALESCE(a.titel, 'Rückblick ' || s.year::text) AS titel,
                   a.freigegeben_at
              FROM wrapped_snapshots s
              LEFT JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
