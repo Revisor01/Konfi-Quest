@@ -100,7 +100,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   jahrgang,
   onClose,
   onSuccess,
-  onRefresh,
+  // onRefresh wird von aussen uebergeben (Z. 513), hier drin aber nicht
+  // gebraucht -- die Liste aktualisiert onSuccess. Bewusst nicht
+  // destrukturiert, damit der Lint nicht ueber eine tote Bindung stolpert;
+  // die Schnittstelle bleibt unveraendert (05.09.2026).
   dismiss
 }) => {
   const handleClose = () => {
@@ -119,7 +122,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   // gehabt ueber Mehr > Benutzer:innen).
   const [zuweisbare, setZuweisbare] = useState<ZuweisbarePerson[]>([]);
   const [ausgewaehlt, setAusgewaehlt] = useState<{ [id: number]: boolean }>({});
-  const [presentAlert] = useIonAlert();
   // Lokaler Zustand des Wrapped-Releases, damit der Toggle nach generate/delete
   // sofort den neuen Stand zeigt (das Modal bleibt offen).
 

@@ -53,14 +53,12 @@ const SKALA: Record<string, string> = {
   '--app-text-titel-gross': '1.4rem',
   '--app-text-ueberschrift': '1.5rem',
   '--app-text-ueberschrift-gross': '1.6rem',
-  '--app-anzeige-klein': '1.7rem',
+  // Von 11 auf 7 Stufen am 05.09.2026: klein/mittel/wasserzeichen/symbol
+  // lagen 0,1-0,3rem neben einer anderen Stufe und wurden 0-3 Mal genutzt.
   '--app-anzeige-basis': '1.8rem',
   '--app-anzeige-zahl': '2rem',
-  '--app-anzeige-mittel': '2.2rem',
   '--app-anzeige-gross': '2.5rem',
-  '--app-anzeige-wasserzeichen': '2.9rem',
   '--app-anzeige-riesig': '3rem',
-  '--app-anzeige-symbol': '3.2rem',
   '--app-anzeige-hero': '3.5rem',
   '--app-anzeige-maximal': '4rem',
   '--app-anzeige-marke': '5.8rem',

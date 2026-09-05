@@ -150,7 +150,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       <SectionHeader
         title="Deine Badges"
         subtitle="Sammle alle Erfolge!"
-        icon={ICON_POKAL_GEFUELLT}
+        // Band wie im Tab und im Onboarding (Simon, 05.09.2026): Die Sache
+        // trug vier Zeichen -- Stern im Tab, Pokal hier, Band bei Teamer und
+        // Leitung. Ein Konfi sah fuer dasselbe Stern UND Pokal.
+        icon={ICON_ABZEICHEN_GEFUELLT}
         preset="badges"
         stats={[
           { value: badges.filter(b => b.is_earned && !b.is_hidden).length, label: 'ERREICHT' },
@@ -191,7 +194,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
-            <IonIcon icon={ICON_POKAL_GEFUELLT} />
+            <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
           </div>
           <IonLabel>Erreichte Badges ({badges.filter(b => b.is_earned).length})</IonLabel>
         </IonListHeader>

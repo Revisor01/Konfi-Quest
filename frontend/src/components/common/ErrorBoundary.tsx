@@ -78,7 +78,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
 
             <div className="app-auth-container">
-              <div className="app-auth-hero" style={{ marginTop: 'var(--app-freiraum-kopf-xxl)' }}>
+              <div className="app-auth-hero" style={{ marginTop: 'var(--app-freiraum-kopf-m)' }}>
                 <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
                   KONFI<br />QUEST
                 </h1>

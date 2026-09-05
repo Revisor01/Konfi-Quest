@@ -324,7 +324,7 @@ const KonfiDashboardPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-s)' }}>
+          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             Deine Startseite konnte nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.
           </p>
         </IonContent>
@@ -373,7 +373,7 @@ const KonfiDashboardPage: React.FC = () => {
           <IonTitle>Konfi Quest</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
-              <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-klein)' }} />
+              <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-basis)' }} />
             </IonButton>
           </IonButtons>
         </IonToolbar>

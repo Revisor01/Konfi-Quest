@@ -186,7 +186,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           maxWidth: '70%',
           backgroundColor: isOwnMessage ? 'var(--app-color-chat)' : 'var(--app-surface-soft)',
           color: isOwnMessage ? 'white' : 'var(--app-text-emphasis)',
-          borderRadius: 'var(--app-radius-blase)',
+          borderRadius: 'var(--app-radius-gross)',
           padding: 'var(--app-abstand-schmal) var(--app-abstand-mittelweit)',
           position: 'relative',
           cursor: 'pointer',
@@ -780,7 +780,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               marginTop: 'var(--app-abstand-eng)',
               padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
               backgroundColor: 'white',
-              borderRadius: 'var(--app-radius-extragross)',
+              borderRadius: 'var(--app-radius-gross)',
               boxShadow: 'var(--app-schatten-schwebend-stark)',
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
             }}

@@ -20,8 +20,8 @@ import {
   ICON_PERSON_GEFUELLT,
   ICON_PFEIL_WEITER_GEFUELLT,
   ICON_SCHLUESSEL_GEFUELLT,
-  ICON_SICHTBAR_GEFUELLT,
-  ICON_VERBORGEN_GEFUELLT,
+  ICON_SICHTBAR,
+  ICON_VERBORGEN,
   ICON_WARNHINWEIS_GEFUELLT,
 } from '../shared/icons';
 import { useApp } from '../../contexts/AppContext';
@@ -326,7 +326,7 @@ const LoginView: React.FC = () => {
                   spellcheck={false}
                 />
                 <IonIcon
-                  icon={showPassword ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT}
+                  icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
                   slot="end"
                   onClick={() => setShowPassword(!showPassword)}
                   className="app-auth-input__toggle"

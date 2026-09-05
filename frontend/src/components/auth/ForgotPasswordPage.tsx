@@ -95,7 +95,7 @@ const ForgotPasswordPage: React.FC = () => {
               <IonIcon icon={ICON_MAIL} className="app-auth-hero__cosmic-circle-icon" />
             </div>
 
-            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-mittel)', letterSpacing: '4px' }}>
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-zahl)', letterSpacing: '4px' }}>
               PASSWORT<br />VERGESSEN?
             </h1>
 

@@ -101,25 +101,22 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
       '--app-freiraum-aktion-xxl': '100px',
       '--app-freiraum-aktion-xxl-plus': '110px',
       '--app-freiraum-aktion-xxxl': '120px',
-      '--app-freiraum-kopf-s': '50px',
+      // kopf-s (50px) und kopf-xxl (90px) entfielen am 05.09.2026 mit dem
+      // Angleichen der Rollen-Unterschiede -- niemand nutzte sie mehr.
       '--app-freiraum-kopf-m': '60px',
       '--app-freiraum-kopf-l': '70px',
       '--app-freiraum-kopf-xl': '80px',
-      '--app-freiraum-kopf-xxl': '90px',
       '--app-freiraum-fuss': '56px',
-      '--app-radius-haarfein': '2px',
+      // Von 15 auf 9 Stufen am 05.09.2026: haarfein/schmal/blase/
+      // extragross/kachel/kachel-gross waren Einzelgaenger mit 0-3
+      // Nutzungen und wurden auf die Nachbarstufe gezogen (max. 4px).
       '--app-radius-fein': '4px',
-      '--app-radius-schmal': '6px',
       '--app-radius-klein': '8px',
       '--app-radius-knopf': '10px',
       '--app-radius-karte': '12px',
       '--app-radius-weich': '14px',
       '--app-radius-gross': '16px',
-      '--app-radius-blase': '18px',
-      '--app-radius-extragross': '20px',
-      '--app-radius-kachel': '22px',
       '--app-radius-modal': '24px',
-      '--app-radius-kachel-gross': '28px',
       '--app-radius-kreis': '50%',
       '--app-radius-band': '0 10px 0 10px',
       '--app-schatten-fein': '0 1px 4px rgba(0, 0, 0, 0.06)',

@@ -606,7 +606,7 @@ ion-modal.wrapped-modal-fullscreen {
 .endspurt-progress-fill {
   height: 100%;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: var(--app-radius-schmal);
+  border-radius: var(--app-radius-klein);
   transition: width 2s ease-out;
 }
 
@@ -1102,7 +1102,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 /* Bildplätze für die Momente-Fotos (image-slot im Entwurf). */
 .wrapped-bildplatz {
-  border-radius: var(--app-radius-extragross);
+  border-radius: var(--app-radius-gross);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);

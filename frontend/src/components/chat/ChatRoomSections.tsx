@@ -341,7 +341,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
         <div style={{
           flex: 1,
           backgroundColor: 'white',
-          borderRadius: 'var(--app-radius-extragross)',
+          borderRadius: 'var(--app-radius-gross)',
           border: '1.5px solid rgba(var(--app-color-chat-rgb), 0.3)',
           overflow: 'hidden',
           // Tuerkiser Hauch-Schatten des Chat-Banners — bleibt bewusst inline (05.09.2026, Token-Konsolidierung)

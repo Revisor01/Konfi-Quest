@@ -369,7 +369,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           zIndex: 1
         }}>
           <h2 style={{
-            fontSize: 'var(--app-anzeige-maximal)',
+            fontSize: 'var(--app-anzeige-hero)',
             fontWeight: 'var(--app-schrift-schwer)',
             color: 'rgba(255, 255, 255, 0.1)',
             margin: '0',
@@ -384,7 +384,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <div style={{
           position: 'relative',
           zIndex: 2,
-          padding: 'var(--app-freiraum-kopf-s) var(--app-abstand-weit) var(--app-abstand-weit) var(--app-abstand-weit)',
+          padding: 'var(--app-freiraum-kopf-l) var(--app-abstand-weit) var(--app-abstand-weit) var(--app-abstand-weit)',
           flex: 1,
           display: 'flex',
           alignItems: 'center'

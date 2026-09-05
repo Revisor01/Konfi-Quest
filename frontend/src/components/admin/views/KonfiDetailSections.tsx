@@ -12,13 +12,13 @@ import {
   ICON_BUCH_GEFUELLT,
   ICON_DATEI,
   ICON_HINZUFUEGEN_GEFUELLT,
-  ICON_JAHRGANG_GEFUELLT,
+  ICON_GOTTESDIENST,
+  ICON_GOTTESDIENST_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_OFFLINE,
   ICON_PERSON,
   ICON_PODIUM,
   ICON_POKAL_GEFUELLT,
-  ICON_STERN,
   ICON_TERMIN,
   ICON_TERMIN_GEFUELLT,
   ICON_TEXTDOKUMENT_GEFUELLT,
@@ -153,7 +153,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
           /* 05.09.2026: an die Wasserzeichen-Stufe der Dashboard-Sektionen
              angeglichen (vorher 3rem/900, die Klasse hat 2.9rem/800 --
              derselbe Hintergrund-Schriftzug, per Hand kopiert und verdriftet). */
-          fontSize: 'var(--app-anzeige-wasserzeichen)',
+          fontSize: 'var(--app-anzeige-riesig)',
           fontWeight: 'var(--app-schrift-extrafett)',
           color: 'rgba(255, 255, 255, 0.08)',
           margin: '0',
@@ -809,7 +809,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                               Zweig bekaemen sie immer das Gemeinde-Icon. */}
                           <IonIcon icon={activity.isPending ? ICON_UHRZEIT_GEFUELLT
                             : isTeamer ? ICON_ABZEICHEN_GEFUELLT
-                            : activity.type === 'gottesdienst' ? ICON_JAHRGANG_GEFUELLT : ICON_AKTION_GEFUELLT} />
+                            : activity.type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT : ICON_AKTION_GEFUELLT} />
                         </div>
                         <div className="app-list-item__content">
                           <div
@@ -1144,7 +1144,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               const categoryColor = entry.category === 'gottesdienst' ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)';
               const entryIcon = entry.source_type === 'bonus' ? ICON_BONUS
                 : entry.source_type === 'event' ? ICON_TERMIN
-                : entry.category === 'gottesdienst' ? ICON_STERN : ICON_AKTION;
+                : entry.category === 'gottesdienst' ? ICON_GOTTESDIENST : ICON_AKTION;
               const typeBadgeColor = entry.source_type === 'bonus' ? 'var(--app-color-badges)'
                 : entry.source_type === 'event' ? 'var(--app-color-events)'
                 : null;

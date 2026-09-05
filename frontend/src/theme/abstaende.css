@@ -51,29 +51,31 @@
   --app-freiraum-aktion-xxl: 100px;
   --app-freiraum-aktion-xxl-plus: 110px;
   --app-freiraum-aktion-xxxl: 120px;
-  --app-freiraum-kopf-s: 50px;
+  /* kopf-s (50px) und kopf-xxl (90px) sind am 05.09.2026 entfallen: Nach dem
+     Angleichen der Rollen-Unterschiede (Profil-Kopf, Ladehinweis, Auth-Hero)
+     nutzte sie niemand mehr. Der Test schlaegt an, wenn ein Token verwaist. */
   --app-freiraum-kopf-m: 60px;
   --app-freiraum-kopf-l: 70px;
   --app-freiraum-kopf-xl: 80px;
-  --app-freiraum-kopf-xxl: 90px;
   --app-freiraum-fuss: 56px;      /* Onboarding: Platz fuer Punkte/Steuerung unten */
 
   /* ---- Eckradien ----
      "karte" (12px) ist der Standard der App-Karten,
      "knopf" (10px) der kleiner Bedienelemente. */
-  --app-radius-haarfein: 2px;
+  /* Von 15 auf 9 Stufen eingedampft (Simon, 05.09.2026): Sechs Stufen waren
+     Einzelgaenger mit 0-3 Nutzungen und standen dem eigentlichen Zweck im Weg
+     -- eine kurze Liste, in der man die passende Stufe auf einen Blick findet.
+     Zusammengelegt (max. 4px Unterschied, unsichtbar):
+       2 -> 4 (haarfein)      6 -> 8 (schmal)
+      18 -> 16 (Chat-Blase)  20 -> 16 (extragross)
+      22 -> 24 (Kachel)      28 -> 24 (grosse Kachel) */
   --app-radius-fein: 4px;
-  --app-radius-schmal: 6px;
   --app-radius-klein: 8px;
   --app-radius-knopf: 10px;
   --app-radius-karte: 12px;
   --app-radius-weich: 14px;
   --app-radius-gross: 16px;
-  --app-radius-blase: 18px;       /* Chat-Sprechblasen */
-  --app-radius-extragross: 20px;
-  --app-radius-kachel: 22px;      /* App-Icon-artige Symbolkacheln (72px) */
   --app-radius-modal: 24px;
-  --app-radius-kachel-gross: 28px; /* grosse Symbolkacheln (110px, Onboarding) */
   --app-radius-kreis: 50%;
   --app-radius-band: 0 10px 0 10px; /* diagonal abgeschraegtes Eckband ("Neu"-Banderole) */
 

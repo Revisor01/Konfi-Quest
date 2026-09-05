@@ -151,13 +151,13 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
               }}>
                 <div style={{
                   position: 'relative', zIndex: 1,
-                  width: '110px', height: '110px', borderRadius: 'var(--app-radius-kachel-gross)',
+                  width: '110px', height: '110px', borderRadius: 'var(--app-radius-modal)',
                   background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)',
                   border: '1px solid rgba(255,255,255,0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   marginBottom: 'var(--app-abstand-sehrweit)', boxShadow: 'var(--app-schatten-modal)'
                 }}>
-                  <IonIcon icon={slide.icon} style={{ fontSize: 'var(--app-anzeige-symbol)', color: 'white' }} />
+                  <IonIcon icon={slide.icon} style={{ fontSize: 'var(--app-anzeige-riesig)', color: 'white' }} />
                 </div>
                 <h1 style={{ position: 'relative', zIndex: 1, fontSize: 'var(--app-text-ueberschrift-gross)', fontWeight: 'var(--app-schrift-extrafett)', color: 'white', margin: '0 0 var(--app-abstand-mittel)', textShadow: '0 1px 6px rgba(0,0,0,0.18)' }}>
                   {slide.title}

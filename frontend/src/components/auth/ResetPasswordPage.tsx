@@ -1,8 +1,8 @@
 import {
   ICON_ABSAGE,
-  ICON_SICHTBAR_GEFUELLT,
+  ICON_SICHTBAR,
   ICON_SPERRE,
-  ICON_VERBORGEN_GEFUELLT,
+  ICON_VERBORGEN,
   ICON_WARNHINWEIS_GEFUELLT,
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
@@ -141,7 +141,7 @@ const ResetPasswordPage: React.FC = () => {
               <IonIcon icon={ICON_SPERRE} className="app-auth-hero__cosmic-circle-icon" />
             </div>
 
-            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-mittel)', letterSpacing: '4px' }}>
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-zahl)', letterSpacing: '4px' }}>
               NEUES<br />PASSWORT
             </h1>
 
@@ -199,7 +199,7 @@ const ResetPasswordPage: React.FC = () => {
                   <div style={{
                     width: '72px',
                     height: '72px',
-                    borderRadius: 'var(--app-radius-kachel)',
+                    borderRadius: 'var(--app-radius-modal)',
                     background: 'var(--app-gradient-auth-fehler)',
                     display: 'flex',
                     alignItems: 'center',
@@ -258,7 +258,7 @@ const ResetPasswordPage: React.FC = () => {
                       spellcheck={false}
                     />
                     <IonIcon
-                      icon={showPassword ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT}
+                      icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
                       className="app-auth-input__toggle"
@@ -294,7 +294,7 @@ const ResetPasswordPage: React.FC = () => {
                       spellcheck={false}
                     />
                     <IonIcon
-                      icon={showConfirmPassword ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT}
+                      icon={showConfirmPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="app-auth-input__toggle"

@@ -962,7 +962,7 @@ ion-item {
 
 /* === Header Banner === */
 .app-header-banner {
-  border-radius: var(--app-radius-extragross);
+  border-radius: var(--app-radius-gross);
   padding: var(--app-abstand-weit);
   margin: var(--app-abstand-basis);
   margin-bottom: var(--app-abstand-basis);
@@ -1302,7 +1302,7 @@ ion-item {
 /* === Progress Bars === */
 .app-progress-bar {
   height: 4px;
-  border-radius: var(--app-radius-haarfein);
+  border-radius: var(--app-radius-fein);
   overflow: hidden;
 }
 .app-progress-bar--thick {
@@ -2061,7 +2061,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-hero__logo {
   width: 112px;
   height: 112px;
-  border-radius: var(--app-radius-kachel-gross);
+  border-radius: var(--app-radius-modal);
   display: block;
   margin: 0 auto var(--app-abstand-weit) auto;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -2122,7 +2122,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-hero__icons--small {
-  font-size: var(--app-anzeige-hero);
+  font-size: var(--app-anzeige-maximal);
   margin-bottom: var(--app-abstand-mittel);
 }
 
@@ -2170,7 +2170,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-card {
   width: 100%;
   max-width: 420px;
-  border-radius: var(--app-radius-extragross);
+  border-radius: var(--app-radius-gross);
   overflow: hidden;
   /* Solider App-Card-Stil (keine Glasoptik) — passend zum Rest der App */
   background: #ffffff;
@@ -2206,7 +2206,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-card__heading h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: var(--app-anzeige-klein);
+  font-size: var(--app-anzeige-basis);
   font-weight: var(--app-schrift-normal);
   letter-spacing: 3px;
   margin: 0;
@@ -2526,14 +2526,14 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-success-circle--small {
   width: 72px;
   height: 72px;
-  border-radius: var(--app-radius-kachel);
+  border-radius: var(--app-radius-modal);
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   margin-bottom: var(--app-abstand-gross);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
 }
 
 .app-auth-success-circle__icon {
-  font-size: var(--app-anzeige-hero);
+  font-size: var(--app-anzeige-maximal);
   color: white;
 }
 
@@ -2576,7 +2576,7 @@ ion-button.app-modal-submit-btn--bonus {
 /* === Dashboard Sektionen === */
 /* Gemeinsame Sektion-Basis */
 .app-dashboard-section {
-  border-radius: var(--app-radius-extragross);
+  border-radius: var(--app-radius-gross);
   padding: 0;
   margin-bottom: var(--app-abstand-basis);
   position: relative;
@@ -2594,7 +2594,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-dashboard-section__bg-label {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: var(--app-anzeige-wasserzeichen);
+  font-size: var(--app-anzeige-riesig);
   font-weight: var(--app-schrift-extrafett);
   color: rgba(255, 255, 255, 0.08);
   margin: 0;
@@ -3048,14 +3048,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-audio-seekbar {
   -webkit-appearance: none;
   appearance: none;
-  border-radius: var(--app-radius-haarfein);
+  border-radius: var(--app-radius-fein);
   outline: none;
 }
 .app-audio-seekbar::-webkit-slider-runnable-track {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  border-radius: var(--app-radius-haarfein);
+  border-radius: var(--app-radius-fein);
   background: transparent;
 }
 .app-audio-seekbar::-webkit-slider-thumb {
@@ -3072,7 +3072,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 }
 .app-audio-seekbar::-moz-range-track {
   height: 4px;
-  border-radius: var(--app-radius-haarfein);
+  border-radius: var(--app-radius-fein);
   background: transparent;
 }
 .app-audio-seekbar::-moz-range-thumb {

@@ -20,6 +20,7 @@ import {
   ICON_BONUS,
   ICON_POKAL,
   ICON_SCHLIESSEN,
+  ICON_GOTTESDIENST_GEFUELLT,
   ICON_STERN,
   ICON_TERMIN,
   ICON_TERMIN_GEFUELLT,
@@ -124,7 +125,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     if (sourceType === 'bonus') return ICON_BONUS;
     if (sourceType === 'event') return ICON_TERMIN;
     switch (category) {
-      case 'gottesdienst': return ICON_STERN;
+      // Haus wie in allen Terminlisten (Simon, 05.09.2026): Die Kategorie
+      // trug drei Zeichen -- Haus in den Listen, Stern hier, Schulhut in
+      // der Admin-Aktivitaetenliste. Das Haus ist die Mehrheit.
+      case 'gottesdienst': return ICON_GOTTESDIENST_GEFUELLT;
       case 'gemeinde': return ICON_AKTION;
       default: return ICON_STERN;
     }

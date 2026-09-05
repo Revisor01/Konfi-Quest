@@ -31,14 +31,19 @@
   --app-text-ueberschrift-gross: 1.6rem;/* Hero-Ueberschriften (Auth-Seiten) */
 
   /* --- Anzeigegroessen (Emoji, grosse Zahlen, Leerzustaende) --- */
-  --app-anzeige-klein: 1.7rem;          /* Profil-Emoji, kleine Schmuckzeichen */
+  /* Von 11 auf 6 Stufen eingedampft (Simon, 05.09.2026): Fuenf Stufen lagen
+     nur 0,1-0,3rem neben einer anderen und wurden 0-3 Mal genutzt --
+     Auswahlaufwand ohne Gegenwert. Zusammengelegt:
+       1,7 -> 1,8 (klein)          2,2 -> 2,0 (mittel)
+       2,9 -> 3,0 (wasserzeichen)  3,2 -> 3,0 (symbol)
+     BEWUSST NICHT zusammengelegt: hero 3,5 mit maximal 4,0 -- ein halber
+     rem an einer Dashboard-Ueberschrift ist sichtbar, und die App soll
+     aussehen wie vorher. */
   --app-anzeige-basis: 1.8rem;          /* Emoji in Karten, QR-Ueberschrift */
-  --app-anzeige-zahl: 2rem;             /* grosse Statistikzahlen */
-  --app-anzeige-mittel: 2.2rem;         /* Auth-Icons */
+  --app-anzeige-zahl: 2rem;             /* grosse Statistikzahlen, Auth-Icons */
   --app-anzeige-gross: 2.5rem;          /* Emoji in Legenden und Modals */
-  --app-anzeige-wasserzeichen: 2.9rem;  /* Hintergrund-Schriftzug Dashboard-Sektionen */
-  --app-anzeige-riesig: 3rem;           /* Leerzustand-Emoji, Avatar-Initialen */
-  --app-anzeige-symbol: 3.2rem;         /* Onboarding-Kachel-Icon */
+  --app-anzeige-riesig: 3rem;           /* Leerzustand-Emoji, Avatar-Initialen,
+                                           Wasserzeichen, Onboarding-Kacheln */
   --app-anzeige-hero: 3.5rem;           /* Auth-Icon-Reihe, Erfolgs-Icon */
   --app-anzeige-maximal: 4rem;          /* Profil-Avatar-Emoji, Dateivorschau */
   --app-anzeige-marke: 5.8rem;          /* "KONFI QUEST"-Schriftzug (Bebas) auf Auth */

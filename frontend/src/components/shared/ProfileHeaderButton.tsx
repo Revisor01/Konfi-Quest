@@ -22,7 +22,7 @@ const ProfileHeaderButton: React.FC<ProfileHeaderButtonProps> = ({ href, variant
           slot="icon-only"
           icon={ICON_PROFIL}
           className={colorClass}
-          style={{ fontSize: 'var(--app-anzeige-klein)' }}
+          style={{ fontSize: 'var(--app-anzeige-basis)' }}
         />
       </IonButton>
     </IonButtons>

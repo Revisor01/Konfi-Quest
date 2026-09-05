@@ -4,7 +4,7 @@ import {
   ICON_CHATS,
   ICON_FUNKELN,
   ICON_STARTSEITE,
-  ICON_STERN,
+  ICON_ABZEICHEN,
   ICON_TERMIN,
   ICON_TEXTDOKUMENT,
 } from '../../shared/icons';
@@ -63,7 +63,7 @@ export const SLIDES: OnboardingSlide[] = [
     text: 'Der zweite Reiter im Mitmachen-Tab: Aktivitäten sind Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Hier meldest du dich nicht vorher an, sondern erzählst hinterher davon. Dein Team bestätigt und du bekommst deine Punkte.',
   },
   {
-    icon: ICON_STERN,
+    icon: ICON_ABZEICHEN,
     color: 'var(--app-color-badges)',
     rgb: '--app-color-badges-rgb',
     title: 'Deine Badges',

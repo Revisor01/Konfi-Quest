@@ -1,14 +1,13 @@
 import { lazy } from 'react';
 import type React from 'react';
 import {
-  ICON_AKTION_GEFUELLT,
   ICON_CHALLENGE_GEFUELLT,
   ICON_CHATS_GEFUELLT,
   ICON_DATEI_GEFUELLT,
   ICON_GRUPPE_GEFUELLT,
   ICON_MEHR,
   ICON_STARTSEITE_GEFUELLT,
-  ICON_STERN_GEFUELLT,
+  ICON_ABZEICHEN_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
 } from '../components/shared/icons';
 import type { Rolle, RollenBaum } from './routes';
@@ -219,7 +218,10 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     tabs: [
       { tab: 'admin-konfis', href: '/admin/konfis', icon: ICON_GRUPPE_GEFUELLT, label: 'Konfis' },
       { tab: 'admin-chat', href: '/admin/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
-      { tab: 'admin-events', href: '/admin/events', icon: ICON_AKTION_GEFUELLT, label: 'Mitmachen', badge: 'events' },
+      // Kalender wie bei Teamer und Konfi (Simon, 05.09.2026): Derselbe Reiter
+      // trug bei der Leitung einen Blitz, bei den anderen beiden einen
+      // Kalender -- gleiche Beschriftung, anderes Zeichen.
+      { tab: 'admin-events', href: '/admin/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen', badge: 'events' },
       { tab: 'admin-challenges', href: '/admin/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
       { tab: 'admin-settings', href: '/admin/settings', icon: ICON_MEHR, label: 'Mehr' },
     ],
@@ -280,7 +282,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'chat', href: '/konfi/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
       { tab: 'challenges', href: '/konfi/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges' },
       { tab: 'events', href: '/konfi/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
-      { tab: 'badges', href: '/konfi/badges', icon: ICON_STERN_GEFUELLT, label: 'Badges', badge: 'badges' },
+      { tab: 'badges', href: '/konfi/badges', icon: ICON_ABZEICHEN_GEFUELLT, label: 'Badges', badge: 'badges' },
     ],
   },
 

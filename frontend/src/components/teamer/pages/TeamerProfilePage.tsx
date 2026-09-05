@@ -257,7 +257,7 @@ const TeamerProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent className="ion-padding">
-          <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-xl)' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <p>Fehler beim Laden des Profils</p>
             <IonButton
               expand="block"

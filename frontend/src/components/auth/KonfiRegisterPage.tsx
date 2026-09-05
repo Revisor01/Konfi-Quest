@@ -7,8 +7,8 @@ import {
   ICON_OFFLINE,
   ICON_PERSON_GEFUELLT,
   ICON_SCHLUESSEL_GEFUELLT,
-  ICON_SICHTBAR_GEFUELLT,
-  ICON_VERBORGEN_GEFUELLT,
+  ICON_SICHTBAR,
+  ICON_VERBORGEN,
   ICON_WARNHINWEIS_GEFUELLT,
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
@@ -291,7 +291,7 @@ const KonfiRegisterPage: React.FC = () => {
             <div className="app-auth-success-circle">
               <IonIcon icon={ICON_ZUSAGE_GEFUELLT} className="app-auth-success-circle__icon" />
             </div>
-            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-mittel)', letterSpacing: '4px' }}>
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: 'var(--app-anzeige-zahl)', letterSpacing: '4px' }}>
               WILLKOMMEN!
             </h1>
             <div className="app-auth-hero__divider">
@@ -325,7 +325,7 @@ const KonfiRegisterPage: React.FC = () => {
         <div className="app-auth-container">
 
           {/* Hero Section */}
-          <div className="app-auth-hero" style={{ marginTop: 'var(--app-freiraum-kopf-s)' }}>
+          <div className="app-auth-hero" style={{ marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
               KONFI<br />QUEST
             </h1>
@@ -517,7 +517,7 @@ const KonfiRegisterPage: React.FC = () => {
                       className="app-auth-input__value"
                     />
                     <IonIcon
-                      icon={showPassword ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT}
+                      icon={showPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
                       className="app-auth-input__toggle"
@@ -555,7 +555,7 @@ const KonfiRegisterPage: React.FC = () => {
                       className="app-auth-input__value"
                     />
                     <IonIcon
-                      icon={showConfirmPassword ? ICON_VERBORGEN_GEFUELLT : ICON_SICHTBAR_GEFUELLT}
+                      icon={showConfirmPassword ? ICON_VERBORGEN : ICON_SICHTBAR}
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="app-auth-input__toggle"

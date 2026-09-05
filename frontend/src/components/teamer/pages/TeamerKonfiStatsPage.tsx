@@ -166,7 +166,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-xl)' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             <p>Keine Konfi-Daten vorhanden</p>
           </div>
         </IonContent>

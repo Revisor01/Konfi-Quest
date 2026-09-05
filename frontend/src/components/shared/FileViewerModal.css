@@ -139,7 +139,7 @@
 }
 
 .file-viewer-fallback-icon {
-  font-size: var(--app-anzeige-maximal);
+  font-size: var(--app-anzeige-hero);
   opacity: 0.5;
   color: #888;
 }

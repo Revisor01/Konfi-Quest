@@ -97,7 +97,7 @@ const KonfiProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-s)' }}>
+          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-m)' }}>
             Fehler beim Laden des Profils
           </p>
         </IonContent>

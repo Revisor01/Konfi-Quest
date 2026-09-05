@@ -158,7 +158,7 @@ const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId, role =
                     }}>
                       <IonIcon
                         icon={getIconFromString(badge.icon)}
-                        style={{ fontSize: 'var(--app-anzeige-klein)', color: 'white' }}
+                        style={{ fontSize: 'var(--app-anzeige-basis)', color: 'white' }}
                       />
                       <div style={{
                         position: 'absolute',
