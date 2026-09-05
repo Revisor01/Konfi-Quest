@@ -1,4 +1,17 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_ANHANG,
+  ICON_DATEI,
+  ICON_DATEI_GEFUELLT,
+  ICON_FILTER,
+  ICON_HINZUFUEGEN_GEFUELLT,
+  ICON_LINK,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN,
+  ICON_TERMIN_GEFUELLT,
+  ICON_WELT,
+  ICON_ZURUECK,
+} from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -28,20 +41,6 @@ import {
   useIonAlert,
   useIonModal
 } from '@ionic/react';
-import {
-  document as documentIcon,
-  documentOutline,
-  add,
-  arrowBack,
-  trash,
-  attachOutline,
-  calendar,
-  calendarOutline,
-  filterOutline,
-  globeOutline,
-  linkOutline,
-  search as searchIcon,
-} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -211,7 +210,7 @@ const AdminMaterialPage: React.FC = () => {
           <IonTitle>Material verwalten</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neues Material anlegen" onClick={openCreateModal}>
-              <IonIcon icon={add} />
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -238,8 +237,8 @@ const AdminMaterialPage: React.FC = () => {
             <SectionHeader
               title="Material"
               subtitle="Dokumente und Dateien"
-              icon={documentIcon}
-              colors={{ primary: 'var(--app-color-material)', secondary: '#b45309' }}
+              icon={ICON_DATEI_GEFUELLT}
+              colors={{ primary: 'var(--app-color-material)', secondary: 'var(--app-color-material-dunkel)' }}
               stats={(() => {
                 // Dritte Kachel "Links" (Simons Wunsch 01.09.2026): seit ein
                 // Material statt Dateien einen Link tragen kann, fehlten die
@@ -255,16 +254,16 @@ const AdminMaterialPage: React.FC = () => {
             />
 
             {/* Suche & Filter */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={filterOutline} />
+                  <IonIcon icon={ICON_FILTER} />
                 </div>
                 <IonLabel>Suche & Filter</IonLabel>
               </IonListHeader>
               <IonItemGroup>
                 <IonItem>
-                  <IonIcon icon={searchIcon} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                   <IonInput
                     value={search}
                     onIonInput={(e) => setSearch(e.detail.value || '')}
@@ -274,7 +273,7 @@ const AdminMaterialPage: React.FC = () => {
                 </IonItem>
                 {(jahrgaenge || []).length > 0 && (
                   <IonItem>
-                    <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                     <IonSelect
                       value={nurGlobal ? 'global' : (activeJahrgangId ?? 'alle')}
                       onIonChange={(e) => {
@@ -301,7 +300,7 @@ const AdminMaterialPage: React.FC = () => {
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={documentIcon} />
+                  <IonIcon icon={ICON_DATEI_GEFUELLT} />
                 </div>
                 <IonLabel>Materialien ({filteredMaterials.length})</IonLabel>
               </IonListHeader>
@@ -309,7 +308,7 @@ const AdminMaterialPage: React.FC = () => {
                 <IonCardContent>
                   {filteredMaterials.length === 0 ? (
                     <EmptyState
-                      icon={documentOutline}
+                      icon={ICON_DATEI}
                       // Der Jahrgangs-Hinweis nur, wenn der Server die Leere
                       // damit begruendet hat UND kein eigener Filter die
                       // Liste geleert haben kann: Bei aktiver Suche erklaert
@@ -327,7 +326,7 @@ const AdminMaterialPage: React.FC = () => {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredMaterials.map((mat, index) => (
-                        <IonItemSliding key={mat.id} style={{ marginBottom: index < filteredMaterials.length - 1 ? '8px' : '0' }}>
+                        <IonItemSliding key={mat.id} style={{ marginBottom: index < filteredMaterials.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                           <IonItem
                             button
                             onClick={() => openEditModal(mat)}
@@ -342,7 +341,7 @@ const AdminMaterialPage: React.FC = () => {
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
                                   <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
-                                    <IonIcon icon={mat.link_url ? linkOutline : documentIcon} />
+                                    <IonIcon icon={mat.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT} />
                                   </div>
                                   <div className="app-list-item__content">
                                     <div className="app-list-item__title">
@@ -362,25 +361,25 @@ const AdminMaterialPage: React.FC = () => {
                                     <div className="app-list-item__meta">
                                       {mat.ist_global && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={globeOutline} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_WELT} style={{ color: 'var(--app-color-material)' }} />
                                           Für alle
                                         </span>
                                       )}
                                       {((mat.link_count ?? (mat.link_url ? 1 : 0)) > 0) && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={linkOutline} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_LINK} style={{ color: 'var(--app-color-material)' }} />
                                           {(mat.link_count ?? 1) === 1 ? 'Link' : `${mat.link_count} Links`}
                                         </span>
                                       )}
                                       {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />
+                                          <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-color-material)' }} />
                                           {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                         </span>
                                       )}
                                       {(mat.event_count || 0) > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
+                                          <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-events)' }} />
                                           {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                                         </span>
                                       )}
@@ -401,7 +400,7 @@ const AdminMaterialPage: React.FC = () => {
                                 aria-label="Material löschen"
                               >
                                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                  <IonIcon icon={trash} />
+                                  <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                                 </div>
                               </IonItemOption>
                             </IonItemOptions>

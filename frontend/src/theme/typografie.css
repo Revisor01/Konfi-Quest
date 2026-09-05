@@ -1,0 +1,64 @@
+/* =========================================================================
+   Typografie-Skala — die EINE Stelle fuer Schriftgroessen und -schnitte.
+   Angelegt 05.09.2026: Vorher standen 607 Inline-fontSize und 254
+   Inline-fontWeight verstreut in den Komponenten; zentral aenderbar war
+   nur die Farbe. Die Stufen bilden den gemessenen Bestand ab (Haeufigkeits-
+   zaehlung ueber alle .tsx und .css), sie sind KEINE theoretische Skala.
+   Nah beieinanderliegende Altwerte wurden auf eine Stufe gelegt
+   (z.B. 0.72rem -> 0.7rem, 1.25rem -> 1.2rem); Abweichung max. 0.05rem,
+   bei den Anzeigegroessen max. 0.1rem — unter der Sichtbarkeitsschwelle.
+
+   Verwendung in Komponenten:  fontSize: 'var(--app-text-basis)'
+   Verwendung in CSS:          font-size: var(--app-text-basis);
+   ========================================================================= */
+
+:root {
+  /* --- Textgroessen (Flusstext, Listen, Titel) --- */
+  --app-text-winzig: 0.6rem;            /* Tab-Beschriftungen, kleinste Marker */
+  --app-text-mini: 0.65rem;             /* Zaehler-Badges, Kleinstlabels */
+  --app-text-meta: 0.7rem;              /* Zeitstempel, Metazeilen */
+  --app-text-klein: 0.75rem;            /* Chips, Badges, Fussnoten */
+  --app-text-hinweis: 0.8rem;           /* Hinweise, Zweitinfos */
+  --app-text-sekundaer: 0.85rem;        /* Listen-Untertexte (haeufigster Wert) */
+  --app-text-basis: 0.9rem;             /* Flusstext */
+  --app-text-betont: 0.95rem;           /* leicht hervorgehobener Text */
+  --app-text-standard: 1rem;            /* Standardgroesse, Eingaben */
+  --app-text-gross: 1.1rem;             /* grosse Werte, Item-Titel */
+  --app-text-untertitel: 1.2rem;        /* Untertitel, Kartentitel */
+  --app-text-titel: 1.3rem;             /* Abschnittstitel */
+  --app-text-titel-gross: 1.4rem;       /* grosse Titel, Icons in Titelzeilen */
+  --app-text-ueberschrift: 1.5rem;      /* Seiten-Ueberschriften */
+  --app-text-ueberschrift-gross: 1.6rem;/* Hero-Ueberschriften (Auth-Seiten) */
+
+  /* --- Anzeigegroessen (Emoji, grosse Zahlen, Leerzustaende) --- */
+  --app-anzeige-klein: 1.7rem;          /* Profil-Emoji, kleine Schmuckzeichen */
+  --app-anzeige-basis: 1.8rem;          /* Emoji in Karten, QR-Ueberschrift */
+  --app-anzeige-zahl: 2rem;             /* grosse Statistikzahlen */
+  --app-anzeige-mittel: 2.2rem;         /* Auth-Icons */
+  --app-anzeige-gross: 2.5rem;          /* Emoji in Legenden und Modals */
+  --app-anzeige-wasserzeichen: 2.9rem;  /* Hintergrund-Schriftzug Dashboard-Sektionen */
+  --app-anzeige-riesig: 3rem;           /* Leerzustand-Emoji, Avatar-Initialen */
+  --app-anzeige-symbol: 3.2rem;         /* Onboarding-Kachel-Icon */
+  --app-anzeige-hero: 3.5rem;           /* Auth-Icon-Reihe, Erfolgs-Icon */
+  --app-anzeige-maximal: 4rem;          /* Profil-Avatar-Emoji, Dateivorschau */
+  --app-anzeige-marke: 5.8rem;          /* "KONFI QUEST"-Schriftzug (Bebas) auf Auth */
+
+  /* --- Pixelfeste Groessen ---
+     Bewusst px statt rem: Diese Groessen haengen an px-festen Layouts
+     (38px-Chatknoepfe, 14px-Punkt, Accordion-Chrome) und duerfen bei
+     geaenderter Systemschriftgroesse nicht mitwachsen. */
+  --app-icon-inline: 0.9em;             /* Unendlich-Zeichen im Lauftext (relativ zur Umgebung) */
+  --app-text-hinweispunkt: 10px;        /* "!" im Benachrichtigungspunkt */
+  --app-icon-chat-senden: 15px;         /* Senden-Icon im 38px-Chatknopf */
+  --app-icon-accordion: 18px;           /* Accordion-Toggle-Icon */
+  --app-icon-chat-anhang: 22px;         /* Anhang-Icon im 38px-Chatknopf */
+  --app-icon-leerzustand: 64px;         /* QR-Scanner-Platzhalter-Icon */
+
+  /* --- Schriftschnitte --- */
+  --app-schrift-normal: 400;
+  --app-schrift-mittel: 500;
+  --app-schrift-halbfett: 600;
+  --app-schrift-fett: 700;
+  --app-schrift-extrafett: 800;
+  --app-schrift-schwer: 900;
+}

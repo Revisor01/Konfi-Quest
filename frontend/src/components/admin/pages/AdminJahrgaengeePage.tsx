@@ -1,4 +1,19 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_ABSAGE,
+  ICON_EINSTELLUNGEN,
+  ICON_FUNKELN,
+  ICON_GOTTESDIENST_GEFUELLT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN,
+  ICON_HINZUFUEGEN_GEFUELLT,
+  ICON_JAHRGANG,
+  ICON_JAHRGANG_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_POKAL_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_ZURUECK,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import { fehlerDaten, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -28,22 +43,6 @@ import {
   IonToggle,
   IonRange
 } from '@ionic/react';
-import {
-  add,
-  school,
-  checkmarkOutline,
-  closeOutline,
-  arrowBack,
-  trash,
-  schoolOutline,
-  settingsOutline,
-  sparklesOutline,
-  checkmarkCircle,
-  closeCircle,
-  trophy,
-  home,
-  people
-} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -260,7 +259,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           </IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading}>
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
@@ -271,7 +270,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
               {loading ? (
                 <IonSpinner name="crescent" />
               ) : (
-                <IonIcon icon={checkmarkOutline} />
+                <IonIcon icon={ICON_HAKEN} />
               )}
             </IonButton>
           </IonButtons>
@@ -280,10 +279,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* Jahrgang Details - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--jahrgang">
-              <IonIcon icon={school} />
+              <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
             </div>
             <IonLabel>Jahrgang Details</IonLabel>
           </IonListHeader>
@@ -301,7 +300,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
               </IonList>
-              <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', margin: '8px 4px 0', lineHeight: 1.4 }}>
+              <p style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-system)', margin: 'var(--app-abstand-eng) var(--app-abstand-mini) 0', lineHeight: 1.4 }}>
                 Hier steuerst du diesen Jahrgang zentral: Punkteziele, die Freischaltung der Konfispruch-Auswahl und die Freigabe des Wrapped-Rückblicks.
               </p>
             </IonCardContent>
@@ -309,10 +308,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         </IonList>
 
         {/* Punkte-Konfiguration */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--jahrgang">
-              <IonIcon icon={settingsOutline} />
+              <IonIcon icon={ICON_EINSTELLUNGEN} />
             </div>
             <IonLabel>Punkte-Konfiguration</IonLabel>
           </IonListHeader>
@@ -330,15 +329,15 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
                 {!formData.gemeinde_enabled && formData.gottesdienst_enabled && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--app-color-badges)', marginTop: '4px', paddingLeft: '16px' }}>
+                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
                     Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gottesdienst-Punkte.` : ''}
                   </div>
                 )}
                 {formData.gottesdienst_enabled && (
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Ziel Gottesdienst <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.target_gottesdienst}</span></IonLabel>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                    <IonLabel position="stacked">Ziel Gottesdienst <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.target_gottesdienst}</span></IonLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
+                      <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                       <IonRange
                         min={1} max={20} step={1}
                         pin={true} pinFormatter={(value: number) => `${value}`}
@@ -347,7 +346,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                         disabled={loading}
                         style={{ flex: 1 }}
                       />
-                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                      <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>20</span>
                     </div>
                   </IonItem>
                 )}
@@ -362,15 +361,15 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
                 {!formData.gottesdienst_enabled && formData.gemeinde_enabled && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--app-color-badges)', marginTop: '4px', paddingLeft: '16px' }}>
+                  <div style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-color-badges)', marginTop: 'var(--app-abstand-mini)', paddingLeft: 'var(--app-abstand-basis)' }}>
                     Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gemeinde-Punkte.` : ''}
                   </div>
                 )}
                 {formData.gemeinde_enabled && (
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Ziel Gemeinde <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.target_gemeinde}</span></IonLabel>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                    <IonLabel position="stacked">Ziel Gemeinde <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{formData.target_gemeinde}</span></IonLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
+                      <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                       <IonRange
                         min={1} max={20} step={1}
                         pin={true} pinFormatter={(value: number) => `${value}`}
@@ -379,7 +378,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                         disabled={loading}
                         style={{ flex: 1 }}
                       />
-                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                      <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>20</span>
                     </div>
                   </IonItem>
                 )}
@@ -389,10 +388,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         </IonList>
 
         {/* Konfispruch & Wrapped */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--jahrgang">
-              <IonIcon icon={sparklesOutline} />
+              <IonIcon icon={ICON_FUNKELN} />
             </div>
             <IonLabel>Konfispruch & Wrapped</IonLabel>
           </IonListHeader>
@@ -402,7 +401,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 <IonItem lines={jahrgang ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
                   <IonLabel>
                     <h3 style={{ margin: 0 }}>Konfispruch-Auswahl</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', whiteSpace: 'normal' }}>
+                    <p style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-system)', whiteSpace: 'normal' }}>
                       Konfis dieses Jahrgangs können ihren Konfispruch wählen.
                     </p>
                   </IonLabel>
@@ -435,15 +434,15 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             Zuweisungen — nachtraeglich geht es weiter ueber die
             Benutzerverwaltung. */}
         {!jahrgang && user?.role_name === 'org_admin' && zuweisbare.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--jahrgang">
-                <IonIcon icon={people} />
+                <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
               </div>
               <IonLabel>Zugriff für Admins & Teamer:innen</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {zuweisbare.map((person, index) => {
                     const istGewaehlt = ausgewaehlt[person.id] || false;
@@ -458,22 +457,22 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          marginBottom: index < zuweisbare.length - 1 ? '8px' : '0',
+                          marginBottom: index < zuweisbare.length - 1 ? 'var(--app-abstand-eng)' : '0',
                           background: istGewaehlt ? 'rgba(102, 126, 234, 0.08)' : undefined
                         }}
                       >
-                        <span style={{ fontWeight: '500', color: '#333' }}>{person.display_name}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--app-text-sub-color, #8e8e93)' }}>
+                        <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{person.display_name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
+                          <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)' }}>
                             {person.role_name === 'admin' ? 'Admin' : 'Teamer:in'}
                           </span>
-                          {istGewaehlt && <IonIcon icon={checkmarkCircle} style={{ color: '#34c759' }} />}
+                          {istGewaehlt && <IonIcon icon={ICON_ZUSAGE_GEFUELLT} style={{ color: 'var(--app-color-success)' }} />}
                         </span>
                       </div>
                     );
                   })}
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', margin: '12px 4px 0', lineHeight: 1.4 }}>
+                <p style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-system)', margin: 'var(--app-abstand-mittel) var(--app-abstand-mini) 0', lineHeight: 1.4 }}>
                   Ausgewählte Personen sehen und bearbeiten den neuen Jahrgang sofort. Ohne Auswahl kannst du die Zuweisung später unter „Benutzer:innen" vergeben.
                 </p>
               </IonCardContent>
@@ -607,7 +606,7 @@ const AdminJahrgaengeePage: React.FC = () => {
           {canCreate && (
             <IonButtons slot="end">
               <IonButton aria-label="Neuen Jahrgang anlegen" onClick={openCreateModal}>
-                <IonIcon icon={add} />
+                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
               </IonButton>
             </IonButtons>
           )}
@@ -632,7 +631,7 @@ const AdminJahrgaengeePage: React.FC = () => {
             <SectionHeader
               title="Jahrgänge"
               subtitle="Konfirmand:innen verwalten"
-              icon={school}
+              icon={ICON_JAHRGANG_GEFUELLT}
               preset="jahrgang"
               stats={[
                 { value: (jahrgaenge || []).length, label: 'GESAMT' }
@@ -641,14 +640,14 @@ const AdminJahrgaengeePage: React.FC = () => {
 
         {/* Jahrgaenge List */}
         <ListSection
-          icon={schoolOutline}
+          icon={ICON_JAHRGANG}
           title="Jahrgänge"
           count={(jahrgaenge || []).length}
           iconColorClass="jahrgang"
-          emptyIcon={school}
+          emptyIcon={ICON_JAHRGANG_GEFUELLT}
           emptyTitle="Keine Jahrgänge gefunden"
           emptyMessage="Noch keine Jahrgänge angelegt"
-          emptyIconColor="#007aff"
+          emptyIconColor="var(--app-color-info)"
         >
                   {(jahrgaenge || []).map((jahrgang, index) => (
                     <IonItemSliding
@@ -660,7 +659,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                           slidingRefs.current.delete(jahrgang.id);
                         }
                       }}
-                      style={{ marginBottom: index < (jahrgaenge || []).length - 1 ? '8px' : '0' }}
+                      style={{ marginBottom: index < (jahrgaenge || []).length - 1 ? 'var(--app-abstand-eng)' : '0' }}
                     >
                       <IonItem
                         button={canEdit}
@@ -684,7 +683,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
-                                <IonIcon icon={school} />
+                                <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
                               </div>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title">
@@ -693,27 +692,27 @@ const AdminJahrgaengeePage: React.FC = () => {
                                 <div className="app-list-item__meta">
                                   {jahrgang.gottesdienst_enabled !== false && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={home} className="app-icon-color--gottesdienst" />
+                                      <IonIcon icon={ICON_GOTTESDIENST_GEFUELLT} className="app-icon-color--gottesdienst" />
                                       {`GD-Ziel ${jahrgang.target_gottesdienst ?? 10}`}
                                     </span>
                                   )}
                                   {jahrgang.gemeinde_enabled !== false && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={people} className="app-icon-color--gemeinde" />
+                                      <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-icon-color--gemeinde" />
                                       {`Gem-Ziel ${jahrgang.target_gemeinde ?? 10}`}
                                     </span>
                                   )}
                                   <span className="app-list-item__meta-item">
                                     <IonIcon
-                                      icon={jahrgang.konfspruch_enabled !== false ? checkmarkCircle : closeCircle}
-                                      style={{ color: jahrgang.konfspruch_enabled !== false ? '#34c759' : '#8e8e93' }}
+                                      icon={jahrgang.konfspruch_enabled !== false ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE}
+                                      style={{ color: jahrgang.konfspruch_enabled !== false ? 'var(--app-color-success)' : 'var(--app-text-system)' }}
                                     />
                                     {jahrgang.konfspruch_enabled !== false ? 'Spruch frei' : 'Spruch gesperrt'}
                                   </span>
                                   <span className="app-list-item__meta-item">
                                     <IonIcon
-                                      icon={trophy}
-                                      style={{ color: jahrgang.wrapped_released_at ? '#ff9500' : '#8e8e93' }}
+                                      icon={ICON_POKAL_GEFUELLT}
+                                      style={{ color: jahrgang.wrapped_released_at ? 'var(--app-color-warning)' : 'var(--app-text-system)' }}
                                     />
                                     {jahrgang.wrapped_released_at
                                       ? `Wrapped gestartet am ${new Date(jahrgang.wrapped_released_at).toLocaleDateString('de-DE')}`
@@ -734,7 +733,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                              <IonIcon icon={trash} />
+                              <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                             </div>
                           </IonItemOption>
                         </IonItemOptions>

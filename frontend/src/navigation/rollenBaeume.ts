@@ -1,6 +1,16 @@
 import { lazy } from 'react';
 import type React from 'react';
-import { home, people, chatbubbles, calendar, flash, flag, star, ellipsisHorizontal, document as documentIcon } from 'ionicons/icons';
+import {
+  ICON_AKTION_GEFUELLT,
+  ICON_CHALLENGE_GEFUELLT,
+  ICON_CHATS_GEFUELLT,
+  ICON_DATEI_GEFUELLT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_MEHR,
+  ICON_STARTSEITE_GEFUELLT,
+  ICON_STERN_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+} from '../components/shared/icons';
 import type { Rolle, RollenBaum } from './routes';
 
 // Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
@@ -207,11 +217,11 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { from: '/admin/requests', to: '/admin/events?segment=antraege' },
     ],
     tabs: [
-      { tab: 'admin-konfis', href: '/admin/konfis', icon: people, label: 'Konfis' },
-      { tab: 'admin-chat', href: '/admin/chat', icon: chatbubbles, label: 'Chat', badge: 'chat' },
-      { tab: 'admin-events', href: '/admin/events', icon: flash, label: 'Mitmachen', badge: 'events' },
-      { tab: 'admin-challenges', href: '/admin/challenges', icon: flag, label: 'Challenges', badge: 'challenges' },
-      { tab: 'admin-settings', href: '/admin/settings', icon: ellipsisHorizontal, label: 'Mehr' },
+      { tab: 'admin-konfis', href: '/admin/konfis', icon: ICON_GRUPPE_GEFUELLT, label: 'Konfis' },
+      { tab: 'admin-chat', href: '/admin/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
+      { tab: 'admin-events', href: '/admin/events', icon: ICON_AKTION_GEFUELLT, label: 'Mitmachen', badge: 'events' },
+      { tab: 'admin-challenges', href: '/admin/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
+      { tab: 'admin-settings', href: '/admin/settings', icon: ICON_MEHR, label: 'Mehr' },
     ],
   },
 
@@ -235,16 +245,16 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { from: '/teamer/requests', to: '/teamer/events?segment=antraege' },
     ],
     tabs: [
-      { tab: 'teamer-dashboard', href: '/teamer/dashboard', icon: home, label: 'Start' },
-      { tab: 'teamer-chat', href: '/teamer/chat', icon: chatbubbles, label: 'Chat', badge: 'chat' },
+      { tab: 'teamer-dashboard', href: '/teamer/dashboard', icon: ICON_STARTSEITE_GEFUELLT, label: 'Start' },
+      { tab: 'teamer-chat', href: '/teamer/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
       // Reihenfolge wie beim Konfi (Simon, 04.09.2026): Challenges vor
       // Mitmachen -- beide Rollen sollen dieselbe Tab-Folge haben.
-      { tab: 'teamer-challenges', href: '/teamer/challenges', icon: flag, label: 'Challenges', badge: 'challenges' },
-      { tab: 'teamer-events', href: '/teamer/events', icon: calendar, label: 'Mitmachen' },
+      { tab: 'teamer-challenges', href: '/teamer/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
+      { tab: 'teamer-events', href: '/teamer/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
       // Material in der Tab-Leiste, Badges dafuer im Profil (Simon,
       // 04.09.2026): Material braucht das Team im Alltag, Badges schaut man
       // gelegentlich an.
-      { tab: 'teamer-material', href: '/teamer/profile/material', icon: documentIcon, label: 'Material' },
+      { tab: 'teamer-material', href: '/teamer/profile/material', icon: ICON_DATEI_GEFUELLT, label: 'Material' },
     ],
   },
 
@@ -266,11 +276,11 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { from: '/konfi/requests', to: '/konfi/events?segment=antraege' },
     ],
     tabs: [
-      { tab: 'dashboard', href: '/konfi/dashboard', icon: home, label: 'Start' },
-      { tab: 'chat', href: '/konfi/chat', icon: chatbubbles, label: 'Chat', badge: 'chat' },
-      { tab: 'challenges', href: '/konfi/challenges', icon: flag, label: 'Challenges' },
-      { tab: 'events', href: '/konfi/events', icon: calendar, label: 'Mitmachen' },
-      { tab: 'badges', href: '/konfi/badges', icon: star, label: 'Badges', badge: 'badges' },
+      { tab: 'dashboard', href: '/konfi/dashboard', icon: ICON_STARTSEITE_GEFUELLT, label: 'Start' },
+      { tab: 'chat', href: '/konfi/chat', icon: ICON_CHATS_GEFUELLT, label: 'Chat', badge: 'chat' },
+      { tab: 'challenges', href: '/konfi/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges' },
+      { tab: 'events', href: '/konfi/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
+      { tab: 'badges', href: '/konfi/badges', icon: ICON_STERN_GEFUELLT, label: 'Badges', badge: 'badges' },
     ],
   },
 

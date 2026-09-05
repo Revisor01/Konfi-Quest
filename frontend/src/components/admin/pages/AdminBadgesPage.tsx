@@ -1,4 +1,4 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT, ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useRef } from 'react';
 import {
@@ -15,7 +15,6 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -164,7 +163,7 @@ const AdminBadgesPage: React.FC = () => {
           <IonTitle>Badges</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neues Badge anlegen" onClick={presentBadgeModal}>
-              <IonIcon icon={add} />
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>

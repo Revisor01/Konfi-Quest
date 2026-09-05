@@ -12,7 +12,6 @@ import {
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
-import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';

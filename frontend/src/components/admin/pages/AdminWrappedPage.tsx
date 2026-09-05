@@ -1,4 +1,18 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import {
+  ICON_FUNKELN,
+  ICON_FUNKELN_GEFUELLT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN,
+  ICON_HINZUFUEGEN,
+  ICON_JAHRGANG_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_SICHTBAR_GEFUELLT,
+  ICON_TERMIN,
+  ICON_TERMIN_GEFUELLT,
+  ICON_ZURUECK,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
@@ -10,7 +24,6 @@ import {
 } from '@ionic/react';
 // Solid-Icons wie in der Events-Liste (dort: people, calendar, trophy,
 // pricetag) -- die Outline-Varianten wichen hier als einzige Liste ab.
-import { addOutline, closeOutline, checkmarkOutline, sparklesOutline, calendarOutline, trash, people, sparkles, school, calendar, checkmarkCircle, eye } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader, EmptyState } from '../../shared';
@@ -168,7 +181,7 @@ const AdminWrappedPage: React.FC = () => {
           <IonTitle>Jahresrückblick</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neuen Rückblick anlegen" onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
-              <IonIcon icon={addOutline} slot="icon-only" />
+              <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -190,8 +203,8 @@ const AdminWrappedPage: React.FC = () => {
         <SectionHeader
           title="Jahresrückblick"
           subtitle="Ausgaben verwalten"
-          icon={sparklesOutline}
-          colors={{ primary: 'var(--app-color-wrapped)', secondary: '#6d28d9' }}
+          icon={ICON_FUNKELN}
+          colors={{ primary: 'var(--app-color-wrapped)', secondary: 'var(--app-color-wrapped-dunkel)' }}
           stats={[
             { value: sichtbar.length, label: sichtbar.length === 1 ? 'Ausgabe' : 'Ausgaben' },
             { value: sichtbar.filter(a => a.freigegeben).length, label: 'Freigegeben' },
@@ -199,7 +212,7 @@ const AdminWrappedPage: React.FC = () => {
           ]}
         />
 
-        <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ padding: 'var(--app-abstand-basis) var(--app-abstand-basis) 0' }}>
           <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as 'konfi' | 'teamer')}>
             <IonSegmentButton value="konfi">Konfis</IonSegmentButton>
             {/* Teamer-Ausgaben betreffen die ganze Gemeinde -- nur die Leitung. */}
@@ -208,7 +221,7 @@ const AdminWrappedPage: React.FC = () => {
         </div>
 
         {laedt ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : sichtbar.length === 0 ? (
@@ -219,14 +232,14 @@ const AdminWrappedPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--wrapped">
-                <IonIcon icon={sparklesOutline} />
+                <IonIcon icon={ICON_FUNKELN} />
               </div>
               <IonLabel>{segment === 'konfi' ? 'Konfis' : 'Team'}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
                 <EmptyState
-                  icon={sparklesOutline}
+                  icon={ICON_FUNKELN}
                   title="Noch kein Rückblick"
                   // Beide Texte etwa gleich lang, damit der Leerzustand auf
                   // beiden Reitern gleich hoch steht (Simon, 05.09.2026).
@@ -252,7 +265,7 @@ const AdminWrappedPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--wrapped">
-                <IonIcon icon={sparklesOutline} />
+                <IonIcon icon={ICON_FUNKELN} />
               </div>
               <IonLabel>{segment === 'konfi' ? 'Konfis' : 'Team'} ({sichtbar.length})</IonLabel>
             </IonListHeader>
@@ -272,7 +285,7 @@ const AdminWrappedPage: React.FC = () => {
                   // Icons und Farben folgen der Events-Liste: Solid-Varianten mit
                   // den app-icon-color--*-Klassen, keine Inline-Farben und keine
                   // Outline-Icons -- vorher wich diese Liste als einzige ab.
-                  <IonItemSliding key={a.id} style={{ marginBottom: '8px' }}>
+                  <IonItemSliding key={a.id} style={{ marginBottom: 'var(--app-abstand-eng)' }}>
                     <IonItem
                       detail={false}
                       lines="none"
@@ -297,7 +310,7 @@ const AdminWrappedPage: React.FC = () => {
                               style={{ backgroundColor: 'var(--app-color-success)' }}
                               title="Freigegeben"
                             >
-                              <IonIcon icon={eye} />
+                              <IonIcon icon={ICON_SICHTBAR_GEFUELLT} />
                             </div>
                           </div>
                         )}
@@ -305,36 +318,36 @@ const AdminWrappedPage: React.FC = () => {
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--wrapped">
-                              <IonIcon icon={a.typ === 'teamer' ? people : sparkles} />
+                              <IonIcon icon={a.typ === 'teamer' ? ICON_GRUPPE_GEFUELLT : ICON_FUNKELN_GEFUELLT} />
                             </div>
                             <div className="app-list-item__content">
-                              <div className="app-list-item__title" style={{ paddingRight: a.freigegeben ? '48px' : '0' }}>
+                              <div className="app-list-item__title" style={{ paddingRight: a.freigegeben ? 'var(--app-abstand-block)' : '0' }}>
                                 {a.titel}
                               </div>
                               <div className="app-list-item__meta">
                                 {/* Wie viele Rueckblicke in der Ausgabe stecken --
                                     gehoert in die Zeile, nicht in eine Ecke. */}
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={people} className="app-icon-color--participants" />
+                                  <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-icon-color--participants" />
                                   {a.snapshots}
                                 </span>
                                 {a.jahrgang_name && (
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={school} className="app-icon-color--konfis" />
+                                    <IonIcon icon={ICON_JAHRGANG_GEFUELLT} className="app-icon-color--konfis" />
                                     {a.jahrgang_name}
                                   </span>
                                 )}
                               </div>
-                              <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <div className="app-list-item__meta" style={{ marginTop: 'var(--app-abstand-mini)' }}>
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={calendar} className="app-icon-color--events" />
+                                  <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-icon-color--events" />
                                   {datum(a.zeitraum_start)} – {datum(a.zeitraum_ende)}
                                 </span>
                               </div>
                               {a.freigegeben_at && (
-                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                <div className="app-list-item__meta" style={{ marginTop: 'var(--app-abstand-mini)' }}>
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={checkmarkCircle} className="app-icon-color--success" />
+                                    <IonIcon icon={ICON_ZUSAGE_GEFUELLT} className="app-icon-color--success" />
                                     freigegeben {datum(a.freigegeben_at)}
                                   </span>
                                 </div>
@@ -352,7 +365,7 @@ const AdminWrappedPage: React.FC = () => {
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                          <IonIcon icon={trash} />
+                          <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                         </div>
                       </IonItemOption>
                     </IonItemOptions>
@@ -378,13 +391,13 @@ const AdminWrappedPage: React.FC = () => {
             <IonToolbar>
               <IonButtons slot="start">
                 <IonButton onClick={() => setModalOffen(false)} aria-label="Schließen">
-                  <IonIcon icon={closeOutline} slot="icon-only" />
+                  <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
                 </IonButton>
               </IonButtons>
               <IonTitle>Neuer Rückblick</IonTitle>
               <IonButtons slot="end">
                 <IonButton onClick={erzeugen} disabled={erzeugt} aria-label="Rückblick erstellen und freigeben">
-                  {erzeugt ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                  {erzeugt ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}
                 </IonButton>
               </IonButtons>
             </IonToolbar>
@@ -393,7 +406,7 @@ const AdminWrappedPage: React.FC = () => {
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--wrapped">
-                  <IonIcon icon={sparklesOutline} />
+                  <IonIcon icon={ICON_FUNKELN} />
                 </div>
                 <IonLabel>Grunddaten</IonLabel>
               </IonListHeader>
@@ -405,7 +418,7 @@ const AdminWrappedPage: React.FC = () => {
                       Breite. */}
                   {segment === 'konfi' && (
                     <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                      <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                      <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                       <IonSelect
                         placeholder="Jahrgang"
                         interface="popover"
@@ -433,7 +446,7 @@ const AdminWrappedPage: React.FC = () => {
                       (Simon, 05.09.2026). Der Satz "Ohne Namen schlagen wir
                       einen vor" ist raus: Er nannte den Vorschlag nicht und
                       liess offen, was passiert. */}
-                  <div className="app-info-box app-info-box--blue" style={{ marginTop: 12, borderRadius: 12 }}>
+                  <div className="app-info-box app-info-box--blue" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     Der Rückblick wird sofort erstellt und freigegeben; alle
                     bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.
                   </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { calendarOutline, peopleOutline, ribbonOutline } from 'ionicons/icons';
+import { ICON_ABZEICHEN, ICON_GRUPPE, ICON_TERMIN } from '../../../shared/icons';
 import SlideBase from '../SlideBase';
 import type { SlideProps, TeamerWrappedData } from '../../../../types/wrapped';
 
@@ -20,9 +20,9 @@ interface Props extends SlideProps {
  */
 const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year, titel }) => {
   const zahlen = [
-    { icon: calendarOutline, wert: data.slides.events_geleitet.total, label: 'Termine' },
-    { icon: peopleOutline, wert: data.slides.konfis_betreut.total_konfis, label: 'Konfis' },
-    { icon: ribbonOutline, wert: data.slides.badges.total_earned, label: 'Abzeichen' },
+    { icon: ICON_TERMIN, wert: data.slides.events_geleitet.total, label: 'Termine' },
+    { icon: ICON_GRUPPE, wert: data.slides.konfis_betreut.total_konfis, label: 'Konfis' },
+    { icon: ICON_ABZEICHEN, wert: data.slides.badges.total_earned, label: 'Abzeichen' },
   ];
 
   return (
@@ -45,7 +45,7 @@ const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year, titel }) 
         ))}
       </div>
 
-      <div className="kat-nachsatz" style={{ marginTop: 16 }}>
+      <div className="kat-nachsatz" style={{ marginTop: 'var(--app-abstand-basis)'}}>
         Ohne Leute wie dich gaebe es keine Konfi-Zeit.
       </div>
     </SlideBase>

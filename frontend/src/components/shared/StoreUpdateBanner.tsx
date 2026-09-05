@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { arrowUpCircleOutline, closeOutline } from 'ionicons/icons';
+import { ICON_SCHLIESSEN, ICON_UPGRADE } from './icons';
 import {
   pruefeStoreUpdate,
   istHinweisWeggeklickt,
@@ -60,7 +60,7 @@ const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({ style })
       }}
     >
       <IonIcon
-        icon={arrowUpCircleOutline}
+        icon={ICON_UPGRADE}
         className="app-whatsnew__icon"
         aria-hidden="true"
       />
@@ -81,7 +81,7 @@ const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({ style })
           setInfo(null);
         }}
       >
-        <IonIcon icon={closeOutline} aria-hidden="true" />
+        <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />
       </button>
     </div>
   );

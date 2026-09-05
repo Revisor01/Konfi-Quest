@@ -9,21 +9,21 @@
  * (User-Hinweis 11.08.).
  */
 import {
-  statsChart,
-  home,
-  people,
-  flash,
-  grid,
-  listOutline,
-  pricetag,
-  time,
-  checkmarkCircle,
-  calendar,
-  shield,
-  star,
-  flame,
-  sparkles
-} from 'ionicons/icons';
+  ICON_AKTION_GEFUELLT,
+  ICON_FLAMME_GEFUELLT,
+  ICON_FUNKELN_GEFUELLT,
+  ICON_GOTTESDIENST_GEFUELLT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_KATEGORIE_GEFUELLT,
+  ICON_LISTE,
+  ICON_RASTER_GEFUELLT,
+  ICON_SCHILD_GEFUELLT,
+  ICON_STATISTIK_GEFUELLT,
+  ICON_STERN_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+  ICON_UHRZEIT_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../components/shared/icons';
 
 /**
  * Die Zusatzangaben eines Kriteriums (`custom_badges.criteria_extra`).
@@ -74,21 +74,21 @@ export const CRITERIA_COLORS: Record<string, string> = {
 };
 
 const CRITERIA_ICONS: Record<string, string> = {
-  total_points: statsChart,
-  gottesdienst_points: home,
-  gemeinde_points: people,
-  specific_activity: flash,
-  both_categories: grid,
-  activity_combination: listOutline,
-  category_activities: pricetag,
-  time_based: time,
-  activity_count: checkmarkCircle,
-  event_count: calendar,
-  mandatory_event_count: shield,
-  bonus_points: star,
-  streak: flame,
-  unique_activities: sparkles,
-  teamer_year: calendar
+  total_points: ICON_STATISTIK_GEFUELLT,
+  gottesdienst_points: ICON_GOTTESDIENST_GEFUELLT,
+  gemeinde_points: ICON_GRUPPE_GEFUELLT,
+  specific_activity: ICON_AKTION_GEFUELLT,
+  both_categories: ICON_RASTER_GEFUELLT,
+  activity_combination: ICON_LISTE,
+  category_activities: ICON_KATEGORIE_GEFUELLT,
+  time_based: ICON_UHRZEIT_GEFUELLT,
+  activity_count: ICON_ZUSAGE_GEFUELLT,
+  event_count: ICON_TERMIN_GEFUELLT,
+  mandatory_event_count: ICON_SCHILD_GEFUELLT,
+  bonus_points: ICON_STERN_GEFUELLT,
+  streak: ICON_FLAMME_GEFUELLT,
+  unique_activities: ICON_FUNKELN_GEFUELLT,
+  teamer_year: ICON_TERMIN_GEFUELLT
 };
 
 /** Farbe für Kriterientypen ohne eigenen Eintrag (entspricht --app-color-users). */
@@ -98,4 +98,4 @@ export const getCriteriaColor = (criteriaType: string): string =>
   CRITERIA_COLORS[criteriaType] || CRITERIA_FALLBACK_COLOR;
 
 export const getCriteriaIcon = (criteriaType: string): string =>
-  CRITERIA_ICONS[criteriaType] || flash;
+  CRITERIA_ICONS[criteriaType] || ICON_AKTION_GEFUELLT;

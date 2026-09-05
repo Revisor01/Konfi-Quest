@@ -1,5 +1,5 @@
 import React from 'react';
-import { sparklesOutline, imagesOutline, linkOutline, flagOutline } from 'ionicons/icons';
+import { ICON_CHALLENGE, ICON_FUNKELN, ICON_GALERIE, ICON_LINK } from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
 interface Props {
@@ -17,28 +17,28 @@ interface Props {
 // SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
 export const SLIDES: OnboardingSlide[] = [
   {
-    icon: flagOutline,
+    icon: ICON_CHALLENGE,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Was Challenges sind',
     text: 'Challenges sind Aufgaben, die dich eine Zeit lang begleiten — du schickst ein Foto, einen Text, eine Aufnahme oder einen Link. Es gibt keine Punkte, keine Rangliste, keinen Vergleich: nur einen Stempel fürs Mitmachen. Die Idee ist, dass du dich mitten in deinem Alltag eine Weile mit einem Thema beschäftigst. Du findest sie im eigenen Challenges-Tab.',
   },
   {
-    icon: sparklesOutline,
+    icon: ICON_FUNKELN,
     color: 'var(--app-color-wrapped)',
     rgb: '--app-color-wrapped-rgb',
     title: 'Dein Jahresrückblick ist persönlich',
     text: 'Gleich nach der Begrüßung kommt eine Seite, die zeigt, was dich in diesem Jahr besonders macht — ob du den Chat am Leben hältst, viele Reaktionen bekommst oder bei allem dabei warst. Verglichen wird nur mit dem Durchschnitt deines Jahrgangs, ohne Namen und nur, wenn der Vergleich freundlich ausfällt.',
   },
   {
-    icon: imagesOutline,
+    icon: ICON_GALERIE,
     color: 'var(--app-color-wrapped)',
     rgb: '--app-color-wrapped-rgb',
     title: 'Deine Fotos, größer',
     text: 'Deine Beiträge aus den Challenges erscheinen im Rückblick jetzt groß statt als Briefmarke. Hast du nur ein oder zwei, füllen sie die ganze Seite. Am Ende steht: „Dein Weg. Deine Zeit. Dein Glaube."',
   },
   {
-    icon: linkOutline,
+    icon: ICON_LINK,
     color: 'var(--app-color-material)',
     rgb: '--app-color-material-rgb',
     title: 'Material mit Links',

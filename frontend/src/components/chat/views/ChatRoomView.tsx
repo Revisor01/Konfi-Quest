@@ -14,7 +14,6 @@ import {
   IonButtons,
   IonIcon,
 } from '@ionic/react';
-import { arrowBack } from 'ionicons/icons';
  // Hinzufügen
 import { useModalPage } from '../../../contexts/ModalContext'; // Hinzufügen
 import ChatRoom from '../ChatRoom';

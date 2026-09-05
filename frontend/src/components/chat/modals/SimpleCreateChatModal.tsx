@@ -24,7 +24,18 @@ import {
   IonCardContent,
   useIonAlert
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, person, personOutline, search, people, peopleOutline, filterOutline, calendar, cloudOfflineOutline } from 'ionicons/icons';
+import {
+  ICON_FILTER,
+  ICON_GRUPPE,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN,
+  ICON_OFFLINE,
+  ICON_PERSON,
+  ICON_PERSON_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useBadge } from '../../../contexts/BadgeContext';
@@ -352,14 +363,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating} aria-label="Schließen">
-              <IonIcon icon={closeOutline} slot="icon-only" />
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{chatType === 'direct' ? 'Neue Direktnachricht' : 'Neuer Gruppenchat'}</IonTitle>
           {chatType === 'group' && (
             <IonButtons slot="end">
               <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating || !isOnline} aria-label="Gruppenchat erstellen">
-                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}
               </IonButton>
             </IonButtons>
           )}
@@ -389,7 +400,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--chat">
-                  <IonIcon icon={peopleOutline} />
+                  <IonIcon icon={ICON_GRUPPE} />
                 </div>
                 <IonLabel>Gruppenname</IonLabel>
               </IonListHeader>
@@ -411,7 +422,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
-                <IonIcon icon={filterOutline} />
+                <IonIcon icon={ICON_FILTER} />
               </div>
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
@@ -419,11 +430,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               {/* Suchfeld */}
               <IonItem>
                 <IonIcon
-                  icon={search}
+                  icon={ICON_SUCHE_GEFUELLT}
                   slot="start"
                   style={{
-                    color: '#8e8e93',
-                    fontSize: '1rem'
+                    color: 'var(--app-text-system)',
+                    fontSize: 'var(--app-text-standard)'
                   }}
                 />
                 <IonInput
@@ -436,9 +447,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               {(isAdmin || isTeamer) && (
                 <IonItem>
                   <IonIcon
-                    icon={personOutline}
+                    icon={ICON_PERSON}
                     slot="start"
-                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                    style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
                   <IonSelect
                     value={selectedRole}
@@ -457,9 +468,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               {(isAdmin || isTeamer) && availableJahrgaenge.length > 0 && (
                 <IonItem>
                   <IonIcon
-                    icon={calendar}
+                    icon={ICON_TERMIN_GEFUELLT}
                     slot="start"
-                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                    style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }}
                   />
                   <IonSelect
                     value={selectedJahrgang}
@@ -482,24 +493,24 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
-                <IonIcon icon={peopleOutline} />
+                <IonIcon icon={ICON_GRUPPE} />
               </div>
               <IonLabel>Personen ({filteredUsers.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: filteredUsers.length === 0 ? '16px' : '12px' }}>
+              <IonCardContent style={{ padding: filteredUsers.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
                 {loading ? (
-                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                  <div style={{ padding: 'var(--app-abstand-riesig) var(--app-abstand-gross)', textAlign: 'center' }}>
                     <IonSpinner name="crescent" />
                   </div>
                 ) : filteredUsers.length === 0 ? (
                   <div style={{
-                    padding: '40px 20px',
+                    padding: 'var(--app-abstand-riesig) var(--app-abstand-gross)',
                     textAlign: 'center',
-                    color: '#666'
+                    color: 'var(--app-text-secondary)'
                   }}>
-                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
+                    <IonIcon icon={ICON_SUCHE_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-riesig)', opacity: 0.3, marginBottom: 'var(--app-abstand-basis)' }} />
+                    <p style={{ margin: '0', fontSize: 'var(--app-text-standard)' }}>Keine Personen gefunden</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -535,26 +546,26 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           <div className="app-corner-badges">
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                               title={isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                             >
-                              <IonIcon icon={isAdmin ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                              <IonIcon icon={isAdmin ? ICON_GRUPPE_GEFUELLT : ICON_PERSON_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                             </div>
                           </div>
 
-                          <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: '8px' } : undefined}>
+                          <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: 'var(--app-abstand-eng)' } : undefined}>
                             <div className="app-list-item__main">
                               <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
-                                <IonIcon icon={person} />
+                                <IonIcon icon={ICON_PERSON_GEFUELLT} />
                               </div>
                               <div className="app-list-item__content">
-                                <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
+                                <div className="app-list-item__title" style={{ paddingRight: 'var(--app-freiraum-aktion-l)' }}>
                                   {getUserDisplayName(targetUser)}
                                 </div>
                                 {isAdmin && targetUser.role_description && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                                      <IonIcon icon={ICON_GRUPPE} style={{ color: 'var(--app-color-teamer)' }} />
                                       {targetUser.role_description}
                                     </span>
                                   </div>
@@ -562,7 +573,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
+                                      <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ color: 'var(--app-color-jahrgang)' }} />
                                       {targetUser.jahrgang_name || targetUser.jahrgang}
                                     </span>
                                   </div>

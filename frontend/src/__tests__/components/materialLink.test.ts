@@ -106,11 +106,11 @@ describe('materialLinks buendelt neue und alte Antwortform', () => {
 
 describe('Material als Link: Anzeige', () => {
   it('die Leitungsliste kennzeichnet Link-Material mit eigenem Icon', () => {
-    expect(leitungsListe).toContain('mat.link_url ? linkOutline : documentIcon');
+    expect(leitungsListe).toContain('mat.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT');
   });
 
   it('die Teamer-Liste ebenso', () => {
-    expect(teamerListe).toContain('mat.link_url ? linkOutline : documentIcon');
+    expect(teamerListe).toContain('mat.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT');
   });
 
   it.each([
@@ -119,7 +119,7 @@ describe('Material als Link: Anzeige', () => {
   ])('%s rendert den Link nur, wenn er http/https ist', (_name, quelle) => {
     const inhalt = quelle();
     expect(inhalt).toContain('istWebLink(');
-    expect(inhalt).toContain('linkOutline');
+    expect(inhalt).toContain('ICON_LINK');
   });
 
   it.each([
@@ -130,15 +130,15 @@ describe('Material als Link: Anzeige', () => {
   });
 
   it('die Material-Liste am Termin zeigt Link statt Dateizahl', () => {
-    expect(leitungTermin).toContain('mat.link_url ? linkOutline : documentIcon');
-    expect(teamerTermin).toContain('mat.link_url ? linkOutline : documentIcon');
+    expect(leitungTermin).toContain('mat.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT');
+    expect(teamerTermin).toContain('mat.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT');
   });
 
   it('nirgends stehen Emojis fuer den Link', () => {
     // Vorgabe: IonIcon, keine Emojis.
     const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
     for (const quelle of [formular, leitungsListe, teamerListe, teamerDetail]) {
-      const zeilen = quelle.split('\n').filter(z => z.includes('link_url') || z.includes('linkOutline'));
+      const zeilen = quelle.split('\n').filter(z => z.includes('link_url') || z.includes('ICON_LINK'));
       expect(zeilen.some(z => emoji.test(z))).toBe(false);
     }
   });

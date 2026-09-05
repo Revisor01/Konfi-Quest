@@ -13,7 +13,7 @@ import {
   useIonModal,
   useIonRouter
 } from '@ionic/react';
-import { sparkles, chevronForward, personCircleOutline, closeOutline } from 'ionicons/icons';
+import { ICON_FUNKELN_GEFUELLT, ICON_PROFIL, ICON_SCHLIESSEN } from '../../shared/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
@@ -324,7 +324,7 @@ const KonfiDashboardPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <p style={{ textAlign: 'center', marginTop: '50px' }}>
+          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-s)' }}>
             Deine Startseite konnte nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.
           </p>
         </IonContent>
@@ -373,7 +373,7 @@ const KonfiDashboardPage: React.FC = () => {
           <IonTitle>Konfi Quest</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
-              <IonIcon slot="icon-only" icon={personCircleOutline} style={{ color: '#7c3aed', fontSize: '1.7rem' }} />
+              <IonIcon slot="icon-only" icon={ICON_PROFIL} style={{ color: 'var(--app-color-wrapped)', fontSize: 'var(--app-anzeige-klein)' }} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -384,7 +384,7 @@ const KonfiDashboardPage: React.FC = () => {
         scrollEvents={true}
         onIonScroll={handleScrollTiefe}
         style={{
-          '--background': '#f8f9fa'
+          '--background': 'var(--app-surface-soft)'
         }}
       >
         <IonHeader collapse="condense">
@@ -399,17 +399,17 @@ const KonfiDashboardPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <TrialBanner style={{ marginTop: '8px' }} />
+        <TrialBanner style={{ marginTop: 'var(--app-abstand-eng)' }} />
 
         {/* Dezenter Hinweis, wenn im Store eine neuere Version liegt.
             Prueft selbst und rendert sonst nichts (StoreUpdateBanner). */}
-        <StoreUpdateBanner style={{ margin: '8px 16px 0' }} />
+        <StoreUpdateBanner style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }} />
 
         {/* Die beiden Neuerungs-Banner. Auf der Startseite wegklickbar:
             jeder hat sein eigenes X und sein eigenes Flag. Dauerhaft
             erreichbar bleiben sie im Profil (Nutzerwunsch 25.08.2026). */}
         <NeuerungenBanner
-          style={{ margin: '8px 16px 0' }}
+          style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }}
           updateSichtbar={showUpdateHinweis}
           mitmachenSichtbar={showMitmachenHinweis}
           onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
@@ -429,22 +429,22 @@ const KonfiDashboardPage: React.FC = () => {
               im Profil unter "Meine Rueckblicke". */}
         {dashboardData.has_wrapped && !wrappedHinweisWeg && (
           <div onClick={openWrapped} style={{
-            margin: '0 16px 16px',
-            padding: '20px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%)',
+            margin: '0 var(--app-abstand-basis) var(--app-abstand-basis)',
+            padding: 'var(--app-abstand-gross)',
+            borderRadius: 'var(--app-radius-gross)',
+            background: 'var(--app-gradient-wrapped)',
             color: 'white',
             cursor: 'pointer',
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <IonIcon icon={sparkles} style={{ fontSize: '2rem' }} />
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
+              <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
               <div style={{ minWidth: 0 }}>
-                <h3 className="app-headline" style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>
+                <h3 className="app-headline" style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>
                   {dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>
+                <p style={{ margin: 'var(--app-abstand-mini) 0 0', fontSize: 'var(--app-text-sekundaer)', opacity: 0.9 }}>
                   {/* "Dein Rückblick - bis jetzt!" statt "Jahresrückblick"
                       (Simon, 04.09.2026): Eine Ausgabe kann ein Zwischenstand
                       mitten im Jahr sein, kein Jahresabschluss. */}
@@ -461,7 +461,7 @@ const KonfiDashboardPage: React.FC = () => {
                   marginLeft: 'auto',
                   background: 'rgba(255,255,255,0.18)',
                   border: 'none',
-                  borderRadius: '50%',
+                  borderRadius: 'var(--app-radius-kreis)',
                   width: '32px',
                   height: '32px',
                   display: 'flex',
@@ -472,7 +472,7 @@ const KonfiDashboardPage: React.FC = () => {
                   flexShrink: 0
                 }}
               >
-                <IonIcon icon={closeOutline} style={{ fontSize: '1.1rem' }} aria-hidden="true" />
+                <IonIcon icon={ICON_SCHLIESSEN} style={{ fontSize: 'var(--app-text-gross)' }} aria-hidden="true" />
               </button>
             </div>
           </div>

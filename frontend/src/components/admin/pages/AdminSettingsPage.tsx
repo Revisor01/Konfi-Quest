@@ -17,7 +17,27 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
-import { people, shield, business, pricetag, school, person, trophy, ribbon, logOut, flash, notifications, qrCode, appsOutline, pulseOutline, informationCircleOutline, schoolOutline, compassOutline, sparklesOutline, document as documentIcon } from 'ionicons/icons';
+import {
+  ICON_ABMELDEN_GEFUELLT,
+  ICON_ABZEICHEN_GEFUELLT,
+  ICON_AKTION_GEFUELLT,
+  ICON_APPS,
+  ICON_BENACHRICHTIGUNG,
+  ICON_DATEI_GEFUELLT,
+  ICON_FUNKELN,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_INFO,
+  ICON_JAHRGANG,
+  ICON_JAHRGANG_GEFUELLT,
+  ICON_KATEGORIE_GEFUELLT,
+  ICON_KOMPASS,
+  ICON_ORGANISATION_GEFUELLT,
+  ICON_PERSON_GEFUELLT,
+  ICON_POKAL_GEFUELLT,
+  ICON_PULS,
+  ICON_QRCODE_GEFUELLT,
+  ICON_SCHILD_GEFUELLT,
+} from '../../shared/icons';
 import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 // 2.1.1-Fassung, NICHT die alte 2.0 (Befund Simon, 03.09.2026: "Im Profil
@@ -58,7 +78,7 @@ const AdminSettingsPage: React.FC = () => {
   const [presentInfoModal, dismissInfoModal] = useIonModal(InfoModal, {
     onClose: () => dismissInfoModal(),
     title: infoContent?.title ?? '',
-    icon: infoContent?.icon ?? informationCircleOutline,
+    icon: infoContent?.icon ?? ICON_INFO,
     color: infoContent?.color,
     paragraphs: infoContent?.paragraphs ?? [],
   });
@@ -73,7 +93,7 @@ const AdminSettingsPage: React.FC = () => {
   // wie hängt es mit anderen Bereichen zusammen.
   const INFOS: Record<string, { title: string; icon: string; color: string; paragraphs: string[] }> = {
     users: {
-      title: 'Benutzer:innen', icon: people, color: 'var(--app-color-users)',
+      title: 'Benutzer:innen', icon: ICON_GRUPPE_GEFUELLT, color: 'var(--app-color-users)',
       paragraphs: [
         'Hier verwaltest du alle Personen in deiner Organisation: Admins, Teamer:innen und ihre Rollen.',
         'Die Rolle entscheidet, was jemand darf — z.B. ob jemand Punkte vergeben, Events anlegen oder die ganze Verwaltung sehen kann.',
@@ -81,7 +101,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     invite: {
-      title: 'Konfis einladen', icon: qrCode, color: 'var(--app-color-users)',
+      title: 'Konfis einladen', icon: ICON_QRCODE_GEFUELLT, color: 'var(--app-color-users)',
       paragraphs: [
         'Hier erzeugst du einen QR-Code bzw. Einladungslink, mit dem sich neue Konfis selbst registrieren können.',
         'Du legst fest, für welchen Jahrgang die Einladung gilt. Die Konfis scannen den Code und legen nur noch ihren Zugang an — sie landen automatisch im richtigen Jahrgang.',
@@ -89,14 +109,14 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     dashboard: {
-      title: 'Dashboard', icon: appsOutline, color: 'var(--app-color-organizations)',
+      title: 'Dashboard', icon: ICON_APPS, color: 'var(--app-color-organizations)',
       paragraphs: [
         'Lege fest, welche Bereiche auf den Startseiten von Konfis und Teamer:innen angezeigt werden.',
         'So blendest du z.B. die Tageslosung, die Bestenliste oder einzelne Karten ein oder aus — passend zu deiner Gemeinde.',
       ],
     },
     activities: {
-      title: 'Aktivitäten', icon: flash, color: 'var(--app-color-activities)',
+      title: 'Aktivitäten', icon: ICON_AKTION_GEFUELLT, color: 'var(--app-color-activities)',
       paragraphs: [
         'Aktivitäten sind die wiederkehrenden Dinge, für die es Punkte gibt — z.B. Gottesdienstbesuch oder eine Gemeinde-Aktion.',
         'Anders als bei Events melden Konfis eine Aktivität selbst, wenn sie sie erledigt haben. Du bestätigst die Meldung, dann werden die Punkte gutgeschrieben.',
@@ -104,7 +124,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     badges: {
-      title: 'Badges', icon: ribbon, color: 'var(--app-color-badges)',
+      title: 'Badges', icon: ICON_ABZEICHEN_GEFUELLT, color: 'var(--app-color-badges)',
       paragraphs: [
         'Badges sind Auszeichnungen, die deine Konfis automatisch erhalten, wenn sie ein Ziel erreichen.',
         'Du wählst die Logik selbst: nach Gesamtpunkten, nach der Anzahl bestimmter Aktivitäten, nach besuchten (Pflicht-)Events oder als Kombination mehrerer Bedingungen.',
@@ -112,7 +132,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     jahrgaenge: {
-      title: 'Jahrgänge', icon: schoolOutline, color: 'var(--app-color-jahrgang)',
+      title: 'Jahrgänge', icon: ICON_JAHRGANG, color: 'var(--app-color-jahrgang)',
       paragraphs: [
         'Jeder Konfi gehört zu einem Jahrgang. Hier legst du neue Jahrgänge an und verwaltest die bestehenden.',
         'Pro Jahrgang legst du die Punkteziele für Gottesdienst und Gemeinde fest — also wie viele Punkte deine Konfis in jedem Bereich erreichen sollen.',
@@ -121,7 +141,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     categories: {
-      title: 'Kategorien', icon: pricetag, color: 'var(--app-color-categories)',
+      title: 'Kategorien', icon: ICON_KATEGORIE_GEFUELLT, color: 'var(--app-color-categories)',
       paragraphs: [
         'Kategorien ordnen Aktivitäten und Events thematisch ein und sind ein wichtiges Bindeglied im System.',
         'Bei Aktivitäten bestimmt die Kategorie, ob Punkte zu Gottesdienst oder Gemeinde zählen. Bei Events helfen Kategorien beim Sortieren und Filtern.',
@@ -129,7 +149,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     levels: {
-      title: 'Level', icon: trophy, color: 'var(--app-color-level)',
+      title: 'Level', icon: ICON_POKAL_GEFUELLT, color: 'var(--app-color-level)',
       paragraphs: [
         'Level machen den Fortschritt deiner Konfis sichtbar: Mit steigender Punktzahl erreichen sie das nächste Level.',
         'Du legst die Punkteschwellen und Namen der Level selbst fest und kannst Belohnungen daran knüpfen.',
@@ -137,7 +157,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     material: {
-      title: 'Material', icon: documentIcon, color: 'var(--app-color-material)',
+      title: 'Material', icon: ICON_DATEI_GEFUELLT, color: 'var(--app-color-material)',
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
         'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
@@ -146,7 +166,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     wrapped: {
-      title: 'Jahresrückblick', icon: sparklesOutline, color: 'var(--app-color-wrapped, #7c3aed)',
+      title: 'Jahresrückblick', icon: ICON_FUNKELN, color: 'var(--app-color-wrapped)',
       paragraphs: [
         'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Termine, Punkte, Abzeichen, ihre Schwerpunkte und die Momente aus den Challenges.',
         'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
@@ -155,7 +175,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     certificates: {
-      title: 'Zertifikate', icon: ribbon, color: 'var(--app-color-teamer)',
+      title: 'Zertifikate', icon: ICON_ABZEICHEN_GEFUELLT, color: 'var(--app-color-teamer)',
       paragraphs: [
         'Hier verwaltest du Zertifikate für deine Teamer:innen — etwa Schulungen oder Qualifikationen.',
         'Zertifikate können ein Ausstell- und ein Ablaufdatum haben. Deine Teamer:innen sehen ihre Zertifikate auf ihrer Startseite.',
@@ -189,10 +209,10 @@ const AdminSettingsPage: React.FC = () => {
           {user?.is_super_admin && (
             <IonButtons slot="end">
               <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
-                <IonIcon slot="icon-only" icon={business} />
+                <IonIcon slot="icon-only" icon={ICON_ORGANISATION_GEFUELLT} />
               </IonButton>
               <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
-                <IonIcon slot="icon-only" icon={pulseOutline} />
+                <IonIcon slot="icon-only" icon={ICON_PULS} />
               </IonButton>
             </IonButtons>
           )}
@@ -216,19 +236,19 @@ const AdminSettingsPage: React.FC = () => {
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
-              <IonIcon icon={person} />
+              <IonIcon icon={ICON_PERSON_GEFUELLT} />
             </div>
             <IonLabel>Konto</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div
                 className="app-list-item app-list-item--users app-settings-item"
                 onClick={() => router.push('/admin/profile')}
               >
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                  <IonIcon icon={person} />
+                  <IonIcon icon={ICON_PERSON_GEFUELLT} />
                 </div>
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Profil</h2>
@@ -249,14 +269,14 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-corner-badges">
                     <div
                       className="app-corner-badge"
-                      style={{ backgroundColor: '#059669' }}
+                      style={{ backgroundColor: 'var(--app-color-success-strong)' }}
                     >
                       Aktiviert
                     </div>
                   </div>
                 )}
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                  <IonIcon icon={notifications} />
+                  <IonIcon icon={ICON_BENACHRICHTIGUNG} />
                 </div>
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Benachrichtigungen</h2>
@@ -270,7 +290,7 @@ const AdminSettingsPage: React.FC = () => {
                 onClick={() => setShowOnboarding(true)}
               >
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                  <IonIcon icon={compassOutline} />
+                  <IonIcon icon={ICON_KOMPASS} />
                 </div>
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">App-Tour ansehen</h2>
@@ -287,26 +307,26 @@ const AdminSettingsPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">
-                <IonIcon icon={shield} />
+                <IonIcon icon={ICON_SCHILD_GEFUELLT} />
               </div>
               <IonLabel>Verwaltung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '12px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
                   className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => router.push('/admin/users')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                    <IonIcon icon={people} />
+                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Benutzer:innen</h2>
                     <p className="app-settings-item__subtitle">Admins, Teamer:innen und Rollen verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -316,14 +336,14 @@ const AdminSettingsPage: React.FC = () => {
                     onClick={() => router.push('/admin/settings/dashboard')}
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                      <IonIcon icon={appsOutline} />
+                      <IonIcon icon={ICON_APPS} />
                     </div>
                     <div className="app-flex-fill">
                       <h2 className="app-settings-item__title">Dashboard</h2>
                       <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Teamer:innen</p>
                     </div>
                     <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                      <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                      <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                     </IonButton>
                   </div>
                 )}
@@ -333,14 +353,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                    <IonIcon icon={qrCode} />
+                    <IonIcon icon={ICON_QRCODE_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Konfis einladen</h2>
                     <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
                 </div>
@@ -358,26 +378,26 @@ const AdminSettingsPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">
-                <IonIcon icon={pricetag} />
+                <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
               </div>
               <IonLabel>Inhalt</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '12px' }}>
+              <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
                   className="app-list-item app-list-item--activities app-settings-item"
                   onClick={() => router.push('/admin/activities')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
-                    <IonIcon icon={flash} />
+                    <IonIcon icon={ICON_AKTION_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Aktivitäten</h2>
                     <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -386,14 +406,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/badges')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
-                    <IonIcon icon={ribbon} />
+                    <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Badges</h2>
                     <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -402,7 +422,7 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/settings/jahrgaenge')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
-                    <IonIcon icon={school} />
+                    <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Jahrgänge</h2>
@@ -414,7 +434,7 @@ const AdminSettingsPage: React.FC = () => {
                     style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}
                     aria-label="Info zu Jahrgängen"
                   >
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -423,14 +443,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/settings/categories')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
-                    <IonIcon icon={pricetag} />
+                    <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Kategorien</h2>
                     <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -439,14 +459,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/settings/levels')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
-                    <IonIcon icon={trophy} />
+                    <IonIcon icon={ICON_POKAL_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Level</h2>
                     <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -455,14 +475,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/material')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
-                    <IonIcon icon={documentIcon} />
+                    <IonIcon icon={ICON_DATEI_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Material</h2>
                     <p className="app-settings-item__subtitle">Materialien und Dokumente verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -470,15 +490,15 @@ const AdminSettingsPage: React.FC = () => {
                   className="app-list-item app-list-item--wrapped app-settings-item"
                   onClick={() => router.push('/admin/wrapped')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped, #7c3aed)' }}>
-                    <IonIcon icon={sparklesOutline} style={{ color: '#fff' }} />
+                  <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
+                    <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Jahresrückblick</h2>
                     <p className="app-settings-item__subtitle">Ausgaben anlegen, benennen und freigeben</p>
                   </div>
-                  <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped, #7c3aed)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
 
@@ -487,14 +507,14 @@ const AdminSettingsPage: React.FC = () => {
                   onClick={() => router.push('/admin/settings/certificates')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
-                    <IonIcon icon={ribbon} />
+                    <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Zertifikate</h2>
                     <p className="app-settings-item__subtitle">Teamer:innen-Zertifikate verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
                 </div>
                 </div>
@@ -512,7 +532,7 @@ const AdminSettingsPage: React.FC = () => {
             onClick={handleLogout}
             className="app-action-button"
           >
-            <IonIcon icon={logOut} slot="start" />
+            <IonIcon icon={ICON_ABMELDEN_GEFUELLT} slot="start" />
             Abmelden
           </IonButton>
         </div>

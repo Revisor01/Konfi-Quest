@@ -1,5 +1,11 @@
 import React from 'react';
-import { checkmarkCircleOutline, linkOutline, shieldCheckmarkOutline, sparklesOutline, flagOutline } from 'ionicons/icons';
+import {
+  ICON_CHALLENGE,
+  ICON_FUNKELN,
+  ICON_LINK,
+  ICON_SCHUTZ,
+  ICON_ZUSAGE,
+} from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
 interface Props {
@@ -15,14 +21,14 @@ interface Props {
 // SLIDES exportiert für den Textbaustein-Test (onboardingSlides.test.ts).
 export const SLIDES: OnboardingSlide[] = [
   {
-    icon: flagOutline,
+    icon: ICON_CHALLENGE,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Was Challenges sind',
     text: 'Challenges begleiten deine Konfis über einen Zeitraum, den du festlegst: Fotos, Texte, Aufnahmen oder Links. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur einen Stempel fürs Mitmachen. Die Idee: Die Konfis beschäftigen sich eine Zeit lang mit einem Thema, mitten in ihrem Alltag. Beim Anlegen bestimmst du Jahrgänge, Zeitraum, erlaubte Medien, Sichtbarkeit und Freigabe; nach dem Start bleiben Sichtbarkeit und Freigabe gesperrt.',
   },
   {
-    icon: checkmarkCircleOutline,
+    icon: ICON_ZUSAGE,
     // Termin-Rot, nicht Aktivitaeten-Gruen (Simon, 04.09.2026): Die Folie
     // handelt vom Zusagen zu TERMINEN -- Gruen gehoert den Aktivitaeten.
     color: 'var(--app-color-events)',
@@ -31,21 +37,21 @@ export const SLIDES: OnboardingSlide[] = [
     text: 'Teamer:innen sagen zu Terminen jetzt ausdrücklich zu oder ab. In der Terminansicht siehst du, wer abgesagt hat und warum — eine Absage nach vorheriger Zusage ist eigens gekennzeichnet, denn dann hast du mit dieser Person schon geplant. Bei einer Absage wird der Platz frei und die Warteliste rückt nach.',
   },
   {
-    icon: linkOutline,
+    icon: ICON_LINK,
     color: 'var(--app-color-material)',
     rgb: '--app-color-material-rgb',
     title: 'Material einfacher',
     text: 'Material trägt Dateien und Links jetzt zusammen — ein PDF und dazu mehrere Videos, ohne Entweder-oder. Den Sichtbarkeits-Schalter gibt es nicht mehr: Wer das Material sieht, entscheidet allein die Jahrgangs-Zuordnung. Mit Jahrgang nur dessen Teamer:innen, ohne Jahrgang alle Teamer:innen der Gemeinde. Bearbeiten darf, wer es angelegt hat.',
   },
   {
-    icon: shieldCheckmarkOutline,
+    icon: ICON_SCHUTZ,
     color: 'var(--app-color-jahrgang)',
     rgb: '--app-color-jahrgang-rgb',
     title: 'Rollen und Jahrgänge',
     text: 'Als Admin siehst du jetzt überall nur die Jahrgänge, die dir zugewiesen sind — bei Konfis, Anträgen, Terminen und im Rückblick. Teamer:innen bleiben davon ausgenommen, die erreichst du alle. Bleibt eine Liste leer, steht künftig dabei, dass dir noch kein Jahrgang zugewiesen ist; das ist kein Fehler. Org-Admins dürfen weiterhin alles, und nur sie legen Jahrgänge an.',
   },
   {
-    icon: sparklesOutline,
+    icon: ICON_FUNKELN,
     color: 'var(--app-color-wrapped)',
     rgb: '--app-color-wrapped-rgb',
     title: 'Der Rückblick, persönlicher',

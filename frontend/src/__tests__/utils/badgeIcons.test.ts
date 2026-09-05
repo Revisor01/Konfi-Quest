@@ -56,9 +56,13 @@ describe('Rueckfall-Symbole der Aufrufstellen', () => {
   });
 
   it('Zertifikats-Seite faellt weiterhin auf das Band zurueck', () => {
-    // AdminCertificatesPage rendert ueber getIconFromString(icon, ribbon).
+    // AdminCertificatesPage rendert ueber getIconFromString(icon, <Rueckfall>).
+    // Der Rueckfall heisst seit der Icon-Konsolidierung (05.09.2026)
+    // ICON_ABZEICHEN_GEFUELLT statt `ribbon` -- dasselbe Zeichen, nur
+    // zentral tauschbar. Geprueft wird weiter, DASS ein Rueckfall uebergeben
+    // wird, nicht wie er buchstabiert ist.
     const seite = quelltext('components/admin/pages/AdminCertificatesPage.tsx');
-    expect(seite).toContain('getIconFromString(certType.icon, ribbon)');
+    expect(seite).toContain('getIconFromString(certType.icon, ICON_ABZEICHEN_GEFUELLT)');
     expect(getIconFromString('gibtesnicht', ribbon)).toBe(ribbon);
   });
 

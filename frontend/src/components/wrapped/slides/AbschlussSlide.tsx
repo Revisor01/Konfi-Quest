@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { heartOutline, trophyOutline, calendarOutline, ribbonOutline } from 'ionicons/icons';
+import { ICON_ABZEICHEN, ICON_HERZ, ICON_POKAL, ICON_TERMIN } from '../../shared/icons';
 import type { SlideProps, KonfiWrappedData } from '../../../types/wrapped';
 import SlideBase from './SlideBase';
 
@@ -29,9 +29,9 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year, t
   const zeitraumEnde = z ? (('konfirmation' in z) ? (z.konfirmation || null) : (z.ende || null)) : null;
 
   const zahlen = [
-    { icon: trophyOutline, wert: data.slides.punkte.total, label: 'Punkte' },
-    { icon: calendarOutline, wert: data.slides.events.total_attended, label: 'Termine' },
-    { icon: ribbonOutline, wert: data.slides.badges.total_earned, label: 'Abzeichen' },
+    { icon: ICON_POKAL, wert: data.slides.punkte.total, label: 'Punkte' },
+    { icon: ICON_TERMIN, wert: data.slides.events.total_attended, label: 'Termine' },
+    { icon: ICON_ABZEICHEN, wert: data.slides.badges.total_earned, label: 'Abzeichen' },
   ];
 
   return (
@@ -63,7 +63,7 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year, t
 
       {/* Einladend, nicht werbend -- es ist eine Kirchen-App. */}
       <div className="w-einladung">
-        <IonIcon icon={heartOutline} />
+        <IonIcon icon={ICON_HERZ} />
         <span>Werde Teamer:in und gestalte das nächste Jahr mit</span>
       </div>
     </SlideBase>

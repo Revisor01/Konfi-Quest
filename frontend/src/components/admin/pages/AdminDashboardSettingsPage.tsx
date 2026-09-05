@@ -1,5 +1,6 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import { ICON_APPS, ICON_ZURUECK } from '../../shared/icons';
 import React, { useState } from 'react';
+import { FARBEN } from '../../../theme/colors';
 import {
   IonPage,
   IonHeader,
@@ -23,7 +24,6 @@ import {
   IonReorder,
   IonReorderGroup
 } from '@ionic/react';
-import { arrowBack, appsOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -282,8 +282,8 @@ const AdminDashboardSettingsPage: React.FC = () => {
         <SectionHeader
           title="Dashboard"
           subtitle="Sichtbare Bereiche konfigurieren"
-          icon={appsOutline}
-          colors={{ primary: '#667eea', secondary: '#5a67d8' }}
+          icon={ICON_APPS}
+          colors={{ primary: FARBEN.users, secondary: FARBEN.usersDunkel }}
           stats={[
             // Die Kacheln entsprechen den beiden Reitern und schalten dorthin.
             { value: Object.values(dashboardConfig).filter(Boolean).length, label: 'Konfi', onClick: () => setDashboardSegment('konfi'), active: dashboardSegment === 'konfi' },
@@ -309,7 +309,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--settings">
-                <IonIcon icon={appsOutline} />
+                <IonIcon icon={ICON_APPS} />
               </div>
               <IonLabel>Konfi-Dashboard</IonLabel>
             </IonListHeader>
@@ -351,7 +351,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--settings">
-                <IonIcon icon={appsOutline} />
+                <IonIcon icon={ICON_APPS} />
               </div>
               <IonLabel>Teamer:innen-Dashboard</IonLabel>
             </IonListHeader>

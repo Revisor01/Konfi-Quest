@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
-import { closeOutline, shareOutline } from 'ionicons/icons';
+import { ICON_SCHLIESSEN, ICON_TEILEN } from '../shared/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -502,11 +502,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         )}
         {data && (
           <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
-            <IonIcon icon={shareOutline} />
+            <IonIcon icon={ICON_TEILEN} />
           </button>
         )}
         <button className="wrapped-close-btn" onClick={onClose} aria-label="Schließen">
-          <IonIcon icon={closeOutline} />
+          <IonIcon icon={ICON_SCHLIESSEN} />
         </button>
       </div>
 

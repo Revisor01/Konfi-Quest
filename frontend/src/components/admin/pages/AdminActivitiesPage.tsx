@@ -1,4 +1,4 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT, ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import {
@@ -15,7 +15,6 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -137,7 +136,7 @@ const AdminActivitiesPage: React.FC = () => {
           {canCreate && (
             <IonButtons slot="end">
               <IonButton aria-label="Neue Aktivität anlegen" onClick={presentActivityModal}>
-                <IonIcon icon={add} />
+                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
               </IonButton>
             </IonButtons>
           )}

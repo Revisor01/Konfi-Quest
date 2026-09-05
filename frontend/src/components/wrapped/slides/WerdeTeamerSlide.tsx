@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { heartOutline, arrowForwardOutline } from 'ionicons/icons';
+import { ICON_HERZ, ICON_PFEIL_WEITER } from '../../shared/icons';
 import SlideBase from './SlideBase';
 import type { SlideProps } from '../../../types/wrapped';
 
@@ -33,13 +33,14 @@ const WerdeTeamerSlide: React.FC<SlideProps> = ({ isActive }) => (
       die jetzt anfangen, wo du angefangen hast.
     </div>
 
+    {/* 22px ist Wrapped-Feinjustierung ausserhalb der Abstands-Skala — bleibt bewusst roh (05.09.2026) */}
     <div className="w-einladung" style={{ marginTop: 22 }}>
-      <IonIcon icon={heartOutline} />
+      <IonIcon icon={ICON_HERZ} />
       <span>Sprich einfach jemanden aus dem Team an</span>
     </div>
 
     <div className="teamer-pfeil" aria-hidden="true">
-      <IonIcon icon={arrowForwardOutline} />
+      <IonIcon icon={ICON_PFEIL_WEITER} />
     </div>
   </SlideBase>
 );

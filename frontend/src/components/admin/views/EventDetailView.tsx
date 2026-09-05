@@ -1,4 +1,19 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import { FARBEN } from '../../../theme/colors';
+import {
+  ICON_ABSAGE,
+  ICON_ANTWORTEN,
+  ICON_BEARBEITEN,
+  ICON_CHAT,
+  ICON_GESPERRT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HAKEN_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_PERSON_HINZUFUEGEN_GEFUELLT,
+  ICON_QRCODE,
+  ICON_TERMIN_GEFUELLT,
+  ICON_ZURUECK,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -10,11 +25,6 @@ import {
   useIonActionSheet, useIonAlert, useIonRouter
 } from '@ionic/react';
 import type { ActionSheetButton } from '@ionic/react';
-import {
-  arrowBack, createOutline, calendar, people, ban,
-  personAdd, checkmarkCircle, closeCircle, checkmark, trash,
-  returnUpBack, qrCodeOutline, chatbubbleOutline
-} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineCache } from '../../../services/offlineCache';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
@@ -362,7 +372,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
     const konfirm = { primary: 'var(--app-color-konfis)', secondary: 'var(--app-color-konfis)' }; // Konfirmation = lila
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
-    const past = { primary: '#6c757d', secondary: '#6c757d' };
+    const past = { primary: FARBEN.neutral, secondary: FARBEN.neutral };
     const waitlist = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
     const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
     const upcoming = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
@@ -439,10 +449,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (offlineBlockiert(isOnline, setError)) return;
     const buttons: ActionSheetButton[] = [];
     if (participant.attendance_status !== 'present') {
-      buttons.push({ text: 'Anwesend', icon: checkmarkCircle, handler: () => handleAttendanceUpdate(participant, 'present') });
+      buttons.push({ text: 'Anwesend', icon: ICON_ZUSAGE_GEFUELLT, handler: () => handleAttendanceUpdate(participant, 'present') });
     }
     if (participant.attendance_status !== 'absent') {
-      buttons.push({ text: 'Abwesend', icon: closeCircle, handler: () => handleAttendanceUpdate(participant, 'absent') });
+      buttons.push({ text: 'Abwesend', icon: ICON_ABSAGE, handler: () => handleAttendanceUpdate(participant, 'absent') });
     }
     buttons.push({ text: 'Abbrechen', role: 'cancel' });
     presentActionSheet({ header: participant.participant_name, subHeader: 'Anwesenheit verwalten', buttons });
@@ -454,8 +464,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       header: participant.participant_name,
       subHeader: 'Warteliste verwalten',
       buttons: [
-        { text: 'Bestätigen', icon: checkmark, handler: () => handlePromoteParticipant(participant) },
-        { text: 'Entfernen', icon: trash, role: 'destructive', handler: () => handleRemoveParticipant(participant) },
+        { text: 'Bestätigen', icon: ICON_HAKEN_GEFUELLT, handler: () => handlePromoteParticipant(participant) },
+        { text: 'Entfernen', icon: ICON_LOESCHEN_GEFUELLT, role: 'destructive', handler: () => handleRemoveParticipant(participant) },
         { text: 'Abbrechen', role: 'cancel' }
       ]
     });
@@ -589,7 +599,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {
           text: 'Event absagen',
           role: 'destructive',
-          icon: ban,
+          icon: ICON_GESPERRT,
           handler: async () => {
             try {
               await api.put(`/events/${eventData.id}/cancel`, {
@@ -675,9 +685,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                             participant.attendance_status === 'present' ? 'app-icon-circle--success' :
                             participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
                             isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
-    const statusIcon = isOptedOut ? closeCircle :
-                       participant.attendance_status === 'present' ? checkmarkCircle :
-                       participant.attendance_status === 'absent' ? closeCircle : people;
+    const statusIcon = isOptedOut ? ICON_ABSAGE :
+                       participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
+                       participant.attendance_status === 'absent' ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT;
     const statusText = isOptedOut ? 'Abgemeldet' :
                        participant.attendance_status === 'present' ? 'Anwesend' :
                        participant.attendance_status === 'absent' ? 'Abwesend' :
@@ -708,10 +718,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             <div className="app-corner-badges">
               <div
                 className={`app-corner-badge ${cornerBadgeClass}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                 title={statusText}
               >
-                <IonIcon icon={getStatusIcon(statusText) || people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                <IonIcon icon={getStatusIcon(statusText) || ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
               </div>
             </div>
             <div className="app-list-item__row">
@@ -739,7 +749,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       Zusage zurueckgenommen hat, heisst fuer die Leitung
                       "kurzfristig umplanen" und wird eigens benannt. */}
                   {isOptedOut && (participant.opt_out_reason || participant.absage_nach_zusage) && (
-                    <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       {participant.absage_nach_zusage && (
                         <strong>Nach Zusage abgesagt{participant.opt_out_reason ? ': ' : ''}</strong>
                       )}
@@ -756,13 +766,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           {participant.role_name === 'konfi' && participant.status === 'confirmed' && (
             <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                <IonIcon icon={returnUpBack} />
+                <IonIcon icon={ICON_ANTWORTEN} />
               </div>
             </IonItemOption>
           )}
           <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-              <IonIcon icon={trash} />
+              <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
             </div>
           </IonItemOption>
         </IonItemOptions>
@@ -805,13 +815,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Event-Chat öffnen" onClick={handleChatButtonClick}>
-              <IonIcon icon={chatbubbleOutline} />
+              <IonIcon icon={ICON_CHAT} />
             </IonButton>
             <IonButton aria-label="QR-Code anzeigen" onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
-              <IonIcon icon={qrCodeOutline} />
+              <IonIcon icon={ICON_QRCODE} />
             </IonButton>
             <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
-              <IonIcon icon={createOutline} />
+              <IonIcon icon={ICON_BEARBEITEN} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -832,7 +842,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         <SectionHeader
           title={eventData?.name || 'Event'}
           subtitle={getStatusText()}
-          icon={calendar}
+          icon={ICON_TERMIN_GEFUELLT}
           colors={getStatusColors()}
           stats={(() => {
             const konfiOnly = participants.filter(p => p.role_name === 'konfi');
@@ -931,7 +941,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {darfSichMelden && (
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
+              <div className="app-section-icon app-section-icon--events"><IonIcon icon={ICON_GRUPPE_GEFUELLT} /></div>
               <IonLabel>Bist du dabei?</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
@@ -974,7 +984,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   </IonButton>
                 </div>
                 {!isOnline && (
-                  <p className="app-text-sub" style={{ marginTop: '12px', marginBottom: 0 }}>
+                  <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-mittel)', marginBottom: 0 }}>
                     Ohne Netz nicht möglich — versuch es später nochmal.
                   </p>
                 )}
@@ -1042,14 +1052,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {!eventData?.teamer_only && (
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                         Konfi hinzufügen
                       </IonButton>
                     )}
                     {teamerErlaubt && (
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
-                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                         Team hinzufügen
                       </IonButton>
                     )}
@@ -1058,7 +1068,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     {teamerErlaubt && (
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
-                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                         Leitung hinzufügen
                       </IonButton>
                     )}
@@ -1105,7 +1115,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               {!isTeamerOnlyEvent && displayParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
-                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
+                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={ICON_GRUPPE_GEFUELLT} /></div>
                     <IonLabel>{konfiHeaderText}</IonLabel>
                     {(() => {
                       // Button nur, wenn es unverbuchte Angemeldete gibt (Konfis mit
@@ -1116,21 +1126,21 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
                           onClick={() => handleConfirmAllAttendance(unprocessed, waitlistParticipants.length)}>
-                          <IonIcon icon={checkmark} slot="start" />
+                          <IonIcon icon={ICON_HAKEN_GEFUELLT} slot="start" />
                           Alle bestätigen ({unprocessed})
                         </IonButton>
                       );
                     })()}
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent style={{ padding: displayParticipants.length === 0 ? '16px' : '12px' }}>
+                    <IonCardContent style={{ padding: displayParticipants.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {displayParticipants.map(renderParticipant)}
                       </div>
                       <div className="app-event-detail__add-button-wrapper">
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                           Konfi hinzufügen
                         </IonButton>
                       </div>
@@ -1141,7 +1151,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               {(teamerParticipants.length > 0 || eventData?.teamer_needed || eventData?.teamer_only) && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
-                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
+                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={ICON_GRUPPE_GEFUELLT} /></div>
                     <IonLabel>{teamerHeaderText}</IonLabel>
                     {(() => {
                       // Gleiches Muster wie bei den Konfis oben, aber mit
@@ -1156,26 +1166,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
                           onClick={() => handleConfirmAllAttendance(unprocessedTeamer, teamerWaitlist.length, 'teamer')}>
-                          <IonIcon icon={checkmark} slot="start" />
+                          <IonIcon icon={ICON_HAKEN_GEFUELLT} slot="start" />
                           Alle bestätigen ({unprocessedTeamer})
                         </IonButton>
                       );
                     })()}
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent style={{ padding: teamerParticipants.length === 0 ? '16px' : '12px' }}>
+                    <IonCardContent style={{ padding: teamerParticipants.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {teamerParticipants.map(renderParticipant)}
                       </div>
                       <div className="app-event-detail__add-button-wrapper">
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                           Team hinzufügen
                         </IonButton>
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                           Leitung hinzufügen
                         </IonButton>
                       </div>
@@ -1189,7 +1199,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     <IonCardContent className="app-card-content">
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
                         Konfi hinzufügen
                       </IonButton>
                     </IonCardContent>

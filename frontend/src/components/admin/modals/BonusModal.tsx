@@ -24,7 +24,7 @@ import {
   IonDatetimeButton,
   IonModal,
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, gift, chatbubbleOutline } from 'ionicons/icons';
+import { ICON_BONUS_GEFUELLT, ICON_CHAT, ICON_HAKEN, ICON_SCHLIESSEN } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -126,12 +126,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           <IonTitle>Bonuspunkte hinzufügen</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
-              <IonIcon icon={closeOutline} />
+              <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             <IonButton aria-label="Bonuspunkte speichern" onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--bonus">
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -142,12 +142,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--bonus">
-              <IonIcon icon={gift} />
+              <IonIcon icon={ICON_BONUS_GEFUELLT} />
             </div>
             <IonLabel>Bonuspunkt Detail</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Bezeichnung *</IonLabel>
@@ -162,7 +162,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
               </IonList>
 
-              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>Datum *</p>
+              <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>Datum *</p>
               <IonDatetimeButton datetime="bonus-date" style={{ justifyContent: 'flex-start' }} />
               <IonModal keepContentsMounted={true}>
                 <IonDatetime
@@ -180,11 +180,11 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                 />
               </IonModal>
 
-              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>
-                Punkte * <span style={{ fontWeight: 700, color: 'var(--app-color-bonus)' }}>{points}</span>
+              <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-mini)' }}>
+                Punkte * <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-color-bonus)' }}>{points}</span>
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px' }}>
-                <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', padding: '0 var(--app-abstand-eng)' }}>
+                <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                 <IonRange
                   min={1} max={10} step={1}
                   pin={true} pinFormatter={(value: number) => `${value}`}
@@ -199,16 +199,16 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     '--pin-background': 'var(--app-color-bonus)',
                   } as React.CSSProperties}
                 />
-                <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
+                <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>10</span>
               </div>
 
-              <div style={{ marginTop: '16px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</span>
+              <div style={{ marginTop: 'var(--app-abstand-basis)', marginBottom: 'var(--app-abstand-eng)' }}>
+                <span style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)' }}>Typ *</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                 {verfuegbareArten.map((art) => {
                   // Farben wie bisher: Gemeinde gruen, Gottesdienst blau.
-                  const rahmen = art === 'gemeinde' ? '#059669' : '#3b82f6';
+                  const rahmen = art === 'gemeinde' ? 'var(--app-color-gemeinde)' : 'var(--app-color-gottesdienst)';
                   const fuellung = art === 'gemeinde'
                     ? 'rgba(5, 150, 105, 0.1)'
                     : 'rgba(59, 130, 246, 0.1)';
@@ -228,7 +228,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                         backgroundColor: type === art ? fuellung : undefined
                       }}
                     >
-                      <span style={{ fontWeight: '500', color: '#333' }}>{PUNKTEART_NAME[art]}</span>
+                      <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{PUNKTEART_NAME[art]}</span>
                     </div>
                   );
                 })}
@@ -241,12 +241,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--bonus">
-              <IonIcon icon={chatbubbleOutline} />
+              <IonIcon icon={ICON_CHAT} />
             </div>
             <IonLabel>Begründung (optional)</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Begründung</IonLabel>

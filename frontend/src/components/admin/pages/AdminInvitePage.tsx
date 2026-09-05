@@ -1,5 +1,6 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect } from 'react';
+import { QR_FARBEN } from '../../../theme/colors';
 import {
   IonPage,
   IonHeader,
@@ -25,18 +26,18 @@ import {
   useIonAlert
 } from '@ionic/react';
 import {
-  closeOutline,
-  qrCode,
-  school,
-  copyOutline,
-  shareOutline,
-  add,
-  time,
-  checkmarkCircle,
-  people,
-  trash,
-  cloudOfflineOutline
-} from 'ionicons/icons';
+  ICON_GRUPPE_GEFUELLT,
+  ICON_HINZUFUEGEN_GEFUELLT,
+  ICON_JAHRGANG_GEFUELLT,
+  ICON_KOPIEREN,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_OFFLINE,
+  ICON_QRCODE_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_TEILEN,
+  ICON_UHRZEIT_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import api from '../../../services/api';
@@ -117,7 +118,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       const firstValid = validInvites[0];
       const registrationUrl = `https://konfi-quest.de/register?code=${firstValid.invite_code}`;
       QRCode.toDataURL(registrationUrl, {
-        width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' }
+        width: 256, margin: 2, color: { dark: QR_FARBEN.dunkel, light: QR_FARBEN.hell }
       }).then(qrDataUrl => {
         setInviteCode(firstValid.invite_code);
         setQrCodeDataUrl(qrDataUrl);
@@ -151,8 +152,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
         width: 256,
         margin: 2,
         color: {
-          dark: '#000000',
-          light: '#ffffff'
+          dark: QR_FARBEN.dunkel,
+          light: QR_FARBEN.hell
         }
       });
       setQrCodeDataUrl(qrDataUrl);
@@ -210,7 +211,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
       width: 256,
       margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
+      color: { dark: QR_FARBEN.dunkel, light: QR_FARBEN.hell }
     });
     setInviteCode(invite.invite_code);
     setQrCodeDataUrl(qrDataUrl);
@@ -267,7 +268,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton onClick={handleClose} aria-label="Schließen">
-              <IonIcon icon={closeOutline} slot="icon-only" />
+              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Konfis einladen</IonTitle>
@@ -277,7 +278,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       <IonContent className="app-gradient-background">
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
@@ -286,7 +287,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--users">
-                  <IonIcon icon={school} />
+                  <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
                 </div>
                 <IonLabel>Jahrgang auswählen</IonLabel>
               </IonListHeader>
@@ -318,15 +319,15 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                     fill="outline"
                     onClick={generateInviteCode}
                     disabled={generatingCode || !selectedJahrgang || !isOnline}
-                    style={{ marginTop: '16px' }}
+                    style={{ marginTop: 'var(--app-abstand-basis)' }}
                   >
                     {generatingCode ? (
                       <IonSpinner name="crescent" />
                     ) : !isOnline ? (
-                      <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</>
+                      <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</>
                     ) : (
                       <>
-                        <IonIcon icon={add} slot="start" />
+                        <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} slot="start" />
                         Einladungslink generieren
                       </>
                     )}
@@ -340,7 +341,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--users">
-                    <IonIcon icon={checkmarkCircle} />
+                    <IonIcon icon={ICON_ZUSAGE_GEFUELLT} />
                   </div>
                   <IonLabel>Aktive Einladungscodes</IonLabel>
                 </IonListHeader>
@@ -348,7 +349,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                   <IonCardContent>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {(existingInvites || []).map((invite, index) => (
-                        <IonItemSliding key={invite.id} style={{ marginBottom: index < (existingInvites || []).length - 1 ? '8px' : '0' }}>
+                        <IonItemSliding key={invite.id} style={{ marginBottom: index < (existingInvites || []).length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
                           <IonItem
                             button
                             onClick={() => showExistingInviteQR(invite)}
@@ -370,22 +371,22 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                 width: '100%',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                borderLeftColor: '#059669'
+                                borderLeftColor: 'var(--app-color-success-strong)'
                               }}
                             >
                               {/* Corner Badge - Gültigkeit */}
                               <div className="app-corner-badges">
-                                <div className="app-corner-badge" style={{ backgroundColor: '#059669' }}>
+                                <div className="app-corner-badge" style={{ backgroundColor: 'var(--app-color-success-strong)' }}>
                                   {formatExpiryDate(invite.expires_at)}
                                 </div>
                               </div>
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  <div className="app-icon-circle" style={{ backgroundColor: '#059669' }}>
-                                    <IonIcon icon={qrCode} />
+                                  <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-success-strong)' }}>
+                                    <IonIcon icon={ICON_QRCODE_GEFUELLT} />
                                   </div>
                                   <div className="app-list-item__content">
-                                    <div className="app-list-item__title" style={{ paddingRight: '100px' }}>
+                                    <div className="app-list-item__title" style={{ paddingRight: 'var(--app-freiraum-aktion-xxl)' }}>
                                       {invite.jahrgang_name}
                                     </div>
                                     <div className="app-list-item__meta">
@@ -393,7 +394,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                         {invite.invite_code}
                                       </span>
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={people} style={{ color: '#667eea' }} />
+                                        <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-color-users)' }} />
                                         {invite.used_count || 0}
                                       </span>
                                     </div>
@@ -415,7 +416,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
                                 {extendingInvite === invite.id
                                   ? <IonSpinner name="crescent" />
-                                  : <IonIcon icon={time} />}
+                                  : <IonIcon icon={ICON_UHRZEIT_GEFUELLT} />}
                               </div>
                             </IonItemOption>
                             <IonItemOption
@@ -424,7 +425,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                <IonIcon icon={trash} />
+                                <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                               </div>
                             </IonItemOption>
                           </IonItemOptions>
@@ -441,41 +442,41 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--users">
-                    <IonIcon icon={qrCode} />
+                    <IonIcon icon={ICON_QRCODE_GEFUELLT} />
                   </div>
                   <IonLabel>QR-Code</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
-                  <IonCardContent style={{ padding: '24px', textAlign: 'center' }}>
+                  <IonCardContent style={{ padding: 'var(--app-abstand-weit)', textAlign: 'center' }}>
                     <img
                       src={qrCodeDataUrl}
                       alt="QR Code für Registrierung"
                       style={{
                         width: '200px',
                         height: '200px',
-                        margin: '0 auto 16px auto',
+                        margin: '0 auto var(--app-abstand-basis) auto',
                         display: 'block',
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        borderRadius: 'var(--app-radius-karte)',
+                        boxShadow: 'var(--app-schatten-schwebend)'
                       }}
                     />
-                    <p className="app-settings-item__subtitle" style={{ fontSize: '0.9rem', margin: '0 0 8px 0' }}>
+                    <p className="app-settings-item__subtitle" style={{ fontSize: 'var(--app-text-basis)', margin: '0 0 var(--app-abstand-eng) 0' }}>
                       Konfis scannen diesen Code, um sich selbst zu registrieren.
                     </p>
                     <div style={{
-                      background: '#f5f5f5',
-                      borderRadius: '8px',
-                      padding: '12px',
-                      marginBottom: '16px'
+                      background: 'var(--app-surface-muted)',
+                      borderRadius: 'var(--app-radius-klein)',
+                      padding: 'var(--app-abstand-mittel)',
+                      marginBottom: 'var(--app-abstand-basis)'
                     }}>
                       <IonText color="medium">
                         <small>Einladungscode:</small>
                       </IonText>
                       <div style={{
                         fontFamily: 'monospace',
-                        fontSize: '1.2rem',
-                        fontWeight: '600',
-                        color: '#007aff',
+                        fontSize: 'var(--app-text-untertitel)',
+                        fontWeight: 'var(--app-schrift-halbfett)',
+                        color: 'var(--app-color-info)',
                         letterSpacing: '2px'
                       }}>
                         {inviteCode}
@@ -487,14 +488,14 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         fill="outline"
                         onClick={copyInviteLink}
                       >
-                        <IonIcon icon={copyOutline} slot="start" />
+                        <IonIcon icon={ICON_KOPIEREN} slot="start" />
                         Link kopieren
                       </IonButton>
                       <IonButton
                         expand="block"
                         onClick={shareInvite}
                       >
-                        <IonIcon icon={shareOutline} slot="start" />
+                        <IonIcon icon={ICON_TEILEN} slot="start" />
                         Teilen
                       </IonButton>
                     </div>

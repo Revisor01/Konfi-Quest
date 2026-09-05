@@ -14,19 +14,20 @@ import {
   IonInput
 } from '@ionic/react';
 import {
-  hourglass,
-  checkmarkCircle,
-  closeCircle,
-  calendar,
-  home,
-  people,
-  trash,
-  trophy,
-  camera,
-  documentTextOutline,
-  search,
-  filterOutline
-} from 'ionicons/icons';
+  ICON_ABSAGE,
+  ICON_FILTER,
+  ICON_GEMEINDE_GEFUELLT,
+  ICON_GOTTESDIENST_GEFUELLT,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_KAMERA_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_POKAL_GEFUELLT,
+  ICON_SUCHE_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+  ICON_TEXTDOKUMENT,
+  ICON_WARTEND_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
+} from '../../shared/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 // Gemeinsamer Typ statt eigener Kopie — siehe RequestDetailModal. Sieben
@@ -79,9 +80,9 @@ const RequestsView: React.FC<RequestsViewProps> = ({
     const isApproved = request.status === 'approved';
     const isRejected = request.status === 'rejected';
 
-    const statusColor = isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545';
+    const statusColor = isPending ? 'var(--app-color-warning)' : isApproved ? 'var(--app-color-success-strong)' : 'var(--app-color-danger)';
     const statusText = isPending ? 'Offen' : isApproved ? 'Angerechnet' : 'Abgelehnt';
-    const statusIcon = isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle;
+    const statusIcon = isPending ? ICON_WARTEND_GEFUELLT : isApproved ? ICON_ZUSAGE_GEFUELLT : ICON_ABSAGE;
 
     return { statusColor, statusText, statusIcon, isPending, isApproved, isRejected };
   };
@@ -92,7 +93,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
       <SectionHeader
         title="Deine Aktivitäten"
         subtitle="Was du gemeldet hast"
-        icon={checkmarkCircle}
+        icon={ICON_ZUSAGE_GEFUELLT}
         preset="konfi-requests"
         stats={[
           // Die Kacheln entsprechen den drei Reitern und schalten dorthin.
@@ -105,16 +106,16 @@ const RequestsView: React.FC<RequestsViewProps> = ({
       {headerSlot}
 
       {/* Suche & Filter — wie Chat-Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
+      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--success">
-            <IonIcon icon={filterOutline} />
+            <IonIcon icon={ICON_FILTER} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
-            <IonIcon icon={search} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
+            <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
             <IonInput
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value || '')}
@@ -144,15 +145,15 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 
       {/* Aktivitäten-Liste — neue Aktivitäten laufen ueber den Plus-Button im Header */}
       <ListSection
-        icon={documentTextOutline}
+        icon={ICON_TEXTDOKUMENT}
         title="Aktivitäten"
         count={filteredRequests.length}
         iconColorClass="success"
         isEmpty={filteredRequests.length === 0}
-        emptyIcon={documentTextOutline}
+        emptyIcon={ICON_TEXTDOKUMENT}
         emptyTitle="Keine Aktivitäten gefunden"
         emptyMessage="Noch keine Aktivitäten gemeldet"
-        emptyIconColor="#059669"
+        emptyIconColor="var(--app-color-success-strong)"
       >
         {filteredRequests.map((request) => {
           const { statusColor, statusText, statusIcon, isPending, isRejected } = getRequestStatusInfo(request);
@@ -195,7 +196,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         className="app-icon-circle app-icon-circle--lg"
                         style={{ backgroundColor: statusColor }}
                       >
-                        <IonIcon icon={statusIcon} style={{ color: '#fff' }} />
+                        <IonIcon icon={statusIcon} style={{ color: 'white' }} />
                       </div>
 
                       {/* Content */}
@@ -204,7 +205,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         <div
                           className="app-list-item__title"
                           style={{
-                            paddingRight: '70px'
+                            paddingRight: 'var(--app-freiraum-aktion-l)'
                           }}
                         >
                           {request.activity_name}
@@ -213,26 +214,26 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         {/* Zeile 2: Datum + Punkte + Typ + Foto */}
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={calendar} className="app-icon-color--gemeinde" />
+                            <IonIcon icon={ICON_TERMIN_GEFUELLT} className="app-icon-color--gemeinde" />
                             {formatDate(request.requested_date)}
                           </span>
                           {/* Punkte nur fuer Konfis — Teamer-Aktivitaeten geben keine Punkte. */}
                           {!teamerMode && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={trophy} className="app-icon-color--points" />
+                              <IonIcon icon={ICON_POKAL_GEFUELLT} className="app-icon-color--points" />
                               {request.activity_points}P
                             </span>
                           )}
                           <span className="app-list-item__meta-item">
                             {teamerMode ? (
                               <>
-                                <IonIcon icon={people} className="app-icon-color--teamer" />
+                                <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-icon-color--teamer" />
                                 Team
                               </>
                             ) : (
                               <>
                                 <IonIcon
-                                  icon={request.activity_type === 'gottesdienst' ? home : people}
+                                  icon={request.activity_type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT : ICON_GEMEINDE_GEFUELLT}
                                   className={request.activity_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}
                                 />
                                 {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
@@ -241,7 +242,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                           </span>
                           {request.photo_filename && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={camera} className="app-icon-color--konfis" />
+                              <IonIcon icon={ICON_KAMERA_GEFUELLT} className="app-icon-color--konfis" />
                               Foto
                             </span>
                           )}
@@ -252,7 +253,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                           <div className="app-list-item__subtitle" style={{
                             color: 'var(--app-text-secondary)',
                             fontStyle: 'italic',
-                            marginTop: '4px'
+                            marginTop: 'var(--app-abstand-mini)'
                           }}>
                             "{request.comment}"
                           </div>
@@ -260,16 +261,16 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 
                         {/* Ablehnungsgrund bei rejected */}
                         {isRejected && request.admin_comment && (
-                          <div className="app-reason-box app-reason-box--danger" style={{ marginTop: '8px' }}>
+                          <div className="app-reason-box app-reason-box--danger" style={{ marginTop: 'var(--app-abstand-eng)' }}>
                             <div>
                               <span className="app-reason-box__label" style={{
-                                fontSize: '0.7rem'
+                                fontSize: 'var(--app-text-meta)'
                               }}>
                                 Grund der Ablehnung
                               </span>
                               <p style={{
-                                margin: '2px 0 0 0',
-                                fontSize: '0.8rem',
+                                margin: 'var(--app-abstand-winzig) 0 0 0',
+                                fontSize: 'var(--app-text-hinweis)',
                                 lineHeight: '1.4'
                               }}>
                                 {request.admin_comment}
@@ -292,7 +293,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                      <IonIcon icon={trash} />
+                      <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                     </div>
                   </IonItemOption>
                 </IonItemOptions>

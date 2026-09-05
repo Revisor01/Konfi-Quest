@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
-  imageOutline,
-  linkOutline,
-  musicalNotesOutline,
-  videocamOutline,
-  chatbubbleEllipsesOutline,
-} from 'ionicons/icons';
+  ICON_BILD,
+  ICON_CHAT_AKTIV,
+  ICON_LINK,
+  ICON_MUSIK,
+  ICON_VIDEO,
+} from '../../shared/icons';
 import SlideBase from './SlideBase';
 import api from '../../../services/api';
 import { getIconFromString } from '../../../utils/badgeIcons';
@@ -23,11 +23,11 @@ const MAX_MOMENTE = 6;
 /** Icon passend zur Medienart (nur IonIcons, keine Emojis). */
 function iconFuerMedienart(mediaType: string): string {
   switch (mediaType) {
-    case 'photo': return imageOutline;
-    case 'video': return videocamOutline;
-    case 'audio': return musicalNotesOutline;
-    case 'link': return linkOutline;
-    default: return chatbubbleEllipsesOutline;
+    case 'photo': return ICON_BILD;
+    case 'video': return ICON_VIDEO;
+    case 'audio': return ICON_MUSIK;
+    case 'link': return ICON_LINK;
+    default: return ICON_CHAT_AKTIV;
   }
 }
 
@@ -71,7 +71,7 @@ const ChallengeFoto: React.FC<{ filePath: string; fileName?: string }> = ({ file
   if (fehler) {
     return (
       <div className="challenge-moment-foto challenge-moment-foto--leer">
-        <IonIcon icon={imageOutline} />
+        <IonIcon icon={ICON_BILD} />
       </div>
     );
   }
@@ -126,7 +126,7 @@ const ChallengeMomenteSlide: React.FC<ChallengeMomenteSlideProps> = ({ isActive,
     <SlideBase isActive={isActive} className="challenge-momente-slide" kachel="challenge-momente">
       <div className="kat-auge">Deine Momente</div>
 
-      <div className="kat-slogan" style={{ marginBottom: 10 }}>
+      <div className="kat-slogan" style={{ marginBottom: 'var(--app-abstand-schmal)'}}>
         <span style={{ display: 'block' }}>Das hast du</span>
         <span style={{ display: 'block' }}>hinterlassen.</span>
       </div>

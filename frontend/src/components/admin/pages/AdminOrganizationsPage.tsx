@@ -1,4 +1,4 @@
-import { ICON_ZURUECK } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT, ICON_ZURUECK } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
@@ -15,9 +15,6 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import {
-  add
-} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -138,7 +135,7 @@ const AdminOrganizationsPage: React.FC = () => {
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
-              <IonIcon icon={add} />
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
         </IonToolbar>

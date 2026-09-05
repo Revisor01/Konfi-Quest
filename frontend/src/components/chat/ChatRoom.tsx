@@ -1,4 +1,4 @@
-import { ICON_ZURUECK } from '../shared/icons';
+import { ICON_AUFKLAPPEN_GEFUELLT, ICON_ZURUECK } from '../shared/icons';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
@@ -14,10 +14,6 @@ import {
   useIonAlert,
   useIonActionSheet
 } from '@ionic/react';
-import {
-  arrowBack,
-  chevronDown
-} from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -569,7 +565,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           </IonToolbar>
         </IonHeader>
         <IonContent className="app-gradient-background" fullscreen>
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--app-abstand-riesig)' }}>
             <p>Chat wird geladen...</p>
           </div>
         </IonContent>
@@ -631,9 +627,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             display: 'flex', justifyContent: 'center', zIndex: 10, pointerEvents: 'none'
           }}>
             <span style={{
-              fontSize: '0.72rem', fontWeight: 600, color: '#555',
+              fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-body)',
               background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
-              padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+              padding: 'var(--app-abstand-mini) var(--app-abstand-mittelweit)', borderRadius: 'var(--app-radius-karte)', boxShadow: 'var(--app-schatten-flach)'
             }}>
               {floatingDay}
             </span>
@@ -664,7 +660,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             style={{
               width: '40px',
               height: '40px',
-              borderRadius: '50%',
+              borderRadius: 'var(--app-radius-kreis)',
               border: 'none',
               padding: 0,
               display: 'flex',
@@ -673,21 +669,21 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               cursor: 'pointer',
               backgroundColor: 'rgba(255,255,255,0.95)',
               backdropFilter: 'blur(10px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+              boxShadow: 'var(--app-schatten-karte-stark)'
             }}
           >
-            <IonIcon icon={chevronDown} style={{ fontSize: '1.35rem', color: '#06b6d4' }} />
+            <IonIcon icon={ICON_AUFKLAPPEN_GEFUELLT} style={{ fontSize: 'var(--app-text-titel)', color: 'var(--app-color-chat)' }} />
           </button>
         </div>
 
         {user?.type === 'admin' && room && (room.type === 'group' || room.type === 'admin') && (
           <div style={{
-            margin: '8px 16px 0',
-            padding: '8px 12px',
+            margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0',
+            padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
             backgroundColor: 'rgba(0,0,0,0.05)',
-            borderRadius: '8px',
-            fontSize: '0.8rem',
-            color: '#666',
+            borderRadius: 'var(--app-radius-klein)',
+            fontSize: 'var(--app-text-hinweis)',
+            color: 'var(--app-text-secondary)',
             textAlign: 'center'
           }}>
             Admins können Chats nicht verlassen. Chats können nur gelöscht werden.

@@ -12,7 +12,6 @@ import {
   IonButton,
   IonIcon
 } from '@ionic/react';
-import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -98,7 +97,7 @@ const KonfiProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <p style={{ textAlign: 'center', marginTop: '50px' }}>
+          <p style={{ textAlign: 'center', marginTop: 'var(--app-freiraum-kopf-s)' }}>
             Fehler beim Laden des Profils
           </p>
         </IonContent>

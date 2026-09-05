@@ -1,6 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { IonIcon, IonItem, IonItemGroup, IonLabel, IonList, IonListHeader, IonItemSliding, IonItemOptions, IonItemOption, IonInput, IonSegment, IonSegmentButton, IonRefresher, IonRefresherContent } from '@ionic/react';
-import { trash, people, person, personOutline, shield, at, school, time, briefcase, filterOutline, peopleOutline, search } from 'ionicons/icons';
+import { FARBEN } from '../../theme/colors';
+import {
+  ICON_AKTENTASCHE_GEFUELLT,
+  ICON_AT_ZEICHEN,
+  ICON_FILTER,
+  ICON_GRUPPE,
+  ICON_GRUPPE_GEFUELLT,
+  ICON_JAHRGANG_GEFUELLT,
+  ICON_LOESCHEN_GEFUELLT,
+  ICON_PERSON,
+  ICON_PERSON_GEFUELLT,
+  ICON_SCHILD_GEFUELLT,
+  ICON_SUCHE_GEFUELLT,
+  ICON_UHRZEIT_GEFUELLT,
+} from '../shared/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
@@ -65,12 +79,14 @@ const UsersView: React.FC<UsersViewProps> = ({
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
+  // Echte Hexwerte (theme/colors.ts): Die Rollenfarbe wird teils per
+  // Alpha-Suffix weiterverrechnet, var()-Strings scheiden aus (05.09.2026).
   const getRoleColor = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return '#667eea';
-      case 'admin': return '#667eea';
-      case 'teamer': return '#be185d';
-      default: return '#6b7280';
+      case 'org_admin': return FARBEN.users;
+      case 'admin': return FARBEN.users;
+      case 'teamer': return FARBEN.teamer;
+      default: return FARBEN.neutral;
     }
   };
 
@@ -102,7 +118,7 @@ const UsersView: React.FC<UsersViewProps> = ({
       <SectionHeader
         title="Benutzer:innen"
         subtitle="Admins, Teamer:innen und Rollen"
-        icon={people}
+        icon={ICON_GRUPPE_GEFUELLT}
         preset="users"
         stats={[
           // Die Kacheln entsprechen den Reitern; "Aktiv" hat keine Kachel.
@@ -137,13 +153,13 @@ const UsersView: React.FC<UsersViewProps> = ({
       <IonList inset={true} className="app-segment-wrapper">
         <IonListHeader>
           <div className="app-section-icon app-section-icon--users">
-            <IonIcon icon={filterOutline} />
+            <IonIcon icon={ICON_FILTER} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
-            <IonIcon icon={search} slot="start" className="app-search-bar__icon" />
+            <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-search-bar__icon" />
             <IonInput
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
@@ -155,15 +171,15 @@ const UsersView: React.FC<UsersViewProps> = ({
 
       {/* Benutzer-Liste */}
       <ListSection
-        icon={peopleOutline}
+        icon={ICON_GRUPPE}
         title="Benutzer:innen"
         count={filteredAndSortedUsers.length}
         iconColorClass="users"
         isEmpty={filteredAndSortedUsers.length === 0}
-        emptyIcon={personOutline}
+        emptyIcon={ICON_PERSON}
         emptyTitle="Keine Benutzer:innen gefunden"
         emptyMessage="Noch keine Teammitglieder angelegt"
-        emptyIconColor="#667eea"
+        emptyIconColor="var(--app-color-users)"
       >
         {filteredAndSortedUsers.map((user, index) => {
               const roleColor = getRoleColor(user.role_name);
@@ -174,7 +190,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                 ref={(ref) => {
                   if (ref) slidingRefs.current.set(user.id, ref);
                 }}
-                style={{ marginBottom: index < filteredAndSortedUsers.length - 1 ? '8px' : '0' }}
+                style={{ marginBottom: index < filteredAndSortedUsers.length - 1 ? 'var(--app-abstand-eng)' : '0' }}
               >
                 <IonItem
                   button={user.can_edit !== false}
@@ -209,7 +225,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                           className="app-icon-circle app-icon-circle--lg"
                           style={{ backgroundColor: roleColor }}
                         >
-                          <IonIcon icon={user.role_name === 'org_admin' || user.role_name === 'admin' ? shield : person} />
+                          <IonIcon icon={user.role_name === 'org_admin' || user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT} />
                         </div>
 
                         {/* Content */}
@@ -217,7 +233,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                           {/* Zeile 1: Name */}
                           <div
                             className="app-list-item__title"
-                            style={!user.is_active ? { color: '#999', paddingRight: '70px' } : { paddingRight: '70px' }}
+                            style={!user.is_active ? { color: 'var(--app-text-muted)', paddingRight: 'var(--app-freiraum-aktion-l)' } : { paddingRight: 'var(--app-freiraum-aktion-l)' }}
                           >
                             {user.display_name}
                           </div>
@@ -225,12 +241,12 @@ const UsersView: React.FC<UsersViewProps> = ({
                           {/* Zeile 2: Username + Titel */}
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={at} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
+                              <IonIcon icon={ICON_AT_ZEICHEN} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: 'var(--app-text-muted)' } : undefined} />
                               {user.username}
                             </span>
                             {user.role_title && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={briefcase} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
+                                <IonIcon icon={ICON_AKTENTASCHE_GEFUELLT} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: 'var(--app-text-muted)' } : undefined} />
                                 {user.role_title}
                               </span>
                             )}
@@ -240,13 +256,13 @@ const UsersView: React.FC<UsersViewProps> = ({
                           <div className="app-list-item__meta">
                             {user.assigned_jahrgaenge_count > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={school} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
+                                <IonIcon icon={ICON_JAHRGANG_GEFUELLT} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: 'var(--app-text-muted)' } : undefined} />
                                 {user.assigned_jahrgaenge_count} Jg.
                               </span>
                             )}
                             {user.last_login_at && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={time} className={user.is_active ? 'app-icon-color--success' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
+                                <IonIcon icon={ICON_UHRZEIT_GEFUELLT} className={user.is_active ? 'app-icon-color--success' : ''} style={!user.is_active ? { color: 'var(--app-text-muted)' } : undefined} />
                                 {formatDate(user.last_login_at)}
                               </span>
                             )}
@@ -272,7 +288,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                       aria-label="Benutzer:in löschen"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                        <IonIcon icon={trash} />
+                        <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                       </div>
                     </IonItemOption>
                   </IonItemOptions>
