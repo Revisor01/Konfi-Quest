@@ -1,8 +1,30 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
 
+/* ===================================================================
+   WO LIEGT WAS? (Wegweiser, 05.09.2026)
+
+   Diese Datei ist der Einstieg. Sie enthaelt die FARBEN und die
+   Ionic-Integration und laedt die uebrigen Skalen per @import:
+
+     theme/farben         -> stehen (noch) hier unten in dieser Datei
+     theme/typografie.css -> Schriftgroessen und -schnitte
+     theme/abstaende.css  -> Abstaende, Eckradien, Schatten
+     theme/icons.ts       -> gibt es nicht; Icons liegen in
+                             components/shared/icons.ts
+     theme/colors.ts      -> Spiegel der Farben fuer JS-Kontexte, in denen
+                             CSS-Variablen technisch nicht gehen (SVG-
+                             Attribute, QR-Bibliothek, Alpha-Rechnungen).
+                             Der Test farbTokens.test.ts haelt ihn mit den
+                             Tokens hier deckungsgleich.
+
+   Wer den Look aendern will, aendert eine Zeile in der passenden Datei --
+   nicht mehr hunderte Fundstellen in den Komponenten. Abgesichert durch
+   vier Tests: farbTokens, typografieTokens, abstaendeTokens, zentraleIcons.
+   =================================================================== */
+
 /* Abstands-, Radius- und Schatten-Skalen (05.09.2026, Konsolidierung der Inline-Styles) */
-@import './design-tokens.css';
+@import './abstaende.css';
 
 /* iOS26 Theme - kann durch Entfernen dieser Imports deaktiviert werden */
 @import '@rdlabo/ionic-theme-ios26/dist/css/default-variables.css';

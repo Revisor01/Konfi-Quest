@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
 
 // Konsolidierung 05.09.2026: Abstaende, Eckradien und Schatten leben in
-// theme/design-tokens.css statt als ~700 verstreute Inline-px-Werte.
+// theme/abstaende.css statt als ~700 verstreute Inline-px-Werte.
 // Diese Tests lesen die Quellen und pruefen die Verdrahtung:
 //  (a) die Skalen sind vollstaendig und tragen exakt die gemessenen Werte,
 //  (b) keine Komponente setzt mehr rohe px-Abstaende oder -Radien inline,
@@ -65,7 +65,7 @@ function roheFunde(quelle: string): string[] {
 }
 
 describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
-  const tokensCss = lies('src/theme/design-tokens.css');
+  const tokensCss = lies('src/theme/abstaende.css');
 
   it('definiert die Abstands-Skala vollstaendig und mit den gemessenen Werten', () => {
     const erwartet: Record<string, string> = {
@@ -141,7 +141,7 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
   });
 
   it('bindet die Token-Datei in variables.css ein', () => {
-    expect(lies('src/theme/variables.css')).toContain("@import './design-tokens.css';");
+    expect(lies('src/theme/variables.css')).toContain("@import './abstaende.css';");
   });
 
   it('keine Komponente setzt rohe px-Abstaende oder -Radien inline', () => {
