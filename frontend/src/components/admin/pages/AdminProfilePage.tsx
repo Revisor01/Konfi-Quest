@@ -150,7 +150,7 @@ const AdminProfilePage: React.FC = () => {
         <div className="app-detail-header" style={{
           background: 'var(--app-gradient-admin)',
           // Marken-Glow des Admin-Hero — bleibt bewusst inline (05.09.2026, Token-Konsolidierung)
-          boxShadow: '0 20px 40px rgba(102, 126, 234, 0.35)',
+          boxShadow: '0 20px 40px rgba(var(--app-color-users-rgb), 0.35)',
           position: 'relative',
           overflow: 'hidden'
         }}>

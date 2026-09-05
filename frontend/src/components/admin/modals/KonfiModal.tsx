@@ -242,7 +242,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
               </div>
               <IonLabel>Was der Wechsel bewirkt</IonLabel>
             </IonListHeader>
-            <IonCard className="app-card" style={{ background: 'rgba(190, 24, 93, 0.08)', border: '1px solid rgba(190, 24, 93, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-teamer-rgb), 0.08)', border: '1px solid rgba(var(--app-color-teamer-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: '0 0 var(--app-abstand-schmal)', fontSize: 'var(--app-text-basis)', lineHeight: '1.5' }}>
                   Es gelten die Regeln des neuen Jahrgangs:
@@ -287,7 +287,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
               </div>
               <IonLabel>Hinweis</IonLabel>
             </IonListHeader>
-            <IonCard className="app-card" style={{ background: 'rgba(91, 33, 182, 0.08)', border: '1px solid rgba(91, 33, 182, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-color-konfis)' }}>
                   Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
@@ -308,7 +308,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
               </div>
               <IonLabel>Hinweis</IonLabel>
             </IonListHeader>
-            <IonCard className="app-card" style={{ background: 'rgba(91, 33, 182, 0.08)', border: '1px solid rgba(91, 33, 182, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-color-konfis)' }}>
                   Der Benutzername zum Anmelden ändert sich nicht — auch dann

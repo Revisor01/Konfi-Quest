@@ -303,7 +303,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     justifyContent: 'space-between',
                     marginBottom: '0',
                     borderLeftColor: 'var(--app-color-success-strong)',
-                    background: formData.target_role === 'konfi' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                    background: formData.target_role === 'konfi' ? 'rgba(var(--app-color-success-strong-rgb), 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Konfis</span>
@@ -318,7 +318,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     justifyContent: 'space-between',
                     marginBottom: '0',
                     borderLeftColor: 'var(--app-color-success-strong)',
-                    background: formData.target_role === 'teamer' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                    background: formData.target_role === 'teamer' ? 'rgba(var(--app-color-success-strong-rgb), 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Teamer:innen</span>
@@ -393,7 +393,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                       justifyContent: 'space-between',
                       marginBottom: '0',
                       borderLeftColor: 'var(--app-color-gottesdienst)',
-                      background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
+                      background: formData.type === 'gottesdienst' ? 'rgba(var(--app-color-gottesdienst-rgb), 0.1)' : undefined
                     }}
                   >
                     <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Gottesdienst</span>
@@ -409,7 +409,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                       justifyContent: 'space-between',
                       marginBottom: '0',
                       borderLeftColor: 'var(--app-color-success-strong)',
-                      background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                      background: formData.type === 'gemeinde' ? 'rgba(var(--app-color-gemeinde-rgb), 0.1)' : undefined
                     }}
                   >
                     <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Gemeinde</span>
@@ -460,7 +460,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         marginBottom: index < categories.length - 1 ? 'var(--app-abstand-eng)' : '0',
-                        background: isChecked ? 'rgba(14, 165, 233, 0.08)' : undefined
+                        background: isChecked ? 'rgba(var(--app-color-categories-rgb), 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{category.name}</span>

@@ -191,7 +191,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           position: 'relative',
           cursor: 'pointer',
           boxShadow: isOwnMessage
-            ? '0 2px 8px rgba(6, 182, 212, 0.25)'
+            ? '0 2px 8px rgba(var(--app-color-chat-rgb), 0.25)'
             : '0 1px 4px rgba(0,0,0,0.08)',
           ...(message.queueStatus === 'pending' ? { opacity: 0.7 } : {})
         }}
@@ -262,7 +262,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
               if (replyElement) {
                 replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                replyElement.style.backgroundColor = 'rgba(6, 182, 212, 0.15)';
+                replyElement.style.backgroundColor = 'rgba(var(--app-color-chat-rgb), 0.15)';
                 setTimeout(() => {
                   replyElement.style.backgroundColor = '';
                 }, 1500);
@@ -271,7 +271,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             style={{
               padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
               marginBottom: 'var(--app-abstand-kompakt)',
-              backgroundColor: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.08)',
+              backgroundColor: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.08)',
               borderRadius: 'var(--app-radius-klein)',
               borderLeft: '3px solid var(--app-color-chat)',
               cursor: 'pointer'
@@ -315,11 +315,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         ) : message.message_type === 'poll' && message.question && message.options ? (
           <div style={{
-            background: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.06)',
+            background: isOwnMessage ? 'white' : 'rgba(var(--app-color-chat-rgb), 0.06)',
             borderRadius: 'var(--app-radius-weich)',
             padding: 'var(--app-abstand-basis)',
             marginTop: 'var(--app-abstand-mini)',
-            border: isOwnMessage ? '1px solid rgba(6, 182, 212, 0.15)' : '1px solid rgba(6, 182, 212, 0.15)',
+            border: isOwnMessage ? '1px solid rgba(var(--app-color-chat-rgb), 0.15)' : '1px solid rgba(var(--app-color-chat-rgb), 0.15)',
           }}>
             {/* Frage mit Icon */}
             <div style={{
@@ -360,7 +360,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   fontSize: 'var(--app-text-hinweis)',
                   marginBottom: 'var(--app-abstand-mittel)',
                   padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
-                  background: isExpired ? 'rgba(220,53,69,0.12)' : 'rgba(6, 182, 212, 0.1)',
+                  background: isExpired ? 'rgba(var(--app-color-danger-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.1)',
                   borderRadius: 'var(--app-radius-klein)',
                   color: isExpired ? 'var(--app-color-danger)' : 'var(--app-color-chat)',
                   display: 'flex',
@@ -401,7 +401,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   key={index}
                   onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
                   style={{
-                    background: userVoted ? 'rgba(6, 182, 212, 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
+                    background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
                     border: userVoted ? '2px solid var(--app-color-chat)' : '1px solid rgba(0,0,0,0.08)',
                     borderRadius: 'var(--app-radius-knopf)',
                     padding: 'var(--app-abstand-mittel)',
@@ -421,7 +421,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       top: 0,
                       height: '100%',
                       width: `${percentage}%`,
-                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
+                      background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.06)',
                       transition: 'width 0.4s ease',
                       borderRadius: 'var(--app-radius-klein)'
                     }} />
@@ -650,7 +650,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     padding: 'var(--app-abstand-mini) var(--app-abstand-eng)',
                     borderRadius: 'var(--app-radius-karte)',
                     backgroundColor: userHasReacted
-                      ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.12)')
+                      ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(var(--app-color-chat-rgb), 0.12)')
                       : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)'),
                     border: userHasReacted
                       ? `1.5px solid ${emojiData?.color || 'var(--app-color-chat)'}`
@@ -758,7 +758,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: 'var(--app-radius-kreis)',
-                  backgroundColor: 'rgba(220, 53, 69, 0.15)',
+                  backgroundColor: 'rgba(var(--app-color-danger-rgb), 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

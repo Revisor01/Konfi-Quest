@@ -355,7 +355,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         borderRadius: 'var(--app-radius-modal)',
         background: profile.confirmation_date ? 'var(--app-gradient-konfi)' : 'var(--app-gradient-neutral)',
         border: 'none',
-        boxShadow: profile.confirmation_date ? '0 10px 40px rgba(91, 33, 182, 0.3)' : '0 10px 40px rgba(100, 116, 139, 0.3)',
+        boxShadow: profile.confirmation_date ? '0 10px 40px rgba(var(--app-color-konfis-rgb), 0.3)' : '0 10px 40px rgba(100, 116, 139, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',

@@ -500,7 +500,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                                 cursor: 'pointer',
                                 marginBottom: '0',
                                 borderLeftColor: isSelected ? 'var(--app-color-material)' : 'var(--app-border-soft)',
-                                backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                                backgroundColor: isSelected ? 'rgba(var(--app-color-material-rgb), 0.08)' : undefined
                               }}
                             >
                               <div className="app-list-item__row">
@@ -555,7 +555,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                               cursor: 'pointer',
                               marginBottom: '0',
                               borderLeftColor: isSelected ? 'var(--app-color-material)' : 'var(--app-border-soft)',
-                              backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                              backgroundColor: isSelected ? 'rgba(var(--app-color-material-rgb), 0.08)' : undefined
                             }}
                           >
                             <div className="app-list-item__row">

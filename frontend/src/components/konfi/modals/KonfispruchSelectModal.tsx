@@ -293,7 +293,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                               cursor: 'pointer',
                               position: 'relative',
                               overflow: 'hidden',
-                              background: isSelected ? 'rgba(91, 33, 182, 0.08)' : undefined
+                              background: isSelected ? 'rgba(var(--app-color-konfis-rgb), 0.08)' : undefined
                             }}
                           >
                             {isSelected && (

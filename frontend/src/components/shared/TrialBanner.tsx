@@ -30,7 +30,7 @@ const TrialBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   const isUrgent = days <= 7;
   // Echte Hexwerte: unten wird `${accent}33` gerechnet — var() geht nicht.
   const accent = isUrgent ? FARBEN.events : FARBEN.users;
-  const bg = isUrgent ? 'rgba(220, 38, 38, 0.08)' : 'rgba(102, 126, 234, 0.08)';
+  const bg = isUrgent ? 'rgba(var(--app-color-events-rgb), 0.08)' : 'rgba(var(--app-color-users-rgb), 0.08)';
 
   return (
     <div

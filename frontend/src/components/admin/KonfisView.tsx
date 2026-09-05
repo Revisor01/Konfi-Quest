@@ -515,7 +515,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                       <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{godiPoints}/{targetGodi}</span>
                                     </div>
                                     <div className="app-progress-bar">
-                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-gottesdienst-rgb), 0.15)' }}>
                                         <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: 'var(--app-color-gottesdienst)' }} />
                                       </div>
                                     </div>
@@ -526,7 +526,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                       <span style={{ fontSize: 'var(--app-text-mini)', color: 'var(--app-text-muted)' }}>{gemPoints}/{targetGem}</span>
                                     </div>
                                     <div className="app-progress-bar">
-                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-success-rgb), 0.15)' }}>
                                         <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: 'var(--app-color-gemeinde)' }} />
                                       </div>
                                     </div>
@@ -542,7 +542,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                     </span>
                                   </div>
                                   <div className="app-progress-bar app-progress-bar--thick">
-                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
+                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(var(--app-color-konfis-rgb), 0.12)' }}>
                                       <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: 'var(--app-color-konfis)' }} />
                                     </div>
                                   </div>
@@ -560,7 +560,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   </span>
                                 </div>
                                 <div className="app-progress-bar app-progress-bar--thick">
-                                  <div className="app-progress-bar__track" style={{ backgroundColor: godiEnabled ? 'rgba(59, 130, 246, 0.15)' : 'rgba(34, 197, 94, 0.15)' }}>
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: godiEnabled ? 'rgba(var(--app-color-gottesdienst-rgb), 0.15)' : 'rgba(var(--app-color-success-rgb), 0.15)' }}>
                                     <div className="app-progress-bar__fill" style={{
                                       width: `${Math.min(100, godiEnabled ? percentGodi : percentGem)}%`,
                                       backgroundColor: godiEnabled ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)'

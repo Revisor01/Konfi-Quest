@@ -731,7 +731,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                       backgroundColor: mediaPreview
                         ? 'rgba(0, 0, 0, 0.04)'
                         : isRecording
-                          ? 'rgba(220, 53, 69, 0.08)'
+                          ? 'rgba(var(--app-color-danger-rgb), 0.08)'
                           : 'transparent',
                       borderRadius: 'var(--app-radius-knopf)',
                       border: mediaPreview || isRecording ? 'none' : '1px dashed var(--app-border-strong)',

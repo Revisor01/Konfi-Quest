@@ -458,7 +458,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           marginBottom: index < zuweisbare.length - 1 ? 'var(--app-abstand-eng)' : '0',
-                          background: istGewaehlt ? 'rgba(102, 126, 234, 0.08)' : undefined
+                          background: istGewaehlt ? 'rgba(var(--app-color-users-rgb), 0.08)' : undefined
                         }}
                       >
                         <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{person.display_name}</span>

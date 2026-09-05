@@ -290,7 +290,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* Validierungs-Hinweis - Passwörter stimmen nicht überein */}
         {passwordData.new_password && passwordData.confirm_password && !passwordsMatch && (
           <IonList inset={true} className="app-modal-section">
-            <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-danger-rgb), 0.08)', border: '1px solid rgba(var(--app-color-danger-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis)' }}>
                 <IonText color="danger">
                   <p style={{ margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
@@ -305,7 +305,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* Bestätigung wenn alles passt */}
         {isValid && (
           <IonList inset={true} className="app-modal-section">
-            <IonCard className="app-card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-success-fresh-rgb), 0.08)', border: '1px solid rgba(var(--app-color-success-fresh-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', color: 'var(--app-color-success-fresh)' }}>
                   <IonIcon icon={ICON_ZUSAGE_GEFUELLT} />

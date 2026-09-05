@@ -427,7 +427,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
+                            background: isSelected ? 'rgba(var(--app-color-events-rgb), 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)', flex: 1, minWidth: 0 }}>

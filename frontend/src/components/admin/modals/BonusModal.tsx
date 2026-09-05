@@ -210,8 +210,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                   // Farben wie bisher: Gemeinde gruen, Gottesdienst blau.
                   const rahmen = art === 'gemeinde' ? 'var(--app-color-gemeinde)' : 'var(--app-color-gottesdienst)';
                   const fuellung = art === 'gemeinde'
-                    ? 'rgba(5, 150, 105, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)';
+                    ? 'rgba(var(--app-color-success-strong-rgb), 0.1)'
+                    : 'rgba(var(--app-color-gottesdienst-rgb), 0.1)';
                   return (
                     <div
                       key={art}

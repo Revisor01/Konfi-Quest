@@ -332,7 +332,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               style={{
                 '--border-color': 'var(--app-color-danger)',
                 '--color': 'var(--app-color-danger)',
-                '--background-hover': 'rgba(220, 53, 69, 0.1)',
+                '--background-hover': 'rgba(var(--app-color-danger-rgb), 0.1)',
                 '--border-width': '2px',
                 height: '48px',
                 fontWeight: 'var(--app-schrift-halbfett)'

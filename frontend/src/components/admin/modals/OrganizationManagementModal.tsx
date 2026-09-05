@@ -926,7 +926,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   }} disabled={isSubmitting} />
                 </IonItem>
                 {!formData.is_active && (
-                  <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
+                  <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-danger-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
                     <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-danger)' }} />
                     <IonLabel><p style={{ color: 'var(--app-color-danger)', margin: 0, fontWeight: 'var(--app-schrift-mittel)' }}>Inaktive Organisationen sind gesperrt</p></IonLabel>
                   </IonItem>
@@ -963,7 +963,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </IonItem>
                 </IonList>
 
-                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
+                <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
                   <IonIcon icon={ICON_SCHILD} slot="start" style={{ color: 'var(--app-color-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-color-users)', margin: 0, fontWeight: 'var(--app-schrift-mittel)', fontSize: 'var(--app-text-sekundaer)' }}>
@@ -1050,7 +1050,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                 {/* Neuen Admin hinzufügen */}
                 {showAddAdmin && (
-                  <div style={{ marginTop: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)', background: 'rgba(102, 126, 234, 0.05)', borderRadius: 'var(--app-radius-karte)', border: '1px dashed var(--app-color-users)' }}>
+                  <div style={{ marginTop: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)', background: 'rgba(var(--app-color-users-rgb), 0.05)', borderRadius: 'var(--app-radius-karte)', border: '1px dashed var(--app-color-users)' }}>
                     <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Neuen Administrator hinzufügen</h4>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: 'var(--app-abstand-eng)' }}>
@@ -1187,7 +1187,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         detail={false}
                         lines="none"
                         onClick={() => memberAddingId === null && handleAddMember(u.id)}
-                        style={{ '--background': 'rgba(102, 126, 234, 0.05)', '--border-radius': '10px' }}
+                        style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.05)', '--border-radius': '10px' }}
                       >
                         <IonLabel>
                           <h3 style={{ margin: 0 }}>{u.display_name}</h3>
@@ -1297,7 +1297,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   )}
                 </IonList>
 
-                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
+                <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
                   <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-color-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>
@@ -1401,7 +1401,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   )}
                 </IonList>
 
-                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
+                <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-mittel)' }}>
                   <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-color-users)' }} />
                   <IonLabel>
                     <p style={{ color: 'var(--app-color-users)', margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>

@@ -1198,9 +1198,9 @@ const TeamerEventsPage: React.FC = () => {
                     <div
                       className="app-status-box"
                       style={{
-                        backgroundColor: 'rgba(156, 163, 175, 0.12)',
+                        backgroundColor: 'rgba(var(--app-color-neutral-hell-rgb), 0.12)',
                         color: 'var(--app-color-neutral)',
-                        borderColor: 'rgba(156, 163, 175, 0.35)'
+                        borderColor: 'rgba(var(--app-color-neutral-hell-rgb), 0.35)'
                       }}
                     >
                       <IonIcon icon={ICON_INFO_GEFUELLT} />

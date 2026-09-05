@@ -125,8 +125,8 @@ export const ReplyPreview = React.memo<ReplyPreviewProps>(({ replyToMessage, onC
     display: 'flex',
     alignItems: 'center',
     padding: 'var(--app-abstand-eng) var(--app-abstand-basis)',
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
-    borderTop: '1px solid rgba(6, 182, 212, 0.15)',
+    backgroundColor: 'rgba(var(--app-color-chat-rgb), 0.08)',
+    borderTop: '1px solid rgba(var(--app-color-chat-rgb), 0.15)',
     borderLeft: '3px solid var(--app-color-chat)',
     gap: 'var(--app-abstand-eng)'
   }}>
@@ -174,8 +174,8 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
     display: 'flex',
     alignItems: 'center',
     padding: 'var(--app-abstand-schmal) var(--app-abstand-basis)',
-    backgroundColor: 'rgba(6, 182, 212, 0.06)',
-    borderTop: '1px solid rgba(6, 182, 212, 0.12)',
+    backgroundColor: 'rgba(var(--app-color-chat-rgb), 0.06)',
+    borderTop: '1px solid rgba(var(--app-color-chat-rgb), 0.12)',
     borderLeft: '3px solid var(--app-color-chat)',
     gap: 'var(--app-abstand-schmal)'
   }}>
@@ -204,7 +204,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
         width: '44px',
         height: '44px',
         borderRadius: 'var(--app-radius-klein)',
-        backgroundColor: 'rgba(6, 182, 212, 0.15)',
+        backgroundColor: 'rgba(var(--app-color-chat-rgb), 0.15)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -342,10 +342,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
           flex: 1,
           backgroundColor: 'white',
           borderRadius: 'var(--app-radius-extragross)',
-          border: '1.5px solid rgba(6, 182, 212, 0.3)',
+          border: '1.5px solid rgba(var(--app-color-chat-rgb), 0.3)',
           overflow: 'hidden',
           // Tuerkiser Hauch-Schatten des Chat-Banners — bleibt bewusst inline (05.09.2026, Token-Konsolidierung)
-          boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)',
+          boxShadow: '0 1px 4px rgba(var(--app-color-chat-rgb), 0.1)',
           display: 'flex',
           alignItems: 'center'
         }}>
@@ -416,7 +416,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
             '--border-radius': '19px',
             '--padding-start': '0',
             '--padding-end': '0',
-            '--box-shadow': '0 2px 8px rgba(6, 182, 212, 0.35)',
+            '--box-shadow': '0 2px 8px rgba(var(--app-color-chat-rgb), 0.35)',
             minWidth: '38px',
             maxWidth: '38px',
             fontSize: 'var(--app-icon-chat-senden)'

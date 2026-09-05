@@ -93,7 +93,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
             </div>
             <IonLabel>Achtung</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-danger-rgb), 0.08)', border: '1px solid rgba(var(--app-color-danger-rgb), 0.2)' }}>
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <IonText color="danger">
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: 1.5 }}>
@@ -145,7 +145,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
         {/* Inline-Fehler */}
         {inlineError && (
           <IonList inset={true} className="app-modal-section">
-            <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-danger-rgb), 0.08)', border: '1px solid rgba(var(--app-color-danger-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis)' }}>
                 <IonText color="danger">
                   <p style={{ margin: 0, fontSize: 'var(--app-text-sekundaer)' }}>{inlineError}</p>

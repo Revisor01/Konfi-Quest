@@ -671,12 +671,12 @@ const TeamerDashboardPage: React.FC = () => {
                             ? 'rgba(255, 255, 255, 0.1)'
                             : isValid
                               ? 'rgba(255, 255, 255, 0.22)'
-                              : 'rgba(239, 68, 68, 0.3)',
+                              : 'rgba(var(--app-color-danger-rgb), 0.3)',
                           border: isNotEarned
                             ? '2px dashed rgba(255, 255, 255, 0.2)'
                             : isValid
                               ? '2px solid rgba(255, 255, 255, 0.55)'
-                              : '2px solid rgba(239, 68, 68, 0.5)',
+                              : '2px solid rgba(var(--app-color-danger-rgb), 0.5)',
                           boxShadow: isValid ? '0 4px 16px rgba(255, 255, 255, 0.15)' : 'none',
                           opacity: isNotEarned ? 0.5 : 1,
                           cursor: 'pointer',
@@ -694,7 +694,7 @@ const TeamerDashboardPage: React.FC = () => {
                             ? 'rgba(255, 255, 255, 0.15)'
                             : isValid
                               ? 'rgba(255, 255, 255, 0.4)'
-                              : 'rgba(239, 68, 68, 0.5)',
+                              : 'rgba(var(--app-color-danger-rgb), 0.5)',
                           color: 'white'
                         }}>
                           <IonIcon
@@ -934,14 +934,14 @@ const TeamerDashboardPage: React.FC = () => {
                           onClick={() => router.push(`/teamer/events?eventId=${event.id}`)}
                           style={{
                             background: isWaitlist
-                              ? 'rgba(251, 191, 36, 0.25)'
+                              ? 'rgba(var(--app-wrapped-gold-rgb), 0.25)'
                               : undefined,
                             position: 'relative',
                             overflow: 'hidden',
                             border: event.cancelled
                               ? '2px dashed rgba(255,255,255,0.3)'
                               : isWaitlist
-                                ? '2px solid rgba(251, 191, 36, 0.5)'
+                                ? '2px solid rgba(var(--app-wrapped-gold-rgb), 0.5)'
                                 : 'none',
                             cursor: 'pointer',
                             transition: 'transform 0.2s ease, background 0.2s ease'

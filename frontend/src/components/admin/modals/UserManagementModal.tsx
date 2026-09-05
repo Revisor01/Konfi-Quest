@@ -620,7 +620,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         marginBottom: index < jahrgaenge.length - 1 ? 'var(--app-abstand-eng)' : '0',
-                        background: isAssigned ? 'rgba(102, 126, 234, 0.08)' : undefined
+                        background: isAssigned ? 'rgba(var(--app-color-users-rgb), 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{jahrgang.name}</span>

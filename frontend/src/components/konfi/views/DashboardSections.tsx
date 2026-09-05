@@ -201,14 +201,14 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
       className="app-dashboard-glass-card"
       style={{
         background: isWaitlist
-          ? 'rgba(251, 191, 36, 0.25)'
+          ? 'rgba(var(--app-wrapped-gold-rgb), 0.25)'
           : undefined,
         position: 'relative',
         overflow: 'hidden',
         border: event.cancelled
           ? '2px dashed rgba(255,255,255,0.3)'
           : isWaitlist
-            ? '2px solid rgba(251, 191, 36, 0.5)'
+            ? '2px solid rgba(var(--app-wrapped-gold-rgb), 0.5)'
             : 'none',
         cursor: 'pointer',
         transition: 'transform 0.2s ease, background 0.2s ease'

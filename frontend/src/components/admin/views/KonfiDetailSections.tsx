@@ -133,8 +133,8 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
       padding: 'var(--app-abstand-weit)',
       margin: 'var(--app-abstand-basis)',
       boxShadow: isTeamer
-        ? '0 20px 40px rgba(225, 29, 72, 0.3)'
-        : '0 20px 40px rgba(91, 33, 182, 0.3)',
+        ? '0 20px 40px rgba(var(--app-color-teamer-rgb), 0.3)'
+        : '0 20px 40px rgba(var(--app-color-konfis-rgb), 0.3)',
       position: 'relative',
       overflow: 'hidden'
     }}
@@ -1104,7 +1104,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
           {totals.gottesdienst > 0 && (
             <div style={{
               flex: 1,
-              background: 'rgba(59, 130, 246, 0.1)',
+              background: 'rgba(var(--app-color-gottesdienst-rgb), 0.1)',
               borderRadius: 'var(--app-radius-knopf)',
               padding: 'var(--app-abstand-schmal)',
               textAlign: 'center'
@@ -1116,7 +1116,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
           {totals.gemeinde > 0 && (
             <div style={{
               flex: 1,
-              background: 'rgba(5, 150, 105, 0.1)',
+              background: 'rgba(var(--app-color-success-strong-rgb), 0.1)',
               borderRadius: 'var(--app-radius-knopf)',
               padding: 'var(--app-abstand-schmal)',
               textAlign: 'center'
@@ -1127,7 +1127,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
           )}
           <div style={{
             flex: 1,
-            background: 'rgba(91, 33, 182, 0.1)',
+            background: 'rgba(var(--app-color-konfis-rgb), 0.1)',
             borderRadius: 'var(--app-radius-knopf)',
             padding: 'var(--app-abstand-schmal)',
             textAlign: 'center'

@@ -108,7 +108,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
                         borderLeftColor: 'var(--app-color-zertifikate)',
                         cursor: 'pointer',
                         marginBottom: index < availableTypes.length - 1 ? 'var(--app-abstand-eng)' : '0',
-                        background: isSelected ? 'rgba(219, 39, 119, 0.1)' : undefined
+                        background: isSelected ? 'rgba(var(--app-color-zertifikate-rgb), 0.1)' : undefined
                       }}
                     >
                       <div className="app-list-item__row">

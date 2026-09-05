@@ -331,7 +331,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                             </div>
                             <span style={{
                               flexShrink: 0, fontSize: 'var(--app-text-hinweis)', fontWeight: 'var(--app-schrift-fett)', color: accent,
-                              background: isGodi ? 'rgba(59,130,246,0.12)' : 'rgba(4,120,87,0.12)',
+                              background: isGodi ? 'rgba(var(--app-color-gottesdienst-rgb), 0.12)' : 'rgba(var(--app-color-activities-rgb), 0.12)',
                               padding: 'var(--app-abstand-mini) var(--app-abstand-schmal)', borderRadius: 'var(--app-radius-knopf)', whiteSpace: 'nowrap'
                             }}>
                               +{selectedActivity.points}P
