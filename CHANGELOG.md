@@ -77,6 +77,12 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,
+  Gemeinde und der Reiter „Mitmachen" trugen je nach Ansicht verschiedene
+  Symbole, teils sogar verschiedene Farben. Auch Kopfbereiche und Hinweise
+  stehen bei Konfis, Team und Leitung jetzt gleich hoch.
+- Challenges haben eine eigene Farbe bekommen und teilen sich das Rot nicht
+  mehr mit dem Team-Bereich.
 - Zu- und Absage zu einem Termin stehen für das Team jetzt von Anfang an
   nebeneinander. Wer geantwortet hat, sieht nur noch den Gegenknopf —
   „Nicht mehr dabei" nach einer Zusage, „Doch dabei" nach einer Absage.
