@@ -42,7 +42,11 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   jahrgang: { primary: cssColor('jahrgang', FARBEN.jahrgang), secondary: cssColor('jahrgang-dunkel', FARBEN.jahrgangDunkel) },
   categories: { primary: cssColor('categories', FARBEN.categories), secondary: cssColor('categories-dunkel', FARBEN.categoriesDunkel) },
   level: { primary: cssColor('level', FARBEN.level), secondary: cssColor('level-dunkel', FARBEN.levelDunkel) },
-  challenges: { primary: cssColor('challenges', FARBEN.challenges), secondary: cssColor('teamer-dunkel', FARBEN.teamerDunkel) },
+  // Bis 06.09.2026 endete dieser Kopf auf teamer-dunkel -- ein Rest davon,
+  // dass Challenges frueher die Teamer-Farbe trugen. Nach dem Wechsel auf
+  // Indigo lief der Verlauf von Blau nach Beerenrot (Simon: "Der Header ist
+  // blau lila"). Jetzt wie bei allen anderen: x mit x-dunkel.
+  challenges: { primary: cssColor('challenges', FARBEN.challenges), secondary: cssColor('challenges-dunkel', FARBEN.challengesDunkel) },
 };
 
 // Hilfsfunktion: HEX zu RGB-String für rgba()

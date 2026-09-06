@@ -67,6 +67,34 @@ describe('Farben kommen aus Tokens', () => {
     expect(treffer).toEqual([]);
   });
 
+  it('keine CSS-REGEL enthaelt eine rohe Farbe', () => {
+    // DIE LUECKE, die diese Pruefung schliesst (Simon, 06.09.2026):
+    // Bis hierher sah der Test nur .tsx-Dateien an. In variables.css selbst
+    // standen 179 rohe Werte in den Regeln -- darunter zwei Kopfbereiche, die
+    // hart auf #be123c endeten. Nach dem Wechsel der Challenges-Farbe auf
+    // Indigo lief dieser Verlauf von Blau nach Rot; Simon sah einen
+    // "blau lila" Header. Der Test war gruen, weil er an der falschen Stelle
+    // suchte.
+    //
+    // Erlaubt bleiben: Token-DEFINITIONEN (dort MUSS der Wert stehen) und
+    // Ionic-Rueckfallwerte der Form var(--ion-x, #abc) -- das ist Ionics
+    // eigener Vertrag, kein Wert von uns.
+    const treffer: string[] = [];
+    for (const datei of ['src/theme/variables.css', 'src/theme/typografie.css', 'src/theme/abstaende.css']) {
+      const roh = lies(datei);
+      const ohneBlock = roh.replace(/\/\*[\s\S]*?\*\//g, '');
+      ohneBlock.split('\n').forEach((zeile, i) => {
+        const t = zeile.trim();
+        if (t.startsWith('--app-') || t.startsWith('--ion-')) return;   // Definition
+        if (/var\(--ion-[a-z-]+,\s*#/.test(zeile)) return;              // Ionic-Rueckfall
+        for (const hex of zeile.match(HEX) ?? []) {
+          treffer.push(`${datei}:${i + 1} ${hex}`);
+        }
+      });
+    }
+    expect(treffer).toEqual([]);
+  });
+
   it('es gibt fuer jede Rolle genau EINEN Verlauf, definiert in variables.css', () => {
     const css = lies('src/theme/variables.css');
     const anzahl = (name: string) => (css.match(new RegExp(`--app-gradient-${name}:`, 'g')) ?? []).length;
@@ -142,6 +170,7 @@ describe('theme/colors.ts spiegelt variables.css', () => {
     ['teamer', 'app-color-teamer'],
     ['teamerDunkel', 'app-color-teamer-dunkel'],
     ['challenges', 'app-color-challenges'],
+    ['challengesDunkel', 'app-color-challenges-dunkel'],
     ['users', 'app-color-users'],
     ['usersDunkel', 'app-color-users-dunkel'],
     ['badges', 'app-color-badges'],

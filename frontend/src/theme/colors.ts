@@ -27,6 +27,7 @@ export const FARBEN = {
   teamer: '#be185d', // --app-color-teamer
   teamerDunkel: '#831843', // --app-color-teamer-dunkel
   challenges: '#4f46e5', // --app-color-challenges (Indigo seit 05.09.2026)
+  challengesDunkel: '#4338ca', // --app-color-challenges-dunkel
   users: '#667eea', // --app-color-users
   usersDunkel: '#5a67d8', // --app-color-users-dunkel
   badges: '#f59e0b', // --app-color-badges

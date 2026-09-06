@@ -364,7 +364,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                     <div
                       style={{
                         width: '52px', height: '52px', borderRadius: 'var(--app-radius-kreis)',
-                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-akzent) 100%)',
+                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: 'var(--app-schatten-glow-challenges)'
                       }}
