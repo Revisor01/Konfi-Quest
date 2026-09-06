@@ -3629,11 +3629,32 @@ describe('Events Routes', () => {
         .send({ user_id: USERS.orgAdmin1.id });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Dieses Event ist nicht für Teamer:innen vorgesehen');
+      expect(res.body.error).toBe('Dieses Event ist nicht für das Team vorgesehen');
 
       const { rows } = await db.query(
         'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
         [event.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    // Die Gruppe heisst in der Oberflaeche "Team", nicht "Teamer:innen". Die
+    // Rueckmeldung an die Leitung sagt deshalb "nur fuer das Team" -- der
+    // Rollenname 'teamer' und die Spalte teamer_only bleiben davon unberuehrt.
+    it('Verbotener Fall: eine Konfi an einem Nur-Team-Termin wird mit 400 abgewiesen und die Meldung nennt das Team', async () => {
+      const eventId = await teamTermin({ teamerOnly: true });
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/participants`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ user_id: USERS.konfi1.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Dieses Event ist nur für das Team');
+
+      const { rows } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
       );
       expect(rows.length).toBe(0);
     });
