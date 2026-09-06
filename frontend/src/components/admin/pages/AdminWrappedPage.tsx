@@ -70,6 +70,24 @@ interface Jahrgang {
 const datum = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
+/**
+ * Vorschlag fuer den Zeitraum einer neuen Ausgabe: das laufende Konfi-Jahr,
+ * 1.9. bis 31.8. -- dieselbe Spanne, die das Backend ohne Angabe rechnet.
+ *
+ * Damit steht im Formular von vornherein das Richtige und niemand muss
+ * tippen; wer eine andere Spanne will (Zwischenstand, verkuerztes Jahr),
+ * aendert die beiden Felder.
+ *
+ * Vor dem 1.9. laeuft noch das Jahr, das im VORIGEN September begann --
+ * deshalb der Monatsvergleich statt schlicht getFullYear().
+ */
+function vorgeschlagenerZeitraum(): { start: string; ende: string } {
+  const heute = new Date();
+  // getMonth() ist zaehlt ab 0; 8 = September.
+  const startJahr = heute.getMonth() >= 8 ? heute.getFullYear() : heute.getFullYear() - 1;
+  return { start: `${startJahr}-09-01`, ende: `${startJahr + 1}-08-31` };
+}
+
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const [zeigeAlert] = useIonAlert();
@@ -87,6 +105,11 @@ const AdminWrappedPage: React.FC = () => {
   const [modalOffen, setModalOffen] = useState(false);
   const [neuerTitel, setNeuerTitel] = useState('');
   const [neuerJahrgang, setNeuerJahrgang] = useState<number | null>(null);
+  // Der Zeitraum der Ausgabe. Er steht seit jeher in wrapped_ausgaben und
+  // wurde angezeigt -- nur konnte ihn niemand setzen, und das Backend
+  // rechnete ohnehin mit einem anderen (Befund 06.09.2026).
+  const [neuerStart, setNeuerStart] = useState(vorgeschlagenerZeitraum().start);
+  const [neuerEnde, setNeuerEnde] = useState(vorgeschlagenerZeitraum().ende);
   const [erzeugt, setErzeugt] = useState(false);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
@@ -116,18 +139,38 @@ const AdminWrappedPage: React.FC = () => {
       setError('Bitte einen Jahrgang wählen');
       return;
     }
+    if (!neuerStart || !neuerEnde) {
+      setError('Bitte einen Zeitraum angeben');
+      return;
+    }
+    if (neuerStart > neuerEnde) {
+      // Sonst entstuende eine Ausgabe, die nichts zaehlen kann -- und der
+      // Fehler faellt erst auf, wenn alle Rueckblicke leer sind.
+      setError('Der Zeitraum endet vor seinem Anfang');
+      return;
+    }
     setErzeugt(true);
     try {
       const titel = neuerTitel.trim();
+      // Der Zeitraum geht IMMER mit -- sonst rechnet das Backend mit seinem
+      // Fallback, und im Formular staende eine Spanne, unter der Zahlen aus
+      // einer anderen liegen.
+      const rumpf: { titel?: string; zeitraum_start: string; zeitraum_ende: string } = {
+        zeitraum_start: neuerStart,
+        zeitraum_ende: neuerEnde,
+      };
+      if (titel) rumpf.titel = titel;
       if (segment === 'konfi') {
-        await api.post(`/wrapped/generate/${neuerJahrgang}`, titel ? { titel } : {});
+        await api.post(`/wrapped/generate/${neuerJahrgang}`, rumpf);
       } else {
-        await api.post('/wrapped/generate-teamer', titel ? { titel } : {});
+        await api.post('/wrapped/generate-teamer', rumpf);
       }
       setSuccess(titel ? `„${titel}" wurde erstellt und freigegeben` : 'Rückblick erstellt und freigegeben');
       setModalOffen(false);
       setNeuerTitel('');
       setNeuerJahrgang(null);
+      setNeuerStart(vorgeschlagenerZeitraum().start);
+      setNeuerEnde(vorgeschlagenerZeitraum().ende);
       await laden();
     } catch (e) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -432,7 +475,7 @@ const AdminWrappedPage: React.FC = () => {
                       </IonSelect>
                     </IonItem>
                   )}
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonInput
                       label="Name"
                       labelPlacement="stacked"
@@ -440,6 +483,28 @@ const AdminWrappedPage: React.FC = () => {
                       value={neuerTitel}
                       maxlength={120}
                       onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
+                    />
+                  </IonItem>
+                  {/* Der Zeitraum, den der Rueckblick zaehlt. Vorbelegt mit
+                      dem laufenden Konfi-Jahr, damit niemand tippen muss.
+                      Native Datumsfelder statt IonDatetime: zwei Kalender in
+                      einem Sheet waeren mehr Bedienung als die Sache wert. */}
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonInput
+                      type="date"
+                      label="Zeitraum von"
+                      labelPlacement="stacked"
+                      value={neuerStart}
+                      onIonInput={(e) => setNeuerStart(e.detail.value || '')}
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonInput
+                      type="date"
+                      label="Zeitraum bis"
+                      labelPlacement="stacked"
+                      value={neuerEnde}
+                      onIonInput={(e) => setNeuerEnde(e.detail.value || '')}
                     />
                   </IonItem>
                   {/* Hinweis im gemeinsamen Muster statt als loser Absatz

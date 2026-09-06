@@ -49,6 +49,11 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Beim Anlegen eines Rückblicks lässt sich jetzt der Zeitraum angeben, den er
+  zählen soll — vorbelegt mit dem laufenden Konfi-Jahr. Bisher stand in der
+  Übersicht ein Zeitraum, unter dem Zahlen aus einem anderen standen.
+- Bonuspunkte aus früheren Jahren zählen nicht mehr in den aktuellen
+  Rückblick.
 - Der Rückblick zeigt wieder, in welchem Monat jemand am meisten unterwegs
   war. Die Seite war seit dem Umbau der Reihenfolge aus dem Rückblick
   gefallen; sie erscheint jetzt zwischen Punkten und Abzeichen, sobald in

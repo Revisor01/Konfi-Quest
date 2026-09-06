@@ -830,7 +830,25 @@ class BackgroundService {
           );
 
           if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
-            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, today.getFullYear());
+            // ZEITRAUM DER AUTOMATISCHEN AUSGABE: das gerade abgelaufene
+            // KALENDERJAHR (1.1. bis 31.12. von year-1).
+            //
+            // Begruendung: Der Cron feuert am 6. Januar. Ohne ausdruecklichen
+            // Zeitraum faellt die Generierung auf das Arbeitsjahr
+            // 1.9.(year-1) bis 31.8.(year) zurueck -- am 6.1.2027 also auf
+            // einen Zeitraum, der zu ueber der Haelfte noch in der ZUKUNFT
+            // liegt. Der Rueckblick zaehlte dann vier Monate und nannte sie
+            // ein Jahr.
+            //
+            // Das Kalenderjahr passt hier besser als das Konfi-Jahr: Die
+            // Teamer-Ausgabe haengt an keinem Jahrgang und an keiner
+            // Konfirmation, und ein Rueckblick, der am 6. Januar kommt,
+            // meint das Jahr, das gerade zu Ende ging.
+            const jahr = today.getFullYear();
+            await this.wrappedRouter.generateAllTeamerWrapped(
+              db, org.id, jahr,
+              { start: `${jahr - 1}-01-01`, ende: `${jahr - 1}-12-31` }
+            );
             teamerOrgsGenerated++;
           }
         } catch (err) {

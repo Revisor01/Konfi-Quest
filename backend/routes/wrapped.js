@@ -40,11 +40,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * new Date(y, 8, 1).toISOString() -- letzteres rechnet Ortszeit nach UTC und
    * machte in Sommerzeit aus dem 1.9. den 31.8.
    */
-  function berechneZeitraum(konfirmationTermin, year) {
+  function berechneZeitraum(konfirmationTermin, year, vorgabe = null) {
     const iso = (d) => {
+      // Ein reiner Datumsstring bleibt UNANGETASTET. new Date('2025-10-01')
+      // ist Mitternacht UTC -- in Berlin also der 30.09. um 02:00, und
+      // getDate() liefert 30. Genau diese Verschiebung hat schon einmal aus
+      // dem 1.9. den 31.8. gemacht (siehe Kommentar oben); sie traefe jetzt
+      // jeden Zeitraum, den jemand im Formular eintraegt.
+      if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
       const dt = (d instanceof Date) ? d : new Date(d);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     };
+    // Ein AUSDRUECKLICH gesetzter Zeitraum geht vor. Er kommt aus dem
+    // Anlege-Formular und steht so auch in der Ausgabe (wrapped_ausgaben) --
+    // die angezeigte Spanne und die Zahlen darunter muessen dieselbe sein.
+    // Der Konfirmationstermin bleibt als ANGABE erhalten (die Konfirmations-
+    // Seite zeigt ihn), er bestimmt dann nur nicht mehr das Ende.
+    if (vorgabe && vorgabe.start && vorgabe.ende) {
+      return {
+        start: iso(vorgabe.start),
+        ende: iso(vorgabe.ende),
+        konfirmation: konfirmationTermin ? iso(konfirmationTermin) : null
+      };
+    }
     if (konfirmationTermin) {
       const termin = new Date(konfirmationTermin);
       const start = `${termin.getFullYear() - 1}-09-01`;
@@ -53,7 +71,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     return { start: `${year - 1}-09-01`, ende: `${year}-08-31`, konfirmation: null };
   }
 
-  async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year) {
+  async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year, zeitraumVorgabe = null) {
     // Konfirmationstermin je Jahrgang aus dem is_konfirmation-Event ableiten
     // (frueheste nicht-cancelled Konfirmation, org-gescopt) -- ersetzt die alte
     // Jahrgang-Stichtag-Spalte (D-04/D-05).
@@ -69,11 +87,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
 
-    const zeitraum = berechneZeitraum(konfirmationTermin, year);
+    const zeitraum = berechneZeitraum(konfirmationTermin, year, zeitraumVorgabe);
     const zeitraumStart = zeitraum.start;
     const zeitraumEnde = zeitraum.ende;
 
-    // Punkte aus konfi_profiles
+    // Punkte aus konfi_profiles.
+    //
+    // BEWUSST OHNE ZEITFILTER: Das sind laufende STAENDE, keine Ereignisse --
+    // konfi_profiles fuehrt zwei Summenspalten und kein Datum, an dem sich
+    // filtern liesse. Der Endspurt weiter unten vergleicht sie mit dem Ziel
+    // des Jahrgangs; beides ist der aktuelle Stand und muss zueinander
+    // passen.
     const { rows: [profile] } = await client.query(
       `SELECT kp.gottesdienst_points, kp.gemeinde_points
        FROM konfi_profiles kp
@@ -83,10 +107,20 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const gottesdienst = profile ? profile.gottesdienst_points : 0;
     const gemeinde = profile ? profile.gemeinde_points : 0;
 
-    // Bonus-Punkte
+    // Bonus-Punkte im Zeitraum.
+    //
+    // BEFUND 06.09.2026: Diese Query hatte als einzige EREIGNIS-Query keinen
+    // Zeitfilter -- sie summierte alle Bonuspunkte seit Kontobeginn. Bei
+    // einem Konto, das ein zweites Konfi-Jahr durchlaeuft, trug der
+    // Rueckblick damit die Sonderpunkte des Vorjahres mit. bonus_points hat
+    // ein completed_date (Spalte existiert in Produktion), der Filter war
+    // also jederzeit moeglich.
     const { rows: [bonusRow] } = await client.query(
-      `SELECT COALESCE(SUM(points), 0) as total FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2`,
-      [userId, orgId]
+      `SELECT COALESCE(SUM(points), 0) as total FROM bonus_points
+        WHERE konfi_id = $1 AND organization_id = $2
+          AND completed_date >= $3::date
+          AND completed_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const bonus = parseInt(bonusRow.total, 10) || 0;
 
@@ -231,7 +265,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const termineDaten = termineDatenRows.map(r => r.event_date);
 
-    // Gesamt-Events verfuegbar für diesen Jahrgang
+    // Gesamt-Events verfuegbar für diesen Jahrgang.
+    // BEWUSST OHNE ZEITFILTER: die Bezugsgroesse "wie viele Termine gab es
+    // ueberhaupt", nicht eine Zahl aus dem Zeitraum.
     const { rows: [totalEventsRow] } = await client.query(
       `SELECT COUNT(DISTINCT e.id) as count FROM events e
        JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $2
@@ -264,6 +300,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        ORDER BY ub.awarded_date DESC`,
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
+    // BEWUSST OHNE ZEITFILTER: wie viele Abzeichen es in der Gemeinde gibt.
+    // Eine Konfiguration der Gemeinde, kein Ereignis im Zeitraum.
     const { rows: [totalBadgesRow] } = await client.query(
       `SELECT COUNT(*) as count FROM custom_badges WHERE organization_id = $1`,
       [orgId]
@@ -383,7 +421,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? { monat: monatRows[0].monat, monat_name: MONAT_NAMEN[monatRows[0].monat] || '', aktivitaeten: parseInt(monatRows[0].count, 10) }
       : { monat: 0, monat_name: '', aktivitaeten: 0 };
 
-    // Endspurt: Vergleich mit Zielwerten aus jahrgaenge
+    // Endspurt: Vergleich mit Zielwerten aus jahrgaenge.
+    // BEWUSST OHNE ZEITFILTER: die Zielvorgabe des Jahrgangs ist eine
+    // Einstellung, kein Ereignis.
     const { rows: [jahrgang] } = await client.query(
       `SELECT target_gottesdienst, target_gemeinde, gottesdienst_enabled, gemeinde_enabled
        FROM jahrgaenge WHERE id = $1`,
@@ -1022,10 +1062,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Parallele Hilfsfunktion: Generiert und speichert einen Konfi-Snapshot.
    * Holt eigenen DB-Client aus dem Pool (kein geteilter Client für parallele Queries).
    */
-  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year, ausgabeId = null) {
+  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year, ausgabeId = null, zeitraumVorgabe = null) {
     const konfiClient = await dbRef.getClient();
     try {
-      const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year);
+      const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year, zeitraumVorgabe);
       // Der Schluessel schliesst seit Migration 144 die AUSGABE ein: Je
       // Ausgabe ein Snapshot pro Person. Innerhalb einer Ausgabe bleibt der
       // Lauf idempotent (Korrektur ueberschreibt), zwei Ausgaben stehen
@@ -1209,6 +1249,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // gar keine Snapshots erzeugt haette.
         const titel = (req.body?.titel || '').trim()
           || `Rückblick ${jahrgang.name || currentYear}`;
+
+        // Der Zeitraum der Ausgabe -- DIESELBEN Werte, die unten in
+        // wrapped_ausgaben landen und die die Oberflaeche anzeigt.
+        //
+        // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert
+        // und gespeichert, aber NIE an die Generierung uebergeben. Gerechnet
+        // wurde immer mit berechneZeitraum(konfirmationTermin, currentYear).
+        // Solange das Formular kein Datumsfeld hatte, fiel das nicht auf --
+        // sobald jemand einen Zeitraum eintraegt, staenden Zahlen aus einem
+        // anderen Zeitraum darunter.
+        //
+        // null, wenn nichts angegeben wurde: dann greift wie bisher das
+        // Konfirmations-Fallback in berechneZeitraum.
+        const zeitraumStartVorgabe = req.body?.zeitraum_start || null;
+        const zeitraumEndeVorgabe = req.body?.zeitraum_ende || null;
+        const zeitraumVorgabe = (zeitraumStartVorgabe && zeitraumEndeVorgabe)
+          ? { start: zeitraumStartVorgabe, ende: zeitraumEndeVorgabe }
+          : null;
         const { rows: [ausgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1217,8 +1275,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'konfi', $2, $3, $4::date, $5::date, NOW(), $6, $6)
            RETURNING id, titel`,
           [req.user.organization_id, jahrgangId, titel,
-           req.body?.zeitraum_start || `${currentYear - 1}-09-01`,
-           req.body?.zeitraum_ende || `${currentYear}-08-31`,
+           zeitraumStartVorgabe || `${currentYear - 1}-09-01`,
+           zeitraumEndeVorgabe || `${currentYear}-08-31`,
            req.user.id]
         );
 
@@ -1235,7 +1293,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
         const results = await Promise.allSettled(
-          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id))
+          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe))
         );
         const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
         const errors = results.length - generated;
@@ -1291,11 +1349,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     rbacVerifier,
     requireOrgAdmin,
     body('titel').optional({ nullable: true }).isString().trim().isLength({ min: 1, max: 120 }),
+    // Zeitraum wie bei den Konfis. Fehlte hier komplett -- die Teamer-Route
+    // nahm nur einen Titel entgegen und schrieb einen fest gerechneten
+    // Zeitraum in die Ausgabe.
+    body('zeitraum_start').optional({ nullable: true }).isISO8601(),
+    body('zeitraum_ende').optional({ nullable: true }).isISO8601(),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
       try {
         const currentYear = new Date().getFullYear();
+
+        const zeitraumStartVorgabe = req.body?.zeitraum_start || null;
+        const zeitraumEndeVorgabe = req.body?.zeitraum_ende || null;
+        const zeitraumVorgabe = (zeitraumStartVorgabe && zeitraumEndeVorgabe)
+          ? { start: zeitraumStartVorgabe, ende: zeitraumEndeVorgabe }
+          : null;
 
         await client.query('BEGIN');
 
@@ -1320,7 +1389,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)
            RETURNING id, titel`,
           [req.user.organization_id, teamerTitel,
-           `${currentYear - 1}-09-01`, `${currentYear}-08-31`, req.user.id]
+           zeitraumStartVorgabe || `${currentYear - 1}-09-01`,
+           zeitraumEndeVorgabe || `${currentYear}-08-31`, req.user.id]
         );
 
         let generated = 0;
@@ -1328,7 +1398,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         for (const teamer of teamers) {
           try {
-            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear);
+            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear, zeitraumVorgabe);
 
             await client.query(
               `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, ausgabe_id, data, computed_at)
@@ -1732,7 +1802,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Generiert Konfi-Wrapped für alle Konfis eines Jahrgangs.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
-  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year) => {
+  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year, zeitraumVorgabe = null) => {
     const client = await dbRef.getClient();
     try {
       await client.query('BEGIN');
@@ -1747,7 +1817,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
       const results = await Promise.allSettled(
-        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year))
+        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year, null, zeitraumVorgabe))
       );
       const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
       const errors = results.length - generated;
@@ -1781,7 +1851,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Generiert Teamer-Wrapped für alle Teamer einer Organisation.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
-  router.generateAllTeamerWrapped = async (dbRef, orgId, year) => {
+  router.generateAllTeamerWrapped = async (dbRef, orgId, year, zeitraumVorgabe = null) => {
     const client = await dbRef.getClient();
     try {
       await client.query('BEGIN');
@@ -1798,7 +1868,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       for (const teamer of teamers) {
         try {
-          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year);
+          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year, zeitraumVorgabe);
           await client.query(
             `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
              VALUES ($1, $2, 'teamer', $3, $4, NOW())

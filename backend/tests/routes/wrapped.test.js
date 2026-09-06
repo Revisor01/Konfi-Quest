@@ -357,6 +357,34 @@ describe('Wrapped Routes', () => {
         .toEqual(['Juleica im Zeitraum']);
     });
 
+    it('Ein angegebener Zeitraum schlaegt bis in die Teamer-Zahlen durch', async () => {
+      // Die Teamer-Route nahm bis zum 06.09.2026 ueberhaupt keinen Zeitraum
+      // entgegen -- nur einen Titel.
+      const drin = await termin('November', IM_ZEITRAUM);
+      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+      await buchung(USERS.teamer1.id, drin);
+      await buchung(USERS.teamer1.id, draussen);
+
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      const snap = rows[0].data;
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+      // Nur der Termin im engen Fenster.
+      expect(snap.slides.events_geleitet.total).toBe(1);
+    });
+
     it('Der Snapshot benennt seinen Zeitraum', async () => {
       const snap = await snapshotVonTeamer1();
       expect(snap.slides.zeitraum.year).toBe(JAHR);
@@ -944,8 +972,13 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(gen.status).toBe(200);
 
+      // Der zuletzt erzeugte Snapshot: Jeder Lauf legt eine eigene Ausgabe
+      // an (Migration 144), zwei Laeufe in einem Test stehen also
+      // nebeneinander.
       const { rows } = await db.query(
-        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
         [USERS.konfi1.id]
       );
       expect(rows).toHaveLength(1);
@@ -1080,6 +1113,150 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
       expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-05-10`);
       expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR}-05-10`);
+    });
+
+    // ------------------------------------------------------------
+    // Der angegebene Zeitraum schlaegt bis in die Zahlen durch.
+    //
+    // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert und
+    // in wrapped_ausgaben geschrieben -- aber NIE an die Generierung
+    // uebergeben. Gerechnet wurde immer mit dem Konfirmations-/Fallback-
+    // Zeitraum. In der Oberflaeche haette eine Spanne gestanden, unter der
+    // Zahlen aus einer anderen liegen.
+    // ------------------------------------------------------------
+    /**
+     * Erzeugt Wrapped mit ausdruecklichem Zeitraum; gibt konfi1s Snapshot.
+     *
+     * Jeder Lauf legt eine eigene AUSGABE an und damit einen eigenen
+     * Snapshot (Migration 144, ausgabe_id gehoert zum Schluessel) -- deshalb
+     * gezielt der Snapshot DIESER Ausgabe, nicht "der eine".
+     */
+    async function snapshotMitZeitraum(start, ende) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    it('Der angegebene Zeitraum steht im Snapshot -- nicht der Fallback', async () => {
+      const snap = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+    });
+
+    it('Der angegebene Zeitraum entscheidet, welche Termine zaehlen', async () => {
+      // IM_ZEITRAUM ist der 15.11., liegt also im engeren Fenster;
+      // der zweite Termin liegt im Fallback-Jahr, aber ausserhalb davon.
+      const drin = await termin('November', IM_ZEITRAUM);
+      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+      await buchung(USERS.konfi1.id, drin);
+      await buchung(USERS.konfi1.id, draussen);
+
+      // Der Fallback (1.9.-31.8.) wuerde beide zaehlen.
+      const weit = await snapshotVonKonfi1();
+      expect(weit.slides.events.total_attended).toBe(2);
+
+      // Der ausdrueckliche Zeitraum nur den einen.
+      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(eng.slides.events.total_attended).toBe(1);
+    });
+
+    it('Der angegebene Zeitraum schlaegt bis in die Challenge-Zahlen durch', async () => {
+      // Die Challenge-Queries filtern laengst -- aber auf den Zeitraum, den
+      // die Generierung kennt. Bekam sie den falschen, zaehlten auch sie
+      // falsch. Der Test haelt die Kette fest, nicht nur die Query.
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by,
+            starts_at, ends_at)
+         VALUES ('Mutprobe', 'Trau dich', 'Mutig', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year')
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const beitrag = async (datum) => db.query(
+        `INSERT INTO challenge_submissions
+           (challenge_id, user_id, organization_id, media_type, moderation_status, created_at)
+         VALUES ($1, $2, $3, 'text', 'approved', $4::timestamptz)`,
+        [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id, `${datum} 10:00:00`]
+      );
+      await beitrag(IM_ZEITRAUM);          // 15.11., im engen Fenster
+      await beitrag(`${JAHR}-06-15`);      // im Fallback-Jahr, ausserhalb
+
+      const weit = await snapshotVonKonfi1();
+      expect(weit.slides.challenges.beitraege).toBe(2);
+      expect(weit.slides.challenge_momente).toHaveLength(2);
+
+      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(eng.slides.challenges.beitraege).toBe(1);
+      expect(eng.slides.challenge_momente).toHaveLength(1);
+    });
+
+    it('Bonuspunkte zaehlen nur im Zeitraum', async () => {
+      // Diese Query war die einzige Ereignis-Query ohne Zeitfilter: Sie
+      // summierte alle Bonuspunkte seit Kontobeginn. Der Seed legt bereits
+      // 3 Punkte mit completed_date = heute an.
+      await db.query('DELETE FROM bonus_points');
+      await db.query(
+        `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, completed_date)
+         VALUES ($1, 5, 'gemeinde', 'Im Zeitraum', $2, $3, $4::date)`,
+        [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, IM_ZEITRAUM]
+      );
+      await db.query(
+        `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, completed_date)
+         VALUES ($1, 7, 'gemeinde', 'Im Vorjahr', $2, $3, $4::date)`,
+        [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, VOR_ZEITRAUM]
+      );
+
+      const snap = await snapshotVonKonfi1();
+      // Nur die 5 aus dem Zeitraum, nicht 12.
+      expect(snap.slides.punkte.bonus).toBe(5);
+    });
+
+    it('Ohne Angabe bleibt es beim bisherigen Fallback', async () => {
+      // Alt-Verhalten unveraendert: Wer keinen Zeitraum angibt, bekommt
+      // genau das, was er vorher bekam.
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
+    });
+
+    it('Der Zeitraum der Ausgabe und der des Snapshots sind derselbe', async () => {
+      // Der eigentliche Befund: Die Ausgabe zeigte eine Spanne, die
+      // Generierung rechnete mit einer anderen.
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+
+      const { rows: [ausgabe] } = await db.query(
+        `SELECT zeitraum_start, zeitraum_ende FROM wrapped_ausgaben
+          WHERE titel = 'Zwischenstand'`
+      );
+      const { rows: [snapRow] } = await db.query(
+        `SELECT s.data FROM wrapped_snapshots s
+           JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+          WHERE s.user_id = $1 AND s.wrapped_type = 'konfi' AND a.titel = 'Zwischenstand'`,
+        [USERS.konfi1.id]
+      );
+      // Die DATE-Spalte kommt als JS-Date in Ortszeit zurueck.
+      // toISOString() rechnete sie nach UTC und machte aus dem 1.10. den
+      // 30.9. -- dieselbe Falle, gegen die berechneZeitraum() sich wehrt.
+      const iso = (d) => {
+        const dt = new Date(d);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      };
+      expect(iso(ausgabe.zeitraum_start)).toBe(snapRow.data.slides.zeitraum.start);
+      expect(iso(ausgabe.zeitraum_ende)).toBe(snapRow.data.slides.zeitraum.ende);
     });
 
     // ------------------------------------------------------------
