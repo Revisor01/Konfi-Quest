@@ -40,6 +40,10 @@ Versionsüberschrift.
 - Einzelne Seiten des Jahresrückblicks lassen sich wieder teilen. Bei rund der
   Hälfte der Seiten kam bisher ein leeres, schwarzes Bild heraus — darunter die
   Einladung ins Team, die jede Konfi am Ende bekommt.
+- Der Rückblick für Teamer:innen zeigt jetzt wirklich das Jahr. Termine,
+  Abzeichen und Zertifikate wurden bisher seit dem allerersten Tag gezählt —
+  wer seit Jahren dabei ist, sah alles auf einmal unter einer Jahreszahl. Wie
+  lange jemand schon im Team ist, bleibt bewusst die Gesamtzeit.
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
 - Auf der Startseite des Teams stehen unter „Zertifikate" nur noch die
   wirklich erhaltenen. Wer keine hat, sieht den Block gar nicht mehr statt

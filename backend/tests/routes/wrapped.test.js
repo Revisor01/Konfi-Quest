@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ORGS, BADGES } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const PushService = require('../../services/pushService');
 
@@ -228,6 +228,163 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // Zahlen im Teamer-Snapshot: der Zeitraum (Befund 06.09.2026)
+  // ================================================================
+  //
+  // generateTeamerSnapshot filterte KEINE ihrer sechs Abfragen auf den
+  // Zeitraum -- das `year` landete nur in slides.zeitraum.year. Der
+  // "Jahresrueckblick" zaehlte damit die gesamte Kontolebenszeit: Wer seit
+  // vier Jahren im Team ist, sah Termine, Abzeichen und Zertifikate aus vier
+  // Jahren unter einer Jahreszahl.
+  describe('Zahlen im Teamer-Snapshot', () => {
+    const JAHR = new Date().getFullYear();
+    // Fallback-Zeitraum des Teamer-Rueckblicks: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
+    const VOR_ZEITRAUM = `${JAHR - 2}-06-15`; // ein volles Jahr davor
+    const NACH_ZEITRAUM = `${JAHR}-10-15`;
+
+    async function termin(name, datum) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, $2::timestamp, $3, false, 0, 'gemeinde', 1) RETURNING id`,
+        [name, `${datum} 10:00:00`, ORGS.testGemeinde.id]
+      );
+      return e.id;
+    }
+
+    async function buchung(userId, eventId) {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', 'present', NOW())`,
+        [userId, eventId, ORGS.testGemeinde.id]
+      );
+    }
+
+    async function abzeichen(userId, badgeId, datum) {
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, $4::timestamptz)`,
+        [userId, badgeId, ORGS.testGemeinde.id, `${datum} 10:00:00`]
+      );
+    }
+
+    async function zertifikat(userId, name, datum) {
+      const { rows: [ct] } = await db.query(
+        `INSERT INTO certificate_types (name, organization_id) VALUES ($1, $2) RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, organization_id, issued_date)
+         VALUES ($1, $2, $3, $4::date)`,
+        [userId, ct.id, ORGS.testGemeinde.id, datum]
+      );
+    }
+
+    /** Erzeugt Teamer-Wrapped und gibt den Snapshot von teamer1 zurueck. */
+    async function snapshotVonTeamer1() {
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    beforeEach(async () => {
+      // Der Seed legt vier Termine 7 Tage in der Zukunft an -- die liegen
+      // je nach Kalendertag im oder ausserhalb des Zeitraums. Fuer eine
+      // bekannte Datenlage raeumen wir das Feld leer.
+      await db.query('DELETE FROM event_bookings');
+      await db.query('DELETE FROM event_jahrgang_assignments');
+      await db.query('DELETE FROM events');
+      await db.query('DELETE FROM user_badges');
+    });
+
+    it('Termine vor und nach dem Zeitraum zaehlen nicht mit', async () => {
+      const drin = await termin('Konfitreff im Zeitraum', IM_ZEITRAUM);
+      const davor = await termin('Konfitreff im Vorjahr', VOR_ZEITRAUM);
+      const danach = await termin('Konfitreff im Folgejahr', NACH_ZEITRAUM);
+      await buchung(USERS.teamer1.id, drin);
+      await buchung(USERS.teamer1.id, davor);
+      await buchung(USERS.teamer1.id, danach);
+
+      const snap = await snapshotVonTeamer1();
+      // Drei Termine gebucht, genau einer liegt im Rueckblicksjahr.
+      expect(snap.slides.events_geleitet.total).toBe(1);
+    });
+
+    it('Der Termin mit den meisten Teilnehmenden stammt aus dem Zeitraum', async () => {
+      // Der groessere Termin liegt im VORJAHR. Ungefiltert haette er
+      // gewonnen und der Rueckblick haette einen fremden Termin gefeiert.
+      const gross = await termin('Grosse Freizeit im Vorjahr', VOR_ZEITRAUM);
+      const klein = await termin('Kleiner Treff im Zeitraum', IM_ZEITRAUM);
+      await buchung(USERS.teamer1.id, gross);
+      await buchung(USERS.konfi1.id, gross);
+      await buchung(USERS.konfi2.id, gross);
+      await buchung(USERS.teamer1.id, klein);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.events_geleitet.meiste_teilnehmer_event).not.toBe(null);
+      expect(snap.slides.events_geleitet.meiste_teilnehmer_event.name)
+        .toBe('Kleiner Treff im Zeitraum');
+    });
+
+    it('Ein Abzeichen aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
+      await abzeichen(USERS.teamer1.id, BADGES.streak.id, IM_ZEITRAUM);
+      await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, VOR_ZEITRAUM);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.badges.total_earned).toBe(1);
+      expect(snap.slides.badges.badges.map(b => b.name)).toEqual([BADGES.streak.name]);
+    });
+
+    it('Ein Zertifikat aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
+      await zertifikat(USERS.teamer1.id, 'Juleica im Zeitraum', IM_ZEITRAUM);
+      await zertifikat(USERS.teamer1.id, 'Erste Hilfe im Vorjahr', VOR_ZEITRAUM);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zertifikate.total).toBe(1);
+      expect(snap.slides.zertifikate.zertifikate.map(z => z.name))
+        .toEqual(['Juleica im Zeitraum']);
+    });
+
+    it('Der Snapshot benennt seinen Zeitraum', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.year).toBe(JAHR);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
+    });
+
+    // BEWUSST OHNE ZEITFILTER -- kein Versehen, sondern eine Entscheidung:
+    // "seit 4 Jahren dabei" IST der Lebenszeitwert und die Aussage der
+    // Seite. Auf ein Jahr eingegrenzt kaeme dort immer 1 heraus.
+    it('Die Jahre im Team bleiben ein Lebenszeitwert -- gerechnet bis zum Zeitraum-Ende', async () => {
+      // Eintritt genau vier Jahre vor dem Ende des Rueckblicksjahres.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 4}-08-31`, USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.engagement.jahre_aktiv).toBe(4);
+    });
+
+    // "Konfis betreut" ist ein ZUSTAND, kein Ereignis: die Zuweisung
+    // user_jahrgang_assignments traegt kein Datum. Der Wert bleibt deshalb
+    // ungefiltert -- der Test haelt das fest, damit es niemand versehentlich
+    // "mitfiltert".
+    it('Die betreuten Konfis bleiben ungefiltert -- die Zuweisung hat kein Datum', async () => {
+      const snap = await snapshotVonTeamer1();
+      // Der Seed weist teamer1 den Jahrgang 1 zu; dort liegen konfi1 und konfi2.
+      expect(snap.slides.konfis_betreut.total_konfis).toBe(2);
+      expect(snap.slides.konfis_betreut.jahrgaenge).toContain(JAHRGAENGE.jahrgang1.name);
     });
   });
 

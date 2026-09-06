@@ -226,6 +226,12 @@ export interface TeamerEngagementSlide {
 
 export interface TeamerZeitraumSlide {
   year: number;
+  // Additiv ab Snapshot-Version 2 (06.09.2026): der Zeitraum, auf den die
+  // Zahlen des Teamer-Rueckblicks eingegrenzt sind. Version-1-Snapshots
+  // haben die Felder nicht -- dort zaehlten die Zahlen noch die gesamte
+  // Kontolebenszeit, weshalb sie optional bleiben.
+  start?: string;
+  ende?: string;
 }
 
 export interface TeamerWrappedData {

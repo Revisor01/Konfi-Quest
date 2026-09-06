@@ -856,14 +856,55 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     return schnappschuss;
   }
 
-  async function generateTeamerSnapshot(client, userId, orgId, year) {
+  /**
+   * Teamer-Rueckblick eines Jahres.
+   *
+   * BEFUND 06.09.2026: Diese Funktion filterte KEINE ihrer sechs Abfragen auf
+   * den Zeitraum. Das `year` landete nur in slides.zeitraum.year -- die Zahlen
+   * darunter zaehlten die gesamte Kontolebenszeit. Wer seit vier Jahren im
+   * Team ist, sah in seinem "Jahresrueckblick" alle Termine aus vier Jahren.
+   * Der Konfi-Zweig macht es seit dem 01.09.2026 richtig (berechneZeitraum),
+   * der Teamer-Zweig blieb dabei stehen.
+   *
+   * WAS AUF DEN ZEITRAUM GEFILTERT WIRD -- und was bewusst nicht:
+   *
+   *   gefiltert: Termine, der Termin mit den meisten Teilnehmenden, Abzeichen
+   *     und Zertifikate. Das sind EREIGNISSE mit Datum. Ein Abzeichen aus dem
+   *     Vorjahr gehoert nicht in diesen Jahresrueckblick -- es war die
+   *     Nachricht des VORIGEN Jahres und wuerde sie hier ein zweites Mal
+   *     erzaehlen.
+   *
+   *   NICHT gefiltert: "Konfis betreut". Das ist ein ZUSTAND, kein Ereignis --
+   *     user_jahrgang_assignments traegt kein Datum, an dem man filtern
+   *     koennte, und die Aussage "du begleitest 13 Konfis" ist ohnehin als
+   *     Gegenwart gemeint, nicht als Jahressumme.
+   *
+   *   NICHT gefiltert: teamer_since / jahre_aktiv. Das IST der Lebenszeitwert
+   *     und genau die Aussage der Seite ("seit 4 Jahren dabei"). Auf ein Jahr
+   *     eingegrenzt kaeme dort immer 1 heraus und die Seite verloere ihren
+   *     Sinn. Gerechnet wird sie aber jetzt gegen das ZEITRAUM-ENDE statt
+   *     gegen Date.now(): Ein Rueckblick auf 2024, im Jahr 2026 nochmals
+   *     geoeffnet, sagte sonst "6 Jahre" -- eine Zahl, die zum Rueckblick
+   *     nicht passt und sich mit jedem Aufruf aendert.
+   */
+  async function generateTeamerSnapshot(client, userId, orgId, year, zeitraumVorgabe = null) {
+    // Ohne ausdruecklichen Zeitraum das volle Arbeitsjahr 1.9.(year-1) bis
+    // 31.8.(year) -- dieselbe Regel wie beim Konfi-Fallback.
+    const zeitraum = (zeitraumVorgabe && zeitraumVorgabe.start && zeitraumVorgabe.ende)
+      ? { start: zeitraumVorgabe.start, ende: zeitraumVorgabe.ende }
+      : { start: `${year - 1}-09-01`, ende: `${year}-08-31` };
+    const zeitraumStart = zeitraum.start;
+    const zeitraumEnde = zeitraum.ende;
+
     // Events geleitet (Teamer war als Teilnehmer gebucht)
     const { rows: [eventsGeleitetRow] } = await client.query(
       `SELECT COUNT(*) as count FROM event_bookings eb
        JOIN events e ON eb.event_id = e.id
        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-         AND e.organization_id = $2`,
-      [userId, orgId]
+         AND e.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const eventsGeleitet = parseInt(eventsGeleitetRow.count, 10) || 0;
 
@@ -875,16 +916,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        LEFT JOIN event_bookings eb2 ON e.id = eb2.event_id AND eb2.status = 'confirmed' AND eb2.attendance_status = 'present'
        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
          AND e.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')
        GROUP BY e.id, e.name
        ORDER BY teilnehmer DESC
        LIMIT 1`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const meisteTeilnehmerEvent = topEventRows.length > 0
       ? { name: topEventRows[0].name, count: parseInt(topEventRows[0].teilnehmer, 10) }
       : null;
 
-    // Konfis betreut (über zugewiesene Jahrgänge)
+    // Konfis betreut (über zugewiesene Jahrgänge).
+    // BEWUSST OHNE ZEITFILTER: ein Zustand, kein Ereignis (siehe oben).
     const { rows: konfiRows } = await client.query(
       `SELECT COUNT(DISTINCT kp.user_id) as total,
               ARRAY_AGG(DISTINCT j.name) as jahrgaenge
@@ -899,36 +943,49 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? konfiRows[0].jahrgaenge.filter(Boolean)
       : [];
 
-    // Badges
+    // Badges -- nur die im Zeitraum verliehenen (wie beim Konfi-Rueckblick).
     const { rows: teamerBadges } = await client.query(
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
+         AND ub.awarded_date >= $3::date
+         AND ub.awarded_date < ($4::date + INTERVAL '1 day')
        ORDER BY ub.awarded_date DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
-    // Zertifikate
+    // Zertifikate -- ebenfalls nur die im Zeitraum ausgestellten.
     const { rows: certRows } = await client.query(
       `SELECT ct.name, uc.issued_date FROM user_certificates uc
        JOIN certificate_types ct ON uc.certificate_type_id = ct.id
        WHERE uc.user_id = $1 AND uc.organization_id = $2
+         AND uc.issued_date >= $3::date
+         AND uc.issued_date < ($4::date + INTERVAL '1 day')
        ORDER BY uc.issued_date DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
-    // Jahre aktiv (teamer_since)
+    // Jahre aktiv (teamer_since). BEWUSST EIN LEBENSZEITWERT -- aber gegen
+    // das Zeitraum-Ende gerechnet, nicht gegen "jetzt" (siehe oben).
     const { rows: [userRow] } = await client.query(
       `SELECT teamer_since FROM users WHERE id = $1`,
       [userId]
     );
     const teamerSeit = userRow && userRow.teamer_since ? userRow.teamer_since : null;
+    const stichtag = new Date(`${zeitraumEnde}T00:00:00`).getTime();
     const jahreAktiv = teamerSeit
-      ? Math.max(1, Math.floor((Date.now() - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
+      ? Math.max(1, Math.floor((stichtag - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
       : 0;
 
     return {
-      version: 1,
+      // Version 2 (06.09.2026): alle Ereignis-Zahlen sind auf den Zeitraum
+      // eingegrenzt. Rein ADDITIV zu Version 1 -- kein Feld entfernt,
+      // umbenannt oder umtypisiert; `zeitraum` bekommt nur start/ende dazu.
+      // Ausgelieferte Apps lesen weiterhin dieselben Felder. Bereits
+      // erzeugte Version-1-Snapshots liegen unveraendert in der Datenbank
+      // und werden nie neu gerechnet -- der alte Rueckblick bleibt der
+      // alte Rueckblick.
+      version: 2,
       slides: {
         events_geleitet: {
           total: eventsGeleitet,
@@ -951,7 +1008,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           jahre_aktiv: jahreAktiv
         },
         zeitraum: {
-          year
+          year,
+          // Additiv (ab Version 2): alte Apps ignorieren die Felder, neue
+          // koennen den Zeitraum benennen, statt ihn aus `year` zu raten.
+          start: zeitraumStart,
+          ende: zeitraumEnde
         }
       }
     };
