@@ -86,6 +86,8 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Die Gruppe heißt in der App jetzt durchgehend „Team“ — in Titeln, Reitern,
+  Listen und Hinweisen. Die einzelne Person bleibt „Teamer:in“.
 - Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,
   Gemeinde und der Reiter „Mitmachen" trugen je nach Ansicht verschiedene
   Symbole, teils sogar verschiedene Farben. Auch Kopfbereiche und Hinweise

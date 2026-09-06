@@ -51,7 +51,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/profile', rbacVerifier, (req, res, next) => {
     // Nur Teamer dürfen ihr Profil abrufen
     if (req.user.role_name !== 'teamer') {
-      return res.status(403).json({ error: 'Nur Teamer können dieses Profil abrufen' });
+      return res.status(403).json({ error: 'Nur das Team kann dieses Profil abrufen' });
     }
     next();
   }, async (req, res) => {
@@ -195,7 +195,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/konfi-history', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können die Konfi-Historie abrufen' });
+        return res.status(403).json({ error: 'Nur das Team kann die Konfi-Historie abrufen' });
       }
 
       const { history, totals } = await getPunkteHistorie(db, req.user.id, req.user.organization_id);
@@ -238,7 +238,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/badges', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
+        return res.status(403).json({ error: 'Nur das Team kann Teamer-Badges abrufen' });
       }
 
       // Gerechnet wird in utils/teamerBadgeProgress.js — EINE Quelle fuer
@@ -276,7 +276,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/badges/v2', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
+        return res.status(403).json({ error: 'Nur das Team kann Teamer-Badges abrufen' });
       }
 
       const ergebnis = await getTeamerBadgeProgress(db, req.user.id, req.user.organization_id);
@@ -298,7 +298,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/badges/unseen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können Badge-Status abrufen' });
+        return res.status(403).json({ error: 'Nur das Team kann Badge-Status abrufen' });
       }
 
       const { rows: [result] } = await db.query(
@@ -329,7 +329,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können Badges als gesehen markieren' });
+        return res.status(403).json({ error: 'Nur das Team kann Badges als gesehen markieren' });
       }
 
       await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
@@ -356,7 +356,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.post('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können Badges als gesehen markieren' });
+        return res.status(403).json({ error: 'Nur das Team kann Badges als gesehen markieren' });
       }
 
       await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
@@ -518,7 +518,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       if (parseInt(usage.count) > 0) {
         return res.status(409).json({
-          error: 'Zertifikat-Typ kann nicht gelöscht werden: bereits an Teamer:innen vergeben.'
+          error: 'Zertifikat-Typ kann nicht gelöscht werden: bereits im Team vergeben.'
         });
       }
 
@@ -644,7 +644,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/dashboard', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer können das Dashboard abrufen' });
+        return res.status(403).json({ error: 'Nur das Team kann das Dashboard abrufen' });
       }
 
       const userId = req.user.id;
@@ -849,7 +849,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // (org-gefiltert, gleiche Aufbereitung wie GET /konfi/konfsprueche).
   router.get('/konfsprueche', rbacVerifier, requireTeamer, async (req, res) => {
     if (req.user.role_name !== 'teamer') {
-      return res.status(403).json({ error: 'Nur Teamer können die Spruchliste abrufen' });
+      return res.status(403).json({ error: 'Nur das Team kann die Spruchliste abrufen' });
     }
     try {
       const orgId = req.user.organization_id;
@@ -896,7 +896,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Accounts haben noch keine.
   router.patch('/profile', rbacVerifier, requireTeamer, async (req, res) => {
     if (req.user.role_name !== 'teamer') {
-      return res.status(403).json({ error: 'Nur Teamer können ihren Konfispruch setzen' });
+      return res.status(403).json({ error: 'Nur das Team kann seinen Konfispruch setzen' });
     }
     try {
       const userId = req.user.id;
