@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { IonIcon, IonSpinner } from '@ionic/react';
-import { ICON_SCHLIESSEN, ICON_TEILEN } from '../shared/icons';
+import { IonIcon, IonSpinner, IonToast } from '@ionic/react';
+import { ICON_SCHLIESSEN, ICON_TEILEN, ICON_WARNHINWEIS } from '../shared/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -126,6 +126,10 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const [titel, setTitel] = useState<string | null>(initialTitel ?? null);
   const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
   const [isSharing, setIsSharing] = useState(false);
+  // Rueckmeldung zum Teilen. Bis zum 06.09.2026 gab es KEINE: Jeder Fehler
+  // wurde still verschluckt, und wer teilte und nichts sah, wusste nicht,
+  // ob die App noch arbeitet oder ob etwas schiefgegangen ist.
+  const [teilenHinweis, setTeilenHinweis] = useState<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -486,7 +490,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     try {
       const currentKey = slides[activeIndex]?.key || 'intro';
       const textData = getSlideTextData(currentKey);
-      await shareSlide(shareCardRef.current, currentKey, wrappedType, textData);
+      const ergebnis = await shareSlide(shareCardRef.current, currentKey, wrappedType, textData);
+
+      // ABGEBROCHEN BLEIBT STILL: Wer das Teilen-Blatt zuschiebt, hat sich
+      // entschieden -- eine Meldung darauf waere Bevormundung.
+      if (ergebnis.art === 'nur-text') {
+        setTeilenHinweis('Das Bild hat nicht geklappt — geteilt wurde nur der Text.');
+      } else if (ergebnis.art === 'fehler') {
+        setTeilenHinweis('Teilen hat nicht geklappt. Versuch es noch einmal.');
+      }
+    } catch {
+      // shareSlide faengt selbst ab; hier landet nur das Unerwartete.
+      setTeilenHinweis('Teilen hat nicht geklappt. Versuch es noch einmal.');
     } finally {
       setIsSharing(false);
     }
@@ -508,8 +523,19 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           <div className="wrapped-pagination" />
         )}
         {data && (
-          <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
-            <IonIcon icon={ICON_TEILEN} />
+          <button
+            className="wrapped-share-btn"
+            onClick={handleShare}
+            disabled={isSharing}
+            aria-label={isSharing ? 'Bild wird erstellt' : 'Teilen'}
+            aria-busy={isSharing}
+          >
+            {/* Das Erzeugen des Bildes dauert einen Moment (gemessen rund
+                300-800 ms). Ohne sichtbaren Ladezustand wirkt der Knopf in
+                dieser Zeit tot, und es wird ein zweites Mal getippt. */}
+            {isSharing
+              ? <IonSpinner name="crescent" className="wrapped-share-spinner" />
+              : <IonIcon icon={ICON_TEILEN} />}
           </button>
         )}
         <button className="wrapped-close-btn" onClick={onClose} aria-label="Schließen">
@@ -542,6 +568,20 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         </Swiper>
         </MotivKontext.Provider>
       )}
+
+      {/* Die Meldung gehoert IN das Overlay: Der Rueckblick liegt als
+          eigene Ebene ueber der App, ein Hinweis aus dem gewoehnlichen
+          Toast-Bereich laege darunter und waere nicht zu sehen. */}
+      <IonToast
+        isOpen={!!teilenHinweis}
+        message={teilenHinweis || ''}
+        duration={4000}
+        position="top"
+        color="danger"
+        icon={ICON_WARNHINWEIS}
+        swipeGesture="vertical"
+        onDidDismiss={() => setTeilenHinweis(null)}
+      />
 
       {data && year && (
         <ShareCard

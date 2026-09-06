@@ -201,6 +201,20 @@ ion-modal.wrapped-modal-fullscreen {
   cursor: not-allowed;
 }
 
+/* Waehrend das Bild entsteht, dreht sich der Knopf. Er behaelt seine
+   Groesse, damit der Kopfbereich nicht springt. */
+.wrapped-share-spinner {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+}
+
+/* Die Meldung zum Teilen liegt ueber dem Rueckblick (z-index 9999), sonst
+   waere sie hinter dem Overlay unsichtbar. */
+.wrapped-overlay ion-toast {
+  z-index: 10000;
+}
+
 /* ========================================
    Swiper Container
    ======================================== */

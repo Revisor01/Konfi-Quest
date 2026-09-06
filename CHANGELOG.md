@@ -42,6 +42,10 @@ Versionsüberschrift.
   Einladung ins Team, die jede Konfi am Ende bekommt.
 - Das geteilte Bild sieht jetzt aus wie die Seite, von der es stammt: mit
   ihrem Hintergrundmotiv, ihrer Farbe und demselben Spruch.
+- Wenn das Teilen nicht klappt, sagt die App es jetzt, statt kommentarlos
+  nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
+- Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
+  bisher landete sie nur im Download-Ordner.
 - Der Rückblick für Teamer:innen zeigt jetzt wirklich das Jahr. Termine,
   Abzeichen und Zertifikate wurden bisher seit dem allerersten Tag gezählt —
   wer seit Jahren dabei ist, sah alles auf einmal unter einer Jahreszahl. Wie
