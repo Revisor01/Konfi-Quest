@@ -1,7 +1,10 @@
 # Offene Befunde
 
-Gemeldet von Simon, noch nicht behoben. Eine Zeile pro Befund, mit dem, was
-nachgemessen wurde — damit die nächste Sitzung nicht bei null anfängt.
+Gemeldete und geprüfte Befunde, mit dem, was jeweils nachgemessen wurde —
+damit die nächste Sitzung nicht bei null anfängt. Behobene und als
+gegenstandslos erwiesene Befunde bleiben stehen und werden im Titel als
+solche markiert; sonst liest sich die Liste wie eine Reihe offener Lücken,
+die längst zu sind.
 
 ---
 
@@ -108,3 +111,40 @@ geladen, oder behält die Oberfläche ihren alten Stand im Speicher?
 
 Weiche Erwartungen sind hier ein Fehler: `toBeGreaterThanOrEqual(0)` würde
 den Fehler durchlassen. Auf den konkreten Wert prüfen.
+
+---
+
+## 2. Sicherheitsmeldungen zu react-router (07.09.2026) — GEPRÜFT, TRIFFT UNS NICHT
+
+Zwei Meldungen zu `react-router` 6.30.6 stehen offen und lassen sich nicht
+durch ein Update schließen. Nachgemessen am 07.09.2026:
+
+**Warum kein Update möglich ist.** Der Fix existiert ausschließlich in
+7.18.0; für den 6er-Zweig gibt es keinen. Ein Sprung auf 7 ist mit Ionic
+ausgeschlossen — `@ionic/react-router` deklariert als Peer:
+
+    "react-router":     ">=6.4.0 <7"
+    "react-router-dom": ">=6.4.0 <7"
+
+Das gilt für die installierte 9.0.1, für die neueste 9.0.2 und auch für die
+Nightly 9.0.3. Es ist eine harte Obergrenze, keine Empfehlung. Die Meldungen
+bleiben also offen, bis Ionic nachzieht — das liegt nicht bei uns.
+
+**Beide Lücken greifen bei uns nicht:**
+
+| Meldung | Trifft zu? | Begründung |
+|---|---|---|
+| Constructor Injection in `deserializeErrors()` (SSR-Hydration) | nein | Wir haben kein SSR. Die App ist eine Vite-SPA in einer Capacitor-Hülle; der betroffene Pfad läuft nie. |
+| Open Redirect via Backslash in `<Link>` / `useNavigate` | nein | Alle Navigationsziele sind feste Pfade mit eingesetzter ID (`/konfi/events/${event.id}`, `/admin/chat/room/${room.id}`). Nirgends fließt ein nutzergesteuerter Pfad oder eine ganze Adresse in ein Ziel. |
+
+Die zweite Zeile ist der Punkt, der bei jedem Umbau neu gilt: **Sobald
+irgendwo ein Ziel aus Nutzereingaben, einer API-Antwort oder einem
+Push-Datenfeld gebaut wird, ist die Lücke wieder da.** Wer so etwas
+einführt, prüft das Ziel gegen eine Erlaubnisliste, statt es direkt
+weiterzureichen.
+
+**Zum Gegenprüfen** (die Suche, die den Befund trägt):
+
+    grep -rn 'navigate(`\|push(`\|routerLink={`' frontend/src
+
+Erwartet: ausschließlich feste Pfade mit eingesetzten IDs.
