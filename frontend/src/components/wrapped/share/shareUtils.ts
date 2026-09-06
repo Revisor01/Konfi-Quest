@@ -22,6 +22,53 @@ function generateFallbackText(data: ShareTextData): string {
   return `${prefix} - Schau dir meinen Rückblick an! #KonfiQuest`;
 }
 
+
+/**
+ * Wartet, bis das Hintergrundfoto der Karte wirklich geladen ist.
+ *
+ * WARUM: html-to-image zeichnet, was DA IST. Ein Motiv, das im Moment des
+ * Tippens noch laedt, fehlt im Bild -- ohne Fehler und ohne Meldung. Die
+ * Motive werden zwar mit der App ausgeliefert, aber beim allerersten
+ * Oeffnen einer Seite sind sie noch nicht im Zwischenspeicher.
+ *
+ * decode() statt onload: Es wartet nicht nur auf die Bytes, sondern auch
+ * darauf, dass das Bild entpackt ist -- erst dann kann es gezeichnet werden.
+ */
+async function wartAufBilder(el: HTMLElement): Promise<void> {
+  const foto = el.querySelector('.share-card-foto') as HTMLElement | null;
+  const stil = foto?.style.backgroundImage;
+  const treffer = stil?.match(/url\(["']?([^"')]+)["']?\)/);
+  if (!treffer) return;
+  try {
+    const bild = new Image();
+    bild.src = treffer[1];
+    await bild.decode();
+  } catch {
+    // Bild fehlt oder laesst sich nicht entpacken: Die Karte wird dann
+    // ohne Foto exportiert -- mit Farbverlauf und Text ist sie immer noch
+    // ein brauchbares Bild. Besser als gar nichts zu teilen.
+  }
+}
+
+/**
+ * Erzeugt das Teilen-Bild.
+ *
+ * KEIN cacheBust (gemessen 06.09.2026): Die Option haengt einen Zeitstempel
+ * an jede Bild-Adresse. html-to-image liest den Dateityp aber aus der
+ * Endung -- aus `watt.webp` wird `watt.webp?1757200000000`, und die
+ * Typerkennung liefert dann eine leere Zeichenkette statt `image/webp`.
+ * Gebraucht wird die Option ohnehin nicht: Die Motive liegen fest in der
+ * App und aendern sich nicht unter der Hand.
+ */
+async function erzeugeBild(el: HTMLElement): Promise<string> {
+  await wartAufBilder(el);
+  return toPng(el, {
+    width: 1080,
+    height: 1920,
+    pixelRatio: 1,
+  });
+}
+
 export async function shareSlide(
   cardElement: HTMLElement,
   slideKey: string,
@@ -29,13 +76,7 @@ export async function shareSlide(
   textFallbackData: ShareTextData
 ): Promise<void> {
   try {
-    // Bild-Export via html-to-image
-    const dataUrl = await toPng(cardElement, {
-      width: 1080,
-      height: 1920,
-      pixelRatio: 1,
-      cacheBust: true,
-    });
+    const dataUrl = await erzeugeBild(cardElement);
 
     if (Capacitor.isNativePlatform()) {
       // Native: Filesystem + Share-Sheet

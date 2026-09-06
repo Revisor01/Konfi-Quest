@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import type { KonfiWrappedData, TeamerWrappedData } from '../../../types/wrapped';
 import { TEXTE, stufeFuer } from '../slides/kategorieSeitenTexte';
 import { tageBis } from '../../shared/eventFormatting';
+import { hintergrundFuer } from '../hintergrundbilder';
 import './ShareCard.css';
 
 interface ShareCardProps {
@@ -11,6 +12,13 @@ interface ShareCardProps {
   displayName: string;
   jahrgangName?: string;
   year: number;
+  /**
+   * Das Motiv dieser Seite, wie es der Rueckblick gerade zeigt. Es kommt aus
+   * der Verteilung des GANZEN Rueckblicks (verteileMotive), damit das
+   * geteilte Bild dasselbe Foto traegt wie die Seite auf dem Bildschirm.
+   * Ohne Angabe greift die feste Zuordnung.
+   */
+  motiv?: string;
 }
 
 // Typografie-Konsolidierung 05.09.2026: Dieses Bauteil bleibt bewusst bei
@@ -19,7 +27,7 @@ interface ShareCardProps {
 // hinge es an rem, veraenderte die Systemschriftgroesse des Geraets das
 // exportierte Bild.
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  ({ slideKey, data, wrappedType, displayName, jahrgangName, year }, ref) => {
+  ({ slideKey, data, wrappedType, displayName, jahrgangName, year, motiv }, ref) => {
     const isTeamer = wrappedType === 'teamer';
     const konfi = !isTeamer ? (data as KonfiWrappedData) : null;
     const teamer = isTeamer ? (data as TeamerWrappedData) : null;
@@ -37,6 +45,19 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           : slideKey;
 
     const bgClass = `share-card share-card--${klassenName}${isTeamer ? ' share-card--teamer' : ''}`;
+
+    // DAS FOTO DER SEITE.
+    //
+    // Warum als Inline-Stil und nicht als CSS-Regel: Welche Seite welches
+    // Motiv bekommt, entscheidet sich zur Laufzeit (verteileMotive verteilt
+    // sie so, dass sich in einem Rueckblick keines wiederholt). Eine feste
+    // Regel je Seite koennte das nicht abbilden.
+    //
+    // Der Farbverlauf der Seite liegt als eigene Schicht DARUEBER -- unten
+    // dicht, oben offen. Genau wie im Rueckblick selbst: Ohne diese Schicht
+    // waere weisser Text auf einem hellen Himmel auf dem Handy in der Sonne
+    // nicht zu lesen.
+    const bild = motiv || hintergrundFuer(slideKey);
 
     /**
      * Wie viele Termine stecken hinter einer Kategorie- oder Datums-Seite?
@@ -181,6 +202,25 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         // Challenge-Momente: BEWUSST nur Text und Challenge-Titel. Fotos, Audio
         // und Video der Konfis werden NIE in ein Teilen-Bild eingebettet
         // (Datenschutz — das Bild verlässt die App).
+        // Die ZAHL der Challenges (die Bilder stehen im Zweig darunter).
+        case 'challenges': {
+          if (!konfi) return null;
+          const ch = konfi.slides.challenges;
+          if (!ch) return null;
+          return (
+            <>
+              <div className="share-label">Meine Kraftproben</div>
+              <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1 }}>{ch.beitraege}</div>
+              <div className="share-sub">Mal mitgemacht</div>
+              {ch.top_challenge && (
+                <div className="share-sub" style={{ marginTop: 24, opacity: 0.85 }}>
+                  Am liebsten bei „{ch.top_challenge.title}“
+                </div>
+              )}
+            </>
+          );
+        }
+
         case 'challenge-momente': {
           if (!konfi) return null;
           const momente = (konfi.slides.challenge_momente || []).slice(0, 4);
@@ -540,10 +580,38 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
       }
     };
 
+    // DIE HUELLE VERSTECKT, DIE KARTE SELBST NICHT (gemessen 06.09.2026).
+    //
+    // Der Verweis (ref) zeigt auf die KARTE, nicht mehr auf die versteckte
+    // Huelle. Das ist kein Schoenheitsfehler, sondern war die Ursache des
+    // gemeldeten schwarzen Bildes:
+    //
+    // html-to-image klont den Knoten in ein <foreignObject> und uebernimmt
+    // dabei seinen berechneten Stil -- `position: fixed` bleibt, `left`
+    // faellt weg. Der Inhalt landet damit ausserhalb des sichtbaren
+    // Bereichs, und heraus kommt ein vollstaendig durchsichtiges Bild.
+    // Gemessen: Aus der versteckten Huelle kamen 0 % gefuellte Bildpunkte,
+    // aus der Karte darin 96 %. Dasselbe gilt fuer `opacity: 0` --
+    // die Durchsichtigkeit wandert mit in den Klon.
+    //
+    // Die Huelle darf weiterhin verschoben sein: Was auf IHR steht, wird
+    // nicht mitgeklont.
     return (
-      <div className="share-card-container" ref={ref}>
-        <div className={bgClass}>
-          {renderContent()}
+      <div className="share-card-container">
+        <div className={bgClass} ref={ref}>
+          {bild && (
+            <>
+              <div
+                className="share-card-foto"
+                style={{ backgroundImage: `url(${bild})` }}
+              />
+              <div className="share-card-schleier" />
+              <div className="share-card-abdunklung" />
+            </>
+          )}
+          <div className="share-card-inhalt">
+            {renderContent()}
+          </div>
           <div className="share-card-watermark">Konfi Quest</div>
         </div>
       </div>

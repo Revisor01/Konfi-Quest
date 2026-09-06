@@ -552,6 +552,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           displayName={displayName}
           jahrgangName={jahrgangName}
           year={year}
+          // Dasselbe Motiv wie die Seite auf dem Bildschirm: Die Verteilung
+          // sorgt dafuer, dass sich in einem Rueckblick kein Bild
+          // wiederholt -- die feste Zuordnung allein wuerde ein anderes
+          // Foto liefern als das, was die Konfi gerade sieht.
+          motiv={motive[slides[activeIndex]?.key || 'intro']?.haupt}
         />
       )}
     </div>

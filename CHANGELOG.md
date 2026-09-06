@@ -40,6 +40,8 @@ Versionsüberschrift.
 - Einzelne Seiten des Jahresrückblicks lassen sich wieder teilen. Bei rund der
   Hälfte der Seiten kam bisher ein leeres, schwarzes Bild heraus — darunter die
   Einladung ins Team, die jede Konfi am Ende bekommt.
+- Das geteilte Bild sieht jetzt aus wie die Seite, von der es stammt: mit
+  ihrem Hintergrundmotiv, ihrer Farbe und demselben Spruch.
 - Der Rückblick für Teamer:innen zeigt jetzt wirklich das Jahr. Termine,
   Abzeichen und Zertifikate wurden bisher seit dem allerersten Tag gezählt —
   wer seit Jahren dabei ist, sah alles auf einmal unter einer Jahreszahl. Wie
