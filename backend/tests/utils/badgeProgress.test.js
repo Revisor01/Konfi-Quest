@@ -52,6 +52,7 @@ describe('berechneBadgeProgress: kaputtes criteria_extra zerreisst nichts', () =
   it.each([
     'specific_activity',
     'category_activities',
+    'category_combination',
     'activity_combination',
     'time_based'
   ])('%s mit unlesbarem criteria_extra ergibt 0 statt eines Fehlers', (typ) => {
@@ -178,6 +179,73 @@ describe('berechneBadgeProgress: unbekannte Kriterien', () => {
   );
 });
 
+describe('berechneBadgeProgress: category_combination', () => {
+  // Der Unterschied zu category_activities: dort zaehlt EINE Kategorie
+  // mehrfach, hier zaehlt jede Kategorie hoechstens einmal. Das ist genau
+  // der Grund, warum es den Typ gibt -- "3 Freizeiten" soll drei
+  // VERSCHIEDENE meinen.
+  it('zaehlt jede abgedeckte Kategorie einmal', () => {
+    const p = berechneBadgeProgress(
+      badge('category_combination', 3, {
+        required_categories: ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit']
+      }),
+      { abgedeckteKategorien: new Set(['Konfifahrt', 'Übernachtung']) }
+    );
+    expect(p).toEqual({ current: 2, target: 3, percentage: (2 / 3) * 100 });
+  });
+
+  it('erfuellt: alle drei abgedeckt -> 3 von 3', () => {
+    const p = berechneBadgeProgress(
+      badge('category_combination', 3, {
+        required_categories: ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit']
+      }),
+      { abgedeckteKategorien: new Set(['Sommerfreizeit', 'Konfifahrt', 'Übernachtung']) }
+    );
+    expect(p).toEqual({ current: 3, target: 3, percentage: 100 });
+  });
+
+  it('nicht geforderte Kategorien treiben den Fortschritt nicht hoch', () => {
+    const p = berechneBadgeProgress(
+      badge('category_combination', 3, {
+        required_categories: ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit']
+      }),
+      { abgedeckteKategorien: new Set(['Konfifahrt', 'Konzert', 'Kreativ', 'Fest']) }
+    );
+    expect(p.current).toBe(1);
+  });
+
+  it('dieselbe Kategorie doppelt gefordert zaehlt nur einmal', () => {
+    // Sonst waere "3 verschiedene" mit einer einzigen Kategorie erfuellbar.
+    const p = berechneBadgeProgress(
+      badge('category_combination', 2, {
+        required_categories: ['Konfifahrt', 'Konfifahrt']
+      }),
+      { abgedeckteKategorien: new Set(['Konfifahrt']) }
+    );
+    expect(p.current).toBe(1);
+  });
+
+  it('ohne gelieferte Kategorien des Aufrufers bleibt es bei 0', () => {
+    // Der Aufrufer (Konfi- bzw. Teamer-Fortschritt) MUSS das Set liefern.
+    const p = berechneBadgeProgress(
+      badge('category_combination', 2, { required_categories: ['A', 'B'] }),
+      {}
+    );
+    expect(p.current).toBe(0);
+  });
+
+  it.each(['__proto__', 'constructor', 'toString'])(
+    'Kategorie "%s" ohne Eintrag zaehlt 0',
+    (name) => {
+      const p = berechneBadgeProgress(
+        badge('category_combination', 2, { required_categories: [name, 'Konfifahrt'] }),
+        { abgedeckteKategorien: new Set(['Konfifahrt']) }
+      );
+      expect(p.current).toBe(1);
+    }
+  );
+});
+
 describe('bedingungFehlt', () => {
   // Ein Abzeichen ohne hinterlegte Bedingung kann niemand erreichen: Die
   // Wertung prueft genau dieses Feld. In Org 1 standen so zehn aktive
@@ -189,7 +257,10 @@ describe('bedingungFehlt', () => {
     ['category_activities', { required_category: null }],
     ['activity_combination', {}],
     ['activity_combination', { required_activities: [] }],
-    ['activity_combination', { required_activities: 'kein Array' }]
+    ['activity_combination', { required_activities: 'kein Array' }],
+    ['category_combination', {}],
+    ['category_combination', { required_categories: [] }],
+    ['category_combination', { required_categories: 'kein Array' }]
   ])('%s ohne brauchbare Bedingung ist unerreichbar', (typ, extra) => {
     expect(bedingungFehlt(badge(typ, 3, extra))).toBe(true);
   });
@@ -197,7 +268,8 @@ describe('bedingungFehlt', () => {
   it.each([
     ['specific_activity', { required_activity_name: 'Konfitag' }],
     ['category_activities', { required_category: 'Musik' }],
-    ['activity_combination', { required_activities: ['A', 'B'] }]
+    ['activity_combination', { required_activities: ['A', 'B'] }],
+    ['category_combination', { required_categories: ['Konfifahrt', 'Übernachtung'] }]
   ])('%s mit Bedingung ist erreichbar', (typ, extra) => {
     expect(bedingungFehlt(badge(typ, 3, extra))).toBe(false);
   });

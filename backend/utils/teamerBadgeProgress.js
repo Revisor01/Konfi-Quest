@@ -19,6 +19,7 @@
 
 const { computeCurrentStreak } = require('./streakCalculation');
 const { berechneBadgeProgress, bedingungFehlt } = require('./badgeProgress');
+const { TEAMER_KATEGORIE_NAMEN_SQL } = require('./badgeKategorieRegel');
 
 // Ermittelt Abzeichen (verdient + offen + Fortschritt) fuer eine Teamer:in.
 // Erwartet: db (pg Pool), userId (users.id), orgId (organizations.id).
@@ -42,7 +43,7 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
   const { rows: badges } = await db.query(badgesQuery, [userId, orgId]);
 
   // Hauptmetriken einmalig abfragen für Fortschrittsberechnung
-  const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes, categoryCountsRes, actNamesRes, eventTitlesRes, allDatesRes] = await Promise.all([
+  const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes, categoryCountsRes, actNamesRes, eventTitlesRes, allDatesRes, kategorieNamenRes] = await Promise.all([
     // Teamer-Aktivitäten + Events
     db.query(
       `SELECT (
@@ -127,7 +128,11 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
        JOIN events e ON eb.event_id = e.id
        WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
       [userId, orgId]
-    )
+    ),
+    // category_combination: aus welchen Kategorien war die Teamer:in dabei.
+    // Query-Text aus utils/badgeKategorieRegel.js -- byte-identisch zur
+    // Wertung in routes/badges.js (Teamer-Zweig).
+    db.query(TEAMER_KATEGORIE_NAMEN_SQL, [userId, orgId])
   ]);
 
   const activityCount = parseInt(actCountRes.rows[0].count);
@@ -145,6 +150,9 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
   );
   // Set statt Array: activity_combination fragt nur nach Enthaltensein.
   const attendedEventTitles = new Set(eventTitlesRes.rows.map(r => r.title));
+  // Set statt Map: bei category_combination zaehlt jede Kategorie hoechstens
+  // einmal, die Anzahl interessiert dort nicht.
+  const abgedeckteKategorien = new Set(kategorieNamenRes.rows.map(r => r.name));
   // Datums-Liste (Strings/Dates) für streak / time_based.
   const allDates = allDatesRes.rows.map(r => r.date).filter(Boolean);
   // Array der aktiven Jahre (INTEGER) — für Startjahr-Filter im teamer_year-Case.
@@ -205,6 +213,7 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
         : activeYearValues.filter(y => y >= teamerStartYear).length,
       proKategorie: categoryCounts,
       proAktivitaetsname: activityNameCounts,
+      abgedeckteKategorien,
       // Der Teamer-Pfad zaehlt bei activity_combination auch
       // required_events mit (wie die Wertung in `badges.js:391`); der
       // Konfi-Pfad liefert dieses Feld bewusst nicht.

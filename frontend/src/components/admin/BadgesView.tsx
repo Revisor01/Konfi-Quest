@@ -136,6 +136,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'both_categories': return 'Beide Kategorien';
       case 'activity_combination': return 'Aktivitätskombination';
       case 'category_activities': return 'Kategorie-Aktivitäten';
+      case 'category_combination': return 'Kategorie-Kombination';
       case 'time_based': return 'Zeitbasiert';
       case 'activity_count': return 'Aktivitätsanzahl';
       case 'event_count': return 'Event-Teilnahmen';
@@ -203,6 +204,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       }
       case 'category_activities':
         return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
+      case 'category_combination': {
+        // Wie bei activity_combination: bis zu zwei Namen ausschreiben, danach
+        // zaehlen, sonst sprengt die Zeile die Listenbreite.
+        const k = extra.required_categories ?? [];
+        if (!k.length) return `${badge.criteria_value} Kategorien`;
+        return k.length <= 2
+          ? `${k.join(' + ')}, min. ${badge.criteria_value}`
+          : `${badge.criteria_value} aus ${k.length} Kategorien`;
+      }
       case 'time_based': {
         const weeks = extra.days ? Math.round(extra.days / 7) : (extra.weeks || '?');
         return `${badge.criteria_value} in ${weeks} Wochen`;

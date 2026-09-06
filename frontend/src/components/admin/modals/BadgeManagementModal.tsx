@@ -58,6 +58,9 @@ interface ExtraKriteriumFormular {
   activity_id?: number;
   activity_ids?: number[];
   required_category?: string;
+  /** category_combination: mehrere Kategorienamen (die Auswahl arbeitet hier
+   *  direkt mit Namen — die Wertung im Backend liest ebenfalls Namen). */
+  required_categories?: string[];
   weeks?: number;
 }
 
@@ -280,6 +283,16 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             criteriaExtra = { required_category: extraCriteria.required_category };
           }
           break;
+        case 'category_combination': {
+          // Anders als bei den Aktivitaeten wird hier KEIN ID-Umweg gegangen:
+          // Die Wertung liest Kategorienamen (categories.name), und die
+          // Auswahl haelt sie schon als Namen.
+          const kategorien = [...new Set(extraCriteria.required_categories || [])];
+          if (kategorien.length > 0) {
+            criteriaExtra = { required_categories: kategorien };
+          }
+          break;
+        }
         case 'time_based':
           if (extraCriteria.weeks) {
             criteriaExtra = { days: extraCriteria.weeks * 7 };
@@ -498,6 +511,76 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         );
       }
 
+      case 'category_combination': {
+        // Mehrfachauswahl von Kategorien. Bewusst dieselbe Machart wie die
+        // Aktivitaets-Kombination darunter, nur mit Kategorien: Das Kriterium
+        // fragt "aus wie vielen VERSCHIEDENEN Kategorien war jemand dabei" —
+        // dreimal dieselbe zaehlt nur einmal.
+        const gewaehlteKategorien = extraCriteria.required_categories || [];
+        return (
+          <div style={{ marginTop: 'var(--app-abstand-basis)' }}>
+            <IonAccordionGroup>
+              <IonAccordion value="category-combination-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
+                <IonItem slot="header" lines="none">
+                  <IonLabel>
+                    <h3 style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-secondary)', margin: '0 0 var(--app-abstand-mini) 0' }}>
+                      Kategorien kombinieren (mehrere auswählbar)
+                    </h3>
+                    {gewaehlteKategorien.length > 0 && (
+                      <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0', fontWeight: 'var(--app-schrift-mittel)' }}>
+                        {gewaehlteKategorien.join(', ')}
+                      </p>
+                    )}
+                  </IonLabel>
+                </IonItem>
+                <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
+                    {categories.map(category => {
+                      const isSelected = gewaehlteKategorien.includes(category.name);
+                      return (
+                        <div
+                          key={category.id}
+                          className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
+                          onClick={() => {
+                            if (loading) return;
+                            const neueAuswahl = isSelected
+                              ? gewaehlteKategorien.filter((n: string) => n !== category.name)
+                              : [...gewaehlteKategorien, category.name];
+                            setExtraCriteria({ ...extraCriteria, required_categories: neueAuswahl });
+                            // "4 aus 3" kann niemand erreichen — das Backend
+                            // lehnt es ab. Statt die Speichern-Meldung
+                            // abzuwarten, zieht der Wert beim Abwaehlen mit.
+                            if (neueAuswahl.length > 0 && formData.criteria_value > neueAuswahl.length) {
+                              setFormData({ ...formData, criteria_value: neueAuswahl.length });
+                            }
+                          }}
+                          style={{
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
+                            marginBottom: '0'
+                          }}
+                        >
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle app-icon-circle--categories">
+                                <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{category.name}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </IonAccordion>
+            </IonAccordionGroup>
+          </div>
+        );
+      }
+
       case 'time_based':
         return (
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-basis)' }}>
@@ -616,6 +699,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return 'Anzahl (Pflicht-Events)';
       case 'category_activities':
         return 'Anzahl (Kategorie-Aktivitäten & Events)';
+      case 'category_combination':
+        return 'Anzahl (Verschiedene Kategorien)';
       case 'unique_activities':
         return 'Anzahl (Verschiedene Aktivitäten)';
       case 'streak':
@@ -934,7 +1019,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                                   value === 'specific_activity' || value === 'category_activities' ||
                                   value === 'event_count') {
                                 defaultValue = 5;
-                              } else if (value === 'activity_combination') {
+                              } else if (value === 'activity_combination' || value === 'category_combination') {
                                 defaultValue = 3;
                               } else if (value === 'streak') {
                                 defaultValue = 4;

@@ -99,6 +99,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       { key: 'unique_activities', title: 'Vielseitig', icon: ICON_RASTER, color: CRITERIA_COLORS.unique_activities, badges: filtered.filter(b => b.criteria_type === 'unique_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'activity_combination', title: 'Kombinier-Profi', icon: ICON_PRISMA, color: CRITERIA_COLORS.activity_combination, badges: filtered.filter(b => b.criteria_type === 'activity_combination').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'category_activities', title: 'Kategorie-Meister', icon: ICON_WUERFEL, color: CRITERIA_COLORS.category_activities, badges: filtered.filter(b => b.criteria_type === 'category_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
+      // Ohne eigene Gruppe taucht ein Abzeichen dieses Typs in der Liste NIE
+      // auf, obwohl es vergeben wird (Befund 24.08.2026, mandatory_event_count).
+      { key: 'category_combination', title: 'Kategorie-Kombinierer', icon: ICON_PRISMA, color: CRITERIA_COLORS.category_combination, badges: filtered.filter(b => b.criteria_type === 'category_combination').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'specific_activity', title: 'Spezialist', icon: ICON_HAND_GEFUELLT, color: CRITERIA_COLORS.specific_activity, badges: filtered.filter(b => b.criteria_type === 'specific_activity').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'streak', title: 'Serien-Champion', icon: ICON_FLAMME_GEFUELLT, color: CRITERIA_COLORS.streak, badges: filtered.filter(b => b.criteria_type === 'streak').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'time_based', title: 'Zeitreisender', icon: ICON_UHRZEIT_GEFUELLT, color: CRITERIA_COLORS.time_based, badges: filtered.filter(b => b.criteria_type === 'time_based').sort((a, b) => a.criteria_value - b.criteria_value) },

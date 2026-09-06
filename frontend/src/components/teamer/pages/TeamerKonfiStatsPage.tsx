@@ -266,6 +266,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
             { key: 'unique_activities', title: 'Vielseitig', icon: ICON_RASTER, color: CRITERIA_COLORS.unique_activities },
             { key: 'activity_combination', title: 'Kombinier-Profi', icon: ICON_PRISMA, color: CRITERIA_COLORS.activity_combination },
             { key: 'category_activities', title: 'Kategorie-Meister', icon: ICON_WUERFEL, color: CRITERIA_COLORS.category_activities },
+            { key: 'category_combination', title: 'Kategorie-Kombinierer', icon: ICON_PRISMA, color: CRITERIA_COLORS.category_combination },
             { key: 'specific_activity', title: 'Spezialist', icon: ICON_HAND_GEFUELLT, color: CRITERIA_COLORS.specific_activity },
             { key: 'streak', title: 'Serien-Champion', icon: ICON_FLAMME_GEFUELLT, color: CRITERIA_COLORS.streak },
             { key: 'time_based', title: 'Zeitreisender', icon: ICON_UHRZEIT_GEFUELLT, color: FARBEN.textSystem },
