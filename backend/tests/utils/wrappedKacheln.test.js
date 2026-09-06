@@ -24,6 +24,7 @@ const aktiverSnapshot = () => ({
   chat: { nachrichten_gesendet: 18, reaktionen_bekommen: 12 },
   challenges: { beitraege: 4, top_challenge: { title: 'Foto' } },
   challenge_momente: [{}, {}, {}],
+  aktivster_monat: { monat: 12, monat_name: 'Dezember', aktivitaeten: 5 },
   badges: {
     total_earned: 7,
     seltenstes: { name: 'Bonuspunkte-Gewinner', icon: 'trophy', color: '#f59e0b',
@@ -46,6 +47,7 @@ const stillerSnapshot = () => ({
   chat: { nachrichten_gesendet: 1 },
   challenges: { beitraege: 0, top_challenge: null },
   challenge_momente: [],
+  aktivster_monat: { monat: 0, monat_name: '', aktivitaeten: 0 },
   zeitraum: { start: '2025-09-01', ende: '2026-08-31', konfirmation: null },
   kategorie: { verteilung: [], top_kategorie: null },
   termine_daten: []
@@ -98,6 +100,7 @@ describe('Dramaturgie', () => {
     // "Eine Kachel mit einer Null darauf ist keine Erinnerung."
     const kacheln = waehleKacheln(stillerSnapshot());
     expect(kacheln).not.toContain('challenges');
+    expect(kacheln).not.toContain('aktivster-monat');
     expect(kacheln).not.toContain('challenge-momente');
     expect(kacheln).not.toContain('konfirmation');
     expect(kacheln).toEqual(FESTE_KACHELN);
@@ -143,6 +146,42 @@ describe('Challenges-Seite (Simons Schwelle)', () => {
     const s = aktiverSnapshot();
     s.challenges.beitraege = 1;
     expect(waehleKacheln(s)).toContain('challenges');
+  });
+});
+
+describe('Aktivster Monat (Zeit-/Rhythmus-Seite)', () => {
+  // BEFUND 06.09.2026: Die Komponente, der Renderer und die Daten
+  // (slides.aktivster_monat) gab es laengst -- nur stand 'aktivster-monat'
+  // nicht in der DRAMATURGIE. Seit Version 3 das Backend die Seiten waehlt,
+  // wurde die Seite deshalb NIE mehr gezeigt; allein der v2-Fallback im
+  // Frontend kannte sie noch. Eine fertige Seite, die niemand je zu sehen
+  // bekam.
+
+  test('die Seite steht zwischen Punkten und Abzeichen', () => {
+    const kacheln = waehleKacheln(aktiverSnapshot());
+    const pos = (k) => kacheln.indexOf(k);
+    expect(pos('punkte')).toBeLessThan(pos('aktivster-monat'));
+    expect(pos('aktivster-monat')).toBeLessThan(pos('badges'));
+  });
+
+  test('ab zwei Aktivitaeten im Monat erscheint sie', () => {
+    const s = aktiverSnapshot();
+    s.aktivster_monat = { monat: 3, monat_name: 'Maerz', aktivitaeten: 2 };
+    expect(waehleKacheln(s)).toContain('aktivster-monat');
+  });
+
+  test('bei einer einzigen Aktivitaet gibt es die Seite nicht', () => {
+    // "Dein aktivster Monat: 1 Aktivitaet" ist keine Aussage ueber einen
+    // Rhythmus, sondern der Monat, in dem zufaellig das Einzige stattfand.
+    const s = aktiverSnapshot();
+    s.aktivster_monat = { monat: 3, monat_name: 'Maerz', aktivitaeten: 1 };
+    expect(waehleKacheln(s)).not.toContain('aktivster-monat');
+  });
+
+  test('ohne jede Aktivitaet gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.aktivster_monat = { monat: 0, monat_name: '', aktivitaeten: 0 };
+    expect(waehleKacheln(s)).not.toContain('aktivster-monat');
   });
 });
 

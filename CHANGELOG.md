@@ -49,6 +49,10 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Rückblick zeigt wieder, in welchem Monat jemand am meisten unterwegs
+  war. Die Seite war seit dem Umbau der Reihenfolge aus dem Rückblick
+  gefallen; sie erscheint jetzt zwischen Punkten und Abzeichen, sobald in
+  dem Monat mindestens zwei Dinge zusammenkamen.
 - Im Jahresrückblick blieb eine Seite zwischen den Challenges leer. Sie
   zeigt jetzt, wie oft jemand mitgemacht hat und bei welcher Challenge am
   liebsten. Die angekündigte Chat-Seite gab es nie — die Chat-Zahlen stehen

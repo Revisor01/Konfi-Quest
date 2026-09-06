@@ -76,7 +76,7 @@ const PLATZHALTER = ['kategorie'];
  * wird. Eine Seite, die nirgends gewaehlt wird, gehoert nicht in diese
  * Liste, sondern in die Dramaturgie.
  */
-const NUR_ALT_SNAPSHOTS = ['highlight', 'endspurt', 'ueber-das-ziel', 'aktivster-monat'];
+const NUR_ALT_SNAPSHOTS = ['highlight', 'endspurt', 'ueber-das-ziel'];
 
 describe('Dramaturgie und Renderer passen zueinander', () => {
   it('die Listen sind ueberhaupt gefunden worden', () => {

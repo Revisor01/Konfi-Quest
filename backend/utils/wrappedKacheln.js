@@ -6,7 +6,7 @@
 // dynamische Seiten einschieben:
 //
 //   Opener - Events - Kategorie - Challenges - Challenges Special -
-//   Punkte - Badges - Konfi - Abschluss
+//   Punkte - Aktivster Monat - Badges - Konfi - Abschluss
 //
 // Rund zehn Seiten fuer eine sehr aktive Person. Die Zahl ergibt sich aus
 // dem, was jemand getan hat, nicht aus einer festen Obergrenze.
@@ -57,6 +57,17 @@ const DRAMATURGIE = [
   'challenges',         // 4  wie oft du mitgemacht hast
   'challenge-momente',  // 5  Challenges Special: die Bilder, gross
   'punkte',             // 6
+  // 7: Der aktivste Monat -- eine Zeit-/Rhythmus-Seite ("wann warst du am
+  // meisten unterwegs"). Sie stand bis zum 06.09.2026 NICHT hier, obwohl es
+  // die Komponente, den Renderer und die Daten (slides.aktivster_monat)
+  // laengst gab. Seit Snapshot-Version 3 das Backend die Seiten waehlt,
+  // wurde sie deshalb nie mehr gezeigt -- nur der v2-Fallback im Frontend
+  // kannte sie noch.
+  //
+  // Der Platz ist bewusst hier: nach den Punkten, vor den Abzeichen. Die
+  // Punkte sagen WIE VIEL, der Monat sagt WANN -- zusammen ergeben sie das
+  // Bild des Jahres, bevor es zu den Auszeichnungen geht.
+  'aktivster-monat',    // 7  wann du am meisten unterwegs warst
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
@@ -97,6 +108,11 @@ const BEDINGUNGEN = {
   // eine Zahl ohne Aussage.
   seltenstes: (s) => Boolean(s.badges?.seltenstes?.name),
   'challenge-momente': (s) => (s.challenge_momente?.length || 0) > 0,
+  // Mindestens zwei Aktivitaeten in dem Monat. Bei einer einzigen waere
+  // "dein aktivster Monat" keine Aussage ueber einen Rhythmus, sondern nur
+  // der Monat, in dem zufaellig das Einzige stattfand -- und "1 Aktivitaet"
+  // gross auf einer Seite ist wieder eine Kachel mit fast einer Null darauf.
+  'aktivster-monat': (s) => (s.aktivster_monat?.aktivitaeten || 0) >= 2,
   konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
 };
 
