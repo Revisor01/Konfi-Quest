@@ -11,6 +11,9 @@
 
 const {
   waehleKacheln,
+  waehleTeamerKacheln,
+  FESTE_TEAMER_KACHELN,
+  TEAMER_DRAMATURGIE,
   waehleKategorieSeiten,
   FESTE_KACHELN,
   DRAMATURGIE,
@@ -300,5 +303,125 @@ describe('Robustheit', () => {
     // beide werden in eigenen Tests geprueft.
     const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie' && k !== 'konfirmation');
     for (const k of erwartet) expect(kacheln).toContain(k);
+  });
+});
+
+// ====================================================================
+// DER TEAMER-RUECKBLICK
+// ====================================================================
+//
+// BEFUND 06.09.2026: Der Teamer-Rueckblick hatte SIEBEN fest verdrahtete
+// Seiten ohne jede Bedingung -- das Handbuch hielt das sogar ausdruecklich
+// fest ("immer genau sieben Seiten, ohne Bedingungen"). Simons Grundregel
+// "Eine Kachel mit einer Null darauf ist keine Erinnerung" galt damit fuer
+// Konfis, aber nicht fuers Team: Wer neu dabei war, bekam "0 Abzeichen",
+// "0 Zertifikate" und "0 Konfis" als eigene Seiten hintereinander.
+
+/** Eine erfahrene Teamer:in -- ueberall etwas vorzuweisen. */
+const aktiverTeamer = () => ({
+  events_geleitet: { total: 12, meiste_teilnehmer_event: { name: 'Konfifahrt', count: 24 } },
+  konfis_betreut: { total_konfis: 13, jahrgaenge: ['2025/2026'] },
+  badges: { total_earned: 4, badges: [{ name: 'Fleissig' }] },
+  zertifikate: { total: 2, zertifikate: [{ name: 'Juleica' }] },
+  engagement: { teamer_seit: '2021-09-01', jahre_aktiv: 4 },
+  zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
+});
+
+/** Neu im Team: erstes Jahr, noch nichts gesammelt. */
+const neuerTeamer = () => ({
+  events_geleitet: { total: 0, meiste_teilnehmer_event: null },
+  konfis_betreut: { total_konfis: 0, jahrgaenge: [] },
+  badges: { total_earned: 0, badges: [] },
+  zertifikate: { total: 0, zertifikate: [] },
+  engagement: { teamer_seit: null, jahre_aktiv: 0 },
+  zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
+});
+
+describe('Teamer-Dramaturgie', () => {
+  test('eine erfahrene Teamer:in bekommt alle sieben Seiten', () => {
+    expect(waehleTeamerKacheln(aktiverTeamer())).toEqual([
+      'teamer-intro',
+      'teamer-events',
+      'teamer-konfis',
+      'teamer-badges',
+      'teamer-zertifikate',
+      'teamer-jahre',
+      'teamer-abschluss'
+    ]);
+  });
+
+  test('eine neue Teamer:in bekommt keine Seite mit einer Null darauf', () => {
+    // Genau der Befund: frueher standen hier sieben Seiten, fuenf davon
+    // mit einer Null.
+    const kacheln = waehleTeamerKacheln(neuerTeamer());
+    expect(kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
+  });
+
+  test('die festen Seiten erscheinen immer', () => {
+    for (const fest of FESTE_TEAMER_KACHELN) {
+      expect(waehleTeamerKacheln(neuerTeamer())).toContain(fest);
+    }
+  });
+
+  test('ohne Termine faellt die Termin-Seite weg', () => {
+    const t = aktiverTeamer();
+    t.events_geleitet = { total: 0, meiste_teilnehmer_event: null };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-events');
+  });
+
+  test('ohne betreute Konfis faellt die Konfi-Seite weg', () => {
+    const t = aktiverTeamer();
+    t.konfis_betreut = { total_konfis: 0, jahrgaenge: [] };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-konfis');
+  });
+
+  test('ohne Abzeichen faellt die Abzeichen-Seite weg', () => {
+    const t = aktiverTeamer();
+    t.badges = { total_earned: 0, badges: [] };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-badges');
+  });
+
+  test('ohne Zertifikate faellt die Zertifikats-Seite weg', () => {
+    const t = aktiverTeamer();
+    t.zertifikate = { total: 0, zertifikate: [] };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-zertifikate');
+  });
+
+  test('ohne Eintrittsdatum faellt die Jahre-Seite weg', () => {
+    // Diese Pruefung stand bisher im Frontend -- eine Bedingung an der
+    // falschen Stelle. Ohne teamer_since rechnet das Backend 0 Jahre, und
+    // "0 Jahre als Teamer:in" ist eine Aussage ueber eine fehlende Angabe,
+    // nicht ueber die Person.
+    const t = aktiverTeamer();
+    t.engagement = { teamer_seit: null, jahre_aktiv: 0 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-jahre');
+  });
+
+  test('das Intro ist erste, der Abschluss letzte Seite', () => {
+    for (const snap of [aktiverTeamer(), neuerTeamer()]) {
+      const k = waehleTeamerKacheln(snap);
+      expect(k[0]).toBe('teamer-intro');
+      expect(k[k.length - 1]).toBe('teamer-abschluss');
+    }
+  });
+
+  test('jede Seite kommt hoechstens einmal vor', () => {
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(new Set(k).size).toBe(k.length);
+  });
+
+  test('kaputte Daten liefern trotzdem einen Rueckblick', () => {
+    // Ein Rueckblick, der gar nicht erst entsteht, ist schlimmer als einer
+    // mit wenigen Seiten.
+    expect(waehleTeamerKacheln(null)).toEqual([...FESTE_TEAMER_KACHELN]);
+    expect(waehleTeamerKacheln(undefined)).toEqual([...FESTE_TEAMER_KACHELN]);
+    expect(waehleTeamerKacheln({})).toEqual([...FESTE_TEAMER_KACHELN]);
+  });
+
+  test('jede Seite der Teamer-Dramaturgie ist erreichbar', () => {
+    // Verhindert, dass ein Tippfehler eine Seite still unerreichbar macht --
+    // derselbe Waechter wie bei den Konfis.
+    const kacheln = waehleTeamerKacheln(aktiverTeamer());
+    for (const k of TEAMER_DRAMATURGIE) expect(kacheln).toContain(k);
   });
 });

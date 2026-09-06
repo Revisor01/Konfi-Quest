@@ -44,10 +44,18 @@ function konfiSeitenAusModal(): string[] {
   return [...registry[1].matchAll(/^\s*'([a-z0-9-]+)':\s*\(/gm)].map(m => m[1]);
 }
 
-/** Die Teamer-Seiten -- `key: 'teamer-...'` in buildTeamerSlides. */
 function teamerSeitenAusModal(): string[] {
+  // Seit dem 06.09.2026 baut buildTeamerSlides die Seiten NICHT mehr als
+  // Folge von `key: 'teamer-...'`-Objekten, sondern datengetrieben ueber
+  // eine Renderer-Registry -- genau wie der Konfi-Zweig. Der Rueckblick
+  // waehlt seine Seiten jetzt nach Inhalt, statt sieben feste zu zeigen.
+  // Gelesen wird deshalb dieselbe Stelle wie beim Konfi: die Registry.
   const bau = modal.slice(modal.indexOf('const buildTeamerSlides'));
-  return [...new Set([...bau.matchAll(/key:\s*'(teamer-[a-z-]+)'/g)].map(m => m[1]))];
+  const registry = bau.match(
+    /const renderers: Record<string, \(isActive: boolean\) => React\.ReactNode> = \{([\s\S]*?)\n {4}\};/
+  );
+  if (!registry) throw new Error('Teamer-Renderer-Registry in WrappedModal.tsx nicht gefunden');
+  return [...new Set([...registry[1].matchAll(/^\s*'(teamer-[a-z-]+)':\s*\(/gm)].map(m => m[1]))];
 }
 
 /** Die `case`-Zweige der Teilen-Karte. */

@@ -78,6 +78,26 @@ const PLATZHALTER = ['kategorie'];
  */
 const NUR_ALT_SNAPSHOTS = ['highlight', 'endspurt', 'ueber-das-ziel'];
 
+/** Die Teamer-Renderer-Registry in buildTeamerSlides. */
+function teamerRendererSchluessel(): string[] {
+  const bau = modal.slice(modal.indexOf('const buildTeamerSlides'));
+  const registry = bau.match(
+    /const renderers: Record<string, \(isActive: boolean\) => React\.ReactNode> = \{([\s\S]*?)\n {4}\};/
+  );
+  if (!registry) throw new Error('Teamer-Renderer-Registry nicht gefunden');
+  return [...registry[1].matchAll(/^\s*'([a-z0-9-]+)':\s*\(/gm)].map(m => m[1]);
+}
+
+/** Die TEAMER_DRAMATURGIE des Backends. */
+function teamerDramaturgie(): string[] {
+  const block = kacheln.match(/const TEAMER_DRAMATURGIE = \[([\s\S]*?)\n\];/);
+  if (!block) throw new Error('TEAMER_DRAMATURGIE nicht gefunden');
+  return [...block[1].matchAll(/^\s*'([a-z0-9-]+)',?/gm)].map(m => m[1]);
+}
+
+const TEAMER_RENDERER = teamerRendererSchluessel();
+const TEAMER_DRAMATURGIE = teamerDramaturgie();
+
 describe('Dramaturgie und Renderer passen zueinander', () => {
   it('die Listen sind ueberhaupt gefunden worden', () => {
     // Ohne diese Absicherung wuerde ein Umbau der Schreibweise die beiden
@@ -104,5 +124,23 @@ describe('Dramaturgie und Renderer passen zueinander', () => {
       .filter(k => !NUR_ALT_SNAPSHOTS.includes(k))
       .filter(k => !DRAMATURGIE.includes(k));
     expect(nieGewaehlt).toEqual([]);
+  });
+});
+
+describe('Teamer-Dramaturgie und Renderer passen zueinander', () => {
+  // Der Teamer-Rueckblick zeigte bis zum 06.09.2026 sieben fest verdrahtete
+  // Seiten; seit er die Auswahl vom Backend bekommt, gilt hier dieselbe
+  // Kopplung wie beim Konfi-Rueckblick -- und derselbe Waechter.
+  it('die Listen sind ueberhaupt gefunden worden', () => {
+    expect(TEAMER_RENDERER.length).toBeGreaterThan(5);
+    expect(TEAMER_DRAMATURGIE.length).toBeGreaterThan(5);
+  });
+
+  it('jede Teamer-Seite der Dramaturgie hat einen Renderer', () => {
+    expect(TEAMER_DRAMATURGIE.filter(k => !TEAMER_RENDERER.includes(k))).toEqual([]);
+  });
+
+  it('jeder Teamer-Renderer wird von der Dramaturgie auch gewaehlt', () => {
+    expect(TEAMER_RENDERER.filter(k => !TEAMER_DRAMATURGIE.includes(k))).toEqual([]);
   });
 });

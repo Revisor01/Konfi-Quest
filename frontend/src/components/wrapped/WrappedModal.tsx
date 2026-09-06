@@ -418,59 +418,57 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     }));
   };
 
-  // Teamer-Slides aufbauen (7 Slides)
+  // Teamer-Slides aufbauen.
+  //
+  // Bis zum 06.09.2026 standen hier SIEBEN fest verdrahtete Seiten ohne
+  // jede Bedingung -- wer neu im Team war, bekam "0 Abzeichen",
+  // "0 Zertifikate" und "0 Konfis" als eigene Seiten hintereinander.
+  // Simons Grundregel "Eine Kachel mit einer Null darauf ist keine
+  // Erinnerung" galt fuer Konfis, aber nicht fuers Team.
+  //
+  // Ab Snapshot-Version 3 waehlt das Backend die Seiten
+  // (utils/wrappedKacheln.js, waehleTeamerKacheln) und legt sie als
+  // `kacheln` in den Snapshot. Aeltere Snapshots haben das Feld nicht und
+  // laufen weiter ueber die feste Siebener-Reihenfolge unten -- an bereits
+  // erzeugten Rueckblicken aendert sich dadurch nichts.
   const buildTeamerSlides = (teamerData: TeamerWrappedData, slideYear: number) => {
-    const slides: Array<{ key: string; content: React.ReactNode }> = [];
-    let slideIndex = 0;
+    const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
+      'teamer-intro': (a) => <TeamerIntroSlide isActive={a} displayName={displayName} year={slideYear} titel={titel} />,
+      'teamer-events': (a) => <TeamerEventsSlide isActive={a} events={teamerData.slides.events_geleitet} />,
+      'teamer-konfis': (a) => <TeamerKonfisSlide isActive={a} konfis={teamerData.slides.konfis_betreut} />,
+      'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,
+      'teamer-zertifikate': (a) => <TeamerZertifikateSlide isActive={a} zertifikate={teamerData.slides.zertifikate} />,
+      'teamer-jahre': (a) => <TeamerJahreSlide isActive={a} engagement={teamerData.slides.engagement} />,
+      'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} titel={titel} />,
+    };
 
-    slides.push({
-      key: 'teamer-intro',
-      content: <TeamerIntroSlide isActive={activeIndex === slideIndex} displayName={displayName} year={slideYear} titel={titel} />,
-    });
-    slideIndex++;
+    const kachelListe = (teamerData as { kacheln?: string[] }).kacheln;
 
-    slides.push({
-      key: 'teamer-events',
-      content: <TeamerEventsSlide isActive={activeIndex === slideIndex} events={teamerData.slides.events_geleitet} />,
-    });
-    slideIndex++;
+    const gewaehlt: string[] = (Array.isArray(kachelListe) && kachelListe.length > 0)
+      // --- Ab Version 3: das Backend bestimmt die Seiten ---
+      ? kachelListe.filter(k => renderers[k])
+      // --- Alt-Snapshots: die bisherige feste Reihenfolge ---
+      : [
+          'teamer-intro',
+          'teamer-events',
+          'teamer-konfis',
+          'teamer-badges',
+          'teamer-zertifikate',
+          // Die einzige Bedingung, die es hier schon gab: Ohne
+          // Eintrittsdatum rechnet das Backend 0 und die Seite sagte
+          // "0 Jahre als Teamer:in" -- eine Aussage ueber eine fehlende
+          // Angabe, nicht ueber die Person (01.09.2026).
+          ...(teamerData.slides.engagement.teamer_seit ? ['teamer-jahre'] : []),
+          'teamer-abschluss',
+        ];
 
-    slides.push({
-      key: 'teamer-konfis',
-      content: <TeamerKonfisSlide isActive={activeIndex === slideIndex} konfis={teamerData.slides.konfis_betreut} />,
-    });
-    slideIndex++;
+    // Doppelte raus, Reihenfolge bleibt.
+    const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
 
-    slides.push({
-      key: 'teamer-badges',
-      content: <TeamerBadgesSlide isActive={activeIndex === slideIndex} badges={teamerData.slides.badges} />,
-    });
-    slideIndex++;
-
-    slides.push({
-      key: 'teamer-zertifikate',
-      content: <TeamerZertifikateSlide isActive={activeIndex === slideIndex} zertifikate={teamerData.slides.zertifikate} />,
-    });
-    slideIndex++;
-
-    // Nur zeigen, wenn ein Eintrittsdatum hinterlegt ist. Ohne teamer_since
-    // rechnet das Backend 0 und die Seite sagte "0 Jahre als Teamer:in" --
-    // eine Aussage ueber eine fehlende Angabe, nicht ueber die Person
-    // (aufgefallen 01.09.2026 im Rueckblick der Demo-Gemeinde).
-    if (teamerData.slides.engagement.teamer_seit) {
-      slides.push({
-        key: 'teamer-jahre',
-        content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
-      });
-      slideIndex++;
-    }
-
-    slides.push({
-      key: 'teamer-abschluss',
-      content: <TeamerAbschlussSlide isActive={activeIndex === slideIndex} data={teamerData} year={slideYear} titel={titel} />,
-    });
-
-    return slides;
+    return ohneDoppelte.map((key, idx) => ({
+      key,
+      content: renderers[key](activeIndex === idx),
+    }));
   };
 
   // Slides dynamisch aufbauen basierend auf wrappedType

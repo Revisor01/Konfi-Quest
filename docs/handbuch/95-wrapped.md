@@ -318,7 +318,10 @@ volle Konfi-Jahr.
 
 ## Die Seiten des Teamer-Rückblicks
 
-Hier sind es **immer genau sieben Seiten**, ohne Bedingungen.
+Es sind **höchstens sieben Seiten** — und wie bei den Konfis erscheint eine
+Seite nur, wenn sie etwas zu erzählen hat. Wer neu im Team ist, bekommt keine
+Reihe von Seiten mit einer Null darauf, sondern einen kürzeren Rückblick.
+Begrüßung und Abschluss stehen immer.
 
 **1. Begrüßung** — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei
 den Konfis ohne Jahrgangsangabe.
@@ -326,22 +329,26 @@ den Konfis ohne Jahrgangsangabe.
 **2. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
 eingetragen war, überschrieben mit „Events geleitet“. *Nur, wenn vorhanden*,
 darunter das größte Event mit Teilnehmerzahl.
+*Entfällt ohne Termine im Zeitraum.*
 
 **3. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
 die Namen der zugewiesenen Jahrgänge. Grundlage ist die Jahrgangs-Zuweisung: Wer
 keinem Jahrgang zugewiesen ist, steht hier bei null.
+*Entfällt, wenn niemand zugewiesen ist.*
 
 **4. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
 Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
+*Entfällt ohne Abzeichen im Zeitraum.*
 
 **5. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
+*Entfällt ohne Zertifikate im Zeitraum.*
 
-**6. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …“. Gerechnet
-wird ab dem Eintrittsdatum.
+**6. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
+wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
 
-> **Achtung:** Ist kein Eintrittsdatum hinterlegt, steht dort „0 Jahre als
-> Teamer:in“ und **„Dabei seit 01. Januar 1970“**. Wenn dir das auffällt, fehlt
-> bei der Person das Feld „Teamer:in seit“.
+> **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
+> jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
+> „Teamer:in seit".
 
 **7. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.

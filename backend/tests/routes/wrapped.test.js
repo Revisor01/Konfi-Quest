@@ -385,6 +385,29 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.events_geleitet.total).toBe(1);
     });
 
+    it('Der Snapshot traegt seine Seitenauswahl', async () => {
+      // Ab Version 3 waehlt das Backend die Seiten (waehleTeamerKacheln)
+      // und legt sie als `kacheln` in den Snapshot -- vorher zeigte das
+      // Frontend sieben feste Seiten, auch wenn fuenf davon eine Null
+      // trugen.
+      const snap = await snapshotVonTeamer1();
+      expect(snap.version).toBe(3);
+      expect(Array.isArray(snap.kacheln)).toBe(true);
+      expect(snap.kacheln[0]).toBe('teamer-intro');
+      expect(snap.kacheln[snap.kacheln.length - 1]).toBe('teamer-abschluss');
+    });
+
+    it('Ein Team-Mitglied ohne alles bekommt keine Seite mit einer Null', async () => {
+      // teamer1 hat im leergeraeumten Zustand keine Termine, keine
+      // Abzeichen, keine Zertifikate und kein Eintrittsdatum.
+      await db.query('DELETE FROM user_certificates');
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
+    });
+
     it('Der Snapshot benennt seinen Zeitraum', async () => {
       const snap = await snapshotVonTeamer1();
       expect(snap.slides.zeitraum.year).toBe(JAHR);

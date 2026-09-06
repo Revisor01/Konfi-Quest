@@ -236,6 +236,13 @@ export interface TeamerZeitraumSlide {
 
 export interface TeamerWrappedData {
   version: number;
+  /**
+   * Die Seiten dieses Rueckblicks in Anzeigereihenfolge, vom Backend
+   * gewaehlt (utils/wrappedKacheln.js, waehleTeamerKacheln). Ab
+   * Snapshot-Version 3 (06.09.2026). Fehlt bei aelteren Snapshots -- dann
+   * rendert das Frontend wie bisher die feste Siebener-Reihenfolge.
+   */
+  kacheln?: string[];
   slides: {
     events_geleitet: TeamerEventsGeleitetSlide;
     konfis_betreut: TeamerKonfisBetreutSlide;

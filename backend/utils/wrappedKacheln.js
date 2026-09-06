@@ -205,13 +205,98 @@ function waehleKacheln(slides, schnitt = null) {
   return [...rest.slice(0, MAX_KACHELN - schluss.length), ...schluss];
 }
 
+/**
+ * =====================================================================
+ * DER TEAMER-RUECKBLICK
+ * =====================================================================
+ *
+ * BEFUND 06.09.2026: Der Teamer-Rueckblick hatte sieben fest verdrahtete
+ * Seiten OHNE jede Bedingung -- das Handbuch (95-wrapped.md) hielt das sogar
+ * ausdruecklich fest ("immer genau sieben Seiten, ohne Bedingungen"). Simons
+ * Grundregel "Eine Kachel mit einer Null darauf ist keine Erinnerung" galt
+ * damit fuer Konfis, aber nicht fuers Team: Wer neu dabei war, bekam
+ * "0 Abzeichen", "0 Zertifikate" und "0 Konfis" als eigene Seiten
+ * hintereinander.
+ *
+ * Die einzige Ausnahme war die Jahre-Seite, die das Frontend seit dem
+ * 01.09.2026 bei fehlendem teamer_since aussparte -- eine Bedingung an der
+ * falschen Stelle, im Frontend statt in der Auswahl.
+ */
+
+/**
+ * Fest: Auftakt und Abschluss tragen die Erzaehlung. Ohne sie entstuende bei
+ * einer neuen Teamer:in gar kein Rueckblick.
+ */
+const FESTE_TEAMER_KACHELN = ['teamer-intro', 'teamer-abschluss'];
+
+/** Die Reihenfolge des Teamer-Rueckblicks. */
+const TEAMER_DRAMATURGIE = [
+  'teamer-intro',        // 1  Auftakt
+  'teamer-events',       // 2  die Termine des Jahres
+  'teamer-konfis',       // 3  wen du begleitet hast
+  'teamer-badges',       // 4  Abzeichen
+  'teamer-zertifikate',  // 5  Zertifikate
+  'teamer-jahre',        // 6  "seit x Jahren dabei"
+  'teamer-abschluss'     // 7  Uebersicht
+];
+
+/**
+ * Bedingungen der nicht-festen Teamer-Seiten. Dieselbe Regel wie bei den
+ * Konfis: Eine Seite erscheint nur, wenn sie etwas zu erzaehlen hat.
+ */
+const TEAMER_BEDINGUNGEN = {
+  // Wer im Zeitraum keinen Termin begleitet hat, braucht keine Termin-Seite.
+  'teamer-events': (s) => (s.events_geleitet?.total || 0) > 0,
+  // "0 Konfis betreut" ist keine Erinnerung, sondern eine Luecke in der
+  // Jahrgangs-Zuweisung.
+  'teamer-konfis': (s) => (s.konfis_betreut?.total_konfis || 0) > 0,
+  'teamer-badges': (s) => (s.badges?.total_earned || 0) > 0,
+  'teamer-zertifikate': (s) => (s.zertifikate?.total || 0) > 0,
+  // Ohne Eintrittsdatum rechnet das Backend 0 Jahre -- das waere eine
+  // Aussage ueber eine fehlende Angabe, nicht ueber die Person. Diese
+  // Pruefung stand bisher im Frontend (WrappedModal); sie gehoert hierher,
+  // wo alle anderen auch stehen.
+  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit)
+};
+
+/**
+ * Waehlt die Seiten eines Teamer-Rueckblicks in Anzeigereihenfolge.
+ *
+ * @param {object} slides die `slides` des Teamer-Snapshots
+ * @returns {string[]} Seiten-Schluessel in Anzeigereihenfolge
+ */
+function waehleTeamerKacheln(slides) {
+  if (!slides || typeof slides !== 'object') return [...FESTE_TEAMER_KACHELN];
+
+  const gewaehlt = [];
+  for (const key of TEAMER_DRAMATURGIE) {
+    if (FESTE_TEAMER_KACHELN.includes(key)) { gewaehlt.push(key); continue; }
+    const bedingung = TEAMER_BEDINGUNGEN[key];
+    if (!bedingung) continue;
+    let trifft = false;
+    // Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern.
+    try { trifft = bedingung(slides) === true; } catch { trifft = false; }
+    if (trifft) gewaehlt.push(key);
+  }
+
+  // Doppelte raus, Reihenfolge bleibt. Der Abschluss steht immer am Ende --
+  // er ist die letzte Seite der DRAMATURGIE und wird nie gedeckelt (der
+  // Teamer-Rueckblick hat hoechstens sieben Seiten, MAX_KACHELN kann hier
+  // gar nicht greifen).
+  return gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
+}
+
 module.exports = {
   waehleKacheln,
+  waehleTeamerKacheln,
   waehleKategorieSeiten,
   FESTE_KACHELN,
   DRAMATURGIE,
   MAX_KACHELN,
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN,
-  BEDINGUNGEN
+  BEDINGUNGEN,
+  FESTE_TEAMER_KACHELN,
+  TEAMER_DRAMATURGIE,
+  TEAMER_BEDINGUNGEN
 };

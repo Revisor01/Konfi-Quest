@@ -49,6 +49,10 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Rückblick für Teamer:innen zeigt keine leeren Seiten mehr. Bisher kamen
+  immer sieben Seiten, auch wenn fünf davon eine Null trugen — wer neu im Team
+  ist, bekommt jetzt einen kürzeren Rückblick statt „0 Abzeichen",
+  „0 Zertifikate" und „0 Konfis" hintereinander.
 - Beim Anlegen eines Rückblicks lässt sich jetzt der Zeitraum angeben, den er
   zählen soll — vorbelegt mit dem laufenden Konfi-Jahr. Bisher stand in der
   Übersicht ein Zeitraum, unter dem Zahlen aus einem anderen standen.

@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { waehleKacheln } = require('../utils/wrappedKacheln');
+const { waehleKacheln, waehleTeamerKacheln } = require('../utils/wrappedKacheln');
 const { seiteFuerKategorie, datumsFenster } = require('../utils/wrappedKategorien');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
@@ -1017,15 +1017,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? Math.max(1, Math.floor((stichtag - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
       : 0;
 
-    return {
-      // Version 2 (06.09.2026): alle Ereignis-Zahlen sind auf den Zeitraum
-      // eingegrenzt. Rein ADDITIV zu Version 1 -- kein Feld entfernt,
-      // umbenannt oder umtypisiert; `zeitraum` bekommt nur start/ende dazu.
-      // Ausgelieferte Apps lesen weiterhin dieselben Felder. Bereits
-      // erzeugte Version-1-Snapshots liegen unveraendert in der Datenbank
-      // und werden nie neu gerechnet -- der alte Rueckblick bleibt der
-      // alte Rueckblick.
-      version: 2,
+    const schnappschuss = {
+      // Version 3 (06.09.2026), in zwei Schritten gewachsen:
+      //   2: alle Ereignis-Zahlen sind auf den Zeitraum eingegrenzt
+      //      (`zeitraum` bekam start/ende dazu).
+      //   3: der Rueckblick waehlt seine Seiten nach Inhalt statt sieben
+      //      feste zu zeigen (`kacheln`, unten gesetzt).
+      //
+      // Beide Schritte rein ADDITIV -- kein Feld entfernt, umbenannt oder
+      // umtypisiert. Ausgelieferte Apps kennen `kacheln` nicht, ignorieren
+      // das Feld und rendern weiter ueber ihre feste Siebener-Reihenfolge.
+      // Bereits erzeugte Snapshots liegen unveraendert in der Datenbank und
+      // werden nie neu gerechnet -- der alte Rueckblick bleibt der alte.
+      version: 3,
       slides: {
         events_geleitet: {
           total: eventsGeleitet,
@@ -1056,6 +1060,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
       }
     };
+
+    // Die Seitenauswahl -- wie beim Konfi-Rueckblick IM Snapshot gespeichert
+    // statt bei jedem Ansehen neu gerechnet: Ein Rueckblick wird geteilt und
+    // mehrfach geoeffnet und muss jedes Mal gleich aussehen.
+    //
+    // Additiv: Alte App-Versionen kennen `kacheln` nicht und rendern weiter
+    // ueber ihre feste Siebener-Reihenfolge. Der Vertrag bleibt gewahrt.
+    schnappschuss.kacheln = waehleTeamerKacheln(schnappschuss.slides);
+    return schnappschuss;
   }
 
   /**
