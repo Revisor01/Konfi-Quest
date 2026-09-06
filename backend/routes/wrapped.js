@@ -1438,7 +1438,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
 
         res.json({
-          message: `Wrapped f\u00fcr ${generated} Teamer:innen generiert`,
+          message: `Wrapped f\u00fcr ${generated} Personen im Team generiert`,
           generated,
           errors,
           year: currentYear,

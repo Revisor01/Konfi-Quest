@@ -259,7 +259,7 @@ const AdminWrappedPage: React.FC = () => {
           <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as 'konfi' | 'teamer')}>
             <IonSegmentButton value="konfi">Konfis</IonSegmentButton>
             {/* Teamer-Ausgaben betreffen die ganze Gemeinde -- nur die Leitung. */}
-            <IonSegmentButton value="teamer" disabled={!istLeitung}>Teamer:innen</IonSegmentButton>
+            <IonSegmentButton value="teamer" disabled={!istLeitung}>Team</IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -292,8 +292,8 @@ const AdminWrappedPage: React.FC = () => {
                   message={segment === 'konfi'
                     ? 'Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
                     : istLeitung
-                      ? 'Über das Plus oben legst du einen an — für alle Teamer:innen gemeinsam, mit eigenem Namen.'
-                      : 'Für das Team ist noch keiner erstellt. Rückblicke für Teamer:innen legt die Leitung deiner Gemeinde an.'}
+                      ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, mit eigenem Namen.'
+                      : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Leitung deiner Gemeinde an.'}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>
