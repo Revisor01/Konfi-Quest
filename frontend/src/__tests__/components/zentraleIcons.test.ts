@@ -147,3 +147,26 @@ describe('Alle drei Rollen nutzen dieselben Konstanten fuer dieselbe Bedeutung',
     expect(lies('src/components/teamer/pages/TeamerMaterialPage.tsx')).toContain(muster);
   });
 });
+
+describe('Nur-Kontur-Modus gilt fuer ALLE Konstanten', () => {
+  // Simon, 06.09.2026: "icon benachrichtigungen bei admin mehr ist noch
+  // nicht line."
+  //
+  // Der erste Umbau erfasste nur die _GEFUELLT-Namen. 20 Konstanten OHNE
+  // dieses Namensteil zeigten weiter auf gefuellte Glyphen -- darunter
+  // ICON_BENACHRICHTIGUNG (notifications), ICON_MEHR (ellipsisHorizontal)
+  // und ICON_ABSAGE (closeCircle). Sie fielen durch, weil die Umstellung am
+  // NAMEN haing statt am Glyph.
+  //
+  // Dieser Test prueft das Glyph: Jede Konstante muss auf eine
+  // -Outline-Variante zeigen. Ein neues gefuelltes Icon faellt sofort auf.
+  it('jede Konstante zeigt auf ein Outline-Glyph', () => {
+    const quelle = lies('src/components/shared/icons.ts');
+    const paare = [...quelle.matchAll(/ {2}(\w+) as (ICON_[A-Z_]+),/g)];
+    expect(paare.length).toBeGreaterThan(150);
+    const gefuellt = paare
+      .filter((m) => !m[1].endsWith('Outline'))
+      .map((m) => `${m[2]} -> ${m[1]}`);
+    expect(gefuellt).toEqual([]);
+  });
+});
