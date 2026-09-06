@@ -53,7 +53,7 @@ const ENTRIES: LegendEntry[] = [
     color: 'var(--app-color-teamer)',
     icon: ICON_PLUS_KREIS_GEFUELLT,
     label: 'Anmeldung möglich (Team)',
-    description: 'Dieses Event sucht Team. Du kannst dich anmelden.',
+    description: 'Für dieses Event wird Team gesucht. Du kannst dich anmelden.',
     variants: ['teamer'],
   },
   {
