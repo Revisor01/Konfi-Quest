@@ -78,9 +78,8 @@ describe('Dramaturgie', () => {
   test('die Reihenfolge folgt Simons Erzaehlung', () => {
     const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
     const pos = (k) => kacheln.indexOf(k);
-    // Opener - Chat - Events - Kategorie - Challenges - Punkte - Badges - Abschluss
-    expect(pos('intro')).toBeLessThan(pos('chat'));
-    expect(pos('chat')).toBeLessThan(pos('events'));
+    // Opener - Events - Kategorie - Challenges - Punkte - Badges - Abschluss
+    expect(pos('intro')).toBeLessThan(pos('events'));
     expect(pos('events')).toBeLessThan(pos('challenges'));
     expect(pos('challenges')).toBeLessThan(pos('challenge-momente'));
     expect(pos('challenge-momente')).toBeLessThan(pos('punkte'));
@@ -98,7 +97,6 @@ describe('Dramaturgie', () => {
   test('eine stille Konfi bekommt keine leeren Seiten', () => {
     // "Eine Kachel mit einer Null darauf ist keine Erinnerung."
     const kacheln = waehleKacheln(stillerSnapshot());
-    expect(kacheln).not.toContain('chat');
     expect(kacheln).not.toContain('challenges');
     expect(kacheln).not.toContain('challenge-momente');
     expect(kacheln).not.toContain('konfirmation');
@@ -123,25 +121,28 @@ describe('Dramaturgie', () => {
   });
 });
 
-describe('Chat-Seite (Simons Schwelle)', () => {
-  test('wer wenig geschrieben hat, bekommt keine Chat-Seite', () => {
+// DIE CHAT-SEITE GAB ES NIE (Befund 06.09.2026): 'chat' stand in der
+// DRAMATURGIE und hatte hier drei gruene Tests -- im Frontend gab es aber
+// weder einen Renderer noch ueberhaupt eine Chat-Komponente. Die Seite
+// wurde ausgewaehlt und blieb leer. Die Tests bewiesen nur, dass die
+// Auswahl funktioniert, nicht dass irgendjemand die Seite je sah.
+//
+// Der Schluessel ist ersatzlos gestrichen: Die Chat-Zahlen haben bereits
+// eine Seite (das persoenliche Highlight 'chat_star' / 'reaktions_magnet').
+// Damit entfallen die drei Tests hier -- eine Schwelle fuer eine Seite, die
+// es nicht gibt, ist nichts, was man pruefen kann.
+
+describe('Challenges-Seite (Simons Schwelle)', () => {
+  test('wer nie mitgemacht hat, bekommt keine Challenges-Seite', () => {
     const s = aktiverSnapshot();
-    s.chat.nachrichten_gesendet = 4;
-    expect(waehleKacheln(s)).not.toContain('chat');
+    s.challenges.beitraege = 0;
+    expect(waehleKacheln(s)).not.toContain('challenges');
   });
 
-  test('ab fuenf Nachrichten erscheint sie', () => {
+  test('ab dem ersten Beitrag erscheint sie', () => {
     const s = aktiverSnapshot();
-    s.chat.nachrichten_gesendet = 5;
-    expect(waehleKacheln(s)).toContain('chat');
-  });
-
-  test('unter dem Jahrgangsschnitt gibt es die Seite nicht', () => {
-    // Vergleiche nur nach oben -- niemand bekommt einen mageren Vergleich.
-    const s = aktiverSnapshot();
-    s.chat.nachrichten_gesendet = 8;
-    expect(waehleKacheln(s, { chat: 20 })).not.toContain('chat');
-    expect(waehleKacheln(s, { chat: 5 })).toContain('chat');
+    s.challenges.beitraege = 1;
+    expect(waehleKacheln(s)).toContain('challenges');
   });
 });
 

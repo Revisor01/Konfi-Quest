@@ -26,6 +26,9 @@ Versionsüberschrift.
   die Kategorie in der Gemeinde heißt.
 - Neue Gemeinden starten mit einem erweiterten Satz an Kategorien, der die
   Arbeit vor Ort besser abbildet.
+- Abzeichen können jetzt verlangen, dass jemand aus mehreren verschiedenen
+  Kategorien dabei war — etwa Konfifahrt, Übernachtung und Sommerfreizeit für
+  ein Freizeiten-Abzeichen. Dreimal dasselbe zählt dabei nur einmal.
 
 - Ein Jahrgang kann jetzt mehrere Rückblicke haben, jeder mit eigenem Namen —
   etwa „Dein erstes Jahr", „Zwischenstand" und „Dein Abschluss". Frühere
@@ -46,6 +49,10 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Im Jahresrückblick blieb eine Seite zwischen den Challenges leer. Sie
+  zeigt jetzt, wie oft jemand mitgemacht hat und bei welcher Challenge am
+  liebsten. Die angekündigte Chat-Seite gab es nie — die Chat-Zahlen stehen
+  weiterhin auf der persönlichen Highlight-Seite.
 - Der Rückblick für Teamer:innen zeigt jetzt wirklich das Jahr. Termine,
   Abzeichen und Zertifikate wurden bisher seit dem allerersten Tag gezählt —
   wer seit Jahren dabei ist, sah alles auf einmal unter einer Jahreszahl. Wie

@@ -5,7 +5,7 @@
 // zufaelligen", sondern eine ERZAEHLUNG mit fester Dramaturgie, in die sich
 // dynamische Seiten einschieben:
 //
-//   Opener - Chat - Events - Kategorie - Challenges - Challenges Special -
+//   Opener - Events - Kategorie - Challenges - Challenges Special -
 //   Punkte - Badges - Konfi - Abschluss
 //
 // Rund zehn Seiten fuer eine sehr aktive Person. Die Zahl ergibt sich aus
@@ -45,12 +45,18 @@ const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss', 'werd
  */
 const DRAMATURGIE = [
   'intro',              // 1  Auftakt
-  'chat',               // 2  nur wer wirklich geschrieben hat
-  'events',             // 3  Termine des Jahres
-  'kategorie',          // 4  der eigene Schwerpunkt (mehrere moeglich)
-  'challenges',         // 5  zwei Momente und Stempel
-  'challenge-momente',  // 6  Challenges Special: die Bilder, gross
-  'punkte',             // 7
+  // 'chat' STAND HIER (bis 06.09.2026) und wurde nie gezeigt: Es gab
+  // keinen Renderer und ueberhaupt keine Chat-Komponente -- die Seite blieb
+  // leer. Ersatzlos gestrichen statt nachgebaut, weil die Chat-Zahlen
+  // bereits eine Seite haben: Das persoenliche Highlight ('chat_star',
+  // 'reaktions_magnet') zeigt genau diese Werte, und zwar genau dann, wenn
+  // jemand darin heraussticht. Eine zweite Chat-Seite haette dieselbe Zahl
+  // ein zweites Mal erzaehlt.
+  'events',             // 2  Termine des Jahres
+  'kategorie',          // 3  der eigene Schwerpunkt (mehrere moeglich)
+  'challenges',         // 4  wie oft du mitgemacht hast
+  'challenge-momente',  // 5  Challenges Special: die Bilder, gross
+  'punkte',             // 6
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
@@ -83,14 +89,8 @@ const MAX_KATEGORIE_SEITEN = 2;
  */
 const BEDINGUNGEN = {
   // Simons Regel woertlich: "Wer nicht viel geschrieben hat, braucht keine
-  // Chat-Kachel." Eine einzelne Nachricht ist keine Geschichte.
-  chat: (s, schnitt) => {
-    const eigene = s.chat?.nachrichten_gesendet || 0;
-    if (eigene < 5) return false;
-    const mittel = schnitt?.chat;
-    // Vergleich nur nach oben: unter dem Schnitt gibt es die Seite nicht.
-    return typeof mittel !== 'number' || eigene >= mittel;
-  },
+  // Kachel." Eine einzelne Teilnahme ist keine Geschichte -- deshalb erst
+  // ab dem ersten echten Beitrag.
   challenges: (s) => (s.challenges?.beitraege || 0) > 0,
   // Nur wenn das Backend ein seltenstes Abzeichen bestimmt hat. Das setzt
   // mindestens 5 Konfis in der Gemeinde voraus -- bei zweien waere "50 %"

@@ -12,6 +12,7 @@ import EventsSlide from './slides/EventsSlide';
 import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChallengeMomenteSlide from './slides/ChallengeMomenteSlide';
+import ChallengesSlide from './slides/ChallengesSlide';
 import HighlightSlide, { rendertHighlightSlide } from './slides/HighlightSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import KategorieSlide from './slides/KategorieSlide';
@@ -177,6 +178,13 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
+        case 'challenges': {
+          // Die Zahl vorher herausziehen: Der Feldname `beitraege` ist eine
+          // Schnittstelle und bleibt ohne Umlaut -- im angezeigten Satz
+          // hat er nichts verloren.
+          const anzahl = k.slides.challenges?.beitraege || 0;
+          return { ...base, slideValue: `${anzahl} Mal bei Challenges mitgemacht` };
+        }
         case 'highlight': {
           const h = k.slides.highlight;
           const highlightTexte: Record<string, string> = {
@@ -253,6 +261,16 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} titel={titel} />,
       'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
+      // 'challenges' stand seit dem 03.09.2026 in der DRAMATURGIE des
+      // Backends, hatte hier aber KEINEN Eintrag -- addSlide schob die Seite
+      // mit `render: undefined` in die Liste und sie blieb leer. Die Zahl
+      // (beitraege + top_challenge) liegt seit Version 3 in jedem Snapshot
+      // und wurde bisher nirgends gezeigt.
+      'challenges': (a) => (
+        konfiData.slides.challenges
+          ? <ChallengesSlide isActive={a} challenges={konfiData.slides.challenges} />
+          : null
+      ),
       'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
       'events': (a) => <EventsSlide isActive={a} events={konfiData.slides.events} />,
       'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,

@@ -956,6 +956,48 @@ ion-modal.wrapped-modal-fullscreen {
 .highlight-slide { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%);
   background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%); }
 
+/* ========================================
+   Challenges-Seite (die ZAHL, nicht die Bilder)
+   Derselbe Rosa-Ton wie die Momente-Seite -- beide erzaehlen von den
+   Challenges und gehoeren sichtbar zusammen, stehen aber im Rueckblick
+   nacheinander (erst die Zahl, dann die Bilder gross).
+   ======================================== */
+.challenges-slide {
+  --seiten-verlauf: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #a21456 50%, #7d1240 100%);
+  background: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #a21456 50%, #7d1240 100%);
+}
+
+.challenges-top {
+  margin-top: var(--app-abstand-mittel);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--app-radius-karte);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittelweit);
+  backdrop-filter: blur(8px);
+}
+
+.challenges-top__abzeichen {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: var(--app-radius-kreis);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--app-color-challenges, #be185d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--app-text-standard);
+}
+
+.challenges-top__text {
+  font-size: var(--app-text-betont);
+  color: rgba(255, 255, 255, 0.9);
+  text-align: left;
+}
+
 .highlight-zahl {
   font-size: 5rem;
   font-weight: var(--app-schrift-extrafett);
