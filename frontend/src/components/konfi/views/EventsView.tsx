@@ -265,27 +265,8 @@ const EventsView: React.FC<EventsViewProps> = ({
 
       {headerSlot}
 
-      {/* Suche & Filter — wie Chat-Pattern */}
-      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--events">
-            <IonIcon icon={ICON_FILTER} />
-          </div>
-          <IonLabel>Suche & Filter</IonLabel>
-        </IonListHeader>
-        <IonItemGroup>
-          <IonItem>
-            <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
-            <IonInput
-              value={searchText}
-              onIonInput={(e) => setSearchText(e.detail.value || '')}
-              placeholder="Events durchsuchen..."
-            />
-          </IonItem>
-        </IonItemGroup>
-      </IonList>
-
-      {/* Tab Navigation */}
+      {/* Reiter ZUERST, Suche darunter (Simon, 06.09.2026): erst
+          eingrenzen, dann darin suchen -- wie im Chat. */}
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
@@ -302,6 +283,26 @@ const EventsView: React.FC<EventsViewProps> = ({
           </IonSegmentButton>
         </IonSegment>
       </div>
+
+      {/* Suche -- steht UNTER den Reitern, siehe Kommentar oben */}
+      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--events">
+            <IonIcon icon={ICON_FILTER} />
+          </div>
+          <IonLabel>Suche</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={ICON_SUCHE_GEFUELLT} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
+            <IonInput
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value || '')}
+              placeholder="Events durchsuchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
+      </IonList>
 
       {/* Events Liste */}
       <ListSection

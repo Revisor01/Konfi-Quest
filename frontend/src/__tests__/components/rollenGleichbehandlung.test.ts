@@ -244,3 +244,39 @@ describe('Chat: erst filtern, dann suchen', () => {
     }
   });
 });
+
+describe('Termine: erst filtern, dann suchen -- in allen drei Rollen', () => {
+  // Simon, 06.09.2026: "das muessten wir suche & filter bei events auch
+  // machen. aktuell verbuchen vergangen unter die leiste events aktivitaeten
+  // schieben."
+  //
+  // Dieselbe Reihenfolge wie im Chat. Bewusst in ALLEN drei Ansichten
+  // geprueft: Jede Rolle hat hier eine eigene Datei -- genau die Konstellation,
+  // in der bisher immer eine vergessen wurde.
+  const ansichten = [
+    'src/components/admin/EventsView.tsx',
+    'src/components/konfi/views/EventsView.tsx',
+    'src/components/teamer/pages/TeamerEventsPage.tsx',
+  ];
+
+  it('die Reiter stehen ueberall vor der Suche', () => {
+    for (const datei of ansichten) {
+      const seite = lies(datei);
+      // Die Platzhaltertexte unterscheiden sich je Ansicht ("Event
+      // suchen...", "Events durchsuchen..."), deshalb am Eingabefeld
+      // festgemacht statt am Wortlaut.
+      const reiter = seite.indexOf('app-segment-wrapper');
+      const suche = seite.search(/placeholder="[^"]*(suchen|durchsuchen)/);
+      expect(reiter, datei).toBeGreaterThan(0);
+      expect(suche, datei).toBeGreaterThan(0);
+      expect(reiter, datei).toBeLessThan(suche);
+    }
+  });
+
+  it('der Abschnitt heisst nur noch "Suche", nicht mehr "Suche & Filter"', () => {
+    // Der Filter steht jetzt darueber und gehoert nicht mehr dazu.
+    for (const datei of [...ansichten, 'src/components/chat/ChatOverview.tsx']) {
+      expect(lies(datei), datei).not.toContain('Suche & Filter</IonLabel>');
+    }
+  });
+});

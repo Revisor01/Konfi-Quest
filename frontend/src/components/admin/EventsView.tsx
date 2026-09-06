@@ -146,13 +146,36 @@ const EventsView: React.FC<EventsViewProps> = ({
 
       {headerSlot}
 
-      {/* Suche & Filter */}
+      {/* Reiter ZUERST, Suche darunter (Simon, 06.09.2026): Erst grenzt
+          man die Menge ein, dann sucht man darin -- wie im Chat. Vorher
+          stand die Suche oben und man tippte einen Namen, bevor klar war,
+          in welchem Zeitraum ueberhaupt gesucht wird. */}
+      {onTabChange && (
+        <div className="app-segment-wrapper">
+          <IonSegment
+            value={activeTab}
+            onIonChange={(e) => onTabChange(e.detail.value as 'aktuell' | 'verbuchen' | 'vergangen')}
+          >
+            <IonSegmentButton value="aktuell">
+              <IonLabel>Aktuell</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="verbuchen">
+              <IonLabel>Verbuchen</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="vergangen">
+              <IonLabel>Vergangen</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
+      )}
+
+      {/* Suche -- steht UNTER den Reitern, siehe Kommentar oben */}
       <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--events">
             <IonIcon icon={ICON_FILTER} />
           </div>
-          <IonLabel>Suche & Filter</IonLabel>
+          <IonLabel>Suche</IonLabel>
         </IonListHeader>
         <IonItemGroup>
           {onSearchChange && (
@@ -184,26 +207,6 @@ const EventsView: React.FC<EventsViewProps> = ({
           )}
         </IonItemGroup>
       </IonList>
-
-      {/* Tab Navigation - einfaches IonSegment */}
-      {onTabChange && (
-        <div className="app-segment-wrapper">
-          <IonSegment
-            value={activeTab}
-            onIonChange={(e) => onTabChange(e.detail.value as 'aktuell' | 'verbuchen' | 'vergangen')}
-          >
-            <IonSegmentButton value="aktuell">
-              <IonLabel>Aktuell</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="verbuchen">
-              <IonLabel>Verbuchen</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="vergangen">
-              <IonLabel>Vergangen</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
-      )}
 
       {/* Events Liste */}
       <ListSection
