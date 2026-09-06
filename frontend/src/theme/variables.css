@@ -308,6 +308,14 @@ ion-list-header ion-label {
   --app-color-danger-hell: #ef4444;
   --app-color-success-klassisch: #28a745;
   --app-color-success-tief: #155724;
+  /* RGB-Formen fuer rgba()-Schatten (06.09.2026) */
+  --app-text-system-rgb: 142, 142, 147;
+  --app-aurora-tuerkis-rgb: 34, 211, 238;
+  --app-color-trophy-rgb: 255, 149, 0;
+  --app-color-gottesdienst-mittel-rgb: 37, 99, 235;
+  --app-color-wrapped-dunkel-rgb: 109, 40, 217;
+  --app-color-gottesdienst-dunkel-rgb: 30, 58, 138;
+  --app-color-success-klassisch-rgb: 40, 167, 69;
 
   /* Dekorative Verlaeufe und Hover-Zustaende, die keinem Bereichstoken
      entsprechen (06.09.2026). Als Ganzes benannt statt in Einzelwerte
@@ -509,15 +517,15 @@ ion-item-sliding:last-child {
   line-height: 1.4;
 }
 .app-reason-box--danger {
-  background-color: rgba(220, 53, 69, 0.08);
+  background-color: rgba(var(--app-color-danger-rgb), 0.08);
   color: var(--app-text-secondary);
 }
 .app-reason-box--warning {
-  background-color: rgba(255, 149, 0, 0.08);
+  background-color: rgba(var(--app-color-trophy-rgb), 0.08);
   color: var(--app-text-secondary);
 }
 .app-reason-box--info {
-  background-color: rgba(0, 122, 255, 0.08);
+  background-color: rgba(var(--app-color-info-rgb), 0.08);
   color: var(--app-text-secondary);
 }
 .app-reason-box__label {
@@ -539,31 +547,31 @@ ion-item-sliding:last-child {
   gap: var(--app-abstand-mini);
 }
 .app-chip--events {
-  background-color: rgba(220, 38, 38, 0.15);
+  background-color: rgba(var(--app-color-events-rgb), 0.15);
   color: var(--app-color-events);
 }
 .app-chip--success {
-  background-color: rgba(52, 199, 89, 0.15);
+  background-color: rgba(var(--app-color-success-rgb), 0.15);
   color: var(--app-color-success);
 }
 .app-chip--warning {
-  background-color: rgba(255, 149, 0, 0.15);
+  background-color: rgba(var(--app-color-trophy-rgb), 0.15);
   color: var(--app-color-warning);
 }
 .app-chip--danger {
-  background-color: rgba(220, 53, 69, 0.15);
+  background-color: rgba(var(--app-color-danger-rgb), 0.15);
   color: var(--app-color-danger);
 }
 .app-chip--info {
-  background-color: rgba(0, 122, 255, 0.15);
+  background-color: rgba(var(--app-color-info-rgb), 0.15);
   color: var(--app-color-jahrgang);
 }
 .app-chip--chat {
-  background-color: rgba(6, 182, 212, 0.15);
+  background-color: rgba(var(--app-color-chat-rgb), 0.15);
   color: var(--app-color-chat);
 }
 .app-chip--purple {
-  background-color: rgba(91, 33, 182, 0.15);
+  background-color: rgba(var(--app-color-requests-rgb), 0.15);
   color: var(--app-color-konfis);
 }
 /* Challenges: Rosa bewusst nur als Akzent (Chip/Icon), nicht als Vollflaeche */
@@ -783,27 +791,27 @@ ion-list[inset] ion-list-header {
   margin-bottom: var(--app-abstand-kompakt);
 }
 .app-tag--events {
-  background-color: rgba(220, 38, 38, 0.12);
+  background-color: rgba(var(--app-color-events-rgb), 0.12);
   color: var(--app-color-events);
 }
 .app-tag--chat {
-  background-color: rgba(6, 182, 212, 0.12);
+  background-color: rgba(var(--app-color-chat-rgb), 0.12);
   color: var(--app-color-chat);
 }
 .app-tag--purple {
-  background-color: rgba(91, 33, 182, 0.12);
+  background-color: rgba(var(--app-color-requests-rgb), 0.12);
   color: var(--app-color-konfis);
 }
 .app-tag--info {
-  background-color: rgba(0, 122, 255, 0.12);
+  background-color: rgba(var(--app-color-info-rgb), 0.12);
   color: var(--app-color-jahrgang);
 }
 .app-tag--success {
-  background-color: rgba(52, 199, 89, 0.12);
+  background-color: rgba(var(--app-color-success-rgb), 0.12);
   color: var(--app-color-success);
 }
 .app-tag--warning {
-  background-color: rgba(255, 149, 0, 0.12);
+  background-color: rgba(var(--app-color-trophy-rgb), 0.12);
   color: var(--app-color-warning);
 }
 
@@ -967,8 +975,8 @@ ion-popover ion-item {
 
 ion-popover ion-select-popover ion-item {
   --background: var(--app-weiss);
-  --background-hover: rgba(6, 182, 212, 0.08);
-  --background-activated: rgba(6, 182, 212, 0.12);
+  --background-hover: rgba(var(--app-color-chat-rgb), 0.08);
+  --background-activated: rgba(var(--app-color-chat-rgb), 0.12);
 }
 
 /* === Fokus/Auswahl-Rahmen global entfernt (GUI-02) === */
@@ -1246,12 +1254,12 @@ ion-item {
   font-weight: var(--app-schrift-halbfett);
   white-space: nowrap;
 }
-.app-status-chip--success { background: rgba(52, 199, 89, 0.15); color: var(--app-color-success); }
-.app-status-chip--warning { background: rgba(255, 149, 0, 0.15); color: var(--app-color-warning); }
-.app-status-chip--danger { background: rgba(220, 53, 69, 0.15); color: var(--app-color-danger); }
-.app-status-chip--info { background: rgba(0, 122, 255, 0.15); color: var(--app-color-jahrgang); }
-.app-status-chip--purple { background: rgba(91, 33, 182, 0.15); color: var(--app-color-konfis); }
-.app-status-chip--neutral { background: rgba(142, 142, 147, 0.15); color: var(--app-text-system); }
+.app-status-chip--success { background: rgba(var(--app-color-success-rgb), 0.15); color: var(--app-color-success); }
+.app-status-chip--warning { background: rgba(var(--app-color-trophy-rgb), 0.15); color: var(--app-color-warning); }
+.app-status-chip--danger { background: rgba(var(--app-color-danger-rgb), 0.15); color: var(--app-color-danger); }
+.app-status-chip--info { background: rgba(var(--app-color-info-rgb), 0.15); color: var(--app-color-jahrgang); }
+.app-status-chip--purple { background: rgba(var(--app-color-requests-rgb), 0.15); color: var(--app-color-konfis); }
+.app-status-chip--neutral { background: rgba(var(--app-text-system-rgb), 0.15); color: var(--app-text-system); }
 
 /* === Search Bar === */
 .app-search-bar {
@@ -1316,13 +1324,13 @@ ion-item {
   margin: 0;
 }
 .app-info-box--blue {
-  background: rgba(0, 122, 255, 0.08);
-  border: 1px solid rgba(0, 122, 255, 0.2);
+  background: rgba(var(--app-color-info-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-info-rgb), 0.2);
   color: var(--app-color-jahrgang);
 }
 .app-info-box--neutral {
-  background: rgba(142, 142, 147, 0.08);
-  border: 1px solid rgba(142, 142, 147, 0.2);
+  background: rgba(var(--app-text-system-rgb), 0.08);
+  border: 1px solid rgba(var(--app-text-system-rgb), 0.2);
   color: var(--app-text-system);
 }
 .app-info-box--purple {
@@ -2035,7 +2043,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-background {
   --background:
     radial-gradient(circle at 15% 8%, rgba(255, 255, 255, 0.30) 0%, transparent 45%),
-    radial-gradient(circle at 92% 100%, rgba(34, 211, 238, 0.80) 0%, transparent 52%),
+    radial-gradient(circle at 92% 100%, rgba(var(--app-aurora-tuerkis-rgb), 0.80) 0%, transparent 52%),
     var(--app-gradient-aurora);
   --overflow: auto;
   position: relative;
@@ -2231,9 +2239,9 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-card--error {
-  border-color: rgba(220, 38, 38, 0.35);
+  border-color: rgba(var(--app-color-events-rgb), 0.35);
   box-shadow:
-    0 24px 60px rgba(220, 38, 38, 0.18),
+    0 24px 60px rgba(var(--app-color-events-rgb), 0.18),
     0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -2288,7 +2296,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-input.item-has-focus,
 .app-auth-input:focus-within {
   border-color: var(--ion-color-primary, var(--app-color-wrapped));
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--app-color-wrapped-rgb), 0.15);
 }
 
 .app-auth-input--compact {
@@ -2324,7 +2332,7 @@ ion-button.app-modal-submit-btn--bonus {
   --background-activated: linear-gradient(135deg, var(--app-color-wrapped-dunkel) 0%, var(--app-color-konfis-dunkel) 100%);
   --color: var(--app-weiss);
   --border-radius: 16px;
-  --box-shadow: 0 10px 28px rgba(91, 33, 182, 0.4);
+  --box-shadow: 0 10px 28px rgba(var(--app-color-requests-rgb), 0.4);
   height: 52px;
   font-family: var(--app-schriftart-marke);
   font-size: var(--app-text-titel);
@@ -2375,7 +2383,7 @@ ion-button.app-modal-submit-btn--bonus {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--app-color-events-rgb), 0.3);
 }
 
 .app-auth-error__badge-icon {
@@ -2404,7 +2412,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-link--muted {
-  color: rgba(91, 33, 182, 0.7);
+  color: rgba(var(--app-color-requests-rgb), 0.7);
   font-size: var(--app-text-hinweis);
 }
 
@@ -2437,7 +2445,7 @@ ion-button.app-modal-submit-btn--bonus {
   margin-bottom: var(--app-abstand-gross);
   color: white;
   text-align: center;
-  box-shadow: 0 8px 24px rgba(91, 33, 182, 0.28);
+  box-shadow: 0 8px 24px rgba(var(--app-color-requests-rgb), 0.28);
 }
 
 .app-auth-invite-info__icon {
@@ -2517,7 +2525,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-retry-button {
   --background: transparent;
   --color: var(--app-color-wrapped);
-  --border-color: rgba(124, 58, 237, 0.4);
+  --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
   --border-radius: 10px;
   --border-width: 1px;
   --border-style: solid;
@@ -2531,7 +2539,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-biometrie-button {
   --background: transparent;
   --color: var(--app-color-wrapped);
-  --border-color: rgba(124, 58, 237, 0.4);
+  --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
   --border-radius: 12px;
   --border-width: 1px;
   --border-style: solid;
@@ -2553,7 +2561,7 @@ ion-button.app-modal-submit-btn--bonus {
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--app-abstand-gross) auto;
-  box-shadow: 0 12px 28px rgba(91, 33, 182, 0.35);
+  box-shadow: 0 12px 28px rgba(var(--app-color-requests-rgb), 0.35);
 }
 
 .app-auth-hero__cosmic-circle-icon {
@@ -2570,7 +2578,7 @@ ion-button.app-modal-submit-btn--bonus {
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--app-abstand-weit) auto;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 24px rgba(var(--app-color-success-fresh-rgb), 0.35);
 }
 
 .app-auth-success-circle--small {
@@ -2579,7 +2587,7 @@ ion-button.app-modal-submit-btn--bonus {
   border-radius: var(--app-radius-modal);
   background: linear-gradient(135deg, var(--app-color-success-fresh) 0%, var(--app-color-gemeinde) 100%);
   margin-bottom: var(--app-abstand-gross);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 24px rgba(var(--app-color-success-fresh-rgb), 0.3);
 }
 
 .app-auth-success-circle__icon {
@@ -2666,28 +2674,28 @@ ion-button.app-modal-submit-btn--bonus {
 /* Sektion-Farben als Box-Shadow */
 .app-dashboard-section--konfirmation {
   background: var(--app-gradient-nacht);
-  box-shadow: 0 8px 32px rgba(30, 58, 138, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-gottesdienst-dunkel-rgb), 0.25);
 }
 
 .app-dashboard-section--events {
   background: linear-gradient(135deg, var(--app-color-events) 0%, var(--app-text-fehler) 100%);
-  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-events-rgb), 0.25);
   min-height: 180px;
 }
 
 .app-dashboard-section--konfispruch {
   background: linear-gradient(135deg, var(--app-color-wrapped-dunkel) 0%, var(--app-color-challenges-dunkel) 100%);
-  box-shadow: 0 8px 32px rgba(109, 40, 217, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-wrapped-dunkel-rgb), 0.25);
 }
 
 .app-dashboard-section--tageslosung {
   background: linear-gradient(135deg, var(--app-color-chat) 0%, var(--app-color-chat-dunkel) 100%);
-  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-chat-rgb), 0.25);
 }
 
 .app-dashboard-section--badges {
   background: linear-gradient(135deg, var(--app-color-badges) 0%, var(--app-color-medaille-bronze) 100%);
-  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-badges-rgb), 0.25);
 }
 
 .app-dashboard-section--zertifikate {
@@ -2696,13 +2704,16 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-dashboard-section--challenges {
-  background: linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-teamer-dunkel) 100%);
+  /* Endet auf dem eigenen Dunkelton, nicht auf teamer-dunkel (Simon,
+     06.09.2026): Rest davon, dass Challenges frueher beerenrot waren --
+     seit dem Indigo lief der Verlauf von Blau nach Rot. */
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%);
   box-shadow: 0 8px 32px rgba(var(--app-color-challenges-rgb), 0.25);
 }
 
 .app-dashboard-section--ranking {
   background: linear-gradient(135deg, var(--app-color-success-klassisch) 0%, var(--app-color-success-tief) 100%);
-  box-shadow: 0 8px 32px rgba(40, 167, 69, 0.25);
+  box-shadow: 0 8px 32px rgba(var(--app-color-success-klassisch-rgb), 0.25);
   min-height: 180px;
 }
 
@@ -2712,7 +2723,7 @@ ion-button.app-modal-submit-btn--bonus {
   border-radius: var(--app-radius-modal);
   padding: var(--app-abstand-weit);
   margin-bottom: var(--app-abstand-basis);
-  box-shadow: 0 10px 40px rgba(91, 33, 182, 0.35);
+  box-shadow: 0 10px 40px rgba(var(--app-color-requests-rgb), 0.35);
   position: relative;
   overflow: hidden;
 }
@@ -3188,10 +3199,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
    unterscheidbar bleiben. */
 .app-whatsnew--store {
   background: linear-gradient(135deg, var(--app-color-gottesdienst) 0%, var(--app-color-gottesdienst-mittel) 60%, var(--app-color-gottesdienst-dunkel) 100%);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+  box-shadow: 0 4px 14px rgba(var(--app-color-gottesdienst-mittel-rgb), 0.28);
 }
 .app-whatsnew--store:active {
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 2px 8px rgba(var(--app-color-gottesdienst-mittel-rgb), 0.22);
 }
 
 .app-whatsnew:active {

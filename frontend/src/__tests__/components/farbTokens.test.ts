@@ -95,6 +95,26 @@ describe('Farben kommen aus Tokens', () => {
     expect(treffer).toEqual([]);
   });
 
+  it('keine CSS-Regel enthaelt ein rohes rgba() mit Farbwerten', () => {
+    // ZWEITE LUECKE (Simon, 06.09.2026): Der Test oben prueft nur Hexwerte.
+    // Sechs Kachel-Schatten standen als rgba(109, 40, 217, .25) da -- eine
+    // Farbe, nur anders geschrieben. Erlaubt bleiben Schwarz- und
+    // Weiss-Transparenzen (Overlays, Glaseffekte ohne Farbidentitaet).
+    const treffer: string[] = [];
+    for (const datei of ['src/theme/variables.css', 'src/theme/abstaende.css']) {
+      const ohneBlock = lies(datei).replace(/\/\*[\s\S]*?\*\//g, '');
+      ohneBlock.split('\n').forEach((zeile, i) => {
+        if (zeile.trim().startsWith('--app-')) return;   // Definition
+        for (const m of zeile.matchAll(/rgba\((\d+),\s*(\d+),\s*(\d+),/g)) {
+          const [r, g, b] = [m[1], m[2], m[3]].map(Number);
+          const neutral = (r === g && g === b);          // Schwarz/Weiss/Grau
+          if (!neutral) treffer.push(`${datei}:${i + 1} ${m[0]}`);
+        }
+      });
+    }
+    expect(treffer).toEqual([]);
+  });
+
   it('es gibt fuer jede Rolle genau EINEN Verlauf, definiert in variables.css', () => {
     const css = lies('src/theme/variables.css');
     const anzahl = (name: string) => (css.match(new RegExp(`--app-gradient-${name}:`, 'g')) ?? []).length;
