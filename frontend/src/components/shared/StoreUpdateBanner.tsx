@@ -25,7 +25,14 @@ import {
  * fuer DIESE Version aus. Erst die naechste Version bringt ihn wieder.
  * Offline oder bei Fehlern erscheint schlicht nichts (updateCheck.ts).
  */
-const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
+// Standardabstand wie bei NeuerungenBanner (Simon, 06.09.2026): Ohne ihn
+// klebte das Banner in der Leitungsansicht (KonfisView) an beiden Raendern
+// und fuellte die volle Breite -- dort wurde es ohne style eingebunden,
+// waehrend Konfi- und Teamer-Startseite je einen mitgaben. Ein Standardwert
+// verhindert, dass eine weitere Rolle ihn wieder vergisst.
+const StoreUpdateBanner: React.FC<{ style?: React.CSSProperties }> = ({
+  style = { margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' },
+}) => {
   const [info, setInfo] = useState<StoreUpdateInfo | null>(null);
 
   useEffect(() => {

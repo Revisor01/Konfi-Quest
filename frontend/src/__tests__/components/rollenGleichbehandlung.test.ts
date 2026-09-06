@@ -152,3 +152,40 @@ describe('Gleiche Elemente haben bei allen Rollen denselben Abstand', () => {
     }
   });
 });
+
+describe('Banner haben ueberall Abstand zum Rand', () => {
+  // Simon, 06.09.2026: "das banner version 2.0.0 hat keine richtigen
+  // abstaende nach links und rechts, fuellt die volle breite."
+  //
+  // Ursache: StoreUpdateBanner hatte keinen Standard-style. Konfi- und
+  // Teamer-Startseite gaben je einen mit, die Leitungsansicht nicht -- dort
+  // klebte das Banner an beiden Raendern. Derselbe Fehlertyp wie so oft:
+  // Drei Rollenbaeume, einer wird vergessen.
+  it('StoreUpdateBanner bringt seinen eigenen Abstand mit', () => {
+    const banner = lies('src/components/shared/StoreUpdateBanner.tsx');
+    expect(banner).toContain("style = { margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }");
+  });
+
+  it('NeuerungenBanner ebenso', () => {
+    const banner = lies('src/components/shared/NeuerungenBanner.tsx');
+    expect(banner).toContain("style = { margin: 'var(--app-abstand-basis)' }");
+  });
+});
+
+describe('Die App kennt ihre eigene Version', () => {
+  // Simon, 06.09.2026: "warum zeigt er das? wir sind doch auf 2.1.1"
+  //
+  // Der Store-Update-Hinweis vergleicht die Store-Version mit App.getInfo().
+  // Im iOS-Projekt stand noch 1.5.3, waehrend version.json 2.1.1 sagt --
+  // die App hielt sich fuer aelter und meldete 2.0.0 als "neuer".
+  // Ausgelieferte Builds waren NIE betroffen: Dort setzt
+  // scripts/apply-version.sh die Version in der CI. Nur der lokale Stand
+  // lief weg, und genau der laeuft beim Geraetetest.
+  it('die iOS-Version stimmt mit version.json ueberein', () => {
+    const version = JSON.parse(lies('version.json')).version as string;
+    const pbx = lies('ios/App/App.xcodeproj/project.pbxproj');
+    const treffer = [...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1].trim());
+    expect(treffer.length).toBeGreaterThan(0);
+    for (const t of treffer) expect(t).toBe(version);
+  });
+});
