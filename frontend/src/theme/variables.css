@@ -1326,9 +1326,17 @@ ion-item {
   color: var(--app-text-system);
 }
 .app-info-box--purple {
-  background: rgba(91, 33, 182, 0.08);
-  border: 1px solid rgba(91, 33, 182, 0.2);
+  background: rgba(var(--app-color-konfis-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-konfis-rgb), 0.2);
   color: var(--app-color-konfis);
+}
+/* Jahresrueckblick (Simon, 06.09.2026): "die haben immer die Farbe ihrer
+   Abteilung". --purple ist das Konfi-Violett, der Rueckblick hat sein
+   eigenes (--app-color-wrapped). */
+.app-info-box--wrapped {
+  background: rgba(var(--app-color-wrapped-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-wrapped-rgb), 0.2);
+  color: var(--app-color-wrapped);
 }
 .app-info-box--teamer {
   background: rgba(var(--app-color-teamer-rgb), 0.08);

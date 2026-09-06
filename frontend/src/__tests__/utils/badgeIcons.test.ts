@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { flag, ribbon, trophy, medal, compass, rocket } from 'ionicons/icons';
+// Kontur-Varianten: Seit dem Nur-Kontur-Modus (06.09.2026) bildet
+// ICON_CHOICES die gespeicherten Namen auf die Outline-Glyphen ab. Der
+// DATENVERTRAG sind die Schluessel ('trophy', 'medal', ...), nicht das
+// Bild -- die Tests pruefen weiter, dass jeder Name sein Icon findet.
+import { flagOutline as flag, ribbonOutline as ribbon, trophyOutline as trophy,
+  medalOutline as medal, compassOutline as compass, rocketOutline as rocket } from 'ionicons/icons';
 // ICON_CHALLENGE_GEFUELLT zeigt seit dem Nur-Kontur-Modus (06.09.2026) auf
 // flagOutline. Die Rueckfall-Tests unten pruefen deshalb gegen die zentrale
 // Konstante statt gegen 'flag' aus ionicons -- die Aussage ist "der

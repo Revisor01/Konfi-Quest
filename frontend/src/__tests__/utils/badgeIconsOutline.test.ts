@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { getIconFromString, ICON_MAP } from '../../utils/badgeIcons';
-import { trophy } from 'ionicons/icons';
+// Kontur seit dem Nur-Kontur-Modus (06.09.2026): Der Rueckfall IST die
+// Trophaee -- geprueft wird die Aufloesung, nicht welches Glyph.
+import { trophyOutline as trophy } from 'ionicons/icons';
 
 // Befund vom 02.09.2026 (Simon: "Die Badges-Seite sieht aus wie Müll, holt
 // nicht die Icons"):

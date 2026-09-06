@@ -446,7 +446,7 @@ const AdminWrappedPage: React.FC = () => {
                       (Simon, 05.09.2026). Der Satz "Ohne Namen schlagen wir
                       einen vor" ist raus: Er nannte den Vorschlag nicht und
                       liess offen, was passiert. */}
-                  <div className="app-info-box app-info-box--blue" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
+                  <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     Der Rückblick wird sofort erstellt und freigegeben; alle
                     bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.
                   </div>
