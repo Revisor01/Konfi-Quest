@@ -58,6 +58,9 @@ interface ExtraKriteriumFormular {
   activity_id?: number;
   activity_ids?: number[];
   required_category?: string;
+  /** category_combination: mehrere Kategorienamen (die Auswahl arbeitet hier
+   *  direkt mit Namen — die Wertung im Backend liest ebenfalls Namen). */
+  required_categories?: string[];
   weeks?: number;
 }
 
@@ -280,6 +283,16 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             criteriaExtra = { required_category: extraCriteria.required_category };
           }
           break;
+        case 'category_combination': {
+          // Anders als bei den Aktivitaeten wird hier KEIN ID-Umweg gegangen:
+          // Die Wertung liest Kategorienamen (categories.name), und die
+          // Auswahl haelt sie schon als Namen.
+          const kategorien = [...new Set(extraCriteria.required_categories || [])];
+          if (kategorien.length > 0) {
+            criteriaExtra = { required_categories: kategorien };
+          }
+          break;
+        }
         case 'time_based':
           if (extraCriteria.weeks) {
             criteriaExtra = { days: extraCriteria.weeks * 7 };
@@ -713,7 +726,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
                       </div>
                       <div className="app-list-item__content">
-                        <div className="app-list-item__title">Teamer:innen</div>
+                        <div className="app-list-item__title">Team</div>
                       </div>
                     </div>
                   </div>

@@ -441,7 +441,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
               <div className="app-section-icon app-section-icon--jahrgang">
                 <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
               </div>
-              <IonLabel>Zugriff für Admins & Teamer:innen</IonLabel>
+              <IonLabel>Zugriff für Admins & Team</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>

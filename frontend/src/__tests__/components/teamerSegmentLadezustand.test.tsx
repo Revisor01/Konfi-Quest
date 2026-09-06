@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import KonfisView from '../../components/admin/KonfisView';
 
-// Waehrend die Teamer:innen noch laden, darf NICHT "Noch keine Teamer:innen
-// vorhanden" stehen — dieselbe Fehlerklasse wie der Audit-Befund vom 10.08.
+// Waehrend das Team noch laedt, darf NICHT "Noch niemand im Team"
+// stehen — dieselbe Fehlerklasse wie der Audit-Befund vom 10.08.
 // (Fehler nicht als Leerzustand ausgeben): auch Laden ist kein Leerzustand.
 // Der Ladezustand (teamerLoading) wurde gepflegt, aber nie gerendert.
 //
@@ -46,13 +46,13 @@ const basisProps = {
 describe('KonfisView Teamer-Segment: Laden ist kein Leerzustand', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('zeigt waehrend des Ladens einen Spinner statt "Noch keine Teamer:innen vorhanden"', async () => {
+  it('zeigt waehrend des Ladens einen Spinner statt "Noch niemand im Team"', async () => {
     const { container } = render(<KonfisView {...basisProps} />);
 
     await waitFor(() => {
       expect(container.querySelector('ion-spinner')).not.toBeNull();
     });
-    expect(container.textContent).not.toContain('Noch keine Teamer:innen vorhanden');
+    expect(container.textContent).not.toContain('Noch niemand im Team');
   });
 
   it('zeigt nach leerer Antwort den echten Leerzustand', async () => {
@@ -64,7 +64,7 @@ describe('KonfisView Teamer-Segment: Laden ist kein Leerzustand', () => {
     await act(async () => { teamerResolve({ data: [] }); });
 
     await waitFor(() => {
-      expect(container.textContent).toContain('Noch keine Teamer:innen vorhanden');
+      expect(container.textContent).toContain('Noch niemand im Team');
     });
     expect(container.querySelector('ion-spinner')).toBeNull();
   });

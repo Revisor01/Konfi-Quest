@@ -300,7 +300,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
               <IonLabel>Konfi</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="teamer">
-              <IonLabel>Teamer:innen</IonLabel>
+              <IonLabel>Team</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </div>
@@ -353,7 +353,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
               <div className="app-section-icon app-section-icon--settings">
                 <IonIcon icon={ICON_APPS} />
               </div>
-              <IonLabel>Teamer:innen-Dashboard</IonLabel>
+              <IonLabel>Team-Dashboard</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>

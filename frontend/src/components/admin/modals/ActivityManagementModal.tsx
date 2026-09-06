@@ -321,7 +321,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     background: formData.target_role === 'teamer' ? 'rgba(var(--app-color-success-strong-rgb), 0.1)' : undefined
                   }}
                 >
-                  <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Teamer:innen</span>
+                  <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>Team</span>
                 </div>
               </div>
             </IonCardContent>
@@ -353,7 +353,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
                 {formData.target_role === 'teamer' && (
                   <div style={{ padding: 'var(--app-abstand-eng) var(--app-abstand-basis)', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-sekundaer)' }}>
-                    Teamer:innen-Aktivitäten haben keine Punkte und keinen Typ.
+                    Aktivitäten fürs Team haben keine Punkte und keinen Typ.
                   </div>
                 )}
 

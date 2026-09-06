@@ -530,8 +530,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                       </h3>
                       <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-neutral)', margin: '0', fontWeight: 'var(--app-schrift-normal)' }}>
                         {jahrgangIds.length > 0
-                          ? `Nur Teamer:innen ${jahrgangIds.length === 1 ? 'dieses Jahrgangs' : 'dieser Jahrgänge'} sehen das Material`
-                          : 'Ohne Zuordnung sehen alle Teamer:innen das Material'}
+                          ? `Nur das Team ${jahrgangIds.length === 1 ? 'dieses Jahrgangs' : 'dieser Jahrgänge'} sieht das Material`
+                          : 'Ohne Zuordnung sieht das ganze Team das Material'}
                       </p>
                     </IonLabel>
                   </IonItem>

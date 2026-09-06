@@ -95,9 +95,9 @@ const AdminSettingsPage: React.FC = () => {
     users: {
       title: 'Benutzer:innen', icon: ICON_GRUPPE_GEFUELLT, color: 'var(--app-color-users)',
       paragraphs: [
-        'Hier verwaltest du alle Personen in deiner Organisation: Admins, Teamer:innen und ihre Rollen.',
+        'Hier verwaltest du alle Personen in deiner Organisation: Admins, Team und ihre Rollen.',
         'Die Rolle entscheidet, was jemand darf — z.B. ob jemand Punkte vergeben, Events anlegen oder die ganze Verwaltung sehen kann.',
-        'Teamer:innen ordnest du außerdem Jahrgänge zu, damit sie genau ihre Gruppen sehen.',
+        'Dem Team ordnest du außerdem Jahrgänge zu, damit alle genau ihre Gruppen sehen.',
       ],
     },
     invite: {
@@ -111,7 +111,7 @@ const AdminSettingsPage: React.FC = () => {
     dashboard: {
       title: 'Dashboard', icon: ICON_APPS, color: 'var(--app-color-organizations)',
       paragraphs: [
-        'Lege fest, welche Bereiche auf den Startseiten von Konfis und Teamer:innen angezeigt werden.',
+        'Lege fest, welche Bereiche auf den Startseiten von Konfis und Team angezeigt werden.',
         'So blendest du z.B. die Tageslosung, die Bestenliste oder einzelne Karten ein oder aus — passend zu deiner Gemeinde.',
       ],
     },
@@ -161,8 +161,8 @@ const AdminSettingsPage: React.FC = () => {
       paragraphs: [
         'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
         'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
-        'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sehen es nur dessen Teamer:innen — oder ausdrücklich für alle, dann sehen es alle Teamer:innen der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
-        'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: alle Teamer:innen.',
+        'Unter Sichtbarkeit legst du fest, für wen es gedacht ist: nach Jahrgang — dann sieht es nur das Team dieses Jahrgangs — oder ausdrücklich für alle, dann sieht es das ganze Team der Gemeinde. Freigeben und zurückziehen kann nur der Org-Admin.',
+        'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis. Für alle heißt also immer: das ganze Team.',
       ],
     },
     wrapped: {
@@ -171,14 +171,14 @@ const AdminSettingsPage: React.FC = () => {
         'Der Jahresrückblick zeigt jeder Konfi und jeder Teamer:in am Ende eines Abschnitts, was sie erlebt hat — Termine, Punkte, Abzeichen, ihre Schwerpunkte und die Momente aus den Challenges.',
         'Ein Jahrgang läuft über mehrere Jahre. Deshalb kannst du mehrere Ausgaben anlegen und jeder einen eigenen Namen geben: „Dein erstes Jahr", „Zwischenstand", „Dein Abschluss". Frühere Ausgaben bleiben erhalten, wenn eine neue dazukommt.',
         'Jede Ausgabe wird beim Erstellen sofort freigegeben, und alle Betroffenen bekommen eine Mitteilung. Einzelne Ausgaben lassen sich gezielt löschen, ohne die anderen anzurühren.',
-        'Als Admin verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke der Teamer:innen.',
+        'Als Admin verwaltest du die Rückblicke deiner eigenen Jahrgänge. Die Leitung sieht alle Jahrgänge und verwaltet zusätzlich die Rückblicke des Teams.',
       ],
     },
     certificates: {
       title: 'Zertifikate', icon: ICON_ABZEICHEN_GEFUELLT, color: 'var(--app-color-teamer)',
       paragraphs: [
-        'Hier verwaltest du Zertifikate für deine Teamer:innen — etwa Schulungen oder Qualifikationen.',
-        'Zertifikate können ein Ausstell- und ein Ablaufdatum haben. Deine Teamer:innen sehen ihre Zertifikate auf ihrer Startseite.',
+        'Hier verwaltest du Zertifikate für dein Team — etwa Schulungen oder Qualifikationen.',
+        'Zertifikate können ein Ausstell- und ein Ablaufdatum haben. Dein Team sieht seine Zertifikate auf der eigenen Startseite.',
         'So behältst du im Blick, wer welche Qualifikation hat und wann etwas erneuert werden muss.',
       ],
     },
@@ -323,7 +323,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Benutzer:innen</h2>
-                    <p className="app-settings-item__subtitle">Admins, Teamer:innen und Rollen verwalten</p>
+                    <p className="app-settings-item__subtitle">Admins, Team und Rollen verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
@@ -340,7 +340,7 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                     <div className="app-flex-fill">
                       <h2 className="app-settings-item__title">Dashboard</h2>
-                      <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Teamer:innen</p>
+                      <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Team</p>
                     </div>
                     <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
@@ -511,7 +511,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Zertifikate</h2>
-                    <p className="app-settings-item__subtitle">Teamer:innen-Zertifikate verwalten</p>
+                    <p className="app-settings-item__subtitle">Zertifikate fürs Team verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
