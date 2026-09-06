@@ -460,13 +460,28 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           ]}
         />
 
-        {/* Suche & Filter */}
+        {/* Reiter ZUERST, Suche darunter (Simon, 06.09.2026): "dann
+            filtert man erst und dann sucht man." Vorher stand die Suche
+            oben -- man tippte einen Namen und schraenkte danach die Menge
+            ein, also gegen die eigene Erwartung. */}
+        <div className="app-segment-wrapper">
+          <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
+            <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="ungelesen"><IonLabel>Ungelesen</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
+            {gehoertZumTeam && (
+              <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>
+            )}
+          </IonSegment>
+        </div>
+
+        {/* Suche -- steht UNTER den Reitern, siehe Kommentar oben */}
         <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--chat">
               <IonIcon icon={ICON_FILTER} />
             </div>
-            <IonLabel>Suche & Filter</IonLabel>
+            <IonLabel>Suche</IonLabel>
           </IonListHeader>
           <IonItemGroup>
             <IonItem>
@@ -486,18 +501,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             </IonItem>
           </IonItemGroup>
         </IonList>
-
-        {/* Filter-Tabs */}
-        <div className="app-segment-wrapper">
-          <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
-            <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="ungelesen"><IonLabel>Ungelesen</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
-            {gehoertZumTeam && (
-              <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>
-            )}
-          </IonSegment>
-        </div>
 
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
         <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>

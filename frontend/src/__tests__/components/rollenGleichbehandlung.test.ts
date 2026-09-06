@@ -218,3 +218,29 @@ describe('Leerzustaende tragen die Farbe ihres Bereichs', () => {
     expect(seite).not.toContain('var(--app-color-teamer)');
   });
 });
+
+describe('Chat: erst filtern, dann suchen', () => {
+  // Simon, 06.09.2026: "im chat finde ich das suche und filter unter die
+  // tableiste muss. alle ungelesen konfis team. dann filtert man erst und
+  // dann sucht man."
+  //
+  // Vorher stand die Suche ueber den Reitern: Man tippte einen Namen und
+  // schraenkte die Menge erst danach ein -- gegen die eigene Erwartung.
+  // Alle drei Rollen nutzen dieselbe Datei, die Reihenfolge gilt also
+  // ueberall.
+  it('die Reiter stehen vor der Suche', () => {
+    const seite = lies('src/components/chat/ChatOverview.tsx');
+    const reiter = seite.indexOf('app-segment-wrapper');
+    const suche = seite.indexOf('Chaträume durchsuchen');
+    expect(reiter).toBeGreaterThan(0);
+    expect(suche).toBeGreaterThan(0);
+    expect(reiter).toBeLessThan(suche);
+  });
+
+  it('die Reiter heissen Alle, Ungelesen, Konfis und Team', () => {
+    const seite = lies('src/components/chat/ChatOverview.tsx');
+    for (const wert of ['alle', 'ungelesen', 'konfis', 'team']) {
+      expect(seite).toContain(`<IonSegmentButton value="${wert}">`);
+    }
+  });
+});
