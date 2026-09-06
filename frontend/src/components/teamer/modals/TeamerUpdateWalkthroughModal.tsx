@@ -22,7 +22,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Anlegen, mitmachen, begleiten',
-    text: 'Du legst Challenges für deine Jahrgänge an und gibst Beiträge frei, wenn du das so festgelegt hast. Du kannst Beiträge auch nachträglich anonymisieren oder ausblenden. Sichtbarkeit und Freigabe stehen nach dem Start fest — darauf sollen sich die Konfis verlassen können. Und du machst mit: Teamer:innen sind bei Challenges keine Zuschauer, es gibt sogar Runden nur fürs Team.',
+    text: 'Du legst Challenges für deine Jahrgänge an und gibst Beiträge frei, wenn du das so festgelegt hast. Du kannst Beiträge auch nachträglich anonymisieren oder ausblenden. Sichtbarkeit und Freigabe stehen nach dem Start fest — darauf sollen sich die Konfis verlassen können. Und du machst mit: Ihr im Team seid bei Challenges keine Zuschauer, es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: ICON_WECHSEL,

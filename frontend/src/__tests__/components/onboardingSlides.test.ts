@@ -158,8 +158,8 @@ describe('Update-Walkthrough 2.1.1', () => {
     const text = admin211.map(s => s.text).join(' ');
     expect(text).toContain('Jahrgang');
     expect(text).toContain('kein Fehler');
-    // Teamer:innen sind von der Jahrgangs-Bindung ausgenommen.
-    expect(text).toMatch(/Teamer:innen bleiben davon ausgenommen|erreichst du alle/);
+    // Das Team ist von der Jahrgangs-Bindung ausgenommen.
+    expect(text).toMatch(/Das Team bleibt davon ausgenommen/);
   });
 
   it('keine Folie verspricht Punkte für Challenges', () => {

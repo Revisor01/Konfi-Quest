@@ -42,7 +42,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-material)',
     rgb: '--app-color-material-rgb',
     title: 'Material mit Dateien und Links',
-    text: 'Material trägt jetzt beides zusammen: eine Datei und dazu mehrere Links, zum Beispiel ein PDF und zwei Videos. Wer das Material sieht, entscheidet allein der Jahrgang — ohne Jahrgang sehen es alle Teamer:innen der Gemeinde. Aus einem Termin heraus kommst du direkt zum passenden Material.',
+    text: 'Material trägt jetzt beides zusammen: eine Datei und dazu mehrere Links, zum Beispiel ein PDF und zwei Videos. Wer das Material sieht, entscheidet allein der Jahrgang — ohne Jahrgang sieht es das ganze Team der Gemeinde. Aus einem Termin heraus kommst du direkt zum passenden Material.',
   },
 ];
 
