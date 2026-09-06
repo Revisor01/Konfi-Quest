@@ -1,5 +1,7 @@
 import React, { forwardRef } from 'react';
 import type { KonfiWrappedData, TeamerWrappedData } from '../../../types/wrapped';
+import { TEXTE, stufeFuer } from '../slides/kategorieSeitenTexte';
+import { tageBis } from '../../shared/eventFormatting';
 import './ShareCard.css';
 
 interface ShareCardProps {
@@ -22,9 +24,76 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
     const konfi = !isTeamer ? (data as KonfiWrappedData) : null;
     const teamer = isTeamer ? (data as TeamerWrappedData) : null;
 
-    const bgClass = `share-card share-card--${slideKey}${isTeamer ? ' share-card--teamer' : ''}`;
+    // Die dynamischen Seiten ('kategorie:fest', 'datum:advent') koennen
+    // keinen eigenen Klassennamen bekommen -- der Doppelpunkt ist in CSS
+    // kein gueltiges Zeichen und die Liste waechst mit jeder Kategorie, die
+    // eine Gemeinde anlegt. Sie teilen sich deshalb je eine Sammelklasse.
+    const klassenName = slideKey.startsWith('kategorie:')
+      ? 'kategorie-seite'
+      : slideKey.startsWith('datum:')
+        ? 'datums-seite'
+        : slideKey === 'kategorie-allgemein'
+          ? 'kategorie-seite'
+          : slideKey;
+
+    const bgClass = `share-card share-card--${klassenName}${isTeamer ? ' share-card--teamer' : ''}`;
+
+    /**
+     * Wie viele Termine stecken hinter einer Kategorie- oder Datums-Seite?
+     * Dieselbe Rechnung wie in WrappedModal -- die Zahl steht auf der Seite
+     * und muss auf dem geteilten Bild dieselbe sein.
+     */
+    const kategorieZahl = (kachel: string): number => {
+      if (!konfi) return 0;
+      const verteilung = konfi.slides.kategorie?.verteilung || [];
+      if (kachel.startsWith('datum:')) {
+        const fenster = (konfi.slides as { datums_fenster?: Record<string, number> }).datums_fenster || {};
+        return fenster[kachel.slice('datum:'.length)] || 0;
+      }
+      if (kachel === 'kategorie-allgemein') return verteilung[0]?.count || 0;
+      return verteilung
+        .filter(v => (v as { seite?: string | null }).seite === kachel)
+        .reduce((n, v) => n + (v.count || 0), 0);
+    };
+
+    /**
+     * Die Kategorie- und Datums-Seiten. Sie werden als MUSTER behandelt,
+     * nicht aufgezaehlt: Welche es gibt, entscheidet die Gemeinde-Verwaltung
+     * -- eine Aufzaehlung waere beim naechsten neuen Eintrag veraltet.
+     *
+     * Slogan und Nachsatz kommen aus derselben Quelle wie die Seite selbst
+     * (KategorieSeiteSlide), damit das geteilte Bild dasselbe sagt wie das,
+     * was die Konfi vor sich sieht.
+     */
+    const renderKategorieSeite = () => {
+      const text = TEXTE[slideKey];
+      if (!text) return null;
+      const anzahl = kategorieZahl(slideKey);
+      return (
+        <>
+          <div className="share-auge">{text.auge}</div>
+          <div className="share-zahl">
+            {anzahl}<span className="share-zahl-mal">×</span>
+          </div>
+          <div className="share-slogan">
+            {stufeFuer(text.stufen, anzahl).split('\n').map((zeile, i) => (
+              <span key={i} style={{ display: 'block' }}>{zeile}</span>
+            ))}
+          </div>
+          <div className="share-nachsatz">{text.nachsatz(anzahl)}</div>
+        </>
+      );
+    };
 
     const renderContent = () => {
+      if (
+        slideKey.startsWith('kategorie:')
+        || slideKey.startsWith('datum:')
+        || slideKey === 'kategorie-allgemein'
+      ) {
+        return renderKategorieSeite();
+      }
+
       switch (slideKey) {
         case 'intro':
           return (
@@ -321,6 +390,150 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
         }
+
+        // "Dein Schwerpunkt": die Balken der Seite, auf Teilen-Groesse.
+        case 'kategorie': {
+          if (!konfi) return null;
+          const kat = konfi.slides.kategorie;
+          if (!kat?.top_kategorie) return null;
+          const top = kat.verteilung.slice(0, 5);
+          const max = top.length > 0 ? Math.max(...top.map(k => k.count)) : 1;
+          const gross = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+          return (
+            <>
+              <div className="share-label">Dein Schwerpunkt</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.1, marginBottom: 48 }}>
+                {gross(kat.top_kategorie)}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: 820 }}>
+                {top.map((k) => (
+                  <div key={k.kategorie} style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                    <span style={{ fontSize: 30, width: 260, textAlign: 'left' }}>{gross(k.kategorie)}</span>
+                    <div style={{ flex: 1, height: 24, background: 'rgba(255,255,255,0.18)', borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${(k.count / Math.max(1, max)) * 100}%`,
+                        background: 'rgba(255,255,255,0.85)',
+                        borderRadius: 12,
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 30, fontWeight: 700, width: 70, textAlign: 'right' }}>{k.count}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        }
+
+        // Die Konfirmation. Der Ton haengt daran, ob der Termin noch
+        // bevorsteht -- nach der Feier waere "bald ist es so weit" falsch.
+        // Dieselbe Staffelung wie auf der Seite (KonfirmationsSlide).
+        case 'konfirmation': {
+          if (!konfi) return null;
+          const z = konfi.slides.zeitraum;
+          const roh = z && 'konfirmation' in z ? (z.konfirmation || z.ende) : z?.ende;
+          if (!roh) return null;
+          const termin = new Date(roh);
+          const tage = tageBis(termin);
+          const datum = termin.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+          const slogan = tage < 0
+            ? ['Du bist', 'konfirmiert.']
+            : tage === 0
+              ? ['Heute', 'ist es', 'so weit.']
+              : tage <= 30
+                ? ['Bald', 'ist es', 'so weit.']
+                : ['Noch', `${tage}`, tage === 1 ? 'Tag.' : 'Tage.'];
+          const nachsatz = tage < 0
+            ? `Am ${datum} war es so weit.`
+            : tage === 0
+              ? 'Heute. Genau heute.'
+              : tage <= 30
+                ? `Noch ${tage} ${tage === 1 ? 'Tag' : 'Tage'} bis zum ${datum}.`
+                : `Deine Konfirmation ist am ${datum}.`;
+          return (
+            <>
+              <div className="share-auge">Deine Konfirmation</div>
+              {tage > 0 && (
+                <div className="share-zahl">
+                  {tage}<span className="share-zahl-mal">{tage === 1 ? ' Tag' : ' Tage'}</span>
+                </div>
+              )}
+              <div className="share-slogan">
+                {slogan.map((zeile, i) => <span key={i} style={{ display: 'block' }}>{zeile}</span>)}
+              </div>
+              <div className="share-nachsatz">{nachsatz}</div>
+            </>
+          );
+        }
+
+        // Ziel uebertroffen. Die Zahl ist der Ueberschuss, nicht der Stand --
+        // das ist die Nachricht, die man teilt.
+        case 'ueber-das-ziel': {
+          if (!konfi) return null;
+          const e = konfi.slides.endspurt;
+          const ueberschuss = Math.max(0, e.aktuell_total - e.ziel_total);
+          return (
+            <>
+              <div className="share-label">Geschafft!</div>
+              <div className="share-big-number">+{ueberschuss}</div>
+              <div className="share-subtitle">Punkte über dem Ziel!</div>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.7)', marginTop: 32 }}>
+                {e.aktuell_total} / {e.ziel_total} Punkte
+              </div>
+            </>
+          );
+        }
+
+        // Das seltenste Abzeichen. Hier traegt die PROZENTZAHL die Karte,
+        // nicht der Name -- sie setzt die Leistung ins Verhaeltnis, und
+        // genau das macht die Seite teilenswert (Simons Idee 02.09.2026).
+        case 'seltenstes': {
+          if (!konfi) return null;
+          const selt = konfi.slides.badges?.seltenstes;
+          if (!selt?.name) return null;
+          const auge = selt.prozent <= 10
+            ? 'Fast niemand hat das'
+            : selt.prozent <= 25
+              ? 'Selten'
+              : selt.prozent <= 50
+                ? 'Nicht selbstverständlich'
+                : 'Dein seltenstes';
+          return (
+            <>
+              <div className="share-label">{auge}</div>
+              <div style={{
+                width: 220, height: 220, borderRadius: '50%', marginBottom: 32,
+                background: selt.color || 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 96, fontWeight: 800,
+              }}>
+                {selt.name.charAt(0)}
+              </div>
+              <div style={{ fontSize: 44, fontWeight: 600, marginBottom: 24 }}>{selt.name}</div>
+              <div className="share-big-number">{selt.prozent}<span style={{ fontSize: 80 }}>%</span></div>
+              <div className="share-subtitle">haben das auch</div>
+            </>
+          );
+        }
+
+        // Die Einladung ins Team -- letzte Seite jedes Konfi-Rueckblicks.
+        // Sie bekommt JEDE Konfi (feste Kachel im Backend), also wurde sie
+        // auch am haeufigsten geteilt -- und kam bis 06.09.2026 schwarz
+        // heraus.
+        case 'werde-teamer':
+          return (
+            <>
+              <div className="share-auge">Und jetzt?</div>
+              <div className="share-slogan">
+                <span style={{ display: 'block' }}>Bleib</span>
+                <span style={{ display: 'block' }}>dabei.</span>
+              </div>
+              <div className="share-nachsatz">
+                Als Teamer:in gestaltest du das nächste Konfi-Jahr mit — für die,
+                die jetzt anfangen, wo du angefangen hast.
+              </div>
+            </>
+          );
 
         default:
           return null;

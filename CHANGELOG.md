@@ -37,6 +37,9 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Einzelne Seiten des Jahresrückblicks lassen sich wieder teilen. Bei rund der
+  Hälfte der Seiten kam bisher ein leeres, schwarzes Bild heraus — darunter die
+  Einladung ins Team, die jede Konfi am Ende bekommt.
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
 - Auf der Startseite des Teams stehen unter „Zertifikate" nur noch die
   wirklich erhaltenen. Wer keine hat, sieht den Block gar nicht mehr statt
