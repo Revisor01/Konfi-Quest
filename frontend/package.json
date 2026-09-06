@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "live:ios": "cap run ios --live-reload --external",
-    "live:android": "cap run android --live-reload --external",
+    "live:ios": "cap run ios --live-reload --host $(ipconfig getifaddr en0 || ipconfig getifaddr en1) --port 5173",
+    "live:android": "cap run android --live-reload --host $(ipconfig getifaddr en0 || ipconfig getifaddr en1) --port 5173",
     "build": "tsc && vite build",
     "docs:api": "node ../scripts/build-api-docs.mjs",
     "docs:handbuch": "node ../scripts/build-handbuch.mjs",

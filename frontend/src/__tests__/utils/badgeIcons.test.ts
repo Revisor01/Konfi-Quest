@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { flag, ribbon, trophy, medal, compass, rocket } from 'ionicons/icons';
+// ICON_CHALLENGE_GEFUELLT zeigt seit dem Nur-Kontur-Modus (06.09.2026) auf
+// flagOutline. Die Rueckfall-Tests unten pruefen deshalb gegen die zentrale
+// Konstante statt gegen 'flag' aus ionicons -- die Aussage ist "der
+// Rueckfall ist die Challenge-Flagge", nicht "es ist genau dieses Glyph".
+import { ICON_CHALLENGE_GEFUELLT } from '../../components/shared/icons';
 import { ICON_CHOICES, ICON_MAP, getIconFromString } from '../../utils/badgeIcons';
 import { getChallengeIcon } from '../../components/admin/modals/ChallengeManageModal';
 import { getChallengeBadgeIcon } from '../../components/konfi/views/ChallengesView';
@@ -46,13 +51,13 @@ describe('getIconFromString', () => {
 
 describe('Rueckfall-Symbole der Aufrufstellen', () => {
   it('Challenge-Verwaltung faellt weiterhin auf die Flagge zurueck', () => {
-    expect(getChallengeIcon('gibtesnicht')).toBe(flag);
-    expect(getChallengeIcon(undefined)).toBe(flag);
+    expect(getChallengeIcon('gibtesnicht')).toBe(ICON_CHALLENGE_GEFUELLT);
+    expect(getChallengeIcon(undefined)).toBe(ICON_CHALLENGE_GEFUELLT);
   });
 
   it('Konfi-Challenges fallen weiterhin auf die Flagge zurueck', () => {
-    expect(getChallengeBadgeIcon('gibtesnicht')).toBe(flag);
-    expect(getChallengeBadgeIcon(null)).toBe(flag);
+    expect(getChallengeBadgeIcon('gibtesnicht')).toBe(ICON_CHALLENGE_GEFUELLT);
+    expect(getChallengeBadgeIcon(null)).toBe(ICON_CHALLENGE_GEFUELLT);
   });
 
   it('Zertifikats-Seite faellt weiterhin auf das Band zurueck', () => {

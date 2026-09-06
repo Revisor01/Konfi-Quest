@@ -120,7 +120,7 @@ const ForgotPasswordPage: React.FC = () => {
                   </div>
 
                   <h2 style={{
-                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontFamily: 'var(--app-schriftart-marke)',
                     fontSize: 'var(--app-text-ueberschrift-gross)',
                     fontWeight: 'var(--app-schrift-normal)',
                     letterSpacing: '3px',

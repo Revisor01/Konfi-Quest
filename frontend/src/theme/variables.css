@@ -39,10 +39,13 @@ http://ionicframework.com/docs/theming/ */
    Stelle fuer alle Textgroessen, so wie diese Datei fuer die Farben. */
 @import './typografie.css';
 
-/* Headline-Schrift: Plus Jakarta Sans (wie Landing-Page) */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+/* Headline-Schrift: Outfit (Simons Wahl, 06.09.2026 -- vorher Plus Jakarta
+   Sans; Fraunces, Space Grotesk und Nunito wurden auf dem Geraet verglichen).
+   Plus Jakarta Sans wird nicht mehr geladen: Sie war nach dem Wechsel
+   ungenutzt und haette die App bei jedem Start umsonst Daten holen lassen. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap');
 
-/* Globale Headline-Typografie (Plus Jakarta Sans) */
+/* Globale Headline-Typografie */
 .app-header-banner__title,
 .app-header-banner__subtitle,
 ion-list-header ion-label,
@@ -56,7 +59,7 @@ ion-list-header ion-label,
 .app-dashboard-glass-card h3,
 .app-text-main,
 .app-headline {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--app-schriftart-ueberschrift);
 }
 .app-header-banner__title {
   font-weight: var(--app-schrift-extrafett);
@@ -272,6 +275,12 @@ ion-list-header ion-label {
   /* Grundtoene. Bis 06.09.2026 standen #fff/#ffffff 34x roh in den Regeln
      -- harmlos, aber sie machten die Suche nach "welche Farben gibt es"
      unbrauchbar. */
+  /* Schriftarten (06.09.2026): Standen bis hierher an sechs Stellen roh im
+     CSS -- eine andere Ueberschriftenschrift haette man an jeder einzeln
+     aendern muessen. Jetzt zwei Zeilen fuer die ganze App. */
+  --app-schriftart-ueberschrift: 'Outfit', system-ui, sans-serif;
+  --app-schriftart-marke: 'Bebas Neue', sans-serif;
+
   --app-weiss: #ffffff;
 
   /* Statusflaechen (06.09.2026): Helle Grundflaeche, passender Rand, dunkler
@@ -2102,7 +2111,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 /* Hero-Title — weiß auf dem Verlauf-BG */
 .app-auth-hero__title--cosmic {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--app-schriftart-marke);
   font-size: var(--app-anzeige-marke);
   line-height: 0.9;
   letter-spacing: 6px;
@@ -2161,7 +2170,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-hero__title {
   font-size: var(--app-anzeige-riesig);
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--app-schriftart-marke);
   font-weight: var(--app-schrift-normal);
   margin: 0 0 var(--app-abstand-eng) 0;
   text-shadow: 0 2px 12px rgba(0,0,0,0.25);
@@ -2238,7 +2247,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-card__heading h2 {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--app-schriftart-marke);
   font-size: var(--app-anzeige-basis);
   font-weight: var(--app-schrift-normal);
   letter-spacing: 3px;
@@ -2309,7 +2318,7 @@ ion-button.app-modal-submit-btn--bonus {
   --border-radius: 16px;
   --box-shadow: 0 10px 28px rgba(91, 33, 182, 0.4);
   height: 52px;
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--app-schriftart-marke);
   font-size: var(--app-text-titel);
   font-weight: var(--app-schrift-normal);
   letter-spacing: 4px;
@@ -2430,7 +2439,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-invite-info__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--app-schriftart-marke);
   font-size: var(--app-text-titel);
   font-weight: var(--app-schrift-normal);
   letter-spacing: 2px;
@@ -2626,7 +2635,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-dashboard-section__bg-label {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--app-schriftart-ueberschrift);
   font-size: var(--app-anzeige-riesig);
   font-weight: var(--app-schrift-extrafett);
   color: rgba(255, 255, 255, 0.08);
@@ -2751,7 +2760,7 @@ ion-button.app-modal-submit-btn--bonus {
   color: white;
   font-weight: var(--app-schrift-mittel);
   margin: 0 0 var(--app-abstand-basis) 0;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--app-schriftart-ueberschrift);
   padding-left: var(--app-abstand-basis);
   border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
