@@ -417,6 +417,7 @@ Versionsüberschrift.
   nächsten Erzeugen die gesamte Historie weg gewesen wäre.
 
 ### Sonstiges
+- Sicherheitsmeldungen zu verwendeten Fremdbibliotheken abgearbeitet.
 - Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
   schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und
   zwei Uhr fehl, obwohl die Erinnerungen selbst korrekt verschickt wurden.
