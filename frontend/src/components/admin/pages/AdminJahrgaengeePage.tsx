@@ -649,7 +649,7 @@ const AdminJahrgaengeePage: React.FC = () => {
           emptyIcon={ICON_JAHRGANG_GEFUELLT}
           emptyTitle="Keine Jahrgänge gefunden"
           emptyMessage="Noch keine Jahrgänge angelegt"
-          emptyIconColor="var(--app-color-info)"
+          emptyIconColor="var(--app-color-jahrgang)"
         >
                   {(jahrgaenge || []).map((jahrgang, index) => (
                     <IonItemSliding

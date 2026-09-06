@@ -3159,7 +3159,12 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   padding: 16px 18px;
   border-radius: var(--app-radius-gross);
   cursor: pointer;
-  background: linear-gradient(135deg, var(--app-color-level) 0%, var(--app-color-challenges) 60%, var(--app-color-teamer-mittel) 100%);
+  /* Verlauf in EINER Farbfamilie (Simon, 06.09.2026: "ist pink und blau, das
+     muesste anders"). Vorher lief er von --app-color-level (Pink) ueber
+     Challenges nach --app-color-teamer-mittel (Beerenrot) -- das passte,
+     solange Challenges selbst beerenrot war. Seit dem Wechsel auf Indigo
+     standen drei unzusammenhaengende Farben nebeneinander. */
+  background: linear-gradient(135deg, var(--app-color-wrapped) 0%, var(--app-color-challenges) 55%, var(--app-color-challenges-dunkel) 100%);
   box-shadow: 0 4px 14px rgba(var(--app-color-challenges-rgb), 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -3173,7 +3178,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 /* Einstieg in den Challenges-Bereich. Behaelt bewusst den Farbverlauf des
    Grundbanners: Challenges ist der Bereich, dessen Farbe das ist. */
 .app-whatsnew--challenges {
-  background: linear-gradient(135deg, var(--app-color-level) 0%, var(--app-color-challenges) 60%, var(--app-color-teamer-mittel) 100%);
+  background: linear-gradient(135deg, var(--app-color-wrapped) 0%, var(--app-color-challenges) 55%, var(--app-color-challenges-dunkel) 100%);
 }
 /* Blaue Variante: "Neue Version verfügbar". Gleiche Form wie "Was ist neu",
    andere Farbe (Simons Wunsch 02.09.2026) — ein Tippen führt in den Store.

@@ -189,3 +189,32 @@ describe('Die App kennt ihre eigene Version', () => {
     for (const t of treffer) expect(t).toBe(version);
   });
 });
+
+describe('Leerzustaende tragen die Farbe ihres Bereichs', () => {
+  // Simon, 06.09.2026: "unter challenges wenn noch nichts da ist, unter
+  // aktuelles geplant und archiv im admin immer noch das Pink auf den Icons."
+  //
+  // Alle drei Leerzustaende der Challenge-Verwaltung standen auf
+  // --app-color-teamer, dem Beerenrot des Team-Bereichs. Ein Rest davon, dass
+  // Challenges frueher dieselbe Farbe trugen -- nach dem Wechsel auf Indigo
+  // fiel es auf. Die Konfi-Ansicht war korrekt, nur die Leitung nicht:
+  // wieder der Fall "drei Rollenbaeume, einer wird vergessen".
+  it('die Challenge-Verwaltung nutzt die Challenges-Farbe', () => {
+    const seite = lies('src/components/admin/views/ChallengesManageView.tsx');
+    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
+    expect(treffer.length).toBe(3);   // Aktuell, Geplant, Archiv
+    for (const t of treffer) expect(t).toBe('var(--app-color-challenges)');
+  });
+
+  it('die Konfi-Challenges ebenso', () => {
+    const seite = lies('src/components/konfi/views/ChallengesView.tsx');
+    for (const t of [...seite.matchAll(/iconColor="([^"]+)"/g)].map((m) => m[1])) {
+      expect(t).toBe('var(--app-color-challenges)');
+    }
+  });
+
+  it('keine Ansicht nutzt mehr die Teamer-Farbe fuer Challenges', () => {
+    const seite = lies('src/components/admin/views/ChallengesManageView.tsx');
+    expect(seite).not.toContain('var(--app-color-teamer)');
+  });
+});

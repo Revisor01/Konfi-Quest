@@ -483,7 +483,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         emptyIcon={ICON_CHALLENGE_GEFUELLT}
         emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Gerade läuft keine Challenge'}
         emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können'}
-        emptyIconColor="var(--app-color-teamer)"
+        emptyIconColor="var(--app-color-challenges)"
       >
         {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
       </ListSection>
@@ -500,7 +500,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         emptyIcon={ICON_UHRZEIT}
         emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Nichts in Planung'}
         emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier'}
-        emptyIconColor="var(--app-color-teamer)"
+        emptyIconColor="var(--app-color-challenges)"
       >
         {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
       </ListSection>
@@ -516,7 +516,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         emptyIcon={ICON_ARCHIV}
         emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Noch nichts im Archiv'}
         emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen'}
-        emptyIconColor="var(--app-color-teamer)"
+        emptyIconColor="var(--app-color-challenges)"
       >
         {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}
       </ListSection>
