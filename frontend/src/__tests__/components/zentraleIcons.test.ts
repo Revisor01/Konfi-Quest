@@ -148,25 +148,32 @@ describe('Alle drei Rollen nutzen dieselben Konstanten fuer dieselbe Bedeutung',
   });
 });
 
-describe('Nur-Kontur-Modus gilt fuer ALLE Konstanten', () => {
-  // Simon, 06.09.2026: "icon benachrichtigungen bei admin mehr ist noch
-  // nicht line."
+describe('Der Gefuellt/Kontur-Schalter bleibt an EINER Stelle', () => {
+  // Am 06.09.2026 wurde die ganze App auf Kontur umgestellt und auf Simons
+  // Wunsch wieder zurueckgenommen -- der Look wird spaeter in Ruhe
+  // entschieden. Was bleibt, ist die Faehigkeit, das mit EINEM Skriptlauf
+  // ueber diese Datei zu tun.
   //
-  // Der erste Umbau erfasste nur die _GEFUELLT-Namen. 20 Konstanten OHNE
-  // dieses Namensteil zeigten weiter auf gefuellte Glyphen -- darunter
-  // ICON_BENACHRICHTIGUNG (notifications), ICON_MEHR (ellipsisHorizontal)
-  // und ICON_ABSAGE (closeCircle). Sie fielen durch, weil die Umstellung am
-  // NAMEN haing statt am Glyph.
-  //
-  // Dieser Test prueft das Glyph: Jede Konstante muss auf eine
-  // -Outline-Variante zeigen. Ein neues gefuelltes Icon faellt sofort auf.
-  it('jede Konstante zeigt auf ein Outline-Glyph', () => {
+  // FALLE, in die ich selbst getappt bin: Zwanzig Konstanten tragen KEIN
+  // _GEFUELLT im Namen, zeigen aber auf gefuellte Glyphen
+  // (ICON_BENACHRICHTIGUNG -> notifications, ICON_MEHR ->
+  // ellipsisHorizontal, ICON_ABSAGE -> closeCircle ...). Wer am NAMEN
+  // umstellt statt am Glyph, uebersieht sie. Dieser Test haelt fest, dass
+  // es sie gibt, damit die naechste Umstellung sie mitnimmt.
+  it('alle Icons kommen aus dieser einen Datei', () => {
     const quelle = lies('src/components/shared/icons.ts');
     const paare = [...quelle.matchAll(/ {2}(\w+) as (ICON_[A-Z_]+),/g)];
     expect(paare.length).toBeGreaterThan(150);
-    const gefuellt = paare
-      .filter((m) => !m[1].endsWith('Outline'))
-      .map((m) => `${m[2]} -> ${m[1]}`);
-    expect(gefuellt).toEqual([]);
+  });
+
+  it('es gibt Konstanten ohne _GEFUELLT, die auf gefuellte Glyphen zeigen', () => {
+    // Kein Mangel, sondern eine Eigenschaft, die man kennen muss: Diese
+    // Namen beschreiben eine Bedeutung, kein Aussehen.
+    const quelle = lies('src/components/shared/icons.ts');
+    const ohneNamensteil = [...quelle.matchAll(/ {2}(\w+) as (ICON_[A-Z_]+),/g)]
+      .filter((m) => !m[2].endsWith('_GEFUELLT') && !m[1].endsWith('Outline'));
+    expect(ohneNamensteil.length).toBeGreaterThan(0);
+    // Der Kopfkommentar muss davor warnen.
+    expect(quelle).toContain('Zwanzig Konstanten tragen KEIN _GEFUELLT im Namen');
   });
 });
