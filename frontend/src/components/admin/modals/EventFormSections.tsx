@@ -146,8 +146,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
           >
             <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
-            <IonSelectOption value="teamer_needed">Konfis, Teamer:innen gesucht</IonSelectOption>
-            <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
+            <IonSelectOption value="teamer_needed">Konfis, Team gesucht</IonSelectOption>
+            <IonSelectOption value="teamer_only">Nur Team</IonSelectOption>
           </IonSelect>
         </IonItem>
         {/* Pflicht-Event und Konfirmation nur, wenn Konfis teilnehmen */}
@@ -529,13 +529,13 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
       </div>
-      <IonLabel>Teamer:innen</IonLabel>
+      <IonLabel>Team</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
     <IonCardContent>
       <IonList>
         <IonItem lines="none">
-          <IonLabel>Unbegrenzte Teamer:innen</IonLabel>
+          <IonLabel>Team unbegrenzt</IonLabel>
           <IonToggle
             slot="end"
             className="app-toggle--events"
@@ -546,7 +546,7 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
         </IonItem>
         {formData.teamer_max_participants !== 0 && (
           <IonItem lines="none">
-            <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Wie viele Teamer:innen werden gesucht?</IonLabel>
+            <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Wie viele Personen werden fürs Team gesucht?</IonLabel>
             <div className="app-range-row">
               <span className="app-range-row__min">1</span>
               <IonRange

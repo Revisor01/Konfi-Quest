@@ -48,4 +48,25 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
     expect(lies('src/components/admin/pages/AdminCertificatesPage.tsx'))
       .toContain('Teamer-Card');
   });
+
+  it('Event-Zielgruppen heissen ueberall gleich', () => {
+    // Die Ecken-Marke sagte schon "Team gesucht"/"Nur Team", das Formular
+    // daneben noch "Teamer:innen gesucht". Jetzt sagen beide dasselbe.
+    const form = lies('src/components/admin/modals/EventFormSections.tsx');
+    expect(form).toContain('>Konfis, Team gesucht<');
+    expect(form).toContain('>Nur Team<');
+    expect(form).toContain('<IonLabel>Team unbegrenzt</IonLabel>');
+
+    const marke = lies('src/components/shared/EventCornerBadges.tsx');
+    expect(marke).toContain("'Nur Team' : 'Team gesucht'");
+
+    for (const pfad of [
+      'src/components/admin/views/EventDetailSections.tsx',
+      'src/components/teamer/pages/TeamerEventsPage.tsx',
+    ]) {
+      const quelle = lies(pfad);
+      expect(quelle).toContain('__label">Team-Zugang<');
+      expect(quelle).toContain("'Nur Team' : 'Team gesucht'");
+    }
+  });
 });
