@@ -29,7 +29,19 @@ describe('Team-Rueckblick am 6. Januar (Wrapped-Cron)', () => {
     // Der Cron ruft den Router ueber BackgroundService.wrappedRouter -- so
     // wie der Server ihn beim Start setzt (server.js).
     const rbacDurchreiche = (req, res, next) => next();
-    wrappedRouter = require('../../routes/wrapped')(db, rbacDurchreiche, {});
+    // Die Rollen-Helfer muessen echte Middleware sein, kein leeres Objekt:
+    // Seit 1aea1404 haengt requireAdmin an POST /generate/:jahrgangId, und
+    // express lehnt ein undefined als Handler beim Anlegen der Route ab
+    // ("argument handler must be a function") -- die ganze Datei fiel damit
+    // aus, nicht nur der eine Test. Dieser Test prueft den Cron, nicht die
+    // Berechtigung; Durchreichen ist hier richtig.
+    const rollenDurchreiche = {
+      requireSuperAdmin: rbacDurchreiche,
+      requireOrgAdmin: rbacDurchreiche,
+      requireAdmin: rbacDurchreiche,
+      requireTeamer: rbacDurchreiche
+    };
+    wrappedRouter = require('../../routes/wrapped')(db, rbacDurchreiche, rollenDurchreiche);
     BackgroundService.wrappedRouter = wrappedRouter;
   });
 
