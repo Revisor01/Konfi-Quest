@@ -1005,6 +1005,31 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
+    // DER ANTWORTENDE -- wie oft jemand im Chat auf andere geantwortet hat.
+    //
+    // Warum gerade ANTWORTEN und nicht Nachrichten: Eine Antwort ist die
+    // Zuwendung, die den Unterschied macht. Wer im Team viel schreibt, redet
+    // vielleicht viel; wer viel ANTWORTET, hat auf andere reagiert -- genau
+    // das ist die Arbeit, die im Team selten jemand sieht. chat_messages
+    // traegt dafuer reply_to (Fremdschluessel auf die beantwortete
+    // Nachricht), es braucht keine neue Spalte.
+    //
+    // Org-Grenze ueber den Raum, nicht ueber die Nachricht (chat_messages
+    // traegt keine organization_id) -- dieselbe Regel wie im Konfi-Zweig.
+    // Geloeschte Antworten zaehlen nicht: Was jemand zurueckgenommen hat,
+    // soll ihm der Rueckblick nicht vorrechnen.
+    const { rows: [antwortenRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM chat_messages cm
+         JOIN chat_rooms cr ON cm.room_id = cr.id
+        WHERE cm.user_id = $1 AND cr.organization_id = $2
+          AND cm.reply_to IS NOT NULL
+          AND cm.deleted_at IS NULL
+          AND cm.created_at >= $3::date
+          AND cm.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const antworten = parseInt(antwortenRow.count, 10) || 0;
+
     // VOM KONFI ZUR TEAMER:IN -- die eigene Geschichte in der Gemeinde.
     //
     // Wer heute im Team ist und frueher selbst Konfi war, hat eine
@@ -1074,8 +1099,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           teamer_seit: teamerSeit,
           jahre_aktiv: jahreAktiv
         },
-        // Additiv (ab Version 3): alte Apps kennen das Feld nicht und
-        // ignorieren es.
+        // Additiv (ab Version 3): alte Apps kennen die Felder nicht und
+        // ignorieren sie.
+        chat: {
+          antworten
+        },
         konfi_zeit: warSelbstKonfi
           ? { jahrgang: konfiZeit.jahrgang || null }
           : null,

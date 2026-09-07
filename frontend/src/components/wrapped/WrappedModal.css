@@ -1810,6 +1810,7 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-konfis-slide,
 .teamer-badges-slide,
 .teamer-zertifikate-slide,
+.teamer-antworten-slide,
 .teamer-jahre-slide,
 .teamer-konfi-zeit-slide,
 .teamer-abschluss-slide {
@@ -1826,6 +1827,7 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-badges-slide     { --seiten-verlauf: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); background: var(--seiten-verlauf); }
 .teamer-zertifikate-slide{ --seiten-verlauf: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); background: var(--seiten-verlauf); }
 .teamer-jahre-slide      { --seiten-verlauf: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); background: var(--seiten-verlauf); }
+.teamer-antworten-slide { --seiten-verlauf: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 55%, #5b21b6 100%); background: var(--seiten-verlauf); }
 /* Warmes Bernstein-Blau: der Blick zurueck auf die eigene Konfi-Zeit. */
 .teamer-konfi-zeit-slide { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0369a1 55%, #075985 100%); background: var(--seiten-verlauf); }
 .teamer-abschluss-slide  { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%); background: var(--seiten-verlauf); }

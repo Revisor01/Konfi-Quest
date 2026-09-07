@@ -49,6 +49,8 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Teamer-Rückblick zeigt, wie oft jemand im Chat auf andere geantwortet
+  hat — die Zuwendung, die sonst in keiner Zahl auftaucht.
 - Teamer:innen, die selbst einmal Konfi in ihrer Gemeinde waren, bekommen im
   Rückblick eine eigene Seite dazu — mit dem eigenen Jahrgang.
 - Der Rückblick für Teamer:innen zeigt keine leeren Seiten mehr. Bisher kamen

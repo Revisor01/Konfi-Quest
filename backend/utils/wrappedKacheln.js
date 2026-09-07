@@ -236,13 +236,16 @@ const TEAMER_DRAMATURGIE = [
   'teamer-konfis',       // 3  wen du begleitet hast
   'teamer-badges',       // 4  Abzeichen
   'teamer-zertifikate',  // 5  Zertifikate
-  'teamer-jahre',        // 6  "seit x Jahren dabei"
+  // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
+  // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
+  'teamer-antworten',    // 6  wie oft du geantwortet hast
+  'teamer-jahre',        // 7  "seit x Jahren dabei"
   // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
   // Konfi war. Steht bewusst NACH den Jahren im Team: erst wie lange du
   // dabei bist, dann wie es angefangen hat. Und vor dem Abschluss, damit
   // der Rueckblick auf dem persoenlichsten Punkt ausklingt.
-  'teamer-konfi-zeit',   // 7  vom Konfi zur Teamer:in
-  'teamer-abschluss'     // 8  Uebersicht
+  'teamer-konfi-zeit',   // 8  vom Konfi zur Teamer:in
+  'teamer-abschluss'     // 9  Uebersicht
 ];
 
 /**
@@ -261,6 +264,9 @@ const TEAMER_BEDINGUNGEN = {
   // Aussage ueber eine fehlende Angabe, nicht ueber die Person. Diese
   // Pruefung stand bisher im Frontend (WrappedModal); sie gehoert hierher,
   // wo alle anderen auch stehen.
+  // Erst ab fuenf Antworten. Eine einzelne Antwort ist keine Geschichte --
+  // dieselbe Schwelle, die im Konfi-Zweig fuer den Chat galt.
+  'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
   'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit),
   // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer
   // von aussen ins Team kam, bekommt die Seite nicht -- eine erfundene

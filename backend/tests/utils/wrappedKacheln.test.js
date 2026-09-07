@@ -324,6 +324,7 @@ const aktiverTeamer = () => ({
   badges: { total_earned: 4, badges: [{ name: 'Fleissig' }] },
   zertifikate: { total: 2, zertifikate: [{ name: 'Juleica' }] },
   engagement: { teamer_seit: '2021-09-01', jahre_aktiv: 4 },
+  chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
@@ -335,6 +336,7 @@ const neuerTeamer = () => ({
   badges: { total_earned: 0, badges: [] },
   zertifikate: { total: 0, zertifikate: [] },
   engagement: { teamer_seit: null, jahre_aktiv: 0 },
+  chat: { antworten: 0 },
   konfi_zeit: null,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
@@ -347,6 +349,7 @@ describe('Teamer-Dramaturgie', () => {
       'teamer-konfis',
       'teamer-badges',
       'teamer-zertifikate',
+      'teamer-antworten',
       'teamer-jahre',
       'teamer-konfi-zeit',
       'teamer-abschluss'
@@ -398,6 +401,19 @@ describe('Teamer-Dramaturgie', () => {
     const t = aktiverTeamer();
     t.engagement = { teamer_seit: null, jahre_aktiv: 0 };
     expect(waehleTeamerKacheln(t)).not.toContain('teamer-jahre');
+  });
+
+  test('ab fuenf Antworten erscheint die Antworten-Seite', () => {
+    const t = aktiverTeamer();
+    t.chat = { antworten: 5 };
+    expect(waehleTeamerKacheln(t)).toContain('teamer-antworten');
+  });
+
+  test('bei vier Antworten gibt es die Seite nicht', () => {
+    // Eine Handvoll Antworten ist noch keine Geschichte.
+    const t = aktiverTeamer();
+    t.chat = { antworten: 4 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-antworten');
   });
 
   test('wer selbst Konfi war, bekommt die Seite "Wie alles anfing"', () => {

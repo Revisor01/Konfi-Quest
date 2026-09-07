@@ -224,6 +224,11 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/** Chat-Zahlen im Teamer-Rueckblick -- ab Snapshot-Version 3. */
+export interface TeamerChatSlide {
+  antworten: number;
+}
+
 /**
  * Die eigene Konfi-Zeit einer Teamer:in -- ab Snapshot-Version 3.
  * null, wenn die Person nicht selbst Konfi in dieser Gemeinde war.
@@ -257,6 +262,8 @@ export interface TeamerWrappedData {
     badges: TeamerBadgesSlide;
     zertifikate: TeamerZertifikateSlide;
     engagement: TeamerEngagementSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    chat?: TeamerChatSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     konfi_zeit?: TeamerKonfiZeitSlide | null;
     zeitraum: TeamerZeitraumSlide;

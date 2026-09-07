@@ -386,6 +386,19 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-antworten': {
+          if (!teamer) return null;
+          const ant = teamer.slides.chat?.antworten;
+          if (!ant) return null;
+          return (
+            <>
+              <div className="share-label">Im Gespräch</div>
+              <div className="share-big-number">{ant}</div>
+              <div className="share-subtitle">Mal geantwortet</div>
+            </>
+          );
+        }
+
         case 'teamer-konfi-zeit': {
           if (!teamer) return null;
           const kz = teamer.slides.konfi_zeit;

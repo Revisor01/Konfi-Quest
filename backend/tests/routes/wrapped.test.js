@@ -385,6 +385,54 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.events_geleitet.total).toBe(1);
     });
 
+    it('Antworten zaehlen -- eigene Nachrichten ohne Bezug nicht', async () => {
+      // Raum 3 ist die Team-Gruppe aus dem Seed (teamer1 ist Teilnehmer).
+      const schreib = async (userId, datum, replyTo = null) => {
+        const { rows: [m] } = await db.query(
+          `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at)
+           VALUES (3, $1, 'text', $2, $3::timestamptz) RETURNING id`,
+          [userId, replyTo, `${datum} 10:00:00`]
+        );
+        return m.id;
+      };
+      const fremd = await schreib(USERS.admin1.id, IM_ZEITRAUM);
+      // Fuenf echte Antworten im Zeitraum ...
+      for (let i = 0; i < 5; i++) await schreib(USERS.teamer1.id, IM_ZEITRAUM, fremd);
+      // ... eine eigene Nachricht OHNE Bezug (zaehlt nicht) ...
+      await schreib(USERS.teamer1.id, IM_ZEITRAUM);
+      // ... und eine Antwort im Vorjahr (ausserhalb des Zeitraums).
+      await schreib(USERS.teamer1.id, VOR_ZEITRAUM, fremd);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.chat.antworten).toBe(5);
+      expect(snap.kacheln).toContain('teamer-antworten');
+    });
+
+    it('Eine geloeschte Antwort zaehlt nicht mit', async () => {
+      const { rows: [fremd] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, content, created_at)
+         VALUES (3, $1, 'text', $2::timestamptz) RETURNING id`,
+        [USERS.admin1.id, `${IM_ZEITRAUM} 10:00:00`]
+      );
+      for (let i = 0; i < 5; i++) {
+        await db.query(
+          `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at)
+           VALUES (3, $1, 'text', $2, $3::timestamptz)`,
+          [USERS.teamer1.id, fremd.id, `${IM_ZEITRAUM} 10:00:00`]
+        );
+      }
+      // Was jemand zurueckgenommen hat, soll ihm der Rueckblick nicht
+      // vorrechnen.
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at, deleted_at)
+         VALUES (3, $1, 'text', $2, $3::timestamptz, NOW())`,
+        [USERS.teamer1.id, fremd.id, `${IM_ZEITRAUM} 10:00:00`]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.chat.antworten).toBe(5);
+    });
+
     it('Wer selbst Konfi war, bekommt die Seite "Wie alles anfing"', async () => {
       // konfi_profiles bleibt beim Rollenwechsel stehen -- geloescht wird die
       // Zeile nur mit dem ganzen Menschen (routes/users.js, purgeHistory).

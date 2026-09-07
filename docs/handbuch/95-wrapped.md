@@ -343,19 +343,24 @@ Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
 **5. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
 *Entfällt ohne Zertifikate im Zeitraum.*
 
-**6. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
+**6. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
+Gezählt werden echte Antworten (Bezug auf eine Nachricht), keine eigenen
+Beiträge ohne Bezug; zurückgenommene Antworten zählen nicht.
+*Entfällt unter fünf Antworten.*
+
+**7. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
 wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
 
 > **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
 > jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
 > „Teamer:in seit".
 
-**7. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
+**8. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
 dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
 Jahrgang, sofern bekannt.
 *Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
 
-**8. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
+**9. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.
 
 ## Wo man den Rückblick wiederfindet
