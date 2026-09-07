@@ -34,7 +34,7 @@ function zeilen(titel: string): string[] {
   return [worte[0], worte.slice(1).join(' ')];
 }
 
-const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year, titel }) => {
+const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year: _year, titel }) => {
   // Ohne Titel: "Deine Konfi-Zeit" statt "Konfi-Jahr {Jahr}" (Simons
   // Wortlaut, 07.09.2026). Der Rueckblick umfasst seit derselben Regel die
   // ganze Konfi-Zeit -- bei manchen zwei Jahre. Eine einzelne Jahreszahl

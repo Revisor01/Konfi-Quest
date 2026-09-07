@@ -22,7 +22,7 @@ interface AbschlussSlideProps extends SlideProps {
  * Die drei Zahlen bleiben als Zeile darunter -- hier gehoert die Uebersicht
  * hin, das ist der Sinn der Seite.
  */
-const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year, titel }) => {
+const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _year, titel }) => {
   // Siehe WrappedModal: `konfirmation` ist das echte Datum, `ende` nur der
   // Rueckfall fuer Alt-Snapshots ohne das Feld.
   const z = data.slides.zeitraum;
