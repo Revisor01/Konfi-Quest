@@ -49,6 +49,9 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Wer im Konfi-Jahr von der Warteliste nachgerückt ist, bekommt dafür eine
+  eigene Seite im Rückblick. Für frühere Anmeldungen lässt sich das nicht
+  mehr feststellen — dort bleibt die Seite aus.
 - Der Teamer-Rückblick zeigt, mit wie vielen anderen zusammen die Jahrgänge
   betreut wurden, und begrüßt alle, die im Rückblicksjahr neu ins Team
   gekommen sind.

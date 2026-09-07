@@ -962,6 +962,9 @@ ion-modal.wrapped-modal-fullscreen {
    Challenges und gehoeren sichtbar zusammen, stehen aber im Rueckblick
    nacheinander (erst die Zahl, dann die Bilder gross).
    ======================================== */
+.warteliste-slide { --seiten-verlauf: linear-gradient(135deg, #10b981 0%, #059669 55%, #065f46 100%);
+  background: var(--seiten-verlauf); }
+
 /* Zeit-/Rhythmus-Seiten und der Vielseitige (07.09.2026). */
 .langer-atem-slide { --seiten-verlauf: linear-gradient(135deg, #0d9488 0%, #0f766e 55%, #134e4a 100%);
   background: var(--seiten-verlauf); }

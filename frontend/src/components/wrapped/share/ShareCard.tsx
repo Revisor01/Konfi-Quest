@@ -203,6 +203,23 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         // und Video der Konfis werden NIE in ein Teilen-Bild eingebettet
         // (Datenschutz — das Bild verlässt die App).
         // Die ZAHL der Challenges (die Bilder stehen im Zweig darunter).
+        case 'warteliste': {
+          if (!konfi) return null;
+          const w = konfi.slides.warteliste;
+          if (!w?.nachgerueckt) return null;
+          return (
+            <>
+              <div className="share-label">Nachgerückt</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>
+                Gewartet.<br />Und dabei.
+              </div>
+              <div className="share-subtitle">
+                {w.nachgerueckt === 1 ? 'Ein Platz wurde frei' : `${w.nachgerueckt} Mal nachgerückt`}
+              </div>
+            </>
+          );
+        }
+
         case 'langer-atem': {
           if (!konfi) return null;
           const la = konfi.slides.langer_atem;

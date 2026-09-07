@@ -13,6 +13,7 @@ import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChallengeMomenteSlide from './slides/ChallengeMomenteSlide';
 import ChallengesSlide from './slides/ChallengesSlide';
+import WartelisteSlide from './slides/WartelisteSlide';
 import LangerAtemSlide from './slides/LangerAtemSlide';
 import WochentagSlide from './slides/WochentagSlide';
 import VielseitigSlide from './slides/VielseitigSlide';
@@ -186,6 +187,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'events': return { ...base, slideValue: `${k.slides.events.total_attended} Events besucht` };
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
+        case 'warteliste': return { ...base, slideValue: `${k.slides.warteliste?.nachgerueckt || 0} Mal nachgerückt` };
         case 'langer-atem': return { ...base, slideValue: `${k.slides.langer_atem?.tage || 0} Tage lang dabei` };
         case 'wochentag': return { ...base, slideValue: `Mein Tag: ${k.slides.wochentag?.name || ''}` };
         case 'vielseitig': return { ...base, slideValue: `Auf ${k.slides.medienarten?.length || 0} Arten geantwortet` };
@@ -294,6 +296,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,
       'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
+      'warteliste': (a) => (
+        konfiData.slides.warteliste
+          ? <WartelisteSlide isActive={a} warteliste={konfiData.slides.warteliste} />
+          : null
+      ),
       'langer-atem': (a) => (
         konfiData.slides.langer_atem
           ? <LangerAtemSlide isActive={a} langerAtem={konfiData.slides.langer_atem} />

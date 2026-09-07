@@ -310,6 +310,7 @@ bekommt zwei Seiten über denselben Termin.
 | Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
 | Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
 | Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
+| Nachgerückt | Buchungen, die von der Warteliste nachgerückt sind; ab einer |
 | Der lange Atem | Spanne zwischen erstem und letztem Termin; ab 5 Terminen und 60 Tagen |
 | Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit; ab 4 Terminen an dem Tag und mindestens der Hälfte aller |
 | Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge; ab zwei Arten |

@@ -178,6 +178,11 @@
 
 /* Challenges: derselbe Rosa-Ton wie die Momente-Karte -- beide erzaehlen
    von den Challenges und gehoeren sichtbar zusammen. */
+.share-card--warteliste {
+  background: linear-gradient(135deg, #065f46 0%, #0a0a0a 60%);
+  --karten-schleier: linear-gradient(135deg, #065f46 0%, #0a0a0a 60%);
+}
+
 .share-card--langer-atem {
   background: linear-gradient(135deg, #0f766e 0%, #0a0a0a 60%);
   --karten-schleier: linear-gradient(135deg, #0f766e 0%, #0a0a0a 60%);

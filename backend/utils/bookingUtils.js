@@ -226,8 +226,13 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
         ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`;
   const params = timeslotId ? [eventId, timeslotId] : [eventId];
 
+  // war_auf_warteliste haelt fest, was dieses UPDATE ueberschreibt (Migration
+  // 145): Nach dem Wechsel auf 'confirmed' ist sonst nicht mehr erkennbar,
+  // dass diese Person gewartet hat. Der Jahresrueckblick erzaehlt daraus
+  // "du hast gewartet -- und bist reingekommen"; ohne die Spalte ginge die
+  // Information im Moment des Nachrueckens verloren.
   const { rows: [promoted] } = await db.query(
-    `UPDATE event_bookings SET status = 'confirmed'
+    `UPDATE event_bookings SET status = 'confirmed', war_auf_warteliste = true
      WHERE id = (${subSelect})
      RETURNING user_id, organization_id`,
     params

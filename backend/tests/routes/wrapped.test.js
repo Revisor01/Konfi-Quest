@@ -1317,6 +1317,40 @@ describe('Wrapped Routes', () => {
     });
 
     // ------------------------------------------------------------
+    // Warteliste-Held:in (Migration 145).
+    // ------------------------------------------------------------
+    it('Nur ein echtes Nachruecken zaehlt -- NULL heisst unbekannt, nicht nein', async () => {
+      const nachgerueckt = await termin('Nachgerueckt', IM_ZEITRAUM);
+      const normal = await termin('Von Anfang an', IM_ZEITRAUM);
+      const alt = await termin('Bestandsbuchung', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, nachgerueckt);
+      await buchung(USERS.konfi1.id, normal);
+      await buchung(USERS.konfi1.id, alt);
+
+      // Eine Buchung ist nachgerueckt, eine ausdruecklich NICHT, eine
+      // traegt NULL wie jede Bestandszeile vor der Migration.
+      await db.query(
+        `UPDATE event_bookings SET war_auf_warteliste = true WHERE event_id = $1`, [nachgerueckt]);
+      await db.query(
+        `UPDATE event_bookings SET war_auf_warteliste = false WHERE event_id = $1`, [normal]);
+      // 'alt' bleibt NULL.
+
+      const snap = await snapshotVonKonfi1();
+      // Genau EINE -- weder die ausdrueckliche false noch die unbekannte NULL.
+      expect(snap.slides.warteliste.nachgerueckt).toBe(1);
+      expect(snap.kacheln).toContain('warteliste');
+    });
+
+    it('Ohne Nachruecken fehlt die Seite', async () => {
+      const t = await termin('Ganz normal', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, t);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.warteliste.nachgerueckt).toBe(0);
+      expect(snap.kacheln).not.toContain('warteliste');
+    });
+
+    // ------------------------------------------------------------
     // Zeit-/Rhythmus-Seiten: Spanne und Wochentag.
     // ------------------------------------------------------------
     it('Der lange Atem misst die Spanne zwischen erstem und letztem Termin', async () => {

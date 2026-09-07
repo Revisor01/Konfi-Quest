@@ -18,6 +18,7 @@ const {
   FESTE_KACHELN,
   DRAMATURGIE,
   MAX_KACHELN,
+  GESCHUETZTE_KACHELN,
   ZEIT_SEITEN,
   MAX_ZEIT_SEITEN,
   MAX_DATUM_SEITEN,
@@ -30,6 +31,7 @@ const aktiverSnapshot = () => ({
   challenges: { beitraege: 4, top_challenge: { title: 'Foto' } },
   challenge_momente: [{}, {}, {}],
   aktivster_monat: { monat: 12, monat_name: 'Dezember', aktivitaeten: 5 },
+  warteliste: { nachgerueckt: 2 },
   langer_atem: { erster: '2025-09-14', letzter: '2026-04-12', tage: 210, termine: 9 },
   wochentag: { tag: 0, name: 'Sonntag', anzahl: 6, gesamt: 9, anteil: 67 },
   medienarten: ['photo', 'text'],
@@ -56,6 +58,7 @@ const stillerSnapshot = () => ({
   challenges: { beitraege: 0, top_challenge: null },
   challenge_momente: [],
   aktivster_monat: { monat: 0, monat_name: '', aktivitaeten: 0 },
+  warteliste: { nachgerueckt: 0 },
   langer_atem: null,
   wochentag: null,
   medienarten: [],
@@ -112,6 +115,7 @@ describe('Dramaturgie', () => {
     const kacheln = waehleKacheln(stillerSnapshot());
     expect(kacheln).not.toContain('challenges');
     expect(kacheln).not.toContain('aktivster-monat');
+    expect(kacheln).not.toContain('warteliste');
     expect(kacheln).not.toContain('langer-atem');
     expect(kacheln).not.toContain('wochentag');
     expect(kacheln).not.toContain('vielseitig');
@@ -160,6 +164,53 @@ describe('Challenges-Seite (Simons Schwelle)', () => {
     const s = aktiverSnapshot();
     s.challenges.beitraege = 1;
     expect(waehleKacheln(s)).toContain('challenges');
+  });
+});
+
+describe('Der Deckel', () => {
+  test('kuerzt niemals eine feste oder geschuetzte Seite weg', () => {
+    // BEFUND 07.09.2026: Der Deckel schnitt positionsweise ab. Alles WEIT
+    // HINTEN in der Dramaturgie fiel zuerst heraus -- erst 'badges' (fest),
+    // dann 'seltenstes' und 'konfirmation'. Genau die Seiten, die eine
+    // Konfi sich verdienen muss, verschwanden zugunsten einer weiteren
+    // Kategorie-Kachel.
+    const s = aktiverSnapshot();
+    // Ein Maximalfall: viele Datums-Treffer, alles andere trifft auch zu.
+    s.termine_daten = [
+      new Date(2026, 11, 24), new Date(2026, 11, 6), new Date(2026, 3, 5),
+      new Date(2027, 0, 2), new Date(2026, 6, 15), new Date(2026, 9, 4)
+    ];
+    const kacheln = waehleKacheln(s, { chat: 10 });
+    expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
+    for (const fest of FESTE_KACHELN) {
+      expect(kacheln, `${fest} wurde weggekuerzt`).toContain(fest);
+    }
+    for (const geschuetzt of GESCHUETZTE_KACHELN) {
+      // Nur pruefen, was bei diesem Snapshot ueberhaupt zutrifft.
+      if (geschuetzt === 'seltenstes' && !s.badges?.seltenstes?.name) continue;
+      if (geschuetzt === 'konfirmation' && !s.zeitraum?.konfirmation) continue;
+      expect(kacheln, `${geschuetzt} wurde weggekuerzt`).toContain(geschuetzt);
+    }
+  });
+});
+
+describe('Warteliste-Held:in', () => {
+  test('wer nachgerueckt ist, bekommt die Seite', () => {
+    expect(waehleKacheln(aktiverSnapshot())).toContain('warteliste');
+  });
+
+  test('ohne Nachruecken gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.warteliste = { nachgerueckt: 0 };
+    expect(waehleKacheln(s)).not.toContain('warteliste');
+  });
+
+  test('ein fehlendes Feld (Alt-Snapshot) ergibt keine Seite', () => {
+    // Alt-Snapshots kennen 'warteliste' nicht -- sie duerfen davon nicht
+    // ploetzlich eine Seite bekommen.
+    const s = aktiverSnapshot();
+    delete s.warteliste;
+    expect(waehleKacheln(s)).not.toContain('warteliste');
   });
 });
 

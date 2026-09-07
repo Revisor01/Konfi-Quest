@@ -53,6 +53,9 @@ const DRAMATURGIE = [
   // jemand darin heraussticht. Eine zweite Chat-Seite haette dieselbe Zahl
   // ein zweites Mal erzaehlt.
   'events',             // 2  Termine des Jahres
+  // 2b: Warteliste-Held:in -- direkt bei den Terminen, weil die Seite von
+  // ihnen erzaehlt: nicht wie viele, sondern wie du hineingekommen bist.
+  'warteliste',         // 2b du hast gewartet und es hat geklappt
   'kategorie',          // 3  der eigene Schwerpunkt (mehrere moeglich)
   'challenges',         // 4  wie oft du mitgemacht hast
   'challenge-momente',  // 5  Challenges Special: die Bilder, gross
@@ -89,17 +92,21 @@ const DRAMATURGIE = [
  * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
  * plus Kategorie-Seiten, die mehrfach vorkommen duerfen.
  *
- * VON 14 AUF 16 (07.09.2026): Mit den drei neuen Zeit-/Rhythmus-Seiten
- * liegt das theoretische Maximum bei 17 (gemessen, nicht geschaetzt: 6 feste
- * + 7 bedingte nach Zeit-Kontingent + 4 Kategorie-/Datums-Seiten). Bei 14
- * verdraengte der Deckel ausgerechnet die Seiten am ENDE der Dramaturgie --
- * 'seltenstes' und 'konfirmation', also das seltenste Abzeichen und die
- * Konfirmation. Zwei Seiten, die eine Konfi sich erst verdienen muss.
+ * VON 14 UEBER 16 AUF 18 (07.09.2026): Mit den neuen Seiten liegt das
+ * theoretische Maximum bei 18 -- gemessen, nicht geschaetzt: 6 feste
+ * + 8 bedingte (nach Abzug des Zeit-Kontingents) + 4 Kategorie-/Datums-
+ * Seiten. Ein niedrigerer Deckel schnitt genau dort ab, wo die Dramaturgie
+ * am dichtesten ist, und verdraengte je nach Fall 'seltenstes',
+ * 'konfirmation' oder die Zeit-Seiten.
  *
- * Simons "rund zehn" beschreibt die typische Person; der Deckel greift nur
- * im Ausnahmefall, bei dem wirklich alles zutrifft.
+ * WARUM DAS UNBEDENKLICH IST: Der Deckel ist NICHT das, was den Rueckblick
+ * kurz haelt -- das tun die Bedingungen. JEDE nicht-feste Seite muss sich
+ * qualifizieren (mindestens 5 Termine, mindestens 4 Antworten, ein
+ * seltenstes Abzeichen ...). Die 18 treffen nur eine Person, auf die
+ * WIRKLICH ALLES zutrifft; Simons "rund zehn" bleibt der Normalfall.
+ * Der Deckel ist die Notbremse, nicht die Regel.
  */
-const MAX_KACHELN = 16;
+const MAX_KACHELN = 18;
 
 // Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
 // Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
@@ -124,6 +131,19 @@ const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
 const MAX_ZEIT_SEITEN = 2;
 
 /**
+ * Seiten, die der Deckel NICHT wegkuerzen darf, obwohl sie nicht zu den
+ * festen gehoeren.
+ *
+ * Beide muss man sich VERDIENEN: das seltenste Abzeichen ("das haben nur
+ * x %") und die Konfirmation. Sie stehen weit hinten in der Dramaturgie und
+ * fielen deshalb als Erste heraus, sobald vorne Seiten dazukamen -- gemessen
+ * am 07.09.2026, als das Maximum auf 18 stieg. Eine Konfi verlor damit
+ * ausgerechnet die zwei Seiten, die ueber sie am meisten sagen, zugunsten
+ * einer weiteren Kategorie-Kachel.
+ */
+const GESCHUETZTE_KACHELN = ['seltenstes', 'konfirmation'];
+
+/**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
  * Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern --
  * deshalb faengt waehleKacheln() Fehler ab.
@@ -132,6 +152,10 @@ const BEDINGUNGEN = {
   // Simons Regel woertlich: "Wer nicht viel geschrieben hat, braucht keine
   // Kachel." Eine einzelne Teilnahme ist keine Geschichte -- deshalb erst
   // ab dem ersten echten Beitrag.
+  // Nur bei einem echten Nachruecken. NULL in der Spalte heisst UNBEKANNT
+  // (Bestandszeilen vor Migration 145) und ergibt hier 0 -- niemand bekommt
+  // die Seite auf Verdacht.
+  warteliste: (s) => (s.warteliste?.nachgerueckt || 0) > 0,
   challenges: (s) => (s.challenges?.beitraege || 0) > 0,
   // Nur wenn das Backend ein seltenstes Abzeichen bestimmt hat. Das setzt
   // mindestens 5 Konfis in der Gemeinde voraus -- bei zweien waere "50 %"
@@ -258,10 +282,14 @@ function waehleKacheln(slides, schnitt = null) {
   // Jetzt ueberleben ALLE festen Seiten den Deckel; gekuerzt wird
   // ausschliesslich bei den dynamischen. Die Reihenfolge der Dramaturgie
   // bleibt dabei erhalten.
-  const feste = ohneDoppelte.filter(k => FESTE_KACHELN.includes(k));
-  const dynamisch = ohneDoppelte.filter(k => !FESTE_KACHELN.includes(k));
-  const platzFuerDynamische = Math.max(0, MAX_KACHELN - feste.length);
-  const behalten = new Set([...feste, ...dynamisch.slice(0, platzFuerDynamische)]);
+  const unkuerzbar = ohneDoppelte.filter(
+    k => FESTE_KACHELN.includes(k) || GESCHUETZTE_KACHELN.includes(k)
+  );
+  const kuerzbar = ohneDoppelte.filter(
+    k => !FESTE_KACHELN.includes(k) && !GESCHUETZTE_KACHELN.includes(k)
+  );
+  const platzFuerKuerzbare = Math.max(0, MAX_KACHELN - unkuerzbar.length);
+  const behalten = new Set([...unkuerzbar, ...kuerzbar.slice(0, platzFuerKuerzbare)]);
   return ohneDoppelte.filter(k => behalten.has(k));
 }
 
@@ -394,6 +422,7 @@ module.exports = {
   MAX_KATEGORIE_SEITEN,
   ZEIT_SEITEN,
   MAX_ZEIT_SEITEN,
+  GESCHUETZTE_KACHELN,
   BEDINGUNGEN,
   FESTE_TEAMER_KACHELN,
   TEAMER_DRAMATURGIE,

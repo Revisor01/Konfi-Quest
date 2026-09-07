@@ -427,6 +427,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? { monat: monatRows[0].monat, monat_name: MONAT_NAMEN[monatRows[0].monat] || '', aktivitaeten: parseInt(monatRows[0].count, 10) }
       : { monat: 0, monat_name: '', aktivitaeten: 0 };
 
+    // WARTELISTE-HELD:IN -- wie oft jemand nachgerueckt ist.
+    //
+    // Die Spalte war_auf_warteliste setzt promoteFromWaitlist im Moment des
+    // Nachrueckens (Migration 145). NULL heisst UNBEKANNT (Bestandszeilen
+    // von vor der Migration), nicht "nein" -- deshalb wird hier auf
+    // ausdrueckliches true geprueft und nicht auf "nicht false".
+    const { rows: [wartelisteRow] } = await client.query(
+      `SELECT COUNT(*)::int AS anzahl FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.organization_id = $2
+          AND eb.war_auf_warteliste IS TRUE
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const nachgerueckt = wartelisteRow ? wartelisteRow.anzahl : 0;
+
     // DER LANGE ATEM -- die Spanne zwischen erstem und letztem Termin.
     //
     // Die Aussage ist "du warst ueber das ganze Jahr hinweg dabei", nicht
@@ -945,6 +962,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         },
         aktivster_monat: aktivsterMonat,
         // Additiv (ab 07.09.2026): alte Apps kennen die Felder nicht.
+        warteliste: {
+          nachgerueckt
+        },
         langer_atem: langerAtem,
         wochentag: wochentag,
         medienarten: medienarten,

@@ -180,6 +180,8 @@ export interface KonfiWrappedData {
     /** Ab Version 3: Challenge-Zahlen fuer die Highlight-Seite. */
     challenges?: KonfiChallengesSlide;
     /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    warteliste?: KonfiWartelisteSlide;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
     langer_atem?: KonfiLangerAtemSlide | null;
     /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
     wochentag?: KonfiWochentagSlide | null;
@@ -198,6 +200,11 @@ export interface KonfiWrappedData {
     /** Backend liefert es weiter, wird aber nicht mehr gerendert. */
     pflicht?: KonfiPflichtSlide;
   };
+}
+
+/** Nachgerueckte Buchungen -- ab 07.09.2026 (Migration 145). */
+export interface KonfiWartelisteSlide {
+  nachgerueckt: number;
 }
 
 /** Spanne zwischen erstem und letztem Termin -- ab 07.09.2026. */
