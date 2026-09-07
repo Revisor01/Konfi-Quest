@@ -23,6 +23,14 @@ interface PunkteSlideProps extends SlideProps {
  * Fuenf Stufen plus Null (Simons Vorgabe 03.09.2026). Die Schwellen richten
  * sich an den Punktezielen aus: Die meisten Jahrgaenge setzen 20 Punkte als
  * Ziel, deshalb liegt dort eine Grenze.
+ *
+ * KEIN "JAHR" ALS ABGESCHLOSSENE EINHEIT (Simon, 06.09.2026: "Das Jahr ist
+ * noch nicht zu Ende ist ne seltsame Ansage bei zweistellig. Weil wir das
+ * ja nie richtig auf das Konfi Jahr rechnen."). Der Zeitraum laeuft seit
+ * dem 06.09.2026 von Anfang an bis jetzt -- ein "Jahr, das noch nicht
+ * vorbei ist", gibt es in dieser Rechnung gar nicht mehr. Hier stand
+ * ausgerechnet auf der haeufigsten Stufe (10 bis 19 Punkte) "und das Jahr
+ * ist noch nicht vorbei".
  */
 function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: string } {
   // 1) Weit ueber dem Ziel
@@ -46,7 +54,7 @@ function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: 
     return {
       auge: 'Deine Punkte',
       slogan: ['Der Stapel', 'wächst.'],
-      nachsatz: 'Zweistellig — und das Jahr ist noch nicht vorbei.'
+      nachsatz: 'Zweistellig. Und da kommt noch was.'
     };
   }
   // 4) Angefangen
@@ -68,7 +76,7 @@ function spruchFuer(total: number): { auge: string; slogan: string[]; nachsatz: 
   // Null: keine Zahl, kein Vergleich, kein Vorwurf.
   return {
     auge: 'Deine Punkte',
-    slogan: ['Dein Jahr', 'fängt', 'gerade erst', 'an.'],
+    slogan: ['Deine', 'Konfi-Zeit', 'fängt', 'gerade erst an.'],
     nachsatz: 'Die Punkte kommen, sobald du dabei bist.'
   };
 }

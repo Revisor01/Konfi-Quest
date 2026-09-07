@@ -223,3 +223,54 @@ describe('Keine Wortdoppelung zwischen Seiten, die zusammen auftreten', () => {
     expect(treffer, treffer.join('\n')).toEqual([]);
   });
 });
+
+/**
+ * "DAS JAHR" IST KEINE ABGESCHLOSSENE EINHEIT.
+ *
+ * SIMONS KRITIK (06.09.2026, woertlich): "Das Jahr ist noch nicht zu Ende
+ * ist ne seltsame Ansage bei zweistellig. Weil wir das ja nie richtig auf
+ * das Konfi Jahr rechnen."
+ *
+ * Der Rueckblickszeitraum laeuft seither von Anfang an bis jetzt. Ein
+ * "Jahr, das noch nicht vorbei ist", gibt es in dieser Rechnung nicht mehr,
+ * und die Konfi-Zeit dauert bei vielen zwei Jahre.
+ *
+ * ERLAUBT BLEIBT das KALENDARISCHE Jahr -- "die vollste Zeit des Jahres" im
+ * Advent, "Jahr fuer Jahr Danke gesagt" beim Erntedank, "zwischen den
+ * Jahren". Gemeint ist dort der Kalender, nicht der Rueckblickszeitraum.
+ * Ebenso das NAECHSTE Jahr in der Einladung ins Team: Das ist eine
+ * Zukunftsangabe, kein Zeitraum, ueber den abgerechnet wird.
+ */
+describe('Kein "Jahr" als abgeschlossene Einheit im Konfi-Rueckblick', () => {
+  // Wendungen, die den Rueckblickszeitraum als Jahr behandeln.
+  const VERBOTEN = [
+    /\bdas Jahr ist\b/i,
+    /\bJahr ist noch nicht\b/i,
+    /\bdein Jahr\b/i,
+    /\bein Jahr, in dem\b/i,
+    /\büber das ganze Jahr\b/i,
+    /\bim Laufe des Jahres\b/i,
+  ];
+
+  it.each(KONFI_TEXTQUELLEN)('%s spricht nicht vom Jahr als Zeitraum', (pfad) => {
+    const inhalt = readFileSync(resolve(process.cwd(), pfad), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^[ \t]*\/\/.*$/gm, ' ');
+    for (const muster of VERBOTEN) {
+      const treffer = inhalt.match(muster);
+      expect(treffer, `${pfad}: "${treffer?.[0]}"`).toBe(null);
+    }
+  });
+
+  it('das kalendarische Jahr bleibt erlaubt', () => {
+    // Gegenprobe zur Regel oben: Waeren diese Stellen mit verschwunden,
+    // haette der Test zu grob gegriffen und echte Texte mitgerissen.
+    const kategorien = readFileSync(
+      resolve(process.cwd(), 'src/components/wrapped/slides/kategorieSeitenTexte.ts'),
+      'utf8'
+    );
+    expect(kategorien).toContain('vollsten Zeit des Jahres');
+    expect(kategorien).toContain('Jahr für Jahr');
+    expect(kategorien).toContain('zwischen den Jahren');
+  });
+});

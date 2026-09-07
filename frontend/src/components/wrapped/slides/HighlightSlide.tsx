@@ -28,7 +28,7 @@ const VARIANTEN: Record<string, Array<{ label: string; hero: string; sub: string
   chat_star: [
     { label: 'Dein Ding: der Chat', hero: 'Chat-Star', sub: 'Nachrichten hast du geschrieben' },
     { label: 'Immer was zu sagen', hero: 'Mitten im Gespräch', sub: 'Nachrichten von dir' },
-    { label: 'Dein Jahr im Chat', hero: 'Wortmeldung!', sub: 'Mal hast du dich zu Wort gemeldet' },
+    { label: 'Im Chat gut zu hören', hero: 'Wortmeldung!', sub: 'Mal hast du dich zu Wort gemeldet' },
   ],
   reaktions_magnet: [
     { label: 'Deine Nachrichten kamen an', hero: 'Reaktions-Magnet', sub: 'Reaktionen hast du bekommen' },

@@ -43,6 +43,10 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Der Rückblick redet nicht mehr vom Jahr, das „noch nicht vorbei" sei. Er
+  rechnet über die ganze Konfi-Zeit, und die dauert bei vielen länger als
+  ein Jahr. Advent, Erntedank und der Jahreswechsel behalten ihr Jahr — dort
+  ist der Kalender gemeint.
 - Die Seite „Der lange Atem" erzählt jetzt die Spanne vom ersten bis zum
   letzten Termin, statt dieselbe Terminzahl zu wiederholen, die zwei andere
   Seiten schon nennen.

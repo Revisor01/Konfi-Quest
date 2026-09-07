@@ -24,7 +24,7 @@ function spruchFuer(n: number): { auge: string; slogan: string[]; nachsatz: stri
   if (n >= 6) return { auge: 'Deine Termine', slogan: ['Verlässlich', 'dabei.'], nachsatz: `${n} Termine, bei denen du gebraucht wurdest.` };
   if (n >= 2) return { auge: 'Deine Termine', slogan: ['Du hast', 'mitgetragen.'], nachsatz: `${n} Mal warst du dabei.` };
   if (n === 1) return { auge: 'Dein Termin', slogan: ['Einmal', 'mitgetragen.'], nachsatz: 'Und das zählt.' };
-  return { auge: 'Deine Termine', slogan: ['Dein Jahr', 'fängt', 'gerade an.'], nachsatz: 'Die Termine kommen.' };
+  return { auge: 'Deine Termine', slogan: ['Es fängt', 'gerade', 'erst an.'], nachsatz: 'Die Termine kommen.' };
 }
 
 const TeamerEventsSlide: React.FC<TeamerEventsSlideProps> = ({ isActive, events }) => {

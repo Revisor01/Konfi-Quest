@@ -32,7 +32,7 @@ function spruchFuer(besucht: number): { auge: string; slogan: string[]; nachsatz
     return {
       auge: 'Deine Termine',
       slogan: ['Du warst', 'öfter da', 'als manche', 'Möbel.'],
-      nachsatz: 'Ein Jahr, in dem du kaum etwas verpasst hast.'
+      nachsatz: 'Du hast kaum etwas ausgelassen.'
     };
   }
   // 2) Viel: 10 bis 19
