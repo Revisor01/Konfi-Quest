@@ -302,6 +302,21 @@ musst nichts pflegen.
 auf der Weihnachtsseite, nicht zusätzlich auf der Gottesdienst-Seite. Niemand
 bekommt zwei Seiten über denselben Termin.
 
+### Die Seite zur Sommerfreizeit 2026
+
+Eine Sonderseite für die Fahrt nach **Stavanger**: „Du warst dabei. 14
+unvergessliche Tage in Himmel og Hav.“ Sie erscheint bei **Konfis und
+Teamer:innen gleichermaßen** — aber nur bei denen, die mitgefahren sind.
+
+Wer dabei war, entscheidet sich an den Daten: Wer eine Aktivität oder einen
+Termin der Kategorie **„Sommerfreizeit“** aus dem Sommer 2026 hat, bekommt die
+Seite. Gibt es die Kategorie in eurer Gemeinde nicht, erscheint die Seite bei
+niemandem.
+
+Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
+Tage, ganz gleich wie oft jemand abgehakt wurde. Eine spätere Sommerfreizeit
+löst diese Seite nicht aus.
+
 ### Woher die Zahlen kommen
 
 | Seite | Datenquelle |

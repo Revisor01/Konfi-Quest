@@ -49,6 +49,10 @@ const aktiverSnapshot = () => ({
                   haben_es: 5, konfis: 13, prozent: 38 }
   },
   zeitraum: { start: '2025-09-01', ende: '2026-04-12', konfirmation: '2026-04-12' },
+  // Sie war bei der Sommerfreizeit 2026 in Stavanger dabei (07.09.2026).
+  // Ein reiner Wahrheitswert -- die "14 Tage" auf der Seite sind fester
+  // Text, keine gerechnete Zahl.
+  stavanger_2026: true,
   kategorie: {
     verteilung: [
       { kategorie: 'Gottesdienst', count: 8, seite: 'kategorie:gottesdienst' },
@@ -78,6 +82,8 @@ const stillerSnapshot = () => ({
   wochentag: null,
   medienarten: [],
   zeitraum: { start: '2025-09-01', ende: '2026-08-31', konfirmation: null },
+  // Nicht dabei gewesen -- die Sonderseite darf nicht erscheinen.
+  stavanger_2026: false,
   kategorie: { verteilung: [], top_kategorie: null },
   termine_daten: []
 });
@@ -496,6 +502,122 @@ describe('Kategorie- und Datums-Seiten', () => {
   });
 });
 
+describe('Sonderseite Stavanger 2026 (Sommerfreizeit)', () => {
+  // SIMONS VORGABE (07.09.2026): "kannst du bitte eine seite bauen fuer
+  // sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+  // und konfis die dabei waren."
+  //
+  // Der Kern: Sie erscheint bei GENAU DENEN, die dabei waren -- und bei
+  // sonst niemandem. Und sie zaehlt nichts: Die "14 Tage" sind fester Text.
+
+  test('wer dabei war, bekommt die Seite -- als Konfi', () => {
+    expect(waehleKacheln(aktiverSnapshot(), { chat: 10 })).toContain('stavanger-2026');
+  });
+
+  test('wer dabei war, bekommt die Seite -- als Teamer:in', () => {
+    expect(waehleTeamerKacheln(aktiverTeamer())).toContain('stavanger-2026');
+  });
+
+  test('wer nicht dabei war, bekommt sie nicht -- als Konfi', () => {
+    const s = aktiverSnapshot();
+    s.stavanger_2026 = false;
+    expect(waehleKacheln(s, { chat: 10 })).not.toContain('stavanger-2026');
+  });
+
+  test('wer nicht dabei war, bekommt sie nicht -- als Teamer:in', () => {
+    const t = aktiverTeamer();
+    t.stavanger_2026 = false;
+    expect(waehleTeamerKacheln(t)).not.toContain('stavanger-2026');
+  });
+
+  test('ohne das Feld erscheint sie nicht', () => {
+    // DER WICHTIGSTE FALL. Die Kategorie "Sommerfreizeit" existiert in
+    // KEINER Gemeinde -- sie wird erst per SQL angelegt. Bis dahin liefert
+    // das Backend das Feld gar nicht erst mit (Alt-Snapshots) oder auf
+    // false. Die Seite muss dann sauber verschwinden: kein Fehler, keine
+    // leere Seite.
+    const s = aktiverSnapshot();
+    delete s.stavanger_2026;
+    expect(waehleKacheln(s, { chat: 10 })).not.toContain('stavanger-2026');
+
+    const t = aktiverTeamer();
+    delete t.stavanger_2026;
+    expect(waehleTeamerKacheln(t)).not.toContain('stavanger-2026');
+  });
+
+  test('nur ein echtes true zaehlt, kein wahrheitsaehnlicher Wert', () => {
+    // Die Seite entscheidet ueber eine sehr persoenliche Aussage ("du warst
+    // dabei"). Sie jemandem zu zeigen, der nicht dabei war, waere schlimmer
+    // als sie wegzulassen -- deshalb kein == true, sondern === true.
+    for (const wert of [1, 'ja', 'true', {}, []]) {
+      const s = aktiverSnapshot();
+      s.stavanger_2026 = wert;
+      expect(waehleKacheln(s, { chat: 10 }), `Wert ${JSON.stringify(wert)}`)
+        .not.toContain('stavanger-2026');
+    }
+  });
+
+  test('sie steht bei den Schwerpunkt-Seiten, vor den Challenges', () => {
+    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    const pos = (k) => kacheln.indexOf(k);
+    expect(pos('events')).toBeLessThan(pos('stavanger-2026'));
+    expect(pos('stavanger-2026')).toBeLessThan(pos('challenges'));
+  });
+
+  test('der Deckel kuerzt sie nicht weg', () => {
+    // Sie trifft auf sehr wenige Leute zu und ist fuer genau die das
+    // Ereignis des Jahres. Ein Maximalfall mit vielen Datums-Treffern darf
+    // sie nicht verdraengen.
+    expect(GESCHUETZTE_KACHELN).toContain('stavanger-2026');
+    const s = aktiverSnapshot();
+    s.termine_daten = [
+      new Date(2026, 11, 24), new Date(2026, 11, 6), new Date(2026, 3, 5),
+      new Date(2027, 0, 2), new Date(2026, 6, 15), new Date(2026, 9, 4)
+    ];
+    const kacheln = waehleKacheln(s, { chat: 10 });
+    expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
+    expect(kacheln).toContain('stavanger-2026');
+  });
+
+  test('sie kommt hoechstens einmal vor', () => {
+    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    expect(kacheln.filter(k => k === 'stavanger-2026')).toHaveLength(1);
+  });
+
+  test('sie verdraengt keine Zeit-Seite ueber den Deckel', () => {
+    // GEMESSEN 07.09.2026 BEIM BAU DIESER SEITE: Mit der Sonderseite kam bei
+    // einer sehr aktiven Konfi genau eine Seite dazu -- 19 statt 18. Der
+    // Deckel stand auf 18 und fraess daraufhin 'langer-atem'. Das
+    // Zeit-Kontingent fiel damit still von zwei Seiten auf eine.
+    //
+    // Der Deckel wurde deshalb auf 19 gehoben. Dieser Test haelt beides
+    // zusammen: Die Sonderseite ist da UND die zwei Zeit-Seiten sind es
+    // auch. Wer die naechste Seite hinzufuegt, sieht hier sofort, ob der
+    // Deckel mitwaechst.
+    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    expect(kacheln).toContain('stavanger-2026');
+    expect(kacheln.filter(k => ZEIT_SEITEN.includes(k))).toHaveLength(MAX_ZEIT_SEITEN);
+    expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
+  });
+
+  test('der Schluessel traegt KEIN kategorie:- oder datum:-Praefix', () => {
+    // DAS IST EIN VERTRAG MIT DEN AUSGELIEFERTEN APPS, kein Schoenheits-
+    // wunsch. Der Build 176 (Commit 51cf1362) behandelt beide Praefixe als
+    // MUSTER: Jeder so beginnende Schluessel wird in die Seitenliste
+    // geschoben, auch ein unbekannter. Dort findet KategorieSeiteSlide
+    // keinen Text, gibt null zurueck -- und im Rueckblick steht eine leere
+    // weisse Seite mitten in der Erzaehlung.
+    //
+    // Ohne Praefix faellt der Schluessel dort sauber durch
+    // `if (renderers[kachel])` und verschwindet spurlos. Wer den Schluessel
+    // umbenennt, muss das mitbedenken.
+    expect(DRAMATURGIE).toContain('stavanger-2026');
+    expect('stavanger-2026'.startsWith('kategorie:')).toBe(false);
+    expect('stavanger-2026'.startsWith('datum:')).toBe(false);
+    expect(TEAMER_DRAMATURGIE).toContain('stavanger-2026');
+  });
+});
+
 describe('Das seltenste Abzeichen (Simons Idee)', () => {
   test('erscheint, wenn das Backend eines bestimmt hat', () => {
     expect(waehleKacheln(aktiverSnapshot(), { chat: 1 })).toContain('seltenstes');
@@ -585,6 +707,8 @@ const aktiverTeamer = () => ({
   neu_dabei: { erstes_jahr: false, start_jahr: 2021 },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
+  // Sie hat die Sommerfreizeit 2026 mitbegleitet.
+  stavanger_2026: true,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
 
@@ -602,6 +726,7 @@ const neuerTeamer = () => ({
   neu_dabei: { erstes_jahr: false, start_jahr: null },
   chat: { antworten: 0 },
   konfi_zeit: null,
+  stavanger_2026: false,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
 
@@ -611,6 +736,9 @@ describe('Teamer-Dramaturgie', () => {
       'teamer-intro',
       'teamer-anfang',
       'teamer-events',
+      // Die Sonderseite zur Sommerfreizeit 2026 -- diese Teamer:in war
+      // dabei (siehe Fixture).
+      'stavanger-2026',
       'teamer-konfis',
       'teamer-team',
       'teamer-badges',

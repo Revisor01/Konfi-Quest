@@ -726,6 +726,27 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Sie steht
+        // in BEIDEN Rueckblicken -- Konfis wie Team -- und braucht deshalb
+        // keine Unterscheidung nach `konfi`/`teamer`: Sie zeigt in beiden
+        // Faellen denselben Text, weil es dieselbe Fahrt war.
+        //
+        // Keine Zahl: Die 14 Tage sind fester Text (siehe
+        // Stavanger2026Slide), gezaehlt wird hier nichts.
+        case 'stavanger-2026':
+          return (
+            <>
+              <div className="share-auge">Stavanger 2026</div>
+              <div className="share-slogan">
+                <span style={{ display: 'block' }}>Du warst</span>
+                <span style={{ display: 'block' }}>dabei.</span>
+              </div>
+              <div className="share-nachsatz">
+                14 unvergessliche Tage in Himmel og Hav.
+              </div>
+            </>
+          );
+
         default:
           return null;
       }

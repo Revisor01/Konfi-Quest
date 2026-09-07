@@ -1805,6 +1805,21 @@ ion-modal.wrapped-modal-fullscreen {
   background: var(--seiten-verlauf);
 }
 
+/* Sommerfreizeit 2026, Stavanger (Norwegen).
+   Kaltes Nordmeerblau -- das Bild dahinter zeigt den Preikestolen ueber dem
+   Lysefjord, und ein warmer Verlauf darauf saehe aus wie ein Suedseeurlaub.
+   Aufbau wie bei allen Slogan-Seiten: linksbuendig am unteren Rand, KEINE
+   Zahl (die 14 Tage sind fester Text im Nachsatz). */
+.stavanger-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 0 30px calc(90px + env(safe-area-inset-bottom, 0px));
+  --seiten-verlauf: linear-gradient(135deg, #0e7490 0%, #155e75 55%, #082f49 100%);
+  background: var(--seiten-verlauf);
+}
+
 .teamer-pfeil {
   margin-top: 18px;
   width: 44px;

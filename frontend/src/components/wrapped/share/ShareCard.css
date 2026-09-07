@@ -351,6 +351,11 @@
 
 /* Die Slogan-Seiten stehen linksbuendig am unteren Rand -- wie im
    Rueckblick selbst. Zentriert saehen sie aus wie eine Statistikkachel. */
+/* 'stavanger-2026' steht VOR der Vierergruppe und nicht dahinter: Ein Test
+   (wrappedTeilenAlleSeiten) prueft diesen Block woertlich in genau dieser
+   Reihenfolge, weil er am 06.09.2026 bei einer Ersetzung schon einmal
+   ueberschrieben wurde. Die Gruppe bleibt deshalb unangetastet. */
+.share-card--stavanger-2026,
 .share-card--kategorie-seite,
 .share-card--datums-seite,
 .share-card--konfirmation,
@@ -394,6 +399,14 @@
 .share-card--werde-teamer {
   background: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #831843 100%);
   --karten-schleier: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #831843 100%);
+}
+
+/* Sommerfreizeit 2026, Stavanger. Kaltes Nordmeerblau -- dieselbe Farbe wie
+   auf der Seite selbst (WrappedModal.css), damit Bild und Seite
+   zusammengehoeren. */
+.share-card--stavanger-2026 {
+  background: linear-gradient(135deg, #0e7490 0%, #155e75 55%, #082f49 100%);
+  --karten-schleier: linear-gradient(135deg, #0e7490 0%, #155e75 55%, #082f49 100%);
 }
 
 /* Die dynamischen Seiten teilen sich je eine Sammelklasse: Der Doppelpunkt

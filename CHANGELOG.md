@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Wer bei der Sommerfreizeit 2026 in Stavanger dabei war, findet im
+  Rückblick eine eigene Seite dazu — Konfis wie Team. Alle anderen sehen sie
+  nicht.
 - Der Jahresrückblick erzählt jetzt eine Geschichte statt einer festen Liste:
   Auftakt, Chat, Termine, die eigenen Schwerpunkte, Challenges, Punkte,
   Abzeichen und Abschluss. Wie viele Seiten jemand sieht, hängt davon ab, was

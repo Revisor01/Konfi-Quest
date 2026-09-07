@@ -25,6 +25,7 @@ import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
 import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
 import WerdeTeamerSlide from './slides/WerdeTeamerSlide';
+import Stavanger2026Slide from './slides/Stavanger2026Slide';
 import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
@@ -193,6 +194,9 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'wochentag': return { ...base, slideValue: `Mein Tag: ${k.slides.wochentag?.name || ''}` };
         case 'vielseitig': return { ...base, slideValue: `Auf ${k.slides.medienarten?.length || 0} Arten geantwortet` };
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
+        // Die 14 ist fester Text, keine gerechnete Zahl -- siehe
+        // Stavanger2026Slide.
+        case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
         case 'challenges': {
           // Die Zahl vorher herausziehen: Der Feldname `beitraege` ist eine
           // Schnittstelle und bleibt ohne Umlaut -- im angezeigten Satz
@@ -232,6 +236,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-erstes-abzeichen': return { ...base, slideValue: `Erstes Abzeichen: ${t.slides.erstes_abzeichen?.name || ''}` };
         case 'teamer-antworten': return { ...base, slideValue: `${t.slides.chat?.antworten || 0} Mal geantwortet` };
         case 'teamer-konfi-zeit': return { ...base, slideValue: 'Selbst mal Konfi gewesen — heute im Team' };
+        case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
         case 'teamer-abschluss': return { ...base, slideValue: `${t.slides.events_geleitet.total} Events, ${t.slides.konfis_betreut.total_konfis} Konfis, ${t.slides.badges.total_earned} Badges` };
         default: return base;
       }
@@ -323,6 +328,15 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} titel={titel} />,
       'werde-teamer': (a) => <WerdeTeamerSlide isActive={a} />,
+      // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Der Schluessel
+      // traegt BEWUSST KEIN 'kategorie:'- oder 'datum:'-Praefix: Der
+      // ausgelieferte Build 176 behandelt diese beiden Praefixe als MUSTER
+      // und schiebt jeden so beginnenden Schluessel in die Seitenliste --
+      // auch einen, den er nicht kennt. Dort faende KategorieSeiteSlide
+      // keinen Text, gaebe null zurueck, und im Rueckblick staende eine
+      // leere weisse Seite. Ohne Praefix faellt der Schluessel dort sauber
+      // durch `if (renderers[kachel])` und verschwindet spurlos.
+      'stavanger-2026': (a) => <Stavanger2026Slide isActive={a} />,
       'seltenstes': (a) => {
         const selt = (konfiData.slides.badges as { seltenstes?: { name: string; icon: string; color: string; haben_es: number; konfis: number; prozent: number } })?.seltenstes;
         return selt ? <SeltenstesAbzeichenSlide isActive={a} abzeichen={selt} /> : null;
@@ -513,6 +527,10 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           : null
       ),
       'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} titel={titel} />,
+      // Dieselbe Sonderseite wie im Konfi-Rueckblick -- die Fahrt gehoert
+      // beiden Seiten. Simon: "das sehen dann nur die teamer und konfis
+      // die dabei waren."
+      'stavanger-2026': (a) => <Stavanger2026Slide isActive={a} />,
     };
 
     const kachelListe = (teamerData as { kacheln?: string[] }).kacheln;

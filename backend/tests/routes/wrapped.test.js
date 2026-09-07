@@ -2359,6 +2359,235 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // SONDERSEITE STAVANGER 2026 (Sommerfreizeit)
+  // ================================================================
+  //
+  // SIMONS VORGABE (07.09.2026): "kannst du bitte eine seite bauen fuer
+  // sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+  // und konfis die dabei waren. ich lege das als aktivitaet an mit
+  // sommerfrezeit als kategorie."
+  //
+  // WICHTIG BEIM LESEN: Die Kategorie "Sommerfreizeit" existiert in KEINER
+  // Gemeinde -- sie wird erst per SQL angelegt. Der erste Test hier prueft
+  // deshalb genau das: Solange es sie nicht gibt, erscheint die Seite
+  // nirgends. Kein Fehler, keine leere Seite.
+  describe('Sonderseite Stavanger 2026', () => {
+    // Der Zeitraum der Fahrt (utils/wrappedKategorien.js):
+    // 01.06.2026 bis 30.09.2026.
+    const IN_DER_FAHRT = '2026-07-15';
+    const NACH_DER_FAHRT = '2026-11-15';  // liegt ausserhalb des Fahrt-Fensters
+
+    /** Legt die Kategorie "Sommerfreizeit" an und gibt ihre ID zurueck. */
+    async function sommerfreizeitKategorie(orgId = ORGS.testGemeinde.id) {
+      const { rows: [c] } = await db.query(
+        `INSERT INTO categories (name, type, organization_id)
+         VALUES ('Sommerfreizeit', 'both', $1) RETURNING id`,
+        [orgId]
+      );
+      return c.id;
+    }
+
+    /**
+     * Termin mit Kategorie anlegen und die Person darauf buchen.
+     * Die Fahrt kann als Termin ODER als Aktivitaet gefuehrt sein -- hier
+     * der Termin-Weg.
+     */
+    async function fahrtAlsTermin(userId, datum, kategorieId) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ('Sommerfreizeit Norwegen', $1::timestamp, $2, false, 0, 'gemeinde', 1) RETURNING id`,
+        [`${datum} 10:00:00`, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [e.id, JAHRGAENGE.jahrgang1.id]
+      );
+      await db.query(
+        'INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)',
+        [e.id, kategorieId]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', 'present', NOW())`,
+        [userId, e.id, ORGS.testGemeinde.id]
+      );
+      return e.id;
+    }
+
+    /** Der Aktivitaets-Weg -- so, wie Simon es anlegen will. */
+    async function fahrtAlsAktivitaet(userId, datum, kategorieId) {
+      const { rows: [a] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id)
+         VALUES ('Sommerfreizeit Norwegen', 5, 'gemeinde', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)',
+        [a.id, kategorieId]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, $4::date, $5)`,
+        [userId, a.id, USERS.admin1.id, datum, ORGS.testGemeinde.id]
+      );
+      return a.id;
+    }
+
+    /** Konfi-Snapshot von konfi1 mit ausdruecklichem Zeitraum. */
+    async function konfiSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    /** Teamer-Snapshot von teamer1 mit ausdruecklichem Zeitraum. */
+    async function teamerSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+      // generate-teamer verlangt OrgAdmin -- ein Admin bekommt 403.
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    it('ohne die Kategorie erscheint die Seite nirgends -- der heutige Stand', async () => {
+      // DER WICHTIGSTE TEST. "Sommerfreizeit" gibt es in keiner Gemeinde;
+      // sie wird erst per SQL angelegt. Bis dahin muss die Seite sauber
+      // verschwinden: kein Fehler, keine leere Seite.
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('wer die Fahrt als Termin hat, bekommt die Seite', async () => {
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsTermin(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('wer die Fahrt als Aktivitaet hat, bekommt die Seite ebenfalls', async () => {
+      // Simon legt sie als AKTIVITAET an -- dieser Weg muss genauso
+      // funktionieren wie der Termin-Weg.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('wer nicht dabei war, bekommt sie nicht -- auch wenn es die Kategorie gibt', async () => {
+      // Die Kategorie existiert, die Fahrt ist eingetragen -- aber fuer
+      // konfi2, nicht fuer konfi1. Genau das ist Simons Vorgabe: "nur die
+      // teamer und konfis die dabei waren".
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi2.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('eine spaetere Sommerfreizeit loest die Norwegen-Seite NICHT aus', async () => {
+      // Die Kategorie bleibt und wird wiederverwendet. Ohne das
+      // Fahrt-Fenster wuerde die Freizeit 2027 dieselbe Seite ueber
+      // Norwegen 2026 erzeugen -- fuer jemanden, der nie dort war.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, NACH_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('ein Rueckblick, dessen Zeitraum die Fahrt nicht enthaelt, zeigt sie nicht', async () => {
+      // Simons Regel (07.09.2026): Der Rueckblick zeigt nur, was in seiner
+      // Spanne liegt. Die Fahrt war im Juli 2026 -- ein Zwischenbericht
+      // ueber das Fruehjahr darf sie nicht mitnehmen.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot('2026-01-01', '2026-05-31');
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('das Team bekommt die Seite genauso', async () => {
+      // "das sehen dann nur die teamer und konfis die dabei waren."
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.teamer1.id, IN_DER_FAHRT, kat);
+
+      const snap = await teamerSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('ein Teamer ohne die Fahrt bekommt sie nicht', async () => {
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await teamerSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('eine Kategorie derselben Schreibweise in einer FREMDEN Gemeinde zaehlt nicht', async () => {
+      // Org-Isolation: Wer in einer anderen Gemeinde eine "Sommerfreizeit"
+      // fuehrt, darf hier niemandem eine Norwegen-Seite verschaffen.
+      const fremdeKat = await sommerfreizeitKategorie(ORGS.andereGemeinde.id);
+      const { rows: [a] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id)
+         VALUES ('Sommerfreizeit', 5, 'gemeinde', $1) RETURNING id`,
+        [ORGS.andereGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)',
+        [a.id, fremdeKat]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, $4::date, $5)`,
+        [USERS.konfi1.id, a.id, USERS.admin1.id, IN_DER_FAHRT, ORGS.andereGemeinde.id]
+      );
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('das Feld ist ADDITIV -- die uebrigen Snapshot-Felder bleiben unveraendert', async () => {
+      // Ausgelieferte Apps lesen diesen Snapshot. Ein neues Feld ist
+      // erlaubt, eine geaenderte Form nicht.
+      const snap = await konfiSnapshot();
+      expect(typeof snap.slides.stavanger_2026).toBe('boolean');
+      expect(Array.isArray(snap.slides.kategorie.verteilung)).toBe(true);
+      expect(Array.isArray(snap.kacheln)).toBe(true);
+      expect(typeof snap.slides.punkte.total).toBe('number');
+    });
+  });
+
+  // ================================================================
   // AUSGABEN (Migration 143, Simons Vorgabe: mehrfach freigeben + benennen)
   // ================================================================
   describe('Rueckblick-Ausgaben', () => {

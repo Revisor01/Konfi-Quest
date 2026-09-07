@@ -75,6 +75,11 @@ const DRAMATURGIE = [
   // ihnen erzaehlt: nicht wie viele, sondern wie du hineingekommen bist.
   'warteliste',         // 2b du hast gewartet und es hat geklappt
   'kategorie',          // 3  der eigene Schwerpunkt (mehrere moeglich)
+  // 3b: Die Sonderseite zur Sommerfreizeit 2026 nach Stavanger. Sie steht
+  // direkt bei den Schwerpunkt-Seiten, weil sie dieselbe Frage beantwortet
+  // -- wo warst du -- nur eben fuer die eine Fahrt, ueber die man nachher
+  // noch jahrelang redet. Wer nicht dabei war, sieht sie nie.
+  'stavanger-2026',     // 3b die Fahrt nach Norwegen
   'challenges',         // 4  wie oft du mitgemacht hast
   'challenge-momente',  // 5  Challenges Special: die Bilder, gross
   // 5b: Der Vielseitige -- direkt bei den Challenges, weil er von ihnen
@@ -110,12 +115,20 @@ const DRAMATURGIE = [
  * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
  * plus Kategorie-Seiten, die mehrfach vorkommen duerfen.
  *
- * VON 14 UEBER 16 AUF 18 (07.09.2026): Mit den neuen Seiten liegt das
- * theoretische Maximum bei 18 -- gemessen, nicht geschaetzt: 6 feste
+ * VON 14 UEBER 16 UND 18 AUF 19 (07.09.2026): Mit den neuen Seiten liegt das
+ * theoretische Maximum bei 19 -- gemessen, nicht geschaetzt: 6 feste
  * + 8 bedingte (nach Abzug des Zeit-Kontingents) + 4 Kategorie-/Datums-
- * Seiten. Ein niedrigerer Deckel schnitt genau dort ab, wo die Dramaturgie
- * am dichtesten ist, und verdraengte je nach Fall 'seltenstes',
- * 'konfirmation' oder die Zeit-Seiten.
+ * Seiten + die Sonderseite 'stavanger-2026'. Ein niedrigerer Deckel schnitt
+ * genau dort ab, wo die Dramaturgie am dichtesten ist, und verdraengte je
+ * nach Fall 'seltenstes', 'konfirmation' oder die Zeit-Seiten.
+ *
+ * DER SCHRITT VON 18 AUF 19 IST GEMESSEN, nicht vorsorglich: Mit der
+ * Sonderseite kam bei einer sehr aktiven Konfi, die bei der Fahrt dabei
+ * war, genau eine Seite dazu -- und der Deckel von 18 fraess daraufhin
+ * 'langer-atem'. Das Zeit-Kontingent fiel damit still von zwei auf eine
+ * Seite, ohne dass irgendwo etwas fehlschlug ausser den Tests, die genau
+ * diese zwei Seiten festhalten. Wer eine weitere Seite hinzufuegt, rechnet
+ * hier mit.
  *
  * WARUM DAS UNBEDENKLICH IST: Der Deckel ist NICHT das, was den Rueckblick
  * kurz haelt -- das tun die Bedingungen. JEDE nicht-feste Seite muss sich
@@ -124,7 +137,7 @@ const DRAMATURGIE = [
  * WIRKLICH ALLES zutrifft; Simons "rund zehn" bleibt der Normalfall.
  * Der Deckel ist die Notbremse, nicht die Regel.
  */
-const MAX_KACHELN = 18;
+const MAX_KACHELN = 19;
 
 // Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
 // Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
@@ -168,7 +181,14 @@ const MAX_ZEIT_SEITEN = 2;
  * 07.09.2026 ("Der Deckel darf keine feste Seite fressen", siehe unten).
  * Der Schutz bleibt also erhalten, nur die Bedingungslosigkeit faellt weg.
  */
-const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges', 'seltenstes', 'konfirmation'];
+const GESCHUETZTE_KACHELN = [
+  'events', 'punkte', 'badges', 'seltenstes', 'konfirmation',
+  // Die Sonderseite zur Sommerfreizeit. Sie trifft auf sehr wenige Leute zu
+  // und ist fuer genau die das Ereignis des Jahres -- sie darf nicht dem
+  // Deckel zum Opfer fallen, weil jemand nebenbei viele Kategorie-Seiten
+  // gesammelt hat.
+  'stavanger-2026'
+];
 
 /**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
@@ -218,7 +238,22 @@ const BEDINGUNGEN = {
   // auf ["text","photo"], Audio ist oft gar nicht erlaubt -- eine Seite, die
   // alle drei verlangt, traefe fast nie zu.
   vielseitig: (s) => (s.medienarten?.length || 0) >= 2,
-  konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
+  konfirmation: (s) => Boolean(s.zeitraum?.konfirmation),
+  // STAVANGER 2026 -- die Sonderseite zur Sommerfreizeit.
+  //
+  // Sie erscheint NUR, wenn die Person die Kategorie "Sommerfreizeit" im
+  // Zeitraum der Fahrt hat. Das Backend setzt dafuer ein einzelnes
+  // Wahrheitsfeld in den Snapshot (routes/wrapped.js); hier steht bewusst
+  // KEINE Zahl und kein Schwellenwert:
+  //
+  //   Die "14 Tage" auf der Seite sind ein FESTER TEXT (Simon, 07.09.2026).
+  //   Die Fahrt dauerte 14 Tage, ganz gleich wie oft jemand angehakt wurde.
+  //   Eine gerechnete Zahl wuerde sagen "3 Tage in Norwegen" -- das waere
+  //   eine Aussage ueber die Pflege der Liste, nicht ueber die Fahrt.
+  //
+  // Solange die Kategorie in keiner Gemeinde existiert (Stand 07.09.2026),
+  // ist das Feld ueberall false und die Seite erscheint nirgends.
+  'stavanger-2026': (s) => s.stavanger_2026 === true
 };
 
 /**
@@ -363,6 +398,10 @@ const TEAMER_DRAMATURGIE = [
   // der Gesamtzahl: erst der Moment, dann die Bilanz.
   'teamer-anfang',       // 2  wie das Jahr begann
   'teamer-events',       // 3  die Termine des Jahres
+  // 3b: Dieselbe Sonderseite wie im Konfi-Rueckblick. Simons Vorgabe:
+  // "das sehen dann nur die teamer und konfis die dabei waren" -- die
+  // Fahrt gehoert beiden Seiten gleichermassen.
+  'stavanger-2026',      // 3b die Fahrt nach Norwegen
   'teamer-konfis',       // 4  wen du begleitet hast
   // 4b: Dein Team -- direkt nach den Konfis, weil beide von Menschen
   // erzaehlen: erst wen du begleitet hast, dann mit wem zusammen.
@@ -426,7 +465,9 @@ const TEAMER_BEDINGUNGEN = {
   // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer
   // von aussen ins Team kam, bekommt die Seite nicht -- eine erfundene
   // Herkunft waere schlimmer als gar keine Seite.
-  'teamer-konfi-zeit': (s) => Boolean(s.konfi_zeit)
+  'teamer-konfi-zeit': (s) => Boolean(s.konfi_zeit),
+  // Dieselbe Sonderseite und dieselbe Regel wie im Konfi-Rueckblick.
+  'stavanger-2026': (s) => s.stavanger_2026 === true
 };
 
 /**

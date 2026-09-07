@@ -4,7 +4,7 @@ const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { waehleKacheln, waehleTeamerKacheln } = require('../utils/wrappedKacheln');
-const { seiteFuerKategorie, datumsFenster } = require('../utils/wrappedKategorien');
+const { seiteFuerKategorie, datumsFenster, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -222,6 +222,71 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [orgId, ausserAusgabeId]
     );
     return row && row.ende ? row.ende : null;
+  }
+
+  /**
+   * War diese Person bei der Sommerfreizeit 2026 nach Stavanger dabei?
+   *
+   * SIMONS VORGABE (07.09.2026): "kannst du bitte eine seite bauen fuer
+   * sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+   * und konfis die dabei waren. ich lege das als aktivitaet an mit
+   * sommerfrezeit als kategorie."
+   *
+   * GEPRUEFT WIRD DIE KATEGORIE, nicht ein Aktivitaets- oder Terminname.
+   * Beide Quellen zaehlen -- Aktivitaeten UND Termine -- weil die Fahrt je
+   * nach Gemeinde als das eine oder das andere gefuehrt wird (dieselbe
+   * Ueberlegung wie bei der Kategorie-Verteilung weiter unten).
+   *
+   * ZWEI FENSTER MUESSEN BEIDE ZUTREFFEN:
+   *   1. der Zeitraum DIESES Rueckblicks (Simons Regel 07.09.2026: der
+   *      Rueckblick zeigt nur, was in seiner Spanne liegt), und
+   *   2. der Zeitraum der FAHRT selbst. Sonst loeste die Freizeit 2027
+   *      dieselbe Norwegen-Seite noch einmal aus.
+   *
+   * DIE KATEGORIE EXISTIERT HEUTE IN KEINER GEMEINDE -- sie wird erst per
+   * SQL angelegt. Bis dahin liefert diese Funktion ueberall false und die
+   * Seite erscheint nirgends. Kein Fehler, keine leere Seite.
+   *
+   * Eine fehlende Tabelle oder Spalte darf den ganzen Rueckblick nicht
+   * verhindern: Im Fehlerfall gilt "nicht dabei" (siehe zaehleWennMoeglich
+   * weiter oben -- dieselbe Regel, hier auf einen Wahrheitswert bezogen).
+   */
+  async function warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde) {
+    // Der Schnitt der beiden Fenster. Liegt der Rueckblick ganz vor oder
+    // ganz nach der Fahrt, ist er leer und wir fragen gar nicht erst.
+    const von = zeitraumStart > STAVANGER_VON ? zeitraumStart : STAVANGER_VON;
+    const bis = zeitraumEnde < STAVANGER_BIS ? zeitraumEnde : STAVANGER_BIS;
+    if (von > bis) return false;
+
+    try {
+      const { rows: [row] } = await client.query(
+        `SELECT EXISTS (
+           SELECT 1
+             FROM user_activities ua
+             JOIN activity_categories ac ON ac.activity_id = ua.activity_id
+             JOIN categories c ON c.id = ac.category_id
+            WHERE ua.user_id = $1 AND ua.organization_id = $2
+              AND LOWER(BTRIM(c.name)) = 'sommerfreizeit'
+              AND ua.completed_date >= $3::date
+              AND ua.completed_date < ($4::date + INTERVAL '1 day')
+           UNION ALL
+           SELECT 1
+             FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             JOIN event_categories ec ON ec.event_id = e.id
+             JOIN categories c ON c.id = ec.category_id
+            WHERE eb.user_id = $1 AND eb.organization_id = $2
+              AND LOWER(BTRIM(c.name)) = 'sommerfreizeit'
+              AND e.event_date >= $3::date
+              AND e.event_date < ($4::date + INTERVAL '1 day')
+         ) AS dabei`,
+        [userId, orgId, von, bis]
+      );
+      return Boolean(row && row.dabei);
+    } catch (err) {
+      console.warn('Wrapped: Sommerfreizeit-Pruefung nicht moeglich, Seite entfaellt:', err.message);
+      return false;
+    }
   }
 
   async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year, zeitraumVorgabe = null) {
@@ -444,6 +509,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const termineDaten = termineDatenRows.map(r => r.event_date);
+
+    // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Ein reiner
+    // Wahrheitswert -- die "14 Tage" auf der Seite sind fester Text, keine
+    // gerechnete Zahl (siehe warBeiStavanger und wrappedKacheln.js).
+    const stavanger2026 = await warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde);
 
     // Gesamt-Events verfuegbar für diesen Jahrgang.
     // BEWUSST OHNE ZEITFILTER: die Bezugsgroesse "wie viele Termine gab es
@@ -1201,6 +1271,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           })),
           top_kategorie: kategorieVerteilung.length > 0 ? kategorieVerteilung[0].kategorie : null
         },
+        // Additiv (07.09.2026): War die Person bei der Sommerfreizeit 2026
+        // nach Stavanger dabei? Alte Apps kennen das Feld nicht und
+        // ignorieren es -- und die Seite selbst traegt bewusst einen
+        // Schluessel OHNE 'kategorie:'-Praefix, damit sie dort spurlos
+        // durchfaellt statt eine leere Seite zu erzeugen.
+        stavanger_2026: stavanger2026,
         // Rohdaten fuer die Datums-Seiten. Bewusst nur die Daten, keine
         // Namen -- die Seite sagt "du warst bei drei Advents-Terminen", nicht
         // welche das waren.
@@ -1542,6 +1618,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Erstes Jahr = das Startjahr liegt IM Rueckblicksjahr.
     const erstesJahr = teamerStartJahr !== null && teamerStartJahr === year;
 
+    // Die Sonderseite zur Sommerfreizeit 2026 -- dieselbe Pruefung wie im
+    // Konfi-Rueckblick. Simon: "das sehen dann nur die teamer und konfis
+    // die dabei waren."
+    const stavanger2026 = await warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde);
+
 
     const schnappschuss = {
       // Version 3 (06.09.2026), in zwei Schritten gewachsen:
@@ -1606,6 +1687,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         konfi_zeit: warSelbstKonfi
           ? { jahrgang: konfiZeit.jahrgang || null }
           : null,
+        // Additiv (07.09.2026): die Sommerfreizeit-Sonderseite. Alte Apps
+        // kennen das Feld nicht und ignorieren es.
+        stavanger_2026: stavanger2026,
         zeitraum: {
           year,
           // Additiv (ab Version 2): alte Apps ignorieren die Felder, neue

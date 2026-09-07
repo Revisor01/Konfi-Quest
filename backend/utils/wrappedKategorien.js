@@ -197,6 +197,50 @@ const STANDARD_SEITEN = {
 
 const NUR_TEAMER = new Set(['teamtreff']);
 
+/**
+ * =====================================================================
+ * SONDERSEITE "STAVANGER 2026"
+ * =====================================================================
+ *
+ * Simons Vorgabe (07.09.2026), woertlich: "kannst du bitte eine seite bauen
+ * fuer sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+ * und konfis die dabei waren. ich lege das als aktivitaet an mit
+ * sommerfrezeit als kategorie."
+ *
+ * WARUM UEBER DIE KATEGORIE UND NICHT UEBER EINE LISTE VON NAMEN: Wer dabei
+ * war, steht in den Daten -- Simon haengt die Fahrt als Aktivitaet (oder
+ * Termin) an eine Kategorie "Sommerfreizeit". Wer sie im Zeitraum hat, war
+ * dabei. Eine gepflegte Namensliste liefe schon beim ersten Nachzuegler
+ * auseinander.
+ *
+ * DIE KATEGORIE EXISTIERT HEUTE IN KEINER GEMEINDE. Sie wird erst per SQL
+ * angelegt. Bis dahin trifft `istSommerfreizeit` auf nichts zu, die Seite
+ * erscheint nicht -- kein Fehler, keine leere Seite. Genau so soll es sein.
+ *
+ * NICHT in STANDARD_SEITEN aufgenommen: Diese Liste muss zu
+ * defaultCategories in routes/organizations.js passen (ein Test haelt beide
+ * zusammen), und "Sommerfreizeit" soll NICHT bei jeder neuen Gemeinde
+ * angelegt werden. Es ist eine Sonderseite fuer eine einzelne Fahrt, kein
+ * Standardvokabular.
+ */
+function istSommerfreizeit(name) {
+  if (!name || typeof name !== 'string') return false;
+  return normalisiere(name) === 'sommerfreizeit';
+}
+
+/**
+ * Der Zeitraum der Fahrt. Nur wer die Kategorie IN DIESEM Fenster hat, war
+ * dabei -- eine spaetere Aktivitaet derselben Kategorie (die Freizeit 2027)
+ * darf die Seite von 2026 nicht ausloesen.
+ *
+ * Bewusst grosszuegig um die 14 Tage herum gelegt: Vor- und Nachtreffen
+ * gehoeren zur Fahrt, und wann genau jemand die Aktivitaet eingetragen
+ * bekommt, haengt daran, wann die Leitung dazu kommt.
+ */
+const STAVANGER_VON = '2026-06-01';
+const STAVANGER_BIS = '2026-09-30';
+
+
 /** Vergleichsform: klein, Bindestrich wie Leerzeichen, ohne Raender. */
 function normalisiere(s) {
   return String(s).trim().toLowerCase().replace(/[-\s]+/g, ' ');
@@ -230,6 +274,9 @@ module.exports = {
   erntedank,
   datumsFenster,
   seiteFuerKategorie,
+  istSommerfreizeit,
+  STAVANGER_VON,
+  STAVANGER_BIS,
   STANDARD_SEITEN,
   NUR_TEAMER
 };
