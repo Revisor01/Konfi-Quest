@@ -19,6 +19,8 @@ const {
   DRAMATURGIE,
   MAX_KACHELN,
   GESCHUETZTE_KACHELN,
+  SELTENSTES_GESETZT_AB_PROZENT,
+  seltenstesIstGesetzt,
   ZEIT_SEITEN,
   haeufigkeitFuer,
   MAX_TEAMER_KACHELN,
@@ -1375,5 +1377,72 @@ describe('Teamer-Dramaturgie', () => {
       setzeTeamerBedingung(t, k);
       expect(waehleTeamerKacheln(t), `${k} ist unerreichbar`).toContain(k);
     }
+  });
+});
+
+describe('Das seltenste Abzeichen ist ab 20 Prozent gesetzt', () => {
+  // SIMONS VORGABE (07.09.2026), woertlich: "der seltenste badge den man hat
+  // der ist schon richtig cool wenn es nur 20% andere haben oder weniger.
+  // Dann muss der."
+  //
+  // Bis dahin konkurrierte die Seite mit ihrem gemessenen Prozentwert gegen
+  // alle anderen -- und konnte verlieren, wenn genug seltenere Seiten
+  // zusammenkamen.
+
+  /**
+   * Ein Snapshot mit VIELEN sehr seltenen Seiten -- so viele, dass die
+   * Auswahl greifen muss und das seltenste Abzeichen ohne Schutz
+   * herausfiele.
+   */
+  const vieleSeltene = (prozent) => {
+    const s = aktiverSnapshot();
+    s.badges.seltenstes.prozent = prozent;
+    // Alle uebrigen Seiten sind seltener als jedes Abzeichen ueber 1 % --
+    // damit gewinnt ohne Schutz garantiert die Konkurrenz.
+    s.seiten_haeufigkeit = {
+      warteliste: 1, wochentag: 1, 'langer-atem': 1, vielseitig: 1,
+      challenges: 1, 'challenge-momente': 1, 'aktivster-monat': 1,
+      konfirmation: 1, 'stavanger-2026': 1
+    };
+    return s;
+  };
+
+  test('bei genau 20 Prozent ist die Seite dabei', () => {
+    const gewaehlt = waehleKacheln(vieleSeltene(20), { chat: 10 });
+    expect(gewaehlt).toContain('seltenstes');
+  });
+
+  test('bei 8 Prozent ist die Seite dabei', () => {
+    expect(waehleKacheln(vieleSeltene(8), { chat: 10 })).toContain('seltenstes');
+  });
+
+  test('bei 21 Prozent konkurriert sie wieder und verliert hier', () => {
+    // DIE GEGENPROBE ZUR REGEL: Knapp ueber der Schwelle gilt der Schutz
+    // NICHT mehr. Alle uebrigen Seiten stehen hier auf 1 % und sind damit
+    // seltener -- die Abzeichen-Seite faellt heraus. Waere sie auch hier
+    // dabei, waere aus der Schwelle ein Dauerschutz geworden.
+    const gewaehlt = waehleKacheln(vieleSeltene(21), { chat: 10 });
+    expect(gewaehlt).not.toContain('seltenstes');
+  });
+
+  test('ohne Abzeichen gibt es die Seite auch bei 1 Prozent nicht', () => {
+    // Der Schutz darf keine Seite erzwingen, die nichts zu erzaehlen hat.
+    const s = vieleSeltene(1);
+    s.badges.seltenstes = null;
+    expect(waehleKacheln(s, { chat: 10 })).not.toContain('seltenstes');
+  });
+
+  test('die Schwelle liegt bei 20 und schliesst 20 ein', () => {
+    expect(SELTENSTES_GESETZT_AB_PROZENT).toBe(20);
+    expect(seltenstesIstGesetzt({ badges: { seltenstes: { prozent: 20 } } })).toBe(true);
+    expect(seltenstesIstGesetzt({ badges: { seltenstes: { prozent: 21 } } })).toBe(false);
+  });
+
+  test('ohne gemessenen Prozentwert greift der Schutz nicht', () => {
+    // Alt-Snapshots und zu kleine Jahrgaenge tragen keinen Wert. Dann gibt
+    // es nichts, worauf sich die Schwelle beziehen koennte.
+    expect(seltenstesIstGesetzt({ badges: { seltenstes: { name: 'X' } } })).toBe(false);
+    expect(seltenstesIstGesetzt({ badges: { seltenstes: { prozent: 0 } } })).toBe(false);
+    expect(seltenstesIstGesetzt({})).toBe(false);
   });
 });

@@ -225,6 +225,46 @@ const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
 const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges'];
 
 /**
+ * DAS SELTENSTE ABZEICHEN IST AB 20 % GESETZT.
+ *
+ * SIMONS VORGABE (07.09.2026), woertlich: "der seltenste badge den man hat
+ * der ist schon richtig cool wenn es nur 20% andere haben oder weniger. Dann
+ * muss der."
+ *
+ * WIE ES VORHER WAR: Die Seite trat mit ihrem gemessenen Prozentwert gegen
+ * alle anderen an. Bei einem wirklich seltenen Abzeichen gewann sie fast
+ * immer -- aber eben nur fast: Wer eine Sonderseite (5 %), eine
+ * Wochentag-Seite und mehrere seltene Kategorie-Seiten mitbrachte, konnte
+ * sie trotzdem verlieren. Genau das schliesst Simons Regel aus.
+ *
+ * WARUM EIN SCHWELLENWERT UND KEIN DAUERSCHUTZ: Ein Abzeichen, das die
+ * Haelfte des Jahrgangs hat, ist keine Besonderheit -- dafuer gibt es die
+ * Abzeichen-Seite. Erst die Seltenheit macht die Aussage "das haben nur x %"
+ * ueberhaupt interessant. Oberhalb der Schwelle konkurriert die Seite
+ * deshalb weiter wie jede andere.
+ *
+ * 20 EINSCHLIESSLICH: Simon sagt "20% andere haben oder weniger".
+ */
+const SELTENSTES_GESETZT_AB_PROZENT = 20;
+
+/**
+ * Ist das seltenste Abzeichen dieser Person so selten, dass seine Seite
+ * gesetzt ist?
+ *
+ * @param {object} slides die `slides` des Snapshots
+ * @returns {boolean}
+ */
+function seltenstesIstGesetzt(slides) {
+  const prozent = slides?.badges?.seltenstes?.prozent;
+  // Ohne Abzeichen gibt es keine Seite -- das entscheidet die Bedingung
+  // weiter unten. Ohne gemessenen Prozentwert (Alt-Snapshots, zu kleiner
+  // Jahrgang) gibt es nichts, worauf sich die Schwelle beziehen koennte:
+  // dann konkurriert die Seite wie bisher.
+  if (typeof prozent !== 'number' || prozent <= 0) return false;
+  return prozent <= SELTENSTES_GESETZT_AB_PROZENT;
+}
+
+/**
  * =====================================================================
  * DIE SELTENHEIT -- wie wertvoll ist eine Seite?
  * =====================================================================
@@ -607,7 +647,13 @@ function waehleKacheln(slides, schnitt = null) {
   //    auf dem Abschluss noch einmal -- ohne sie fasste er etwas zusammen,
   //    das nie gezeigt wurde.
   const gesetzt = ohneDoppelte.filter(
-    k => FESTE_KACHELN.includes(k) || GESCHUETZTE_KACHELN.includes(k)
+    k => FESTE_KACHELN.includes(k) ||
+         GESCHUETZTE_KACHELN.includes(k) ||
+         // Das seltenste Abzeichen ab 20 % (Simon: "Dann muss der.").
+         // Steht hier und nicht in GESCHUETZTE_KACHELN, weil der Schutz an
+         // eine BEDINGUNG geknuepft ist -- oberhalb der Schwelle
+         // konkurriert die Seite ganz normal.
+         (k === 'seltenstes' && seltenstesIstGesetzt(slides))
   );
 
   // 2b. EIN PLATZ FUER DEN EIGENEN SCHWERPUNKT.
@@ -880,6 +926,8 @@ module.exports = {
   GRUND_HAEUFIGKEIT_KATEGORIE_SEITE,
   haeufigkeitFuer,
   GESCHUETZTE_KACHELN,
+  SELTENSTES_GESETZT_AB_PROZENT,
+  seltenstesIstGesetzt,
   BEDINGUNGEN,
   FESTE_TEAMER_KACHELN,
   MAX_TEAMER_KACHELN,
