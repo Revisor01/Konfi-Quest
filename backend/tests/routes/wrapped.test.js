@@ -1241,6 +1241,34 @@ describe('Wrapped Routes', () => {
       return rows[0].data;
     }
 
+    /**
+     * Snapshot mit AUSDRUECKLICHEM Zeitraum -- Simons Option fuer
+     * Zwischenberichte (07.09.2026).
+     *
+     * Seit der neuen Regel laeuft der automatische Zeitraum vom Beginn der
+     * Konfi-Zeit bis heute und schneidet nichts mehr ab. Wer pruefen will,
+     * DASS ein Zeitraum ueberhaupt greift, muss ihn also angeben -- das ist
+     * seither die einzige Stelle, an der ein Fenster enger wird.
+     */
+    async function snapshotVonKonfi1MitZeitraum(start, ende) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    /** Das Fenster, das frueher automatisch galt: 1.9.(JAHR-1) .. 31.8.(JAHR). */
+    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
+
     beforeEach(async () => {
       // Der Seed legt vier Termine 7 Tage in der Zukunft an und bucht nichts.
       // Fuer die Zahlen-Tests raeumen wir das Feld leer und stellen eine
@@ -1301,7 +1329,10 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, davor);
       await buchung(USERS.konfi1.id, danach);
 
-      const snap = await snapshotVonKonfi1();
+      // Mit ausdruecklichem Zeitraum -- seit 07.09.2026 die einzige Stelle,
+      // an der ein Fenster ueberhaupt noch enger wird. Der automatische
+      // Zeitraum umfasst die ganze Konfi-Zeit und schneidet nichts ab.
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       // Das Dashboard zaehlt weiterhin alle drei -- es kennt keinen Zeitraum.
       expect(snap.slides.events.total_attended).toBe(1);
       expect(snap.slides.events.lieblings_event.name).toBe('Im Zeitraum');
@@ -1313,7 +1344,7 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, drin, { status: 'cancelled' });
       await buchung(USERS.konfi1.id, davor, { status: 'cancelled' });
 
-      const snap = await snapshotVonKonfi1();
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       expect(snap.slides.events.abgesagt).toBe(1);
     });
 
@@ -1331,44 +1362,98 @@ describe('Wrapped Routes', () => {
         await buchung(USERS.konfi1.id, id);
       }
 
-      const snap = await snapshotVonKonfi1();
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       expect(snap.slides.aktivster_monat.monat).toBe(11);
       expect(snap.slides.aktivster_monat.monat_name).toBe('November');
       expect(snap.slides.aktivster_monat.aktivitaeten).toBe(2);
     });
 
     // ------------------------------------------------------------
-    // W-C: Fallback-Zeitraum, und der August fehlt nicht.
+    // SIMONS KONFI-REGEL (07.09.2026): "Immer vom anfang an bis zum jetzigen
+    // zeitpunkt." Der Zeitraum beginnt am Anfang der Konfi-Zeit
+    // (konfi_profiles.created_at) und endet HEUTE -- der Konfirmationstermin
+    // schneidet nichts mehr ab.
     // ------------------------------------------------------------
-    it('Ein Jahrgang OHNE Konfirmationstermin bekommt 1.9. bis 31.8. -- der August fehlt nicht', async () => {
+    /** Der heutige Tag als ISO-Datum, nach Ortszeit wie im Backend. */
+    function heuteIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    it('Ohne Konfirmationstermin laeuft der Zeitraum vom Beginn der Konfi-Zeit bis heute', async () => {
       const { rows: [k] } = await db.query(
         'SELECT COUNT(*)::int AS anzahl FROM events WHERE is_konfirmation = true'
       );
       expect(k.anzahl).toBe(0);
 
+      // Beginn der Konfi-Zeit ausdruecklich setzen, damit die Erwartung eine
+      // Zahl ist und kein "ungefaehr".
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+
       const imAugust = await termin('Sommerfreizeit im August', AUGUST);
       await buchung(USERS.konfi1.id, imAugust);
 
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
-      // Ohne Konfirmations-Termin gibt es KEINEN Konfirmationstermin --
-      // frueher wurde dafuer das Zeitraum-Ende als Datum angezeigt.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      // Ohne Konfirmations-Termin gibt es KEINEN Konfirmationstermin.
       expect(snap.slides.zeitraum.konfirmation).toBe(null);
-      // Und der August zaehlt mit.
       expect(snap.slides.events.total_attended).toBe(1);
     });
 
-    it('Mit Konfirmationstermin endet der Zeitraum am Termin, ohne Zeitzonen-Verschiebung', async () => {
-      // Der 1.9. als Startdatum rutschte per new Date(y,8,1).toISOString()
-      // in Sommerzeit auf den 31.8.
-      const konf = await termin('Konfirmation', `${JAHR}-05-10`);
+    it('Der Konfirmationstermin schneidet den Zeitraum NICHT mehr ab', async () => {
+      // GENAU DER PRODUKTIONSFALL (Org 1, Jahrgang 12, gemessen 07.09.2026):
+      // Konfirmation im kommenden Mai, die Abzeichen liegen im Sommer davor.
+      // Die alte Regel setzte start = (Jahr des Termins - 1) + '-09-01' und
+      // ende = Termin -- alles davor fiel heraus, die Abzeichen-Seite zeigte
+      // eine glatte 0.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 1}-05-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const konf = await termin('Konfirmation', `${JAHR + 1}-05-10`);
       await db.query('UPDATE events SET is_konfirmation = true WHERE id = $1', [konf]);
 
+      // Ein Termin aus dem Sommer VOR dem alten Fenster (1.9.JAHR .. 10.5.JAHR+1).
+      const frueher = await termin('Sommerfreizeit weit davor', `${JAHR - 1}-07-15`);
+      await buchung(USERS.konfi1.id, frueher);
+
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-05-10`);
-      expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR}-05-10`);
+      // Der Zeitraum beginnt an der Konfi-Zeit, nicht am 1.9. vor dem Termin.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-05-01`);
+      // Und er endet heute, nicht am Konfirmationstermin in der Zukunft.
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      // Der Termin bleibt als ANGABE erhalten -- die Konfirmations-Seite
+      // zeigt ihn weiterhin.
+      expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR + 1}-05-10`);
+      // Und das Entscheidende: der frueher abgeschnittene Termin zaehlt mit.
+      expect(snap.slides.events.total_attended).toBe(1);
+    });
+
+    it('Ein Abzeichen vor dem Konfirmations-Fenster faellt nicht mehr heraus', async () => {
+      // Dieselbe Lage wie oben, aber auf der Seite, an der es in Produktion
+      // auffiel: 20 Abzeichen aus dem Sommer, Abzeichen-Seite zeigte 0.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 1}-05-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const konf = await termin('Konfirmation', `${JAHR + 1}-05-10`);
+      await db.query('UPDATE events SET is_konfirmation = true WHERE id = $1', [konf]);
+
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, $4::timestamptz)`,
+        [USERS.konfi1.id, BADGES.badge1.id, ORGS.testGemeinde.id, `${JAHR - 1}-07-20 10:00:00`]
+      );
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.badges.total).toBe(1);
     });
 
     // ------------------------------------------------------------
@@ -1403,6 +1488,93 @@ describe('Wrapped Routes', () => {
       const snap = await snapshotVonKonfi1();
       expect(snap.slides.warteliste.nachgerueckt).toBe(0);
       expect(snap.kacheln).not.toContain('warteliste');
+    });
+
+    // ------------------------------------------------------------
+    // EINE FEHLENDE SPALTE DARF DEN RUECKBLICK NICHT SPRENGEN.
+    //
+    // BEFUND 07.09.2026, gemessen: Produktion stand auf Migration 144,
+    // event_bookings.war_auf_warteliste existierte dort nicht. Die Abfrage
+    // in generateKonfiSnapshot hatte kein try/catch -- sie waere fuer JEDE
+    // Konfi mit "column does not exist" abgebrochen.
+    //
+    // Dass die Migrationen beim Start automatisch laufen, rettet das NICHT:
+    // runMigrations faengt Fehler ab und laesst den Server weiterlaufen
+    // (database.js, "Server laeuft weiter"). Schlaegt 145 fehl, startet das
+    // Backend trotzdem -- und der Rueckblick faellt still komplett aus.
+    //
+    // Diese Tests stellen den Fall WIRKLICH her (Spalte droppen), statt ihn
+    // zu mocken: Ein Mock haette nicht gezeigt, ob der Snapshot danach
+    // durchlaeuft.
+    // ------------------------------------------------------------
+    describe('Fehlende Spalten aus neuen Migrationen', () => {
+      // Die Spalten kommen nach jedem Test zurueck. truncateAll leert nur
+      // Zeilen, es stellt kein Schema wieder her -- ohne dieses afterEach
+      // liefe der Rest der Datei gegen eine kaputte Test-DB.
+      afterEach(async () => {
+        await db.query(
+          'ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS war_auf_warteliste BOOLEAN'
+        );
+        await db.query(
+          `ALTER TABLE challenge_submissions
+             ADD COLUMN IF NOT EXISTS approved_by INTEGER,
+             ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
+        );
+      });
+
+      it('Ohne war_auf_warteliste (Migration 145) laeuft der Snapshot durch und die Seite fehlt', async () => {
+        const t = await termin('Ganz normal', IM_ZEITRAUM);
+        await buchung(USERS.konfi1.id, t);
+
+        await db.query('ALTER TABLE event_bookings DROP COLUMN war_auf_warteliste');
+        // Wirklich weg, nicht nur leer.
+        const { rows: weg } = await db.query(
+          `SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'event_bookings' AND column_name = 'war_auf_warteliste'`
+        );
+        expect(weg).toHaveLength(0);
+
+        const snap = await snapshotVonKonfi1();
+
+        // Der Rueckblick entsteht vollstaendig -- das ist der Kern.
+        expect(snap.slides.events.total_attended).toBe(1);
+        expect(snap.slides.punkte.total).toBeGreaterThanOrEqual(0);
+        // Die Warteliste-Zahl faellt auf 0 zurueck, nicht auf undefined.
+        expect(snap.slides.warteliste.nachgerueckt).toBe(0);
+        // Und die Seite erscheint deshalb gar nicht -- das richtige Verhalten.
+        expect(snap.kacheln).not.toContain('warteliste');
+        // Die tragenden Seiten sind da.
+        expect(snap.kacheln).toContain('intro');
+        expect(snap.kacheln).toContain('abschluss');
+      });
+
+      it('Ohne approved_by (Migration 146) laeuft der Teamer-Snapshot durch und die Seite fehlt', async () => {
+        await db.query('ALTER TABLE challenge_submissions DROP COLUMN approved_by');
+        const { rows: weg } = await db.query(
+          `SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'challenge_submissions' AND column_name = 'approved_by'`
+        );
+        expect(weg).toHaveLength(0);
+
+        const gen = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(gen.status).toBe(200);
+
+        const { rows } = await db.query(
+          `SELECT data FROM wrapped_snapshots
+            WHERE user_id = $1 AND wrapped_type = 'teamer'
+            ORDER BY computed_at DESC, id DESC LIMIT 1`,
+          [USERS.teamer1.id]
+        );
+        expect(rows).toHaveLength(1);
+        const snap = rows[0].data;
+
+        expect(snap.slides.moderation.freigegeben).toBe(0);
+        expect(snap.kacheln).not.toContain('teamer-moderation');
+        expect(snap.kacheln).toContain('teamer-intro');
+        expect(snap.kacheln).toContain('teamer-abschluss');
+      });
     });
 
     // ------------------------------------------------------------
@@ -1608,17 +1780,44 @@ describe('Wrapped Routes', () => {
         [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, VOR_ZEITRAUM]
       );
 
-      const snap = await snapshotVonKonfi1();
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       // Nur die 5 aus dem Zeitraum, nicht 12.
       expect(snap.slides.punkte.bonus).toBe(5);
     });
 
-    it('Ohne Angabe bleibt es beim bisherigen Fallback', async () => {
-      // Alt-Verhalten unveraendert: Wer keinen Zeitraum angibt, bekommt
-      // genau das, was er vorher bekam.
+    it('Ohne Angabe laeuft der Zeitraum vom Beginn der Konfi-Zeit bis heute', async () => {
+      // Simons Regel (07.09.2026). Vorher stand hier das Fenster
+      // 1.9.(JAHR-1) .. 31.8.(JAHR) -- es schnitt jede Konfi-Zeit ab, die
+      // laenger als ein Jahr war.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const heute = new Date();
+      const heuteStr = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}-${String(heute.getDate()).padStart(2, '0')}`;
+
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteStr);
+    });
+
+    it('Eine Konfi-Zeit ueber zwei Jahre wird vollstaendig erfasst', async () => {
+      // Simon: "den ganzen zeitraum, bei manchen sind das auch zwei jahre."
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // Je ein Termin im ersten und im zweiten Konfi-Jahr.
+      const jahr1 = await termin('Erstes Konfi-Jahr', `${JAHR - 2}-11-15`);
+      const jahr2 = await termin('Zweites Konfi-Jahr', `${JAHR - 1}-11-15`);
+      await buchung(USERS.konfi1.id, jahr1);
+      await buchung(USERS.konfi1.id, jahr2);
+
+      const snap = await snapshotVonKonfi1();
+      // Beide. Das alte Ein-Jahres-Fenster haette nur einen gezaehlt.
+      expect(snap.slides.events.total_attended).toBe(2);
     });
 
     it('Der Zeitraum der Ausgabe und der des Snapshots sind derselbe', async () => {
@@ -1759,10 +1958,13 @@ describe('Wrapped Routes', () => {
     }
 
     /** Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot eines Konfis zurueck. */
-    async function snapshotVon(userId) {
-      const gen = await request(app)
+    async function snapshotVon(userId, zeitraum = null) {
+      const req_ = request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
+      const gen = zeitraum
+        ? await req_.send({ zeitraum_start: zeitraum[0], zeitraum_ende: zeitraum[1] })
+        : await req_;
       expect(gen.status).toBe(200);
 
       const { rows } = await db.query(
@@ -1772,6 +1974,9 @@ describe('Wrapped Routes', () => {
       expect(rows).toHaveLength(1);
       return rows[0].data;
     }
+
+    /** Das Fenster, das vor dem 07.09.2026 automatisch galt. */
+    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
 
     beforeEach(async () => {
       // Bekannte Datenlage: Seed-Termine raus (wie im Zahlen-describe).
@@ -1936,7 +2141,10 @@ describe('Wrapped Routes', () => {
       // Abmeldung aus dem VORIGEN Konfi-Jahr: gehoert nicht in diesen Rueckblick.
       await abmeldung(USERS.konfi1.id, termine[0], VOR_ZEITRAUM);
 
-      const snap = await snapshotVon(USERS.konfi1.id);
+      // Mit ausdruecklichem Zeitraum: Seit dem 07.09.2026 laeuft der
+      // automatische Zeitraum ueber die ganze Konfi-Zeit -- nur eine
+      // Angabe engt ihn noch ein.
+      const snap = await snapshotVon(USERS.konfi1.id, ALTES_FENSTER);
       expect(snap.slides.chat.nachrichten_gesendet).toBe(1);
       expect(snap.slides.verlaesslichkeit.abmeldungen).toBe(0);
       expect(snap.slides.verlaesslichkeit.nie_abgesagt).toBe(true);

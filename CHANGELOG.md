@@ -40,6 +40,9 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Der Jahresrückblick entsteht auch dann vollständig, wenn eine einzelne
+  Auswertung nicht möglich ist — betroffen ist dann nur die eine Seite, die
+  davon lebt, nicht der ganze Rückblick.
 - Der Jahresrückblick zeigt keine Seite mehr mit einer Null darauf. Wer im
   Rückblickszeitraum keine Abzeichen, keine Punkte oder keine Termine hat,
   bekommt diese Seite gar nicht erst — statt „0 von 55". Auftakt, Abschluss

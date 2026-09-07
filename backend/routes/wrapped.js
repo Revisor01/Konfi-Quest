@@ -29,24 +29,133 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
 
   /**
-   * Konfi-Jahr als Datumsfenster [start, ende] (beide inklusive).
+   * Der Zeitraum eines Rueckblicks als Datumsfenster [start, ende] (beide
+   * inklusive).
    *
-   * Frueher wurde der Zeitraum erst am Ende der Funktion berechnet und nur auf
-   * die Challenge-Momente angewendet -- alle anderen Zahlen liefen ueber die
-   * gesamte Kontolebenszeit (Befund W-B, 01.09.2026). Jetzt steht er vorn und
-   * gilt fuer jede Zahl.
+   * SIMONS REGEL (07.09.2026), woertlich:
+   *   "bei konfi jahrgaengen muss das wrapped alles erfassen was der konfi
+   *    gemacht hat. den ganzen zeitraum, bei manchen sind das auch zwei
+   *    jahre. es sollte nur die option mit rein das man auch zwischenberichte
+   *    machen kann" -- "Konfi regel. Immer vom anfang an bis zum jetzigen
+   *    zeitpunkt."
+   *   "Und bei teamern das erste wrapped geht vom anbeginn der zeit als
+   *    teamer bis zum zeitpunkt des wrapped und dann immer bis zum letzten
+   *    wrapped."
    *
-   * Regeln:
-   * - Mit Konfirmationstermin: 1.9. des Vorjahres bis zum Termin.
-   * - Ohne Termin (3 von 5 Jahrgaengen in Produktion, Befund W-C): volles
-   *   Konfi-Jahr 1.9.(year-1) bis 31.8.(year). Der frueher fest verdrahtete
-   *   31.7. liess den August in jedem Fallback-Jahr verschwinden.
+   * Daraus:
+   *   KONFI  -> Beginn der Konfi-Zeit bis HEUTE. Kein 1.9.-Fenster, kein
+   *             Kalenderjahr, und der Konfirmationstermin schneidet NICHT
+   *             mehr ab.
+   *   TEAMER -> lueckenlose Kette: vom Ende der vorigen Teamer-Ausgabe
+   *             derselben Organisation (beim ersten Mal: seit wann jemand im
+   *             Team ist) bis HEUTE.
+   *
+   * WAS VORHER FALSCH WAR (gemessen an der Produktionsdatenbank, 07.09.2026):
+   * Mit Konfirmationstermin setzte die Funktion start = (Jahr des Termins -1)
+   * + '-09-01'. Eine echte Konfi in Org 1 (Jahrgang 12, Konfirmation
+   * 2027-05-01) bekam damit 01.09.2026 bis 01.05.2027 -- ihre 20 Abzeichen
+   * liegen aber alle im Sommer 2026, also DAVOR. Ihre Abzeichen-Seite zeigte
+   * eine glatte 0. Genau das schliesst Simons Regel aus.
+   *
+   * Der Konfirmationstermin bleibt als ANGABE erhalten (die Konfirmations-
+   * Seite und die Teilen-Karte zeigen ihn ueber `zeitraum.konfirmation`), er
+   * bestimmt nur den Zeitraum nicht mehr.
+   *
+   * Die Funktion bleibt bewusst SYNCHRON und ohne Datenbank: Woher der Beginn
+   * kommt, weiss der Aufrufer (Konfi-Profil, vorige Ausgabe, teamer_since) --
+   * hier wird nur noch gerechnet. Das macht sie einzeln pruefbar.
+   *
+   * @param {string|Date|null} konfirmationTermin Nur noch Angabe, nie Grenze.
+   * @param {string|Date|null} beginn  Beginn des Zeitraums (Konfi-Zeit bzw.
+   *   Ende der vorigen Teamer-Ausgabe / teamer_since). Fehlt er, faellt der
+   *   Zeitraum auf das laufende Konfi-Jahr zurueck -- besser eine bekannte
+   *   Spanne als eine seit 1970.
+   * @param {number} year  Nur noch fuer diesen Fallback.
+   * @param {object|null} vorgabe  Ausdruecklich gesetzter Zeitraum aus dem
+   *   Formular (Simons "Option fuer Zwischenberichte"). Geht IMMER vor.
+   * @param {Date} jetzt  Ende des Zeitraums; injizierbar fuer Tests.
    *
    * Datumsstrings werden mit padStart gebaut, NICHT ueber
    * new Date(y, 8, 1).toISOString() -- letzteres rechnet Ortszeit nach UTC und
    * machte in Sommerzeit aus dem 1.9. den 31.8.
    */
-  function berechneZeitraum(konfirmationTermin, year, vorgabe = null) {
+  /**
+   * Liest eine Zahl, die auf einer Spalte aus einer NEUEN Migration beruht.
+   *
+   * BEFUND 07.09.2026, gemessen: Produktion stand auf Migration 144, die
+   * Spalte event_bookings.war_auf_warteliste (145) existierte dort nicht.
+   * Die Abfrage im Snapshot hatte kein try/catch -- sie waere fuer JEDE
+   * Konfi mit "column does not exist" abgebrochen.
+   *
+   * Dass die Migrationen beim Start automatisch laufen, rettet das NICHT:
+   * runMigrations faengt Fehler ab und laesst den Server WEITERLAUFEN
+   * (database.js, "Server laeuft weiter"). Schlaegt eine Migration aus
+   * irgendeinem Grund fehl, startet das Backend trotzdem -- und ohne diese
+   * Absicherung faellt der komplette Rueckblick still aus, wegen einer
+   * einzigen Seite.
+   *
+   * WARUM SAVEPOINT UND NICHT NUR try/catch (das war der eigentliche
+   * Fallstrick, gemessen am 07.09.2026): Der Teamer-Zweig laeuft in einer
+   * Transaktion (BEGIN ... COMMIT). In PostgreSQL bricht EIN
+   * fehlgeschlagenes Statement die ganze Transaktion ab -- jede weitere
+   * Query scheitert danach mit "current transaction is aborted", ganz
+   * gleich, ob der Fehler abgefangen wurde. Genau das stand hier schon
+   * einmal fuer die Challenge-Freigaben: ein try/catch, das den Fehler
+   * brav schluckte, waehrend der Teamer-Rueckblick trotzdem fuer jede
+   * Person ausfiel. Der SAVEPOINT nimmt genau dieses eine Statement
+   * zurueck und laesst die Transaktion heil.
+   *
+   * Dasselbe Muster steht in routes/users.js (Loeschweg, 22.08.2026).
+   *
+   * Nur die beiden Codes fuer "Spalte fehlt" (42703) und "Tabelle fehlt"
+   * (42P01) werden geschluckt. Alles andere -- ein Tippfehler im SQL, ein
+   * Timeout -- fliegt weiter: Ein echter Fehler darf sich nicht als
+   * harmlose Null tarnen.
+   *
+   * @returns {Promise<number>} der gelesene Wert, oder 0 wenn die Spalte fehlt
+   */
+  async function zahlAusNeuerSpalte(client, sql, params, was) {
+    // DER SAVEPOINT DARF NUR IN EINER TRANSAKTION GESETZT WERDEN.
+    //
+    // Beide Zweige benutzen diese Funktion, aber sie arbeiten
+    // unterschiedlich: Der Teamer-Zweig laeuft in BEGIN ... COMMIT, der
+    // Konfi-Zweig holt je Person einen eigenen Client aus dem Pool und
+    // laeuft im Autocommit. Dort wirft `SAVEPOINT` selbst den Fehler
+    // "SAVEPOINT can only be used in transaction blocks" -- und haette dann
+    // genau den Ausfall verursacht, den diese Funktion verhindern soll
+    // (gemessen 07.09.2026 im ersten Anlauf: alle Konfi-Snapshots weg).
+    //
+    // Deshalb wird der SAVEPOINT versucht und sein Scheitern hingenommen.
+    // Im Autocommit braucht es ihn nicht: Dort reisst ein fehlgeschlagenes
+    // Statement nichts mit sich, es gibt keine Transaktion zum Abbrechen.
+    let mitSavepoint = false;
+    try {
+      await client.query('SAVEPOINT neue_spalte');
+      mitSavepoint = true;
+    } catch {
+      // Kein Transaktionsblock -- dann eben ohne.
+    }
+
+    try {
+      const { rows: [row] } = await client.query(sql, params);
+      if (mitSavepoint) await client.query('RELEASE SAVEPOINT neue_spalte');
+      return row ? (row.anzahl || 0) : 0;
+    } catch (err) {
+      if (mitSavepoint) {
+        await client.query('ROLLBACK TO SAVEPOINT neue_spalte').catch(() => {});
+      }
+      if (err.code !== '42703' && err.code !== '42P01') throw err;
+      // Alt-Deployment ohne die Migration. Der Rueckfall ist 0, und die
+      // zugehoerige Seite faellt damit ueber ihre Bedingung in
+      // wrappedKacheln.js einfach weg -- das richtige Verhalten: Ohne die
+      // Spalte WEISS niemand etwas, eine Seite auf Verdacht waere schlimmer
+      // als keine.
+      console.warn(`Wrapped: ${was} nicht verfuegbar (${err.code}), Seite entfaellt:`, err.message);
+      return 0;
+    }
+  }
+
+  function berechneZeitraum(konfirmationTermin, year, vorgabe = null, beginn = null, jetzt = new Date()) {
     const iso = (d) => {
       // Ein reiner Datumsstring bleibt UNANGETASTET. new Date('2025-10-01')
       // ist Mitternacht UTC -- in Berlin also der 30.09. um 02:00, und
@@ -57,24 +166,62 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const dt = (d instanceof Date) ? d : new Date(d);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     };
-    // Ein AUSDRUECKLICH gesetzter Zeitraum geht vor. Er kommt aus dem
-    // Anlege-Formular und steht so auch in der Ausgabe (wrapped_ausgaben) --
-    // die angezeigte Spanne und die Zahlen darunter muessen dieselbe sein.
-    // Der Konfirmationstermin bleibt als ANGABE erhalten (die Konfirmations-
-    // Seite zeigt ihn), er bestimmt dann nur nicht mehr das Ende.
+    const konfirmation = konfirmationTermin ? iso(konfirmationTermin) : null;
+
+    // Ein AUSDRUECKLICH gesetzter Zeitraum geht vor -- das ist Simons Option
+    // fuer Zwischenberichte. Er kommt aus dem Anlege-Formular und steht so
+    // auch in der Ausgabe (wrapped_ausgaben); die angezeigte Spanne und die
+    // Zahlen darunter muessen dieselbe sein.
     if (vorgabe && vorgabe.start && vorgabe.ende) {
-      return {
-        start: iso(vorgabe.start),
-        ende: iso(vorgabe.ende),
-        konfirmation: konfirmationTermin ? iso(konfirmationTermin) : null
-      };
+      return { start: iso(vorgabe.start), ende: iso(vorgabe.ende), konfirmation };
     }
-    if (konfirmationTermin) {
-      const termin = new Date(konfirmationTermin);
-      const start = `${termin.getFullYear() - 1}-09-01`;
-      return { start, ende: iso(termin), konfirmation: iso(termin) };
+
+    // Ohne Vorgabe: vom Beginn bis JETZT. "Jetzt" ist der Tag der Erzeugung
+    // und wird im Snapshot festgeschrieben -- ein einmal erzeugter Rueckblick
+    // aendert sich nie wieder.
+    const ende = iso(jetzt);
+
+    if (beginn) {
+      const start = iso(beginn);
+      // Ein Beginn NACH dem heutigen Tag (verschobene Uhr, Datenfehler) gaebe
+      // ein Fenster, das nichts zaehlen kann. Dann lieber der Tag selbst.
+      return { start: start > ende ? ende : start, ende, konfirmation };
     }
-    return { start: `${year - 1}-09-01`, ende: `${year}-08-31`, konfirmation: null };
+
+    // Kein Beginn ermittelbar (Altdaten ohne created_at, Teamer ohne
+    // teamer_since und ohne Aktivitaet): das laufende Konfi-Jahr wie bisher.
+    return { start: `${year - 1}-09-01`, ende, konfirmation };
+  }
+
+  /**
+   * Das Ende der VORIGEN Teamer-Ausgabe dieser Organisation -- der Anfang der
+   * naechsten (Simons Kette, 07.09.2026).
+   *
+   * "sagen wir ich werde teamer am 1.9.2025 und das wrapped wird
+   *  freigeschaltet am 1.1.2027 dann bekomme ich diesen zeitraum. Und das
+   *  naechste wrapped wird gestartet am 1.5.2028 dann geht es vom
+   *  1.1.2027-1.5.2028"
+   *
+   * Genommen wird das GROESSTE zeitraum_ende, nicht die zuletzt angelegte
+   * Ausgabe: Wer nachtraeglich einen Zwischenbericht ueber einen frueheren
+   * Abschnitt anlegt, darf die Kette nicht zurueckdrehen.
+   *
+   * `ausserAusgabeId` schliesst die soeben angelegte Ausgabe aus. Sie steht
+   * beim Erzeugen der Snapshots schon in der Tabelle (bewusst -- der
+   * Fremdschluessel der Snapshots braucht sie) und faende sich sonst selbst
+   * als eigene Vorgaengerin: Der Zeitraum begaenne dann an seinem eigenen
+   * Ende und der Rueckblick zaehlte nichts.
+   */
+  async function ermittleVorigesTeamerEnde(client, orgId, ausserAusgabeId = null) {
+    const { rows: [row] } = await client.query(
+      `SELECT MAX(zeitraum_ende) AS ende
+         FROM wrapped_ausgaben
+        WHERE organization_id = $1
+          AND wrapped_type = 'teamer'
+          AND ($2::bigint IS NULL OR id <> $2::bigint)`,
+      [orgId, ausserAusgabeId]
+    );
+    return row && row.ende ? row.ende : null;
   }
 
   async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year, zeitraumVorgabe = null) {
@@ -93,7 +240,34 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
 
-    const zeitraum = berechneZeitraum(konfirmationTermin, year, zeitraumVorgabe);
+    // BEGINN DER KONFI-ZEIT -- der Anfang des Rueckblicks (Simons Regel
+    // 07.09.2026: "Immer vom anfang an bis zum jetzigen zeitpunkt").
+    //
+    // QUELLE: konfi_profiles.created_at des Profils IN DIESEM Jahrgang.
+    // Das ist der Tag, an dem die Person diesem Jahrgang zugeordnet wurde --
+    // also der Beginn genau der Konfi-Zeit, die dieser Rueckblick erzaehlt.
+    //
+    // WARUM NICHT jahrgaenge.created_at: Das ist der Tag, an dem die LEITUNG
+    // den Jahrgang anlegte, nicht der Tag, an dem diese Person dazukam. Wer
+    // spaeter nachrueckt oder aus einem anderen Jahrgang wechselt, bekaeme
+    // einen Zeitraum, der vor der eigenen Konfi-Zeit beginnt. Umgekehrt
+    // liegt konfi_profiles.created_at bei einem nachtraeglich angelegten
+    // Jahrgang nie VOR dem Jahrgang selbst.
+    //
+    // WARUM NICHT users.created_at: Ein Konto kann aelter sein als die
+    // Konfi-Zeit (zweiter Jahrgang, Teamer, der spaeter Konfi wird) -- dann
+    // zaehlte der Rueckblick eine fremde Zeit mit.
+    //
+    // Fehlt created_at (Altdaten), faellt berechneZeitraum auf das laufende
+    // Konfi-Jahr zurueck.
+    const { rows: [beginnRow] } = await client.query(
+      `SELECT kp.created_at FROM konfi_profiles kp
+        WHERE kp.user_id = $1 AND kp.jahrgang_id = $2`,
+      [userId, jahrgangId]
+    );
+    const konfiBeginn = beginnRow && beginnRow.created_at ? beginnRow.created_at : null;
+
+    const zeitraum = berechneZeitraum(konfirmationTermin, year, zeitraumVorgabe, konfiBeginn);
     const zeitraumStart = zeitraum.start;
     const zeitraumEnde = zeitraum.ende;
 
@@ -433,16 +607,35 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Nachrueckens (Migration 145). NULL heisst UNBEKANNT (Bestandszeilen
     // von vor der Migration), nicht "nein" -- deshalb wird hier auf
     // ausdrueckliches true geprueft und nicht auf "nicht false".
-    const { rows: [wartelisteRow] } = await client.query(
+    //
+    // EINE FEHLENDE SPALTE DARF DEN RUECKBLICK NICHT SPRENGEN (Befund
+    // 07.09.2026, gemessen: Produktion stand auf Migration 144, die Spalte
+    // existierte dort nicht). Die Migrationen laufen zwar beim Start
+    // automatisch -- aber runMigrations FAENGT FEHLER AB und laesst den
+    // Server weiterlaufen (database.js: "Server laeuft weiter"). Schlaegt
+    // 145 aus irgendeinem Grund fehl, startet das Backend trotzdem, und
+    // ohne dieses try/catch braeche generateKonfiSnapshot danach fuer JEDE
+    // Konfi mit "column does not exist" ab: ein stiller Totalausfall des
+    // gesamten Rueckblicks wegen einer einzigen Seite.
+    //
+    // Der Rueckfall ist 0, und damit faellt die Seite ueber ihre Bedingung
+    // in wrappedKacheln.js (nachgerueckt > 0) einfach weg. Das ist das
+    // richtige Verhalten: Ohne die Spalte WEISS niemand, wer gewartet hat --
+    // eine Seite auf Verdacht waere schlimmer als keine.
+    //
+    // Dasselbe Muster steht weiter unten bei den Challenge-Freigaben
+    // (approved_by, Migration 146).
+    const nachgerueckt = await zahlAusNeuerSpalte(
+      client,
       `SELECT COUNT(*)::int AS anzahl FROM event_bookings eb
          JOIN events e ON eb.event_id = e.id
         WHERE eb.user_id = $1 AND eb.organization_id = $2
           AND eb.war_auf_warteliste IS TRUE
           AND e.event_date >= $3::date
           AND e.event_date < ($4::date + INTERVAL '1 day')`,
-      [userId, orgId, zeitraumStart, zeitraumEnde]
+      [userId, orgId, zeitraumStart, zeitraumEnde],
+      'Warteliste (Migration 145)'
     );
-    const nachgerueckt = wartelisteRow ? wartelisteRow.anzahl : 0;
 
     // DER LANGE ATEM -- die Spanne zwischen erstem und letztem Termin.
     //
@@ -1060,12 +1253,46 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    *     geoeffnet, sagte sonst "6 Jahre" -- eine Zahl, die zum Rueckblick
    *     nicht passt und sich mit jedem Aufruf aendert.
    */
-  async function generateTeamerSnapshot(client, userId, orgId, year, zeitraumVorgabe = null) {
-    // Ohne ausdruecklichen Zeitraum das volle Arbeitsjahr 1.9.(year-1) bis
-    // 31.8.(year) -- dieselbe Regel wie beim Konfi-Fallback.
-    const zeitraum = (zeitraumVorgabe && zeitraumVorgabe.start && zeitraumVorgabe.ende)
-      ? { start: zeitraumVorgabe.start, ende: zeitraumVorgabe.ende }
-      : { start: `${year - 1}-09-01`, ende: `${year}-08-31` };
+  async function generateTeamerSnapshot(client, userId, orgId, year, zeitraumVorgabe = null, vorigesEnde = null) {
+    // BEGINN DES TEAMER-ZEITRAUMS -- die lueckenlose Kette (Simons Regel
+    // 07.09.2026): "das erste wrapped geht vom anbeginn der zeit als teamer
+    // bis zum zeitpunkt des wrapped und dann immer bis zum letzten wrapped."
+    //
+    // 1. Gab es schon eine Teamer-Ausgabe in dieser Organisation, beginnt
+    //    dieser Rueckblick an deren ENDE. Der Aufrufer ermittelt das einmal
+    //    pro Lauf (ermittleVorigesTeamerEnde) und reicht es herein -- sonst
+    //    fragte jede Person dieselbe Zeile erneut ab, und schlimmer: die
+    //    Ausgabe DIESES Laufs steht beim Anlegen schon in der Tabelle und
+    //    wuerde sich selbst als Vorgaengerin finden.
+    // 2. Beim ersten Mal: seit wann die Person im Team ist -- users.
+    //    teamer_since, sonst (nullable, Altdaten) die aelteste
+    //    Teamer-Aktivitaet. Dieselbe Kette wie im Abzeichen-Zweig
+    //    (routes/badges.js, 'teamer_year').
+    //
+    // Punkt 2 ist bewusst PERSONENBEZOGEN: Wer erst seit einem halben Jahr
+    // dabei ist, bekommt sein halbes Jahr und nicht die Historie der Gemeinde.
+    let teamerBeginn = vorigesEnde || null;
+    if (!teamerBeginn) {
+      const { rows: [seitRow] } = await client.query(
+        `SELECT teamer_since FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (seitRow && seitRow.teamer_since) {
+        teamerBeginn = seitRow.teamer_since;
+      } else {
+        const { rows: [ersteAkt] } = await client.query(
+          `SELECT MIN(ua.completed_date) AS min_date FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND a.target_role = 'teamer'`,
+          [userId]
+        );
+        if (ersteAkt && ersteAkt.min_date) teamerBeginn = ersteAkt.min_date;
+      }
+    }
+
+    // Dieselbe Funktion wie beim Konfi -- eine Regel, eine Stelle. Der
+    // Teamer-Zweig kennt keinen Konfirmationstermin, daher null.
+    const zeitraum = berechneZeitraum(null, year, zeitraumVorgabe, teamerBeginn);
     const zeitraumStart = zeitraum.start;
     const zeitraumEnde = zeitraum.ende;
 
@@ -1209,21 +1436,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Zeitanker ist approved_at (die Handlung im Rueckblicksjahr), nicht
     // das Einreichungsdatum: Ein Beitrag vom August, im September
     // freigegeben, ist Arbeit des September.
-    let freigegebeneBeitraege = 0;
-    try {
-      const { rows: [freigabeRow] } = await client.query(
-        `SELECT COUNT(*)::int AS anzahl FROM challenge_submissions cs
-          WHERE cs.approved_by = $1
-            AND cs.organization_id = $2
-            AND cs.approved_at >= $3::date
-            AND cs.approved_at < ($4::date + INTERVAL '1 day')`,
-        [userId, orgId, zeitraumStart, zeitraumEnde]
-      );
-      freigegebeneBeitraege = freigabeRow ? freigabeRow.anzahl : 0;
-    } catch (freigabeErr) {
-      // Alt-Deployment ohne Challenge-Tabellen oder ohne die Spalte.
-      console.warn('Wrapped: Freigaben konnten nicht geladen werden:', freigabeErr.message);
-    }
+    // Das blosse try/catch, das hier bis zum 07.09.2026 stand, war
+    // WIRKUNGSLOS -- gemessen: Dieser Zweig laeuft in einer Transaktion,
+    // und ein fehlgeschlagenes Statement bricht sie in PostgreSQL ganz ab.
+    // Jede weitere Query scheiterte danach mit "current transaction is
+    // aborted": Der Fehler war abgefangen, der Teamer-Rueckblick trotzdem
+    // fuer jede Person weg. Siehe zahlAusNeuerSpalte().
+    const freigegebeneBeitraege = await zahlAusNeuerSpalte(
+      client,
+      `SELECT COUNT(*)::int AS anzahl FROM challenge_submissions cs
+        WHERE cs.approved_by = $1
+          AND cs.organization_id = $2
+          AND cs.approved_at >= $3::date
+          AND cs.approved_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde],
+      'Challenge-Freigaben (Migration 146)'
+    );
 
     // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
     // wurden.
@@ -1607,6 +1835,28 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         const zeitraumVorgabe = (zeitraumStartVorgabe && zeitraumEndeVorgabe)
           ? { start: zeitraumStartVorgabe, ende: zeitraumEndeVorgabe }
           : null;
+        // Der Zeitraum, der in der Ausgabe STEHT, muss der sein, mit dem
+        // gerechnet wird (Simons Regel 07.09.2026: vom Anfang der Konfi-Zeit
+        // bis heute). Ohne Vorgabe: der frueheste Beginn im Jahrgang bis
+        // heute -- die Spanne, die die Ausgabe insgesamt abdeckt. Die
+        // einzelnen Rueckblicke beginnen je am eigenen Eintritt.
+        const heuteIso = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
+        let anzeigeStart = zeitraumStartVorgabe;
+        if (!anzeigeStart) {
+          const { rows: [fruehest] } = await client.query(
+            `SELECT MIN(kp.created_at)::date AS beginn FROM konfi_profiles kp
+               JOIN users u ON kp.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+            [jahrgangId]
+          );
+          anzeigeStart = fruehest && fruehest.beginn
+            ? new Date(fruehest.beginn).toISOString().slice(0, 10)
+            : `${currentYear - 1}-09-01`;
+        }
         const { rows: [ausgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1615,8 +1865,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'konfi', $2, $3, $4::date, $5::date, NOW(), $6, $6)
            RETURNING id, titel`,
           [req.user.organization_id, jahrgangId, titel,
-           zeitraumStartVorgabe || `${currentYear - 1}-09-01`,
-           zeitraumEndeVorgabe || `${currentYear}-08-31`,
+           anzeigeStart,
+           zeitraumEndeVorgabe || heuteIso,
            req.user.id]
         );
 
@@ -1721,6 +1971,35 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // vorigen (derselbe Fehler wie bei den Konfis).
         const teamerTitel = (req.body?.titel || '').trim()
           || `Teamer-Rückblick ${currentYear}`;
+        // Der Zeitraum, der in der Ausgabe STEHT, muss der sein, mit dem
+        // gerechnet wird. Ohne Vorgabe ist das die Kette: vom Ende der
+        // vorigen Teamer-Ausgabe bis heute. Steht noch keine da (erste
+        // Ausgabe), bleibt die Zeile beim heutigen Tag als Ende und dem
+        // frueheren Eintritt als Anfang -- die Personen unterscheiden sich
+        // darin, die ANZEIGE nennt deshalb den frueheren der beiden.
+        const heuteIso = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
+        const vorigesEndeFuerAnzeige = zeitraumVorgabe
+          ? null
+          : await ermittleVorigesTeamerEnde(client, req.user.organization_id);
+        const anzeigeStart = zeitraumStartVorgabe
+          || (vorigesEndeFuerAnzeige
+            ? new Date(vorigesEndeFuerAnzeige).toISOString().slice(0, 10)
+            : null)
+          // Ganz ohne Vorgaenger: der frueheste Eintritt ins Team. Das ist
+          // die Spanne, die die Ausgabe insgesamt abdeckt.
+          || (await (async () => {
+            const { rows: [r] } = await client.query(
+              `SELECT MIN(u.teamer_since)::date AS seit FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'teamer' AND u.organization_id = $1`,
+              [req.user.organization_id]
+            );
+            return r && r.seit ? new Date(r.seit).toISOString().slice(0, 10) : null;
+          })())
+          || `${currentYear - 1}-09-01`;
         const { rows: [teamerAusgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1729,16 +2008,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)
            RETURNING id, titel`,
           [req.user.organization_id, teamerTitel,
-           zeitraumStartVorgabe || `${currentYear - 1}-09-01`,
-           zeitraumEndeVorgabe || `${currentYear}-08-31`, req.user.id]
+           anzeigeStart,
+           zeitraumEndeVorgabe || heuteIso, req.user.id]
         );
+
+        // Das Ende der VORIGEN Ausgabe -- der Anfang dieser. Einmal pro Lauf,
+        // und ausdruecklich OHNE die soeben angelegte Ausgabe (sonst faende
+        // sie sich selbst).
+        const vorigesEnde = zeitraumVorgabe
+          ? null
+          : await ermittleVorigesTeamerEnde(client, req.user.organization_id, teamerAusgabe.id);
 
         let generated = 0;
         let errors = 0;
 
         for (const teamer of teamers) {
           try {
-            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear, zeitraumVorgabe);
+            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear, zeitraumVorgabe, vorigesEnde);
 
             await client.query(
               `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, ausgabe_id, data, computed_at)
@@ -2196,6 +2482,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     try {
       await client.query('BEGIN');
 
+      // Anfang der Kette: das Ende der vorigen Teamer-Ausgabe. Dieser Weg
+      // legt keine Ausgabe an, also gibt es hier nichts auszuschliessen.
+      const vorigesEnde = zeitraumVorgabe
+        ? null
+        : await ermittleVorigesTeamerEnde(client, orgId);
+
       const { rows: teamers } = await client.query(
         `SELECT u.id as user_id FROM users u
          JOIN roles r ON u.role_id = r.id
@@ -2208,7 +2500,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       for (const teamer of teamers) {
         try {
-          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year, zeitraumVorgabe);
+          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year, zeitraumVorgabe, vorigesEnde);
           await client.query(
             `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
              VALUES ($1, $2, 'teamer', $3, $4, NOW())
