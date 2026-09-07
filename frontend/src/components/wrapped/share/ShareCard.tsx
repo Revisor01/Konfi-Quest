@@ -161,12 +161,12 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               <div className="share-label">Events</div>
               <div className="share-big-number">{konfi.slides.events.total_attended}</div>
               <div className="share-subtitle">Events besucht</div>
-              {konfi.slides.events.lieblings_event && (
-                <div style={{ marginTop: 48, padding: '24px 36px', background: 'rgba(var(--app-color-wrapped-rgb), 0.15)', borderRadius: 24, border: '1px solid rgba(var(--app-color-wrapped-rgb), 0.3)' }}>
-                  <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)' }}>Lieblings-Event</div>
-                  <div style={{ fontSize: 36, fontWeight: 600, marginTop: 8 }}>{konfi.slides.events.lieblings_event.name}</div>
-                </div>
-              )}
+              {/* Der Kasten "Lieblings-Event" mit dem Namen des zuletzt
+                  besuchten Termins ist am 07.09.2026 entfallen (Simon:
+                  "Dein letzter Termin kann weg") -- genauso wie der
+                  Merkzettel auf der Seite selbst (EventsSlide). Das
+                  Snapshot-Feld `lieblings_event` bleibt im Backend: alte
+                  App-Versionen lesen es weiter. */}
             </>
           );
 
@@ -333,29 +333,65 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
-        case 'abschluss':
+        // DIE GETEILTE UEBERSICHT -- seit dem 07.09.2026 die LETZTE Seite
+        // jedes Konfi-Rueckblicks (Simon: "Das soll auch die letzte Folie
+        // sein") und damit die, die am haeufigsten weitergegeben wird.
+        //
+        // Simons Vorgabe, woertlich: "Die Uebersicht die geteilt wird sollte
+        // die Kirchengemeinde enthalten. Die Punkte und das Konfi Datum. Mit
+        // dem Slogan deine Weg deine Zeit dein Glaube."
+        //
+        // VIER ANGABEN, MEHR NICHT: Gemeinde, Punkte, Konfirmationstermin,
+        // Slogan. Die frueheren drei Zahlen nebeneinander (Punkte, Events,
+        // Badges) sind auf eine reduziert -- ein Bild, das jemand in seine
+        // Story stellt, wird im Vorbeiscrollen gelesen, und drei
+        // gleichgrosse Zahlen sagen darin weniger als eine.
+        //
+        // Der Gemeindename steht ueber dem Slogan, das Wasserzeichen
+        // "Konfi Quest" unten auf der Karte -- Simons Entscheidung.
+        // Alt-Snapshots kennen `slides.gemeinde` nicht; dann faellt die
+        // Zeile weg und die Karte bleibt sonst gleich.
+        case 'abschluss': {
           if (!konfi) return null;
+          const zA = konfi.slides.zeitraum;
+          const konfiDatum = zA && 'konfirmation' in zA ? (zA.konfirmation || null) : null;
           return (
             <>
-              <div style={{ fontSize: 48, fontWeight: 700, marginBottom: 48 }}>
-                Deine Konfi-Zeit
+              {konfi.slides.gemeinde && (
+                <div style={{ fontSize: 34, fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: 20 }}>
+                  {konfi.slides.gemeinde}
+                </div>
+              )}
+
+              {/* Eigene Groesse statt der Klasse `share-slogan` (130px):
+                  Die reinen Slogan-Seiten tragen nichts ausser dem Spruch,
+                  diese Karte traegt darunter noch Punktzahl und Datum. Bei
+                  130px in Grossbuchstaben stiessen die drei Zeilen und die
+                  Zahl aneinander -- 96px lassen beidem Platz und der Slogan
+                  bleibt das Groesste auf der Karte. */}
+              <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+                <span style={{ display: 'block' }}>Dein Weg.</span>
+                <span style={{ display: 'block' }}>Deine Zeit.</span>
+                <span style={{ display: 'block' }}>Dein Glaube.</span>
               </div>
-              <div style={{ display: 'flex', gap: 48 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.punkte.total}</div>
-                  <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Punkte</div>
+
+              <div style={{ marginTop: 56, textAlign: 'center' }}>
+                <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, color: 'var(--app-color-wrapped-hell)' }}>
+                  {konfi.slides.punkte.total}
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.events.total_attended}</div>
-                  <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Events</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 700, color: 'var(--app-color-wrapped-hell)' }}>{konfi.slides.badges.total_earned}</div>
-                  <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>Badges</div>
+                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>
+                  {konfi.slides.punkte.total === 1 ? 'Punkt' : 'Punkte'}
                 </div>
               </div>
+
+              {konfiDatum && (
+                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.7)', marginTop: 36 }}>
+                  Konfirmation am {new Date(konfiDatum).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              )}
             </>
           );
+        }
 
         // Teamer-Slides
         case 'teamer-intro':
@@ -720,8 +756,8 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <span style={{ display: 'block' }}>dabei.</span>
               </div>
               <div className="share-nachsatz">
-                Als Teamer:in gestaltest du das nächste Konfi-Jahr mit — für die,
-                die jetzt anfangen, wo du angefangen hast.
+                Schreib einfach jemandem aus dem Team. Und gestalte mit —
+                die Kirche und den Glauben von morgen.
               </div>
             </>
           );

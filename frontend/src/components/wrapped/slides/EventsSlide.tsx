@@ -15,6 +15,15 @@ interface EventsSlideProps extends SlideProps {
  * ist genau die Art Zeile, die Simons Regel verbietet ("keine
  * Negativ-Seiten"): Sie macht das Absagen zum Thema, obwohl niemand danach
  * gefragt hat, und war obendrein nicht mal gerechnet.
+ *
+ * EBENSO ENTFERNT (Simon, 07.09.2026, woertlich: "Dein letzter Termin kann
+ * weg"): Der Merkzettel mit dem Namen des zuletzt besuchten Termins. Die
+ * Seite erzaehlt, WIE OFT jemand da war -- der Name eines einzelnen Termins
+ * sagt dazu nichts und traegt die Seite auch nicht.
+ *
+ * Das Snapshot-Feld `slides.events.lieblings_event` BLEIBT im Backend:
+ * Ausgelieferte App-Versionen lesen es, und die Antwortform ist ein
+ * Vertrag. Nur die Anzeige faellt weg -- hier und in der Teilen-Karte.
  */
 
 /**
@@ -95,13 +104,6 @@ const EventsSlide: React.FC<EventsSlideProps> = ({ isActive, events }) => {
       </div>
 
       <div className="kat-nachsatz">{text.nachsatz}</div>
-
-      {events.lieblings_event?.name && (
-        <div className="w-merkzettel">
-          <span className="w-merkzettel__label">Dein letzter Termin</span>
-          <span className="w-merkzettel__wert">{events.lieblings_event.name}</span>
-        </div>
-      )}
     </SlideBase>
   );
 };

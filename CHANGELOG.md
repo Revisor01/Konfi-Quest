@@ -42,7 +42,33 @@ Versionsüberschrift.
 - Die Leitung sieht im Profil einer Konfi oder Teamer:in alle Rückblicke —
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
+### Geändert
+- Der Rückblick endet jetzt mit der Übersicht statt mit der Einladung ins
+  Team. Die Einladung steht davor, die Übersicht ganz zuletzt — sie ist die
+  Seite, die man weitergibt.
+- Die Übersicht am Ende nennt die Kirchengemeinde, die Punkte und den
+  Konfirmationstermin, darüber „Dein Weg. Deine Zeit. Dein Glaube.". Das
+  geteilte Bild zeigt dasselbe. Ältere Rückblicke kennen den Gemeindenamen
+  noch nicht; dort bleibt die Zeile weg, alles andere ist unverändert.
+- Die Einladung ins Team lädt jetzt zu einem ersten Schritt ein: „Schreib
+  einfach jemandem aus dem Team." Der Pfeil darunter ist weg.
+- Die Termin-Seite nennt den zuletzt besuchten Termin nicht mehr — auch nicht
+  auf dem geteilten Bild. Sie erzählt, wie oft jemand da war.
+- Die Schrift im Rückblick erscheint jetzt nacheinander statt auf einen
+  Schlag: erst die Überschrift, dann die Zahl, dann der Spruch Zeile für
+  Zeile, zuletzt der Satz darunter. Wer im Gerät „Bewegung reduzieren"
+  eingestellt hat, bekommt alles sofort und unbewegt.
+
 ### Behoben
+- Das Handbuch beschrieb den Jahresrückblick an mehreren Stellen so, wie er
+  einmal war: Es verwies für die Freigabe noch auf den Jahrgang statt auf
+  „Mehr → Jahresrückblick", kannte nur einen Rückblick pro Person und Jahr
+  statt der Ausgaben, nannte eine Löschabfrage, die es so nicht mehr gibt,
+  und beschrieb eine Seite, die im Rückblick gar nicht mehr vorkommt.
+  Außerdem stimmten einzelne Angaben nicht: die Termin-Seite zeigt kein „von
+  N verfügbaren", die Zertifikats-Seite nur das zuletzt erhaltene Zertifikat,
+  „Deine Momente" verlangt keinen Beitrag mit Bild oder Text, und der
+  Ersatztext beim Teilen lautet „Meine Konfi-Zeit" statt „Mein Konfi-Jahr".
 - Ein Termin zählt im Rückblick nur noch einmal. Ein Gottesdienst in der
   Passionszeit erschien bisher auf der Oster-Seite und zusätzlich auf der
   Gottesdienst-Seite — dieselbe Stunde, zweimal gezählt. Fällt ein Termin in

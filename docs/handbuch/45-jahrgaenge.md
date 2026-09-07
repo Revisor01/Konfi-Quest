@@ -157,24 +157,16 @@ Konfirmationsablauf.
 
 ## Wrapped-Freigabe
 
-Der zweite Schalter im selben Abschnitt gibt den Jahresrückblick frei. Er
-erscheint erst, wenn du einen bestehenden Jahrgang **bearbeitest**.
+Freigegeben wird der Jahresrückblick **nicht mehr hier**, sondern unter
+**Mehr → Jahresrückblick**. Ein Schalter im Jahrgang konnte nur an oder aus —
+er konnte weder eine Ausgabe benennen noch eine einzelne wieder entfernen.
 
-**Beim Einschalten** fragt die App nach: „Wrapped wird für alle Konfis dieses
-Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“
+In der Jahrgangsliste steht deshalb nur noch der **Stand**: „Wrapped gestartet
+am …“, sobald für den Jahrgang eine Ausgabe freigegeben ist, sonst „Wrapped
+nicht freigegeben“.
 
-Bestätigst du, passiert beides:
-
-1. Für **jeden aktiven Konfi** des Jahrgangs wird der Rückblick berechnet und
-   als feste Momentaufnahme gespeichert.
-2. Alle bekommen einen Push: **„Dein Konfi-Jahr ist da!“** mit dem Text „Schau
-   dir jetzt deinen persönlichen Jahresrückblick an!“
-
-**Beim Ausschalten** — Rückfrage „Wrapped-Rückblick für diesen Jahrgang löschen?
-Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten
-Rückblicke **wirklich gelöscht**, nicht nur ausgeblendet.
-
-Mehr dazu im Kapitel [Jahresrückblick (Wrapped)](95-wrapped.md).
+Wie du Ausgaben anlegst, benennst, erneut freigibst und löschst, steht im
+Kapitel [Jahresrückblick (Wrapped)](95-wrapped.md).
 
 ## Was die Jahrgangs-Zuweisung von Teamer:innen steuert
 

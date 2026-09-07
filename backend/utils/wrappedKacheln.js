@@ -47,11 +47,14 @@ const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKate
  *
  * WAS FEST BLEIBT UND WARUM: 'intro' zeigt Name und Jahrgang, 'werde-teamer'
  * ist reiner Text -- beide koennen gar keine Null tragen. 'abschluss' traegt
- * Simons Botschaft ("Dein Weg. Deine Zeit. Dein Glaube.") als Seiteninhalt;
+ * Gemeinde, Punkte, Konfirmationstermin und Simons Botschaft
+ * ("Dein Weg. Deine Zeit. Dein Glaube.") als Seiteninhalt;
  * die drei Zahlen darunter sind eine Zusammenfassung, kein Highlight. Ohne
  * diese drei entstuende bei einer stillen Konfi ueberhaupt kein Rueckblick.
  */
-const FESTE_KACHELN = ['intro', 'abschluss', 'werde-teamer'];
+// Reihenfolge wie in der DRAMATURGIE: Auftakt, dann die Einladung ins Team,
+// dann der Abschluss als letzte Seite (Simon, 07.09.2026).
+const FESTE_KACHELN = ['intro', 'werde-teamer', 'abschluss'];
 
 /**
  * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
@@ -104,11 +107,20 @@ const DRAMATURGIE = [
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
-  'abschluss',          // 10 Uebersicht
-  // 11: Die Einladung ins Team -- Simons Vorgabe 03.09.2026, "eine letzte
-  // Seite bei Konfis: Werde Teamerin". Steht bewusst NACH dem Abschluss:
-  // erst der Rueckblick, dann der Blick nach vorn.
-  'werde-teamer'
+  // 10: Die Einladung ins Team -- Simons Vorgabe 03.09.2026, "eine letzte
+  // Seite bei Konfis: Werde Teamerin".
+  //
+  // SIE STAND BIS ZUM 07.09.2026 GANZ AM ENDE, hinter dem Abschluss ("erst
+  // der Rueckblick, dann der Blick nach vorn"). Simon hat die beiden nach
+  // dem Ansehen auf dem Geraet getauscht, woertlich: "Das soll auch die
+  // letzte Folie sein. Die Teamer Folie als vorletztes."
+  //
+  // WARUM DAS BESSER IST: Der Abschluss ist die Seite, die geteilt wird --
+  // Gemeinde, Punkte, Konfirmationstermin und Simons Botschaft "Dein Weg.
+  // Deine Zeit. Dein Glaube." Was am Ende stehen bleibt, soll das sein,
+  // was man weitergibt, nicht die Einladung ins Team.
+  'werde-teamer',       // 10 der Blick nach vorn
+  'abschluss'           // 11 Uebersicht und Schlusswort -- die letzte Seite
 ];
 
 /**

@@ -90,7 +90,11 @@ export {
   addCircle as ICON_PLUS_KREIS_GEFUELLT,
   addCircleOutline as ICON_PLUS_KREIS,
   arrowForward as ICON_PFEIL_WEITER_GEFUELLT,
-  arrowForwardOutline as ICON_PFEIL_WEITER,
+  // ICON_PFEIL_WEITER (arrowForwardOutline) STAND HIER und ist am 07.09.2026
+  // entfallen: Sein einziger Verwender war der winkende Pfeil auf der
+  // Team-Seite des Rueckblicks, und den hat Simon gestrichen ("Sprich
+  // jemanden an kommt der Pfeil weg"). Die gefuellte Fassung bleibt --
+  // Login und Onboarding-Tour benutzen sie.
   arrowUndoOutline as ICON_RUECKGAENGIG,
   chevronDown as ICON_AUFKLAPPEN_GEFUELLT,
   chevronDownOutline as ICON_AUFKLAPPEN,

@@ -1475,6 +1475,57 @@ describe('Wrapped Routes', () => {
     });
 
     // ------------------------------------------------------------
+    // Der Name der Kirchengemeinde im Snapshot (additiv ab 07.09.2026).
+    //
+    // Simons Vorgabe: "Die Uebersicht die geteilt wird sollte die
+    // Kirchengemeinde enthalten." Die Abschluss-Seite und die Teilen-Karte
+    // lesen `slides.gemeinde` -- steht der Name nicht im Snapshot, bleibt
+    // die Zeile leer, ohne dass irgendetwas kaputtgeht. Genau deshalb
+    // braucht es hier einen Test: Ein fehlendes Feld faellt sonst nicht auf.
+    // ------------------------------------------------------------
+    it('der Snapshot traegt den Anzeigenamen der Kirchengemeinde', async () => {
+      const snap = await snapshotVonKonfi1();
+      // Der Seed setzt display_name = 'Test-Gemeinde St. Martin' und
+      // name = 'Test-Gemeinde'. Auf ein Bild, das jemand weitergibt,
+      // gehoert der Anzeigename, nicht der interne Bezeichner.
+      expect(snap.slides.gemeinde).toBe(ORGS.testGemeinde.display_name);
+      expect(snap.slides.gemeinde).toBe('Test-Gemeinde St. Martin');
+    });
+
+    it('ohne Anzeigename faellt der Snapshot auf den Gemeindenamen zurueck', async () => {
+      // COALESCE(NULLIF(TRIM(display_name), ''), name): Eine Gemeinde, die
+      // keinen Anzeigenamen gepflegt hat, bekommt ihren name -- nicht null
+      // und erst recht keine leere Zeile auf dem geteilten Bild.
+      await db.query('UPDATE organizations SET display_name = NULL WHERE id = $1', [ORGS.testGemeinde.id]);
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.gemeinde).toBe('Test-Gemeinde');
+    });
+
+    it('ein Anzeigename aus Leerzeichen zaehlt nicht als Name', async () => {
+      await db.query("UPDATE organizations SET display_name = '   ' WHERE id = $1", [ORGS.testGemeinde.id]);
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.gemeinde).toBe('Test-Gemeinde');
+    });
+
+    it('das Feld lieblings_event bleibt im Snapshot, obwohl es niemand mehr zeigt', async () => {
+      // VERTRAGSTREUE GEGENUEBER AUSGELIEFERTEN APPS: Die Anzeige ist am
+      // 07.09.2026 entfallen (Simon: "Dein letzter Termin kann weg") -- auf
+      // der Termin-Seite und auf der Teilen-Karte. Das FELD bleibt: Auf den
+      // Geraeten laufen App-Versionen, die es lesen, und ein weggelassenes
+      // Feld ist ein Bruch der Antwortform.
+      //
+      // Dieser Test steht ausdruecklich hier, damit niemand das Feld beim
+      // naechsten Aufraeumen "als ungenutzt" streicht: Im Repo hat es seit
+      // dem 07.09.2026 tatsaechlich keinen Leser mehr.
+      const e = await termin('Der eine Termin', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, e);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.events).toHaveProperty('lieblings_event');
+      expect(snap.slides.events.lieblings_event.name).toBe('Der eine Termin');
+    });
+
+    // ------------------------------------------------------------
     // W-A: Wrapped und Dashboard zaehlen dieselbe Sache gleich.
     // ------------------------------------------------------------
     it('Wrapped und Dashboard liefern fuer dieselbe Person dieselbe Terminzahl', async () => {

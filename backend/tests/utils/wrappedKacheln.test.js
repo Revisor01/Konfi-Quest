@@ -180,12 +180,12 @@ describe('Keine Seite mit einer Null darauf', () => {
     // Kein leerer Rueckblick, aber auch keine drei Nullen: Intro (Name und
     // Jahrgang), Abschluss (Simons Botschaft) und die Einladung ins Team
     // (reiner Text) koennen gar keine Null tragen.
-    expect(waehleKacheln(stillerSnapshot())).toEqual(['intro', 'abschluss', 'werde-teamer']);
+    expect(waehleKacheln(stillerSnapshot())).toEqual(['intro', 'werde-teamer', 'abschluss']);
   });
 
   test('fehlende slides ergeben denselben Mindestrueckblick', () => {
-    expect(waehleKacheln(null)).toEqual(['intro', 'abschluss', 'werde-teamer']);
-    expect(waehleKacheln({})).toEqual(['intro', 'abschluss', 'werde-teamer']);
+    expect(waehleKacheln(null)).toEqual(['intro', 'werde-teamer', 'abschluss']);
+    expect(waehleKacheln({})).toEqual(['intro', 'werde-teamer', 'abschluss']);
   });
 
   test('keine der drei Zahl-Seiten steht noch bedingungslos in FESTE_KACHELN', () => {
@@ -220,17 +220,37 @@ describe('Dramaturgie', () => {
     for (const fest of FESTE_KACHELN) expect(kacheln).toContain(fest);
   });
 
-  test('die Einladung ins Team ist immer die letzte Seite', () => {
-    // GEAENDERT AM 03.09.2026: Simon wollte "eine letzte Seite bei Konfis:
-    // Werde Teamerin". Sie steht NACH dem Abschluss -- erst der Rueckblick,
-    // dann der Blick nach vorn.
-    expect(waehleKacheln(aktiverSnapshot()).slice(-1)[0]).toBe('werde-teamer');
-    expect(waehleKacheln(stillerSnapshot()).slice(-1)[0]).toBe('werde-teamer');
+  test('der Abschluss ist immer die letzte Seite', () => {
+    // GEAENDERT AM 07.09.2026: Bis dahin stand die Einladung ins Team ganz
+    // am Ende (Vorgabe vom 03.09.2026). Simon hat die beiden nach dem
+    // Ansehen auf dem Geraet getauscht, woertlich: "Das soll auch die
+    // letzte Folie sein. Die Teamer Folie als vorletztes."
+    //
+    // Der Abschluss ist die Seite, die geteilt wird -- Gemeinde, Punkte,
+    // Konfirmationstermin und Simons Botschaft. Was am Ende stehen bleibt,
+    // soll das sein, was man weitergibt.
+    expect(waehleKacheln(aktiverSnapshot()).slice(-1)[0]).toBe('abschluss');
+    expect(waehleKacheln(stillerSnapshot()).slice(-1)[0]).toBe('abschluss');
   });
 
-  test('der Abschluss steht direkt davor', () => {
+  test('die Einladung ins Team steht direkt davor', () => {
     const k = waehleKacheln(aktiverSnapshot());
-    expect(k[k.length - 2]).toBe('abschluss');
+    expect(k[k.length - 2]).toBe('werde-teamer');
+    const still = waehleKacheln(stillerSnapshot());
+    expect(still[still.length - 2]).toBe('werde-teamer');
+  });
+
+  test("in der DRAMATURGIE steht 'werde-teamer' vor 'abschluss'", () => {
+    // Der Waechter fuer Simons Tausch vom 07.09.2026, direkt an der Quelle.
+    // Die Tests darueber messen das Ergebnis von waehleKacheln; dieser hier
+    // liest die Liste selbst -- wer sie wieder umdreht, faellt hier auf,
+    // auch wenn eine Bedingung die eine der beiden Seiten gerade
+    // herausfiltert.
+    const iTeamer = DRAMATURGIE.indexOf('werde-teamer');
+    const iAbschluss = DRAMATURGIE.indexOf('abschluss');
+    expect(iTeamer).toBeGreaterThan(-1);
+    expect(iAbschluss).toBe(DRAMATURGIE.length - 1);
+    expect(iTeamer).toBe(DRAMATURGIE.length - 2);
   });
 
   test('das Intro ist immer die erste Seite', () => {
@@ -256,8 +276,8 @@ describe('Dramaturgie', () => {
     }
     // Auftakt und Abschluss sind trotzdem fest verankert.
     expect(kacheln[0]).toBe('intro');
-    expect(kacheln[kacheln.length - 1]).toBe('werde-teamer');
-    expect(kacheln.indexOf('abschluss')).toBe(kacheln.length - 2);
+    expect(kacheln[kacheln.length - 1]).toBe('abschluss');
+    expect(kacheln.indexOf('werde-teamer')).toBe(kacheln.length - 2);
   });
 
   test('eine aktive Konfi bekommt genau zehn Seiten', () => {
@@ -295,8 +315,9 @@ describe('Dramaturgie', () => {
     ];
     const kacheln = waehleKacheln(viel, { chat: 10 });
     expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
-    // Abschluss und Einladung ueberleben den Deckel immer.
-    expect(kacheln.slice(-2)).toEqual(['abschluss', 'werde-teamer']);
+    // Einladung und Abschluss ueberleben den Deckel immer -- in genau
+    // dieser Reihenfolge (Simon, 07.09.2026).
+    expect(kacheln.slice(-2)).toEqual(['werde-teamer', 'abschluss']);
   });
 });
 

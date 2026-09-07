@@ -166,6 +166,12 @@ export interface KonfiWrappedData {
   highlight_type: HighlightType;
   formulierung_seed: number;
   slides: {
+    /**
+     * Der Name der Kirchengemeinde. Ab 07.09.2026 -- Alt-Snapshots haben das
+     * Feld nicht, dann bleibt die Zeile auf der Abschluss-Seite und der
+     * Teilen-Karte einfach weg.
+     */
+    gemeinde?: string | null;
     punkte: KonfiPunkteSlide;
     events: KonfiEventsSlide;
     badges: KonfiBadgesSlide;

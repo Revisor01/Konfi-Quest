@@ -36,10 +36,11 @@ zwischendurch ausgeschaltet hast, benachrichtigt das nächste Freigeben wieder.
 
 ## Freigabe pro Jahrgang
 
-Der Konfi-Rückblick wird **pro Jahrgang** freigegeben,
-[im Jahrgang](45-jahrgaenge.md#wrapped-freigabe) unter „Konfispruch & Wrapped“. Er läuft nie automatisch an — du entscheidest, wann.
+Der Konfi-Rückblick wird **pro Jahrgang** freigegeben, unter
+**Mehr → Jahresrückblick**. Er läuft nie automatisch an — du entscheidest,
+wann.
 
-**Beim Einschalten** fragt die App: „Wrapped wird für alle Konfis dieses
+**Beim Freigeben** fragt die App: „Wrapped wird für alle Konfis dieses
 Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“
 
 Bestätigst du, passiert zweierlei:
@@ -118,12 +119,11 @@ Die Person selbst sieht nur die **freigegebenen** Ausgaben.
 
 ### Was seit Version 2.1 dazugekommen ist
 
-**Der Rückblick ist persönlich geworden.** Gleich nach der Begrüßung steht eine
-Seite, die zeigt, was diese Konfi besonders macht — Chat-Star,
-Reaktions-Magnet, Challenge-Fan oder verlässlich dabei. Ausgewählt wird, worin
-jemand im Vergleich zum eigenen Jahrgang heraussticht. Der Vergleich ist
-anonym (nur die Zahl, nie ein Name) und erscheint **nur, wenn er freundlich
-ausfällt**: Wer unter dem Schnitt liegt, bekommt die Seite gar nicht erst.
+**Der Rückblick ist persönlich geworden.** Statt für alle dieselben Zahlen zu
+zeigen, sucht er heraus, was gerade diese Konfi ausmacht — der Termin, an dem
+sie war, das Abzeichen, das sonst kaum jemand hat, die Wochen, in denen sie
+durchgehalten hat. Vergleiche mit anderen bleiben anonym (nur die Zahl, nie
+ein Name) und werden nur gezogen, wenn sie **freundlich ausfallen**.
 
 Eine Seite fürs Absagen gibt es bewusst nicht und wird es nicht geben.
 
@@ -154,21 +154,22 @@ alten bleiben stehen — in der Liste stehen sie mit Jahreszahl untereinander.
 Der Teamer-Rückblick entsteht also von selbst, einmal im Jahr. Existiert er für
 das Jahr schon, wird er dabei **nicht** überschrieben.
 
-## Erneut freigeben und wieder ausschalten
+## Erneut freigeben und löschen
 
-**Erneut freigeben = neu berechnen.** Schaltest du die Freigabe aus und wieder
-ein, wird der Rückblick vollständig neu gerechnet und überschreibt den alten.
+**Dieselbe Ausgabe erneut freigeben = neu berechnen.** Der Rückblick wird
+vollständig neu gerechnet und überschreibt den bisherigen Stand dieser
+Ausgabe.
 
-> **Achtung:** Innerhalb desselben Jahres gibt es immer nur **einen** Rückblick
-> pro Person. Der vorherige Stand ist nach dem Neuberechnen unwiderruflich weg —
-> auch aus „Meine Wrappeds“. Über Jahresgrenzen hinweg bleiben die Rückblicke
-> dagegen getrennt erhalten.
+> **Achtung:** Der vorherige Stand **derselben Ausgabe** ist nach dem
+> Neuberechnen unwiderruflich weg — auch aus „Meine Wrappeds“. Die anderen
+> Ausgaben bleiben unberührt: Ein Zwischenstand vom Januar verschwindet nicht,
+> wenn du im Mai den Abschluss neu rechnest.
 
-**Ausschalten = löschen.** Die Rückfrage lautet „Wrapped-Rückblick für diesen
-Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ Die
-gespeicherten Rückblicke werden dabei **wirklich gelöscht**, nicht nur
-ausgeblendet. Nur ein erneutes Freigeben stellt sie wieder her — dann mit neu
-berechneten Zahlen.
+**Löschen betrifft immer eine einzelne Ausgabe.** Die Rückfrage lautet
+„Ausgabe löschen?“. Die gespeicherten Rückblicke dieser Ausgabe werden dabei
+**wirklich gelöscht**, nicht nur ausgeblendet — die übrigen Ausgaben des
+Jahrgangs bleiben stehen. Nur ein erneutes Freigeben stellt sie wieder her,
+dann mit neu berechneten Zahlen.
 
 Teamer-Rückblicke sind davon nicht betroffen — sie hängen an keinem Jahrgang.
 Löschen lassen sie sich trotzdem, allerdings nicht über die Oberfläche: Der
@@ -198,7 +199,7 @@ sieht genau das.
 Sieben Seiten hängen nicht an der Seltenheit:
 
 - **Begrüßung** und **Auf einen Blick** — Anfang und Ende der Erzählung.
-- **Werde Teamer:in** — die Einladung ganz zum Schluss.
+- **Werde Teamer:in** — die Einladung, kurz vor Schluss.
 - **Termine**, **Punkte** und **Abzeichen** — die drei Zahlen, die auf der
   Abschluss-Seite noch einmal zusammengefasst werden. Ohne sie fasste der
   Abschluss etwas zusammen, das nie gezeigt wurde. Sie erscheinen aber nur,
@@ -214,25 +215,30 @@ hat.
 
 > **Die Reihenfolge bleibt die Erzählung.** Die Seltenheit entscheidet, *wer*
 > mitkommt — nicht, in welcher Reihenfolge erzählt wird. Der Rückblick fängt
-> immer mit der Begrüßung an und hört mit der Einladung ins Team auf.
+> immer mit der Begrüßung an, dann kommt die Einladung ins Team, und ganz
+> zuletzt steht die Übersicht — die Seite, die geteilt wird.
 
 ## Die Seiten des Konfi-Rückblicks
 
 Die Spalte **Wie selten** ist ein grober Anhaltspunkt: Sie sagt, wie viel
-Prozent eines Jahrgangs diese Seite typischerweise bekommen. Bei Gemeinden ab
-fünf Konfis im Jahrgang misst die App das an den echten Daten, sonst rechnet sie
-mit diesen Schätzwerten. Kleiner heißt seltener heißt wertvoller.
+Prozent eines Jahrgangs diese Seite typischerweise bekommen. Kleiner heißt
+seltener heißt wertvoller.
+
+Bei Jahrgängen ab fünf Konfis misst die App vier dieser Werte an den echten
+Daten nach — Termine, Punkte, Abzeichen und Wochentag. Alle übrigen Seiten
+behalten die Schätzwerte aus der Tabelle: Sie hängen an Dingen, die sich
+gemeindeweit nicht sinnvoll auszählen lassen.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
 | **Begrüßung** | Name, Jahrgang, Jahreszahl | immer | immer |
-| **Deine Termine** | Zahl der besuchten Termine, „von N verfügbaren", zuletzt besuchter Termin | mindestens ein besuchter Termin | 95 % |
+| **Deine Termine** | Zahl der besuchten Termine, mit einem Spruch dazu | mindestens ein besuchter Termin | 95 % |
 | **Warteliste-Held:in** | „Du hast gewartet — und es hat geklappt" | mindestens einmal von der Warteliste nachgerückt | 20 % |
 | **Dein Schwerpunkt** | Bereich oder besondere Zeit, mit eigenem Bild und Spruch | siehe die beiden Tabellen unten | verschieden |
 | **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
 | **Deine Challenges** | Zahl der Beiträge, Lieblings-Challenge | mindestens ein Challenge-Beitrag | 60 % |
-| **Deine Momente** | bis zu sechs Challenge-Beiträge, Fotos groß | mindestens ein Beitrag mit Bild oder Text | 55 % |
-| **Der Vielseitige** | auf wie vielen Wegen geantwortet wurde | Beiträge in mindestens zwei Medienarten (Text, Foto, Ton) | 40 % |
+| **Deine Momente** | bis zu sechs Challenge-Beiträge, Fotos groß | mindestens ein Challenge-Beitrag | 55 % |
+| **Der Vielseitige** | auf wie vielen Wegen geantwortet wurde | Beiträge in mindestens zwei verschiedenen Medienarten (Text, Foto, Ton, Video, Link) | 40 % |
 | **Deine Punkte** | Gesamtpunkte, getrennt nach Gottesdienst und Gemeinde, Bonuspunkte | mindestens ein Punkt | 95 % |
 | **Dein aktivster Monat** | der Monat mit den meisten Einträgen | mindestens zwei Aktivitäten oder Termine in einem Monat | 85 % |
 | **Der lange Atem** | Spanne vom ersten bis zum letzten Termin | mindestens 5 Termine über mindestens 60 Tage | 45 % |
@@ -240,8 +246,8 @@ mit diesen Schätzwerten. Kleiner heißt seltener heißt wertvoller.
 | **Deine Abzeichen** | Zahl der Abzeichen, „von N", bis zu sechs Symbole | mindestens ein Abzeichen | 90 % |
 | **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen |
 | **Deine Konfirmation** | das Konfirmationsdatum, Countdown wenn sie noch bevorsteht | der Jahrgang hat einen als Konfirmation gekennzeichneten Termin | 35 % |
-| **Auf einen Blick** | Punkte, Termine, Abzeichen nebeneinander, „Dein Weg. Deine Zeit. Dein Glaube." | immer | immer |
-| **Werde Teamer:in** | die Einladung, dabeizubleiben | immer, als letzte Seite | immer |
+| **Werde Teamer:in** | die Einladung, dabeizubleiben | immer, als vorletzte Seite | immer |
+| **Auf einen Blick** | Kirchengemeinde, Punkte, Termine, Abzeichen und der Konfirmationstermin unter „Dein Weg. Deine Zeit. Dein Glaube." | immer, als letzte Seite | immer |
 
 > **Warum die häufigen Seiten trotzdem erscheinen:** Termine, Punkte und
 > Abzeichen bekommen fast alle — und sie sind trotzdem gesetzt, weil die
@@ -383,7 +389,7 @@ etwas zusammengekommen ist.
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
 | **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
 | **Das erste** | das zuerst verliehene Abzeichen des Jahres | mindestens ein Abzeichen im Zeitraum | 70 % |
-| **Deine Zertifikate** | Zahl und die vollständige Liste mit Datum | mindestens ein Zertifikat im Zeitraum | 40 % |
+| **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat | mindestens ein Zertifikat im Zeitraum | 40 % |
 | **Hinter den Kulissen** | wie viele Challenge-Beiträge freigegeben wurden | mindestens fünf eigene Freigaben | 30 % |
 | **Im Gespräch** | wie oft im Chat auf andere geantwortet wurde | mindestens fünf echte Antworten | 50 % |
 | **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
@@ -447,14 +453,23 @@ Quest“. In der App öffnet sich das übliche Teilen-Menü des Geräts, im Brow
 wird das Bild heruntergeladen.
 
 Klappt der Bildexport nicht, wird ersatzweise ein kurzer Text geteilt, etwa
-„Mein Konfi-Jahr 2026: 24 Punkte gesammelt! #KonfiQuest“.
+„Meine Konfi-Zeit: 24 Punkte gesammelt! #KonfiQuest“. Bei Teamer:innen
+steht dort „Mein Teamer-Jahr 2026“ — ihr Rückblick umfasst ein Jahr, der
+der Konfis die ganze Konfi-Zeit.
 
 > **Datenschutz, bewusst so gebaut:** In das Teilen-Bild werden **niemals Fotos,
 > Ton- oder Videoaufnahmen** aus Challenge-Beiträgen übernommen — nur der
 > Challenge-Titel und ein gekürzter Text. Das Bild verlässt die App, deshalb
 > bleiben die Medien der Konfis draußen.
 
-Nicht jede Seite lässt sich sinnvoll teilen: Für **Schwerpunkt**, **Über dem
-Ziel** und **Konfirmation** gibt es keine Teilen-Vorlage. Das erzeugte Bild ist
-dann leer bis auf den Schriftzug. Weise Konfis darauf hin, dass sie zum Teilen
-besser eine der anderen Seiten wählen.
+Am häufigsten weitergegeben wird die letzte Seite, **Auf einen Blick**. Auf
+dem geteilten Bild steht **weniger als auf der Seite selbst**: die
+Kirchengemeinde, die gesammelten Punkte und der Konfirmationstermin unter dem
+Satz „Dein Weg. Deine Zeit. Dein Glaube." — und unten wie auf jedem geteilten
+Bild der Schriftzug „Konfi Quest". Termine und Abzeichen, die in der App
+daneben stehen, bleiben auf dem Bild weg: Vier Angaben lesen sich unterwegs,
+sechs sehen aus wie eine Tabelle. Rückblicke aus der Zeit vor diesem Umbau
+kennen den Gemeindenamen nicht; dort bleibt die Zeile weg, alles andere steht
+unverändert da.
+
+Jede Seite, die der Rückblick zeigen kann, lässt sich teilen.

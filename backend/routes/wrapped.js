@@ -1348,6 +1348,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       challengeMomente = [];
     }
 
+    // DER NAME DER KIRCHENGEMEINDE (additiv ab 07.09.2026).
+    //
+    // Simons Vorgabe: "Die Uebersicht die geteilt wird sollte die
+    // Kirchengemeinde enthalten." Die Abschluss-Seite ist die Seite, die
+    // geteilt wird -- ohne den Gemeindenamen sagt das Bild nicht, WO diese
+    // Konfi-Zeit stattgefunden hat.
+    //
+    // WARUM IM SNAPSHOT UND NICHT AUS DEM ANGEMELDETEN KONTO: Ein
+    // Rueckblick wird geteilt und spaeter noch einmal geoeffnet -- auch von
+    // der Leitung, die ihn in der Detailansicht ansieht. Er muss jedes Mal
+    // dieselbe Gemeinde nennen, naemlich die, in der die Konfi-Zeit lief,
+    // nicht die gerade aktive Organisation des Betrachters.
+    //
+    // COALESCE(display_name, name): Dasselbe Muster wie in auth.js. `name`
+    // ist der interne Bezeichner, `display_name` der Anzeigename der
+    // Gemeinde -- der gehoert auf ein Bild, das jemand weitergibt.
+    const { rows: [orgRow] } = await client.query(
+      `SELECT COALESCE(NULLIF(TRIM(o.display_name), ''), o.name) AS gemeinde
+         FROM organizations o WHERE o.id = $1`,
+      [orgId]
+    );
+    const gemeindeName = orgRow && orgRow.gemeinde ? orgRow.gemeinde : null;
+
     // ---------------------------------------------------------------
     // Bis hier die Zahlen. Ab hier die AUSWAHL DER SEITEN -- der Punkt, an
     // dem utils/wrappedKacheln.js an seinem Aufrufer haengt.
@@ -1433,6 +1456,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           ziel_total: zielTotal,
           aktuell_total: aktuellTotal
         },
+        // Additiv (07.09.2026): Der Name der Kirchengemeinde. Alte
+        // App-Versionen kennen das Feld nicht und ignorieren es; die
+        // Abschluss-Seite und die Teilen-Karte zeigen es, wenn es da ist,
+        // und lassen die Zeile sonst weg (Alt-Snapshots).
+        gemeinde: gemeindeName,
         zeitraum: {
           start: zeitraumStart,
           ende: zeitraumEnde,

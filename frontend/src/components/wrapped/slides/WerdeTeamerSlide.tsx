@@ -1,23 +1,36 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_HERZ, ICON_PFEIL_WEITER } from '../../shared/icons';
+import { ICON_HERZ } from '../../shared/icons';
 import SlideBase from './SlideBase';
 import type { SlideProps } from '../../../types/wrapped';
 
 /**
- * Die letzte Seite eines Konfi-Rueckblicks: die Einladung ins Team.
+ * Die vorletzte Seite eines Konfi-Rueckblicks: die Einladung ins Team.
  *
  * SIMONS VORGABE (03.09.2026): "Eine letzte Seite bei Konfis: Werde
  * Teamerin."
  *
  * WARUM EINE EIGENE SEITE: Die Einladung stand bisher als kleine Zeile unter
  * der Bilanz auf der Abschluss-Seite -- zwischen Punkten, Terminen und
- * Abzeichen ging sie unter. Als eigene, letzte Seite ist sie das, was am
- * Ende stehen bleibt.
+ * Abzeichen ging sie unter. Als eigene Seite ist sie das, was haengen
+ * bleibt.
+ *
+ * SEIT DEM 07.09.2026 STEHT SIE VORLETZTE, nicht mehr letzte (Simon: "Die
+ * Teamer Folie als vorletztes"). Danach kommt der Abschluss -- die Seite,
+ * die geteilt wird. Weil die Einladung damit direkt VOR dem Abschluss
+ * steht, ist die gleichlautende Zeile dort entfallen; sie haette sonst
+ * zweimal hintereinander gestanden.
+ *
+ * DER PFEIL IST WEG (Simon, 07.09.2026: "Sprich jemanden an kommt der Pfeil
+ * weg"). Er zeigte nach rechts und deutete damit "weiterblaettern" an --
+ * genau das war ab hier falsch, denn nach dieser Seite kommt noch der
+ * Abschluss. Und ueber einer Einladung wirkte er wie eine
+ * Handlungsaufforderung, die zum Weitergehen draengt.
  *
  * TON: Einladend, nicht werbend. Es ist eine Kirchen-App, kein
  * Mitgliederwerbe-Formular. Deshalb keine Handlungsaufforderung mit
- * Ausrufezeichen, sondern eine offene Tuer.
+ * Ausrufezeichen, sondern eine offene Tuer -- und ein konkreter erster
+ * Schritt, der niemanden ueberfordert: eine Nachricht schreiben.
  */
 const WerdeTeamerSlide: React.FC<SlideProps> = ({ isActive }) => (
   <SlideBase isActive={isActive} className="werde-teamer-slide" kachel="werde-teamer">
@@ -29,18 +42,14 @@ const WerdeTeamerSlide: React.FC<SlideProps> = ({ isActive }) => (
     </div>
 
     <div className="kat-nachsatz">
-      Als Teamer:in gestaltest du das nächste Konfi-Jahr mit — für die,
-      die jetzt anfangen, wo du angefangen hast.
+      Schreib einfach jemandem aus dem Team. Und gestalte mit —
+      die Kirche und den Glauben von morgen.
     </div>
 
-    {/* 22px ist Wrapped-Feinjustierung ausserhalb der Abstands-Skala — bleibt bewusst roh (05.09.2026) */}
+    {/* 22px ist Wrapped-Feinjustierung ausserhalb der Abstands-Skala -- bleibt bewusst roh (05.09.2026) */}
     <div className="w-einladung" style={{ marginTop: 22 }}>
       <IonIcon icon={ICON_HERZ} />
-      <span>Sprich einfach jemanden aus dem Team an</span>
-    </div>
-
-    <div className="teamer-pfeil" aria-hidden="true">
-      <IonIcon icon={ICON_PFEIL_WEITER} />
+      <span>Für die, die jetzt anfangen, wo du angefangen hast</span>
     </div>
   </SlideBase>
 );

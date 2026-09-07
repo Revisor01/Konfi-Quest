@@ -1590,6 +1590,16 @@ paths:
         # Konfirmationstermin, null wenn der Jahrgang keinen hat). Das Feld
         # kommt hinzu, es verschwindet keines - die Antwortform bleibt
         # unveraendert.
+        #
+        # Ebenfalls additiv (07.09.2026): slides.gemeinde - der Anzeigename
+        # der Kirchengemeinde (COALESCE(display_name, name)). Die Abschluss-
+        # Seite und das geteilte Bild nennen ihn. Alte Snapshots haben das
+        # Feld nicht; dort bleibt die Zeile weg.
+        #
+        # slides.events.lieblings_event BLEIBT im Snapshot, obwohl seit dem
+        # 07.09.2026 keine Ansicht es mehr zeigt ("Dein letzter Termin kann
+        # weg"): Ausgelieferte App-Versionen lesen es weiter, und ein
+        # weggelassenes Feld waere ein Bruch der Antwortform.
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: Jahrgang nicht gefunden (fremde Organisation) }

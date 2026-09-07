@@ -73,7 +73,11 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     }
     // Konkrete Zahl statt "irgendwas": Stand der Konsolidierung 05.09.2026.
     // Wer eine Konstante ergaenzt oder entfernt, zieht die Zahl bewusst nach.
-    expect(namen.length).toBe(190);
+    // 07.09.2026: 190 -> 189. ICON_PFEIL_WEITER ist entfallen, weil Simon
+    // den winkenden Pfeil auf der Team-Seite des Rueckblicks gestrichen hat
+    // ("Sprich jemanden an kommt der Pfeil weg") -- er war der einzige
+    // Verwender. Die gefuellte Fassung (ICON_PFEIL_WEITER_GEFUELLT) bleibt.
+    expect(namen.length).toBe(189);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

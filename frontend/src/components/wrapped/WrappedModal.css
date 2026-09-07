@@ -1256,6 +1256,20 @@ ion-modal.wrapped-modal-fullscreen {
   margin-bottom: var(--app-abstand-mittelweit);
 }
 
+/* Der Name der Kirchengemeinde auf der Abschluss-Seite (07.09.2026).
+
+   Er steht zwischen dem Auge ("Deine Konfi-Zeit") und dem Slogan und ist
+   bewusst groesser als das Auge, aber deutlich kleiner als der Slogan: Er
+   ordnet ein, wo diese Konfi-Zeit stattgefunden hat -- tragen soll die
+   Seite weiterhin Simons Botschaft. */
+.kat-gemeinde {
+  font-size: 17px;
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.88);
+  margin-bottom: var(--app-abstand-schmal);
+}
+
 /* Die Zahl: bewusst KLEIN. Sie ordnet ein, sie traegt nicht.
    Simon: "nur Zahlen sind ultra uninteressant". */
 .kat-zahl {
@@ -1298,6 +1312,153 @@ ion-modal.wrapped-modal-fullscreen {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.62);
+}
+
+/* ========================================
+   AUFTRITT DER SCHRIFT (07.09.2026)
+
+   SIMONS WUNSCH: "mehr Bewegung beim Erscheinen der Schrift".
+
+   BEFUND VORHER: Die Bewegung gab es nur auf den acht aelteren Seiten
+   (Intro, Highlight, Challenges, Endspurt, Monat, Ziel, Kategorie,
+   Abzeichen) ueber die Klassen .wrapped-anim-*. Die 27 Seiten im
+   Slogan-Aufbau -- also fast der ganze Rueckblick -- hatten gar keine:
+   Auge, Zahl, Slogan und Nachsatz standen mit dem Seitenwechsel
+   schlagartig alle gleichzeitig da.
+
+   WARUM GESTAFFELT: Die Slogans sind bewusst in Zeilen gebrochen, sie
+   geben einen Rhythmus vor ("Du hast / gesammelt / wie andere /
+   Sticker."). Erscheinen alle Zeilen auf einmal, geht dieser Rhythmus
+   verloren. Jetzt kommt zuerst das Auge, dann die Zahl, dann der Slogan
+   Zeile fuer Zeile, zuletzt der Nachsatz -- die Seite liest sich in der
+   Reihenfolge, in der sie gemeint ist.
+
+   WARUM KEINE NEUEN KEYFRAMES: wrapped-fade-in und wrapped-slide-up gab
+   es schon. wrapped-slide-up war sogar definiert, aber nirgends benutzt --
+   es traegt jetzt die Slogan-Zeilen.
+
+   WARUM NUR UNTER .wrapped-slide--active: Die Seiten liegen im
+   Seitenkarussell schon im Hintergrund bereit, bevor sie sichtbar werden.
+   Ohne diese Bedingung waere die Bewegung abgelaufen, bevor jemand
+   hinsieht -- die Seite erschiene dann fertig und tot. (Der Grundbau
+   haengt die Kinder ohnehin erst beim Aktivwerden ein, aber die Regel
+   haelt auch dann, wenn eine Seite das einmal anders macht.)
+
+   MASS: 0.45 bis 0.5 s je Teil, Versatz 60 ms zwischen den Slogan-Zeilen.
+   Es ist ein Rueckblick, kein Werbespot -- nach gut einer halben Sekunde
+   steht die Seite.
+   ======================================== */
+
+.wrapped-slide--active .kat-auge,
+.wrapped-slide--active .kat-gemeinde,
+.wrapped-slide--active .kat-zahl,
+.wrapped-slide--active .kat-slogan > span,
+.wrapped-slide--active .kat-nachsatz,
+.wrapped-slide--active .kat-fussnote,
+.wrapped-slide--active .w-aufteilung,
+.wrapped-slide--active .w-merkzettel,
+.wrapped-slide--active .w-bilanz,
+.wrapped-slide--active .w-einladung,
+.wrapped-slide--active .vielseitig-icons {
+  animation-fill-mode: both;
+}
+
+.wrapped-slide--active .kat-auge {
+  animation: wrapped-fade-in 0.45s ease-out both;
+}
+
+.wrapped-slide--active .kat-gemeinde {
+  animation: wrapped-fade-in 0.45s ease-out 0.08s both;
+}
+
+/* Die Zahl blendet KURZ und FRUEH ein (0.35 s, kein Versatz).
+   Grund: Auf den Zahl-Seiten laeuft sie ueber 1,6 s hoch (useCountUp).
+   Ein spaeter oder langer Auftritt wuerde den Anfang des Hochzaehlens
+   verschlucken -- man saehe nur noch das Ende. So ist die Zahl da,
+   bevor sie zu laufen beginnt. */
+.wrapped-slide--active .kat-zahl {
+  animation: wrapped-fade-in 0.35s ease-out both;
+}
+
+/* Der Slogan: Zeile fuer Zeile von unten herein. Der Versatz folgt den
+   Zeilenumbruechen, die im Text stehen und Absicht sind. */
+.wrapped-slide--active .kat-slogan > span {
+  animation: wrapped-slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.14s;
+}
+.wrapped-slide--active .kat-slogan > span:nth-child(2) { animation-delay: 0.20s; }
+.wrapped-slide--active .kat-slogan > span:nth-child(3) { animation-delay: 0.26s; }
+.wrapped-slide--active .kat-slogan > span:nth-child(4) { animation-delay: 0.32s; }
+.wrapped-slide--active .kat-slogan > span:nth-child(5) { animation-delay: 0.38s; }
+.wrapped-slide--active .kat-slogan > span:nth-child(n + 6) { animation-delay: 0.44s; }
+
+/* Der Nachsatz kommt zuletzt -- er ordnet ein, was der Slogan gesagt hat. */
+.wrapped-slide--active .kat-nachsatz {
+  animation: wrapped-fade-in 0.5s ease-out 0.46s both;
+}
+
+.wrapped-slide--active .kat-fussnote {
+  animation: wrapped-fade-in 0.45s ease-out 0.56s both;
+}
+
+/* Was UNTER dem Nachsatz steht, kommt zuletzt: die Aufteilung der Punkte,
+   der Merkzettel ("Zuletzt", "Dein groesster Termin"), die Bilanz der
+   Abschluss-Seiten und die Einladung. Alles im selben Takt -- so schliesst
+   die Seite ab, statt in mehreren Wellen nachzuklappern. */
+.wrapped-slide--active .w-aufteilung,
+.wrapped-slide--active .w-merkzettel,
+.wrapped-slide--active .w-bilanz,
+.wrapped-slide--active .w-einladung {
+  animation: wrapped-fade-in 0.45s ease-out 0.56s both;
+}
+
+.wrapped-slide--active .vielseitig-icons {
+  animation: wrapped-fade-in 0.45s ease-out 0.1s both;
+}
+
+/* ========================================
+   BEWEGUNG REDUZIEREN (Barrierefreiheit)
+
+   Wer im System "Bewegung reduzieren" gesetzt hat, bekommt den Rueckblick
+   ohne Auftritt: Alle Inhalte stehen sofort und vollstaendig da.
+
+   BEFUND VORHER: Die Einstellung wurde im Rueckblick nur an zwei Stellen
+   beachtet (die treibenden Hintergrundbilder und die Polaroid-Wand). Die
+   Schrift-Auftritte der aelteren Seiten (.wrapped-anim-*) liefen trotzdem
+   -- und weil deren Grundzustand `opacity: 0` ist, haette ein blosses
+   `animation: none` die Seiten LEER gelassen. Deshalb wird hier die
+   Deckkraft ausdruecklich auf 1 zurueckgesetzt.
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .wrapped-anim-fade,
+  .wrapped-anim-scale,
+  .wrapped-anim-slide-up,
+  .wrapped-anim-bounce,
+  .wrapped-anim-fly-left,
+  .wrapped-anim-fly-right,
+  .wrapped-anim-number-pop,
+  .wrapped-slide--active .wrapped-anim-fade,
+  .wrapped-slide--active .wrapped-anim-scale,
+  .wrapped-slide--active .wrapped-anim-slide-up,
+  .wrapped-slide--active .wrapped-anim-bounce,
+  .wrapped-slide--active .wrapped-anim-fly-left,
+  .wrapped-slide--active .wrapped-anim-fly-right,
+  .wrapped-slide--active .wrapped-anim-number-pop,
+  .wrapped-slide--active .kat-auge,
+  .wrapped-slide--active .kat-gemeinde,
+  .wrapped-slide--active .kat-zahl,
+  .wrapped-slide--active .kat-slogan > span,
+  .wrapped-slide--active .kat-nachsatz,
+  .wrapped-slide--active .kat-fussnote,
+  .wrapped-slide--active .w-aufteilung,
+  .wrapped-slide--active .w-merkzettel,
+  .wrapped-slide--active .w-bilanz,
+  .wrapped-slide--active .w-einladung,
+  .wrapped-slide--active .vielseitig-icons {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* --- Kategorien --- */
@@ -1820,33 +1981,14 @@ ion-modal.wrapped-modal-fullscreen {
   background: var(--seiten-verlauf);
 }
 
-.teamer-pfeil {
-  margin-top: 18px;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--app-radius-kreis);
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(6px);
-  animation: teamer-winken 2.6s ease-in-out infinite;
-}
-
-.teamer-pfeil ion-icon {
-  font-size: 22px;
-  color: #fff;
-}
-
-@keyframes teamer-winken {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(6px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .teamer-pfeil { animation: none; }
-}
+/* DER WINKENDE PFEIL (.teamer-pfeil) STAND HIER und ist am 07.09.2026
+   entfallen -- samt seiner Bewegung (@keyframes teamer-winken) und der
+   Ausnahme fuer reduzierte Bewegung. Simon woertlich: "Sprich jemanden an
+   kommt der Pfeil weg." Der Pfeil zeigte nach rechts und las sich als
+   "weiterblaettern"; seit dem Tausch kommt nach der Team-Seite aber noch
+   der Abschluss, und ueber einer Einladung wirkte er wie Draengeln.
+   Ersatzlos gestrichen statt auskommentiert: Er hatte nur diesen einen
+   Verwender (WerdeTeamerSlide). */
 
 /* Teamer-Rueckblick: dieselbe Gestaltung wie beim Konfi-Rueckblick,
    eigene Farben (03.09.2026, Simons "Teamer sich umbauen"). */

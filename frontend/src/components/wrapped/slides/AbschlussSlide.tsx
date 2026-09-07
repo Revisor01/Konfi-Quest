@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_HERZ, ICON_POKAL, ICON_TERMIN } from '../../shared/icons';
+import { ICON_ABZEICHEN, ICON_POKAL, ICON_TERMIN } from '../../shared/icons';
 import type { SlideProps, KonfiWrappedData } from '../../../types/wrapped';
 import SlideBase from './SlideBase';
 
@@ -21,12 +21,29 @@ interface AbschlussSlideProps extends SlideProps {
  *
  * Die drei Zahlen bleiben als Zeile darunter -- hier gehoert die Uebersicht
  * hin, das ist der Sinn der Seite.
+ *
+ * SEIT DEM 07.09.2026 IST SIE DIE LETZTE SEITE des Rueckblicks (vorher stand
+ * die Einladung ins Team dahinter) -- und damit die, die geteilt wird.
+ * Simons Vorgabe dazu: "Die Uebersicht die geteilt wird sollte die
+ * Kirchengemeinde enthalten. Die Punkte und das Konfi Datum."
+ *
+ * DER GEMEINDENAME steht seither ueber dem Slogan. Er kommt aus dem
+ * Snapshot (slides.gemeinde, additiv ab 07.09.2026) und nicht aus dem
+ * angemeldeten Konto: Ein Rueckblick wird spaeter noch einmal geoeffnet,
+ * auch von der Leitung, und muss dann dieselbe Gemeinde nennen. Alt-
+ * Snapshots haben das Feld nicht -- dann faellt die Zeile weg.
+ *
+ * DIE EINLADUNG INS TEAM ("Werde Teamer:in und gestalte das naechste Jahr
+ * mit") STAND HIER und ist am 07.09.2026 entfallen. Grund: Seit dem Tausch
+ * kommt die eigene Team-Seite (WerdeTeamerSlide) DIREKT DAVOR -- die
+ * Einladung staende sonst zweimal hintereinander.
  */
 const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _year, titel }) => {
   // Siehe WrappedModal: `konfirmation` ist das echte Datum, `ende` nur der
   // Rueckfall fuer Alt-Snapshots ohne das Feld.
   const z = data.slides.zeitraum;
   const zeitraumEnde = z ? (('konfirmation' in z) ? (z.konfirmation || null) : (z.ende || null)) : null;
+  const gemeinde = data.slides.gemeinde?.trim() || null;
 
   const zahlen = [
     { icon: ICON_POKAL, wert: data.slides.punkte.total, label: 'Punkte' },
@@ -42,6 +59,10 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _
           dann ist "Dein Konfi-Jahr 2026" schlicht falsch. Ein gesetzter
           Titel gewinnt weiterhin (Muster aus IntroSlide). */}
       <div className="kat-auge">{titel?.trim() || 'Deine Konfi-Zeit'}</div>
+
+      {/* Die Kirchengemeinde -- wo diese Konfi-Zeit stattgefunden hat.
+          Fehlt bei Alt-Snapshots, dann bleibt die Zeile weg. */}
+      {gemeinde && <div className="kat-gemeinde">{gemeinde}</div>}
 
       {/* Simons Botschaft traegt die Seite. */}
       <div className="kat-slogan">
@@ -65,12 +86,6 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _
           Konfirmation am {new Date(zeitraumEnde).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
         </div>
       )}
-
-      {/* Einladend, nicht werbend -- es ist eine Kirchen-App. */}
-      <div className="w-einladung">
-        <IonIcon icon={ICON_HERZ} />
-        <span>Werde Teamer:in und gestalte das nächste Jahr mit</span>
-      </div>
     </SlideBase>
   );
 };
