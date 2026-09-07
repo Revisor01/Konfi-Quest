@@ -13,6 +13,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Schema-Migrationen: siehe backend/migrations/075_wrapped.sql
 
   // Deutsche Monatsnamen
+  // Wochentage, indiziert wie EXTRACT(DOW): 0 = Sonntag.
+  const WOCHENTAG_NAMEN = [
+    'Sonntag', 'Montag', 'Dienstag', 'Mittwoch',
+    'Donnerstag', 'Freitag', 'Samstag'
+  ];
+
   const MONAT_NAMEN = [
     '', 'Januar', 'Februar', 'M\u00e4rz', 'April', 'Mai', 'Juni',
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
@@ -420,6 +426,109 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const aktivsterMonat = monatRows.length > 0
       ? { monat: monatRows[0].monat, monat_name: MONAT_NAMEN[monatRows[0].monat] || '', aktivitaeten: parseInt(monatRows[0].count, 10) }
       : { monat: 0, monat_name: '', aktivitaeten: 0 };
+
+    // DER LANGE ATEM -- die Spanne zwischen erstem und letztem Termin.
+    //
+    // Die Aussage ist "du warst ueber das ganze Jahr hinweg dabei", nicht
+    // "du hast viele Termine". Deshalb zaehlt hier die SPANNE, nicht die
+    // Menge -- und deshalb braucht die Seite eine Mindestzahl an Terminen
+    // (siehe Bedingung in wrappedKacheln.js): Bei zwei Terminen im September
+    // und im Mai waeren es rechnerisch auch 240 Tage, aber die Zahl erzaehlte
+    // dann das Gegenteil von dem, was sie behauptet.
+    //
+    // Gerechnet in Berliner Zeit: event_date ist ein Zeitstempel mit Zone,
+    // und ein Termin am Sonntagabend um 20 Uhr gehoert zum Sonntag, nicht
+    // zum Montag in UTC.
+    const { rows: [spanneRow] } = await client.query(
+      `SELECT
+         MIN((e.event_date AT TIME ZONE 'Europe/Berlin')::date) AS erster,
+         MAX((e.event_date AT TIME ZONE 'Europe/Berlin')::date) AS letzter,
+         COUNT(*)::int AS anzahl
+       FROM event_bookings eb
+       JOIN events e ON eb.event_id = e.id
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    // Die Spalten kommen als DATE zurueck. Sie in einen ISO-String zu
+    // giessen, darf NICHT ueber toISOString() laufen -- das rechnet nach UTC
+    // und schoebe das Datum um einen Tag (derselbe Fehler, den
+    // berechneZeitraum() schon einmal hatte).
+    const alsDatum = (d) => {
+      const dt = (d instanceof Date) ? d : new Date(d);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    };
+    const langerAtem = (spanneRow && spanneRow.erster && spanneRow.letzter)
+      ? {
+          erster: alsDatum(spanneRow.erster),
+          letzter: alsDatum(spanneRow.letzter),
+          tage: Math.round(
+            (new Date(spanneRow.letzter).getTime() - new Date(spanneRow.erster).getTime())
+            / (24 * 60 * 60 * 1000)
+          ),
+          termine: spanneRow.anzahl
+        }
+      : null;
+
+    // DEIN WOCHENTAG -- an welchem Tag die Termine ueberwiegend lagen.
+    //
+    // ZEITZONE (der eigentliche Fallstrick): EXTRACT(DOW ...) rechnet ohne
+    // AT TIME ZONE in UTC. Ein Gottesdienst am Sonntag um 20 Uhr Berliner
+    // Zeit ist in UTC noch Sonntag 18 Uhr -- aber im Winter ein Termin um
+    // 00:30 waere schon Montag. Dieselbe Fehlerklasse wie der Datumsversatz
+    // in berechneZeitraum(). Deshalb wird konsequent nach Europe/Berlin
+    // umgerechnet, bevor der Wochentag bestimmt wird.
+    const { rows: wochentagRows } = await client.query(
+      `SELECT EXTRACT(DOW FROM (e.event_date AT TIME ZONE 'Europe/Berlin'))::int AS tag,
+              COUNT(*)::int AS anzahl
+         FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.organization_id = $2
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')
+        GROUP BY tag
+        ORDER BY anzahl DESC, tag ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const gesamtTermine = spanneRow ? spanneRow.anzahl : 0;
+    const wochentag = wochentagRows.length > 0
+      ? {
+          tag: wochentagRows[0].tag,
+          name: WOCHENTAG_NAMEN[wochentagRows[0].tag] || '',
+          anzahl: wochentagRows[0].anzahl,
+          gesamt: gesamtTermine,
+          anteil: gesamtTermine > 0
+            ? Math.round((wochentagRows[0].anzahl / gesamtTermine) * 100)
+            : 0
+        }
+      : null;
+
+    // DER VIELSEITIGE -- mit wie vielen Medienarten jemand geantwortet hat.
+    //
+    // BEWUSST "2 VON 3" STATT "ALLE DREI": challenges.allowed_media steht per
+    // Default auf ["text","photo"] -- Audio ist in vielen Challenges gar
+    // nicht erlaubt. Eine Seite, die alle drei verlangt, traefe fast nie zu
+    // und waere damit keine Seite, sondern eine Fussnote. Gezaehlt werden
+    // deshalb die verschiedenen Arten, und ab zwei ist es eine Geschichte.
+    let medienarten = [];
+    try {
+      const { rows: medienRows } = await client.query(
+        `SELECT DISTINCT cs.media_type
+           FROM challenge_submissions cs
+          WHERE cs.user_id = $1 AND cs.organization_id = $2
+            AND cs.moderation_status <> 'hidden'
+            AND cs.created_at >= $3::date
+            AND cs.created_at < ($4::date + INTERVAL '1 day')
+            AND cs.media_type IS NOT NULL`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      medienarten = medienRows.map(r => r.media_type).sort();
+    } catch (medienErr) {
+      // Alt-Deployment ohne Challenge-Tabellen: die Seite entfaellt.
+      console.warn('Wrapped: Medienarten konnten nicht geladen werden:', medienErr.message);
+    }
 
     // Endspurt: Vergleich mit Zielwerten aus jahrgaenge.
     // BEWUSST OHNE ZEITFILTER: die Zielvorgabe des Jahrgangs ist eine
@@ -835,6 +944,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           gesamt: pflichtGesamt
         },
         aktivster_monat: aktivsterMonat,
+        // Additiv (ab 07.09.2026): alte Apps kennen die Felder nicht.
+        langer_atem: langerAtem,
+        wochentag: wochentag,
+        medienarten: medienarten,
         endspurt: {
           aktiv: endspurtAktiv,
           fehlende_punkte: fehlendePunkte,

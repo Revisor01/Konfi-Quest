@@ -1257,6 +1257,107 @@ describe('Wrapped Routes', () => {
     });
 
     // ------------------------------------------------------------
+    // Zeit-/Rhythmus-Seiten: Spanne und Wochentag.
+    // ------------------------------------------------------------
+    it('Der lange Atem misst die Spanne zwischen erstem und letztem Termin', async () => {
+      // 14.09. bis 12.04. -- 210 Tage.
+      const daten = [`${JAHR - 1}-09-14`, `${JAHR - 1}-12-01`, `${JAHR}-01-10`,
+                     `${JAHR}-02-20`, `${JAHR}-04-12`];
+      for (const d of daten) await buchung(USERS.konfi1.id, await termin(`T ${d}`, d));
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.langer_atem.termine).toBe(5);
+      expect(snap.slides.langer_atem.erster).toBe(`${JAHR - 1}-09-14`);
+      expect(snap.slides.langer_atem.letzter).toBe(`${JAHR}-04-12`);
+      expect(snap.slides.langer_atem.tage).toBe(210);
+    });
+
+    it('Der Wochentag kommt aus dem Berliner Kalendertag', async () => {
+      // Vier Termine an Montagen, jeweils kurz nach Mitternacht Berliner
+      // Zeit -- also genau die Zeitstempel, bei denen sich UTC und Berlin
+      // im Kalendertag unterscheiden.
+      const montagsNaechte = [`${JAHR - 1}-11-17`, `${JAHR - 1}-11-24`,
+                              `${JAHR - 1}-12-01`, `${JAHR - 1}-12-08`];
+      for (const d of montagsNaechte) {
+        const { rows: [e] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+           VALUES ($1, $2::timestamptz, $3, false, 0, 'gemeinde', 1) RETURNING id`,
+          [`Nachtcafe ${d}`, `${d} 00:30:00+01`, ORGS.testGemeinde.id]
+        );
+        await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+          [e.id, JAHRGAENGE.jahrgang1.id]);
+        await buchung(USERS.konfi1.id, e.id);
+      }
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.wochentag.tag).toBe(1);
+      expect(snap.slides.wochentag.name).toBe('Montag');
+      expect(snap.slides.wochentag.anzahl).toBe(4);
+    });
+
+    it('AT TIME ZONE ist die Absicherung gegen eine Datenbank ausserhalb Berlins', async () => {
+      // WARUM DIESER TEST DIREKT AUF SQL GEHT statt ueber den Snapshot:
+      //
+      // GEMESSEN am 07.09.2026: events.event_date ist timestamptz, und
+      // Test- WIE Produktionsdatenbank laufen auf Europe/Berlin
+      // (docker-compose.test.yml, deploy/compose.konfi_quest.yml). Dort
+      // liefert EXTRACT(DOW ...) bereits den Berliner Wochentag -- die
+      // Umrechnung ist wirkungsgleich und ueber den Snapshot NICHT
+      // pruefbar. Ein Test, der es dennoch behauptet, waere gruen, ohne
+      // etwas zu zeigen (erst versucht, dann verworfen: ALTER DATABASE
+      // erreicht bestehende Pool-Verbindungen nicht).
+      //
+      // Die Absicherung gilt einer Datenbank, die NICHT auf Berlin steht.
+      // Genau diese Lage stellt die Abfrage hier her -- und misst beide
+      // Wege nebeneinander.
+      const client = await db.getClient();
+      try {
+        await client.query("SET TIME ZONE 'UTC'");
+        const { rows: [r] } = await client.query(
+          `SELECT EXTRACT(DOW FROM $1::timestamptz)::int AS ohne_umrechnung,
+                  EXTRACT(DOW FROM ($1::timestamptz AT TIME ZONE 'Europe/Berlin'))::int AS mit_umrechnung`,
+          [`${JAHR - 1}-11-17 00:30:00+01`]
+        );
+        // Ohne Umrechnung: Sonntag (0) -- der Termin rutscht auf den Vortag.
+        expect(r.ohne_umrechnung).toBe(0);
+        // Mit Umrechnung: Montag (1) -- der Berliner Kalendertag.
+        expect(r.mit_umrechnung).toBe(1);
+      } finally {
+        // Die Zone WIEDER ZURUECKSETZEN, bevor die Verbindung in den Pool
+        // zurueckgeht: SET TIME ZONE gilt fuer die Sitzung, und eine
+        // ausgeliehene Verbindung wird spaeter von anderen Tests
+        // weiterbenutzt. Ohne das Zuruecksetzen laeuft irgendein spaeterer
+        // Test unbemerkt in UTC.
+        await client.query("SET TIME ZONE 'Europe/Berlin'").catch(() => {});
+        client.release();
+      }
+    });
+
+    it('Die Medienarten zaehlen jede Art nur einmal', async () => {
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by, starts_at, ends_at)
+         VALUES ('Vielfalt', 'Zeig es', 'Bunt', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year')
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const beitrag = (art) => db.query(
+        `INSERT INTO challenge_submissions
+           (challenge_id, user_id, organization_id, media_type, moderation_status, created_at)
+         VALUES ($1, $2, $3, $4, 'approved', $5::timestamptz)`,
+        [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id, art, `${IM_ZEITRAUM} 10:00:00`]
+      );
+      await beitrag('text');
+      await beitrag('text');
+      await beitrag('photo');
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.medienarten).toEqual(['photo', 'text']);
+      expect(snap.kacheln).toContain('vielseitig');
+    });
+
+    // ------------------------------------------------------------
     // Der angegebene Zeitraum schlaegt bis in die Zahlen durch.
     //
     // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert und

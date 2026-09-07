@@ -56,6 +56,9 @@ const DRAMATURGIE = [
   'kategorie',          // 3  der eigene Schwerpunkt (mehrere moeglich)
   'challenges',         // 4  wie oft du mitgemacht hast
   'challenge-momente',  // 5  Challenges Special: die Bilder, gross
+  // 5b: Der Vielseitige -- direkt bei den Challenges, weil er von ihnen
+  // erzaehlt: nicht wie viele Beitraege, sondern auf wie vielen Wegen.
+  'vielseitig',         // 5b mit wie vielen Medienarten du geantwortet hast
   'punkte',             // 6
   // 7: Der aktivste Monat -- eine Zeit-/Rhythmus-Seite ("wann warst du am
   // meisten unterwegs"). Sie stand bis zum 06.09.2026 NICHT hier, obwohl es
@@ -68,6 +71,10 @@ const DRAMATURGIE = [
   // Punkte sagen WIE VIEL, der Monat sagt WANN -- zusammen ergeben sie das
   // Bild des Jahres, bevor es zu den Auszeichnungen geht.
   'aktivster-monat',    // 7  wann du am meisten unterwegs warst
+  // 7b/7c: Zwei weitere Zeit-/Rhythmus-Seiten, direkt beim aktivsten Monat.
+  // Erst WANN im Jahr (Monat), dann WIE LANG (Spanne), dann AN WELCHEM TAG.
+  'langer-atem',        // 7b ueber welche Spanne du dabei warst
+  'wochentag',          // 7c an welchem Tag deine Termine lagen
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
@@ -80,10 +87,19 @@ const DRAMATURGIE = [
 
 /**
  * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
- * plus Kategorie-Seiten, die mehrfach vorkommen duerfen. 14 ist die harte
- * Grenze, ab der niemand mehr durchblaettert.
+ * plus Kategorie-Seiten, die mehrfach vorkommen duerfen.
+ *
+ * VON 14 AUF 16 (07.09.2026): Mit den drei neuen Zeit-/Rhythmus-Seiten
+ * liegt das theoretische Maximum bei 17 (gemessen, nicht geschaetzt: 6 feste
+ * + 7 bedingte nach Zeit-Kontingent + 4 Kategorie-/Datums-Seiten). Bei 14
+ * verdraengte der Deckel ausgerechnet die Seiten am ENDE der Dramaturgie --
+ * 'seltenstes' und 'konfirmation', also das seltenste Abzeichen und die
+ * Konfirmation. Zwei Seiten, die eine Konfi sich erst verdienen muss.
+ *
+ * Simons "rund zehn" beschreibt die typische Person; der Deckel greift nur
+ * im Ausnahmefall, bei dem wirklich alles zutrifft.
  */
-const MAX_KACHELN = 14;
+const MAX_KACHELN = 16;
 
 // Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
 // Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
@@ -92,6 +108,20 @@ const MAX_KACHELN = 14;
 // erzaehlen Verschiedenes und duerfen sich nicht gegenseitig auffressen.
 const MAX_DATUM_SEITEN = 2;
 const MAX_KATEGORIE_SEITEN = 2;
+
+/**
+ * Die Zeit-/Rhythmus-Seiten ('aktivster-monat', 'langer-atem', 'wochentag')
+ * beantworten alle dieselbe Frage: WANN warst du da. Drei davon
+ * hintereinander sind keine Erzaehlung mehr, sondern eine Statistik -- und
+ * sie wuerden zusammen den Deckel sprengen und hinten Seiten verdraengen,
+ * die etwas anderes erzaehlen (gemessen 07.09.2026: theoretisches Maximum
+ * 18 bei einem Deckel von 14).
+ *
+ * Zwei davon reichen. Welche zwei, entscheidet die Reihenfolge der
+ * Dramaturgie -- dieselbe Regel wie bei den Kategorie- und Datums-Seiten.
+ */
+const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
+const MAX_ZEIT_SEITEN = 2;
 
 /**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
@@ -113,6 +143,18 @@ const BEDINGUNGEN = {
   // der Monat, in dem zufaellig das Einzige stattfand -- und "1 Aktivitaet"
   // gross auf einer Seite ist wieder eine Kachel mit fast einer Null darauf.
   'aktivster-monat': (s) => (s.aktivster_monat?.aktivitaeten || 0) >= 2,
+  // Mindestens 5 Termine UND eine Spanne, die etwas aussagt. Bei zwei
+  // Terminen im September und im Mai waeren es rechnerisch auch 240 Tage --
+  // die Zahl erzaehlte dann das Gegenteil von "du warst durchgehend dabei".
+  'langer-atem': (s) => (s.langer_atem?.termine || 0) >= 5 && (s.langer_atem?.tage || 0) >= 60,
+  // Nur wenn ein Tag wirklich heraussticht: mindestens 4 Termine an dem Tag
+  // und die Haelfte aller Termine. Sonst ist "dein Wochentag" nur der Tag,
+  // der zufaellig einmal oefter vorkam.
+  wochentag: (s) => (s.wochentag?.anzahl || 0) >= 4 && (s.wochentag?.anteil || 0) >= 50,
+  // "2 von 3 Medienarten" statt "alle drei": allowed_media steht per Default
+  // auf ["text","photo"], Audio ist oft gar nicht erlaubt -- eine Seite, die
+  // alle drei verlangt, traefe fast nie zu.
+  vielseitig: (s) => (s.medienarten?.length || 0) >= 2,
   konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
 };
 
@@ -190,19 +232,37 @@ function waehleKacheln(slides, schnitt = null) {
     if (!bedingung) continue;
     let trifft = false;
     try { trifft = bedingung(slides, schnitt) === true; } catch { trifft = false; }
-    if (trifft) gewaehlt.push(key);
+    if (!trifft) continue;
+    // Kontingent der Zeit-/Rhythmus-Seiten: hoechstens zwei davon.
+    if (ZEIT_SEITEN.includes(key)) {
+      const schonGewaehlt = gewaehlt.filter(k => ZEIT_SEITEN.includes(k)).length;
+      if (schonGewaehlt >= MAX_ZEIT_SEITEN) continue;
+    }
+    gewaehlt.push(key);
   }
 
-  // Doppelte raus (Reihenfolge bleibt), dann deckeln. Der Abschluss ist
-  // IMMER die letzte Seite -- auch wenn der Deckel vorher greift.
+  // Doppelte raus (Reihenfolge bleibt), dann deckeln.
   const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
   if (ohneDoppelte.length <= MAX_KACHELN) return ohneDoppelte;
 
-  // Abschluss und Einladung stehen IMMER am Ende, auch wenn der Deckel
-  // vorher greift.
-  const schluss = ohneDoppelte.filter(k => k === 'abschluss' || k === 'werde-teamer');
-  const rest = ohneDoppelte.filter(k => k !== 'abschluss' && k !== 'werde-teamer');
-  return [...rest.slice(0, MAX_KACHELN - schluss.length), ...schluss];
+  // DER DECKEL DARF KEINE FESTE SEITE FRESSEN (Befund 07.09.2026).
+  //
+  // Frueher wurden nur 'abschluss' und 'werde-teamer' geschuetzt und der
+  // Rest positionsweise abgeschnitten. Alles, was WEIT HINTEN in der
+  // Dramaturgie steht, fiel damit zuerst heraus -- auch 'badges' und
+  // 'punkte', die zu den FESTE_KACHELN gehoeren und die Erzaehlung tragen.
+  // Aufgefallen ist es, als drei neue Zeit-Seiten dazukamen: Eine sehr
+  // aktive Konfi verlor ihre Abzeichen-Seite, ohne dass irgendwo etwas
+  // fehlschlug.
+  //
+  // Jetzt ueberleben ALLE festen Seiten den Deckel; gekuerzt wird
+  // ausschliesslich bei den dynamischen. Die Reihenfolge der Dramaturgie
+  // bleibt dabei erhalten.
+  const feste = ohneDoppelte.filter(k => FESTE_KACHELN.includes(k));
+  const dynamisch = ohneDoppelte.filter(k => !FESTE_KACHELN.includes(k));
+  const platzFuerDynamische = Math.max(0, MAX_KACHELN - feste.length);
+  const behalten = new Set([...feste, ...dynamisch.slice(0, platzFuerDynamische)]);
+  return ohneDoppelte.filter(k => behalten.has(k));
 }
 
 /**
@@ -319,6 +379,8 @@ module.exports = {
   MAX_KACHELN,
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN,
+  ZEIT_SEITEN,
+  MAX_ZEIT_SEITEN,
   BEDINGUNGEN,
   FESTE_TEAMER_KACHELN,
   TEAMER_DRAMATURGIE,

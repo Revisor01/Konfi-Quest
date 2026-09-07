@@ -49,6 +49,12 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Neue Seiten im Konfi-Rückblick: über welche Spanne jemand dabei war, an
+  welchem Wochentag die Termine meist lagen, und auf wie vielen Wegen jemand
+  bei Challenges geantwortet hat.
+- Bei einer sehr aktiven Konfi konnten am Ende Seiten wegfallen, die sie sich
+  erst verdient hatte — das seltenste Abzeichen und die Konfirmation. Sie
+  bleiben jetzt erhalten.
 - Der Teamer-Rückblick erinnert an den ersten Termin des Jahres und an das
   zuerst verliehene Abzeichen — nicht nur daran, wie viele es wurden.
 - Der Teamer-Rückblick zeigt, wie oft jemand im Chat auf andere geantwortet

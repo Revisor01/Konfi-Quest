@@ -13,6 +13,9 @@ import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChallengeMomenteSlide from './slides/ChallengeMomenteSlide';
 import ChallengesSlide from './slides/ChallengesSlide';
+import LangerAtemSlide from './slides/LangerAtemSlide';
+import WochentagSlide from './slides/WochentagSlide';
+import VielseitigSlide from './slides/VielseitigSlide';
 import HighlightSlide, { rendertHighlightSlide } from './slides/HighlightSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import KategorieSlide from './slides/KategorieSlide';
@@ -181,6 +184,9 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'events': return { ...base, slideValue: `${k.slides.events.total_attended} Events besucht` };
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
+        case 'langer-atem': return { ...base, slideValue: `${k.slides.langer_atem?.tage || 0} Tage lang dabei` };
+        case 'wochentag': return { ...base, slideValue: `Mein Tag: ${k.slides.wochentag?.name || ''}` };
+        case 'vielseitig': return { ...base, slideValue: `Auf ${k.slides.medienarten?.length || 0} Arten geantwortet` };
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
         case 'challenges': {
           // Die Zahl vorher herausziehen: Der Feldname `beitraege` ist eine
@@ -284,6 +290,21 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,
       'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
+      'langer-atem': (a) => (
+        konfiData.slides.langer_atem
+          ? <LangerAtemSlide isActive={a} langerAtem={konfiData.slides.langer_atem} />
+          : null
+      ),
+      'wochentag': (a) => (
+        konfiData.slides.wochentag
+          ? <WochentagSlide isActive={a} wochentag={konfiData.slides.wochentag} />
+          : null
+      ),
+      'vielseitig': (a) => (
+        (konfiData.slides.medienarten?.length || 0) > 0
+          ? <VielseitigSlide isActive={a} medienarten={konfiData.slides.medienarten as string[]} />
+          : null
+      ),
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,

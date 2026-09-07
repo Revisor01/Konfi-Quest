@@ -310,6 +310,9 @@ bekommt zwei Seiten über denselben Termin.
 | Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
 | Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
 | Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
+| Der lange Atem | Spanne zwischen erstem und letztem Termin; ab 5 Terminen und 60 Tagen |
+| Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit; ab 4 Terminen an dem Tag und mindestens der Hälfte aller |
+| Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge; ab zwei Arten |
 | Highlight | Chat-Nachrichten und erhaltene Reaktionen aus dem [Chat](90-chat.md), Challenge-Beiträge, Anmeldungen und Absagen — alles nur aus dem eigenen Zeitraum und der eigenen Gemeinde, verglichen mit dem Durchschnitt des Jahrgangs |
 
 Der **Zeitraum** reicht vom 1. September des Vorjahres bis zur Konfirmation.

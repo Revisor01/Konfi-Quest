@@ -18,6 +18,8 @@ const {
   FESTE_KACHELN,
   DRAMATURGIE,
   MAX_KACHELN,
+  ZEIT_SEITEN,
+  MAX_ZEIT_SEITEN,
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN
 } = require('../../utils/wrappedKacheln');
@@ -28,6 +30,9 @@ const aktiverSnapshot = () => ({
   challenges: { beitraege: 4, top_challenge: { title: 'Foto' } },
   challenge_momente: [{}, {}, {}],
   aktivster_monat: { monat: 12, monat_name: 'Dezember', aktivitaeten: 5 },
+  langer_atem: { erster: '2025-09-14', letzter: '2026-04-12', tage: 210, termine: 9 },
+  wochentag: { tag: 0, name: 'Sonntag', anzahl: 6, gesamt: 9, anteil: 67 },
+  medienarten: ['photo', 'text'],
   badges: {
     total_earned: 7,
     seltenstes: { name: 'Bonuspunkte-Gewinner', icon: 'trophy', color: '#f59e0b',
@@ -51,6 +56,9 @@ const stillerSnapshot = () => ({
   challenges: { beitraege: 0, top_challenge: null },
   challenge_momente: [],
   aktivster_monat: { monat: 0, monat_name: '', aktivitaeten: 0 },
+  langer_atem: null,
+  wochentag: null,
+  medienarten: [],
   zeitraum: { start: '2025-09-01', ende: '2026-08-31', konfirmation: null },
   kategorie: { verteilung: [], top_kategorie: null },
   termine_daten: []
@@ -104,6 +112,9 @@ describe('Dramaturgie', () => {
     const kacheln = waehleKacheln(stillerSnapshot());
     expect(kacheln).not.toContain('challenges');
     expect(kacheln).not.toContain('aktivster-monat');
+    expect(kacheln).not.toContain('langer-atem');
+    expect(kacheln).not.toContain('wochentag');
+    expect(kacheln).not.toContain('vielseitig');
     expect(kacheln).not.toContain('challenge-momente');
     expect(kacheln).not.toContain('konfirmation');
     expect(kacheln).toEqual(FESTE_KACHELN);
@@ -149,6 +160,87 @@ describe('Challenges-Seite (Simons Schwelle)', () => {
     const s = aktiverSnapshot();
     s.challenges.beitraege = 1;
     expect(waehleKacheln(s)).toContain('challenges');
+  });
+});
+
+describe('Der lange Atem', () => {
+  test('ab fuenf Terminen und genug Spanne erscheint die Seite', () => {
+    expect(waehleKacheln(aktiverSnapshot())).toContain('langer-atem');
+  });
+
+  test('bei vier Terminen gibt es die Seite nicht', () => {
+    // Zwei Termine im September und im Mai waeren rechnerisch auch 240 Tage
+    // -- die Zahl erzaehlte dann das Gegenteil von "durchgehend dabei".
+    const s = aktiverSnapshot();
+    s.langer_atem = { erster: '2025-09-14', letzter: '2026-04-12', tage: 210, termine: 4 };
+    expect(waehleKacheln(s)).not.toContain('langer-atem');
+  });
+
+  test('bei kurzer Spanne gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.langer_atem = { erster: '2026-03-01', letzter: '2026-03-20', tage: 19, termine: 9 };
+    expect(waehleKacheln(s)).not.toContain('langer-atem');
+  });
+});
+
+describe('Dein Wochentag', () => {
+  test('ein klar herausstechender Tag bekommt eine Seite', () => {
+    // Die Zeit-Seiten teilen sich ein Kontingent von zwei; fuer diese
+    // Pruefung stehen die beiden anderen still.
+    const s = aktiverSnapshot();
+    s.aktivster_monat = { monat: 0, monat_name: '', aktivitaeten: 0 };
+    s.langer_atem = null;
+    expect(waehleKacheln(s)).toContain('wochentag');
+  });
+
+  test('unter der Haelfte aller Termine gibt es die Seite nicht', () => {
+    // Sonst waere "dein Wochentag" nur der Tag, der zufaellig einmal
+    // oefter vorkam.
+    const s = aktiverSnapshot();
+    s.wochentag = { tag: 0, name: 'Sonntag', anzahl: 4, gesamt: 12, anteil: 33 };
+    expect(waehleKacheln(s)).not.toContain('wochentag');
+  });
+
+  test('unter vier Terminen an dem Tag gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.wochentag = { tag: 0, name: 'Sonntag', anzahl: 3, gesamt: 4, anteil: 75 };
+    expect(waehleKacheln(s)).not.toContain('wochentag');
+  });
+});
+
+describe('Kontingent der Zeit-/Rhythmus-Seiten', () => {
+  test('hoechstens zwei Zeit-Seiten, auch wenn alle drei zutreffen', () => {
+    // Drei Seiten, die alle "wann warst du da" beantworten, sind keine
+    // Erzaehlung mehr, sondern eine Statistik.
+    const k = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    const zeit = k.filter(x => ZEIT_SEITEN.includes(x));
+    expect(zeit.length).toBeLessThanOrEqual(MAX_ZEIT_SEITEN);
+    expect(zeit.length).toBe(2);
+  });
+
+  test('die Reihenfolge der Dramaturgie entscheidet, welche zwei', () => {
+    const k = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    expect(k.filter(x => ZEIT_SEITEN.includes(x))).toEqual(['aktivster-monat', 'langer-atem']);
+  });
+});
+
+describe('Der Vielseitige', () => {
+  test('ab zwei Medienarten erscheint die Seite', () => {
+    // BEWUSST 2 statt 3: allowed_media steht per Default auf
+    // ["text","photo"] -- Audio ist oft gar nicht erlaubt.
+    expect(waehleKacheln(aktiverSnapshot())).toContain('vielseitig');
+  });
+
+  test('bei nur einer Medienart gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.medienarten = ['text'];
+    expect(waehleKacheln(s)).not.toContain('vielseitig');
+  });
+
+  test('ohne Beitraege gibt es die Seite nicht', () => {
+    const s = aktiverSnapshot();
+    s.medienarten = [];
+    expect(waehleKacheln(s)).not.toContain('vielseitig');
   });
 });
 
@@ -297,12 +389,27 @@ describe('Robustheit', () => {
   test('jede Seite der Dramaturgie ist erreichbar', () => {
     // Verhindert, dass ein Tippfehler in DRAMATURGIE eine Seite still
     // unerreichbar macht.
-    const s = aktiverSnapshot();
-    const kacheln = waehleKacheln(s, { chat: 1 });
     // 'kategorie' ist ein Platzhalter, 'konfirmation' braucht einen Termin --
     // beide werden in eigenen Tests geprueft.
     const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie' && k !== 'konfirmation');
-    for (const k of erwartet) expect(kacheln).toContain(k);
+
+    // EINZELN geprueft, nicht in einem Durchlauf: Die drei
+    // Zeit-/Rhythmus-Seiten teilen sich ein Kontingent (MAX_ZEIT_SEITEN),
+    // es koennen also nie alle drei zugleich erscheinen. Ein einzelner
+    // Durchlauf wuerde deshalb faelschlich melden, eine davon sei
+    // unerreichbar. Die Frage hier ist "kommt die Seite ueberhaupt vor",
+    // und die beantwortet man je Seite.
+    for (const k of erwartet) {
+      const s = aktiverSnapshot();
+      // Die anderen Zeit-Seiten stumm schalten, damit das Kontingent nicht
+      // die gerade gepruefte verdraengt.
+      if (ZEIT_SEITEN.includes(k)) {
+        if (k !== 'aktivster-monat') s.aktivster_monat = { monat: 0, monat_name: '', aktivitaeten: 0 };
+        if (k !== 'langer-atem') s.langer_atem = null;
+        if (k !== 'wochentag') s.wochentag = null;
+      }
+      expect(waehleKacheln(s, { chat: 1 }), `${k} ist unerreichbar`).toContain(k);
+    }
   });
 });
 

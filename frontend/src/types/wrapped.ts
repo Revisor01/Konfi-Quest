@@ -179,6 +179,12 @@ export interface KonfiWrappedData {
     highlight?: KonfiHighlight;
     /** Ab Version 3: Challenge-Zahlen fuer die Highlight-Seite. */
     challenges?: KonfiChallengesSlide;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    langer_atem?: KonfiLangerAtemSlide | null;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    wochentag?: KonfiWochentagSlide | null;
+    /** Die verschiedenen Medienarten der eigenen Beitraege. Ab 07.09.2026. */
+    medienarten?: string[];
     /** Ab Version 3: Selbst-Abmeldungen (nur positiv/neutral verwendet). */
     verlaesslichkeit?: KonfiVerlaesslichkeitSlide;
     /**
@@ -192,6 +198,23 @@ export interface KonfiWrappedData {
     /** Backend liefert es weiter, wird aber nicht mehr gerendert. */
     pflicht?: KonfiPflichtSlide;
   };
+}
+
+/** Spanne zwischen erstem und letztem Termin -- ab 07.09.2026. */
+export interface KonfiLangerAtemSlide {
+  erster: string;
+  letzter: string;
+  tage: number;
+  termine: number;
+}
+
+/** Der haeufigste Wochentag -- ab 07.09.2026. */
+export interface KonfiWochentagSlide {
+  tag: number;
+  name: string;
+  anzahl: number;
+  gesamt: number;
+  anteil: number;
 }
 
 // --- Teamer-Snapshot Slides ---

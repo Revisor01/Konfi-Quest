@@ -962,6 +962,33 @@ ion-modal.wrapped-modal-fullscreen {
    Challenges und gehoeren sichtbar zusammen, stehen aber im Rueckblick
    nacheinander (erst die Zahl, dann die Bilder gross).
    ======================================== */
+/* Zeit-/Rhythmus-Seiten und der Vielseitige (07.09.2026). */
+.langer-atem-slide { --seiten-verlauf: linear-gradient(135deg, #0d9488 0%, #0f766e 55%, #134e4a 100%);
+  background: var(--seiten-verlauf); }
+.wochentag-slide { --seiten-verlauf: linear-gradient(135deg, #3b82f6 0%, #2563eb 55%, #1e40af 100%);
+  background: var(--seiten-verlauf); }
+.vielseitig-slide { --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #ea580c 55%, #9a3412 100%);
+  background: var(--seiten-verlauf); }
+
+.vielseitig-icons {
+  display: flex;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.vielseitig-icons__kreis {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--app-radius-kreis);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--app-text-gross, 28px);
+  color: #fff;
+}
+
 .challenges-slide {
   --seiten-verlauf: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #a21456 50%, #7d1240 100%);
   background: linear-gradient(135deg, var(--app-color-challenges, #be185d) 0%, #a21456 50%, #7d1240 100%);

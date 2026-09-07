@@ -203,6 +203,45 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         // und Video der Konfis werden NIE in ein Teilen-Bild eingebettet
         // (Datenschutz — das Bild verlässt die App).
         // Die ZAHL der Challenges (die Bilder stehen im Zweig darunter).
+        case 'langer-atem': {
+          if (!konfi) return null;
+          const la = konfi.slides.langer_atem;
+          if (!la) return null;
+          return (
+            <>
+              <div className="share-label">Vom ersten bis zum letzten Mal</div>
+              <div className="share-big-number">{la.tage}</div>
+              <div className="share-subtitle">Tage lang dabei</div>
+            </>
+          );
+        }
+
+        case 'wochentag': {
+          if (!konfi) return null;
+          const wt = konfi.slides.wochentag;
+          if (!wt) return null;
+          return (
+            <>
+              <div className="share-label">Dein Tag</div>
+              <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.1 }}>{wt.name}</div>
+              <div className="share-subtitle">{wt.anzahl} von {wt.gesamt} Terminen</div>
+            </>
+          );
+        }
+
+        case 'vielseitig': {
+          if (!konfi) return null;
+          const arten = konfi.slides.medienarten || [];
+          if (arten.length === 0) return null;
+          return (
+            <>
+              <div className="share-label">Nicht auf einen Weg festgelegt</div>
+              <div className="share-big-number">{arten.length}</div>
+              <div className="share-subtitle">Arten, auf die ich geantwortet habe</div>
+            </>
+          );
+        }
+
         case 'challenges': {
           if (!konfi) return null;
           const ch = konfi.slides.challenges;
