@@ -55,7 +55,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Kein Fest\nohne dich.',
       'Du feierst\ngern mit.',
-      'Dreimal\nmitgefeiert.',
+      'Mehrfach\nmitgefeiert.',
       'Zweimal\nmitgefeiert.',
       'Ein Fest.\nUnd du\nmittendrin.'
     ],
@@ -77,7 +77,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Da, wo\ndeine Leute\nsind.',
       'Stammgast\nbei der\nJugend.',
-      'Dreimal\nbei deinen\nLeuten.',
+      'Oft genug\nbei deinen\nLeuten.',
       'Zweimal\nbei der\nJugend.',
       'Einmal\nreingeschaut.'
     ],
@@ -88,7 +88,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Du bist\ndas Gesicht\nnach außen.',
       'Du hast es\nnach draußen\ngetragen.',
-      'Dreimal\nsichtbar\ngemacht.',
+      'Mehrfach\nsichtbar\ngemacht.',
       'Zweimal\nnach\ndraußen.',
       'Einmal\ngezeigt,\nwas läuft.'
     ],
@@ -99,7 +99,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Der Koffer\nsteht\nbereit.',
       'Koffer packen\nkannst du.',
-      'Dreimal\nraus\naus dem Alltag.',
+      'Mehrfach\nraus\naus dem Alltag.',
       'Zweimal\nunterwegs.',
       'Einmal raus.\nUnd was für\nein Mal.'
     ],
@@ -110,7 +110,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Die ganze\nWeihnachtszeit\nhindurch.',
       'Zwischen\nden Lichtern.',
-      'Dreimal\nim Kerzen-\nschein.',
+      'Mehrfach\nim Kerzen-\nschein.',
       'Zweimal\nim Advent.',
       'Einmal,\nals es\nleuchtete.'
     ],
@@ -121,7 +121,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Du kennst\njeden Ton\nim Haus.',
       'Volle Kirche,\nvolle Töne.',
-      'Dreimal\nzugehört.',
+      'Mehrfach\nzugehört.',
       'Zweimal\nMusik.',
       'Ein Konzert.\nGänsehaut\ninklusive.'
     ],
@@ -132,7 +132,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Für die\nKleinen bist\ndu jemand.',
       'Die Kleinen\nkennen\ndeinen Namen.',
-      'Dreimal\nfür sie\nda gewesen.',
+      'Mehrfach\nfür sie\nda gewesen.',
       'Zweimal\nbei den\nKleinen.',
       'Einmal\nfür sie\nda gewesen.'
     ],
@@ -143,7 +143,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Bei dir\nentsteht\nständig was.',
       'Aus nichts\nwurde\netwas.',
-      'Dreimal\nselbst\ngemacht.',
+      'Mehrfach\nselbst\ngemacht.',
       'Zweimal\nwas\ngebaut.',
       'Einmal\nselbst\ngemacht.'
     ],
@@ -154,7 +154,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Du bist\njemand,\nder bleibt.',
       'Manchmal\nreicht\ndasein.',
-      'Dreimal\nzugehört.',
+      'Mehrfach\nzugehört.',
       'Zweimal\nZeit\ngehabt.',
       'Einmal\nwirklich\nzugehört.'
     ],
@@ -166,7 +166,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Da, wenn es\ndarauf\nankam.',
       'Du warst da,\nals es\ndarauf ankam.',
-      'Dreimal\ndabei, wenn\nes zählte.',
+      'Mehrfach\ndabei, wenn\nes zählte.',
       'Zweimal\ndabei, wenn\nes zählte.',
       'Du warst da.'
     ],
@@ -179,7 +179,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Der Sonntag\ngehört dir.',
       'Sonntags\nwarst du da.',
-      'Dreimal\nsonntags\ndabei.',
+      'Mehrfach\nsonntags\ndabei.',
       'Zweimal\nim\nGottesdienst.',
       'Einmal\nim\nGottesdienst.'
     ],
@@ -190,21 +190,26 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Ohne Leute\nwie dich\nläuft nichts.',
       'Du packst\neinfach\nmit an.',
-      'Dreimal\nmit\nangepackt.',
+      'Mehrfach\nmit\nangepackt.',
       'Zweimal\nmit\nangepackt.',
       'Einmal\nmit\nangepackt.'
     ],
     nachsatz: (n) => `${n} Mal hast du mit angepackt.`
   },
 
+  // DAS FENSTER SIND DREI TAGE, NICHT EINER: 24. bis 26.12. Das Auge hiess
+  // bis zum 07.09.2026 "Heiligabend" und die 1er-Stufe sagte "Heiligabend.
+  // Du warst in der Kirche." -- bei einem einzelnen Termin am ersten oder
+  // zweiten Feiertag stand da ein falscher Tag. Der Nachsatz nannte das
+  // Fenster von Anfang an richtig ("zwischen dem 24. und 26.").
   'datum:weihnachten': {
-    auge: 'Heiligabend',
+    auge: 'Weihnachten',
     stufen: [
       'Weihnachten\nist bei dir\nein Marathon.',
       'Die ganzen\nFeiertage\nüber da.',
-      'Dreimal\nüber\nWeihnachten.',
+      'Mehrfach\nüber\nWeihnachten.',
       'Zweimal\nüber die\nFeiertage.',
-      'Heiligabend.\nDu warst\nin der Kirche.'
+      'Weihnachten.\nDu warst\nin der Kirche.'
     ],
     nachsatz: (n) => n === 1 ? 'Während andere die Geschenke suchten.' : `${n} Mal zwischen dem 24. und 26.`
   },
@@ -212,8 +217,8 @@ export const TEXTE: Record<string, SeitenText> = {
     auge: 'Advent',
     stufen: [
       'Der ganze\nAdvent\ngehört dir.',
-      'Vier Kerzen.\nUnd du bei\njeder dabei.',
-      'Dreimal\nim\nKerzenschein.',
+      'Der Kerzenschein\nkennt dich\ninzwischen.',
+      'Mehrfach\nim\nKerzenschein.',
       'Zweimal\nim Advent.',
       'Es wurde dunkel.\nDu kamst\ntrotzdem.'
     ],
@@ -224,7 +229,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Zwischen\nden Jahren\nimmer da.',
       'Zwischen\nden Jahren.',
-      'Dreimal\nzwischen\nden Jahren.',
+      'Mehrfach\nzwischen\nden Jahren.',
       'Zweimal\nzwischen\nden Jahren.',
       'Einmal,\nals keiner\nwusste, welcher\nTag ist.'
     ],
@@ -234,12 +239,12 @@ export const TEXTE: Record<string, SeitenText> = {
     auge: 'Passion und Ostern',
     stufen: [
       'Den ganzen\nWeg.\nBis Ostern.',
-      'Durch die\nKarwoche\ngegangen.',
-      'Dreimal\nauf dem Weg\nnach Ostern.',
+      'Durch die\nPassionszeit\ngegangen.',
+      'Mehrfach\nauf dem Weg\nnach Ostern.',
       'Zweimal\nauf dem\nWeg.',
       'Einmal\nauf dem Weg\nnach Ostern.'
     ],
-    nachsatz: (n) => `${n} Mal auf dem Weg durch die Karwoche.`
+    nachsatz: (n) => `${n} Mal auf dem Weg durch die Passionszeit.`
   },
   // ERNTEDANK IST EIN TAG IM JAHR -- "dreimal Erntedank" gibt es im
   // Rueckblick eines Jahres nicht. Die hohen Stufen greifen nur, wenn eine
@@ -250,7 +255,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Erntedank\nohne dich?\nUndenkbar.',
       'Jahr für Jahr\nDanke\ngesagt.',
-      'Dreimal\nDanke\ngesagt.',
+      'Mehrfach\nDanke\ngesagt.',
       'Zweimal\nDanke\ngesagt.',
       'Danke sagen\nfür das,\nwas da ist.'
     ],
@@ -261,7 +266,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Dein Sommer\nwar\nrandvoll.',
       'Sommer.\nUnd du\nmittendrin.',
-      'Dreimal\nim\nSommer.',
+      'Mehrfach\nim\nSommer.',
       'Zweimal,\nals es\nwarm war.',
       'Einmal,\nals es draußen\nam schönsten war.'
     ],
@@ -273,7 +278,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Du hast\ndein Ding\ngefunden.',
       'Da bist du\nzu Hause.',
-      'Dreimal\nin deinem\nBereich.',
+      'Mehrfach\nin deinem\nBereich.',
       'Zweimal\nin deinem\nBereich.',
       'Ein Anfang\nin deinem\nBereich.'
     ],

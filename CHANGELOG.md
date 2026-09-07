@@ -43,6 +43,15 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Auf den Seiten zu Advent, Ostern und den anderen besonderen Zeiten stand im
+  Spruch eine andere Zahl als in der Zeile darunter — „Dreimal auf dem Weg
+  nach Ostern" über „4 Mal". Die Sprüche nennen keine Menge mehr, wenn sie
+  eine Spanne meinen; bei genau einem oder genau zwei Malen bleibt es beim
+  Zahlwort, dort stimmt es.
+- Die Oster-Seite sprach von der Karwoche, zählt aber die ganze Passionszeit
+  von Aschermittwoch bis Ostermontag. Sie sagt das jetzt auch so.
+- Die Weihnachts-Seite hiess „Heiligabend", zählt aber den 24. bis 26.
+  Dezember. Wer nur am ersten Feiertag da war, las dort einen falschen Tag.
 - Im Rückblick fürs Team standen Umlaute als Behelfsschreibung auf dem
   Bildschirm — „gaebe", „weiss", „zaehlt", „ausserhalb" — und auf der
   Termin-Seite erschien statt des Mal-Zeichens eine Buchstabenfolge. Alle
