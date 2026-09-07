@@ -700,7 +700,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'category_activities':
         return 'Anzahl (Kategorie-Aktivitäten & Events)';
       case 'category_combination':
-        return 'Anzahl (Verschiedene Kategorien)';
+        return 'Aus wie vielen der angekreuzten Kategorien?';
       case 'unique_activities':
         return 'Anzahl (Verschiedene Aktivitäten)';
       case 'streak':

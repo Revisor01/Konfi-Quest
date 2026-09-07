@@ -109,12 +109,12 @@ const CRITERIA_TYPES = {
   },
   category_combination: {
     label: "Kategorie-Kombination",
-    description: "Aus mehreren Kategorien je mindestens einmal",
+    description: "Aus wie vielen verschiedenen Kategorien war jemand dabei",
     // Gegenstueck zu category_activities: dort zaehlt EINE Kategorie mehrfach,
     // hier zaehlt jede Kategorie hoechstens einmal. Genau das braucht es fuer
     // "drei verschiedene Freizeiten": dreimal dieselbe Konfifahrt soll das
     // Abzeichen NICHT ausloesen.
-    help: "Badge wird vergeben, wenn aus der angegebenen Anzahl verschiedener Kategorien jeweils mindestens eine Aktivität oder ein Termin dabei war. Mehrfaches aus derselben Kategorie zählt nur einmal. Beispiel: Wert 3 + 'Konfifahrt', 'Übernachtung', 'Sommerfreizeit' = aus allen dreien je einmal dabei gewesen."
+    help: "Kreuze die Kategorien an, die in Frage kommen. Der Wert sagt, aus WIE VIELEN davon jemand dabei gewesen sein muss — nicht wie oft. Beispiel: drei Kategorien angekreuzt und Wert 3 heißt: aus allen dreien mindestens einmal. Wert 1 heißt: eine davon genügt. Zwei Termine aus derselben Kategorie zählen zusammen nur einmal. Es zählen Termine und Aktivitäten gleichermaßen."
   },
   
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
