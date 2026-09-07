@@ -10,16 +10,33 @@ interface LangerAtemSlideProps extends SlideProps {
 /**
  * "Der lange Atem" -- die Spanne zwischen erstem und letztem Termin.
  *
- * Die Aussage ist "du warst ueber das ganze Jahr hinweg dabei", nicht "du
- * hast viele Termine". Deshalb steht hier die SPANNE gross und nicht die
+ * Die Aussage ist "du warst von Anfang bis Ende dabei", nicht "du hast
+ * viele Termine". Deshalb steht hier die SPANNE gross und nicht die
  * Menge -- die Menge hat ihre eigene Seite.
  *
  * Die Seite erscheint erst ab fuenf Terminen (Bedingung im Backend): Bei
  * zwei Terminen im September und im Mai waeren es rechnerisch auch 240
  * Tage, aber die Zahl erzaehlte dann das Gegenteil.
+ *
+ * BEFUND 06.09.2026: Im Nachsatz stand "{termine} Termine ueber das ganze
+ * Jahr verteilt". Damit sagte diese Seite dieselbe Zahl wie die
+ * Termin-Seite ("3x") und die Wochentag-Seite ("x von 3 Terminen") -- drei
+ * Seiten, eine Zahl. Der Nachsatz nennt jetzt die SPANNE, also genau das,
+ * was die Seite ohnehin erzaehlen will. Die Daten dafuer liegen schon im
+ * Snapshot; es braucht keine neue Abfrage.
  */
+
+/** "14. September" -- ohne Jahreszahl, die Konfi-Zeit ist keine Jahresrechnung. */
+function tag(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+}
+
 const LangerAtemSlide: React.FC<LangerAtemSlideProps> = ({ isActive, langerAtem }) => {
   const animiert = useCountUp(langerAtem.tage, isActive);
+  const erster = tag(langerAtem.erster);
+  const letzter = tag(langerAtem.letzter);
 
   return (
     <SlideBase isActive={isActive} className="langer-atem-slide" kachel="langer-atem">
@@ -31,7 +48,9 @@ const LangerAtemSlide: React.FC<LangerAtemSlideProps> = ({ isActive, langerAtem 
         <span style={{ display: 'block' }}>dabei.</span>
       </div>
       <div className="kat-nachsatz">
-        {langerAtem.termine} Termine über das ganze Jahr verteilt.
+        {erster && letzter
+          ? `Vom ${erster} bis zum ${letzter} — die ganze Strecke.`
+          : 'Vom ersten bis zum letzten Mal durchgehalten.'}
       </div>
     </SlideBase>
   );

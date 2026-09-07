@@ -66,7 +66,7 @@ function spruchFuer(verdient: number, gesamt: number): { auge: string; slogan: s
   return {
     auge: 'Deine Abzeichen',
     slogan: ['Das erste', 'wartet', 'auf dich.'],
-    nachsatz: 'Sie kommen von ganz allein, wenn du dabei bist.'
+    nachsatz: 'Es kommt von ganz allein.'
   };
 }
 

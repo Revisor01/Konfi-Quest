@@ -77,7 +77,7 @@ export const TEXTE: Record<string, SeitenText> = {
     stufen: [
       'Da, wo\ndeine Leute\nsind.',
       'Stammgast\nbei der\nJugend.',
-      'Immer\nwieder\ndabei.',
+      'Dreimal\nbei deinen\nLeuten.',
       'Zweimal\nbei der\nJugend.',
       'Einmal\nreingeschaut.'
     ],
@@ -164,7 +164,7 @@ export const TEXTE: Record<string, SeitenText> = {
   'kategorie:kasualien': {
     auge: 'Dabei, wenn es zählte',
     stufen: [
-      'Immer wieder\nda, wenn es\ndarauf ankam.',
+      'Da, wenn es\ndarauf\nankam.',
       'Du warst da,\nals es\ndarauf ankam.',
       'Dreimal\ndabei, wenn\nes zählte.',
       'Zweimal\ndabei, wenn\nes zählte.',

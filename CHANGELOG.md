@@ -43,6 +43,11 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Die Seite „Der lange Atem" erzählt jetzt die Spanne vom ersten bis zum
+  letzten Termin, statt dieselbe Terminzahl zu wiederholen, die zwei andere
+  Seiten schon nennen.
+- Im Rückblick stehen keine gleichlautenden Sprüche mehr auf Seiten, die
+  zusammen auftreten können.
 - Die Abzeichen-Seite des Rückblicks zählt jetzt alle Abzeichen, die jemand
   besitzt. Vorher zählten nur die, deren Verleihungsdatum im
   Rückblickszeitraum lag — wer fünfzehn hatte, las dort oft „Das erste ist

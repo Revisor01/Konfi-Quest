@@ -66,3 +66,160 @@ describe('Sprüche der Rückblick-Seiten', () => {
     }
   });
 });
+
+/**
+ * KEINE WORTDOPPELUNG ZWISCHEN SEITEN, DIE ZUSAMMEN AUFTRETEN.
+ *
+ * BEFUND 06.09.2026: Auf der Termin-Seite stand "Immer wieder aufgetaucht"
+ * mit dem Nachsatz "Nicht einmal, nicht zweimal — immer wieder", und zwei
+ * Seiten weiter las dieselbe Person "Immer wieder dabei" auf der
+ * Jugend-Seite. Dazu kam die Highlight-Seite, die Wort fuer Wort die Labels
+ * der Challenge- und der Termin-Seite trug ("Du hast dich getraut", "Auf
+ * dich war Verlass").
+ *
+ * Warum ein Test und kein Blick: Man sieht immer nur den eigenen Rueckblick,
+ * und welche Seiten zusammenfallen, haengt an den Daten. Beim Lesen der
+ * Dateien nebeneinander faellt es nicht auf -- sie liegen in verschiedenen
+ * Ordnern.
+ *
+ * Geprueft werden die Sprueche des KONFI-Zweigs untereinander. Der
+ * Teamer-Zweig ist eine eigene Kette; seine Seiten treffen nie auf die des
+ * Konfi-Rueckblicks.
+ */
+const KONFI_TEXTQUELLEN = [
+  'src/components/wrapped/slides/kategorieSeitenTexte.ts',
+  'src/components/wrapped/slides/EventsSlide.tsx',
+  'src/components/wrapped/slides/PunkteSlide.tsx',
+  'src/components/wrapped/slides/BadgesSlide.tsx',
+  'src/components/wrapped/slides/ChallengesSlide.tsx',
+  'src/components/wrapped/slides/HighlightSlide.tsx',
+  'src/components/wrapped/slides/LangerAtemSlide.tsx',
+];
+// Nicht dabei: WochentagSlide.tsx -- die Seite hat ihren Text direkt im
+// JSX stehen, ohne eine einzige Zeichenkette, und liesse sich hier nur mit
+// einem eigenen Parser lesen.
+
+/** Normalisiert einen Spruch auf seine Wortfolge -- ohne Satzzeichen und Umbrueche. */
+function woerter(text: string): string[] {
+  return text
+    .replace(/\\n/g, ' ')
+    .toLowerCase()
+    .match(/[a-zäöüß]+/g) || [];
+}
+
+describe('Keine Wortdoppelung zwischen Seiten, die zusammen auftreten', () => {
+  // Je Datei alle Sprueche einsammeln: Slogan-Zeilen, Nachsaetze, Labels.
+  const proDatei = KONFI_TEXTQUELLEN.map(pfad => {
+    // Kommentare zuerst raus: Sie zitieren gern die Saetze, um die es geht
+    // (dieser Test tut es selbst), und waeren sonst falsche Treffer.
+    const inhalt = readFileSync(resolve(process.cwd(), pfad), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^[ \t]*\/\/.*$/gm, ' ');
+    // Nur Zeilen aus den Textfeldern -- Klassennamen und Importpfade
+    // enthalten keine deutschen Saetze mit Leerzeichen und Umlauten.
+    // Einfache Anfuehrungszeichen UND Backticks: Seiten, die Datum oder
+    // Zahl einsetzen, schreiben ihren Nachsatz als Template-Literal.
+    const kandidaten = [
+      ...[...inhalt.matchAll(/'((?:[^'\\\n]|\\.){6,140})'/g)].map(m => m[1]),
+      ...[...inhalt.matchAll(/`((?:[^`\n]){6,140})`/g)].map(m => m[1]),
+    ];
+    const texte = kandidaten.filter(t =>
+      !/import |var\(|className|=>|\.\.\/|@ionic|-slide|kat-|wrapped-|w-/.test(t)
+      && /[ \\]/.test(t)
+      && (woerter(t).length >= 3)
+    );
+    return { pfad, texte };
+  });
+
+  it('die Sprueche werden ueberhaupt gefunden', () => {
+    for (const d of proDatei) {
+      expect(d.texte.length, `keine Texte in ${d.pfad}`).toBeGreaterThan(1);
+    }
+  });
+
+  it('keine Wendung aus drei Woertern steht auf zwei verschiedenen Seiten', () => {
+    // Funktionswoerter allein sind keine Wendung, sondern Grammatik: "mal
+    // hast du" oder "und das ist" stehen zwangslaeufig oefter da und sagen
+    // nichts. Gezaehlt wird nur, was mindestens ein INHALTSWORT traegt --
+    // genau das macht eine Wendung wiedererkennbar.
+    const FUNKTIONSWOERTER = new Set([
+      'und', 'das', 'ist', 'der', 'die', 'den', 'dem', 'des', 'du', 'dir',
+      'dich', 'ein', 'eine', 'einen', 'einem', 'hast', 'hat', 'haben', 'war',
+      'warst', 'bist', 'sein', 'an', 'auf', 'in', 'im', 'mit', 'von', 'zu',
+      'zum', 'zur', 'bei', 'fuer', 'es', 'sie', 'er', 'wir', 'ihr', 'mal',
+      'nicht', 'noch', 'schon', 'auch', 'aber', 'wenn', 'dass', 'was', 'wie',
+      'so', 'als', 'am', 'nur', 'sich', 'dein', 'deine', 'deinen', 'einmal',
+    ]);
+    const traegtInhalt = (w: string[]) => w.some(x => !FUNKTIONSWOERTER.has(x));
+
+    const gesehen = new Map<string, { pfad: string; text: string }>();
+    const treffer: string[] = [];
+
+    for (const { pfad, texte } of proDatei) {
+      // Innerhalb einer Datei darf sich etwas wiederholen -- die Stufen
+      // schliessen einander aus, es sieht nie jemand zwei davon.
+      const inDieserDatei = new Set<string>();
+      for (const text of texte) {
+        const w = woerter(text);
+        for (let i = 0; i + 2 < w.length; i++) {
+          const teile = w.slice(i, i + 3);
+          if (!traegtInhalt(teile)) continue;
+          const wendung = teile.join(' ');
+          if (inDieserDatei.has(wendung)) continue;
+          inDieserDatei.add(wendung);
+          const vorher = gesehen.get(wendung);
+          if (vorher && vorher.pfad !== pfad) {
+            treffer.push(`"${wendung}" -- ${vorher.pfad}: "${vorher.text}" / ${pfad}: "${text}"`);
+          } else if (!vorher) {
+            gesehen.set(wendung, { pfad, text });
+          }
+        }
+      }
+    }
+
+    expect(treffer, treffer.join('\n')).toEqual([]);
+  });
+
+  // Der eigentliche Befund war KUERZER als drei Woerter: "Immer wieder"
+  // stand auf der Termin-Seite (Slogan und Nachsatz) und auf der
+  // Jugend-Seite -- zwei Woerter, beide Inhaltswoerter, und trotzdem eine
+  // Wendung, die man wiedererkennt. Deshalb dieselbe Pruefung noch einmal
+  // fuer Zweierketten, in denen KEIN Funktionswort steckt.
+  it('keine auffaellige Zweierwendung steht auf zwei verschiedenen Seiten', () => {
+    const FUNKTIONSWOERTER = new Set([
+      'und', 'das', 'ist', 'der', 'die', 'den', 'dem', 'des', 'du', 'dir',
+      'dich', 'ein', 'eine', 'einen', 'einem', 'hast', 'hat', 'haben', 'war',
+      'warst', 'bist', 'sein', 'an', 'auf', 'in', 'im', 'mit', 'von', 'zu',
+      'zum', 'zur', 'bei', 'fuer', 'für', 'es', 'sie', 'er', 'wir', 'ihr',
+      'mal', 'nicht', 'noch', 'schon', 'auch', 'aber', 'wenn', 'dass', 'was',
+      'wie', 'so', 'als', 'am', 'nur', 'sich', 'dein', 'deine', 'deinen',
+      'einmal', 'da', 'dabei', 'jeder', 'jede', 'alle', 'kein', 'keine',
+      'zwei', 'drei', 'vier', 'zweimal', 'dreimal', 'stück', 'mehr',
+    ]);
+
+    const gesehen = new Map<string, { pfad: string; text: string }>();
+    const treffer: string[] = [];
+
+    for (const { pfad, texte } of proDatei) {
+      const inDieserDatei = new Set<string>();
+      for (const text of texte) {
+        const w = woerter(text);
+        for (let i = 0; i + 1 < w.length; i++) {
+          const teile = w.slice(i, i + 2);
+          if (teile.some(x => FUNKTIONSWOERTER.has(x))) continue;
+          const wendung = teile.join(' ');
+          if (inDieserDatei.has(wendung)) continue;
+          inDieserDatei.add(wendung);
+          const vorher = gesehen.get(wendung);
+          if (vorher && vorher.pfad !== pfad) {
+            treffer.push(`"${wendung}" -- ${vorher.pfad}: "${vorher.text}" / ${pfad}: "${text}"`);
+          } else if (!vorher) {
+            gesehen.set(wendung, { pfad, text });
+          }
+        }
+      }
+    }
+
+    expect(treffer, treffer.join('\n')).toEqual([]);
+  });
+});

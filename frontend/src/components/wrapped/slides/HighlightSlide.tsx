@@ -35,13 +35,18 @@ const VARIANTEN: Record<string, Array<{ label: string; hero: string; sub: string
     { label: 'Das kam gut an', hero: 'Daumen hoch!', sub: 'Mal haben andere auf dich reagiert' },
     { label: 'Gehört werden', hero: 'Voll getroffen', sub: 'Reaktionen auf deine Nachrichten' },
   ],
+  // BEFUND 06.09.2026: Hier standen 'Du hast dich getraut', 'Deine
+  // Kraftproben' und 'Auf dich war Verlass' -- Wort fuer Wort dieselben
+  // Saetze wie auf der Challenge- und der Termin-Seite, die im selben
+  // Rueckblick nur wenige Seiten entfernt stehen. Wer den Challenge-Fan
+  // bekommt, hat die Challenge-Seite ohnehin; die Termin-Seite hat jede:r.
   challenge_fan: [
     { label: 'Dein Ding: Challenges', hero: 'Challenge-Fan', sub: 'Beiträge hast du eingereicht' },
-    { label: 'Du hast dich getraut', hero: 'Mutig dabei!', sub: 'Challenge-Beiträge von dir' },
-    { label: 'Deine Kraftproben', hero: 'Angepackt!', sub: 'Mal hast du bei Challenges mitgemacht' },
+    { label: 'Du bist ins Risiko gegangen', hero: 'Mutig dabei!', sub: 'Challenge-Beiträge von dir' },
+    { label: 'Aufgaben liegen dir', hero: 'Angepackt!', sub: 'Mal hast du bei Challenges mitgemacht' },
   ],
   verlaesslich: [
-    { label: 'Auf dich war Verlass', hero: 'Fels in der Brandung', sub: 'Anmeldungen — und keine einzige Absage' },
+    { label: 'Zugesagt und gekommen', hero: 'Fels in der Brandung', sub: 'Anmeldungen — und keine einzige Absage' },
     { label: 'Zugesagt ist zugesagt', hero: 'Verlässlich!', sub: 'Termine gebucht, alle gehalten' },
     { label: 'Man konnte auf dich zählen', hero: 'Immer da', sub: 'Anmeldungen ohne eine Absage' },
   ],
