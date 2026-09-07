@@ -60,6 +60,8 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Bei Terminen nur fürs Team stand der Hinweis, dass Konfis sich bis zwei
+  Tage vorher abmelden können — obwohl dort gar keine Konfis teilnehmen.
 - Das Handbuch beschrieb den Jahresrückblick an mehreren Stellen so, wie er
   einmal war: Es verwies für die Freigabe noch auf den Jahrgang statt auf
   „Mehr → Jahresrückblick", kannte nur einen Rückblick pro Person und Jahr

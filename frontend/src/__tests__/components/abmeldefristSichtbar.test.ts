@@ -24,10 +24,40 @@ const adminDetail = lies('src/components/admin/views/EventDetailSections.tsx');
 const konfiDetail = lies('src/components/konfi/views/EventDetailView.tsx');
 const handbuch = lies('../docs/handbuch/70-termine.md');
 const backend = lies('../backend/routes/konfi.js');
+// Der Abmeldeweg des TEAMS -- bewusst ohne Frist (siehe Test unten).
+const teamerAbmeldung = lies('../backend/routes/events/buchung.js');
 
 describe('Abmeldefrist ist benannt (N6/6)', () => {
   it('die Leitung sieht die Regel im Termin-Detail', () => {
     expect(adminDetail).toContain('Konfis können sich bis 2 Tage vorher selbst abmelden');
+  });
+
+  it('bei "Nur Team" steht der Konfi-Satz nicht da (Befund 06.09.2026)', () => {
+    // Der Satz hing nur an `!eventData.mandatory`. An einem teamer_only-Termin
+    // nehmen aber gar keine Konfis teil -- die Leitung las eine Regel ueber
+    // Leute, die es bei diesem Termin nicht gibt. Zwanzig Zeilen weiter stand
+    // `nurTeamer` bereits und schuetzte die Teilnehmerzeile korrekt; der
+    // Abmeldetext war beim Absichern uebersehen worden.
+    const block = adminDetail.slice(
+      adminDetail.indexOf('Anmeldezeitraum — wie Zeitfenster aufgebaut'),
+      adminDetail.indexOf('TN gesamt - Konfis und Teamer getrennt')
+    );
+    expect(block).toContain('{!eventData.teamer_only && (');
+    // Und der Satz steht INNERHALB dieser Bedingung, nicht davor.
+    expect(block.indexOf('{!eventData.teamer_only && ('))
+      .toBeLessThan(block.indexOf('Konfis können sich bis 2 Tage vorher selbst abmelden'));
+  });
+
+  it('fuers Team wird KEINE Frist behauptet', () => {
+    // Gegenprobe zur naheliegenden "Korrektur": Eine eigene Formulierung
+    // ("Das Team kann sich bis 2 Tage vorher abmelden") waere eine zweite
+    // Falschaussage. Die Frist steckt allein in der Konfi-Abmeldung
+    // (konfi.js, DELETE /konfi/events/:id/register); der Weg des Teams
+    // (events/buchung.js, DELETE /:id/book) hat keine Fristpruefung --
+    // Teamer:innen koennen sich jederzeit austragen.
+    expect(teamerAbmeldung).not.toContain('2 * 24 * 60 * 60 * 1000');
+    expect(teamerAbmeldung).not.toContain('nur bis 2 Tage vor dem Event');
+    expect(adminDetail).not.toContain('Das Team kann sich bis 2 Tage vorher');
   });
 
   it('sie steht beim Anmeldezeitraum, nicht irgendwo', () => {

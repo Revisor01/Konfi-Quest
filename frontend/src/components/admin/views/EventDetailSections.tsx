@@ -195,9 +195,20 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                   (Handbuch 70-termine.md fuehrt genau diese Frage auf).
                   Der Wert ist fest verdrahtet (konfi.js:1812) -- er steht
                   hier deshalb als Text, nicht als Einstellung. */}
-              <div className="app-info-row__value" style={{ color: 'var(--app-text-secondary)', marginTop: 'var(--app-abstand-mini)' }}>
-                Konfis können sich bis 2 Tage vorher selbst abmelden
-              </div>
+              {/* NICHT bei "Nur Team": Dort nehmen gar keine Konfis teil, der
+                  Satz sprach also von Leuten, die es beim Termin nicht gibt
+                  (Befund 06.09.2026). Und er stimmt fuers Team auch nicht in
+                  eigener Formulierung: Die Frist steckt allein in der
+                  Konfi-Abmeldung (konfi.js, DELETE /konfi/events/:id/register);
+                  der Weg des Teams (events/buchung.js, DELETE /:id/book) hat
+                  keine — Teamer:innen koennen sich jederzeit austragen. Eine
+                  auf das Team umgeschriebene Fassung desselben Satzes waere
+                  deshalb eine zweite Falschaussage statt einer Korrektur. */}
+              {!eventData.teamer_only && (
+                <div className="app-info-row__value" style={{ color: 'var(--app-text-secondary)', marginTop: 'var(--app-abstand-mini)' }}>
+                  Konfis können sich bis 2 Tage vorher selbst abmelden
+                </div>
+              )}
             </div>
           </div>
         )}
