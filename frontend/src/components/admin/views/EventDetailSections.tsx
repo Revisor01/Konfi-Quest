@@ -70,7 +70,13 @@ export interface EventData {
   registration_opens_at?: string;
   registration_closes_at?: string;
   registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed';
+  // Kommt aus GET /events/:id (seit 06.09.2026 auch dort, vorher nur aus der
+  // Liste). Optional, weil aeltere Antworten das Feld nicht haben — die
+  // Anzeige darf daraus dann kein "Geschlossen" machen.
+  registration_status?: 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
+  // Eigener Status fuer das TEAMER-Kontingent (Migration 120):
+  // registration_status daruber rechnet ausschliesslich mit Konfi-Zahlen.
+  teamer_registration_status?: 'none' | 'upcoming' | 'open' | 'waitlist' | 'closed' | 'cancelled';
   available_spots: number;
   participants: Participant[];
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;

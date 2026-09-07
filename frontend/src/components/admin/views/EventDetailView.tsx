@@ -360,8 +360,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // 'cancelled' vorher ab), und ein ausgebuchter Termin MIT freier Warteliste
   // galt als 'closed', obwohl die Anmeldung auf die Warteliste offen ist.
   // Die Berechnung steht in `events.js:124-133`.
-  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' =>
-    event.registration_status as 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
+  //
+  // Fehlt der Wert, wird KEIN Status behauptet (Befund 06.09.2026, Prod-Event
+  // 130 "Teamerfreizeit"): Bis dahin fiel `undefined` durch die ganze Kette in
+  // getStatusText() bis zum abschliessenden `return 'Geschlossen'`. Ein
+  // offener Termin ohne Frist und ohne Kapazitaet stand dadurch als
+  // "Geschlossen" da. Der Rueckgabewert ist deshalb bewusst `undefined` und
+  // nicht ein geratener Status — "Geschlossen" ist die teuerste falsche
+  // Annahme, denn sie sagt, dass niemand mehr mitkommen kann.
+  //
+  // Bei "Nur Team"- und "Team gesucht"-Terminen zaehlt ohnehin das
+  // TEAMER-Kontingent: registration_status rechnet ausschliesslich mit
+  // Konfi-Zahlen (Migration 120), deshalb hat das Backend dafuer einen
+  // zweiten Wert. 'waitlist' gibt es nur dort und heisst fuers Anmelden:
+  // offen, nur eben auf die Warteliste.
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' | undefined => {
+    const nurTeam = !!(event.teamer_only || event.teamer_needed);
+    if (nurTeam && event.teamer_registration_status && event.teamer_registration_status !== 'none') {
+      const t = event.teamer_registration_status;
+      return t === 'waitlist' ? 'open' : t;
+    }
+    return event.registration_status as 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' | undefined;
+  };
 
   const handleEditSuccess = () => { onBack(); };
 
@@ -424,7 +444,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (istVoll) return 'Ausgebucht';
     if (regStatus === 'open') return 'Offen';
     if (regStatus === 'upcoming') return 'Bald';
-    return 'Geschlossen';
+    if (regStatus === 'closed') return 'Geschlossen';
+    // Kein Status vom Backend: neutral bleiben statt "Geschlossen" behaupten.
+    return 'Termin';
   };
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {

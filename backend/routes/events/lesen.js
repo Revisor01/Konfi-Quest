@@ -393,7 +393,80 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const eventId = req.params.id;
     try {
       // Get event details
-      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+      // registration_status und teamer_registration_status kommen hier MIT
+      // (Befund 06.09.2026, Prod-Event 130 "Teamerfreizeit").
+      //
+      // Bisher lieferte nur die Liste (GET /events) die beiden Werte; die
+      // Detailantwort liess sie weg. Die Leitungs-Detailansicht liest den
+      // Status aber genau aus dieser Antwort — er war dort immer undefined,
+      // und die Kette in getStatusText() fiel auf "Geschlossen" durch. Das
+      // traf JEDEN Termin; sichtbar wurde es nur, wenn weder Anmeldefrist
+      // noch Kapazitaet gesetzt sind, weil sonst eine vorgelagerte Bedingung
+      // (Warteliste, Ausgebucht, Vergangen, Pflicht, Abgesagt) das verdeckte.
+      // Der Gegenbeweis stand im selben Code: OHNE Verbindung nimmt die
+      // Ansicht den Stand aus dem Listen-Cache, der das Feld hat — derselbe
+      // Termin stand offline korrekt auf "Offen" und kippte beim naechsten
+      // Online-Laden auf "Geschlossen".
+      //
+      // Gerechnet wird mit denselben Helfern wie in der Liste
+      // (utils/terminAnmeldeStatus.js), damit die beiden Ansichten nicht
+      // wieder auseinanderlaufen — genau dafuer gibt es die Datei.
+      //
+      // REIN ADDITIV: zwei neue Felder, kein bestehendes aendert Form oder
+      // Typ. Ausgelieferte Apps ignorieren sie — und bekommen die Anzeige
+      // sogar ohne Update repariert, weil sie den Wert schon auslesen.
+      const detailQuery = `
+        SELECT e.id, e.name, e.description, e.event_date, e.event_end_time, e.location,
+               e.location_maps_url, e.points, e.point_type, e.type, e.max_participants,
+               e.registration_opens_at, e.registration_closes_at, e.has_timeslots,
+               e.waitlist_enabled, e.max_waitlist_size, e.teamer_max_participants,
+               e.teamer_waitlist_enabled, e.teamer_max_waitlist_size, e.is_series,
+               e.series_id, e.mandatory, e.is_konfirmation, e.bring_items,
+               e.checkin_window, e.teamer_needed, e.teamer_only, e.cancelled,
+               e.cancelled_at, e.qr_token, e.created_by, e.organization_id, e.created_at,
+               ${anmeldeStatusSql({
+                 kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
+                 bestaetigt: 'bstats.registered_count',
+                 warteliste: 'bstats.waitlist_count'
+               })} as registration_status,
+               -- Zweiter, unabhaengiger Status fuer das TEAMER-Kontingent,
+               -- wortgleich zur Liste (oben in dieser Datei). Ohne ihn
+               -- bewertet die Detailansicht bei "Nur Team"-Terminen das
+               -- falsche Kontingent: registration_status rechnet
+               -- ausschliesslich mit Konfi-Zahlen.
+               CASE
+                 WHEN e.cancelled THEN 'cancelled'
+                 WHEN NOT (e.teamer_needed OR e.teamer_only) THEN 'none'
+                 WHEN NOW() < e.registration_opens_at THEN 'upcoming'
+                 WHEN NOW() > e.registration_closes_at THEN 'closed'
+                 WHEN COALESCE(e.teamer_max_participants, 0) > 0
+                      AND bstats.teamer_count >= e.teamer_max_participants
+                      AND (NOT e.teamer_waitlist_enabled
+                           OR bstats.teamer_waitlist_count >= COALESCE(e.teamer_max_waitlist_size, 0))
+                   THEN 'closed'
+                 WHEN COALESCE(e.teamer_max_participants, 0) > 0
+                      AND bstats.teamer_count >= e.teamer_max_participants
+                   THEN 'waitlist'
+                 ELSE 'open'
+               END as teamer_registration_status
+        FROM events e
+        LEFT JOIN LATERAL (
+          SELECT
+            COALESCE(ebs.konfi_confirmed, 0)  as registered_count,
+            COALESCE(ebs.konfi_waitlist, 0)   as waitlist_count,
+            COALESCE(ebs.teamer_confirmed, 0) as teamer_count,
+            COALESCE(ebs.teamer_waitlist, 0)  as teamer_waitlist_count
+          FROM event_booking_stats ebs
+          WHERE ebs.event_id = e.id
+        ) bstats ON true
+        LEFT JOIN LATERAL (
+          SELECT SUM(et.max_participants) as total_capacity
+          FROM event_timeslots et
+          WHERE et.event_id = e.id
+        ) timeslot_capacity ON true
+        WHERE e.id = $1 AND e.organization_id = $2
+      `;
+      const { rows: [event] } = await db.query(detailQuery, [eventId, req.user.organization_id]);
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });

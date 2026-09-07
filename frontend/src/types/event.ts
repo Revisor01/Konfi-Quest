@@ -47,7 +47,13 @@ export interface Event {
   registration_opens_at?: string;
   registration_closes_at?: string;
   registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
+  // Optional und um 'mandatory' erweitert (06.09.2026): Der Wert fehlte in
+  // GET /events/:id ganz -- die Leitungs-Detailansicht las ihn dort als
+  // undefined und zeigte deshalb "Geschlossen" an einem offenen Termin
+  // (Prod-Event 130). Das Backend liefert ihn jetzt auch im Detail; der Typ
+  // sagt trotzdem "kann fehlen", denn aeltere Antworten und Cache-Staende
+  // haben ihn nicht. Wer ihn liest, muss den Fall behandeln.
+  registration_status?: 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
   // Eigener Status fuer das Teamer-Kontingent (Migration 120). registration_status
   // rechnet ausschliesslich mit Konfi-Zahlen -- die beiden Kontingente sind
   // unabhaengig voneinander. 'none' heisst: An diesem Termin werden gar keine

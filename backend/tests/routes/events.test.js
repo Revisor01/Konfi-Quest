@@ -3824,4 +3824,204 @@ describe('Events Routes', () => {
       expect(rows[0].status).toBe('confirmed');
     });
   });
+  // Befund 06.09.2026 (Prod-Event 130 "Teamerfreizeit", Org 1):
+  // GET /events/:id lieferte KEINEN registration_status -- die ausgeschriebene
+  // Spaltenliste hatte ihn nicht, und das Antwortobjekt ergaenzte ihn nicht.
+  // Nur die Liste GET /events berechnete ihn. Die Leitungs-Detailansicht liest
+  // aber genau aus dieser Antwort: der Wert war immer undefined, und die
+  // Anzeigekette fiel bis auf "Geschlossen" durch.
+  //
+  // Sichtbar wurde es nur bei Terminen OHNE Anmeldefrist und OHNE Kapazitaet,
+  // weil sonst eine vorgelagerte Bedingung (Warteliste, Ausgebucht, Vergangen,
+  // Pflicht, Abgesagt) das Durchfallen verdeckte. Genau so stand Event 130 da:
+  // teamer_only, max_participants = 0, teamer_max_participants = 0, beide
+  // registration_*_at NULL, Datum in der Zukunft -- ein offener Termin, den
+  // die App als "Geschlossen" auswies.
+  describe('GET /api/events/:id liefert den Anmeldestatus (Befund 06.09.2026)', () => {
+    // Der echte Fall, Feld fuer Feld wie Event 130.
+    async function nurTeamTerminOhneGrenzen() {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled,
+                             registration_opens_at, registration_closes_at,
+                             teamer_needed, teamer_only, teamer_max_participants,
+                             teamer_waitlist_enabled, cancelled)
+         VALUES ('Teamerfreizeit', NOW() + interval '30 days', $1, false, 0,
+                 'gemeinde', 0, false, false,
+                 NULL, NULL,
+                 false, true, 0,
+                 false, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      return ev.id;
+    }
+
+    it('Nur-Team-Termin ohne Fristen und ohne Kapazitaet meldet open, nicht closed', async () => {
+      const eventId = await nurTeamTerminOhneGrenzen();
+
+      const res = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      // Der Kern des Befundes: Das Feld war vorher gar nicht da.
+      expect(res.body.registration_status).toBe('open');
+      // Bei teamer_only bewertet die Ansicht das TEAMER-Kontingent -- ohne
+      // diesen zweiten Wert rechnet sie mit Konfi-Zahlen an einem Termin,
+      // an dem keine Konfis teilnehmen.
+      expect(res.body.teamer_registration_status).toBe('open');
+    });
+
+    it('Detail und Liste sind sich beim selben Termin einig', async () => {
+      // Der eigentliche Fehler war das Auseinanderlaufen zweier Endpunkte
+      // ueber denselben Termin. Genau das wird hier festgenagelt.
+      const eventId = await nurTeamTerminOhneGrenzen();
+
+      const liste = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(liste.status).toBe(200);
+      const ausListe = liste.body.find((e) => e.id === eventId);
+      expect(ausListe).toBeTruthy();
+
+      const detail = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detail.status).toBe(200);
+
+      expect(detail.body.registration_status).toBe(ausListe.registration_status);
+      expect(detail.body.teamer_registration_status).toBe(ausListe.teamer_registration_status);
+    });
+
+    it('abgelaufene Anmeldefrist meldet im Detail closed', async () => {
+      // Gegenprobe zum Test darueber: 'open' darf nicht einfach immer
+      // herauskommen -- sonst waere der Fix nur ein fest verdrahtetes Wort.
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled,
+                             registration_opens_at, registration_closes_at,
+                             teamer_needed, teamer_only, cancelled)
+         VALUES ('Frist vorbei', NOW() + interval '30 days', $1, false, 0,
+                 'gemeinde', 0, false, false,
+                 NOW() - interval '10 days', NOW() - interval '1 day',
+                 false, false, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${ev.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registration_status).toBe('closed');
+    });
+
+    it('Pflichttermin meldet im Detail mandatory', async () => {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled,
+                             teamer_needed, teamer_only, cancelled)
+         VALUES ('Pflicht im Detail', NOW() + interval '30 days', $1, true, 0,
+                 'gemeinde', 0, false, false, false, false, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${ev.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registration_status).toBe('mandatory');
+    });
+
+    it('abgesagter Termin meldet im Detail cancelled', async () => {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled,
+                             teamer_needed, teamer_only, cancelled)
+         VALUES ('Abgesagt im Detail', NOW() + interval '30 days', $1, false, 0,
+                 'gemeinde', 0, false, false, false, false, true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${ev.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registration_status).toBe('cancelled');
+      expect(res.body.teamer_registration_status).toBe('cancelled');
+    });
+
+    it('reiner Konfi-Termin meldet teamer_registration_status none', async () => {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled,
+                             teamer_needed, teamer_only, cancelled)
+         VALUES ('Nur Konfis', NOW() + interval '30 days', $1, false, 10,
+                 'gemeinde', 0, false, true, false, false, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/events/${ev.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registration_status).toBe('open');
+      expect(res.body.teamer_registration_status).toBe('none');
+    });
+
+    it('die Antwort behaelt ihre bisherige Form (ausgelieferte Apps)', async () => {
+      // Die Erweiterung ist rein additiv. Verschwindet oder kippt hier ein
+      // Feld, brechen die Apps im Store -- die lassen sich nicht mitdeployen.
+      const eventId = await nurTeamTerminOhneGrenzen();
+
+      const res = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('Teamerfreizeit');
+      expect(Array.isArray(res.body.participants)).toBe(true);
+      expect(Array.isArray(res.body.timeslots)).toBe(true);
+      expect(Array.isArray(res.body.jahrgaenge)).toBe(true);
+      expect(Array.isArray(res.body.categories)).toBe(true);
+      expect(Array.isArray(res.body.unregistrations)).toBe(true);
+      expect(Array.isArray(res.body.series_events)).toBe(true);
+      expect(res.body.registered_count).toBe(0);
+      expect(res.body.pending_count).toBe(0);
+      expect(res.body.teamer_count).toBe(0);
+      expect(res.body.teamer_waitlist_count).toBe(0);
+      expect(res.body.max_participants).toBe(0);
+      expect(res.body.booking_status).toBe(null);
+      expect(res.body.is_registered).toBe(false);
+      expect(res.body.teamer_only).toBe(true);
+      // qr_token wird erst bei Bedarf erzeugt (POST /events/:id/generate-qr),
+      // ist hier also null. Entscheidend fuer die Form: Das Feld IST in der
+      // Leitungs-Antwort enthalten -- in der Konfi-Antwort wird es entfernt
+      // (Test darunter). Deshalb auf Vorhandensein pruefen, nicht auf Inhalt.
+      expect('qr_token' in res.body).toBe(true);
+      expect(res.body.qr_token).toBe(null);
+    });
+
+    it('Konfis bekommen den Status ebenfalls, aber weiter kein qr_token', async () => {
+      // Die Sichtbarkeitsregeln der Route bleiben unangetastet.
+      const eventId = await nurTeamTerminOhneGrenzen();
+
+      const res = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.registration_status).toBe('open');
+      expect(res.body.qr_token).toBeUndefined();
+      expect(res.body.participants).toEqual([]);
+    });
+  });
 });

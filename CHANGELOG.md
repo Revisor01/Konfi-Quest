@@ -60,6 +60,10 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Termine standen in der Detailansicht der Leitung als „Geschlossen", obwohl
+  die Anmeldung offen war. Betroffen waren vor allem Termine ohne
+  Anmeldefrist und ohne Teilnehmerbegrenzung; in der Terminliste stand
+  derselbe Termin korrekt als offen.
 - Bei Terminen nur fürs Team stand der Hinweis, dass Konfis sich bis zwei
   Tage vorher abmelden können — obwohl dort gar keine Konfis teilnehmen.
 - Das Handbuch beschrieb den Jahresrückblick an mehreren Stellen so, wie er

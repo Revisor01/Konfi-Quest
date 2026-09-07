@@ -1173,6 +1173,13 @@ paths:
         vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg
         (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde
         entfernt, umbenannt oder im Typ geaendert.
+        BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und
+        teamer_registration_status — beide berechnet mit denselben Helfern wie
+        GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die
+        Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined
+        und zeigte deshalb "Geschlossen" an offenen Terminen (sichtbar vor
+        allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein
+        vorhandenes Feld aendert Form oder Typ.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1181,7 +1188,7 @@ paths:
         hinweis: "Teamer: KEIN Jahrgang-Check - Teilnehmer-Klarnamen und Opt-out-Gruende aller Org-Events einsehbar (siehe Analyse Punkt 2)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id" }
+        "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id, registration_status, teamer_registration_status" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
