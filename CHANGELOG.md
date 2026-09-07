@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Wer bei der Sommerfreizeit 2026 in Stavanger dabei war, findet im
+  Rückblick eine eigene Seite dazu — Konfis wie Team. Alle anderen sehen sie
+  nicht.
 - Der Jahresrückblick erzählt jetzt eine Geschichte statt einer festen Liste:
   Auftakt, Chat, Termine, die eigenen Schwerpunkte, Challenges, Punkte,
   Abzeichen und Abschluss. Wie viele Seiten jemand sieht, hängt davon ab, was
@@ -26,6 +29,9 @@ Versionsüberschrift.
   die Kategorie in der Gemeinde heißt.
 - Neue Gemeinden starten mit einem erweiterten Satz an Kategorien, der die
   Arbeit vor Ort besser abbildet.
+- Abzeichen können jetzt verlangen, dass jemand aus mehreren verschiedenen
+  Kategorien dabei war — etwa Konfifahrt, Übernachtung und Sommerfreizeit für
+  ein Freizeiten-Abzeichen. Dreimal dasselbe zählt dabei nur einmal.
 
 - Ein Jahrgang kann jetzt mehrere Rückblicke haben, jeder mit eigenem Namen —
   etwa „Dein erstes Jahr", „Zwischenstand" und „Dein Abschluss". Frühere
@@ -37,6 +43,65 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Der Jahresrückblick entsteht auch dann vollständig, wenn eine einzelne
+  Auswertung nicht möglich ist — betroffen ist dann nur die eine Seite, die
+  davon lebt, nicht der ganze Rückblick.
+- Der Jahresrückblick zeigt keine Seite mehr mit einer Null darauf. Wer im
+  Rückblickszeitraum keine Abzeichen, keine Punkte oder keine Termine hat,
+  bekommt diese Seite gar nicht erst — statt „0 von 55". Auftakt, Abschluss
+  und die Einladung ins Team bleiben, damit immer ein Rückblick entsteht.
+- Einzelne Seiten des Jahresrückblicks lassen sich wieder teilen. Bei rund der
+  Hälfte der Seiten kam bisher ein leeres, schwarzes Bild heraus — darunter die
+  Einladung ins Team, die jede Konfi am Ende bekommt.
+- Das geteilte Bild sieht jetzt aus wie die Seite, von der es stammt: mit
+  ihrem Hintergrundmotiv, ihrer Farbe und demselben Spruch.
+- Wenn das Teilen nicht klappt, sagt die App es jetzt, statt kommentarlos
+  nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
+- Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
+  bisher landete sie nur im Download-Ordner.
+- Der Teamer-Rückblick zeigt, wie viele Challenge-Beiträge jemand
+  freigegeben hat — Arbeit, die sonst niemand sieht. Nur die eigene
+  Freigabe, nie eine Ablehnungsquote. Für frühere Freigaben lässt sich das
+  nicht mehr feststellen.
+- Wer im Konfi-Jahr von der Warteliste nachgerückt ist, bekommt dafür eine
+  eigene Seite im Rückblick. Für frühere Anmeldungen lässt sich das nicht
+  mehr feststellen — dort bleibt die Seite aus.
+- Der Teamer-Rückblick zeigt, mit wie vielen anderen zusammen die Jahrgänge
+  betreut wurden, und begrüßt alle, die im Rückblicksjahr neu ins Team
+  gekommen sind.
+- Neue Seiten im Konfi-Rückblick: über welche Spanne jemand dabei war, an
+  welchem Wochentag die Termine meist lagen, und auf wie vielen Wegen jemand
+  bei Challenges geantwortet hat.
+- Bei einer sehr aktiven Konfi konnten am Ende Seiten wegfallen, die sie sich
+  erst verdient hatte — das seltenste Abzeichen und die Konfirmation. Sie
+  bleiben jetzt erhalten.
+- Der Teamer-Rückblick erinnert an den ersten Termin des Jahres und an das
+  zuerst verliehene Abzeichen — nicht nur daran, wie viele es wurden.
+- Der Teamer-Rückblick zeigt, wie oft jemand im Chat auf andere geantwortet
+  hat — die Zuwendung, die sonst in keiner Zahl auftaucht.
+- Teamer:innen, die selbst einmal Konfi in ihrer Gemeinde waren, bekommen im
+  Rückblick eine eigene Seite dazu — mit dem eigenen Jahrgang.
+- Der Rückblick für Teamer:innen zeigt keine leeren Seiten mehr. Bisher kamen
+  immer sieben Seiten, auch wenn fünf davon eine Null trugen — wer neu im Team
+  ist, bekommt jetzt einen kürzeren Rückblick statt „0 Abzeichen",
+  „0 Zertifikate" und „0 Konfis" hintereinander.
+- Beim Anlegen eines Rückblicks lässt sich jetzt der Zeitraum angeben, den er
+  zählen soll — vorbelegt mit dem laufenden Konfi-Jahr. Bisher stand in der
+  Übersicht ein Zeitraum, unter dem Zahlen aus einem anderen standen.
+- Bonuspunkte aus früheren Jahren zählen nicht mehr in den aktuellen
+  Rückblick.
+- Der Rückblick zeigt wieder, in welchem Monat jemand am meisten unterwegs
+  war. Die Seite war seit dem Umbau der Reihenfolge aus dem Rückblick
+  gefallen; sie erscheint jetzt zwischen Punkten und Abzeichen, sobald in
+  dem Monat mindestens zwei Dinge zusammenkamen.
+- Im Jahresrückblick blieb eine Seite zwischen den Challenges leer. Sie
+  zeigt jetzt, wie oft jemand mitgemacht hat und bei welcher Challenge am
+  liebsten. Die angekündigte Chat-Seite gab es nie — die Chat-Zahlen stehen
+  weiterhin auf der persönlichen Highlight-Seite.
+- Der Rückblick für Teamer:innen zeigt jetzt wirklich das Jahr. Termine,
+  Abzeichen und Zertifikate wurden bisher seit dem allerersten Tag gezählt —
+  wer seit Jahren dabei ist, sah alles auf einmal unter einer Jahreszahl. Wie
+  lange jemand schon im Team ist, bleibt bewusst die Gesamtzeit.
 - Beim Material lassen sich wieder Dateien anhängen. Die Auswahl kam nicht an, der Upload passierte still gar nicht.
 - Auf der Startseite des Teams stehen unter „Zertifikate" nur noch die
   wirklich erhaltenen. Wer keine hat, sieht den Block gar nicht mehr statt
@@ -77,6 +142,18 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Der Rückblick einer Konfi umfasst jetzt die ganze Konfi-Zeit — vom Beginn
+  bis heute, auch wenn das zwei Jahre sind. Der Konfirmationstermin schneidet
+  nichts mehr ab; er wird weiterhin auf der eigenen Seite gezeigt.
+- Ein Teamer-Rückblick schließt jetzt lückenlos an den vorigen an: Der erste
+  beginnt beim Eintritt ins Team, jeder weitere am Ende des letzten.
+- Beim Anlegen eines Rückblicks bleibt der Zeitraum leer und wird automatisch
+  bestimmt. Nur für einen Zwischenbericht trägt die Leitung eigene Daten ein;
+  ein Hinweis im Formular erklärt beides.
+- Statt „Dein Konfi-Jahr 2026" heißt es im Rückblick jetzt „Deine Konfi-Zeit" —
+  eine einzelne Jahreszahl passt nicht mehr, wenn der Zeitraum länger ist.
+- Die Gruppe heißt in der App jetzt durchgehend „Team“ — in Titeln, Reitern,
+  Listen und Hinweisen. Die einzelne Person bleibt „Teamer:in“.
 - Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,
   Gemeinde und der Reiter „Mitmachen" trugen je nach Ansicht verschiedene
   Symbole, teils sogar verschiedene Farben. Auch Kopfbereiche und Hinweise
@@ -417,6 +494,7 @@ Versionsüberschrift.
   nächsten Erzeugen die gesamte Historie weg gewesen wäre.
 
 ### Sonstiges
+- Sicherheitsmeldungen zu verwendeten Fremdbibliotheken abgearbeitet.
 - Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
   schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und
   zwei Uhr fehl, obwohl die Erinnerungen selbst korrekt verschickt wurden.

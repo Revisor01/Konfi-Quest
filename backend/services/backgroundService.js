@@ -830,7 +830,22 @@ class BackgroundService {
           );
 
           if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
-            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, today.getFullYear());
+            // ZEITRAUM DER AUTOMATISCHEN AUSGABE: KEINE Vorgabe mehr.
+            //
+            // SIMONS REGEL (07.09.2026): Ein Teamer-Rueckblick geht vom Ende
+            // des vorigen bis zum Zeitpunkt der Erzeugung, beim ersten Mal
+            // vom Eintritt ins Team an. Diese Kette rechnet
+            // generateAllTeamerWrapped selbst, sobald man ihr keinen
+            // Zeitraum aufdraengt.
+            //
+            // Vorher stand hier fest das abgelaufene Kalenderjahr (1.1. bis
+            // 31.12. von year-1). Das riss zwei Luecken auf: Alles zwischen
+            // dem 1.1. und dem 6.1. fiel durch, und wer erst im Laufe des
+            // Jahres dazukam, bekam einen Zeitraum, der vor seinem Eintritt
+            // begann. Die Kette hat beide Probleme nicht -- sie schliesst
+            // luecken- und ueberschneidungsfrei an die vorige Ausgabe an.
+            const jahr = today.getFullYear();
+            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, jahr);
             teamerOrgsGenerated++;
           }
         } catch (err) {

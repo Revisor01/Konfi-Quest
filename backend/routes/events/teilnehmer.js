@@ -90,12 +90,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         if (addedIsTeamer && !event.teamer_needed && !event.teamer_only) {
           await client.query('ROLLBACK');
           client.release();
-          return res.status(400).json({ error: 'Dieses Event ist nicht für Teamer:innen vorgesehen' });
+          return res.status(400).json({ error: 'Dieses Event ist nicht für das Team vorgesehen' });
         }
         if (!addedIsTeamer && event.teamer_only) {
           await client.query('ROLLBACK');
           client.release();
-          return res.status(400).json({ error: 'Dieses Event ist nur für Teamer:innen' });
+          return res.status(400).json({ error: 'Dieses Event ist nur für das Team' });
         }
 
         // Teamer buchen nie in Timeslots (wie im Selbst-Buchungs-Pfad).

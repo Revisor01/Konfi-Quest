@@ -16,6 +16,7 @@ import {
   ICON_GRUPPE_GEFUELLT,
   ICON_KATEGORIE_GEFUELLT,
   ICON_LISTE,
+  ICON_PRISMA,
   ICON_RASTER_GEFUELLT,
   ICON_SCHILD_GEFUELLT,
   ICON_STATISTIK_GEFUELLT,
@@ -43,6 +44,12 @@ export interface BadgeKriteriumExtra {
   activity_ids?: number[];
   /** category_activities: Name der Kategorie. */
   required_category?: string;
+  /**
+   * category_combination: mehrere Kategorien, von denen eine Mindestzahl
+   * abgedeckt sein muss. Jede Kategorie zaehlt hoechstens einmal — anders als
+   * bei category_activities, wo dieselbe Kategorie mehrfach zaehlt.
+   */
+  required_categories?: string[];
   /** time_based: der gespeicherte Wert — die Anzeige rechnet in Wochen um. */
   days?: number;
   /**
@@ -65,6 +72,7 @@ export const CRITERIA_COLORS: Record<string, string> = {
   unique_activities: '#10dc60',
   activity_combination: '#7044ff',
   category_activities: '#0cd1e8',
+  category_combination: '#0891b2',
   specific_activity: '#ffce00',
   streak: '#eb445a',
   time_based: '#8e8e93',
@@ -81,6 +89,7 @@ const CRITERIA_ICONS: Record<string, string> = {
   both_categories: ICON_RASTER_GEFUELLT,
   activity_combination: ICON_LISTE,
   category_activities: ICON_KATEGORIE_GEFUELLT,
+  category_combination: ICON_PRISMA,
   time_based: ICON_UHRZEIT_GEFUELLT,
   activity_count: ICON_ZUSAGE_GEFUELLT,
   event_count: ICON_TERMIN_GEFUELLT,

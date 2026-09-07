@@ -67,12 +67,55 @@ describe('generateBiblicalPassword', () => {
     // doppelt drin und hatte damit die doppelte Wahrscheinlichkeit.
     const getroffen = new Set(passwoerter.map((p) => zerlege(p).buch));
 
-    // Bei 2000 Ziehungen aus 66 Buechern ist ein ungetroffenes Buch extrem
-    // unwahrscheinlich; die Grenze laesst trotzdem Luft.
-    expect(getroffen.size).toBeGreaterThanOrEqual(60);
+    // Frueher stand hier `getroffen.size >= 60`. Das war eine Wette auf den
+    // Zufall und ging in rund 1 % der Laeufe verloren (nachgemessen am
+    // 07.09.2026: 300 Laeufe, 3 unter der Grenze, niedrigster Wert 59).
+    // Ein zufaellig roter Lauf ueberspringt still den Deploy — die Schwelle
+    // war also nicht nur unscharf, sondern schaedlich.
+    //
+    // Die Ursache ist kein Fehler: Gezogen wird aus allen STELLEN, nicht aus
+    // Buechern. Sechs sehr kurze Buecher (3Johannes, 2Johannes, Jona,
+    // Obadja, Philemon, Judas) kommen bei 2000 Ziehungen im Schnitt weniger
+    // als zweimal vor, eines davon fehlt daher regelmaessig rein zufaellig.
+    //
+    // Geprueft wird deshalb, was der Test wirklich meint: dass die grossen
+    // Buecher IMMER vorkommen (dort ist ein Fehlen ein echter Befund) und
+    // dass kein erfundenes Buch auftaucht. Der alte Befund — fehlende
+    // Ordnungszahl-Buecher, "Johannes" doppelt — wird davon voll erfasst.
+    // Die zehn versreichsten Buecher (2527 bis 959 Verse). Bei 2000
+    // Ziehungen ist jedes von ihnen hundertfach zu erwarten — fehlt hier
+    // eines, ist der Topf tatsaechlich kaputt und nicht der Zufall schuld.
+    const GROSSE_BUECHER = ['Psalm', 'Genesis', 'Jeremia', 'Jesaja', 'Numeri',
+      'Hesekiel', 'Exodus', 'Lukas', 'Matthäus', 'Apostelgeschichte'];
+    for (const buch of GROSSE_BUECHER) {
+      expect(VERSE_PRO_KAPITEL).toHaveProperty(buch);
+      expect(getroffen.has(buch)).toBe(true);
+    }
+
+    // Beide Johannesbriefe und das Evangelium sind eigene Eintraege, keine
+    // Dubletten — das war der zweite Teil des alten Befunds.
+    expect(VERSE_PRO_KAPITEL).toHaveProperty('Johannes');
+    expect(VERSE_PRO_KAPITEL).toHaveProperty('1Johannes');
+    expect(VERSE_PRO_KAPITEL).toHaveProperty('2Johannes');
+    expect(VERSE_PRO_KAPITEL).toHaveProperty('3Johannes');
+
     for (const buch of getroffen) {
       expect(VERSE_PRO_KAPITEL).toHaveProperty(buch);
     }
+  });
+
+  it('Rut faellt heraus, weil jede seiner Stellen zu kurz ist', () => {
+    // Nachgemessen (07.09.2026): Rut ist das einzige Buch, das in 200.000
+    // Ziehungen NIE vorkommt. Das ist kein Fehler, sondern die Policy:
+    // "Rut1,1" hat 6 Zeichen, die Mindestlaenge ist 8. Rut hat 4 Kapitel
+    // und hoechstens zweistellige Verse, kommt also nie ueber 7 Zeichen.
+    //
+    // Der Test haelt das ausdruecklich fest, damit niemand spaeter ein
+    // "fehlendes Buch" als Fehler meldet und die Mindestlaenge aufweicht.
+    const kuerzesteRutStelle = 'Rut1,1';
+    expect(kuerzesteRutStelle.length).toBeLessThan(8);
+    expect(VERSE_PRO_KAPITEL).toHaveProperty('Rut');
+    expect(VERSE_PRO_KAPITEL.Rut.length).toBe(4);
   });
 
   it('trifft auch die kurzen Buecher — sie fallen nicht stillschweigend raus', () => {

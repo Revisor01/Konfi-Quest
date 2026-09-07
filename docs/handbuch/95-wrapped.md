@@ -204,8 +204,10 @@ damit die Fotos wirken und nicht als Miniatur untergehen. Ausgeblendete
 Beiträge kommen nicht vor.
 
 **4. Deine Events** — Anzahl der besuchten Termine, dazu „von N verfügbaren“.
-Erscheint immer. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte
-Event unter der Überschrift „Dein letztes Event“.
+*Nur, wenn im Zeitraum mindestens ein Termin besucht wurde.* Wer keinen hat,
+bekommt die Seite gar nicht erst — eine Seite mit einer Null darauf ist keine
+Erinnerung. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte Event
+unter der Überschrift „Dein letztes Event“.
 
 > Auf dieser Seite steht immer „0 mal abgesagt“ — auch bei tatsächlichen
 > Absagen. Die Zahl ist im Programm fest eingetragen und wird nicht berechnet.
@@ -224,7 +226,7 @@ werden Aktivitäten und besuchte Termine zusammen. Erscheint immer.
 
 **7. Deine Punkte** — Gesamtpunkte groß, darunter getrennt Gottesdienst und
 Gemeinde. *Nur, wenn Bonuspunkte vergeben wurden*, zusätzlich „davon N
-Bonuspunkte“. Erscheint immer.
+Bonuspunkte“. *Nur, wenn mindestens ein Punkt zusammengekommen ist.*
 
 **8. Endspurt ODER Über dem Ziel** — eine von beiden, nie beide:
 
@@ -236,7 +238,9 @@ Bonuspunkte“. Erscheint immer.
 Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.
 
 **9. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
-sechs Abzeichen als Symbole. Erscheint immer.
+sechs Abzeichen als Symbole. *Nur, wenn im Zeitraum mindestens ein Abzeichen
+verdient wurde.* Weil der Zeitraum am Beginn der Konfi-Zeit anfängt, zählt hier
+alles mit, was seither verdient wurde — auch aus einem früheren Sommer.
 
 **10. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
 Konfirmationstermin hinterlegt ist* — praktisch also fast immer, weil sonst ein
@@ -246,7 +250,7 @@ Tage noch“.
 > Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite **immer** — auch
 > wenn die Konfirmation längst vorbei ist.
 
-**11. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
+**14. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
 großen Lettern **„Dein Weg. Deine Zeit. Dein Glaube.“** und als Einladung
 „Werde Teamer:in — bleib dabei und gestalte das nächste Konfi-Jahr mit“. Immer
 die letzte Seite: Der Rückblick endet nicht mit einer Zahl, sondern mit einer
@@ -298,6 +302,21 @@ musst nichts pflegen.
 auf der Weihnachtsseite, nicht zusätzlich auf der Gottesdienst-Seite. Niemand
 bekommt zwei Seiten über denselben Termin.
 
+### Die Seite zur Sommerfreizeit 2026
+
+Eine Sonderseite für die Fahrt nach **Stavanger**: „Du warst dabei. 14
+unvergessliche Tage in Himmel og Hav.“ Sie erscheint bei **Konfis und
+Teamer:innen gleichermaßen** — aber nur bei denen, die mitgefahren sind.
+
+Wer dabei war, entscheidet sich an den Daten: Wer eine Aktivität oder einen
+Termin der Kategorie **„Sommerfreizeit“** aus dem Sommer 2026 hat, bekommt die
+Seite. Gibt es die Kategorie in eurer Gemeinde nicht, erscheint die Seite bei
+niemandem.
+
+Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
+Tage, ganz gleich wie oft jemand abgehakt wurde. Eine spätere Sommerfreizeit
+löst diese Seite nicht aus.
+
 ### Woher die Zahlen kommen
 
 | Seite | Datenquelle |
@@ -310,40 +329,90 @@ bekommt zwei Seiten über denselben Termin.
 | Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
 | Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
 | Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
+| Nachgerückt | Buchungen, die von der Warteliste nachgerückt sind; ab einer |
+| Der lange Atem | Spanne zwischen erstem und letztem Termin; ab 5 Terminen und 60 Tagen |
+| Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit; ab 4 Terminen an dem Tag und mindestens der Hälfte aller |
+| Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge; ab zwei Arten |
 | Highlight | Chat-Nachrichten und erhaltene Reaktionen aus dem [Chat](90-chat.md), Challenge-Beiträge, Anmeldungen und Absagen — alles nur aus dem eigenen Zeitraum und der eigenen Gemeinde, verglichen mit dem Durchschnitt des Jahrgangs |
 
-Der **Zeitraum** reicht vom 1. September des Vorjahres bis zur Konfirmation.
-Fehlt ein Konfirmationstermin, wird der 31. August als Ende angenommen — das
-volle Konfi-Jahr.
+Der **Zeitraum** reicht vom Beginn der Konfi-Zeit bis zu dem Tag, an dem der
+Rückblick erstellt wird — bei manchen sind das zwei Jahre. Der
+Konfirmationstermin schneidet nichts ab; er wird nur auf der eigenen Seite
+gezeigt. Wer stattdessen einen **Zwischenbericht** will, trägt beim Anlegen
+einen eigenen Zeitraum ein; dann gilt der.
+
+Beim **Teamer-Rückblick** schließt jede Ausgabe lückenlos an die vorige an: Die
+erste beginnt beim Eintritt ins Team, jede weitere am Ende der letzten. Auch
+hier geht ein eingetragener Zeitraum vor.
 
 ## Die Seiten des Teamer-Rückblicks
 
-Hier sind es **immer genau sieben Seiten**, ohne Bedingungen.
+Es sind **höchstens dreizehn Seiten** — und wie bei den Konfis erscheint eine
+Seite nur, wenn sie etwas zu erzählen hat. Wer neu im Team ist, bekommt keine
+Reihe von Seiten mit einer Null darauf, sondern einen kürzeren Rückblick.
+Begrüßung und Abschluss stehen immer.
 
 **1. Begrüßung** — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei
 den Konfis ohne Jahrgangsangabe.
 
-**2. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
+**2. So fing es an** — der erste Termin des Jahres mit Namen und Datum.
+*Entfällt, wenn im Zeitraum kein Termin besucht wurde.*
+
+**3. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
 eingetragen war, überschrieben mit „Events geleitet“. *Nur, wenn vorhanden*,
 darunter das größte Event mit Teilnehmerzahl.
+*Entfällt ohne Termine im Zeitraum.*
 
-**3. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
+**4. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
 die Namen der zugewiesenen Jahrgänge. Grundlage ist die Jahrgangs-Zuweisung: Wer
 keinem Jahrgang zugewiesen ist, steht hier bei null.
+*Entfällt, wenn niemand zugewiesen ist.*
 
-**4. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
+**5. Nicht allein** — mit wie vielen anderen Teamer:innen zusammen die
+Jahrgänge betreut wurden. Gezählt werden nur Teamer:innen auf denselben
+Jahrgängen, keine Admins; Namen stehen nicht dabei.
+*Entfällt, wenn niemand sonst auf den Jahrgängen steht.*
+
+**6. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
 Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
+*Entfällt ohne Abzeichen im Zeitraum.*
 
-**5. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
+**7. Das erste** — das zuerst verliehene Abzeichen des Jahres.
+*Entfällt ohne Abzeichen im Zeitraum.*
 
-**6. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …“. Gerechnet
-wird ab dem Eintrittsdatum.
+**8. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
+*Entfällt ohne Zertifikate im Zeitraum.*
 
-> **Achtung:** Ist kein Eintrittsdatum hinterlegt, steht dort „0 Jahre als
-> Teamer:in“ und **„Dabei seit 01. Januar 1970“**. Wenn dir das auffällt, fehlt
-> bei der Person das Feld „Teamer:in seit“.
+**9. Hinter den Kulissen** — wie viele Challenge-Beiträge die Teamer:in
+freigegeben hat. Gezählt wird **nur die eigene Freigabe** — nie, wie viel
+jemand ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch
+freigegebene Beiträge unmoderierter Challenges zählen nicht mit, dort hat
+niemand hingesehen.
+*Entfällt unter fünf Freigaben.*
 
-**7. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
+**10. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
+Gezählt werden echte Antworten (Bezug auf eine Nachricht), keine eigenen
+Beiträge ohne Bezug; zurückgenommene Antworten zählen nicht.
+*Entfällt unter fünf Antworten.*
+
+**11. Dein erstes Jahr** — für alle, die im Rückblicksjahr ins Team gekommen
+sind. Sie bekommen diese Seite **statt** „Dein Engagement" — beides zugleich
+wäre dieselbe Auskunft zweimal.
+*Entfällt ab dem zweiten Jahr und wenn kein Eintrittsdatum bekannt ist.*
+
+**12. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
+wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
+
+> **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
+> jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
+> „Teamer:in seit".
+
+**13. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
+dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
+Jahrgang, sofern bekannt.
+*Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
+
+**14. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.
 
 ## Wo man den Rückblick wiederfindet

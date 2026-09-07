@@ -5,8 +5,8 @@
 // zufaelligen", sondern eine ERZAEHLUNG mit fester Dramaturgie, in die sich
 // dynamische Seiten einschieben:
 //
-//   Opener - Chat - Events - Kategorie - Challenges - Challenges Special -
-//   Punkte - Badges - Konfi - Abschluss
+//   Opener - Events - Kategorie - Challenges - Challenges Special -
+//   Punkte - Aktivster Monat - Badges - Konfi - Abschluss
 //
 // Rund zehn Seiten fuer eine sehr aktive Person. Die Zahl ergibt sich aus
 // dem, was jemand getan hat, nicht aus einer festen Obergrenze.
@@ -32,8 +32,26 @@ const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKate
  * Die feste Dramaturgie. Diese Seiten tragen die Erzaehlung (Auftakt, Mitte,
  * Schluss) und erscheinen bei jeder Person -- ohne sie entstuende bei einer
  * stillen Konfi gar kein Rueckblick.
+ *
+ * VON SECHS AUF DREI (07.09.2026, gemessen an Produktion): 'events',
+ * 'punkte' und 'badges' standen hier und hatten damit KEINE Bedingung --
+ * sie erschienen auch mit einer glatten Null darauf. Gemessen an einer
+ * echten Konfi (Org 1, Jahrgang 2026/27): Ihr Jahrgang hat einen
+ * Konfirmationstermin im Mai 2027, der Zeitraum beginnt deshalb am
+ * 01.09.2026 -- ihre 20 Abzeichen aus dem Sommer 2026 liegen davor und
+ * fallen heraus. Sie bekam eine Seite "0 von 55".
+ *
+ * Das verletzt Simons Grundregel oben: "Eine Kachel mit einer Null darauf
+ * ist keine Erinnerung." Die drei Zahl-Seiten haben jetzt Bedingungen wie
+ * jede andere Zahl-Seite auch (siehe BEDINGUNGEN).
+ *
+ * WAS FEST BLEIBT UND WARUM: 'intro' zeigt Name und Jahrgang, 'werde-teamer'
+ * ist reiner Text -- beide koennen gar keine Null tragen. 'abschluss' traegt
+ * Simons Botschaft ("Dein Weg. Deine Zeit. Dein Glaube.") als Seiteninhalt;
+ * die drei Zahlen darunter sind eine Zusammenfassung, kein Highlight. Ohne
+ * diese drei entstuende bei einer stillen Konfi ueberhaupt kein Rueckblick.
  */
-const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss', 'werde-teamer'];
+const FESTE_KACHELN = ['intro', 'abschluss', 'werde-teamer'];
 
 /**
  * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
@@ -45,12 +63,44 @@ const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss', 'werd
  */
 const DRAMATURGIE = [
   'intro',              // 1  Auftakt
-  'chat',               // 2  nur wer wirklich geschrieben hat
-  'events',             // 3  Termine des Jahres
-  'kategorie',          // 4  der eigene Schwerpunkt (mehrere moeglich)
-  'challenges',         // 5  zwei Momente und Stempel
-  'challenge-momente',  // 6  Challenges Special: die Bilder, gross
-  'punkte',             // 7
+  // 'chat' STAND HIER (bis 06.09.2026) und wurde nie gezeigt: Es gab
+  // keinen Renderer und ueberhaupt keine Chat-Komponente -- die Seite blieb
+  // leer. Ersatzlos gestrichen statt nachgebaut, weil die Chat-Zahlen
+  // bereits eine Seite haben: Das persoenliche Highlight ('chat_star',
+  // 'reaktions_magnet') zeigt genau diese Werte, und zwar genau dann, wenn
+  // jemand darin heraussticht. Eine zweite Chat-Seite haette dieselbe Zahl
+  // ein zweites Mal erzaehlt.
+  'events',             // 2  Termine des Jahres
+  // 2b: Warteliste-Held:in -- direkt bei den Terminen, weil die Seite von
+  // ihnen erzaehlt: nicht wie viele, sondern wie du hineingekommen bist.
+  'warteliste',         // 2b du hast gewartet und es hat geklappt
+  'kategorie',          // 3  der eigene Schwerpunkt (mehrere moeglich)
+  // 3b: Die Sonderseite zur Sommerfreizeit 2026 nach Stavanger. Sie steht
+  // direkt bei den Schwerpunkt-Seiten, weil sie dieselbe Frage beantwortet
+  // -- wo warst du -- nur eben fuer die eine Fahrt, ueber die man nachher
+  // noch jahrelang redet. Wer nicht dabei war, sieht sie nie.
+  'stavanger-2026',     // 3b die Fahrt nach Norwegen
+  'challenges',         // 4  wie oft du mitgemacht hast
+  'challenge-momente',  // 5  Challenges Special: die Bilder, gross
+  // 5b: Der Vielseitige -- direkt bei den Challenges, weil er von ihnen
+  // erzaehlt: nicht wie viele Beitraege, sondern auf wie vielen Wegen.
+  'vielseitig',         // 5b mit wie vielen Medienarten du geantwortet hast
+  'punkte',             // 6
+  // 7: Der aktivste Monat -- eine Zeit-/Rhythmus-Seite ("wann warst du am
+  // meisten unterwegs"). Sie stand bis zum 06.09.2026 NICHT hier, obwohl es
+  // die Komponente, den Renderer und die Daten (slides.aktivster_monat)
+  // laengst gab. Seit Snapshot-Version 3 das Backend die Seiten waehlt,
+  // wurde sie deshalb nie mehr gezeigt -- nur der v2-Fallback im Frontend
+  // kannte sie noch.
+  //
+  // Der Platz ist bewusst hier: nach den Punkten, vor den Abzeichen. Die
+  // Punkte sagen WIE VIEL, der Monat sagt WANN -- zusammen ergeben sie das
+  // Bild des Jahres, bevor es zu den Auszeichnungen geht.
+  'aktivster-monat',    // 7  wann du am meisten unterwegs warst
+  // 7b/7c: Zwei weitere Zeit-/Rhythmus-Seiten, direkt beim aktivsten Monat.
+  // Erst WANN im Jahr (Monat), dann WIE LANG (Spanne), dann AN WELCHEM TAG.
+  'langer-atem',        // 7b ueber welche Spanne du dabei warst
+  'wochentag',          // 7c an welchem Tag deine Termine lagen
   'badges',             // 8
   'seltenstes',         // 8b "Das haben nur x %" -- Simons Idee
   'konfirmation',       // 9  "Konfi"
@@ -63,10 +113,31 @@ const DRAMATURGIE = [
 
 /**
  * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
- * plus Kategorie-Seiten, die mehrfach vorkommen duerfen. 14 ist die harte
- * Grenze, ab der niemand mehr durchblaettert.
+ * plus Kategorie-Seiten, die mehrfach vorkommen duerfen.
+ *
+ * VON 14 UEBER 16 UND 18 AUF 19 (07.09.2026): Mit den neuen Seiten liegt das
+ * theoretische Maximum bei 19 -- gemessen, nicht geschaetzt: 6 feste
+ * + 8 bedingte (nach Abzug des Zeit-Kontingents) + 4 Kategorie-/Datums-
+ * Seiten + die Sonderseite 'stavanger-2026'. Ein niedrigerer Deckel schnitt
+ * genau dort ab, wo die Dramaturgie am dichtesten ist, und verdraengte je
+ * nach Fall 'seltenstes', 'konfirmation' oder die Zeit-Seiten.
+ *
+ * DER SCHRITT VON 18 AUF 19 IST GEMESSEN, nicht vorsorglich: Mit der
+ * Sonderseite kam bei einer sehr aktiven Konfi, die bei der Fahrt dabei
+ * war, genau eine Seite dazu -- und der Deckel von 18 fraess daraufhin
+ * 'langer-atem'. Das Zeit-Kontingent fiel damit still von zwei auf eine
+ * Seite, ohne dass irgendwo etwas fehlschlug ausser den Tests, die genau
+ * diese zwei Seiten festhalten. Wer eine weitere Seite hinzufuegt, rechnet
+ * hier mit.
+ *
+ * WARUM DAS UNBEDENKLICH IST: Der Deckel ist NICHT das, was den Rueckblick
+ * kurz haelt -- das tun die Bedingungen. JEDE nicht-feste Seite muss sich
+ * qualifizieren (mindestens 5 Termine, mindestens 4 Antworten, ein
+ * seltenstes Abzeichen ...). Die 18 treffen nur eine Person, auf die
+ * WIRKLICH ALLES zutrifft; Simons "rund zehn" bleibt der Normalfall.
+ * Der Deckel ist die Notbremse, nicht die Regel.
  */
-const MAX_KACHELN = 14;
+const MAX_KACHELN = 19;
 
 // Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
 // Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
@@ -77,27 +148,112 @@ const MAX_DATUM_SEITEN = 2;
 const MAX_KATEGORIE_SEITEN = 2;
 
 /**
+ * Die Zeit-/Rhythmus-Seiten ('aktivster-monat', 'langer-atem', 'wochentag')
+ * beantworten alle dieselbe Frage: WANN warst du da. Drei davon
+ * hintereinander sind keine Erzaehlung mehr, sondern eine Statistik -- und
+ * sie wuerden zusammen den Deckel sprengen und hinten Seiten verdraengen,
+ * die etwas anderes erzaehlen (gemessen 07.09.2026: theoretisches Maximum
+ * 18 bei einem Deckel von 14).
+ *
+ * Zwei davon reichen. Welche zwei, entscheidet die Reihenfolge der
+ * Dramaturgie -- dieselbe Regel wie bei den Kategorie- und Datums-Seiten.
+ */
+const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
+const MAX_ZEIT_SEITEN = 2;
+
+/**
+ * Seiten, die der Deckel NICHT wegkuerzen darf, obwohl sie nicht zu den
+ * festen gehoeren.
+ *
+ * Zwei muss man sich VERDIENEN: das seltenste Abzeichen ("das haben nur
+ * x %") und die Konfirmation. Sie stehen weit hinten in der Dramaturgie und
+ * fielen deshalb als Erste heraus, sobald vorne Seiten dazukamen -- gemessen
+ * am 07.09.2026, als das Maximum auf 18 stieg. Eine Konfi verlor damit
+ * ausgerechnet die zwei Seiten, die ueber sie am meisten sagen, zugunsten
+ * einer weiteren Kategorie-Kachel.
+ *
+ * DAZU DIE DREI ZAHL-SEITEN (07.09.2026): 'events', 'punkte' und 'badges'
+ * gehoerten bis dahin zu FESTE_KACHELN und waren damit doppelt geschuetzt --
+ * gegen den Deckel UND gegen jede Bedingung. Sie haben jetzt Bedingungen
+ * (eine Null erscheint nicht mehr), sollen aber, WENN sie etwas zu erzaehlen
+ * haben, weiterhin nicht vom Deckel gefressen werden: Sie tragen die Mitte
+ * der Erzaehlung, und genau dieser Fall war schon einmal der Befund vom
+ * 07.09.2026 ("Der Deckel darf keine feste Seite fressen", siehe unten).
+ * Der Schutz bleibt also erhalten, nur die Bedingungslosigkeit faellt weg.
+ */
+const GESCHUETZTE_KACHELN = [
+  'events', 'punkte', 'badges', 'seltenstes', 'konfirmation',
+  // Die Sonderseite zur Sommerfreizeit. Sie trifft auf sehr wenige Leute zu
+  // und ist fuer genau die das Ereignis des Jahres -- sie darf nicht dem
+  // Deckel zum Opfer fallen, weil jemand nebenbei viele Kategorie-Seiten
+  // gesammelt hat.
+  'stavanger-2026'
+];
+
+/**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
  * Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern --
  * deshalb faengt waehleKacheln() Fehler ab.
  */
 const BEDINGUNGEN = {
+  // Die drei Zahl-Seiten der Erzaehlung. Sie standen bis zum 07.09.2026 in
+  // FESTE_KACHELN und hatten deshalb gar keine Bedingung -- siehe die
+  // Begruendung dort.
+  //
+  // Die Schwelle ist bewusst "groesser als null" und nicht hoeher: Ein
+  // einziger Termin, ein einziger Punkt, ein einziges Abzeichen IST eine
+  // Erinnerung, und die Seiten erzaehlen das auch so ("Einmal
+  // hingegangen.", "Der Anfang ist gemacht.", "Das erste ist das
+  // schoenste."). Verboten ist nur die Null.
+  events: (s) => (s.events?.total_attended || 0) > 0,
+  punkte: (s) => (s.punkte?.total || 0) > 0,
+  badges: (s) => (s.badges?.total_earned || 0) > 0,
   // Simons Regel woertlich: "Wer nicht viel geschrieben hat, braucht keine
-  // Chat-Kachel." Eine einzelne Nachricht ist keine Geschichte.
-  chat: (s, schnitt) => {
-    const eigene = s.chat?.nachrichten_gesendet || 0;
-    if (eigene < 5) return false;
-    const mittel = schnitt?.chat;
-    // Vergleich nur nach oben: unter dem Schnitt gibt es die Seite nicht.
-    return typeof mittel !== 'number' || eigene >= mittel;
-  },
+  // Kachel." Eine einzelne Teilnahme ist keine Geschichte -- deshalb erst
+  // ab dem ersten echten Beitrag.
+  // Nur bei einem echten Nachruecken. NULL in der Spalte heisst UNBEKANNT
+  // (Bestandszeilen vor Migration 145) und ergibt hier 0 -- niemand bekommt
+  // die Seite auf Verdacht.
+  warteliste: (s) => (s.warteliste?.nachgerueckt || 0) > 0,
   challenges: (s) => (s.challenges?.beitraege || 0) > 0,
   // Nur wenn das Backend ein seltenstes Abzeichen bestimmt hat. Das setzt
   // mindestens 5 Konfis in der Gemeinde voraus -- bei zweien waere "50 %"
   // eine Zahl ohne Aussage.
   seltenstes: (s) => Boolean(s.badges?.seltenstes?.name),
   'challenge-momente': (s) => (s.challenge_momente?.length || 0) > 0,
-  konfirmation: (s) => Boolean(s.zeitraum?.konfirmation)
+  // Mindestens zwei Aktivitaeten in dem Monat. Bei einer einzigen waere
+  // "dein aktivster Monat" keine Aussage ueber einen Rhythmus, sondern nur
+  // der Monat, in dem zufaellig das Einzige stattfand -- und "1 Aktivitaet"
+  // gross auf einer Seite ist wieder eine Kachel mit fast einer Null darauf.
+  'aktivster-monat': (s) => (s.aktivster_monat?.aktivitaeten || 0) >= 2,
+  // Mindestens 5 Termine UND eine Spanne, die etwas aussagt. Bei zwei
+  // Terminen im September und im Mai waeren es rechnerisch auch 240 Tage --
+  // die Zahl erzaehlte dann das Gegenteil von "du warst durchgehend dabei".
+  'langer-atem': (s) => (s.langer_atem?.termine || 0) >= 5 && (s.langer_atem?.tage || 0) >= 60,
+  // Nur wenn ein Tag wirklich heraussticht: mindestens 4 Termine an dem Tag
+  // und die Haelfte aller Termine. Sonst ist "dein Wochentag" nur der Tag,
+  // der zufaellig einmal oefter vorkam.
+  wochentag: (s) => (s.wochentag?.anzahl || 0) >= 4 && (s.wochentag?.anteil || 0) >= 50,
+  // "2 von 3 Medienarten" statt "alle drei": allowed_media steht per Default
+  // auf ["text","photo"], Audio ist oft gar nicht erlaubt -- eine Seite, die
+  // alle drei verlangt, traefe fast nie zu.
+  vielseitig: (s) => (s.medienarten?.length || 0) >= 2,
+  konfirmation: (s) => Boolean(s.zeitraum?.konfirmation),
+  // STAVANGER 2026 -- die Sonderseite zur Sommerfreizeit.
+  //
+  // Sie erscheint NUR, wenn die Person die Kategorie "Sommerfreizeit" im
+  // Zeitraum der Fahrt hat. Das Backend setzt dafuer ein einzelnes
+  // Wahrheitsfeld in den Snapshot (routes/wrapped.js); hier steht bewusst
+  // KEINE Zahl und kein Schwellenwert:
+  //
+  //   Die "14 Tage" auf der Seite sind ein FESTER TEXT (Simon, 07.09.2026).
+  //   Die Fahrt dauerte 14 Tage, ganz gleich wie oft jemand angehakt wurde.
+  //   Eine gerechnete Zahl wuerde sagen "3 Tage in Norwegen" -- das waere
+  //   eine Aussage ueber die Pflege der Liste, nicht ueber die Fahrt.
+  //
+  // Solange die Kategorie in keiner Gemeinde existiert (Stand 07.09.2026),
+  // ist das Feld ueberall false und die Seite erscheint nirgends.
+  'stavanger-2026': (s) => s.stavanger_2026 === true
 };
 
 /**
@@ -174,28 +330,187 @@ function waehleKacheln(slides, schnitt = null) {
     if (!bedingung) continue;
     let trifft = false;
     try { trifft = bedingung(slides, schnitt) === true; } catch { trifft = false; }
-    if (trifft) gewaehlt.push(key);
+    if (!trifft) continue;
+    // Kontingent der Zeit-/Rhythmus-Seiten: hoechstens zwei davon.
+    if (ZEIT_SEITEN.includes(key)) {
+      const schonGewaehlt = gewaehlt.filter(k => ZEIT_SEITEN.includes(k)).length;
+      if (schonGewaehlt >= MAX_ZEIT_SEITEN) continue;
+    }
+    gewaehlt.push(key);
   }
 
-  // Doppelte raus (Reihenfolge bleibt), dann deckeln. Der Abschluss ist
-  // IMMER die letzte Seite -- auch wenn der Deckel vorher greift.
+  // Doppelte raus (Reihenfolge bleibt), dann deckeln.
   const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
   if (ohneDoppelte.length <= MAX_KACHELN) return ohneDoppelte;
 
-  // Abschluss und Einladung stehen IMMER am Ende, auch wenn der Deckel
-  // vorher greift.
-  const schluss = ohneDoppelte.filter(k => k === 'abschluss' || k === 'werde-teamer');
-  const rest = ohneDoppelte.filter(k => k !== 'abschluss' && k !== 'werde-teamer');
-  return [...rest.slice(0, MAX_KACHELN - schluss.length), ...schluss];
+  // DER DECKEL DARF KEINE FESTE SEITE FRESSEN (Befund 07.09.2026).
+  //
+  // Frueher wurden nur 'abschluss' und 'werde-teamer' geschuetzt und der
+  // Rest positionsweise abgeschnitten. Alles, was WEIT HINTEN in der
+  // Dramaturgie steht, fiel damit zuerst heraus -- auch 'badges' und
+  // 'punkte', die zu den FESTE_KACHELN gehoeren und die Erzaehlung tragen.
+  // Aufgefallen ist es, als drei neue Zeit-Seiten dazukamen: Eine sehr
+  // aktive Konfi verlor ihre Abzeichen-Seite, ohne dass irgendwo etwas
+  // fehlschlug.
+  //
+  // Jetzt ueberleben ALLE festen Seiten den Deckel; gekuerzt wird
+  // ausschliesslich bei den dynamischen. Die Reihenfolge der Dramaturgie
+  // bleibt dabei erhalten.
+  const unkuerzbar = ohneDoppelte.filter(
+    k => FESTE_KACHELN.includes(k) || GESCHUETZTE_KACHELN.includes(k)
+  );
+  const kuerzbar = ohneDoppelte.filter(
+    k => !FESTE_KACHELN.includes(k) && !GESCHUETZTE_KACHELN.includes(k)
+  );
+  const platzFuerKuerzbare = Math.max(0, MAX_KACHELN - unkuerzbar.length);
+  const behalten = new Set([...unkuerzbar, ...kuerzbar.slice(0, platzFuerKuerzbare)]);
+  return ohneDoppelte.filter(k => behalten.has(k));
+}
+
+/**
+ * =====================================================================
+ * DER TEAMER-RUECKBLICK
+ * =====================================================================
+ *
+ * BEFUND 06.09.2026: Der Teamer-Rueckblick hatte sieben fest verdrahtete
+ * Seiten OHNE jede Bedingung -- das Handbuch (95-wrapped.md) hielt das sogar
+ * ausdruecklich fest ("immer genau sieben Seiten, ohne Bedingungen"). Simons
+ * Grundregel "Eine Kachel mit einer Null darauf ist keine Erinnerung" galt
+ * damit fuer Konfis, aber nicht fuers Team: Wer neu dabei war, bekam
+ * "0 Abzeichen", "0 Zertifikate" und "0 Konfis" als eigene Seiten
+ * hintereinander.
+ *
+ * Die einzige Ausnahme war die Jahre-Seite, die das Frontend seit dem
+ * 01.09.2026 bei fehlendem teamer_since aussparte -- eine Bedingung an der
+ * falschen Stelle, im Frontend statt in der Auswahl.
+ */
+
+/**
+ * Fest: Auftakt und Abschluss tragen die Erzaehlung. Ohne sie entstuende bei
+ * einer neuen Teamer:in gar kein Rueckblick.
+ */
+const FESTE_TEAMER_KACHELN = ['teamer-intro', 'teamer-abschluss'];
+
+/** Die Reihenfolge des Teamer-Rueckblicks. */
+const TEAMER_DRAMATURGIE = [
+  'teamer-intro',        // 1  Auftakt
+  // 2: Der Anfang -- der eine Termin, mit dem das Jahr losging. Steht VOR
+  // der Gesamtzahl: erst der Moment, dann die Bilanz.
+  'teamer-anfang',       // 2  wie das Jahr begann
+  'teamer-events',       // 3  die Termine des Jahres
+  // 3b: Dieselbe Sonderseite wie im Konfi-Rueckblick. Simons Vorgabe:
+  // "das sehen dann nur die teamer und konfis die dabei waren" -- die
+  // Fahrt gehoert beiden Seiten gleichermassen.
+  'stavanger-2026',      // 3b die Fahrt nach Norwegen
+  'teamer-konfis',       // 4  wen du begleitet hast
+  // 4b: Dein Team -- direkt nach den Konfis, weil beide von Menschen
+  // erzaehlen: erst wen du begleitet hast, dann mit wem zusammen.
+  'teamer-team',         // 4b mit wem zusammen
+  'teamer-badges',       // 5  Abzeichen
+  // 6: Das erste Abzeichen -- direkt nach der Abzeichen-Seite, weil es
+  // dieselbe Sache aus der Naehe zeigt: nicht wie viele, sondern welches
+  // zuerst.
+  'teamer-erstes-abzeichen', // 6  womit es losging
+  'teamer-zertifikate',  // 7  Zertifikate
+  // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
+  // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
+  // 7b: Die Challenge-Begleiterin -- die Moderationsarbeit, die sonst
+  // niemand sieht. Steht bei den Taetigkeits-Seiten, vor dem Chat.
+  'teamer-moderation',   // 7b was du freigegeben hast
+  'teamer-antworten',    // 8  wie oft du geantwortet hast
+  'teamer-jahre',        // 9  "seit x Jahren dabei"
+  // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
+  // Konfi war. Steht bewusst NACH den Jahren im Team: erst wie lange du
+  // dabei bist, dann wie es angefangen hat. Und vor dem Abschluss, damit
+  // der Rueckblick auf dem persoenlichsten Punkt ausklingt.
+  // 9b: Neu dabei -- das Gegenstueck zu "seit x Jahren". Steht direkt
+  // daneben, weil beide dieselbe Frage beantworten: wie lange schon.
+  'teamer-neu-dabei',    // 9b dein erstes Jahr
+  'teamer-konfi-zeit',   // 10 vom Konfi zur Teamer:in
+  'teamer-abschluss'     // 11 Uebersicht
+];
+
+/**
+ * Bedingungen der nicht-festen Teamer-Seiten. Dieselbe Regel wie bei den
+ * Konfis: Eine Seite erscheint nur, wenn sie etwas zu erzaehlen hat.
+ */
+const TEAMER_BEDINGUNGEN = {
+  // Wer im Zeitraum keinen Termin begleitet hat, braucht keine Termin-Seite.
+  'teamer-events': (s) => (s.events_geleitet?.total || 0) > 0,
+  // "0 Konfis betreut" ist keine Erinnerung, sondern eine Luecke in der
+  // Jahrgangs-Zuweisung.
+  'teamer-konfis': (s) => (s.konfis_betreut?.total_konfis || 0) > 0,
+  'teamer-badges': (s) => (s.badges?.total_earned || 0) > 0,
+  'teamer-zertifikate': (s) => (s.zertifikate?.total || 0) > 0,
+  // Ohne Eintrittsdatum rechnet das Backend 0 Jahre -- das waere eine
+  // Aussage ueber eine fehlende Angabe, nicht ueber die Person. Diese
+  // Pruefung stand bisher im Frontend (WrappedModal); sie gehoert hierher,
+  // wo alle anderen auch stehen.
+  // Erst ab fuenf Antworten. Eine einzelne Antwort ist keine Geschichte --
+  // dieselbe Schwelle, die im Konfi-Zweig fuer den Chat galt.
+  'teamer-anfang': (s) => Boolean(s.anfang?.name),
+  'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
+  'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
+  'teamer-team': (s) => (s.team?.mitstreitende || 0) > 0,
+  // Erst ab fuenf Freigaben. Eine einzelne ist keine Geschichte -- dieselbe
+  // Schwelle wie bei den Antworten.
+  'teamer-moderation': (s) => (s.moderation?.freigegeben || 0) >= 5,
+  // Nur im ERSTEN Jahr. Und nur, wenn das Startjahr ueberhaupt bekannt ist:
+  // "unbekannt" ist nicht "neu" -- wer seit Jahren dabei ist, aber kein
+  // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst werden.
+  'teamer-neu-dabei': (s) => s.neu_dabei?.erstes_jahr === true,
+  // Wer im ersten Jahr ist, bekommt NICHT zusaetzlich "seit x Jahren dabei" --
+  // das waere dieselbe Auskunft zweimal, einmal davon mit einer 1.
+  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit) && s.neu_dabei?.erstes_jahr !== true,
+  // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer
+  // von aussen ins Team kam, bekommt die Seite nicht -- eine erfundene
+  // Herkunft waere schlimmer als gar keine Seite.
+  'teamer-konfi-zeit': (s) => Boolean(s.konfi_zeit),
+  // Dieselbe Sonderseite und dieselbe Regel wie im Konfi-Rueckblick.
+  'stavanger-2026': (s) => s.stavanger_2026 === true
+};
+
+/**
+ * Waehlt die Seiten eines Teamer-Rueckblicks in Anzeigereihenfolge.
+ *
+ * @param {object} slides die `slides` des Teamer-Snapshots
+ * @returns {string[]} Seiten-Schluessel in Anzeigereihenfolge
+ */
+function waehleTeamerKacheln(slides) {
+  if (!slides || typeof slides !== 'object') return [...FESTE_TEAMER_KACHELN];
+
+  const gewaehlt = [];
+  for (const key of TEAMER_DRAMATURGIE) {
+    if (FESTE_TEAMER_KACHELN.includes(key)) { gewaehlt.push(key); continue; }
+    const bedingung = TEAMER_BEDINGUNGEN[key];
+    if (!bedingung) continue;
+    let trifft = false;
+    // Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern.
+    try { trifft = bedingung(slides) === true; } catch { trifft = false; }
+    if (trifft) gewaehlt.push(key);
+  }
+
+  // Doppelte raus, Reihenfolge bleibt. Der Abschluss steht immer am Ende --
+  // er ist die letzte Seite der DRAMATURGIE und wird nie gedeckelt (der
+  // Teamer-Rueckblick hat hoechstens sieben Seiten, MAX_KACHELN kann hier
+  // gar nicht greifen).
+  return gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
 }
 
 module.exports = {
   waehleKacheln,
+  waehleTeamerKacheln,
   waehleKategorieSeiten,
   FESTE_KACHELN,
   DRAMATURGIE,
   MAX_KACHELN,
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN,
-  BEDINGUNGEN
+  ZEIT_SEITEN,
+  MAX_ZEIT_SEITEN,
+  GESCHUETZTE_KACHELN,
+  BEDINGUNGEN,
+  FESTE_TEAMER_KACHELN,
+  TEAMER_DRAMATURGIE,
+  TEAMER_BEDINGUNGEN
 };

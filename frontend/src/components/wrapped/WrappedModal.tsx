@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { IonIcon, IonSpinner } from '@ionic/react';
-import { ICON_SCHLIESSEN, ICON_TEILEN } from '../shared/icons';
+import { IonIcon, IonSpinner, IonToast } from '@ionic/react';
+import { ICON_SCHLIESSEN, ICON_TEILEN, ICON_WARNHINWEIS } from '../shared/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -12,6 +12,11 @@ import EventsSlide from './slides/EventsSlide';
 import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChallengeMomenteSlide from './slides/ChallengeMomenteSlide';
+import ChallengesSlide from './slides/ChallengesSlide';
+import WartelisteSlide from './slides/WartelisteSlide';
+import LangerAtemSlide from './slides/LangerAtemSlide';
+import WochentagSlide from './slides/WochentagSlide';
+import VielseitigSlide from './slides/VielseitigSlide';
 import HighlightSlide, { rendertHighlightSlide } from './slides/HighlightSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import KategorieSlide from './slides/KategorieSlide';
@@ -20,6 +25,7 @@ import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
 import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
 import WerdeTeamerSlide from './slides/WerdeTeamerSlide';
+import Stavanger2026Slide from './slides/Stavanger2026Slide';
 import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
@@ -27,6 +33,13 @@ import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
 import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
 import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
 import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
+import TeamerModerationSlide from './slides/teamer/TeamerModerationSlide';
+import TeamerTeamSlide from './slides/teamer/TeamerTeamSlide';
+import TeamerNeuDabeiSlide from './slides/teamer/TeamerNeuDabeiSlide';
+import TeamerAnfangSlide from './slides/teamer/TeamerAnfangSlide';
+import TeamerErstesAbzeichenSlide from './slides/teamer/TeamerErstesAbzeichenSlide';
+import TeamerAntwortenSlide from './slides/teamer/TeamerAntwortenSlide';
+import TeamerKonfiZeitSlide from './slides/teamer/TeamerKonfiZeitSlide';
 import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
 import { MotivKontext } from './MotivKontext';
 import { verteileMotive } from './hintergrundbilder';
@@ -126,6 +139,10 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const [titel, setTitel] = useState<string | null>(initialTitel ?? null);
   const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
   const [isSharing, setIsSharing] = useState(false);
+  // Rueckmeldung zum Teilen. Bis zum 06.09.2026 gab es KEINE: Jeder Fehler
+  // wurde still verschluckt, und wer teilte und nichts sah, wusste nicht,
+  // ob die App noch arbeitet oder ob etwas schiefgegangen ist.
+  const [teilenHinweis, setTeilenHinweis] = useState<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -172,7 +189,21 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'events': return { ...base, slideValue: `${k.slides.events.total_attended} Events besucht` };
         case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
+        case 'warteliste': return { ...base, slideValue: `${k.slides.warteliste?.nachgerueckt || 0} Mal nachgerückt` };
+        case 'langer-atem': return { ...base, slideValue: `${k.slides.langer_atem?.tage || 0} Tage lang dabei` };
+        case 'wochentag': return { ...base, slideValue: `Mein Tag: ${k.slides.wochentag?.name || ''}` };
+        case 'vielseitig': return { ...base, slideValue: `Auf ${k.slides.medienarten?.length || 0} Arten geantwortet` };
         case 'challenge-momente': return { ...base, slideValue: 'Meine Challenge-Momente' };
+        // Die 14 ist fester Text, keine gerechnete Zahl -- siehe
+        // Stavanger2026Slide.
+        case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
+        case 'challenges': {
+          // Die Zahl vorher herausziehen: Der Feldname `beitraege` ist eine
+          // Schnittstelle und bleibt ohne Umlaut -- im angezeigten Satz
+          // hat er nichts verloren.
+          const anzahl = k.slides.challenges?.beitraege || 0;
+          return { ...base, slideValue: `${anzahl} Mal bei Challenges mitgemacht` };
+        }
         case 'highlight': {
           const h = k.slides.highlight;
           const highlightTexte: Record<string, string> = {
@@ -198,6 +229,14 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-badges': return { ...base, slideValue: `${t.slides.badges.total_earned} Badges verdient` };
         case 'teamer-zertifikate': return { ...base, slideValue: `${t.slides.zertifikate.total} Zertifikate erhalten` };
         case 'teamer-jahre': return { ...base, slideValue: `${t.slides.engagement.jahre_aktiv} Jahre als Teamer:in` };
+        case 'teamer-moderation': return { ...base, slideValue: `${t.slides.moderation?.freigegeben || 0} Beiträge freigegeben` };
+        case 'teamer-team': return { ...base, slideValue: `Mit ${t.slides.team?.mitstreitende || 0} anderen im Team` };
+        case 'teamer-neu-dabei': return { ...base, slideValue: 'Mein erstes Jahr im Team' };
+        case 'teamer-anfang': return { ...base, slideValue: `Erster Termin: ${t.slides.anfang?.name || ''}` };
+        case 'teamer-erstes-abzeichen': return { ...base, slideValue: `Erstes Abzeichen: ${t.slides.erstes_abzeichen?.name || ''}` };
+        case 'teamer-antworten': return { ...base, slideValue: `${t.slides.chat?.antworten || 0} Mal geantwortet` };
+        case 'teamer-konfi-zeit': return { ...base, slideValue: 'Selbst mal Konfi gewesen — heute im Team' };
+        case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
         case 'teamer-abschluss': return { ...base, slideValue: `${t.slides.events_geleitet.total} Events, ${t.slides.konfis_betreut.total_konfis} Konfis, ${t.slides.badges.total_earned} Badges` };
         default: return base;
       }
@@ -249,16 +288,55 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} titel={titel} />,
       'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
+      // 'challenges' stand seit dem 03.09.2026 in der DRAMATURGIE des
+      // Backends, hatte hier aber KEINEN Eintrag -- addSlide schob die Seite
+      // mit `render: undefined` in die Liste und sie blieb leer. Die Zahl
+      // (beitraege + top_challenge) liegt seit Version 3 in jedem Snapshot
+      // und wurde bisher nirgends gezeigt.
+      'challenges': (a) => (
+        konfiData.slides.challenges
+          ? <ChallengesSlide isActive={a} challenges={konfiData.slides.challenges} />
+          : null
+      ),
       'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
       'events': (a) => <EventsSlide isActive={a} events={konfiData.slides.events} />,
       'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,
       'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
+      'warteliste': (a) => (
+        konfiData.slides.warteliste
+          ? <WartelisteSlide isActive={a} warteliste={konfiData.slides.warteliste} />
+          : null
+      ),
+      'langer-atem': (a) => (
+        konfiData.slides.langer_atem
+          ? <LangerAtemSlide isActive={a} langerAtem={konfiData.slides.langer_atem} />
+          : null
+      ),
+      'wochentag': (a) => (
+        konfiData.slides.wochentag
+          ? <WochentagSlide isActive={a} wochentag={konfiData.slides.wochentag} />
+          : null
+      ),
+      'vielseitig': (a) => (
+        (konfiData.slides.medienarten?.length || 0) > 0
+          ? <VielseitigSlide isActive={a} medienarten={konfiData.slides.medienarten as string[]} />
+          : null
+      ),
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} titel={titel} />,
       'werde-teamer': (a) => <WerdeTeamerSlide isActive={a} />,
+      // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Der Schluessel
+      // traegt BEWUSST KEIN 'kategorie:'- oder 'datum:'-Praefix: Der
+      // ausgelieferte Build 176 behandelt diese beiden Praefixe als MUSTER
+      // und schiebt jeden so beginnenden Schluessel in die Seitenliste --
+      // auch einen, den er nicht kennt. Dort faende KategorieSeiteSlide
+      // keinen Text, gaebe null zurueck, und im Rueckblick staende eine
+      // leere weisse Seite. Ohne Praefix faellt der Schluessel dort sauber
+      // durch `if (renderers[kachel])` und verschwindet spurlos.
+      'stavanger-2026': (a) => <Stavanger2026Slide isActive={a} />,
       'seltenstes': (a) => {
         const selt = (konfiData.slides.badges as { seltenstes?: { name: string; icon: string; color: string; haben_es: number; konfis: number; prozent: number } })?.seltenstes;
         return selt ? <SeltenstesAbzeichenSlide isActive={a} abzeichen={selt} /> : null;
@@ -396,59 +474,92 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     }));
   };
 
-  // Teamer-Slides aufbauen (7 Slides)
+  // Teamer-Slides aufbauen.
+  //
+  // Bis zum 06.09.2026 standen hier SIEBEN fest verdrahtete Seiten ohne
+  // jede Bedingung -- wer neu im Team war, bekam "0 Abzeichen",
+  // "0 Zertifikate" und "0 Konfis" als eigene Seiten hintereinander.
+  // Simons Grundregel "Eine Kachel mit einer Null darauf ist keine
+  // Erinnerung" galt fuer Konfis, aber nicht fuers Team.
+  //
+  // Ab Snapshot-Version 3 waehlt das Backend die Seiten
+  // (utils/wrappedKacheln.js, waehleTeamerKacheln) und legt sie als
+  // `kacheln` in den Snapshot. Aeltere Snapshots haben das Feld nicht und
+  // laufen weiter ueber die feste Siebener-Reihenfolge unten -- an bereits
+  // erzeugten Rueckblicken aendert sich dadurch nichts.
   const buildTeamerSlides = (teamerData: TeamerWrappedData, slideYear: number) => {
-    const slides: Array<{ key: string; content: React.ReactNode }> = [];
-    let slideIndex = 0;
+    const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
+      'teamer-intro': (a) => <TeamerIntroSlide isActive={a} displayName={displayName} year={slideYear} titel={titel} />,
+      'teamer-events': (a) => <TeamerEventsSlide isActive={a} events={teamerData.slides.events_geleitet} />,
+      'teamer-konfis': (a) => <TeamerKonfisSlide isActive={a} konfis={teamerData.slides.konfis_betreut} />,
+      'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,
+      'teamer-zertifikate': (a) => <TeamerZertifikateSlide isActive={a} zertifikate={teamerData.slides.zertifikate} />,
+      'teamer-jahre': (a) => <TeamerJahreSlide isActive={a} engagement={teamerData.slides.engagement} />,
+      'teamer-moderation': (a) => (
+        teamerData.slides.moderation
+          ? <TeamerModerationSlide isActive={a} moderation={teamerData.slides.moderation} />
+          : null
+      ),
+      'teamer-team': (a) => (
+        teamerData.slides.team
+          ? <TeamerTeamSlide isActive={a} team={teamerData.slides.team} />
+          : null
+      ),
+      'teamer-neu-dabei': (a) => <TeamerNeuDabeiSlide isActive={a} />,
+      'teamer-anfang': (a) => (
+        teamerData.slides.anfang
+          ? <TeamerAnfangSlide isActive={a} anfang={teamerData.slides.anfang} />
+          : null
+      ),
+      'teamer-erstes-abzeichen': (a) => (
+        teamerData.slides.erstes_abzeichen
+          ? <TeamerErstesAbzeichenSlide isActive={a} abzeichen={teamerData.slides.erstes_abzeichen} />
+          : null
+      ),
+      'teamer-antworten': (a) => (
+        teamerData.slides.chat
+          ? <TeamerAntwortenSlide isActive={a} chat={teamerData.slides.chat} />
+          : null
+      ),
+      'teamer-konfi-zeit': (a) => (
+        teamerData.slides.konfi_zeit
+          ? <TeamerKonfiZeitSlide isActive={a} konfiZeit={teamerData.slides.konfi_zeit} />
+          : null
+      ),
+      'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} titel={titel} />,
+      // Dieselbe Sonderseite wie im Konfi-Rueckblick -- die Fahrt gehoert
+      // beiden Seiten. Simon: "das sehen dann nur die teamer und konfis
+      // die dabei waren."
+      'stavanger-2026': (a) => <Stavanger2026Slide isActive={a} />,
+    };
 
-    slides.push({
-      key: 'teamer-intro',
-      content: <TeamerIntroSlide isActive={activeIndex === slideIndex} displayName={displayName} year={slideYear} titel={titel} />,
-    });
-    slideIndex++;
+    const kachelListe = (teamerData as { kacheln?: string[] }).kacheln;
 
-    slides.push({
-      key: 'teamer-events',
-      content: <TeamerEventsSlide isActive={activeIndex === slideIndex} events={teamerData.slides.events_geleitet} />,
-    });
-    slideIndex++;
+    const gewaehlt: string[] = (Array.isArray(kachelListe) && kachelListe.length > 0)
+      // --- Ab Version 3: das Backend bestimmt die Seiten ---
+      ? kachelListe.filter(k => renderers[k])
+      // --- Alt-Snapshots: die bisherige feste Reihenfolge ---
+      : [
+          'teamer-intro',
+          'teamer-events',
+          'teamer-konfis',
+          'teamer-badges',
+          'teamer-zertifikate',
+          // Die einzige Bedingung, die es hier schon gab: Ohne
+          // Eintrittsdatum rechnet das Backend 0 und die Seite sagte
+          // "0 Jahre als Teamer:in" -- eine Aussage ueber eine fehlende
+          // Angabe, nicht ueber die Person (01.09.2026).
+          ...(teamerData.slides.engagement.teamer_seit ? ['teamer-jahre'] : []),
+          'teamer-abschluss',
+        ];
 
-    slides.push({
-      key: 'teamer-konfis',
-      content: <TeamerKonfisSlide isActive={activeIndex === slideIndex} konfis={teamerData.slides.konfis_betreut} />,
-    });
-    slideIndex++;
+    // Doppelte raus, Reihenfolge bleibt.
+    const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
 
-    slides.push({
-      key: 'teamer-badges',
-      content: <TeamerBadgesSlide isActive={activeIndex === slideIndex} badges={teamerData.slides.badges} />,
-    });
-    slideIndex++;
-
-    slides.push({
-      key: 'teamer-zertifikate',
-      content: <TeamerZertifikateSlide isActive={activeIndex === slideIndex} zertifikate={teamerData.slides.zertifikate} />,
-    });
-    slideIndex++;
-
-    // Nur zeigen, wenn ein Eintrittsdatum hinterlegt ist. Ohne teamer_since
-    // rechnet das Backend 0 und die Seite sagte "0 Jahre als Teamer:in" --
-    // eine Aussage ueber eine fehlende Angabe, nicht ueber die Person
-    // (aufgefallen 01.09.2026 im Rueckblick der Demo-Gemeinde).
-    if (teamerData.slides.engagement.teamer_seit) {
-      slides.push({
-        key: 'teamer-jahre',
-        content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
-      });
-      slideIndex++;
-    }
-
-    slides.push({
-      key: 'teamer-abschluss',
-      content: <TeamerAbschlussSlide isActive={activeIndex === slideIndex} data={teamerData} year={slideYear} titel={titel} />,
-    });
-
-    return slides;
+    return ohneDoppelte.map((key, idx) => ({
+      key,
+      content: renderers[key](activeIndex === idx),
+    }));
   };
 
   // Slides dynamisch aufbauen basierend auf wrappedType
@@ -486,7 +597,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     try {
       const currentKey = slides[activeIndex]?.key || 'intro';
       const textData = getSlideTextData(currentKey);
-      await shareSlide(shareCardRef.current, currentKey, wrappedType, textData);
+      const ergebnis = await shareSlide(shareCardRef.current, currentKey, wrappedType, textData);
+
+      // ABGEBROCHEN BLEIBT STILL: Wer das Teilen-Blatt zuschiebt, hat sich
+      // entschieden -- eine Meldung darauf waere Bevormundung.
+      if (ergebnis.art === 'nur-text') {
+        setTeilenHinweis('Das Bild hat nicht geklappt — geteilt wurde nur der Text.');
+      } else if (ergebnis.art === 'fehler') {
+        setTeilenHinweis('Teilen hat nicht geklappt. Versuch es noch einmal.');
+      }
+    } catch {
+      // shareSlide faengt selbst ab; hier landet nur das Unerwartete.
+      setTeilenHinweis('Teilen hat nicht geklappt. Versuch es noch einmal.');
     } finally {
       setIsSharing(false);
     }
@@ -508,8 +630,19 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           <div className="wrapped-pagination" />
         )}
         {data && (
-          <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
-            <IonIcon icon={ICON_TEILEN} />
+          <button
+            className="wrapped-share-btn"
+            onClick={handleShare}
+            disabled={isSharing}
+            aria-label={isSharing ? 'Bild wird erstellt' : 'Teilen'}
+            aria-busy={isSharing}
+          >
+            {/* Das Erzeugen des Bildes dauert einen Moment (gemessen rund
+                300-800 ms). Ohne sichtbaren Ladezustand wirkt der Knopf in
+                dieser Zeit tot, und es wird ein zweites Mal getippt. */}
+            {isSharing
+              ? <IonSpinner name="crescent" className="wrapped-share-spinner" />
+              : <IonIcon icon={ICON_TEILEN} />}
           </button>
         )}
         <button className="wrapped-close-btn" onClick={onClose} aria-label="Schließen">
@@ -543,6 +676,20 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         </MotivKontext.Provider>
       )}
 
+      {/* Die Meldung gehoert IN das Overlay: Der Rueckblick liegt als
+          eigene Ebene ueber der App, ein Hinweis aus dem gewoehnlichen
+          Toast-Bereich laege darunter und waere nicht zu sehen. */}
+      <IonToast
+        isOpen={!!teilenHinweis}
+        message={teilenHinweis || ''}
+        duration={4000}
+        position="top"
+        color="danger"
+        icon={ICON_WARNHINWEIS}
+        swipeGesture="vertical"
+        onDidDismiss={() => setTeilenHinweis(null)}
+      />
+
       {data && year && (
         <ShareCard
           ref={shareCardRef}
@@ -552,6 +699,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           displayName={displayName}
           jahrgangName={jahrgangName}
           year={year}
+          // Dasselbe Motiv wie die Seite auf dem Bildschirm: Die Verteilung
+          // sorgt dafuer, dass sich in einem Rueckblick kein Bild
+          // wiederholt -- die feste Zuordnung allein wuerde ein anderes
+          // Foto liefern als das, was die Konfi gerade sieht.
+          motiv={motive[slides[activeIndex]?.key || 'intro']?.haupt}
         />
       )}
     </div>

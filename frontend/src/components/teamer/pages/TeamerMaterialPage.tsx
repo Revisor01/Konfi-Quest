@@ -345,7 +345,7 @@ const TeamerMaterialPage: React.FC = () => {
                     <IonIcon icon={ICON_WELT} className="app-info-row__icon" style={{ color: 'var(--app-color-material)' }} />
                     <div>
                       <div className="app-info-row__label">Sichtbar für</div>
-                      <div className="app-info-row__value">Alle Teamer:innen der Gemeinde</div>
+                      <div className="app-info-row__value">Das ganze Team der Gemeinde</div>
                     </div>
                   </div>
                 )}

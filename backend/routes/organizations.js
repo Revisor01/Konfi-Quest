@@ -410,7 +410,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
       // 5. Create default certificate types for the organization
       const defaultCertificates = [
-        { name: 'Teamer:innen Card', icon: 'card' },
+        { name: 'Teamer-Card', icon: 'card' },
         { name: 'JuLeiCa', icon: 'ribbon' },
         { name: 'Rettungsschwimmer', icon: 'water' },
         { name: 'Erste Hilfe', icon: 'medkit' }
@@ -1283,7 +1283,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       );
       if (orgs.length === 0) return;
       const defaultCerts = [
-        { name: 'Teamer:innen Card', icon: 'card' },
+        { name: 'Teamer-Card', icon: 'card' },
         { name: 'JuLeiCa', icon: 'ribbon' },
         { name: 'Rettungsschwimmer', icon: 'water' },
         { name: 'Erste Hilfe', icon: 'medkit' }

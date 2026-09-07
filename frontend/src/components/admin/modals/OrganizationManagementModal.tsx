@@ -903,7 +903,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     if (!checked && isEditMode) {
                       presentAlert({
                         header: 'Organisation deaktivieren?',
-                        message: 'Alle Konfis, Teamer:innen und Admins dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
+                        message: 'Alle Konfis, das Team und die Admins dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
                         buttons: [
                           {
                             text: 'Abbrechen',
@@ -1137,7 +1137,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)' }}>
-                  Bestehende Admins oder Teamer:innen anderer Organisationen dieser
+                  Bestehende Admins oder Team-Mitglieder anderer Organisationen dieser
                   Organisation zuweisen — sie können dann per Org-Wechsler hierher
                   springen. Konfis sind ausgenommen.
                 </p>

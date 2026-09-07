@@ -195,7 +195,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // (Titel, Beschreibung, Dateien, Link) -- nur das Flag selbst kann er
   // weder setzen noch entziehen. Geprüft wird beides: das Setzen (false ->
   // true) und das Entziehen (true -> false).
-  const GLOBAL_FEHLER = 'Nur die Gemeindeleitung kann Material für alle Teamer:innen freigeben';
+  const GLOBAL_FEHLER = 'Nur die Gemeindeleitung kann Material für das ganze Team freigeben';
 
   const darfGlobalSetzen = (user) => user.role_name === 'org_admin';
 

@@ -53,7 +53,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Mitmachen: Events',
-    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Bei den Events findest du alle Termine und meldest dich vorher dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Angelegt werden Termine von der Leitung.',
+    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Bei den Events findest du alle Termine und meldest dich vorher dort an, wo das Team gebraucht wird. Manche Termine sind nur fürs Team. Angelegt werden Termine von der Leitung.',
   },
   {
     icon: ICON_TEXTDOKUMENT,
@@ -67,7 +67,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Challenges',
-    text: 'Challenges begleiten die Konfis über einen Zeitraum, den du festlegst: Sie antworten mit Foto, Text, Aufnahme oder Link. Ohne Punkte, ohne Zähler, ohne Rangliste — nur ein Stempel fürs Mitmachen. Und das Wichtigste: Du machst mit. Teamer:innen und Leitung sind bei Challenges keine Zuschauer, sondern antworten selbst — es gibt sogar Runden nur fürs Team.',
+    text: 'Challenges begleiten die Konfis über einen Zeitraum, den du festlegst: Sie antworten mit Foto, Text, Aufnahme oder Link. Ohne Punkte, ohne Zähler, ohne Rangliste — nur ein Stempel fürs Mitmachen. Und das Wichtigste: Du machst mit. Team und Leitung sind bei Challenges keine Zuschauer, sondern antworten selbst — es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: ICON_ABZEICHEN,

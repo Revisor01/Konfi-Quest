@@ -55,14 +55,14 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Mitmachen: Events',
-    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Events sind Termine, die du anlegst — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich vorher an, und du behältst An- und Abwesenheit im Griff. Du kannst auch festlegen, dass Teamer:innen gesucht werden oder ein Termin nur fürs Team ist.',
+    text: 'Der Tab "Mitmachen" bündelt Events und Aktivitäten in zwei Reitern. Events sind Termine, die du anlegst — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich vorher an, und du behältst An- und Abwesenheit im Griff. Du kannst auch festlegen, dass für einen Termin Team gesucht wird oder er nur fürs Team ist.',
   },
   {
     icon: ICON_TEXTDOKUMENT,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
     title: 'Mitmachen: Aktivitäten',
-    text: 'Der zweite Reiter im Mitmachen-Tab: wiederkehrende Dinge, für die es Punkte gibt — Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht vorher an — sie melden die Aktivität hinterher, du prüfst sie und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
+    text: 'Der zweite Reiter im Mitmachen-Tab: wiederkehrende Dinge, für die es Punkte gibt — Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht vorher an — sie melden die Aktivität hinterher, du prüfst sie und vergibst mit einem Tipp die Punkte. Auch das Team reicht hier seinen Einsatz ein.',
   },
   {
     icon: ICON_CHALLENGE,
@@ -104,7 +104,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-material)',
     rgb: '--app-color-material-rgb',
     title: 'Material',
-    text: 'Lege Unterlagen fürs Team ab — allgemein oder direkt einem Event zugeordnet. Dieses Material ist nur fürs Team sichtbar, nicht für die Konfis. So haben alle Teamer:innen die wichtigen Dokumente parat.',
+    text: 'Lege Unterlagen fürs Team ab — allgemein oder direkt einem Event zugeordnet. Dieses Material ist nur fürs Team sichtbar, nicht für die Konfis. So hat das ganze Team die wichtigen Dokumente parat.',
   },
 ];
 

@@ -53,7 +53,7 @@ const ENTRIES: LegendEntry[] = [
     color: 'var(--app-color-teamer)',
     icon: ICON_PLUS_KREIS_GEFUELLT,
     label: 'Anmeldung möglich (Team)',
-    description: 'Dieses Event sucht Teamer:innen. Du kannst dich anmelden.',
+    description: 'Für dieses Event wird Team gesucht. Du kannst dich anmelden.',
     variants: ['teamer'],
   },
   {
@@ -134,7 +134,7 @@ const MARKERS: LegendEntry[] = [
     color: 'var(--app-color-teamer)',
     icon: ICON_GRUPPE_GEFUELLT,
     label: 'Team',
-    description: 'Für dieses Event werden Teamer:innen gesucht (oder es ist nur für das Team).',
+    description: 'Für dieses Event wird Team gesucht (oder es ist nur für das Team).',
     // Konfis geht das nichts an -> nur Teamer/Admin.
     variants: ['teamer', 'admin'],
   },

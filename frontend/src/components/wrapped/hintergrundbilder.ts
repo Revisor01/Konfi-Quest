@@ -38,7 +38,13 @@ export type Motiv =
   | 'deich' | 'watt' | 'feld' | 'weite' | 'wald' | 'wasser' | 'himmel'
   // fröhlich und feiernd (Simons Wunsch: "gerne auch ein bisschen
   // verrückte Bilder oder was lustiges")
-  | 'konfetti' | 'luftschlangen' | 'feuerwerk' | 'gitarre';
+  | 'konfetti' | 'luftschlangen' | 'feuerwerk' | 'gitarre'
+  // Sonderseite Sommerfreizeit 2026: der Preikestolen bei Stavanger.
+  // Wikimedia Commons, CC0 -- keine Namensnennungspflicht. Bewusst dieses
+  // Bild und nicht die Variante mit Touristengruppe: Hier steht eine
+  // einzelne Silhouette an der Felskante, kein erkennbares Gesicht. Das
+  // ist die Regel im Kopf dieser Datei.
+  | 'preikestolen';
 
 const MOTIV_DATEI: Record<Motiv, string> = {
   kirchenschiff: '/assets/wrapped/kirchenschiff.webp',
@@ -57,6 +63,7 @@ const MOTIV_DATEI: Record<Motiv, string> = {
   luftschlangen: '/assets/wrapped/luftschlangen.webp',
   feuerwerk: '/assets/wrapped/feuerwerk.webp',
   gitarre: '/assets/wrapped/gitarre.webp',
+  preikestolen: '/assets/wrapped/preikestolen.webp',
 };
 /**
  * Kachel -> Motiv. Was hier fehlt, bekommt bewusst kein Bild.
@@ -124,10 +131,17 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'ueber-das-ziel': 'feuerwerk',
   bonus: 'konfetti',
   pflicht: 'turm',
+  warteliste: 'turm',
+  'langer-atem': 'weg',
+  wochentag: 'kirchenschiff',
+  vielseitig: 'konfetti',
   'challenge-momente': 'wald',
   // Das seltenste Abzeichen -- Feuerwerk, weil es ein Moment ist.
   seltenstes: 'feuerwerk',
   'werde-teamer': 'gitarre',
+  // Die Sonderseite zur Sommerfreizeit 2026. Sie ist die EINZIGE Seite mit
+  // diesem Motiv -- das Bild ist der Ort, von dem die Seite erzaehlt.
+  'stavanger-2026': 'preikestolen',
 
   // Teamer-Rueckblick (03.09.2026).
   'teamer-intro': 'weite',
@@ -135,7 +149,14 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'teamer-konfis': 'konfetti',
   'teamer-badges': 'feuerwerk',
   'teamer-zertifikate': 'fenster',
+  'teamer-moderation': 'kerzen',
+  'teamer-team': 'feld',
+  'teamer-neu-dabei': 'deich',
+  'teamer-anfang': 'weg',
+  'teamer-erstes-abzeichen': 'feuerwerk',
+  'teamer-antworten': 'fenster',
   'teamer-jahre': 'weg',
+  'teamer-konfi-zeit': 'kirchenschiff',
   'teamer-abschluss': 'himmel',
 };
 /**
@@ -197,16 +218,28 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'ueber-das-ziel': 'konfetti',
   bonus: 'luftschlangen',
   pflicht: 'kirchenschiff',
+  warteliste: 'kerzen',
+  'langer-atem': 'himmel',
+  wochentag: 'fenster',
+  vielseitig: 'luftschlangen',
   'challenge-momente': 'wasser',
   seltenstes: 'konfetti',
   'werde-teamer': 'weg',
+  'stavanger-2026': 'weite',
 
   'teamer-intro': 'himmel',
   'teamer-events': 'turm',
   'teamer-konfis': 'luftschlangen',
   'teamer-badges': 'konfetti',
   'teamer-zertifikate': 'kirchenschiff',
+  'teamer-moderation': 'turm',
+  'teamer-team': 'weite',
+  'teamer-neu-dabei': 'watt',
+  'teamer-anfang': 'himmel',
+  'teamer-erstes-abzeichen': 'konfetti',
+  'teamer-antworten': 'gitarre',
   'teamer-jahre': 'wald',
+  'teamer-konfi-zeit': 'weite',
   'teamer-abschluss': 'watt',
 };
 /**
@@ -260,7 +293,7 @@ const STIMMUNG: Record<string, Motiv[]> = {
   // ruhig, kirchlich
   ruhig: ['kirchenschiff', 'fenster', 'kerzen', 'turm', 'weg'],
   // Weite und Landschaft
-  weite: ['deich', 'watt', 'feld', 'weite', 'wald', 'wasser', 'himmel'],
+  weite: ['deich', 'watt', 'feld', 'weite', 'wald', 'wasser', 'himmel', 'preikestolen'],
   // feiern
   feier: ['konfetti', 'luftschlangen', 'feuerwerk', 'gitarre'],
 };

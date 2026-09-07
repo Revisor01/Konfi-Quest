@@ -32,7 +32,7 @@ module.exports = (db, rbacVerifier) => {
     const isKonfi = req.user.type === 'konfi';
     const isTeamer = req.user.type === 'teamer';
     if (!isKonfi && !isTeamer) {
-      return res.status(403).json({ error: 'Nur Konfis und Teamer:innen können Events buchen' });
+      return res.status(403).json({ error: 'Nur Konfis und das Team können Events buchen' });
     }
 
     const client = await db.getClient();
@@ -102,7 +102,7 @@ module.exports = (db, rbacVerifier) => {
     const isKonfi = req.user.type === 'konfi';
     const isTeamer = req.user.type === 'teamer';
     if (!isKonfi && !isTeamer) {
-      return res.status(403).json({ error: 'Nur Konfis und Teamer:innen können Buchungen stornieren' });
+      return res.status(403).json({ error: 'Nur Konfis und das Team können Buchungen stornieren' });
     }
 
     let promotedUserId = null;
@@ -275,7 +275,7 @@ module.exports = (db, rbacVerifier) => {
   router.get('/user/bookings', rbacVerifier, async (req, res) => {
     try {
       if (req.user.type !== 'konfi' && req.user.type !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Konfis und Teamer:innen können ihre Buchungen einsehen' });
+        return res.status(403).json({ error: 'Nur Konfis und das Team können ihre Buchungen einsehen' });
       }
       
       const query = `

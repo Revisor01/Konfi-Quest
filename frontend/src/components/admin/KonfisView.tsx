@@ -122,7 +122,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       // als gaebe es keine Teamer:innen (Audit 10.08.).
       console.error('Error loading teamers:', err);
       setTeamers([]);
-      setError('Teamer:innen konnten nicht geladen werden');
+      setError('Das Team konnte nicht geladen werden');
     } finally {
       setTeamerLoading(false);
     }
@@ -207,8 +207,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       <StoreUpdateBanner />
 
       <SectionHeader
-        title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
-        subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfis verwalten'}
+        title={viewMode === 'teamer' ? 'Team' : 'Konfis'}
+        subtitle={viewMode === 'teamer' ? 'Team verwalten' : 'Konfis verwalten'}
         icon={viewMode === 'teamer' ? ICON_ABZEICHEN_GEFUELLT : ICON_GRUPPE_GEFUELLT}
         preset={viewMode === 'teamer' ? 'teamer' : 'konfis'}
         stats={viewMode === 'teamer' ? [
@@ -240,7 +240,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           <IonLabel>Konfis</IonLabel>
         </IonSegmentButton>
         <IonSegmentButton value="teamer">
-          <IonLabel>Teamer:innen</IonLabel>
+          <IonLabel>Team</IonLabel>
         </IonSegmentButton>
       </IonSegment>
 
@@ -259,7 +259,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
             <IonInput
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder={viewMode === 'teamer' ? 'Teamer:in suchen...' : 'Konfi suchen...'}
+              placeholder={viewMode === 'teamer' ? 'Im Team suchen...' : 'Konfi suchen...'}
             />
           </IonItem>
           {/* Jahrgang Filter - nur für Konfis */}
@@ -311,13 +311,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       ) : viewMode === 'teamer' ? (
         <ListSection
           icon={ICON_ABZEICHEN_GEFUELLT}
-          title="Teamer:innen"
+          title="Team"
           count={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length}
           iconColorClass="teamer"
           isEmpty={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length === 0}
           emptyIcon={ICON_ABZEICHEN_GEFUELLT}
-          emptyTitle="Keine Teamer:innen gefunden"
-          emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
+          emptyTitle="Niemand im Team gefunden"
+          emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch niemand im Team'}
           emptyIconColor="var(--app-color-teamer)"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer, index, arr) => (

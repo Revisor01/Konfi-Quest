@@ -158,8 +158,9 @@ paths:
         (total_points, gottesdienst_points, gemeinde_points, both_categories),
         aktivitaetsbasierte (activity_count, event_count,
         mandatory_event_count, unique_activities), spezifische
-        (specific_activity, category_activities, activity_combination,
-        time_based, streak, bonus_points) und den teamer-spezifischen Typ
+        (specific_activity, category_activities, category_combination,
+        activity_combination, time_based, streak, bonus_points) und den
+        teamer-spezifischen Typ
         teamer_year. Rein statisch — kein Org-Bezug.
       responses:
         "200": { description: "Objekt Kriterientyp -> { label, description, help }" }
@@ -214,7 +215,7 @@ paths:
                 description: { type: string }
                 criteria_type: { type: string, description: "Einer der Werte aus GET /admin/badges/criteria-types" }
                 criteria_value: { type: integer, minimum: 1, description: "Seit 24.08.2026 min. 1 — Wert 0 löste jedes Zähl-Kriterium sofort für alle aus" }
-                criteria_extra: { type: object, description: "Zusatzparameter je Kriterientyp, wird als JSON gespeichert. Pflicht je nach Typ: specific_activity -> required_activity_name, activity_combination -> required_activities (nicht leer), category_activities -> required_category, time_based -> days oder weeks (seit 24.08.2026 validiert; vorher entstanden still unerreichbare Abzeichen)" }
+                criteria_extra: { type: object, description: "Zusatzparameter je Kriterientyp, wird als JSON gespeichert. Pflicht je nach Typ: specific_activity -> required_activity_name, activity_combination -> required_activities (nicht leer), category_activities -> required_category, category_combination -> required_categories (mindestens zwei, criteria_value darf ihre Anzahl nicht ueberschreiten), time_based -> days oder weeks (seit 24.08.2026 validiert; vorher entstanden still unerreichbare Abzeichen)" }
                 is_hidden: { type: boolean, default: false }
                 color: { type: string, default: "#667eea" }
                 target_role: { type: string, enum: [konfi, teamer], default: konfi }

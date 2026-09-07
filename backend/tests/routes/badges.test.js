@@ -191,6 +191,33 @@ describe('Badges Routes', () => {
       expect(res.body.total_points).toBeDefined();
       expect(res.body.streak).toBeDefined();
       expect(res.body.time_based).toBeDefined();
+      // Ohne Eintrag hier taucht der Typ im Anlege-Formular gar nicht auf --
+      // die Auswahlliste wird aus dieser Antwort gebaut.
+      expect(res.body.category_combination).toBeDefined();
+    });
+
+    it('jeder ausgelieferte Kriterientyp hat eine eigene Farbe im Frontend', async () => {
+      // Zwei handgepflegte Listen, die auseinanderlaufen koennen:
+      // CRITERIA_COLORS in routes/badges.js und dieselbe Liste in
+      // frontend/src/utils/badgeCriteria.ts. Faellt ein Typ in der zweiten
+      // durch, traegt sein Abzeichen die Sammelfarbe -- am 04.09.2026 hatten
+      // so 94 von 174 Abzeichen dasselbe Blau.
+      const fs = require('fs');
+      const path = require('path');
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .get('/api/admin/badges/criteria-types')
+        .set('Authorization', `Bearer ${token}`);
+
+      const frontend = fs.readFileSync(
+        path.join(__dirname, '../../../frontend/src/utils/badgeCriteria.ts'), 'utf8'
+      );
+      const farbBlock = frontend.slice(
+        frontend.indexOf('export const CRITERIA_COLORS'),
+        frontend.indexOf('};', frontend.indexOf('export const CRITERIA_COLORS'))
+      );
+      const ohneFarbe = Object.keys(res.body).filter(typ => !farbBlock.includes(`${typ}:`));
+      expect(ohneFarbe).toEqual([]);
     });
   });
 
@@ -867,6 +894,373 @@ describe('Badges Routes', () => {
         [USERS.konfi1.id, badge.id]
       );
       expect(rows.length).toBe(1);
+    });
+  });
+
+
+  // ================================================================
+  // category_combination (neu 06.09.2026)
+  //
+  // Der Anlass: "3 Freizeiten" soll DREI VERSCHIEDENE Termine meinen --
+  // Konfifahrt, Uebernachtung, Sommerfreizeit -- und nicht dreimal dieselbe
+  // Konfifahrt. Genau darin unterscheidet sich das Kriterium von
+  // category_activities, das eine Kategorie mehrfach zaehlt.
+  //
+  // Getestet wird beides: die Wertung (erfuellt und nicht erfuellt, je Rolle)
+  // UND dass Wertung und Fortschritt dieselbe Zahl nennen. Der
+  // Konsistenz-Vertrag in utils/badgeProgress.js waere sonst nur ein
+  // Kommentar: Die App zeigte 3/3, ohne dass das Abzeichen kommt.
+  // ================================================================
+  describe('category_combination Wertung', () => {
+    // Kategorie in einer Organisation anlegen
+    async function kategorie(name, orgId = ORGS.testGemeinde.id) {
+      const { rows: [c] } = await db.query(
+        `INSERT INTO categories (name, organization_id) VALUES ($1, $2) RETURNING id`,
+        [name, orgId]
+      );
+      return c.id;
+    }
+
+    // Aktivitaet in einer Kategorie, N-mal fuer einen User verbucht
+    async function aktivitaetInKategorie(userId, katId, name, anzahl = 1, targetRole = 'konfi') {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ($1, 1, 'gemeinde', $2, $3) RETURNING id`,
+        [`${name}-${Math.random()}`, ORGS.testGemeinde.id, targetRole]
+      );
+      await db.query(
+        `INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)`,
+        [act.id, katId]
+      );
+      for (let i = 0; i < anzahl; i++) {
+        await db.query(
+          `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+           VALUES ($1, $2, CURRENT_DATE, $3, $4)`,
+          [userId, act.id, USERS.admin1.id, ORGS.testGemeinde.id]
+        );
+      }
+      return act.id;
+    }
+
+    // Besuchter Termin in einer Kategorie
+    async function terminInKategorie(userId, katId, name) {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, NOW() - interval '1 day', $2, false, 0, 'gemeinde', 0) RETURNING id`,
+        [`${name}-${Math.random()}`, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)`,
+        [ev.id, katId]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status)
+         VALUES ($1, $2, $3, 'confirmed', 'present')`,
+        [userId, ev.id, ORGS.testGemeinde.id]
+      );
+      return ev.id;
+    }
+
+    const kombiAbzeichen = async (wert, kategorien, targetRole) => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ($1, 'category_combination', $2, $3, 'prism-outline', '#0891b2', $4, $5, true)
+         RETURNING id`,
+        [
+          `Kombi-Kat ${Math.random()}`, wert,
+          JSON.stringify({ required_categories: kategorien }),
+          ORGS.testGemeinde.id, targetRole
+        ]
+      );
+      return badge.id;
+    };
+
+    const hatAbzeichen = async (userId, badgeId) => {
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [userId, badgeId]
+      );
+      return rows.length;
+    };
+
+    // ---------- Konfi ----------
+
+    it('Konfi: aus allen drei Kategorien je einmal -> Abzeichen kommt', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      const sommer = await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      await terminInKategorie(USERS.konfi1.id, nacht, 'Kirchenuebernachtung');
+      await terminInKategorie(USERS.konfi1.id, sommer, 'Sommerfreizeit');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(1);
+    });
+
+    it('Konfi: dreimal DIESELBE Kategorie reicht NICHT (der eigentliche Zweck)', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      await kategorie('Übernachtung');
+      await kategorie('Sommerfreizeit');
+      // Drei Eintraege, alle in "Konfifahrt" -- category_activities wuerde hier
+      // 3 zaehlen, category_combination zaehlt 1.
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt', 2);
+      await terminInKategorie(USERS.konfi1.id, fahrt, 'Noch eine Fahrt');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+    });
+
+    it('Konfi: zwei von drei Kategorien reichen, wenn der Wert 2 ist', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      await terminInKategorie(USERS.konfi1.id, nacht, 'Uebernachtung');
+      const badgeId = await kombiAbzeichen(2, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(1);
+    });
+
+    it('Konfi: ohne hinterlegte Kategorien wird nichts vergeben', async () => {
+      const badgeId = await kombiAbzeichen(1, [], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+    });
+
+    it('Konfi: ein NICHT besuchter Termin zaehlt seine Kategorie nicht mit', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      // Termin gebucht, aber abwesend -> darf nicht zaehlen (Anwesenheit ist der Massstab)
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ('Verpasste Nacht', NOW() - interval '1 day', $1, false, 0, 'gemeinde', 0) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(`INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)`, [ev.id, nacht]);
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status)
+         VALUES ($1, $2, $3, 'confirmed', 'absent')`,
+        [USERS.konfi1.id, ev.id, ORGS.testGemeinde.id]
+      );
+      const badgeId = await kombiAbzeichen(2, ['Konfifahrt', 'Übernachtung'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+    });
+
+    // ---------- Teamer ----------
+
+    it('Teamer: aus drei Kategorien je einmal -> Abzeichen kommt', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      const sommer = await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.teamer1.id, fahrt, 'Fahrt begleiten', 1, 'teamer');
+      await terminInKategorie(USERS.teamer1.id, nacht, 'Nacht begleiten');
+      await terminInKategorie(USERS.teamer1.id, sommer, 'Sommer begleiten');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'teamer');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      expect(await hatAbzeichen(USERS.teamer1.id, badgeId)).toBe(1);
+    });
+
+    it('Teamer: zwei von drei reichen NICHT, wenn der Wert 3 ist', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.teamer1.id, fahrt, 'Fahrt begleiten', 1, 'teamer');
+      await terminInKategorie(USERS.teamer1.id, nacht, 'Nacht begleiten');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'teamer');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      expect(await hatAbzeichen(USERS.teamer1.id, badgeId)).toBe(0);
+    });
+
+    it('Teamer: eine KONFI-Aktivitaet zaehlt fuer ein Teamer-Abzeichen nicht mit', async () => {
+      // Simons Vorgabe 06.09.2026: Teamer- und Konfi-Abzeichen bleiben strikt
+      // getrennt. Der Teamer-Zweig filtert Aktivitaeten auf target_role='teamer'.
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await aktivitaetInKategorie(USERS.teamer1.id, fahrt, 'Fahrt als Konfi', 1, 'konfi');
+      await aktivitaetInKategorie(USERS.teamer1.id, nacht, 'Nacht begleiten', 1, 'teamer');
+      const badgeId = await kombiAbzeichen(2, ['Konfifahrt', 'Übernachtung'], 'teamer');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      expect(await hatAbzeichen(USERS.teamer1.id, badgeId)).toBe(0);
+    });
+
+    // ---------- Wertung gegen Fortschritt ----------
+
+    it('Konfi: Fortschritt nennt exakt die Zahl, die auch die Wertung zaehlt', async () => {
+      // Der Test, um den es eigentlich geht (Konsistenz-Vertrag
+      // utils/badgeProgress.js): zwei von drei Kategorien abgedeckt.
+      // Wertung darf NICHT vergeben, Fortschritt MUSS 2 von 3 zeigen.
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt', 3);
+      await terminInKategorie(USERS.konfi1.id, nacht, 'Uebernachtung');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+
+      const { getKonfiBadgeProgress } = require('../../utils/konfiBadgeProgress');
+      const { available } = await getKonfiBadgeProgress(db, USERS.konfi1.id, ORGS.testGemeinde.id);
+      const abzeichen = available.find(b => b.id === badgeId);
+      expect(abzeichen).toBeDefined();
+      expect(abzeichen.progress).toEqual({ current: 2, target: 3, percentage: (2 / 3) * 100 });
+    });
+
+    it('Teamer: Fortschritt nennt exakt die Zahl, die auch die Wertung zaehlt', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.teamer1.id, fahrt, 'Fahrt begleiten', 2, 'teamer');
+      await terminInKategorie(USERS.teamer1.id, nacht, 'Nacht begleiten');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'teamer');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+      expect(await hatAbzeichen(USERS.teamer1.id, badgeId)).toBe(0);
+
+      const { getTeamerBadgeProgress } = require('../../utils/teamerBadgeProgress');
+      const { available } = await getTeamerBadgeProgress(db, USERS.teamer1.id, ORGS.testGemeinde.id);
+      const abzeichen = available.find(b => b.id === badgeId);
+      expect(abzeichen).toBeDefined();
+      expect(abzeichen.progress).toEqual({ current: 2, target: 3, percentage: (2 / 3) * 100 });
+    });
+
+    it('Konfi: Fortschritt und Wertung stimmen auch im erfuellten Fall ueberein', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      const nacht = await kategorie('Übernachtung');
+      const sommer = await kategorie('Sommerfreizeit');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      await terminInKategorie(USERS.konfi1.id, nacht, 'Uebernachtung');
+      await terminInKategorie(USERS.konfi1.id, sommer, 'Sommerfreizeit');
+      const badgeId = await kombiAbzeichen(3, ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'], 'konfi');
+
+      // Fortschritt VOR der Wertung: muss schon 3 von 3 zeigen.
+      const { getKonfiBadgeProgress } = require('../../utils/konfiBadgeProgress');
+      const vorher = await getKonfiBadgeProgress(db, USERS.konfi1.id, ORGS.testGemeinde.id);
+      const offen = vorher.available.find(b => b.id === badgeId);
+      expect(offen).toBeDefined();
+      expect(offen.progress).toEqual({ current: 3, target: 3, percentage: 100 });
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(1);
+    });
+
+    it('Kategorien einer fremden Organisation zaehlen nicht mit', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      // Gleichnamige Kategorie in Org 2 mit einer dortigen Erledigung
+      const fremdKat = await kategorie('Übernachtung', ORGS.andereGemeinde.id);
+      const { rows: [fremdAct] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Fremde Nacht', 1, 'gemeinde', $1, 'konfi') RETURNING id`,
+        [ORGS.andereGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)`,
+        [fremdAct.id, fremdKat]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3, $4)`,
+        [USERS.konfi1.id, fremdAct.id, USERS.admin1.id, ORGS.andereGemeinde.id]
+      );
+      const badgeId = await kombiAbzeichen(2, ['Konfifahrt', 'Übernachtung'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+    });
+
+    it('dieselbe Kategorie doppelt in der Forderung treibt den Fortschritt nicht hoch', async () => {
+      const fahrt = await kategorie('Konfifahrt');
+      await kategorie('Übernachtung');
+      await aktivitaetInKategorie(USERS.konfi1.id, fahrt, 'Fahrt');
+      const badgeId = await kombiAbzeichen(2, ['Konfifahrt', 'Konfifahrt'], 'konfi');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+      expect(await hatAbzeichen(USERS.konfi1.id, badgeId)).toBe(0);
+
+      const { getKonfiBadgeProgress } = require('../../utils/konfiBadgeProgress');
+      const { available } = await getKonfiBadgeProgress(db, USERS.konfi1.id, ORGS.testGemeinde.id);
+      const abzeichen = available.find(b => b.id === badgeId);
+      expect(abzeichen.progress.current).toBe(1);
+    });
+  });
+
+  // ================================================================
+  // category_combination: Validierung beim Anlegen
+  // ================================================================
+  describe('POST /api/admin/badges category_combination Validierung', () => {
+    const anlegen = (token, body) =>
+      request(app).post('/api/admin/badges').set('Authorization', `Bearer ${token}`).send(body);
+
+    const basis = {
+      name: 'Freizeit-Trio',
+      icon: 'prism-outline',
+      description: 'Drei verschiedene Freizeiten',
+      criteria_type: 'category_combination',
+      target_role: 'konfi'
+    };
+
+    it('mit zwei Kategorien und passendem Wert -> 201', async () => {
+      const res = await anlegen(generateToken('admin1'), {
+        ...basis,
+        criteria_value: 2,
+        criteria_extra: { required_categories: ['Konfifahrt', 'Übernachtung'] }
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it('ohne Kategorien -> 400', async () => {
+      const res = await anlegen(generateToken('admin1'), {
+        ...basis, criteria_value: 2, criteria_extra: {}
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('mit nur EINER Kategorie -> 400 (das waere category_activities)', async () => {
+      const res = await anlegen(generateToken('admin1'), {
+        ...basis, criteria_value: 1, criteria_extra: { required_categories: ['Konfifahrt'] }
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('Wert groesser als die Zahl der Kategorien -> 400 (waere unerreichbar)', async () => {
+      const res = await anlegen(generateToken('admin1'), {
+        ...basis, criteria_value: 4,
+        criteria_extra: { required_categories: ['Konfifahrt', 'Übernachtung', 'Sommerfreizeit'] }
+      });
+      expect(res.status).toBe(400);
     });
   });
 

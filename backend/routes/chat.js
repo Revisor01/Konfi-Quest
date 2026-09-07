@@ -161,7 +161,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   router.get('/team-contacts', verifyTokenRBAC, async (req, res) => {
     try {
       if (!['admin', 'org_admin', 'teamer'].includes(req.user.role_name)) {
-        return res.status(403).json({ error: 'Nur für Teamer:innen und Admins' });
+        return res.status(403).json({ error: 'Nur für Team und Admins' });
       }
 
       const query = `

@@ -167,8 +167,14 @@ async function seed(db) {
   for (const konfi of konfis) {
     const jgId = konfi.org_id === 1 ? JAHRGAENGE.jahrgang1.id : JAHRGAENGE.jahrgang2.id;
     await db.query(
-      `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
-       VALUES ($1, $2, 0, 0, $3)`,
+      // created_at BEWUSST drei Jahre zurueck: Seit dem 07.09.2026 beginnt
+      // der Konfi-Rueckblick am Anfang der Konfi-Zeit (konfi_profiles.
+      // created_at) und laeuft bis heute. Blieb der Standardwert NOW()
+      // stehen, waere das Fenster null Tage breit und keine der Testdaten --
+      // die durchweg in der Vergangenheit liegen -- faende darin statt. Drei
+      // Jahre decken auch die Faelle ab, die bewusst zwei Jahre umspannen.
+      `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id, created_at)
+       VALUES ($1, $2, 0, 0, $3, NOW() - INTERVAL '3 years')`,
       [konfi.id, jgId, konfi.org_id]
     );
   }

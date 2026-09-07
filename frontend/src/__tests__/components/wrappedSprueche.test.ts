@@ -16,8 +16,12 @@ import { resolve } from 'path';
  * sieht ja immer nur die eigene Stufe.
  */
 
+// Die Texte liegen seit dem 06.09.2026 in einer eigenen Datei: Die
+// Teilen-Karte braucht dieselben Sprueche wie die Seite, und ein Bauteil,
+// das nebenher Konstanten ausgibt, haengt das schnelle Neuladen im
+// Entwicklungsbetrieb aus.
 const quelle = readFileSync(
-  resolve(process.cwd(), 'src/components/wrapped/slides/KategorieSeiteSlide.tsx'),
+  resolve(process.cwd(), 'src/components/wrapped/slides/kategorieSeitenTexte.ts'),
   'utf8'
 );
 

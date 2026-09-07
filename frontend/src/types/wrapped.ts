@@ -179,6 +179,14 @@ export interface KonfiWrappedData {
     highlight?: KonfiHighlight;
     /** Ab Version 3: Challenge-Zahlen fuer die Highlight-Seite. */
     challenges?: KonfiChallengesSlide;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    warteliste?: KonfiWartelisteSlide;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    langer_atem?: KonfiLangerAtemSlide | null;
+    /** Ab 07.09.2026. Fehlt bei aelteren Snapshots. */
+    wochentag?: KonfiWochentagSlide | null;
+    /** Die verschiedenen Medienarten der eigenen Beitraege. Ab 07.09.2026. */
+    medienarten?: string[];
     /** Ab Version 3: Selbst-Abmeldungen (nur positiv/neutral verwendet). */
     verlaesslichkeit?: KonfiVerlaesslichkeitSlide;
     /**
@@ -192,6 +200,28 @@ export interface KonfiWrappedData {
     /** Backend liefert es weiter, wird aber nicht mehr gerendert. */
     pflicht?: KonfiPflichtSlide;
   };
+}
+
+/** Nachgerueckte Buchungen -- ab 07.09.2026 (Migration 145). */
+export interface KonfiWartelisteSlide {
+  nachgerueckt: number;
+}
+
+/** Spanne zwischen erstem und letztem Termin -- ab 07.09.2026. */
+export interface KonfiLangerAtemSlide {
+  erster: string;
+  letzter: string;
+  tage: number;
+  termine: number;
+}
+
+/** Der haeufigste Wochentag -- ab 07.09.2026. */
+export interface KonfiWochentagSlide {
+  tag: number;
+  name: string;
+  anzahl: number;
+  gesamt: number;
+  anteil: number;
 }
 
 // --- Teamer-Snapshot Slides ---
@@ -224,18 +254,88 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/** Freigegebene Challenge-Beitraege -- ab Snapshot-Version 3 (Migration 146). */
+export interface TeamerModerationSlide {
+  freigegeben: number;
+}
+
+/** Mit wie vielen anderen zusammen -- ab Snapshot-Version 3. */
+export interface TeamerTeamSlide {
+  mitstreitende: number;
+}
+
+/** Das erste Jahr im Team -- ab Snapshot-Version 3. */
+export interface TeamerNeuDabeiSlide {
+  erstes_jahr: boolean;
+  start_jahr: number | null;
+}
+
+/** Der erste Termin des Jahres -- ab Snapshot-Version 3. */
+export interface TeamerAnfangSlide {
+  name: string;
+  datum: string;
+}
+
+/** Das erste Abzeichen des Jahres -- ab Snapshot-Version 3. */
+export interface TeamerErstesAbzeichenSlide {
+  name: string;
+  icon: string;
+  color: string;
+  datum: string;
+}
+
+/** Chat-Zahlen im Teamer-Rueckblick -- ab Snapshot-Version 3. */
+export interface TeamerChatSlide {
+  antworten: number;
+}
+
+/**
+ * Die eigene Konfi-Zeit einer Teamer:in -- ab Snapshot-Version 3.
+ * null, wenn die Person nicht selbst Konfi in dieser Gemeinde war.
+ */
+export interface TeamerKonfiZeitSlide {
+  jahrgang: string | null;
+}
+
 export interface TeamerZeitraumSlide {
   year: number;
+  // Additiv ab Snapshot-Version 2 (06.09.2026): der Zeitraum, auf den die
+  // Zahlen des Teamer-Rueckblicks eingegrenzt sind. Version-1-Snapshots
+  // haben die Felder nicht -- dort zaehlten die Zahlen noch die gesamte
+  // Kontolebenszeit, weshalb sie optional bleiben.
+  start?: string;
+  ende?: string;
 }
 
 export interface TeamerWrappedData {
   version: number;
+  /**
+   * Die Seiten dieses Rueckblicks in Anzeigereihenfolge, vom Backend
+   * gewaehlt (utils/wrappedKacheln.js, waehleTeamerKacheln). Ab
+   * Snapshot-Version 3 (06.09.2026). Fehlt bei aelteren Snapshots -- dann
+   * rendert das Frontend wie bisher die feste Siebener-Reihenfolge.
+   */
+  kacheln?: string[];
   slides: {
     events_geleitet: TeamerEventsGeleitetSlide;
     konfis_betreut: TeamerKonfisBetreutSlide;
     badges: TeamerBadgesSlide;
     zertifikate: TeamerZertifikateSlide;
     engagement: TeamerEngagementSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    team?: TeamerTeamSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    moderation?: TeamerModerationSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    neu_dabei?: TeamerNeuDabeiSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    anfang?: TeamerAnfangSlide | null;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    erstes_abzeichen?: TeamerErstesAbzeichenSlide | null;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    chat?: TeamerChatSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    konfi_zeit?: TeamerKonfiZeitSlide | null;
     zeitraum: TeamerZeitraumSlide;
   };
 }

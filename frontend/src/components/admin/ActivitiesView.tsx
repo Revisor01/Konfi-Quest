@@ -120,7 +120,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     <>
       <SectionHeader
         title="Aktivitäten"
-        subtitle={targetRole === 'teamer' ? 'Teamer:innen-Aktivitäten' : 'Punkte und Aufgaben'}
+        subtitle={targetRole === 'teamer' ? 'Aktivitäten fürs Team' : 'Punkte und Aufgaben'}
         icon={ICON_AKTION_GEFUELLT}
         preset="activities"
         stats={targetRole === 'teamer' ? [
@@ -145,7 +145,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
             <IonLabel>Konfis</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="teamer">
-            <IonLabel>Teamer:innen</IonLabel>
+            <IonLabel>Team</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       )}

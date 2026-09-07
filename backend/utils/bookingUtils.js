@@ -226,8 +226,13 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
         ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`;
   const params = timeslotId ? [eventId, timeslotId] : [eventId];
 
+  // war_auf_warteliste haelt fest, was dieses UPDATE ueberschreibt (Migration
+  // 145): Nach dem Wechsel auf 'confirmed' ist sonst nicht mehr erkennbar,
+  // dass diese Person gewartet hat. Der Jahresrueckblick erzaehlt daraus
+  // "du hast gewartet -- und bist reingekommen"; ohne die Spalte ginge die
+  // Information im Moment des Nachrueckens verloren.
   const { rows: [promoted] } = await db.query(
-    `UPDATE event_bookings SET status = 'confirmed'
+    `UPDATE event_bookings SET status = 'confirmed', war_auf_warteliste = true
      WHERE id = (${subSelect})
      RETURNING user_id, organization_id`,
     params
@@ -451,7 +456,7 @@ async function bucheTermin(client, eingabe) {
   // duerfen sich jederzeit melden, begrenzt wird nur die Anzahl.
   if (rolle === 'teamer') {
     if (!event.teamer_needed && !event.teamer_only) {
-      return fehler(403, 'Dieses Event ist nicht für Teamer:innen buchbar');
+      return fehler(403, 'Dieses Event ist nicht für das Team buchbar');
     }
 
     const zahlen = await zaehleBuchungen(client, { eventId }, 'team');
@@ -493,7 +498,7 @@ async function bucheTermin(client, eingabe) {
   }
 
   // ---------- KONFI-SEITE ----------
-  if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für Teamer:innen');
+  if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für das Team');
   if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
 
   const fenster = validateRegistrationWindow(event);
@@ -621,7 +626,7 @@ async function setzeTeamerZusage(client, eingabe) {
   // Nur dort, wo Teamer:innen ueberhaupt gebraucht werden. Bei reinen
   // Konfi-Terminen gibt es nichts zuzusagen.
   if (!event.teamer_needed && !event.teamer_only) {
-    return fehler(400, 'Für diesen Termin werden keine Teamer:innen gesucht');
+    return fehler(400, 'Für diesen Termin wird kein Team gesucht');
   }
   if (new Date(event.event_date) <= new Date()) {
     return fehler(400, 'Der Termin liegt bereits in der Vergangenheit');

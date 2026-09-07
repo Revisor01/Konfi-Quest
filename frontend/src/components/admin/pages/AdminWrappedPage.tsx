@@ -70,6 +70,26 @@ interface Jahrgang {
 const datum = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
+/**
+ * Der Zeitraum bleibt LEER -- und das ist seit dem 07.09.2026 der Normalfall.
+ *
+ * SIMONS REGEL: "bei konfi jahrgaengen muss das wrapped alles erfassen was
+ * der konfi gemacht hat. den ganzen zeitraum, bei manchen sind das auch zwei
+ * jahre. es sollte nur die option mit rein das man auch zwischenberichte
+ * machen kann." Und: "Immer vom anfang an bis zum jetzigen zeitpunkt."
+ *
+ * Ohne Eingabe rechnet das Backend also selbst:
+ *   Konfi  -> vom Anfang der Konfi-Zeit bis heute,
+ *   Teamer -> vom Ende des letzten Rueckblicks bis heute (beim ersten Mal
+ *             ab dem Eintritt ins Team).
+ *
+ * Vorher stand hier ein Vorschlag (1.9. bis 31.8.), der bei jedem Anlegen
+ * mitging -- damit war der ZWISCHENBERICHT der Normalfall und Simons Regel
+ * die Ausnahme. Genau andersherum ist es richtig. Wer wirklich einen
+ * Zwischenstand will, traegt die beiden Daten ein.
+ */
+const LEERER_ZEITRAUM = { start: '', ende: '' };
+
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const [zeigeAlert] = useIonAlert();
@@ -87,6 +107,11 @@ const AdminWrappedPage: React.FC = () => {
   const [modalOffen, setModalOffen] = useState(false);
   const [neuerTitel, setNeuerTitel] = useState('');
   const [neuerJahrgang, setNeuerJahrgang] = useState<number | null>(null);
+  // Der Zeitraum der Ausgabe. Er steht seit jeher in wrapped_ausgaben und
+  // wurde angezeigt -- nur konnte ihn niemand setzen, und das Backend
+  // rechnete ohnehin mit einem anderen (Befund 06.09.2026).
+  const [neuerStart, setNeuerStart] = useState(LEERER_ZEITRAUM.start);
+  const [neuerEnde, setNeuerEnde] = useState(LEERER_ZEITRAUM.ende);
   const [erzeugt, setErzeugt] = useState(false);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
@@ -116,18 +141,44 @@ const AdminWrappedPage: React.FC = () => {
       setError('Bitte einen Jahrgang wählen');
       return;
     }
+    // Beide Felder leer ist der NORMALFALL -- dann rechnet das Backend den
+    // Zeitraum selbst (ganze Konfi-Zeit bzw. Anschluss an den letzten
+    // Teamer-Rueckblick). Nur EIN gefuelltes Feld ist dagegen ein Versehen:
+    // Das Backend nimmt eine halbe Angabe nicht an und faellt still auf die
+    // Automatik zurueck -- der eingetragene Tag waere wirkungslos.
+    if ((neuerStart && !neuerEnde) || (!neuerStart && neuerEnde)) {
+      setError('Bitte beide Daten angeben oder beide frei lassen');
+      return;
+    }
+    if (neuerStart && neuerEnde && neuerStart > neuerEnde) {
+      // Sonst entstuende eine Ausgabe, die nichts zaehlen kann -- und der
+      // Fehler faellt erst auf, wenn alle Rueckblicke leer sind.
+      setError('Der Zeitraum endet vor seinem Anfang');
+      return;
+    }
     setErzeugt(true);
     try {
       const titel = neuerTitel.trim();
+      // Der Zeitraum geht NUR mit, wenn er ausdruecklich eingetragen wurde --
+      // das ist Simons Option fuer Zwischenberichte. Ohne Angabe bleibt das
+      // Feld weg, und das Backend rechnet den vollen Zeitraum.
+      const rumpf: { titel?: string; zeitraum_start?: string; zeitraum_ende?: string } = {};
+      if (neuerStart && neuerEnde) {
+        rumpf.zeitraum_start = neuerStart;
+        rumpf.zeitraum_ende = neuerEnde;
+      }
+      if (titel) rumpf.titel = titel;
       if (segment === 'konfi') {
-        await api.post(`/wrapped/generate/${neuerJahrgang}`, titel ? { titel } : {});
+        await api.post(`/wrapped/generate/${neuerJahrgang}`, rumpf);
       } else {
-        await api.post('/wrapped/generate-teamer', titel ? { titel } : {});
+        await api.post('/wrapped/generate-teamer', rumpf);
       }
       setSuccess(titel ? `„${titel}" wurde erstellt und freigegeben` : 'Rückblick erstellt und freigegeben');
       setModalOffen(false);
       setNeuerTitel('');
       setNeuerJahrgang(null);
+      setNeuerStart(LEERER_ZEITRAUM.start);
+      setNeuerEnde(LEERER_ZEITRAUM.ende);
       await laden();
     } catch (e) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -216,7 +267,7 @@ const AdminWrappedPage: React.FC = () => {
           <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as 'konfi' | 'teamer')}>
             <IonSegmentButton value="konfi">Konfis</IonSegmentButton>
             {/* Teamer-Ausgaben betreffen die ganze Gemeinde -- nur die Leitung. */}
-            <IonSegmentButton value="teamer" disabled={!istLeitung}>Teamer:innen</IonSegmentButton>
+            <IonSegmentButton value="teamer" disabled={!istLeitung}>Team</IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -249,8 +300,8 @@ const AdminWrappedPage: React.FC = () => {
                   message={segment === 'konfi'
                     ? 'Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
                     : istLeitung
-                      ? 'Über das Plus oben legst du einen an — für alle Teamer:innen gemeinsam, mit eigenem Namen.'
-                      : 'Für das Team ist noch keiner erstellt. Rückblicke für Teamer:innen legt die Leitung deiner Gemeinde an.'}
+                      ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, mit eigenem Namen.'
+                      : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Leitung deiner Gemeinde an.'}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>
@@ -432,7 +483,7 @@ const AdminWrappedPage: React.FC = () => {
                       </IonSelect>
                     </IonItem>
                   )}
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonInput
                       label="Name"
                       labelPlacement="stacked"
@@ -442,10 +493,40 @@ const AdminWrappedPage: React.FC = () => {
                       onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
                     />
                   </IonItem>
-                  {/* Hinweis im gemeinsamen Muster statt als loser Absatz
-                      (Simon, 05.09.2026). Der Satz "Ohne Namen schlagen wir
-                      einen vor" ist raus: Er nannte den Vorschlag nicht und
-                      liess offen, was passiert. */}
+                  {/* Die Datumsfelder sind seit dem 07.09.2026 die AUSNAHME,
+                      nicht der Normalfall: Sie bleiben leer, und nur wer
+                      wirklich einen Zwischenbericht will, traegt etwas ein.
+                      Native Datumsfelder statt IonDatetime: zwei Kalender in
+                      einem Sheet waeren mehr Bedienung als die Sache wert. */}
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonInput
+                      type="date"
+                      label="Nur für Zwischenbericht: von"
+                      labelPlacement="stacked"
+                      value={neuerStart}
+                      onIonInput={(e) => setNeuerStart(e.detail.value || '')}
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonInput
+                      type="date"
+                      label="Nur für Zwischenbericht: bis"
+                      labelPlacement="stacked"
+                      value={neuerEnde}
+                      onIonInput={(e) => setNeuerEnde(e.detail.value || '')}
+                    />
+                  </IonItem>
+                  {/* Simon ausdruecklich (07.09.2026): "Das erklaeren wir
+                      auch." Der Text sagt, was OHNE Eingabe passiert -- sonst
+                      steht da ein leeres Pflichtfeld-Gefuehl und niemand
+                      weiss, welchen Zeitraum der Rueckblick am Ende zeigt.
+                      Beide Rollen werden genannt, weil dieselbe Maske beide
+                      Ausgaben anlegt. */}
+                  <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
+                    {segment === 'konfi'
+                      ? 'Lass die Daten leer: Dann zählt der Rückblick die ganze Konfi-Zeit — vom Beginn bis heute, auch über zwei Jahre. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'
+                      : 'Lass die Daten leer: Dann schließt der Rückblick lückenlos an den letzten an — beim ersten Mal ab dem Eintritt ins Team, danach ab dem Ende des vorigen Rückblicks. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'}
+                  </div>
                   <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     Der Rückblick wird sofort erstellt und freigegeben; alle
                     bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.

@@ -3,8 +3,8 @@ const router = express.Router();
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { waehleKacheln } = require('../utils/wrappedKacheln');
-const { seiteFuerKategorie, datumsFenster } = require('../utils/wrappedKategorien');
+const { waehleKacheln, waehleTeamerKacheln } = require('../utils/wrappedKacheln');
+const { seiteFuerKategorie, datumsFenster, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
@@ -13,6 +13,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Schema-Migrationen: siehe backend/migrations/075_wrapped.sql
 
   // Deutsche Monatsnamen
+  // Wochentage, indiziert wie EXTRACT(DOW): 0 = Sonntag.
+  const WOCHENTAG_NAMEN = [
+    'Sonntag', 'Montag', 'Dienstag', 'Mittwoch',
+    'Donnerstag', 'Freitag', 'Samstag'
+  ];
+
   const MONAT_NAMEN = [
     '', 'Januar', 'Februar', 'M\u00e4rz', 'April', 'Mai', 'Juni',
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
@@ -23,37 +29,267 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
 
   /**
-   * Konfi-Jahr als Datumsfenster [start, ende] (beide inklusive).
+   * Der Zeitraum eines Rueckblicks als Datumsfenster [start, ende] (beide
+   * inklusive).
    *
-   * Frueher wurde der Zeitraum erst am Ende der Funktion berechnet und nur auf
-   * die Challenge-Momente angewendet -- alle anderen Zahlen liefen ueber die
-   * gesamte Kontolebenszeit (Befund W-B, 01.09.2026). Jetzt steht er vorn und
-   * gilt fuer jede Zahl.
+   * SIMONS REGEL (07.09.2026), woertlich:
+   *   "bei konfi jahrgaengen muss das wrapped alles erfassen was der konfi
+   *    gemacht hat. den ganzen zeitraum, bei manchen sind das auch zwei
+   *    jahre. es sollte nur die option mit rein das man auch zwischenberichte
+   *    machen kann" -- "Konfi regel. Immer vom anfang an bis zum jetzigen
+   *    zeitpunkt."
+   *   "Und bei teamern das erste wrapped geht vom anbeginn der zeit als
+   *    teamer bis zum zeitpunkt des wrapped und dann immer bis zum letzten
+   *    wrapped."
    *
-   * Regeln:
-   * - Mit Konfirmationstermin: 1.9. des Vorjahres bis zum Termin.
-   * - Ohne Termin (3 von 5 Jahrgaengen in Produktion, Befund W-C): volles
-   *   Konfi-Jahr 1.9.(year-1) bis 31.8.(year). Der frueher fest verdrahtete
-   *   31.7. liess den August in jedem Fallback-Jahr verschwinden.
+   * Daraus:
+   *   KONFI  -> Beginn der Konfi-Zeit bis HEUTE. Kein 1.9.-Fenster, kein
+   *             Kalenderjahr, und der Konfirmationstermin schneidet NICHT
+   *             mehr ab.
+   *   TEAMER -> lueckenlose Kette: vom Ende der vorigen Teamer-Ausgabe
+   *             derselben Organisation (beim ersten Mal: seit wann jemand im
+   *             Team ist) bis HEUTE.
+   *
+   * WAS VORHER FALSCH WAR (gemessen an der Produktionsdatenbank, 07.09.2026):
+   * Mit Konfirmationstermin setzte die Funktion start = (Jahr des Termins -1)
+   * + '-09-01'. Eine echte Konfi in Org 1 (Jahrgang 12, Konfirmation
+   * 2027-05-01) bekam damit 01.09.2026 bis 01.05.2027 -- ihre 20 Abzeichen
+   * liegen aber alle im Sommer 2026, also DAVOR. Ihre Abzeichen-Seite zeigte
+   * eine glatte 0. Genau das schliesst Simons Regel aus.
+   *
+   * Der Konfirmationstermin bleibt als ANGABE erhalten (die Konfirmations-
+   * Seite und die Teilen-Karte zeigen ihn ueber `zeitraum.konfirmation`), er
+   * bestimmt nur den Zeitraum nicht mehr.
+   *
+   * Die Funktion bleibt bewusst SYNCHRON und ohne Datenbank: Woher der Beginn
+   * kommt, weiss der Aufrufer (Konfi-Profil, vorige Ausgabe, teamer_since) --
+   * hier wird nur noch gerechnet. Das macht sie einzeln pruefbar.
+   *
+   * @param {string|Date|null} konfirmationTermin Nur noch Angabe, nie Grenze.
+   * @param {string|Date|null} beginn  Beginn des Zeitraums (Konfi-Zeit bzw.
+   *   Ende der vorigen Teamer-Ausgabe / teamer_since). Fehlt er, faellt der
+   *   Zeitraum auf das laufende Konfi-Jahr zurueck -- besser eine bekannte
+   *   Spanne als eine seit 1970.
+   * @param {number} year  Nur noch fuer diesen Fallback.
+   * @param {object|null} vorgabe  Ausdruecklich gesetzter Zeitraum aus dem
+   *   Formular (Simons "Option fuer Zwischenberichte"). Geht IMMER vor.
+   * @param {Date} jetzt  Ende des Zeitraums; injizierbar fuer Tests.
    *
    * Datumsstrings werden mit padStart gebaut, NICHT ueber
    * new Date(y, 8, 1).toISOString() -- letzteres rechnet Ortszeit nach UTC und
    * machte in Sommerzeit aus dem 1.9. den 31.8.
    */
-  function berechneZeitraum(konfirmationTermin, year) {
+  /**
+   * Liest eine Zahl, die auf einer Spalte aus einer NEUEN Migration beruht.
+   *
+   * BEFUND 07.09.2026, gemessen: Produktion stand auf Migration 144, die
+   * Spalte event_bookings.war_auf_warteliste (145) existierte dort nicht.
+   * Die Abfrage im Snapshot hatte kein try/catch -- sie waere fuer JEDE
+   * Konfi mit "column does not exist" abgebrochen.
+   *
+   * Dass die Migrationen beim Start automatisch laufen, rettet das NICHT:
+   * runMigrations faengt Fehler ab und laesst den Server WEITERLAUFEN
+   * (database.js, "Server laeuft weiter"). Schlaegt eine Migration aus
+   * irgendeinem Grund fehl, startet das Backend trotzdem -- und ohne diese
+   * Absicherung faellt der komplette Rueckblick still aus, wegen einer
+   * einzigen Seite.
+   *
+   * WARUM SAVEPOINT UND NICHT NUR try/catch (das war der eigentliche
+   * Fallstrick, gemessen am 07.09.2026): Der Teamer-Zweig laeuft in einer
+   * Transaktion (BEGIN ... COMMIT). In PostgreSQL bricht EIN
+   * fehlgeschlagenes Statement die ganze Transaktion ab -- jede weitere
+   * Query scheitert danach mit "current transaction is aborted", ganz
+   * gleich, ob der Fehler abgefangen wurde. Genau das stand hier schon
+   * einmal fuer die Challenge-Freigaben: ein try/catch, das den Fehler
+   * brav schluckte, waehrend der Teamer-Rueckblick trotzdem fuer jede
+   * Person ausfiel. Der SAVEPOINT nimmt genau dieses eine Statement
+   * zurueck und laesst die Transaktion heil.
+   *
+   * Dasselbe Muster steht in routes/users.js (Loeschweg, 22.08.2026).
+   *
+   * Nur die beiden Codes fuer "Spalte fehlt" (42703) und "Tabelle fehlt"
+   * (42P01) werden geschluckt. Alles andere -- ein Tippfehler im SQL, ein
+   * Timeout -- fliegt weiter: Ein echter Fehler darf sich nicht als
+   * harmlose Null tarnen.
+   *
+   * @returns {Promise<number>} der gelesene Wert, oder 0 wenn die Spalte fehlt
+   */
+  async function zahlAusNeuerSpalte(client, sql, params, was) {
+    // DER SAVEPOINT DARF NUR IN EINER TRANSAKTION GESETZT WERDEN.
+    //
+    // Beide Zweige benutzen diese Funktion, aber sie arbeiten
+    // unterschiedlich: Der Teamer-Zweig laeuft in BEGIN ... COMMIT, der
+    // Konfi-Zweig holt je Person einen eigenen Client aus dem Pool und
+    // laeuft im Autocommit. Dort wirft `SAVEPOINT` selbst den Fehler
+    // "SAVEPOINT can only be used in transaction blocks" -- und haette dann
+    // genau den Ausfall verursacht, den diese Funktion verhindern soll
+    // (gemessen 07.09.2026 im ersten Anlauf: alle Konfi-Snapshots weg).
+    //
+    // Deshalb wird der SAVEPOINT versucht und sein Scheitern hingenommen.
+    // Im Autocommit braucht es ihn nicht: Dort reisst ein fehlgeschlagenes
+    // Statement nichts mit sich, es gibt keine Transaktion zum Abbrechen.
+    let mitSavepoint = false;
+    try {
+      await client.query('SAVEPOINT neue_spalte');
+      mitSavepoint = true;
+    } catch {
+      // Kein Transaktionsblock -- dann eben ohne.
+    }
+
+    try {
+      const { rows: [row] } = await client.query(sql, params);
+      if (mitSavepoint) await client.query('RELEASE SAVEPOINT neue_spalte');
+      return row ? (row.anzahl || 0) : 0;
+    } catch (err) {
+      if (mitSavepoint) {
+        await client.query('ROLLBACK TO SAVEPOINT neue_spalte').catch(() => {});
+      }
+      if (err.code !== '42703' && err.code !== '42P01') throw err;
+      // Alt-Deployment ohne die Migration. Der Rueckfall ist 0, und die
+      // zugehoerige Seite faellt damit ueber ihre Bedingung in
+      // wrappedKacheln.js einfach weg -- das richtige Verhalten: Ohne die
+      // Spalte WEISS niemand etwas, eine Seite auf Verdacht waere schlimmer
+      // als keine.
+      console.warn(`Wrapped: ${was} nicht verfuegbar (${err.code}), Seite entfaellt:`, err.message);
+      return 0;
+    }
+  }
+
+  function berechneZeitraum(konfirmationTermin, year, vorgabe = null, beginn = null, jetzt = new Date()) {
     const iso = (d) => {
+      // Ein reiner Datumsstring bleibt UNANGETASTET. new Date('2025-10-01')
+      // ist Mitternacht UTC -- in Berlin also der 30.09. um 02:00, und
+      // getDate() liefert 30. Genau diese Verschiebung hat schon einmal aus
+      // dem 1.9. den 31.8. gemacht (siehe Kommentar oben); sie traefe jetzt
+      // jeden Zeitraum, den jemand im Formular eintraegt.
+      if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
       const dt = (d instanceof Date) ? d : new Date(d);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     };
-    if (konfirmationTermin) {
-      const termin = new Date(konfirmationTermin);
-      const start = `${termin.getFullYear() - 1}-09-01`;
-      return { start, ende: iso(termin), konfirmation: iso(termin) };
+    const konfirmation = konfirmationTermin ? iso(konfirmationTermin) : null;
+
+    // Ein AUSDRUECKLICH gesetzter Zeitraum geht vor -- das ist Simons Option
+    // fuer Zwischenberichte. Er kommt aus dem Anlege-Formular und steht so
+    // auch in der Ausgabe (wrapped_ausgaben); die angezeigte Spanne und die
+    // Zahlen darunter muessen dieselbe sein.
+    if (vorgabe && vorgabe.start && vorgabe.ende) {
+      return { start: iso(vorgabe.start), ende: iso(vorgabe.ende), konfirmation };
     }
-    return { start: `${year - 1}-09-01`, ende: `${year}-08-31`, konfirmation: null };
+
+    // Ohne Vorgabe: vom Beginn bis JETZT. "Jetzt" ist der Tag der Erzeugung
+    // und wird im Snapshot festgeschrieben -- ein einmal erzeugter Rueckblick
+    // aendert sich nie wieder.
+    const ende = iso(jetzt);
+
+    if (beginn) {
+      const start = iso(beginn);
+      // Ein Beginn NACH dem heutigen Tag (verschobene Uhr, Datenfehler) gaebe
+      // ein Fenster, das nichts zaehlen kann. Dann lieber der Tag selbst.
+      return { start: start > ende ? ende : start, ende, konfirmation };
+    }
+
+    // Kein Beginn ermittelbar (Altdaten ohne created_at, Teamer ohne
+    // teamer_since und ohne Aktivitaet): das laufende Konfi-Jahr wie bisher.
+    return { start: `${year - 1}-09-01`, ende, konfirmation };
   }
 
-  async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year) {
+  /**
+   * Das Ende der VORIGEN Teamer-Ausgabe dieser Organisation -- der Anfang der
+   * naechsten (Simons Kette, 07.09.2026).
+   *
+   * "sagen wir ich werde teamer am 1.9.2025 und das wrapped wird
+   *  freigeschaltet am 1.1.2027 dann bekomme ich diesen zeitraum. Und das
+   *  naechste wrapped wird gestartet am 1.5.2028 dann geht es vom
+   *  1.1.2027-1.5.2028"
+   *
+   * Genommen wird das GROESSTE zeitraum_ende, nicht die zuletzt angelegte
+   * Ausgabe: Wer nachtraeglich einen Zwischenbericht ueber einen frueheren
+   * Abschnitt anlegt, darf die Kette nicht zurueckdrehen.
+   *
+   * `ausserAusgabeId` schliesst die soeben angelegte Ausgabe aus. Sie steht
+   * beim Erzeugen der Snapshots schon in der Tabelle (bewusst -- der
+   * Fremdschluessel der Snapshots braucht sie) und faende sich sonst selbst
+   * als eigene Vorgaengerin: Der Zeitraum begaenne dann an seinem eigenen
+   * Ende und der Rueckblick zaehlte nichts.
+   */
+  async function ermittleVorigesTeamerEnde(client, orgId, ausserAusgabeId = null) {
+    const { rows: [row] } = await client.query(
+      `SELECT MAX(zeitraum_ende) AS ende
+         FROM wrapped_ausgaben
+        WHERE organization_id = $1
+          AND wrapped_type = 'teamer'
+          AND ($2::bigint IS NULL OR id <> $2::bigint)`,
+      [orgId, ausserAusgabeId]
+    );
+    return row && row.ende ? row.ende : null;
+  }
+
+  /**
+   * War diese Person bei der Sommerfreizeit 2026 nach Stavanger dabei?
+   *
+   * SIMONS VORGABE (07.09.2026): "kannst du bitte eine seite bauen fuer
+   * sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+   * und konfis die dabei waren. ich lege das als aktivitaet an mit
+   * sommerfrezeit als kategorie."
+   *
+   * GEPRUEFT WIRD DIE KATEGORIE, nicht ein Aktivitaets- oder Terminname.
+   * Beide Quellen zaehlen -- Aktivitaeten UND Termine -- weil die Fahrt je
+   * nach Gemeinde als das eine oder das andere gefuehrt wird (dieselbe
+   * Ueberlegung wie bei der Kategorie-Verteilung weiter unten).
+   *
+   * ZWEI FENSTER MUESSEN BEIDE ZUTREFFEN:
+   *   1. der Zeitraum DIESES Rueckblicks (Simons Regel 07.09.2026: der
+   *      Rueckblick zeigt nur, was in seiner Spanne liegt), und
+   *   2. der Zeitraum der FAHRT selbst. Sonst loeste die Freizeit 2027
+   *      dieselbe Norwegen-Seite noch einmal aus.
+   *
+   * DIE KATEGORIE EXISTIERT HEUTE IN KEINER GEMEINDE -- sie wird erst per
+   * SQL angelegt. Bis dahin liefert diese Funktion ueberall false und die
+   * Seite erscheint nirgends. Kein Fehler, keine leere Seite.
+   *
+   * Eine fehlende Tabelle oder Spalte darf den ganzen Rueckblick nicht
+   * verhindern: Im Fehlerfall gilt "nicht dabei" (siehe zaehleWennMoeglich
+   * weiter oben -- dieselbe Regel, hier auf einen Wahrheitswert bezogen).
+   */
+  async function warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde) {
+    // Der Schnitt der beiden Fenster. Liegt der Rueckblick ganz vor oder
+    // ganz nach der Fahrt, ist er leer und wir fragen gar nicht erst.
+    const von = zeitraumStart > STAVANGER_VON ? zeitraumStart : STAVANGER_VON;
+    const bis = zeitraumEnde < STAVANGER_BIS ? zeitraumEnde : STAVANGER_BIS;
+    if (von > bis) return false;
+
+    try {
+      const { rows: [row] } = await client.query(
+        `SELECT EXISTS (
+           SELECT 1
+             FROM user_activities ua
+             JOIN activity_categories ac ON ac.activity_id = ua.activity_id
+             JOIN categories c ON c.id = ac.category_id
+            WHERE ua.user_id = $1 AND ua.organization_id = $2
+              AND LOWER(BTRIM(c.name)) = 'sommerfreizeit'
+              AND ua.completed_date >= $3::date
+              AND ua.completed_date < ($4::date + INTERVAL '1 day')
+           UNION ALL
+           SELECT 1
+             FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             JOIN event_categories ec ON ec.event_id = e.id
+             JOIN categories c ON c.id = ec.category_id
+            WHERE eb.user_id = $1 AND eb.organization_id = $2
+              AND LOWER(BTRIM(c.name)) = 'sommerfreizeit'
+              AND e.event_date >= $3::date
+              AND e.event_date < ($4::date + INTERVAL '1 day')
+         ) AS dabei`,
+        [userId, orgId, von, bis]
+      );
+      return Boolean(row && row.dabei);
+    } catch (err) {
+      console.warn('Wrapped: Sommerfreizeit-Pruefung nicht moeglich, Seite entfaellt:', err.message);
+      return false;
+    }
+  }
+
+  async function generateKonfiSnapshot(client, userId, orgId, jahrgangId, year, zeitraumVorgabe = null) {
     // Konfirmationstermin je Jahrgang aus dem is_konfirmation-Event ableiten
     // (frueheste nicht-cancelled Konfirmation, org-gescopt) -- ersetzt die alte
     // Jahrgang-Stichtag-Spalte (D-04/D-05).
@@ -69,11 +305,44 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
 
-    const zeitraum = berechneZeitraum(konfirmationTermin, year);
+    // BEGINN DER KONFI-ZEIT -- der Anfang des Rueckblicks (Simons Regel
+    // 07.09.2026: "Immer vom anfang an bis zum jetzigen zeitpunkt").
+    //
+    // QUELLE: konfi_profiles.created_at des Profils IN DIESEM Jahrgang.
+    // Das ist der Tag, an dem die Person diesem Jahrgang zugeordnet wurde --
+    // also der Beginn genau der Konfi-Zeit, die dieser Rueckblick erzaehlt.
+    //
+    // WARUM NICHT jahrgaenge.created_at: Das ist der Tag, an dem die LEITUNG
+    // den Jahrgang anlegte, nicht der Tag, an dem diese Person dazukam. Wer
+    // spaeter nachrueckt oder aus einem anderen Jahrgang wechselt, bekaeme
+    // einen Zeitraum, der vor der eigenen Konfi-Zeit beginnt. Umgekehrt
+    // liegt konfi_profiles.created_at bei einem nachtraeglich angelegten
+    // Jahrgang nie VOR dem Jahrgang selbst.
+    //
+    // WARUM NICHT users.created_at: Ein Konto kann aelter sein als die
+    // Konfi-Zeit (zweiter Jahrgang, Teamer, der spaeter Konfi wird) -- dann
+    // zaehlte der Rueckblick eine fremde Zeit mit.
+    //
+    // Fehlt created_at (Altdaten), faellt berechneZeitraum auf das laufende
+    // Konfi-Jahr zurueck.
+    const { rows: [beginnRow] } = await client.query(
+      `SELECT kp.created_at FROM konfi_profiles kp
+        WHERE kp.user_id = $1 AND kp.jahrgang_id = $2`,
+      [userId, jahrgangId]
+    );
+    const konfiBeginn = beginnRow && beginnRow.created_at ? beginnRow.created_at : null;
+
+    const zeitraum = berechneZeitraum(konfirmationTermin, year, zeitraumVorgabe, konfiBeginn);
     const zeitraumStart = zeitraum.start;
     const zeitraumEnde = zeitraum.ende;
 
-    // Punkte aus konfi_profiles
+    // Punkte aus konfi_profiles.
+    //
+    // BEWUSST OHNE ZEITFILTER: Das sind laufende STAENDE, keine Ereignisse --
+    // konfi_profiles fuehrt zwei Summenspalten und kein Datum, an dem sich
+    // filtern liesse. Der Endspurt weiter unten vergleicht sie mit dem Ziel
+    // des Jahrgangs; beides ist der aktuelle Stand und muss zueinander
+    // passen.
     const { rows: [profile] } = await client.query(
       `SELECT kp.gottesdienst_points, kp.gemeinde_points
        FROM konfi_profiles kp
@@ -83,10 +352,20 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const gottesdienst = profile ? profile.gottesdienst_points : 0;
     const gemeinde = profile ? profile.gemeinde_points : 0;
 
-    // Bonus-Punkte
+    // Bonus-Punkte im Zeitraum.
+    //
+    // BEFUND 06.09.2026: Diese Query hatte als einzige EREIGNIS-Query keinen
+    // Zeitfilter -- sie summierte alle Bonuspunkte seit Kontobeginn. Bei
+    // einem Konto, das ein zweites Konfi-Jahr durchlaeuft, trug der
+    // Rueckblick damit die Sonderpunkte des Vorjahres mit. bonus_points hat
+    // ein completed_date (Spalte existiert in Produktion), der Filter war
+    // also jederzeit moeglich.
     const { rows: [bonusRow] } = await client.query(
-      `SELECT COALESCE(SUM(points), 0) as total FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2`,
-      [userId, orgId]
+      `SELECT COALESCE(SUM(points), 0) as total FROM bonus_points
+        WHERE konfi_id = $1 AND organization_id = $2
+          AND completed_date >= $3::date
+          AND completed_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const bonus = parseInt(bonusRow.total, 10) || 0;
 
@@ -231,7 +510,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const termineDaten = termineDatenRows.map(r => r.event_date);
 
-    // Gesamt-Events verfuegbar für diesen Jahrgang
+    // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Ein reiner
+    // Wahrheitswert -- die "14 Tage" auf der Seite sind fester Text, keine
+    // gerechnete Zahl (siehe warBeiStavanger und wrappedKacheln.js).
+    const stavanger2026 = await warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde);
+
+    // Gesamt-Events verfuegbar für diesen Jahrgang.
+    // BEWUSST OHNE ZEITFILTER: die Bezugsgroesse "wie viele Termine gab es
+    // ueberhaupt", nicht eine Zahl aus dem Zeitraum.
     const { rows: [totalEventsRow] } = await client.query(
       `SELECT COUNT(DISTINCT e.id) as count FROM events e
        JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $2
@@ -264,6 +550,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        ORDER BY ub.awarded_date DESC`,
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
+    // BEWUSST OHNE ZEITFILTER: wie viele Abzeichen es in der Gemeinde gibt.
+    // Eine Konfiguration der Gemeinde, kein Ereignis im Zeitraum.
     const { rows: [totalBadgesRow] } = await client.query(
       `SELECT COUNT(*) as count FROM custom_badges WHERE organization_id = $1`,
       [orgId]
@@ -383,7 +671,148 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? { monat: monatRows[0].monat, monat_name: MONAT_NAMEN[monatRows[0].monat] || '', aktivitaeten: parseInt(monatRows[0].count, 10) }
       : { monat: 0, monat_name: '', aktivitaeten: 0 };
 
-    // Endspurt: Vergleich mit Zielwerten aus jahrgaenge
+    // WARTELISTE-HELD:IN -- wie oft jemand nachgerueckt ist.
+    //
+    // Die Spalte war_auf_warteliste setzt promoteFromWaitlist im Moment des
+    // Nachrueckens (Migration 145). NULL heisst UNBEKANNT (Bestandszeilen
+    // von vor der Migration), nicht "nein" -- deshalb wird hier auf
+    // ausdrueckliches true geprueft und nicht auf "nicht false".
+    //
+    // EINE FEHLENDE SPALTE DARF DEN RUECKBLICK NICHT SPRENGEN (Befund
+    // 07.09.2026, gemessen: Produktion stand auf Migration 144, die Spalte
+    // existierte dort nicht). Die Migrationen laufen zwar beim Start
+    // automatisch -- aber runMigrations FAENGT FEHLER AB und laesst den
+    // Server weiterlaufen (database.js: "Server laeuft weiter"). Schlaegt
+    // 145 aus irgendeinem Grund fehl, startet das Backend trotzdem, und
+    // ohne dieses try/catch braeche generateKonfiSnapshot danach fuer JEDE
+    // Konfi mit "column does not exist" ab: ein stiller Totalausfall des
+    // gesamten Rueckblicks wegen einer einzigen Seite.
+    //
+    // Der Rueckfall ist 0, und damit faellt die Seite ueber ihre Bedingung
+    // in wrappedKacheln.js (nachgerueckt > 0) einfach weg. Das ist das
+    // richtige Verhalten: Ohne die Spalte WEISS niemand, wer gewartet hat --
+    // eine Seite auf Verdacht waere schlimmer als keine.
+    //
+    // Dasselbe Muster steht weiter unten bei den Challenge-Freigaben
+    // (approved_by, Migration 146).
+    const nachgerueckt = await zahlAusNeuerSpalte(
+      client,
+      `SELECT COUNT(*)::int AS anzahl FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.organization_id = $2
+          AND eb.war_auf_warteliste IS TRUE
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde],
+      'Warteliste (Migration 145)'
+    );
+
+    // DER LANGE ATEM -- die Spanne zwischen erstem und letztem Termin.
+    //
+    // Die Aussage ist "du warst ueber das ganze Jahr hinweg dabei", nicht
+    // "du hast viele Termine". Deshalb zaehlt hier die SPANNE, nicht die
+    // Menge -- und deshalb braucht die Seite eine Mindestzahl an Terminen
+    // (siehe Bedingung in wrappedKacheln.js): Bei zwei Terminen im September
+    // und im Mai waeren es rechnerisch auch 240 Tage, aber die Zahl erzaehlte
+    // dann das Gegenteil von dem, was sie behauptet.
+    //
+    // Gerechnet in Berliner Zeit: event_date ist ein Zeitstempel mit Zone,
+    // und ein Termin am Sonntagabend um 20 Uhr gehoert zum Sonntag, nicht
+    // zum Montag in UTC.
+    const { rows: [spanneRow] } = await client.query(
+      `SELECT
+         MIN((e.event_date AT TIME ZONE 'Europe/Berlin')::date) AS erster,
+         MAX((e.event_date AT TIME ZONE 'Europe/Berlin')::date) AS letzter,
+         COUNT(*)::int AS anzahl
+       FROM event_bookings eb
+       JOIN events e ON eb.event_id = e.id
+       WHERE eb.user_id = $1 AND eb.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    // Die Spalten kommen als DATE zurueck. Sie in einen ISO-String zu
+    // giessen, darf NICHT ueber toISOString() laufen -- das rechnet nach UTC
+    // und schoebe das Datum um einen Tag (derselbe Fehler, den
+    // berechneZeitraum() schon einmal hatte).
+    const alsDatum = (d) => {
+      const dt = (d instanceof Date) ? d : new Date(d);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    };
+    const langerAtem = (spanneRow && spanneRow.erster && spanneRow.letzter)
+      ? {
+          erster: alsDatum(spanneRow.erster),
+          letzter: alsDatum(spanneRow.letzter),
+          tage: Math.round(
+            (new Date(spanneRow.letzter).getTime() - new Date(spanneRow.erster).getTime())
+            / (24 * 60 * 60 * 1000)
+          ),
+          termine: spanneRow.anzahl
+        }
+      : null;
+
+    // DEIN WOCHENTAG -- an welchem Tag die Termine ueberwiegend lagen.
+    //
+    // ZEITZONE (der eigentliche Fallstrick): EXTRACT(DOW ...) rechnet ohne
+    // AT TIME ZONE in UTC. Ein Gottesdienst am Sonntag um 20 Uhr Berliner
+    // Zeit ist in UTC noch Sonntag 18 Uhr -- aber im Winter ein Termin um
+    // 00:30 waere schon Montag. Dieselbe Fehlerklasse wie der Datumsversatz
+    // in berechneZeitraum(). Deshalb wird konsequent nach Europe/Berlin
+    // umgerechnet, bevor der Wochentag bestimmt wird.
+    const { rows: wochentagRows } = await client.query(
+      `SELECT EXTRACT(DOW FROM (e.event_date AT TIME ZONE 'Europe/Berlin'))::int AS tag,
+              COUNT(*)::int AS anzahl
+         FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.organization_id = $2
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')
+        GROUP BY tag
+        ORDER BY anzahl DESC, tag ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const gesamtTermine = spanneRow ? spanneRow.anzahl : 0;
+    const wochentag = wochentagRows.length > 0
+      ? {
+          tag: wochentagRows[0].tag,
+          name: WOCHENTAG_NAMEN[wochentagRows[0].tag] || '',
+          anzahl: wochentagRows[0].anzahl,
+          gesamt: gesamtTermine,
+          anteil: gesamtTermine > 0
+            ? Math.round((wochentagRows[0].anzahl / gesamtTermine) * 100)
+            : 0
+        }
+      : null;
+
+    // DER VIELSEITIGE -- mit wie vielen Medienarten jemand geantwortet hat.
+    //
+    // BEWUSST "2 VON 3" STATT "ALLE DREI": challenges.allowed_media steht per
+    // Default auf ["text","photo"] -- Audio ist in vielen Challenges gar
+    // nicht erlaubt. Eine Seite, die alle drei verlangt, traefe fast nie zu
+    // und waere damit keine Seite, sondern eine Fussnote. Gezaehlt werden
+    // deshalb die verschiedenen Arten, und ab zwei ist es eine Geschichte.
+    let medienarten = [];
+    try {
+      const { rows: medienRows } = await client.query(
+        `SELECT DISTINCT cs.media_type
+           FROM challenge_submissions cs
+          WHERE cs.user_id = $1 AND cs.organization_id = $2
+            AND cs.moderation_status <> 'hidden'
+            AND cs.created_at >= $3::date
+            AND cs.created_at < ($4::date + INTERVAL '1 day')
+            AND cs.media_type IS NOT NULL`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      medienarten = medienRows.map(r => r.media_type).sort();
+    } catch (medienErr) {
+      // Alt-Deployment ohne Challenge-Tabellen: die Seite entfaellt.
+      console.warn('Wrapped: Medienarten konnten nicht geladen werden:', medienErr.message);
+    }
+
+    // Endspurt: Vergleich mit Zielwerten aus jahrgaenge.
+    // BEWUSST OHNE ZEITFILTER: die Zielvorgabe des Jahrgangs ist eine
+    // Einstellung, kein Ereignis.
     const { rows: [jahrgang] } = await client.query(
       `SELECT target_gottesdienst, target_gemeinde, gottesdienst_enabled, gemeinde_enabled
        FROM jahrgaenge WHERE id = $1`,
@@ -795,6 +1224,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           gesamt: pflichtGesamt
         },
         aktivster_monat: aktivsterMonat,
+        // Additiv (ab 07.09.2026): alte Apps kennen die Felder nicht.
+        warteliste: {
+          nachgerueckt
+        },
+        langer_atem: langerAtem,
+        wochentag: wochentag,
+        medienarten: medienarten,
         endspurt: {
           aktiv: endspurtAktiv,
           fehlende_punkte: fehlendePunkte,
@@ -835,6 +1271,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           })),
           top_kategorie: kategorieVerteilung.length > 0 ? kategorieVerteilung[0].kategorie : null
         },
+        // Additiv (07.09.2026): War die Person bei der Sommerfreizeit 2026
+        // nach Stavanger dabei? Alte Apps kennen das Feld nicht und
+        // ignorieren es -- und die Seite selbst traegt bewusst einen
+        // Schluessel OHNE 'kategorie:'-Praefix, damit sie dort spurlos
+        // durchfaellt statt eine leere Seite zu erzeugen.
+        stavanger_2026: stavanger2026,
         // Rohdaten fuer die Datums-Seiten. Bewusst nur die Daten, keine
         // Namen -- die Seite sagt "du warst bei drei Advents-Terminen", nicht
         // welche das waren.
@@ -856,14 +1298,89 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     return schnappschuss;
   }
 
-  async function generateTeamerSnapshot(client, userId, orgId, year) {
+  /**
+   * Teamer-Rueckblick eines Jahres.
+   *
+   * BEFUND 06.09.2026: Diese Funktion filterte KEINE ihrer sechs Abfragen auf
+   * den Zeitraum. Das `year` landete nur in slides.zeitraum.year -- die Zahlen
+   * darunter zaehlten die gesamte Kontolebenszeit. Wer seit vier Jahren im
+   * Team ist, sah in seinem "Jahresrueckblick" alle Termine aus vier Jahren.
+   * Der Konfi-Zweig macht es seit dem 01.09.2026 richtig (berechneZeitraum),
+   * der Teamer-Zweig blieb dabei stehen.
+   *
+   * WAS AUF DEN ZEITRAUM GEFILTERT WIRD -- und was bewusst nicht:
+   *
+   *   gefiltert: Termine, der Termin mit den meisten Teilnehmenden, Abzeichen
+   *     und Zertifikate. Das sind EREIGNISSE mit Datum. Ein Abzeichen aus dem
+   *     Vorjahr gehoert nicht in diesen Jahresrueckblick -- es war die
+   *     Nachricht des VORIGEN Jahres und wuerde sie hier ein zweites Mal
+   *     erzaehlen.
+   *
+   *   NICHT gefiltert: "Konfis betreut". Das ist ein ZUSTAND, kein Ereignis --
+   *     user_jahrgang_assignments traegt kein Datum, an dem man filtern
+   *     koennte, und die Aussage "du begleitest 13 Konfis" ist ohnehin als
+   *     Gegenwart gemeint, nicht als Jahressumme.
+   *
+   *   NICHT gefiltert: teamer_since / jahre_aktiv. Das IST der Lebenszeitwert
+   *     und genau die Aussage der Seite ("seit 4 Jahren dabei"). Auf ein Jahr
+   *     eingegrenzt kaeme dort immer 1 heraus und die Seite verloere ihren
+   *     Sinn. Gerechnet wird sie aber jetzt gegen das ZEITRAUM-ENDE statt
+   *     gegen Date.now(): Ein Rueckblick auf 2024, im Jahr 2026 nochmals
+   *     geoeffnet, sagte sonst "6 Jahre" -- eine Zahl, die zum Rueckblick
+   *     nicht passt und sich mit jedem Aufruf aendert.
+   */
+  async function generateTeamerSnapshot(client, userId, orgId, year, zeitraumVorgabe = null, vorigesEnde = null) {
+    // BEGINN DES TEAMER-ZEITRAUMS -- die lueckenlose Kette (Simons Regel
+    // 07.09.2026): "das erste wrapped geht vom anbeginn der zeit als teamer
+    // bis zum zeitpunkt des wrapped und dann immer bis zum letzten wrapped."
+    //
+    // 1. Gab es schon eine Teamer-Ausgabe in dieser Organisation, beginnt
+    //    dieser Rueckblick an deren ENDE. Der Aufrufer ermittelt das einmal
+    //    pro Lauf (ermittleVorigesTeamerEnde) und reicht es herein -- sonst
+    //    fragte jede Person dieselbe Zeile erneut ab, und schlimmer: die
+    //    Ausgabe DIESES Laufs steht beim Anlegen schon in der Tabelle und
+    //    wuerde sich selbst als Vorgaengerin finden.
+    // 2. Beim ersten Mal: seit wann die Person im Team ist -- users.
+    //    teamer_since, sonst (nullable, Altdaten) die aelteste
+    //    Teamer-Aktivitaet. Dieselbe Kette wie im Abzeichen-Zweig
+    //    (routes/badges.js, 'teamer_year').
+    //
+    // Punkt 2 ist bewusst PERSONENBEZOGEN: Wer erst seit einem halben Jahr
+    // dabei ist, bekommt sein halbes Jahr und nicht die Historie der Gemeinde.
+    let teamerBeginn = vorigesEnde || null;
+    if (!teamerBeginn) {
+      const { rows: [seitRow] } = await client.query(
+        `SELECT teamer_since FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (seitRow && seitRow.teamer_since) {
+        teamerBeginn = seitRow.teamer_since;
+      } else {
+        const { rows: [ersteAkt] } = await client.query(
+          `SELECT MIN(ua.completed_date) AS min_date FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND a.target_role = 'teamer'`,
+          [userId]
+        );
+        if (ersteAkt && ersteAkt.min_date) teamerBeginn = ersteAkt.min_date;
+      }
+    }
+
+    // Dieselbe Funktion wie beim Konfi -- eine Regel, eine Stelle. Der
+    // Teamer-Zweig kennt keinen Konfirmationstermin, daher null.
+    const zeitraum = berechneZeitraum(null, year, zeitraumVorgabe, teamerBeginn);
+    const zeitraumStart = zeitraum.start;
+    const zeitraumEnde = zeitraum.ende;
+
     // Events geleitet (Teamer war als Teilnehmer gebucht)
     const { rows: [eventsGeleitetRow] } = await client.query(
       `SELECT COUNT(*) as count FROM event_bookings eb
        JOIN events e ON eb.event_id = e.id
        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
-         AND e.organization_id = $2`,
-      [userId, orgId]
+         AND e.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const eventsGeleitet = parseInt(eventsGeleitetRow.count, 10) || 0;
 
@@ -875,16 +1392,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
        LEFT JOIN event_bookings eb2 ON e.id = eb2.event_id AND eb2.status = 'confirmed' AND eb2.attendance_status = 'present'
        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
          AND e.organization_id = $2
+         AND e.event_date >= $3::date
+         AND e.event_date < ($4::date + INTERVAL '1 day')
        GROUP BY e.id, e.name
        ORDER BY teilnehmer DESC
        LIMIT 1`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
     const meisteTeilnehmerEvent = topEventRows.length > 0
       ? { name: topEventRows[0].name, count: parseInt(topEventRows[0].teilnehmer, 10) }
       : null;
 
-    // Konfis betreut (über zugewiesene Jahrgänge)
+    // Konfis betreut (über zugewiesene Jahrgänge).
+    // BEWUSST OHNE ZEITFILTER: ein Zustand, kein Ereignis (siehe oben).
     const { rows: konfiRows } = await client.query(
       `SELECT COUNT(DISTINCT kp.user_id) as total,
               ARRAY_AGG(DISTINCT j.name) as jahrgaenge
@@ -899,36 +1419,224 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? konfiRows[0].jahrgaenge.filter(Boolean)
       : [];
 
-    // Badges
+    // Badges -- nur die im Zeitraum verliehenen (wie beim Konfi-Rueckblick).
     const { rows: teamerBadges } = await client.query(
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
+         AND ub.awarded_date >= $3::date
+         AND ub.awarded_date < ($4::date + INTERVAL '1 day')
        ORDER BY ub.awarded_date DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
-    // Zertifikate
+    // Zertifikate -- ebenfalls nur die im Zeitraum ausgestellten.
     const { rows: certRows } = await client.query(
       `SELECT ct.name, uc.issued_date FROM user_certificates uc
        JOIN certificate_types ct ON uc.certificate_type_id = ct.id
        WHERE uc.user_id = $1 AND uc.organization_id = $2
+         AND uc.issued_date >= $3::date
+         AND uc.issued_date < ($4::date + INTERVAL '1 day')
        ORDER BY uc.issued_date DESC`,
-      [userId, orgId]
+      [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
-    // Jahre aktiv (teamer_since)
+    // DER ANFANG -- der erste Termin des Jahres.
+    //
+    // Die Termin-Seite zaehlt, wie VIELE es waren; diese hier erinnert an
+    // den EINEN, mit dem es losging. Ein Datum und ein Name, mehr braucht
+    // die Erinnerung nicht.
+    const { rows: [ersterTermin] } = await client.query(
+      `SELECT e.name, e.event_date FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
+          AND e.organization_id = $2
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')
+        ORDER BY e.event_date ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+
+    // DAS ERSTE ABZEICHEN des Jahres -- dieselbe Idee wie beim ersten
+    // Termin: nicht wie viele, sondern welches zuerst.
+    const { rows: [erstesAbzeichen] } = await client.query(
+      `SELECT cb.name, cb.icon, cb.color, ub.awarded_date FROM user_badges ub
+         JOIN custom_badges cb ON ub.badge_id = cb.id
+        WHERE ub.user_id = $1 AND ub.organization_id = $2
+          AND ub.awarded_date >= $3::date
+          AND ub.awarded_date < ($4::date + INTERVAL '1 day')
+        ORDER BY ub.awarded_date ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+
+    // DER ANTWORTENDE -- wie oft jemand im Chat auf andere geantwortet hat.
+    //
+    // Warum gerade ANTWORTEN und nicht Nachrichten: Eine Antwort ist die
+    // Zuwendung, die den Unterschied macht. Wer im Team viel schreibt, redet
+    // vielleicht viel; wer viel ANTWORTET, hat auf andere reagiert -- genau
+    // das ist die Arbeit, die im Team selten jemand sieht. chat_messages
+    // traegt dafuer reply_to (Fremdschluessel auf die beantwortete
+    // Nachricht), es braucht keine neue Spalte.
+    //
+    // Org-Grenze ueber den Raum, nicht ueber die Nachricht (chat_messages
+    // traegt keine organization_id) -- dieselbe Regel wie im Konfi-Zweig.
+    // Geloeschte Antworten zaehlen nicht: Was jemand zurueckgenommen hat,
+    // soll ihm der Rueckblick nicht vorrechnen.
+    const { rows: [antwortenRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM chat_messages cm
+         JOIN chat_rooms cr ON cm.room_id = cr.id
+        WHERE cm.user_id = $1 AND cr.organization_id = $2
+          AND cm.reply_to IS NOT NULL
+          AND cm.deleted_at IS NULL
+          AND cm.created_at >= $3::date
+          AND cm.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+    const antworten = parseInt(antwortenRow.count, 10) || 0;
+
+    // DIE CHALLENGE-BEGLEITERIN -- wie viele Beitraege jemand freigegeben hat.
+    //
+    // NUR DIE EIGENE LEISTUNG, NIE EINE ABLEHNUNGSQUOTE (Konzept
+    // docs/wrapped-kacheln-konzept.md): Gezaehlt wird ausschliesslich, was
+    // diese Person FREIGEGEBEN hat. Eine Quote "x % abgelehnt" waere eine
+    // Bewertung der Moderation und hat im Rueckblick nichts verloren --
+    // deshalb wird hidden_by hier gar nicht erst gelesen.
+    //
+    // approved_by ist NULL bei Bestandszeilen (vor Migration 146) UND bei
+    // unmoderierten Challenges, die automatisch auf 'approved' stehen. In
+    // beiden Faellen hat niemand hingesehen -- niemand bekommt sie
+    // gutgeschrieben.
+    //
+    // Zeitanker ist approved_at (die Handlung im Rueckblicksjahr), nicht
+    // das Einreichungsdatum: Ein Beitrag vom August, im September
+    // freigegeben, ist Arbeit des September.
+    // Das blosse try/catch, das hier bis zum 07.09.2026 stand, war
+    // WIRKUNGSLOS -- gemessen: Dieser Zweig laeuft in einer Transaktion,
+    // und ein fehlgeschlagenes Statement bricht sie in PostgreSQL ganz ab.
+    // Jede weitere Query scheiterte danach mit "current transaction is
+    // aborted": Der Fehler war abgefangen, der Teamer-Rueckblick trotzdem
+    // fuer jede Person weg. Siehe zahlAusNeuerSpalte().
+    const freigegebeneBeitraege = await zahlAusNeuerSpalte(
+      client,
+      `SELECT COUNT(*)::int AS anzahl FROM challenge_submissions cs
+        WHERE cs.approved_by = $1
+          AND cs.organization_id = $2
+          AND cs.approved_at >= $3::date
+          AND cs.approved_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde],
+      'Challenge-Freigaben (Migration 146)'
+    );
+
+    // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
+    // wurden.
+    //
+    // Self-Join ueber user_jahrgang_assignments: alle, die auf denselben
+    // Jahrgaengen stehen wie diese Person. NUR TEAMER:INNEN -- ohne den
+    // Rollenfilter zaehlten Admins und die Leitung mit, und die Zahl waere
+    // keine Aussage ueber das Team, sondern ueber die Zugriffsrechte.
+    // Die Person selbst ist ausgenommen (sie ist nicht ihr eigenes Team).
+    const { rows: [teamRow] } = await client.query(
+      `SELECT COUNT(DISTINCT andere.user_id)::int AS mitstreitende
+         FROM user_jahrgang_assignments meine
+         JOIN user_jahrgang_assignments andere
+           ON andere.jahrgang_id = meine.jahrgang_id
+          AND andere.user_id <> meine.user_id
+         JOIN jahrgaenge j ON j.id = meine.jahrgang_id
+         JOIN users u ON u.id = andere.user_id
+         JOIN roles r ON r.id = u.role_id
+        WHERE meine.user_id = $1
+          AND j.organization_id = $2
+          AND u.organization_id = $2
+          AND r.name = 'teamer'
+          AND u.deleted_at IS NULL`,
+      [userId, orgId]
+    );
+    const teamGroesse = teamRow ? teamRow.mitstreitende : 0;
+
+    // VOM KONFI ZUR TEAMER:IN -- die eigene Geschichte in der Gemeinde.
+    //
+    // Wer heute im Team ist und frueher selbst Konfi war, hat eine
+    // Konfi-Zeit in derselben Gemeinde hinter sich. Das ist die schoenste
+    // Nachricht, die ein Teamer-Rueckblick tragen kann, und sie steht
+    // laengst in der Datenbank: konfi_profiles bleibt beim Rollenwechsel
+    // stehen (geloescht wird die Zeile nur, wenn der ganze Mensch geloescht
+    // wird -- routes/users.js, purgeHistory).
+    //
+    // Die Seite erscheint nur, wenn wir wirklich etwas wissen: eine
+    // Konfi-Zeit in DIESER Organisation. Ein Profil aus einer fremden
+    // Gemeinde erzaehlt nicht die Geschichte dieser Gemeinde.
+    const { rows: [konfiZeit] } = await client.query(
+      `SELECT j.name AS jahrgang, kp.created_at
+         FROM konfi_profiles kp
+         LEFT JOIN jahrgaenge j ON j.id = kp.jahrgang_id
+        WHERE kp.user_id = $1 AND kp.organization_id = $2
+        ORDER BY kp.created_at ASC NULLS LAST
+        LIMIT 1`,
+      [userId, orgId]
+    );
+    const warSelbstKonfi = Boolean(konfiZeit);
+
+    // Jahre aktiv (teamer_since). BEWUSST EIN LEBENSZEITWERT -- aber gegen
+    // das Zeitraum-Ende gerechnet, nicht gegen "jetzt" (siehe oben).
     const { rows: [userRow] } = await client.query(
       `SELECT teamer_since FROM users WHERE id = $1`,
       [userId]
     );
     const teamerSeit = userRow && userRow.teamer_since ? userRow.teamer_since : null;
+    const stichtag = new Date(`${zeitraumEnde}T00:00:00`).getTime();
     const jahreAktiv = teamerSeit
-      ? Math.max(1, Math.floor((Date.now() - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
+      ? Math.max(1, Math.floor((stichtag - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
       : 0;
 
-    return {
-      version: 1,
+    // NEU DABEI -- das erste Jahr im Team.
+    //
+    // Fallback-Kette wie im Abzeichen-Zweig (routes/badges.js, 'teamer_year'):
+    // erst users.teamer_since, sonst die aelteste Teamer-Aktivitaet. Ohne
+    // beides bleibt es unbekannt -- und "unbekannt" ist NICHT "neu": Wer
+    // seit Jahren dabei ist, aber kein Eintrittsdatum hinterlegt hat, darf
+    // nicht als Neuling begruesst werden.
+    let teamerStartJahr = null;
+    if (teamerSeit) {
+      teamerStartJahr = new Date(teamerSeit).getFullYear();
+    } else {
+      try {
+        const { rows: [ersteAkt] } = await client.query(
+          `SELECT MIN(ua.completed_date) AS min_date FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND a.target_role = 'teamer'`,
+          [userId]
+        );
+        if (ersteAkt && ersteAkt.min_date) {
+          teamerStartJahr = new Date(ersteAkt.min_date).getFullYear();
+        }
+      } catch (startErr) {
+        console.warn('Wrapped: Teamer-Startjahr nicht ermittelbar:', startErr.message);
+      }
+    }
+    // Erstes Jahr = das Startjahr liegt IM Rueckblicksjahr.
+    const erstesJahr = teamerStartJahr !== null && teamerStartJahr === year;
+
+    // Die Sonderseite zur Sommerfreizeit 2026 -- dieselbe Pruefung wie im
+    // Konfi-Rueckblick. Simon: "das sehen dann nur die teamer und konfis
+    // die dabei waren."
+    const stavanger2026 = await warBeiStavanger(client, userId, orgId, zeitraumStart, zeitraumEnde);
+
+
+    const schnappschuss = {
+      // Version 3 (06.09.2026), in zwei Schritten gewachsen:
+      //   2: alle Ereignis-Zahlen sind auf den Zeitraum eingegrenzt
+      //      (`zeitraum` bekam start/ende dazu).
+      //   3: der Rueckblick waehlt seine Seiten nach Inhalt statt sieben
+      //      feste zu zeigen (`kacheln`, unten gesetzt).
+      //
+      // Beide Schritte rein ADDITIV -- kein Feld entfernt, umbenannt oder
+      // umtypisiert. Ausgelieferte Apps kennen `kacheln` nicht, ignorieren
+      // das Feld und rendern weiter ueber ihre feste Siebener-Reihenfolge.
+      // Bereits erzeugte Snapshots liegen unveraendert in der Datenbank und
+      // werden nie neu gerechnet -- der alte Rueckblick bleibt der alte.
+      version: 3,
       slides: {
         events_geleitet: {
           total: eventsGeleitet,
@@ -950,21 +1658,66 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           teamer_seit: teamerSeit,
           jahre_aktiv: jahreAktiv
         },
+        // Additiv (ab Version 3): alte Apps kennen die Felder nicht und
+        // ignorieren sie.
+        chat: {
+          antworten
+        },
+        team: {
+          mitstreitende: teamGroesse
+        },
+        moderation: {
+          freigegeben: freigegebeneBeitraege
+        },
+        neu_dabei: {
+          erstes_jahr: erstesJahr,
+          start_jahr: teamerStartJahr
+        },
+        anfang: ersterTermin
+          ? { name: ersterTermin.name, datum: ersterTermin.event_date }
+          : null,
+        erstes_abzeichen: erstesAbzeichen
+          ? {
+              name: erstesAbzeichen.name,
+              icon: erstesAbzeichen.icon,
+              color: erstesAbzeichen.color,
+              datum: erstesAbzeichen.awarded_date
+            }
+          : null,
+        konfi_zeit: warSelbstKonfi
+          ? { jahrgang: konfiZeit.jahrgang || null }
+          : null,
+        // Additiv (07.09.2026): die Sommerfreizeit-Sonderseite. Alte Apps
+        // kennen das Feld nicht und ignorieren es.
+        stavanger_2026: stavanger2026,
         zeitraum: {
-          year
+          year,
+          // Additiv (ab Version 2): alte Apps ignorieren die Felder, neue
+          // koennen den Zeitraum benennen, statt ihn aus `year` zu raten.
+          start: zeitraumStart,
+          ende: zeitraumEnde
         }
       }
     };
+
+    // Die Seitenauswahl -- wie beim Konfi-Rueckblick IM Snapshot gespeichert
+    // statt bei jedem Ansehen neu gerechnet: Ein Rueckblick wird geteilt und
+    // mehrfach geoeffnet und muss jedes Mal gleich aussehen.
+    //
+    // Additiv: Alte App-Versionen kennen `kacheln` nicht und rendern weiter
+    // ueber ihre feste Siebener-Reihenfolge. Der Vertrag bleibt gewahrt.
+    schnappschuss.kacheln = waehleTeamerKacheln(schnappschuss.slides);
+    return schnappschuss;
   }
 
   /**
    * Parallele Hilfsfunktion: Generiert und speichert einen Konfi-Snapshot.
    * Holt eigenen DB-Client aus dem Pool (kein geteilter Client für parallele Queries).
    */
-  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year, ausgabeId = null) {
+  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year, ausgabeId = null, zeitraumVorgabe = null) {
     const konfiClient = await dbRef.getClient();
     try {
-      const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year);
+      const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year, zeitraumVorgabe);
       // Der Schluessel schliesst seit Migration 144 die AUSGABE ein: Je
       // Ausgabe ein Snapshot pro Person. Innerhalb einer Ausgabe bleibt der
       // Lauf idempotent (Korrektur ueberschreibt), zwei Ausgaben stehen
@@ -1148,6 +1901,46 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // gar keine Snapshots erzeugt haette.
         const titel = (req.body?.titel || '').trim()
           || `Rückblick ${jahrgang.name || currentYear}`;
+
+        // Der Zeitraum der Ausgabe -- DIESELBEN Werte, die unten in
+        // wrapped_ausgaben landen und die die Oberflaeche anzeigt.
+        //
+        // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert
+        // und gespeichert, aber NIE an die Generierung uebergeben. Gerechnet
+        // wurde immer mit berechneZeitraum(konfirmationTermin, currentYear).
+        // Solange das Formular kein Datumsfeld hatte, fiel das nicht auf --
+        // sobald jemand einen Zeitraum eintraegt, staenden Zahlen aus einem
+        // anderen Zeitraum darunter.
+        //
+        // null, wenn nichts angegeben wurde: dann greift wie bisher das
+        // Konfirmations-Fallback in berechneZeitraum.
+        const zeitraumStartVorgabe = req.body?.zeitraum_start || null;
+        const zeitraumEndeVorgabe = req.body?.zeitraum_ende || null;
+        const zeitraumVorgabe = (zeitraumStartVorgabe && zeitraumEndeVorgabe)
+          ? { start: zeitraumStartVorgabe, ende: zeitraumEndeVorgabe }
+          : null;
+        // Der Zeitraum, der in der Ausgabe STEHT, muss der sein, mit dem
+        // gerechnet wird (Simons Regel 07.09.2026: vom Anfang der Konfi-Zeit
+        // bis heute). Ohne Vorgabe: der frueheste Beginn im Jahrgang bis
+        // heute -- die Spanne, die die Ausgabe insgesamt abdeckt. Die
+        // einzelnen Rueckblicke beginnen je am eigenen Eintritt.
+        const heuteIso = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
+        let anzeigeStart = zeitraumStartVorgabe;
+        if (!anzeigeStart) {
+          const { rows: [fruehest] } = await client.query(
+            `SELECT MIN(kp.created_at)::date AS beginn FROM konfi_profiles kp
+               JOIN users u ON kp.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+            [jahrgangId]
+          );
+          anzeigeStart = fruehest && fruehest.beginn
+            ? new Date(fruehest.beginn).toISOString().slice(0, 10)
+            : `${currentYear - 1}-09-01`;
+        }
         const { rows: [ausgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1156,8 +1949,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'konfi', $2, $3, $4::date, $5::date, NOW(), $6, $6)
            RETURNING id, titel`,
           [req.user.organization_id, jahrgangId, titel,
-           req.body?.zeitraum_start || `${currentYear - 1}-09-01`,
-           req.body?.zeitraum_ende || `${currentYear}-08-31`,
+           anzeigeStart,
+           zeitraumEndeVorgabe || heuteIso,
            req.user.id]
         );
 
@@ -1174,7 +1967,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
         const results = await Promise.allSettled(
-          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id))
+          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear, ausgabe.id, zeitraumVorgabe))
         );
         const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
         const errors = results.length - generated;
@@ -1230,11 +2023,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     rbacVerifier,
     requireOrgAdmin,
     body('titel').optional({ nullable: true }).isString().trim().isLength({ min: 1, max: 120 }),
+    // Zeitraum wie bei den Konfis. Fehlte hier komplett -- die Teamer-Route
+    // nahm nur einen Titel entgegen und schrieb einen fest gerechneten
+    // Zeitraum in die Ausgabe.
+    body('zeitraum_start').optional({ nullable: true }).isISO8601(),
+    body('zeitraum_ende').optional({ nullable: true }).isISO8601(),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
       try {
         const currentYear = new Date().getFullYear();
+
+        const zeitraumStartVorgabe = req.body?.zeitraum_start || null;
+        const zeitraumEndeVorgabe = req.body?.zeitraum_ende || null;
+        const zeitraumVorgabe = (zeitraumStartVorgabe && zeitraumEndeVorgabe)
+          ? { start: zeitraumStartVorgabe, ende: zeitraumEndeVorgabe }
+          : null;
 
         await client.query('BEGIN');
 
@@ -1251,6 +2055,35 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // vorigen (derselbe Fehler wie bei den Konfis).
         const teamerTitel = (req.body?.titel || '').trim()
           || `Teamer-Rückblick ${currentYear}`;
+        // Der Zeitraum, der in der Ausgabe STEHT, muss der sein, mit dem
+        // gerechnet wird. Ohne Vorgabe ist das die Kette: vom Ende der
+        // vorigen Teamer-Ausgabe bis heute. Steht noch keine da (erste
+        // Ausgabe), bleibt die Zeile beim heutigen Tag als Ende und dem
+        // frueheren Eintritt als Anfang -- die Personen unterscheiden sich
+        // darin, die ANZEIGE nennt deshalb den frueheren der beiden.
+        const heuteIso = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
+        const vorigesEndeFuerAnzeige = zeitraumVorgabe
+          ? null
+          : await ermittleVorigesTeamerEnde(client, req.user.organization_id);
+        const anzeigeStart = zeitraumStartVorgabe
+          || (vorigesEndeFuerAnzeige
+            ? new Date(vorigesEndeFuerAnzeige).toISOString().slice(0, 10)
+            : null)
+          // Ganz ohne Vorgaenger: der frueheste Eintritt ins Team. Das ist
+          // die Spanne, die die Ausgabe insgesamt abdeckt.
+          || (await (async () => {
+            const { rows: [r] } = await client.query(
+              `SELECT MIN(u.teamer_since)::date AS seit FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'teamer' AND u.organization_id = $1`,
+              [req.user.organization_id]
+            );
+            return r && r.seit ? new Date(r.seit).toISOString().slice(0, 10) : null;
+          })())
+          || `${currentYear - 1}-09-01`;
         const { rows: [teamerAusgabe] } = await client.query(
           `INSERT INTO wrapped_ausgaben
              (organization_id, wrapped_type, jahrgang_id, titel,
@@ -1259,15 +2092,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)
            RETURNING id, titel`,
           [req.user.organization_id, teamerTitel,
-           `${currentYear - 1}-09-01`, `${currentYear}-08-31`, req.user.id]
+           anzeigeStart,
+           zeitraumEndeVorgabe || heuteIso, req.user.id]
         );
+
+        // Das Ende der VORIGEN Ausgabe -- der Anfang dieser. Einmal pro Lauf,
+        // und ausdruecklich OHNE die soeben angelegte Ausgabe (sonst faende
+        // sie sich selbst).
+        const vorigesEnde = zeitraumVorgabe
+          ? null
+          : await ermittleVorigesTeamerEnde(client, req.user.organization_id, teamerAusgabe.id);
 
         let generated = 0;
         let errors = 0;
 
         for (const teamer of teamers) {
           try {
-            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear);
+            const snapshot = await generateTeamerSnapshot(client, teamer.user_id, req.user.organization_id, currentYear, zeitraumVorgabe, vorigesEnde);
 
             await client.query(
               `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, ausgabe_id, data, computed_at)
@@ -1294,7 +2135,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
 
         res.json({
-          message: `Wrapped f\u00fcr ${generated} Teamer:innen generiert`,
+          message: `Wrapped f\u00fcr ${generated} Personen im Team generiert`,
           generated,
           errors,
           year: currentYear,
@@ -1671,7 +2512,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Generiert Konfi-Wrapped für alle Konfis eines Jahrgangs.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
-  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year) => {
+  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year, zeitraumVorgabe = null) => {
     const client = await dbRef.getClient();
     try {
       await client.query('BEGIN');
@@ -1686,7 +2527,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
       const results = await Promise.allSettled(
-        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year))
+        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year, null, zeitraumVorgabe))
       );
       const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
       const errors = results.length - generated;
@@ -1720,10 +2561,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Generiert Teamer-Wrapped für alle Teamer einer Organisation.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
-  router.generateAllTeamerWrapped = async (dbRef, orgId, year) => {
+  router.generateAllTeamerWrapped = async (dbRef, orgId, year, zeitraumVorgabe = null) => {
     const client = await dbRef.getClient();
     try {
       await client.query('BEGIN');
+
+      // Anfang der Kette: das Ende der vorigen Teamer-Ausgabe. Dieser Weg
+      // legt keine Ausgabe an, also gibt es hier nichts auszuschliessen.
+      const vorigesEnde = zeitraumVorgabe
+        ? null
+        : await ermittleVorigesTeamerEnde(client, orgId);
 
       const { rows: teamers } = await client.query(
         `SELECT u.id as user_id FROM users u
@@ -1737,7 +2584,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       for (const teamer of teamers) {
         try {
-          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year);
+          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year, zeitraumVorgabe, vorigesEnde);
           await client.query(
             `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
              VALUES ($1, $2, 'teamer', $3, $4, NOW())

@@ -22,14 +22,14 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Anlegen und moderieren',
-    text: 'Beim Anlegen legst du Jahrgänge, Zeitraum, erlaubte Medien, Sichtbarkeit und Freigabe fest. Nach dem Start bleiben Sichtbarkeit und Freigabe gesperrt — die Zusage an die Konfis gilt. Bei den Beiträgen kannst du freigeben, einen Beitrag nachträglich anonymisieren oder ihn ausblenden, wenn etwas nicht passt. Und ihr im Team macht mit: Teamer:innen und Leitung nehmen selbst teil, es gibt sogar Runden nur fürs Team.',
+    text: 'Beim Anlegen legst du Jahrgänge, Zeitraum, erlaubte Medien, Sichtbarkeit und Freigabe fest. Nach dem Start bleiben Sichtbarkeit und Freigabe gesperrt — die Zusage an die Konfis gilt. Bei den Beiträgen kannst du freigeben, einen Beitrag nachträglich anonymisieren oder ihn ausblenden, wenn etwas nicht passt. Und ihr im Team macht mit: Team und Leitung nehmen selbst teil, es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: ICON_WECHSEL,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
     title: 'Neu: der Mitmachen-Tab',
-    text: 'Deine Tab-Leiste ist jetzt Konfis · Chat · Mitmachen · Challenges · Mehr. Der Mitmachen-Tab bündelt Events und Aktivitäten in zwei Reitern: Zu Events melden sich Konfis vorher an, Aktivitäten melden sie hinterher und du bestätigst sie mit einem Tipp. Auch bei Konfis und Teamer:innen heißt der Tab "Mitmachen" — dafür ist der eigene Aktivitäten-Tab weg.',
+    text: 'Deine Tab-Leiste ist jetzt Konfis · Chat · Mitmachen · Challenges · Mehr. Der Mitmachen-Tab bündelt Events und Aktivitäten in zwei Reitern: Zu Events melden sich Konfis vorher an, Aktivitäten melden sie hinterher und du bestätigst sie mit einem Tipp. Auch bei den Konfis und im Team heißt der Tab "Mitmachen" — dafür ist der eigene Aktivitäten-Tab weg.',
   },
 ];
 

@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ORGS, BADGES } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const PushService = require('../../services/pushService');
 
@@ -228,6 +228,606 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // Zahlen im Teamer-Snapshot: der Zeitraum (Befund 06.09.2026)
+  // ================================================================
+  //
+  // generateTeamerSnapshot filterte KEINE ihrer sechs Abfragen auf den
+  // Zeitraum -- das `year` landete nur in slides.zeitraum.year. Der
+  // "Jahresrueckblick" zaehlte damit die gesamte Kontolebenszeit: Wer seit
+  // vier Jahren im Team ist, sah Termine, Abzeichen und Zertifikate aus vier
+  // Jahren unter einer Jahreszahl.
+  describe('Zahlen im Teamer-Snapshot', () => {
+    const JAHR = new Date().getFullYear();
+    // Fallback-Zeitraum des Teamer-Rueckblicks: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
+    const VOR_ZEITRAUM = `${JAHR - 2}-06-15`; // ein volles Jahr davor
+    const NACH_ZEITRAUM = `${JAHR}-10-15`;
+
+    async function termin(name, datum) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, $2::timestamp, $3, false, 0, 'gemeinde', 1) RETURNING id`,
+        [name, `${datum} 10:00:00`, ORGS.testGemeinde.id]
+      );
+      return e.id;
+    }
+
+    async function buchung(userId, eventId) {
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', 'present', NOW())`,
+        [userId, eventId, ORGS.testGemeinde.id]
+      );
+    }
+
+    async function abzeichen(userId, badgeId, datum) {
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, $4::timestamptz)`,
+        [userId, badgeId, ORGS.testGemeinde.id, `${datum} 10:00:00`]
+      );
+    }
+
+    async function zertifikat(userId, name, datum) {
+      const { rows: [ct] } = await db.query(
+        `INSERT INTO certificate_types (name, organization_id) VALUES ($1, $2) RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, organization_id, issued_date)
+         VALUES ($1, $2, $3, $4::date)`,
+        [userId, ct.id, ORGS.testGemeinde.id, datum]
+      );
+    }
+
+    /** Erzeugt Teamer-Wrapped und gibt den Snapshot von teamer1 zurueck. */
+    async function snapshotVonTeamer1() {
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    beforeEach(async () => {
+      // Der Seed legt vier Termine 7 Tage in der Zukunft an -- die liegen
+      // je nach Kalendertag im oder ausserhalb des Zeitraums. Fuer eine
+      // bekannte Datenlage raeumen wir das Feld leer.
+      await db.query('DELETE FROM event_bookings');
+      await db.query('DELETE FROM event_jahrgang_assignments');
+      await db.query('DELETE FROM events');
+      await db.query('DELETE FROM user_badges');
+    });
+
+    it('Termine vor und nach dem Zeitraum zaehlen nicht mit', async () => {
+      const drin = await termin('Konfitreff im Zeitraum', IM_ZEITRAUM);
+      const davor = await termin('Konfitreff im Vorjahr', VOR_ZEITRAUM);
+      const danach = await termin('Konfitreff im Folgejahr', NACH_ZEITRAUM);
+      await buchung(USERS.teamer1.id, drin);
+      await buchung(USERS.teamer1.id, davor);
+      await buchung(USERS.teamer1.id, danach);
+
+      const snap = await snapshotVonTeamer1();
+      // Drei Termine gebucht, genau einer liegt im Rueckblicksjahr.
+      expect(snap.slides.events_geleitet.total).toBe(1);
+    });
+
+    it('Der Termin mit den meisten Teilnehmenden stammt aus dem Zeitraum', async () => {
+      // Der groessere Termin liegt im VORJAHR. Ungefiltert haette er
+      // gewonnen und der Rueckblick haette einen fremden Termin gefeiert.
+      const gross = await termin('Grosse Freizeit im Vorjahr', VOR_ZEITRAUM);
+      const klein = await termin('Kleiner Treff im Zeitraum', IM_ZEITRAUM);
+      await buchung(USERS.teamer1.id, gross);
+      await buchung(USERS.konfi1.id, gross);
+      await buchung(USERS.konfi2.id, gross);
+      await buchung(USERS.teamer1.id, klein);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.events_geleitet.meiste_teilnehmer_event).not.toBe(null);
+      expect(snap.slides.events_geleitet.meiste_teilnehmer_event.name)
+        .toBe('Kleiner Treff im Zeitraum');
+    });
+
+    it('Ein Abzeichen aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
+      await abzeichen(USERS.teamer1.id, BADGES.streak.id, IM_ZEITRAUM);
+      await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, VOR_ZEITRAUM);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.badges.total_earned).toBe(1);
+      expect(snap.slides.badges.badges.map(b => b.name)).toEqual([BADGES.streak.name]);
+    });
+
+    it('Ein Zertifikat aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
+      await zertifikat(USERS.teamer1.id, 'Juleica im Zeitraum', IM_ZEITRAUM);
+      await zertifikat(USERS.teamer1.id, 'Erste Hilfe im Vorjahr', VOR_ZEITRAUM);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zertifikate.total).toBe(1);
+      expect(snap.slides.zertifikate.zertifikate.map(z => z.name))
+        .toEqual(['Juleica im Zeitraum']);
+    });
+
+    it('Ein angegebener Zeitraum schlaegt bis in die Teamer-Zahlen durch', async () => {
+      // Die Teamer-Route nahm bis zum 06.09.2026 ueberhaupt keinen Zeitraum
+      // entgegen -- nur einen Titel.
+      const drin = await termin('November', IM_ZEITRAUM);
+      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+      await buchung(USERS.teamer1.id, drin);
+      await buchung(USERS.teamer1.id, draussen);
+
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      const snap = rows[0].data;
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+      // Nur der Termin im engen Fenster.
+      expect(snap.slides.events_geleitet.total).toBe(1);
+    });
+
+    it('Der Anfang ist der FRUEHESTE Termin im Zeitraum, nicht der letzte', async () => {
+      const spaet = await termin('Spaeter Termin', `${JAHR}-03-01`);
+      const frueh = await termin('Erster Termin', `${JAHR - 1}-09-20`);
+      const davor = await termin('Noch im Vorjahr', VOR_ZEITRAUM);
+      await buchung(USERS.teamer1.id, spaet);
+      await buchung(USERS.teamer1.id, frueh);
+      await buchung(USERS.teamer1.id, davor);
+
+      const snap = await snapshotVonTeamer1();
+      // Der Termin aus dem Vorjahr liegt ausserhalb und darf nicht gewinnen.
+      expect(snap.slides.anfang.name).toBe('Erster Termin');
+      expect(snap.kacheln).toContain('teamer-anfang');
+    });
+
+    it('Das erste Abzeichen ist das FRUEHESTE im Zeitraum', async () => {
+      await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, `${JAHR}-02-01`);
+      await abzeichen(USERS.teamer1.id, BADGES.streak.id, `${JAHR - 1}-10-05`);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.erstes_abzeichen.name).toBe(BADGES.streak.name);
+      expect(snap.kacheln).toContain('teamer-erstes-abzeichen');
+    });
+
+    it('Ohne Termine und Abzeichen fehlen beide Seiten', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.anfang).toBe(null);
+      expect(snap.slides.erstes_abzeichen).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-anfang');
+      expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
+    });
+
+    it('Freigaben zaehlen nur mit ausdruecklichem approved_by', async () => {
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by, starts_at, ends_at, moderated)
+         VALUES ('Moderiert', 'Zeig es', 'Stempel', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const einreichen = async (opts = {}) => {
+        const { rows: [sub] } = await db.query(
+          `INSERT INTO challenge_submissions
+             (challenge_id, user_id, organization_id, media_type, moderation_status,
+              approved_by, approved_at, created_at)
+           VALUES ($1, $2, $3, 'text', 'approved', $4, $5, $6::timestamptz)
+           RETURNING id`,
+          [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id,
+           opts.approvedBy || null,
+           opts.approvedAt || null,
+           `${IM_ZEITRAUM} 10:00:00`]
+        );
+        return sub.id;
+      };
+      // Fuenf von teamer1 freigegeben ...
+      for (let i = 0; i < 5; i++) {
+        await einreichen({ approvedBy: USERS.teamer1.id, approvedAt: `${IM_ZEITRAUM} 12:00:00` });
+      }
+      // ... eine von jemand anderem ...
+      await einreichen({ approvedBy: USERS.admin1.id, approvedAt: `${IM_ZEITRAUM} 12:00:00` });
+      // ... und eine mit NULL (Bestandszeile oder unmoderierte Challenge).
+      await einreichen();
+
+      const snap = await snapshotVonTeamer1();
+      // Genau die fuenf eigenen -- fremde und unbekannte zaehlen nicht.
+      expect(snap.slides.moderation.freigegeben).toBe(5);
+      expect(snap.kacheln).toContain('teamer-moderation');
+    });
+
+    it('Ohne Freigaben fehlt die Moderations-Seite', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.moderation.freigegeben).toBe(0);
+      expect(snap.kacheln).not.toContain('teamer-moderation');
+    });
+
+    it('Der Snapshot enthaelt KEINE Ablehnungsquote', async () => {
+      // SIMONS REGEL (Konzept): nur die eigene Leistung, nie eine
+      // Ablehnungsquote. Der Rueckblick darf Moderation nicht bewerten.
+      const snap = await snapshotVonTeamer1();
+      const alsText = JSON.stringify(snap);
+      expect(alsText).not.toContain('abgelehnt');
+      expect(alsText).not.toContain('hidden');
+      expect(alsText).not.toContain('quote');
+      expect(Object.keys(snap.slides.moderation)).toEqual(['freigegeben']);
+    });
+
+    it('Das Team zaehlt nur Teamer:innen -- keine Admins', async () => {
+      // DER EIGENTLICHE FALLSTRICK: Ohne Rollenfilter zaehlte der Self-Join
+      // ueber user_jahrgang_assignments auch Admins und die Leitung mit --
+      // die Zahl waere dann keine Aussage ueber das Team, sondern ueber die
+      // Zugriffsrechte. admin1 steht im Seed (beforeEach) auf jahrgang1,
+      // teamer1 ebenfalls.
+      //
+      // Eine zweite Teamer:in in DERSELBEN Organisation und auf demselben
+      // Jahrgang -- sie ist es, die zaehlen soll.
+      const { rows: [kollegin] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('teamer1b', 'Zweite Teamerin', 'x', $1, $2) RETURNING id`,
+        [USERS.teamer1.role_id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [kollegin.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Genau EINE: die zweite Teamer:in. admin1 sitzt auf demselben
+      // Jahrgang, zaehlt aber nicht mit.
+      expect(snap.slides.team.mitstreitende).toBe(1);
+      expect(snap.kacheln).toContain('teamer-team');
+    });
+
+    it('Eine Teamer:in aus einer fremden Gemeinde zaehlt nicht zum Team', async () => {
+      // Mandantengrenze: teamer2 gehoert zu Org 2.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.teamer2.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.team.mitstreitende).toBe(0);
+      expect(snap.kacheln).not.toContain('teamer-team');
+    });
+
+    it('Im ersten Jahr erscheint "Neu dabei" statt "seit x Jahren"', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR}-02-01`, USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.neu_dabei.erstes_jahr).toBe(true);
+      expect(snap.slides.neu_dabei.start_jahr).toBe(JAHR);
+      expect(snap.kacheln).toContain('teamer-neu-dabei');
+      expect(snap.kacheln).not.toContain('teamer-jahre');
+    });
+
+    it('Ohne Eintrittsdatum und ohne Teamer-Aktivitaet bleibt das Startjahr unbekannt', async () => {
+      // "Unbekannt" ist NICHT "neu" -- niemand wird faelschlich als Neuling
+      // begruesst.
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.neu_dabei.start_jahr).toBe(null);
+      expect(snap.slides.neu_dabei.erstes_jahr).toBe(false);
+      expect(snap.kacheln).not.toContain('teamer-neu-dabei');
+    });
+
+    it('Antworten zaehlen -- eigene Nachrichten ohne Bezug nicht', async () => {
+      // Raum 3 ist die Team-Gruppe aus dem Seed (teamer1 ist Teilnehmer).
+      const schreib = async (userId, datum, replyTo = null) => {
+        const { rows: [m] } = await db.query(
+          `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at)
+           VALUES (3, $1, 'text', $2, $3::timestamptz) RETURNING id`,
+          [userId, replyTo, `${datum} 10:00:00`]
+        );
+        return m.id;
+      };
+      const fremd = await schreib(USERS.admin1.id, IM_ZEITRAUM);
+      // Fuenf echte Antworten im Zeitraum ...
+      for (let i = 0; i < 5; i++) await schreib(USERS.teamer1.id, IM_ZEITRAUM, fremd);
+      // ... eine eigene Nachricht OHNE Bezug (zaehlt nicht) ...
+      await schreib(USERS.teamer1.id, IM_ZEITRAUM);
+      // ... und eine Antwort im Vorjahr (ausserhalb des Zeitraums).
+      await schreib(USERS.teamer1.id, VOR_ZEITRAUM, fremd);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.chat.antworten).toBe(5);
+      expect(snap.kacheln).toContain('teamer-antworten');
+    });
+
+    it('Eine geloeschte Antwort zaehlt nicht mit', async () => {
+      const { rows: [fremd] } = await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, content, created_at)
+         VALUES (3, $1, 'text', $2::timestamptz) RETURNING id`,
+        [USERS.admin1.id, `${IM_ZEITRAUM} 10:00:00`]
+      );
+      for (let i = 0; i < 5; i++) {
+        await db.query(
+          `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at)
+           VALUES (3, $1, 'text', $2, $3::timestamptz)`,
+          [USERS.teamer1.id, fremd.id, `${IM_ZEITRAUM} 10:00:00`]
+        );
+      }
+      // Was jemand zurueckgenommen hat, soll ihm der Rueckblick nicht
+      // vorrechnen.
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, content, reply_to, created_at, deleted_at)
+         VALUES (3, $1, 'text', $2, $3::timestamptz, NOW())`,
+        [USERS.teamer1.id, fremd.id, `${IM_ZEITRAUM} 10:00:00`]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.chat.antworten).toBe(5);
+    });
+
+    it('Wer selbst Konfi war, bekommt die Seite "Wie alles anfing"', async () => {
+      // konfi_profiles bleibt beim Rollenwechsel stehen -- geloescht wird die
+      // Zeile nur mit dem ganzen Menschen (routes/users.js, purgeHistory).
+      // Genau darauf stuetzt sich die Seite; der Test haelt die Annahme gegen
+      // eine echte Datenbank fest.
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id)
+         VALUES ($1, $2, $3)`,
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang1.id, ORGS.testGemeinde.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).not.toBe(null);
+      expect(snap.slides.konfi_zeit.jahrgang).toBe(JAHRGAENGE.jahrgang1.name);
+      expect(snap.kacheln).toContain('teamer-konfi-zeit');
+    });
+
+    it('Wer von aussen ins Team kam, bekommt die Seite nicht', async () => {
+      // teamer1 hat im Seed KEIN konfi_profiles -- der Normalfall fuer
+      // jemanden, der nie Konfi dieser Gemeinde war.
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-konfi-zeit');
+    });
+
+    it('Eine Konfi-Zeit in einer FREMDEN Gemeinde zaehlt nicht', async () => {
+      // Mandantengrenze: Ein Profil aus einer anderen Organisation erzaehlt
+      // nicht die Geschichte DIESER Gemeinde.
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id)
+         VALUES ($1, $2, $3)`,
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang2.id, ORGS.andereGemeinde.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-konfi-zeit');
+    });
+
+    it('Der Snapshot traegt seine Seitenauswahl', async () => {
+      // Ab Version 3 waehlt das Backend die Seiten (waehleTeamerKacheln)
+      // und legt sie als `kacheln` in den Snapshot -- vorher zeigte das
+      // Frontend sieben feste Seiten, auch wenn fuenf davon eine Null
+      // trugen.
+      const snap = await snapshotVonTeamer1();
+      expect(snap.version).toBe(3);
+      expect(Array.isArray(snap.kacheln)).toBe(true);
+      expect(snap.kacheln[0]).toBe('teamer-intro');
+      expect(snap.kacheln[snap.kacheln.length - 1]).toBe('teamer-abschluss');
+    });
+
+    it('Ein Team-Mitglied ohne alles bekommt keine Seite mit einer Null', async () => {
+      // teamer1 hat im leergeraeumten Zustand keine Termine, keine
+      // Abzeichen, keine Zertifikate und kein Eintrittsdatum.
+      await db.query('DELETE FROM user_certificates');
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
+    });
+
+    /** Der heutige Tag als ISO-Datum, nach Ortszeit wie im Backend. */
+    function heuteIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    it('Der erste Rueckblick laeuft vom Eintritt ins Team bis heute', async () => {
+      // SIMONS TEAMER-REGEL (07.09.2026): "das erste wrapped geht vom
+      // anbeginn der zeit als teamer bis zum zeitpunkt des wrapped."
+      // Vorher stand hier fest 1.9.(JAHR-1) bis 31.8.(JAHR) -- ein Fenster,
+      // das weder am Eintritt begann noch am Erzeugungstag endete.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.year).toBe(JAHR);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Ohne teamer_since faellt der Anfang auf die aelteste Teamer-Aktivitaet', async () => {
+      // teamer_since ist nullable (Altdaten). Dieselbe Fallback-Kette wie im
+      // Abzeichen-Zweig (routes/badges.js, 'teamer_year').
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Teamer-Schulung', 1, 'gemeinde', $1, 'teamer') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, organization_id, completed_date)
+         VALUES ($1, $2, $3, $4, $5::date)`,
+        [USERS.teamer1.id, akt.id, USERS.admin1.id, ORGS.testGemeinde.id, `${JAHR - 2}-03-15`]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-03-15`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    // ------------------------------------------------------------
+    // DIE KETTE -- der Kern von Simons Teamer-Regel:
+    // "und dann immer bis zum letzten wrapped."
+    // ------------------------------------------------------------
+    it('Der zweite Rueckblick beginnt EXAKT am Ende des ersten -- keine Luecke, keine Ueberlappung', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      /**
+       * Eine Ausgabe erzeugen und den Snapshot GENAU DIESER Ausgabe holen.
+       *
+       * Nicht ueber snapshotVonTeamer1(): Der Helfer verlangt genau EINEN
+       * Snapshot -- und dieser Test legt bewusst zwei Ausgaben an, um die
+       * Kette zu pruefen.
+       */
+      async function ausgabeUndSnapshot() {
+        const gen = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(gen.status).toBe(200);
+        const { rows } = await db.query(
+          `SELECT data FROM wrapped_snapshots
+            WHERE user_id = $1 AND wrapped_type = 'teamer' AND ausgabe_id = $2`,
+          [USERS.teamer1.id, gen.body.ausgabe_id]
+        );
+        expect(rows).toHaveLength(1);
+        return rows[0].data;
+      }
+
+      // ERSTE Ausgabe: vom Eintritt bis heute.
+      const ersterSnap = await ausgabeUndSnapshot();
+      expect(ersterSnap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+      const ersterEnde = ersterSnap.slides.zeitraum.ende;
+      expect(ersterEnde).toBe(heuteIso());
+
+      // ZWEITE Ausgabe, unmittelbar danach. Sie darf NICHT wieder beim
+      // Eintritt anfangen -- sonst erzaehlte sie dieselbe Zeit noch einmal.
+      const zweiterSnap = await ausgabeUndSnapshot();
+      expect(zweiterSnap.slides.zeitraum.start).toBe(ersterEnde);
+      expect(zweiterSnap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Die Kette knuepft an die vorherige Ausgabe an, nicht an den Eintritt', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      // Eine frueher freigegebene Teamer-Ausgabe von Hand -- so, wie sie
+      // nach einem echten Lauf im vorigen Jahr in der Tabelle staende.
+      await db.query(
+        `INSERT INTO wrapped_ausgaben
+           (organization_id, wrapped_type, jahrgang_id, titel,
+            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+         VALUES ($1, 'teamer', NULL, 'Rueckblick im Vorjahr',
+                 $2::date, $3::date, NOW(), $4, $4)`,
+        [ORGS.testGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Genau Simons Beispiel: Der naechste Rueckblick beginnt am Ende des
+      // vorigen (1.1.), nicht wieder beim Eintritt (1.9. drei Jahre zuvor).
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-01-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Die Kette nimmt das SPAETESTE Ende, nicht die zuletzt angelegte Ausgabe', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 4}-09-01`, USERS.teamer1.id]);
+
+      // Erst die spaetere Ausgabe anlegen, danach eine, die einen FRUEHEREN
+      // Abschnitt nachtraegt (ein Zwischenbericht ueber alte Zeiten). Die
+      // Kette darf davon nicht zurueckgedreht werden.
+      for (const [titel, start, ende] of [
+        ['Spaeter', `${JAHR - 2}-01-01`, `${JAHR - 1}-06-01`],
+        ['Nachgetragen', `${JAHR - 4}-09-01`, `${JAHR - 3}-01-01`],
+      ]) {
+        await db.query(
+          `INSERT INTO wrapped_ausgaben
+             (organization_id, wrapped_type, jahrgang_id, titel,
+              zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+           VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)`,
+          [ORGS.testGemeinde.id, titel, start, ende, USERS.orgAdmin1.id]
+        );
+      }
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-06-01`);
+    });
+
+    it('Eine Teamer-Ausgabe einer FREMDEN Gemeinde bricht die Kette nicht', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+      await db.query(
+        `INSERT INTO wrapped_ausgaben
+           (organization_id, wrapped_type, jahrgang_id, titel,
+            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+         VALUES ($1, 'teamer', NULL, 'Fremde Gemeinde',
+                 $2::date, $3::date, NOW(), $4, $4)`,
+        [ORGS.andereGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin2.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Unveraendert der Eintritt -- die fremde Ausgabe zaehlt nicht.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+    });
+
+    it('Ein ausdruecklicher Zeitraum geht der Kette vor (Zwischenbericht)', async () => {
+      // Simons "Option fuer Zwischenberichte" -- die Automatik greift nur,
+      // wenn nichts gesetzt ist.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].data.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(rows[0].data.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+    });
+
+    // BEWUSST OHNE ZEITFILTER -- kein Versehen, sondern eine Entscheidung:
+    // "seit 4 Jahren dabei" IST der Lebenszeitwert und die Aussage der
+    // Seite. Auf ein Jahr eingegrenzt kaeme dort immer 1 heraus.
+    it('Die Jahre im Team bleiben ein Lebenszeitwert -- gerechnet bis zum Zeitraum-Ende', async () => {
+      // Eintritt genau vier Jahre vor dem Ende des Rueckblicksjahres.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 4}-08-31`, USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.engagement.jahre_aktiv).toBe(4);
+    });
+
+    // "Konfis betreut" ist ein ZUSTAND, kein Ereignis: die Zuweisung
+    // user_jahrgang_assignments traegt kein Datum. Der Wert bleibt deshalb
+    // ungefiltert -- der Test haelt das fest, damit es niemand versehentlich
+    // "mitfiltert".
+    it('Die betreuten Konfis bleiben ungefiltert -- die Zuweisung hat kein Datum', async () => {
+      const snap = await snapshotVonTeamer1();
+      // Der Seed weist teamer1 den Jahrgang 1 zu; dort liegen konfi1 und konfi2.
+      expect(snap.slides.konfis_betreut.total_konfis).toBe(2);
+      expect(snap.slides.konfis_betreut.jahrgaenge).toContain(JAHRGAENGE.jahrgang1.name);
     });
   });
 
@@ -787,13 +1387,46 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(gen.status).toBe(200);
 
+      // Der zuletzt erzeugte Snapshot: Jeder Lauf legt eine eigene Ausgabe
+      // an (Migration 144), zwei Laeufe in einem Test stehen also
+      // nebeneinander.
       const { rows } = await db.query(
-        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'konfi'`,
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
         [USERS.konfi1.id]
       );
       expect(rows).toHaveLength(1);
       return rows[0].data;
     }
+
+    /**
+     * Snapshot mit AUSDRUECKLICHEM Zeitraum -- Simons Option fuer
+     * Zwischenberichte (07.09.2026).
+     *
+     * Seit der neuen Regel laeuft der automatische Zeitraum vom Beginn der
+     * Konfi-Zeit bis heute und schneidet nichts mehr ab. Wer pruefen will,
+     * DASS ein Zeitraum ueberhaupt greift, muss ihn also angeben -- das ist
+     * seither die einzige Stelle, an der ein Fenster enger wird.
+     */
+    async function snapshotVonKonfi1MitZeitraum(start, ende) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    /** Das Fenster, das frueher automatisch galt: 1.9.(JAHR-1) .. 31.8.(JAHR). */
+    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
 
     beforeEach(async () => {
       // Der Seed legt vier Termine 7 Tage in der Zukunft an und bucht nichts.
@@ -855,7 +1488,10 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, davor);
       await buchung(USERS.konfi1.id, danach);
 
-      const snap = await snapshotVonKonfi1();
+      // Mit ausdruecklichem Zeitraum -- seit 07.09.2026 die einzige Stelle,
+      // an der ein Fenster ueberhaupt noch enger wird. Der automatische
+      // Zeitraum umfasst die ganze Konfi-Zeit und schneidet nichts ab.
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       // Das Dashboard zaehlt weiterhin alle drei -- es kennt keinen Zeitraum.
       expect(snap.slides.events.total_attended).toBe(1);
       expect(snap.slides.events.lieblings_event.name).toBe('Im Zeitraum');
@@ -867,7 +1503,7 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, drin, { status: 'cancelled' });
       await buchung(USERS.konfi1.id, davor, { status: 'cancelled' });
 
-      const snap = await snapshotVonKonfi1();
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       expect(snap.slides.events.abgesagt).toBe(1);
     });
 
@@ -885,44 +1521,491 @@ describe('Wrapped Routes', () => {
         await buchung(USERS.konfi1.id, id);
       }
 
-      const snap = await snapshotVonKonfi1();
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
       expect(snap.slides.aktivster_monat.monat).toBe(11);
       expect(snap.slides.aktivster_monat.monat_name).toBe('November');
       expect(snap.slides.aktivster_monat.aktivitaeten).toBe(2);
     });
 
     // ------------------------------------------------------------
-    // W-C: Fallback-Zeitraum, und der August fehlt nicht.
+    // SIMONS KONFI-REGEL (07.09.2026): "Immer vom anfang an bis zum jetzigen
+    // zeitpunkt." Der Zeitraum beginnt am Anfang der Konfi-Zeit
+    // (konfi_profiles.created_at) und endet HEUTE -- der Konfirmationstermin
+    // schneidet nichts mehr ab.
     // ------------------------------------------------------------
-    it('Ein Jahrgang OHNE Konfirmationstermin bekommt 1.9. bis 31.8. -- der August fehlt nicht', async () => {
+    /** Der heutige Tag als ISO-Datum, nach Ortszeit wie im Backend. */
+    function heuteIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    it('Ohne Konfirmationstermin laeuft der Zeitraum vom Beginn der Konfi-Zeit bis heute', async () => {
       const { rows: [k] } = await db.query(
         'SELECT COUNT(*)::int AS anzahl FROM events WHERE is_konfirmation = true'
       );
       expect(k.anzahl).toBe(0);
 
+      // Beginn der Konfi-Zeit ausdruecklich setzen, damit die Erwartung eine
+      // Zahl ist und kein "ungefaehr".
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+
       const imAugust = await termin('Sommerfreizeit im August', AUGUST);
       await buchung(USERS.konfi1.id, imAugust);
 
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
-      // Ohne Konfirmations-Termin gibt es KEINEN Konfirmationstermin --
-      // frueher wurde dafuer das Zeitraum-Ende als Datum angezeigt.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      // Ohne Konfirmations-Termin gibt es KEINEN Konfirmationstermin.
       expect(snap.slides.zeitraum.konfirmation).toBe(null);
-      // Und der August zaehlt mit.
       expect(snap.slides.events.total_attended).toBe(1);
     });
 
-    it('Mit Konfirmationstermin endet der Zeitraum am Termin, ohne Zeitzonen-Verschiebung', async () => {
-      // Der 1.9. als Startdatum rutschte per new Date(y,8,1).toISOString()
-      // in Sommerzeit auf den 31.8.
-      const konf = await termin('Konfirmation', `${JAHR}-05-10`);
+    it('Der Konfirmationstermin schneidet den Zeitraum NICHT mehr ab', async () => {
+      // GENAU DER PRODUKTIONSFALL (Org 1, Jahrgang 12, gemessen 07.09.2026):
+      // Konfirmation im kommenden Mai, die Abzeichen liegen im Sommer davor.
+      // Die alte Regel setzte start = (Jahr des Termins - 1) + '-09-01' und
+      // ende = Termin -- alles davor fiel heraus, die Abzeichen-Seite zeigte
+      // eine glatte 0.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 1}-05-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const konf = await termin('Konfirmation', `${JAHR + 1}-05-10`);
       await db.query('UPDATE events SET is_konfirmation = true WHERE id = $1', [konf]);
 
+      // Ein Termin aus dem Sommer VOR dem alten Fenster (1.9.JAHR .. 10.5.JAHR+1).
+      const frueher = await termin('Sommerfreizeit weit davor', `${JAHR - 1}-07-15`);
+      await buchung(USERS.konfi1.id, frueher);
+
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-05-10`);
-      expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR}-05-10`);
+      // Der Zeitraum beginnt an der Konfi-Zeit, nicht am 1.9. vor dem Termin.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-05-01`);
+      // Und er endet heute, nicht am Konfirmationstermin in der Zukunft.
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      // Der Termin bleibt als ANGABE erhalten -- die Konfirmations-Seite
+      // zeigt ihn weiterhin.
+      expect(snap.slides.zeitraum.konfirmation).toBe(`${JAHR + 1}-05-10`);
+      // Und das Entscheidende: der frueher abgeschnittene Termin zaehlt mit.
+      expect(snap.slides.events.total_attended).toBe(1);
+    });
+
+    it('Ein Abzeichen vor dem Konfirmations-Fenster faellt nicht mehr heraus', async () => {
+      // Dieselbe Lage wie oben, aber auf der Seite, an der es in Produktion
+      // auffiel: 20 Abzeichen aus dem Sommer, Abzeichen-Seite zeigte 0.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 1}-05-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const konf = await termin('Konfirmation', `${JAHR + 1}-05-10`);
+      await db.query('UPDATE events SET is_konfirmation = true WHERE id = $1', [konf]);
+
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, $4::timestamptz)`,
+        [USERS.konfi1.id, BADGES.streak.id, ORGS.testGemeinde.id, `${JAHR - 1}-07-20 10:00:00`]
+      );
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.badges.total_earned).toBe(1);
+    });
+
+    // ------------------------------------------------------------
+    // Warteliste-Held:in (Migration 145).
+    // ------------------------------------------------------------
+    it('Nur ein echtes Nachruecken zaehlt -- NULL heisst unbekannt, nicht nein', async () => {
+      const nachgerueckt = await termin('Nachgerueckt', IM_ZEITRAUM);
+      const normal = await termin('Von Anfang an', IM_ZEITRAUM);
+      const alt = await termin('Bestandsbuchung', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, nachgerueckt);
+      await buchung(USERS.konfi1.id, normal);
+      await buchung(USERS.konfi1.id, alt);
+
+      // Eine Buchung ist nachgerueckt, eine ausdruecklich NICHT, eine
+      // traegt NULL wie jede Bestandszeile vor der Migration.
+      await db.query(
+        `UPDATE event_bookings SET war_auf_warteliste = true WHERE event_id = $1`, [nachgerueckt]);
+      await db.query(
+        `UPDATE event_bookings SET war_auf_warteliste = false WHERE event_id = $1`, [normal]);
+      // 'alt' bleibt NULL.
+
+      const snap = await snapshotVonKonfi1();
+      // Genau EINE -- weder die ausdrueckliche false noch die unbekannte NULL.
+      expect(snap.slides.warteliste.nachgerueckt).toBe(1);
+      expect(snap.kacheln).toContain('warteliste');
+    });
+
+    it('Ohne Nachruecken fehlt die Seite', async () => {
+      const t = await termin('Ganz normal', IM_ZEITRAUM);
+      await buchung(USERS.konfi1.id, t);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.warteliste.nachgerueckt).toBe(0);
+      expect(snap.kacheln).not.toContain('warteliste');
+    });
+
+    // ------------------------------------------------------------
+    // EINE FEHLENDE SPALTE DARF DEN RUECKBLICK NICHT SPRENGEN.
+    //
+    // BEFUND 07.09.2026, gemessen: Produktion stand auf Migration 144,
+    // event_bookings.war_auf_warteliste existierte dort nicht. Die Abfrage
+    // in generateKonfiSnapshot hatte kein try/catch -- sie waere fuer JEDE
+    // Konfi mit "column does not exist" abgebrochen.
+    //
+    // Dass die Migrationen beim Start automatisch laufen, rettet das NICHT:
+    // runMigrations faengt Fehler ab und laesst den Server weiterlaufen
+    // (database.js, "Server laeuft weiter"). Schlaegt 145 fehl, startet das
+    // Backend trotzdem -- und der Rueckblick faellt still komplett aus.
+    //
+    // Diese Tests stellen den Fall WIRKLICH her (Spalte droppen), statt ihn
+    // zu mocken: Ein Mock haette nicht gezeigt, ob der Snapshot danach
+    // durchlaeuft.
+    // ------------------------------------------------------------
+    describe('Fehlende Spalten aus neuen Migrationen', () => {
+      // Die Spalten kommen nach jedem Test zurueck. truncateAll leert nur
+      // Zeilen, es stellt kein Schema wieder her -- ohne dieses afterEach
+      // liefe der Rest der Datei gegen eine kaputte Test-DB.
+      afterEach(async () => {
+        await db.query(
+          'ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS war_auf_warteliste BOOLEAN'
+        );
+        await db.query(
+          `ALTER TABLE challenge_submissions
+             ADD COLUMN IF NOT EXISTS approved_by INTEGER,
+             ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
+        );
+      });
+
+      it('Ohne war_auf_warteliste (Migration 145) laeuft der Snapshot durch und die Seite fehlt', async () => {
+        const t = await termin('Ganz normal', IM_ZEITRAUM);
+        await buchung(USERS.konfi1.id, t);
+
+        await db.query('ALTER TABLE event_bookings DROP COLUMN war_auf_warteliste');
+        // Wirklich weg, nicht nur leer.
+        const { rows: weg } = await db.query(
+          `SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'event_bookings' AND column_name = 'war_auf_warteliste'`
+        );
+        expect(weg).toHaveLength(0);
+
+        const snap = await snapshotVonKonfi1();
+
+        // Der Rueckblick entsteht vollstaendig -- das ist der Kern.
+        expect(snap.slides.events.total_attended).toBe(1);
+        expect(snap.slides.punkte.total).toBeGreaterThanOrEqual(0);
+        // Die Warteliste-Zahl faellt auf 0 zurueck, nicht auf undefined.
+        expect(snap.slides.warteliste.nachgerueckt).toBe(0);
+        // Und die Seite erscheint deshalb gar nicht -- das richtige Verhalten.
+        expect(snap.kacheln).not.toContain('warteliste');
+        // Die tragenden Seiten sind da.
+        expect(snap.kacheln).toContain('intro');
+        expect(snap.kacheln).toContain('abschluss');
+      });
+
+      it('Ohne approved_by (Migration 146) laeuft der Teamer-Snapshot durch und die Seite fehlt', async () => {
+        await db.query('ALTER TABLE challenge_submissions DROP COLUMN approved_by');
+        const { rows: weg } = await db.query(
+          `SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'challenge_submissions' AND column_name = 'approved_by'`
+        );
+        expect(weg).toHaveLength(0);
+
+        const gen = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(gen.status).toBe(200);
+
+        const { rows } = await db.query(
+          `SELECT data FROM wrapped_snapshots
+            WHERE user_id = $1 AND wrapped_type = 'teamer'
+            ORDER BY computed_at DESC, id DESC LIMIT 1`,
+          [USERS.teamer1.id]
+        );
+        expect(rows).toHaveLength(1);
+        const snap = rows[0].data;
+
+        expect(snap.slides.moderation.freigegeben).toBe(0);
+        expect(snap.kacheln).not.toContain('teamer-moderation');
+        expect(snap.kacheln).toContain('teamer-intro');
+        expect(snap.kacheln).toContain('teamer-abschluss');
+      });
+    });
+
+    // ------------------------------------------------------------
+    // Zeit-/Rhythmus-Seiten: Spanne und Wochentag.
+    // ------------------------------------------------------------
+    it('Der lange Atem misst die Spanne zwischen erstem und letztem Termin', async () => {
+      // 14.09. bis 12.04. -- 210 Tage.
+      const daten = [`${JAHR - 1}-09-14`, `${JAHR - 1}-12-01`, `${JAHR}-01-10`,
+                     `${JAHR}-02-20`, `${JAHR}-04-12`];
+      for (const d of daten) await buchung(USERS.konfi1.id, await termin(`T ${d}`, d));
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.langer_atem.termine).toBe(5);
+      expect(snap.slides.langer_atem.erster).toBe(`${JAHR - 1}-09-14`);
+      expect(snap.slides.langer_atem.letzter).toBe(`${JAHR}-04-12`);
+      expect(snap.slides.langer_atem.tage).toBe(210);
+    });
+
+    it('Der Wochentag kommt aus dem Berliner Kalendertag', async () => {
+      // Vier Termine an Montagen, jeweils kurz nach Mitternacht Berliner
+      // Zeit -- also genau die Zeitstempel, bei denen sich UTC und Berlin
+      // im Kalendertag unterscheiden.
+      const montagsNaechte = [`${JAHR - 1}-11-17`, `${JAHR - 1}-11-24`,
+                              `${JAHR - 1}-12-01`, `${JAHR - 1}-12-08`];
+      for (const d of montagsNaechte) {
+        const { rows: [e] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+           VALUES ($1, $2::timestamptz, $3, false, 0, 'gemeinde', 1) RETURNING id`,
+          [`Nachtcafe ${d}`, `${d} 00:30:00+01`, ORGS.testGemeinde.id]
+        );
+        await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+          [e.id, JAHRGAENGE.jahrgang1.id]);
+        await buchung(USERS.konfi1.id, e.id);
+      }
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.wochentag.tag).toBe(1);
+      expect(snap.slides.wochentag.name).toBe('Montag');
+      expect(snap.slides.wochentag.anzahl).toBe(4);
+    });
+
+    it('AT TIME ZONE ist die Absicherung gegen eine Datenbank ausserhalb Berlins', async () => {
+      // WARUM DIESER TEST DIREKT AUF SQL GEHT statt ueber den Snapshot:
+      //
+      // GEMESSEN am 07.09.2026: events.event_date ist timestamptz, und
+      // Test- WIE Produktionsdatenbank laufen auf Europe/Berlin
+      // (docker-compose.test.yml, deploy/compose.konfi_quest.yml). Dort
+      // liefert EXTRACT(DOW ...) bereits den Berliner Wochentag -- die
+      // Umrechnung ist wirkungsgleich und ueber den Snapshot NICHT
+      // pruefbar. Ein Test, der es dennoch behauptet, waere gruen, ohne
+      // etwas zu zeigen (erst versucht, dann verworfen: ALTER DATABASE
+      // erreicht bestehende Pool-Verbindungen nicht).
+      //
+      // Die Absicherung gilt einer Datenbank, die NICHT auf Berlin steht.
+      // Genau diese Lage stellt die Abfrage hier her -- und misst beide
+      // Wege nebeneinander.
+      const client = await db.getClient();
+      try {
+        await client.query("SET TIME ZONE 'UTC'");
+        const { rows: [r] } = await client.query(
+          `SELECT EXTRACT(DOW FROM $1::timestamptz)::int AS ohne_umrechnung,
+                  EXTRACT(DOW FROM ($1::timestamptz AT TIME ZONE 'Europe/Berlin'))::int AS mit_umrechnung`,
+          [`${JAHR - 1}-11-17 00:30:00+01`]
+        );
+        // Ohne Umrechnung: Sonntag (0) -- der Termin rutscht auf den Vortag.
+        expect(r.ohne_umrechnung).toBe(0);
+        // Mit Umrechnung: Montag (1) -- der Berliner Kalendertag.
+        expect(r.mit_umrechnung).toBe(1);
+      } finally {
+        // Die Zone WIEDER ZURUECKSETZEN, bevor die Verbindung in den Pool
+        // zurueckgeht: SET TIME ZONE gilt fuer die Sitzung, und eine
+        // ausgeliehene Verbindung wird spaeter von anderen Tests
+        // weiterbenutzt. Ohne das Zuruecksetzen laeuft irgendein spaeterer
+        // Test unbemerkt in UTC.
+        await client.query("SET TIME ZONE 'Europe/Berlin'").catch(() => {});
+        client.release();
+      }
+    });
+
+    it('Die Medienarten zaehlen jede Art nur einmal', async () => {
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by, starts_at, ends_at)
+         VALUES ('Vielfalt', 'Zeig es', 'Bunt', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year')
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const beitrag = (art) => db.query(
+        `INSERT INTO challenge_submissions
+           (challenge_id, user_id, organization_id, media_type, moderation_status, created_at)
+         VALUES ($1, $2, $3, $4, 'approved', $5::timestamptz)`,
+        [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id, art, `${IM_ZEITRAUM} 10:00:00`]
+      );
+      await beitrag('text');
+      await beitrag('text');
+      await beitrag('photo');
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.medienarten).toEqual(['photo', 'text']);
+      expect(snap.kacheln).toContain('vielseitig');
+    });
+
+    // ------------------------------------------------------------
+    // Der angegebene Zeitraum schlaegt bis in die Zahlen durch.
+    //
+    // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert und
+    // in wrapped_ausgaben geschrieben -- aber NIE an die Generierung
+    // uebergeben. Gerechnet wurde immer mit dem Konfirmations-/Fallback-
+    // Zeitraum. In der Oberflaeche haette eine Spanne gestanden, unter der
+    // Zahlen aus einer anderen liegen.
+    // ------------------------------------------------------------
+    /**
+     * Erzeugt Wrapped mit ausdruecklichem Zeitraum; gibt konfi1s Snapshot.
+     *
+     * Jeder Lauf legt eine eigene AUSGABE an und damit einen eigenen
+     * Snapshot (Migration 144, ausgabe_id gehoert zum Schluessel) -- deshalb
+     * gezielt der Snapshot DIESER Ausgabe, nicht "der eine".
+     */
+    async function snapshotMitZeitraum(start, ende) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    it('Der angegebene Zeitraum steht im Snapshot -- nicht der Fallback', async () => {
+      const snap = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+    });
+
+    it('Der angegebene Zeitraum entscheidet, welche Termine zaehlen', async () => {
+      // IM_ZEITRAUM ist der 15.11., liegt also im engeren Fenster;
+      // der zweite Termin liegt im Fallback-Jahr, aber ausserhalb davon.
+      const drin = await termin('November', IM_ZEITRAUM);
+      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+      await buchung(USERS.konfi1.id, drin);
+      await buchung(USERS.konfi1.id, draussen);
+
+      // Der Fallback (1.9.-31.8.) wuerde beide zaehlen.
+      const weit = await snapshotVonKonfi1();
+      expect(weit.slides.events.total_attended).toBe(2);
+
+      // Der ausdrueckliche Zeitraum nur den einen.
+      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(eng.slides.events.total_attended).toBe(1);
+    });
+
+    it('Der angegebene Zeitraum schlaegt bis in die Challenge-Zahlen durch', async () => {
+      // Die Challenge-Queries filtern laengst -- aber auf den Zeitraum, den
+      // die Generierung kennt. Bekam sie den falschen, zaehlten auch sie
+      // falsch. Der Test haelt die Kette fest, nicht nur die Query.
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by,
+            starts_at, ends_at)
+         VALUES ('Mutprobe', 'Trau dich', 'Mutig', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year')
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const beitrag = async (datum) => db.query(
+        `INSERT INTO challenge_submissions
+           (challenge_id, user_id, organization_id, media_type, moderation_status, created_at)
+         VALUES ($1, $2, $3, 'text', 'approved', $4::timestamptz)`,
+        [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id, `${datum} 10:00:00`]
+      );
+      await beitrag(IM_ZEITRAUM);          // 15.11., im engen Fenster
+      await beitrag(`${JAHR}-06-15`);      // im Fallback-Jahr, ausserhalb
+
+      const weit = await snapshotVonKonfi1();
+      expect(weit.slides.challenges.beitraege).toBe(2);
+      expect(weit.slides.challenge_momente).toHaveLength(2);
+
+      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
+      expect(eng.slides.challenges.beitraege).toBe(1);
+      expect(eng.slides.challenge_momente).toHaveLength(1);
+    });
+
+    it('Bonuspunkte zaehlen nur im Zeitraum', async () => {
+      // Diese Query war die einzige Ereignis-Query ohne Zeitfilter: Sie
+      // summierte alle Bonuspunkte seit Kontobeginn. Der Seed legt bereits
+      // 3 Punkte mit completed_date = heute an.
+      await db.query('DELETE FROM bonus_points');
+      await db.query(
+        `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, completed_date)
+         VALUES ($1, 5, 'gemeinde', 'Im Zeitraum', $2, $3, $4::date)`,
+        [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, IM_ZEITRAUM]
+      );
+      await db.query(
+        `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, completed_date)
+         VALUES ($1, 7, 'gemeinde', 'Im Vorjahr', $2, $3, $4::date)`,
+        [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, VOR_ZEITRAUM]
+      );
+
+      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
+      // Nur die 5 aus dem Zeitraum, nicht 12.
+      expect(snap.slides.punkte.bonus).toBe(5);
+    });
+
+    it('Ohne Angabe laeuft der Zeitraum vom Beginn der Konfi-Zeit bis heute', async () => {
+      // Simons Regel (07.09.2026). Vorher stand hier das Fenster
+      // 1.9.(JAHR-1) .. 31.8.(JAHR) -- es schnitt jede Konfi-Zeit ab, die
+      // laenger als ein Jahr war.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const heute = new Date();
+      const heuteStr = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}-${String(heute.getDate()).padStart(2, '0')}`;
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteStr);
+    });
+
+    it('Eine Konfi-Zeit ueber zwei Jahre wird vollstaendig erfasst', async () => {
+      // Simon: "den ganzen zeitraum, bei manchen sind das auch zwei jahre."
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // Je ein Termin im ersten und im zweiten Konfi-Jahr.
+      const jahr1 = await termin('Erstes Konfi-Jahr', `${JAHR - 2}-11-15`);
+      const jahr2 = await termin('Zweites Konfi-Jahr', `${JAHR - 1}-11-15`);
+      await buchung(USERS.konfi1.id, jahr1);
+      await buchung(USERS.konfi1.id, jahr2);
+
+      const snap = await snapshotVonKonfi1();
+      // Beide. Das alte Ein-Jahres-Fenster haette nur einen gezaehlt.
+      expect(snap.slides.events.total_attended).toBe(2);
+    });
+
+    it('Der Zeitraum der Ausgabe und der des Snapshots sind derselbe', async () => {
+      // Der eigentliche Befund: Die Ausgabe zeigte eine Spanne, die
+      // Generierung rechnete mit einer anderen.
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+
+      const { rows: [ausgabe] } = await db.query(
+        `SELECT zeitraum_start, zeitraum_ende FROM wrapped_ausgaben
+          WHERE titel = 'Zwischenstand'`
+      );
+      const { rows: [snapRow] } = await db.query(
+        `SELECT s.data FROM wrapped_snapshots s
+           JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
+          WHERE s.user_id = $1 AND s.wrapped_type = 'konfi' AND a.titel = 'Zwischenstand'`,
+        [USERS.konfi1.id]
+      );
+      // Die DATE-Spalte kommt als JS-Date in Ortszeit zurueck.
+      // toISOString() rechnete sie nach UTC und machte aus dem 1.10. den
+      // 30.9. -- dieselbe Falle, gegen die berechneZeitraum() sich wehrt.
+      const iso = (d) => {
+        const dt = new Date(d);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      };
+      expect(iso(ausgabe.zeitraum_start)).toBe(snapRow.data.slides.zeitraum.start);
+      expect(iso(ausgabe.zeitraum_ende)).toBe(snapRow.data.slides.zeitraum.ende);
     });
 
     // ------------------------------------------------------------
@@ -1034,10 +2117,13 @@ describe('Wrapped Routes', () => {
     }
 
     /** Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot eines Konfis zurueck. */
-    async function snapshotVon(userId) {
-      const gen = await request(app)
+    async function snapshotVon(userId, zeitraum = null) {
+      const req_ = request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
+      const gen = zeitraum
+        ? await req_.send({ zeitraum_start: zeitraum[0], zeitraum_ende: zeitraum[1] })
+        : await req_;
       expect(gen.status).toBe(200);
 
       const { rows } = await db.query(
@@ -1047,6 +2133,9 @@ describe('Wrapped Routes', () => {
       expect(rows).toHaveLength(1);
       return rows[0].data;
     }
+
+    /** Das Fenster, das vor dem 07.09.2026 automatisch galt. */
+    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
 
     beforeEach(async () => {
       // Bekannte Datenlage: Seed-Termine raus (wie im Zahlen-describe).
@@ -1211,7 +2300,10 @@ describe('Wrapped Routes', () => {
       // Abmeldung aus dem VORIGEN Konfi-Jahr: gehoert nicht in diesen Rueckblick.
       await abmeldung(USERS.konfi1.id, termine[0], VOR_ZEITRAUM);
 
-      const snap = await snapshotVon(USERS.konfi1.id);
+      // Mit ausdruecklichem Zeitraum: Seit dem 07.09.2026 laeuft der
+      // automatische Zeitraum ueber die ganze Konfi-Zeit -- nur eine
+      // Angabe engt ihn noch ein.
+      const snap = await snapshotVon(USERS.konfi1.id, ALTES_FENSTER);
       expect(snap.slides.chat.nachrichten_gesendet).toBe(1);
       expect(snap.slides.verlaesslichkeit.abmeldungen).toBe(0);
       expect(snap.slides.verlaesslichkeit.nie_abgesagt).toBe(true);
@@ -1263,6 +2355,235 @@ describe('Wrapped Routes', () => {
       expect(typeof snap.slides.verlaesslichkeit.nie_abgesagt).toBe('boolean');
       expect(snap.slides.highlight.type).toBe(snap.highlight_type);
       expect(typeof snap.slides.highlight.wert).toBe('number');
+    });
+  });
+
+  // ================================================================
+  // SONDERSEITE STAVANGER 2026 (Sommerfreizeit)
+  // ================================================================
+  //
+  // SIMONS VORGABE (07.09.2026): "kannst du bitte eine seite bauen fuer
+  // sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
+  // und konfis die dabei waren. ich lege das als aktivitaet an mit
+  // sommerfrezeit als kategorie."
+  //
+  // WICHTIG BEIM LESEN: Die Kategorie "Sommerfreizeit" existiert in KEINER
+  // Gemeinde -- sie wird erst per SQL angelegt. Der erste Test hier prueft
+  // deshalb genau das: Solange es sie nicht gibt, erscheint die Seite
+  // nirgends. Kein Fehler, keine leere Seite.
+  describe('Sonderseite Stavanger 2026', () => {
+    // Der Zeitraum der Fahrt (utils/wrappedKategorien.js):
+    // 01.06.2026 bis 30.09.2026.
+    const IN_DER_FAHRT = '2026-07-15';
+    const NACH_DER_FAHRT = '2026-11-15';  // liegt ausserhalb des Fahrt-Fensters
+
+    /** Legt die Kategorie "Sommerfreizeit" an und gibt ihre ID zurueck. */
+    async function sommerfreizeitKategorie(orgId = ORGS.testGemeinde.id) {
+      const { rows: [c] } = await db.query(
+        `INSERT INTO categories (name, type, organization_id)
+         VALUES ('Sommerfreizeit', 'both', $1) RETURNING id`,
+        [orgId]
+      );
+      return c.id;
+    }
+
+    /**
+     * Termin mit Kategorie anlegen und die Person darauf buchen.
+     * Die Fahrt kann als Termin ODER als Aktivitaet gefuehrt sein -- hier
+     * der Termin-Weg.
+     */
+    async function fahrtAlsTermin(userId, datum, kategorieId) {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ('Sommerfreizeit Norwegen', $1::timestamp, $2, false, 0, 'gemeinde', 1) RETURNING id`,
+        [`${datum} 10:00:00`, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [e.id, JAHRGAENGE.jahrgang1.id]
+      );
+      await db.query(
+        'INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)',
+        [e.id, kategorieId]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', 'present', NOW())`,
+        [userId, e.id, ORGS.testGemeinde.id]
+      );
+      return e.id;
+    }
+
+    /** Der Aktivitaets-Weg -- so, wie Simon es anlegen will. */
+    async function fahrtAlsAktivitaet(userId, datum, kategorieId) {
+      const { rows: [a] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id)
+         VALUES ('Sommerfreizeit Norwegen', 5, 'gemeinde', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)',
+        [a.id, kategorieId]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, $4::date, $5)`,
+        [userId, a.id, USERS.admin1.id, datum, ORGS.testGemeinde.id]
+      );
+      return a.id;
+    }
+
+    /** Konfi-Snapshot von konfi1 mit ausdruecklichem Zeitraum. */
+    async function konfiSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    /** Teamer-Snapshot von teamer1 mit ausdruecklichem Zeitraum. */
+    async function teamerSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+      // generate-teamer verlangt OrgAdmin -- ein Admin bekommt 403.
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    it('ohne die Kategorie erscheint die Seite nirgends -- der heutige Stand', async () => {
+      // DER WICHTIGSTE TEST. "Sommerfreizeit" gibt es in keiner Gemeinde;
+      // sie wird erst per SQL angelegt. Bis dahin muss die Seite sauber
+      // verschwinden: kein Fehler, keine leere Seite.
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('wer die Fahrt als Termin hat, bekommt die Seite', async () => {
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsTermin(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('wer die Fahrt als Aktivitaet hat, bekommt die Seite ebenfalls', async () => {
+      // Simon legt sie als AKTIVITAET an -- dieser Weg muss genauso
+      // funktionieren wie der Termin-Weg.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('wer nicht dabei war, bekommt sie nicht -- auch wenn es die Kategorie gibt', async () => {
+      // Die Kategorie existiert, die Fahrt ist eingetragen -- aber fuer
+      // konfi2, nicht fuer konfi1. Genau das ist Simons Vorgabe: "nur die
+      // teamer und konfis die dabei waren".
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi2.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('eine spaetere Sommerfreizeit loest die Norwegen-Seite NICHT aus', async () => {
+      // Die Kategorie bleibt und wird wiederverwendet. Ohne das
+      // Fahrt-Fenster wuerde die Freizeit 2027 dieselbe Seite ueber
+      // Norwegen 2026 erzeugen -- fuer jemanden, der nie dort war.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, NACH_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('ein Rueckblick, dessen Zeitraum die Fahrt nicht enthaelt, zeigt sie nicht', async () => {
+      // Simons Regel (07.09.2026): Der Rueckblick zeigt nur, was in seiner
+      // Spanne liegt. Die Fahrt war im Juli 2026 -- ein Zwischenbericht
+      // ueber das Fruehjahr darf sie nicht mitnehmen.
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await konfiSnapshot('2026-01-01', '2026-05-31');
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('das Team bekommt die Seite genauso', async () => {
+      // "das sehen dann nur die teamer und konfis die dabei waren."
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.teamer1.id, IN_DER_FAHRT, kat);
+
+      const snap = await teamerSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(true);
+      expect(snap.kacheln).toContain('stavanger-2026');
+    });
+
+    it('ein Teamer ohne die Fahrt bekommt sie nicht', async () => {
+      const kat = await sommerfreizeitKategorie();
+      await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
+
+      const snap = await teamerSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('eine Kategorie derselben Schreibweise in einer FREMDEN Gemeinde zaehlt nicht', async () => {
+      // Org-Isolation: Wer in einer anderen Gemeinde eine "Sommerfreizeit"
+      // fuehrt, darf hier niemandem eine Norwegen-Seite verschaffen.
+      const fremdeKat = await sommerfreizeitKategorie(ORGS.andereGemeinde.id);
+      const { rows: [a] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id)
+         VALUES ('Sommerfreizeit', 5, 'gemeinde', $1) RETURNING id`,
+        [ORGS.andereGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO activity_categories (activity_id, category_id) VALUES ($1, $2)',
+        [a.id, fremdeKat]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, $4::date, $5)`,
+        [USERS.konfi1.id, a.id, USERS.admin1.id, IN_DER_FAHRT, ORGS.andereGemeinde.id]
+      );
+
+      const snap = await konfiSnapshot();
+      expect(snap.slides.stavanger_2026).toBe(false);
+      expect(snap.kacheln).not.toContain('stavanger-2026');
+    });
+
+    it('das Feld ist ADDITIV -- die uebrigen Snapshot-Felder bleiben unveraendert', async () => {
+      // Ausgelieferte Apps lesen diesen Snapshot. Ein neues Feld ist
+      // erlaubt, eine geaenderte Form nicht.
+      const snap = await konfiSnapshot();
+      expect(typeof snap.slides.stavanger_2026).toBe('boolean');
+      expect(Array.isArray(snap.slides.kategorie.verteilung)).toBe(true);
+      expect(Array.isArray(snap.kacheln)).toBe(true);
+      expect(typeof snap.slides.punkte.total).toBe('number');
     });
   });
 

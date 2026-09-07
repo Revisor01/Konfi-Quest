@@ -722,7 +722,7 @@ const TeamerEventsPage: React.FC = () => {
     switch (activeTab) {
       case 'meine': return 'Du bist noch bei keinem Event dabei';
       case 'alle': return 'Keine Events vorhanden';
-      case 'team': return 'Keine Events für Teamer:innen verfügbar';
+      case 'team': return 'Keine Events fürs Team verfügbar';
       default: return 'Keine Events';
     }
   };
@@ -917,7 +917,7 @@ const TeamerEventsPage: React.FC = () => {
                   <div className="app-info-row">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon app-icon-color--team" />
                     <div>
-                      <div className="app-info-row__label">Teamer:innen</div>
+                      <div className="app-info-row__label">Team</div>
                       <div className="app-info-row__value">
                         {(selectedEvent.teamer_count || 0)} / {(selectedEvent.teamer_max_participants || 0) > 0 ? selectedEvent.teamer_max_participants : '∞'}
                       </div>
@@ -1014,7 +1014,7 @@ const TeamerEventsPage: React.FC = () => {
                   <div className="app-info-row">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon app-icon-color--team" />
                     <div>
-                      <div className="app-info-row__label">Teamer-Zugang</div>
+                      <div className="app-info-row__label">Team-Zugang</div>
                       <div className="app-info-row__value">{selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
                     </div>
                   </div>

@@ -260,7 +260,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                 <div className="app-info-row">
                   <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon app-icon-color--team" />
                   <div>
-                    <div className="app-info-row__label">Teamer:innen</div>
+                    <div className="app-info-row__label">Team</div>
                     <div className="app-info-row__value">
                       {teamerConfirmed.length} / {teamerMax > 0 ? teamerMax : '\u221E'}
                     </div>
@@ -272,7 +272,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                 <div className="app-info-row">
                   <IonIcon icon={ICON_LISTE} className="app-info-row__icon app-icon-color--waitlist" />
                   <div>
-                    <div className="app-info-row__label">Teamer-Warteliste</div>
+                    <div className="app-info-row__label">Team-Warteliste</div>
                     <div className="app-info-row__value">
                       {teamerWaitlistCount} / {eventData.teamer_max_waitlist_size || 10}
                     </div>
@@ -373,7 +373,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           <div className="app-info-row">
             <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon app-icon-color--team" />
             <div>
-              <div className="app-info-row__label">Teamer-Zugang</div>
+              <div className="app-info-row__label">Team-Zugang</div>
               <div className="app-info-row__value">{eventData.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
             </div>
           </div>

@@ -46,7 +46,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-chat)',
     rgb: '--app-color-chat-rgb',
     title: 'Dein Chat',
-    text: 'Schreib mit deinem Jahrgang und deinen Teamer:innen. Hier bekommst du auch wichtige Infos und Ankündigungen direkt mit.',
+    text: 'Schreib mit deinem Jahrgang und deinem Team. Hier bekommst du auch wichtige Infos und Ankündigungen direkt mit.',
   },
   {
     icon: ICON_TERMIN,
@@ -74,7 +74,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Deine Challenges',
-    text: 'Zum Schluss das Neueste: In der Mitte deiner Tab-Leiste warten die Challenges — eine Aufgabe und eine Zeit lang Ruhe, dich damit zu beschäftigen. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link. Du entscheidest, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es einen Stempel und mit Absicht keine Punkte: Hier geht es nicht ums Sammeln, sondern um dich und deinen Glauben. Deine Teamer:innen machen übrigens mit.',
+    text: 'Zum Schluss das Neueste: In der Mitte deiner Tab-Leiste warten die Challenges — eine Aufgabe und eine Zeit lang Ruhe, dich damit zu beschäftigen. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link. Du entscheidest, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es einen Stempel und mit Absicht keine Punkte: Hier geht es nicht ums Sammeln, sondern um dich und deinen Glauben. Dein Team macht übrigens mit.',
   },
 ];
 

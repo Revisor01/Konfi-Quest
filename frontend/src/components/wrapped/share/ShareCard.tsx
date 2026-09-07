@@ -1,5 +1,8 @@
 import React, { forwardRef } from 'react';
 import type { KonfiWrappedData, TeamerWrappedData } from '../../../types/wrapped';
+import { TEXTE, stufeFuer } from '../slides/kategorieSeitenTexte';
+import { tageBis } from '../../shared/eventFormatting';
+import { hintergrundFuer } from '../hintergrundbilder';
 import './ShareCard.css';
 
 interface ShareCardProps {
@@ -9,6 +12,13 @@ interface ShareCardProps {
   displayName: string;
   jahrgangName?: string;
   year: number;
+  /**
+   * Das Motiv dieser Seite, wie es der Rueckblick gerade zeigt. Es kommt aus
+   * der Verteilung des GANZEN Rueckblicks (verteileMotive), damit das
+   * geteilte Bild dasselbe Foto traegt wie die Seite auf dem Bildschirm.
+   * Ohne Angabe greift die feste Zuordnung.
+   */
+  motiv?: string;
 }
 
 // Typografie-Konsolidierung 05.09.2026: Dieses Bauteil bleibt bewusst bei
@@ -17,20 +27,100 @@ interface ShareCardProps {
 // hinge es an rem, veraenderte die Systemschriftgroesse des Geraets das
 // exportierte Bild.
 const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  ({ slideKey, data, wrappedType, displayName, jahrgangName, year }, ref) => {
+  ({ slideKey, data, wrappedType, displayName, jahrgangName, year, motiv }, ref) => {
     const isTeamer = wrappedType === 'teamer';
     const konfi = !isTeamer ? (data as KonfiWrappedData) : null;
     const teamer = isTeamer ? (data as TeamerWrappedData) : null;
 
-    const bgClass = `share-card share-card--${slideKey}${isTeamer ? ' share-card--teamer' : ''}`;
+    // Die dynamischen Seiten ('kategorie:fest', 'datum:advent') koennen
+    // keinen eigenen Klassennamen bekommen -- der Doppelpunkt ist in CSS
+    // kein gueltiges Zeichen und die Liste waechst mit jeder Kategorie, die
+    // eine Gemeinde anlegt. Sie teilen sich deshalb je eine Sammelklasse.
+    const klassenName = slideKey.startsWith('kategorie:')
+      ? 'kategorie-seite'
+      : slideKey.startsWith('datum:')
+        ? 'datums-seite'
+        : slideKey === 'kategorie-allgemein'
+          ? 'kategorie-seite'
+          : slideKey;
+
+    const bgClass = `share-card share-card--${klassenName}${isTeamer ? ' share-card--teamer' : ''}`;
+
+    // DAS FOTO DER SEITE.
+    //
+    // Warum als Inline-Stil und nicht als CSS-Regel: Welche Seite welches
+    // Motiv bekommt, entscheidet sich zur Laufzeit (verteileMotive verteilt
+    // sie so, dass sich in einem Rueckblick keines wiederholt). Eine feste
+    // Regel je Seite koennte das nicht abbilden.
+    //
+    // Der Farbverlauf der Seite liegt als eigene Schicht DARUEBER -- unten
+    // dicht, oben offen. Genau wie im Rueckblick selbst: Ohne diese Schicht
+    // waere weisser Text auf einem hellen Himmel auf dem Handy in der Sonne
+    // nicht zu lesen.
+    const bild = motiv || hintergrundFuer(slideKey);
+
+    /**
+     * Wie viele Termine stecken hinter einer Kategorie- oder Datums-Seite?
+     * Dieselbe Rechnung wie in WrappedModal -- die Zahl steht auf der Seite
+     * und muss auf dem geteilten Bild dieselbe sein.
+     */
+    const kategorieZahl = (kachel: string): number => {
+      if (!konfi) return 0;
+      const verteilung = konfi.slides.kategorie?.verteilung || [];
+      if (kachel.startsWith('datum:')) {
+        const fenster = (konfi.slides as { datums_fenster?: Record<string, number> }).datums_fenster || {};
+        return fenster[kachel.slice('datum:'.length)] || 0;
+      }
+      if (kachel === 'kategorie-allgemein') return verteilung[0]?.count || 0;
+      return verteilung
+        .filter(v => (v as { seite?: string | null }).seite === kachel)
+        .reduce((n, v) => n + (v.count || 0), 0);
+    };
+
+    /**
+     * Die Kategorie- und Datums-Seiten. Sie werden als MUSTER behandelt,
+     * nicht aufgezaehlt: Welche es gibt, entscheidet die Gemeinde-Verwaltung
+     * -- eine Aufzaehlung waere beim naechsten neuen Eintrag veraltet.
+     *
+     * Slogan und Nachsatz kommen aus derselben Quelle wie die Seite selbst
+     * (KategorieSeiteSlide), damit das geteilte Bild dasselbe sagt wie das,
+     * was die Konfi vor sich sieht.
+     */
+    const renderKategorieSeite = () => {
+      const text = TEXTE[slideKey];
+      if (!text) return null;
+      const anzahl = kategorieZahl(slideKey);
+      return (
+        <>
+          <div className="share-auge">{text.auge}</div>
+          <div className="share-zahl">
+            {anzahl}<span className="share-zahl-mal">×</span>
+          </div>
+          <div className="share-slogan">
+            {stufeFuer(text.stufen, anzahl).split('\n').map((zeile, i) => (
+              <span key={i} style={{ display: 'block' }}>{zeile}</span>
+            ))}
+          </div>
+          <div className="share-nachsatz">{text.nachsatz(anzahl)}</div>
+        </>
+      );
+    };
 
     const renderContent = () => {
+      if (
+        slideKey.startsWith('kategorie:')
+        || slideKey.startsWith('datum:')
+        || slideKey === 'kategorie-allgemein'
+      ) {
+        return renderKategorieSeite();
+      }
+
       switch (slideKey) {
         case 'intro':
           return (
             <>
               <div style={{ fontSize: 36, fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>
-                Dein Konfi-Jahr {year}
+                Deine Konfi-Zeit
               </div>
               <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1 }}>
                 {displayName}
@@ -112,6 +202,81 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         // Challenge-Momente: BEWUSST nur Text und Challenge-Titel. Fotos, Audio
         // und Video der Konfis werden NIE in ein Teilen-Bild eingebettet
         // (Datenschutz — das Bild verlässt die App).
+        // Die ZAHL der Challenges (die Bilder stehen im Zweig darunter).
+        case 'warteliste': {
+          if (!konfi) return null;
+          const w = konfi.slides.warteliste;
+          if (!w?.nachgerueckt) return null;
+          return (
+            <>
+              <div className="share-label">Nachgerückt</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>
+                Gewartet.<br />Und dabei.
+              </div>
+              <div className="share-subtitle">
+                {w.nachgerueckt === 1 ? 'Ein Platz wurde frei' : `${w.nachgerueckt} Mal nachgerückt`}
+              </div>
+            </>
+          );
+        }
+
+        case 'langer-atem': {
+          if (!konfi) return null;
+          const la = konfi.slides.langer_atem;
+          if (!la) return null;
+          return (
+            <>
+              <div className="share-label">Vom ersten bis zum letzten Mal</div>
+              <div className="share-big-number">{la.tage}</div>
+              <div className="share-subtitle">Tage lang dabei</div>
+            </>
+          );
+        }
+
+        case 'wochentag': {
+          if (!konfi) return null;
+          const wt = konfi.slides.wochentag;
+          if (!wt) return null;
+          return (
+            <>
+              <div className="share-label">Dein Tag</div>
+              <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.1 }}>{wt.name}</div>
+              <div className="share-subtitle">{wt.anzahl} von {wt.gesamt} Terminen</div>
+            </>
+          );
+        }
+
+        case 'vielseitig': {
+          if (!konfi) return null;
+          const arten = konfi.slides.medienarten || [];
+          if (arten.length === 0) return null;
+          return (
+            <>
+              <div className="share-label">Nicht auf einen Weg festgelegt</div>
+              <div className="share-big-number">{arten.length}</div>
+              <div className="share-subtitle">Arten, auf die ich geantwortet habe</div>
+            </>
+          );
+        }
+
+        case 'challenges': {
+          if (!konfi) return null;
+          const ch = konfi.slides.challenges;
+          if (!ch) return null;
+          return (
+            <>
+              <div className="share-label">Meine Kraftproben</div>
+              <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1 }}>{ch.beitraege}</div>
+              <div className="share-sub">Mal mitgemacht</div>
+              {ch.top_challenge && (
+                <div className="share-sub" style={{ marginTop: 24, opacity: 0.85 }}>
+                  Am liebsten bei „{ch.top_challenge.title}“
+                </div>
+              )}
+            </>
+          );
+        }
+
         case 'challenge-momente': {
           if (!konfi) return null;
           const momente = (konfi.slides.challenge_momente || []).slice(0, 4);
@@ -173,7 +338,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           return (
             <>
               <div style={{ fontSize: 48, fontWeight: 700, marginBottom: 48 }}>
-                Dein Konfi-Jahr {year}
+                Deine Konfi-Zeit
               </div>
               <div style={{ display: 'flex', gap: 48 }}>
                 <div style={{ textAlign: 'center' }}>
@@ -277,6 +442,101 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-moderation': {
+          if (!teamer) return null;
+          const mod = teamer.slides.moderation;
+          if (!mod?.freigegeben) return null;
+          return (
+            <>
+              <div className="share-label">Hinter den Kulissen</div>
+              <div className="share-big-number">{mod.freigegeben}</div>
+              <div className="share-subtitle">Beiträge freigegeben</div>
+            </>
+          );
+        }
+
+        case 'teamer-team': {
+          if (!teamer) return null;
+          const tm = teamer.slides.team;
+          if (!tm) return null;
+          return (
+            <>
+              <div className="share-label">Nicht allein</div>
+              <div className="share-big-number">{tm.mitstreitende}</div>
+              <div className="share-subtitle">andere waren mit mir da</div>
+            </>
+          );
+        }
+
+        case 'teamer-neu-dabei': {
+          if (!teamer) return null;
+          return (
+            <>
+              <div className="share-label">Dein erstes Jahr</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.15 }}>
+                Angefangen
+              </div>
+              <div className="share-subtitle">Mein erstes Jahr im Team</div>
+            </>
+          );
+        }
+
+        case 'teamer-anfang': {
+          if (!teamer) return null;
+          const an = teamer.slides.anfang;
+          if (!an) return null;
+          return (
+            <>
+              <div className="share-label">So fing es an</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{an.name}</div>
+              <div className="share-subtitle">Dein erster Termin</div>
+            </>
+          );
+        }
+
+        case 'teamer-erstes-abzeichen': {
+          if (!teamer) return null;
+          const ab = teamer.slides.erstes_abzeichen;
+          if (!ab) return null;
+          return (
+            <>
+              <div className="share-label">Das erste</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{ab.name}</div>
+              <div className="share-subtitle">Damit ging es los</div>
+            </>
+          );
+        }
+
+        case 'teamer-antworten': {
+          if (!teamer) return null;
+          const ant = teamer.slides.chat?.antworten;
+          if (!ant) return null;
+          return (
+            <>
+              <div className="share-label">Im Gespräch</div>
+              <div className="share-big-number">{ant}</div>
+              <div className="share-subtitle">Mal geantwortet</div>
+            </>
+          );
+        }
+
+        case 'teamer-konfi-zeit': {
+          if (!teamer) return null;
+          const kz = teamer.slides.konfi_zeit;
+          if (!kz) return null;
+          return (
+            <>
+              <div className="share-label">Wie alles anfing</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.1 }}>
+                Vom Konfi<br />ins Team
+              </div>
+              <div className="share-subtitle">
+                {kz.jahrgang ? `Selbst Konfi im Jahrgang ${kz.jahrgang}` : 'Selbst Konfi in dieser Gemeinde'}
+              </div>
+            </>
+          );
+        }
+
         case 'teamer-abschluss':
           if (!teamer) return null;
           return (
@@ -322,15 +582,208 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           );
         }
 
+        // "Dein Schwerpunkt": die Balken der Seite, auf Teilen-Groesse.
+        case 'kategorie': {
+          if (!konfi) return null;
+          const kat = konfi.slides.kategorie;
+          if (!kat?.top_kategorie) return null;
+          const top = kat.verteilung.slice(0, 5);
+          const max = top.length > 0 ? Math.max(...top.map(k => k.count)) : 1;
+          const gross = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+          return (
+            <>
+              <div className="share-label">Dein Schwerpunkt</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.1, marginBottom: 48 }}>
+                {gross(kat.top_kategorie)}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: 820 }}>
+                {top.map((k) => (
+                  <div key={k.kategorie} style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                    <span style={{ fontSize: 30, width: 260, textAlign: 'left' }}>{gross(k.kategorie)}</span>
+                    <div style={{ flex: 1, height: 24, background: 'rgba(255,255,255,0.18)', borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${(k.count / Math.max(1, max)) * 100}%`,
+                        background: 'rgba(255,255,255,0.85)',
+                        borderRadius: 12,
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 30, fontWeight: 700, width: 70, textAlign: 'right' }}>{k.count}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        }
+
+        // Die Konfirmation. Der Ton haengt daran, ob der Termin noch
+        // bevorsteht -- nach der Feier waere "bald ist es so weit" falsch.
+        // Dieselbe Staffelung wie auf der Seite (KonfirmationsSlide).
+        case 'konfirmation': {
+          if (!konfi) return null;
+          const z = konfi.slides.zeitraum;
+          const roh = z && 'konfirmation' in z ? (z.konfirmation || z.ende) : z?.ende;
+          if (!roh) return null;
+          const termin = new Date(roh);
+          const tage = tageBis(termin);
+          const datum = termin.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+          const slogan = tage < 0
+            ? ['Du bist', 'konfirmiert.']
+            : tage === 0
+              ? ['Heute', 'ist es', 'so weit.']
+              : tage <= 30
+                ? ['Bald', 'ist es', 'so weit.']
+                : ['Noch', `${tage}`, tage === 1 ? 'Tag.' : 'Tage.'];
+          const nachsatz = tage < 0
+            ? `Am ${datum} war es so weit.`
+            : tage === 0
+              ? 'Heute. Genau heute.'
+              : tage <= 30
+                ? `Noch ${tage} ${tage === 1 ? 'Tag' : 'Tage'} bis zum ${datum}.`
+                : `Deine Konfirmation ist am ${datum}.`;
+          return (
+            <>
+              <div className="share-auge">Deine Konfirmation</div>
+              {tage > 0 && (
+                <div className="share-zahl">
+                  {tage}<span className="share-zahl-mal">{tage === 1 ? ' Tag' : ' Tage'}</span>
+                </div>
+              )}
+              <div className="share-slogan">
+                {slogan.map((zeile, i) => <span key={i} style={{ display: 'block' }}>{zeile}</span>)}
+              </div>
+              <div className="share-nachsatz">{nachsatz}</div>
+            </>
+          );
+        }
+
+        // Ziel uebertroffen. Die Zahl ist der Ueberschuss, nicht der Stand --
+        // das ist die Nachricht, die man teilt.
+        case 'ueber-das-ziel': {
+          if (!konfi) return null;
+          const e = konfi.slides.endspurt;
+          const ueberschuss = Math.max(0, e.aktuell_total - e.ziel_total);
+          return (
+            <>
+              <div className="share-label">Geschafft!</div>
+              <div className="share-big-number">+{ueberschuss}</div>
+              <div className="share-subtitle">Punkte über dem Ziel!</div>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.7)', marginTop: 32 }}>
+                {e.aktuell_total} / {e.ziel_total} Punkte
+              </div>
+            </>
+          );
+        }
+
+        // Das seltenste Abzeichen. Hier traegt die PROZENTZAHL die Karte,
+        // nicht der Name -- sie setzt die Leistung ins Verhaeltnis, und
+        // genau das macht die Seite teilenswert (Simons Idee 02.09.2026).
+        case 'seltenstes': {
+          if (!konfi) return null;
+          const selt = konfi.slides.badges?.seltenstes;
+          if (!selt?.name) return null;
+          const auge = selt.prozent <= 10
+            ? 'Fast niemand hat das'
+            : selt.prozent <= 25
+              ? 'Selten'
+              : selt.prozent <= 50
+                ? 'Nicht selbstverständlich'
+                : 'Dein seltenstes';
+          return (
+            <>
+              <div className="share-label">{auge}</div>
+              <div style={{
+                width: 220, height: 220, borderRadius: '50%', marginBottom: 32,
+                background: selt.color || 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 96, fontWeight: 800,
+              }}>
+                {selt.name.charAt(0)}
+              </div>
+              <div style={{ fontSize: 44, fontWeight: 600, marginBottom: 24 }}>{selt.name}</div>
+              <div className="share-big-number">{selt.prozent}<span style={{ fontSize: 80 }}>%</span></div>
+              <div className="share-subtitle">haben das auch</div>
+            </>
+          );
+        }
+
+        // Die Einladung ins Team -- letzte Seite jedes Konfi-Rueckblicks.
+        // Sie bekommt JEDE Konfi (feste Kachel im Backend), also wurde sie
+        // auch am haeufigsten geteilt -- und kam bis 06.09.2026 schwarz
+        // heraus.
+        case 'werde-teamer':
+          return (
+            <>
+              <div className="share-auge">Und jetzt?</div>
+              <div className="share-slogan">
+                <span style={{ display: 'block' }}>Bleib</span>
+                <span style={{ display: 'block' }}>dabei.</span>
+              </div>
+              <div className="share-nachsatz">
+                Als Teamer:in gestaltest du das nächste Konfi-Jahr mit — für die,
+                die jetzt anfangen, wo du angefangen hast.
+              </div>
+            </>
+          );
+
+        // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Sie steht
+        // in BEIDEN Rueckblicken -- Konfis wie Team -- und braucht deshalb
+        // keine Unterscheidung nach `konfi`/`teamer`: Sie zeigt in beiden
+        // Faellen denselben Text, weil es dieselbe Fahrt war.
+        //
+        // Keine Zahl: Die 14 Tage sind fester Text (siehe
+        // Stavanger2026Slide), gezaehlt wird hier nichts.
+        case 'stavanger-2026':
+          return (
+            <>
+              <div className="share-auge">Stavanger 2026</div>
+              <div className="share-slogan">
+                <span style={{ display: 'block' }}>Du warst</span>
+                <span style={{ display: 'block' }}>dabei.</span>
+              </div>
+              <div className="share-nachsatz">
+                14 unvergessliche Tage in Himmel og Hav.
+              </div>
+            </>
+          );
+
         default:
           return null;
       }
     };
 
+    // DIE HUELLE VERSTECKT, DIE KARTE SELBST NICHT (gemessen 06.09.2026).
+    //
+    // Der Verweis (ref) zeigt auf die KARTE, nicht mehr auf die versteckte
+    // Huelle. Das ist kein Schoenheitsfehler, sondern war die Ursache des
+    // gemeldeten schwarzen Bildes:
+    //
+    // html-to-image klont den Knoten in ein <foreignObject> und uebernimmt
+    // dabei seinen berechneten Stil -- `position: fixed` bleibt, `left`
+    // faellt weg. Der Inhalt landet damit ausserhalb des sichtbaren
+    // Bereichs, und heraus kommt ein vollstaendig durchsichtiges Bild.
+    // Gemessen: Aus der versteckten Huelle kamen 0 % gefuellte Bildpunkte,
+    // aus der Karte darin 96 %. Dasselbe gilt fuer `opacity: 0` --
+    // die Durchsichtigkeit wandert mit in den Klon.
+    //
+    // Die Huelle darf weiterhin verschoben sein: Was auf IHR steht, wird
+    // nicht mitgeklont.
     return (
-      <div className="share-card-container" ref={ref}>
-        <div className={bgClass}>
-          {renderContent()}
+      <div className="share-card-container">
+        <div className={bgClass} ref={ref}>
+          {bild && (
+            <>
+              <div
+                className="share-card-foto"
+                style={{ backgroundImage: `url(${bild})` }}
+              />
+              <div className="share-card-schleier" />
+              <div className="share-card-abdunklung" />
+            </>
+          )}
+          <div className="share-card-inhalt">
+            {renderContent()}
+          </div>
           <div className="share-card-watermark">Konfi Quest</div>
         </div>
       </div>

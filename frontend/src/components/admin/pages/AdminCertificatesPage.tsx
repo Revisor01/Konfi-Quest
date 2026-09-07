@@ -390,7 +390,7 @@ const AdminCertificatesPage: React.FC = () => {
 
         <SectionHeader
           title="Zertifikate"
-          subtitle="Teamer:innen-Zertifikate"
+          subtitle="Zertifikate fürs Team"
           icon={ICON_ABZEICHEN_GEFUELLT}
           colors={{ primary: 'var(--app-color-teamer)', secondary: 'var(--app-color-teamer-mittel)' }}
           stats={[
