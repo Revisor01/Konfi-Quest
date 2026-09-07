@@ -1234,12 +1234,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
 
-            const updateField = getPointField(activity.type);
-            const updateQuery = `
-                UPDATE konfi_profiles
-                SET ${updateField} = GREATEST(0, ${updateField} - $1)
-                WHERE user_id = $2`;
-            await client.query(updateQuery, [activity.points, req.params.id]);
+            // Punkte nur abziehen, wenn es welche gab. Teamer-Aktivitaeten
+            // haben keinen Punktetyp und 0 Punkte — getPointField() kennt nur
+            // 'gottesdienst' und 'gemeinde' und warf hier bedingungslos
+            // 'Ungueltiger Punktetyp'. Die Route antwortete dadurch mit 500,
+            // und KEINE Teamer-Aktivitaet liess sich loeschen (Befund
+            // 07.09.2026, in Produktion im Log nachgewiesen). Dieselbe
+            // Fallunterscheidung steht beim Vergeben schon
+            // (POST /:id/activities oben und activities.js) — nur das
+            // Zuruecknehmen wurde nicht mitgedacht.
+            const istTeamerAktivitaet = activity.target_role === 'teamer';
+            if (!istTeamerAktivitaet && activity.points && activity.type) {
+                const updateField = getPointField(activity.type);
+                const updateQuery = `
+                    UPDATE konfi_profiles
+                    SET ${updateField} = GREATEST(0, ${updateField} - $1)
+                    WHERE user_id = $2`;
+                await client.query(updateQuery, [activity.points, req.params.id]);
+            }
 
             await client.query('COMMIT');
 
@@ -1253,8 +1265,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             res.json({ message: 'Aktivität erfolgreich gelöscht' });
 
-            // Live Update: Notify konfi about dashboard (points) and admins about konfi change
-            liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -activity.points });
+            // Live Update: Die Punktemeldung nur, wenn sich wirklich Punkte
+            // geaendert haben. Teamer:innen haben kein Punktekonto — eine
+            // Meldung 'points: -0' wuerde dort eine Aenderung vortaeuschen,
+            // die es nicht gibt. Die Listen-Aktualisierung fuer die Admins
+            // geht in beiden Faellen raus.
+            if (!istTeamerAktivitaet && activity.points) {
+                liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -activity.points });
+            }
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {

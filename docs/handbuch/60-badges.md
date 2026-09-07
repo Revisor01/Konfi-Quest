@@ -250,8 +250,18 @@ Sofort bei:
 - einer direkt zugewiesenen Aktivität
 - vergebenen Bonuspunkten
 - [eingetragener Anwesenheit](70-termine.md#anwesenheit) bei einem Termin
+- dem Anlegen oder Bearbeiten eines Abzeichens selbst — ändert sich die
+  Bedingung, holt das System die Vergabe für alle direkt nach
 
 Zusätzlich alle fünf Minuten im Hintergrund.
+
+### Von Hand nachprüfen
+
+Beim Bearbeiten eines Abzeichens gibt es den Knopf „Abzeichen neu prüfen". Er
+ist für den Sonderfall gedacht, dass sich die **Datenlage** geändert hat, nicht
+das Abzeichen selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
+Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push, damit ein
+Nachhol-Lauf niemanden mit Benachrichtigungen überschüttet.
 
 > Der Hintergrundlauf erfasst **nur Geräte mit eingeschalteten Mitteilungen**.
 > Wer die App nie installiert oder Mitteilungen abgelehnt hat, bekommt zeitliche

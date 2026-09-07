@@ -506,12 +506,37 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { name: 'Küsterdienst', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' }
       ];
 
+      // Aktivitaeten fuers Team (Simons Standard, 07.09.2026). Bewusst OHNE
+      // Punkte und ohne Punktetyp: Teamer:innen sammeln keine Gottesdienst-
+      // oder Gemeindepunkte. Ein Typ hier waere nicht nur sinnlos, sondern
+      // schaedlich -- die Loeschroute rief bis heute getPointField() darauf
+      // und brach mit "Ungueltiger Punktetyp" ab.
+      // Was NICHT hierher gehoert: "Kirchenuebernachtung" und "SFZ Norwegen"
+      // sind Eigenheiten einzelner Gemeinden und werden dort von Hand
+      // angelegt.
+      const defaultTeamerActivities = [
+        { name: 'Andacht halten', categoryKey: 'gottesdienst' },
+        { name: 'Gottesdienst mitgestalten', categoryKey: 'gottesdienst' },
+        { name: 'Team-Schulung', categoryKey: 'teamtreff' },
+        { name: 'Team-Sitzung', categoryKey: 'teamtreff' }
+      ];
+
       const activityQuery = `INSERT INTO activities (name, points, type, organization_id)
                              VALUES ($1, $2, $3, $4) RETURNING id`;
       const activityCategoryQuery = `INSERT INTO activity_categories (activity_id, category_id)
                                      VALUES ($1, $2)`;
       for (const act of defaultActivities) {
         const { rows: [newAct] } = await db.query(activityQuery, [act.name, act.points, act.type, organizationId]);
+        const catId = categoryIdByKey[act.categoryKey];
+        if (catId) {
+          await db.query(activityCategoryQuery, [newAct.id, catId]);
+        }
+      }
+
+      const teamerActivityQuery = `INSERT INTO activities (name, points, type, target_role, organization_id)
+                                   VALUES ($1, 0, NULL, 'teamer', $2) RETURNING id`;
+      for (const act of defaultTeamerActivities) {
+        const { rows: [newAct] } = await db.query(teamerActivityQuery, [act.name, organizationId]);
         const catId = categoryIdByKey[act.categoryKey];
         if (catId) {
           await db.query(activityCategoryQuery, [newAct.id, catId]);
@@ -572,7 +597,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         default_certificates_created: defaultCertificates.length,
         default_levels_created: defaultLevels.length,
         default_categories_created: defaultCategories.length,
-        default_activities_created: defaultActivities.length,
+        default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
         message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       });

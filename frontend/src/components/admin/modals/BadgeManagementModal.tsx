@@ -4,6 +4,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonTextarea, IonToggle, IonCard, IonCardContent, IonIcon, IonText, IonSpinner, IonList, IonListHeader, IonAccordion, IonAccordionGroup, IonRange } from '@ionic/react';
 import {
   ICON_ABZEICHEN_GEFUELLT,
+  ICON_AKTUALISIEREN,
   ICON_AUFKLAPPEN,
   ICON_EINSTELLUNGEN_GEFUELLT,
   ICON_GEMEINDE_GEFUELLT,
@@ -72,6 +73,10 @@ interface BadgeManagementModalProps {
   // Meldet den "ungespeicherte Änderungen"-Stand nach aussen, damit die
   // praesentierende Seite über canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
   onDirtyChange?: (dirty: boolean) => void;
+  // Laedt nur die Badge-Liste neu, OHNE das Modal zu schliessen (anders als
+  // onSuccess). Gebraucht nach "Abzeichen neu pruefen", damit earned_count
+  // stimmt, waehrend der Admin im Modal bleibt.
+  onRefreshList?: () => void;
 }
 
 const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
@@ -79,12 +84,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   targetRole = 'konfi',
   onClose,
   onSuccess,
-  onDirtyChange
+  onDirtyChange,
+  onRefreshList
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  // Nur admin/org_admin duerfen den Knopf "Abzeichen neu pruefen" sehen bzw.
+  // druecken (Route POST /admin/badges/:id/pruefen: requireAdmin).
+  const darfPruefen = user?.role_name === 'admin' || user?.role_name === 'org_admin';
+  const [pruefLoading, setPruefLoading] = useState(false);
   const initializedRef = useRef(false);
 
   const doClose = () => onClose();
@@ -363,6 +373,29 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // Doppelklick auf Speichern — der zweite Aufruf wird verworfen.
       // Nichts anzeigen, aber den Ladezustand sicher zuruecknehmen.
       setLoading(false);
+    }
+  };
+
+  // "Abzeichen neu pruefen": holt die Vergabe fuer alle Personen der
+  // Zielrolle in der eigenen Organisation nach (POST /admin/badges/:id/pruefen).
+  // Fuer Sonderfaelle gedacht (Datenlage hat sich geaendert) — Speichern loest
+  // die Pruefung inzwischen ohnehin automatisch aus.
+  const handlePruefen = async () => {
+    if (!badgeId) return;
+    setPruefLoading(true);
+    try {
+      const res = await api.post(`/admin/badges/${badgeId}/pruefen`);
+      const neuVergeben = res.data?.neu_vergeben ?? 0;
+      if (neuVergeben > 0) {
+        setSuccess(neuVergeben === 1 ? '1 Abzeichen neu vergeben' : `${neuVergeben} Abzeichen neu vergeben`);
+        onRefreshList?.();
+      } else {
+        setSuccess('Alle Abzeichen sind aktuell');
+      }
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler bei der Pruefung des Abzeichens'));
+    } finally {
+      setPruefLoading(false);
     }
   };
 
@@ -1126,6 +1159,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
             </IonList>
+
+            {/* Nur bei bestehendem Badge (Route ist je Abzeichen) und nur fuer
+                admin/org_admin (POST /admin/badges/:id/pruefen: requireAdmin).
+                Fuer Sonderfaelle gedacht — Speichern loest die Pruefung
+                inzwischen automatisch aus. */}
+            {isEditMode && darfPruefen && (
+              <IonButton
+                expand="block"
+                fill="outline"
+                onClick={handlePruefen}
+                disabled={pruefLoading || loading}
+                style={{ marginTop: 'var(--app-abstand-mittel)' }}
+              >
+                {pruefLoading ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_AKTUALISIEREN} slot="start" />}
+                Abzeichen neu prüfen
+              </IonButton>
+            )}
           </IonCardContent>
         </IonCard>
         </IonList>

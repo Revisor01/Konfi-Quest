@@ -145,7 +145,7 @@ components:
 
 paths:
   # ==========================================================================
-  # BADGES (backend/routes/badges.js — 6 Routen, Mount /api/admin/badges)
+  # BADGES (backend/routes/badges.js — 7 Routen, Mount /api/admin/badges)
   # Muster: lesen requireTeamer, schreiben requireAdmin.
   # ==========================================================================
   /api/admin/badges/criteria-types:
@@ -310,6 +310,47 @@ paths:
           wird die Transaktion zurueckgerollt — die vergebenen Exemplare
           bleiben also erhalten.
         hinweis: "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
+
+  /api/admin/badges/{id}/pruefen:
+    post:
+      tags: ["Abzeichen"]
+      summary: Vergabe eines einzelnen Abzeichens fuer die eigene Organisation nachholen
+      description: >
+        Prueft fuer EIN Abzeichen alle Personen der passenden Zielrolle
+        (target_role) in der eigenen Organisation nach und vergibt es dort,
+        wo die Bedingung erfuellt ist, aber noch fehlt. Die Vergabe laeuft
+        dabei STILL — ohne Push und ohne In-App-Mitteilung — damit ein
+        Nachhol-Lauf nicht auf einen Schlag ein Dutzend Benachrichtigungen
+        ausloest. Gedacht fuer Sonderfaelle (geaenderte Datenlage, nicht das
+        Abzeichen selbst): Seit derselben Aenderung laeuft dieselbe Pruefung
+        bereits automatisch nach POST/PUT auf /api/admin/badges, abgekoppelt
+        nach der Antwort.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
+      responses:
+        "200":
+          description: "Pruefung durchgelaufen"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badge_id: { type: integer }
+                  badge_name: { type: string }
+                  geprueft: { type: integer, description: "Anzahl geprüfter Personen der Zielrolle" }
+                  neu_vergeben: { type: integer, description: "Anzahl dabei neu vergebener Exemplare" }
+        "400": { description: "Das Abzeichen ist nicht aktiv" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Abzeichen nicht gefunden oder keine Berechtigung (fremde Org oder unbekannte id)" }
+        "429": { description: "Sperre 60 Sekunden je Organisation: 'Die Prüfung lief gerade eben. Bitte N Sekunden warten.'" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "WHERE id = :id AND organization_id = req.user.organization_id"
+        hinweis: "Teamer und Konfi erhalten 403, ebenso wie bei POST/PUT/DELETE auf dieselbe Ressource"
 
   # ==========================================================================
   # LEVELS (backend/routes/levels.js — 5 Routen, Mount /api/levels)

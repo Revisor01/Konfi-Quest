@@ -33,16 +33,36 @@ Versionsüberschrift.
   Kategorien dabei war — etwa Konfifahrt, Übernachtung und Sommerfreizeit für
   ein Freizeiten-Abzeichen. Dreimal dasselbe zählt dabei nur einmal.
 
-- Ein Jahrgang kann jetzt mehrere Rückblicke haben, jeder mit eigenem Namen —
-  etwa „Dein erstes Jahr", „Zwischenstand" und „Dein Abschluss". Frühere
-  Ausgaben bleiben erhalten, wenn eine neue dazukommt, und Konfis wie
-  Teamer:innen sehen sie alle unter ihrem jeweiligen Namen.
+- Ein Jahrgang kann jetzt mehrere Rückblicke haben. Frühere bleiben
+  erhalten, wenn ein neuer dazukommt, und Konfis wie Teamer:innen sehen sie
+  alle.
+- Der Rückblick fürs Team entsteht ab sofort in jeder Gemeinde von selbst:
+  am 6. Januar für das Jahr davor. Von Hand geht es weiterhin — doppelt wird
+  er dabei nie angelegt.
 - Einzelne Rückblick-Ausgaben lassen sich gezielt löschen, ohne die anderen
   anzurühren.
 - Die Leitung sieht im Profil einer Konfi oder Teamer:in alle Rückblicke —
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
+- Geänderte Abzeichen werden jetzt automatisch nachträglich vergeben; in der
+  Abzeichen-Verwaltung lässt sich die Prüfung für Sonderfälle zusätzlich von
+  Hand anstoßen.
 
 ### Geändert
+- Der Rückblick braucht keine Einstellungen mehr. Für Konfis zählt er immer
+  die ganze Konfi-Zeit vom Beginn bis heute, fürs Team immer ein
+  Kalenderjahr — gewählt wird nur noch, welches. Namen und Datumsfelder sind
+  entfallen: Die Überschrift heißt „Deine Konfi-Zeit" beziehungsweise „Dein
+  Teamerjahr" mit der Jahreszahl. Ist die Konfirmation noch mehr als einen
+  Monat hin, steht „(bis jetzt)" dabei.
+- Das laufende Jahr lässt sich fürs Team erst zurückblicken, wenn es vorbei
+  ist. In der Auswahl steht es sichtbar, aber gesperrt, mit dem Hinweis, ab
+  wann es geht.
+- Das seltenste eigene Abzeichen bekommt seine Seite jetzt sicher, wenn
+  höchstens ein Fünftel der anderen es auch hat. Vorher konnte sie
+  wegfallen, wenn viele seltene Seiten zusammenkamen.
+- Die Seite zur Sommerfreizeit erscheint nur noch in den beiden Gemeinden,
+  die mitgefahren sind. Andernorts bleibt der Rückblick allgemein, auch wenn
+  dort eine gleichnamige Kategorie geführt wird.
 - Der Rückblick endet jetzt mit der Übersicht statt mit der Einladung ins
   Team. Die Einladung steht davor, die Übersicht ganz zuletzt — sie ist die
   Seite, die man weitergibt.
@@ -66,6 +86,9 @@ Versionsüberschrift.
   derselbe Termin korrekt als offen.
 - Bei Terminen nur fürs Team stand der Hinweis, dass Konfis sich bis zwei
   Tage vorher abmelden können — obwohl dort gar keine Konfis teilnehmen.
+- Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
+  entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
+  Löschen wieder.
 - Das Handbuch beschrieb den Jahresrückblick an mehreren Stellen so, wie er
   einmal war: Es verwies für die Freigabe noch auf den Jahrgang statt auf
   „Mehr → Jahresrückblick", kannte nur einen Rückblick pro Person und Jahr

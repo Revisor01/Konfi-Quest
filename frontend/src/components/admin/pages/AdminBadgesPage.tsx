@@ -79,7 +79,8 @@ const AdminBadgesPage: React.FC = () => {
       dismissBadgeModalHook();
       setModalBadgeId(null);
       refreshBadges();
-    }
+    },
+    onRefreshList: () => { refreshBadges(); }
   });
 
   // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten

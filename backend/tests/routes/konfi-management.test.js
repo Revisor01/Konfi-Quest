@@ -1060,6 +1060,76 @@ describe('Konfi-Management Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // Teamer-Aktivitaeten haben KEINEN Punktetyp und 0 Punkte — Teamer:innen
+    // sammeln keine Punkte. Die Route rief trotzdem bedingungslos
+    // getPointField(activity.type) auf, das nur 'gottesdienst' und 'gemeinde'
+    // kennt und sonst wirft. Ergebnis: 500, und keine einzige
+    // Teamer-Aktivitaet liess sich loeschen (Befund 07.09.2026, im
+    // Produktions-Log nachgewiesen).
+    it('Teamer-Aktivitaet ohne Punktetyp laesst sich loeschen -> 200', async () => {
+      // Teamer-Aktivitaet anlegen: type NULL, points 0 — genau wie in Produktion.
+      const { rows: [teamerAkt] } = await db.query(
+        `INSERT INTO activities (name, points, type, target_role, organization_id)
+         VALUES ($1, 0, NULL, 'teamer', $2) RETURNING id`,
+        ['Konfi-Freizeit begleitet', ORGS.testGemeinde.id]
+      );
+
+      const { rows: [zuweisung] } = await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [USERS.teamer1.id, teamerAkt.id, USERS.admin1.id, '2026-08-30', ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.teamer1.id}/activities/${zuweisung.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('gelöscht');
+
+      // Die Zeile ist wirklich weg — nicht nur die Antwort war gruen.
+      const { rows: rest } = await db.query(
+        'SELECT id FROM user_activities WHERE id = $1',
+        [zuweisung.id]
+      );
+      expect(rest).toHaveLength(0);
+    });
+
+    // Gegenprobe zum Test darueber: bei einer Konfi-Aktivitaet MUSS der
+    // Punkteabzug weiterhin laufen. Sonst waere der Fix zu breit geraten und
+    // haette das Zuruecknehmen von Punkten stillgelegt.
+    it('Konfi-Aktivitaet zieht beim Loeschen weiterhin Punkte ab', async () => {
+      await request(app)
+        .post(`/api/admin/konfis/${USERS.konfi1.id}/activities`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          completed_date: '2026-03-28',
+        });
+
+      const { rows: [vorher] } = await db.query(
+        'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+
+      const { rows: [zuweisung] } = await db.query(
+        'SELECT id FROM user_activities WHERE user_id = $1 AND activity_id = $2',
+        [USERS.konfi1.id, ACTIVITIES.sonntagsgottesdienst.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/admin/konfis/${USERS.konfi1.id}/activities/${zuweisung.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows: [nachher] } = await db.query(
+        'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(nachher.gottesdienst_points).toBe(vorher.gottesdienst_points - 1);
+    });
   });
 
   // ================================================================

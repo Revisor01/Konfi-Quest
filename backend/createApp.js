@@ -482,6 +482,12 @@ function createApp(db, options = {}) {
   // Admin Routes
   app.use('/api/admin/activities', activitiesRouter);
   app.use('/api/admin/badges', badgesRouter);
+  // Nur im Test: Die Sperre der Abzeichen-Nachpruefung zuruecksetzen. Die
+  // Test-App wird pro Datei einmal erzeugt, der Merker lebt also ueber alle
+  // Tests der Datei hinweg (siehe routes/badges.js).
+  if (process.env.NODE_ENV === 'test' && badgesRouter.sperreZuruecksetzen) {
+    app.locals.badgeSperreZuruecksetzen = badgesRouter.sperreZuruecksetzen;
+  }
   app.use('/api/admin/konfis', require('./routes/konfi-management')(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
   app.use('/api/admin/jahrgaenge', require('./routes/jahrgaenge')(db, rbacVerifier, roleHelpers));
   app.use('/api/admin/categories', require('./routes/categories')(db, rbacVerifier, roleHelpers));

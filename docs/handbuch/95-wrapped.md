@@ -34,67 +34,88 @@ wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis dabei
 nicht: Der Push geht nur beim ersten Freigeben raus. Erst wenn du den Rückblick
 zwischendurch ausgeschaltet hast, benachrichtigt das nächste Freigeben wieder.
 
-## Freigabe pro Jahrgang
+## Wo du den Rückblick erstellst
 
-Der Konfi-Rückblick wird **pro Jahrgang** freigegeben, unter
-**Mehr → Jahresrückblick**. Er läuft nie automatisch an — du entscheidest,
-wann.
+Unter **Mehr → Jahresrückblick**. Dort stehen alle bisherigen Rückblicke, und
+über das Plus oben rechts legst du einen neuen an. Er läuft für Konfis nie von
+selbst an — du entscheidest, wann.
 
-**Beim Freigeben** fragt die App: „Wrapped wird für alle Konfis dieses
-Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“
+**Du stellst nichts ein.** Beim Konfi-Rückblick wählst du nur den **Jahrgang**,
+beim Team-Rückblick nur das **Jahr**. Keinen Namen, keinen Zeitraum. Was der
+Rückblick umfasst, steht fest:
 
-Bestätigst du, passiert zweierlei:
+- **Konfis:** die ganze Konfi-Zeit, vom Beginn bis heute — bei manchen sind das
+  zwei Jahre.
+- **Team:** ein volles Kalenderjahr, vom 1. Januar bis zum 31. Dezember.
 
-1. Für jeden aktiven Konfi des Jahrgangs wird der Rückblick berechnet und
-   gespeichert. Gelöschte Konfis werden übersprungen.
-2. Alle bekommen einen Push: **„Dein Konfi-Jahr ist da!“** mit dem Text „Schau
-   dir jetzt deinen persönlichen Jahresrückblick an!“
+> Früher konntest du beides von Hand setzen: einen Namen und einen eigenen
+> Zeitraum. Das ist entfallen. Wer einen Zeitraum einstellen kann, kann ihn auch
+> falsch einstellen — und der Rückblick zeigte dann Zahlen, die niemand mehr
+> nachvollziehen konnte.
 
-In der Jahrgangsliste steht danach „Wrapped gestartet am …“ statt „Wrapped nicht
-freigegeben“.
+**Beim Erstellen** passiert zweierlei:
+
+1. Für jede aktive Person wird der Rückblick berechnet und gespeichert.
+   Gelöschte Konten werden übersprungen.
+2. Alle bekommen einen Push: **„Dein Konfi-Jahr ist da!"** mit dem Text „Schau
+   dir jetzt deinen persönlichen Jahresrückblick an!"
 
 > Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da,
 > nur hat niemand eine Benachrichtigung bekommen.
 
-## Mehrere Rückblicke pro Jahrgang: die Ausgaben
+### Das Jahr beim Team-Rückblick
+
+Wählbar sind nur **abgeschlossene** Jahre. Das laufende steht sichtbar in der
+Liste, aber gesperrt, mit dem Hinweis „verfügbar ab 1.1." und der nächsten
+Jahreszahl. Der Grund ist einfach: Ein Jahr, das noch läuft, kann man nicht
+zurückblicken — es ist ja noch nicht vorbei.
+
+## Mehrere Rückblicke pro Jahrgang
 
 Ein Konfi-Jahrgang läuft über zwei oder drei Jahre. Ein einziger Rückblick am
-Ende wird dem nicht gerecht — deshalb kannst du **mehrere Ausgaben** anlegen
-und jeder einen eigenen Namen geben:
+Ende wird dem nicht gerecht — deshalb kannst du **mehrere** anlegen: einen
+Zwischenstand mitten in der Konfi-Zeit und einen zum Abschluss.
 
-- „Dein erstes Jahr"
-- „Zwischenstand"
-- „Dein Abschluss"
+Jeder Rückblick umfasst dieselbe Spanne, nämlich vom Beginn der Konfi-Zeit bis
+zu dem Tag, an dem du ihn erstellst. Ein Zwischenstand ist also kein Ausschnitt,
+sondern der Stand bis dahin.
 
-**Wo du das findest:** Unter **Mehr → Jahresrückblick**. Dort siehst du alle
-Ausgaben mit Namen, Zeitraum und der Zahl der Rückblicke darin. Über das Plus
-oben rechts legst du eine neue an.
+**Woran man sie unterscheidet:** an ihrem Datum. Unter **Mehr →
+Jahresrückblick** stehen sie mit Zeitraum und der Zahl der Rückblicke darin
+untereinander.
 
 > Der frühere Schalter „Wrapped freigeben" im Jahrgang ist entfallen. Ein
-> Schalter kann nur an oder aus — er konnte weder benennen noch eine einzelne
-> Ausgabe löschen.
+> Schalter kann nur an oder aus — er konnte weder mehrere verwalten noch einen
+> einzelnen löschen.
 
-**So legst du eine an:** Jahrgang wählen, Namen vergeben, „Erstellen und
-freigeben". Lässt du das Feld leer, schlägt die App einen Namen aus dem
-Jahrgang vor — du musst also nichts eintippen.
+Jedes Erstellen erzeugt einen **neuen** Rückblick. Der vorherige bleibt
+bestehen: Der Zwischenstand von Januar verschwindet nicht, wenn du im Mai den
+Abschluss erstellst. Die Konfis sehen beide.
 
-Jede Freigabe erzeugt eine **neue** Ausgabe. Die vorherige bleibt bestehen:
-Der Zwischenstand von Januar verschwindet nicht, wenn du im Mai den Abschluss
-freigibst. Die Konfis sehen beide, jeden unter seinem Namen.
-
-> Gibst du dieselbe Ausgabe erneut frei, werden ihre Zahlen **korrigiert**
+> Erstellst du denselben Rückblick erneut, werden seine Zahlen **korrigiert**
 > statt gedoppelt. Das ist der Weg, wenn nachträglich Punkte dazugekommen
 > sind.
 
-### Eine einzelne Ausgabe löschen
+### Was in der Überschrift steht
 
-Du kannst eine Ausgabe gezielt entfernen, ohne die anderen anzurühren — etwa
-einen Zwischenstand, der nicht mehr gebraucht wird. Die Rückblicke aller
-Konfis dieser Ausgabe verschwinden mit ihr; die übrigen Ausgaben bleiben
-unberührt.
+Der Rückblick trägt keinen Namen, den jemand eintippt. Seine Überschrift ergibt
+sich aus dem, was er ist:
 
-War es die letzte freigegebene Ausgabe des Jahrgangs, steht in der
-Jahrgangsliste wieder „Wrapped nicht freigegeben".
+- **Konfis:** „Deine Konfi-Zeit". Ist die Konfirmation noch **mehr als einen
+  Monat** hin, steht **„(bis jetzt)"** dabei — dann ist es erkennbar ein
+  Zwischenstand. Kurz davor oder danach fällt der Zusatz weg: Dann ist es der
+  Abschluss.
+- **Team:** „Dein Teamerjahr" mit der Jahreszahl.
+
+Gerechnet wird gegen den Tag, an dem der Rückblick entstanden ist — nicht gegen
+heute. Ein im Mai erstellter Zwischenstand trägt sein „(bis jetzt)" also auch
+im November noch.
+
+### Einen einzelnen Rückblick löschen
+
+Du kannst einen gezielt entfernen, ohne die anderen anzurühren — etwa einen
+Zwischenstand, der nicht mehr gebraucht wird. Die Rückblicke aller Konfis
+verschwinden mit ihm; die übrigen bleiben stehen.
 
 ### Wer was darf
 
@@ -103,19 +124,16 @@ Jahrgangsliste wieder „Wrapped nicht freigegeben".
 | **Admin** | ja | nein | nein |
 | **Leitung (org_admin)** | ja | ja | ja |
 
-Ein Admin sieht und verwaltet also die Ausgaben **seiner** Jahrgänge. Die
+Ein Admin sieht und verwaltet also die Rückblicke **seiner** Jahrgänge. Die
 Leitung sieht alle Jahrgänge und ist zusätzlich die einzige Rolle, die
-Teamer-Rückblicke freigeben und löschen darf — die betreffen die ganze
-Gemeinde und hängen an keinem Jahrgang.
+Team-Rückblicke erstellen und löschen darf — die betreffen die ganze Gemeinde
+und hängen an keinem Jahrgang.
 
 ### Im Profil der Konfis und Teamer:innen
 
 Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
-Rückblicke** mit Namen und Datum — auch die, die du noch nicht freigegeben
-hast. So kannst du hineinsehen, bevor du sie sichtbar machst, und bei
-Rückfragen nachvollziehen, was die Person selbst sieht.
-
-Die Person selbst sieht nur die **freigegebenen** Ausgaben.
+Rückblicke** mit Datum. So kannst du bei Rückfragen nachvollziehen, was die
+Person selbst sieht.
 
 ### Was seit Version 2.1 dazugekommen ist
 

@@ -5,6 +5,8 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
+// Seiteneffekte nach der Antwort (abwartbar im Test) -- siehe utils/nachAntwort.js
+const { nachAntwort } = require('../utils/nachAntwort');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 // Single Source of Truth: aus welchen Kategorien war jemand dabei (category_combination).
@@ -147,7 +149,17 @@ const CRITERIA_TYPES = {
   }
 };
 
-const checkAndAwardBadges = async (db, userId) => {
+// Nachtraegliche Vergabe ("Abzeichen neu pruefen"): still, ohne Push und
+// In-App-Nachricht. Begruendung: Wer ein Abzeichen aendert, holt damit
+// Vergaben fuer die GANZE Gemeinde nach. In Org 1 sind das rund 40 Personen;
+// bei einem geaenderten Kriterium koennen ohne Weiteres zwei Dutzend Push-
+// Nachrichten auf einen Schlag rausgehen — fuer Erfolge, die die Konfis
+// laengst erbracht haben. Der reguläre Weg (Aktivität eintragen) benachrichtigt
+// weiter wie bisher; nur der Nachhol-Lauf schweigt.
+const STILL = { still: true };
+
+const checkAndAwardBadges = async (db, userId, optionen = {}) => {
+  const still = optionen.still === true;
   try {
     // Rolle des Users prüfen
     const roleCheckQuery = `SELECT u.organization_id, u.display_name as name, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`;
@@ -161,7 +173,7 @@ const checkAndAwardBadges = async (db, userId) => {
     // TEAMER-BRANCH
     // =====================================================================
     if (isTeamer) {
-      return await checkAndAwardTeamerBadges(db, userId, organizationId);
+      return await checkAndAwardTeamerBadges(db, userId, organizationId, still);
     }
 
     // =====================================================================
@@ -401,7 +413,7 @@ const checkAndAwardBadges = async (db, userId) => {
     }
 
     if (earnedBadgeIds.length > 0) {
-      await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails);
+      await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still);
     }
 
     return { count: newBadges, badges: earnedBadgeDetails };
@@ -414,7 +426,7 @@ const checkAndAwardBadges = async (db, userId) => {
 // =====================================================================
 // Teamer-Badge-Prüfung
 // =====================================================================
-async function checkAndAwardTeamerBadges(db, userId, organizationId) {
+async function checkAndAwardTeamerBadges(db, userId, organizationId, still = false) {
   // Teamer-Badges laden
   const { rows: badges } = await db.query(
     "SELECT id, name, description, icon, color, criteria_type, criteria_value::int AS criteria_value, criteria_extra, is_hidden, sort_order, is_active, target_role, organization_id FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'teamer'",
@@ -675,7 +687,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   }
 
   if (earnedBadgeIds.length > 0) {
-    await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails);
+    await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still);
   }
 
   return { count: newBadges, badges: earnedBadgeDetails };
@@ -705,13 +717,22 @@ async function checkStreakCriteria(db, userId, organizationId, criteriaValue, is
 // =====================================================================
 // Shared: Badges einfuegen und Notifications senden
 // =====================================================================
-async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails) {
+async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still = false) {
   const insertPromises = earnedBadgeIds.map(badgeId =>
     db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [userId, badgeId, organizationId])
   );
   await Promise.all(insertPromises);
 
   try {
+    // Stille Vergabe (Nachhol-Lauf ueber "Abzeichen neu pruefen"): weder
+    // In-App-Nachricht noch Push. Das Abzeichen steht danach im Profil, es
+    // klingelt nur nicht. Das Live-Update unten bleibt — es aktualisiert nur
+    // den Zaehler in einer offenen App und macht kein Geraeusch.
+    if (still) {
+      liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
+      return;
+    }
+
     for (const badge of earnedBadgeDetails) {
       await db.query(
         "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -834,6 +855,153 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     res.json(CRITERIA_TYPES);
   });
 
+  // ==================================================================
+  // Abzeichen nachtraeglich pruefen
+  // ==================================================================
+  //
+  // WARUM: Vergeben wurde bisher NUR beim Eintragen einer Aktivitaet
+  // (checkAndAwardBadges in activities.js/events/konfi-management.js). Wer ein
+  // Abzeichen aenderte oder neu anlegte, musste warten, bis zufaellig jemand
+  // etwas eintrug. Konkret passiert (06.09.2026): Ein Abzeichen wurde von
+  // activity_combination auf category_combination umgestellt, eine Person
+  // erfuellte es nachweislich und bekam es trotzdem nicht.
+  //
+  // ZUSCHNITT — JE ABZEICHEN, nicht je Organisation: Der Anlass ist immer
+  // "ich habe DIESES Abzeichen geaendert". Das haelt die Rueckmeldung ehrlich
+  // ("3 Personen haben es jetzt" statt einer Sammelzahl) und begrenzt den
+  // Personenkreis auf die passende Zielrolle: bei einem Konfi-Abzeichen
+  // laufen keine Teamer:innen mit und umgekehrt.
+  //
+  // ABGRENZUNG: checkAndAwardBadges prueft immer ALLE Abzeichen der Person auf
+  // einmal. Ein Lauf kann deshalb nebenbei auch andere faellige Abzeichen
+  // vergeben. Das ist gewollt — nichts anderes tut der regulaere Weg auch.
+  // Gezaehlt und gemeldet wird nur, wer das ANGEFRAGTE Abzeichen bekommen hat.
+  //
+  // MISSBRAUCHSSCHUTZ: Ein Lauf geht ueber alle Personen der Zielrolle (Org 1:
+  // rund 40) und macht je Person mehrere Abfragen. Deshalb eine Sperre von
+  // 60 Sekunden je Organisation — Dauerklicken laeuft ins Leere, nicht in die
+  // Datenbank. Der Merker liegt im Prozessspeicher; nach einem Neustart darf
+  // wieder geprueft werden, was hier voellig ausreicht.
+  const letztePruefungJeOrg = new Map();
+  const PRUEF_SPERRE_MS = 60 * 1000;
+  // Im Test zuruecksetzbar: Die Test-App wird pro Datei EINMAL erzeugt, der
+  // Merker lebt also ueber alle Tests der Datei. Ohne diesen Weg liefe jeder
+  // Test nach dem ersten in die Sperre statt in die Pruefung. Der Test fuer
+  // die Sperre selbst benutzt den Haken bewusst NICHT.
+  router.sperreZuruecksetzen = () => letztePruefungJeOrg.clear();
+
+  // Der eigentliche Lauf, geteilt zwischen Knopf und Auto-Pruefung beim
+  // Speichern. Liefert, wie viele Personen geprueft wurden und wie viele das
+  // angefragte Abzeichen neu bekommen haben.
+  async function pruefeAbzeichenNach(badge, organizationId) {
+    const rollenFilter = badge.target_role === 'teamer'
+      ? "r.name = 'teamer'"
+      : "r.name = 'konfi'";
+    const { rows: personen } = await db.query(
+      `SELECT DISTINCT u.id
+       FROM users u
+       JOIN roles r ON u.role_id = r.id
+       LEFT JOIN user_organizations uo ON uo.user_id = u.id
+       WHERE ${rollenFilter}
+         AND u.deleted_at IS NULL
+         AND u.is_active = true
+         AND (u.organization_id = $1 OR uo.organization_id = $1)`,
+      [organizationId]
+    );
+
+    let neuVergeben = 0;
+    let geprueft = 0;
+    for (const person of personen) {
+      try {
+        // STILL: Ein Nachhol-Lauf soll nicht zwei Dutzend Push-Nachrichten
+        // auf einmal ausloesen (siehe Kommentar bei STILL oben).
+        const ergebnis = await checkAndAwardBadges(db, person.id, STILL);
+        geprueft++;
+        if (ergebnis.badges.some(b => b.id === badge.id)) neuVergeben++;
+      } catch (personErr) {
+        // Eine kaputte Person darf den Lauf nicht abbrechen.
+        console.error(`Badge-Nachpruefung fuer User ${person.id} fehlgeschlagen:`, personErr);
+      }
+    }
+    return { geprueft, neu_vergeben: neuVergeben };
+  }
+
+  // Automatisch nach dem Speichern (POST/PUT), NACH der Antwort.
+  //
+  // WARUM ueberhaupt: Genau das war Simons Problem — ein geaendertes Abzeichen
+  // wirkte erst, wenn zufaellig jemand eine Aktivitaet eintrug. Wer es
+  // speichert, erwartet, dass es gilt. Der Knopf bleibt fuer die Faelle, in
+  // denen sich nicht das Abzeichen, sondern die Datenlage geaendert hat.
+  //
+  // WARUM NICHT VOR DER ANTWORT: Der Lauf geht ueber alle Personen der
+  // Zielrolle und macht je Person mehrere Abfragen. Vor der Antwort haenge
+  // das Speichern-Formular daran; abgekoppelt bleibt das Speichern so schnell
+  // wie bisher. Fehler landen im Log, nicht in einer unbehandelten Promise.
+  function pruefeNachSpeichernImHintergrund(req, badgeId, organizationId) {
+    nachAntwort(req, async () => {
+      const { rows: [badge] } = await db.query(
+        'SELECT id, name, target_role, is_active FROM custom_badges WHERE id = $1 AND organization_id = $2',
+        [badgeId, organizationId]
+      );
+      if (!badge || !badge.is_active) return;
+      const { neu_vergeben } = await pruefeAbzeichenNach(badge, organizationId);
+      if (neu_vergeben > 0) {
+        liveUpdate.sendToOrgAdmins(organizationId, 'badges', 'update');
+        liveUpdate.sendToOrgKonfis(organizationId, 'badges', 'update');
+      }
+    }, 'Abzeichen-Pruefung nach Speichern');
+  }
+
+  router.post('/:id/pruefen', rbacVerifier, requireAdmin, validateBadgeId, async (req, res) => {
+    const organizationId = req.user.organization_id;
+
+    try {
+      // Org-Bindung: Das Abzeichen muss der eigenen Organisation gehoeren.
+      // Ein fremdes ergibt 404 (wie in PUT/DELETE oben), nicht etwa einen Lauf
+      // ueber die fremde Gemeinde.
+      const { rows: [badge] } = await db.query(
+        'SELECT id, name, target_role, is_active FROM custom_badges WHERE id = $1 AND organization_id = $2',
+        [req.params.id, organizationId]
+      );
+      if (!badge) {
+        return res.status(404).json({ error: 'Badge nicht gefunden oder keine Berechtigung' });
+      }
+      if (!badge.is_active) {
+        // Inaktive Abzeichen werden von checkAndAwardBadges ohnehin
+        // uebersprungen — dann lieber gleich sagen, warum nichts passiert.
+        return res.status(400).json({ error: 'Das Abzeichen ist nicht aktiv' });
+      }
+
+      const zuletzt = letztePruefungJeOrg.get(organizationId);
+      if (zuletzt && Date.now() - zuletzt < PRUEF_SPERRE_MS) {
+        const restSekunden = Math.ceil((PRUEF_SPERRE_MS - (Date.now() - zuletzt)) / 1000);
+        return res.status(429).json({
+          error: `Die Prüfung lief gerade eben. Bitte ${restSekunden} Sekunden warten.`
+        });
+      }
+      letztePruefungJeOrg.set(organizationId, Date.now());
+
+      // Nur Personen der passenden Zielrolle, nur aktive, nur diese
+      // Organisation (siehe pruefeAbzeichenNach).
+      const { geprueft, neu_vergeben: neuVergeben } = await pruefeAbzeichenNach(badge, organizationId);
+
+      res.json({
+        badge_id: badge.id,
+        badge_name: badge.name,
+        geprueft,
+        neu_vergeben: neuVergeben
+      });
+
+      if (neuVergeben > 0) {
+        liveUpdate.sendToOrgAdmins(organizationId, 'badges', 'update');
+        liveUpdate.sendToOrgKonfis(organizationId, 'badges', 'update');
+      }
+    } catch (err) {
+      console.error('Database error in POST /api/badges/:id/pruefen:', req.params.id, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { target_role } = req.query;
@@ -919,6 +1087,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'create');
       // Konfis sehen den Badge-Katalog (KonfiBadgesPage abonniert 'badges').
       liveUpdate.sendToOrgKonfis(req.user.organization_id, 'badges', 'create');
+
+      // Neu angelegtes Abzeichen sofort vergeben, wer es schon erfuellt.
+      // Laeuft NACH der Antwort, damit das Speichern nicht daran haengt.
+      pruefeNachSpeichernImHintergrund(req, newBadge.id, req.user.organization_id);
     } catch (err) {
  console.error('Database error in POST /api/badges:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -955,6 +1127,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'update');
       // Konfis sehen den Badge-Katalog (KonfiBadgesPage abonniert 'badges').
       liveUpdate.sendToOrgKonfis(req.user.organization_id, 'badges', 'update');
+
+      // Genau Simons Fall: Kriterium geaendert -> sofort nachvergeben, statt
+      // zu warten, bis zufaellig jemand eine Aktivitaet eintraegt.
+      // Laeuft NACH der Antwort, damit das Speichern nicht daran haengt.
+      pruefeNachSpeichernImHintergrund(req, req.params.id, req.user.organization_id);
     } catch (err) {
  console.error('Database error in PUT /api/badges/:id:', req.params.id, err);
       res.status(500).json({ error: 'Datenbankfehler' });

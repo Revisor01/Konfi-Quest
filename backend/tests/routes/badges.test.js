@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { getTestApp } = require('../helpers/testApp');
+const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, BADGES, LEVELS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
@@ -1423,5 +1423,418 @@ describe('Badges Routes', () => {
       );
       expect(rows.length).toBe(1);
     });
+  });
+
+  // ================================================================
+  // POST /api/admin/badges/:id/pruefen  (Abzeichen nachtraeglich vergeben)
+  // ================================================================
+  //
+  // ANLASS (06.09.2026): Ein Abzeichen wurde von activity_combination auf
+  // category_combination umgestellt. Eine Person erfuellte es nachweislich und
+  // bekam es trotzdem nicht — vergeben wurde bis dahin NUR beim Eintragen
+  // einer Aktivitaet. Es gab keinen Weg, die Pruefung anzustossen.
+  describe('POST /api/admin/badges/:id/pruefen', () => {
+    // Die Test-App wird pro Datei EINMAL erzeugt, die Sperre lebt also ueber
+    // alle Tests dieser Datei. Ohne Ruecksetzen liefe jeder Test nach dem
+    // ersten in 429. Der Sperr-Test selbst setzt bewusst NICHT zurueck.
+    beforeEach(() => {
+      app.locals.badgeSperreZuruecksetzen?.();
+    });
+
+    // Legt ein erfuellbares Konfi-Abzeichen an und sorgt dafuer, dass konfi1
+    // es erfuellt — aber noch nicht hat.
+    async function erfuelltesBadgeOhneVergabe(name = 'Nachzuegler') {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ($2, 'total_points', 5, 'star', '#00ff00', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, name]
+      );
+      await db.query(
+        'UPDATE konfi_profiles SET gottesdienst_points = 7 WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      return badge;
+    }
+
+    it('GEGENPROBE: ohne die Route bleibt das Abzeichen aus', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Ohne Lauf');
+
+      // Kein Aufruf. Der Zustand ist damit genau Simons Ausgangslage:
+      // Kriterium erfuellt, Abzeichen nicht vergeben.
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Route holt die Vergabe nach: Person erfuellt es, danach hat sie es', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Mit Lauf');
+
+      const vorher = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(vorher.rows.length).toBe(0);
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.badge_id).toBe(badge.id);
+      expect(res.body.badge_name).toBe('Mit Lauf');
+      expect(res.body.neu_vergeben).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Ohne Erfueller meldet die Route 0 neu vergebene Abzeichen', async () => {
+      // Schwelle so hoch, dass sie niemand erreicht.
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Unerreichbar', 'total_points', 9999, 'star', '#00ff00', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.neu_vergeben).toBe(0);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE badge_id = $1', [badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Stille Vergabe: kein Push-Eintrag, keine In-App-Nachricht', async () => {
+      // Ein Nachhol-Lauf ueber die ganze Gemeinde darf nicht zwei Dutzend
+      // Benachrichtigungen auf einmal ausloesen — die Erfolge liegen laengst
+      // zurueck. Der regulaere Weg (Aktivitaet eintragen) benachrichtigt weiter.
+      const badge = await erfuelltesBadgeOhneVergabe('Leise');
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.neu_vergeben).toBe(1);
+
+      // Vergeben ist es:
+      const { rows: vergeben } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(vergeben.length).toBe(1);
+
+      // Benachrichtigt wurde nicht:
+      const { rows: nachrichten } = await db.query(
+        "SELECT 1 FROM notifications WHERE user_id = $1 AND type = 'badge_earned'",
+        [USERS.konfi1.id]
+      );
+      expect(nachrichten.length).toBe(0);
+    });
+
+    it('Der regulaere Weg benachrichtigt weiterhin (Gegenprobe zur Stille)', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Laut');
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      const ergebnis = await checkAndAwardBadges(db, USERS.konfi1.id);
+      expect(ergebnis.badges.some(b => b.id === badge.id)).toBe(true);
+
+      const { rows: nachrichten } = await db.query(
+        "SELECT 1 FROM notifications WHERE user_id = $1 AND type = 'badge_earned'",
+        [USERS.konfi1.id]
+      );
+      expect(nachrichten.length).toBe(1);
+    });
+
+    it('Teamer-Abzeichen erreicht Teamer:innen, nicht Konfis', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Teamer-Nachzuegler', 'teamer_year', 1, 'ribbon', '#7c3aed', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      // Eine Teamer-Aktivitaet im laufenden Jahr -> teamer_year 1 erfuellt.
+      await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Teamer-Schulung', 1, 'gemeinde', $1, 'teamer')`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [akt] } = await db.query(
+        "SELECT id FROM activities WHERE name = 'Teamer-Schulung' AND organization_id = $1",
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id)
+         VALUES ($1, $2, $3, CURRENT_DATE, $4)`,
+        [USERS.teamer1.id, akt.id, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.neu_vergeben).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Inaktives Abzeichen gibt 400 und vergibt nichts', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Stillgelegt', 'total_points', 1, 'star', '#00ff00', $1, 'konfi', false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+
+      const { rows } = await db.query('SELECT 1 FROM user_badges WHERE badge_id = $1', [badge.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    // ------------------------------------------------------------
+    // Berechtigung
+    // ------------------------------------------------------------
+    it('Fremde Organisation bekommt 404 und vergibt nichts', async () => {
+      // Abzeichen liegt in Org 1, angefragt von Admin aus Org 2.
+      const badge = await erfuelltesBadgeOhneVergabe('Fremd');
+
+      const token = generateToken('admin2');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Teamer bekommt 403 und vergibt nichts', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Fuer Teamer gesperrt');
+
+      const token = generateToken('teamer1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Konfi bekommt 403 und vergibt nichts', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Fuer Konfi gesperrt');
+
+      const token = generateToken('konfi1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('org_admin darf ebenfalls', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Fuer Org-Admin');
+
+      const token = generateToken('orgAdmin1');
+      const res = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.neu_vergeben).toBe(1);
+    });
+
+    it('Ohne Token gibt 401', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Ohne Token');
+      const res = await request(app).post(`/api/admin/badges/${badge.id}/pruefen`);
+      expect(res.status).toBe(401);
+    });
+
+    it('Unbekannte ID gibt 404', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges/999999/pruefen')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(404);
+    });
+
+    // ------------------------------------------------------------
+    // Missbrauchsschutz
+    // ------------------------------------------------------------
+    it('Zweiter Lauf kurz danach gibt 429 (Sperre je Organisation)', async () => {
+      const badge = await erfuelltesBadgeOhneVergabe('Dauerklick');
+      const token = generateToken('admin1');
+
+      const erst = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(erst.status).toBe(200);
+
+      const zweit = await request(app)
+        .post(`/api/admin/badges/${badge.id}/pruefen`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(zweit.status).toBe(429);
+    });
+
+  // ================================================================
+  // Automatische Pruefung beim Speichern (POST/PUT)
+  // ================================================================
+  //
+  // Das ist die eigentliche Loesung von Simons Problem: Wer ein Abzeichen
+  // speichert, erwartet, dass es gilt — und nicht, dass es erst wirkt, wenn
+  // zufaellig jemand eine Aktivitaet eintraegt. Der Knopf oben bleibt fuer
+  // die Faelle, in denen sich nicht das Abzeichen, sondern die Datenlage
+  // geaendert hat.
+  describe('Automatische Pruefung beim Speichern', () => {
+    beforeEach(() => {
+      app.locals.badgeSperreZuruecksetzen?.();
+    });
+
+    it('PUT vergibt sofort nach: geaendertes Kriterium wirkt ohne weiteres Zutun', async () => {
+      // Ausgangslage wie bei Simon: Abzeichen existiert, Person erfuellt es
+      // NICHT (Schwelle zu hoch), hat es also nicht.
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Umgestellt', 'total_points', 9999, 'star', '#00ff00', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'UPDATE konfi_profiles SET gottesdienst_points = 7 WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+
+      const vorher = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(vorher.rows.length).toBe(0);
+
+      // Schwelle heruntersetzen -- ab jetzt erfuellt konfi1 es.
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .put(`/api/admin/badges/${badge.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Umgestellt',
+          icon: 'star',
+          description: 'Test',
+          criteria_type: 'total_points',
+          criteria_value: 5
+        });
+      expect(res.status).toBe(200);
+
+      await warteAufNachwehen(app);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('POST vergibt sofort an alle, die das neue Abzeichen schon erfuellen', async () => {
+      await db.query(
+        'UPDATE konfi_profiles SET gottesdienst_points = 7 WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Frisch angelegt',
+          icon: 'star',
+          description: 'Test',
+          criteria_type: 'total_points',
+          criteria_value: 5,
+          target_role: 'konfi'
+        });
+      expect(res.status).toBe(201);
+
+      await warteAufNachwehen(app);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, res.body.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Auch beim Speichern wird still vergeben (keine In-App-Nachricht)', async () => {
+      await db.query(
+        'UPDATE konfi_profiles SET gottesdienst_points = 7 WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Leise angelegt',
+          icon: 'star',
+          description: 'Test',
+          criteria_type: 'total_points',
+          criteria_value: 5,
+          target_role: 'konfi'
+        });
+      expect(res.status).toBe(201);
+      await warteAufNachwehen(app);
+
+      const { rows: vergeben } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, res.body.id]
+      );
+      expect(vergeben.length).toBe(1);
+
+      const { rows: nachrichten } = await db.query(
+        "SELECT 1 FROM notifications WHERE user_id = $1 AND type = 'badge_earned'",
+        [USERS.konfi1.id]
+      );
+      expect(nachrichten.length).toBe(0);
+    });
+  });
   });
 });
