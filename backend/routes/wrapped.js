@@ -540,20 +540,48 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? { name: favoriteRows[0].name, date: favoriteRows[0].event_date }
       : null;
 
-    // Badges
+    // Abzeichen -- BEWUSST OHNE ZEITFILTER, wie die Punkte weiter oben:
+    // Das sind laufende STAENDE, keine Ereignisse. Ein Abzeichen bleibt,
+    // wenn es einmal verliehen ist; awarded_date sagt nur, WANN es dazukam.
+    //
+    // BEFUND 06.09.2026 (Demo-Gemeinde, Org 4): Der frueher hier stehende
+    // Filter auf awarded_date warf 146 von 162 Verleihungen heraus -- ihr
+    // Datum liegt in der Zukunft. Alle 13 Rueckblicke zeigten daraufhin
+    // total_earned = 1, waehrend die Leute 8 bis 19 Abzeichen hatten; die
+    // Seite gratulierte jedem zum "ersten" Abzeichen.
+    //
+    // Der Filter war ausserdem in sich widerspruechlich: Die Seite zeigt
+    // "x von y", und y (total_available) war noch nie gefiltert. Ein
+    // gefilterter Zaehler ueber einem ungefilterten Nenner kann nur
+    // schieflaufen.
+    //
+    // NICHT BETROFFEN ist "Das erste Abzeichen" im Teamer-Zweig: Die Seite
+    // will ausdruecklich das FRUEHESTE des Zeitraums, nicht den Bestand,
+    // und hat dafuer eine eigene Abfrage mit eigenem Zeitfilter.
     const { rows: badgeRows } = await client.query(
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
-         AND ub.awarded_date >= $3::date
-         AND ub.awarded_date < ($4::date + INTERVAL '1 day')
        ORDER BY ub.awarded_date DESC`,
-      [userId, orgId, zeitraumStart, zeitraumEnde]
+      [userId, orgId]
     );
     // BEWUSST OHNE ZEITFILTER: wie viele Abzeichen es in der Gemeinde gibt.
     // Eine Konfiguration der Gemeinde, kein Ereignis im Zeitraum.
+    //
+    // ABER MIT DENSELBEN GRENZEN WIE DIE ABZEICHEN-ANSICHT DER APP
+    // (routes/badges.js): nur aktive Abzeichen und nur die fuer Konfis.
+    // Ohne die beiden Bedingungen zaehlte der Nenner Abzeichen mit, die
+    // eine Konfi gar nicht bekommen kann -- gemessen am 06.09.2026 in Org 1
+    // 56 statt 45, in Org 4 zeigte der Rueckblick 31 und die App 27. Die
+    // Stufe "Alle. Wirklich alle." konnte damit nie greifen.
+    //
+    // is_hidden bleibt BEWUSST ungefiltert: Versteckte Abzeichen sind
+    // erreichbar, sie werden nur nicht vorab angezeigt.
     const { rows: [totalBadgesRow] } = await client.query(
-      `SELECT COUNT(*) as count FROM custom_badges WHERE organization_id = $1`,
+      `SELECT COUNT(*) as count FROM custom_badges
+        WHERE organization_id = $1
+          AND is_active = true
+          AND target_role = 'konfi'`,
       [orgId]
     );
     const totalBadgesAvailable = parseInt(totalBadgesRow.count, 10) || 0;
@@ -1419,16 +1447,31 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? konfiRows[0].jahrgaenge.filter(Boolean)
       : [];
 
-    // Badges -- nur die im Zeitraum verliehenen (wie beim Konfi-Rueckblick).
+    // Abzeichen -- BEWUSST OHNE ZEITFILTER, dieselbe Begruendung wie im
+    // Konfi-Zweig: laufende STAENDE, keine Ereignisse. Ein Abzeichen bleibt,
+    // wenn es einmal verliehen ist.
+    //
+    // "Das erste Abzeichen" weiter unten ist davon unberuehrt -- die Seite
+    // will das FRUEHESTE des Zeitraums und hat ihren eigenen Zeitfilter.
     const { rows: teamerBadges } = await client.query(
       `SELECT cb.name, cb.icon, cb.color FROM user_badges ub
        JOIN custom_badges cb ON ub.badge_id = cb.id
        WHERE ub.user_id = $1 AND ub.organization_id = $2
-         AND ub.awarded_date >= $3::date
-         AND ub.awarded_date < ($4::date + INTERVAL '1 day')
        ORDER BY ub.awarded_date DESC`,
-      [userId, orgId, zeitraumStart, zeitraumEnde]
+      [userId, orgId]
     );
+    // Wie viele Abzeichen es fuer Teamer:innen ueberhaupt gibt -- mit
+    // denselben Grenzen wie die Abzeichen-Ansicht der App: nur aktive, nur
+    // die der eigenen Rolle. is_hidden bleibt bewusst ungefiltert
+    // (versteckte Abzeichen sind erreichbar, nur nicht vorab sichtbar).
+    const { rows: [teamerBadgesGesamtRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM custom_badges
+        WHERE organization_id = $1
+          AND is_active = true
+          AND target_role = 'teamer'`,
+      [orgId]
+    );
+    const teamerBadgesGesamt = parseInt(teamerBadgesGesamtRow.count, 10) || 0;
 
     // Zertifikate -- ebenfalls nur die im Zeitraum ausgestellten.
     const { rows: certRows } = await client.query(
@@ -1648,6 +1691,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         },
         badges: {
           total_earned: teamerBadges.length,
+          // Ab 06.09.2026 ergaenzt (rein additiv -- aeltere Apps ignorieren
+          // das Feld, aeltere Snapshots tragen es schlicht nicht).
+          total_available: teamerBadgesGesamt,
           badges: teamerBadges.map(b => ({ name: b.name, icon: b.icon, color: b.color }))
         },
         zertifikate: {

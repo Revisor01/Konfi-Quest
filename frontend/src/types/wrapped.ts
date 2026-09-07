@@ -238,6 +238,11 @@ export interface TeamerKonfisBetreutSlide {
 
 export interface TeamerBadgesSlide {
   total_earned: number;
+  /**
+   * Wie viele Teamer-Abzeichen die Gemeinde ueberhaupt vergibt (aktive der
+   * Rolle 'teamer'). Ab 06.09.2026; bei aelteren Snapshots nicht vorhanden.
+   */
+  total_available?: number;
   badges: Array<{ name: string; icon: string; color: string }>;
 }
 

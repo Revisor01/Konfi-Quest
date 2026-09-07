@@ -338,13 +338,50 @@ describe('Wrapped Routes', () => {
         .toBe('Kleiner Treff im Zeitraum');
     });
 
-    it('Ein Abzeichen aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
+    // Bis zum 06.09.2026 stand hier die Erwartung, ein Abzeichen aus dem
+    // Vorjahr falle heraus. Das war dieselbe Verwechslung wie im
+    // Konfi-Zweig: Abzeichen sind ein BESTAND, kein Ereignis -- wer eins
+    // hat, hat es weiter. Der Rueckblick zeigte deshalb systematisch zu
+    // wenige.
+    it('Abzeichen aus anderen Zeitraeumen bleiben im Bestand', async () => {
       await abzeichen(USERS.teamer1.id, BADGES.streak.id, IM_ZEITRAUM);
       await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, VOR_ZEITRAUM);
+      await abzeichen(USERS.teamer1.id, BADGES.timeBased.id, NACH_ZEITRAUM);
 
       const snap = await snapshotVonTeamer1();
-      expect(snap.slides.badges.total_earned).toBe(1);
-      expect(snap.slides.badges.badges.map(b => b.name)).toEqual([BADGES.streak.name]);
+      expect(snap.slides.badges.total_earned).toBe(3);
+      expect(snap.slides.badges.badges.map(b => b.name).sort()).toEqual([
+        BADGES.categoryBased.name, BADGES.streak.name, BADGES.timeBased.name
+      ].sort());
+    });
+
+    // "Das erste Abzeichen" ist das Gegenstueck: Sie will ausdruecklich das
+    // FRUEHESTE des Zeitraums und behaelt deshalb ihren Zeitfilter.
+    it('Das erste Abzeichen bleibt an den Zeitraum gebunden', async () => {
+      await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, VOR_ZEITRAUM);
+      await abzeichen(USERS.teamer1.id, BADGES.streak.id, IM_ZEITRAUM);
+
+      const snap = await snapshotVonTeamer1();
+      // Der Bestand kennt beide ...
+      expect(snap.slides.badges.total_earned).toBe(2);
+      // ... die Seite "womit es losging" nennt das erste IM Zeitraum.
+      expect(snap.slides.erstes_abzeichen.name).toBe(BADGES.streak.name);
+    });
+
+    // Der Seed legt vier Abzeichen fuer Org 1 an -- alle mit der Vorgabe
+    // target_role = 'konfi'. Fuer Teamer:innen gibt es also zunaechst keins.
+    it('Konfi-Abzeichen zaehlen nicht in total_available der Teamer:innen', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.badges.total_available).toBe(0);
+    });
+
+    it('total_available zaehlt nur die aktiven Teamer-Abzeichen', async () => {
+      await db.query("UPDATE custom_badges SET target_role = 'teamer' WHERE id = ANY($1::int[])",
+        [[BADGES.streak.id, BADGES.categoryBased.id, BADGES.timeBased.id]]);
+      await db.query('UPDATE custom_badges SET is_active = false WHERE id = $1', [BADGES.timeBased.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.badges.total_available).toBe(2);
     });
 
     it('Ein Zertifikat aus dem Vorjahr gehoert nicht in diesen Rueckblick', async () => {
@@ -1613,6 +1650,76 @@ describe('Wrapped Routes', () => {
 
       const snap = await snapshotVonKonfi1();
       expect(snap.slides.badges.total_earned).toBe(1);
+    });
+
+    // ------------------------------------------------------------
+    // ABZEICHEN SIND EIN BESTAND, KEIN EREIGNIS (Befund 06.09.2026).
+    //
+    // Gemessen in der Demo-Gemeinde (Org 4): 146 von 162 Verleihungen
+    // tragen ein Datum in der Zukunft. Mit Zeitfilter blieb bei allen 13
+    // Rueckblicken genau eins uebrig -- total_earned = 1, obwohl die Leute
+    // 8 bis 19 Abzeichen hatten.
+    // ------------------------------------------------------------
+    it('Abzeichen ausserhalb des Zeitraums zaehlen mit -- vorher, nachher, mittendrin', async () => {
+      async function abzeichen(badgeId, datum) {
+        await db.query(
+          `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+           VALUES ($1, $2, $3, $4::timestamptz)`,
+          [USERS.konfi1.id, badgeId, ORGS.testGemeinde.id, `${datum} 10:00:00`]
+        );
+      }
+      await abzeichen(BADGES.streak.id, VOR_ZEITRAUM);
+      await abzeichen(BADGES.categoryBased.id, IM_ZEITRAUM);
+      await abzeichen(BADGES.timeBased.id, NACH_ZEITRAUM);
+      // Und der Fall aus Org 4: ein Datum weit in der Zukunft.
+      await abzeichen(BADGES.yearly.id, `${JAHR + 2}-03-01`);
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.badges.total_earned).toBe(4);
+      expect(snap.slides.badges.badges.map(b => b.name).sort()).toEqual([
+        BADGES.categoryBased.name,
+        BADGES.streak.name,
+        BADGES.timeBased.name,
+        BADGES.yearly.name
+      ].sort());
+    });
+
+    // ------------------------------------------------------------
+    // DER NENNER: dieselben Grenzen wie die Abzeichen-Ansicht der App
+    // (routes/badges.js) -- nur aktive, nur die der eigenen Rolle.
+    // Gemessen Org 1: 56 gesamt, 45 aktiv+konfi. Org 4: 31 gegen 27.
+    // ------------------------------------------------------------
+    it('Inaktive und Teamer-Abzeichen zaehlen nicht in total_available', async () => {
+      // Der Seed legt vier Abzeichen fuer Org 1 an, alle aktiv und (per
+      // Spalten-Default) fuer Konfis.
+      const vorher = await snapshotVonKonfi1();
+      expect(vorher.slides.badges.total_available).toBe(4);
+
+      // Eins stillgelegt, eins auf die Teamer-Rolle umgestellt.
+      await db.query('UPDATE custom_badges SET is_active = false WHERE id = $1', [BADGES.streak.id]);
+      await db.query("UPDATE custom_badges SET target_role = 'teamer' WHERE id = $1", [BADGES.categoryBased.id]);
+      // Ein verstecktes bleibt drin -- es ist erreichbar, nur nicht sichtbar.
+      await db.query('UPDATE custom_badges SET is_hidden = true WHERE id = $1', [BADGES.timeBased.id]);
+
+      const nachher = await snapshotVonKonfi1();
+      expect(nachher.slides.badges.total_available).toBe(2);
+    });
+
+    it('Alle Abzeichen verdient: verdient und verfuegbar sind dieselbe Zahl', async () => {
+      // Die Stufe "Alle. Wirklich alle." braucht total_earned >= total_available.
+      // Mit ungefiltertem Nenner (56 statt 45) war sie unerreichbar.
+      await db.query('UPDATE custom_badges SET is_active = false WHERE id = $1', [BADGES.yearly.id]);
+      for (const b of [BADGES.streak, BADGES.categoryBased, BADGES.timeBased]) {
+        await db.query(
+          `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+           VALUES ($1, $2, $3, $4::timestamptz)`,
+          [USERS.konfi1.id, b.id, ORGS.testGemeinde.id, `${JAHR + 2}-03-01 10:00:00`]
+        );
+      }
+
+      const snap = await snapshotVonKonfi1();
+      expect(snap.slides.badges.total_available).toBe(3);
+      expect(snap.slides.badges.total_earned).toBe(3);
     });
 
     // ------------------------------------------------------------

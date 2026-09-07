@@ -43,6 +43,14 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Die Abzeichen-Seite des Rückblicks zählt jetzt alle Abzeichen, die jemand
+  besitzt. Vorher zählten nur die, deren Verleihungsdatum im
+  Rückblickszeitraum lag — wer fünfzehn hatte, las dort oft „Das erste ist
+  das schönste".
+- Als erreichbare Abzeichen zählt der Rückblick nur noch die, die es in der
+  Gemeinde wirklich zu holen gibt: aktive, und nur die der eigenen Rolle. Die
+  Zahl hinter dem Schrägstrich stimmt damit wieder mit der Abzeichen-Ansicht
+  überein.
 - Der Jahresrückblick entsteht auch dann vollständig, wenn eine einzelne
   Auswertung nicht möglich ist — betroffen ist dann nur die eine Seite, die
   davon lebt, nicht der ganze Rückblick.
