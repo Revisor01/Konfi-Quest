@@ -808,53 +808,57 @@ class BackgroundService {
   }
 
   /**
-   * Prueft ob Wrapped-Snapshots automatisch generiert werden müssen.
-   * Laeuft jaehrlich am 6.1. (Teamer-Wrapped für alle Organisationen).
-   * Konfi-Wrapped wird NICHT mehr automatisch getriggert (Toggle pro Jahrgang, 119).
+   * Legt am 6. Januar in JEDER Organisation den Team-Rueckblick fuer das
+   * abgelaufene Kalenderjahr an -- und gibt ihn frei.
+   *
+   * Der KONFI-Rueckblick laeuft NICHT automatisch: Er umfasst die ganze
+   * Konfi-Zeit bis zum Tag der Erzeugung, und wann dieser Tag ist, weiss
+   * nur die Gemeinde (Konfirmation, Abschlussfahrt, letzter Abend). Ein
+   * Datum im Kalender kann das nicht wissen.
    */
   static async checkWrappedTriggers(db) {
     try {
       const today = new Date();
 
+      // DAS ABGELAUFENE KALENDERJAHR. Der Cron feuert am 6. Januar -- der
+      // Rueckblick gilt dem Jahr davor.
+      //
+      // SIMONS VORGABE (07.09.2026): "Ich finde Teamer zum 6.1 super wenn es
+      // automatisch passiert. Aber darf auch Manuel." Fuer ALLE Gemeinden --
+      // deshalb ohne Filter ueber alle Organisationen.
+      const jahr = today.getFullYear() - 1;
+
       let teamerOrgsGenerated = 0;
 
-      // Teamer-Wrapped: Jaehrlich (Cron feuert nur am 6.1.) für alle Organisationen
       const { rows: orgs } = await db.query('SELECT id FROM organizations');
 
       for (const org of orgs) {
         try {
-          // Pruefen ob schon generiert (Idempotenz)
-          const { rows: existing } = await db.query(
-            `SELECT 1 FROM wrapped_snapshots WHERE organization_id = $1 AND wrapped_type = 'teamer' AND year = $2 LIMIT 1`,
-            [org.id, today.getFullYear()]
-          );
+          if (!this.wrappedRouter || !this.wrappedRouter.generateAllTeamerWrapped) continue;
 
-          if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
-            // ZEITRAUM DER AUTOMATISCHEN AUSGABE: KEINE Vorgabe mehr.
-            //
-            // SIMONS REGEL (07.09.2026): Ein Teamer-Rueckblick geht vom Ende
-            // des vorigen bis zum Zeitpunkt der Erzeugung, beim ersten Mal
-            // vom Eintritt ins Team an. Diese Kette rechnet
-            // generateAllTeamerWrapped selbst, sobald man ihr keinen
-            // Zeitraum aufdraengt.
-            //
-            // Vorher stand hier fest das abgelaufene Kalenderjahr (1.1. bis
-            // 31.12. von year-1). Das riss zwei Luecken auf: Alles zwischen
-            // dem 1.1. und dem 6.1. fiel durch, und wer erst im Laufe des
-            // Jahres dazukam, bekam einen Zeitraum, der vor seinem Eintritt
-            // begann. Die Kette hat beide Probleme nicht -- sie schliesst
-            // luecken- und ueberschneidungsfrei an die vorige Ausgabe an.
-            const jahr = today.getFullYear();
-            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, jahr);
-            teamerOrgsGenerated++;
-          }
+          // DOPPELTE ANLAGE VERHINDERT generateAllTeamerWrapped SELBST:
+          // Sie prueft, ob fuer diese Organisation schon eine Team-Ausgabe
+          // ueber genau dieses Kalenderjahr steht, und tut dann nichts.
+          //
+          // Die Pruefung gehoert dorthin und nicht hierher, weil sie auch
+          // fuer den manuellen Weg gelten muss -- eine Leitung, die den
+          // Rueckblick am 3. Januar selbst erzeugt, darf am 6. keinen
+          // zweiten bekommen. Zwei Pruefungen an zwei Stellen liefen
+          // irgendwann auseinander.
+          //
+          // Frueher stand hier eine eigene Abfrage auf wrapped_snapshots
+          // (year = laufendes Jahr). Sie war doppelt falsch: Sie pruefte das
+          // LAUFENDE statt des abgelaufenen Jahres, und sie zaehlte
+          // Snapshots statt Ausgaben.
+          const ergebnis = await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, jahr);
+          if (ergebnis && !ergebnis.uebersprungen) teamerOrgsGenerated++;
         } catch (err) {
           console.error(`Wrapped-Cron: Teamer-Org ${org.id} Fehler:`, err.message);
         }
       }
 
       if (teamerOrgsGenerated > 0) {
-        console.log(`Wrapped-Cron: ${teamerOrgsGenerated} Teamer-Orgs generiert`);
+        console.log(`Wrapped-Cron: Team-Rueckblick ${jahr} fuer ${teamerOrgsGenerated} Organisationen erzeugt`);
       }
     } catch (error) {
       console.error('Error in checkWrappedTriggers:', error);
