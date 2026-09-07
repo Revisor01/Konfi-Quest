@@ -17,7 +17,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
   IonLabel, IonButton, IonIcon, IonSpinner, IonRefresher, IonRefresherContent,
-  IonModal, IonInput, IonSelect, IonSelectOption, IonButtons,
+  IonModal, IonSelect, IonSelectOption, IonButtons,
   IonSegment, IonSegmentButton, useIonAlert,
   IonItemSliding, IonItemOptions, IonItemOption, IonListHeader,
   IonCard, IonCardContent
@@ -32,14 +32,22 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 /**
  * Die Rueckblick-Ausgaben verwalten.
  *
- * SIMONS VORGABE (03.09.2026): "Volle Flexibilitaet fuer Wrapped. Damit man
- * etwa auch einen Zwischenstand mit Titel machen kann." Und: "Es gibt keine
- * Admin-Sektionen, um sie freizugeben, zu benennen, zu loeschen."
+ * SIMONS VORGABE (07.09.2026), woertlich: "wir lassen das mit dem Datum. Wir
+ * machen einfach immer Konfi bis jetzt von Beginn und Teamer der Rueckblick
+ * des Jahres. Also immer zurueck auf den 1.1. des Jahres. Sonst ist das zu
+ * kompliziert mit den rueckblicken. Dann braucht es auch keine Titel."
+ *
+ * DAS FORMULAR IST DAMIT FAST LEER, und das ist der Punkt:
+ *   Konfi -> nur den Jahrgang waehlen. Gerechnet wird vom Beginn der
+ *            Konfi-Zeit bis heute.
+ *   Team  -> nur das Jahr waehlen. Gerechnet wird vom 1.1. bis 31.12.
+ * Kein Titel, keine Datumsfelder. Was frueher einzustellen war, konnte man
+ * falsch einstellen; jetzt gibt es nichts mehr falsch zu machen.
  *
  * WARUM EINE EIGENE SEITE STATT DES SCHALTERS IM JAHRGANG: Der Schalter dort
- * konnte nur EINEN Zustand abbilden -- an oder aus. Mit mehreren Ausgaben je
- * Jahrgang ("Dein erstes Jahr", "Zwischenstand", "Dein Abschluss") passt das
- * nicht mehr: Ein Schalter kann keine drei benannten Ausgaben verwalten.
+ * konnte nur EINEN Zustand abbilden -- an oder aus. Ein Jahrgang bekommt aber
+ * mehrere Ausgaben (Zwischenstand und Abschluss), und ein Schalter kann die
+ * nicht verwalten.
  *
  * RECHTE (Simons Regel):
  *   Admin      -> nur Jahrgaenge mit eigener Zuweisung
@@ -71,24 +79,29 @@ const datum = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
 /**
- * Der Zeitraum bleibt LEER -- und das ist seit dem 07.09.2026 der Normalfall.
+ * Die waehlbaren Jahre fuer einen TEAM-Rueckblick.
  *
- * SIMONS REGEL: "bei konfi jahrgaengen muss das wrapped alles erfassen was
- * der konfi gemacht hat. den ganzen zeitraum, bei manchen sind das auch zwei
- * jahre. es sollte nur die option mit rein das man auch zwischenberichte
- * machen kann." Und: "Immer vom anfang an bis zum jetzigen zeitpunkt."
+ * SIMONS REGEL (07.09.2026): Der Team-Rueckblick ist immer ein volles
+ * Kalenderjahr. Das LAUFENDE Jahr steht deshalb sichtbar in der Liste, ist
+ * aber gesperrt -- es ist noch nicht vorbei, es gibt darauf noch nichts
+ * zurueckzublicken.
  *
- * Ohne Eingabe rechnet das Backend also selbst:
- *   Konfi  -> vom Anfang der Konfi-Zeit bis heute,
- *   Teamer -> vom Ende des letzten Rueckblicks bis heute (beim ersten Mal
- *             ab dem Eintritt ins Team).
+ * WARUM SICHTBAR UND NICHT WEGGELASSEN: Wer im November 2026 nach "2026"
+ * sucht und es nicht findet, haelt das fuer einen Fehler. Steht es da mit
+ * dem Hinweis "verfuegbar ab 1.1.2027", ist die Regel in dem Moment erklaert,
+ * in dem sie jemanden betrifft.
  *
- * Vorher stand hier ein Vorschlag (1.9. bis 31.8.), der bei jedem Anlegen
- * mitging -- damit war der ZWISCHENBERICHT der Normalfall und Simons Regel
- * die Ausnahme. Genau andersherum ist es richtig. Wer wirklich einen
- * Zwischenstand will, traegt die beiden Daten ein.
+ * Zurueck reichen fuenf Jahre. Weiter zurueck gibt es keine Daten, die einen
+ * Rueckblick truegen -- und eine Liste, die bis 2019 laeuft, ist keine Hilfe.
  */
-const LEERER_ZEITRAUM = { start: '', ende: '' };
+const TEAM_JAHRE = (heute = new Date()) => {
+  const laufend = heute.getFullYear();
+  const jahre: { jahr: number; gesperrt: boolean }[] = [];
+  for (let j = laufend; j >= laufend - 5; j--) {
+    jahre.push({ jahr: j, gesperrt: j >= laufend });
+  }
+  return jahre;
+};
 
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -105,13 +118,11 @@ const AdminWrappedPage: React.FC = () => {
   const [segment, setSegment] = useState<'konfi' | 'teamer'>('konfi');
 
   const [modalOffen, setModalOffen] = useState(false);
-  const [neuerTitel, setNeuerTitel] = useState('');
   const [neuerJahrgang, setNeuerJahrgang] = useState<number | null>(null);
-  // Der Zeitraum der Ausgabe. Er steht seit jeher in wrapped_ausgaben und
-  // wurde angezeigt -- nur konnte ihn niemand setzen, und das Backend
-  // rechnete ohnehin mit einem anderen (Befund 06.09.2026).
-  const [neuerStart, setNeuerStart] = useState(LEERER_ZEITRAUM.start);
-  const [neuerEnde, setNeuerEnde] = useState(LEERER_ZEITRAUM.ende);
+  // Das Jahr des TEAM-Rueckblicks. Vorbelegt mit dem zuletzt abgeschlossenen
+  // Jahr -- dem einzigen, das die Leitung am 1. Januar ueberhaupt meinen
+  // kann, und demselben, das der automatische Lauf am 6.1. nimmt.
+  const [neuesJahr, setNeuesJahr] = useState<number>(new Date().getFullYear() - 1);
   const [erzeugt, setErzeugt] = useState(false);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
@@ -141,44 +152,21 @@ const AdminWrappedPage: React.FC = () => {
       setError('Bitte einen Jahrgang wählen');
       return;
     }
-    // Beide Felder leer ist der NORMALFALL -- dann rechnet das Backend den
-    // Zeitraum selbst (ganze Konfi-Zeit bzw. Anschluss an den letzten
-    // Teamer-Rueckblick). Nur EIN gefuelltes Feld ist dagegen ein Versehen:
-    // Das Backend nimmt eine halbe Angabe nicht an und faellt still auf die
-    // Automatik zurueck -- der eingetragene Tag waere wirkungslos.
-    if ((neuerStart && !neuerEnde) || (!neuerStart && neuerEnde)) {
-      setError('Bitte beide Daten angeben oder beide frei lassen');
-      return;
-    }
-    if (neuerStart && neuerEnde && neuerStart > neuerEnde) {
-      // Sonst entstuende eine Ausgabe, die nichts zaehlen kann -- und der
-      // Fehler faellt erst auf, wenn alle Rueckblicke leer sind.
-      setError('Der Zeitraum endet vor seinem Anfang');
-      return;
-    }
     setErzeugt(true);
     try {
-      const titel = neuerTitel.trim();
-      // Der Zeitraum geht NUR mit, wenn er ausdruecklich eingetragen wurde --
-      // das ist Simons Option fuer Zwischenberichte. Ohne Angabe bleibt das
-      // Feld weg, und das Backend rechnet den vollen Zeitraum.
-      const rumpf: { titel?: string; zeitraum_start?: string; zeitraum_ende?: string } = {};
-      if (neuerStart && neuerEnde) {
-        rumpf.zeitraum_start = neuerStart;
-        rumpf.zeitraum_ende = neuerEnde;
-      }
-      if (titel) rumpf.titel = titel;
+      // KEIN RUMPF MEHR beim Konfi-Rueckblick: kein Titel, kein Zeitraum.
+      // Das Backend rechnet vom Beginn der Konfi-Zeit bis heute.
+      // Beim Team geht nur das JAHR mit -- gerechnet wird 1.1. bis 31.12.
       if (segment === 'konfi') {
-        await api.post(`/wrapped/generate/${neuerJahrgang}`, rumpf);
+        await api.post(`/wrapped/generate/${neuerJahrgang}`, {});
       } else {
-        await api.post('/wrapped/generate-teamer', rumpf);
+        await api.post('/wrapped/generate-teamer', { jahr: neuesJahr });
       }
-      setSuccess(titel ? `„${titel}" wurde erstellt und freigegeben` : 'Rückblick erstellt und freigegeben');
+      setSuccess(segment === 'konfi'
+        ? 'Rückblick erstellt und freigegeben'
+        : `Teamerjahr ${neuesJahr} erstellt und freigegeben`);
       setModalOffen(false);
-      setNeuerTitel('');
       setNeuerJahrgang(null);
-      setNeuerStart(LEERER_ZEITRAUM.start);
-      setNeuerEnde(LEERER_ZEITRAUM.ende);
       await laden();
     } catch (e) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -467,8 +455,8 @@ const AdminWrappedPage: React.FC = () => {
                       Konfi-Liste (Simons Hinweis 04.09.2026): Icon links per
                       slot="start", kein gestapeltes Label, Popover, volle
                       Breite. */}
-                  {segment === 'konfi' && (
-                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  {segment === 'konfi' ? (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                       <IonSelect
                         placeholder="Jahrgang"
@@ -482,50 +470,34 @@ const AdminWrappedPage: React.FC = () => {
                         ))}
                       </IonSelect>
                     </IonItem>
+                  ) : (
+                    /* Nur das JAHR (Simon, 07.09.2026). Das laufende Jahr
+                       steht sichtbar in der Liste, aber gesperrt -- mit dem
+                       Hinweis, ab wann es geht. */
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
+                      <IonSelect
+                        placeholder="Jahr"
+                        interface="popover"
+                        style={{ width: '100%' }}
+                        value={neuesJahr}
+                        onIonChange={(e) => setNeuesJahr(e.detail.value)}
+                      >
+                        {TEAM_JAHRE().map(({ jahr, gesperrt }) => (
+                          <IonSelectOption key={jahr} value={jahr} disabled={gesperrt}>
+                            {gesperrt ? `${jahr} — verfügbar ab 1.1.${jahr + 1}` : String(jahr)}
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonItem>
                   )}
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonInput
-                      label="Name"
-                      labelPlacement="stacked"
-                      placeholder="z. B. Zwischenstand"
-                      value={neuerTitel}
-                      maxlength={120}
-                      onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
-                    />
-                  </IonItem>
-                  {/* Die Datumsfelder sind seit dem 07.09.2026 die AUSNAHME,
-                      nicht der Normalfall: Sie bleiben leer, und nur wer
-                      wirklich einen Zwischenbericht will, traegt etwas ein.
-                      Native Datumsfelder statt IonDatetime: zwei Kalender in
-                      einem Sheet waeren mehr Bedienung als die Sache wert. */}
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonInput
-                      type="date"
-                      label="Nur für Zwischenbericht: von"
-                      labelPlacement="stacked"
-                      value={neuerStart}
-                      onIonInput={(e) => setNeuerStart(e.detail.value || '')}
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonInput
-                      type="date"
-                      label="Nur für Zwischenbericht: bis"
-                      labelPlacement="stacked"
-                      value={neuerEnde}
-                      onIonInput={(e) => setNeuerEnde(e.detail.value || '')}
-                    />
-                  </IonItem>
-                  {/* Simon ausdruecklich (07.09.2026): "Das erklaeren wir
-                      auch." Der Text sagt, was OHNE Eingabe passiert -- sonst
-                      steht da ein leeres Pflichtfeld-Gefuehl und niemand
-                      weiss, welchen Zeitraum der Rueckblick am Ende zeigt.
-                      Beide Rollen werden genannt, weil dieselbe Maske beide
-                      Ausgaben anlegt. */}
+                  {/* Was der Rueckblick umfasst -- ohne dass jemand etwas
+                      einstellen muss. Simon ausdruecklich: "Das erklaeren wir
+                      auch." */}
                   <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     {segment === 'konfi'
-                      ? 'Lass die Daten leer: Dann zählt der Rückblick die ganze Konfi-Zeit — vom Beginn bis heute, auch über zwei Jahre. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'
-                      : 'Lass die Daten leer: Dann schließt der Rückblick lückenlos an den letzten an — beim ersten Mal ab dem Eintritt ins Team, danach ab dem Ende des vorigen Rückblicks. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'}
+                      ? 'Der Rückblick zählt die ganze Konfi-Zeit — vom Beginn bis heute, auch über zwei Jahre.'
+                      : 'Der Rückblick zählt das ganze Kalenderjahr, vom 1. Januar bis zum 31. Dezember. Das laufende Jahr ist erst wählbar, wenn es vorbei ist.'}
                   </div>
                   <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     Der Rückblick wird sofort erstellt und freigegeben; alle

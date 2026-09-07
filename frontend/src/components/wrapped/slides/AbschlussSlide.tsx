@@ -3,12 +3,16 @@ import { IonIcon } from '@ionic/react';
 import { ICON_ABZEICHEN, ICON_POKAL, ICON_TERMIN } from '../../shared/icons';
 import type { SlideProps, KonfiWrappedData } from '../../../types/wrapped';
 import SlideBase from './SlideBase';
+import { konfiUeberschrift } from '../ueberschrift';
 
 interface AbschlussSlideProps extends SlideProps {
   data: KonfiWrappedData;
   year: number;
-  /** Name der Ausgabe -- steht in der Ueberschrift statt "Konfi-Jahr {Jahr}". */
-  titel?: string | null;
+  /**
+   * Konfirmationstermin -- entscheidet, ob "(bis jetzt)" dazugehoert.
+   * Der frueher hier uebergebene freie Titel ist am 07.09.2026 entfallen.
+   */
+  konfirmation?: string | null;
 }
 
 /**
@@ -38,7 +42,7 @@ interface AbschlussSlideProps extends SlideProps {
  * kommt die eigene Team-Seite (WerdeTeamerSlide) DIREKT DAVOR -- die
  * Einladung staende sonst zweimal hintereinander.
  */
-const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _year, titel }) => {
+const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _year, konfirmation }) => {
   // Siehe WrappedModal: `konfirmation` ist das echte Datum, `ende` nur der
   // Rueckfall fuer Alt-Snapshots ohne das Feld.
   const z = data.slides.zeitraum;
@@ -58,7 +62,7 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year: _
           Anfang der Konfi-Zeit bis heute -- das koennen zwei Jahre sein, und
           dann ist "Dein Konfi-Jahr 2026" schlicht falsch. Ein gesetzter
           Titel gewinnt weiterhin (Muster aus IntroSlide). */}
-      <div className="kat-auge">{titel?.trim() || 'Deine Konfi-Zeit'}</div>
+      <div className="kat-auge">{konfiUeberschrift(konfirmation, zeitraumEnde).join(' ')}</div>
 
       {/* Die Kirchengemeinde -- wo diese Konfi-Zeit stattgefunden hat.
           Fehlt bei Alt-Snapshots, dann bleibt die Zeile weg. */}

@@ -2,6 +2,7 @@ import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_FUNKELN } from '../../shared/icons';
 import SlideBase from './SlideBase';
+import { konfiUeberschrift } from '../ueberschrift';
 import type { SlideProps } from '../../../types/wrapped';
 
 interface IntroSlideProps extends SlideProps {
@@ -9,40 +10,20 @@ interface IntroSlideProps extends SlideProps {
   jahrgangName: string;
   year: number;
   /**
-   * Name der Ausgabe ("Zwischenstand", "Dein Abschluss"). Ab 03.09.2026.
-   *
-   * Simon: "Die erste Seite des Slides muss natuerlich auch 'Willkommen zu
-   * deinem Zwischenstand' heissen." Vorher stand hier fest "Konfi-Jahr
-   * {year}" -- bei einer Zwischenstands-Ausgabe war das schlicht falsch.
-   *
-   * Ohne Titel (Alt-Snapshots) bleibt es bei der bisherigen Ueberschrift,
-   * damit bereits erzeugte Rueckblicke unveraendert aussehen.
+   * Konfirmationstermin und Stand des Rueckblicks -- daraus entsteht die
+   * Ueberschrift. Der frueher hier uebergebene freie `titel` ist am
+   * 07.09.2026 entfallen (Simon: "Dann braucht es auch keine Titel.").
    */
-  titel?: string | null;
+  konfirmation?: string | null;
+  stand?: string | null;
 }
 
-/**
- * Die Ueberschrift in bis zu drei Zeilen brechen -- die Typo lebt vom
- * Umbruch. "Zwischenstand September" wird zu "Zwischenstand / September",
- * nicht zu einer Zeile, die aus dem Bild laeuft.
- */
-function zeilen(titel: string): string[] {
-  const worte = titel.trim().split(/\s+/);
-  if (worte.length <= 1) return worte;
-  if (worte.length === 2) return worte;
-  // Bei mehr Worten: erste Zeile ein Wort, Rest zusammen.
-  return [worte[0], worte.slice(1).join(' ')];
-}
-
-const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year: _year, titel }) => {
-  // Ohne Titel: "Deine Konfi-Zeit" statt "Konfi-Jahr {Jahr}" (Simons
-  // Wortlaut, 07.09.2026). Der Rueckblick umfasst seit derselben Regel die
-  // ganze Konfi-Zeit -- bei manchen zwei Jahre. Eine einzelne Jahreszahl
-  // waere dann falsch. `year` bleibt in der Schnittstelle stehen: Der
-  // Snapshot fuehrt das Feld weiter, und ausgelieferte Apps lesen es.
-  const ueberschrift = titel && titel.trim()
-    ? zeilen(titel)
-    : ['Deine', 'Konfi-Zeit'];
+const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year: _year, konfirmation, stand }) => {
+  // "Deine Konfi-Zeit", mit "(bis jetzt)" solange die Konfirmation noch
+  // mehr als 30 Tage entfernt ist (Simons Regel, 07.09.2026). `year` bleibt
+  // in der Schnittstelle stehen: Der Snapshot fuehrt das Feld weiter, und
+  // ausgelieferte Apps lesen es.
+  const ueberschrift = konfiUeberschrift(konfirmation, stand);
 
   return (
     <SlideBase isActive={isActive} className="intro-slide">

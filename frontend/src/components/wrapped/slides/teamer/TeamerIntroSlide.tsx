@@ -1,23 +1,19 @@
 import React from 'react';
 import SlideBase from '../SlideBase';
+import { teamerUeberschrift } from '../../ueberschrift';
 import type { SlideProps } from '../../../../types/wrapped';
 
 interface TeamerIntroSlideProps extends SlideProps {
   displayName: string;
   year: number;
-  /** Name der Ausgabe -- wie beim Konfi-Rueckblick. */
-  titel?: string | null;
 }
 
-/** Ueberschrift in bis zu drei Zeilen brechen. */
-function zeilen(titel: string): string[] {
-  const w = titel.trim().split(/\s+/);
-  if (w.length <= 2) return w;
-  return [w[0], w.slice(1).join(' ')];
-}
-
-const TeamerIntroSlide: React.FC<TeamerIntroSlideProps> = ({ isActive, displayName, year, titel }) => {
-  const ueberschrift = titel && titel.trim() ? zeilen(titel) : ['Teamer-', 'Jahr', String(year)];
+const TeamerIntroSlide: React.FC<TeamerIntroSlideProps> = ({ isActive, displayName, year }) => {
+  // "Dein Teamerjahr 2026" -- der Team-Rueckblick ist seit dem 07.09.2026
+  // immer ein volles Kalenderjahr, also sagt die Ueberschrift welches.
+  // Freie Titel gibt es nicht mehr (Simon: "Dann braucht es auch keine
+  // Titel.").
+  const ueberschrift = teamerUeberschrift(year);
 
   return (
     <SlideBase isActive={isActive} className="teamer-intro-slide" kachel="teamer-intro">

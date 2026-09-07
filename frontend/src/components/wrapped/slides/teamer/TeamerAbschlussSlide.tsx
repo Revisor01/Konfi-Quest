@@ -2,12 +2,12 @@ import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_ABZEICHEN, ICON_GRUPPE, ICON_TERMIN } from '../../../shared/icons';
 import SlideBase from '../SlideBase';
+import { teamerUeberschrift } from '../../ueberschrift';
 import type { SlideProps, TeamerWrappedData } from '../../../../types/wrapped';
 
 interface Props extends SlideProps {
   data: TeamerWrappedData;
   year: number;
-  titel?: string | null;
 }
 
 /**
@@ -18,7 +18,7 @@ interface Props extends SlideProps {
  * einblendet. Greift die nicht (reduzierte Bewegung, unterbrochener
  * Seitenwechsel), blieb die Seite leer.
  */
-const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year, titel }) => {
+const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year }) => {
   const zahlen = [
     { icon: ICON_TERMIN, wert: data.slides.events_geleitet.total, label: 'Termine' },
     { icon: ICON_GRUPPE, wert: data.slides.konfis_betreut.total_konfis, label: 'Konfis' },
@@ -27,7 +27,7 @@ const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year, titel }) 
 
   return (
     <SlideBase isActive={isActive} className="teamer-abschluss-slide" kachel="teamer-abschluss">
-      <div className="kat-auge">{titel?.trim() || `Dein Teamer-Jahr ${year}`}</div>
+      <div className="kat-auge">{teamerUeberschrift(year).join(' ')}</div>
 
       <div className="kat-slogan">
         <span style={{ display: 'block' }}>Danke,</span>

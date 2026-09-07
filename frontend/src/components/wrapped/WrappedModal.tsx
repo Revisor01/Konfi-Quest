@@ -61,6 +61,13 @@ interface WrappedModalProps {
   initialData?: KonfiWrappedData | TeamerWrappedData;
   initialYear?: number;
   /** Name der Ausgabe -- steht auf der ersten Seite. */
+  /**
+   * ALT-VERTRAG: Wird nicht mehr ausgewertet. Freie Titel gibt es seit dem
+   * 07.09.2026 nicht mehr (Simon: "Dann braucht es auch keine Titel.") --
+   * die Ueberschrift ergibt sich aus dem Rueckblick selbst. Das Feld bleibt
+   * in der Schnittstelle, damit Aufrufer, die es noch mitgeben, nicht
+   * brechen.
+   */
   initialTitel?: string | null;
 }
 
@@ -128,15 +135,11 @@ const konfirmationsTermin = (data: KonfiWrappedData): string | null => {
   return z.ende || null;
 };
 
-const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear, initialTitel }) => {
+const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear }) => {
   const [data, setData] = useState<KonfiWrappedData | TeamerWrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [year, setYear] = useState<number | null>(null);
-  // Der Name der Ausgabe fuer die erste Seite ("Willkommen zu deinem
-  // Zwischenstand"). Kommt bei der Wiederansicht als Prop, sonst von
-  // GET /wrapped/me.
-  const [titel, setTitel] = useState<string | null>(initialTitel ?? null);
   const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
   const [isSharing, setIsSharing] = useState(false);
   // Rueckmeldung zum Teilen. Bis zum 06.09.2026 gab es KEINE: Jeder Fehler
@@ -150,7 +153,6 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     if (initialData && initialYear) {
       setData(initialData);
       setYear(initialYear);
-      if (initialTitel !== undefined) setTitel(initialTitel);
       if (initialType) setWrappedType(initialType);
       return;
     }
@@ -160,7 +162,6 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         setData(response.data);
         setYear(response.year);
         setWrappedType(response.wrapped_type);
-        setTitel((response as WrappedResponse & { titel?: string | null }).titel ?? null);
       })
       .catch((err) => {
         if (err.response?.status === 404) {
@@ -283,9 +284,24 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     const seed = konfiData.formulierung_seed || 0;
     const version = konfiData.version || 1;
 
+    // Die Ueberschrift des Konfi-Rueckblicks: "Deine Konfi-Zeit", mit
+    // "(bis jetzt)" solange die Konfirmation mehr als 30 Tage entfernt ist
+    // (Simons Regel, 07.09.2026).
+    //
+    // Beide Werte kommen aus dem SNAPSHOT, nicht aus der Uhr: `ende` ist der
+    // Tag, an dem der Rueckblick erzeugt wurde. Ein im Mai erzeugter
+    // Zwischenstand traegt seinen Nachsatz auch dann noch, wenn man ihn im
+    // November wieder oeffnet. `konfirmation` fehlt bei Snapshots vor
+    // Version 2.1 -- dann steht schlicht "Deine Konfi-Zeit" da.
+    const konfiZeitraum = konfiData.slides.zeitraum;
+    const konfiKonfirmation = konfiZeitraum && 'konfirmation' in konfiZeitraum
+      ? (konfiZeitraum.konfirmation || null)
+      : null;
+    const konfiStand = konfiZeitraum?.ende || null;
+
     // Alle moeglichen Slide-Renderer
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
-      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} titel={titel} />,
+      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} konfirmation={konfiKonfirmation} stand={konfiStand} />,
       'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
       // 'challenges' stand seit dem 03.09.2026 in der DRAMATURGIE des
@@ -326,7 +342,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
-      'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} titel={titel} />,
+      'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} konfirmation={konfiKonfirmation} />,
       'werde-teamer': (a) => <WerdeTeamerSlide isActive={a} />,
       // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Der Schluessel
       // traegt BEWUSST KEIN 'kategorie:'- oder 'datum:'-Praefix: Der
@@ -489,7 +505,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   // erzeugten Rueckblicken aendert sich dadurch nichts.
   const buildTeamerSlides = (teamerData: TeamerWrappedData, slideYear: number) => {
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
-      'teamer-intro': (a) => <TeamerIntroSlide isActive={a} displayName={displayName} year={slideYear} titel={titel} />,
+      'teamer-intro': (a) => <TeamerIntroSlide isActive={a} displayName={displayName} year={slideYear} />,
       'teamer-events': (a) => <TeamerEventsSlide isActive={a} events={teamerData.slides.events_geleitet} />,
       'teamer-konfis': (a) => <TeamerKonfisSlide isActive={a} konfis={teamerData.slides.konfis_betreut} />,
       'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,
@@ -526,7 +542,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           ? <TeamerKonfiZeitSlide isActive={a} konfiZeit={teamerData.slides.konfi_zeit} />
           : null
       ),
-      'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} titel={titel} />,
+      'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} />,
       // Dieselbe Sonderseite wie im Konfi-Rueckblick -- die Fahrt gehoert
       // beiden Seiten. Simon: "das sehen dann nur die teamer und konfis
       // die dabei waren."

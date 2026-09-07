@@ -203,7 +203,9 @@ describe('Wrapped Routes', () => {
       // Generierung liefe sonst als "definiert" durch.
       expect(res.body.generated).toBe(1);
       expect(res.body.errors).toBe(0);
-      expect(res.body.year).toBe(new Date().getFullYear());
+      // Ohne Angabe: das zuletzt ABGESCHLOSSENE Kalenderjahr (Simon,
+      // 07.09.2026). Das laufende Jahr ist noch nicht vorbei.
+      expect(res.body.year).toBe(new Date().getFullYear() - 1);
     });
 
     it('Admin (nicht OrgAdmin) bekommt 403', async () => {
@@ -242,7 +244,11 @@ describe('Wrapped Routes', () => {
   // Jahren unter einer Jahreszahl.
   describe('Zahlen im Teamer-Snapshot', () => {
     const JAHR = new Date().getFullYear();
-    // Fallback-Zeitraum des Teamer-Rueckblicks: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    // SEIT DEM 07.09.2026 ist der Teamer-Zeitraum das zuletzt abgeschlossene
+    // KALENDERJAHR (Simon: "Teamer der Rueckblick des Jahres. Also immer
+    // zurueck auf den 1.1. des Jahres."). Ohne Angabe rechnet die Route also
+    // vom 1.1.(JAHR-1) bis zum 31.12.(JAHR-1).
+    const RUECKBLICK_JAHR = JAHR - 1;
     const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
     const VOR_ZEITRAUM = `${JAHR - 2}-06-15`; // ein volles Jahr davor
     const NACH_ZEITRAUM = `${JAHR}-10-15`;
@@ -394,37 +400,35 @@ describe('Wrapped Routes', () => {
         .toEqual(['Juleica im Zeitraum']);
     });
 
-    it('Ein angegebener Zeitraum schlaegt bis in die Teamer-Zahlen durch', async () => {
-      // Die Teamer-Route nahm bis zum 06.09.2026 ueberhaupt keinen Zeitraum
-      // entgegen -- nur einen Titel.
-      const drin = await termin('November', IM_ZEITRAUM);
-      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+    it('Das gewaehlte Jahr schlaegt bis in die Teamer-Zahlen durch', async () => {
+      // Nicht nur die Anzeige: Die Zahlen darunter muessen zum Jahr passen.
+      const drin = await termin('November im Rueckblicksjahr', IM_ZEITRAUM);
+      const draussen = await termin('Juni im Folgejahr', `${JAHR}-06-15`);
       await buchung(USERS.teamer1.id, drin);
       await buchung(USERS.teamer1.id, draussen);
 
       const gen = await request(app)
         .post('/api/wrapped/generate-teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+        .send({ jahr: RUECKBLICK_JAHR });
       expect(gen.status).toBe(200);
 
       const { rows } = await db.query(
         `SELECT data FROM wrapped_snapshots
-          WHERE user_id = $1 AND wrapped_type = 'teamer'
-          ORDER BY computed_at DESC, id DESC LIMIT 1`,
-        [USERS.teamer1.id]
+          WHERE user_id = $1 AND wrapped_type = 'teamer' AND ausgabe_id = $2`,
+        [USERS.teamer1.id, gen.body.ausgabe_id]
       );
       expect(rows).toHaveLength(1);
       const snap = rows[0].data;
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
-      // Nur der Termin im engen Fenster.
+      expect(snap.slides.zeitraum.start).toBe(`${RUECKBLICK_JAHR}-01-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${RUECKBLICK_JAHR}-12-31`);
+      // Nur der Termin im Rueckblicksjahr -- der aus dem Folgejahr nicht.
       expect(snap.slides.events_geleitet.total).toBe(1);
     });
 
     it('Der Anfang ist der FRUEHESTE Termin im Zeitraum, nicht der letzte', async () => {
-      const spaet = await termin('Spaeter Termin', `${JAHR}-03-01`);
-      const frueh = await termin('Erster Termin', `${JAHR - 1}-09-20`);
+      const spaet = await termin('Spaeter Termin', `${RUECKBLICK_JAHR}-03-01`);
+      const frueh = await termin('Erster Termin', `${RUECKBLICK_JAHR}-01-20`);
       const davor = await termin('Noch im Vorjahr', VOR_ZEITRAUM);
       await buchung(USERS.teamer1.id, spaet);
       await buchung(USERS.teamer1.id, frueh);
@@ -547,12 +551,14 @@ describe('Wrapped Routes', () => {
     });
 
     it('Im ersten Jahr erscheint "Neu dabei" statt "seit x Jahren"', async () => {
+      // Der Rueckblick gilt dem abgeschlossenen Kalenderjahr -- "neu dabei"
+      // ist also, wer IN DIESEM Jahr angefangen hat.
       await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR}-02-01`, USERS.teamer1.id]);
+        [`${RUECKBLICK_JAHR}-02-01`, USERS.teamer1.id]);
 
       const snap = await snapshotVonTeamer1();
       expect(snap.slides.neu_dabei.erstes_jahr).toBe(true);
-      expect(snap.slides.neu_dabei.start_jahr).toBe(JAHR);
+      expect(snap.slides.neu_dabei.start_jahr).toBe(RUECKBLICK_JAHR);
       expect(snap.kacheln).toContain('teamer-neu-dabei');
       expect(snap.kacheln).not.toContain('teamer-jahre');
     });
@@ -684,23 +690,28 @@ describe('Wrapped Routes', () => {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    it('Der erste Rueckblick laeuft vom Eintritt ins Team bis heute', async () => {
-      // SIMONS TEAMER-REGEL (07.09.2026): "das erste wrapped geht vom
-      // anbeginn der zeit als teamer bis zum zeitpunkt des wrapped."
-      // Vorher stand hier fest 1.9.(JAHR-1) bis 31.8.(JAHR) -- ein Fenster,
-      // das weder am Eintritt begann noch am Erzeugungstag endete.
+    it('Der Rueckblick umfasst das ganze Kalenderjahr, 1.1. bis 31.12.', async () => {
+      // SIMONS REGEL (07.09.2026), woertlich: "Teamer der Rueckblick des
+      // Jahres. Also immer zurueck auf den 1.1. des Jahres."
+      //
+      // VORHER war es eine lueckenlose Kette: Jede Ausgabe begann am Ende der
+      // vorigen, die erste beim Eintritt ins Team. Korrekt gerechnet, aber
+      // man konnte einer Ausgabe nicht ansehen, welchen Abschnitt sie
+      // abdeckt. Das Kalenderjahr erklaert sich selbst.
       await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
         [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
 
       const snap = await snapshotVonTeamer1();
-      expect(snap.slides.zeitraum.year).toBe(JAHR);
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      expect(snap.slides.zeitraum.year).toBe(RUECKBLICK_JAHR);
+      expect(snap.slides.zeitraum.start).toBe(`${RUECKBLICK_JAHR}-01-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${RUECKBLICK_JAHR}-12-31`);
     });
 
-    it('Ohne teamer_since faellt der Anfang auf die aelteste Teamer-Aktivitaet', async () => {
-      // teamer_since ist nullable (Altdaten). Dieselbe Fallback-Kette wie im
-      // Abzeichen-Zweig (routes/badges.js, 'teamer_year').
+    it('Der Eintritt ins Team verschiebt den Zeitraum NICHT', async () => {
+      // Der frueher hier gerechnete Fallback auf teamer_since bzw. die
+      // aelteste Teamer-Aktivitaet greift nicht mehr: Das Kalenderjahr gilt
+      // fuer alle gleich. Wer erst im Juni dazukam, bekommt trotzdem einen
+      // Rueckblick ueber das Jahr -- er zaehlt eben nur, was seither war.
       await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
       const { rows: [akt] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)
@@ -714,143 +725,91 @@ describe('Wrapped Routes', () => {
       );
 
       const snap = await snapshotVonTeamer1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-03-15`);
-      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+      expect(snap.slides.zeitraum.start).toBe(`${RUECKBLICK_JAHR}-01-01`);
+      expect(snap.slides.zeitraum.ende).toBe(`${RUECKBLICK_JAHR}-12-31`);
     });
 
-    // ------------------------------------------------------------
-    // DIE KETTE -- der Kern von Simons Teamer-Regel:
-    // "und dann immer bis zum letzten wrapped."
-    // ------------------------------------------------------------
-    it('Der zweite Rueckblick beginnt EXAKT am Ende des ersten -- keine Luecke, keine Ueberlappung', async () => {
+    it('Die Leitung waehlt das Jahr -- und bekommt genau dieses', async () => {
       await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
-
-      /**
-       * Eine Ausgabe erzeugen und den Snapshot GENAU DIESER Ausgabe holen.
-       *
-       * Nicht ueber snapshotVonTeamer1(): Der Helfer verlangt genau EINEN
-       * Snapshot -- und dieser Test legt bewusst zwei Ausgaben an, um die
-       * Kette zu pruefen.
-       */
-      async function ausgabeUndSnapshot() {
-        const gen = await request(app)
-          .post('/api/wrapped/generate-teamer')
-          .set('Authorization', `Bearer ${orgAdminToken}`);
-        expect(gen.status).toBe(200);
-        const { rows } = await db.query(
-          `SELECT data FROM wrapped_snapshots
-            WHERE user_id = $1 AND wrapped_type = 'teamer' AND ausgabe_id = $2`,
-          [USERS.teamer1.id, gen.body.ausgabe_id]
-        );
-        expect(rows).toHaveLength(1);
-        return rows[0].data;
-      }
-
-      // ERSTE Ausgabe: vom Eintritt bis heute.
-      const ersterSnap = await ausgabeUndSnapshot();
-      expect(ersterSnap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
-      const ersterEnde = ersterSnap.slides.zeitraum.ende;
-      expect(ersterEnde).toBe(heuteIso());
-
-      // ZWEITE Ausgabe, unmittelbar danach. Sie darf NICHT wieder beim
-      // Eintritt anfangen -- sonst erzaehlte sie dieselbe Zeit noch einmal.
-      const zweiterSnap = await ausgabeUndSnapshot();
-      expect(zweiterSnap.slides.zeitraum.start).toBe(ersterEnde);
-      expect(zweiterSnap.slides.zeitraum.ende).toBe(heuteIso());
-    });
-
-    it('Die Kette knuepft an die vorherige Ausgabe an, nicht an den Eintritt', async () => {
-      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
-
-      // Eine frueher freigegebene Teamer-Ausgabe von Hand -- so, wie sie
-      // nach einem echten Lauf im vorigen Jahr in der Tabelle staende.
-      await db.query(
-        `INSERT INTO wrapped_ausgaben
-           (organization_id, wrapped_type, jahrgang_id, titel,
-            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
-         VALUES ($1, 'teamer', NULL, 'Rueckblick im Vorjahr',
-                 $2::date, $3::date, NOW(), $4, $4)`,
-        [ORGS.testGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin1.id]
-      );
-
-      const snap = await snapshotVonTeamer1();
-      // Genau Simons Beispiel: Der naechste Rueckblick beginnt am Ende des
-      // vorigen (1.1.), nicht wieder beim Eintritt (1.9. drei Jahre zuvor).
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-01-01`);
-      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
-    });
-
-    it('Die Kette nimmt das SPAETESTE Ende, nicht die zuletzt angelegte Ausgabe', async () => {
-      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 4}-09-01`, USERS.teamer1.id]);
-
-      // Erst die spaetere Ausgabe anlegen, danach eine, die einen FRUEHEREN
-      // Abschnitt nachtraegt (ein Zwischenbericht ueber alte Zeiten). Die
-      // Kette darf davon nicht zurueckgedreht werden.
-      for (const [titel, start, ende] of [
-        ['Spaeter', `${JAHR - 2}-01-01`, `${JAHR - 1}-06-01`],
-        ['Nachgetragen', `${JAHR - 4}-09-01`, `${JAHR - 3}-01-01`],
-      ]) {
-        await db.query(
-          `INSERT INTO wrapped_ausgaben
-             (organization_id, wrapped_type, jahrgang_id, titel,
-              zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
-           VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)`,
-          [ORGS.testGemeinde.id, titel, start, ende, USERS.orgAdmin1.id]
-        );
-      }
-
-      const snap = await snapshotVonTeamer1();
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-06-01`);
-    });
-
-    it('Eine Teamer-Ausgabe einer FREMDEN Gemeinde bricht die Kette nicht', async () => {
-      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
-      await db.query(
-        `INSERT INTO wrapped_ausgaben
-           (organization_id, wrapped_type, jahrgang_id, titel,
-            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
-         VALUES ($1, 'teamer', NULL, 'Fremde Gemeinde',
-                 $2::date, $3::date, NOW(), $4, $4)`,
-        [ORGS.andereGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin2.id]
-      );
-
-      const snap = await snapshotVonTeamer1();
-      // Unveraendert der Eintritt -- die fremde Ausgabe zaehlt nicht.
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
-    });
-
-    it('Ein ausdruecklicher Zeitraum geht der Kette vor (Zwischenbericht)', async () => {
-      // Simons "Option fuer Zwischenberichte" -- die Automatik greift nur,
-      // wenn nichts gesetzt ist.
-      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+        [`${JAHR - 5}-09-01`, USERS.teamer1.id]);
 
       const gen = await request(app)
         .post('/api/wrapped/generate-teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+        .send({ jahr: JAHR - 2 });
       expect(gen.status).toBe(200);
+      expect(gen.body.year).toBe(JAHR - 2);
 
       const { rows } = await db.query(
-        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'teamer'`,
-        [USERS.teamer1.id]
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer' AND ausgabe_id = $2`,
+        [USERS.teamer1.id, gen.body.ausgabe_id]
       );
       expect(rows).toHaveLength(1);
-      expect(rows[0].data.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
-      expect(rows[0].data.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
+      expect(rows[0].data.slides.zeitraum.start).toBe(`${JAHR - 2}-01-01`);
+      expect(rows[0].data.slides.zeitraum.ende).toBe(`${JAHR - 2}-12-31`);
+    });
+
+    it('Das LAUFENDE Jahr wird abgelehnt -- es ist noch nicht vorbei', async () => {
+      // Die Oberflaeche zeigt es gesperrt mit dem Hinweis "verfuegbar ab
+      // 1.1.<naechstes Jahr>". Dass es auch das Backend ablehnt, macht aus
+      // der Anzeige eine Regel.
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: JAHR });
+      expect(gen.status).toBe(400);
+      expect(gen.body.error).toContain(`1.1.${JAHR + 1}`);
+    });
+
+    it('Ein kuenftiges Jahr wird ebenfalls abgelehnt', async () => {
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: JAHR + 1 });
+      expect(gen.status).toBe(400);
+    });
+
+    it('Der Zeitraum der Ausgabe ist derselbe wie der im Snapshot', async () => {
+      // Sonst staende in der Verwaltung eine Spanne, die zu den Zahlen
+      // darunter nicht passt.
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: JAHR - 1 });
+      expect(gen.status).toBe(200);
+
+      const { rows: [ausgabe] } = await db.query(
+        `SELECT zeitraum_start, zeitraum_ende FROM wrapped_ausgaben WHERE id = $1`,
+        [gen.body.ausgabe_id]
+      );
+      // Die DATE-Spalte kommt als JS-Date in ORTSZEIT zurueck.
+      // toISOString() rechnete sie nach UTC und machte aus dem 1.1. den
+      // 31.12. des Vorjahres -- dieselbe Falle, gegen die berechneZeitraum()
+      // sich wehrt.
+      const iso = (d) => {
+        const dt = new Date(d);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      };
+      expect(iso(ausgabe.zeitraum_start)).toBe(`${JAHR - 1}-01-01`);
+      expect(iso(ausgabe.zeitraum_ende)).toBe(`${JAHR - 1}-12-31`);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND ausgabe_id = $2`,
+        [USERS.teamer1.id, gen.body.ausgabe_id]
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].data.slides.zeitraum.start).toBe(`${JAHR - 1}-01-01`);
+      expect(rows[0].data.slides.zeitraum.ende).toBe(`${JAHR - 1}-12-31`);
     });
 
     // BEWUSST OHNE ZEITFILTER -- kein Versehen, sondern eine Entscheidung:
     // "seit 4 Jahren dabei" IST der Lebenszeitwert und die Aussage der
     // Seite. Auf ein Jahr eingegrenzt kaeme dort immer 1 heraus.
     it('Die Jahre im Team bleiben ein Lebenszeitwert -- gerechnet bis zum Zeitraum-Ende', async () => {
-      // Eintritt genau vier Jahre vor dem Ende des Rueckblicksjahres.
+      // Eintritt genau vier Jahre vor dem 31.12. des Rueckblicksjahres.
       await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
-        [`${JAHR - 4}-08-31`, USERS.teamer1.id]);
+        [`${RUECKBLICK_JAHR - 4}-12-31`, USERS.teamer1.id]);
 
       const snap = await snapshotVonTeamer1();
       expect(snap.slides.engagement.jahre_aktiv).toBe(4);
@@ -963,12 +922,10 @@ describe('Wrapped Routes', () => {
       // (jahrgang_id IS NULL) gar nicht mehr eindeutig.
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ titel: 'Erster Lauf' });
+        .set('Authorization', `Bearer ${orgAdminToken}`);
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ titel: 'Zweiter Lauf' });
+        .set('Authorization', `Bearer ${orgAdminToken}`);
 
       // Zwei Ausgaben -> zwei Zeilen, aber je Ausgabe genau eine.
       const { rows } = await db.query(
@@ -986,8 +943,7 @@ describe('Wrapped Routes', () => {
       // Die Idempotenz, die der ON-CONFLICT-Schluessel sichern muss.
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Einmal' });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const { rows: [vorher] } = await db.query(
         `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
@@ -1150,14 +1106,18 @@ describe('Wrapped Routes', () => {
         `SELECT user_id, organization_id, data FROM wrapped_snapshots
          WHERE wrapped_type = 'teamer' LIMIT 1`
       );
+      // Der Lauf oben legt den Rueckblick des zuletzt abgeschlossenen
+      // Jahres an; daneben kommt der des Jahres davor.
+      const erzeugtesJahr = new Date().getFullYear() - 1;
+      const aelteresJahr = erzeugtesJahr - 1;
       await db.query(
         `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
-         VALUES ($1, $2, 'teamer', 2025, $3, NOW())`,
-        [vorhanden.user_id, vorhanden.organization_id, vorhanden.data]
+         VALUES ($1, $2, 'teamer', $3, $4, NOW())`,
+        [vorhanden.user_id, vorhanden.organization_id, aelteresJahr, vorhanden.data]
       );
 
       const res = await request(app)
-        .delete('/api/wrapped/teamer?year=2026')
+        .delete(`/api/wrapped/teamer?year=${erzeugtesJahr}`)
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
@@ -1166,7 +1126,7 @@ describe('Wrapped Routes', () => {
       const { rows } = await db.query(
         `SELECT year FROM wrapped_snapshots WHERE wrapped_type = 'teamer' ORDER BY year`
       );
-      expect(rows.map(r => r.year)).toEqual([2025]);
+      expect(rows.map(r => r.year)).toEqual([aelteresJahr]);
     });
 
     it('loescht ohne Jahresangabe weiterhin alle Jahre (bisheriges Verhalten)', async () => {
@@ -1446,11 +1406,24 @@ describe('Wrapped Routes', () => {
      * DASS ein Zeitraum ueberhaupt greift, muss ihn also angeben -- das ist
      * seither die einzige Stelle, an der ein Fenster enger wird.
      */
-    async function snapshotVonKonfi1MitZeitraum(start, ende) {
+    /**
+     * Snapshot von konfi1, wobei der BEGINN DER KONFI-ZEIT gesetzt wird.
+     *
+     * SEIT DEM 07.09.2026 gibt es keine Datumsfelder mehr (Simon: "wir
+     * lassen das mit dem Datum"). Der Konfi-Rueckblick laeuft immer vom
+     * Beginn der Konfi-Zeit bis heute -- und dieser Beginn ist das einzige,
+     * was den Zeitraum noch verschiebt. Genau deshalb setzen die Tests ihn
+     * hier: Sie pruefen die Regel, die es wirklich gibt, statt eine
+     * Eingabemoeglichkeit, die es nicht mehr gibt.
+     */
+    async function snapshotVonKonfi1AbBeginn(beginn) {
+      await db.query(
+        'UPDATE konfi_profiles SET created_at = $1::timestamp WHERE user_id = $2',
+        [`${beginn} 00:00:00`, USERS.konfi1.id]
+      );
       const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ zeitraum_start: start, zeitraum_ende: ende });
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(gen.status).toBe(200);
       const { rows } = await db.query(
         `SELECT data FROM wrapped_snapshots
@@ -1462,8 +1435,11 @@ describe('Wrapped Routes', () => {
       return rows[0].data;
     }
 
-    /** Das Fenster, das frueher automatisch galt: 1.9.(JAHR-1) .. 31.8.(JAHR). */
-    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
+    /**
+     * Der Beginn der Konfi-Zeit fuer die Zeitraum-Tests. Alles davor faellt
+     * heraus, alles danach bis heute zaehlt.
+     */
+    const KONFI_BEGINN = `${JAHR - 1}-09-01`;
 
     beforeEach(async () => {
       // Der Seed legt vier Termine 7 Tage in der Zukunft an und bucht nichts.
@@ -1576,10 +1552,9 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, davor);
       await buchung(USERS.konfi1.id, danach);
 
-      // Mit ausdruecklichem Zeitraum -- seit 07.09.2026 die einzige Stelle,
-      // an der ein Fenster ueberhaupt noch enger wird. Der automatische
-      // Zeitraum umfasst die ganze Konfi-Zeit und schneidet nichts ab.
-      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
+      // Der Rueckblick laeuft vom Beginn der Konfi-Zeit bis HEUTE: Der
+      // Termin davor faellt heraus, der in der Zukunft ebenfalls.
+      const snap = await snapshotVonKonfi1AbBeginn(KONFI_BEGINN);
       // Das Dashboard zaehlt weiterhin alle drei -- es kennt keinen Zeitraum.
       expect(snap.slides.events.total_attended).toBe(1);
       expect(snap.slides.events.lieblings_event.name).toBe('Im Zeitraum');
@@ -1591,7 +1566,7 @@ describe('Wrapped Routes', () => {
       await buchung(USERS.konfi1.id, drin, { status: 'cancelled' });
       await buchung(USERS.konfi1.id, davor, { status: 'cancelled' });
 
-      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
+      const snap = await snapshotVonKonfi1AbBeginn(KONFI_BEGINN);
       expect(snap.slides.events.abgesagt).toBe(1);
     });
 
@@ -1609,7 +1584,7 @@ describe('Wrapped Routes', () => {
         await buchung(USERS.konfi1.id, id);
       }
 
-      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
+      const snap = await snapshotVonKonfi1AbBeginn(KONFI_BEGINN);
       expect(snap.slides.aktivster_monat.monat).toBe(11);
       expect(snap.slides.aktivster_monat.monat_name).toBe('November');
       expect(snap.slides.aktivster_monat.aktivitaeten).toBe(2);
@@ -1996,70 +1971,40 @@ describe('Wrapped Routes', () => {
     });
 
     // ------------------------------------------------------------
-    // Der angegebene Zeitraum schlaegt bis in die Zahlen durch.
+    // DER ZEITRAUM DES KONFI-RUECKBLICKS -- vom Beginn der Konfi-Zeit
+    // bis heute, und nichts anderes.
     //
-    // BEFUND 06.09.2026: zeitraum_start/zeitraum_ende wurden validiert und
-    // in wrapped_ausgaben geschrieben -- aber NIE an die Generierung
-    // uebergeben. Gerechnet wurde immer mit dem Konfirmations-/Fallback-
-    // Zeitraum. In der Oberflaeche haette eine Spanne gestanden, unter der
-    // Zahlen aus einer anderen liegen.
+    // SIMONS REGEL (07.09.2026), woertlich: "wir lassen das mit dem Datum.
+    // Wir machen einfach immer Konfi bis jetzt von Beginn." Die frei
+    // setzbaren Datumsfelder sind damit entfallen. Was den Zeitraum noch
+    // verschiebt, ist allein der Beginn der Konfi-Zeit.
     // ------------------------------------------------------------
-    /**
-     * Erzeugt Wrapped mit ausdruecklichem Zeitraum; gibt konfi1s Snapshot.
-     *
-     * Jeder Lauf legt eine eigene AUSGABE an und damit einen eigenen
-     * Snapshot (Migration 144, ausgabe_id gehoert zum Schluessel) -- deshalb
-     * gezielt der Snapshot DIESER Ausgabe, nicht "der eine".
-     */
-    async function snapshotMitZeitraum(start, ende) {
-      const gen = await request(app)
-        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ zeitraum_start: start, zeitraum_ende: ende });
-      expect(gen.status).toBe(200);
-      const { rows } = await db.query(
-        `SELECT data FROM wrapped_snapshots
-          WHERE user_id = $1 AND wrapped_type = 'konfi'
-          ORDER BY computed_at DESC, id DESC LIMIT 1`,
-        [USERS.konfi1.id]
-      );
-      expect(rows).toHaveLength(1);
-      return rows[0].data;
-    }
-
-    it('Der angegebene Zeitraum steht im Snapshot -- nicht der Fallback', async () => {
-      const snap = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
-    });
-
-    it('Der angegebene Zeitraum entscheidet, welche Termine zaehlen', async () => {
-      // IM_ZEITRAUM ist der 15.11., liegt also im engeren Fenster;
-      // der zweite Termin liegt im Fallback-Jahr, aber ausserhalb davon.
-      const drin = await termin('November', IM_ZEITRAUM);
-      const draussen = await termin('Juni danach', `${JAHR}-06-15`);
+    it('Der Beginn der Konfi-Zeit entscheidet, welche Termine zaehlen', async () => {
+      const drin = await termin('Nach dem Beginn', IM_ZEITRAUM);
+      const draussen = await termin('Vor dem Beginn', `${JAHR - 2}-06-15`);
       await buchung(USERS.konfi1.id, drin);
       await buchung(USERS.konfi1.id, draussen);
 
-      // Der Fallback (1.9.-31.8.) wuerde beide zaehlen.
-      const weit = await snapshotVonKonfi1();
-      expect(weit.slides.events.total_attended).toBe(2);
+      // Beginn NACH dem frueheren Termin: nur der eine zaehlt.
+      const spaet = await snapshotVonKonfi1AbBeginn(`${JAHR - 1}-09-01`);
+      expect(spaet.slides.events.total_attended).toBe(1);
 
-      // Der ausdrueckliche Zeitraum nur den einen.
-      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
-      expect(eng.slides.events.total_attended).toBe(1);
+      // Beginn DAVOR: beide zaehlen. Genau das war vorher unmoeglich --
+      // das alte Ein-Jahres-Fenster schnitt den frueheren immer ab.
+      const frueh = await snapshotVonKonfi1AbBeginn(`${JAHR - 3}-09-01`);
+      expect(frueh.slides.events.total_attended).toBe(2);
     });
 
-    it('Der angegebene Zeitraum schlaegt bis in die Challenge-Zahlen durch', async () => {
+    it('Der Beginn der Konfi-Zeit schlaegt bis in die Challenge-Zahlen durch', async () => {
       // Die Challenge-Queries filtern laengst -- aber auf den Zeitraum, den
-      // die Generierung kennt. Bekam sie den falschen, zaehlten auch sie
+      // die Generierung kennt. Bekaeme sie den falschen, zaehlten auch sie
       // falsch. Der Test haelt die Kette fest, nicht nur die Query.
       const { rows: [ch] } = await db.query(
         `INSERT INTO challenges
            (title, description, badge_name, organization_id, created_by,
             starts_at, ends_at)
          VALUES ('Mutprobe', 'Trau dich', 'Mutig', $1, $2,
-                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year')
+                 NOW() - INTERVAL '4 years', NOW() + INTERVAL '1 year')
          RETURNING id`,
         [ORGS.testGemeinde.id, USERS.admin1.id]
       );
@@ -2069,16 +2014,16 @@ describe('Wrapped Routes', () => {
          VALUES ($1, $2, $3, 'text', 'approved', $4::timestamptz)`,
         [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id, `${datum} 10:00:00`]
       );
-      await beitrag(IM_ZEITRAUM);          // 15.11., im engen Fenster
-      await beitrag(`${JAHR}-06-15`);      // im Fallback-Jahr, ausserhalb
+      await beitrag(IM_ZEITRAUM);              // 15.11. im Vorjahr
+      await beitrag(`${JAHR - 2}-06-15`);      // vor dem spaeteren Beginn
 
-      const weit = await snapshotVonKonfi1();
-      expect(weit.slides.challenges.beitraege).toBe(2);
-      expect(weit.slides.challenge_momente).toHaveLength(2);
+      const spaet = await snapshotVonKonfi1AbBeginn(`${JAHR - 1}-09-01`);
+      expect(spaet.slides.challenges.beitraege).toBe(1);
+      expect(spaet.slides.challenge_momente).toHaveLength(1);
 
-      const eng = await snapshotMitZeitraum(`${JAHR - 1}-10-01`, `${JAHR}-03-31`);
-      expect(eng.slides.challenges.beitraege).toBe(1);
-      expect(eng.slides.challenge_momente).toHaveLength(1);
+      const frueh = await snapshotVonKonfi1AbBeginn(`${JAHR - 3}-09-01`);
+      expect(frueh.slides.challenges.beitraege).toBe(2);
+      expect(frueh.slides.challenge_momente).toHaveLength(2);
     });
 
     it('Bonuspunkte zaehlen nur im Zeitraum', async () => {
@@ -2097,7 +2042,7 @@ describe('Wrapped Routes', () => {
         [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id, VOR_ZEITRAUM]
       );
 
-      const snap = await snapshotVonKonfi1MitZeitraum(...ALTES_FENSTER);
+      const snap = await snapshotVonKonfi1AbBeginn(KONFI_BEGINN);
       // Nur die 5 aus dem Zeitraum, nicht 12.
       expect(snap.slides.punkte.bonus).toBe(5);
     });
@@ -2138,21 +2083,25 @@ describe('Wrapped Routes', () => {
     });
 
     it('Der Zeitraum der Ausgabe und der des Snapshots sind derselbe', async () => {
-      // Der eigentliche Befund: Die Ausgabe zeigte eine Spanne, die
-      // Generierung rechnete mit einer anderen.
-      await request(app)
+      // Sonst staende in der Verwaltung eine Spanne, unter der Zahlen aus
+      // einer anderen liegen. Der Konfi-Rueckblick beginnt je Person am
+      // eigenen Eintritt; die AUSGABE nennt den fruehesten im Jahrgang.
+      await db.query(
+        `UPDATE konfi_profiles SET created_at = $1::timestamptz
+          WHERE user_id = $2 AND jahrgang_id = $3`,
+        [`${JAHR - 2}-09-01 08:00:00+02`, USERS.konfi1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(gen.status).toBe(200);
 
       const { rows: [ausgabe] } = await db.query(
-        `SELECT zeitraum_start, zeitraum_ende FROM wrapped_ausgaben
-          WHERE titel = 'Zwischenstand'`
-      );
-      const { rows: [snapRow] } = await db.query(
-        `SELECT s.data FROM wrapped_snapshots s
+        `SELECT a.zeitraum_start, a.zeitraum_ende, s.data
+           FROM wrapped_snapshots s
            JOIN wrapped_ausgaben a ON a.id = s.ausgabe_id
-          WHERE s.user_id = $1 AND s.wrapped_type = 'konfi' AND a.titel = 'Zwischenstand'`,
+          WHERE s.user_id = $1 AND s.wrapped_type = 'konfi'
+          ORDER BY s.computed_at DESC, s.id DESC LIMIT 1`,
         [USERS.konfi1.id]
       );
       // Die DATE-Spalte kommt als JS-Date in Ortszeit zurueck.
@@ -2162,8 +2111,15 @@ describe('Wrapped Routes', () => {
         const dt = new Date(d);
         return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
       };
-      expect(iso(ausgabe.zeitraum_start)).toBe(snapRow.data.slides.zeitraum.start);
-      expect(iso(ausgabe.zeitraum_ende)).toBe(snapRow.data.slides.zeitraum.ende);
+      // DAS ENDE ist fuer alle dasselbe: der Tag der Erzeugung.
+      expect(iso(ausgabe.zeitraum_ende)).toBe(ausgabe.data.slides.zeitraum.ende);
+      // DER ANFANG der Ausgabe ist der FRUEHESTE Beginn im Jahrgang -- die
+      // Spanne, die sie insgesamt abdeckt. Der einzelne Rueckblick beginnt
+      // am eigenen Eintritt und kann deshalb spaeter liegen, nie frueher.
+      expect(iso(ausgabe.zeitraum_start) <= ausgabe.data.slides.zeitraum.start).toBe(true);
+      // konfi1s Beginn steht oben auf dem 1.9. -- genau das muss im
+      // Snapshot stehen, nicht der eines anderen Konfis.
+      expect(ausgabe.data.slides.zeitraum.start).toBe(`${JAHR - 2}-09-01`);
     });
 
     // ------------------------------------------------------------
@@ -2274,14 +2230,22 @@ describe('Wrapped Routes', () => {
       );
     }
 
-    /** Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot eines Konfis zurueck. */
-    async function snapshotVon(userId, zeitraum = null) {
-      const req_ = request(app)
+    /**
+     * Erzeugt Wrapped fuer Jahrgang 1 und gibt den Snapshot eines Konfis
+     * zurueck. `beginn` setzt den Beginn der Konfi-Zeit -- seit dem
+     * 07.09.2026 das einzige, was den Zeitraum noch verschiebt (die
+     * Datumsfelder sind entfallen).
+     */
+    async function snapshotVon(userId, beginn = null) {
+      if (beginn) {
+        await db.query(
+          'UPDATE konfi_profiles SET created_at = $1::timestamp WHERE user_id = $2',
+          [`${beginn} 00:00:00`, userId]
+        );
+      }
+      const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
-      const gen = zeitraum
-        ? await req_.send({ zeitraum_start: zeitraum[0], zeitraum_ende: zeitraum[1] })
-        : await req_;
       expect(gen.status).toBe(200);
 
       const { rows } = await db.query(
@@ -2292,8 +2256,8 @@ describe('Wrapped Routes', () => {
       return rows[0].data;
     }
 
-    /** Das Fenster, das vor dem 07.09.2026 automatisch galt. */
-    const ALTES_FENSTER = [`${JAHR - 1}-09-01`, `${JAHR}-08-31`];
+    /** Der Beginn der Konfi-Zeit fuer die Zeitraum-Tests. */
+    const KONFI_BEGINN = `${JAHR - 1}-09-01`;
 
     beforeEach(async () => {
       // Bekannte Datenlage: Seed-Termine raus (wie im Zahlen-describe).
@@ -2458,10 +2422,9 @@ describe('Wrapped Routes', () => {
       // Abmeldung aus dem VORIGEN Konfi-Jahr: gehoert nicht in diesen Rueckblick.
       await abmeldung(USERS.konfi1.id, termine[0], VOR_ZEITRAUM);
 
-      // Mit ausdruecklichem Zeitraum: Seit dem 07.09.2026 laeuft der
-      // automatische Zeitraum ueber die ganze Konfi-Zeit -- nur eine
-      // Angabe engt ihn noch ein.
-      const snap = await snapshotVon(USERS.konfi1.id, ALTES_FENSTER);
+      // Der Rueckblick laeuft vom Beginn der Konfi-Zeit bis heute -- was
+      // davor liegt, gehoert nicht dazu.
+      const snap = await snapshotVon(USERS.konfi1.id, KONFI_BEGINN);
       expect(snap.slides.chat.nachrichten_gesendet).toBe(1);
       expect(snap.slides.verlaesslichkeit.abmeldungen).toBe(0);
       expect(snap.slides.verlaesslichkeit.nie_abgesagt).toBe(true);
@@ -2591,12 +2554,21 @@ describe('Wrapped Routes', () => {
       return a.id;
     }
 
-    /** Konfi-Snapshot von konfi1 mit ausdruecklichem Zeitraum. */
-    async function konfiSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+    /**
+     * Konfi-Snapshot von konfi1, mit gesetztem Beginn der Konfi-Zeit.
+     *
+     * Datumsfelder gibt es seit dem 07.09.2026 nicht mehr -- der Zeitraum
+     * laeuft vom Beginn der Konfi-Zeit bis heute. Der Beginn wird deshalb
+     * direkt gesetzt.
+     */
+    async function konfiSnapshot(start = '2026-01-01') {
+      await db.query(
+        'UPDATE konfi_profiles SET created_at = $1::timestamp WHERE user_id = $2',
+        [`${start} 00:00:00`, USERS.konfi1.id]
+      );
       const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ zeitraum_start: start, zeitraum_ende: ende });
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(gen.status).toBe(200);
       const { rows } = await db.query(
         `SELECT data FROM wrapped_snapshots
@@ -2608,13 +2580,18 @@ describe('Wrapped Routes', () => {
       return rows[0].data;
     }
 
-    /** Teamer-Snapshot von teamer1 mit ausdruecklichem Zeitraum. */
-    async function teamerSnapshot(start = '2026-01-01', ende = '2026-12-31') {
+    /**
+     * Teamer-Snapshot von teamer1 fuer ein KALENDERJAHR.
+     *
+     * Der Team-Rueckblick umfasst seit dem 07.09.2026 immer ein volles
+     * Jahr; gewaehlt wird nur noch dieses.
+     */
+    async function teamerSnapshot(jahr = new Date().getFullYear() - 1) {
       // generate-teamer verlangt OrgAdmin -- ein Admin bekommt 403.
       const gen = await request(app)
         .post('/api/wrapped/generate-teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ zeitraum_start: start, zeitraum_ende: ende });
+        .send({ jahr });
       expect(gen.status).toBe(200);
       const { rows } = await db.query(
         `SELECT data FROM wrapped_snapshots
@@ -2681,22 +2658,38 @@ describe('Wrapped Routes', () => {
 
     it('ein Rueckblick, dessen Zeitraum die Fahrt nicht enthaelt, zeigt sie nicht', async () => {
       // Simons Regel (07.09.2026): Der Rueckblick zeigt nur, was in seiner
-      // Spanne liegt. Die Fahrt war im Juli 2026 -- ein Zwischenbericht
-      // ueber das Fruehjahr darf sie nicht mitnehmen.
+      // Spanne liegt. Wer erst NACH der Fahrt Konfi wurde, war nicht dabei
+      // -- auch wenn die Gemeinde die Kategorie hat.
       const kat = await sommerfreizeitKategorie();
       await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
 
-      const snap = await konfiSnapshot('2026-01-01', '2026-05-31');
+      const snap = await konfiSnapshot('2026-10-01');
       expect(snap.slides.stavanger_2026).toBe(false);
       expect(snap.kacheln).not.toContain('stavanger-2026');
     });
 
     it('das Team bekommt die Seite genauso', async () => {
       // "das sehen dann nur die teamer und konfis die dabei waren."
+      //
+      // DER TEAM-RUECKBLICK UMFASST EIN ABGESCHLOSSENES KALENDERJAHR
+      // (07.09.2026). Die Fahrt war im Juli 2026 -- sie erscheint also im
+      // Rueckblick auf 2026, den es ab dem 1.1.2027 gibt. Solange 2026
+      // laeuft, kann dieser Rueckblick gar nicht erzeugt werden; der Test
+      // prueft dann, dass die Route das auch sagt.
       const kat = await sommerfreizeitKategorie();
       await fahrtAlsAktivitaet(USERS.teamer1.id, IN_DER_FAHRT, kat);
 
-      const snap = await teamerSnapshot();
+      const fahrtJahr = Number(IN_DER_FAHRT.slice(0, 4));
+      if (fahrtJahr >= new Date().getFullYear()) {
+        const abgelehnt = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: fahrtJahr });
+        expect(abgelehnt.status).toBe(400);
+        return;
+      }
+
+      const snap = await teamerSnapshot(fahrtJahr);
       expect(snap.slides.stavanger_2026).toBe(true);
       expect(snap.kacheln).toContain('stavanger-2026');
     });
@@ -2705,7 +2698,9 @@ describe('Wrapped Routes', () => {
       const kat = await sommerfreizeitKategorie();
       await fahrtAlsAktivitaet(USERS.konfi1.id, IN_DER_FAHRT, kat);
 
-      const snap = await teamerSnapshot();
+      // Ein abgeschlossenes Jahr -- der Rueckblick laesst sich erzeugen,
+      // und teamer1 war nicht dabei.
+      const snap = await teamerSnapshot(new Date().getFullYear() - 1);
       expect(snap.slides.stavanger_2026).toBe(false);
       expect(snap.kacheln).not.toContain('stavanger-2026');
     });
@@ -2792,11 +2787,16 @@ describe('Wrapped Routes', () => {
       return e.id;
     }
 
-    async function snapshot(start = `${jahr}-01-01`, ende = `${jahr}-12-31`) {
+    async function snapshot(start = `${jahr}-01-01`) {
+      // Datumsfelder gibt es nicht mehr -- der Beginn der Konfi-Zeit setzt
+      // den Zeitraum (07.09.2026).
+      await db.query(
+        'UPDATE konfi_profiles SET created_at = $1::timestamp WHERE user_id = $2',
+        [`${start} 00:00:00`, USERS.konfi1.id]
+      );
       const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ zeitraum_start: start, zeitraum_ende: ende });
+        .set('Authorization', `Bearer ${adminToken}`);
       expect(gen.status).toBe(200);
       const { rows } = await db.query(
         `SELECT data FROM wrapped_snapshots
@@ -2961,29 +2961,35 @@ describe('Wrapped Routes', () => {
   describe('Rueckblick-Ausgaben', () => {
     it('jeder Lauf legt eine EIGENE Ausgabe an -- der zweite ueberschreibt den ersten nicht', async () => {
       // Der Kern von Simons Anforderung: Ein Jahrgang laeuft ueber mehrere
-      // Jahre ("Dein erstes Jahr", "Dein Abschluss"). Vorher gab es genau
-      // EINEN Stand pro Jahrgang, der zweite Lauf ueberschrieb den ersten.
-      await request(app)
+      // Jahre und bekommt mehrere Rueckblicke. Vorher gab es genau EINEN
+      // Stand pro Jahrgang, der zweite Lauf ueberschrieb den ersten.
+      //
+      // BENANNT werden sie seit dem 07.09.2026 nicht mehr (Simon: "Dann
+      // braucht es auch keine Titel.") -- unterschieden werden sie ueber
+      // ihre id und den Zeitpunkt.
+      const ersterLauf = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Dein erstes Jahr' });
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(ersterLauf.status).toBe(200);
 
-      await request(app)
+      const zweiterLauf = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Dein Abschluss' });
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(zweiterLauf.status).toBe(200);
 
       const res = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      const titel = res.body.map(a => a.titel);
-      expect(titel).toContain('Dein erstes Jahr');
-      expect(titel).toContain('Dein Abschluss');
+      const eigene = res.body.filter(a => a.jahrgang_id === JAHRGAENGE.jahrgang1.id);
+      expect(eigene).toHaveLength(2);
+      // Zwei VERSCHIEDENE Ausgaben, jede mit eigenen Snapshots.
+      expect(new Set(eigene.map(a => a.id)).size).toBe(2);
+      for (const a of eigene) expect(a.snapshots).toBeGreaterThan(0);
     });
 
-    it('ohne Titel entsteht ein Vorschlag statt eines leeren Namens', async () => {
+    it('die Ausgabe traegt einen sachlichen Namen, den niemand eingeben muss', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -2999,37 +3005,40 @@ describe('Wrapped Routes', () => {
     });
 
     it('eine erzeugte Ausgabe ist freigegeben und traegt ihre Snapshots', async () => {
-      await request(app)
+      const gen = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Zwischenstand' });
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(gen.status).toBe(200);
 
       const res = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
-      const ausgabe = res.body.find(a => a.titel === 'Zwischenstand');
+      const ausgabe = res.body.find(a => a.jahrgang_id === JAHRGAENGE.jahrgang1.id);
       expect(ausgabe).toBeDefined();
       expect(ausgabe.freigegeben).toBe(true);
       expect(ausgabe.snapshots).toBeGreaterThan(0);
       expect(ausgabe.jahrgang_id).toBe(JAHRGAENGE.jahrgang1.id);
     });
 
-    it('die Teamer-Ausgabe laesst sich benennen', async () => {
+    it('die Teamer-Ausgabe nennt ihr Jahr', async () => {
+      // Kein freier Titel mehr (07.09.2026) -- der Name sagt schlicht,
+      // welches Jahr die Ausgabe abdeckt.
+      const jahrDavor = new Date().getFullYear() - 1;
       const gen = await request(app)
         .post('/api/wrapped/generate-teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ titel: 'Teamer-Jahr 2026' });
+        .send({ jahr: jahrDavor });
 
       expect(gen.status).toBe(200);
-      expect(gen.body.titel).toBe('Teamer-Jahr 2026');
+      expect(gen.body.titel).toBe(`Team-Rückblick ${jahrDavor}`);
 
       const res = await request(app)
         .get('/api/wrapped/ausgaben?typ=teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.map(a => a.titel)).toContain('Teamer-Jahr 2026');
+      expect(res.body.map(a => a.titel)).toContain(`Team-Rückblick ${jahrDavor}`);
     });
 
     it('Teamer-Ausgaben sieht ein einfacher Admin NICHT', async () => {
@@ -3037,7 +3046,7 @@ describe('Wrapped Routes', () => {
       await request(app)
         .post('/api/wrapped/generate-teamer')
         .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ titel: 'Nur fuer die Leitung' });
+
 
       const res = await request(app)
         .get('/api/wrapped/ausgaben?typ=teamer')
@@ -3050,8 +3059,7 @@ describe('Wrapped Routes', () => {
     it('ein Admin sieht nur Ausgaben SEINER Jahrgaenge', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Jahrgang 1' });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const admin2Token = generateToken('admin2');
       const res = await request(app)
@@ -3059,7 +3067,7 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.map(a => a.titel)).not.toContain('Jahrgang 1');
+      expect(res.body.map(a => a.jahrgang_id)).not.toContain(JAHRGAENGE.jahrgang1.id);
     });
 
     it('Konfis kommen an die Ausgaben-Liste nicht heran', async () => {
@@ -3075,12 +3083,10 @@ describe('Wrapped Routes', () => {
       // Konfis und Teamern sehen koennen."
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Dein erstes Jahr' });
+        .set('Authorization', `Bearer ${adminToken}`);
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Dein Abschluss' });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const res = await request(app)
         .get(`/api/wrapped/history/${USERS.konfi1.id}`)
@@ -3088,8 +3094,10 @@ describe('Wrapped Routes', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      const titel = res.body.map(r => r.titel);
-      expect(titel).toContain('Dein Abschluss');
+      // BEIDE Ausgaben stehen im Profil -- der zweite Lauf hat den ersten
+      // nicht ueberschrieben.
+      expect(res.body).toHaveLength(2);
+      expect(new Set(res.body.map(r => r.ausgabe_id)).size).toBe(2);
     });
 
     it('history bleibt ein Array mit den bisherigen Feldern (Alt-App-Vertrag)', async () => {
@@ -3109,38 +3117,48 @@ describe('Wrapped Routes', () => {
       }
     });
 
-    it('ein Konfi sieht seine eigenen Ausgaben mit Titel', async () => {
+    it('ein Konfi sieht seine eigenen Ausgaben', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Zwischenstand Januar' });
+        .set('Authorization', `Bearer ${adminToken}`);
+      await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const res = await request(app)
         .get('/api/wrapped/meine')
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.map(r => r.titel)).toContain('Zwischenstand Januar');
+      expect(res.body).toHaveLength(2);
+      // Beide sind freigegeben und tragen ihren Zeitraum.
+      for (const r of res.body) {
+        expect(r.ausgabe_id).toBeGreaterThan(0);
+        expect(r.zeitraum_start).toBeTruthy();
+        expect(r.zeitraum_ende).toBeTruthy();
+      }
     });
 
     it('eine einzelne Ausgabe laesst sich loeschen, ohne die anderen mitzunehmen', async () => {
       // Simon: "Ich will auch alle Wrapped eines Zustandes loeschen koennen."
+      const ersterLauf = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(ersterLauf.status).toBe(200);
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Erster Stand' });
-      await request(app)
-        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Zweiter Stand' });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const liste = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
-      const ersteId = liste.body.find(a => a.titel === 'Erster Stand').id;
+      const eigene = liste.body.filter(a => a.jahrgang_id === JAHRGAENGE.jahrgang1.id);
+      expect(eigene).toHaveLength(2);
+      // Die AELTERE der beiden loeschen -- die juengere muss stehen bleiben.
+      const [aelter, juenger] = [...eigene].sort((a, b) => a.id - b.id);
 
       const del = await request(app)
-        .delete(`/api/wrapped/ausgabe/${ersteId}`)
+        .delete(`/api/wrapped/ausgabe/${aelter.id}`)
         .set('Authorization', `Bearer ${orgAdminToken}`);
       expect(del.status).toBe(200);
       expect(del.body.deleted).toBeGreaterThan(0);
@@ -3148,16 +3166,15 @@ describe('Wrapped Routes', () => {
       const danach = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
-      const titelDanach = danach.body.map(a => a.titel);
-      expect(titelDanach).not.toContain('Erster Stand');
-      expect(titelDanach).toContain('Zweiter Stand');
+      const idsDanach = danach.body.map(a => a.id);
+      expect(idsDanach).not.toContain(aelter.id);
+      expect(idsDanach).toContain(juenger.id);
     });
 
     it('ein Konfi darf keine Ausgabe loeschen', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Nicht loeschbar' });
+        .set('Authorization', `Bearer ${adminToken}`);
       const liste = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
@@ -3172,8 +3189,7 @@ describe('Wrapped Routes', () => {
     it('eine Ausgabe fremder Organisation ist nicht loeschbar -> 404', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Org1' });
+        .set('Authorization', `Bearer ${adminToken}`);
       const liste = await request(app)
         .get('/api/wrapped/ausgaben?typ=konfi')
         .set('Authorization', `Bearer ${orgAdminToken}`);
@@ -3188,8 +3204,7 @@ describe('Wrapped Routes', () => {
     it('Ausgaben einer fremden Organisation sind unsichtbar', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ titel: 'Org1 Ausgabe' });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const res = await request(app)
         .get('/api/wrapped/ausgaben')
