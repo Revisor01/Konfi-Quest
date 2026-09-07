@@ -127,6 +127,12 @@ ausfällt**: Wer unter dem Schnitt liegt, bekommt die Seite gar nicht erst.
 
 Eine Seite fürs Absagen gibt es bewusst nicht und wird es nicht geben.
 
+**Und seit 2.1.1 sieht nicht mehr jede Konfi dasselbe.** Der Rückblick zeigt
+höchstens zehn Seiten statt bis zu neunzehn — und ausgewählt werden die
+seltensten. Wer etwas erlebt hat, das nur wenige im Jahrgang erlebt haben,
+bekommt genau dafür eine Seite. Wie das im Einzelnen funktioniert, steht weiter
+unten unter [„Wie viele Seiten jemand sieht"](#wie-viele-seiten-jemand-sieht-und-welche).
+
 **Fotos sind größer.** Beiträge aus Challenges füllen jetzt die Seite statt als
 Miniatur zu erscheinen. Bei ein oder zwei Beiträgen werden sie noch größer.
 
@@ -169,147 +175,144 @@ Löschen lassen sie sich trotzdem, allerdings nicht über die Oberfläche: Der
 Weg dafür ist ein Betriebswerkzeug und läuft über die Schnittstelle, so wie
 das Erzeugen des Teamer-Rückblicks selbst.
 
+## Wie viele Seiten jemand sieht — und welche
+
+**Höchstens zehn.** Nicht weil mehr technisch schwierig wäre, sondern weil ein
+Rückblick, den man einmal durchwischt, nicht länger sein soll. Vorher waren es
+bis zu neunzehn, im Schnitt vierzehn — und weil fast alle fast alles bekamen,
+sahen alle Rückblicke gleich aus.
+
+Welche zehn, entscheidet die **Seltenheit**. Für jede Seite, die überhaupt in
+Frage kommt, fragt die App: *Wie viele andere im Jahrgang bekommen diese Seite
+auch?* Je weniger, desto eher ist sie dabei.
+
+*Beispiel:* Fast jede Konfi war bei irgendeinem Termin — die Termin-Seite ist
+also nichts Besonderes. Bei der Sommerfreizeit nach Norwegen waren wenige — die
+Seite dazu ist etwas Besonderes und kommt fast immer durch.
+
+Damit sieht nicht jede Konfi dasselbe, und wer etwas Ungewöhnliches erlebt hat,
+sieht genau das.
+
+### Was immer dabei ist
+
+Sieben Seiten hängen nicht an der Seltenheit:
+
+- **Begrüßung** und **Auf einen Blick** — Anfang und Ende der Erzählung.
+- **Werde Teamer:in** — die Einladung ganz zum Schluss.
+- **Termine**, **Punkte** und **Abzeichen** — die drei Zahlen, die auf der
+  Abschluss-Seite noch einmal zusammengefasst werden. Ohne sie fasste der
+  Abschluss etwas zusammen, das nie gezeigt wurde. Sie erscheinen aber nur,
+  wenn wirklich etwas zusammengekommen ist: Eine Seite mit einer Null darauf
+  ist keine Erinnerung.
+- **Mindestens ein Schwerpunkt** — eine Seite zu einem Bereich oder einer
+  besonderen Zeit im Kirchenjahr. Sie erzählt, *worum* es in dem Jahr ging;
+  ohne sie wäre der Rückblick eine Sammlung von Zahlen. Mehr als zwei davon
+  gibt es nicht, sonst wiederholen sie sich.
+
+Die übrigen Plätze gehen an die seltensten Seiten, auf die die Person Anspruch
+hat.
+
+> **Die Reihenfolge bleibt die Erzählung.** Die Seltenheit entscheidet, *wer*
+> mitkommt — nicht, in welcher Reihenfolge erzählt wird. Der Rückblick fängt
+> immer mit der Begrüßung an und hört mit der Einladung ins Team auf.
+
 ## Die Seiten des Konfi-Rückblicks
 
-Je nach Datenlage sind es sieben bis elf Seiten. Fünf davon erscheinen nur
-unter bestimmten Bedingungen.
+Die Spalte **Wie selten** ist ein grober Anhaltspunkt: Sie sagt, wie viel
+Prozent eines Jahrgangs diese Seite typischerweise bekommen. Bei Gemeinden ab
+fünf Konfis im Jahrgang misst die App das an den echten Daten, sonst rechnet sie
+mit diesen Schätzwerten. Kleiner heißt seltener heißt wertvoller.
 
-**1. Begrüßung** — „Willkommen zu deinem Konfi-Jahr“, mit Name und Jahrgang.
-Erscheint immer.
+| Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
+|---|---|---|---|
+| **Begrüßung** | Name, Jahrgang, Jahreszahl | immer | immer |
+| **Deine Termine** | Zahl der besuchten Termine, „von N verfügbaren", zuletzt besuchter Termin | mindestens ein besuchter Termin | 95 % |
+| **Warteliste-Held:in** | „Du hast gewartet — und es hat geklappt" | mindestens einmal von der Warteliste nachgerückt | 20 % |
+| **Dein Schwerpunkt** | Bereich oder besondere Zeit, mit eigenem Bild und Spruch | siehe die beiden Tabellen unten | verschieden |
+| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
+| **Deine Challenges** | Zahl der Beiträge, Lieblings-Challenge | mindestens ein Challenge-Beitrag | 60 % |
+| **Deine Momente** | bis zu sechs Challenge-Beiträge, Fotos groß | mindestens ein Beitrag mit Bild oder Text | 55 % |
+| **Der Vielseitige** | auf wie vielen Wegen geantwortet wurde | Beiträge in mindestens zwei Medienarten (Text, Foto, Ton) | 40 % |
+| **Deine Punkte** | Gesamtpunkte, getrennt nach Gottesdienst und Gemeinde, Bonuspunkte | mindestens ein Punkt | 95 % |
+| **Dein aktivster Monat** | der Monat mit den meisten Einträgen | mindestens zwei Aktivitäten oder Termine in einem Monat | 85 % |
+| **Der lange Atem** | Spanne vom ersten bis zum letzten Termin | mindestens 5 Termine über mindestens 60 Tage | 45 % |
+| **Dein Wochentag** | der Tag, an dem die meisten Termine lagen | mindestens 4 Termine an einem Wochentag, und das ist mindestens die Hälfte aller | 25 % |
+| **Deine Abzeichen** | Zahl der Abzeichen, „von N", bis zu sechs Symbole | mindestens ein Abzeichen | 90 % |
+| **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen |
+| **Deine Konfirmation** | das Konfirmationsdatum, Countdown wenn sie noch bevorsteht | der Jahrgang hat einen als Konfirmation gekennzeichneten Termin | 35 % |
+| **Auf einen Blick** | Punkte, Termine, Abzeichen nebeneinander, „Dein Weg. Deine Zeit. Dein Glaube." | immer | immer |
+| **Werde Teamer:in** | die Einladung, dabeizubleiben | immer, als letzte Seite | immer |
 
-**2. Dein Highlight** — *nur, wenn eine der neuen Auszeichnungen greift.* Die
-Seite, die diesen Konfi besonders macht: **Chat-Star** (viel im Jahrgangs-Chat
-geschrieben), **Reaktions-Magnet** (viel Zustimmung auf die eigenen Nachrichten
-bekommen), **Challenge-Fan** (viele Challenge-Beiträge, mit der Lieblings-
-Challenge) oder **Fels in der Brandung** (mindestens fünf Anmeldungen und keine
-einzige Absage). Ausgewählt wird nicht der größte Rohwert, sondern das, worin
-jemand **im Vergleich zum eigenen Jahrgang** heraussticht — so bekommen zwei
-Konfis mit unterschiedlichem Profil auch unterschiedliche Seiten. Der Vergleich
-bleibt anonym: Es erscheint höchstens der Jahrgangsdurchschnitt, nie ein Name,
-und nur dann, wenn der eigene Wert darüber liegt.
-
-> **Bewusst weggelassen:** Ein Highlight „am öftesten abgesagt“ gibt es nicht
-> und wird es nicht geben. Absagen haben bei Konfis oft Gründe außerhalb ihrer
-> Kontrolle — Familie, Krankheit, Fahrdienste. Ein Jahresrückblick, der einem
-> Kind „du hast am meisten abgesagt“ zeigt, beschämt statt zu ermutigen.
-> Der Gegenpol ist deshalb nur positiv gewendet: Wer nie abgesagt hat, wird
-> dafür gefeiert; wer abgesagt hat, bekommt einfach sein nächstbestes
-> Highlight. Die Absagen-Zahl selbst wird gespeichert, aber nirgends
-> hervorgehoben.
-
-**3. Deine Momente** — *nur, wenn es Challenge-Beiträge gibt.* Zeigt bis zu
-sechs Beiträge aus dem Zeitraum: Challenge-Titel, ein Symbol für die Art des
-Beitrags und bei Fotos das Bild — bei ein oder zwei Beiträgen besonders groß,
-damit die Fotos wirken und nicht als Miniatur untergehen. Ausgeblendete
-Beiträge kommen nicht vor.
-
-**4. Deine Events** — Anzahl der besuchten Termine, dazu „von N verfügbaren“.
-*Nur, wenn im Zeitraum mindestens ein Termin besucht wurde.* Wer keinen hat,
-bekommt die Seite gar nicht erst — eine Seite mit einer Null darauf ist keine
-Erinnerung. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte Event
-unter der Überschrift „Dein letztes Event“.
-
-> Auf dieser Seite steht immer „0 mal abgesagt“ — auch bei tatsächlichen
-> Absagen. Die Zahl ist im Programm fest eingetragen und wird nicht berechnet.
-> Ein bekannter Fehler, keine Aussage über den Konfi.
-
-**5. Dein Schwerpunkt** — *nur, wenn Aktivitäten vorhanden sind.* Die häufigste
-Kategorie groß, darunter ein Balkendiagramm der fünf häufigsten. Grundlage sind
-die erledigten Aktivitäten, nicht die Termine.
-
-**6. Dein aktivster Monat** — der Monat mit den meisten Einträgen. Gezählt
-werden Aktivitäten und besuchte Termine zusammen. Erscheint immer.
-
-> Hat jemand weder Aktivitäten noch besuchte Termine, bleibt die
-> Monatsüberschrift **leer** und es steht nur „0 Aktivitaeten“. Die Seite wird
-> trotzdem gezeigt.
-
-**7. Deine Punkte** — Gesamtpunkte groß, darunter getrennt Gottesdienst und
-Gemeinde. *Nur, wenn Bonuspunkte vergeben wurden*, zusätzlich „davon N
-Bonuspunkte“. *Nur, wenn mindestens ein Punkt zusammengekommen ist.*
-
-**8. Endspurt ODER Über dem Ziel** — eine von beiden, nie beide:
-
-- **Endspurt**, wenn das Ziel noch nicht erreicht ist: „N Punkte fehlen noch“
-  mit Fortschrittsbalken und „Du schaffst das!“
-- **Über dem Ziel**, wenn das Ziel erreicht oder überschritten ist: Konfetti und
-  „+N Punkte über dem Ziel!“
-
-Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.
-
-**9. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
-sechs Abzeichen als Symbole. *Nur, wenn im Zeitraum mindestens ein Abzeichen
-verdient wurde.* Weil der Zeitraum am Beginn der Konfi-Zeit anfängt, zählt hier
-alles mit, was seither verdient wurde — auch aus einem früheren Sommer.
-
-**10. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
-Konfirmationstermin hinterlegt ist* — praktisch also fast immer, weil sonst ein
-Ersatzdatum greift. Ist die Konfirmation noch nicht gewesen, steht darunter „N
-Tage noch“.
-
-> Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite **immer** — auch
-> wenn die Konfirmation längst vorbei ist.
-
-**14. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
-großen Lettern **„Dein Weg. Deine Zeit. Dein Glaube.“** und als Einladung
-„Werde Teamer:in — bleib dabei und gestalte das nächste Konfi-Jahr mit“. Immer
-die letzte Seite: Der Rückblick endet nicht mit einer Zahl, sondern mit einer
-Einladung.
+> **Warum die häufigen Seiten trotzdem erscheinen:** Termine, Punkte und
+> Abzeichen bekommen fast alle — und sie sind trotzdem gesetzt, weil die
+> Abschluss-Seite genau diese drei Zahlen zusammenfasst.
 
 ### Die Seiten zu den Bereichen
 
-Seit Version 2.1.1 zeigt der Rückblick, **worin** jemand unterwegs war. Für
-jede der Standardkategorien gibt es eine eigene Seite mit eigenem Bild und
-eigenem Text:
+Für jede der Standardkategorien gibt es eine eigene Seite mit eigenem Bild und
+eigenem Text. Man bekommt sie, wenn man in diesem Bereich etwas getan hat —
+gezählt werden **Termine und Aktivitäten zusammen**.
 
-Fest · Senior:innen · Jugend · Öffentlichkeitsarbeit · Freizeit · Weihnachten ·
-Konzert · Kinder · Kreativ · Seelsorge · Kasualien · Gottesdienst · Gemeinde
-
-Eine Seite erscheint nur, wenn die Person darin tatsächlich etwas getan hat.
-Wer nie bei einem Konzert war, bekommt keine Konzert-Seite mit einer Null
-darauf.
-
-**Gezählt werden Termine und Aktivitäten zusammen.** Beides trägt eine
-Kategorie; der Rückblick fasst sie in derselben Seite zusammen und nennt
-zusätzlich, wie viele davon Termine waren.
+| Seite | Wann man sie bekommt | Wie selten |
+|---|---|---|
+| **Gottesdienst** | mindestens ein Gottesdienst | 85 % |
+| **Gemeinde** | mindestens einmal in der Gemeindearbeit mitgemacht | 75 % |
+| **Jugend** | mindestens einmal bei der Jugend | 60 % |
+| **Fest** | mindestens ein Fest | 55 % |
+| **Weihnachten** | mindestens einmal in der Advents- und Weihnachtszeit (als Kategorie) | 55 % |
+| **Freizeit** | mindestens eine Freizeit oder Fahrt | 45 % |
+| **Kinder** | mindestens einmal bei der Kinderarbeit | 40 % |
+| **Kreativ** | mindestens einmal etwas selbst gemacht | 40 % |
+| **Konzert** | mindestens ein Konzert | 35 % |
+| **Kasualien** | mindestens einmal bei Taufe, Trauung oder Beerdigung | 30 % |
+| **Öffentlichkeitsarbeit** | mindestens einmal dabei | 25 % |
+| **Senior:innen** | mindestens einmal bei der Seniorenarbeit | 25 % |
+| **Seelsorge** | mindestens einmal dabei | 15 % |
+| **Dein Schwerpunkt (allgemein)** | wer überwiegend eigene Kategorien nutzt — die häufigste davon | 35 % |
 
 > **Eigene Kategorien:** Habt ihr eine Kategorie selbst angelegt, die nicht in
-> der Liste oben steht, bekommt sie keine eigene Seite. Sie zählt aber auf der
-> allgemeinen Seite „Dein Schwerpunkt" mit — niemand geht leer aus. Wollt ihr
-> eine eigene Seite dafür, benennt die Kategorie wie eine der Standardnamen.
+> der Liste steht, bekommt sie keine eigene Seite. Sie zählt aber auf der
+> allgemeinen Schwerpunkt-Seite mit — niemand geht leer aus. Wollt ihr eine
+> eigene Seite dafür, benennt die Kategorie wie einen der Standardnamen.
 
 ### Seiten, die sich nach dem Datum richten
 
-Manche Seiten hängen **nicht** an der Kategorie, sondern am Datum des Termins:
+Diese Seiten hängen **nicht** an der Kategorie, sondern am Datum des Termins.
 
-| Seite | Zeitraum |
-|---|---|
-| Advent | 1. Advent bis 23. Dezember |
-| Weihnachten | 24. bis 26. Dezember |
-| Jahreswechsel | 27. Dezember bis 6. Januar |
-| Passion und Ostern | Aschermittwoch bis Ostermontag |
-| Erntedank | erster Sonntag im Oktober |
-| Sommer | Juli und August |
+| Seite | Zeitraum | Wie selten |
+|---|---|---|
+| **Advent** | 1. Advent bis 23. Dezember | 70 % |
+| **Weihnachten** | 24. bis 26. Dezember | 60 % |
+| **Sommer** | Juli und August | 55 % |
+| **Passion und Ostern** | Aschermittwoch bis Ostermontag | 50 % |
+| **Jahreswechsel** | 27. Dezember bis 6. Januar | 30 % |
+| **Erntedank** | erster Sonntag im Oktober | 15 % |
 
-Das ist Absicht: Ein Gottesdienst am 24. Dezember ist Heiligabend, ganz gleich
-ob eure Kategorie „Gottesdienst", „Advent" oder „Christvesper" heißt. Das
-Datum stimmt immer, der Name nicht unbedingt.
+Warum sie sich so stark unterscheiden: Der Advent dauert vier Wochen und hat
+vier Sonntage — da war fast jede Konfi bei irgendetwas. Erntedank ist **ein**
+Tag im Jahr; wer ausgerechnet an dem da war, hat etwas Selteneres erlebt.
 
-Ostern und der 1. Advent wandern jedes Jahr — die App rechnet sie aus, du
-musst nichts pflegen.
+Das Datum geht bewusst vor dem Namen: Ein Gottesdienst am 24. Dezember ist
+Heiligabend, ganz gleich ob eure Kategorie „Gottesdienst", „Advent" oder
+„Christvesper" heißt. Das Datum stimmt immer, der Name nicht unbedingt.
 
-**Trifft beides zu**, gewinnt das Datum: Ein Termin am 24. Dezember erscheint
-auf der Weihnachtsseite, nicht zusätzlich auf der Gottesdienst-Seite. Niemand
-bekommt zwei Seiten über denselben Termin.
+Ostern und der 1. Advent wandern jedes Jahr — die App rechnet sie aus, ihr
+müsst nichts pflegen.
+
+> **Jeder Termin zählt nur einmal.** Fällt ein Termin in eine dieser Zeiten,
+> gehört er dieser Seite — und **nicht zusätzlich** seiner Kategorie. Ein
+> Gottesdienst in der Passionszeit erscheint auf der Oster-Seite, nicht auch
+> noch auf der Gottesdienst-Seite. Niemand bekommt zwei Seiten über dieselbe
+> Stunde in derselben Kirche.
 
 ### Die Seite zur Sommerfreizeit 2026
 
 Eine Sonderseite für die Fahrt nach **Stavanger**: „Du warst dabei. 14
-unvergessliche Tage in Himmel og Hav.“ Sie erscheint bei **Konfis und
+unvergessliche Tage in Himmel og Hav." Sie erscheint bei **Konfis und
 Teamer:innen gleichermaßen** — aber nur bei denen, die mitgefahren sind.
 
 Wer dabei war, entscheidet sich an den Daten: Wer eine Aktivität oder einen
-Termin der Kategorie **„Sommerfreizeit“** aus dem Sommer 2026 hat, bekommt die
+Termin der Kategorie **„Sommerfreizeit"** aus dem Sommer 2026 hat, bekommt die
 Seite. Gibt es die Kategorie in eurer Gemeinde nicht, erscheint die Seite bei
 niemandem.
 
@@ -317,23 +320,38 @@ Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
 Tage, ganz gleich wie oft jemand abgehakt wurde. Eine spätere Sommerfreizeit
 löst diese Seite nicht aus.
 
+Mit 5 % ist es die seltenste Seite überhaupt — wer sie bekommen kann, bekommt
+sie auch.
+
+### Was bewusst nicht vorkommt
+
+Ein Highlight „am öftesten abgesagt" gibt es nicht und wird es nicht geben.
+Absagen haben bei Konfis oft Gründe außerhalb ihrer Kontrolle — Familie,
+Krankheit, Fahrdienste. Ein Jahresrückblick, der einem Kind „du hast am meisten
+abgesagt" zeigt, beschämt statt zu ermutigen.
+
+Der Gegenpol ist deshalb nur positiv gewendet: Wer nie abgesagt hat, wird dafür
+gefeiert; wer abgesagt hat, bekommt einfach seine nächstbeste Seite. Vergleiche
+gehen immer nur nach oben und bleiben anonym — es erscheint höchstens der
+Jahrgangsdurchschnitt, nie ein Name, und nur dann, wenn der eigene Wert darüber
+liegt.
+
 ### Woher die Zahlen kommen
 
 | Seite | Datenquelle |
 |---|---|
 | Punkte | der gespeicherte Punktestand des Konfis, plus Bonuspunkte-Summe |
-| Events | bestätigte Buchungen mit Anwesenheit „anwesend“ |
-| Schwerpunkt | erledigte Aktivitäten, nach Kategorie gruppiert |
+| Termine | die Buchungen der Person im Zeitraum |
+| Schwerpunkt | Aktivitäten und Termine, nach Kategorie gruppiert |
 | Aktivster Monat | Aktivitäten und besuchte Termine zusammen |
-| Badges | die verliehenen [Abzeichen](60-badges.md) |
-| Endspurt | die [Punkteziele des Jahrgangs](45-jahrgaenge.md#punkteziele), nur die aktiven Arten |
+| Abzeichen | die verliehenen [Abzeichen](60-badges.md) |
+| Das haben nur x % | wie viele Konfis der Gemeinde dasselbe Abzeichen haben |
 | Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
-| Momente | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
-| Nachgerückt | Buchungen, die von der Warteliste nachgerückt sind; ab einer |
-| Der lange Atem | Spanne zwischen erstem und letztem Termin; ab 5 Terminen und 60 Tagen |
-| Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit; ab 4 Terminen an dem Tag und mindestens der Hälfte aller |
-| Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge; ab zwei Arten |
-| Highlight | Chat-Nachrichten und erhaltene Reaktionen aus dem [Chat](90-chat.md), Challenge-Beiträge, Anmeldungen und Absagen — alles nur aus dem eigenen Zeitraum und der eigenen Gemeinde, verglichen mit dem Durchschnitt des Jahrgangs |
+| Momente und Challenges | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
+| Warteliste | Buchungen, die von der Warteliste nachgerückt sind |
+| Der lange Atem | Spanne zwischen erstem und letztem Termin |
+| Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit |
+| Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge |
 
 Der **Zeitraum** reicht vom Beginn der Konfi-Zeit bis zu dem Tag, an dem der
 Rückblick erstellt wird — bei manchen sind das zwei Jahre. Der
@@ -347,73 +365,55 @@ hier geht ein eingetragener Zeitraum vor.
 
 ## Die Seiten des Teamer-Rückblicks
 
-Es sind **höchstens dreizehn Seiten** — und wie bei den Konfis erscheint eine
-Seite nur, wenn sie etwas zu erzählen hat. Wer neu im Team ist, bekommt keine
-Reihe von Seiten mit einer Null darauf, sondern einen kürzeren Rückblick.
-Begrüßung und Abschluss stehen immer.
+Auch hier sind es **höchstens zehn Seiten**, und auch hier entscheidet die
+Seltenheit, welche. Wer neu im Team ist, bekommt keine Reihe von Seiten mit
+einer Null darauf, sondern einen kürzeren Rückblick.
 
-**1. Begrüßung** — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei
-den Konfis ohne Jahrgangsangabe.
+**Immer dabei:** Begrüßung und Abschluss, dazu Termine, Konfis und Abzeichen —
+die drei Zahlen, die der Abschluss zusammenfasst. Auch sie nur, wenn wirklich
+etwas zusammengekommen ist.
 
-**2. So fing es an** — der erste Termin des Jahres mit Namen und Datum.
-*Entfällt, wenn im Zeitraum kein Termin besucht wurde.*
+| Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
+|---|---|---|---|
+| **Begrüßung** | „Dein Teamer-Jahr", mit Name | immer | immer |
+| **So fing es an** | der erste Termin des Jahres mit Name und Datum | mindestens ein Termin im Zeitraum | 85 % |
+| **Deine Termine** | Zahl der begleiteten Termine, der größte mit Teilnehmerzahl | mindestens ein Termin im Zeitraum | 95 % |
+| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
+| **Deine Konfis** | Zahl der betreuten Konfis, die Jahrgänge | mindestens ein Konfi über die Jahrgangs-Zuweisung | 90 % |
+| **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
+| **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
+| **Das erste** | das zuerst verliehene Abzeichen des Jahres | mindestens ein Abzeichen im Zeitraum | 70 % |
+| **Deine Zertifikate** | Zahl und die vollständige Liste mit Datum | mindestens ein Zertifikat im Zeitraum | 40 % |
+| **Hinter den Kulissen** | wie viele Challenge-Beiträge freigegeben wurden | mindestens fünf eigene Freigaben | 30 % |
+| **Im Gespräch** | wie oft im Chat auf andere geantwortet wurde | mindestens fünf echte Antworten | 50 % |
+| **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
+| **Dein erstes Jahr** | die Begrüßung für alle, die neu dazugekommen sind | im Rückblicksjahr ins Team gekommen, Eintrittsdatum bekannt | 25 % |
+| **Wie alles anfing** | „Du saßt mal auf der anderen Seite", mit eigenem Jahrgang | war selbst einmal Konfi in dieser Gemeinde | 20 % |
+| **Auf einen Blick** | Termine, Konfis, Abzeichen nebeneinander, „Danke, dass du da warst." | immer, als letzte Seite | immer |
 
-**3. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
-eingetragen war, überschrieben mit „Events geleitet“. *Nur, wenn vorhanden*,
-darunter das größte Event mit Teilnehmerzahl.
-*Entfällt ohne Termine im Zeitraum.*
+### Was dabei zu beachten ist
 
-**4. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
-die Namen der zugewiesenen Jahrgänge. Grundlage ist die Jahrgangs-Zuweisung: Wer
-keinem Jahrgang zugewiesen ist, steht hier bei null.
-*Entfällt, wenn niemand zugewiesen ist.*
+**„Dein Engagement" und „Dein erstes Jahr" schließen sich aus.** Wer im ersten
+Jahr ist, bekommt die Neu-dabei-Seite — beides zugleich wäre dieselbe Auskunft
+zweimal, einmal davon mit einer Eins.
 
-**5. Nicht allein** — mit wie vielen anderen Teamer:innen zusammen die
-Jahrgänge betreut wurden. Gezählt werden nur Teamer:innen auf denselben
-Jahrgängen, keine Admins; Namen stehen nicht dabei.
-*Entfällt, wenn niemand sonst auf den Jahrgängen steht.*
+**Ohne Eintrittsdatum keine Jahre-Seite.** Ist bei einer Teamer:in das Feld
+„Teamer:in seit" leer, entfällt sie. Wer sie erwartet und nicht bekommt, findet
+dort die Ursache. „Unbekannt" gilt dabei ausdrücklich nicht als „neu": Wer seit
+Jahren dabei ist, aber kein Datum hinterlegt hat, wird nicht als Neuling
+begrüßt.
 
-**6. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
-Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
-*Entfällt ohne Abzeichen im Zeitraum.*
+**„Hinter den Kulissen" zählt nur die eigene Freigabe** — nie, wie viel jemand
+ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch freigegebene
+Beiträge unmoderierter Challenges zählen nicht mit; dort hat niemand
+hingesehen.
 
-**7. Das erste** — das zuerst verliehene Abzeichen des Jahres.
-*Entfällt ohne Abzeichen im Zeitraum.*
+**„Nicht allein" nennt keine Namen.** Gezählt werden nur Teamer:innen auf
+denselben Jahrgängen, keine Admins.
 
-**8. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
-*Entfällt ohne Zertifikate im Zeitraum.*
-
-**9. Hinter den Kulissen** — wie viele Challenge-Beiträge die Teamer:in
-freigegeben hat. Gezählt wird **nur die eigene Freigabe** — nie, wie viel
-jemand ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch
-freigegebene Beiträge unmoderierter Challenges zählen nicht mit, dort hat
-niemand hingesehen.
-*Entfällt unter fünf Freigaben.*
-
-**10. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
-Gezählt werden echte Antworten (Bezug auf eine Nachricht), keine eigenen
-Beiträge ohne Bezug; zurückgenommene Antworten zählen nicht.
-*Entfällt unter fünf Antworten.*
-
-**11. Dein erstes Jahr** — für alle, die im Rückblicksjahr ins Team gekommen
-sind. Sie bekommen diese Seite **statt** „Dein Engagement" — beides zugleich
-wäre dieselbe Auskunft zweimal.
-*Entfällt ab dem zweiten Jahr und wenn kein Eintrittsdatum bekannt ist.*
-
-**12. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
-wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
-
-> **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
-> jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
-> „Teamer:in seit".
-
-**13. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
-dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
-Jahrgang, sofern bekannt.
-*Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
-
-**14. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
-deinen Einsatz!“ und „Du machst den Unterschied“.
+**„Deine Konfis" hängt an der Jahrgangs-Zuweisung.** Wer keinem Jahrgang
+zugewiesen ist, steht hier bei null und bekommt die Seite nicht — meist ein
+Zeichen dafür, dass die Zuweisung fehlt, nicht dass niemand betreut wurde.
 
 ## Wo man den Rückblick wiederfindet
 
