@@ -112,83 +112,319 @@ const DRAMATURGIE = [
 ];
 
 /**
- * Obergrenze. Simon: "rund zehn Seiten fuer eine sehr aktive Person" --
- * plus Kategorie-Seiten, die mehrfach vorkommen duerfen.
+ * Obergrenze. Simon, 07.09.2026, woertlich:
  *
- * VON 14 UEBER 16 UND 18 AUF 19 (07.09.2026): Mit den neuen Seiten liegt das
- * theoretische Maximum bei 19 -- gemessen, nicht geschaetzt: 6 feste
- * + 8 bedingte (nach Abzug des Zeit-Kontingents) + 4 Kategorie-/Datums-
- * Seiten + die Sonderseite 'stavanger-2026'. Ein niedrigerer Deckel schnitt
- * genau dort ab, wo die Dramaturgie am dichtesten ist, und verdraengte je
- * nach Fall 'seltenstes', 'konfirmation' oder die Zeit-Seiten.
+ *   "damit es wirklich unterschiedlich ist, sollen die Konfis ja nicht 19
+ *    Folien sehen, sondern jeder kriegt maximal 10 Folien. Wir gucken,
+ *    welche die besonderen Folien sind, um sie zu kriegen."
  *
- * DER SCHRITT VON 18 AUF 19 IST GEMESSEN, nicht vorsorglich: Mit der
- * Sonderseite kam bei einer sehr aktiven Konfi, die bei der Fahrt dabei
- * war, genau eine Seite dazu -- und der Deckel von 18 fraess daraufhin
- * 'langer-atem'. Das Zeit-Kontingent fiel damit still von zwei auf eine
- * Seite, ohne dass irgendwo etwas fehlschlug ausser den Tests, die genau
- * diese zwei Seiten festhalten. Wer eine weitere Seite hinzufuegt, rechnet
- * hier mit.
+ * VON 19 AUF 10 -- UND DIE AUSWAHL WIRD UMGEDREHT.
  *
- * WARUM DAS UNBEDENKLICH IST: Der Deckel ist NICHT das, was den Rueckblick
- * kurz haelt -- das tun die Bedingungen. JEDE nicht-feste Seite muss sich
- * qualifizieren (mindestens 5 Termine, mindestens 4 Antworten, ein
- * seltenstes Abzeichen ...). Die 18 treffen nur eine Person, auf die
- * WIRKLICH ALLES zutrifft; Simons "rund zehn" bleibt der Normalfall.
- * Der Deckel ist die Notbremse, nicht die Regel.
+ * WARUM 19 DIE FALSCHE RICHTUNG WAR: Der Deckel wurde an einem einzigen Tag
+ * dreimal hochgesetzt (14 -> 18 -> 19), jedes Mal weil eine neu
+ * hinzugekommene Seite eine alte verdraengt hatte. Das kuriert das Symptom.
+ * Gemessen kamen dabei 6 bis 19 Seiten heraus, im Schnitt 14,5 -- fuer einen
+ * Rueckblick, den man einmal durchwischt, deutlich zu viel, und fuer den
+ * Vergleich untereinander nichtssagend: Wer 14 Seiten sieht und wer 15
+ * sieht, hat praktisch dasselbe gesehen.
+ *
+ * WAS STATTDESSEN ZAEHLT: nicht mehr die Position in der Dramaturgie,
+ * sondern die SELTENHEIT. Siehe seltenheitFuer() weiter unten.
  */
-const MAX_KACHELN = 19;
+const MAX_KACHELN = 10;
 
-// Getrennte Kontingente, KEIN gemeinsames Limit. Gemessen am 03.09.2026:
-// Mit einem gemeinsamen Deckel von 3 verdraengten drei Datums-Treffer
-// (Weihnachten, Advent, Ostern) saemtliche Kategorie-Seiten -- eine Konfi
-// mit 8 Gottesdiensten und 3 Kasualien sah davon keine einzige. Die beiden
-// erzaehlen Verschiedenes und duerfen sich nicht gegenseitig auffressen.
+// WIE VIELE Kategorie- und Datums-Seiten ueberhaupt in die Auswahl gehen.
+//
+// Das sind KEINE Kontingente mehr im alten Sinn. Frueher entschieden sie
+// mit, welche Seiten am Ende uebrig blieben -- wer drei Datums-Treffer
+// hatte, verlor dadurch Kategorie-Seiten. Diese Entscheidung trifft jetzt
+// die Seltenheit (siehe waehleKacheln), und zwar ueber alle Seiten hinweg.
+//
+// Was hier bleibt, ist eine Vorauswahl gegen Wildwuchs: Eine Konfi mit
+// zwoelf verschiedenen Kategorien soll nicht zwoelf fast gleiche Seiten in
+// den Wettbewerb schicken und damit alles andere verdraengen -- die zwei
+// staerksten je Sorte reichen, den Rest entscheidet die Seltenheit.
 const MAX_DATUM_SEITEN = 2;
 const MAX_KATEGORIE_SEITEN = 2;
 
 /**
- * Die Zeit-/Rhythmus-Seiten ('aktivster-monat', 'langer-atem', 'wochentag')
- * beantworten alle dieselbe Frage: WANN warst du da. Drei davon
- * hintereinander sind keine Erzaehlung mehr, sondern eine Statistik -- und
- * sie wuerden zusammen den Deckel sprengen und hinten Seiten verdraengen,
- * die etwas anderes erzaehlen (gemessen 07.09.2026: theoretisches Maximum
- * 18 bei einem Deckel von 14).
+ * Die Zeit-/Rhythmus-Seiten ('aktivster-monat', 'langer-atem', 'wochentag').
+ * Sie beantworten alle dieselbe Frage: WANN warst du da.
  *
- * Zwei davon reichen. Welche zwei, entscheidet die Reihenfolge der
- * Dramaturgie -- dieselbe Regel wie bei den Kategorie- und Datums-Seiten.
+ * DAS KONTINGENT IST WEG (07.09.2026) -- und das war ein Fehler, den es zu
+ * belegen gilt, nicht bloss aufzuraeumen.
+ *
+ * BEFUND: 'wochentag' war praktisch UNERREICHBAR. Das Kontingent liess zwei
+ * Zeit-Seiten zu und wurde in der Reihenfolge der Dramaturgie gefuellt --
+ * 'aktivster-monat' steht dort vor 'langer-atem', und dieses vor
+ * 'wochentag'. Wer die Bedingung fuer 'wochentag' erfuellte (mindestens 4
+ * Termine an einem Tag UND die Haelfte aller Termine), erfuellte fast immer
+ * auch die beiden davor -- denn beide verlangen weniger. Die Seite fiel
+ * damit heraus, ohne dass irgendwo etwas fehlschlug.
+ *
+ * WARUM ES JETZT OHNE GEHT: Die Seltenheit erledigt genau das, wofuer das
+ * Kontingent gedacht war. Drei Zeit-Seiten hintereinander waren deshalb
+ * schlecht, weil sie einander aehneln -- und was viele bekommen, ist per
+ * Definition nicht selten. 'aktivster-monat' trifft fast jeden (Schwelle:
+ * zwei Aktivitaeten in einem Monat) und rangiert entsprechend weit hinten;
+ * 'wochentag' trifft wenige und rueckt nach vorn. Die Auswahl regelt sich
+ * ueber den Wert, nicht ueber eine Sonderregel.
+ *
+ * Die Liste selbst bleibt: Der Test, der die Erreichbarkeit jeder Seite
+ * nachweist, braucht sie, und sie dokumentiert die Verwandtschaft.
  */
 const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
-const MAX_ZEIT_SEITEN = 2;
 
 /**
- * Seiten, die der Deckel NICHT wegkuerzen darf, obwohl sie nicht zu den
- * festen gehoeren.
+ * DER ROTE FADEN -- Seiten, die immer erscheinen, wenn sie zutreffen.
  *
- * Zwei muss man sich VERDIENEN: das seltenste Abzeichen ("das haben nur
- * x %") und die Konfirmation. Sie stehen weit hinten in der Dramaturgie und
- * fielen deshalb als Erste heraus, sobald vorne Seiten dazukamen -- gemessen
- * am 07.09.2026, als das Maximum auf 18 stieg. Eine Konfi verlor damit
- * ausgerechnet die zwei Seiten, die ueber sie am meisten sagen, zugunsten
- * einer weiteren Kategorie-Kachel.
+ * Simons Vorgabe 07.09.2026: "Auftakt und Abschluss muessen bleiben."
+ * FESTE_KACHELN (intro, abschluss, werde-teamer) tragen ihn ohne jede
+ * Bedingung -- sie koennen gar keine Null tragen. Hier stehen die, die
+ * eine Bedingung haben, aber wenn sie erfuellt ist, nicht dem Deckel zum
+ * Opfer fallen duerfen.
  *
- * DAZU DIE DREI ZAHL-SEITEN (07.09.2026): 'events', 'punkte' und 'badges'
- * gehoerten bis dahin zu FESTE_KACHELN und waren damit doppelt geschuetzt --
- * gegen den Deckel UND gegen jede Bedingung. Sie haben jetzt Bedingungen
- * (eine Null erscheint nicht mehr), sollen aber, WENN sie etwas zu erzaehlen
- * haben, weiterhin nicht vom Deckel gefressen werden: Sie tragen die Mitte
- * der Erzaehlung, und genau dieser Fall war schon einmal der Befund vom
- * 07.09.2026 ("Der Deckel darf keine feste Seite fressen", siehe unten).
- * Der Schutz bleibt also erhalten, nur die Bedingungslosigkeit faellt weg.
+ * WELCHE UND WARUM -- geprueft, nicht uebernommen:
+ *
+ *   'events'   Die Termine sind der Kern der Konfi-Zeit. Ohne sie waere
+ *              der Abschluss eine Zusammenfassung von nichts: Die Seite
+ *              'abschluss' zeigt genau diese Zahl noch einmal.
+ *   'punkte'   Dieselbe Begruendung -- steht ebenfalls auf dem Abschluss.
+ *   'badges'   Dieselbe Begruendung -- steht ebenfalls auf dem Abschluss.
+ *
+ * NICHT MEHR DABEI, mit Begruendung:
+ *
+ *   'seltenstes'   Es war hier, weil es weit hinten in der Dramaturgie
+ *                  stand und deshalb als Erstes vom Deckel gefressen
+ *                  wurde. Genau dieses Problem loest die Seltenheits-
+ *                  Auswahl: Die Seite bekommt ihren Wert aus dem Prozent-
+ *                  satz, den sie selbst nennt, und setzt sich damit von
+ *                  allein durch -- je seltener das Abzeichen, desto weiter
+ *                  vorn. Ein Schutz obendrauf waere doppelt gemoppelt.
+ *   'konfirmation' Dasselbe. Sie ist ohnehin selten (nur Jahrgaenge mit
+ *                  echtem Konfirmationstermin) und braucht keinen Schutz.
+ *   'stavanger-2026' Dasselbe, und hier am deutlichsten: Die Sonderseite
+ *                  ist die seltenste Seite ueberhaupt und steht damit
+ *                  automatisch ganz vorn.
+ *
+ * Der Unterschied ist nicht kosmetisch: Ein Schutz ist eine Ausnahme von
+ * der Regel und muss gepflegt werden. Die Seltenheit IST die Regel.
  */
-const GESCHUETZTE_KACHELN = [
-  'events', 'punkte', 'badges', 'seltenstes', 'konfirmation',
-  // Die Sonderseite zur Sommerfreizeit. Sie trifft auf sehr wenige Leute zu
-  // und ist fuer genau die das Ereignis des Jahres -- sie darf nicht dem
-  // Deckel zum Opfer fallen, weil jemand nebenbei viele Kategorie-Seiten
-  // gesammelt hat.
-  'stavanger-2026'
-];
+const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges'];
+
+/**
+ * =====================================================================
+ * DIE SELTENHEIT -- wie wertvoll ist eine Seite?
+ * =====================================================================
+ *
+ * SIMONS IDEE (07.09.2026), woertlich:
+ *
+ *   "dann muessen wir ueberlegen, wie man den Dingern eine gewisse
+ *    Wertigkeit gibt. Zum Beispiel hat ja nicht jede Kirchengemeinde
+ *    Sommerfreizeit. Das ist tendenziell eine extra Kategorie."
+ *
+ * DIE FRAGE, die jede Seite beantworten muss: Wie viele andere in derselben
+ * Gemeinde bekommen diese Seite auch? Je weniger, desto wertvoller.
+ *
+ * DAS MUSTER GIBT ES SCHON: Das seltenste Abzeichen (routes/wrapped.js,
+ * Feld `prozent`) rechnet genau so -- "das haben nur x %" -- und ist die
+ * einzige Stelle im Rueckblick, die etwas ueber die Seltenheit einer
+ * Leistung sagt. Diese Machart wird hier auf ALLE Seiten ausgedehnt.
+ *
+ * WOHER DIE ZAHL KOMMT: Das Backend zaehlt in EINER Abfrage aus, wie viele
+ * Konfis des Jahrgangs die Voraussetzung je Seite erfuellen, und legt das
+ * Ergebnis als `slides.seiten_haeufigkeit` in den Snapshot (Anteil in
+ * Prozent, 1 bis 100). Fehlt das Feld -- alte Snapshots, oder ein zu
+ * kleiner Jahrgang -- greift die geschaetzte Grundhaeufigkeit unten.
+ *
+ * WARUM EINE GESCHAETZTE GRUNDHAEUFIGKEIT UEBERHAUPT NOETIG IST: Bei
+ * weniger als 5 Konfis im Jahrgang ist ein gemessener Anteil keine
+ * Aussage -- bei zweien waere jede Seite entweder "50 %" oder "100 %".
+ * Dieselbe Schwelle gilt beim seltensten Abzeichen und aus demselben
+ * Grund. Die Schaetzung ist dann die bessere Zahl als eine gemessene, die
+ * nichts bedeutet.
+ *
+ * DIE SCHAETZWERTE sind der Anteil der Konfis, die diese Seite typischer-
+ * weise bekommen -- abgeleitet aus den Bedingungen oben, nicht geraten:
+ * Was eine niedrige Schwelle hat, trifft viele; was eine hohe hat, wenige.
+ */
+const GRUND_HAEUFIGKEIT = {
+  // Trifft fast jeden: ein einziger Termin/Punkt/Abzeichen reicht.
+  events: 95,
+  punkte: 95,
+  badges: 90,
+  // Zwei Aktivitaeten in einem Monat -- fast jeder, der ueberhaupt da war.
+  'aktivster-monat': 85,
+  // Ein einziger Challenge-Beitrag reicht.
+  challenges: 60,
+  'challenge-momente': 55,
+  // Zwei von drei Medienarten. Audio ist oft gar nicht erlaubt.
+  vielseitig: 40,
+  // Mindestens 5 Termine UND 60 Tage Spanne.
+  'langer-atem': 45,
+  // Ein Jahrgang hat einen Konfirmationstermin oder keinen -- innerhalb
+  // eines Jahrgangs bekommen ihn darum entweder alle oder niemand. Das ist
+  // die eine Seite, deren Seltenheit NICHT zwischen den Konfis eines
+  // Jahrgangs variiert; gemessen wuerde sie 100 % ergeben. Der Wert steht
+  // hier trotzdem niedriger, weil sie ueber die Gemeinde hinweg selten ist
+  // (drei von fuenf Jahrgaengen haben keinen Termin) und weil sie fuer die
+  // Person der Zielpunkt der ganzen Konfi-Zeit ist.
+  konfirmation: 35,
+  // Mindestens 4 Termine an EINEM Wochentag und die Haelfte aller Termine.
+  // Deutlich seltener, als das alte Zeit-Kontingent vermuten liess -- es
+  // hat die Seite nur nie durchgelassen.
+  wochentag: 25,
+  // Ein echtes Nachruecken von der Warteliste.
+  warteliste: 20,
+  // Das seltenste Abzeichen. Der Standardwert gilt nur, wenn das Backend
+  // keinen Prozentsatz geliefert hat -- sonst zaehlt der echte (siehe
+  // seltenheitFuer).
+  seltenstes: 20,
+  // Simons Beispiel. Die Kategorie existiert in keiner Gemeinde als
+  // Standard; wer sie hat, war bei DER Fahrt dabei.
+  'stavanger-2026': 5
+};
+
+/**
+ * Die Datums-Seiten -- je Fenster ein eigener Wert.
+ *
+ * EIN GEMEINSAMER WERT WAERE FALSCH, und das laesst sich am Kalender
+ * ablesen: Advent hat vier Sonntage und laeuft ueber vier Wochen, Erntedank
+ * ist EIN Tag im Jahr. Wer im Advent in der Kirche war, ist damit in bester
+ * Gesellschaft; wer ausgerechnet am Erntedanksonntag da war, ist es nicht.
+ *
+ * GEMESSEN, WARUM DAS NOETIG WAR: Mit einem gemeinsamen Wert (40 %)
+ * standen zwei Datums-Seiten gleichauf und nahmen gemeinsam zwei der vier
+ * freien Plaetze -- 'vielseitig' (ebenfalls 40 %, aber tatsaechlich
+ * seltener) und 'langer-atem' fielen heraus, obwohl sie mehr ueber die
+ * Person sagen. Zwei Seiten, die dasselbe erzaehlen ("du warst im
+ * Dezember da"), duerfen sich nicht gegenseitig nach oben tragen.
+ *
+ * Die Werte folgen der Laenge des Fensters und dem, was ueblich ist:
+ */
+const GRUND_HAEUFIGKEIT_DATUM = {
+  // Vier Wochen, vier Sonntage, dazu Adventsandachten -- fast jede Gemeinde
+  // hat in dieser Zeit etwas, und fast jede Konfi ist bei etwas davon.
+  advent: 70,
+  // Drei Tage, aber der Christvesper-Besuch ist fuer viele gesetzt.
+  weihnachten: 60,
+  // Juli und August -- zwei ganze Monate, allerdings Ferienzeit.
+  sommer: 55,
+  // 48 Tage, die ganze Passionszeit.
+  ostern: 50,
+  // Elf Tage, in denen in vielen Gemeinden wenig stattfindet.
+  jahreswechsel: 30,
+  // EIN Sonntag im Jahr. Die seltenste Datums-Seite, mit Abstand.
+  erntedank: 15
+};
+
+/**
+ * Die Kategorie-Seiten -- ebenfalls je Kategorie.
+ *
+ * Dieselbe Ueberlegung: "Gottesdienst" hat fast jede Konfi, "Seelsorge"
+ * kaum eine. Ein gemeinsamer Wert haette die haeufigste Kategorie so weit
+ * nach vorn getragen wie die seltenste.
+ */
+const GRUND_HAEUFIGKEIT_KATEGORIE_SEITE = {
+  gottesdienst: 85,
+  gemeinde: 75,
+  jugend: 60,
+  fest: 55,
+  weihnachten: 55,
+  freizeit: 45,
+  kinder: 40,
+  kreativ: 40,
+  konzert: 35,
+  kasualien: 30,
+  oeffentlichkeit: 25,
+  senioren: 25,
+  seelsorge: 15
+};
+
+/** Rueckfall fuer eine Kategorie ohne eigenen Wert. */
+const GRUND_HAEUFIGKEIT_KATEGORIE = 50;
+
+/**
+ * Dieselbe Rechnung fuer den Teamer-Rueckblick.
+ *
+ * Der Deckel ist dort SEPARAT (MAX_TEAMER_KACHELN) und die Grundgesamtheit
+ * eine andere: Ein Team hat typischerweise 5 bis 15 Leute, ein Jahrgang 10
+ * bis 20 Konfis. Die Anteile sind darum eigene Werte und keine Kopie.
+ *
+ * Abgeleitet aus den Bedingungen (TEAMER_BEDINGUNGEN), nicht geraten.
+ */
+const GRUND_HAEUFIGKEIT_TEAMER = {
+  // Ein einziger begleiteter Termin reicht -- fast jeder im Team.
+  'teamer-events': 95,
+  'teamer-konfis': 90,
+  'teamer-badges': 80,
+  // Der erste Termin des Jahres. Wer ueberhaupt einen hatte, hat ihn.
+  'teamer-anfang': 85,
+  'teamer-erstes-abzeichen': 70,
+  // Wer mit anderen zusammen im Einsatz war.
+  'teamer-team': 75,
+  // Mindestens fuenf Antworten im Chat.
+  'teamer-antworten': 50,
+  'teamer-zertifikate': 40,
+  // "Seit x Jahren dabei" -- nur, wer NICHT im ersten Jahr ist.
+  'teamer-jahre': 55,
+  // Mindestens fuenf Freigaben. Moderation macht nur ein Teil des Teams.
+  'teamer-moderation': 30,
+  // Das erste Jahr -- per Definition wenige zur selben Zeit.
+  'teamer-neu-dabei': 25,
+  // Wer heute im Team ist UND frueher selbst Konfi in DIESER Gemeinde war.
+  'teamer-konfi-zeit': 20,
+  // Dieselbe Sonderseite und dieselbe Seltenheit wie im Konfi-Rueckblick.
+  'stavanger-2026': 5
+};
+
+/**
+ * Wie haeufig ist diese Seite -- in Prozent der Konfis, die sie auch
+ * bekommen? Kleiner = seltener = wertvoller.
+ *
+ * @param {string} kachel
+ * @param {object} slides
+ * @returns {number} 1 bis 100
+ */
+function haeufigkeitFuer(kachel, slides) {
+  const grenzen = (n) => Math.min(100, Math.max(1, n));
+
+  // 1. Das seltenste Abzeichen bringt seine echte Zahl selbst mit -- sie
+  //    steht ohnehin auf der Seite ("das haben nur x %"). Sie hier NICHT zu
+  //    benutzen hiesse, neben einer gemessenen Zahl eine geschaetzte zu
+  //    fuehren.
+  if (kachel === 'seltenstes' && (slides.badges?.seltenstes?.prozent || 0) > 0) {
+    return grenzen(slides.badges.seltenstes.prozent);
+  }
+
+  // 2. Vom Backend gemessen (ab 07.09.2026, nur bei genug Konfis).
+  const gemessen = slides.seiten_haeufigkeit;
+  if (gemessen && typeof gemessen === 'object' && (gemessen[kachel] || 0) > 0) {
+    return grenzen(gemessen[kachel]);
+  }
+
+  // 3. Geschaetzte Grundhaeufigkeit.
+  if (Object.prototype.hasOwnProperty.call(GRUND_HAEUFIGKEIT, kachel)) {
+    return grenzen(GRUND_HAEUFIGKEIT[kachel]);
+  }
+  if (Object.prototype.hasOwnProperty.call(GRUND_HAEUFIGKEIT_TEAMER, kachel)) {
+    return grenzen(GRUND_HAEUFIGKEIT_TEAMER[kachel]);
+  }
+  if (kachel.startsWith('datum:')) {
+    const fenster = kachel.slice('datum:'.length);
+    return grenzen(GRUND_HAEUFIGKEIT_DATUM[fenster] ?? 40);
+  }
+  if (kachel.startsWith('kategorie:')) {
+    const name = kachel.slice('kategorie:'.length);
+    return grenzen(GRUND_HAEUFIGKEIT_KATEGORIE_SEITE[name] ?? GRUND_HAEUFIGKEIT_KATEGORIE);
+  }
+  // Die allgemeine Schwerpunkt-Seite bekommt nur, wer ueberwiegend eigene
+  // Kategorien nutzt -- das ist eher selten.
+  if (kachel === 'kategorie-allgemein') return 35;
+
+  // Unbekannte Seite: mittig einsortieren statt bevorzugen oder benachteiligen.
+  return 50;
+}
 
 /**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
@@ -336,51 +572,115 @@ function waehleKacheln(slides, schnitt = null) {
     try { return waehleKategorieSeiten(slides); } catch { return []; }
   })();
 
-  const gewaehlt = [];
+  // 1. WER KOMMT UEBERHAUPT IN FRAGE. Unveraendert: Eine Seite muss etwas
+  //    zu erzaehlen haben, sonst ist sie draussen -- Simons Grundregel
+  //    "Eine Kachel mit einer Null darauf ist keine Erinnerung" steht ueber
+  //    der Seltenheit. Eine seltene leere Seite bleibt eine leere Seite.
+  const infrage = [];
   for (const key of DRAMATURGIE) {
-    if (key === 'kategorie') {
-      gewaehlt.push(...kategorieSeiten);
-      continue;
-    }
-    if (FESTE_KACHELN.includes(key)) { gewaehlt.push(key); continue; }
+    if (key === 'kategorie') { infrage.push(...kategorieSeiten); continue; }
+    if (FESTE_KACHELN.includes(key)) { infrage.push(key); continue; }
     const bedingung = BEDINGUNGEN[key];
     if (!bedingung) continue;
     let trifft = false;
     try { trifft = bedingung(slides, schnitt) === true; } catch { trifft = false; }
-    if (!trifft) continue;
-    // Kontingent der Zeit-/Rhythmus-Seiten: hoechstens zwei davon.
-    if (ZEIT_SEITEN.includes(key)) {
-      const schonGewaehlt = gewaehlt.filter(k => ZEIT_SEITEN.includes(k)).length;
-      if (schonGewaehlt >= MAX_ZEIT_SEITEN) continue;
-    }
-    gewaehlt.push(key);
+    if (trifft) infrage.push(key);
   }
 
-  // Doppelte raus (Reihenfolge bleibt), dann deckeln.
-  const ohneDoppelte = gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
+  const ohneDoppelte = infrage.filter((k, i, arr) => arr.indexOf(k) === i);
   if (ohneDoppelte.length <= MAX_KACHELN) return ohneDoppelte;
 
-  // DER DECKEL DARF KEINE FESTE SEITE FRESSEN (Befund 07.09.2026).
-  //
-  // Frueher wurden nur 'abschluss' und 'werde-teamer' geschuetzt und der
-  // Rest positionsweise abgeschnitten. Alles, was WEIT HINTEN in der
-  // Dramaturgie steht, fiel damit zuerst heraus -- auch 'badges' und
-  // 'punkte', die zu den FESTE_KACHELN gehoeren und die Erzaehlung tragen.
-  // Aufgefallen ist es, als drei neue Zeit-Seiten dazukamen: Eine sehr
-  // aktive Konfi verlor ihre Abzeichen-Seite, ohne dass irgendwo etwas
-  // fehlschlug.
-  //
-  // Jetzt ueberleben ALLE festen Seiten den Deckel; gekuerzt wird
-  // ausschliesslich bei den dynamischen. Die Reihenfolge der Dramaturgie
-  // bleibt dabei erhalten.
-  const unkuerzbar = ohneDoppelte.filter(
+  // 2. DER ROTE FADEN IST GESETZT. Er wird nicht gewogen: Auftakt und
+  //    Abschluss muessen bleiben (Simon), und die drei Zahl-Seiten stehen
+  //    auf dem Abschluss noch einmal -- ohne sie fasste er etwas zusammen,
+  //    das nie gezeigt wurde.
+  const gesetzt = ohneDoppelte.filter(
     k => FESTE_KACHELN.includes(k) || GESCHUETZTE_KACHELN.includes(k)
   );
-  const kuerzbar = ohneDoppelte.filter(
-    k => !FESTE_KACHELN.includes(k) && !GESCHUETZTE_KACHELN.includes(k)
-  );
-  const platzFuerKuerzbare = Math.max(0, MAX_KACHELN - unkuerzbar.length);
-  const behalten = new Set([...unkuerzbar, ...kuerzbar.slice(0, platzFuerKuerzbare)]);
+
+  // 2b. EIN PLATZ FUER DEN EIGENEN SCHWERPUNKT.
+  //
+  // GEMESSEN, nachdem die Seltenheit stand: Eine sehr aktive Konfi mit acht
+  // Gottesdiensten, drei Kasualien, drei Terminen in der Passionszeit und
+  // zwei im Advent bekam davon KEINE EINZIGE Seite -- die vier freien
+  // Plaetze gingen an Stavanger (5 %), das seltenste Abzeichen (8 %), die
+  // Warteliste (20 %) und den Wochentag (25 %). Alle vier sind seltener als
+  // jede Kategorie- oder Datums-Seite, und alle vier haben recht: Sie SIND
+  // seltener.
+  //
+  // Trotzdem waere das Ergebnis falsch. Die Kategorie- und Datums-Seiten
+  // stehen in Simons Dramaturgie an Position 3 als "der eigene
+  // Schwerpunkt" -- sie erzaehlen, WO jemand war, waehrend die uebrigen
+  // erzaehlen, WIE OFT oder WIE BESONDERS. Ein Rueckblick ohne sie sagt
+  // nicht mehr, worum es in dem Jahr ging.
+  //
+  // Deshalb ist EIN Platz fuer sie reserviert -- der seltenste ihrer Art.
+  // Nicht zwei: Die Seltenheit soll die Regel bleiben, die Reservierung ist
+  // die Ausnahme, und eine Ausnahme bleibt so klein wie moeglich.
+  const istSchwerpunkt = (k) =>
+    k.startsWith('kategorie:') || k.startsWith('datum:') || k === 'kategorie-allgemein';
+  const schwerpunkte = ohneDoppelte.filter(k => istSchwerpunkt(k) && !gesetzt.includes(k));
+  if (schwerpunkte.length > 0 && gesetzt.length < MAX_KACHELN) {
+    const seltenster = [...schwerpunkte].sort((a, b) => {
+      const d = haeufigkeitFuer(a, slides) - haeufigkeitFuer(b, slides);
+      return d !== 0 ? d : ohneDoppelte.indexOf(a) - ohneDoppelte.indexOf(b);
+    })[0];
+    gesetzt.push(seltenster);
+  }
+
+  // 2c. HOECHSTENS ZWEI SCHWERPUNKT-SEITEN INSGESAMT.
+  //
+  // GEMESSEN: Eine Konfi mit einem Weihnachts- und einem Advents-Termin
+  // bekam BEIDE Datums-Seiten -- sie liegen naturgemaess dicht beieinander
+  // (Dezember) und erzaehlen fast dasselbe. Zusammen nahmen sie zwei der
+  // vier freien Plaetze, und 'vielseitig', 'langer-atem', 'challenges' und
+  // 'challenge-momente' fielen samt und sonders heraus.
+  //
+  // Zwei sind genug: eine, die den Schwerpunkt zeigt, und eine zweite, wenn
+  // sie sich ueber die Seltenheit durchsetzt. Was darueber hinausgeht,
+  // wiederholt sich.
+  const MAX_SCHWERPUNKT_SEITEN = 2;
+  const imWettbewerb = ohneDoppelte.filter(k => !gesetzt.includes(k));
+
+  // 3. DIE UEBRIGEN PLAETZE GEHEN AN DIE SELTENSTEN.
+  //
+  //    Das ist der Kern von Simons Entscheidung (07.09.2026): Nicht mehr
+  //    die Position in der Dramaturgie entscheidet, wer bleibt, sondern
+  //    die Frage "wie viele andere bekommen diese Seite auch".
+  //
+  //    Warum das die bessere Regel ist, laesst sich an einem Fall zeigen,
+  //    der gemessen wurde: 'wochentag' stand ganz hinten bei den
+  //    Zeit-Seiten und war deshalb praktisch unerreichbar -- obwohl die
+  //    Seite eine der seltensten ueberhaupt ist (mindestens 4 Termine an
+  //    einem Tag UND die Haelfte aller Termine). Nach Position verlor sie
+  //    immer, nach Seltenheit gewinnt sie fast immer.
+  const platz = Math.max(0, MAX_KACHELN - gesetzt.length);
+  const nachSeltenheit = [...imWettbewerb].sort((a, b) => {
+    const ha = haeufigkeitFuer(a, slides);
+    const hb = haeufigkeitFuer(b, slides);
+    if (ha !== hb) return ha - hb;             // seltener zuerst
+    // Gleich selten: die Reihenfolge der Dramaturgie entscheidet. Damit
+    // bleibt das Ergebnis bei gleichen Daten immer dasselbe -- ein
+    // Rueckblick wird geteilt und mehrfach geoeffnet.
+    return ohneDoppelte.indexOf(a) - ohneDoppelte.indexOf(b);
+  });
+  const zusaetzlich = [];
+  let schwerpunkteDrin = gesetzt.filter(istSchwerpunkt).length;
+  for (const k of nachSeltenheit) {
+    if (zusaetzlich.length >= platz) break;
+    if (istSchwerpunkt(k)) {
+      if (schwerpunkteDrin >= MAX_SCHWERPUNKT_SEITEN) continue;
+      schwerpunkteDrin += 1;
+    }
+    zusaetzlich.push(k);
+  }
+  const behalten = new Set([...gesetzt, ...zusaetzlich]);
+
+  // 4. ANZEIGEREIHENFOLGE BLEIBT DIE DRAMATURGIE. Die Seltenheit
+  //    entscheidet, WER mitkommt -- nicht, in welcher Reihenfolge erzaehlt
+  //    wird. Ein Rueckblick, der nach Seltenheit sortiert ist, faengt mit
+  //    der Sonderseite an und hoert bei den Terminen auf; das ist eine
+  //    Rangliste, keine Erzaehlung.
   return ohneDoppelte.filter(k => behalten.has(k));
 }
 
@@ -407,6 +707,32 @@ function waehleKacheln(slides, schnitt = null) {
  * einer neuen Teamer:in gar kein Rueckblick.
  */
 const FESTE_TEAMER_KACHELN = ['teamer-intro', 'teamer-abschluss'];
+
+/**
+ * Der Deckel des Teamer-Rueckblicks -- SEPARAT vom Konfi-Deckel.
+ *
+ * BEFUND 07.09.2026: Es gab hier gar keinen. Der Kommentar unten in
+ * waehleTeamerKacheln behauptete, "der Teamer-Rueckblick hat hoechstens
+ * sieben Seiten, MAX_KACHELN kann hier gar nicht greifen" -- das stimmte,
+ * als die Dramaturgie sieben Eintraege hatte. Sie hat inzwischen 15, und
+ * gemessen bekommt eine aktive Teamer:in davon 14. Der Kommentar war nicht
+ * mitgewachsen, und weil nichts fehlschlug, fiel es nicht auf.
+ *
+ * ZEHN, WIE BEI DEN KONFIS (Simons Vorgabe: "Teamer-Dramaturgie analog
+ * behandeln"). Die Begruendung ist dieselbe: Ein Rueckblick, den man einmal
+ * durchwischt, traegt keine 14 Seiten, und ein Deckel, den alle
+ * ausschoepfen, macht alle Rueckblicke gleich.
+ */
+const MAX_TEAMER_KACHELN = 10;
+
+/**
+ * Der rote Faden des Teamer-Rueckblicks -- dieselbe Ueberlegung wie bei den
+ * Konfis (GESCHUETZTE_KACHELN).
+ *
+ * 'teamer-abschluss' fasst Termine, Konfis und Abzeichen zusammen. Fielen
+ * die drei Seiten heraus, fasste er etwas zusammen, das nie gezeigt wurde.
+ */
+const GESCHUETZTE_TEAMER_KACHELN = ['teamer-events', 'teamer-konfis', 'teamer-badges'];
 
 /** Die Reihenfolge des Teamer-Rueckblicks. */
 const TEAMER_DRAMATURGIE = [
@@ -496,22 +822,35 @@ const TEAMER_BEDINGUNGEN = {
 function waehleTeamerKacheln(slides) {
   if (!slides || typeof slides !== 'object') return [...FESTE_TEAMER_KACHELN];
 
-  const gewaehlt = [];
+  const infrage = [];
   for (const key of TEAMER_DRAMATURGIE) {
-    if (FESTE_TEAMER_KACHELN.includes(key)) { gewaehlt.push(key); continue; }
+    if (FESTE_TEAMER_KACHELN.includes(key)) { infrage.push(key); continue; }
     const bedingung = TEAMER_BEDINGUNGEN[key];
     if (!bedingung) continue;
     let trifft = false;
     // Eine kaputte Bedingung darf nie den ganzen Rueckblick verhindern.
     try { trifft = bedingung(slides) === true; } catch { trifft = false; }
-    if (trifft) gewaehlt.push(key);
+    if (trifft) infrage.push(key);
   }
 
-  // Doppelte raus, Reihenfolge bleibt. Der Abschluss steht immer am Ende --
-  // er ist die letzte Seite der DRAMATURGIE und wird nie gedeckelt (der
-  // Teamer-Rueckblick hat hoechstens sieben Seiten, MAX_KACHELN kann hier
-  // gar nicht greifen).
-  return gewaehlt.filter((k, i, arr) => arr.indexOf(k) === i);
+  const ohneDoppelte = infrage.filter((k, i, arr) => arr.indexOf(k) === i);
+  if (ohneDoppelte.length <= MAX_TEAMER_KACHELN) return ohneDoppelte;
+
+  // Dieselbe Auswahl wie bei den Konfis: Der rote Faden ist gesetzt, die
+  // uebrigen Plaetze gehen an die seltensten. Die ANZEIGEREIHENFOLGE bleibt
+  // die Dramaturgie -- die Seltenheit entscheidet, wer mitkommt, nicht wie
+  // erzaehlt wird.
+  const gesetzt = ohneDoppelte.filter(
+    k => FESTE_TEAMER_KACHELN.includes(k) || GESCHUETZTE_TEAMER_KACHELN.includes(k)
+  );
+  const imWettbewerb = ohneDoppelte.filter(k => !gesetzt.includes(k));
+  const platz = Math.max(0, MAX_TEAMER_KACHELN - gesetzt.length);
+  const nachSeltenheit = [...imWettbewerb].sort((a, b) => {
+    const d = haeufigkeitFuer(a, slides) - haeufigkeitFuer(b, slides);
+    return d !== 0 ? d : ohneDoppelte.indexOf(a) - ohneDoppelte.indexOf(b);
+  });
+  const behalten = new Set([...gesetzt, ...nachSeltenheit.slice(0, platz)]);
+  return ohneDoppelte.filter(k => behalten.has(k));
 }
 
 module.exports = {
@@ -524,10 +863,16 @@ module.exports = {
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN,
   ZEIT_SEITEN,
-  MAX_ZEIT_SEITEN,
+  GRUND_HAEUFIGKEIT,
+  GRUND_HAEUFIGKEIT_DATUM,
+  GRUND_HAEUFIGKEIT_KATEGORIE_SEITE,
+  haeufigkeitFuer,
   GESCHUETZTE_KACHELN,
   BEDINGUNGEN,
   FESTE_TEAMER_KACHELN,
+  MAX_TEAMER_KACHELN,
+  GESCHUETZTE_TEAMER_KACHELN,
+  GRUND_HAEUFIGKEIT_TEAMER,
   TEAMER_DRAMATURGIE,
   TEAMER_BEDINGUNGEN
 };

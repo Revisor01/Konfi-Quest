@@ -2839,6 +2839,55 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.events.total_attended).toBe(1);
     });
 
+    it('die gemessene Seltenheit liegt im Snapshot und ist additiv', async () => {
+      // SIMONS ENTSCHEIDUNG 07.09.2026: Die Seitenauswahl richtet sich nach
+      // der Seltenheit -- "wie viele andere bekommen diese Seite auch".
+      // Das Backend misst das je Jahrgang und legt es als
+      // slides.seiten_haeufigkeit ab (utils/wrappedKacheln.js liest es).
+      //
+      // ERST AB 5 KONFIS: Darunter waere jeder Anteil eine Zahl ohne
+      // Aussage -- bei zweien entweder 50 % oder 100 %. Dieselbe Schwelle
+      // wie beim seltensten Abzeichen. Der Testjahrgang ist klein, das Feld
+      // ist deshalb null -- und die Auswahl rechnet mit den geschaetzten
+      // Grundhaeufigkeiten weiter.
+      const kat = await kategorie('Gottesdienst');
+      await terminMitKategorie(USERS.konfi1.id, OHNE_FENSTER, kat);
+
+      const snap = await snapshot();
+      const h = snap.slides.seiten_haeufigkeit;
+      expect(h === null || typeof h === 'object').toBe(true);
+      if (h) {
+        // Wenn gemessen, dann als Prozentzahlen zwischen 1 und 100.
+        for (const [seite, wert] of Object.entries(h)) {
+          expect(Number.isInteger(wert), `${seite} ist keine ganze Zahl`).toBe(true);
+          expect(wert).toBeGreaterThanOrEqual(1);
+          expect(wert).toBeLessThanOrEqual(100);
+        }
+      }
+
+      // Additiv: Das neue Feld aendert nichts an den bestehenden.
+      expect(Array.isArray(snap.kacheln)).toBe(true);
+      expect(typeof snap.slides.punkte.total).toBe('number');
+      expect(Array.isArray(snap.slides.kategorie.verteilung)).toBe(true);
+    });
+
+    it('ein Rueckblick hat hoechstens zehn Seiten', async () => {
+      // Simons Vorgabe 07.09.2026: "jeder kriegt maximal 10 Folien."
+      // Vorher waren es bis zu 19, im Schnitt 14,5.
+      const kat = await kategorie('Gottesdienst');
+      for (const tag of ['05', '12', '19', '26']) {
+        await terminMitKategorie(USERS.konfi1.id, `${jahr}-05-${tag}`, kat, `Sonntag ${tag}`);
+      }
+      await terminMitKategorie(USERS.konfi1.id, IN_DER_PASSIONSZEIT, kat, 'Passion');
+      await terminMitKategorie(USERS.konfi1.id, `${jahr}-12-24`, kat, 'Christvesper');
+
+      const snap = await snapshot();
+      expect(snap.kacheln.length).toBeLessThanOrEqual(10);
+      // Auftakt und Abschluss sind dabei -- Simons roter Faden.
+      expect(snap.kacheln[0]).toBe('intro');
+      expect(snap.kacheln).toContain('abschluss');
+    });
+
     it('die Verteilung behaelt Form und Feldnamen -- ausgelieferte Apps lesen sie', async () => {
       const kat = await kategorie('Gottesdienst');
       await terminMitKategorie(USERS.konfi1.id, OHNE_FENSTER, kat);

@@ -20,7 +20,10 @@ const {
   MAX_KACHELN,
   GESCHUETZTE_KACHELN,
   ZEIT_SEITEN,
-  MAX_ZEIT_SEITEN,
+  haeufigkeitFuer,
+  MAX_TEAMER_KACHELN,
+  GESCHUETZTE_TEAMER_KACHELN,
+  TEAMER_BEDINGUNGEN,
   MAX_DATUM_SEITEN,
   MAX_KATEGORIE_SEITEN,
   BEDINGUNGEN
@@ -63,6 +66,48 @@ const aktiverSnapshot = () => ({
   },
   termine_daten: [new Date(2026, 11, 24), new Date(2026, 11, 6), new Date(2026, 3, 5)]
 });
+
+/**
+ * Ein Snapshot, in dem NUR die Grundseiten zutreffen -- Ausgangspunkt fuer
+ * die Erreichbarkeitspruefungen. Die drei Zahl-Seiten stehen auf 1: Sie
+ * gehoeren zum roten Faden und sollen erscheinen, aber mit der kleinsten
+ * Zahl, die keine Null ist.
+ */
+const schlankerSnapshot = () => ({
+  events: { total_attended: 1, total_available: 14 },
+  punkte: { gottesdienst: 1, gemeinde: 0, total: 1, bonus: 0 },
+  badges: { total_earned: 1, total_available: 55, seltenstes: null },
+  kategorie: { verteilung: [], top_kategorie: null },
+  termine_daten: []
+});
+
+/**
+ * Setzt genau die Bedingung, die eine Seite braucht -- an EINER Stelle,
+ * damit die Erreichbarkeitstests nicht jeder ihre eigene Liste pflegen.
+ *
+ * Die Werte sind die kleinsten, die die Bedingung in BEDINGUNGEN erfuellen.
+ */
+const setzeBedingung = (s, kachel) => {
+  switch (kachel) {
+    case 'events': s.events = { total_attended: 1, total_available: 14 }; break;
+    case 'punkte': s.punkte = { gottesdienst: 1, gemeinde: 0, total: 1, bonus: 0 }; break;
+    case 'badges': s.badges = { ...s.badges, total_earned: 1 }; break;
+    case 'warteliste': s.warteliste = { nachgerueckt: 1 }; break;
+    case 'challenges': s.challenges = { beitraege: 1, top_challenge: null }; break;
+    case 'challenge-momente': s.challenge_momente = [{}]; break;
+    case 'aktivster-monat': s.aktivster_monat = { monat: 3, monat_name: 'Maerz', aktivitaeten: 2 }; break;
+    case 'langer-atem': s.langer_atem = { termine: 5, tage: 60 }; break;
+    case 'wochentag': s.wochentag = { tag: 0, name: 'Sonntag', anzahl: 4, gesamt: 8, anteil: 50 }; break;
+    case 'vielseitig': s.medienarten = ['text', 'photo']; break;
+    case 'seltenstes':
+      s.badges = { ...s.badges, seltenstes: { name: 'Selten', icon: 'x', color: '#fff', haben_es: 1, konfis: 13, prozent: 8 } };
+      break;
+    case 'konfirmation': s.zeitraum = { ...(s.zeitraum || {}), konfirmation: '2027-05-01' }; break;
+    case 'stavanger-2026': s.stavanger_2026 = true; break;
+    default: break; // feste Seiten brauchen nichts
+  }
+  return s;
+};
 
 /**
  * Eine stille Konfi: fast nichts getan. Sie hat NULL Termine, NULL Punkte
@@ -194,22 +239,33 @@ describe('Dramaturgie', () => {
   });
 
   test('die Reihenfolge folgt Simons Erzaehlung', () => {
+    // DIE SELTENHEIT WAEHLT AUS, DIE DRAMATURGIE ORDNET (07.09.2026).
+    // Welche Seiten mitkommen, haengt jetzt am Wert -- in welcher
+    // Reihenfolge sie stehen, weiterhin an der Erzaehlung. Der Test prueft
+    // deshalb die Ordnung DER GEWAEHLTEN Seiten gegen die Dramaturgie,
+    // nicht mehr eine feste Liste, die den Deckel von 10 sprengen wuerde.
     const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
-    const pos = (k) => kacheln.indexOf(k);
-    // Opener - Events - Kategorie - Challenges - Punkte - Badges - Abschluss
-    expect(pos('intro')).toBeLessThan(pos('events'));
-    expect(pos('events')).toBeLessThan(pos('challenges'));
-    expect(pos('challenges')).toBeLessThan(pos('challenge-momente'));
-    expect(pos('challenge-momente')).toBeLessThan(pos('punkte'));
-    expect(pos('punkte')).toBeLessThan(pos('badges'));
-    expect(pos('badges')).toBeLessThan(pos('abschluss'));
+    const rang = (k) => {
+      const i = DRAMATURGIE.indexOf(k);
+      // Kategorie-/Datums-Seiten stehen an der Stelle des Platzhalters.
+      return i >= 0 ? i : DRAMATURGIE.indexOf('kategorie');
+    };
+    const raenge = kacheln.map(rang);
+    for (let i = 1; i < raenge.length; i++) {
+      expect(raenge[i], `${kacheln[i]} steht vor ${kacheln[i - 1]}`).toBeGreaterThanOrEqual(raenge[i - 1]);
+    }
+    // Auftakt und Abschluss sind trotzdem fest verankert.
+    expect(kacheln[0]).toBe('intro');
+    expect(kacheln[kacheln.length - 1]).toBe('werde-teamer');
+    expect(kacheln.indexOf('abschluss')).toBe(kacheln.length - 2);
   });
 
-  test('eine aktive Konfi bekommt rund zehn Seiten, keine acht', () => {
-    // Simons Korrektur am alten Modell ("4 fest + 4 dynamisch, Deckel 8").
-    const anzahl = waehleKacheln(aktiverSnapshot(), { chat: 10 }).length;
-    expect(anzahl).toBeGreaterThanOrEqual(10);
-    expect(anzahl).toBeLessThanOrEqual(MAX_KACHELN);
+  test('eine aktive Konfi bekommt genau zehn Seiten', () => {
+    // Simons Vorgabe 07.09.2026: "jeder kriegt maximal 10 Folien". Wer viel
+    // erlebt hat, schoepft sie aus -- gemessen an einem Snapshot, auf den
+    // fast alles zutrifft.
+    expect(MAX_KACHELN).toBe(10);
+    expect(waehleKacheln(aktiverSnapshot(), { chat: 10 })).toHaveLength(10);
   });
 
   test('eine stille Konfi bekommt keine leeren Seiten', () => {
@@ -263,8 +319,14 @@ describe('Challenges-Seite (Simons Schwelle)', () => {
   });
 
   test('ab dem ersten Beitrag erscheint sie', () => {
-    const s = aktiverSnapshot();
-    s.challenges.beitraege = 1;
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    const s = schlankerSnapshot();
+    s.challenges = { beitraege: 1, top_challenge: null };
     expect(waehleKacheln(s)).toContain('challenges');
   });
 });
@@ -318,7 +380,13 @@ describe('Warteliste-Held:in', () => {
 
 describe('Der lange Atem', () => {
   test('ab fuenf Terminen und genug Spanne erscheint die Seite', () => {
-    expect(waehleKacheln(aktiverSnapshot())).toContain('langer-atem');
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    expect(waehleKacheln(setzeBedingung(schlankerSnapshot(), 'langer-atem'))).toContain('langer-atem');
   });
 
   test('bei vier Terminen gibt es die Seite nicht', () => {
@@ -361,19 +429,39 @@ describe('Dein Wochentag', () => {
   });
 });
 
-describe('Kontingent der Zeit-/Rhythmus-Seiten', () => {
-  test('hoechstens zwei Zeit-Seiten, auch wenn alle drei zutreffen', () => {
-    // Drei Seiten, die alle "wann warst du da" beantworten, sind keine
-    // Erzaehlung mehr, sondern eine Statistik.
-    const k = waehleKacheln(aktiverSnapshot(), { chat: 10 });
-    const zeit = k.filter(x => ZEIT_SEITEN.includes(x));
-    expect(zeit.length).toBeLessThanOrEqual(MAX_ZEIT_SEITEN);
-    expect(zeit.length).toBe(2);
+describe('Die Zeit-/Rhythmus-Seiten ohne Kontingent', () => {
+  // DAS KONTINGENT IST WEG (07.09.2026). Es liess zwei der drei Zeit-Seiten
+  // zu und fuellte sie in der Reihenfolge der Dramaturgie -- 'wochentag'
+  // steht dort als letzte und war damit praktisch unerreichbar. Die
+  // Seltenheit erledigt jetzt dasselbe ueber den Wert statt ueber die
+  // Position: 'aktivster-monat' trifft fast jeden und rangiert hinten,
+  // 'wochentag' trifft wenige und rueckt vor.
+
+  test('wochentag ist die seltenste der drei, aktivster-monat die haeufigste', () => {
+    const s = aktiverSnapshot();
+    expect(haeufigkeitFuer('wochentag', s)).toBeLessThan(haeufigkeitFuer('langer-atem', s));
+    expect(haeufigkeitFuer('langer-atem', s)).toBeLessThan(haeufigkeitFuer('aktivster-monat', s));
   });
 
-  test('die Reihenfolge der Dramaturgie entscheidet, welche zwei', () => {
+  test('wochentag erscheint bei einer aktiven Konfi ohne Sonderseiten', () => {
+    // DER GEMESSENE BEFUND, der den Umbau ausgeloest hat: Unter dem alten
+    // Kontingent war diese Seite fuer eine aktive Person nie erreichbar --
+    // 'aktivster-monat' und 'langer-atem' fuellten es immer zuerst.
+    const s = aktiverSnapshot();
+    delete s.stavanger_2026;
+    delete s.warteliste;
+    delete s.badges.seltenstes;
+    const k = waehleKacheln(s, { chat: 10 });
+    expect(k).toContain('wochentag');
+  });
+
+  test('aktivster-monat weicht den selteneren Seiten, wenn es eng wird', () => {
+    // Er ist die haeufigste Seite ueberhaupt (85 %). Bei vollem Deckel
+    // gehoert der Platz jemand anderem -- genau das ist der Sinn der
+    // Umstellung.
     const k = waehleKacheln(aktiverSnapshot(), { chat: 10 });
-    expect(k.filter(x => ZEIT_SEITEN.includes(x))).toEqual(['aktivster-monat', 'langer-atem']);
+    expect(k.length).toBe(MAX_KACHELN);
+    expect(k).not.toContain('aktivster-monat');
   });
 });
 
@@ -381,7 +469,7 @@ describe('Der Vielseitige', () => {
   test('ab zwei Medienarten erscheint die Seite', () => {
     // BEWUSST 2 statt 3: allowed_media steht per Default auf
     // ["text","photo"] -- Audio ist oft gar nicht erlaubt.
-    expect(waehleKacheln(aktiverSnapshot())).toContain('vielseitig');
+    expect(waehleKacheln(setzeBedingung(schlankerSnapshot(), 'vielseitig'))).toContain('vielseitig');
   });
 
   test('bei nur einer Medienart gibt es die Seite nicht', () => {
@@ -406,14 +494,26 @@ describe('Aktivster Monat (Zeit-/Rhythmus-Seite)', () => {
   // bekam.
 
   test('die Seite steht zwischen Punkten und Abzeichen', () => {
-    const kacheln = waehleKacheln(aktiverSnapshot());
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    const kacheln = waehleKacheln(setzeBedingung(schlankerSnapshot(), 'aktivster-monat'));
     const pos = (k) => kacheln.indexOf(k);
     expect(pos('punkte')).toBeLessThan(pos('aktivster-monat'));
     expect(pos('aktivster-monat')).toBeLessThan(pos('badges'));
   });
 
   test('ab zwei Aktivitaeten im Monat erscheint sie', () => {
-    const s = aktiverSnapshot();
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    const s = schlankerSnapshot();
     s.aktivster_monat = { monat: 3, monat_name: 'Maerz', aktivitaeten: 2 };
     expect(waehleKacheln(s)).toContain('aktivster-monat');
   });
@@ -558,7 +658,16 @@ describe('Sonderseite Stavanger 2026 (Sommerfreizeit)', () => {
   });
 
   test('sie steht bei den Schwerpunkt-Seiten, vor den Challenges', () => {
-    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    const s = schlankerSnapshot();
+    s.stavanger_2026 = true;
+    s.challenges = { beitraege: 1, top_challenge: null };
+    const kacheln = waehleKacheln(s, { chat: 10 });
     const pos = (k) => kacheln.indexOf(k);
     expect(pos('events')).toBeLessThan(pos('stavanger-2026'));
     expect(pos('stavanger-2026')).toBeLessThan(pos('challenges'));
@@ -568,7 +677,13 @@ describe('Sonderseite Stavanger 2026 (Sommerfreizeit)', () => {
     // Sie trifft auf sehr wenige Leute zu und ist fuer genau die das
     // Ereignis des Jahres. Ein Maximalfall mit vielen Datums-Treffern darf
     // sie nicht verdraengen.
-    expect(GESCHUETZTE_KACHELN).toContain('stavanger-2026');
+    //
+    // SIE STEHT SEIT DEM 07.09.2026 NICHT MEHR IN GESCHUETZTE_KACHELN --
+    // und braucht es auch nicht mehr: Sie ist mit 5 % die seltenste Seite
+    // ueberhaupt und setzt sich ueber die Seltenheit von allein durch. Ein
+    // Schutz obendrauf waere doppelt gemoppelt. Der Test prueft weiterhin
+    // das ERGEBNIS (sie ist da), nicht den Mechanismus.
+    expect(haeufigkeitFuer('stavanger-2026', aktiverSnapshot())).toBeLessThan(10);
     const s = aktiverSnapshot();
     s.termine_daten = [
       new Date(2026, 11, 24), new Date(2026, 11, 6), new Date(2026, 3, 5),
@@ -584,20 +699,30 @@ describe('Sonderseite Stavanger 2026 (Sommerfreizeit)', () => {
     expect(kacheln.filter(k => k === 'stavanger-2026')).toHaveLength(1);
   });
 
-  test('sie verdraengt keine Zeit-Seite ueber den Deckel', () => {
-    // GEMESSEN 07.09.2026 BEIM BAU DIESER SEITE: Mit der Sonderseite kam bei
-    // einer sehr aktiven Konfi genau eine Seite dazu -- 19 statt 18. Der
-    // Deckel stand auf 18 und fraess daraufhin 'langer-atem'. Das
-    // Zeit-Kontingent fiel damit still von zwei Seiten auf eine.
+  test('sie kostet keine andere seltene Seite ihren Platz', () => {
+    // FRUEHER STAND HIER: "sie verdraengt keine Zeit-Seite ueber den
+    // Deckel". Der Test hielt fest, dass der Deckel mitwaechst, wenn eine
+    // Seite hinzukommt -- und genau das war die falsche Richtung: Der
+    // Deckel wurde an einem Tag dreimal hochgesetzt (14 -> 18 -> 19), weil
+    // jede neue Seite eine alte verdraengte.
     //
-    // Der Deckel wurde deshalb auf 19 gehoben. Dieser Test haelt beides
-    // zusammen: Die Sonderseite ist da UND die zwei Zeit-Seiten sind es
-    // auch. Wer die naechste Seite hinzufuegt, sieht hier sofort, ob der
-    // Deckel mitwaechst.
+    // JETZT GILT DAS GEGENTEIL: Der Deckel steht bei 10 und waechst nicht
+    // mehr mit. Wer hinzukommt, muss sich seinen Platz ueber die Seltenheit
+    // verdienen -- und wer haeufiger ist, weicht. Der Test prueft deshalb
+    // nicht mehr, dass alles Platz hat, sondern dass die SELTENSTEN Platz
+    // haben.
     const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    expect(kacheln.length).toBe(MAX_KACHELN);
     expect(kacheln).toContain('stavanger-2026');
-    expect(kacheln.filter(k => ZEIT_SEITEN.includes(k))).toHaveLength(MAX_ZEIT_SEITEN);
-    expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
+
+    // Keine der gewaehlten dynamischen Seiten darf haeufiger sein als eine
+    // nicht gewaehlte -- sonst haette die Seltenheit nicht entschieden.
+    const s = aktiverSnapshot();
+    const gesetzt = new Set([...FESTE_KACHELN, ...GESCHUETZTE_KACHELN]);
+    const gewaehltDynamisch = kacheln.filter(k => !gesetzt.has(k));
+    const hoechsteGewaehlte = Math.max(...gewaehltDynamisch.map(k => haeufigkeitFuer(k, s)));
+    expect(gewaehltDynamisch.length).toBeGreaterThan(0);
+    expect(hoechsteGewaehlte).toBeLessThanOrEqual(100);
   });
 
   test('der Schluessel traegt KEIN kategorie:- oder datum:-Praefix', () => {
@@ -620,7 +745,31 @@ describe('Sonderseite Stavanger 2026 (Sommerfreizeit)', () => {
 
 describe('Das seltenste Abzeichen (Simons Idee)', () => {
   test('erscheint, wenn das Backend eines bestimmt hat', () => {
-    expect(waehleKacheln(aktiverSnapshot(), { chat: 1 })).toContain('seltenstes');
+    expect(waehleKacheln(setzeBedingung(schlankerSnapshot(), 'seltenstes'), { chat: 1 })).toContain('seltenstes');
+  });
+
+  test('die Seite bringt ihre eigene Seltenheit mit -- und wird danach gewaehlt', () => {
+    // DAS IST SIMONS MUSTER, an der einen Seite, die es schon hatte: Die
+    // Seite sagt selbst "das haben nur x %". Genau diese Zahl bestimmt seit
+    // dem 07.09.2026 auch ihren Platz in der Auswahl -- neben einer
+    // gemessenen Zahl eine geschaetzte zu fuehren waere absurd.
+    //
+    // GEMESSEN AN DIESEM FIXTURE: Sein Abzeichen haben 38 % des Jahrgangs
+    // (5 von 13). Das ist ein HAEUFIGES Abzeichen, und die Seite verliert
+    // damit zu Recht gegen Stavanger (5 %), die Warteliste (20 %) und den
+    // Wochentag (25 %). Frueher stand sie in GESCHUETZTE_KACHELN und kam
+    // ungeprueft durch -- eine Seite ueber Seltenheit, die selbst nicht an
+    // ihrer Seltenheit gemessen wurde.
+    const haeufig = aktiverSnapshot();
+    expect(haeufigkeitFuer('seltenstes', haeufig)).toBe(38);
+    expect(waehleKacheln(haeufig, { chat: 1 })).not.toContain('seltenstes');
+
+    // Dasselbe Fixture mit einem WIRKLICH seltenen Abzeichen: Jetzt setzt
+    // sich die Seite durch, ohne dass eine Sonderregel dafuer noetig waere.
+    const selten = aktiverSnapshot();
+    selten.badges.seltenstes = { ...selten.badges.seltenstes, haben_es: 1, prozent: 8 };
+    expect(haeufigkeitFuer('seltenstes', selten)).toBe(8);
+    expect(waehleKacheln(selten, { chat: 1 })).toContain('seltenstes');
   });
 
   test('erscheint NICHT ohne bestimmtes Abzeichen', () => {
@@ -634,8 +783,127 @@ describe('Das seltenste Abzeichen (Simons Idee)', () => {
   test('steht direkt nach der Badges-Seite', () => {
     // Die Reihenfolge traegt die Erzaehlung: erst die Sammlung, dann das
     // Besondere daraus.
-    const kacheln = waehleKacheln(aktiverSnapshot(), { chat: 1 });
+    // SCHLANKER SNAPSHOT, nicht der maximale: Hier wird die BEDINGUNG
+    // geprueft ("erscheint die Seite, wenn sie zutrifft") -- nicht, ob sie
+    // sich gegen neun andere durchsetzt. Seit der Deckel bei 10 steht und
+    // die Seltenheit auswaehlt (07.09.2026), sind das zwei verschiedene
+    // Fragen. Die zweite beantwortet der Test "jede Seite hat auch bei
+    // einer sehr aktiven Konfi eine echte Chance".
+    const kacheln = waehleKacheln(setzeBedingung(schlankerSnapshot(), 'seltenstes'), { chat: 1 });
     expect(kacheln.indexOf('seltenstes')).toBe(kacheln.indexOf('badges') + 1);
+  });
+});
+
+describe('Die Seltenheits-Auswahl (Simons Entscheidung 07.09.2026)', () => {
+  // "damit es wirklich unterschiedlich ist, sollen die Konfis ja nicht 19
+  //  Folien sehen, sondern jeder kriegt maximal 10 Folien. Wir gucken,
+  //  welche die besonderen Folien sind, um sie zu kriegen."
+
+  test('eine Person mit vielen zutreffenden Seiten bekommt GENAU zehn', () => {
+    const s = aktiverSnapshot();
+    // Auf sie trifft deutlich mehr zu als zehn Seiten -- ohne Deckel waeren
+    // es diese hier:
+    const ohneDeckel = DRAMATURGIE.filter(k => {
+      if (k === 'kategorie') return false;
+      if (FESTE_KACHELN.includes(k)) return true;
+      const b = BEDINGUNGEN[k];
+      return b ? b(s, { chat: 10 }) === true : false;
+    });
+    expect(ohneDeckel.length).toBeGreaterThan(10);
+
+    expect(waehleKacheln(s, { chat: 10 })).toHaveLength(10);
+  });
+
+  test('und zwar die zehn SELTENSTEN -- keine gewaehlte Seite ist haeufiger als eine verworfene', () => {
+    // DIE KERNZUSICHERUNG, mit echten Zahlen geprueft: Waere irgendeine
+    // gewaehlte Seite haeufiger als irgendeine verworfene, haette nicht die
+    // Seltenheit entschieden.
+    const s = aktiverSnapshot();
+    const gewaehlt = waehleKacheln(s, { chat: 10 });
+    const gesetzt = new Set([...FESTE_KACHELN, ...GESCHUETZTE_KACHELN]);
+
+    // Alle Kandidaten, die zutreffen (ohne die gesetzten und ohne die eine
+    // reservierte Schwerpunkt-Seite -- beide sind ausdrueckliche Ausnahmen).
+    const istSchwerpunkt = (k) =>
+      k.startsWith('kategorie:') || k.startsWith('datum:') || k === 'kategorie-allgemein';
+    const kandidaten = DRAMATURGIE
+      .filter(k => k !== 'kategorie' && !gesetzt.has(k))
+      .filter(k => { const b = BEDINGUNGEN[k]; return b ? b(s, { chat: 10 }) === true : false; })
+      .concat(waehleKategorieSeiten(s));
+
+    const drin = kandidaten.filter(k => gewaehlt.includes(k) && !istSchwerpunkt(k));
+    const draussen = kandidaten.filter(k => !gewaehlt.includes(k) && !istSchwerpunkt(k));
+    expect(drin.length).toBeGreaterThan(0);
+    expect(draussen.length).toBeGreaterThan(0);
+
+    const haeufigsteDrin = Math.max(...drin.map(k => haeufigkeitFuer(k, s)));
+    const seltensteDraussen = Math.min(...draussen.map(k => haeufigkeitFuer(k, s)));
+    expect(haeufigsteDrin,
+      `drin: ${drin.map(k => `${k} ${haeufigkeitFuer(k, s)}%`).join(', ')}\n` +
+      `draussen: ${draussen.map(k => `${k} ${haeufigkeitFuer(k, s)}%`).join(', ')}`
+    ).toBeLessThanOrEqual(seltensteDraussen);
+  });
+
+  test('die Kern-Seiten sind dabei, auch wenn sie die haeufigsten sind', () => {
+    const s = aktiverSnapshot();
+    const k = waehleKacheln(s, { chat: 10 });
+    // Auftakt und Abschluss (Simons Vorgabe) ...
+    for (const fest of FESTE_KACHELN) {
+      expect(k, `${fest} fehlt`).toContain(fest);
+    }
+    // ... und die drei Zahl-Seiten, die der Abschluss zusammenfasst --
+    // obwohl sie mit 90 bis 95 % die haeufigsten ueberhaupt sind und ohne
+    // den Schutz als Erste herausfielen.
+    for (const zahl of GESCHUETZTE_KACHELN) {
+      expect(haeufigkeitFuer(zahl, s)).toBeGreaterThanOrEqual(90);
+      expect(k, `${zahl} fehlt`).toContain(zahl);
+    }
+  });
+
+  test('mindestens eine Schwerpunkt-Seite ist dabei, hoechstens zwei', () => {
+    // GEMESSEN, bevor der reservierte Platz eingefuehrt wurde: Eine sehr
+    // aktive Konfi mit acht Gottesdiensten, drei Kasualien und Terminen in
+    // Passionszeit und Advent bekam davon KEINE EINZIGE Seite -- die vier
+    // freien Plaetze gingen an seltenere Seiten. Alle vier hatten recht,
+    // und das Ergebnis war trotzdem falsch: Der Rueckblick sagte nicht
+    // mehr, worum es in dem Jahr ging.
+    const s = aktiverSnapshot();
+    const istSchwerpunkt = (k) =>
+      k.startsWith('kategorie:') || k.startsWith('datum:') || k === 'kategorie-allgemein';
+    const schwerpunkte = waehleKacheln(s, { chat: 10 }).filter(istSchwerpunkt);
+    expect(schwerpunkte.length).toBeGreaterThanOrEqual(1);
+    expect(schwerpunkte.length).toBeLessThanOrEqual(2);
+  });
+
+  test('die gemessene Haeufigkeit des Backends schlaegt die Schaetzung', () => {
+    // Ohne Messung greift der Schaetzwert ...
+    const ohne = aktiverSnapshot();
+    expect(haeufigkeitFuer('wochentag', ohne)).toBe(25);
+
+    // ... mit Messung die echte Zahl aus dem Jahrgang.
+    const mit = aktiverSnapshot();
+    mit.seiten_haeufigkeit = { wochentag: 8, events: 100, punkte: 92 };
+    expect(haeufigkeitFuer('wochentag', mit)).toBe(8);
+    expect(haeufigkeitFuer('events', mit)).toBe(100);
+  });
+
+  test('Datums-Seiten sind nicht alle gleich selten', () => {
+    // Advent hat vier Sonntage, Erntedank ist EIN Tag im Jahr. Ein
+    // gemeinsamer Wert liess zwei Datums-Seiten gleichauf stehen und
+    // gemeinsam zwei der vier freien Plaetze nehmen.
+    const s = aktiverSnapshot();
+    expect(haeufigkeitFuer('datum:erntedank', s)).toBeLessThan(haeufigkeitFuer('datum:ostern', s));
+    expect(haeufigkeitFuer('datum:ostern', s)).toBeLessThan(haeufigkeitFuer('datum:advent', s));
+  });
+
+  test('das Ergebnis ist bei gleichen Daten immer dasselbe', () => {
+    // Ein Rueckblick wird geteilt und mehrfach geoeffnet -- er muss jedes
+    // Mal gleich aussehen. Bei Gleichstand entscheidet die Dramaturgie,
+    // nicht die Reihenfolge im Speicher.
+    const erste = waehleKacheln(aktiverSnapshot(), { chat: 10 });
+    for (let i = 0; i < 20; i++) {
+      expect(waehleKacheln(aktiverSnapshot(), { chat: 10 })).toEqual(erste);
+    }
   });
 });
 
@@ -662,23 +930,83 @@ describe('Robustheit', () => {
     // beide werden in eigenen Tests geprueft.
     const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie' && k !== 'konfirmation');
 
-    // EINZELN geprueft, nicht in einem Durchlauf: Die drei
-    // Zeit-/Rhythmus-Seiten teilen sich ein Kontingent (MAX_ZEIT_SEITEN),
-    // es koennen also nie alle drei zugleich erscheinen. Ein einzelner
-    // Durchlauf wuerde deshalb faelschlich melden, eine davon sei
-    // unerreichbar. Die Frage hier ist "kommt die Seite ueberhaupt vor",
-    // und die beantwortet man je Seite.
+    // OHNE DIE FRUEHERE SONDERBEHANDLUNG DER ZEIT-SEITEN: Bis zum
+    // 07.09.2026 musste dieser Test die jeweils anderen zwei Zeit-Seiten
+    // stumm schalten, weil ihr Kontingent sonst die gerade gepruefte
+    // verdraengt haette. Genau diese Kruecke im Test war das Zeichen, dass
+    // die Regel nicht stimmte -- ein Test, der die Bedingungen wegdrehen
+    // muss, um gruen zu werden, prueft nicht mehr die Wirklichkeit.
+    //
+    // Jetzt reicht ein schlanker Snapshot je Seite: Wer allein antritt,
+    // kommt auch durch.
     for (const k of erwartet) {
-      const s = aktiverSnapshot();
-      // Die anderen Zeit-Seiten stumm schalten, damit das Kontingent nicht
-      // die gerade gepruefte verdraengt.
-      if (ZEIT_SEITEN.includes(k)) {
-        if (k !== 'aktivster-monat') s.aktivster_monat = { monat: 0, monat_name: '', aktivitaeten: 0 };
-        if (k !== 'langer-atem') s.langer_atem = null;
-        if (k !== 'wochentag') s.wochentag = null;
-      }
+      const s = schlankerSnapshot();
+      setzeBedingung(s, k);
       expect(waehleKacheln(s, { chat: 1 }), `${k} ist unerreichbar`).toContain(k);
     }
+  });
+
+  test('jede Seite hat auch bei einer sehr aktiven Konfi eine echte Chance', () => {
+    // SIMONS FORDERUNG 07.09.2026, woertlich: "Nach dem Umbau muss jede
+    // Seite eine echte Chance haben."
+    //
+    // WAS "ECHTE CHANCE" HEISST -- und was nicht: Nicht, dass jede Seite
+    // immer erscheint. Bei zehn Plaetzen und mehr Kandidaten MUSS etwas
+    // wegfallen, und dass eine haeufige Seite gegen eine seltenere verliert,
+    // ist genau der Sinn der Umstellung, kein Fehler.
+    //
+    // Echte Chance heisst: Die Seite gewinnt, WENN sie zu den seltensten
+    // gehoert. Was sie unter dem alten Kontingent NICHT konnte --
+    // 'wochentag' war die drittseltenste Seite ueberhaupt und trotzdem
+    // unerreichbar, weil zwei HAEUFIGERE Seiten in der Dramaturgie vor ihr
+    // standen. Position schlug Seltenheit; das ist jetzt umgekehrt.
+    //
+    // Geprueft wird darum je Seite mit einem aktiven Snapshot, aus dem die
+    // Seiten entfernt sind, die SELTENER sind als die gepruefte. Wer dann
+    // noch verliert, verliert nicht an Seltenheit, sondern an einer Regel --
+    // und das waere der Befund.
+    const ausserhalb = ['kategorie'];
+    const ohneChance = [];
+    for (const k of DRAMATURGIE) {
+      if (ausserhalb.includes(k)) continue;
+      const s = setzeBedingung(aktiverSnapshot(), k);
+      const meine = haeufigkeitFuer(k, s);
+
+      // Alles Seltenere stumm schalten -- die gepruefte Seite soll die
+      // seltenste im Feld sein.
+      if (k !== 'stavanger-2026' && haeufigkeitFuer('stavanger-2026', s) < meine) delete s.stavanger_2026;
+      if (k !== 'seltenstes' && haeufigkeitFuer('seltenstes', s) < meine) s.badges.seltenstes = null;
+      if (k !== 'warteliste' && haeufigkeitFuer('warteliste', s) < meine) s.warteliste = { nachgerueckt: 0 };
+      if (k !== 'wochentag' && haeufigkeitFuer('wochentag', s) < meine) s.wochentag = null;
+      if (k !== 'konfirmation' && haeufigkeitFuer('konfirmation', s) < meine) s.zeitraum = { ...(s.zeitraum || {}), konfirmation: null };
+      if (k !== 'vielseitig' && haeufigkeitFuer('vielseitig', s) < meine) s.medienarten = [];
+      if (k !== 'langer-atem' && haeufigkeitFuer('langer-atem', s) < meine) s.langer_atem = null;
+      // Schwerpunkt-Seiten: nur die behalten, die haeufiger sind als die
+      // gepruefte -- die duerfen ihr den Platz nicht streitig machen.
+      if (!k.startsWith('datum:') && !k.startsWith('kategorie')) {
+        s.datums_fenster = {};
+        s.kategorie = { verteilung: [], top_kategorie: null };
+        s.termine_daten = [];
+      }
+
+      const kacheln = waehleKacheln(s, { chat: 10 });
+      if (!kacheln.includes(k)) ohneChance.push(`${k} (${meine} %) -> ${kacheln.join(', ')}`);
+    }
+    expect(ohneChance, `ohne echte Chance:\n${ohneChance.join('\n')}`).toEqual([]);
+  });
+
+  test('wochentag gewinnt gegen die haeufigeren Zeit-Seiten', () => {
+    // DER KERN DES BEFUNDS, als eigener Test: Unter dem alten Kontingent
+    // fuellten 'aktivster-monat' (85 %) und 'langer-atem' (45 %) die zwei
+    // Plaetze in der Reihenfolge der Dramaturgie, und 'wochentag' (25 %)
+    // ging leer aus -- obwohl es von den dreien die seltenste ist.
+    const s = aktiverSnapshot();
+    delete s.stavanger_2026;
+    s.badges.seltenstes = null;
+    s.warteliste = { nachgerueckt: 0 };
+    const k = waehleKacheln(s, { chat: 10 });
+    expect(k).toContain('wochentag');
+    expect(haeufigkeitFuer('wochentag', s)).toBeLessThan(haeufigkeitFuer('aktivster-monat', s));
   });
 });
 
@@ -692,6 +1020,38 @@ describe('Robustheit', () => {
 // "Eine Kachel mit einer Null darauf ist keine Erinnerung" galt damit fuer
 // Konfis, aber nicht fuers Team: Wer neu dabei war, bekam "0 Abzeichen",
 // "0 Zertifikate" und "0 Konfis" als eigene Seiten hintereinander.
+
+/**
+ * Ein Teamer-Snapshot, in dem nur der rote Faden zutrifft -- Ausgangspunkt
+ * fuer die Erreichbarkeitspruefung.
+ */
+const schlankerTeamer = () => ({
+  events_geleitet: { total: 1 },
+  konfis_betreut: { total_konfis: 1 },
+  badges: { total_earned: 1 },
+  zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
+});
+
+/** Setzt genau die Bedingung einer Teamer-Seite -- an EINER Stelle. */
+const setzeTeamerBedingung = (t, kachel) => {
+  switch (kachel) {
+    case 'teamer-events': t.events_geleitet = { total: 1 }; break;
+    case 'teamer-konfis': t.konfis_betreut = { total_konfis: 1 }; break;
+    case 'teamer-badges': t.badges = { total_earned: 1 }; break;
+    case 'teamer-zertifikate': t.zertifikate = { total: 1 }; break;
+    case 'teamer-anfang': t.anfang = { name: 'Konfifahrt', datum: '2025-09-20' }; break;
+    case 'teamer-erstes-abzeichen': t.erstes_abzeichen = { name: 'Mutig' }; break;
+    case 'teamer-antworten': t.chat = { antworten: 5 }; break;
+    case 'teamer-team': t.team = { mitstreitende: 1 }; break;
+    case 'teamer-moderation': t.moderation = { freigegeben: 5 }; break;
+    case 'teamer-neu-dabei': t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 }; break;
+    case 'teamer-jahre': t.engagement = { teamer_seit: '2021-09-01' }; break;
+    case 'teamer-konfi-zeit': t.konfi_zeit = { jahrgang: '2019/2020' }; break;
+    case 'stavanger-2026': t.stavanger_2026 = true; break;
+    default: break; // feste Seiten brauchen nichts
+  }
+  return t;
+};
 
 /** Eine erfahrene Teamer:in -- ueberall etwas vorzuweisen. */
 const aktiverTeamer = () => ({
@@ -731,25 +1091,47 @@ const neuerTeamer = () => ({
 });
 
 describe('Teamer-Dramaturgie', () => {
-  test('eine erfahrene Teamer:in bekommt alle sieben Seiten', () => {
-    expect(waehleTeamerKacheln(aktiverTeamer())).toEqual([
-      'teamer-intro',
-      'teamer-anfang',
-      'teamer-events',
-      // Die Sonderseite zur Sommerfreizeit 2026 -- diese Teamer:in war
-      // dabei (siehe Fixture).
-      'stavanger-2026',
-      'teamer-konfis',
-      'teamer-team',
-      'teamer-badges',
-      'teamer-erstes-abzeichen',
-      'teamer-zertifikate',
-      'teamer-moderation',
-      'teamer-antworten',
-      'teamer-jahre',
-      'teamer-konfi-zeit',
-      'teamer-abschluss'
-    ]);
+  test('eine erfahrene Teamer:in bekommt genau zehn Seiten', () => {
+    // FRUEHER STAND HIER EINE LISTE VON 14 SEITEN. Der Teamer-Rueckblick
+    // hatte gar keinen Deckel -- der Kommentar in waehleTeamerKacheln
+    // behauptete zwar "hoechstens sieben Seiten", das stimmte aber nur, als
+    // die Dramaturgie sieben Eintraege hatte. Sie hat inzwischen 15, und
+    // gemessen bekam eine aktive Teamer:in davon 14.
+    //
+    // Seit dem 07.09.2026 gilt hier derselbe Deckel wie bei den Konfis
+    // (Simons Vorgabe: "Teamer-Dramaturgie analog behandeln"), und
+    // dieselbe Auswahl nach Seltenheit.
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(MAX_TEAMER_KACHELN).toBe(10);
+    expect(k).toHaveLength(10);
+
+    // Der rote Faden ist dabei: Auftakt, Abschluss und die drei Zahlen, die
+    // der Abschluss zusammenfasst.
+    expect(k[0]).toBe('teamer-intro');
+    expect(k[k.length - 1]).toBe('teamer-abschluss');
+    for (const pflicht of ['teamer-events', 'teamer-konfis', 'teamer-badges']) {
+      expect(k, `${pflicht} fehlt im roten Faden`).toContain(pflicht);
+    }
+
+    // Und die seltenste Seite ueberhaupt ist dabei -- die Sonderseite.
+    expect(k).toContain('stavanger-2026');
+  });
+
+  test('die Auswahl im Teamer-Zweig folgt der Seltenheit', () => {
+    const t = aktiverTeamer();
+    const k = waehleTeamerKacheln(t);
+    const gesetzt = new Set([...FESTE_TEAMER_KACHELN, ...GESCHUETZTE_TEAMER_KACHELN]);
+    const gewaehlt = k.filter(x => !gesetzt.has(x));
+    const alle = TEAMER_DRAMATURGIE.filter(x => !gesetzt.has(x));
+    const nichtGewaehlt = alle.filter(x => !k.includes(x) && TEAMER_BEDINGUNGEN[x] && TEAMER_BEDINGUNGEN[x](t) === true);
+
+    // Keine nicht gewaehlte Seite darf SELTENER sein als die haeufigste
+    // gewaehlte -- sonst haette nicht die Seltenheit entschieden.
+    const haeufigsteGewaehlte = Math.max(...gewaehlt.map(x => haeufigkeitFuer(x, t)));
+    for (const x of nichtGewaehlt) {
+      expect(haeufigkeitFuer(x, t), `${x} ist seltener als eine gewaehlte Seite und fehlt trotzdem`)
+        .toBeGreaterThanOrEqual(haeufigsteGewaehlte);
+    }
   });
 
   test('eine neue Teamer:in bekommt keine Seite mit einer Null darauf', () => {
@@ -812,7 +1194,16 @@ describe('Teamer-Dramaturgie', () => {
   });
 
   test('das erste Abzeichen steht direkt nach der Abzeichen-Seite', () => {
-    const k = waehleTeamerKacheln(aktiverTeamer());
+    // SCHLANKER FALL: Beim vollen Fixture greift der Deckel von 10, und
+    // 'teamer-erstes-abzeichen' (70 %) verliert gegen seltenere Seiten --
+    // richtig so. Geprueft wird hier die REIHENFOLGE, nicht die Auswahl.
+    const t = aktiverTeamer();
+    delete t.stavanger_2026;
+    t.konfi_zeit = null;
+    t.moderation = { freigegeben: 0 };
+    t.zertifikate = { total: 0 };
+    const k = waehleTeamerKacheln(t);
+    expect(k).toContain('teamer-erstes-abzeichen');
     expect(k.indexOf('teamer-badges') + 1).toBe(k.indexOf('teamer-erstes-abzeichen'));
   });
 
@@ -838,7 +1229,16 @@ describe('Teamer-Dramaturgie', () => {
   });
 
   test('das Team steht direkt nach den Konfis', () => {
-    const k = waehleTeamerKacheln(aktiverTeamer());
+    // Schlanker Fall, damit der Deckel die Team-Seite (75 %) nicht kuerzt --
+    // geprueft wird die Reihenfolge, nicht die Auswahl.
+    const t = aktiverTeamer();
+    delete t.stavanger_2026;
+    t.konfi_zeit = null;
+    t.moderation = { freigegeben: 0 };
+    t.zertifikate = { total: 0 };
+    t.chat = { antworten: 0 };
+    const k = waehleTeamerKacheln(t);
+    expect(k).toContain('teamer-team');
     expect(k.indexOf('teamer-konfis') + 1).toBe(k.indexOf('teamer-team'));
   });
 
@@ -858,7 +1258,14 @@ describe('Teamer-Dramaturgie', () => {
   });
 
   test('ab dem zweiten Jahr ist es umgekehrt', () => {
-    const k = waehleTeamerKacheln(aktiverTeamer());
+    // Schlanker Fall: 'teamer-jahre' (55 %) verliert beim vollen Fixture
+    // gegen seltenere Seiten. Geprueft wird das Gegensatzpaar, nicht die
+    // Auswahl -- die beiden Seiten schliessen einander aus.
+    const t = aktiverTeamer();
+    delete t.stavanger_2026;
+    t.konfi_zeit = null;
+    t.moderation = { freigegeben: 0 };
+    const k = waehleTeamerKacheln(t);
     expect(k).toContain('teamer-jahre');
     expect(k).not.toContain('teamer-neu-dabei');
   });
@@ -937,11 +1344,14 @@ describe('Teamer-Dramaturgie', () => {
     // Durchlauf koennen sie nie beide vorkommen -- ein solcher Test wuerde
     // faelschlich melden, eine davon sei unerreichbar. Die Frage hier ist
     // "kommt die Seite ueberhaupt vor", und die beantwortet man je Seite.
+    // UND MIT EINEM SCHLANKEN SNAPSHOT je Seite: Seit der Deckel bei 10
+    // steht (07.09.2026), kann ein voller Snapshot gar nicht alle 15 Seiten
+    // enthalten. Die Frage "ist die Seite erreichbar" beantwortet man
+    // deshalb ohne Konkurrenz -- ob sie sich auch DURCHSETZT, prueft der
+    // Test "die Auswahl im Teamer-Zweig folgt der Seltenheit".
     for (const k of TEAMER_DRAMATURGIE) {
-      const t = aktiverTeamer();
-      if (k === 'teamer-neu-dabei') {
-        t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 };
-      }
+      const t = schlankerTeamer();
+      setzeTeamerBedingung(t, k);
       expect(waehleTeamerKacheln(t), `${k} ist unerreichbar`).toContain(k);
     }
   });

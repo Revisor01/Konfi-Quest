@@ -177,6 +177,13 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Der Jahresrückblick zeigt jetzt höchstens zehn Seiten statt bis zu neunzehn
+  — und ausgewählt werden die seltensten. Wie viele andere im Jahrgang
+  dieselbe Seite auch bekommen, entscheidet darüber, wer sie sieht: Wer bei
+  etwas dabei war, das nur wenige erlebt haben, bekommt genau dafür eine
+  Seite. Auftakt, Abschluss, die eigenen Zahlen und mindestens ein
+  Schwerpunkt sind dabei immer dabei. Das gilt für Konfis und fürs Team.
+
 - Der Rückblick einer Konfi umfasst jetzt die ganze Konfi-Zeit — vom Beginn
   bis heute, auch wenn das zwei Jahre sind. Der Konfirmationstermin schneidet
   nichts mehr ab; er wird weiterhin auf der eigenen Seite gezeigt.
