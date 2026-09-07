@@ -336,6 +336,9 @@ const TEAMER_DRAMATURGIE = [
   'teamer-zertifikate',  // 7  Zertifikate
   // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
   // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
+  // 7b: Die Challenge-Begleiterin -- die Moderationsarbeit, die sonst
+  // niemand sieht. Steht bei den Taetigkeits-Seiten, vor dem Chat.
+  'teamer-moderation',   // 7b was du freigegeben hast
   'teamer-antworten',    // 8  wie oft du geantwortet hast
   'teamer-jahre',        // 9  "seit x Jahren dabei"
   // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
@@ -371,6 +374,9 @@ const TEAMER_BEDINGUNGEN = {
   'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
   'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
   'teamer-team': (s) => (s.team?.mitstreitende || 0) > 0,
+  // Erst ab fuenf Freigaben. Eine einzelne ist keine Geschichte -- dieselbe
+  // Schwelle wie bei den Antworten.
+  'teamer-moderation': (s) => (s.moderation?.freigegeben || 0) >= 5,
   // Nur im ERSTEN Jahr. Und nur, wenn das Startjahr ueberhaupt bekannt ist:
   // "unbekannt" ist nicht "neu" -- wer seit Jahren dabei ist, aber kein
   // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst werden.

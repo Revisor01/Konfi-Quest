@@ -442,6 +442,19 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-moderation': {
+          if (!teamer) return null;
+          const mod = teamer.slides.moderation;
+          if (!mod?.freigegeben) return null;
+          return (
+            <>
+              <div className="share-label">Hinter den Kulissen</div>
+              <div className="share-big-number">{mod.freigegeben}</div>
+              <div className="share-subtitle">Beiträge freigegeben</div>
+            </>
+          );
+        }
+
         case 'teamer-team': {
           if (!teamer) return null;
           const tm = teamer.slides.team;

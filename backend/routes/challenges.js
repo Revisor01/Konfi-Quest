@@ -1669,12 +1669,23 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           // approve und unhide fuehren beide zu 'approved' und raeumen die
           // hidden-Metadaten ab (ein wieder eingeblendeter Beitrag ist
           // freigegeben) — inklusive der Ausblende-Begruendung.
+          // approved_by/approved_at halten fest, WER freigegeben hat
+          // (Migration 146). Fuers Ausblenden gab es hidden_by/hidden_at
+          // laengst; die Freigabe -- also die eigentliche Moderationsarbeit --
+          // hinterliess bisher keine Spur. Der Jahresrueckblick macht sie
+          // daraus sichtbar.
+          //
+          // BEWUSST NUR HIER und nicht beim Einreichen: Bei unmoderierten
+          // Challenges entsteht 'approved' automatisch, ohne dass jemand
+          // hingesehen hat. Dort bleibt die Spalte NULL -- niemand bekommt
+          // Arbeit gutgeschrieben, die er nicht geleistet hat.
           ({ rows: [updated] } = await db.query(
             `UPDATE challenge_submissions
              SET moderation_status = 'approved', hidden_by = NULL, hidden_at = NULL,
-                 moderation_note = NULL
+                 moderation_note = NULL,
+                 approved_by = $2, approved_at = NOW()
              WHERE id = $1 RETURNING id, moderation_status, moderation_note`,
-            [submissionId]
+            [submissionId, req.user.id]
           ));
         }
 

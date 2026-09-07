@@ -49,6 +49,10 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Teamer-Rückblick zeigt, wie viele Challenge-Beiträge jemand
+  freigegeben hat — Arbeit, die sonst niemand sieht. Nur die eigene
+  Freigabe, nie eine Ablehnungsquote. Für frühere Freigaben lässt sich das
+  nicht mehr feststellen.
 - Wer im Konfi-Jahr von der Warteliste nachgerückt ist, bekommt dafür eine
   eigene Seite im Rückblick. Für frühere Anmeldungen lässt sich das nicht
   mehr feststellen — dort bleibt die Seite aus.

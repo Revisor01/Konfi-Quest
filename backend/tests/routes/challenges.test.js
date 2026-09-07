@@ -607,6 +607,43 @@ describe('Challenges Routes', () => {
       expect(res.status).toBe(404);
     });
 
+    it('Die Freigabe haelt fest, WER sie ausgesprochen hat', async () => {
+      // Fuers Ausblenden gab es hidden_by/hidden_at laengst; die Freigabe --
+      // die eigentliche Moderationsarbeit -- hinterliess bisher keine Spur
+      // (Migration 146). Der Jahresrueckblick macht sie daraus sichtbar.
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(res.status).toBe(200);
+
+      const { rows: [row] } = await db.query(
+        'SELECT moderation_status, approved_by, approved_at FROM challenge_submissions WHERE id = $1',
+        [submission.id]
+      );
+      expect(row.moderation_status).toBe('approved');
+      expect(row.approved_by).toBe(USERS.admin1.id);
+      expect(row.approved_at).not.toBe(null);
+    });
+
+    it('Ein automatisch freigegebener Beitrag traegt KEINEN Freigebenden', async () => {
+      // Bei unmoderierten Challenges entsteht 'approved' ohne dass jemand
+      // hingesehen hat -- niemand darf sich das gutschreiben lassen.
+      const challenge = await createChallenge({ moderated: false });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const { rows: [row] } = await db.query(
+        'SELECT approved_by FROM challenge_submissions WHERE id = $1',
+        [submission.id]
+      );
+      expect(row.approved_by).toBe(null);
+    });
+
     it('Cross-Org: Moderation einer fremden Submission -> 404', async () => {
       const challenge = await createChallenge({ moderated: true });
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);

@@ -246,7 +246,7 @@ Tage noch“.
 > Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite **immer** — auch
 > wenn die Konfirmation längst vorbei ist.
 
-**13. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
+**14. Auf einen Blick** — Punkte, Termine und Abzeichen nebeneinander, dann in
 großen Lettern **„Dein Weg. Deine Zeit. Dein Glaube.“** und als Einladung
 „Werde Teamer:in — bleib dabei und gestalte das nächste Konfi-Jahr mit“. Immer
 die letzte Seite: Der Rückblick endet nicht mit einer Zahl, sondern mit einer
@@ -322,7 +322,7 @@ volle Konfi-Jahr.
 
 ## Die Seiten des Teamer-Rückblicks
 
-Es sind **höchstens zwölf Seiten** — und wie bei den Konfis erscheint eine
+Es sind **höchstens dreizehn Seiten** — und wie bei den Konfis erscheint eine
 Seite nur, wenn sie etwas zu erzählen hat. Wer neu im Team ist, bekommt keine
 Reihe von Seiten mit einer Null darauf, sondern einen kürzeren Rückblick.
 Begrüßung und Abschluss stehen immer.
@@ -358,29 +358,36 @@ Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
 **8. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
 *Entfällt ohne Zertifikate im Zeitraum.*
 
-**9. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
+**9. Hinter den Kulissen** — wie viele Challenge-Beiträge die Teamer:in
+freigegeben hat. Gezählt wird **nur die eigene Freigabe** — nie, wie viel
+jemand ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch
+freigegebene Beiträge unmoderierter Challenges zählen nicht mit, dort hat
+niemand hingesehen.
+*Entfällt unter fünf Freigaben.*
+
+**10. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
 Gezählt werden echte Antworten (Bezug auf eine Nachricht), keine eigenen
 Beiträge ohne Bezug; zurückgenommene Antworten zählen nicht.
 *Entfällt unter fünf Antworten.*
 
-**10. Dein erstes Jahr** — für alle, die im Rückblicksjahr ins Team gekommen
+**11. Dein erstes Jahr** — für alle, die im Rückblicksjahr ins Team gekommen
 sind. Sie bekommen diese Seite **statt** „Dein Engagement" — beides zugleich
 wäre dieselbe Auskunft zweimal.
 *Entfällt ab dem zweiten Jahr und wenn kein Eintrittsdatum bekannt ist.*
 
-**11. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
+**12. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
 wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
 
 > **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
 > jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
 > „Teamer:in seit".
 
-**12. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
+**13. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
 dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
 Jahrgang, sofern bekannt.
 *Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
 
-**13. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
+**14. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.
 
 ## Wo man den Rückblick wiederfindet

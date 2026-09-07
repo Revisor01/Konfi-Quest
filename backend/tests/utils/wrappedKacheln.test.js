@@ -485,6 +485,7 @@ const aktiverTeamer = () => ({
   anfang: { name: 'Konfifahrt', datum: '2025-09-20' },
   erstes_abzeichen: { name: 'Mutig', icon: 'flame', color: '#f00', datum: '2025-10-01' },
   team: { mitstreitende: 5 },
+  moderation: { freigegeben: 18 },
   neu_dabei: { erstes_jahr: false, start_jahr: 2021 },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
@@ -501,6 +502,7 @@ const neuerTeamer = () => ({
   anfang: null,
   erstes_abzeichen: null,
   team: { mitstreitende: 0 },
+  moderation: { freigegeben: 0 },
   neu_dabei: { erstes_jahr: false, start_jahr: null },
   chat: { antworten: 0 },
   konfi_zeit: null,
@@ -518,6 +520,7 @@ describe('Teamer-Dramaturgie', () => {
       'teamer-badges',
       'teamer-erstes-abzeichen',
       'teamer-zertifikate',
+      'teamer-moderation',
       'teamer-antworten',
       'teamer-jahre',
       'teamer-konfi-zeit',
@@ -596,6 +599,18 @@ describe('Teamer-Dramaturgie', () => {
     const k = waehleTeamerKacheln(t);
     expect(k).not.toContain('teamer-badges');
     expect(k).not.toContain('teamer-erstes-abzeichen');
+  });
+
+  test('ab fuenf Freigaben erscheint die Moderations-Seite', () => {
+    const t = aktiverTeamer();
+    t.moderation = { freigegeben: 5 };
+    expect(waehleTeamerKacheln(t)).toContain('teamer-moderation');
+  });
+
+  test('bei vier Freigaben gibt es die Seite nicht', () => {
+    const t = aktiverTeamer();
+    t.moderation = { freigegeben: 4 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-moderation');
   });
 
   test('das Team steht direkt nach den Konfis', () => {

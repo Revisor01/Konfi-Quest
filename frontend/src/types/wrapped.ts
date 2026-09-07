@@ -254,6 +254,11 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/** Freigegebene Challenge-Beitraege -- ab Snapshot-Version 3 (Migration 146). */
+export interface TeamerModerationSlide {
+  freigegeben: number;
+}
+
 /** Mit wie vielen anderen zusammen -- ab Snapshot-Version 3. */
 export interface TeamerTeamSlide {
   mitstreitende: number;
@@ -319,6 +324,8 @@ export interface TeamerWrappedData {
     engagement: TeamerEngagementSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     team?: TeamerTeamSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    moderation?: TeamerModerationSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     neu_dabei?: TeamerNeuDabeiSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */

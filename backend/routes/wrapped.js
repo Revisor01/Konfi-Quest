@@ -1193,6 +1193,38 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const antworten = parseInt(antwortenRow.count, 10) || 0;
 
+    // DIE CHALLENGE-BEGLEITERIN -- wie viele Beitraege jemand freigegeben hat.
+    //
+    // NUR DIE EIGENE LEISTUNG, NIE EINE ABLEHNUNGSQUOTE (Konzept
+    // docs/wrapped-kacheln-konzept.md): Gezaehlt wird ausschliesslich, was
+    // diese Person FREIGEGEBEN hat. Eine Quote "x % abgelehnt" waere eine
+    // Bewertung der Moderation und hat im Rueckblick nichts verloren --
+    // deshalb wird hidden_by hier gar nicht erst gelesen.
+    //
+    // approved_by ist NULL bei Bestandszeilen (vor Migration 146) UND bei
+    // unmoderierten Challenges, die automatisch auf 'approved' stehen. In
+    // beiden Faellen hat niemand hingesehen -- niemand bekommt sie
+    // gutgeschrieben.
+    //
+    // Zeitanker ist approved_at (die Handlung im Rueckblicksjahr), nicht
+    // das Einreichungsdatum: Ein Beitrag vom August, im September
+    // freigegeben, ist Arbeit des September.
+    let freigegebeneBeitraege = 0;
+    try {
+      const { rows: [freigabeRow] } = await client.query(
+        `SELECT COUNT(*)::int AS anzahl FROM challenge_submissions cs
+          WHERE cs.approved_by = $1
+            AND cs.organization_id = $2
+            AND cs.approved_at >= $3::date
+            AND cs.approved_at < ($4::date + INTERVAL '1 day')`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      freigegebeneBeitraege = freigabeRow ? freigabeRow.anzahl : 0;
+    } catch (freigabeErr) {
+      // Alt-Deployment ohne Challenge-Tabellen oder ohne die Spalte.
+      console.warn('Wrapped: Freigaben konnten nicht geladen werden:', freigabeErr.message);
+    }
+
     // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
     // wurden.
     //
@@ -1324,6 +1356,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         },
         team: {
           mitstreitende: teamGroesse
+        },
+        moderation: {
+          freigegeben: freigegebeneBeitraege
         },
         neu_dabei: {
           erstes_jahr: erstesJahr,

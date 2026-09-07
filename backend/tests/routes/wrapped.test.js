@@ -416,6 +416,61 @@ describe('Wrapped Routes', () => {
       expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
     });
 
+    it('Freigaben zaehlen nur mit ausdruecklichem approved_by', async () => {
+      const { rows: [ch] } = await db.query(
+        `INSERT INTO challenges
+           (title, description, badge_name, organization_id, created_by, starts_at, ends_at, moderated)
+         VALUES ('Moderiert', 'Zeig es', 'Stempel', $1, $2,
+                 NOW() - INTERVAL '1 year', NOW() + INTERVAL '1 year', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      const einreichen = async (opts = {}) => {
+        const { rows: [sub] } = await db.query(
+          `INSERT INTO challenge_submissions
+             (challenge_id, user_id, organization_id, media_type, moderation_status,
+              approved_by, approved_at, created_at)
+           VALUES ($1, $2, $3, 'text', 'approved', $4, $5, $6::timestamptz)
+           RETURNING id`,
+          [ch.id, USERS.konfi1.id, ORGS.testGemeinde.id,
+           opts.approvedBy || null,
+           opts.approvedAt || null,
+           `${IM_ZEITRAUM} 10:00:00`]
+        );
+        return sub.id;
+      };
+      // Fuenf von teamer1 freigegeben ...
+      for (let i = 0; i < 5; i++) {
+        await einreichen({ approvedBy: USERS.teamer1.id, approvedAt: `${IM_ZEITRAUM} 12:00:00` });
+      }
+      // ... eine von jemand anderem ...
+      await einreichen({ approvedBy: USERS.admin1.id, approvedAt: `${IM_ZEITRAUM} 12:00:00` });
+      // ... und eine mit NULL (Bestandszeile oder unmoderierte Challenge).
+      await einreichen();
+
+      const snap = await snapshotVonTeamer1();
+      // Genau die fuenf eigenen -- fremde und unbekannte zaehlen nicht.
+      expect(snap.slides.moderation.freigegeben).toBe(5);
+      expect(snap.kacheln).toContain('teamer-moderation');
+    });
+
+    it('Ohne Freigaben fehlt die Moderations-Seite', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.moderation.freigegeben).toBe(0);
+      expect(snap.kacheln).not.toContain('teamer-moderation');
+    });
+
+    it('Der Snapshot enthaelt KEINE Ablehnungsquote', async () => {
+      // SIMONS REGEL (Konzept): nur die eigene Leistung, nie eine
+      // Ablehnungsquote. Der Rueckblick darf Moderation nicht bewerten.
+      const snap = await snapshotVonTeamer1();
+      const alsText = JSON.stringify(snap);
+      expect(alsText).not.toContain('abgelehnt');
+      expect(alsText).not.toContain('hidden');
+      expect(alsText).not.toContain('quote');
+      expect(Object.keys(snap.slides.moderation)).toEqual(['freigegeben']);
+    });
+
     it('Das Team zaehlt nur Teamer:innen -- keine Admins', async () => {
       // DER EIGENTLICHE FALLSTRICK: Ohne Rollenfilter zaehlte der Self-Join
       // ueber user_jahrgang_assignments auch Admins und die Leitung mit --

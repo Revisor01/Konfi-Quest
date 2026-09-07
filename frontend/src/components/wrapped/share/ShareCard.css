@@ -252,6 +252,11 @@
   --karten-schleier: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
 }
 
+.share-card--teamer.share-card--teamer-moderation {
+  background: linear-gradient(135deg, #312e81 0%, #0a0a0a 60%);
+  --karten-schleier: linear-gradient(135deg, #312e81 0%, #0a0a0a 60%);
+}
+
 .share-card--teamer.share-card--teamer-team {
   background: linear-gradient(135deg, #0e7490 0%, #0a0a0a 60%);
   --karten-schleier: linear-gradient(135deg, #0e7490 0%, #0a0a0a 60%);
