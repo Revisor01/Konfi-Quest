@@ -204,8 +204,10 @@ damit die Fotos wirken und nicht als Miniatur untergehen. Ausgeblendete
 Beiträge kommen nicht vor.
 
 **4. Deine Events** — Anzahl der besuchten Termine, dazu „von N verfügbaren“.
-Erscheint immer. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte
-Event unter der Überschrift „Dein letztes Event“.
+*Nur, wenn im Zeitraum mindestens ein Termin besucht wurde.* Wer keinen hat,
+bekommt die Seite gar nicht erst — eine Seite mit einer Null darauf ist keine
+Erinnerung. *Nur, wenn vorhanden*, folgt darunter das zuletzt besuchte Event
+unter der Überschrift „Dein letztes Event“.
 
 > Auf dieser Seite steht immer „0 mal abgesagt“ — auch bei tatsächlichen
 > Absagen. Die Zahl ist im Programm fest eingetragen und wird nicht berechnet.
@@ -224,7 +226,7 @@ werden Aktivitäten und besuchte Termine zusammen. Erscheint immer.
 
 **7. Deine Punkte** — Gesamtpunkte groß, darunter getrennt Gottesdienst und
 Gemeinde. *Nur, wenn Bonuspunkte vergeben wurden*, zusätzlich „davon N
-Bonuspunkte“. Erscheint immer.
+Bonuspunkte“. *Nur, wenn mindestens ein Punkt zusammengekommen ist.*
 
 **8. Endspurt ODER Über dem Ziel** — eine von beiden, nie beide:
 
@@ -236,7 +238,10 @@ Bonuspunkte“. Erscheint immer.
 Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.
 
 **9. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
-sechs Abzeichen als Symbole. Erscheint immer.
+sechs Abzeichen als Symbole. *Nur, wenn im Zeitraum mindestens ein Abzeichen
+verdient wurde.* Das ist wichtiger, als es klingt: Hat der Jahrgang einen
+Konfirmationstermin, beginnt der Zeitraum am 1. September davor — Abzeichen aus
+dem Sommer davor liegen außerhalb und zählen hier nicht mit.
 
 **10. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
 Konfirmationstermin hinterlegt ist* — praktisch also fast immer, weil sonst ein

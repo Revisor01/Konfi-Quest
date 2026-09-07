@@ -40,6 +40,10 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Der Jahresrückblick zeigt keine Seite mehr mit einer Null darauf. Wer im
+  Rückblickszeitraum keine Abzeichen, keine Punkte oder keine Termine hat,
+  bekommt diese Seite gar nicht erst — statt „0 von 55". Auftakt, Abschluss
+  und die Einladung ins Team bleiben, damit immer ein Rückblick entsteht.
 - Einzelne Seiten des Jahresrückblicks lassen sich wieder teilen. Bei rund der
   Hälfte der Seiten kam bisher ein leeres, schwarzes Bild heraus — darunter die
   Einladung ins Team, die jede Konfi am Ende bekommt.

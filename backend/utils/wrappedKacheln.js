@@ -32,8 +32,26 @@ const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKate
  * Die feste Dramaturgie. Diese Seiten tragen die Erzaehlung (Auftakt, Mitte,
  * Schluss) und erscheinen bei jeder Person -- ohne sie entstuende bei einer
  * stillen Konfi gar kein Rueckblick.
+ *
+ * VON SECHS AUF DREI (07.09.2026, gemessen an Produktion): 'events',
+ * 'punkte' und 'badges' standen hier und hatten damit KEINE Bedingung --
+ * sie erschienen auch mit einer glatten Null darauf. Gemessen an einer
+ * echten Konfi (Org 1, Jahrgang 2026/27): Ihr Jahrgang hat einen
+ * Konfirmationstermin im Mai 2027, der Zeitraum beginnt deshalb am
+ * 01.09.2026 -- ihre 20 Abzeichen aus dem Sommer 2026 liegen davor und
+ * fallen heraus. Sie bekam eine Seite "0 von 55".
+ *
+ * Das verletzt Simons Grundregel oben: "Eine Kachel mit einer Null darauf
+ * ist keine Erinnerung." Die drei Zahl-Seiten haben jetzt Bedingungen wie
+ * jede andere Zahl-Seite auch (siehe BEDINGUNGEN).
+ *
+ * WAS FEST BLEIBT UND WARUM: 'intro' zeigt Name und Jahrgang, 'werde-teamer'
+ * ist reiner Text -- beide koennen gar keine Null tragen. 'abschluss' traegt
+ * Simons Botschaft ("Dein Weg. Deine Zeit. Dein Glaube.") als Seiteninhalt;
+ * die drei Zahlen darunter sind eine Zusammenfassung, kein Highlight. Ohne
+ * diese drei entstuende bei einer stillen Konfi ueberhaupt kein Rueckblick.
  */
-const FESTE_KACHELN = ['intro', 'events', 'punkte', 'badges', 'abschluss', 'werde-teamer'];
+const FESTE_KACHELN = ['intro', 'abschluss', 'werde-teamer'];
 
 /**
  * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
@@ -134,14 +152,23 @@ const MAX_ZEIT_SEITEN = 2;
  * Seiten, die der Deckel NICHT wegkuerzen darf, obwohl sie nicht zu den
  * festen gehoeren.
  *
- * Beide muss man sich VERDIENEN: das seltenste Abzeichen ("das haben nur
+ * Zwei muss man sich VERDIENEN: das seltenste Abzeichen ("das haben nur
  * x %") und die Konfirmation. Sie stehen weit hinten in der Dramaturgie und
  * fielen deshalb als Erste heraus, sobald vorne Seiten dazukamen -- gemessen
  * am 07.09.2026, als das Maximum auf 18 stieg. Eine Konfi verlor damit
  * ausgerechnet die zwei Seiten, die ueber sie am meisten sagen, zugunsten
  * einer weiteren Kategorie-Kachel.
+ *
+ * DAZU DIE DREI ZAHL-SEITEN (07.09.2026): 'events', 'punkte' und 'badges'
+ * gehoerten bis dahin zu FESTE_KACHELN und waren damit doppelt geschuetzt --
+ * gegen den Deckel UND gegen jede Bedingung. Sie haben jetzt Bedingungen
+ * (eine Null erscheint nicht mehr), sollen aber, WENN sie etwas zu erzaehlen
+ * haben, weiterhin nicht vom Deckel gefressen werden: Sie tragen die Mitte
+ * der Erzaehlung, und genau dieser Fall war schon einmal der Befund vom
+ * 07.09.2026 ("Der Deckel darf keine feste Seite fressen", siehe unten).
+ * Der Schutz bleibt also erhalten, nur die Bedingungslosigkeit faellt weg.
  */
-const GESCHUETZTE_KACHELN = ['seltenstes', 'konfirmation'];
+const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges', 'seltenstes', 'konfirmation'];
 
 /**
  * Bedingungen der nicht-festen Seiten. `true` = die Seite hat Inhalt.
@@ -149,6 +176,18 @@ const GESCHUETZTE_KACHELN = ['seltenstes', 'konfirmation'];
  * deshalb faengt waehleKacheln() Fehler ab.
  */
 const BEDINGUNGEN = {
+  // Die drei Zahl-Seiten der Erzaehlung. Sie standen bis zum 07.09.2026 in
+  // FESTE_KACHELN und hatten deshalb gar keine Bedingung -- siehe die
+  // Begruendung dort.
+  //
+  // Die Schwelle ist bewusst "groesser als null" und nicht hoeher: Ein
+  // einziger Termin, ein einziger Punkt, ein einziges Abzeichen IST eine
+  // Erinnerung, und die Seiten erzaehlen das auch so ("Einmal
+  // hingegangen.", "Der Anfang ist gemacht.", "Das erste ist das
+  // schoenste."). Verboten ist nur die Null.
+  events: (s) => (s.events?.total_attended || 0) > 0,
+  punkte: (s) => (s.punkte?.total || 0) > 0,
+  badges: (s) => (s.badges?.total_earned || 0) > 0,
   // Simons Regel woertlich: "Wer nicht viel geschrieben hat, braucht keine
   // Kachel." Eine einzelne Teilnahme ist keine Geschichte -- deshalb erst
   // ab dem ersten echten Beitrag.

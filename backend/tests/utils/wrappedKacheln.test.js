@@ -22,7 +22,8 @@ const {
   ZEIT_SEITEN,
   MAX_ZEIT_SEITEN,
   MAX_DATUM_SEITEN,
-  MAX_KATEGORIE_SEITEN
+  MAX_KATEGORIE_SEITEN,
+  BEDINGUNGEN
 } = require('../../utils/wrappedKacheln');
 
 /** Eine sehr aktive Konfi -- Zahlen an Produktion angelehnt (User 62, Org 4). */
@@ -35,8 +36,15 @@ const aktiverSnapshot = () => ({
   langer_atem: { erster: '2025-09-14', letzter: '2026-04-12', tage: 210, termine: 9 },
   wochentag: { tag: 0, name: 'Sonntag', anzahl: 6, gesamt: 9, anteil: 67 },
   medienarten: ['photo', 'text'],
+  // Die drei Zahl-Seiten. Sie standen bis zum 07.09.2026 in FESTE_KACHELN
+  // und brauchten deshalb keine Werte in dieser Fixture -- sie erschienen
+  // ohnehin. Seit sie Bedingungen haben, muss die Fixture sagen, was diese
+  // Konfi getan hat.
+  events: { total_attended: 9, total_available: 14, lieblings_event: null, abgesagt: 0 },
+  punkte: { gottesdienst: 12, gemeinde: 9, total: 21, bonus: 0 },
   badges: {
     total_earned: 7,
+    total_available: 55,
     seltenstes: { name: 'Bonuspunkte-Gewinner', icon: 'trophy', color: '#f59e0b',
                   haben_es: 5, konfis: 13, prozent: 38 }
   },
@@ -52,9 +60,16 @@ const aktiverSnapshot = () => ({
   termine_daten: [new Date(2026, 11, 24), new Date(2026, 11, 6), new Date(2026, 3, 5)]
 });
 
-/** Eine stille Konfi: fast nichts getan. */
+/**
+ * Eine stille Konfi: fast nichts getan. Sie hat NULL Termine, NULL Punkte
+ * und NULL Abzeichen -- genau der Fall, der bis zum 07.09.2026 drei Seiten
+ * mit einer Null darauf erzeugte.
+ */
 const stillerSnapshot = () => ({
   chat: { nachrichten_gesendet: 1 },
+  events: { total_attended: 0, total_available: 14, lieblings_event: null, abgesagt: 0 },
+  punkte: { gottesdienst: 0, gemeinde: 0, total: 0, bonus: 0 },
+  badges: { total_earned: 0, total_available: 55, seltenstes: null },
   challenges: { beitraege: 0, top_challenge: null },
   challenge_momente: [],
   aktivster_monat: { monat: 0, monat_name: '', aktivitaeten: 0 },
@@ -65,6 +80,87 @@ const stillerSnapshot = () => ({
   zeitraum: { start: '2025-09-01', ende: '2026-08-31', konfirmation: null },
   kategorie: { verteilung: [], top_kategorie: null },
   termine_daten: []
+});
+
+describe('Keine Seite mit einer Null darauf', () => {
+  // BEFUND 07.09.2026, gemessen an Produktion (Org 1, Jahrgang 2026/27):
+  // Eine echte Konfi bekam eine Abzeichen-Seite mit "0 von 55" darauf. Ihr
+  // Jahrgang hat einen Konfirmationstermin im Mai 2027, der Zeitraum beginnt
+  // deshalb am 01.09.2026 -- ihre 20 Abzeichen aus dem Sommer 2026 liegen
+  // davor und fallen heraus. 'badges' stand in FESTE_KACHELN und hatte
+  // keine Bedingung.
+  //
+  // Simons Grundregel steht im Kopf von wrappedKacheln.js: "Eine Kachel mit
+  // einer Null darauf ist keine Erinnerung."
+
+  test('die Abzeichen-Seite faellt weg, wenn im Zeitraum keine verdient wurden', () => {
+    const s = aktiverSnapshot();
+    s.badges = { total_earned: 0, total_available: 55, seltenstes: null };
+    expect(waehleKacheln(s)).not.toContain('badges');
+  });
+
+  test('die Abzeichen-Seite erscheint schon beim ersten Abzeichen', () => {
+    const s = aktiverSnapshot();
+    s.badges = { total_earned: 1, total_available: 55, seltenstes: null };
+    expect(waehleKacheln(s)).toContain('badges');
+  });
+
+  test('die Punkte-Seite faellt bei null Punkten weg, erscheint ab einem', () => {
+    const ohne = aktiverSnapshot();
+    ohne.punkte = { gottesdienst: 0, gemeinde: 0, total: 0, bonus: 0 };
+    expect(waehleKacheln(ohne)).not.toContain('punkte');
+
+    const mit = aktiverSnapshot();
+    mit.punkte = { gottesdienst: 1, gemeinde: 0, total: 1, bonus: 0 };
+    expect(waehleKacheln(mit)).toContain('punkte');
+  });
+
+  test('die Termin-Seite faellt bei null Terminen weg, erscheint ab einem', () => {
+    const ohne = aktiverSnapshot();
+    ohne.events = { total_attended: 0, total_available: 14, lieblings_event: null, abgesagt: 0 };
+    expect(waehleKacheln(ohne)).not.toContain('events');
+
+    const mit = aktiverSnapshot();
+    mit.events = { total_attended: 1, total_available: 14, lieblings_event: null, abgesagt: 0 };
+    expect(waehleKacheln(mit)).toContain('events');
+  });
+
+  test('eine Konfi ohne jede Zahl bekommt genau die drei tragenden Seiten', () => {
+    // Kein leerer Rueckblick, aber auch keine drei Nullen: Intro (Name und
+    // Jahrgang), Abschluss (Simons Botschaft) und die Einladung ins Team
+    // (reiner Text) koennen gar keine Null tragen.
+    expect(waehleKacheln(stillerSnapshot())).toEqual(['intro', 'abschluss', 'werde-teamer']);
+  });
+
+  test('fehlende slides ergeben denselben Mindestrueckblick', () => {
+    expect(waehleKacheln(null)).toEqual(['intro', 'abschluss', 'werde-teamer']);
+    expect(waehleKacheln({})).toEqual(['intro', 'abschluss', 'werde-teamer']);
+  });
+
+  test('keine der drei Zahl-Seiten steht noch bedingungslos in FESTE_KACHELN', () => {
+    for (const zahlseite of ['events', 'punkte', 'badges']) {
+      expect(FESTE_KACHELN).not.toContain(zahlseite);
+      expect(Object.keys(BEDINGUNGEN)).toContain(zahlseite);
+    }
+  });
+
+  test('die drei Zahl-Seiten bleiben trotzdem vor dem Deckel geschuetzt', () => {
+    // Sie haben jetzt Bedingungen -- aber WENN sie etwas zu erzaehlen haben,
+    // darf der Deckel sie nicht fressen. Genau das war der Befund vom
+    // 07.09.2026 ("Der Deckel darf keine feste Seite fressen").
+    for (const zahlseite of ['events', 'punkte', 'badges']) {
+      expect(GESCHUETZTE_KACHELN).toContain(zahlseite);
+    }
+  });
+
+  test('bei voller Dramaturgie ueberleben die Zahl-Seiten den Deckel', () => {
+    const s = aktiverSnapshot();
+    const kacheln = waehleKacheln(s, { chat: 1, events: 1 });
+    expect(kacheln.length).toBeLessThanOrEqual(MAX_KACHELN);
+    for (const zahlseite of ['events', 'punkte', 'badges']) {
+      expect(kacheln, `${zahlseite} wurde weggekuerzt`).toContain(zahlseite);
+    }
+  });
 });
 
 describe('Dramaturgie', () => {
