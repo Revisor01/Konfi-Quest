@@ -199,23 +199,73 @@ const NUR_TEAMER = new Set(['teamtreff']);
 
 /**
  * =====================================================================
- * SONDERSEITE "STAVANGER 2026"
+ * DIE SONDERSEITE ZUR SOMMERFREIZEIT -- HIER STEHT ALLES DARUEBER
  * =====================================================================
  *
- * Simons Vorgabe (07.09.2026), woertlich: "kannst du bitte eine seite bauen
- * fuer sommerfreizeit 2026 stavanger norwegen. das sehen dann nur die teamer
- * und konfis die dabei waren. ich lege das als aktivitaet an mit
- * sommerfrezeit als kategorie."
+ * Simons Vorgabe (07.09.2026), woertlich: "die Sommerfreizeit Seite darf nur
+ * in West und Hennstedt sein und selbst nicht erwaehnt werden. Also ist org
+ * und Kategorie Sommerfreizeit. Naechstes Jahr ist es Italien. Ich will das
+ * es nur da passiert. Bei allen andern bleiben wir org uebergreifend
+ * generisch." Und: "Die Logik gilt fuer Konfi und Teamer."
  *
- * WARUM UEBER DIE KATEGORIE UND NICHT UEBER EINE LISTE VON NAMEN: Wer dabei
- * war, steht in den Daten -- Simon haengt die Fahrt als Aktivitaet (oder
- * Termin) an eine Kategorie "Sommerfreizeit". Wer sie im Zeitraum hat, war
- * dabei. Eine gepflegte Namensliste liefe schon beim ersten Nachzuegler
- * auseinander.
+ * DREI BEDINGUNGEN MUESSEN ALLE ZUTREFFEN, damit jemand die Seite sieht:
+ *   1. Die Person gehoert zu einer der Organisationen in SOMMERFREIZEIT.orgs.
+ *   2. Sie hat eine Aktivitaet oder einen Termin der Kategorie
+ *      "Sommerfreizeit" (SOMMERFREIZEIT.kategorie).
+ *   3. Dieser liegt im Fenster von / bis -- sonst loeste die Fahrt des
+ *      naechsten Jahres dieselbe Seite noch einmal aus.
  *
- * DIE KATEGORIE EXISTIERT HEUTE IN KEINER GEMEINDE. Sie wird erst per SQL
- * angelegt. Bis dahin trifft `istSommerfreizeit` auf nichts zu, die Seite
- * erscheint nicht -- kein Fehler, keine leere Seite. Genau so soll es sein.
+ * WARUM DIE ORGANISATIONEN HIER STEHEN UND NICHT IM CODE VERTEILT:
+ * Bis zum 07.09.2026 gab es die Org-Bindung gar nicht -- die Seite hing nur
+ * an der Kategorie. Dass sie anderswo nicht erschien, war ZUFALL: Keine
+ * andere Gemeinde hatte eine Kategorie dieses Namens. Legte irgendwo jemand
+ * eine an, bekaeme seine Gemeinde eine Seite ueber eine Fahrt nach Norwegen,
+ * an der sie nie teilgenommen hat. Eine Regel, die nur zufaellig stimmt, ist
+ * keine Regel.
+ *
+ * SO WIRD DARAUS NAECHSTES JAHR ITALIEN -- alles an dieser einen Stelle:
+ *   - `orgs`      welche Gemeinden fahren mit
+ *   - `kategorie` wie die Kategorie in der App heisst
+ *   - `von`/`bis` das Zeitfenster der Fahrt
+ *   - `seite`     der Schluessel der Seite (steht in beiden Dramaturgien
+ *                 in wrappedKacheln.js und im Frontend als Renderer)
+ * Titel, Text und Bild der Seite selbst liegen im Frontend
+ * (components/wrapped/slides/...) -- der Schluessel `seite` verbindet beides.
+ *
+ * DAS FENSTER ist bewusst grosszuegig um die eigentlichen 14 Tage gelegt:
+ * Vor- und Nachtreffen gehoeren zur Fahrt, und wann genau jemand die
+ * Aktivitaet eingetragen bekommt, haengt daran, wann die Leitung dazu kommt.
+ */
+const SOMMERFREIZEIT = {
+  /**
+   * Die Organisationen, in denen die Seite ueberhaupt erscheinen darf.
+   * 1 = kirchspiel-west, 2 = kirchengemeinde-hennstedt.
+   *
+   * Alle anderen Gemeinden bleiben org-uebergreifend generisch: Sie
+   * bekommen die allgemeinen Seiten, nie diese.
+   */
+  orgs: [1, 2],
+  /** Der Kategoriename, unter dem die Fahrt eingetragen ist. */
+  kategorie: 'sommerfreizeit',
+  /** Das Fenster der Fahrt. */
+  von: '2026-06-01',
+  bis: '2026-09-30',
+  /** Der Schluessel der Seite in Dramaturgie und Frontend. */
+  seite: 'stavanger-2026'
+};
+
+/**
+ * Darf diese Organisation die Sommerfreizeit-Seite ueberhaupt sehen?
+ *
+ * @param {number} orgId
+ * @returns {boolean}
+ */
+function orgHatSommerfreizeit(orgId) {
+  return SOMMERFREIZEIT.orgs.includes(Number(orgId));
+}
+
+/**
+ * Traegt dieser Kategoriename die Sommerfreizeit?
  *
  * NICHT in STANDARD_SEITEN aufgenommen: Diese Liste muss zu
  * defaultCategories in routes/organizations.js passen (ein Test haelt beide
@@ -225,20 +275,13 @@ const NUR_TEAMER = new Set(['teamtreff']);
  */
 function istSommerfreizeit(name) {
   if (!name || typeof name !== 'string') return false;
-  return normalisiere(name) === 'sommerfreizeit';
+  return normalisiere(name) === SOMMERFREIZEIT.kategorie;
 }
 
-/**
- * Der Zeitraum der Fahrt. Nur wer die Kategorie IN DIESEM Fenster hat, war
- * dabei -- eine spaetere Aktivitaet derselben Kategorie (die Freizeit 2027)
- * darf die Seite von 2026 nicht ausloesen.
- *
- * Bewusst grosszuegig um die 14 Tage herum gelegt: Vor- und Nachtreffen
- * gehoeren zur Fahrt, und wann genau jemand die Aktivitaet eingetragen
- * bekommt, haengt daran, wann die Leitung dazu kommt.
- */
-const STAVANGER_VON = '2026-06-01';
-const STAVANGER_BIS = '2026-09-30';
+// ALT-NAMEN, damit bestehender Code und Tests weiterlaufen. Die Werte
+// stehen jetzt in SOMMERFREIZEIT (siehe oben) -- hier nur noch die Ausgabe.
+const STAVANGER_VON = SOMMERFREIZEIT.von;
+const STAVANGER_BIS = SOMMERFREIZEIT.bis;
 
 
 /** Vergleichsform: klein, Bindestrich wie Leerzeichen, ohne Raender. */
@@ -275,6 +318,8 @@ module.exports = {
   datumsFenster,
   seiteFuerKategorie,
   istSommerfreizeit,
+  orgHatSommerfreizeit,
+  SOMMERFREIZEIT,
   STAVANGER_VON,
   STAVANGER_BIS,
   STANDARD_SEITEN,

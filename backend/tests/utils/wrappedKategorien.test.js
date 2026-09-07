@@ -17,6 +17,9 @@ const {
   erntedank,
   datumsFenster,
   seiteFuerKategorie,
+  istSommerfreizeit,
+  orgHatSommerfreizeit,
+  SOMMERFREIZEIT,
   STANDARD_SEITEN,
   NUR_TEAMER
 } = require('../../utils/wrappedKategorien');
@@ -186,5 +189,64 @@ describe('Listen-Abgleich mit routes/organizations.js', () => {
 
   test('"Unterricht" steht nicht mehr im Standard', () => {
     expect(standardNamen).not.toContain('Unterricht');
+  });
+});
+
+describe('Die Sonderseite zur Sommerfreizeit ist an zwei Gemeinden gebunden', () => {
+  // SIMONS VORGABE (07.09.2026), woertlich: "die Sommerfreizeit Seite darf
+  // nur in West und Hennstedt sein und selbst nicht erwaehnt werden. Also ist
+  // org und Kategorie Sommerfreizeit. ... Ich will das es nur da passiert.
+  // Bei allen andern bleiben wir org uebergreifend generisch."
+  //
+  // WARUM DAS VORHER NICHT REICHTE: Die Seite hing nur an der Kategorie.
+  // Dass sie anderswo nicht erschien, war Zufall -- keine andere Gemeinde
+  // hatte eine Kategorie dieses Namens. Diese Tests machen aus dem Zufall
+  // eine Regel.
+
+  test('Kirchspiel West (Org 1) darf sie sehen', () => {
+    expect(orgHatSommerfreizeit(1)).toBe(true);
+  });
+
+  test('Kirchengemeinde Hennstedt (Org 2) darf sie sehen', () => {
+    expect(orgHatSommerfreizeit(2)).toBe(true);
+  });
+
+  test('jede andere Gemeinde nicht -- auch nicht mit der Kategorie', () => {
+    // DER EIGENTLICHE PUNKT: Auch wer die Kategorie "Sommerfreizeit" anlegt,
+    // bekommt in Org 3, 4, 5 keine Seite ueber eine Fahrt nach Norwegen.
+    expect(istSommerfreizeit('Sommerfreizeit')).toBe(true);
+    expect(orgHatSommerfreizeit(3)).toBe(false);
+    expect(orgHatSommerfreizeit(4)).toBe(false);
+    expect(orgHatSommerfreizeit(5)).toBe(false);
+  });
+
+  test('die Org-ID darf auch als Text kommen', () => {
+    // Sie stammt aus dem Token bzw. der Datenbank und ist dort mal Zahl,
+    // mal Text. Ein Vergleich, der daran scheitert, laesst die Seite still
+    // verschwinden.
+    expect(orgHatSommerfreizeit('1')).toBe(true);
+    expect(orgHatSommerfreizeit('3')).toBe(false);
+  });
+
+  test('ohne Org-Angabe gibt es die Seite nicht', () => {
+    expect(orgHatSommerfreizeit(null)).toBe(false);
+    expect(orgHatSommerfreizeit(undefined)).toBe(false);
+  });
+
+  test('Kategorie, Fenster und Seitenschluessel stehen an einer Stelle', () => {
+    // Naechstes Jahr ist es Italien -- dann aendert sich genau dieser Block
+    // und sonst nichts. Der Test haelt fest, dass die Werte dort stehen.
+    expect(SOMMERFREIZEIT.orgs).toEqual([1, 2]);
+    expect(SOMMERFREIZEIT.kategorie).toBe('sommerfreizeit');
+    expect(SOMMERFREIZEIT.von).toBe('2026-06-01');
+    expect(SOMMERFREIZEIT.bis).toBe('2026-09-30');
+    expect(SOMMERFREIZEIT.seite).toBe('stavanger-2026');
+  });
+
+  test('ein anderer Kategoriename loest sie nicht aus', () => {
+    expect(istSommerfreizeit('Freizeit')).toBe(false);
+    expect(istSommerfreizeit('Sommerfest')).toBe(false);
+    expect(istSommerfreizeit('')).toBe(false);
+    expect(istSommerfreizeit(null)).toBe(false);
   });
 });
