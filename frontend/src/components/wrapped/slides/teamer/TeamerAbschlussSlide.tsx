@@ -46,7 +46,7 @@ const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year, titel }) 
       </div>
 
       <div className="kat-nachsatz" style={{ marginTop: 'var(--app-abstand-basis)'}}>
-        Ohne Leute wie dich gaebe es keine Konfi-Zeit.
+        Ohne Leute wie dich gäbe es keine Konfi-Zeit.
       </div>
     </SlideBase>
   );

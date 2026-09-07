@@ -7,12 +7,12 @@ interface Props extends SlideProps { zertifikate: Zert; }
 const TeamerZertifikateSlide: React.FC<Props> = ({ isActive, zertifikate }) => {
   const n = zertifikate.total;
   const slogan = n >= 3
-    ? ['Schwarz', 'auf weiss.']
+    ? ['Schwarz', 'auf weiß.']
     : n >= 1
       ? ['Das hast du', 'schriftlich.']
       : ['Dein erstes', 'Zertifikat', 'kommt noch.'];
   const nachsatz = n >= 1
-    ? `${n} ${n === 1 ? 'Zertifikat' : 'Zertifikate'} fuer deine Ausbildung — das zaehlt auch ausserhalb der Gemeinde.`
+    ? `${n} ${n === 1 ? 'Zertifikat' : 'Zertifikate'} für deine Ausbildung — das zählt auch außerhalb der Gemeinde.`
     : 'Zertifikate gibt es für Schulungen und Kurse.';
 
   return (

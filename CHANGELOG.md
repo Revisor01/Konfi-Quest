@@ -43,6 +43,10 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Im Rückblick fürs Team standen Umlaute als Behelfsschreibung auf dem
+  Bildschirm — „gaebe", „weiss", „zaehlt", „ausserhalb" — und auf der
+  Termin-Seite erschien statt des Mal-Zeichens eine Buchstabenfolge. Alle
+  Texte sind jetzt richtig geschrieben.
 - Der Rückblick redet nicht mehr vom Jahr, das „noch nicht vorbei" sei. Er
   rechnet über die ganze Konfi-Zeit, und die dauert bei vielen länger als
   ein Jahr. Advent, Erntedank und der Jahreswechsel behalten ihr Jahr — dort

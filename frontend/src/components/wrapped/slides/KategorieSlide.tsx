@@ -57,7 +57,7 @@ const KategorieSlide: React.FC<KategorieSlideProps> = ({ isActive, kategorie, ti
         </>
       ) : (
         <div className="wrapped-anim-fade wrapped-anim-delay-1">
-          <p className="wrapped-subtitle">Noch keine Aktivitaeten</p>
+          <p className="wrapped-subtitle">Noch keine Aktivitäten</p>
         </div>
       )}
     </SlideBase>

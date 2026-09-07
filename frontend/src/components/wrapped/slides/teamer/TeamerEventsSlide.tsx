@@ -34,7 +34,7 @@ const TeamerEventsSlide: React.FC<TeamerEventsSlideProps> = ({ isActive, events 
   return (
     <SlideBase isActive={isActive} className="teamer-events-slide" kachel="teamer-events">
       <div className="kat-auge">{t.auge}</div>
-      {events.total > 0 && <div className="kat-zahl">{animiert}<span className="kat-zahl__mal">\u00d7</span></div>}
+      {events.total > 0 && <div className="kat-zahl">{animiert}<span className="kat-zahl__mal">×</span></div>}
       <div className="kat-slogan">
         {t.slogan.map((z, i) => <span key={i} style={{ display: 'block' }}>{z}</span>)}
       </div>
