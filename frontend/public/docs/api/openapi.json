@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n249 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n250 Operationen."
   },
   "servers": [
     {
@@ -4667,7 +4667,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und teamer_registration_status — beide berechnet mit denselben Helfern wie GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined und zeigte deshalb \"Geschlossen\" an offenen Terminen (sichtbar vor allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein vorhandenes Feld aendert Form oder Typ.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4689,7 +4689,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id"
+            "description": "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id, registration_status, teamer_registration_status"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -12599,6 +12599,85 @@
           "org-scope": true,
           "objekt-pruefung": "Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.\n",
           "hinweis": "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
+        }
+      }
+    },
+    "/api/admin/badges/{id}/pruefen": {
+      "post": {
+        "tags": [
+          "Abzeichen"
+        ],
+        "summary": "Vergabe eines einzelnen Abzeichens fuer die eigene Organisation nachholen",
+        "description": "Prueft fuer EIN Abzeichen alle Personen der passenden Zielrolle (target_role) in der eigenen Organisation nach und vergibt es dort, wo die Bedingung erfuellt ist, aber noch fehlt. Die Vergabe laeuft dabei STILL — ohne Push und ohne In-App-Mitteilung — damit ein Nachhol-Lauf nicht auf einen Schlag ein Dutzend Benachrichtigungen ausloest. Gedacht fuer Sonderfaelle (geaenderte Datenlage, nicht das Abzeichen selbst): Seit derselben Aenderung laeuft dieselbe Pruefung bereits automatisch nach POST/PUT auf /api/admin/badges, abgekoppelt nach der Antwort.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID des Abzeichens"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pruefung durchgelaufen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "badge_id": {
+                      "type": "integer"
+                    },
+                    "badge_name": {
+                      "type": "string"
+                    },
+                    "geprueft": {
+                      "type": "integer",
+                      "description": "Anzahl geprüfter Personen der Zielrolle"
+                    },
+                    "neu_vergeben": {
+                      "type": "integer",
+                      "description": "Anzahl dabei neu vergebener Exemplare"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Das Abzeichen ist nicht aktiv"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Abzeichen nicht gefunden oder keine Berechtigung (fremde Org oder unbekannte id)"
+          },
+          "429": {
+            "description": "Sperre 60 Sekunden je Organisation: 'Die Prüfung lief gerade eben. Bitte N Sekunden warten.'"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE id = :id AND organization_id = req.user.organization_id",
+          "hinweis": "Teamer und Konfi erhalten 403, ebenso wie bei POST/PUT/DELETE auf dieselbe Ressource"
         }
       }
     },

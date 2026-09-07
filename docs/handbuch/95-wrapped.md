@@ -17,22 +17,21 @@ Es gibt ihn in zwei Fassungen: eine für **Konfis** und eine für
 
 Das ist das Wichtigste an diesem Kapitel.
 
-Wenn du den Rückblick freigibst, werden **alle Zahlen einmal berechnet und
+Wenn du den Rückblick erstellst, werden **alle Zahlen einmal berechnet und
 festgeschrieben**. Ab dann ändert sich nichts mehr daran. Der Rückblick liest
-die Daten nicht jedes Mal neu, sondern zeigt den Stand vom Moment der Freigabe.
+die Daten nicht jedes Mal neu, sondern zeigt den Stand von dem Moment.
 
-*Beispiel:* Du gibst am 1. Mai frei. Ein Konfi bekommt am 3. Mai noch fünf
+*Beispiel:* Du erstellst ihn am 1. Mai. Ein Konfi bekommt am 3. Mai noch fünf
 Bonuspunkte. Sein Rückblick zeigt weiterhin den Stand vom 1. Mai — die fünf
 Punkte tauchen dort nicht auf.
 
-> **Deshalb gilt:** Erst alles nachtragen, was noch fehlt, dann freigeben. Wer
-> zuerst freigibt und dann noch Punkte einträgt, hat einen Rückblick, der nicht
+> **Deshalb gilt:** Erst alles nachtragen, was noch fehlt, dann erstellen. Wer
+> zuerst erstellt und dann noch Punkte einträgt, hat einen Rückblick, der nicht
 > zu den Zahlen in der App passt.
 
-Korrigieren lässt sich das, indem du den Rückblick **erneut freigibst** — dann
-wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis dabei
-nicht: Der Push geht nur beim ersten Freigeben raus. Erst wenn du den Rückblick
-zwischendurch ausgeschaltet hast, benachrichtigt das nächste Freigeben wieder.
+Korrigieren lässt sich das, indem du denselben Rückblick **erneut erstellst** —
+dann wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis
+dabei nicht: Der Push geht nur beim ersten Mal raus.
 
 ## Wo du den Rückblick erstellst
 
@@ -155,86 +154,129 @@ unten unter [„Wie viele Seiten jemand sieht"](#wie-viele-seiten-jemand-sieht-u
 Miniatur zu erscheinen. Bei ein oder zwei Beiträgen werden sie noch größer.
 
 **Der Rückblick der Teamer:innen ist auch für dich sichtbar.** In der Ansicht
-einer Teamer:in findest du ihren Rückblick genauso wie bei einer Konfi. Anders
-als bei Konfis kommt für Teamer:innen **jedes Jahr ein neuer dazu**, und die
-alten bleiben stehen — in der Liste stehen sie mit Jahreszahl untereinander.
+einer Teamer:in findest du ihren Rückblick genauso wie bei einer Konfi. Für
+Teamer:innen kommt **jedes Jahr einer dazu**, und die alten bleiben stehen — in
+der Liste stehen sie mit Jahreszahl untereinander.
 
-### Der Teamer-Rückblick läuft anders
+### Der Team-Rückblick läuft anders
 
-| | Konfis | Teamer:innen |
+| | Konfis | Team |
 |---|---|---|
-| Freigabe | pro Jahrgang, von Hand | für die ganze Gemeinde |
-| Wer darf | Leitung | nur die Organisations-Administration |
+| Erstellt für | einen Jahrgang | die ganze Gemeinde |
+| Wer darf | Admin (eigene Jahrgänge) und Leitung | nur die Leitung |
+| Zeitraum | Beginn der Konfi-Zeit bis heute | ein Kalenderjahr, 1.1. bis 31.12. |
 | Automatisch | nein | **ja, jedes Jahr am 6. Januar** |
-| Push | „Dein Konfi-Jahr ist da!“ | „Dein Teamer-Jahr ist da!“ |
-| Wieder löschbar | ja | **nein** |
+| Push | „Dein Konfi-Jahr ist da!" | „Dein Teamer-Jahr ist da!" |
 
-Der Teamer-Rückblick entsteht also von selbst, einmal im Jahr. Existiert er für
-das Jahr schon, wird er dabei **nicht** überschrieben.
+### Am 6. Januar geht es von allein
 
-## Erneut freigeben und löschen
+Der Team-Rückblick für das abgelaufene Jahr entsteht in **jeder Gemeinde**
+selbst, am 6. Januar früh. Ihr müsst nichts einstellen und nichts anstoßen.
 
-**Dieselbe Ausgabe erneut freigeben = neu berechnen.** Der Rückblick wird
-vollständig neu gerechnet und überschreibt den bisherigen Stand dieser
-Ausgabe.
+Von Hand geht es trotzdem weiterhin — und **doppelt wird er nie**. Wer den
+Rückblick auf 2026 am 3. Januar selbst erstellt, bekommt am 6. keinen zweiten,
+und sein Team keine zweite Benachrichtigung. Erkannt wird das am Jahr: Ein
+Rückblick auf 2025, der schon dasteht, hält den auf 2026 nicht auf.
 
-> **Achtung:** Der vorherige Stand **derselben Ausgabe** ist nach dem
-> Neuberechnen unwiderruflich weg — auch aus „Meine Wrappeds“. Die anderen
-> Ausgaben bleiben unberührt: Ein Zwischenstand vom Januar verschwindet nicht,
-> wenn du im Mai den Abschluss neu rechnest.
+> **Warum es beim Konfi-Rückblick keine Automatik gibt:** Er umfasst die ganze
+> Konfi-Zeit bis zu dem Tag, an dem er entsteht — und wann dieser Tag der
+> richtige ist, weiß nur ihr: Konfirmation, Abschlussfahrt, letzter Abend. Ein
+> Datum im Kalender kann das nicht wissen.
 
-**Löschen betrifft immer eine einzelne Ausgabe.** Die Rückfrage lautet
-„Ausgabe löschen?“. Die gespeicherten Rückblicke dieser Ausgabe werden dabei
-**wirklich gelöscht**, nicht nur ausgeblendet — die übrigen Ausgaben des
-Jahrgangs bleiben stehen. Nur ein erneutes Freigeben stellt sie wieder her,
-dann mit neu berechneten Zahlen.
+## Neu berechnen und löschen
 
-Teamer-Rückblicke sind davon nicht betroffen — sie hängen an keinem Jahrgang.
-Löschen lassen sie sich trotzdem, allerdings nicht über die Oberfläche: Der
-Weg dafür ist ein Betriebswerkzeug und läuft über die Schnittstelle, so wie
-das Erzeugen des Teamer-Rückblicks selbst.
+**Denselben Rückblick erneut erstellen = neu berechnen.** Er wird vollständig
+neu gerechnet und überschreibt den bisherigen Stand.
+
+> **Achtung:** Der vorherige Stand **desselben Rückblicks** ist danach
+> unwiderruflich weg — auch aus „Meine Wrappeds". Die anderen bleiben
+> unberührt: Ein Zwischenstand vom Januar verschwindet nicht, wenn du im Mai
+> den Abschluss neu rechnest.
+
+**Löschen betrifft immer einen einzelnen Rückblick.** Die Rückfrage lautet
+„Ausgabe löschen?". Die gespeicherten Rückblicke werden dabei **wirklich
+gelöscht**, nicht nur ausgeblendet. Nur ein erneutes Erstellen bringt sie
+zurück, dann mit neu berechneten Zahlen.
+
+Team-Rückblicke lassen sich auf demselben Weg löschen — sie stehen in derselben
+Liste, nur ohne Jahrgang daneben.
 
 ## Wie viele Seiten jemand sieht — und welche
 
-**Höchstens zehn.** Nicht weil mehr technisch schwierig wäre, sondern weil ein
-Rückblick, den man einmal durchwischt, nicht länger sein soll. Vorher waren es
-bis zu neunzehn, im Schnitt vierzehn — und weil fast alle fast alles bekamen,
-sahen alle Rückblicke gleich aus.
+Das ist die Stelle, an der am häufigsten nachgefragt wird. In einem Satz:
 
-Welche zehn, entscheidet die **Seltenheit**. Für jede Seite, die überhaupt in
-Frage kommt, fragt die App: *Wie viele andere im Jahrgang bekommen diese Seite
-auch?* Je weniger, desto eher ist sie dabei.
+> **Höchstens zehn Seiten. Ein paar sind immer dabei. Die übrigen Plätze gehen
+> an das, was am seltensten ist.**
 
-*Beispiel:* Fast jede Konfi war bei irgendeinem Termin — die Termin-Seite ist
-also nichts Besonderes. Bei der Sommerfreizeit nach Norwegen waren wenige — die
-Seite dazu ist etwas Besonderes und kommt fast immer durch.
+### Erstens: höchstens zehn
 
-Damit sieht nicht jede Konfi dasselbe, und wer etwas Ungewöhnliches erlebt hat,
-sieht genau das.
+Nicht weil mehr technisch schwierig wäre, sondern weil ein Rückblick, den man
+einmal durchwischt, nicht länger sein soll. Vorher waren es bis zu neunzehn, im
+Schnitt vierzehn — und weil fast alle fast alles bekamen, sahen alle Rückblicke
+gleich aus.
 
-### Was immer dabei ist
+### Zweitens: eine Seite muss etwas zu erzählen haben
 
-Sieben Seiten hängen nicht an der Seltenheit:
+Bevor überhaupt ausgewählt wird, fällt alles weg, wozu es nichts zu sagen gibt.
+Wer keine Challenge mitgemacht hat, bekommt keine Challenge-Seite. **Eine Seite
+mit einer Null darauf ist keine Erinnerung.**
+
+Deshalb bekommt eine Konfi, die viel erlebt hat, mehr Seiten als eine, die
+selten da war — und wer wenig hat, bekommt einen kurzen, aber ehrlichen
+Rückblick statt einer Reihe von Nullen.
+
+### Drittens: ein paar Seiten sind gesetzt
+
+Sie nehmen nicht am Wettbewerb teil:
 
 - **Begrüßung** und **Auf einen Blick** — Anfang und Ende der Erzählung.
 - **Werde Teamer:in** — die Einladung, kurz vor Schluss.
-- **Termine**, **Punkte** und **Abzeichen** — die drei Zahlen, die auf der
-  Abschluss-Seite noch einmal zusammengefasst werden. Ohne sie fasste der
-  Abschluss etwas zusammen, das nie gezeigt wurde. Sie erscheinen aber nur,
-  wenn wirklich etwas zusammengekommen ist: Eine Seite mit einer Null darauf
-  ist keine Erinnerung.
+- **Termine**, **Punkte** und **Abzeichen**. Der Grund ist die Abschluss-Seite:
+  Sie fasst genau diese drei Zahlen noch einmal zusammen. Ohne sie fasste sie
+  etwas zusammen, das nie gezeigt wurde. (Auch sie nur, wenn wirklich etwas
+  zusammengekommen ist — siehe zweitens.)
 - **Mindestens ein Schwerpunkt** — eine Seite zu einem Bereich oder einer
   besonderen Zeit im Kirchenjahr. Sie erzählt, *worum* es in dem Jahr ging;
   ohne sie wäre der Rückblick eine Sammlung von Zahlen. Mehr als zwei davon
   gibt es nicht, sonst wiederholen sie sich.
+- **Das seltenste eigene Abzeichen**, wenn höchstens ein Fünftel der anderen es
+  auch hat. Dazu gleich mehr.
 
-Die übrigen Plätze gehen an die seltensten Seiten, auf die die Person Anspruch
-hat.
+### Viertens: die übrigen Plätze gehen an das Seltenste
 
-> **Die Reihenfolge bleibt die Erzählung.** Die Seltenheit entscheidet, *wer*
-> mitkommt — nicht, in welcher Reihenfolge erzählt wird. Der Rückblick fängt
-> immer mit der Begrüßung an, dann kommt die Einladung ins Team, und ganz
-> zuletzt steht die Übersicht — die Seite, die geteilt wird.
+Für jede verbliebene Seite fragt die App: *Wie viele andere im Jahrgang bekommen
+diese Seite auch?* Je weniger, desto eher ist sie dabei.
+
+*Ein Beispiel, das die Regel erklärt:* Punkte und Abzeichen hat jeder — die
+sind nichts Besonderes und stehen ohnehin schon fest. Bei der Sommerfreizeit
+nach Norwegen waren wenige; die Seite dazu ist etwas Besonderes und kommt fast
+immer durch. Sind sieben andere seltene Seiten aktiv, kommen eben die.
+
+Damit sieht nicht jede Konfi dasselbe, und wer etwas Ungewöhnliches erlebt hat,
+sieht genau das.
+
+### Das seltenste Abzeichen ab einem Fünftel
+
+Eine Ausnahme mit gutem Grund. Die Seite **„Das haben nur x %"** zeigt das
+seltenste Abzeichen, das jemand hat. Liegt dieser Wert bei **20 % oder
+darunter** — hat es also höchstens ein Fünftel der anderen auch —, ist die Seite
+**gesetzt**. Sie kann dann von nichts mehr verdrängt werden.
+
+Vorher trat sie mit ihrem Prozentwert gegen alle anderen an und gewann meistens,
+aber eben nicht immer: Kamen genug seltene Seiten zusammen, fiel ausgerechnet
+die weg, die am meisten über die Person sagte.
+
+Liegt der Wert **über 20 %**, konkurriert sie wie jede andere Seite. Ein
+Abzeichen, das die Hälfte des Jahrgangs hat, ist keine Besonderheit — dafür gibt
+es schon die Abzeichen-Seite.
+
+### Die Reihenfolge bleibt die Erzählung
+
+Die Seltenheit entscheidet, *wer* mitkommt — nicht, in welcher Reihenfolge
+erzählt wird. Der Rückblick fängt immer mit der Begrüßung an, dann kommt die
+Einladung ins Team, und ganz zuletzt steht die Übersicht — die Seite, die
+geteilt wird. Nach Seltenheit sortiert wäre es eine Rangliste, keine
+Erzählung.
 
 ## Die Seiten des Konfi-Rückblicks
 
@@ -249,7 +291,7 @@ gemeindeweit nicht sinnvoll auszählen lassen.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
-| **Begrüßung** | Name, Jahrgang, Jahreszahl | immer | immer |
+| **Begrüßung** | „Deine Konfi-Zeit" (mit „(bis jetzt)", wenn die Konfirmation noch mehr als einen Monat hin ist) und der Name | immer | immer |
 | **Deine Termine** | Zahl der besuchten Termine, mit einem Spruch dazu | mindestens ein besuchter Termin | 95 % |
 | **Warteliste-Held:in** | „Du hast gewartet — und es hat geklappt" | mindestens einmal von der Warteliste nachgerückt | 20 % |
 | **Dein Schwerpunkt** | Bereich oder besondere Zeit, mit eigenem Bild und Spruch | siehe die beiden Tabellen unten | verschieden |
@@ -262,7 +304,7 @@ gemeindeweit nicht sinnvoll auszählen lassen.
 | **Der lange Atem** | Spanne vom ersten bis zum letzten Termin | mindestens 5 Termine über mindestens 60 Tage | 45 % |
 | **Dein Wochentag** | der Tag, an dem die meisten Termine lagen | mindestens 4 Termine an einem Wochentag, und das ist mindestens die Hälfte aller | 25 % |
 | **Deine Abzeichen** | Zahl der Abzeichen, „von N", bis zu sechs Symbole | mindestens ein Abzeichen | 90 % |
-| **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen |
+| **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen — ab 20 % oder darunter ist die Seite gesetzt |
 | **Deine Konfirmation** | das Konfirmationsdatum, Countdown wenn sie noch bevorsteht | der Jahrgang hat einen als Konfirmation gekennzeichneten Termin | 35 % |
 | **Werde Teamer:in** | die Einladung, dabeizubleiben | immer, als vorletzte Seite | immer |
 | **Auf einen Blick** | Kirchengemeinde, Punkte, Termine, Abzeichen und der Konfirmationstermin unter „Dein Weg. Deine Zeit. Dein Glaube." | immer, als letzte Seite | immer |
@@ -335,10 +377,14 @@ Eine Sonderseite für die Fahrt nach **Stavanger**: „Du warst dabei. 14
 unvergessliche Tage in Himmel og Hav." Sie erscheint bei **Konfis und
 Teamer:innen gleichermaßen** — aber nur bei denen, die mitgefahren sind.
 
-Wer dabei war, entscheidet sich an den Daten: Wer eine Aktivität oder einen
-Termin der Kategorie **„Sommerfreizeit"** aus dem Sommer 2026 hat, bekommt die
-Seite. Gibt es die Kategorie in eurer Gemeinde nicht, erscheint die Seite bei
-niemandem.
+**Sie gibt es nur in den beiden Gemeinden, die mitgefahren sind:** Kirchspiel
+West und Kirchengemeinde Hennstedt. Überall sonst erscheint sie nicht, auch
+dann nicht, wenn dort eine gleichnamige Kategorie geführt wird. Der Rückblick
+bleibt in allen anderen Gemeinden allgemein.
+
+Wer dabei war, entscheidet sich in diesen beiden Gemeinden an den Daten: Wer
+eine Aktivität oder einen Termin der Kategorie **„Sommerfreizeit"** aus dem
+Sommer 2026 hat, bekommt die Seite.
 
 Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
 Tage, ganz gleich wie oft jemand abgehakt wurde. Eine spätere Sommerfreizeit
@@ -346,6 +392,10 @@ löst diese Seite nicht aus.
 
 Mit 5 % ist es die seltenste Seite überhaupt — wer sie bekommen kann, bekommt
 sie auch.
+
+> **Für nächstes Jahr:** Fährt eine andere Gruppe woandershin, wird daraus eine
+> neue Seite mit neuem Bild, neuem Text und neuem Jahr. Auch dann gilt sie nur
+> für die Gemeinden, die wirklich mitgefahren sind.
 
 ### Was bewusst nicht vorkommt
 
@@ -377,15 +427,14 @@ liegt.
 | Dein Wochentag | häufigster Wochentag der Termine, in Berliner Zeit |
 | Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge |
 
-Der **Zeitraum** reicht vom Beginn der Konfi-Zeit bis zu dem Tag, an dem der
-Rückblick erstellt wird — bei manchen sind das zwei Jahre. Der
+Der **Zeitraum** reicht beim Konfi-Rückblick vom Beginn der Konfi-Zeit bis zu
+dem Tag, an dem er erstellt wird — bei manchen sind das zwei Jahre. Der
 Konfirmationstermin schneidet nichts ab; er wird nur auf der eigenen Seite
-gezeigt. Wer stattdessen einen **Zwischenbericht** will, trägt beim Anlegen
-einen eigenen Zeitraum ein; dann gilt der.
+gezeigt und entscheidet über das „(bis jetzt)" in der Überschrift.
 
-Beim **Teamer-Rückblick** schließt jede Ausgabe lückenlos an die vorige an: Die
-erste beginnt beim Eintritt ins Team, jede weitere am Ende der letzten. Auch
-hier geht ein eingetragener Zeitraum vor.
+Beim **Team-Rückblick** ist es das gewählte Kalenderjahr, vom 1. Januar bis zum
+31. Dezember. Wer erst im Laufe des Jahres dazugekommen ist, bekommt trotzdem
+den Rückblick auf das Jahr — gezählt wird eben nur, was seither war.
 
 ## Die Seiten des Teamer-Rückblicks
 
@@ -399,7 +448,7 @@ etwas zusammengekommen ist.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
-| **Begrüßung** | „Dein Teamer-Jahr", mit Name | immer | immer |
+| **Begrüßung** | „Dein Teamerjahr" mit der Jahreszahl, dazu der Name | immer | immer |
 | **So fing es an** | der erste Termin des Jahres mit Name und Datum | mindestens ein Termin im Zeitraum | 85 % |
 | **Deine Termine** | Zahl der begleiteten Termine, der größte mit Teilnehmerzahl | mindestens ein Termin im Zeitraum | 95 % |
 | **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
@@ -472,8 +521,8 @@ wird das Bild heruntergeladen.
 
 Klappt der Bildexport nicht, wird ersatzweise ein kurzer Text geteilt, etwa
 „Meine Konfi-Zeit: 24 Punkte gesammelt! #KonfiQuest“. Bei Teamer:innen
-steht dort „Mein Teamer-Jahr 2026“ — ihr Rückblick umfasst ein Jahr, der
-der Konfis die ganze Konfi-Zeit.
+steht dort „Mein Teamer-Jahr 2026“ — ihr Rückblick umfasst ein Kalenderjahr,
+der der Konfis die ganze Konfi-Zeit.
 
 > **Datenschutz, bewusst so gebaut:** In das Teilen-Bild werden **niemals Fotos,
 > Ton- oder Videoaufnahmen** aus Challenge-Beiträgen übernommen — nur der
