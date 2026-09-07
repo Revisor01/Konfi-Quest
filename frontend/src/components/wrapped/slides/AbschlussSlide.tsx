@@ -36,7 +36,12 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year, t
 
   return (
     <SlideBase isActive={isActive} className="abschluss-slide" kachel="abschluss">
-      <div className="kat-auge">{titel?.trim() || `Dein Konfi-Jahr ${year}`}</div>
+      {/* "Deine Konfi-Zeit" statt einer Jahreszahl (Simons Wortlaut,
+          07.09.2026). Seit derselben Regel laeuft der Konfi-Rueckblick vom
+          Anfang der Konfi-Zeit bis heute -- das koennen zwei Jahre sein, und
+          dann ist "Dein Konfi-Jahr 2026" schlicht falsch. Ein gesetzter
+          Titel gewinnt weiterhin (Muster aus IntroSlide). */}
+      <div className="kat-auge">{titel?.trim() || 'Deine Konfi-Zeit'}</div>
 
       {/* Simons Botschaft traegt die Seite. */}
       <div className="kat-slogan">

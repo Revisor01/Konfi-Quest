@@ -120,7 +120,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           return (
             <>
               <div style={{ fontSize: 36, fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>
-                Dein Konfi-Jahr {year}
+                Deine Konfi-Zeit
               </div>
               <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1 }}>
                 {displayName}
@@ -338,7 +338,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           return (
             <>
               <div style={{ fontSize: 48, fontWeight: 700, marginBottom: 48 }}>
-                Dein Konfi-Jahr {year}
+                Deine Konfi-Zeit
               </div>
               <div style={{ display: 'flex', gap: 48 }}>
                 <div style={{ textAlign: 'center' }}>

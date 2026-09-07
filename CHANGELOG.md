@@ -139,6 +139,16 @@ Versionsüberschrift.
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
 ### Geändert
+- Der Rückblick einer Konfi umfasst jetzt die ganze Konfi-Zeit — vom Beginn
+  bis heute, auch wenn das zwei Jahre sind. Der Konfirmationstermin schneidet
+  nichts mehr ab; er wird weiterhin auf der eigenen Seite gezeigt.
+- Ein Teamer-Rückblick schließt jetzt lückenlos an den vorigen an: Der erste
+  beginnt beim Eintritt ins Team, jeder weitere am Ende des letzten.
+- Beim Anlegen eines Rückblicks bleibt der Zeitraum leer und wird automatisch
+  bestimmt. Nur für einen Zwischenbericht trägt die Leitung eigene Daten ein;
+  ein Hinweis im Formular erklärt beides.
+- Statt „Dein Konfi-Jahr 2026" heißt es im Rückblick jetzt „Deine Konfi-Zeit" —
+  eine einzelne Jahreszahl passt nicht mehr, wenn der Zeitraum länger ist.
 - Die Gruppe heißt in der App jetzt durchgehend „Team“ — in Titeln, Reitern,
   Listen und Hinweisen. Die einzelne Person bleibt „Teamer:in“.
 - Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,

@@ -105,7 +105,7 @@ describe('Rueckmeldung beim Teilen', () => {
     setzeNavigator({ share: teilen, canShare: () => false });
     const ergebnis = await shareSlide(karte(), 'punkte', 'konfi', TEXT);
     expect(ergebnis).toEqual({ art: 'nur-text' });
-    expect(teilen).toHaveBeenCalledWith({ text: 'Mein Konfi-Jahr 2026: 137 Punkte gesammelt! #KonfiQuest' });
+    expect(teilen).toHaveBeenCalledWith({ text: 'Meine Konfi-Zeit: 137 Punkte gesammelt! #KonfiQuest' });
   });
 
   it('gar nichts geht: meldet einen Fehler mit Grund', async () => {

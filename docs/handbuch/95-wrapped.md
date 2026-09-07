@@ -239,9 +239,8 @@ Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.
 
 **9. Deine Badges** — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu
 sechs Abzeichen als Symbole. *Nur, wenn im Zeitraum mindestens ein Abzeichen
-verdient wurde.* Das ist wichtiger, als es klingt: Hat der Jahrgang einen
-Konfirmationstermin, beginnt der Zeitraum am 1. September davor — Abzeichen aus
-dem Sommer davor liegen außerhalb und zählen hier nicht mit.
+verdient wurde.* Weil der Zeitraum am Beginn der Konfi-Zeit anfängt, zählt hier
+alles mit, was seither verdient wurde — auch aus einem früheren Sommer.
 
 **10. Deine Konfirmation** — das Konfirmationsdatum. *Nur, wenn ein
 Konfirmationstermin hinterlegt ist* — praktisch also fast immer, weil sonst ein
@@ -321,9 +320,15 @@ bekommt zwei Seiten über denselben Termin.
 | Der Vielseitige | verschiedene Medienarten der eigenen Challenge-Beiträge; ab zwei Arten |
 | Highlight | Chat-Nachrichten und erhaltene Reaktionen aus dem [Chat](90-chat.md), Challenge-Beiträge, Anmeldungen und Absagen — alles nur aus dem eigenen Zeitraum und der eigenen Gemeinde, verglichen mit dem Durchschnitt des Jahrgangs |
 
-Der **Zeitraum** reicht vom 1. September des Vorjahres bis zur Konfirmation.
-Fehlt ein Konfirmationstermin, wird der 31. August als Ende angenommen — das
-volle Konfi-Jahr.
+Der **Zeitraum** reicht vom Beginn der Konfi-Zeit bis zu dem Tag, an dem der
+Rückblick erstellt wird — bei manchen sind das zwei Jahre. Der
+Konfirmationstermin schneidet nichts ab; er wird nur auf der eigenen Seite
+gezeigt. Wer stattdessen einen **Zwischenbericht** will, trägt beim Anlegen
+einen eigenen Zeitraum ein; dann gilt der.
+
+Beim **Teamer-Rückblick** schließt jede Ausgabe lückenlos an die vorige an: Die
+erste beginnt beim Eintritt ins Team, jede weitere am Ende der letzten. Auch
+hier geht ein eingetragener Zeitraum vor.
 
 ## Die Seiten des Teamer-Rückblicks
 

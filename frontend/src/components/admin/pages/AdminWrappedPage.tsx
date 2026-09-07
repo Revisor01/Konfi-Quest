@@ -71,22 +71,24 @@ const datum = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
 /**
- * Vorschlag fuer den Zeitraum einer neuen Ausgabe: das laufende Konfi-Jahr,
- * 1.9. bis 31.8. -- dieselbe Spanne, die das Backend ohne Angabe rechnet.
+ * Der Zeitraum bleibt LEER -- und das ist seit dem 07.09.2026 der Normalfall.
  *
- * Damit steht im Formular von vornherein das Richtige und niemand muss
- * tippen; wer eine andere Spanne will (Zwischenstand, verkuerztes Jahr),
- * aendert die beiden Felder.
+ * SIMONS REGEL: "bei konfi jahrgaengen muss das wrapped alles erfassen was
+ * der konfi gemacht hat. den ganzen zeitraum, bei manchen sind das auch zwei
+ * jahre. es sollte nur die option mit rein das man auch zwischenberichte
+ * machen kann." Und: "Immer vom anfang an bis zum jetzigen zeitpunkt."
  *
- * Vor dem 1.9. laeuft noch das Jahr, das im VORIGEN September begann --
- * deshalb der Monatsvergleich statt schlicht getFullYear().
+ * Ohne Eingabe rechnet das Backend also selbst:
+ *   Konfi  -> vom Anfang der Konfi-Zeit bis heute,
+ *   Teamer -> vom Ende des letzten Rueckblicks bis heute (beim ersten Mal
+ *             ab dem Eintritt ins Team).
+ *
+ * Vorher stand hier ein Vorschlag (1.9. bis 31.8.), der bei jedem Anlegen
+ * mitging -- damit war der ZWISCHENBERICHT der Normalfall und Simons Regel
+ * die Ausnahme. Genau andersherum ist es richtig. Wer wirklich einen
+ * Zwischenstand will, traegt die beiden Daten ein.
  */
-function vorgeschlagenerZeitraum(): { start: string; ende: string } {
-  const heute = new Date();
-  // getMonth() ist zaehlt ab 0; 8 = September.
-  const startJahr = heute.getMonth() >= 8 ? heute.getFullYear() : heute.getFullYear() - 1;
-  return { start: `${startJahr}-09-01`, ende: `${startJahr + 1}-08-31` };
-}
+const LEERER_ZEITRAUM = { start: '', ende: '' };
 
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -108,8 +110,8 @@ const AdminWrappedPage: React.FC = () => {
   // Der Zeitraum der Ausgabe. Er steht seit jeher in wrapped_ausgaben und
   // wurde angezeigt -- nur konnte ihn niemand setzen, und das Backend
   // rechnete ohnehin mit einem anderen (Befund 06.09.2026).
-  const [neuerStart, setNeuerStart] = useState(vorgeschlagenerZeitraum().start);
-  const [neuerEnde, setNeuerEnde] = useState(vorgeschlagenerZeitraum().ende);
+  const [neuerStart, setNeuerStart] = useState(LEERER_ZEITRAUM.start);
+  const [neuerEnde, setNeuerEnde] = useState(LEERER_ZEITRAUM.ende);
   const [erzeugt, setErzeugt] = useState(false);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
@@ -139,11 +141,16 @@ const AdminWrappedPage: React.FC = () => {
       setError('Bitte einen Jahrgang wählen');
       return;
     }
-    if (!neuerStart || !neuerEnde) {
-      setError('Bitte einen Zeitraum angeben');
+    // Beide Felder leer ist der NORMALFALL -- dann rechnet das Backend den
+    // Zeitraum selbst (ganze Konfi-Zeit bzw. Anschluss an den letzten
+    // Teamer-Rueckblick). Nur EIN gefuelltes Feld ist dagegen ein Versehen:
+    // Das Backend nimmt eine halbe Angabe nicht an und faellt still auf die
+    // Automatik zurueck -- der eingetragene Tag waere wirkungslos.
+    if ((neuerStart && !neuerEnde) || (!neuerStart && neuerEnde)) {
+      setError('Bitte beide Daten angeben oder beide frei lassen');
       return;
     }
-    if (neuerStart > neuerEnde) {
+    if (neuerStart && neuerEnde && neuerStart > neuerEnde) {
       // Sonst entstuende eine Ausgabe, die nichts zaehlen kann -- und der
       // Fehler faellt erst auf, wenn alle Rueckblicke leer sind.
       setError('Der Zeitraum endet vor seinem Anfang');
@@ -152,13 +159,14 @@ const AdminWrappedPage: React.FC = () => {
     setErzeugt(true);
     try {
       const titel = neuerTitel.trim();
-      // Der Zeitraum geht IMMER mit -- sonst rechnet das Backend mit seinem
-      // Fallback, und im Formular staende eine Spanne, unter der Zahlen aus
-      // einer anderen liegen.
-      const rumpf: { titel?: string; zeitraum_start: string; zeitraum_ende: string } = {
-        zeitraum_start: neuerStart,
-        zeitraum_ende: neuerEnde,
-      };
+      // Der Zeitraum geht NUR mit, wenn er ausdruecklich eingetragen wurde --
+      // das ist Simons Option fuer Zwischenberichte. Ohne Angabe bleibt das
+      // Feld weg, und das Backend rechnet den vollen Zeitraum.
+      const rumpf: { titel?: string; zeitraum_start?: string; zeitraum_ende?: string } = {};
+      if (neuerStart && neuerEnde) {
+        rumpf.zeitraum_start = neuerStart;
+        rumpf.zeitraum_ende = neuerEnde;
+      }
       if (titel) rumpf.titel = titel;
       if (segment === 'konfi') {
         await api.post(`/wrapped/generate/${neuerJahrgang}`, rumpf);
@@ -169,8 +177,8 @@ const AdminWrappedPage: React.FC = () => {
       setModalOffen(false);
       setNeuerTitel('');
       setNeuerJahrgang(null);
-      setNeuerStart(vorgeschlagenerZeitraum().start);
-      setNeuerEnde(vorgeschlagenerZeitraum().ende);
+      setNeuerStart(LEERER_ZEITRAUM.start);
+      setNeuerEnde(LEERER_ZEITRAUM.ende);
       await laden();
     } catch (e) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -485,14 +493,15 @@ const AdminWrappedPage: React.FC = () => {
                       onIonInput={(e) => setNeuerTitel(e.detail.value || '')}
                     />
                   </IonItem>
-                  {/* Der Zeitraum, den der Rueckblick zaehlt. Vorbelegt mit
-                      dem laufenden Konfi-Jahr, damit niemand tippen muss.
+                  {/* Die Datumsfelder sind seit dem 07.09.2026 die AUSNAHME,
+                      nicht der Normalfall: Sie bleiben leer, und nur wer
+                      wirklich einen Zwischenbericht will, traegt etwas ein.
                       Native Datumsfelder statt IonDatetime: zwei Kalender in
                       einem Sheet waeren mehr Bedienung als die Sache wert. */}
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonInput
                       type="date"
-                      label="Zeitraum von"
+                      label="Nur für Zwischenbericht: von"
                       labelPlacement="stacked"
                       value={neuerStart}
                       onIonInput={(e) => setNeuerStart(e.detail.value || '')}
@@ -501,16 +510,23 @@ const AdminWrappedPage: React.FC = () => {
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonInput
                       type="date"
-                      label="Zeitraum bis"
+                      label="Nur für Zwischenbericht: bis"
                       labelPlacement="stacked"
                       value={neuerEnde}
                       onIonInput={(e) => setNeuerEnde(e.detail.value || '')}
                     />
                   </IonItem>
-                  {/* Hinweis im gemeinsamen Muster statt als loser Absatz
-                      (Simon, 05.09.2026). Der Satz "Ohne Namen schlagen wir
-                      einen vor" ist raus: Er nannte den Vorschlag nicht und
-                      liess offen, was passiert. */}
+                  {/* Simon ausdruecklich (07.09.2026): "Das erklaeren wir
+                      auch." Der Text sagt, was OHNE Eingabe passiert -- sonst
+                      steht da ein leeres Pflichtfeld-Gefuehl und niemand
+                      weiss, welchen Zeitraum der Rueckblick am Ende zeigt.
+                      Beide Rollen werden genannt, weil dieselbe Maske beide
+                      Ausgaben anlegt. */}
+                  <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
+                    {segment === 'konfi'
+                      ? 'Lass die Daten leer: Dann zählt der Rückblick die ganze Konfi-Zeit — vom Beginn bis heute, auch über zwei Jahre. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'
+                      : 'Lass die Daten leer: Dann schließt der Rückblick lückenlos an den letzten an — beim ersten Mal ab dem Eintritt ins Team, danach ab dem Ende des vorigen Rückblicks. Nur für einen Zwischenbericht trägst du einen eigenen Zeitraum ein.'}
+                  </div>
                   <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     Der Rückblick wird sofort erstellt und freigegeben; alle
                     bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.

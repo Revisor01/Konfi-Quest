@@ -641,11 +641,170 @@ describe('Wrapped Routes', () => {
       expect(snap.kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
     });
 
-    it('Der Snapshot benennt seinen Zeitraum', async () => {
+    /** Der heutige Tag als ISO-Datum, nach Ortszeit wie im Backend. */
+    function heuteIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    it('Der erste Rueckblick laeuft vom Eintritt ins Team bis heute', async () => {
+      // SIMONS TEAMER-REGEL (07.09.2026): "das erste wrapped geht vom
+      // anbeginn der zeit als teamer bis zum zeitpunkt des wrapped."
+      // Vorher stand hier fest 1.9.(JAHR-1) bis 31.8.(JAHR) -- ein Fenster,
+      // das weder am Eintritt begann noch am Erzeugungstag endete.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
       const snap = await snapshotVonTeamer1();
       expect(snap.slides.zeitraum.year).toBe(JAHR);
-      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-09-01`);
-      expect(snap.slides.zeitraum.ende).toBe(`${JAHR}-08-31`);
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Ohne teamer_since faellt der Anfang auf die aelteste Teamer-Aktivitaet', async () => {
+      // teamer_since ist nullable (Altdaten). Dieselbe Fallback-Kette wie im
+      // Abzeichen-Zweig (routes/badges.js, 'teamer_year').
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      const { rows: [akt] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ('Teamer-Schulung', 1, 'gemeinde', $1, 'teamer') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, admin_id, organization_id, completed_date)
+         VALUES ($1, $2, $3, $4, $5::date)`,
+        [USERS.teamer1.id, akt.id, USERS.admin1.id, ORGS.testGemeinde.id, `${JAHR - 2}-03-15`]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 2}-03-15`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    // ------------------------------------------------------------
+    // DIE KETTE -- der Kern von Simons Teamer-Regel:
+    // "und dann immer bis zum letzten wrapped."
+    // ------------------------------------------------------------
+    it('Der zweite Rueckblick beginnt EXAKT am Ende des ersten -- keine Luecke, keine Ueberlappung', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      /**
+       * Eine Ausgabe erzeugen und den Snapshot GENAU DIESER Ausgabe holen.
+       *
+       * Nicht ueber snapshotVonTeamer1(): Der Helfer verlangt genau EINEN
+       * Snapshot -- und dieser Test legt bewusst zwei Ausgaben an, um die
+       * Kette zu pruefen.
+       */
+      async function ausgabeUndSnapshot() {
+        const gen = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`);
+        expect(gen.status).toBe(200);
+        const { rows } = await db.query(
+          `SELECT data FROM wrapped_snapshots
+            WHERE user_id = $1 AND wrapped_type = 'teamer' AND ausgabe_id = $2`,
+          [USERS.teamer1.id, gen.body.ausgabe_id]
+        );
+        expect(rows).toHaveLength(1);
+        return rows[0].data;
+      }
+
+      // ERSTE Ausgabe: vom Eintritt bis heute.
+      const ersterSnap = await ausgabeUndSnapshot();
+      expect(ersterSnap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+      const ersterEnde = ersterSnap.slides.zeitraum.ende;
+      expect(ersterEnde).toBe(heuteIso());
+
+      // ZWEITE Ausgabe, unmittelbar danach. Sie darf NICHT wieder beim
+      // Eintritt anfangen -- sonst erzaehlte sie dieselbe Zeit noch einmal.
+      const zweiterSnap = await ausgabeUndSnapshot();
+      expect(zweiterSnap.slides.zeitraum.start).toBe(ersterEnde);
+      expect(zweiterSnap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Die Kette knuepft an die vorherige Ausgabe an, nicht an den Eintritt', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      // Eine frueher freigegebene Teamer-Ausgabe von Hand -- so, wie sie
+      // nach einem echten Lauf im vorigen Jahr in der Tabelle staende.
+      await db.query(
+        `INSERT INTO wrapped_ausgaben
+           (organization_id, wrapped_type, jahrgang_id, titel,
+            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+         VALUES ($1, 'teamer', NULL, 'Rueckblick im Vorjahr',
+                 $2::date, $3::date, NOW(), $4, $4)`,
+        [ORGS.testGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Genau Simons Beispiel: Der naechste Rueckblick beginnt am Ende des
+      // vorigen (1.1.), nicht wieder beim Eintritt (1.9. drei Jahre zuvor).
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-01-01`);
+      expect(snap.slides.zeitraum.ende).toBe(heuteIso());
+    });
+
+    it('Die Kette nimmt das SPAETESTE Ende, nicht die zuletzt angelegte Ausgabe', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 4}-09-01`, USERS.teamer1.id]);
+
+      // Erst die spaetere Ausgabe anlegen, danach eine, die einen FRUEHEREN
+      // Abschnitt nachtraegt (ein Zwischenbericht ueber alte Zeiten). Die
+      // Kette darf davon nicht zurueckgedreht werden.
+      for (const [titel, start, ende] of [
+        ['Spaeter', `${JAHR - 2}-01-01`, `${JAHR - 1}-06-01`],
+        ['Nachgetragen', `${JAHR - 4}-09-01`, `${JAHR - 3}-01-01`],
+      ]) {
+        await db.query(
+          `INSERT INTO wrapped_ausgaben
+             (organization_id, wrapped_type, jahrgang_id, titel,
+              zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+           VALUES ($1, 'teamer', NULL, $2, $3::date, $4::date, NOW(), $5, $5)`,
+          [ORGS.testGemeinde.id, titel, start, ende, USERS.orgAdmin1.id]
+        );
+      }
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 1}-06-01`);
+    });
+
+    it('Eine Teamer-Ausgabe einer FREMDEN Gemeinde bricht die Kette nicht', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+      await db.query(
+        `INSERT INTO wrapped_ausgaben
+           (organization_id, wrapped_type, jahrgang_id, titel,
+            zeitraum_start, zeitraum_ende, freigegeben_at, freigegeben_von, erstellt_von)
+         VALUES ($1, 'teamer', NULL, 'Fremde Gemeinde',
+                 $2::date, $3::date, NOW(), $4, $4)`,
+        [ORGS.andereGemeinde.id, `${JAHR - 3}-09-01`, `${JAHR - 1}-01-01`, USERS.orgAdmin2.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Unveraendert der Eintritt -- die fremde Ausgabe zaehlt nicht.
+      expect(snap.slides.zeitraum.start).toBe(`${JAHR - 3}-09-01`);
+    });
+
+    it('Ein ausdruecklicher Zeitraum geht der Kette vor (Zwischenbericht)', async () => {
+      // Simons "Option fuer Zwischenberichte" -- die Automatik greift nur,
+      // wenn nichts gesetzt ist.
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR - 3}-09-01`, USERS.teamer1.id]);
+
+      const gen = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ titel: 'Zwischenstand', zeitraum_start: `${JAHR - 1}-10-01`, zeitraum_ende: `${JAHR}-03-31` });
+      expect(gen.status).toBe(200);
+
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].data.slides.zeitraum.start).toBe(`${JAHR - 1}-10-01`);
+      expect(rows[0].data.slides.zeitraum.ende).toBe(`${JAHR}-03-31`);
     });
 
     // BEWUSST OHNE ZEITFILTER -- kein Versehen, sondern eine Entscheidung:
@@ -1449,11 +1608,11 @@ describe('Wrapped Routes', () => {
       await db.query(
         `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
          VALUES ($1, $2, $3, $4::timestamptz)`,
-        [USERS.konfi1.id, BADGES.badge1.id, ORGS.testGemeinde.id, `${JAHR - 1}-07-20 10:00:00`]
+        [USERS.konfi1.id, BADGES.streak.id, ORGS.testGemeinde.id, `${JAHR - 1}-07-20 10:00:00`]
       );
 
       const snap = await snapshotVonKonfi1();
-      expect(snap.slides.badges.total).toBe(1);
+      expect(snap.slides.badges.total_earned).toBe(1);
     });
 
     // ------------------------------------------------------------

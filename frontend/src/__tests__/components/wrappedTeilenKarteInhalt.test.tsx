@@ -77,7 +77,7 @@ function inhaltOhneWasserzeichen(container: HTMLElement): string {
 // Was auf der jeweiligen Karte stehen MUSS. Konkrete Werte, keine weichen
 // Pruefungen: "irgendein Text" waere auch ein falscher Text.
 const ERWARTET: Array<[string, string[]]> = [
-  ['intro', ['Emilia', 'Jahrgang 2026', 'Dein Konfi-Jahr 2026']],
+  ['intro', ['Emilia', 'Jahrgang 2026', 'Deine Konfi-Zeit']],
   ['punkte', ['137', '81', '56']],
   ['events', ['23', 'Konfi-Freizeit Ratzeburg']],
   ['badges', ['9']],

@@ -12,9 +12,13 @@ export interface ShareTextData {
 }
 
 function generateFallbackText(data: ShareTextData): string {
+  // Konfi: "Meine Konfi-Zeit" ohne Jahreszahl (Simons Wortlaut, 07.09.2026)
+  // -- der Rueckblick umfasst die ganze Konfi-Zeit, bei manchen zwei Jahre.
+  // Teamer behaelt die Jahreszahl: Dort bildet die Kette der Ausgaben
+  // tatsaechlich Jahresabschnitte ab.
   const prefix = data.wrappedType === 'teamer'
     ? `Mein Teamer-Jahr ${data.year}`
-    : `Mein Konfi-Jahr ${data.year}`;
+    : 'Meine Konfi-Zeit';
 
   if (data.slideValue) {
     return `${prefix}: ${data.slideValue}! #KonfiQuest`;

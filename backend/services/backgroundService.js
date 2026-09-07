@@ -830,25 +830,22 @@ class BackgroundService {
           );
 
           if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
-            // ZEITRAUM DER AUTOMATISCHEN AUSGABE: das gerade abgelaufene
-            // KALENDERJAHR (1.1. bis 31.12. von year-1).
+            // ZEITRAUM DER AUTOMATISCHEN AUSGABE: KEINE Vorgabe mehr.
             //
-            // Begruendung: Der Cron feuert am 6. Januar. Ohne ausdruecklichen
-            // Zeitraum faellt die Generierung auf das Arbeitsjahr
-            // 1.9.(year-1) bis 31.8.(year) zurueck -- am 6.1.2027 also auf
-            // einen Zeitraum, der zu ueber der Haelfte noch in der ZUKUNFT
-            // liegt. Der Rueckblick zaehlte dann vier Monate und nannte sie
-            // ein Jahr.
+            // SIMONS REGEL (07.09.2026): Ein Teamer-Rueckblick geht vom Ende
+            // des vorigen bis zum Zeitpunkt der Erzeugung, beim ersten Mal
+            // vom Eintritt ins Team an. Diese Kette rechnet
+            // generateAllTeamerWrapped selbst, sobald man ihr keinen
+            // Zeitraum aufdraengt.
             //
-            // Das Kalenderjahr passt hier besser als das Konfi-Jahr: Die
-            // Teamer-Ausgabe haengt an keinem Jahrgang und an keiner
-            // Konfirmation, und ein Rueckblick, der am 6. Januar kommt,
-            // meint das Jahr, das gerade zu Ende ging.
+            // Vorher stand hier fest das abgelaufene Kalenderjahr (1.1. bis
+            // 31.12. von year-1). Das riss zwei Luecken auf: Alles zwischen
+            // dem 1.1. und dem 6.1. fiel durch, und wer erst im Laufe des
+            // Jahres dazukam, bekam einen Zeitraum, der vor seinem Eintritt
+            // begann. Die Kette hat beide Probleme nicht -- sie schliesst
+            // luecken- und ueberschneidungsfrei an die vorige Ausgabe an.
             const jahr = today.getFullYear();
-            await this.wrappedRouter.generateAllTeamerWrapped(
-              db, org.id, jahr,
-              { start: `${jahr - 1}-01-01`, ende: `${jahr - 1}-12-31` }
-            );
+            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, jahr);
             teamerOrgsGenerated++;
           }
         } catch (err) {

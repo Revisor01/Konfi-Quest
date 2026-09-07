@@ -35,9 +35,14 @@ function zeilen(titel: string): string[] {
 }
 
 const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year, titel }) => {
+  // Ohne Titel: "Deine Konfi-Zeit" statt "Konfi-Jahr {Jahr}" (Simons
+  // Wortlaut, 07.09.2026). Der Rueckblick umfasst seit derselben Regel die
+  // ganze Konfi-Zeit -- bei manchen zwei Jahre. Eine einzelne Jahreszahl
+  // waere dann falsch. `year` bleibt in der Schnittstelle stehen: Der
+  // Snapshot fuehrt das Feld weiter, und ausgelieferte Apps lesen es.
   const ueberschrift = titel && titel.trim()
     ? zeilen(titel)
-    : ['Konfi-', 'Jahr', String(year)];
+    : ['Deine', 'Konfi-Zeit'];
 
   return (
     <SlideBase isActive={isActive} className="intro-slide">
