@@ -31,6 +31,8 @@ import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
 import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
 import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
 import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
+import TeamerTeamSlide from './slides/teamer/TeamerTeamSlide';
+import TeamerNeuDabeiSlide from './slides/teamer/TeamerNeuDabeiSlide';
 import TeamerAnfangSlide from './slides/teamer/TeamerAnfangSlide';
 import TeamerErstesAbzeichenSlide from './slides/teamer/TeamerErstesAbzeichenSlide';
 import TeamerAntwortenSlide from './slides/teamer/TeamerAntwortenSlide';
@@ -220,6 +222,8 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-badges': return { ...base, slideValue: `${t.slides.badges.total_earned} Badges verdient` };
         case 'teamer-zertifikate': return { ...base, slideValue: `${t.slides.zertifikate.total} Zertifikate erhalten` };
         case 'teamer-jahre': return { ...base, slideValue: `${t.slides.engagement.jahre_aktiv} Jahre als Teamer:in` };
+        case 'teamer-team': return { ...base, slideValue: `Mit ${t.slides.team?.mitstreitende || 0} anderen im Team` };
+        case 'teamer-neu-dabei': return { ...base, slideValue: 'Mein erstes Jahr im Team' };
         case 'teamer-anfang': return { ...base, slideValue: `Erster Termin: ${t.slides.anfang?.name || ''}` };
         case 'teamer-erstes-abzeichen': return { ...base, slideValue: `Erstes Abzeichen: ${t.slides.erstes_abzeichen?.name || ''}` };
         case 'teamer-antworten': return { ...base, slideValue: `${t.slides.chat?.antworten || 0} Mal geantwortet` };
@@ -468,6 +472,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,
       'teamer-zertifikate': (a) => <TeamerZertifikateSlide isActive={a} zertifikate={teamerData.slides.zertifikate} />,
       'teamer-jahre': (a) => <TeamerJahreSlide isActive={a} engagement={teamerData.slides.engagement} />,
+      'teamer-team': (a) => (
+        teamerData.slides.team
+          ? <TeamerTeamSlide isActive={a} team={teamerData.slides.team} />
+          : null
+      ),
+      'teamer-neu-dabei': (a) => <TeamerNeuDabeiSlide isActive={a} />,
       'teamer-anfang': (a) => (
         teamerData.slides.anfang
           ? <TeamerAnfangSlide isActive={a} anfang={teamerData.slides.anfang} />

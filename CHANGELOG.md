@@ -49,6 +49,9 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Teamer-Rückblick zeigt, mit wie vielen anderen zusammen die Jahrgänge
+  betreut wurden, und begrüßt alle, die im Rückblicksjahr neu ins Team
+  gekommen sind.
 - Neue Seiten im Konfi-Rückblick: über welche Spanne jemand dabei war, an
   welchem Wochentag die Termine meist lagen, und auf wie vielen Wegen jemand
   bei Challenges geantwortet hat.

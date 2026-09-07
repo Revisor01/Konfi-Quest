@@ -247,6 +247,17 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/** Mit wie vielen anderen zusammen -- ab Snapshot-Version 3. */
+export interface TeamerTeamSlide {
+  mitstreitende: number;
+}
+
+/** Das erste Jahr im Team -- ab Snapshot-Version 3. */
+export interface TeamerNeuDabeiSlide {
+  erstes_jahr: boolean;
+  start_jahr: number | null;
+}
+
 /** Der erste Termin des Jahres -- ab Snapshot-Version 3. */
 export interface TeamerAnfangSlide {
   name: string;
@@ -299,6 +310,10 @@ export interface TeamerWrappedData {
     badges: TeamerBadgesSlide;
     zertifikate: TeamerZertifikateSlide;
     engagement: TeamerEngagementSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    team?: TeamerTeamSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    neu_dabei?: TeamerNeuDabeiSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     anfang?: TeamerAnfangSlide | null;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */

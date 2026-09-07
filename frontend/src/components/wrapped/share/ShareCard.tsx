@@ -425,6 +425,32 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-team': {
+          if (!teamer) return null;
+          const tm = teamer.slides.team;
+          if (!tm) return null;
+          return (
+            <>
+              <div className="share-label">Nicht allein</div>
+              <div className="share-big-number">{tm.mitstreitende}</div>
+              <div className="share-subtitle">andere waren mit mir da</div>
+            </>
+          );
+        }
+
+        case 'teamer-neu-dabei': {
+          if (!teamer) return null;
+          return (
+            <>
+              <div className="share-label">Dein erstes Jahr</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.15 }}>
+                Angefangen
+              </div>
+              <div className="share-subtitle">Mein erstes Jahr im Team</div>
+            </>
+          );
+        }
+
         case 'teamer-anfang': {
           if (!teamer) return null;
           const an = teamer.slides.anfang;

@@ -297,6 +297,9 @@ const TEAMER_DRAMATURGIE = [
   'teamer-anfang',       // 2  wie das Jahr begann
   'teamer-events',       // 3  die Termine des Jahres
   'teamer-konfis',       // 4  wen du begleitet hast
+  // 4b: Dein Team -- direkt nach den Konfis, weil beide von Menschen
+  // erzaehlen: erst wen du begleitet hast, dann mit wem zusammen.
+  'teamer-team',         // 4b mit wem zusammen
   'teamer-badges',       // 5  Abzeichen
   // 6: Das erste Abzeichen -- direkt nach der Abzeichen-Seite, weil es
   // dieselbe Sache aus der Naehe zeigt: nicht wie viele, sondern welches
@@ -311,6 +314,9 @@ const TEAMER_DRAMATURGIE = [
   // Konfi war. Steht bewusst NACH den Jahren im Team: erst wie lange du
   // dabei bist, dann wie es angefangen hat. Und vor dem Abschluss, damit
   // der Rueckblick auf dem persoenlichsten Punkt ausklingt.
+  // 9b: Neu dabei -- das Gegenstueck zu "seit x Jahren". Steht direkt
+  // daneben, weil beide dieselbe Frage beantworten: wie lange schon.
+  'teamer-neu-dabei',    // 9b dein erstes Jahr
   'teamer-konfi-zeit',   // 10 vom Konfi zur Teamer:in
   'teamer-abschluss'     // 11 Uebersicht
 ];
@@ -336,7 +342,14 @@ const TEAMER_BEDINGUNGEN = {
   'teamer-anfang': (s) => Boolean(s.anfang?.name),
   'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
   'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
-  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit),
+  'teamer-team': (s) => (s.team?.mitstreitende || 0) > 0,
+  // Nur im ERSTEN Jahr. Und nur, wenn das Startjahr ueberhaupt bekannt ist:
+  // "unbekannt" ist nicht "neu" -- wer seit Jahren dabei ist, aber kein
+  // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst werden.
+  'teamer-neu-dabei': (s) => s.neu_dabei?.erstes_jahr === true,
+  // Wer im ersten Jahr ist, bekommt NICHT zusaetzlich "seit x Jahren dabei" --
+  // das waere dieselbe Auskunft zweimal, einmal davon mit einer 1.
+  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit) && s.neu_dabei?.erstes_jahr !== true,
   // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer
   // von aussen ins Team kam, bekommt die Seite nicht -- eine erfundene
   // Herkunft waere schlimmer als gar keine Seite.

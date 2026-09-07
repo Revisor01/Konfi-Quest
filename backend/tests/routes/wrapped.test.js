@@ -416,6 +416,66 @@ describe('Wrapped Routes', () => {
       expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
     });
 
+    it('Das Team zaehlt nur Teamer:innen -- keine Admins', async () => {
+      // DER EIGENTLICHE FALLSTRICK: Ohne Rollenfilter zaehlte der Self-Join
+      // ueber user_jahrgang_assignments auch Admins und die Leitung mit --
+      // die Zahl waere dann keine Aussage ueber das Team, sondern ueber die
+      // Zugriffsrechte. admin1 steht im Seed (beforeEach) auf jahrgang1,
+      // teamer1 ebenfalls.
+      //
+      // Eine zweite Teamer:in in DERSELBEN Organisation und auf demselben
+      // Jahrgang -- sie ist es, die zaehlen soll.
+      const { rows: [kollegin] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+         VALUES ('teamer1b', 'Zweite Teamerin', 'x', $1, $2) RETURNING id`,
+        [USERS.teamer1.role_id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [kollegin.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      // Genau EINE: die zweite Teamer:in. admin1 sitzt auf demselben
+      // Jahrgang, zaehlt aber nicht mit.
+      expect(snap.slides.team.mitstreitende).toBe(1);
+      expect(snap.kacheln).toContain('teamer-team');
+    });
+
+    it('Eine Teamer:in aus einer fremden Gemeinde zaehlt nicht zum Team', async () => {
+      // Mandantengrenze: teamer2 gehoert zu Org 2.
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.teamer2.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.team.mitstreitende).toBe(0);
+      expect(snap.kacheln).not.toContain('teamer-team');
+    });
+
+    it('Im ersten Jahr erscheint "Neu dabei" statt "seit x Jahren"', async () => {
+      await db.query('UPDATE users SET teamer_since = $1::date WHERE id = $2',
+        [`${JAHR}-02-01`, USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.neu_dabei.erstes_jahr).toBe(true);
+      expect(snap.slides.neu_dabei.start_jahr).toBe(JAHR);
+      expect(snap.kacheln).toContain('teamer-neu-dabei');
+      expect(snap.kacheln).not.toContain('teamer-jahre');
+    });
+
+    it('Ohne Eintrittsdatum und ohne Teamer-Aktivitaet bleibt das Startjahr unbekannt', async () => {
+      // "Unbekannt" ist NICHT "neu" -- niemand wird faelschlich als Neuling
+      // begruesst.
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.neu_dabei.start_jahr).toBe(null);
+      expect(snap.slides.neu_dabei.erstes_jahr).toBe(false);
+      expect(snap.kacheln).not.toContain('teamer-neu-dabei');
+    });
+
     it('Antworten zaehlen -- eigene Nachrichten ohne Bezug nicht', async () => {
       // Raum 3 ist die Team-Gruppe aus dem Seed (teamer1 ist Teilnehmer).
       const schreib = async (userId, datum, replyTo = null) => {

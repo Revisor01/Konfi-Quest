@@ -433,6 +433,8 @@ const aktiverTeamer = () => ({
   engagement: { teamer_seit: '2021-09-01', jahre_aktiv: 4 },
   anfang: { name: 'Konfifahrt', datum: '2025-09-20' },
   erstes_abzeichen: { name: 'Mutig', icon: 'flame', color: '#f00', datum: '2025-10-01' },
+  team: { mitstreitende: 5 },
+  neu_dabei: { erstes_jahr: false, start_jahr: 2021 },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
@@ -447,6 +449,8 @@ const neuerTeamer = () => ({
   engagement: { teamer_seit: null, jahre_aktiv: 0 },
   anfang: null,
   erstes_abzeichen: null,
+  team: { mitstreitende: 0 },
+  neu_dabei: { erstes_jahr: false, start_jahr: null },
   chat: { antworten: 0 },
   konfi_zeit: null,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
@@ -459,6 +463,7 @@ describe('Teamer-Dramaturgie', () => {
       'teamer-anfang',
       'teamer-events',
       'teamer-konfis',
+      'teamer-team',
       'teamer-badges',
       'teamer-erstes-abzeichen',
       'teamer-zertifikate',
@@ -542,6 +547,44 @@ describe('Teamer-Dramaturgie', () => {
     expect(k).not.toContain('teamer-erstes-abzeichen');
   });
 
+  test('das Team steht direkt nach den Konfis', () => {
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(k.indexOf('teamer-konfis') + 1).toBe(k.indexOf('teamer-team'));
+  });
+
+  test('ohne Mitstreitende gibt es die Team-Seite nicht', () => {
+    const t = aktiverTeamer();
+    t.team = { mitstreitende: 0 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-team');
+  });
+
+  test('im ersten Jahr erscheint "Neu dabei" -- und NICHT "seit x Jahren"', () => {
+    // Beide zugleich waeren dieselbe Auskunft zweimal, einmal mit einer 1.
+    const t = aktiverTeamer();
+    t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 };
+    const k = waehleTeamerKacheln(t);
+    expect(k).toContain('teamer-neu-dabei');
+    expect(k).not.toContain('teamer-jahre');
+  });
+
+  test('ab dem zweiten Jahr ist es umgekehrt', () => {
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(k).toContain('teamer-jahre');
+    expect(k).not.toContain('teamer-neu-dabei');
+  });
+
+  test('ohne bekanntes Startjahr gibt es "Neu dabei" NICHT', () => {
+    // "Unbekannt" ist nicht "neu": Wer seit Jahren dabei ist, aber kein
+    // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst
+    // werden.
+    const t = aktiverTeamer();
+    t.engagement = { teamer_seit: null, jahre_aktiv: 0 };
+    t.neu_dabei = { erstes_jahr: false, start_jahr: null };
+    const k = waehleTeamerKacheln(t);
+    expect(k).not.toContain('teamer-neu-dabei');
+    expect(k).not.toContain('teamer-jahre');
+  });
+
   test('ab fuenf Antworten erscheint die Antworten-Seite', () => {
     const t = aktiverTeamer();
     t.chat = { antworten: 5 };
@@ -598,7 +641,18 @@ describe('Teamer-Dramaturgie', () => {
   test('jede Seite der Teamer-Dramaturgie ist erreichbar', () => {
     // Verhindert, dass ein Tippfehler eine Seite still unerreichbar macht --
     // derselbe Waechter wie bei den Konfis.
-    const kacheln = waehleTeamerKacheln(aktiverTeamer());
-    for (const k of TEAMER_DRAMATURGIE) expect(kacheln).toContain(k);
+    //
+    // EINZELN geprueft: 'teamer-neu-dabei' und 'teamer-jahre' schliessen
+    // einander AUS (erstes Jahr gegen "seit x Jahren"). In einem einzigen
+    // Durchlauf koennen sie nie beide vorkommen -- ein solcher Test wuerde
+    // faelschlich melden, eine davon sei unerreichbar. Die Frage hier ist
+    // "kommt die Seite ueberhaupt vor", und die beantwortet man je Seite.
+    for (const k of TEAMER_DRAMATURGIE) {
+      const t = aktiverTeamer();
+      if (k === 'teamer-neu-dabei') {
+        t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 };
+      }
+      expect(waehleTeamerKacheln(t), `${k} ist unerreichbar`).toContain(k);
+    }
   });
 });

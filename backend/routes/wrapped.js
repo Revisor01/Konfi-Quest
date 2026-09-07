@@ -1173,6 +1173,32 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const antworten = parseInt(antwortenRow.count, 10) || 0;
 
+    // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
+    // wurden.
+    //
+    // Self-Join ueber user_jahrgang_assignments: alle, die auf denselben
+    // Jahrgaengen stehen wie diese Person. NUR TEAMER:INNEN -- ohne den
+    // Rollenfilter zaehlten Admins und die Leitung mit, und die Zahl waere
+    // keine Aussage ueber das Team, sondern ueber die Zugriffsrechte.
+    // Die Person selbst ist ausgenommen (sie ist nicht ihr eigenes Team).
+    const { rows: [teamRow] } = await client.query(
+      `SELECT COUNT(DISTINCT andere.user_id)::int AS mitstreitende
+         FROM user_jahrgang_assignments meine
+         JOIN user_jahrgang_assignments andere
+           ON andere.jahrgang_id = meine.jahrgang_id
+          AND andere.user_id <> meine.user_id
+         JOIN jahrgaenge j ON j.id = meine.jahrgang_id
+         JOIN users u ON u.id = andere.user_id
+         JOIN roles r ON r.id = u.role_id
+        WHERE meine.user_id = $1
+          AND j.organization_id = $2
+          AND u.organization_id = $2
+          AND r.name = 'teamer'
+          AND u.deleted_at IS NULL`,
+      [userId, orgId]
+    );
+    const teamGroesse = teamRow ? teamRow.mitstreitende : 0;
+
     // VOM KONFI ZUR TEAMER:IN -- die eigene Geschichte in der Gemeinde.
     //
     // Wer heute im Team ist und frueher selbst Konfi war, hat eine
@@ -1207,6 +1233,35 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const jahreAktiv = teamerSeit
       ? Math.max(1, Math.floor((stichtag - new Date(teamerSeit).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
       : 0;
+
+    // NEU DABEI -- das erste Jahr im Team.
+    //
+    // Fallback-Kette wie im Abzeichen-Zweig (routes/badges.js, 'teamer_year'):
+    // erst users.teamer_since, sonst die aelteste Teamer-Aktivitaet. Ohne
+    // beides bleibt es unbekannt -- und "unbekannt" ist NICHT "neu": Wer
+    // seit Jahren dabei ist, aber kein Eintrittsdatum hinterlegt hat, darf
+    // nicht als Neuling begruesst werden.
+    let teamerStartJahr = null;
+    if (teamerSeit) {
+      teamerStartJahr = new Date(teamerSeit).getFullYear();
+    } else {
+      try {
+        const { rows: [ersteAkt] } = await client.query(
+          `SELECT MIN(ua.completed_date) AS min_date FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND a.target_role = 'teamer'`,
+          [userId]
+        );
+        if (ersteAkt && ersteAkt.min_date) {
+          teamerStartJahr = new Date(ersteAkt.min_date).getFullYear();
+        }
+      } catch (startErr) {
+        console.warn('Wrapped: Teamer-Startjahr nicht ermittelbar:', startErr.message);
+      }
+    }
+    // Erstes Jahr = das Startjahr liegt IM Rueckblicksjahr.
+    const erstesJahr = teamerStartJahr !== null && teamerStartJahr === year;
+
 
     const schnappschuss = {
       // Version 3 (06.09.2026), in zwei Schritten gewachsen:
@@ -1246,6 +1301,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // ignorieren sie.
         chat: {
           antworten
+        },
+        team: {
+          mitstreitende: teamGroesse
+        },
+        neu_dabei: {
+          erstes_jahr: erstesJahr,
+          start_jahr: teamerStartJahr
         },
         anfang: ersterTermin
           ? { name: ersterTermin.name, datum: ersterTermin.event_date }
