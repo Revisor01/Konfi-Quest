@@ -43,6 +43,11 @@ Versionsüberschrift.
   auch noch nicht freigegebene, um vor der Freigabe hineinzusehen.
 
 ### Behoben
+- Ein Termin zählt im Rückblick nur noch einmal. Ein Gottesdienst in der
+  Passionszeit erschien bisher auf der Oster-Seite und zusätzlich auf der
+  Gottesdienst-Seite — dieselbe Stunde, zweimal gezählt. Fällt ein Termin in
+  eine besondere Zeit des Kirchenjahres, gehört er dieser Seite; sonst seiner
+  Kategorie.
 - Auf den Seiten zu Advent, Ostern und den anderen besonderen Zeiten stand im
   Spruch eine andere Zahl als in der Zeile darunter — „Dreimal auf dem Weg
   nach Ostern" über „4 Mal". Die Sprüche nennen keine Menge mehr, wenn sie

@@ -2695,6 +2695,167 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // JEDER TERMIN ZAEHLT NUR EINMAL (Simon, 07.09.2026)
+  // ================================================================
+  //
+  // BEFUND: Die Vorrang-Regel "Datum schlaegt Kategorie" stand seit dem
+  // 02.09.2026 in wrappedKategorien.js ("Eine Person bekommt nie zwei
+  // Seiten ueber denselben Termin"), steuerte aber nur die REIHENFOLGE der
+  // Seiten -- nicht die Zahlen. Ein Gottesdienst in der Passionszeit
+  // zaehlte auf der Oster-Seite UND auf der Gottesdienst-Seite: dieselbe
+  // Stunde in derselben Kirche, zweimal erzaehlt.
+  describe('Vorrang Datum vor Kategorie -- bis in die Zahlen', () => {
+    const jahr = 2026;
+    // Ostern 2026 ist der 05.04. Aschermittwoch der 17.02. -- der 15.03.
+    // liegt mitten in der Passionszeit.
+    const IN_DER_PASSIONSZEIT = `${jahr}-03-15`;
+    // Ein ganz gewoehnlicher Sonntag ausserhalb jedes Datums-Fensters.
+    const OHNE_FENSTER = `${jahr}-05-17`;
+
+    async function kategorie(name) {
+      const { rows: [c] } = await db.query(
+        `INSERT INTO categories (name, type, organization_id)
+         VALUES ($1, 'both', $2) RETURNING id`,
+        [name, ORGS.testGemeinde.id]
+      );
+      return c.id;
+    }
+
+    async function terminMitKategorie(userId, datum, kategorieId, name = 'Gottesdienst') {
+      const { rows: [e] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+         VALUES ($1, $2::timestamp, $3, false, 0, 'gottesdienst', 1) RETURNING id`,
+        [name, `${datum} 10:00:00`, ORGS.testGemeinde.id]
+      );
+      await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [e.id, JAHRGAENGE.jahrgang1.id]);
+      if (kategorieId) {
+        await db.query('INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)',
+          [e.id, kategorieId]);
+      }
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, organization_id, status, booking_date)
+         VALUES ($1, $2, $3, 'confirmed', NOW())`,
+        [userId, e.id, ORGS.testGemeinde.id]
+      );
+      return e.id;
+    }
+
+    async function snapshot(start = `${jahr}-01-01`, ende = `${jahr}-12-31`) {
+      const gen = await request(app)
+        .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ zeitraum_start: start, zeitraum_ende: ende });
+      expect(gen.status).toBe(200);
+      const { rows } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'konfi'
+          ORDER BY computed_at DESC, id DESC LIMIT 1`,
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+      return rows[0].data;
+    }
+
+    /** Wie oft zaehlt diese Kategorie in der Verteilung? */
+    const zaehlerFuer = (snap, name) => {
+      const e = (snap.slides.kategorie.verteilung || []).find(v => v.kategorie === name);
+      return e ? e.count : 0;
+    };
+
+    beforeEach(async () => {
+      await db.query('DELETE FROM event_bookings');
+      await db.query('DELETE FROM event_categories');
+      await db.query('DELETE FROM event_jahrgang_assignments');
+      await db.query('DELETE FROM events');
+      await db.query('DELETE FROM user_activities');
+      await db.query(`DELETE FROM categories WHERE name IN ('Gottesdienst', 'Kasualien')`);
+    });
+
+    it('ein Termin in der Passionszeit zaehlt bei Ostern -- und NICHT bei der Kategorie', async () => {
+      // DER BEFUND, mit echten Zahlen: Vorher stand hier 1 UND 1.
+      const kat = await kategorie('Gottesdienst');
+      await terminMitKategorie(USERS.konfi1.id, IN_DER_PASSIONSZEIT, kat);
+
+      const snap = await snapshot();
+      expect(snap.slides.datums_fenster.ostern).toBe(1);
+      expect(zaehlerFuer(snap, 'Gottesdienst')).toBe(0);
+    });
+
+    it('ein Termin ausserhalb jedes Fensters zaehlt bei der Kategorie', async () => {
+      // DIE GEGENPROBE ZUM TEST DARUEBER: Die Vorrang-Regel darf nicht
+      // einfach alle Kategorie-Zahlen leeren.
+      const kat = await kategorie('Gottesdienst');
+      await terminMitKategorie(USERS.konfi1.id, OHNE_FENSTER, kat);
+
+      const snap = await snapshot();
+      expect(snap.slides.datums_fenster.ostern).toBeUndefined();
+      expect(zaehlerFuer(snap, 'Gottesdienst')).toBe(1);
+    });
+
+    it('die Summe bleibt erhalten -- kein Termin geht verloren, keiner zaehlt doppelt', async () => {
+      // DREI Termine: zwei in der Passionszeit, einer ausserhalb. Zusammen
+      // muessen sie GENAU dreimal gezaehlt werden, ueber alle Seiten hinweg.
+      const kat = await kategorie('Gottesdienst');
+      await terminMitKategorie(USERS.konfi1.id, IN_DER_PASSIONSZEIT, kat, 'Passion 1');
+      await terminMitKategorie(USERS.konfi1.id, `${jahr}-03-22`, kat, 'Passion 2');
+      await terminMitKategorie(USERS.konfi1.id, OHNE_FENSTER, kat, 'Gewoehnlich');
+
+      const snap = await snapshot();
+      const ausDatum = Object.values(snap.slides.datums_fenster || {}).reduce((a, b) => a + b, 0);
+      const ausKategorie = (snap.slides.kategorie.verteilung || [])
+        .reduce((a, v) => a + (v.aus_terminen || 0), 0);
+
+      expect(snap.slides.datums_fenster.ostern).toBe(2);
+      expect(zaehlerFuer(snap, 'Gottesdienst')).toBe(1);
+      expect(ausDatum + ausKategorie).toBe(3);
+      expect(snap.slides.events.total_attended).toBe(3);
+    });
+
+    it('ein Termin mit ZWEI Kategorien im Datums-Fenster zaehlt bei keiner von beiden', async () => {
+      // Er bleibt EIN Termin. Faellt er ins Fenster, gehoert er dem Datum --
+      // und zwar ganz, nicht anteilig.
+      const gd = await kategorie('Gottesdienst');
+      const kas = await kategorie('Kasualien');
+      const eventId = await terminMitKategorie(USERS.konfi1.id, IN_DER_PASSIONSZEIT, gd);
+      await db.query('INSERT INTO event_categories (event_id, category_id) VALUES ($1, $2)',
+        [eventId, kas]);
+
+      const snap = await snapshot();
+      expect(snap.slides.datums_fenster.ostern).toBe(1);
+      expect(zaehlerFuer(snap, 'Gottesdienst')).toBe(0);
+      expect(zaehlerFuer(snap, 'Kasualien')).toBe(0);
+    });
+
+    it('ein Termin OHNE Kategorie zaehlt trotzdem im Datums-Fenster', async () => {
+      // Frueher las die Datums-Seite aus einer eigenen Abfrage ohne
+      // Kategorie-Bedingung, die Kategorie-Seite aus einer mit INNER JOIN.
+      // Jetzt ist es eine Abfrage -- ein Termin ohne Kategorie darf dabei
+      // nicht unter den Tisch fallen.
+      await terminMitKategorie(USERS.konfi1.id, IN_DER_PASSIONSZEIT, null);
+
+      const snap = await snapshot();
+      expect(snap.slides.datums_fenster.ostern).toBe(1);
+      expect(snap.slides.events.total_attended).toBe(1);
+    });
+
+    it('die Verteilung behaelt Form und Feldnamen -- ausgelieferte Apps lesen sie', async () => {
+      const kat = await kategorie('Gottesdienst');
+      await terminMitKategorie(USERS.konfi1.id, OHNE_FENSTER, kat);
+
+      const snap = await snapshot();
+      const eintrag = snap.slides.kategorie.verteilung.find(v => v.kategorie === 'Gottesdienst');
+      expect(typeof eintrag.kategorie).toBe('string');
+      expect(typeof eintrag.count).toBe('number');
+      expect(typeof eintrag.aus_terminen).toBe('number');
+      expect(typeof eintrag.aus_aktivitaeten).toBe('number');
+      expect(eintrag.seite).toBe('kategorie:gottesdienst');
+      expect(typeof snap.slides.kategorie.top_kategorie).toBe('string');
+    });
+  });
+
+
+  // ================================================================
   // AUSGABEN (Migration 143, Simons Vorgabe: mehrfach freigeben + benennen)
   // ================================================================
   describe('Rueckblick-Ausgaben', () => {

@@ -270,11 +270,28 @@ function waehleKategorieSeiten(slides) {
   const seiten = [];
 
   // 1. Datums-Seiten aus den Terminen -- sie gehen vor.
+  //
+  // Bevorzugt aus dem fertig gezaehlten `datums_fenster`: Das Backend hat
+  // damit oben schon entschieden, welcher Termin dem Datum und welcher der
+  // Kategorie zufaellt (Simons Regel "jeder Termin zaehlt nur einmal",
+  // 07.09.2026). Hier ein zweites Mal zu zaehlen hiesse, dieselbe Frage
+  // zweimal zu beantworten -- und die zweite Antwort koennte abweichen.
+  //
+  // Der Rueckfall auf `termine_daten` bleibt fuer Snapshots, die vor dem
+  // 07.09.2026 entstanden sind und das Feld noch nicht tragen. Er zaehlt
+  // wie frueher und aendert an ihnen darum nichts.
   const datumsTreffer = new Map();
-  for (const t of (slides.termine_daten || [])) {
-    const fenster = datumsFenster(t);
-    if (!fenster) continue;
-    datumsTreffer.set(fenster, (datumsTreffer.get(fenster) || 0) + 1);
+  const gezaehlt = slides.datums_fenster;
+  if (gezaehlt && typeof gezaehlt === 'object') {
+    for (const [fenster, n] of Object.entries(gezaehlt)) {
+      if ((n || 0) > 0) datumsTreffer.set(fenster, n);
+    }
+  } else {
+    for (const t of (slides.termine_daten || [])) {
+      const fenster = datumsFenster(t);
+      if (!fenster) continue;
+      datumsTreffer.set(fenster, (datumsTreffer.get(fenster) || 0) + 1);
+    }
   }
   const datumsSeiten = [...datumsTreffer.entries()]
     .sort((a, b) => b[1] - a[1])

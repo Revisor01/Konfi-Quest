@@ -454,61 +454,129 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // statt einer aufgeblaehten Gesamtsumme. 'count' ist die Summe fuer die
     // Sortierung und bleibt formgleich zu frueher (Alt-App-Vertrag: das Feld
     // existierte schon und behaelt Name und Typ).
-    const { rows: kategorieVerteilung } = await client.query(
-      `WITH aus_aktivitaeten AS (
-         SELECT COALESCE(c.name, a.type) AS kategorie, COUNT(*) AS anzahl
-           FROM user_activities ua
-           JOIN activities a ON ua.activity_id = a.id
-           LEFT JOIN activity_categories ac ON ac.activity_id = a.id
-           LEFT JOIN categories c ON c.id = ac.category_id
-          WHERE ua.user_id = $1 AND ua.organization_id = $2
-            AND ua.completed_date >= $3::date
-            AND ua.completed_date < ($4::date + INTERVAL '1 day')
-            AND COALESCE(c.name, a.type) IS NOT NULL
-          GROUP BY COALESCE(c.name, a.type)
-       ),
-       aus_terminen AS (
-         -- Dieselbe Zaehlregel wie die Termin-Zahl weiter oben: jede Buchung
-         -- der Person, kein Anwesenheitsfilter (attendance_status ist in
-         -- Produktion ueberwiegend NULL und waere ein Mass dafuer, ob jemand
-         -- die Liste gepflegt hat, nicht dafuer, ob die Konfi da war).
-         SELECT c.name AS kategorie, COUNT(*) AS anzahl
-           FROM event_bookings eb
-           JOIN events e ON eb.event_id = e.id
-           JOIN event_categories ec ON ec.event_id = e.id
-           JOIN categories c ON c.id = ec.category_id
-          WHERE eb.user_id = $1 AND eb.organization_id = $2
-            AND e.event_date >= $3::date
-            AND e.event_date < ($4::date + INTERVAL '1 day')
-          GROUP BY c.name
-       )
-       SELECT kategorie,
-              SUM(anzahl)::int                       AS count,
-              SUM(aus_akt)::int                      AS aus_aktivitaeten,
-              SUM(aus_ev)::int                       AS aus_terminen
-         FROM (
-           SELECT kategorie, anzahl, anzahl AS aus_akt, 0 AS aus_ev FROM aus_aktivitaeten
-           UNION ALL
-           SELECT kategorie, anzahl, 0 AS aus_akt, anzahl AS aus_ev FROM aus_terminen
-         ) vereint
-        GROUP BY kategorie
-        ORDER BY count DESC`,
+    //
+    // JEDER TERMIN ZAEHLT NUR EINMAL (Simon, 07.09.2026).
+    //
+    // BEFUND: Die Vorrang-Regel "Datum schlaegt Kategorie" steuerte bis
+    // dahin nur die REIHENFOLGE der Seiten (wrappedKacheln.js), nicht die
+    // Zahlen. Ein Gottesdienst in der Passionszeit zaehlte auf der
+    // Oster-Seite UND auf der Gottesdienst-Seite -- dieselbe Stunde in
+    // derselben Kirche, zweimal erzaehlt. Simons Regel dazu steht seit dem
+    // 02.09.2026 in wrappedKategorien.js: "Eine Person bekommt nie zwei
+    // Seiten ueber denselben Termin." Sie war nur nie bis in die Zahlen
+    // durchgezogen.
+    //
+    // WARUM DIE AUFTEILUNG IN JS UND NICHT IN SQL: Welches Datum in welches
+    // Fenster faellt, entscheidet datumsFenster() -- mit der Gaussschen
+    // Osterformel darin. Die gehoert an EINE Stelle. Sie in SQL
+    // nachzubauen hiesse, sie zweimal zu pflegen, und die zweite Fassung
+    // liefe beim ersten Schaltjahr auseinander.
+    //
+    // Die Termine kommen deshalb EINZELN (Datum + Kategorie) und werden
+    // unten in JS zugeordnet. Die Aktivitaeten bleiben in SQL gruppiert:
+    // Sie haben kein Datum, das ein Fenster treffen koennte -- sie tragen
+    // nur ein completed_date, das sagt, wann jemand sie eingetragen hat,
+    // nicht wann das Ereignis war.
+    const { rows: aktivitaetenVerteilung } = await client.query(
+      `SELECT COALESCE(c.name, a.type) AS kategorie, COUNT(*)::int AS anzahl
+         FROM user_activities ua
+         JOIN activities a ON ua.activity_id = a.id
+         LEFT JOIN activity_categories ac ON ac.activity_id = a.id
+         LEFT JOIN categories c ON c.id = ac.category_id
+        WHERE ua.user_id = $1 AND ua.organization_id = $2
+          AND ua.completed_date >= $3::date
+          AND ua.completed_date < ($4::date + INTERVAL '1 day')
+          AND COALESCE(c.name, a.type) IS NOT NULL
+        GROUP BY COALESCE(c.name, a.type)`,
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
-    // Die DATEN der besuchten Termine -- Grundlage der Datums-Seiten
-    // (Advent, Weihnachten, Ostern ...). Simons Vorrang-Regel: "Gottesdienst
-    // im Dezember ist ja immer auch Advent." Ohne diese Liste koennte
-    // waehleKacheln() die Datums-Seiten gar nicht bestimmen.
-    const { rows: termineDatenRows } = await client.query(
-      `SELECT e.event_date FROM event_bookings eb
-       JOIN events e ON eb.event_id = e.id
-       WHERE eb.user_id = $1 AND eb.organization_id = $2
-         AND e.event_date >= $3::date
-         AND e.event_date < ($4::date + INTERVAL '1 day')`,
+    // Die Termine EINZELN, mit Datum und Kategorie.
+    //
+    // Dieselbe Zaehlregel wie die Termin-Zahl weiter oben: jede Buchung der
+    // Person, kein Anwesenheitsfilter (attendance_status ist in Produktion
+    // ueberwiegend NULL und waere ein Mass dafuer, ob jemand die Liste
+    // gepflegt hat, nicht dafuer, ob die Konfi da war).
+    //
+    // LEFT JOIN auf die Kategorien: Ein Termin OHNE Kategorie soll trotzdem
+    // in den Datums-Fenstern zaehlen. Mit dem frueheren INNER JOIN fehlte
+    // er dort -- die Datums-Seiten lasen ihre Zahl aus einer eigenen
+    // Abfrage, die keine Kategorie verlangte, und beide liefen darum schon
+    // vorher auseinander.
+    const { rows: terminRows } = await client.query(
+      `SELECT e.id AS event_id, e.event_date, c.name AS kategorie
+         FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+         LEFT JOIN event_categories ec ON ec.event_id = e.id
+         LEFT JOIN categories c ON c.id = ec.category_id
+        WHERE eb.user_id = $1 AND eb.organization_id = $2
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')`,
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
-    const termineDaten = termineDatenRows.map(r => r.event_date);
+
+    // Jetzt die Vorrang-Regel, Termin fuer Termin.
+    //
+    // Ein Termin mit MEHREREN Kategorien erscheint hier mehrfach (eine
+    // Zeile je Kategorie). Er ist trotzdem EIN Termin: Faellt er in ein
+    // Datums-Fenster, zaehlt er dort einmal und bei KEINER seiner
+    // Kategorien. Faellt er in keins, zaehlt er bei seinen Kategorien --
+    // dort dann bei jeder, wie bisher auch.
+    const terminNachId = new Map();
+    for (const r of terminRows) {
+      const eintrag = terminNachId.get(r.event_id) || { datum: r.event_date, kategorien: [] };
+      if (r.kategorie) eintrag.kategorien.push(r.kategorie);
+      terminNachId.set(r.event_id, eintrag);
+    }
+
+    const datumsFensterZaehler = {};
+    const kategorieAusTerminen = new Map();
+    for (const { datum, kategorien } of terminNachId.values()) {
+      const fenster = datumsFenster(datum);
+      if (fenster) {
+        // DATUM GEWINNT: Der Termin zaehlt hier -- und nirgends sonst.
+        datumsFensterZaehler[fenster] = (datumsFensterZaehler[fenster] || 0) + 1;
+        continue;
+      }
+      for (const k of kategorien) {
+        kategorieAusTerminen.set(k, (kategorieAusTerminen.get(k) || 0) + 1);
+      }
+    }
+
+    // Aktivitaeten und (bereinigte) Termine zu einer Verteilung
+    // zusammenfuehren. Form und Feldnamen bleiben unveraendert -- alte
+    // Apps lesen 'kategorie', 'count', 'aus_terminen' und
+    // 'aus_aktivitaeten' genau wie bisher.
+    const verteilungNachName = new Map();
+    for (const r of aktivitaetenVerteilung) {
+      verteilungNachName.set(r.kategorie, {
+        kategorie: r.kategorie,
+        aus_aktivitaeten: parseInt(r.anzahl, 10) || 0,
+        aus_terminen: 0
+      });
+    }
+    for (const [name, anzahl] of kategorieAusTerminen) {
+      const vorhanden = verteilungNachName.get(name)
+        || { kategorie: name, aus_aktivitaeten: 0, aus_terminen: 0 };
+      vorhanden.aus_terminen += anzahl;
+      verteilungNachName.set(name, vorhanden);
+    }
+    const kategorieVerteilung = [...verteilungNachName.values()]
+      .map(v => ({ ...v, count: v.aus_aktivitaeten + v.aus_terminen }))
+      // Kategorien, die NUR ueber Datums-Termine kamen, stehen jetzt bei
+      // null -- sie fallen heraus statt als leere Seite zu erscheinen.
+      .filter(v => v.count > 0)
+      .sort((a, b) => b.count - a.count || String(a.kategorie).localeCompare(String(b.kategorie)));
+
+    // Die DATEN der besuchten Termine -- Grundlage der Datums-Seiten
+    // (Advent, Weihnachten, Ostern ...).
+    //
+    // Sie kommen jetzt aus derselben Abfrage wie die Kategorien (oben,
+    // terminRows) statt aus einer zweiten. Bis zum 07.09.2026 gab es dafuer
+    // eine eigene Abfrage -- und damit zwei Wahrheiten ueber dieselben
+    // Termine, die auseinanderlaufen konnten, sobald eine der beiden
+    // Bedingungen sich aenderte. Genau ein Termin, genau eine Zeile.
+    const termineDaten = [...terminNachId.values()].map(t => t.datum);
 
     // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Ein reiner
     // Wahrheitswert -- die "14 Tage" auf der Seite sind fester Text, keine
@@ -1057,6 +1125,106 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       console.warn('Wrapped: Jahrgangsschnitt konnte nicht berechnet werden:', avgErr.message);
     }
 
+    // ================================================================
+    // WIE SELTEN IST JEDE SEITE? (Simon, 07.09.2026)
+    // ================================================================
+    //
+    // Simons Vorgabe: "Wir gucken, welche die besonderen Folien sind, um
+    // sie zu kriegen ... nicht jede Kirchengemeinde hat Sommerfreizeit."
+    //
+    // Gezaehlt wird, wie viele Konfis DESSELBEN JAHRGANGS die Voraussetzung
+    // je Seite erfuellen -- das ist die Gruppe, mit der man sich vergleicht,
+    // und dieselbe Bezugsgroesse wie beim Jahrgangsschnitt oben.
+    //
+    // WARUM JAHRGANG UND NICHT ORGANISATION (anders als beim seltensten
+    // Abzeichen): Abzeichen sind Bestaende, die ueber Jahre wachsen -- da
+    // ist die ganze Gemeinde die richtige Bezugsgroesse. Diese Seiten
+    // haengen dagegen an dem, was IN DIESEM ZEITRAUM passiert ist, und der
+    // ist je Jahrgang ein anderer. Ein Advent-Termin des Jahrgangs 2024/25
+    // sagt nichts darueber, wie besonders er fuer den Jahrgang 2026/27 ist.
+    //
+    // ERST AB 5 KONFIS. Bei zweien waere jeder Anteil entweder 50 % oder
+    // 100 % -- eine Zahl ohne Aussage. Dieselbe Schwelle wie beim
+    // seltensten Abzeichen und aus demselben Grund. Darunter bleibt das
+    // Feld leer und wrappedKacheln.js rechnet mit den geschaetzten
+    // Grundhaeufigkeiten.
+    //
+    // NUR DIE SEITEN, DIE SICH GUENSTIG ZAEHLEN LASSEN: Termine, Punkte,
+    // Abzeichen, Warteliste und der Wochentag. Fuer die uebrigen (Chat,
+    // Challenges, Medienarten) braeuchte es je eine weitere Abfrage ueber
+    // den ganzen Jahrgang; sie behalten ihre Schaetzung. Lieber fuenf
+    // gemessene Werte als zwoelf, die den Rueckblick langsam machen.
+    let seitenHaeufigkeit = null;
+    try {
+      const { rows: [hRow] } = await client.query(
+        `WITH jahrgang_konfis AS (
+           SELECT kp.user_id FROM konfi_profiles kp
+           JOIN users u ON kp.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+         ),
+         termine AS (
+           SELECT eb.user_id, e.event_date, e.id AS event_id
+             FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+            WHERE eb.user_id IN (SELECT user_id FROM jahrgang_konfis)
+              AND eb.organization_id = $2
+              AND e.event_date >= $3::date
+              AND e.event_date < ($4::date + INTERVAL '1 day')
+         )
+         SELECT
+           (SELECT COUNT(*) FROM jahrgang_konfis) AS konfis,
+           (SELECT COUNT(DISTINCT user_id) FROM termine) AS mit_terminen,
+           (SELECT COUNT(DISTINCT ub.user_id) FROM user_badges ub
+             WHERE ub.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND ub.organization_id = $2) AS mit_abzeichen,
+           (SELECT COUNT(*) FROM konfi_profiles kp
+             WHERE kp.user_id IN (SELECT user_id FROM jahrgang_konfis)
+               AND kp.jahrgang_id = $1
+               AND (COALESCE(kp.gottesdienst_points, 0) + COALESCE(kp.gemeinde_points, 0)) > 0
+           ) AS mit_punkten,
+           -- DIE WARTELISTE FEHLT HIER BEWUSST: Ihre Spalte
+           -- (war_auf_warteliste, Migration 145) existiert in Produktion
+           -- nicht zuverlaessig -- genau deshalb liest die Seite selbst sie
+           -- ueber zahlAusNeuerSpalte(). Haenge ich sie hier in dieselbe
+           -- Abfrage wie die vier anderen, reisst ihr Fehlen ALLE
+           -- Seltenheitswerte mit; die Auswahl fiele dann auch fuer
+           -- Termine, Punkte und Abzeichen auf die Schaetzung zurueck.
+           -- Sie behaelt ihren Schaetzwert (20 %), der ohnehin nah an der
+           -- Wirklichkeit liegt.
+           -- Der Wochentag: mindestens 4 Termine an EINEM Tag und die
+           -- Haelfte aller Termine -- dieselbe Bedingung wie in
+           -- wrappedKacheln.js. Waere sie hier anders, maesse die
+           -- Seltenheit etwas anderes, als die Auswahl benutzt.
+           (SELECT COUNT(*) FROM (
+              SELECT user_id
+                FROM termine
+               GROUP BY user_id, EXTRACT(DOW FROM event_date)
+              HAVING COUNT(*) >= 4
+                 AND COUNT(*) * 2 >= (SELECT COUNT(*) FROM termine t2 WHERE t2.user_id = termine.user_id)
+            ) w) AS mit_wochentag`,
+        [jahrgangId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      const konfisImJahrgang = parseInt(hRow?.konfis || '0', 10);
+      if (konfisImJahrgang >= 5) {
+        // Anteil in Prozent, mindestens 1 -- eine 0 hiesse "niemand hat
+        // das", und die Person, die den Rueckblick liest, hat es ja.
+        const anteil = (n) => Math.min(100, Math.max(1,
+          Math.round((parseInt(n || '0', 10) / konfisImJahrgang) * 100)));
+        seitenHaeufigkeit = {
+          events: anteil(hRow.mit_terminen),
+          badges: anteil(hRow.mit_abzeichen),
+          punkte: anteil(hRow.mit_punkten),
+          wochentag: anteil(hRow.mit_wochentag)
+        };
+      }
+    } catch (haeufigkeitErr) {
+      // Fehlt eine Spalte (Alt-Deployment vor Migration 145), bleibt das
+      // Feld leer und die Auswahl rechnet mit den Schaetzwerten. Ein
+      // fehlender Seltenheitswert darf nie den Rueckblick verhindern.
+      console.warn('Wrapped: Seitenhaeufigkeit konnte nicht berechnet werden:', haeufigkeitErr.message);
+    }
+
     // Deterministischer Formulierung-Seed (vor der Auswahl gebraucht: er
     // entscheidet auch den Gleichstand zwischen zwei Highlight-Kandidaten).
     const formulierungSeed = (userId * 31 + year * 17) % 97;
@@ -1305,6 +1473,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Schluessel OHNE 'kategorie:'-Praefix, damit sie dort spurlos
         // durchfaellt statt eine leere Seite zu erzeugen.
         stavanger_2026: stavanger2026,
+        // Additiv (07.09.2026): Wie viel Prozent des Jahrgangs bekommen
+        // diese Seite auch? Kleiner = seltener = wertvoller. Grundlage der
+        // Seitenauswahl (utils/wrappedKacheln.js, haeufigkeitFuer).
+        // null bei weniger als 5 Konfis -- dort waere jeder Anteil eine
+        // Zahl ohne Aussage. Alte Apps kennen das Feld nicht.
+        seiten_haeufigkeit: seitenHaeufigkeit,
         // Rohdaten fuer die Datums-Seiten. Bewusst nur die Daten, keine
         // Namen -- die Seite sagt "du warst bei drei Advents-Terminen", nicht
         // welche das waren.
@@ -1312,11 +1486,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Wie viele Termine je Zeitfenster. Das Frontend braucht die Zahl
         // fuer die Datums-Seiten und soll die Fenster nicht selbst
         // ausrechnen -- die Osterformel gehoert an EINE Stelle.
-        datums_fenster: termineDaten.reduce((acc, d) => {
-          const f = datumsFenster(d);
-          if (f) acc[f] = (acc[f] || 0) + 1;
-          return acc;
-        }, {})
+        // Dieselbe Zaehlung, die oben ueber den Vorrang entschieden hat --
+        // nicht ein zweites Mal gerechnet. Waeren es zwei Rechnungen, koennte
+        // die Seite eine andere Zahl zeigen als die Auswahl benutzt hat.
+        datums_fenster: datumsFensterZaehler
       }
     };
 
