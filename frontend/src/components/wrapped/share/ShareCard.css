@@ -232,6 +232,16 @@
   --karten-schleier: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
 }
 
+.share-card--teamer.share-card--teamer-anfang {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+  --karten-schleier: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+}
+
+.share-card--teamer.share-card--teamer-erstes-abzeichen {
+  background: linear-gradient(135deg, #d946ef 0%, #c026d3 55%, #86198f 100%);
+  --karten-schleier: linear-gradient(135deg, #d946ef 0%, #c026d3 55%, #86198f 100%);
+}
+
 .share-card--teamer.share-card--teamer-antworten {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 55%, #5b21b6 100%);
   --karten-schleier: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 55%, #5b21b6 100%);

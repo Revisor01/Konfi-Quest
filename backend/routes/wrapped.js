@@ -1005,6 +1005,36 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
+    // DER ANFANG -- der erste Termin des Jahres.
+    //
+    // Die Termin-Seite zaehlt, wie VIELE es waren; diese hier erinnert an
+    // den EINEN, mit dem es losging. Ein Datum und ein Name, mehr braucht
+    // die Erinnerung nicht.
+    const { rows: [ersterTermin] } = await client.query(
+      `SELECT e.name, e.event_date FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+        WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
+          AND e.organization_id = $2
+          AND e.event_date >= $3::date
+          AND e.event_date < ($4::date + INTERVAL '1 day')
+        ORDER BY e.event_date ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+
+    // DAS ERSTE ABZEICHEN des Jahres -- dieselbe Idee wie beim ersten
+    // Termin: nicht wie viele, sondern welches zuerst.
+    const { rows: [erstesAbzeichen] } = await client.query(
+      `SELECT cb.name, cb.icon, cb.color, ub.awarded_date FROM user_badges ub
+         JOIN custom_badges cb ON ub.badge_id = cb.id
+        WHERE ub.user_id = $1 AND ub.organization_id = $2
+          AND ub.awarded_date >= $3::date
+          AND ub.awarded_date < ($4::date + INTERVAL '1 day')
+        ORDER BY ub.awarded_date ASC
+        LIMIT 1`,
+      [userId, orgId, zeitraumStart, zeitraumEnde]
+    );
+
     // DER ANTWORTENDE -- wie oft jemand im Chat auf andere geantwortet hat.
     //
     // Warum gerade ANTWORTEN und nicht Nachrichten: Eine Antwort ist die
@@ -1104,6 +1134,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         chat: {
           antworten
         },
+        anfang: ersterTermin
+          ? { name: ersterTermin.name, datum: ersterTermin.event_date }
+          : null,
+        erstes_abzeichen: erstesAbzeichen
+          ? {
+              name: erstesAbzeichen.name,
+              icon: erstesAbzeichen.icon,
+              color: erstesAbzeichen.color,
+              datum: erstesAbzeichen.awarded_date
+            }
+          : null,
         konfi_zeit: warSelbstKonfi
           ? { jahrgang: konfiZeit.jahrgang || null }
           : null,

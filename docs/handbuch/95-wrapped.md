@@ -326,41 +326,47 @@ Begrüßung und Abschluss stehen immer.
 **1. Begrüßung** — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei
 den Konfis ohne Jahrgangsangabe.
 
-**2. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
+**2. So fing es an** — der erste Termin des Jahres mit Namen und Datum.
+*Entfällt, wenn im Zeitraum kein Termin besucht wurde.*
+
+**3. Deine Events** — Anzahl der Termine, an denen die Teamer:in als anwesend
 eingetragen war, überschrieben mit „Events geleitet“. *Nur, wenn vorhanden*,
 darunter das größte Event mit Teilnehmerzahl.
 *Entfällt ohne Termine im Zeitraum.*
 
-**3. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
+**4. Deine Konfis** — Anzahl der betreuten Konfis, dazu *nur, wenn vorhanden*
 die Namen der zugewiesenen Jahrgänge. Grundlage ist die Jahrgangs-Zuweisung: Wer
 keinem Jahrgang zugewiesen ist, steht hier bei null.
 *Entfällt, wenn niemand zugewiesen ist.*
 
-**4. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
+**5. Deine Badges** — Anzahl und bis zu sechs Abzeichen. Anders als bei den
 Konfis **ohne** „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.
 *Entfällt ohne Abzeichen im Zeitraum.*
 
-**5. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
+**6. Das erste** — das zuerst verliehene Abzeichen des Jahres.
+*Entfällt ohne Abzeichen im Zeitraum.*
+
+**7. Deine Zertifikate** — Anzahl und die vollständige Liste mit Datum.
 *Entfällt ohne Zertifikate im Zeitraum.*
 
-**6. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
+**8. Im Gespräch** — wie oft die Teamer:in im Chat auf andere geantwortet hat.
 Gezählt werden echte Antworten (Bezug auf eine Nachricht), keine eigenen
 Beiträge ohne Bezug; zurückgenommene Antworten zählen nicht.
 *Entfällt unter fünf Antworten.*
 
-**7. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
+**9. Dein Engagement** — Jahre als Teamer:in, dazu „Dabei seit …". Gerechnet
 wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
 
 > **Hinweis:** Ist kein Eintrittsdatum hinterlegt, entfällt diese Seite. Wenn
 > jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
 > „Teamer:in seit".
 
-**8. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
+**10. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
 dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
 Jahrgang, sofern bekannt.
 *Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
 
-**9. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
+**11. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.
 
 ## Wo man den Rückblick wiederfindet

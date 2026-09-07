@@ -324,6 +324,8 @@ const aktiverTeamer = () => ({
   badges: { total_earned: 4, badges: [{ name: 'Fleissig' }] },
   zertifikate: { total: 2, zertifikate: [{ name: 'Juleica' }] },
   engagement: { teamer_seit: '2021-09-01', jahre_aktiv: 4 },
+  anfang: { name: 'Konfifahrt', datum: '2025-09-20' },
+  erstes_abzeichen: { name: 'Mutig', icon: 'flame', color: '#f00', datum: '2025-10-01' },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
@@ -336,6 +338,8 @@ const neuerTeamer = () => ({
   badges: { total_earned: 0, badges: [] },
   zertifikate: { total: 0, zertifikate: [] },
   engagement: { teamer_seit: null, jahre_aktiv: 0 },
+  anfang: null,
+  erstes_abzeichen: null,
   chat: { antworten: 0 },
   konfi_zeit: null,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
@@ -345,9 +349,11 @@ describe('Teamer-Dramaturgie', () => {
   test('eine erfahrene Teamer:in bekommt alle sieben Seiten', () => {
     expect(waehleTeamerKacheln(aktiverTeamer())).toEqual([
       'teamer-intro',
+      'teamer-anfang',
       'teamer-events',
       'teamer-konfis',
       'teamer-badges',
+      'teamer-erstes-abzeichen',
       'teamer-zertifikate',
       'teamer-antworten',
       'teamer-jahre',
@@ -401,6 +407,32 @@ describe('Teamer-Dramaturgie', () => {
     const t = aktiverTeamer();
     t.engagement = { teamer_seit: null, jahre_aktiv: 0 };
     expect(waehleTeamerKacheln(t)).not.toContain('teamer-jahre');
+  });
+
+  test('der Anfang steht VOR der Termin-Gesamtzahl', () => {
+    // Erst der Moment, dann die Bilanz.
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(k.indexOf('teamer-anfang')).toBeLessThan(k.indexOf('teamer-events'));
+  });
+
+  test('ohne ersten Termin gibt es die Anfang-Seite nicht', () => {
+    const t = aktiverTeamer();
+    t.anfang = null;
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-anfang');
+  });
+
+  test('das erste Abzeichen steht direkt nach der Abzeichen-Seite', () => {
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(k.indexOf('teamer-badges') + 1).toBe(k.indexOf('teamer-erstes-abzeichen'));
+  });
+
+  test('ohne Abzeichen gibt es auch die Erstes-Abzeichen-Seite nicht', () => {
+    const t = aktiverTeamer();
+    t.badges = { total_earned: 0, badges: [] };
+    t.erstes_abzeichen = null;
+    const k = waehleTeamerKacheln(t);
+    expect(k).not.toContain('teamer-badges');
+    expect(k).not.toContain('teamer-erstes-abzeichen');
   });
 
   test('ab fuenf Antworten erscheint die Antworten-Seite', () => {

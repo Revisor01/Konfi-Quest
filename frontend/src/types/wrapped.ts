@@ -224,6 +224,20 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/** Der erste Termin des Jahres -- ab Snapshot-Version 3. */
+export interface TeamerAnfangSlide {
+  name: string;
+  datum: string;
+}
+
+/** Das erste Abzeichen des Jahres -- ab Snapshot-Version 3. */
+export interface TeamerErstesAbzeichenSlide {
+  name: string;
+  icon: string;
+  color: string;
+  datum: string;
+}
+
 /** Chat-Zahlen im Teamer-Rueckblick -- ab Snapshot-Version 3. */
 export interface TeamerChatSlide {
   antworten: number;
@@ -262,6 +276,10 @@ export interface TeamerWrappedData {
     badges: TeamerBadgesSlide;
     zertifikate: TeamerZertifikateSlide;
     engagement: TeamerEngagementSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    anfang?: TeamerAnfangSlide | null;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    erstes_abzeichen?: TeamerErstesAbzeichenSlide | null;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     chat?: TeamerChatSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */

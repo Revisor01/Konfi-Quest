@@ -232,20 +232,27 @@ const FESTE_TEAMER_KACHELN = ['teamer-intro', 'teamer-abschluss'];
 /** Die Reihenfolge des Teamer-Rueckblicks. */
 const TEAMER_DRAMATURGIE = [
   'teamer-intro',        // 1  Auftakt
-  'teamer-events',       // 2  die Termine des Jahres
-  'teamer-konfis',       // 3  wen du begleitet hast
-  'teamer-badges',       // 4  Abzeichen
-  'teamer-zertifikate',  // 5  Zertifikate
+  // 2: Der Anfang -- der eine Termin, mit dem das Jahr losging. Steht VOR
+  // der Gesamtzahl: erst der Moment, dann die Bilanz.
+  'teamer-anfang',       // 2  wie das Jahr begann
+  'teamer-events',       // 3  die Termine des Jahres
+  'teamer-konfis',       // 4  wen du begleitet hast
+  'teamer-badges',       // 5  Abzeichen
+  // 6: Das erste Abzeichen -- direkt nach der Abzeichen-Seite, weil es
+  // dieselbe Sache aus der Naehe zeigt: nicht wie viele, sondern welches
+  // zuerst.
+  'teamer-erstes-abzeichen', // 6  womit es losging
+  'teamer-zertifikate',  // 7  Zertifikate
   // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
   // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
-  'teamer-antworten',    // 6  wie oft du geantwortet hast
-  'teamer-jahre',        // 7  "seit x Jahren dabei"
+  'teamer-antworten',    // 8  wie oft du geantwortet hast
+  'teamer-jahre',        // 9  "seit x Jahren dabei"
   // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
   // Konfi war. Steht bewusst NACH den Jahren im Team: erst wie lange du
   // dabei bist, dann wie es angefangen hat. Und vor dem Abschluss, damit
   // der Rueckblick auf dem persoenlichsten Punkt ausklingt.
-  'teamer-konfi-zeit',   // 8  vom Konfi zur Teamer:in
-  'teamer-abschluss'     // 9  Uebersicht
+  'teamer-konfi-zeit',   // 10 vom Konfi zur Teamer:in
+  'teamer-abschluss'     // 11 Uebersicht
 ];
 
 /**
@@ -266,6 +273,8 @@ const TEAMER_BEDINGUNGEN = {
   // wo alle anderen auch stehen.
   // Erst ab fuenf Antworten. Eine einzelne Antwort ist keine Geschichte --
   // dieselbe Schwelle, die im Konfi-Zweig fuer den Chat galt.
+  'teamer-anfang': (s) => Boolean(s.anfang?.name),
+  'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
   'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
   'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit),
   // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer

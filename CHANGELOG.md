@@ -49,6 +49,8 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Der Teamer-Rückblick erinnert an den ersten Termin des Jahres und an das
+  zuerst verliehene Abzeichen — nicht nur daran, wie viele es wurden.
 - Der Teamer-Rückblick zeigt, wie oft jemand im Chat auf andere geantwortet
   hat — die Zuwendung, die sonst in keiner Zahl auftaucht.
 - Teamer:innen, die selbst einmal Konfi in ihrer Gemeinde waren, bekommen im

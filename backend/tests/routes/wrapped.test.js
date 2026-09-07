@@ -385,6 +385,37 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.events_geleitet.total).toBe(1);
     });
 
+    it('Der Anfang ist der FRUEHESTE Termin im Zeitraum, nicht der letzte', async () => {
+      const spaet = await termin('Spaeter Termin', `${JAHR}-03-01`);
+      const frueh = await termin('Erster Termin', `${JAHR - 1}-09-20`);
+      const davor = await termin('Noch im Vorjahr', VOR_ZEITRAUM);
+      await buchung(USERS.teamer1.id, spaet);
+      await buchung(USERS.teamer1.id, frueh);
+      await buchung(USERS.teamer1.id, davor);
+
+      const snap = await snapshotVonTeamer1();
+      // Der Termin aus dem Vorjahr liegt ausserhalb und darf nicht gewinnen.
+      expect(snap.slides.anfang.name).toBe('Erster Termin');
+      expect(snap.kacheln).toContain('teamer-anfang');
+    });
+
+    it('Das erste Abzeichen ist das FRUEHESTE im Zeitraum', async () => {
+      await abzeichen(USERS.teamer1.id, BADGES.categoryBased.id, `${JAHR}-02-01`);
+      await abzeichen(USERS.teamer1.id, BADGES.streak.id, `${JAHR - 1}-10-05`);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.erstes_abzeichen.name).toBe(BADGES.streak.name);
+      expect(snap.kacheln).toContain('teamer-erstes-abzeichen');
+    });
+
+    it('Ohne Termine und Abzeichen fehlen beide Seiten', async () => {
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.anfang).toBe(null);
+      expect(snap.slides.erstes_abzeichen).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-anfang');
+      expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
+    });
+
     it('Antworten zaehlen -- eigene Nachrichten ohne Bezug nicht', async () => {
       // Raum 3 ist die Team-Gruppe aus dem Seed (teamer1 ist Teilnehmer).
       const schreib = async (userId, datum, replyTo = null) => {

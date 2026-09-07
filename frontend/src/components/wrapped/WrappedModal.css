@@ -1810,6 +1810,8 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-konfis-slide,
 .teamer-badges-slide,
 .teamer-zertifikate-slide,
+.teamer-anfang-slide,
+.teamer-erstes-abzeichen-slide,
 .teamer-antworten-slide,
 .teamer-jahre-slide,
 .teamer-konfi-zeit-slide,
@@ -1827,6 +1829,23 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-badges-slide     { --seiten-verlauf: linear-gradient(135deg, #a855f7 0%, #9333ea 55%, #6b21a8 100%); background: var(--seiten-verlauf); }
 .teamer-zertifikate-slide{ --seiten-verlauf: linear-gradient(135deg, #14b8a6 0%, #0d9488 55%, #115e59 100%); background: var(--seiten-verlauf); }
 .teamer-jahre-slide      { --seiten-verlauf: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%); background: var(--seiten-verlauf); }
+.teamer-anfang-slide { --seiten-verlauf: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #c2410c 100%); background: var(--seiten-verlauf); }
+.teamer-erstes-abzeichen-slide { --seiten-verlauf: linear-gradient(135deg, #d946ef 0%, #c026d3 55%, #86198f 100%); background: var(--seiten-verlauf); }
+
+/* Der Abzeichen-Kreis: dieselbe Form wie auf der Seite des seltensten
+   Abzeichens im Konfi-Rueckblick, damit beide erkennbar zusammengehoeren. */
+.teamer-erstes-abzeichen__kreis {
+  width: 132px;
+  height: 132px;
+  border-radius: var(--app-radius-kreis);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  color: #fff;
+  margin-bottom: var(--app-abstand-mittel);
+}
+
 .teamer-antworten-slide { --seiten-verlauf: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 55%, #5b21b6 100%); background: var(--seiten-verlauf); }
 /* Warmes Bernstein-Blau: der Blick zurueck auf die eigene Konfi-Zeit. */
 .teamer-konfi-zeit-slide { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0369a1 55%, #075985 100%); background: var(--seiten-verlauf); }

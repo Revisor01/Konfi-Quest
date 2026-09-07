@@ -386,6 +386,32 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-anfang': {
+          if (!teamer) return null;
+          const an = teamer.slides.anfang;
+          if (!an) return null;
+          return (
+            <>
+              <div className="share-label">So fing es an</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{an.name}</div>
+              <div className="share-subtitle">Dein erster Termin</div>
+            </>
+          );
+        }
+
+        case 'teamer-erstes-abzeichen': {
+          if (!teamer) return null;
+          const ab = teamer.slides.erstes_abzeichen;
+          if (!ab) return null;
+          return (
+            <>
+              <div className="share-label">Das erste</div>
+              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{ab.name}</div>
+              <div className="share-subtitle">Damit ging es los</div>
+            </>
+          );
+        }
+
         case 'teamer-antworten': {
           if (!teamer) return null;
           const ant = teamer.slides.chat?.antworten;
