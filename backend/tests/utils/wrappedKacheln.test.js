@@ -324,6 +324,7 @@ const aktiverTeamer = () => ({
   badges: { total_earned: 4, badges: [{ name: 'Fleissig' }] },
   zertifikate: { total: 2, zertifikate: [{ name: 'Juleica' }] },
   engagement: { teamer_seit: '2021-09-01', jahre_aktiv: 4 },
+  konfi_zeit: { jahrgang: '2019/2020' },
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
 
@@ -334,6 +335,7 @@ const neuerTeamer = () => ({
   badges: { total_earned: 0, badges: [] },
   zertifikate: { total: 0, zertifikate: [] },
   engagement: { teamer_seit: null, jahre_aktiv: 0 },
+  konfi_zeit: null,
   zeitraum: { year: 2026, start: '2025-09-01', ende: '2026-08-31' }
 });
 
@@ -346,6 +348,7 @@ describe('Teamer-Dramaturgie', () => {
       'teamer-badges',
       'teamer-zertifikate',
       'teamer-jahre',
+      'teamer-konfi-zeit',
       'teamer-abschluss'
     ]);
   });
@@ -395,6 +398,25 @@ describe('Teamer-Dramaturgie', () => {
     const t = aktiverTeamer();
     t.engagement = { teamer_seit: null, jahre_aktiv: 0 };
     expect(waehleTeamerKacheln(t)).not.toContain('teamer-jahre');
+  });
+
+  test('wer selbst Konfi war, bekommt die Seite "Wie alles anfing"', () => {
+    expect(waehleTeamerKacheln(aktiverTeamer())).toContain('teamer-konfi-zeit');
+  });
+
+  test('wer von aussen ins Team kam, bekommt sie NICHT', () => {
+    // Eine erfundene Herkunft waere schlimmer als gar keine Seite.
+    const t = aktiverTeamer();
+    t.konfi_zeit = null;
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-konfi-zeit');
+  });
+
+  test('die Konfi-Zeit steht nach den Jahren und vor dem Abschluss', () => {
+    // Erst wie lange du dabei bist, dann wie es angefangen hat -- der
+    // Rueckblick klingt auf dem persoenlichsten Punkt aus.
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    expect(k.indexOf('teamer-jahre')).toBeLessThan(k.indexOf('teamer-konfi-zeit'));
+    expect(k.indexOf('teamer-konfi-zeit')).toBeLessThan(k.indexOf('teamer-abschluss'));
   });
 
   test('das Intro ist erste, der Abschluss letzte Seite', () => {

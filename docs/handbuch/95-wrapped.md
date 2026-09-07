@@ -350,7 +350,12 @@ wird ab dem Eintrittsdatum bis zum Ende des Rückblick-Zeitraums.
 > jemand sie erwartet und nicht bekommt, fehlt bei der Person das Feld
 > „Teamer:in seit".
 
-**7. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
+**7. Wie alles anfing** — nur für Teamer:innen, die selbst einmal Konfi in
+dieser Gemeinde waren: „Du saßt mal auf der anderen Seite", dazu der eigene
+Jahrgang, sofern bekannt.
+*Entfällt, wenn die Person nicht selbst Konfi dieser Gemeinde war.*
+
+**8. Auf einen Blick** — Events, Konfis, Badges nebeneinander, dazu „Danke fuer
 deinen Einsatz!“ und „Du machst den Unterschied“.
 
 ## Wo man den Rückblick wiederfindet

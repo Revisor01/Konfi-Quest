@@ -136,6 +136,7 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'teamer-badges': 'feuerwerk',
   'teamer-zertifikate': 'fenster',
   'teamer-jahre': 'weg',
+  'teamer-konfi-zeit': 'kirchenschiff',
   'teamer-abschluss': 'himmel',
 };
 /**
@@ -207,6 +208,7 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'teamer-badges': 'konfetti',
   'teamer-zertifikate': 'kirchenschiff',
   'teamer-jahre': 'wald',
+  'teamer-konfi-zeit': 'weite',
   'teamer-abschluss': 'watt',
 };
 /**

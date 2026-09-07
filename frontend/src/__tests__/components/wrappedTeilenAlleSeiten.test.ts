@@ -84,7 +84,14 @@ describe('Teilen-Karte kennt jede Seite des Rueckblicks', () => {
   });
 
   it('die Teamer-Seiten werden gefunden', () => {
-    expect(TEAMER_SEITEN).toHaveLength(7);
+    // KEINE feste Anzahl: Der Rueckblick bekommt neue Seiten (zuletzt
+    // 'teamer-konfi-zeit' am 07.09.2026), und eine hart notierte Zahl
+    // wuerde bei jeder einzelnen umfallen, ohne etwas ueber das Teilen zu
+    // sagen. Geprueft wird, worum es hier geht: dass der Parser die Liste
+    // ueberhaupt findet und die tragenden Seiten darin stehen. Ob JEDE
+    // gefundene Seite einen Teilen-Zweig hat, prueft der Test darunter --
+    // und der waechst von allein mit.
+    expect(TEAMER_SEITEN.length).toBeGreaterThanOrEqual(7);
     expect(TEAMER_SEITEN).toContain('teamer-intro');
     expect(TEAMER_SEITEN).toContain('teamer-abschluss');
   });

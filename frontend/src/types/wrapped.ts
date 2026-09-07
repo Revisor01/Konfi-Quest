@@ -224,6 +224,14 @@ export interface TeamerEngagementSlide {
   jahre_aktiv: number;
 }
 
+/**
+ * Die eigene Konfi-Zeit einer Teamer:in -- ab Snapshot-Version 3.
+ * null, wenn die Person nicht selbst Konfi in dieser Gemeinde war.
+ */
+export interface TeamerKonfiZeitSlide {
+  jahrgang: string | null;
+}
+
 export interface TeamerZeitraumSlide {
   year: number;
   // Additiv ab Snapshot-Version 2 (06.09.2026): der Zeitraum, auf den die
@@ -249,6 +257,8 @@ export interface TeamerWrappedData {
     badges: TeamerBadgesSlide;
     zertifikate: TeamerZertifikateSlide;
     engagement: TeamerEngagementSlide;
+    /** Ab Version 3. Fehlt bei aelteren Snapshots. */
+    konfi_zeit?: TeamerKonfiZeitSlide | null;
     zeitraum: TeamerZeitraumSlide;
   };
 }

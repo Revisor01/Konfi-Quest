@@ -386,6 +386,23 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
+        case 'teamer-konfi-zeit': {
+          if (!teamer) return null;
+          const kz = teamer.slides.konfi_zeit;
+          if (!kz) return null;
+          return (
+            <>
+              <div className="share-label">Wie alles anfing</div>
+              <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1.1 }}>
+                Vom Konfi<br />ins Team
+              </div>
+              <div className="share-subtitle">
+                {kz.jahrgang ? `Selbst Konfi im Jahrgang ${kz.jahrgang}` : 'Selbst Konfi in dieser Gemeinde'}
+              </div>
+            </>
+          );
+        }
+
         case 'teamer-abschluss':
           if (!teamer) return null;
           return (

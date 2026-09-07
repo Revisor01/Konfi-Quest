@@ -237,7 +237,12 @@ const TEAMER_DRAMATURGIE = [
   'teamer-badges',       // 4  Abzeichen
   'teamer-zertifikate',  // 5  Zertifikate
   'teamer-jahre',        // 6  "seit x Jahren dabei"
-  'teamer-abschluss'     // 7  Uebersicht
+  // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
+  // Konfi war. Steht bewusst NACH den Jahren im Team: erst wie lange du
+  // dabei bist, dann wie es angefangen hat. Und vor dem Abschluss, damit
+  // der Rueckblick auf dem persoenlichsten Punkt ausklingt.
+  'teamer-konfi-zeit',   // 7  vom Konfi zur Teamer:in
+  'teamer-abschluss'     // 8  Uebersicht
 ];
 
 /**
@@ -256,7 +261,11 @@ const TEAMER_BEDINGUNGEN = {
   // Aussage ueber eine fehlende Angabe, nicht ueber die Person. Diese
   // Pruefung stand bisher im Frontend (WrappedModal); sie gehoert hierher,
   // wo alle anderen auch stehen.
-  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit)
+  'teamer-jahre': (s) => Boolean(s.engagement?.teamer_seit),
+  // Nur wenn die Person wirklich selbst Konfi in DIESER Gemeinde war. Wer
+  // von aussen ins Team kam, bekommt die Seite nicht -- eine erfundene
+  // Herkunft waere schlimmer als gar keine Seite.
+  'teamer-konfi-zeit': (s) => Boolean(s.konfi_zeit)
 };
 
 /**

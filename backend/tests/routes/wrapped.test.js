@@ -385,6 +385,45 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.events_geleitet.total).toBe(1);
     });
 
+    it('Wer selbst Konfi war, bekommt die Seite "Wie alles anfing"', async () => {
+      // konfi_profiles bleibt beim Rollenwechsel stehen -- geloescht wird die
+      // Zeile nur mit dem ganzen Menschen (routes/users.js, purgeHistory).
+      // Genau darauf stuetzt sich die Seite; der Test haelt die Annahme gegen
+      // eine echte Datenbank fest.
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id)
+         VALUES ($1, $2, $3)`,
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang1.id, ORGS.testGemeinde.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).not.toBe(null);
+      expect(snap.slides.konfi_zeit.jahrgang).toBe(JAHRGAENGE.jahrgang1.name);
+      expect(snap.kacheln).toContain('teamer-konfi-zeit');
+    });
+
+    it('Wer von aussen ins Team kam, bekommt die Seite nicht', async () => {
+      // teamer1 hat im Seed KEIN konfi_profiles -- der Normalfall fuer
+      // jemanden, der nie Konfi dieser Gemeinde war.
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-konfi-zeit');
+    });
+
+    it('Eine Konfi-Zeit in einer FREMDEN Gemeinde zaehlt nicht', async () => {
+      // Mandantengrenze: Ein Profil aus einer anderen Organisation erzaehlt
+      // nicht die Geschichte DIESER Gemeinde.
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id)
+         VALUES ($1, $2, $3)`,
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang2.id, ORGS.andereGemeinde.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.konfi_zeit).toBe(null);
+      expect(snap.kacheln).not.toContain('teamer-konfi-zeit');
+    });
+
     it('Der Snapshot traegt seine Seitenauswahl', async () => {
       // Ab Version 3 waehlt das Backend die Seiten (waehleTeamerKacheln)
       // und legt sie als `kacheln` in den Snapshot -- vorher zeigte das

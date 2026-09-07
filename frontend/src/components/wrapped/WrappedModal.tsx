@@ -28,6 +28,7 @@ import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
 import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
 import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
 import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
+import TeamerKonfiZeitSlide from './slides/teamer/TeamerKonfiZeitSlide';
 import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
 import { MotivKontext } from './MotivKontext';
 import { verteileMotive } from './hintergrundbilder';
@@ -210,6 +211,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-badges': return { ...base, slideValue: `${t.slides.badges.total_earned} Badges verdient` };
         case 'teamer-zertifikate': return { ...base, slideValue: `${t.slides.zertifikate.total} Zertifikate erhalten` };
         case 'teamer-jahre': return { ...base, slideValue: `${t.slides.engagement.jahre_aktiv} Jahre als Teamer:in` };
+        case 'teamer-konfi-zeit': return { ...base, slideValue: 'Selbst mal Konfi gewesen — heute im Team' };
         case 'teamer-abschluss': return { ...base, slideValue: `${t.slides.events_geleitet.total} Events, ${t.slides.konfis_betreut.total_konfis} Konfis, ${t.slides.badges.total_earned} Badges` };
         default: return base;
       }
@@ -439,6 +441,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,
       'teamer-zertifikate': (a) => <TeamerZertifikateSlide isActive={a} zertifikate={teamerData.slides.zertifikate} />,
       'teamer-jahre': (a) => <TeamerJahreSlide isActive={a} engagement={teamerData.slides.engagement} />,
+      'teamer-konfi-zeit': (a) => (
+        teamerData.slides.konfi_zeit
+          ? <TeamerKonfiZeitSlide isActive={a} konfiZeit={teamerData.slides.konfi_zeit} />
+          : null
+      ),
       'teamer-abschluss': (a) => <TeamerAbschlussSlide isActive={a} data={teamerData} year={slideYear} titel={titel} />,
     };
 

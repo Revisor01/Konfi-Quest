@@ -232,6 +232,11 @@
   --karten-schleier: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
 }
 
+.share-card--teamer.share-card--teamer-konfi-zeit {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 55%, #075985 100%);
+  --karten-schleier: linear-gradient(135deg, #0ea5e9 0%, #0369a1 55%, #075985 100%);
+}
+
 .share-card--teamer.share-card--teamer-abschluss {
   background: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);
   --karten-schleier: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);

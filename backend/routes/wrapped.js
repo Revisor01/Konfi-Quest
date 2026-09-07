@@ -1005,6 +1005,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId, zeitraumStart, zeitraumEnde]
     );
 
+    // VOM KONFI ZUR TEAMER:IN -- die eigene Geschichte in der Gemeinde.
+    //
+    // Wer heute im Team ist und frueher selbst Konfi war, hat eine
+    // Konfi-Zeit in derselben Gemeinde hinter sich. Das ist die schoenste
+    // Nachricht, die ein Teamer-Rueckblick tragen kann, und sie steht
+    // laengst in der Datenbank: konfi_profiles bleibt beim Rollenwechsel
+    // stehen (geloescht wird die Zeile nur, wenn der ganze Mensch geloescht
+    // wird -- routes/users.js, purgeHistory).
+    //
+    // Die Seite erscheint nur, wenn wir wirklich etwas wissen: eine
+    // Konfi-Zeit in DIESER Organisation. Ein Profil aus einer fremden
+    // Gemeinde erzaehlt nicht die Geschichte dieser Gemeinde.
+    const { rows: [konfiZeit] } = await client.query(
+      `SELECT j.name AS jahrgang, kp.created_at
+         FROM konfi_profiles kp
+         LEFT JOIN jahrgaenge j ON j.id = kp.jahrgang_id
+        WHERE kp.user_id = $1 AND kp.organization_id = $2
+        ORDER BY kp.created_at ASC NULLS LAST
+        LIMIT 1`,
+      [userId, orgId]
+    );
+    const warSelbstKonfi = Boolean(konfiZeit);
+
     // Jahre aktiv (teamer_since). BEWUSST EIN LEBENSZEITWERT -- aber gegen
     // das Zeitraum-Ende gerechnet, nicht gegen "jetzt" (siehe oben).
     const { rows: [userRow] } = await client.query(
@@ -1051,6 +1074,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           teamer_seit: teamerSeit,
           jahre_aktiv: jahreAktiv
         },
+        // Additiv (ab Version 3): alte Apps kennen das Feld nicht und
+        // ignorieren es.
+        konfi_zeit: warSelbstKonfi
+          ? { jahrgang: konfiZeit.jahrgang || null }
+          : null,
         zeitraum: {
           year,
           // Additiv (ab Version 2): alte Apps ignorieren die Felder, neue

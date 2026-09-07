@@ -49,6 +49,8 @@ Versionsüberschrift.
   nichts zu tun. Während das Bild entsteht, ist das am Knopf zu sehen.
 - Im Browser wird eine Seite jetzt wirklich geteilt, wo das Gerät es anbietet —
   bisher landete sie nur im Download-Ordner.
+- Teamer:innen, die selbst einmal Konfi in ihrer Gemeinde waren, bekommen im
+  Rückblick eine eigene Seite dazu — mit dem eigenen Jahrgang.
 - Der Rückblick für Teamer:innen zeigt keine leeren Seiten mehr. Bisher kamen
   immer sieben Seiten, auch wenn fünf davon eine Null trugen — wer neu im Team
   ist, bekommt jetzt einen kürzeren Rückblick statt „0 Abzeichen",
