@@ -2768,54 +2768,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // BATCH-GENERIERUNG (für backgroundService Cron)
   // ====================================================================
 
-  /**
-   * Generiert Konfi-Wrapped für alle Konfis eines Jahrgangs.
-   * Wird vom Cron oder Admin-Endpoint aufgerufen.
-   */
-  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year, zeitraumVorgabe = null) => {
-    const client = await dbRef.getClient();
-    try {
-      await client.query('BEGIN');
-
-      const { rows: konfis } = await client.query(
-        `SELECT kp.user_id FROM konfi_profiles kp
-         JOIN users u ON kp.user_id = u.id
-         JOIN roles r ON u.role_id = r.id
-         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
-        [jahrgangId]
-      );
-
-      // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
-      const results = await Promise.allSettled(
-        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year, null, zeitraumVorgabe))
-      );
-      const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
-      const errors = results.length - generated;
-
-      // wrapped_released_at setzen
-      await client.query(
-        `UPDATE jahrgaenge SET wrapped_released_at = NOW() WHERE id = $1`,
-        [jahrgangId]
-      );
-
-      await client.query('COMMIT');
-
-      // Push (fire-and-forget, dbRef statt client da client released wird)
-      try {
-        const konfiIds = konfis.map(k => k.user_id);
-        await PushService.sendWrappedReleased(dbRef, konfiIds, 'konfi', orgId);
-      } catch (pushErr) {
-        console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
-      }
-
-      return { generated, errors };
-    } catch (err) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw err;
-    } finally {
-      client.release();
-    }
-  };
+  // generateAllKonfiWrapped ist am 08.09.2026 ENTFALLEN.
+  //
+  // Sie war toter Code: Im ganzen Repo gab es genau eine Fundstelle, ihre
+  // eigene Definition -- kein Aufrufer, kein Test. Ihr Kommentar behauptete
+  // "Wird vom Cron oder Admin-Endpoint aufgerufen"; der Cron
+  // (backgroundService.js) ruft ausschliesslich generateAllTeamerWrapped, und
+  // die Leitung geht ueber POST /wrapped/generate/:jahrgangId.
+  //
+  // Entfernt statt abgesichert: Sie pushte an alle Konfis eines Jahrgangs,
+  // OHNE zu pruefen, ob schon freigegeben war -- obwohl sie
+  // wrapped_released_at selbst setzte. Also derselbe Fehler, der am
+  // 08.09.2026 im Team-Rueckblick behoben wurde (a02e1f67). Solange sie tot
+  // war, passierte nichts; wer sie verdrahtet haette, haette den Doppel-Push
+  // sofort gehabt. Abgesicherter toter Code laedt genau dazu ein.
+  //
+  // Wer die Sache braucht: POST /wrapped/generate/:jahrgangId weiter oben
+  // macht dasselbe richtig -- mit `schonFreigegeben` als Bremse und einer
+  // eigenen Ausgabe je Lauf (Migration 144).
 
   /**
    * Erzeugt den TEAM-Rueckblick eines abgeschlossenen Kalenderjahres fuer
