@@ -122,9 +122,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   // gehabt ueber Mehr > Benutzer:innen).
   const [zuweisbare, setZuweisbare] = useState<ZuweisbarePerson[]>([]);
   const [ausgewaehlt, setAusgewaehlt] = useState<{ [id: number]: boolean }>({});
-  // Lokaler Zustand des Wrapped-Releases, damit der Toggle nach generate/delete
-  // sofort den neuen Stand zeigt (das Modal bleibt offen).
-
   const [formData, setFormData] = useState({
     name: '',
     gottesdienst_enabled: true,
@@ -303,7 +300,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 </IonItem>
               </IonList>
               <p style={{ fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-system)', margin: 'var(--app-abstand-eng) var(--app-abstand-mini) 0', lineHeight: 1.4 }}>
-                Hier steuerst du diesen Jahrgang zentral: Punkteziele, die Freischaltung der Konfispruch-Auswahl und die Freigabe des Wrapped-Rückblicks.
+                Hier steuerst du diesen Jahrgang zentral: Punkteziele und die Freischaltung der Konfispruch-Auswahl.
               </p>
             </IonCardContent>
           </IonCard>
@@ -389,13 +386,13 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           </IonCard>
         </IonList>
 
-        {/* Konfispruch & Wrapped */}
+        {/* Konfispruch */}
         <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--jahrgang">
               <IonIcon icon={ICON_FUNKELN} />
             </div>
-            <IonLabel>Konfispruch & Wrapped</IonLabel>
+            <IonLabel>Konfispruch</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -511,7 +508,7 @@ const AdminJahrgaengeePage: React.FC = () => {
       dismissJahrgangModalHook();
       refreshJahrgaenge();
     },
-    // Wrapped-Toggle aktualisiert die Liste, ohne das Modal zu schliessen.
+    // Aktualisiert die Liste, ohne das Modal zu schliessen.
     onRefresh: () => refreshJahrgaenge()
   });
 
@@ -717,8 +714,8 @@ const AdminJahrgaengeePage: React.FC = () => {
                                       style={{ color: jahrgang.wrapped_released_at ? 'var(--app-color-warning)' : 'var(--app-text-system)' }}
                                     />
                                     {jahrgang.wrapped_released_at
-                                      ? `Wrapped gestartet am ${new Date(jahrgang.wrapped_released_at).toLocaleDateString('de-DE')}`
-                                      : 'Wrapped nicht freigegeben'}
+                                      ? `Rückblick gestartet am ${new Date(jahrgang.wrapped_released_at).toLocaleDateString('de-DE')}`
+                                      : 'Noch kein Rückblick'}
                                   </span>
                                 </div>
                               </div>

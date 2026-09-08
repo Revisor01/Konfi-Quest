@@ -426,7 +426,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Jahrgänge</h2>
-                    <p className="app-settings-item__subtitle">Punkteziele, Konfisprüche und Wrapped verwalten</p>
+                    <p className="app-settings-item__subtitle">Punkteziele und Konfisprüche verwalten</p>
                   </div>
                   <IonButton
                     fill="clear"

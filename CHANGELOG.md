@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Die Jahrgangs-Verwaltung kündigt keine Rückblick-Freigabe mehr an. Die gibt
+  es dort seit der letzten Version nicht mehr — verwaltet wird der Rückblick
+  unter „Mehr“. Die Beschriftungen zeigten weiterhin an den alten Ort.
 - Termine standen in der Detailansicht der Leitung als „Geschlossen", obwohl
   die Anmeldung offen war. Betroffen waren vor allem Termine ohne
   Anmeldefrist und ohne Teilnehmerbegrenzung; in der Terminliste stand
