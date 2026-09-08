@@ -7,9 +7,10 @@ gruppe: Nachschlagen
 
 Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer
 Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und
-ein Teil der Abzeichen ergeben.
+ein Teil der [Abzeichen](60-badges.md) ergeben. Dieses Kapitel richtet sich an
+die Leitung, die Punkte vergibt und korrigiert.
 
-## Die zwei Punktarten
+## Die zwei Punktarten auseinanderhalten
 
 Es gibt genau zwei Arten, mehr lassen sich nicht anlegen:
 
@@ -20,12 +21,12 @@ Jeder Konfi hat für beide Arten einen eigenen Zähler. Diese beiden Zähler sin
 der einzige Ort, an dem der Punktestand steht — alles andere in der App ist eine
 Ansicht darauf.
 
-Jeder **Jahrgang** legt für beide Arten getrennt fest, wie viele Punkte das Ziel
-sind und ob die Art überhaupt genutzt wird. Das steht im Kapitel
-[Jahrgänge und Kategorien](45-jahrgaenge.md#punkteziele).
+Jeder Jahrgang legt für beide Arten getrennt fest, wie viele Punkte
+[das Ziel sind](45-jahrgaenge.md#punkteziele-festlegen) und ob die Art
+[überhaupt genutzt wird](45-jahrgaenge.md#eine-punktart-abschalten).
 
-Welche Art eine Punktevergabe füllt, entscheidest **nicht du im Moment der
-Vergabe**, sondern es hängt an der Sache selbst:
+Welche Art eine Vergabe füllt, entscheidest du nicht im Moment der Vergabe,
+sondern es hängt an der Sache selbst:
 
 | Woher die Punkte kommen | Wer die Art festlegt |
 |---|---|
@@ -33,76 +34,77 @@ Vergabe**, sondern es hängt an der Sache selbst:
 | Termin | der Termin (ohne Angabe: Gemeinde) |
 | Bonuspunkte | du, direkt bei der Vergabe |
 
-## Die drei Wege, auf denen Punkte entstehen
+## Wissen, auf welchen drei Wegen Punkte entstehen
 
-### Weg 1: Aktivitäten
+### Über eine Aktivität
 
-Aktivitäten sind das, was Konfis **selbst melden** — oder was ihr ihnen direkt
+Aktivitäten sind das, was Konfis selbst melden — oder was ihr ihnen direkt
 zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.
+Den Ablauf beschreibt der nächste Abschnitt.
 
-### Weg 2: Termine
+### Über einen Termin
 
-Wer bei einem Termin als **anwesend** eingetragen wird, bekommt die beim Termin
+Wer bei einem Termin als anwesend eingetragen wird, bekommt die beim Termin
 hinterlegten Punkte. Das passiert beim
 [Eintragen der Anwesenheit](70-termine.md#anwesenheit), nicht beim Buchen.
+Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass
+[Pflichttermine](70-termine.md#pflicht-event) und Konfirmationen grundsätzlich
+keine Punkte geben —, steht unter
+[Wann es Punkte gibt](70-termine.md#wann-es-punkte-gibt).
 
-Zwei Einschränkungen, die oft überraschen:
-
-- Ein Termin mit **0 Punkten** gibt nichts. Nicht jeder Termin muss Punkte geben.
-- **[Pflichttermine](70-termine.md#pflicht-event) und Konfirmationen geben grundsätzlich keine Punkte.** Trägst
-  du beim Anlegen trotzdem eine Punktzahl ein, wird sie auf 0 gesetzt. Der
-  Gedanke: Wozu man ohnehin verpflichtet ist, wird nicht zusätzlich belohnt.
-
-### Weg 3: Bonuspunkte
+### Über Bonuspunkte
 
 Bonuspunkte vergibst du frei von Hand — für alles, was in kein Raster passt.
-Du wählst die Punktzahl, die Punktart und schreibst eine **Beschreibung**.
+Du öffnest den Konfi in der Konfi-Verwaltung und tippst auf „Bonuspunkte
+hinzufügen".
 
-> **Die Beschreibung ist hier Pflicht.** Ohne sie lässt sich der Bonus nicht
-> speichern. Das ist Absicht: Bonuspunkte sind der einzige Weg, bei dem sich
-> später sonst niemand mehr erklären kann, wofür sie waren.
+Pflicht sind eine **„Bezeichnung"**, ein **„Datum"** und ein **„Typ"**; die
+Punktzahl stellst du mit einem Schieberegler von **1 bis 10** ein. Die
+**„Begründung"** ist optional — sie wird, wenn du sie ausfüllst, hinter die
+Bezeichnung gehängt und steht später in der Punktegeschichte.
 
-Bonuspunkte dürfen **auch Teamer:innen** vergeben, nicht nur die Leitung.
+Der Konfi bekommt sofort einen Push: **„+3 Bonuspunkte!"** mit dem Text, wofür
+sie waren. Neue Abzeichen und ein neues Level werden gleich mitgeprüft.
 
-## Der Weg einer Aktivitäts-Meldung
+## Eine gemeldete Aktivität entscheiden
 
 Das ist der häufigste Ablauf im Alltag, deshalb hier Schritt für Schritt.
 
-**1. Der Konfi meldet.** Er wählt eine Aktivität, ein Datum und kann eine
-Beschreibung sowie ein **Nachweisfoto** anhängen. Der Antrag ist ab jetzt
-*ausstehend*.
-
-Der Konfi bekommt sofort die Rückmeldung „Antrag eingereicht“ mit dem Hinweis,
-dass der Antrag geprüft wird. Punkte gibt es noch keine.
+**1. Der Konfi meldet.** Er wählt eine Aktivität und ein Datum; „Anmerkungen"
+und ein „Foto als Nachweis" sind beide freiwillig. Lässt er das Foto weg,
+fragt die App noch einmal nach: „Normalerweise gehört ein Foto dazu, damit dein
+Team sieht, dass du dabei warst. Trotzdem abschicken?" Danach meldet sie
+„Aktivität erfolgreich eingereicht!". Der Antrag ist ab jetzt ausstehend,
+Punkte gibt es noch keine.
 
 **2. Die Leitung prüft.** Die Anträge stehen in der Antragsliste.
+[Teamer:innen sehen sie nicht](05-rollen.md#wer-darf-was) — in Beschreibung
+und Foto kann Privates stehen. Ein Admin sieht dort nur die Anträge aus
+[seinen Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert);
+Anträge von Teamer:innen sieht er immer.
 
-> **Nur die Leitung sieht Anträge.** Teamer:innen haben auf die Antragsliste
-> keinen Zugriff — das ist bewusst so, weil in Beschreibung und Foto Privates
-> stehen kann.
+**3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: „Genehmigen" oder
+„Ablehnen".
 
-**3. Die Entscheidung.** Es gibt genau zwei Möglichkeiten: **genehmigen** oder
-**ablehnen**.
-
-- **Verbucht:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
+- **Genehmigt:** Die Aktivität wird gutgeschrieben, die Punkte landen auf dem
   Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob
-  damit neue [Abzeichen](60-badges.md) oder ein neues Level erreicht sind. Der
-  Konfi bekommt „Antrag genehmigt!“ mit der Punktzahl.
-- **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt“
-  mit deiner Begründung als „Grund: …“ daran.
+  damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt
+  „Antrag genehmigt!" mit der Punktzahl.
+- **Abgelehnt:** Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt"
+  mit deiner Begründung als „Grund: …" daran.
 
-> **Die Begründung ist beim Ablehnen Pflicht** — die App verlangt sie, und auch
-> das System dahinter lehnt ein Ablehnen ohne Begründung ab („Beim Ablehnen ist
-> eine Begründung erforderlich“). Der Konfi soll erfahren, warum etwas nicht
-> zählt.
+> **Die Begründung ist beim Ablehnen Pflicht.** Die App verlangt sie
+> („Grund für die Ablehnung *"), und auch das System dahinter weist ein
+> Ablehnen ohne Begründung zurück („Beim Ablehnen ist eine Begründung
+> erforderlich"). Der Konfi soll erfahren, warum etwas nicht zählt.
 
 Ein bereits entschiedener Antrag lässt sich nicht noch einmal entscheiden. Der
 Versuch endet mit „Nur ausstehende Anträge können genehmigt oder abgelehnt
-werden“.
+werden".
 
-### Zurücksetzen: der Weg zurück
+### Eine Entscheidung zurücknehmen
 
-Hast du dich vertan, setzt du den Antrag auf *ausstehend* zurück. Das ist die
+Hast du dich vertan, setzt du den Antrag auf ausstehend zurück. Das ist die
 einzige Korrekturmöglichkeit für eine Entscheidung.
 
 Beim Zurücksetzen passiert dreierlei:
@@ -113,142 +115,136 @@ Beim Zurücksetzen passiert dreierlei:
 - Der Antrag ist wieder offen und kann neu entschieden werden.
 
 > **Der Konfi wird darüber nicht benachrichtigt.** Beim Zurücksetzen geht keine
-> Mitteilung und kein Push raus. Wer gerade „Antrag genehmigt, +3 Punkte“
+> Mitteilung und kein Push raus. Wer gerade „Antrag genehmigt, +3 Punkte"
 > gelesen hat, sieht die Punkte danach kommentarlos wieder verschwinden. Sag
 > vorher Bescheid, wenn du so etwas korrigierst.
 
-### Anträge löschen
+### Einen Antrag löschen
 
-Löschen lassen sich nur **abgelehnte** Anträge. Die anderen sind geschützt:
+Löschen lassen sich nur abgelehnte Anträge. Die anderen sind geschützt:
 
 | Zustand | Löschen möglich? | Meldung |
 |---|---|---|
-| Ausstehend | nein | „Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.“ |
-| Verbucht | nein | „Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“ |
+| Ausstehend | nein | „Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht." |
+| Genehmigt | nein | „Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück." |
 | Abgelehnt | ja | — |
 
-## Direktvergabe durch die Leitung
+Mit dem Antrag verschwindet auch sein Nachweisfoto.
 
-Nicht alles muss den Antragsweg gehen. Die Leitung kann eine Aktivität auch
-direkt zuschreiben — praktisch, wenn sie ohnehin dabei war.
+## Eine Aktivität direkt zuschreiben
 
-Der Weg führt über die **Konfi-Verwaltung**: Konfi öffnen, Aktivität
-hinzufügen. Ein Kommentar ist möglich, aber freiwillig.
+Nicht alles muss den Antragsweg gehen. Warst du ohnehin dabei, schreibst du die
+Aktivität direkt zu: Konfi in der Konfi-Verwaltung öffnen, „Aktivität
+hinzufügen". Ein Kommentar ist möglich, aber freiwillig.
 
-| | Über die Konfi-Verwaltung |
-|---|---|
-| Wer darf | nur Leitung |
-| Kommentar möglich | ja, optional |
-| Push an den Konfi | nein |
-| Abzeichen sofort geprüft | ja |
-| Level sofort neu berechnet | nein |
+Angeboten werden dabei nur Aktivitäten, deren Punktart im Jahrgang des Konfis
+eingeschaltet ist.
 
-> **Der Konfi merkt es nicht sofort.** Es kommt keine Push-Nachricht, und ein
-> dadurch erreichtes neues Level wird erst beim nächsten Öffnen des Dashboards
-> sichtbar. Die Punkte selbst stehen aber sofort da. Wenn jemand es
-> mitbekommen soll, sag am besten kurz Bescheid.
+> **Der Konfi merkt es nicht sofort.** Es kommt keine Push-Nachricht. Die
+> Punkte stehen zwar sofort da und Abzeichen werden gleich geprüft, ein
+> dadurch erreichtes neues Level wird aber erst beim nächsten Öffnen seines
+> Dashboards sichtbar. Wenn jemand es mitbekommen soll, sag am besten kurz
+> Bescheid.
 
-> **Hinweis für Teamer:innen:** Punkte direkt vergeben können nur die
-> Leitungsrollen. Teamer:innen bestätigen Anträge — den Weg beschreibt der
-> Abschnitt oben.
+Direkt zuschreiben, löschen und Bonuspunkte zurücknehmen können nur die
+[Leitungsrollen](05-rollen.md#wer-darf-was). Teamer:innen kommen an die
+Konfi-Verwaltung nicht heran.
 
-## Wie Punkte wieder verschwinden
+## Punkte wieder wegnehmen
 
-**Es gibt keinen „Punkte abziehen“-Knopf.** Du kannst niemandem einfach so drei
+**Es gibt keinen „Punkte abziehen"-Knopf.** Du kannst niemandem einfach so drei
 Punkte wegnehmen, und du kannst auch keine negative Punktzahl eintragen — das
 System lässt es nicht zu.
 
-Punkte verschwinden **ausschließlich**, indem die Buchung zurückgenommen wird,
-die sie erzeugt hat. Das sind alle Wege:
+Punkte verschwinden ausschließlich, indem die Buchung zurückgenommen wird, die
+sie erzeugt hat. Das sind alle Wege:
 
 - Einen **genehmigten Antrag zurücksetzen**
-- Eine **direkt vergebene Aktivität löschen**
+- Eine **direkt zugeschriebene Aktivität löschen**
 - **Bonuspunkte löschen**
-- Bei einem Termin die [**Anwesenheit auf „abwesend“**](70-termine.md#wann-punkte-zurueckgenommen-werden) ändern
-- Eine **Buchung stornieren**, obwohl die Person schon als anwesend galt
+- Bei einem Termin die
+  [**Anwesenheit zurücknehmen**](70-termine.md#wann-punkte-zurueckgenommen-werden)
 - Eine Person **aus einem Termin entfernen**
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
+- Einen **ganzen Termin löschen** — dabei werden alle dafür vergebenen Punkte
+  zurückgenommen
 
 > **Der Punktestand fällt nie unter 0.** Jede dieser Rücknahmen ist so gebaut,
 > dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil
 > anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen.
-> Das heißt aber auch: Zieht das System zweimal dieselben 3 Punkte ab, während
-> nur 2 übrig sind, ist die Differenz stillschweigend weg.
 
-Zwei Dinge, die **keine** Punkte zurücknehmen:
+Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt dagegen bestehen:
+[Abzeichen werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
 
-- Einen **Konfi in einen anderen Jahrgang verschieben.** Punkte und Level wandern
-  unverändert mit.
-- Einen **ganzen Termin löschen.** Wer dafür schon Punkte bekommen hat, behält
-  sie.
+Verschiebst du einen **Konfi in einen anderen Jahrgang**, wandern Punkte und
+Level unverändert mit.
 
-## Level
+## Level anlegen und pflegen
 
 Level sind die Stufen, die sich aus dem Punktestand ergeben. Du legst sie
-einmal für die ganze Gemeinde an — nicht pro Jahrgang.
+einmal für die ganze Gemeinde an — nicht pro Jahrgang. Der Weg führt über
+**Mehr › Level**.
 
 Ein Level besteht aus:
 
-- **Titel** — was angezeigt wird, etwa „Bronze“ oder „Meister“
-- **Benötigte Punkte** — ab wann es gilt
-- **Beschreibung, Symbol, Farbe** — wie es aussieht
+- **„Titel"** — was angezeigt wird, etwa „Bronze" oder „Meister"
+- **„Benötigte Punkte"** — ab wann es gilt, per Schieberegler von **1 bis 40**
+- **„Beschreibung"**, **„Icon"** und **„Level-Farbe"** — wie es aussieht
 
-Die benötigten Punkte stellst du über einen Schieberegler von **1 bis 40** ein.
 Zwei Level dürfen nicht dieselbe Punktzahl haben; der Versuch endet mit „Ein
-Level mit dieser Punktzahl existiert bereits“.
+Level mit dieser Punktzahl existiert bereits".
 
-### Es zählen die Gesamtpunkte — aber nur die aktivierten Arten
+### Verstehen, welche Punkte fürs Level zählen
 
-Für das Level werden **Gottesdienst- und Gemeindepunkte zusammengezählt**.
+Für das Level werden Gottesdienst- und Gemeindepunkte zusammengezählt.
 
-Entscheidend und leicht zu übersehen: Gezählt werden **nur die Punktarten, die
-[im Jahrgang eingeschaltet](45-jahrgaenge.md#wenn-eine-punktart-abgeschaltet-ist)
-sind**. Ist im Jahrgang „Gemeinde“ abgeschaltet,
-zählen für das Level ausschließlich die Gottesdienstpunkte — auch wenn auf dem
-Gemeinde-Zähler noch alte Punkte stehen.
+Entscheidend und leicht zu übersehen: Gezählt werden nur die Punktarten, die
+[im Jahrgang eingeschaltet](45-jahrgaenge.md#eine-punktart-abschalten)
+sind. Ist im Jahrgang „Gemeinde" abgeschaltet, zählen für das Level
+ausschließlich die Gottesdienstpunkte — auch wenn auf dem Gemeinde-Zähler noch
+alte Punkte stehen.
 
 *Beispiel:* Ein Konfi hat 8 Gottesdienst- und 5 Gemeindepunkte. Sind beide Arten
-aktiv, zählt er mit 13 Punkten. Wird „Gemeinde“ im Jahrgang abgeschaltet, zählt
+aktiv, zählt er mit 13 Punkten. Wird „Gemeinde" im Jahrgang abgeschaltet, zählt
 er ab sofort mit 8 — und rutscht damit unter Umständen ein Level zurück.
 
-Deaktivierte Level werden bei der Berechnung übersprungen.
-
-### Aufstieg und Abstieg
+### Aufsteigen und absteigen
 
 **Beim Aufstieg** bekommt der Konfi eine Mitteilung und einen Push: „Level Up!
-Herzlichen Glückwunsch! Du hast Level ‚…‘ erreicht!“
+Herzlichen Glückwunsch! Du hast Level ‚…' erreicht!"
 
 **Beim Abstieg passiert nichts hörbar.** Sinken die Punkte unter die Schwelle,
 wird das Level still nach unten korrigiert — keine Mitteilung, kein Push, kein
-Hinweis. Das ist bewusst so: Niemand soll eine Nachricht bekommen, dass er
-etwas verloren hat.
+Hinweis. Niemand soll eine Nachricht darüber bekommen, dass er etwas verloren
+hat.
 
 > **Nebeneffekt, den du kennen solltest:** Nach dem Löschen einer Aktivität oder
-> von Bonuspunkten wird das Level **nicht sofort** nachgerechnet. Es bleibt
+> von Bonuspunkten wird das Level nicht sofort nachgerechnet. Es bleibt
 > kurzzeitig zu hoch stehen und wird erst korrigiert, wenn der Konfi das
 > nächste Mal sein Dashboard öffnet. Dort passiert es dann ebenfalls still.
 
-### Ein belegtes Level lässt sich nicht löschen
+### Ein belegtes Level loswerden
 
 Steht auch nur ein Konfi aktuell auf einem Level, wird das Löschen abgelehnt:
-**„Level kann nicht gelöscht werden, da es von Konfis verwendet wird“**.
+**„Dieses Level ist noch vergeben — benenne es um oder ordne die betroffenen
+Konfis um."**
 
-Die App nennt dir dabei leider **nicht**, wie viele oder welche Konfis das sind.
-Willst du das Level trotzdem loswerden, gibt es zwei Wege: die Punktzahl so
-ändern, dass niemand mehr darauf steht, oder das Level deaktivieren statt es zu
-löschen. Ein deaktiviertes Level zählt für die Berechnung nicht mehr mit.
+Die App nennt dir dabei nicht, welche Konfis das sind. Willst du das Level
+trotzdem loswerden, änderst du seine Punktzahl so, dass niemand mehr darauf
+steht — oder du benennst es einfach um.
 
-## Wann wird nachgerechnet?
+## Nachvollziehen, wann nachgerechnet wird
 
-Abzeichen und Level werden sofort geprüft bei:
+Abzeichen und Level werden beide sofort geprüft bei:
 
 - einem genehmigten Antrag
-- einer über die Aktivitäten-Seite direkt vergebenen Aktivität
 - vergebenen Bonuspunkten
+- eingetragener Anwesenheit und beim Check-in per QR-Code
 
-Nur die Abzeichen — nicht das Level — werden geprüft bei einer über die
-Konfi-Verwaltung vergebenen oder gelöschten Aktivität.
+Nur die Abzeichen — nicht das Level — werden geprüft, wenn du über die
+Konfi-Verwaltung eine Aktivität zuschreibst oder wieder löschst.
 
-Zusätzlich laufen die [Abzeichen-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
-alle fünf Minuten im Hintergrund, und das Level wird bei jedem Öffnen des
-Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.
+Dazu kommen die
+[stündlichen Abzeichen-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
+im Hintergrund. Das Level wird außerdem bei jedem Öffnen des Konfi-Dashboards
+überprüft und gegebenenfalls stillschweigend richtiggestellt.

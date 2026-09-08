@@ -9,7 +9,7 @@ Ansicht sie beim Anmelden bekommt und was sie darin tun kann. Es gibt vier:
 **Konfi**, **Teamer:in**, **Admin** und **Org-Admin**.
 
 Neben der Rolle gibt es eine zweite Stellschraube, die genauso wichtig ist:
-die [**Jahrgangs-Zuweisung**](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert).
+die [**Jahrgangs-Zuweisung**](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
 Sie legt fest, für welche Jahrgänge jemand zuständig ist — und wirkt bei
 Teamer:innen und bei Admins.
 
@@ -146,7 +146,7 @@ fragen. Ein Admin kann das nicht.
 | **Org-Admin** | keine — er sieht immer die ganze Gemeinde |
 
 Die vollständige Liste dessen, was ohne passende Zuweisung nicht geht, steht im
-Kapitel [Jahrgänge und Kategorien](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert).
+Kapitel [Jahrgänge und Kategorien](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert).
 
 ## Rollen ändern
 

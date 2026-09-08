@@ -461,7 +461,7 @@ Punkte werden vergeben, wenn **alle fünf** Bedingungen erfüllt sind:
 3. Es ist **kein Pflicht-Event** (dort sind die Punkte auf 0 erzwungen)
 4. Die Person ist ein **Konfi** — Teamer:innen bekommen für Termine keine Punkte
 5. Der gewählte **Punkt-Typ ist
-   [im Jahrgang eingeschaltet](45-jahrgaenge.md#wenn-eine-punktart-abgeschaltet-ist)**
+   [im Jahrgang eingeschaltet](45-jahrgaenge.md#eine-punktart-abschalten)**
    (Gottesdienst oder Gemeinde)
 
 Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.
@@ -470,7 +470,7 @@ Pro Person und Termin gibt es die Punkte **genau einmal**. Doppelt einchecken
 oder zweimal verbuchen ändert nichts.
 
 Nach der Punktevergabe wird geprüft, ob neue [Abzeichen](60-badges.md) fällig
-sind, und ob jemand ein [Level](40-punkte.md#level) aufgestiegen ist. Beides
+sind, und ob jemand ein [Level](40-punkte.md#level-anlegen-und-pflegen) aufgestiegen ist. Beides
 läuft automatisch.
 
 ### Punkt-Typ
@@ -495,7 +495,7 @@ In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:
 Der Punktestand fällt dabei nie unter null.
 
 > **Achtung:** Ein Abzeichen, das durch diese Punkte ausgelöst wurde, **bleibt
-> bestehen.** [Abzeichen werden nie aberkannt](60-badges.md#einmal-verliehen-immer-verliehen).
+> bestehen.** [Abzeichen werden nie aberkannt](60-badges.md#wissen-was-vorher-zu-bedenken-ist).
 
 ---
 
@@ -624,7 +624,7 @@ Ein erfolgreicher Scan wirkt **sofort**, nicht erst beim
 - Die Person bekommt eine Benachrichtigung aufs Gerät („Teilnahme bestätigt!"),
   mit der Punktzahl, falls es welche gab.
 - Es wird geprüft, ob damit ein [Abzeichen](60-badges.md) oder ein neues
-  [Level](40-punkte.md#level) fällig ist — beides kommt als eigene Nachricht.
+  [Level](40-punkte.md#level-anlegen-und-pflegen) fällig ist — beides kommt als eigene Nachricht.
 
 Ihr müsst danach nichts mehr nachtragen. Der Termin taucht nur dann noch unter
 „Verbuchen" auf, wenn Personen offen sind, die nicht gescannt haben.

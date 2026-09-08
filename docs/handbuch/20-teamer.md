@@ -5,7 +5,7 @@ farbe: "#be185d"
 ---
 
 Als Teamer:in begleitest du die Jahrgänge, die dir zugewiesen sind. Diese
-[Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
+[Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
 entscheidet fast überall, was du siehst und wen du erreichst.
 
 ## Start
@@ -82,7 +82,7 @@ Zu jedem Termin siehst du die Details und das hinterlegte **Material**.
 
 Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als
 Nachweis. Die Leitung bestätigt sie, dann zählen sie — der
-[Weg einer Meldung](40-punkte.md#der-weg-einer-aktivitaets-meldung) ist derselbe
+[Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist derselbe
 wie bei den Konfis.
 
 ## Challenges

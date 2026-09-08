@@ -348,10 +348,10 @@ tbody tr:last-child td { border-bottom:none; }
       <h2 id="punkte"><span class="abschnitt-nr">11.8</span>Punkte</h2>
       <h3 id="wann-es-punkte-gibt"><span class="abschnitt-nr">11.8.1</span>Wann es Punkte gibt</h3>
       <p>Punkte werden vergeben, wenn <strong>alle fünf</strong> Bedingungen erfüllt sind:</p>
-      <ol><li>Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand)</li><li>Der Termin hat eine <strong>Punktzahl größer 0</strong></li><li>Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen)</li><li>Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte</li><li>Der gewählte <strong>Punkt-Typ ist <a href="./jahrgaenge.html#wenn-eine-punktart-abgeschaltet-ist">im Jahrgang eingeschaltet</a></strong> (Gottesdienst oder Gemeinde)</li></ol>
+      <ol><li>Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand)</li><li>Der Termin hat eine <strong>Punktzahl größer 0</strong></li><li>Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen)</li><li>Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte</li><li>Der gewählte <strong>Punkt-Typ ist <a href="./jahrgaenge.html#eine-punktart-abschalten">im Jahrgang eingeschaltet</a></strong> (Gottesdienst oder Gemeinde)</li></ol>
       <p>Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.</p>
       <p>Pro Person und Termin gibt es die Punkte <strong>genau einmal</strong>. Doppelt einchecken oder zweimal verbuchen ändert nichts.</p>
-      <p>Nach der Punktevergabe wird geprüft, ob neue <a href="./badges.html">Abzeichen</a> fällig sind, und ob jemand ein <a href="./punkte.html#level">Level</a> aufgestiegen ist. Beides läuft automatisch.</p>
+      <p>Nach der Punktevergabe wird geprüft, ob neue <a href="./badges.html">Abzeichen</a> fällig sind, und ob jemand ein <a href="./punkte.html#level-anlegen-und-pflegen">Level</a> aufgestiegen ist. Beides läuft automatisch.</p>
       <h3 id="punkt-typ"><span class="abschnitt-nr">11.8.2</span>Punkt-Typ</h3>
       <p>Jeder Termin gibt entweder <strong>Gottesdienst-</strong> oder <strong>Gemeindepunkte</strong>; Voreinstellung ist Gemeinde. Ist der gewählte Typ im Jahrgang des Konfis abgeschaltet, gibt es keine Punkte.</p>
       <blockquote><strong>Unterschied, den du kennen solltest:</strong> Verbuchst du eine Person <strong>einzeln</strong> und der Punkt-Typ ist in ihrem Jahrgang abgeschaltet, bricht der Vorgang mit einer Fehlermeldung ab. Beim Sammel-Verbuchen („Alle bestätigen&quot;) wird die Person dagegen als anwesend verbucht und einfach übersprungen — sonst würde ein einziger Sonderfall die ganze Liste blockieren.</blockquote>
@@ -359,7 +359,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:</p>
       <ul><li>Du stellst die Anwesenheit von <strong>anwesend auf fehlend</strong></li><li>Die Person <strong>meldet sich ab</strong>, obwohl sie schon als anwesend verbucht war</li></ul>
       <p>Der Punktestand fällt dabei nie unter null.</p>
-      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> <a href="./badges.html#einmal-verliehen-immer-verliehen">Abzeichen werden nie aberkannt</a>.</blockquote>
+      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> <a href="./badges.html#wissen-was-vorher-zu-bedenken-ist">Abzeichen werden nie aberkannt</a>.</blockquote>
       <p>---</p>
       <h2 id="anwesenheit"><span class="abschnitt-nr">11.9</span>Anwesenheit</h2>
       <p>Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege.</p>
@@ -398,7 +398,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Teamer:innen können sich ebenfalls einchecken — sie werden als anwesend verbucht, bekommen aber keine Punkte.</p>
       <h3 id="was-der-scan-sofort-ausloest"><span class="abschnitt-nr">11.10.5</span>Was der Scan sofort auslöst</h3>
       <p>Ein erfolgreicher Scan wirkt <strong>sofort</strong>, nicht erst beim <a href="#anwesenheit">Verbuchen</a>:</p>
-      <ul><li>Die Anwesenheit steht, und die <a href="#wann-es-punkte-gibt">Punkte</a> sind gutgeschrieben.</li><li>Die Person bekommt eine Benachrichtigung aufs Gerät („Teilnahme bestätigt!&quot;), mit der Punktzahl, falls es welche gab.</li><li>Es wird geprüft, ob damit ein <a href="./badges.html">Abzeichen</a> oder ein neues <a href="./punkte.html#level">Level</a> fällig ist — beides kommt als eigene Nachricht.</li></ul>
+      <ul><li>Die Anwesenheit steht, und die <a href="#wann-es-punkte-gibt">Punkte</a> sind gutgeschrieben.</li><li>Die Person bekommt eine Benachrichtigung aufs Gerät („Teilnahme bestätigt!&quot;), mit der Punktzahl, falls es welche gab.</li><li>Es wird geprüft, ob damit ein <a href="./badges.html">Abzeichen</a> oder ein neues <a href="./punkte.html#level-anlegen-und-pflegen">Level</a> fällig ist — beides kommt als eigene Nachricht.</li></ul>
       <p>Ihr müsst danach nichts mehr nachtragen. Der Termin taucht nur dann noch unter „Verbuchen&quot; auf, wenn Personen offen sind, die nicht gescannt haben.</p>
       <h3 id="warum-konfis-den-code-nicht-sehen"><span class="abschnitt-nr">11.10.6</span>Warum Konfis den Code nicht sehen</h3>
       <p>Der QR-Code ist ein Geheimnis. Würde er in der Konfi-App auftauchen, könnte sich jeder von zu Hause aus als anwesend eintragen und sich die Punkte selbst gutschreiben.</p>

@@ -60,7 +60,7 @@ Mitglieder selbst:
 
 Er lässt sich nicht verlassen: Wer im Jahrgang ist, ist im Chat. Und er lässt
 sich nicht einzeln löschen — das geht nur
-[über den Jahrgang selbst](45-jahrgaenge.md#jahrgang-loeschen)
+[über den Jahrgang selbst](45-jahrgaenge.md#einen-jahrgang-loeschen)
 (*„Bitte den Jahrgang löschen"*).
 
 ### Team-Chat
@@ -139,7 +139,7 @@ Jahrgangs-Grenze gebunden.
 > zugewiesenen Jahrgang** erreicht keinen einzigen Konfi — und taucht
 > umgekehrt auch in keiner Konfi-Kontaktliste auf. Wenn jemand meldet
 > „ich sehe meine Konfis nicht im Chat", ist fast immer die
-> [Jahrgangs-Zuweisung](45-jahrgaenge.md#was-die-jahrgangs-zuweisung-von-teamer-innen-steuert)
+> [Jahrgangs-Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
 > die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.
 
 > **Achtung:** Ein Konfi **ohne Jahrgang** ist nur für die Leitung (Org-Admin)

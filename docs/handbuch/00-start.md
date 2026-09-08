@@ -35,7 +35,7 @@ Punkte entstehen auf drei Wegen:
 - **Bonuspunkte** — vergibt die Leitung von Hand, für alles, was sonst in
   kein Raster passt.
 
-Aus den Punkten ergeben sich [**Level**](40-punkte.md#level) und ein Teil der
+Aus den Punkten ergeben sich [**Level**](40-punkte.md#level-anlegen-und-pflegen) und ein Teil der
 **Abzeichen**. Wie Punkte im Einzelnen entstehen und wieder verschwinden,
 steht im Kapitel [Punkte, Level und Ziele](40-punkte.md).
 

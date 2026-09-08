@@ -39,7 +39,7 @@ schicken lassen kannst.
 
 ### In der Detailansicht einer Person
 
-- **Punkte vergeben** — als [Bonuspunkte](40-punkte.md#weg-3-bonuspunkte), frei begründet
+- **Punkte vergeben** — als [Bonuspunkte](40-punkte.md#ueber-bonuspunkte), frei begründet
 - **Aktivitäten** hinzufügen oder entfernen
 - [**Abzeichen**](60-badges.md) ansehen
 - **Konfirmation** — Termin und Konfispruch
@@ -127,7 +127,7 @@ Einstellungen im Detail stehen im Kapitel [Termine](70-termine.md).
 Die Meldungen der Konfis und Teamer:innen: **Offen**, **Verbucht**,
 **Abgelehnt**. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen
 musst du einen Grund angeben — den bekommt die Person zu sehen. Der ganze
-[Weg einer Meldung](40-punkte.md#der-weg-einer-aktivitaets-meldung) steht im
+[Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) steht im
 Punkte-Kapitel.
 
 ## Challenges
@@ -160,7 +160,7 @@ stehen im Kapitel [Challenges](80-challenges.md).
 | **Badges** | [Abzeichen](60-badges.md) definieren, mit Bedingungen |
 | **Jahrgänge** | [Punkteziele, Konfispruch- und Wrapped-Freigabe](45-jahrgaenge.md) |
 | **Kategorien** | Für Aktivitäten und Termine |
-| **Level** | [Punkteschwellen](40-punkte.md#level) und ihre Titel |
+| **Level** | [Punkteschwellen](40-punkte.md#level-anlegen-und-pflegen) und ihre Titel |
 | **Material** | Dateien und Links für Termine und Jahrgänge — beides zusammen, auch mehrere Links. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
@@ -227,7 +227,7 @@ Pro Jahrgang stellst du ein:
 
 - **Punkteziele** für Gottesdienst und Gemeinde, jeweils einzeln abschaltbar
   — mindestens eine Art muss aktiv bleiben
-- [**Konfispruch-Auswahl**](45-jahrgaenge.md#konfispruch-freigabe) freigeben
+- [**Konfispruch-Auswahl**](45-jahrgaenge.md#den-konfispruch-freigeben) freigeben
 - **Wrapped freigeben** — erzeugt den [Jahresrückblick](95-wrapped.md) und
   benachrichtigt die Konfis
 

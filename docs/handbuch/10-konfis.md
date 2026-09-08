@@ -24,7 +24,7 @@ erscheinen, stellt deine Gemeinde ein:
 - **Deine Konfirmation** — der Countdown bis zum Tag, mit Datum und Ort
 - **Deine Challenge** — was gerade läuft und wie lange noch
 - **Dein Konfispruch** — sobald deine Gemeinde die
-  [Auswahl freigegeben](45-jahrgaenge.md#konfispruch-freigabe) hat
+  [Auswahl freigegeben](45-jahrgaenge.md#den-konfispruch-freigeben) hat
 - **Deine Events** — die nächsten Termine
 - **Tageslosung** — der Bibelvers des Tages, in deiner Übersetzung
 - **Deine Badges** — was du schon gesammelt hast
