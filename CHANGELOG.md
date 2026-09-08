@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Ein neues Handbuch-Kapitel „Die App bedienen" erklärt, was überall gleich
+  funktioniert: nach links wischen zum Löschen, nach unten ziehen zum
+  Aktualisieren, der Aufbau der Reiter und was ohne Internet geht.
 - Wer bei der Sommerfreizeit 2026 in Stavanger dabei war, findet im
   Rückblick eine eigene Seite dazu — Konfis wie Team. Alle anderen sehen sie
   nicht.
@@ -48,6 +51,13 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Der Rückblick meldet sich jetzt bei jeder neuen Ausgabe. Bisher blieb es
+  still, wenn für einen Jahrgang ein zweiter Rückblick entstand — niemand
+  erfuhr davon.
+- Die Mitteilung zum Rückblick heißt jetzt „Deine Konfi-Zeit Wrapped ist da!"
+  beziehungsweise „Dein Team-Jahr Wrapped ist da!".
+- Die Handbuch-Kapitel haben nummerierte Abschnitte (13.1, 13.1.1) und ein
+  eigenes Inhaltsverzeichnis. Bei langen Kapiteln startet es zugeklappt.
 - Der Rückblick braucht keine Einstellungen mehr. Für Konfis zählt er immer
   die ganze Konfi-Zeit vom Beginn bis heute, fürs Team immer ein
   Kalenderjahr — gewählt wird nur noch, welches. Namen und Datumsfelder sind

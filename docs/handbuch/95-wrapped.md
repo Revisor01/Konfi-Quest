@@ -22,23 +22,14 @@ Tippe unten auf **Mehr**, dort im Abschnitt **Inhalt** auf
 
 Für Konfis läuft nichts von selbst an — du entscheidest, wann.
 
-> **Einen Schalter im Jahrgang gibt es nicht mehr.** Bis Anfang September 2026
-> wurde der Rückblick dort freigegeben. Das ist entfallen: Ein Schalter kennt
-> nur an und aus, er konnte weder mehrere Ausgaben verwalten noch eine einzelne
-> löschen. Im Jahrgang steht heute nur noch, ob schon ein Rückblick läuft.
-
 **Du stellst nichts ein.** Beim Konfi-Rückblick wählst du nur den **Jahrgang**,
 beim Team-Rückblick nur das **Jahr**. Keinen Namen, keinen Zeitraum. Was der
 Rückblick umfasst, steht fest:
 
-- **Konfis:** die ganze Konfi-Zeit, vom Beginn bis heute — bei manchen sind das
-  zwei Jahre.
+- **Konfis:** die ganze Konfi-Zeit, vom Beginn **bis zu dem Moment, in dem du
+  den Rückblick freigibst**. Gibst du später einen weiteren frei, gilt dieselbe
+  Regel erneut — wieder vom Beginn bis zu dieser Freigabe.
 - **Team:** ein volles Kalenderjahr, vom 1. Januar bis zum 31. Dezember.
-
-> Früher konntest du beides von Hand setzen: einen Namen und einen eigenen
-> Zeitraum. Das ist entfallen. Wer einen Zeitraum einstellen kann, kann ihn auch
-> falsch einstellen — und der Rückblick zeigte dann Zahlen, die niemand mehr
-> nachvollziehen konnte.
 
 **Erstellen heißt zugleich freigeben.** Einen zweiten Schritt gibt es nicht:
 Sobald du bestätigst, ist der Rückblick für alle sichtbar. Der Hinweis im
@@ -48,8 +39,9 @@ Dabei passiert zweierlei:
 
 1. Für jede aktive Person wird der Rückblick berechnet und gespeichert.
    Gelöschte Konten werden übersprungen.
-2. Alle bekommen einen Push: **„Dein Konfi-Jahr ist da!"** mit dem Text „Schau
-   dir jetzt deinen persönlichen Jahresrückblick an!"
+2. Alle bekommen einen Push mit dem Text „Schau dir jetzt deinen persönlichen
+   Jahresrückblick an!" — bei Konfis unter **„Deine Konfi-Zeit Wrapped ist
+   da!"**, beim Team unter **„Dein Team-Jahr Wrapped ist da!"**
 
 > Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da,
 > nur hat niemand eine Benachrichtigung bekommen.
@@ -63,7 +55,7 @@ zurückblicken — es ist ja noch nicht vorbei.
 
 ### Mehrere Rückblicke für denselben Jahrgang anlegen
 
-Ein Konfi-Jahrgang läuft über zwei oder drei Jahre. Ein einziger Rückblick am
+Ein Konfi-Jahrgang läuft über ein oder zwei Jahre. Ein einziger Rückblick am
 Ende wird dem nicht gerecht — deshalb kannst du **mehrere** anlegen: einen
 Zwischenstand mitten in der Konfi-Zeit und einen zum Abschluss.
 
@@ -75,17 +67,9 @@ sondern der Stand bis dahin.
 Jahresrückblick** stehen sie mit Zeitraum und der Zahl der Rückblicke darin
 untereinander.
 
-> Der frühere Schalter „Wrapped freigeben" im Jahrgang ist entfallen. Ein
-> Schalter kann nur an oder aus — er konnte weder mehrere verwalten noch einen
-> einzelnen löschen.
-
 Jedes Erstellen erzeugt einen **neuen** Rückblick. Der vorherige bleibt
 bestehen: Der Zwischenstand von Januar verschwindet nicht, wenn du im Mai den
 Abschluss erstellst. Die Konfis sehen beide.
-
-> Erstellst du denselben Rückblick erneut, werden seine Zahlen **korrigiert**
-> statt gedoppelt. Das ist der Weg, wenn nachträglich Punkte dazugekommen
-> sind.
 
 ### Die Überschrift entsteht von selbst
 
@@ -96,7 +80,7 @@ sich aus dem, was er ist:
   30 Tage**, steht **„(bis jetzt)"** dabei — dann ist es erkennbar ein
   Zwischenstand. Kurz davor oder danach fällt der Zusatz weg: Dann ist es der
   Abschluss.
-- **Team:** „Dein Teamerjahr" mit der Jahreszahl.
+- **Team:** „Dein Team-Jahr" mit der Jahreszahl, also etwa „Dein Team-Jahr 2026".
 
 Gerechnet wird gegen den Tag, an dem der Rückblick entstanden ist — nicht gegen
 heute. Ein im Mai erstellter Zwischenstand trägt sein „(bis jetzt)" also auch
@@ -120,8 +104,9 @@ Punkte tauchen dort nicht auf.
 
 Nachbessern lässt sich das, indem du für denselben Jahrgang **noch einmal
 erstellst**. Das ergibt eine **zusätzliche** Ausgabe mit den neuen Zahlen; die
-alte bleibt daneben stehen, bis du sie löschst. Eine zweite Benachrichtigung
-bekommen die Konfis dabei nicht — der Push geht nur beim ersten Mal raus.
+alte bleibt daneben stehen, bis du sie löschst. Die Konfis bekommen dabei
+wieder eine Benachrichtigung — es ist ja ein neuer Rückblick, den sie sonst
+nicht bemerken würden.
 
 ## Neu berechnen und löschen
 
@@ -133,10 +118,9 @@ ergibt eine **weitere** Ausgabe mit dem Stand von heute.
 > Ausgabe bleibt mit ihren alten Zahlen stehen, und die Konfis sehen beide in
 > ihrer Liste. Willst du nur die neue behalten, lösche die alte hinterher.
 
-**Gelöscht wird mit einer Wischgeste.** Einen Löschknopf gibt es nicht: Wische
-den Eintrag in der Liste nach links, dann erscheint die Schaltfläche. Das ist
-Absicht — Löschen trifft die Rückblicke aller Konfis auf einmal und soll nicht
-mit einem Fehlgriff passieren.
+**Gelöscht wird [mit einer Wischgeste](03-bedienung.md#etwas-loeschen-nach-links-wischen)**
+wie überall in der App: Eintrag nach links wischen, dann erscheint die
+Schaltfläche.
 
 **Es trifft immer nur diesen einen Rückblick.** Die Rückfrage lautet „Ausgabe
 löschen?". Die gespeicherten Rückblicke werden dabei **wirklich gelöscht**,
@@ -144,8 +128,9 @@ nicht nur ausgeblendet — bei allen Personen des Jahrgangs. Die anderen Ausgabe
 bleiben stehen. Nur ein erneutes Erstellen bringt sie zurück, dann mit neu
 berechneten Zahlen.
 
-Team-Rückblicke lassen sich auf demselben Weg löschen — sie stehen in derselben
-Liste, nur ohne Jahrgang daneben.
+Team-Rückblicke lassen sich genauso löschen. Sie stehen allerdings in einer
+**eigenen Liste**: Oben auf der Seite schaltest du zwischen **Konfis** und
+**Team** um, und jede Seite zeigt nur ihre eigenen Ausgaben.
 
 ## Wissen, wer was darf
 
