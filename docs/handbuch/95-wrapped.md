@@ -92,8 +92,8 @@ Abschluss erstellst. Die Konfis sehen beide.
 Der Rückblick trägt keinen Namen, den jemand eintippt. Seine Überschrift ergibt
 sich aus dem, was er ist:
 
-- **Konfis:** „Deine Konfi-Zeit". Ist die Konfirmation noch **mehr als einen
-  Monat** hin, steht **„(bis jetzt)"** dabei — dann ist es erkennbar ein
+- **Konfis:** „Deine Konfi-Zeit". Sind es bis zur Konfirmation noch **mehr als
+  30 Tage**, steht **„(bis jetzt)"** dabei — dann ist es erkennbar ein
   Zwischenstand. Kurz davor oder danach fällt der Zusatz weg: Dann ist es der
   Abschluss.
 - **Team:** „Dein Teamerjahr" mit der Jahreszahl.
@@ -118,19 +118,20 @@ Punkte tauchen dort nicht auf.
 > zuerst erstellt und dann noch Punkte einträgt, hat einen Rückblick, der nicht
 > zu den Zahlen in der App passt.
 
-Korrigieren lässt sich das, indem du denselben Rückblick **erneut erstellst** —
-dann wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis
-dabei nicht: Der Push geht nur beim ersten Mal raus.
+Nachbessern lässt sich das, indem du für denselben Jahrgang **noch einmal
+erstellst**. Das ergibt eine **zusätzliche** Ausgabe mit den neuen Zahlen; die
+alte bleibt daneben stehen, bis du sie löschst. Eine zweite Benachrichtigung
+bekommen die Konfis dabei nicht — der Push geht nur beim ersten Mal raus.
 
 ## Neu berechnen und löschen
 
-**Denselben Rückblick erneut erstellen = neu berechnen.** Er wird vollständig
-neu gerechnet und überschreibt den bisherigen Stand.
+**Es gibt kein „Neu berechnen" auf einer bestehenden Ausgabe.** Wer die Zahlen
+aktualisieren will, erstellt für denselben Jahrgang schlicht noch einmal — das
+ergibt eine **weitere** Ausgabe mit dem Stand von heute.
 
-> **Achtung:** Der vorherige Stand **desselben Rückblicks** ist danach
-> unwiderruflich weg — auch aus „Meine Rückblicke". Die anderen bleiben
-> unberührt: Ein Zwischenstand vom Januar verschwindet nicht, wenn du im Mai
-> den Abschluss neu rechnest.
+> **Nichts geht dabei verloren, aber es wird auch nichts ersetzt.** Die alte
+> Ausgabe bleibt mit ihren alten Zahlen stehen, und die Konfis sehen beide in
+> ihrer Liste. Willst du nur die neue behalten, lösche die alte hinterher.
 
 **Gelöscht wird mit einer Wischgeste.** Einen Löschknopf gibt es nicht: Wische
 den Eintrag in der Liste nach links, dann erscheint die Schaltfläche. Das ist
@@ -173,10 +174,15 @@ und hängen an keinem Jahrgang.
 Der Team-Rückblick für das abgelaufene Jahr entsteht in **jeder Gemeinde**
 selbst, am 6. Januar früh. Ihr müsst nichts einstellen und nichts anstoßen.
 
-Von Hand geht es trotzdem weiterhin — und **doppelt wird er nie**. Wer den
-Rückblick auf 2026 am 3. Januar selbst erstellt, bekommt am 6. keinen zweiten,
-und sein Team keine zweite Benachrichtigung. Erkannt wird das am Jahr: Ein
-Rückblick auf 2025, der schon dasteht, hält den auf 2026 nicht auf.
+Von Hand geht es trotzdem weiterhin. Wer den Rückblick auf 2026 am 3. Januar
+selbst erstellt, bekommt am 6. **keinen zweiten** — der Automatiklauf sieht, dass
+es für dieses Jahr schon einen gibt, und lässt ihn aus. Ein Rückblick auf 2025,
+der schon dasteht, hält den auf 2026 dagegen nicht auf.
+
+> **Umgekehrt greift die Sperre nicht.** Erstellst du den Team-Rückblick für
+> dasselbe Jahr zweimal **von Hand**, entstehen zwei Ausgaben — und anders als
+> bei den Konfis geht dabei auch zweimal eine Benachrichtigung raus. Vor dem
+> Anlegen also kurz in die Liste sehen, ob das Jahr schon dasteht.
 
 > **Warum es beim Konfi-Rückblick keine Automatik gibt:** Er umfasst die ganze
 > Konfi-Zeit bis zu dem Tag, an dem er entsteht — und wann dieser Tag der
@@ -273,11 +279,11 @@ gemeindeweit nicht sinnvoll auszählen lassen.
 
 | Seite | Was draufsteht | Wann man sie bekommt | Wie selten |
 |---|---|---|---|
-| **Begrüßung** | „Deine Konfi-Zeit" (mit „(bis jetzt)", wenn die Konfirmation noch mehr als einen Monat hin ist) und der Name | immer | immer |
+| **Begrüßung** | „Deine Konfi-Zeit" (mit „(bis jetzt)", wenn bis zur Konfirmation noch mehr als 30 Tage sind) und der Name | immer | immer |
 | **Deine Termine** | Zahl der besuchten Termine, mit einem Spruch dazu | mindestens ein besuchter Termin | 95 % |
 | **Warteliste-Held:in** | „Du hast gewartet — und es hat geklappt" | mindestens einmal von der Warteliste nachgerückt | 20 % |
 | **Dein Schwerpunkt** | Bereich oder besondere Zeit, mit eigenem Bild und Spruch | siehe die beiden Tabellen unten | verschieden |
-| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
+| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
 | **Deine Challenges** | Zahl der Beiträge, Lieblings-Challenge | mindestens ein Challenge-Beitrag | 60 % |
 | **Deine Momente** | bis zu sechs Challenge-Beiträge, Fotos groß | mindestens ein Challenge-Beitrag | 55 % |
 | **Der Vielseitige** | auf wie vielen Wegen geantwortet wurde | Beiträge in mindestens zwei verschiedenen Medienarten (Text, Foto, Ton, Video, Link) | 40 % |
@@ -365,8 +371,10 @@ dann nicht, wenn dort eine gleichnamige Kategorie geführt wird. Der Rückblick
 bleibt in allen anderen Gemeinden allgemein.
 
 Wer dabei war, entscheidet sich in diesen beiden Gemeinden an den Daten: Wer
-eine Aktivität oder einen Termin der Kategorie **„Sommerfreizeit"** aus dem
-Sommer 2026 hat, bekommt die Seite.
+eine Aktivität oder einen Termin der Kategorie **„Sommerfreizeit"** zwischen dem
+**1. Juni und dem 30. September 2026** hat, bekommt die Seite. Das Fenster ist
+bewusst weit um die Fahrt gelegt, damit ein früher Vorbereitungstermin oder ein
+Nachtreffen nicht herausfällt.
 
 Die **14 Tage** sind fester Text, keine gezählte Zahl: Die Fahrt dauerte 14
 Tage, ganz gleich wie oft jemand abgehakt wurde. Eine spätere Sommerfreizeit
@@ -433,7 +441,7 @@ etwas zusammengekommen ist.
 | **Begrüßung** | „Dein Teamerjahr" mit der Jahreszahl, dazu der Name | immer | immer |
 | **So fing es an** | der erste Termin des Jahres mit Name und Datum | mindestens ein Termin im Zeitraum | 85 % |
 | **Deine Termine** | Zahl der begleiteten Termine, der größte mit Teilnehmerzahl | mindestens ein Termin im Zeitraum | 95 % |
-| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" aus dem Sommer 2026 | 5 % |
+| **Sommerfreizeit 2026** | „Du warst dabei. 14 unvergessliche Tage in Himmel og Hav." | Aktivität oder Termin der Kategorie „Sommerfreizeit" zwischen 1.6. und 30.9.2026 | 5 % |
 | **Deine Konfis** | Zahl der betreuten Konfis, die Jahrgänge | mindestens ein Konfi über die Jahrgangs-Zuweisung | 90 % |
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
 | **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |

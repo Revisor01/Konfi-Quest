@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Handbuch behauptete, ein erneut erstellter Rückblick überschreibe den
+  alten und der vorherige Stand sei unwiderruflich weg. Tatsächlich entsteht
+  eine zusätzliche Ausgabe, die alte bleibt stehen.
 - Das Handbuch riet davon ab, Abzeichen zu deaktivieren — angeblich
   verschwinden sie dann auch bei denen, die sie schon hatten. Das stimmt seit
   Ende August nicht mehr: Verdiente Abzeichen bleiben sichtbar. Deaktivieren
