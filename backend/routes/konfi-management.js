@@ -560,26 +560,46 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Konto — das darf nur, wer den Jahrgang des Konfis bearbeiten
             // darf. Vorher genuegte die Organisation; ein Admin konnte damit
             // das Passwort JEDES Konfis der Gemeinde neu setzen und sich als
-            // dieser anmelden. Zusaetzlich wird die Konfi-Rolle geprueft: Die
-            // Route haengt unter /admin/konfis, aktualisierte aber bisher
-            // jeden users-Datensatz der Org — auch Teamer:innen und Leitung.
-            // Passwoerter der Teamer:innen setzt die Benutzerverwaltung
-            // (routes/users.js) zurueck, nicht dieser Weg.
-            const { rows: [zielKonfi] } = await client.query(
-                `SELECT u.id FROM users u
+            // dieser anmelden. Die Rollenpruefung haelt Leitungskonten
+            // draussen: Die Route haengt unter /admin/konfis, aktualisierte
+            // aber bisher jeden users-Datensatz der Org.
+            //
+            // TEAMER:INNEN SIND SEIT DEM 08.09.2026 WIEDER DABEI (Simon: "Ich
+            // wollte Mattis Passwort zurueck setzen. Er sagt Fehler beim
+            // zuruecksetzen des Passwort."). Die Pruefung liess nur 'konfi'
+            // durch, die Detailansicht ruft diesen Weg aber fuer BEIDE Rollen
+            // — Ergebnis war ein 404 "Konfi nicht gefunden", das in der
+            // Oberflaeche als "Fehler beim Zuruecksetzen" ankam. Der fruehere
+            // Verweis auf die Benutzerverwaltung (routes/users.js) half nicht
+            // weiter: Die verlangt org_admin UND ein selbst eingetipptes
+            // Passwort, waehrend hier ein Einmalpasswort entsteht.
+            //
+            // Leitungsrollen bleiben ausgeschlossen. Wer ein Leitungspasswort
+            // setzen will, nimmt die Benutzerverwaltung — dort ist die
+            // Hierarchie geprueft.
+            const { rows: [zielPerson] } = await client.query(
+                `SELECT u.id, r.name AS rolle FROM users u
                  JOIN roles r ON u.role_id = r.id
                  WHERE u.id = $1 AND u.organization_id = $2
-                   AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+                   AND r.name IN ('konfi', 'teamer') AND u.deleted_at IS NULL`,
                 [req.params.id, req.user.organization_id]
             );
-            if (!zielKonfi) {
+            if (!zielPerson) {
                 await client.query('ROLLBACK');
-                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+                return res.status(404).json({ error: 'Person nicht gefunden' });
             }
-            const pwZugriff = await darfKonfi(client, req, req.params.id, { edit: true });
-            if (!pwZugriff.erlaubt) {
-                await client.query('ROLLBACK');
-                return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+
+            // Bei Konfis entscheidet der Jahrgang (darfKonfi). Teamer:innen
+            // haengen an mehreren Jahrgaengen oder an keinem — dieselbe
+            // Ausnahme wie ueberall sonst ("ein Admin sieht ALLE
+            // Teamer:innen", siehe utils/jahrgangsZugriff.js). Fuer sie
+            // genuegt deshalb die Organisation, die oben schon geprueft ist.
+            if (zielPerson.rolle === 'konfi') {
+                const pwZugriff = await darfKonfi(client, req, req.params.id, { edit: true });
+                if (!pwZugriff.erlaubt) {
+                    await client.query('ROLLBACK');
+                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+                }
             }
 
             const updateUserQuery = `

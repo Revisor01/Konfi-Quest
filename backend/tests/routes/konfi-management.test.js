@@ -1153,6 +1153,48 @@ describe('Konfi-Management Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    // TEAMER (Simon, 08.09.2026): "Ich wollte Mattis Passwort zurueck setzen.
+    // Er sagt Fehler beim zuruecksetzen des Passwort."
+    //
+    // Die Rollenpruefung vom 01.09. (r.name = 'konfi') schloss Teamer:innen
+    // aus, die Detailansicht rief die Route aber fuer BEIDE Rollen auf --
+    // Ergebnis: 404 "Konfi nicht gefunden", in der Oberflaeche als "Fehler
+    // beim Zuruecksetzen" verschluckt. Der Kommentar im Code verwies auf die
+    // Benutzerverwaltung, die aber org_admin verlangt und einen anderen
+    // Ablauf hat (Passwort selbst eintippen statt Einmalpasswort).
+    it('Leitung setzt das Passwort einer Teamer:in zurueck -> 200', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${USERS.teamer1.id}/regenerate-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(typeof res.body.temporaryPassword).toBe('string');
+      expect(res.body.temporaryPassword.length).toBeGreaterThan(7);
+    });
+
+    it('das neue Passwort der Teamer:in gilt wirklich', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${USERS.teamer1.id}/regenerate-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      // Gegen den Hash pruefen statt gegen die Antwortmarke: Wer den Aufruf
+      // aendert und die Meldung stehen laesst, wuerde sonst nicht auffallen.
+      const bcrypt = require('bcrypt');
+      const { rows: [u] } = await db.query(
+        'SELECT password_hash FROM users WHERE id = $1', [USERS.teamer1.id]
+      );
+      expect(await bcrypt.compare(res.body.temporaryPassword, u.password_hash)).toBe(true);
+    });
+
+    it('Konfis einer fremden Gemeinde bleiben unerreichbar', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${USERS.konfi3.id}/regenerate-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 
   // ================================================================

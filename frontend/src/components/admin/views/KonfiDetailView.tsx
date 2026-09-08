@@ -625,8 +625,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         ]
       });
       triggerRefresh('konfis');
-    } catch {
-      setError('Fehler beim Zurücksetzen des Passworts');
+    } catch (err) {
+      // Server-Begruendung durchreichen (08.09.2026): Bis hierher stand hier
+      // ein blosses `catch {` mit fester Meldung. Als die Route
+      // Teamer:innen ausschloss, kam ein 404 "Konfi nicht gefunden" zurueck
+      // -- die Leitung sah nur "Fehler beim Zuruecksetzen" und konnte nicht
+      // wissen, woran es lag.
+      setError(fehlerText(err, 'Fehler beim Zurücksetzen des Passworts'));
     }
   };
 

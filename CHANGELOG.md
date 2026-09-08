@@ -90,6 +90,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Zurücksetzen des Passworts scheiterte bei Teamer:innen mit „Fehler beim
+  Zurücksetzen". Es funktioniert wieder, und wenn doch etwas schiefgeht,
+  steht jetzt dort, woran es lag.
 - Termine, für die Teamer:innen gesucht werden, tauchen nur noch bei denen
   auf, die den Jahrgang auch betreuen. Vorher standen sie in jeder Liste,
   ließen sich seit dem Fix aber nicht mehr buchen.

@@ -1052,9 +1052,25 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       expect(typeof eigene.body.temporaryPassword).toBe('string');
     });
 
-    it('regenerate-password: Teamer:in als Ziel gibt 404 — die Route ist nur fuer Konfis', async () => {
+    // GEDREHT AM 08.09.2026 (Simon: "Ich wollte Mattis Passwort zurueck
+    // setzen. Er sagt Fehler beim zuruecksetzen des Passwort.").
+    //
+    // Der Ausschluss stammt vom 01.09. und traf die Teamer:innen mit, obwohl
+    // die Detailansicht diesen Weg fuer beide Rollen aufruft. Was BLEIBT: die
+    // Jahrgangsbindung bei Konfis (die Tests darueber) und der Ausschluss der
+    // Leitungskonten -- fuer die gibt es die Benutzerverwaltung mit ihrer
+    // Hierarchiepruefung.
+    it('regenerate-password: Teamer:in als Ziel geht — sie haengt an keinem einzelnen Jahrgang', async () => {
       const res = await request(app)
         .post(`/api/admin/konfis/${TEAMER_ZIEL}/regenerate-password`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(typeof res.body.temporaryPassword).toBe('string');
+    });
+
+    it('regenerate-password: ein Leitungskonto bleibt ausgeschlossen', async () => {
+      const res = await request(app)
+        .post(`/api/admin/konfis/${ADMIN_OHNE_JG}/regenerate-password`)
         .set('Authorization', `Bearer ${orgAdminToken}`);
       expect(res.status).toBe(404);
     });
