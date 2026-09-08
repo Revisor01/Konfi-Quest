@@ -2296,6 +2296,43 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         const zeitraum = teamerJahresZeitraum(jahr);
         const zeitraumVorgabe = zeitraum;
 
+        // SCHON DA? Dann nichts tun -- kein zweiter Datensatz, kein zweiter
+        // Push. Dieselbe Bremse, die der Konfi-Weg ueber `wrapped_released_at`
+        // am Jahrgang hat (siehe `schonFreigegeben` weiter oben); der
+        // Team-Rueckblick haengt an keinem Jahrgang und braucht deshalb den
+        // Zeitraum als Erkennungsmerkmal -- er IST die Sache selbst.
+        //
+        // Ohne diese Pruefung legte jeder weitere Klick eine zusaetzliche
+        // Ausgabe an und schickte dem ganzen Team erneut "Dein Teamer-Jahr
+        // ist da!". Der Cron am 6.1. hatte die Pruefung
+        // (generateAllTeamerWrapped), dessen Kommentar behauptete sogar, sie
+        // gelte "auch fuer den manuellen Weg" -- der lief aber nie durch
+        // jene Funktion.
+        //
+        // VOR der Transaktion, damit ein uebersprungener Lauf gar nichts
+        // anfasst.
+        const { rows: [schonDa] } = await client.query(
+          `SELECT id, titel FROM wrapped_ausgaben
+            WHERE organization_id = $1 AND wrapped_type = 'teamer'
+              AND zeitraum_start = $2::date AND zeitraum_ende = $3::date
+            LIMIT 1`,
+          [req.user.organization_id, zeitraum.start, zeitraum.ende]
+        );
+        if (schonDa) {
+          return res.json({
+            message: `Der Team-R\u00fcckblick ${jahr} besteht bereits`,
+            generated: 0,
+            errors: 0,
+            year: jahr,
+            // Additiv (ausgelieferte Apps lesen die Antwort): dieselben
+            // Felder wie im Normalfall, damit die Oberflaeche nichts
+            // Sonderbares behandeln muss.
+            ausgabe_id: schonDa.id,
+            titel: schonDa.titel,
+            benachrichtigt: false
+          });
+        }
+
         await client.query('BEGIN');
 
         // Alle Teamer der Organisation laden
@@ -2363,7 +2400,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           year: jahr,
           // Additiv: alte Clients ignorieren die Felder.
           ausgabe_id: teamerAusgabe.id,
-          titel: teamerAusgabe.titel
+          titel: teamerAusgabe.titel,
+          benachrichtigt: true
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -2795,6 +2833,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Leitung kann den Rueckblick vorher schon von Hand erzeugt haben.
    * Erkannt wird das am ZEITRAUM der Ausgabe, nicht an einem Zaehler --
    * der Zeitraum ist die Sache selbst.
+   *
+   * Die Route POST /generate-teamer traegt seit dem 08.09.2026 dieselbe
+   * Pruefung im eigenen Rumpf. Sie laeuft NICHT durch diese Funktion --
+   * frueher stand hier, die Pruefung gelte "auch fuer den manuellen Weg",
+   * was nie stimmte: Zweimal von Hand ergab zwei Ausgaben und zwei Pushes
+   * ans ganze Team.
    *
    * @param {object} dbRef  Datenbank-Pool
    * @param {number} orgId  Organisation

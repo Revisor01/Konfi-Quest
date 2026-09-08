@@ -920,12 +920,21 @@ describe('Wrapped Routes', () => {
       // dieselbe Ausgabe korrigiert, statt zu doppeln. Und COALESCE
       // (jahrgang_id, 0) muss weiter greifen, sonst waeren Teamer-Snapshots
       // (jahrgang_id IS NULL) gar nicht mehr eindeutig.
+      //
+      // ZWEI VERSCHIEDENE JAHRE (08.09.2026): Zweimal dasselbe Jahr ergibt
+      // seit dem Fix keine zweite Ausgabe mehr -- der Team-Rueckblick eines
+      // Jahres existiert genau einmal, sonst bekaeme das Team zwei Pushes.
+      // Zwei Ausgaben entstehen jetzt ueber zwei JAHRE, und genau die
+      // muessen weiter getrennte Snapshot-Zeilen haben.
+      const letztes = new Date().getFullYear() - 1;
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`);
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: letztes });
       await request(app)
         .post('/api/wrapped/generate-teamer')
-        .set('Authorization', `Bearer ${orgAdminToken}`);
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: letztes - 1 });
 
       // Zwei Ausgaben -> zwei Zeilen, aber je Ausgabe genau eine.
       const { rows } = await db.query(
@@ -1017,6 +1026,81 @@ describe('Wrapped Routes', () => {
 
       spy.mockRestore();
     });
+
+    // Dasselbe fuer den TEAM-Rueckblick. Der Konfi-Weg prueft
+    // `wrapped_released_at` am Jahrgang und schweigt beim zweiten Lauf; der
+    // Team-Rueckblick haengt an keinem Jahrgang und hatte diese Bremse nicht:
+    // Er legte bei jedem Aufruf eine weitere Ausgabe an und schickte jedes
+    // Mal "Dein Teamer-Jahr ist da!" an das ganze Team. Der Cron am 6.1.
+    // ueberspringt ein schon vorhandenes Jahr (generateAllTeamerWrapped),
+    // die Route dahinter tat es nicht -- obwohl der Kommentar dort behauptet,
+    // die Pruefung gelte "auch fuer den manuellen Weg".
+    it('legt denselben Team-Rueckblick nicht zweimal an und benachrichtigt nur einmal', async () => {
+      const jahr = new Date().getFullYear() - 1;
+
+      const erster = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr });
+      expect(erster.status).toBe(200);
+      expect(erster.body.benachrichtigt).toBe(true);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const zweiter = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr });
+
+      // Der zweite Lauf laeuft durch, tut aber nichts: kein Push ...
+      expect(zweiter.status).toBe(200);
+      expect(zweiter.body.benachrichtigt).toBe(false);
+      expect(spy).not.toHaveBeenCalled();
+
+      // ... und vor allem keine zweite Ausgabe fuer dasselbe Jahr.
+      const { rows: [ausgaben] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_ausgaben
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'
+            AND zeitraum_start = $2::date AND zeitraum_ende = $3::date`,
+        [ORGS.testGemeinde.id, `${jahr}-01-01`, `${jahr}-12-31`]
+      );
+      expect(ausgaben.anzahl).toBe(1);
+
+      spy.mockRestore();
+    });
+
+    // Die Gegenprobe zur Sperre: Ein ANDERES Jahr muss weiterhin durchgehen.
+    // Eine Sperre, die pauschal jeden zweiten Lauf abweist, waere schlimmer
+    // als der Fehler -- dann liesse sich nie ein zweites Jahr anlegen.
+    it('legt fuer ein anderes Jahr sehr wohl einen zweiten Team-Rueckblick an', async () => {
+      const jahr = new Date().getFullYear() - 1;
+
+      await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr });
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const anderes = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: jahr - 1 });
+
+      expect(anderes.status).toBe(200);
+      expect(anderes.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      const { rows: [ausgaben] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_ausgaben
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(ausgaben.anzahl).toBe(2);
+
+      spy.mockRestore();
+    });
+
 
     it('loescht Teamer-Snapshots ueber DELETE /teamer', async () => {
       // Teamer-Snapshots haben keinen Jahrgang. DELETE /:jahrgangId filtert

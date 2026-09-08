@@ -80,6 +80,10 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Ein zweites Mal denselben Team-Rückblick zu erstellen legte eine zweite
+  Ausgabe an und schickte dem ganzen Team noch einmal „Dein Teamer-Jahr ist
+  da!". Jetzt bleibt es bei einer Ausgabe je Jahr, und die Seite sagt, dass
+  nichts geändert wurde.
 - Das Handbuch behauptete, ein erneut erstellter Rückblick überschreibe den
   alten und der vorherige Stand sei unwiderruflich weg. Tatsächlich entsteht
   eine zusätzliche Ausgabe, die alte bleibt stehen.

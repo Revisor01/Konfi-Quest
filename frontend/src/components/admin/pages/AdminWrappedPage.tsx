@@ -159,12 +159,18 @@ const AdminWrappedPage: React.FC = () => {
       // Beim Team geht nur das JAHR mit -- gerechnet wird 1.1. bis 31.12.
       if (segment === 'konfi') {
         await api.post(`/wrapped/generate/${neuerJahrgang}`, {});
+        setSuccess('Rückblick erstellt und freigegeben');
       } else {
-        await api.post('/wrapped/generate-teamer', { jahr: neuesJahr });
+        // `benachrichtigt: false` heisst beim Team: Das Jahr stand schon da,
+        // es ist NICHTS passiert. Ohne diese Unterscheidung meldete die Seite
+        // "erstellt und freigegeben", obwohl sie nur die alte Ausgabe
+        // wiedergefunden hat -- und die Leitung haette geglaubt, ihr Team sei
+        // gerade benachrichtigt worden.
+        const { data } = await api.post('/wrapped/generate-teamer', { jahr: neuesJahr });
+        setSuccess(data?.benachrichtigt === false
+          ? `Teamerjahr ${neuesJahr} bestand schon — es wurde nichts geändert`
+          : `Teamerjahr ${neuesJahr} erstellt und freigegeben`);
       }
-      setSuccess(segment === 'konfi'
-        ? 'Rückblick erstellt und freigegeben'
-        : `Teamerjahr ${neuesJahr} erstellt und freigegeben`);
       setModalOffen(false);
       setNeuerJahrgang(null);
       await laden();
