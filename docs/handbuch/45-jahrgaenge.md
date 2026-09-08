@@ -122,8 +122,8 @@ derzeit nicht angezeigt** — du bekommst sie also nicht zu sehen.
 
 ## Konfispruch-Freigabe
 
-Der Schalter **„Konfispruch-Auswahl“** steht im Jahrgang unter „Konfispruch &
-Wrapped“. Er ist standardmäßig **an**.
+Der Schalter **„Konfispruch-Auswahl“** steht im Jahrgang unter „Konfispruch“.
+Er ist standardmäßig **an**.
 
 Ist er an, erscheint im Konfi-Dashboard die Konfispruch-Karte, und der Konfi
 kann zwischen zwei Wegen wählen:
@@ -161,12 +161,12 @@ Freigegeben wird der Jahresrückblick **nicht mehr hier**, sondern unter
 **Mehr → Jahresrückblick**. Ein Schalter im Jahrgang konnte nur an oder aus —
 er konnte weder eine Ausgabe benennen noch eine einzelne wieder entfernen.
 
-In der Jahrgangsliste steht deshalb nur noch der **Stand**: „Wrapped gestartet
-am …“, sobald für den Jahrgang eine Ausgabe freigegeben ist, sonst „Wrapped
-nicht freigegeben“.
+In der Jahrgangsliste steht deshalb nur noch der **Stand**: „Rückblick gestartet
+am …“, sobald für den Jahrgang eine Ausgabe freigegeben ist, sonst „Noch kein
+Rückblick“.
 
-Wie du Ausgaben anlegst, benennst, erneut freigibst und löschst, steht im
-Kapitel [Jahresrückblick (Wrapped)](95-wrapped.md).
+Wie du Ausgaben anlegst, neu berechnest und löschst, steht im Kapitel
+[Jahresrückblick (Wrapped)](95-wrapped.md).
 
 ## Was die Jahrgangs-Zuweisung von Teamer:innen steuert
 
