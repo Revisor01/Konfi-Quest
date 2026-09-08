@@ -701,5 +701,113 @@ describe('Buchungskern: beide Routen, eine Zaehlung', () => {
       expect(res.status).toBe(404);
       expect(await buchungenLesen(id)).toEqual([]);
     });
+
+    // JAHRGANGSGRENZE (Simons Regel, 08.09.2026), woertlich:
+    //   "teamer sollen nur jahrgaenge und events buchen koennen wenn sie auch
+    //    in dem jahrgang sind. nur teamer ist davon ausgenommen. sie duerfen
+    //    ja auch keine konfis aus nicht zugewiesenen jahrgaengen anschreiben."
+    //
+    // Der Chat hielt sich daran (routes/chat.js ueber darfJahrgang), die
+    // Buchung nicht: Sie prueft nur teamer_needed/teamer_only und die
+    // Kapazitaet. In Produktion nachgemessen (08.09.2026): ein Fall, ein
+    // Teamer ohne jede Zuweisung hatte einen Jahrgangstermin gebucht.
+    it('book: Teamer ohne Zuweisung kommt nicht an einen Jahrgangs-Termin', async () => {
+      const id = await terminAnlegen({ teamer_needed: true, teamer_max_participants: 5 });
+      // teamer1 haengt im Seed an Jahrgang 1 -- Zuweisung entfernen.
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const res = await request(app)
+        .post(`/api/events/${id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({});
+
+      expect(res.status).toBe(403);
+      expect(await buchungenLesen(id)).toEqual([]);
+    });
+
+    it('book: Teamer aus einem ANDEREN Jahrgang derselben Gemeinde kommt nicht ran', async () => {
+      const { rows: [jgZwei] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id) VALUES ('2027/2028', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const id = await terminAnlegen({
+        teamer_needed: true, teamer_max_participants: 5, jahrgang_id: jgZwei.id
+      });
+
+      // teamer1 bleibt in Jahrgang 1, der Termin haengt an Jahrgang 2.
+      const res = await request(app)
+        .post(`/api/events/${id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({});
+
+      expect(res.status).toBe(403);
+      expect(await buchungenLesen(id)).toEqual([]);
+    });
+
+    // Die Gegenrichtung, damit die Sperre nicht zu weit greift.
+    it('book: "Nur Team" ist von der Jahrgangsregel ausgenommen', async () => {
+      const id = await terminAnlegen({ teamer_needed: true, teamer_max_participants: 5 });
+      // teamer_needed und teamer_only schliessen sich per CHECK-Constraint aus
+      // (events_teamer_exclusive) -- beim Umschalten also beides setzen.
+      await db.query(
+        'UPDATE events SET teamer_only = true, teamer_needed = false WHERE id = $1', [id]
+      );
+      // Ohne jede Zuweisung -- und trotzdem erlaubt, weil kein Jahrgang betroffen ist.
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const res = await request(app)
+        .post(`/api/events/${id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({});
+
+      expect(res.status).toBe(201);
+      expect((await buchungenLesen(id)).map(b => b.user_id)).toEqual([USERS.teamer1.id]);
+    });
+
+    // ZWEITER WEG zur selben Buchung. Stuende die Pruefung nur im Kern,
+    // liesse sie sich hierueber umgehen -- genau das Auseinanderlaufen, gegen
+    // das diese Datei geschrieben ist.
+    it('zusage: Teamer aus einem anderen Jahrgang kommt auch hier nicht ran', async () => {
+      const { rows: [jgZwei] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id) VALUES ('2028/2029', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const id = await terminAnlegen({
+        teamer_needed: true, teamer_max_participants: 5, jahrgang_id: jgZwei.id
+      });
+
+      const res = await request(app)
+        .post(`/api/teamer/events/${id}/zusage`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ dabei: true });
+
+      expect(res.status).toBe(403);
+      expect(await buchungenLesen(id)).toEqual([]);
+    });
+
+    it('zusage: mit passender Zuweisung geht es weiterhin', async () => {
+      const id = await terminAnlegen({ teamer_needed: true, teamer_max_participants: 5 });
+
+      const res = await request(app)
+        .post(`/api/teamer/events/${id}/zusage`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ dabei: true });
+
+      expect(res.status).toBe(200);
+      expect((await buchungenLesen(id)).map(b => b.user_id)).toEqual([USERS.teamer1.id]);
+    });
+
+    it('book: mit passender Zuweisung geht es weiterhin', async () => {
+      const id = await terminAnlegen({ teamer_needed: true, teamer_max_participants: 5 });
+
+      const res = await request(app)
+        .post(`/api/events/${id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({});
+
+      expect(res.status).toBe(201);
+      expect((await buchungenLesen(id)).map(b => b.user_id)).toEqual([USERS.teamer1.id]);
+    });
+
   });
 });

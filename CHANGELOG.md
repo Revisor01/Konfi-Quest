@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Teamer:innen konnten sich zu Terminen von Jahrgängen anmelden, denen sie
+  gar nicht zugewiesen sind. Das gilt jetzt wie im Chat: nur der eigene
+  Jahrgang. Termine für das Team allein sind davon ausgenommen.
 - Ein Challenge-Beitrag ein zweites Mal freigegeben schickte dem ganzen
   Jahrgang erneut „Neuer Beitrag von …". Die Mitteilung geht jetzt nur noch
   bei der ersten Freigabe raus.

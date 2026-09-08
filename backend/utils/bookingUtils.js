@@ -382,6 +382,63 @@ async function zaehleBestaetigte(db, bereich, seite) {
 }
 
 /**
+ * Darf diese Teamer:in an den Jahrgang dieses Termins?
+ *
+ * SIMONS REGEL (08.09.2026), woertlich:
+ *   "teamer sollen nur jahrgaenge und events buchen koennen wenn sie auch in
+ *    dem jahrgang sind. nur teamer ist davon ausgenommen. sie duerfen ja auch
+ *    keine konfis aus nicht zugewiesenen jahrgaengen anschreiben."
+ *
+ * Der Chat hielt sich daran (routes/chat.js ueber utils/jahrgangsZugriff), die
+ * Buchung nicht: Beide Buchungswege prueften nur teamer_needed/teamer_only und
+ * die Kapazitaet. In Produktion nachgemessen (08.09.2026): EIN Fall, ein
+ * Teamer ohne jede Zuweisung hatte einen Jahrgangstermin gebucht.
+ *
+ * AN EINEM ORT, weil es ZWEI Wege zur selben Buchung gibt: bucheTermin
+ * (POST /events/:id/book) und setzeTeamerZusage
+ * (POST /teamer/events/:id/zusage). Stuende die Pruefung nur im ersten, liesse
+ * sie sich ueber den zweiten umgehen -- genau das Auseinanderlaufen, das
+ * diesen Baustein ueberhaupt hervorgebracht hat.
+ *
+ * Zwei Ausnahmen, beide bewusst:
+ *   - 'Nur Team' (teamer_only): betrifft keinen Jahrgang, die Regel nennt das
+ *     ausdruecklich.
+ *   - Ein Termin OHNE jede Jahrgangs-Zuordnung: Es gibt nichts zu schuetzen,
+ *     ein solcher Termin gilt der ganzen Gemeinde.
+ *
+ * org_admin und super_admin bleiben ausgenommen -- dieselbe Semantik wie in
+ * utils/jahrgangsZugriff.js (darfJahrgang), nur hier in SQL, weil an dieser
+ * Stelle kein req vorliegt.
+ *
+ * @param {object} client   Client in laufender Transaktion
+ * @param {object} event    Termin-Zeile (braucht teamer_only)
+ * @param {number} userId
+ * @returns {Promise<boolean>} true = darf buchen
+ */
+async function darfTeamerAnDiesenTermin(client, event, userId) {
+  if (event.teamer_only) return true;
+  const { rows: [zugang] } = await client.query(
+    `SELECT
+       EXISTS (SELECT 1 FROM event_jahrgang_assignments WHERE event_id = $1) AS hat_jahrgang,
+       EXISTS (
+         SELECT 1 FROM event_jahrgang_assignments eja
+         JOIN user_jahrgang_assignments uja
+           ON uja.jahrgang_id = eja.jahrgang_id AND uja.user_id = $2
+         WHERE eja.event_id = $1
+       ) AS darf,
+       EXISTS (
+         SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $2 AND (r.name IN ('org_admin', 'super_admin') OR u.is_super_admin = true)
+       ) AS vollzugriff`,
+    [event.id, userId]
+  );
+  if (!zugang) return true;
+  return !zugang.hat_jahrgang || zugang.darf || zugang.vollzugriff;
+}
+
+const JAHRGANG_FREMD = 'Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist';
+
+/**
  * DER Buchungskern: eine Selbst-Anmeldung, komplett.
  *
  * Fuehrt zusammen, was bis 01.09.2026 zweimal ausformuliert war —
@@ -457,6 +514,11 @@ async function bucheTermin(client, eingabe) {
   if (rolle === 'teamer') {
     if (!event.teamer_needed && !event.teamer_only) {
       return fehler(403, 'Dieses Event ist nicht für das Team buchbar');
+    }
+
+    // Jahrgangsgrenze -- Begruendung bei darfTeamerAnDiesenTermin.
+    if (!(await darfTeamerAnDiesenTermin(client, event, userId))) {
+      return fehler(403, JAHRGANG_FREMD);
     }
 
     const zahlen = await zaehleBuchungen(client, { eventId }, 'team');
@@ -630,6 +692,11 @@ async function setzeTeamerZusage(client, eingabe) {
   }
   if (new Date(event.event_date) <= new Date()) {
     return fehler(400, 'Der Termin liegt bereits in der Vergangenheit');
+  }
+  // Dieselbe Jahrgangsgrenze wie im Buchungskern -- sonst liesse sich die
+  // Sperre ueber diesen zweiten Weg umgehen.
+  if (!(await darfTeamerAnDiesenTermin(client, event, userId))) {
+    return fehler(403, JAHRGANG_FREMD);
   }
 
   // Eigene Buchung sperren: Der vorherige Status entscheidet ueber den

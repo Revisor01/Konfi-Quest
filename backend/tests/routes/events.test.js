@@ -1011,6 +1011,15 @@ describe('Events Routes', () => {
            VALUES ($1, $2, 'x', $3, 2, $4, true)`,
           [t.id, t.username, t.display_name, ORGS.testGemeinde.id]
         );
+        // Jahrgang mitgeben (08.09.2026): Seit der Buchungskern die
+        // Jahrgangsgrenze prueft, kommt eine Teamer:in ohne Zuweisung an
+        // einen Jahrgangs-Termin nicht mehr heran. Diese Tests messen
+        // Kontingente und Wartelisten, nicht die Zugriffsregel -- sie
+        // brauchen die Zuweisung als Voraussetzung.
+        await db.query(
+          `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)`,
+          [t.id, JAHRGAENGE.jahrgang1.id]
+        );
       }
     }
 
@@ -1435,6 +1444,15 @@ describe('Events Routes', () => {
           `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
            VALUES ($1, $2, 'x', $3, 2, $4, true)`,
           [t.id, t.username, t.display_name, ORGS.testGemeinde.id]
+        );
+        // Jahrgang mitgeben (08.09.2026): Seit der Buchungskern die
+        // Jahrgangsgrenze prueft, kommt eine Teamer:in ohne Zuweisung an
+        // einen Jahrgangs-Termin nicht mehr heran. Diese Tests messen
+        // Kontingente und Wartelisten, nicht die Zugriffsregel -- sie
+        // brauchen die Zuweisung als Voraussetzung.
+        await db.query(
+          `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)`,
+          [t.id, JAHRGAENGE.jahrgang1.id]
         );
       }
     });
