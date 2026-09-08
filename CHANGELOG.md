@@ -80,6 +80,10 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Handbuch beschreibt jetzt alle fünfzehn Bedingungen für Abzeichen. Die
+  „Kategorie-Kombination" fehlte bisher ganz — also gerade die, bei der der
+  Wert sagt, aus wie vielen Kategorien jemand dabei gewesen sein muss, und
+  nicht wie oft. Dazu eine Übersicht, welche Bedingung wofür taugt.
 - Das Handbuch-Kapitel zum Jahresrückblick ist nach Aufgaben geordnet: einen
   Rückblick anlegen, neu berechnen, löschen, wiederfinden, teilen. Dazu waren
   drei Angaben veraltet — der Weg dorthin, der Name des Bereichs im Profil und

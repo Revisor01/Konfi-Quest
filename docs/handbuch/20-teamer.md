@@ -113,7 +113,7 @@ Alles Weitere steht im Kapitel [Challenges](80-challenges.md).
 ![Die Badges in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-abzeichen.png)
 
 Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
-Welche [Bedingungen für Teamer:innen](60-badges.md#welche-bedingung-fuer-welche-zielgruppe)
+Welche [Bedingungen für Teamer:innen](60-badges.md#pruefen-ob-die-bedingung-zur-zielgruppe-passt)
 gelten, steht im Abzeichen-Kapitel.
 
 ## Dein Profil

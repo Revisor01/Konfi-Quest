@@ -9,11 +9,11 @@ Abzeichen (im System „Badges") bekommen Konfis und Teamer:innen **automatisch*
 sobald sie eine Bedingung erfüllen. Es gibt keine Möglichkeit, ein Abzeichen von
 Hand zu verleihen oder wieder abzuerkennen.
 
-## Der Grundgedanke
+## Verstehen, wofür Abzeichen da sind
 
 Du legst ein Abzeichen einmal an und beschreibst dabei, **wofür** es vergeben
 wird. Ab dann prüft das System selbst — bei jeder
-[Punktevergabe](40-punkte.md) und zusätzlich alle fünf Minuten im Hintergrund.
+[Punktevergabe](40-punkte.md) und zusätzlich stündlich im Hintergrund.
 
 Ein Abzeichen besteht aus vier Dingen:
 
@@ -25,7 +25,7 @@ Ein Abzeichen besteht aus vier Dingen:
 - **Bedingung** — wofür es vergeben wird (die 15 Möglichkeiten unten)
 - **Zielgruppe** — für Konfis oder für Teamer:innen
 
-## Wichtig zu wissen, bevor du anfängst
+## Wissen, was vor dem Anlegen zu bedenken ist
 
 ### Vergangenes zählt immer mit
 
@@ -73,10 +73,37 @@ Die Bedingung wird ganz normal geprüft. „Geheim" betrifft nur die Anzeige.
 
 ---
 
-## Die 15 Bedingungen
+## Die passende Bedingung wählen
 
-Der Zahlenwert wird immer über einen Schieberegler von **1 bis 20** eingestellt.
-Höhere Werte sind über die App nicht möglich.
+Es gibt fünfzehn Bedingungen. Die meiste Zeit braucht nicht das Einstellen,
+sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:
+
+| Du willst auszeichnen … | Nimm |
+|---|---|
+| dass jemand insgesamt viel gesammelt hat | **Gesamtpunkte** |
+| Fleiß in einem der beiden Bereiche | **Gottesdienst-Punkte** oder **Gemeinde-Punkte** |
+| dass jemand in **beiden** Bereichen dabei war | **Beide Kategorien** |
+| dass du selbst etwas belohnt hast | **Bonuspunkte** |
+| schlichte Anwesenheit, egal woran | **Aktivitäten & Events** |
+| nur besuchte Termine | **Event-Teilnahmen** |
+| Abwechslung statt immer dasselbe | **Verschiedene Aktivitäten** |
+| Verlässlichkeit bei Pflichtterminen | **Pflicht-Anwesenheit** |
+| eine ganz bestimmte Sache, mehrfach | **Spezifische Aktivität** |
+| einige aus einer Liste, die du zusammenstellst | **Aktivitäts-Kombination** |
+| Ausdauer in **einem** Bereich | **Kategorie-Aktivitäten** |
+| Vielfalt über **mehrere** Bereiche | **Kategorie-Kombination** |
+| einen Schub in den letzten Wochen | **Zeitbasiert** |
+| Dranbleiben Woche für Woche | **Serie** |
+| lange Treue im Team | **Teamer-Jahr** |
+
+Zwei Dinge vorweg, die für alle gelten:
+
+- **Der Zahlenwert** wird über einen Schieberegler von **1 bis 20** eingestellt.
+  Höhere Werte sind über die App nicht möglich.
+- **Was der Wert bedeutet, ist je Bedingung verschieden** — mal „so viele
+  Punkte", mal „so oft", mal „aus so vielen Kategorien". Bei jeder Bedingung
+  unten steht es dabei. Wer das überliest, baut ein Abzeichen, das zu früh oder
+  gar nicht anspringt.
 
 ### Nach Punkten
 
@@ -154,11 +181,22 @@ Eine bestimmte Aktivität, so oft wie eingestellt.
 
 *Beispiel:* Wert 5 + „Sonntagsgottesdienst" → fünfmal daran teilgenommen.
 
+> **Dieselbe Falle wie bei den Kategorien:** Gemerkt wird der **Name** der
+> Aktivität. Wird sie später umbenannt, findet das Abzeichen nichts mehr —
+> stillschweigend. Verliehene bleiben.
+
 #### Aktivitäts-Kombination
 
 Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.
 
 *Beispiel:* Zehn Aktivitäten ausgewählt, Wert 3 → drei davon reichen.
+
+> **Bei Teamer:innen können hier auch Termine mitzählen** — dafür gibt es das
+> Feld allerdings nur in der Datenbank, nicht in der App. Solange es sich nicht
+> einstellen lässt, zählen bei einer Aktivitäts-Kombination praktisch nur
+> Aktivitäten. Wer Termine gewertet haben will, nimmt bis auf Weiteres
+> **Kategorie-Aktivitäten** oder **Kategorie-Kombination**: Dort zählen Termine
+> und Aktivitäten ohnehin zusammen.
 
 #### Kategorie-Aktivitäten
 
@@ -186,6 +224,45 @@ Abzeichen "Kasualien-Kenner": 3 aus Kategorie "Kasualien"
 > Begleitung" um, findet das Abzeichen nichts mehr — stillschweigend, ohne
 > Fehlermeldung. Bereits verliehene bleiben. **Kategorien, auf die Abzeichen
 > zeigen, also besser nicht umbenennen.**
+
+#### Kategorie-Kombination
+
+**Die Bedingung für „aus verschiedenen Bereichen dabei gewesen".** Du kreuzt
+mehrere Kategorien an; der Wert sagt, aus **wie vielen davon** jemand dabei
+gewesen sein muss.
+
+*Beispiel:* Angekreuzt „Konfifahrt", „Übernachtung" und „Sommerfreizeit",
+Wert 3 → wer aus **allen dreien** mindestens einmal etwas hat, bekommt das
+Abzeichen.
+
+> **Der Wert ist die Anzahl der Kategorien — nicht, wie oft.** Das ist die
+> Stelle, an der es am ehesten schiefgeht. **Wert 1 heißt: eine der
+> angekreuzten Kategorien genügt.** Wer drei Freizeiten fordern will und den
+> Wert auf 1 stellt, verleiht das Abzeichen an alle, die bei *einer* davon
+> waren. Für „drei aus dreien" gehört dort die **3** hin.
+
+**Jede Kategorie zählt höchstens einmal.** Dreimal dieselbe Konfifahrt ergibt
+eine Kategorie, nicht drei — genau dafür gibt es diese Bedingung. Gezählt
+werden Termine und Aktivitäten gleichermaßen.
+
+Die App lässt zwei Fehler gar nicht erst zu: Weniger als **zwei** Kategorien
+werden abgelehnt („Bitte mindestens zwei Kategorien auswählen"), und ein Wert,
+der größer ist als die Zahl der angekreuzten Kategorien, ebenfalls — sonst
+entstünde ein „4 aus 3", das niemand erreichen kann.
+
+#### Kategorie-Aktivitäten oder Kategorie-Kombination?
+
+Die beiden sehen sich ähnlich und meinen Verschiedenes:
+
+| | Kategorie-Aktivitäten | Kategorie-Kombination |
+|---|---|---|
+| Kategorien | **eine** | **mehrere** (mindestens zwei) |
+| Der Wert bedeutet | **wie oft** aus dieser Kategorie | aus **wie vielen** Kategorien |
+| Dreimal dieselbe Konfifahrt | zählt **dreifach** | zählt **einfach** |
+| Passt für | „fünfmal im Gottesdienst" | „bei Fahrt, Übernachtung und Freizeit dabei" |
+
+Als Faustregel: **Ausdauer in einer Sache** → Kategorie-Aktivitäten.
+**Vielfalt über mehrere Sachen** → Kategorie-Kombination.
 
 ### Nach Zeit
 
@@ -222,7 +299,7 @@ Jahr der ältesten Aktivität genommen; fehlt auch das, zählt es null.
 
 ---
 
-## Welche Bedingung für welche Zielgruppe?
+## Prüfen, ob die Bedingung zur Zielgruppe passt
 
 | Bedingung | Konfis | Teamer:innen |
 |---|---|---|
@@ -235,6 +312,7 @@ Jahr der ältesten Aktivität genommen; fehlt auch das, zählt es null.
 | Spezifische Aktivität | ja | ja |
 | Aktivitäts-Kombination | ja | ja |
 | Kategorie-Aktivitäten | ja | ja |
+| Kategorie-Kombination | ja | ja |
 | Zeitbasiert, Serie | ja | nein |
 | Teamer-Jahr | nein | ja |
 
@@ -242,7 +320,7 @@ Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten
 Bedingungen. Bei Termin-Bedingungen zählen für Teamer:innen **alle** besuchten
 Termine, auch Pflichttermine: Sie arbeiten dort mit.
 
-## Wann wird geprüft?
+## Nachvollziehen, wann geprüft wird
 
 Sofort bei:
 
@@ -253,9 +331,17 @@ Sofort bei:
 - dem Anlegen oder Bearbeiten eines Abzeichens selbst — ändert sich die
   Bedingung, holt das System die Vergabe für alle direkt nach
 
-Zusätzlich alle fünf Minuten im Hintergrund.
+Zusätzlich **stündlich** im Hintergrund. Das betrifft in der Praxis nur die
+Bedingungen, die ohne Zutun fällig werden können — „Serie", „Zeitbasiert" und
+„Teamer-Jahr". Alle anderen greifen ohnehin sofort, sobald jemand etwas
+einträgt.
 
-### Von Hand nachprüfen
+> Warum nicht öfter: Eine Prüfung kostet rund zwei Dutzend Datenbankabfragen je
+> Person. Bei den heutigen gut achtzig Personen sind das fünf Sekunden — bei
+> tausend wären es drei Minuten, und der Dienst liefe sich in einem
+> Fünf-Minuten-Takt selbst hinterher.
+
+### Von Hand nachprüfen lassen
 
 Beim Bearbeiten eines Abzeichens gibt es den Knopf „Abzeichen neu prüfen". Er
 ist für den Sonderfall gedacht, dass sich die **Datenlage** geändert hat, nicht
@@ -268,7 +354,7 @@ Nachhol-Lauf niemanden mit Benachrichtigungen überschüttet.
 > Abzeichen („Serie", „Zeitbasiert", „Teamer-Jahr") erst bei der nächsten
 > Punktevergabe. Die anderen Bedingungen greifen ohnehin sofort.
 
-## Was beim Verleihen passiert
+## Wissen, was beim Verleihen passiert
 
 1. Das Abzeichen wird eingetragen
 2. Mitteilung in der App: „Neues Badge erhalten!"

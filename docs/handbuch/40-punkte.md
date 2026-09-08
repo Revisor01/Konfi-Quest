@@ -249,6 +249,6 @@ Abzeichen und Level werden sofort geprüft bei:
 Nur die Abzeichen — nicht das Level — werden geprüft bei einer über die
 Konfi-Verwaltung vergebenen oder gelöschten Aktivität.
 
-Zusätzlich laufen die [Abzeichen-Prüfungen](60-badges.md#wann-wird-geprueft)
+Zusätzlich laufen die [Abzeichen-Prüfungen](60-badges.md#nachvollziehen-wann-geprueft-wird)
 alle fünf Minuten im Hintergrund, und das Level wird bei jedem Öffnen des
 Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.

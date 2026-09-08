@@ -102,7 +102,7 @@ und zählen wieder — vollständig und sofort.
 Eine Einschränkung: **Abzeichen werden nicht rückwirkend vergeben.** Wer während
 der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht
 automatisch nachgereicht. Geprüft wird erst wieder bei der
-[nächsten Punktevergabe oder beim Hintergrundlauf](60-badges.md#wann-wird-geprueft).
+[nächsten Punktevergabe oder beim Hintergrundlauf](60-badges.md#nachvollziehen-wann-geprueft-wird).
 
 ### Mindestens eine Art muss aktiv bleiben
 
