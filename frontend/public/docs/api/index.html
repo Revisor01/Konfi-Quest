@@ -960,7 +960,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/teamer/events/{id}/zusage</code></div>
         <p class="summary">Zusage/Absage zu einem Termin (&quot;Ich bin dabei&quot; / &quot;Ich bin nicht dabei&quot;)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur die eigene Buchung; Termin org-gescopt (404 sonst); nur teamer_needed/teamer_only, nicht abgesagt, nicht vergangen</div>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur die eigene Buchung; Termin org-gescopt (404 sonst); nur teamer_needed/teamer_only, nicht abgesagt, nicht vergangen; Jahrgang des Termins muss zugewiesen sein (403), ausser teamer_only/ohne Jahrgang/org_admin</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/konfi-history</code></div>
         <p class="summary">Eigene Punkte-Historie aus der Konfi-Zeit</p>

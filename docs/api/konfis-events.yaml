@@ -949,9 +949,13 @@ paths:
         Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles).
         Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026,
         Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für
-        can_view-Jahrgänge (allgemeine, teamer_only- und
-        teamer_needed-Events immer); ohne jede Zuweisung kommt der Header
-        X-Kein-Jahrgang-Zugewiesen mit. org_admin sieht alles. Konfis sehen
+        can_view-Jahrgänge (allgemeine und teamer_only-Events immer); ohne
+        jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit.
+        GEAENDERT 08.09.2026: teamer_needed zaehlt NICHT mehr als eigener
+        Sichtbarkeitsgrund. Ein Termin mit "Teamer:innen gesucht" an einem
+        fremden Jahrgang liesse sich seit derselben Aenderung ohnehin nicht
+        mehr buchen (403 aus darfTeamerAnDiesenTermin) -- sichtbar bliebe ein
+        Termin, der beim Antippen abgewiesen wird. org_admin sieht alles. Konfis sehen
         keine teamer_only-Events.
         NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn
         die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe
@@ -1283,6 +1287,16 @@ paths:
         event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich
         Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung,
         geloeschte Konten nie.
+
+
+        JAHRGANGSGRENZE seit 08.09.2026 (utils/bookingUtils.js,
+        darfTeamerAnDiesenTermin): Der Teamer-Pfad lehnt einen Termin mit 403
+        ab, dessen Jahrgang der Aufrufer nicht betreut -- dieselbe Regel wie im
+        Chat. Ausgenommen sind teamer_only (haengt an keinem Jahrgang), Termine
+        ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Dieselbe
+        Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege
+        zur selben Buchung fuehren. GET /api/events blendet solche Termine seit
+        derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).
 
 
         NEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung

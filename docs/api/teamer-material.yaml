@@ -278,6 +278,13 @@ paths:
         Wiederholung einer Absage (Offline-Doppelversand) braucht keinen Grund
         und laesst den gespeicherten Grund samt Kennzeichen
         absage_nach_zusage stehen.
+        JAHRGANGSGRENZE seit 08.09.2026: 403, wenn der Termin zu einem Jahrgang
+        gehoert, den der Aufrufer nicht betreut -- dieselbe Regel wie im Chat
+        und dieselbe Funktion wie im Buchungskern
+        (darfTeamerAnDiesenTermin). Ausgenommen sind teamer_only, Termine ohne
+        jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Ohne diese
+        Pruefung hier liesse sich die Sperre aus POST /api/events/{id}/book
+        ueber diesen zweiten Weg umgehen.
         Fachlicher Kern in utils/bookingUtils.js (setzeTeamerZusage). Pushes
         an die Leitung ueber die Teamer-Typen teamer_event_booking bzw.
         teamer_event_cancellation (Absage seit 01.09.2026 mit Grund im Text);
@@ -286,7 +293,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "nur die eigene Buchung; Termin org-gescopt (404 sonst); nur teamer_needed/teamer_only, nicht abgesagt, nicht vergangen"
+        objekt-pruefung: "nur die eigene Buchung; Termin org-gescopt (404 sonst); nur teamer_needed/teamer_only, nicht abgesagt, nicht vergangen; Jahrgang des Termins muss zugewiesen sein (403), ausser teamer_only/ohne Jahrgang/org_admin"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
