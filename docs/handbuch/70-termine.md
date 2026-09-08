@@ -36,13 +36,19 @@ fest, welche Abschnitte im Formular überhaupt erscheinen.
 |---|---|---|---|
 | Konfis sehen den Termin | ja | ja | **nein** |
 | Konfis können sich anmelden | ja | ja | nein |
-| Teamer:innen können sich anmelden | **nein** | ja | ja |
+| Teamer:innen sehen den Termin | nur mit passendem Jahrgang | nur mit passendem Jahrgang | **alle** |
+| Teamer:innen können sich anmelden | **nein** | nur mit passendem Jahrgang | ja |
 | Abschnitt „Konfis" (Plätze, Punkte) | ja | ja | **weg** |
 | Abschnitt „Teamer:innen" (Kontingent) | **weg** | ja | ja |
 | Pflicht-Event möglich | ja | ja | **weg** |
 | Konfirmation möglich | ja | ja | **weg** |
 | Anmeldezeitraum möglich | ja | ja | **weg** |
 | Zeitfenster möglich | ja | ja | **weg** |
+
+> **„Mit passendem Jahrgang" heißt:** Teamer:innen sehen und buchen nur
+> Termine der Jahrgänge, die sie betreuen — genau wie sie im Chat auch nur
+> Konfis dieser Jahrgänge anschreiben können. Zwei Ausnahmen: Termine für das
+> Team allein und Termine ohne jeden Jahrgang sind für alle offen.
 
 ### Nur Konfis
 
@@ -59,13 +65,22 @@ Zehn Konfi-Plätze und drei Teamer-Plätze sind zehn und drei, nicht dreizehn.
 Ein freigewordener Konfi-Platz geht nie an eine wartende Teamer:in und
 umgekehrt.
 
-Der Termin ist für **alle** Teamer:innen sichtbar, unabhängig davon, welche
-Jahrgänge sie betreuen.
+**Nur Teamer:innen des passenden Jahrgangs** sehen den Termin und können sich
+anmelden. Wer den Jahrgang nicht betreut, findet ihn gar nicht erst in seiner
+Liste — dieselbe Regel wie im Chat, wo man auch nur Konfis der eigenen
+Jahrgänge anschreiben kann.
+
+Hat der Termin **gar keinen** Jahrgang, gilt er der ganzen Gemeinde und ist für
+alle Teamer:innen offen.
 
 ### Nur Teamer:innen
 
 Zum Beispiel eine Teamer-Schulung oder Vorbereitungsrunde. Konfis sehen den
 Termin gar nicht — er wird aus ihrer Liste herausgefiltert.
+
+**Hier gilt die Jahrgangsregel nicht:** Ein Termin für das Team allein hängt an
+keinem Jahrgang, deshalb sehen und buchen ihn **alle** Teamer:innen der
+Gemeinde — auch die ohne Jahrgangs-Zuweisung.
 
 Umschalten auf „Nur Teamer:innen" setzt sofort **Pflicht-Event aus,
 Konfirmation aus und Zeitfenster aus** — alle drei sind Konfi-Angelegenheiten.

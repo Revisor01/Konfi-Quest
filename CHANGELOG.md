@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Termine, für die Teamer:innen gesucht werden, tauchen nur noch bei denen
+  auf, die den Jahrgang auch betreuen. Vorher standen sie in jeder Liste,
+  ließen sich seit dem Fix aber nicht mehr buchen.
 - Teamer:innen konnten sich zu Terminen von Jahrgängen anmelden, denen sie
   gar nicht zugewiesen sind. Das gilt jetzt wie im Chat: nur der eigene
   Jahrgang. Termine für das Team allein sind davon ausgenommen.

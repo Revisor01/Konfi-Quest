@@ -191,7 +191,7 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Konfi anlegen oder verschieben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
-| Termine | jahrgangsgebundene Termine sind unsichtbar (Termine ohne Jahrgang und Teamer-Termine bleiben) |
+| Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar (Termine ohne Jahrgang und Termine für das Team allein bleiben) |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Jahresrückblick freigeben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
@@ -209,8 +209,13 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 > ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.
 
 Termine, die [**nur für Teamer:innen**](70-termine.md#nur-teamer-innen) gedacht
-sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei
-jahrgangsgebundenen Terminen.
+sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar und buchbar — die
+Sperre greift nur bei jahrgangsgebundenen Terminen.
+
+> **Das gilt seit dem 08.09.2026 auch fürs Anmelden.** Vorher konnte sich eine
+> Teamer:in zu einem Termin mit „Teamer:innen gesucht" anmelden, auch wenn der
+> Jahrgang gar nicht ihrer war. Jetzt ist es wie im Chat: nur die eigenen
+> Jahrgänge.
 
 Wird ein Konfi **zur Teamer:in befördert**, übernimmt das System seinen Jahrgang
 automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht.

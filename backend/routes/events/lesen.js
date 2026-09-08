@@ -188,11 +188,22 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
         }
         filteredRows = rows.filter(row => {
-          // Reine Teamer-Events und Teamer-benötigte Events sind immer sichtbar
-          if (row.teamer_only || row.teamer_needed) return true;
+          // Reine Teamer-Events sind immer sichtbar: Sie haengen an keinem
+          // Jahrgang, es gibt nichts zu schuetzen.
+          if (row.teamer_only) return true;
           // Allgemeine Events (keine Jahrgang-Zuweisung) sind für alle sichtbar
           if (!row.jahrgang_ids) return true;
           // Prüfen ob mindestens ein zugewiesener Jahrgang dabei ist
+          //
+          // teamer_needed zaehlt seit dem 08.09.2026 NICHT mehr als eigener
+          // Grund. Vorher war ein Termin mit "Teamer:innen gesucht" fuer ALLE
+          // Teamer:innen sichtbar, auch aus fremden Jahrgaengen -- seit die
+          // Buchung die Jahrgangsgrenze prueft (utils/bookingUtils.js,
+          // darfTeamerAnDiesenTermin) waere das ein Termin, den man sieht,
+          // antippt und dann mit 403 abgewiesen bekommt. Simons Regel
+          // (08.09.2026) gilt fuer Sehen und Buchen gleichermassen: "teamer
+          // sollen nur jahrgaenge und events buchen koennen wenn sie auch in
+          // dem jahrgang sind. nur teamer ist davon ausgenommen."
           const eventJahrgangIds = row.jahrgang_ids.split(',').map(id => parseInt(id, 10));
           return eventJahrgangIds.some(id => viewableJahrgaenge.includes(id));
         });

@@ -127,13 +127,75 @@ describe('Events Routes', () => {
       expect(res.status).toBe(200);
 
       // Jedes noch sichtbare Event muss einen eigenen Grund haben: allgemein
-      // (ohne Jahrgang) oder teamer_only/teamer_needed. Ein jahrgangsgebundenes
-      // Event ohne Teamer-Bezug darf NICHT dabei sein.
+      // (ohne Jahrgang) oder "Nur Team". Ein jahrgangsgebundenes Event darf
+      // NICHT dabei sein.
+      //
+      // teamer_needed zaehlt seit dem 08.09.2026 nicht mehr als Grund: Ein
+      // Termin mit "Teamer:innen gesucht" an einem fremden Jahrgang liesse
+      // sich ohnehin nicht buchen (403), er gehoert also auch nicht in die
+      // Liste.
       for (const evt of res.body) {
         const istAllgemein = !evt.jahrgaenge || evt.jahrgaenge.length === 0;
-        const istTeamerEvent = evt.teamer_only || evt.teamer_needed;
-        expect(istAllgemein || istTeamerEvent).toBe(true);
+        expect(istAllgemein || evt.teamer_only).toBe(true);
       }
+    });
+
+    // SICHTBARKEIT ZIEHT MIT DER BUCHBARKEIT (08.09.2026).
+    //
+    // Bis hierher waren Termine mit "Teamer:innen gesucht" fuer ALLE
+    // Teamer:innen sichtbar, auch aus fremden Jahrgaengen. Seit die Buchung
+    // die Jahrgangsgrenze prueft (utils/bookingUtils.js,
+    // darfTeamerAnDiesenTermin) waere das ein Termin, den man sieht, antippt
+    // und dann mit 403 abgewiesen bekommt. Simons Regel gilt fuer beides.
+    //
+    // Unveraendert sichtbar bleiben: "Nur Team" (kein Jahrgang betroffen) und
+    // Termine ohne jede Jahrgangs-Zuordnung (gelten der ganzen Gemeinde).
+    it('Teamer:in sieht "Teamer:innen gesucht" eines FREMDEN Jahrgangs nicht', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      const { rows: [jgFremd] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id) VALUES ('2029/2030', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, teamer_needed, teamer_max_participants)
+         VALUES ('Fremder Jahrgang, Team gesucht', NOW() + interval '20 days', $1, false, 10,
+                 'gemeinde', 1, true, 5)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [ev.id, jgFremd.id]
+      );
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(e => e.id)).not.toContain(ev.id);
+    });
+
+    it('Teamer:in sieht "Nur Team" eines fremden Jahrgangs weiterhin', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, teamer_only, teamer_max_participants)
+         VALUES ('Team-Schulung', NOW() + interval '20 days', $1, false, 0,
+                 'gemeinde', 0, true, 5)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(e => e.id)).toContain(ev.id);
     });
 
     it('Events einer anderen Org sind NICHT sichtbar', async () => {
