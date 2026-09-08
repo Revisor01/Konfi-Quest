@@ -40,8 +40,12 @@ const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitr
       ? ['Heute', 'ist es', 'so weit.']
       : tage <= 30
         ? ['Bald', 'ist es', 'so weit.']
-        // Weiter weg: nur die Zahl, ohne Versprechen.
-        : ['Noch', `${tage}`, tage === 1 ? 'Tag.' : 'Tage.'];
+        // Weiter weg: KEINE Wiederholung der Zahl (Simon, 08.09.2026: "Die
+        // Folie Konfirmation sagt: 'Erste Zahl: 235 Tage', und dann sagt sie:
+        // 'Noch 235 Tage bis zu deiner Konfirmation'. Das ist doppelt
+        // gemoppelt"). Die grosse Zahl darueber sagt es schon; der Slogan
+        // ordnet nur noch ein, ohne ein Versprechen zu geben.
+        : ['Der Weg', 'geht', 'weiter.'];
 
   const nachsatz = vorbei
     ? `Am ${datum} war es so weit.`

@@ -375,18 +375,32 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 <span style={{ display: 'block' }}>Dein Glaube.</span>
               </div>
 
-              <div style={{ marginTop: 56, textAlign: 'center' }}>
-                <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, color: 'var(--app-color-wrapped-hell)' }}>
-                  {konfi.slides.punkte.total}
-                </div>
-                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>
-                  {konfi.slides.punkte.total === 1 ? 'Punkt' : 'Punkte'}
-                </div>
-              </div>
+              {/* DAS KONFIRMATIONSDATUM IST DIE HAUPTSACHE (Simon,
+                  08.09.2026): "Da soll auch nicht die Punktezahl in
+                  irgendeiner grossen Weise drauf stehen, sondern das
+                  Konfirmationsdatum, also deine Konfirmation, damit die das
+                  quasi teilen koennen als 'Das ist meine Konfirmation'."
+                  Vorher stand die Punktzahl mit 120px in der Mitte und das
+                  Datum klein darunter -- eine Zahl, die ausserhalb der App
+                  niemandem etwas sagt.
 
+                  OHNE KONFIRMATIONSTERMIN faellt der Block weg: "wenn sie die
+                  nicht ueber die App gebucht haben und keine Konfirmation
+                  eventuell gebucht ist, dann machen wir es nicht darueber,
+                  sondern sagen wir nur Kirchengemeinde und das
+                  Konfirmationsdatum." Dann traegt die Karte den Slogan, die
+                  Gemeinde und das Logo -- das genuegt. */}
               {konfiDatum && (
-                <div style={{ fontSize: 30, color: 'rgba(255,255,255,0.7)', marginTop: 36 }}>
-                  Konfirmation am {new Date(konfiDatum).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}
+                <div style={{ marginTop: 64, textAlign: 'center' }}>
+                  <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
+                    Meine Konfirmation
+                  </div>
+                  <div style={{ fontSize: 104, fontWeight: 800, lineHeight: 1.05, marginTop: 14, color: 'var(--app-color-wrapped-hell)' }}>
+                    {new Date(konfiDatum).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+                  </div>
+                  <div style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, color: 'rgba(255,255,255,0.85)' }}>
+                    {new Date(konfiDatum).getFullYear()}
+                  </div>
                 </div>
               )}
             </>
@@ -820,7 +834,14 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           <div className="share-card-inhalt">
             {renderContent()}
           </div>
-          <div className="share-card-watermark">Konfi Quest</div>
+          {/* Logo neben dem Schriftzug (Simon, 08.09.2026: "und das
+              Konfi-Quest-Logo muss auf jeden Fall drauf"). Das App-Symbol
+              liegt unter public/ und wird vom Bildexport mitgezeichnet wie
+              die Hintergrundmotive. */}
+          <div className="share-card-watermark">
+            <img src="/assets/icon/icon-192x192.png" alt="" width={40} height={40} />
+            <span>Konfi Quest</span>
+          </div>
         </div>
       </div>
     );

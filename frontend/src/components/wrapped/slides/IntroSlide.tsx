@@ -16,14 +16,26 @@ interface IntroSlideProps extends SlideProps {
    */
   konfirmation?: string | null;
   stand?: string | null;
+  /**
+   * Name der Ausgabe (Simon, 08.09.2026): "Sonst wird es bei drei
+   * Rueckblicken unuebersichtlich." Steht klein unter dem Namen der Person.
+   * Der Platzhalter aus dem Backend ("Konfi-Rueckblick 2026/27") wird NICHT
+   * gezeigt -- er ist ein Datenbankwert, keine Beschriftung.
+   */
+  ausgabeTitel?: string | null;
 }
 
-const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year: _year, konfirmation, stand }) => {
+const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgangName, year: _year, konfirmation, stand, ausgabeTitel }) => {
   // "Deine Konfi-Zeit", mit "(bis jetzt)" solange die Konfirmation noch
   // mehr als 30 Tage entfernt ist (Simons Regel, 07.09.2026). `year` bleibt
   // in der Schnittstelle stehen: Der Snapshot fuehrt das Feld weiter, und
   // ausgelieferte Apps lesen es.
   const ueberschrift = konfiUeberschrift(konfirmation, stand);
+
+  // Platzhalter aus dem Backend aussortieren: Wer keinen Namen vergeben hat,
+  // soll nicht "Konfi-Rueckblick 2026/27" auf seiner Folie lesen.
+  const zeigeTitel = ausgabeTitel && !/^Konfi-R(ü|ue)ckblick\s/.test(ausgabeTitel)
+    ? ausgabeTitel.trim() : null;
 
   return (
     <SlideBase isActive={isActive} className="intro-slide">
@@ -48,6 +60,9 @@ const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgang
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2">
         <p className="wrapped-subtitle" style={{ marginTop: 'var(--app-abstand-basis)' }}>{displayName}</p>
+        {zeigeTitel && (
+          <p className="wrapped-label" style={{ marginTop: 'var(--app-abstand-mini)', opacity: 0.75 }}>{zeigeTitel}</p>
+        )}
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-3">
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--app-text-basis)', marginTop: 'var(--app-abstand-mini)' }}>{jahrgangName}</p>

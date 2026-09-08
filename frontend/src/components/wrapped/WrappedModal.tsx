@@ -301,7 +301,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
     // Alle moeglichen Slide-Renderer
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
-      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} konfirmation={konfiKonfirmation} stand={konfiStand} />,
+      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} konfirmation={konfiKonfirmation} stand={konfiStand} ausgabeTitel={konfiData.titel} />,
       'highlight': (a) => <HighlightSlide isActive={a} data={konfiData} />,
       'challenge-momente': (a) => <ChallengeMomenteSlide isActive={a} momente={konfiData.slides.challenge_momente || []} />,
       // 'challenges' stand seit dem 03.09.2026 in der DRAMATURGIE des

@@ -51,6 +51,14 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Das Bild zum Teilen zeigt jetzt das Konfirmationsdatum groß statt der
+  Punktzahl, dazu das Konfi-Quest-Logo. Ohne eingetragene Konfirmation
+  bleiben Gemeinde und Spruch.
+- Beim Team-Rückblick stehen nur noch Jahre zur Wahl, für die es auch Daten
+  gibt. Die Auswahl öffnet sich jetzt als Liste von unten, damit der Hinweis
+  zum laufenden Jahr lesbar bleibt.
+- Konfi-Rückblicke bekommen wieder einen Namen. Er steht in der Liste und auf
+  der ersten Folie — hilfreich, sobald es mehrere gibt.
 - Der Rückblick meldet sich jetzt bei jeder neuen Ausgabe. Bisher blieb es
   still, wenn für einen Jahrgang ein zweiter Rückblick entstand — niemand
   erfuhr davon.
@@ -90,6 +98,7 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Die Konfirmations-Folie nannte die Tage zweimal.
 - Das Zurücksetzen des Passworts scheiterte bei Teamer:innen mit „Fehler beim
   Zurücksetzen". Es funktioniert wieder, und wenn doch etwas schiefgeht,
   steht jetzt dort, woran es lag.

@@ -2146,7 +2146,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // ein sachlicher Platzhalter, den die App nicht anzeigt. Die
         // Ueberschrift ergibt sich in der App aus der Rolle: "Deine
         // Konfi-Zeit" bzw. "Dein Teamerjahr 202x".
-        const titel = `Konfi-Rückblick ${jahrgang.name || currentYear}`;
+        // NAME DER AUSGABE, wieder eingefuehrt am 08.09.2026 (Simon: "Ich
+        // glaube es waere gut wenn man den Rueckblicken bei Konfis doch
+        // Namen geben koennte und die dynamisch aufgenommen werden auf die
+        // Folie. Sonst wird es bei drei Rueckblicken unuebersichtlich.").
+        //
+        // Am 07.09. war er entfallen, zusammen mit dem frei setzbaren
+        // ZEITRAUM. Der Zeitraum bleibt entfallen -- er liess sich falsch
+        // stellen und ergab Zahlen, die niemand nachvollziehen konnte. Ein
+        // Name kann das nicht: Er beschriftet nur, er rechnet nichts.
+        //
+        // Ohne Angabe ein sachlicher Platzhalter wie bisher.
+        const eingegeben = typeof req.body?.titel === 'string' ? req.body.titel.trim() : '';
+        const titel = eingegeben
+          ? eingegeben.slice(0, 40)
+          : `Konfi-Rückblick ${jahrgang.name || currentYear}`;
 
         // KEIN ZEITRAUM AUS DEM FORMULAR MEHR (Simon, 07.09.2026: "wir
         // lassen das mit dem Datum"). Der Konfi-Rueckblick geht immer vom
@@ -2548,6 +2562,70 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // Jahrgaenge, org_admin und super_admin sehen alle. Teamer-Ausgaben sind
   // organisationsweit und deshalb nur fuer org_admin sichtbar -- dieselbe
   // Grenze wie beim Erzeugen.
+  /**
+   * Welche Team-Jahre lassen sich ueberhaupt zurueckblicken?
+   *
+   * SIMON, 08.09.2026: "Es sollen nur Teamer Jahre angezeigt werden die auch
+   * geliefert werden koennen. Wenn es aus 2023 nichts gibt brauchen wir auch
+   * kein Teamer Jahr."
+   *
+   * Vorher rechnete die Oberflaeche fuenf Jahre zurueck, ohne zu wissen, ob
+   * es dort etwas gibt. In Kirchspiel West beginnen Termine und Aktivitaeten
+   * erst 2026 (nachgemessen 08.09.2026) -- die Jahre davor haetten leere
+   * Rueckblicke ergeben.
+   *
+   * Ein Jahr gilt als lieferbar, wenn darin irgendetwas passiert ist, das im
+   * Rueckblick vorkommt: ein Termin, eine Aktivitaet, ein verliehenes
+   * Abzeichen oder ein Zertifikat. Dazu kommen Jahre, fuer die schon eine
+   * Ausgabe besteht -- die soll nicht aus der Liste verschwinden.
+   *
+   * Das laufende Jahr wird mitgeliefert, aber als gesperrt: Es ist noch nicht
+   * vorbei, und wer es nicht sieht, haelt sein Fehlen fuer einen Fehler.
+   */
+  router.get('/team-jahre',
+    rbacVerifier,
+    requireOrgAdmin,
+    async (req, res) => {
+      try {
+        const orgId = req.user.organization_id;
+        const laufend = new Date().getFullYear();
+
+        const { rows } = await db.query(
+          `SELECT DISTINCT jahr FROM (
+             SELECT EXTRACT(YEAR FROM e.event_date)::int AS jahr
+               FROM events e WHERE e.organization_id = $1
+             UNION ALL
+             SELECT EXTRACT(YEAR FROM ua.completed_date)::int
+               FROM user_activities ua WHERE ua.organization_id = $1
+             UNION ALL
+             SELECT EXTRACT(YEAR FROM ub.awarded_date)::int
+               FROM user_badges ub WHERE ub.organization_id = $1
+             UNION ALL
+             SELECT EXTRACT(YEAR FROM a.zeitraum_start)::int
+               FROM wrapped_ausgaben a
+              WHERE a.organization_id = $1 AND a.wrapped_type = 'teamer'
+           ) q
+           WHERE jahr IS NOT NULL AND jahr <= $2
+           ORDER BY jahr DESC`,
+          [orgId, laufend]
+        );
+
+        const jahre = rows.map(r => ({ jahr: r.jahr, gesperrt: r.jahr >= laufend }));
+        // Das laufende Jahr immer zeigen, auch wenn darin noch nichts liegt --
+        // sonst fehlt der Hinweis "verfuegbar ab 1.1.<Folgejahr>" genau dann,
+        // wenn jemand danach sucht.
+        if (!jahre.some(j => j.jahr === laufend)) {
+          jahre.unshift({ jahr: laufend, gesperrt: true });
+        }
+
+        res.json(jahre);
+      } catch (err) {
+        console.error('Database error in GET /wrapped/team-jahre:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
+
   router.get('/ausgaben',
     rbacVerifier,
     requireAdmin,

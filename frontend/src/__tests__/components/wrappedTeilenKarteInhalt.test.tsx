@@ -87,9 +87,11 @@ const ERWARTET: Array<[string, string[]]> = [
   ['badges', ['9']],
   ['aktivster-monat', ['Mai', '11 Aktivitäten']],
   ['challenge-momente', ['Sternenhimmel', 'War schoen.']],
-  // Die geteilte Uebersicht -- Simons vier Angaben (07.09.2026): Gemeinde,
-  // Slogan, Punkte, Konfirmationstermin.
-  ['abschluss', ['Kirchspiel Westerdeich', 'Dein Weg.', 'Deine Zeit.', 'Dein Glaube.', '137', 'Punkte', 'Konfirmation am 10. Mai 2026']],
+  // Die geteilte Uebersicht. Seit dem 08.09.2026 ohne Punktzahl: Sie stand
+  // gross in der Mitte und sagt ausserhalb der App niemandem etwas. Jetzt
+  // traegt die Karte das Konfirmationsdatum gross -- das ist es, was jemand
+  // teilen will.
+  ['abschluss', ['Kirchspiel Westerdeich', 'Dein Weg.', 'Deine Zeit.', 'Dein Glaube.', 'Meine Konfirmation', '10. Mai', '2026']],
   // Die fuenf Seiten, die bis zum 06.09.2026 schwarz blieben:
   ['kategorie', ['Gottesdienst', 'Freizeit', '12', '4']],
   ['konfirmation', ['Deine Konfirmation', '10. Mai 2026']],
@@ -147,19 +149,53 @@ describe('Teilen-Karte zeigt echten Inhalt', () => {
     expect(text).not.toContain('Lieblings-Event');
   });
 
-  it('die Abschluss-Karte zeigt Gemeinde, Punkte, Konfi-Datum und den Slogan', () => {
-    // Simons Vorgabe woertlich: "Die Uebersicht die geteilt wird sollte die
-    // Kirchengemeinde enthalten. Die Punkte und das Konfi Datum. Mit dem
-    // Slogan deine Weg deine Zeit dein Glaube."
+  // GEAENDERT AM 08.09.2026. Simon zur alten Fassung: "Die Folie zum Teilen
+  // sieht ultra beschissen aus. Da soll auch nicht die Punktezahl in
+  // irgendeiner grossen Weise drauf stehen, sondern das Konfirmationsdatum,
+  // also deine Konfirmation, damit die das quasi teilen koennen als 'Das ist
+  // meine Konfirmation'."
+  //
+  // Die Punktzahl stand mit 120px in der Mitte -- eine Zahl, die ausserhalb
+  // der App niemandem etwas sagt. Jetzt traegt die Karte das Datum gross,
+  // darueber "MEINE KONFIRMATION", und die Punkte gar nicht mehr.
+  it('die Abschluss-Karte zeigt Gemeinde, Konfirmationsdatum und den Slogan', () => {
     const text = inhaltOhneWasserzeichen(zeige('abschluss'));
     expect(text).toContain('Kirchspiel Westerdeich');
-    expect(text).toContain('137');
-    expect(text).toContain('Konfirmation am 10. Mai 2026');
+    expect(text).toContain('Meine Konfirmation');
+    expect(text).toContain('10. Mai');
+    expect(text).toContain('2026');
     expect(text).toContain('Dein Weg.Deine Zeit.Dein Glaube.');
-    // Und das Wasserzeichen unten bleibt (Simons Entscheidung: Gemeindename
-    // PLUS "Konfi Quest").
+    // Die Punktzahl ist bewusst weg.
+    expect(text).not.toContain('137');
+    expect(text).not.toContain('Punkte');
+  });
+
+  it('das Logo steht neben dem Schriftzug', () => {
+    // Simon: "und das Konfi-Quest-Logo muss auf jeden Fall drauf".
     const karte = zeige('abschluss');
-    expect(karte.querySelector('.share-card-watermark')?.textContent).toBe('Konfi Quest');
+    const marke = karte.querySelector('.share-card-watermark');
+    expect(marke?.textContent).toBe('Konfi Quest');
+    const logo = marke?.querySelector('img');
+    expect(logo).not.toBeNull();
+    expect(logo?.getAttribute('src')).toContain('icon-192x192.png');
+  });
+
+  it('ohne Konfirmationstermin bleibt die Karte heil', () => {
+    // Simon: "wenn sie die nicht ueber die App gebucht haben und keine
+    // Konfirmation eventuell gebucht ist, dann machen wir es nicht darueber,
+    // sondern sagen wir nur Kirchengemeinde und das Konfirmationsdatum."
+    // Ohne Datum traegt die Karte Gemeinde, Slogan und Logo -- kein leerer
+    // Block, kein "undefined".
+    const ohne = JSON.parse(JSON.stringify(KONFI)) as KonfiWrappedData;
+    (ohne.slides.zeitraum as { konfirmation?: string | null }).konfirmation = null;
+    const { container } = render(
+      <ShareCard slideKey="abschluss" data={ohne} wrappedType="konfi"
+        displayName="Emilia" jahrgangName="Jahrgang 2026" year={2026} />
+    );
+    const text = inhaltOhneWasserzeichen(container);
+    expect(text).not.toContain('undefined');
+    expect(text).not.toContain('Meine Konfirmation');
+    expect(text).toBe('Kirchspiel WesterdeichDein Weg.Deine Zeit.Dein Glaube.');
   });
 
   it('ein Alt-Snapshot ohne Gemeindenamen bleibt heil', () => {
@@ -175,8 +211,7 @@ describe('Teilen-Karte zeigt echten Inhalt', () => {
     const text = inhaltOhneWasserzeichen(container);
     expect(text).not.toContain('undefined');
     expect(text).not.toContain('Kirchspiel Westerdeich');
-    // Punkte, Datum und Slogan stehen weiterhin da.
-    expect(text).toBe('Dein Weg.Deine Zeit.Dein Glaube.137PunkteKonfirmation am 10. Mai 2026');
+    expect(text).toBe('Dein Weg.Deine Zeit.Dein Glaube.Meine Konfirmation10. Mai2026');
   });
 
   it('die Team-Karte laedt zum Schreiben ein, ohne Pfeil', () => {

@@ -17,7 +17,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
   IonLabel, IonButton, IonIcon, IonSpinner, IonRefresher, IonRefresherContent,
-  IonModal, IonSelect, IonSelectOption, IonButtons,
+  IonModal, IonSelect, IonSelectOption, IonInput, IonButtons,
   IonSegment, IonSegmentButton, useIonAlert,
   IonItemSliding, IonItemOptions, IonItemOption, IonListHeader,
   IonCard, IonCardContent
@@ -94,14 +94,13 @@ const datum = (iso: string | null) =>
  * Zurueck reichen fuenf Jahre. Weiter zurueck gibt es keine Daten, die einen
  * Rueckblick truegen -- und eine Liste, die bis 2019 laeuft, ist keine Hilfe.
  */
-const TEAM_JAHRE = (heute = new Date()) => {
-  const laufend = heute.getFullYear();
-  const jahre: { jahr: number; gesperrt: boolean }[] = [];
-  for (let j = laufend; j >= laufend - 5; j--) {
-    jahre.push({ jahr: j, gesperrt: j >= laufend });
-  }
-  return jahre;
-};
+// Die Jahre kommen seit dem 08.09.2026 vom Server (GET /wrapped/team-jahre).
+// Vorher rechnete diese Datei fuenf Jahre zurueck, ohne zu wissen, ob es dort
+// etwas gibt -- Simon: "Es sollen nur Teamer Jahre angezeigt werden die auch
+// geliefert werden koennen. Wenn es aus 2023 nichts gibt brauchen wir auch
+// kein Teamer Jahr." In Kirchspiel West beginnen die Daten 2026; vier der
+// fuenf Jahre waeren leer gewesen.
+type TeamJahr = { jahr: number; gesperrt: boolean };
 
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -123,6 +122,22 @@ const AdminWrappedPage: React.FC = () => {
   // Jahr -- dem einzigen, das die Leitung am 1. Januar ueberhaupt meinen
   // kann, und demselben, das der automatische Lauf am 6.1. nimmt.
   const [neuesJahr, setNeuesJahr] = useState<number>(new Date().getFullYear() - 1);
+  const [teamJahre, setTeamJahre] = useState<TeamJahr[]>([]);
+  // Name der Ausgabe (Simon, 08.09.2026): "Ich glaube es waere gut wenn man
+  // den Rueckblicken bei Konfis doch Namen geben koennte und die dynamisch
+  // aufgenommen werden auf die Folie. Sonst wird es bei drei Rueckblicken
+  // unuebersichtlich." Vorbelegt, damit bei drei Ausgaben keine drei
+  // namenlosen Eintraege stehen -- ueberschreibbar.
+  const [neuerName, setNeuerName] = useState('');
+
+  // Vorschlag fuer den Namen: "Zwischenstand" beim ersten, danach
+  // durchnummeriert. Erst der zweite Rueckblick macht die Namen noetig --
+  // bis dahin ist ohnehin klar, welcher gemeint ist.
+  const namensVorschlag = React.useMemo(() => {
+    if (!neuerJahrgang) return 'Zwischenstand';
+    const bisher = ausgaben.filter(a => a.typ === 'konfi' && a.jahrgang_id === neuerJahrgang).length;
+    return bisher === 0 ? 'Zwischenstand' : `Zwischenstand ${bisher + 1}`;
+  }, [neuerJahrgang, ausgaben]);
   const [erzeugt, setErzeugt] = useState(false);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
@@ -131,18 +146,22 @@ const AdminWrappedPage: React.FC = () => {
 
   const laden = useCallback(async () => {
     try {
-      const [a, j] = await Promise.all([
+      // team-jahre nur fuer die Leitung -- Admins duerfen keine
+      // Team-Rueckblicke anlegen und bekaemen dort 403.
+      const [a, j, tj] = await Promise.all([
         api.get('/wrapped/ausgaben'),
         api.get('/admin/jahrgaenge').catch(() => ({ data: [] })),
+        istLeitung ? api.get('/wrapped/team-jahre').catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
       ]);
       setAusgaben(Array.isArray(a.data) ? a.data : []);
       setJahrgaenge(Array.isArray(j.data) ? j.data : []);
+      setTeamJahre(Array.isArray(tj.data) ? tj.data : []);
     } catch {
       setError('Rückblicke konnten nicht geladen werden');
     } finally {
       setLaedt(false);
     }
-  }, [setError]);
+  }, [setError, istLeitung]);
 
   useEffect(() => { laden(); }, [laden]);
   useEffect(() => { setPresentingElement(pageRef.current); }, []);
@@ -158,7 +177,9 @@ const AdminWrappedPage: React.FC = () => {
       // Das Backend rechnet vom Beginn der Konfi-Zeit bis heute.
       // Beim Team geht nur das JAHR mit -- gerechnet wird 1.1. bis 31.12.
       if (segment === 'konfi') {
-        await api.post(`/wrapped/generate/${neuerJahrgang}`, {});
+        // Ohne Eingabe der Vorschlag -- ein leerer Name hilft niemandem.
+        const titel = (neuerName.trim() || namensVorschlag).slice(0, 40);
+        await api.post(`/wrapped/generate/${neuerJahrgang}`, { titel });
         setSuccess('Rückblick erstellt und freigegeben');
       } else {
         // `benachrichtigt: false` heisst beim Team: Das Jahr stand schon da,
@@ -173,6 +194,7 @@ const AdminWrappedPage: React.FC = () => {
       }
       setModalOffen(false);
       setNeuerJahrgang(null);
+      setNeuerName('');
       await laden();
     } catch (e) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -465,6 +487,7 @@ const AdminWrappedPage: React.FC = () => {
                       slot="start", kein gestapeltes Label, Popover, volle
                       Breite. */}
                   {segment === 'konfi' ? (
+                    <>
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
                       <IonSelect
@@ -479,20 +502,46 @@ const AdminWrappedPage: React.FC = () => {
                         ))}
                       </IonSelect>
                     </IonItem>
+                    {/* NAME der Ausgabe (Simon, 08.09.2026). Vorbelegt mit
+                        einem Vorschlag, damit bei drei Ausgaben nicht drei
+                        namenlose Eintraege stehen -- ueberschreibbar. Er
+                        erscheint in der Liste UND auf der Begruessungsfolie. */}
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonIcon icon={ICON_FUNKELN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
+                      <IonInput
+                        label="Name"
+                        labelPlacement="floating"
+                        placeholder={namensVorschlag}
+                        value={neuerName}
+                        maxlength={40}
+                        onIonInput={(e: CustomEvent) => setNeuerName(String(e.detail.value ?? ''))}
+                      />
+                    </IonItem>
+                    </>
                   ) : (
                     /* Nur das JAHR (Simon, 07.09.2026). Das laufende Jahr
                        steht sichtbar in der Liste, aber gesperrt -- mit dem
                        Hinweis, ab wann es geht. */
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonIcon icon={ICON_TERMIN} slot="start" style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-standard)' }} />
+                      {/* action-sheet statt popover (Simon, 08.09.2026: "Der
+                          popup schliesst zu frueh ab man kann nicht lesen das
+                          2027 erst spaeter verfuegbar ist"). Das Popover legt
+                          sich eng an das Feld und schliesst beim ersten
+                          Antippen -- der gesperrte Eintrag mit seinem Hinweis
+                          war nicht zu lesen. Das Aktionsblatt kommt von
+                          unten, zeigt alle Jahre untereinander und bleibt
+                          offen, bis man abbricht oder ein waehlbares Jahr
+                          antippt. */}
                       <IonSelect
                         placeholder="Jahr"
-                        interface="popover"
+                        interface="action-sheet"
+                        interfaceOptions={{ header: 'Welches Jahr?' }}
                         style={{ width: '100%' }}
                         value={neuesJahr}
                         onIonChange={(e) => setNeuesJahr(e.detail.value)}
                       >
-                        {TEAM_JAHRE().map(({ jahr, gesperrt }) => (
+                        {teamJahre.map(({ jahr, gesperrt }) => (
                           <IonSelectOption key={jahr} value={jahr} disabled={gesperrt}>
                             {gesperrt ? `${jahr} — verfügbar ab 1.1.${jahr + 1}` : String(jahr)}
                           </IonSelectOption>
@@ -503,14 +552,13 @@ const AdminWrappedPage: React.FC = () => {
                   {/* Was der Rueckblick umfasst -- ohne dass jemand etwas
                       einstellen muss. Simon ausdruecklich: "Das erklaeren wir
                       auch." */}
+                  {/* EIN Hinweis statt zwei (Simon, 08.09.2026: "Die Hinweise
+                      auf den modalen fuer wrapped jeweils auf einen Hinweis
+                      zusammenfuegen."). */}
                   <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
                     {segment === 'konfi'
-                      ? 'Der Rückblick zählt die ganze Konfi-Zeit — vom Beginn bis heute, auch über zwei Jahre.'
-                      : 'Der Rückblick zählt das ganze Kalenderjahr, vom 1. Januar bis zum 31. Dezember. Das laufende Jahr ist erst wählbar, wenn es vorbei ist.'}
-                  </div>
-                  <div className="app-info-box app-info-box--wrapped" style={{ marginTop: 'var(--app-abstand-mittel)', borderRadius: 'var(--app-radius-karte)'}}>
-                    Der Rückblick wird sofort erstellt und freigegeben; alle
-                    bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.
+                      ? 'Gezählt wird die ganze Konfi-Zeit — vom Beginn bis zu diesem Moment. Der Rückblick wird sofort freigegeben, alle bekommen eine Mitteilung. Frühere Ausgaben bleiben erhalten.'
+                      : 'Gezählt wird das ganze Kalenderjahr, vom 1. Januar bis zum 31. Dezember. Der Rückblick wird sofort freigegeben, alle bekommen eine Mitteilung.'}
                   </div>
                 </IonCardContent>
               </IonCard>

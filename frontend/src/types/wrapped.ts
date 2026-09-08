@@ -157,6 +157,12 @@ export interface KonfiWrappedData {
   /** 1 = Alt-Snapshots (History), ab 2 = Challenges-Wrapped. */
   version: number;
   /**
+   * Name der Ausgabe, seit 08.09.2026 wieder vergebbar. Fehlt bei
+   * Alt-Snapshots und bei Ausgaben ohne eigenen Namen -- dann traegt die
+   * Begruessungsfolie nur die Ueberschrift.
+   */
+  titel?: string | null;
+  /**
    * Die Seiten dieses Rueckblicks in Anzeigereihenfolge, vom Backend
    * gewaehlt (utils/wrappedKacheln.js, Simons Dramaturgie). Ab 03.09.2026.
    * Fehlt bei aelteren Snapshots -- dann rendert das Frontend wie bisher
