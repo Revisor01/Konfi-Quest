@@ -103,7 +103,11 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
   const kapitel = lies('../docs/handbuch/80-challenges.md');
 
   it('das Kapitel hat einen Abschnitt "Der Stempel"', () => {
-    expect(kapitel).toContain('## Der Stempel');
+    // Die Ueberschriften des Handbuchs sind Taetigkeiten (Simons Stilvorgabe
+    // 08.09.2026) -- geprueft wird deshalb der BEGRIFF, nicht die Form. Die
+    // Sache, um die es hier geht, bleibt dieselbe: Challenges geben Stempel,
+    // keine Abzeichen.
+    expect(kapitel).toContain('Stempel');
     expect(kapitel).not.toContain('## Das Abzeichen');
   });
 
@@ -117,7 +121,11 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
 
   it('die anderen Kapitel nennen es auch so', () => {
     expect(lies('../docs/handbuch/00-start.md')).toContain('Stempel fürs Mitmachen');
-    expect(lies('../docs/handbuch/30-leitung.md')).toContain('der Stempel, den es fürs Mitmachen gibt');
+    // Auf den BEGRIFF pruefen, nicht auf einen Satz im Wortlaut: Das
+    // Leitungs-Kapitel verweist seit der Ueberarbeitung aufs Challenge-Kapitel,
+    // statt die Erklaerung zu wiederholen (Simons Stilvorgabe). Die Sache --
+    // Challenges geben Stempel, keine Abzeichen -- steht weiterhin da.
+    expect(lies('../docs/handbuch/30-leitung.md')).toContain('Stempel');
   });
 });
 

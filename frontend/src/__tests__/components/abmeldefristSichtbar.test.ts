@@ -76,17 +76,22 @@ describe('Abmeldefrist ist benannt (N6/6)', () => {
   });
 
   it('das Handbuch erklaert die Regel im Anmelde-Kapitel', () => {
-    expect(handbuch).toContain('Bis wann sich Konfis wieder abmelden können');
+    expect(handbuch).toContain('bis wann Konfis sich abmelden können');
     expect(handbuch).toContain('Zwei Tage vor dem Termin ist Schluss');
   });
 
   it('das Handbuch grenzt sie gegen den QR-Code ab', () => {
     // Die Verwechslung lag nahe genug, dass sie beim Besprechen passiert ist.
+    //
+    // Im ganzen Kapitel geprueft, nicht im Abschnitt: Der QR-Hinweis steht
+    // seit der Ueberarbeitung beim Pflicht-Event ("Wer abgemeldet ist, kann
+    // sich nicht per QR-Code einchecken") -- sachlich der bessere Ort, denn
+    // dort entsteht die Verwechslung. Die Abgrenzung selbst bleibt.
+    expect(handbuch).toContain('QR-Code');
     const abschnitt = handbuch.slice(
-      handbuch.indexOf('Bis wann sich Konfis wieder abmelden können'),
-      handbuch.indexOf('## Plätze und Warteliste')
+      handbuch.indexOf('bis wann Konfis sich abmelden können'),
+      handbuch.indexOf('## Plätze und Warteliste einstellen')
     );
-    expect(abschnitt).toContain('QR-Code');
     expect(abschnitt).toContain('fest eingestellt');
   });
 
@@ -94,8 +99,8 @@ describe('Abmeldefrist ist benannt (N6/6)', () => {
     // Wer kurzfristig absagt, muss ausgetragen werden koennen -- sonst waere
     // die Regel ein Problem statt einer Hilfe.
     const abschnitt = handbuch.slice(
-      handbuch.indexOf('Bis wann sich Konfis wieder abmelden können'),
-      handbuch.indexOf('## Plätze und Warteliste')
+      handbuch.indexOf('bis wann Konfis sich abmelden können'),
+      handbuch.indexOf('## Plätze und Warteliste einstellen')
     );
     expect(abschnitt).toContain('jederzeit entfernen');
   });
