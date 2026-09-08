@@ -6,7 +6,8 @@
 // nach Start, RBAC/Org-Isolation, allow_multiple, konfi_consent-Fallback,
 // media_type-Validierung, Delete/Abzeichen, Export, Moderationszyklus.
 const request = require('supertest');
-const { getTestApp } = require('../helpers/testApp');
+const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
+const PushService = require('../../services/pushService');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
@@ -2016,6 +2017,117 @@ describe('Challenges Routes', () => {
       expect(res.body.gallery[0].jahrgang_name).toBeNull();
       expect(res.body.gallery[0].is_anonymous).toBe(true);
     });
+
+    // Zweimal "Freigeben" schickte dem GANZEN Jahrgang zweimal "Neuer Beitrag
+    // von X". Moeglich per Doppelklick (die Swipe-Aktion prueft kein isBusy)
+    // oder wenn die Antwort verlorengeht und die App den Aufruf wiederholt.
+    //
+    // Der Abzeichen-Push zwei Zeilen darunter war laengst abgesichert
+    // (approvedCount === 1); der Feed-Push darueber nicht. Auch der Kommentar
+    // dort hatte die Fehlerklasse bedacht -- aber nur fuer 'unhide'.
+    it('schickt den Feed-Push bei erneutem Freigeben NICHT noch einmal', async () => {
+      const challenge = await createChallenge({ moderated: true, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi2.id,
+        moderation_status: 'pending'
+      });
+
+      const spy = vi.spyOn(PushService, 'sendChallengeFeedToJahrgaenge').mockResolvedValue(undefined);
+
+      const erste = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(erste.status).toBe(200);
+      await warteAufNachwehen(app);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      const zweite = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(zweite.status).toBe(200);
+      await warteAufNachwehen(app);
+
+      // Immer noch einmal -- der zweite Aufruf darf nichts nachschicken.
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+    });
+
+    // Gegenrichtung: Die Sperre darf den ERSTEN Push nicht verschlucken, wenn
+    // ein Beitrag zwischendurch ausgeblendet und neu freigegeben wird. Auch
+    // dann war er schon einmal sichtbar -- 'unhide' pusht bewusst nicht,
+    // ein 'approve' nach 'hide' aber auch nicht mehr: Der Jahrgang kennt den
+    // Beitrag bereits.
+    it('schickt nach hide und erneutem approve keinen zweiten Feed-Push', async () => {
+      const challenge = await createChallenge({ moderated: true, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi2.id,
+        moderation_status: 'pending'
+      });
+
+      const spy = vi.spyOn(PushService, 'sendChallengeFeedToJahrgaenge').mockResolvedValue(undefined);
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      await warteAufNachwehen(app);
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide' });
+      await warteAufNachwehen(app);
+
+      const wieder = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(wieder.status).toBe(200);
+      await warteAufNachwehen(app);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+    });
+
+    // Der Lueckenfall: Bei UNmoderierten Challenges bleibt `approved_at`
+    // bewusst NULL (dort hat niemand hingesehen). Ein solcher Beitrag stand
+    // trotzdem schon im Feed -- deshalb prueft der Fix zusaetzlich den
+    // moderation_status. Mit `approved_at` allein liefe hier ein Push raus.
+    it('schickt bei unmoderierten Challenges keinen Feed-Push beim Freigeben', async () => {
+      const challenge = await createChallenge({ moderated: false, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi2.id,
+        moderation_status: 'approved'
+      });
+
+      const spy = vi.spyOn(PushService, 'sendChallengeFeedToJahrgaenge').mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+
+      // Der Beitrag war ohne Moderation sofort sichtbar -- der Jahrgang hat
+      // seine Mitteilung beim Einreichen bekommen, nicht hier.
+      expect(spy).not.toHaveBeenCalled();
+
+      spy.mockRestore();
+    });
+
+
   });
 
   // ================================================================

@@ -1611,7 +1611,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: [submission] } = await db.query(
           `SELECT cs.id, cs.challenge_id, cs.user_id, cs.moderation_status,
-                  cs.konfi_consent, cs.media_type, c.visibility, c.title AS challenge_title,
+                  cs.konfi_consent, cs.media_type, cs.approved_at,
+                  c.visibility, c.title AS challenge_title,
                   u.display_name AS einreicher_name
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
@@ -1716,7 +1717,27 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             // Bewusst NUR bei 'approve': Ein wieder eingeblendeter Beitrag
             // ('unhide') war schon einmal sichtbar, dafuer gaebe es sonst eine
             // zweite Mitteilung.
-            if (action === 'approve') {
+            //
+            // Und nur bei der ERSTEN Freigabe (08.09.2026): `approved_at` ist
+            // die Spur, dass dieser Beitrag schon einmal durch war. Ohne die
+            // Pruefung schickte ein zweiter Klick auf "Freigeben" dem ganzen
+            // Jahrgang erneut "Neuer Beitrag von X" -- moeglich per
+            // Doppelklick (die Swipe-Aktion prueft kein isBusy) oder wenn die
+            // Antwort verlorengeht und die App den Aufruf wiederholt. Ein
+            // 'approve' nach einem 'hide' zaehlt genauso: Der Jahrgang kennt
+            // den Beitrag bereits, dieselbe Ueberlegung wie bei 'unhide'.
+            // Der Abzeichen-Push weiter unten war ueber approvedCount === 1
+            // laengst so abgesichert.
+            //
+            // Zwei Merkmale, weil eines allein nicht reicht: `approved_at`
+            // bleibt bei UNmoderierten Challenges bewusst NULL (dort entsteht
+            // 'approved' automatisch, siehe Kommentar beim UPDATE oben), und
+            // `moderation_status` steht bei einem ausgeblendeten Beitrag auf
+            // 'hidden'. Zusammen decken sie beide Wege ab, auf denen ein
+            // Beitrag schon einmal im Feed stand.
+            const schonEinmalFreigegeben =
+              submission.approved_at !== null || submission.moderation_status === 'approved';
+            if (action === 'approve' && !schonEinmalFreigegeben) {
               const sichtbar = isSubmissionPublic(
                 { moderation_status: 'approved', konfi_consent: submission.konfi_consent },
                 { visibility: submission.visibility }

@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Ein Challenge-Beitrag ein zweites Mal freigegeben schickte dem ganzen
+  Jahrgang erneut „Neuer Beitrag von …". Die Mitteilung geht jetzt nur noch
+  bei der ersten Freigabe raus.
 - Ein zweites Mal denselben Team-Rückblick zu erstellen legte eine zweite
   Ausgabe an und schickte dem ganzen Team noch einmal „Dein Teamer-Jahr ist
   da!". Jetzt bleibt es bei einer Ausgabe je Jahr, und die Seite sagt, dass
