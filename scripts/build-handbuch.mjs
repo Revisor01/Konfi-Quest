@@ -104,10 +104,14 @@ function slug(text) {
  * `anker` (optional, Set) sammelt die vergebenen Ueberschriften-Anker der
  * Seite ein — daraus prueft der Aufrufer am Ende alle internen Verweise.
  */
-function markdown(quelle, anker = new Set()) {
+function markdown(quelle, anker = new Set(), kapitelNr = null, abschnitte = null) {
   const zeilen = quelle.split('\n');
   const teile = [];
   let i = 0;
+  // Zaehler fuer die Abschnittsnummern (13.1, 13.1.1). Nur wenn eine
+  // Kapitelnummer uebergeben wurde -- die Uebersichtsseite nummeriert nicht.
+  let nrH2 = 0;
+  let nrH3 = 0;
 
   const istTabelle = (n) =>
     zeilen[n]?.startsWith('|') && /^\|[\s:|-]+\|$/.test(zeilen[n + 1] ?? '');
@@ -127,7 +131,23 @@ function markdown(quelle, anker = new Set()) {
       let n = 2;
       while (anker.has(id)) id = `${slug(h[2])}-${n++}`;
       anker.add(id);
-      teile.push(`<h${stufe} id="${id}">${inline(h[2])}</h${stufe}>`);
+
+      // NUMMERIERUNG (Simon, 08.09.2026): "ich will im handbuch bitte 13.1
+      // 13.2 13.3 auch in der navi wenn man das kapitel anklickt". Zwei
+      // Ebenen: h2 wird 13.1, h3 wird 13.1.1. h4 bleibt unnummeriert -- drei
+      // Ebenen liest niemand mehr als Nummer, das waere 13.1.1.1.
+      let nummer = '';
+      if (kapitelNr != null && stufe === 2) {
+        nrH2 += 1; nrH3 = 0;
+        nummer = `${kapitelNr}.${nrH2}`;
+      } else if (kapitelNr != null && stufe === 3 && nrH2 > 0) {
+        nrH3 += 1;
+        nummer = `${kapitelNr}.${nrH2}.${nrH3}`;
+      }
+      if (abschnitte && nummer) abschnitte.push({ id, nummer, titel: h[2], stufe });
+
+      const marke = nummer ? `<span class="abschnitt-nr">${nummer}</span>` : '';
+      teile.push(`<h${stufe} id="${id}">${marke}${inline(h[2])}</h${stufe}>`);
       i++;
       continue;
     }
@@ -300,6 +320,32 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel-kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:2.3rem; margin:0; letter-spacing:2.5px; line-height:1.05; display:flex; align-items:baseline; gap:11px; }
 .kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
+
+/* Abschnittsnummern (13.1, 13.1.1) und das Inhaltsverzeichnis des Kapitels
+   (Simon, 08.09.2026). Die Nummer steht in der Kapitelfarbe und tabellarisch,
+   damit die Ziffern untereinander stehen. */
+.abschnitt-nr { color:var(--kapitel); font-variant-numeric:tabular-nums; font-weight:600; padding-right:.45em; }
+h2 .abschnitt-nr { font-size:.82em; }
+h3 .abschnitt-nr { font-size:.86em; }
+.kapitel-inhalt { margin:0 0 34px; padding:16px 20px; background:var(--flaeche-2); border-radius:12px; border:1px solid var(--rand); }
+.kapitel-inhalt-titel { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); margin:0; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:12px; -webkit-tap-highlight-color:transparent; }
+.kapitel-inhalt-titel::-webkit-details-marker { display:none; }
+.kapitel-inhalt-titel:focus-visible { outline:2px solid var(--akzent); outline-offset:3px; }
+.kapitel-inhalt[open] .kapitel-inhalt-titel { margin:0 0 9px; }
+.ki-pfeil { flex:none; width:7px; height:7px; border-right:2px solid var(--kapitel); border-bottom:2px solid var(--kapitel); transform:rotate(45deg); margin-top:-3px; transition:transform .15s ease; }
+.kapitel-inhalt[open] .ki-pfeil { transform:rotate(225deg); margin-top:3px; }
+.kapitel-inhalt ul { list-style:none; margin:0; padding:0; }
+.kapitel-inhalt li { margin:0; }
+.kapitel-inhalt li.stufe-3 { padding-left:2.4em; }
+.kapitel-inhalt a { display:flex; gap:9px; align-items:baseline; padding:3px 0; text-decoration:none; color:var(--text); font-size:.9rem; }
+.kapitel-inhalt li.stufe-3 a { font-size:.84rem; color:var(--text-leise); }
+.kapitel-inhalt a:hover { color:var(--akzent); }
+.kapitel-inhalt .ki-nr { flex:none; color:var(--kapitel); font-variant-numeric:tabular-nums; font-size:.78rem; font-weight:600; min-width:2.6em; }
+.kapitel-inhalt li.stufe-3 .ki-nr { min-width:3.4em; }
+@media (max-width:860px) {
+  .kapitel-inhalt { padding:13px 15px; }
+  .kapitel-inhalt li.stufe-3 { padding-left:1.4em; }
+}
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
 .kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
@@ -530,13 +576,35 @@ ${inhalt}
     </nav>`;
 
     const anker = new Set();
-    const rumpfHtml = markdown(s.rumpf, anker);
+    const abschnitte = [];
+    const rumpfHtml = markdown(s.rumpf, anker, s.nr, abschnitte);
+
+    // Inhaltsverzeichnis DES KAPITELS, direkt unter der Kapitelueberschrift
+    // (Simon, 08.09.2026). Zwei Ebenen, die zweite eingerueckt. Es steht im
+    // Fluss und nicht in der Seitenleiste: Die traegt schon die dreizehn
+    // Kapitel, und auf dem Handy klappt sie ohnehin zu.
+    // Lange Verzeichnisse starten zugeklappt -- das Wrapped-Kapitel hat 28
+    // Abschnitte und fuellte sonst den ganzen ersten Bildschirm (gemessen
+    // 1048 px). <details open> im HTML heisst: ohne JavaScript ist alles
+    // sichtbar; das Mini-Skript darunter nimmt das open bei langen Listen
+    // weg. Kurze Kapitel bleiben offen.
+    const langeListe = abschnitte.length > 8;
+    const kapitelNavi = abschnitte.length < 2 ? '' : `
+      <details class="kapitel-inhalt${langeListe ? ' ist-lang' : ''}" open>
+        <summary class="kapitel-inhalt-titel"><span>Inhalt</span><span class="ki-pfeil"></span></summary>
+        <ul>${abschnitte.map((a) =>
+          `<li class="stufe-${a.stufe}"><a href="#${e(a.id)}">`
+          + `<span class="ki-nr">${e(a.nummer)}</span>${e(a.titel)}</a></li>`).join('')}</ul>
+      </details>
+      <script>document.querySelectorAll('.kapitel-inhalt.ist-lang').forEach(function(d){d.removeAttribute('open');});</script>`;
+
     const inhalt = `    <article class="kapitel" style="--kapitel:${e(s.farbe)}">
       <header class="kapitel-kopf">
         <p class="kapitel-zaehler">Kapitel ${s.nr} von ${seiten.length}</p>
         <h1><span class="kapitel-nr">${s.nr}</span>${e(s.titel)}</h1>
         <p class="kapitel-meta">${e(s.untertitel)}</p>
       </header>
+${kapitelNavi}
       ${rumpfHtml}
     </article>
 ${blaettern}`;
