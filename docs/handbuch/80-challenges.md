@@ -10,7 +10,7 @@ eigenen Beitrag antworten: ein Text, ein Foto, eine Sprachaufnahme, ein Video
 oder ein Musik-Link. Alles, was zurückkommt, sammelt sich an einer Stelle — und
 du entscheidest beim Anlegen, wer es zu sehen bekommt. Dieses Kapitel richtet
 sich an die Leitung und an [Teamer:innen](05-rollen.md#teamer-in); was Konfis
-sehen, steht in [Für Konfis](10-konfis.md#challenges).
+sehen, steht in [Für Konfis](10-konfis.md#bei-einer-challenge-mitmachen).
 
 Challenges zählen **nichts**: keine [Punkte](40-punkte.md), keine Rangliste,
 kein Beitrag zum [Punkteziel des Jahrgangs](45-jahrgaenge.md#punkteziele-festlegen). Wer

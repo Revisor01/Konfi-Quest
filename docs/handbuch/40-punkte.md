@@ -46,11 +46,11 @@ Den Ablauf beschreibt der nächste Abschnitt.
 
 Wer bei einem Termin als anwesend eingetragen wird, bekommt die beim Termin
 hinterlegten Punkte. Das passiert beim
-[Eintragen der Anwesenheit](70-termine.md#anwesenheit), nicht beim Buchen.
+[Eintragen der Anwesenheit](70-termine.md#die-anwesenheit-verbuchen), nicht beim Buchen.
 Welche fünf Bedingungen dafür alle erfüllt sein müssen — unter anderem, dass
-[Pflichttermine](70-termine.md#pflicht-event) und Konfirmationen grundsätzlich
+[Pflichttermine](70-termine.md#ein-pflicht-event-einrichten) und Konfirmationen grundsätzlich
 keine Punkte geben —, steht unter
-[Wann es Punkte gibt](70-termine.md#wann-es-punkte-gibt).
+[Wann es Punkte gibt](70-termine.md#punkte-fuer-einen-termin-vergeben).
 
 ### Über Bonuspunkte
 
@@ -163,7 +163,7 @@ sie erzeugt hat. Das sind alle Wege:
 - Eine **direkt zugeschriebene Aktivität löschen**
 - **Bonuspunkte löschen**
 - Bei einem Termin die
-  [**Anwesenheit zurücknehmen**](70-termine.md#wann-punkte-zurueckgenommen-werden)
+  [**Anwesenheit zurücknehmen**](70-termine.md#punkte-zuruecknehmen)
 - Eine Person **aus einem Termin entfernen**
 - Eine bestätigte Buchung **zurück auf die Warteliste** setzen
 - Einen **ganzen Termin löschen** — dabei werden alle dafür vergebenen Punkte

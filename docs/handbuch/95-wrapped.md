@@ -399,7 +399,7 @@ liegt.
 | Aktivster Monat | Aktivitäten und besuchte Termine zusammen |
 | Abzeichen | die verliehenen [Abzeichen](60-badges.md) |
 | Das haben nur x % | wie viele Konfis der Gemeinde dasselbe Abzeichen haben |
-| Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#konfirmation) |
+| Konfirmation | der [als Konfirmation gekennzeichnete Termin](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) |
 | Momente und Challenges | [Challenge-Beiträge](80-challenges.md) aus dem Zeitraum |
 | Warteliste | Buchungen, die von der Warteliste nachgerückt sind |
 | Der lange Atem | Spanne zwischen erstem und letztem Termin |

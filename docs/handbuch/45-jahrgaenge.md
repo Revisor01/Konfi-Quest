@@ -212,7 +212,7 @@ Bei [**Terminen**](70-termine.md) wirkt die Zuweisung auf beides: Sehen und
 Buchen. Eine Teamer:in kann sich nur zu Terminen ihrer eigenen Jahrgänge
 anmelden; sonst kommt **„Dieser Termin gehört zu einem Jahrgang, dem du
 nicht zugewiesen bist“**. Zwei Arten von Terminen bleiben immer sichtbar und
-buchbar: Termine [**nur für Teamer:innen**](70-termine.md#nur-teamer-innen)
+buchbar: Termine [**nur für Teamer:innen**](70-termine.md#die-zielgruppe-waehlen)
 und Termine ohne jede Jahrgangsbindung.
 
 Wird ein Konfi **zur Teamer:in befördert**, übernimmt das System seinen
@@ -284,6 +284,6 @@ später noch nachschauen können.
 
 Am Jahrgang selbst wird **kein** Konfirmationsdatum gepflegt. Der
 Konfirmationstermin ergibt sich **pro Konfi** aus dem Termin, der
-[als Konfirmation gekennzeichnet](70-termine.md#konfirmation) ist und den der
+[als Konfirmation gekennzeichnet](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) ist und den der
 Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat
 also jeder sein eigenes, richtiges Datum.

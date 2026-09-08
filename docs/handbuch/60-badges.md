@@ -161,15 +161,15 @@ eine. Termine zählen hier **nicht** mit.
 
 #### Pflicht-Anwesenheit
 
-Besuchte [**Pflicht-Termine**](70-termine.md#pflicht-event) — also solche mit
+Besuchte [**Pflicht-Termine**](70-termine.md#ein-pflicht-event-einrichten) — also solche mit
 Pflicht-Markierung und [eingetragener
-Anwesenheit](70-termine.md#anwesenheit).
+Anwesenheit](70-termine.md#die-anwesenheit-verbuchen).
 
 *Beispiel:* Wert 12 → 12 besuchte Pflichttermine.
 
 > Das ist bei Konfis die einzige Bedingung, die Pflichttermine zählt. Bei
 > allen anderen bleiben Pflichttermine und
-> [Konfirmationen](70-termine.md#konfirmation) außen vor — sonst gäbe es
+> [Konfirmationen](70-termine.md#einen-termin-als-konfirmation-kennzeichnen) außen vor — sonst gäbe es
 > Abzeichen für etwas, wozu man ohnehin verpflichtet ist.
 
 ### Nach Inhalt zählen
@@ -341,9 +341,9 @@ Sofort bei:
 - einer direkt zugewiesenen [Aktivität](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   — und ebenso, wenn du eine wieder entfernst
 - vergebenen Bonuspunkten — und ebenso, wenn du welche zurücknimmst
-- [eingetragener Anwesenheit](70-termine.md#anwesenheit) bei einem Termin,
+- [eingetragener Anwesenheit](70-termine.md#die-anwesenheit-verbuchen) bei einem Termin,
   einzeln wie für die ganze Liste
-- einem [Check-in per QR-Code](70-termine.md#qr-check-in)
+- einem [Check-in per QR-Code](70-termine.md#den-qr-check-in-nutzen)
 - dem Anlegen oder Bearbeiten eines Abzeichens
 - dem Knopf „Abzeichen neu prüfen"
 

@@ -1,140 +1,114 @@
 ---
 titel: Für Teamer:innen
-untertitel: Start · Chat · Events · Challenges · Badges
+untertitel: Start · Chat · Challenges · Mitmachen · Material
 farbe: "#be185d"
 ---
 
-Als Teamer:in begleitest du die Jahrgänge, die dir zugewiesen sind. Diese
-[Zuweisung](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
-entscheidet fast überall, was du siehst und wen du erreichst.
+Ein Rundgang durch die App aus Teamer-Sicht. Unten stehen fünf Reiter —
+**Start**, **Chat**, **Challenges**, **Mitmachen** und **Material**. Dein
+Profil erreichst du über das Personen-Symbol oben rechts.
 
-## Start
+Was du siehst und wen du erreichst, hängt an den Jahrgängen, die dir zugewiesen
+sind — was diese
+[Zuweisung steuert](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert),
+steht im Jahrgangs-Kapitel. Fehlt sie, setzt die Leitung sie nach.
+
+## Auf der Startseite nachsehen, was ansteht
 
 ![Die Startseite einer Teamer:in: Begrüßung, die Karte für Challenges und die eigenen Zertifikate.](/docs/bilder/iphone/teamer-startseite.png)
 
-Deine Übersicht mit den Bereichen, die deine Gemeinde freigeschaltet hat:
-deine **Zertifikate**, deine **Events**, die **Tageslosung** und deine
-**Badges**. Läuft gerade eine Challenge, steht sie oben.
+Die Bereiche, die deine Gemeinde freigeschaltet hat: deine **Zertifikate**,
+deine **Events**, die **Tageslosung** und deine **Badges**. Läuft gerade eine
+Challenge, steht sie oben. Ist dein
+[Jahresrückblick](95-wrapped.md#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen)
+freigegeben, erscheint hier ein Banner dafür.
 
-Ist dein Jahresrückblick freigegeben, erscheint hier ein Banner dafür.
-
-## Chat
+## Mit Team und Konfis schreiben
 
 ![Die Chat-Übersicht der Teamer:innen.](/docs/bilder/iphone/teamer-chat.png)
 
-Du erreichst **das ganze Team** deiner Gemeinde — alle Teamer:innen und die
-gesamte Leitung, unabhängig vom Jahrgang.
+Du erreichst das ganze Team deiner Gemeinde — alle Teamer:innen und die gesamte
+Leitung, unabhängig vom Jahrgang. Konfis erreichst du nur in deinen
+zugewiesenen Jahrgängen; ohne Zuweisung erreichst du keine und tauchst
+umgekehrt in deren Kontaktliste nicht auf.
 
-Bei **Konfis** gilt deine Jahrgangszuweisung: Du kannst nur die anschreiben,
-für deren Jahrgang du eingetragen bist. Hast du keine Zuweisung, erreichst du
-keine Konfis — und tauchst umgekehrt in deren Kontaktliste auch nicht auf.
-Wenn du Konfis erreichen können solltest und es nicht kannst, fehlt dir die
-Jahrgangszuweisung; die setzt die Leitung.
+Gruppenchats kannst du anlegen. Mitglieder nachträglich hinzufügen oder
+entfernen und den Verlauf exportieren kann nur die Leitung — auch in Gruppen,
+die du selbst angelegt hast. Alle Regeln stehen im Kapitel
+[Chat](90-chat.md#wer-wen-anschreiben-darf).
 
-Du kannst Gruppenchats anlegen. Mitglieder nachträglich hinzufügen oder
-entfernen kann nur die Leitung — auch in Gruppen, die du selbst angelegt hast.
+## Challenges stellen und begleiten
 
-Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung. Alle
-Chat-Regeln im Detail stehen im Kapitel [Chat](90-chat.md).
+![Der Challenges-Bereich in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-challenges.png)
 
-## Events
+Du arbeitest hier wie die Leitung, begrenzt auf deine zugewiesenen Jahrgänge:
+[anlegen und bearbeiten](80-challenges.md#eine-challenge-anlegen),
+[löschen](80-challenges.md#eine-challenge-loeschen), Beiträge
+[freigeben, anonymisieren oder ausblenden](80-challenges.md#beitraege-freigeben-ausblenden-loeschen)
+— und selbst mitmachen.
+
+Es gibt auch Challenges nur fürs Team; die sehen Konfis gar nicht. Was nach dem
+Start noch änderbar ist, steht unter
+[Wissen, was nach dem Start gesperrt ist](80-challenges.md#wissen-was-nach-dem-start-gesperrt-ist).
+
+## Zu Terminen zusagen und absagen
 
 ![Der Bereich Mitmachen mit Terminen und Aktivitäten.](/docs/bilder/iphone/teamer-mitmachen.png)
 
-Zwei Bereiche oben: **Events** und **Aktivitäten**.
+Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
+**Aktivitäten**.
 
 ### Events
 
-Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Bei Terminen,
-für die Teamer:innen gesucht werden, meldest du dich mit **„Ich bin dabei"**
-an. Es gibt ein [eigenes Kontingent für das Team](70-termine.md#teamer-kontingent),
-getrennt von den Plätzen der Konfis, und bei Bedarf eine eigene Warteliste.
+Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Zu jedem Termin
+siehst du die Details und das hinterlegte
+[Material](70-termine.md#material-an-einem-termin-finden). Reine Konfi-Termine stehen nur
+zur Information da, ohne Anmeldung. Termine anlegen kann die Leitung.
 
-#### Zusagen und absagen
+Bei Terminen, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
+du dabei?"** mit **„Ich bin dabei"** oder **„Ich bin nicht dabei"**. Beides
+lässt sich jederzeit ändern. Es gibt ein eigenes
+[Kontingent für das Team](70-termine.md#das-teamer-kontingent-verwalten), getrennt von den
+Plätzen der Konfis.
 
-Zu jedem Team-Termin gibst du eine klare Antwort: **„Ich bin dabei"** oder
-**„Ich bin nicht dabei"**. Eine Absage ist eine eigene Rückmeldung — die
-Leitung sieht sie und muss nicht nachfragen, ob deine Antwort noch kommt.
-Beides lässt sich **jederzeit ändern**, auch von der Absage zurück zur
-Zusage.
-
-Beim Absagen fragt die App nach einem **Grund**:
-
-- Sagst du ab, **ohne vorher zugesagt zu haben**, ist der Grund freiwillig —
-  er hilft der Leitung aber beim Planen.
-- Sagst du ab, **nachdem du zugesagt hattest** (fester Platz oder
-  Warteliste), ist der Grund **Pflicht**. Die Leitung hat mit dir geplant
-  und muss umplanen können.
-
-Sagst du von einem festen Platz ab, wird der Platz frei und die nächste
-Person rückt von der Team-Warteliste nach.
-
-Manche Termine sind reine Konfi-Termine. Die stehen dann nur zur Information
-da, ohne Anmeldung.
-
-Zu jedem Termin siehst du die Details und das hinterlegte **Material**.
-
-> **Hinweis:** Die Einführung in der App sagt, du könntest selbst Termine
-> anlegen. Das stimmt derzeit nicht — in der Teamer-Ansicht gibt es dafür
-> keine Schaltfläche. Termine legt die Leitung an.
+Beim Absagen fragt die App nach einem Grund — nach einer vorherigen Zusage ist
+er Pflicht, sonst freiwillig. Warum das so ist und was danach mit dem Platz
+passiert, steht unter
+[Teamer:innen sagen zu oder ab](70-termine.md#das-teamer-kontingent-verwalten).
 
 ### Aktivitäten
 
 Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als
-Nachweis. Die Leitung bestätigt sie, dann zählen sie — der
-[Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist derselbe
-wie bei den Konfis.
+Nachweis. Der
+[Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
+derselbe wie bei den Konfis.
 
-## Challenges
+## Material öffnen
 
-![Der Challenges-Bereich in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-challenges.png)
+Der Reiter **Material** zeigt die Dokumente und Links, die für dich freigegeben
+sind. Hängt ein Material an einem Jahrgang, sehen es nur dessen Teamer:innen;
+Material ohne Jahrgang sehen alle Teamer:innen der Gemeinde und steht in einem
+eigenen Abschnitt ganz oben, am Globus zu erkennen. Links öffnen sich im
+Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
+[Für die Leitung](30-leitung.md#material-anlegen-und-sichtbar-machen).
 
-Du arbeitest hier genauso wie die Leitung — begrenzt auf deine zugewiesenen
-Jahrgänge. Du kannst:
-
-- Challenges **anlegen und bearbeiten**
-- Challenges **löschen**
-- Beiträge **freigeben**, nachträglich **anonymisieren** oder **ausblenden**
-- **selbst mitmachen** und einen eigenen Beitrag einreichen
-
-Beim Löschen unterscheidet die App: Einen Entwurf, an dem noch niemand
-mitgemacht hat, entfernst du direkt. Läuft die Challenge schon und es gibt
-Beiträge, fragt die App noch einmal nach — und löscht dann alle Beiträge und
-hochgeladenen Dateien mit. Das lässt sich nicht rückgängig machen.
-
-Anonymisieren lässt sich nicht zurücknehmen. Ihr im Team seht weiterhin, von
-wem ein Beitrag stammt — die Anonymität gilt gegenüber der Gruppe.
-
-Es gibt auch Challenges **nur fürs Team**. Die sehen Konfis gar nicht.
-Alles Weitere steht im Kapitel [Challenges](80-challenges.md).
-
-## Badges
-
-![Die Badges in der Teamer-Ansicht.](/docs/bilder/iphone/teamer-abzeichen.png)
-
-Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
-Welche [Bedingungen für Teamer:innen](60-badges.md#pruefen-ob-die-bedingung-zur-zielgruppe-passt)
-gelten, steht im Abzeichen-Kapitel.
-
-## Dein Profil
+## Dein Profil öffnen
 
 ![Das Profil einer Teamer:in.](/docs/bilder/iphone/teamer-profil.png)
 
-Über den Profil-Bereich erreichst du:
+Über das Personen-Symbol oben rechts. Dort findest du:
 
-- **Funktionsbeschreibung** — wie du in der App genannt wirst, etwa
-  „Teamerin" oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
-- **E-Mail und Passwort ändern**
+- **Funktionsbeschreibung** — wie du in der App genannt wirst, etwa „Teamerin"
+  oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
+- **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
-- **Material** — die Dokumente, die für dich freigegeben sind. Hängt ein
-  Dokument an einem Jahrgang, sehen es nur die Teamer:innen dieses Jahrgangs.
-  Dokumente ohne Jahrgang sehen **alle** Teamer:innen der Gemeinde — sie
-  stehen in einem eigenen Abschnitt ganz oben und sind am Globus zu
-  erkennen. Neben Dateien können auch Internetseiten hinterlegt sein,
-  auch mehrere; sie sind am Link-Symbol zu erkennen und öffnen sich im
-  Browser.
+- **App-Tour ansehen** und **Medien-Cache leeren**
+- **Badges** — deine Abzeichen; welche
+  [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
+  steht im Abzeichen-Kapitel
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
-- **Meine Rückblicke** — dein [Jahresrückblick](95-wrapped.md#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen)
-  als Teamer:in. Jede Ausgabe steht unter dem Namen, den die Gemeinde ihr
-  gegeben hat
+- **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
+
+Wie du dich in der App bewegst, steht im Kapitel
+[Die App bedienen](03-bedienung.md).
