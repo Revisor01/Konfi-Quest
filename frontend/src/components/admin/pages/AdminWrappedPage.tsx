@@ -38,11 +38,15 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
  * kompliziert mit den rueckblicken. Dann braucht es auch keine Titel."
  *
  * DAS FORMULAR IST DAMIT FAST LEER, und das ist der Punkt:
- *   Konfi -> nur den Jahrgang waehlen. Gerechnet wird vom Beginn der
- *            Konfi-Zeit bis heute.
+ *   Konfi -> nur den Jahrgang waehlen, dazu einen Namen (vorgeschlagen).
+ *            Gerechnet wird vom Beginn der Konfi-Zeit bis heute.
  *   Team  -> nur das Jahr waehlen. Gerechnet wird vom 1.1. bis 31.12.
- * Kein Titel, keine Datumsfelder. Was frueher einzustellen war, konnte man
- * falsch einstellen; jetzt gibt es nichts mehr falsch zu machen.
+ * Keine Datumsfelder. Was frueher einzustellen war, konnte man falsch
+ * einstellen; jetzt gibt es nichts mehr falsch zu machen.
+ *
+ * DER NAME kam am 08.09.2026 zurueck (Simon: "Sonst wird es bei drei
+ * Rueckblicken unuebersichtlich."). Er beschriftet nur -- er rechnet nichts,
+ * anders als der abgeschaffte Zeitraum.
  *
  * WARUM EINE EIGENE SEITE STATT DES SCHALTERS IM JAHRGANG: Der Schalter dort
  * konnte nur EINEN Zustand abbilden -- an oder aus. Ein Jahrgang bekommt aber

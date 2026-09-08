@@ -2078,11 +2078,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     rbacVerifier,
     requireAdmin,
     param('jahrgangId').isInt({ min: 1 }),
-    // KEINE Felder mehr aus dem Formular (Simon, 07.09.2026): kein Titel,
-    // kein Zeitraum. Der Konfi-Rueckblick geht immer vom Beginn der
-    // Konfi-Zeit bis heute. Aeltere App-Versionen schicken die Felder
-    // moeglicherweise noch mit -- sie werden ohne Fehler ignoriert, statt
-    // die Anfrage abzulehnen (ALT-APP-VERTRAG).
+    // KEIN Zeitraum aus dem Formular (Simon, 07.09.2026): Der
+    // Konfi-Rueckblick geht immer vom Beginn der Konfi-Zeit bis heute.
+    // Ein optionaler `titel` wird dagegen entgegengenommen und gespeichert
+    // (siehe unten) -- er beschriftet nur, er rechnet nichts.
+    // Aeltere App-Versionen schicken den Zeitraum moeglicherweise noch mit
+    // -- er wird ohne Fehler ignoriert, statt die Anfrage abzulehnen
+    // (ALT-APP-VERTRAG).
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
@@ -2140,12 +2142,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Das ist die harmlosere Seite: Sie ist sichtbar und loeschbar
         // (DELETE /wrapped/ausgabe/:id), waehrend ein Fremdschluesselfehler
         // gar keine Snapshots erzeugt haette.
-        // DER TITEL WIRD NICHT MEHR GESETZT (Simon, 07.09.2026: "Dann
-        // braucht es auch keine Titel."). Die Spalte ist NOT NULL und bleibt
-        // in der Datenbank, weil Alt-Ausgaben ihre Titel behalten -- deshalb
-        // ein sachlicher Platzhalter, den die App nicht anzeigt. Die
-        // Ueberschrift ergibt sich in der App aus der Rolle: "Deine
-        // Konfi-Zeit" bzw. "Dein Teamerjahr 202x".
         // NAME DER AUSGABE, wieder eingefuehrt am 08.09.2026 (Simon: "Ich
         // glaube es waere gut wenn man den Rueckblicken bei Konfis doch
         // Namen geben koennte und die dynamisch aufgenommen werden auf die

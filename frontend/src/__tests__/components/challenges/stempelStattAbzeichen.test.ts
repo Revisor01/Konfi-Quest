@@ -120,7 +120,13 @@ describe('Challenge-Stempel: das Handbuch zieht mit', () => {
   });
 
   it('die anderen Kapitel nennen es auch so', () => {
-    expect(lies('../docs/handbuch/00-start.md')).toContain('Stempel fürs Mitmachen');
+    // Auch hier auf den BEGRIFF pruefen: Das Startkapitel verweist seit der
+    // Ueberarbeitung aufs Challenge-Kapitel, statt die Erklaerung zu
+    // wiederholen. Entscheidend bleibt, dass dort "Stempel" steht und nicht
+    // "Abzeichen" -- der Widerspruch, den die Umbenennung beseitigen sollte.
+    const startkapitel = lies('../docs/handbuch/00-start.md');
+    expect(startkapitel).toContain('Stempel');
+    expect(startkapitel).not.toContain('Abzeichen fürs Mitmachen');
     // Auf den BEGRIFF pruefen, nicht auf einen Satz im Wortlaut: Das
     // Leitungs-Kapitel verweist seit der Ueberarbeitung aufs Challenge-Kapitel,
     // statt die Erklaerung zu wiederholen (Simons Stilvorgabe). Die Sache --

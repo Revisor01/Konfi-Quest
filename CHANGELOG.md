@@ -145,6 +145,21 @@ Versionsüberschrift.
 - Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
   entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
   Löschen wieder.
+- Das Handbuch behauptete, beim Anlegen eines Rückblicks lasse sich nichts
+  einstellen und kein Name vergeben. Konfi-Rückblicke bekommen sehr wohl einen
+  Namen, der auf der Begrüßungsfolie und in der Liste erscheint.
+- Das Handbuch nannte für die Teilen-Karte die gesammelten Punkte. Sie zeigt
+  die Konfirmation, nicht die Punktzahl.
+- Das Handbuch gab die Überschrift des Team-Rückblicks als „Dein Team-Jahr"
+  an. Sie lautet „Dein Teamerjahr", und die genannten Texte der Mitteilungen
+  stimmten ebenfalls nicht.
+- Das Handbuch behauptete, fremde Rückblicke könne nur die Leitung ansehen.
+  Admins können das auch, jeweils in der eigenen Gemeinde.
+- Das Handbuch beschrieb den Hinweis auf eine neue Version als Zeile über der
+  App. Es ist eine Karte auf der Startseite, und im Browser erscheint sie gar
+  nicht.
+- Das Handbuch beschrieb den Hinweis auf noch nicht gesendete Vorgänge als
+  Balken am unteren Rand. Es ist ein Knopf mit Zähler.
 - Das Handbuch beschrieb den Jahresrückblick an mehreren Stellen so, wie er
   einmal war: Es verwies für die Freigabe noch auf den Jahrgang statt auf
   „Mehr → Jahresrückblick", kannte nur einen Rückblick pro Person und Jahr
