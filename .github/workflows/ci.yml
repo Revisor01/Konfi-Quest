@@ -42,6 +42,11 @@ env:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    # Normal 11-12 Minuten, mit der tmpfs unten weniger. Ein Lauf hat aber
+    # schon 68 Minuten gebraucht (34120673325, am Ende gruen) -- ohne Grenze
+    # gilt GitHubs Standard von SECHS Stunden, und ein wirklich haengender
+    # Job verbrennt so lange Runner-Zeit, ohne dass jemand etwas erfaehrt.
+    timeout-minutes: 40
 
     services:
       postgres:
@@ -60,11 +65,27 @@ jobs:
           PGTZ: Europe/Berlin
         ports:
           - 5432:5432
+        # Die Datenbank ins RAM, wie lokal (backend/docker-compose.test.yml).
+        # Sie ist ein Wegwerfstueck: je Lauf neu angelegt, danach verworfen.
+        #
+        # Warum es sich lohnt (gemessen 08.09.2026 an zwei Suiten, 291 Tests):
+        #   Platte, wie es hier vorher lief   106 s
+        #   tmpfs, mit genau dieser Option      46 s
+        # Der Grund steht in backend/docker-compose.test.yml: Jedes
+        # TRUNCATE ... RESTART IDENTITY ueber ~45 Tabellen legt neue
+        # Relationsdateien an, und `truncateAll` laeuft 111 Mal. Das sind
+        # tausende Schreibvorgaenge, die hier auf die Runner-Platte gingen --
+        # bei nur 16 % CPU-Auslastung wartete der Lauf fast nur auf die Platte.
+        #
+        # nr_inodes wie lokal hochgesetzt: Mit dem Standardbudget von rund
+        # 500.000 lief der Zaehler bei ~2400 Tests auf 100 %, und Postgres
+        # meldete "No space left on device" bei reichlich freiem Platz.
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --tmpfs /var/lib/postgresql/data:rw,size=2g,nr_inodes=4000000
 
     steps:
       - name: Checkout repository
@@ -96,6 +117,7 @@ jobs:
 
   frontend-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -209,6 +231,7 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     # SCHARF seit 31.08.2026: Die Suite steht auf 32/32 und haengt in den
     # needs von build-and-push. Ab hier gilt: E2E rot -> kein Build -> kein
     # Deploy, genauso wie bei den Unit-Tests.
@@ -267,6 +290,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -347,6 +371,7 @@ jobs:
     needs: [build-and-push]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)
         uses: actions/checkout@v7
