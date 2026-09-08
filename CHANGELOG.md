@@ -80,6 +80,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Handbuch behauptete, zeitabhängige Abzeichen („Serie", „Zeitbasiert")
+  kämen nur bei eingeschalteten Mitteilungen. Das stimmt nicht: Sie werden
+  jedem verliehen. Ohne Mitteilungen erfährt man nur später davon.
 - Das Handbuch beschreibt jetzt alle fünfzehn Bedingungen für Abzeichen. Die
   „Kategorie-Kombination" fehlte bisher ganz — also gerade die, bei der der
   Wert sagt, aus wie vielen Kategorien jemand dabei gewesen sein muss, und

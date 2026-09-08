@@ -349,10 +349,11 @@ das Abzeichen selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
 Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push, damit ein
 Nachhol-Lauf niemanden mit Benachrichtigungen überschüttet.
 
-> Der Hintergrundlauf erfasst **nur Geräte mit eingeschalteten Mitteilungen**.
-> Wer die App nie installiert oder Mitteilungen abgelehnt hat, bekommt zeitliche
-> Abzeichen („Serie", „Zeitbasiert", „Teamer-Jahr") erst bei der nächsten
-> Punktevergabe. Die anderen Bedingungen greifen ohnehin sofort.
+> **Mitteilungen sind dafür nicht nötig.** Der Hintergrundlauf geht alle aktiven
+> Konfis und Teamer:innen durch, ganz gleich ob jemand die App installiert oder
+> Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von dem Abzeichen nur
+> später — beim nächsten Öffnen der App statt sofort per Push. Verliehen wird es
+> genauso.
 
 ## Wissen, was beim Verleihen passiert
 
