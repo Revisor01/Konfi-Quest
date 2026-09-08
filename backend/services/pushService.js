@@ -1788,7 +1788,7 @@ class PushService {
 
       const istKonfi = wrappedType === 'konfi';
       return await this.sendToMultipleUsers(db, userIds, {
-        title: istKonfi ? 'Dein Konfi-Jahr ist da!' : 'Dein Teamer-Jahr ist da!',
+        title: istKonfi ? 'Deine Konfi-Zeit Wrapped ist da!' : 'Dein Team-Jahr Wrapped ist da!',
         body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
         data: {
           type: 'wrapped',

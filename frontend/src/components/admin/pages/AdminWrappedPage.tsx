@@ -291,10 +291,13 @@ const AdminWrappedPage: React.FC = () => {
                   // Der Team-Text richtet sich nach der Berechtigung: Das
                   // Plus ist fuer Admins ohne Leitungsrecht gesperrt, ein
                   // "lege einen an" waere dort eine Sackgasse.
+                  // Kein "mit eigenem Namen" mehr (08.09.2026): Titel und
+                  // Zeitraum sind am 07.09. entfallen, die Ueberschrift
+                  // entsteht aus Jahrgang bzw. Jahr.
                   message={segment === 'konfi'
-                    ? 'Über das Plus oben legst du einen an — mit eigenem Namen, etwa „Zwischenstand" oder „Dein Abschluss".'
+                    ? 'Über das Plus oben legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
                     : istLeitung
-                      ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, mit eigenem Namen.'
+                      ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.'
                       : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Leitung deiner Gemeinde an.'}
                   iconColor="var(--app-color-wrapped)"
                 />

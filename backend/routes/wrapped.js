@@ -2109,15 +2109,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
         }
 
-        // War der Rueckblick schon freigegeben, ist dieser Lauf eine
-        // KORREKTUR und keine Freigabe. Der Push unten entfaellt dann --
-        // sonst bekommt der ganze Jahrgang ein zweites Mal "Dein
-        // Jahresrueckblick ist da", nur weil jemand eine Zahl richtiggestellt
-        // hat. Zurueckgenommen wird die Marke ueber DELETE
-        // /wrapped/jahrgang/:id (setzt wrapped_released_at auf NULL);
-        // danach benachrichtigt eine erneute Freigabe wieder.
-        const schonFreigegeben = jahrgang.wrapped_released_at !== null;
-
         const currentYear = new Date().getFullYear();
 
         // Die Transaktion umschliesst NUR das Setzen der Freigabe unten, nicht
@@ -2219,14 +2210,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         await client.query('COMMIT');
 
-        // Push-Notification an alle Konfis -- nur bei der ERSTEN Freigabe.
-        if (!schonFreigegeben) {
-          try {
-            const konfiIds = konfis.map(k => k.user_id);
-            await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
-          } catch (pushErr) {
-            console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
-          }
+        // Push-Notification an alle Konfis -- bei JEDER neuen Ausgabe.
+        //
+        // GEAENDERT AM 08.09.2026 (Simon: "warum gibt es keinen zweiten push,
+        // verstehe ich nicht?"). Bis hierher schwieg der zweite Lauf, geprueft
+        // ueber wrapped_released_at am Jahrgang.
+        //
+        // Die Bremse stammt vom 01.09.2026 (f226dce0) und hatte damals recht:
+        // Ein erneuter Lauf ueberschrieb DENSELBEN Rueckblick -- ein zweiter
+        // Push haette "ist da!" gemeldet, obwohl nichts Neues da war.
+        //
+        // Seit Migration 144 (03.09.) legt jeder Lauf eine EIGENE Ausgabe an,
+        // die neben der alten stehen bleibt und in der Liste der Konfis
+        // auftaucht ("Zwischenstand" und "Abschluss" sollen beide bleiben).
+        // Damit IST etwas Neues da, und das Schweigen liess niemanden davon
+        // erfahren.
+        try {
+          const konfiIds = konfis.map(k => k.user_id);
+          await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
+        } catch (pushErr) {
+          console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
         }
 
         res.json({
@@ -2236,8 +2239,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           jahrgang: jahrgang.name,
           year: currentYear,
           // Additiv (ausgelieferte Apps lesen die Antwort): sagt der Leitung,
-          // ob dieser Lauf benachrichtigt hat oder eine stille Korrektur war.
-          benachrichtigt: !schonFreigegeben
+          // ob dieser Lauf benachrichtigt hat. Beim Konfi-Rueckblick seit dem
+          // 08.09.2026 immer true -- jeder Lauf legt eine eigene Ausgabe an
+          // und meldet sie. Das Feld bleibt, weil der TEAM-Rueckblick es
+          // weiterhin auf false setzt (dort existiert ein Jahr nur einmal).
+          benachrichtigt: true
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
@@ -2297,10 +2303,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         const zeitraumVorgabe = zeitraum;
 
         // SCHON DA? Dann nichts tun -- kein zweiter Datensatz, kein zweiter
-        // Push. Dieselbe Bremse, die der Konfi-Weg ueber `wrapped_released_at`
-        // am Jahrgang hat (siehe `schonFreigegeben` weiter oben); der
-        // Team-Rueckblick haengt an keinem Jahrgang und braucht deshalb den
-        // Zeitraum als Erkennungsmerkmal -- er IST die Sache selbst.
+        // Push.
+        //
+        // ANDERS ALS BEIM KONFI-RUECKBLICK, und das mit Absicht: Dort ergibt
+        // jeder Lauf eine weitere Ausgabe (Zwischenstand, Abschluss), und
+        // jede meldet sich. Ein KALENDERJAHR dagegen gibt es nur einmal --
+        // ein zweiter "Team-Rueckblick 2026" waere kein Zwischenstand,
+        // sondern ein Duplikat. Erkennungsmerkmal ist der Zeitraum, denn er
+        // IST hier die Sache selbst.
         //
         // Ohne diese Pruefung legte jeder weitere Klick eine zusaetzliche
         // Ausgabe an und schickte dem ganzen Team erneut "Dein Teamer-Jahr
@@ -2784,8 +2794,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // sofort gehabt. Abgesicherter toter Code laedt genau dazu ein.
   //
   // Wer die Sache braucht: POST /wrapped/generate/:jahrgangId weiter oben
-  // macht dasselbe richtig -- mit `schonFreigegeben` als Bremse und einer
-  // eigenen Ausgabe je Lauf (Migration 144).
+  // macht dasselbe richtig -- mit einer eigenen Ausgabe je Lauf
+  // (Migration 144), die jedes Mal benachrichtigt.
 
   /**
    * Erzeugt den TEAM-Rueckblick eines abgeschlossenen Kalenderjahres fuer

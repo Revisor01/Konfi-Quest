@@ -568,7 +568,7 @@ const TeamerDashboardPage: React.FC = () => {
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
                 <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>Dein Teamer-Jahr ist da!</h3>
+                  <h3 style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>Dein Team-Jahr Wrapped ist da!</h3>
                   <p style={{ margin: 'var(--app-abstand-mini) 0 0', fontSize: 'var(--app-text-sekundaer)', opacity: 0.9 }}>Schau dir deinen Jahresrückblick an</p>
                 </div>
                 {/* X statt Chevron (Simon, 04.09.2026): Das Chevron verdeckte

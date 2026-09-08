@@ -984,9 +984,18 @@ describe('Wrapped Routes', () => {
       spy.mockRestore();
     });
 
-    it('benachrichtigt beim erneuten Generieren NICHT noch einmal', async () => {
-      // Wer nach einer Korrektur neu generiert, schickte dem ganzen Jahrgang
-      // ein zweites Mal "Dein Konfi-Jahr ist da!".
+    // GEDREHT AM 08.09.2026 (Simon). Bis hierher schwieg der zweite Lauf.
+    //
+    // Die Regel stammt vom 01.09.2026 (f226dce0) und hatte damals recht: Ein
+    // erneuter Lauf ueberschrieb DENSELBEN Rueckblick, ein zweiter Push haette
+    // "ist da!" gemeldet, obwohl nichts Neues da war.
+    //
+    // Seit Migration 144 (03.09.) stimmt diese Voraussetzung nicht mehr: Jeder
+    // Lauf legt eine EIGENE Ausgabe an, die neben der alten stehen bleibt und
+    // in der Liste der Konfis auftaucht. Es IST etwas Neues da -- und niemand
+    // erfuhr davon. Simon: "warum gibt es keinen zweiten push, verstehe ich
+    // nicht?"
+    it('benachrichtigt bei JEDER neuen Ausgabe', async () => {
       await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -998,9 +1007,12 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(zweiter.status).toBe(200);
-      expect(zweiter.body.benachrichtigt).toBe(false);
-      expect(spy).not.toHaveBeenCalled();
-      // Die Snapshots werden trotzdem erneuert -- nur eben still.
+      expect(zweiter.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      // An beide Konfis des Jahrgangs, wie beim ersten Lauf.
+      const [, userIds, typ] = spy.mock.calls[0];
+      expect([...userIds].sort((a, b) => a - b)).toEqual([USERS.konfi1.id, USERS.konfi2.id]);
+      expect(typ).toBe('konfi');
       expect(zweiter.body.generated).toBe(2);
       expect(zweiter.body.errors).toBe(0);
 
