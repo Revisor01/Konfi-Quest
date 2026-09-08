@@ -1556,11 +1556,16 @@ paths:
       tags: ["Wrapped"]
       summary: Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben
       description: >
-        Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten
-        Konfis des Jahrgangs parallel und setzt jahrgaenge.wrapped_released_at
-        auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in
+        Erzeugt eine neue AUSGABE und darin die Snapshots aller nicht
+        geloeschten Konfis des Jahrgangs parallel und setzt
+        jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar. Laeuft in
         einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt
         (errors), nicht zurueckgerollt.
+
+        Seit Migration 144 ueberschreibt ein zweiter Lauf NICHT: Er legt eine
+        weitere Ausgabe an, die vorherige bleibt mit ihren Zahlen bestehen
+        (Zwischenstand und Abschluss sollen beide erhalten bleiben). Anders
+        als beim Team-Rueckblick, wo ein Kalenderjahr nur einmal existiert.
 
         Die Push-Nachricht geht nur bei der ERSTEN Freigabe raus (seit
         01.09.2026, Befund W-D): War wrapped_released_at bereits gesetzt, gilt
@@ -1610,10 +1615,15 @@ paths:
       tags: ["Wrapped"]
       summary: Teamer-Jahresrueckblick für alle Teamer:innen der Organisation erzeugen
       description: >
-        Erzeugt (oder überschreibt) die Snapshots aller Teamer:innen der
-        Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es
-        gibt keine Freigabe-Markierung wie bei den Jahrgängen - der Rueckblick
-        ist sofort über GET /api/wrapped/me abrufbar.
+        Erzeugt die Snapshots aller Teamer:innen der Organisation nacheinander
+        und schickt ihnen eine Push-Nachricht. Der Rueckblick ist sofort über
+        GET /api/wrapped/me abrufbar; eine getrennte Freigabe gibt es nicht.
+
+        IDEMPOTENT seit 08.09.2026: Besteht fuer den Zeitraum schon eine
+        Team-Ausgabe, wird sie unveraendert zurueckgegeben - kein zweiter
+        Datensatz, kein zweiter Push. Erkennbar an `benachrichtigt: false`
+        und `generated: 0`. Vorher entstand bei jedem Aufruf eine weitere
+        Ausgabe, und das ganze Team bekam erneut eine Benachrichtigung.
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
@@ -1630,14 +1640,20 @@ paths:
             schema:
               type: object
               properties:
-                titel:
-                  type: string
-                  maxLength: 120
+                jahr:
+                  type: integer
+                  minimum: 2000
+                  maximum: 2999
                   description: >
-                    Name der Ausgabe (seit 03.09.2026). Ohne Angabe entsteht
-                    ein Vorschlag aus dem Jahr.
+                    Das Kalenderjahr, auf das zurueckgeblickt wird (1.1. bis
+                    31.12.). Nur ABGESCHLOSSENE Jahre; ein laufendes Jahr
+                    wird mit 400 abgewiesen. Ohne Angabe: das zuletzt
+                    abgeschlossene Jahr - derselbe Wert, den der Cron am 6.1.
+                    nimmt. Einen `titel` gibt es seit dem 07.09.2026 nicht
+                    mehr; die Ueberschrift entsteht aus dem Jahr.
       responses:
-        "200": { description: "message, generated (Anzahl), errors (Anzahl), year, ausgabe_id, titel" }
+        "200": { description: "message, generated (Anzahl), errors (Anzahl), year, ausgabe_id, titel, benachrichtigt (bool; false = Jahr bestand schon, nichts geschehen)" }
+        "400": { description: "Das Jahr ist noch nicht abgeschlossen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1654,8 +1670,9 @@ paths:
 
         Angelegt werden Ausgaben ueber die bestehenden Routen
         POST /api/wrapped/generate/{jahrgangId} und
-        POST /api/wrapped/generate-teamer (beide nehmen optional `titel`
-        entgegen). Diese Route listet sie nur - es gibt bewusst keine eigene
+        POST /api/wrapped/generate-teamer (dort optional `jahr`; einen
+        `titel` nimmt seit dem 07.09.2026 keine der beiden mehr entgegen).
+        Diese Route listet sie nur - es gibt bewusst keine eigene
         Anlege-Route, weil das Anlegen derselbe Vorgang wie das Erzeugen ist.
       parameters:
         - name: typ
