@@ -353,6 +353,17 @@ export interface TeamerWrappedData {
     chat?: TeamerChatSlide;
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     konfi_zeit?: TeamerKonfiZeitSlide | null;
+    /**
+     * Was diese Person dem Jahrgang aufgegeben hat (ab 09.09.2026).
+     * Nicht zu verwechseln mit `moderation`: Die zaehlt Freigaben.
+     */
+    challenges_gestellt?: { total: number };
+    /**
+     * Der Zuspruch statt eines leeren Rueckblicks (Simon, 09.09.2026).
+     * Steht NUR, wenn fuer die Person im Jahr nichts zusammenkam -- dann
+     * traegt `kacheln` die drei Segens-Seiten. Sonst fehlt das Feld.
+     */
+    segen?: { text: string; quelle: string };
     zeitraum: TeamerZeitraumSlide;
   };
 }

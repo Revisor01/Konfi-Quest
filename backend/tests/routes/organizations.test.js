@@ -306,6 +306,34 @@ describe('Organizations Routes', () => {
       );
       expect(roles.map(r => r.name)).toEqual(['admin', 'konfi', 'org_admin', 'teamer']);
 
+      // TEAMER-ABZEICHEN. custom_badges.target_role steht per DEFAULT auf
+      // 'konfi' (Migration 076), und die Teamer-Ansicht fragt nur
+      // target_role = 'teamer' ab: Ohne eigene Vorlage startet eine neue
+      // Gemeinde mit einer leeren Abzeichen-Seite fuer ihr Team.
+      const { rows: badgeRollen } = await db.query(
+        `SELECT target_role, COUNT(*)::int AS c FROM custom_badges
+         WHERE organization_id = $1 GROUP BY target_role ORDER BY target_role`,
+        [res.body.id]
+      );
+      const proRolle = Object.fromEntries(badgeRollen.map(r => [r.target_role, r.c]));
+      expect(proRolle.konfi).toBe(27);
+      expect(proRolle.teamer).toBe(9);
+      expect(res.body.default_badges_created).toBe(36);
+
+      // Die Teamer-Abzeichen muessen mit Kriterien arbeiten, die der
+      // Teamer-Zweig (routes/badges.js) ohne weitere Einrichtung rechnen
+      // kann -- specific_activity und die Kategorie-Typen verlangen
+      // Aktivitaeten, die eine frische Gemeinde noch nicht hat.
+      const { rows: teamerKriterien } = await db.query(
+        `SELECT DISTINCT criteria_type FROM custom_badges
+         WHERE organization_id = $1 AND target_role = 'teamer'`,
+        [res.body.id]
+      );
+      const erlaubt = ['activity_count', 'event_count', 'unique_activities', 'teamer_year', 'streak'];
+      for (const { criteria_type } of teamerKriterien) {
+        expect(erlaubt).toContain(criteria_type);
+      }
+
       // Default-Levels angelegt
       const { rows: levels } = await db.query(
         'SELECT COUNT(*)::int AS c FROM levels WHERE organization_id = $1',

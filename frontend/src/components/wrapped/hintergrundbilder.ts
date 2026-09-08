@@ -150,6 +150,7 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'teamer-badges': 'feuerwerk',
   'teamer-zertifikate': 'fenster',
   'teamer-moderation': 'kerzen',
+  'teamer-challenges': 'luftschlangen',
   'teamer-team': 'feld',
   'teamer-neu-dabei': 'deich',
   'teamer-anfang': 'weg',
@@ -158,6 +159,9 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'teamer-jahre': 'weg',
   'teamer-konfi-zeit': 'kirchenschiff',
   'teamer-abschluss': 'himmel',
+  // Der Zuspruch statt eines leeren Rueckblicks (09.09.2026).
+  'teamer-segen': 'weite',
+  'teamer-segen-abschluss': 'himmel',
 };
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
@@ -233,6 +237,7 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'teamer-badges': 'konfetti',
   'teamer-zertifikate': 'kirchenschiff',
   'teamer-moderation': 'turm',
+  'teamer-challenges': 'konfetti',
   'teamer-team': 'weite',
   'teamer-neu-dabei': 'watt',
   'teamer-anfang': 'himmel',
@@ -241,6 +246,8 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'teamer-jahre': 'wald',
   'teamer-konfi-zeit': 'weite',
   'teamer-abschluss': 'watt',
+  'teamer-segen': 'himmel',
+  'teamer-segen-abschluss': 'watt',
 };
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.

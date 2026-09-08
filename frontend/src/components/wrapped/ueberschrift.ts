@@ -4,10 +4,10 @@
  * SIMONS REGEL (07.09.2026), woertlich: "wir lassen das mit dem Datum. Wir
  * machen einfach immer Konfi bis jetzt von Beginn und Teamer der Rueckblick
  * des Jahres. Also immer zurueck auf den 1.1. des Jahres. Sonst ist das zu
- * kompliziert mit den rueckblicken. Dann braucht es auch keine Titel."
+ * kompliziert mit den rueckblicken."
  *
- * Es gibt seither KEINE frei vergebenen Titel mehr. Die Ueberschrift ergibt
- * sich aus dem, was der Rueckblick ist:
+ * Die Ueberschrift ergibt sich aus dem, was der Rueckblick IST -- sie wird
+ * nie eingetippt:
  *
  *   Konfi -> "Deine Konfi-Zeit", und "(bis jetzt)" dazu, solange die
  *            Konfirmation noch mehr als 30 Tage entfernt ist.
@@ -22,6 +22,10 @@
  *
  * Ohne Konfirmationstermin gibt es nichts, wozu der Rueckblick vorlaeufig
  * waere -- dann steht der Nachsatz nicht da.
+ *
+ * DER NAME DER AUSGABE ist etwas anderes und kam am 08.09.2026 zurueck
+ * (Simon: "Sonst wird es bei drei Rueckblicken unuebersichtlich."). Er steht
+ * klein NEBEN dieser Ueberschrift (IntroSlide) und ersetzt sie nicht.
  */
 
 /** Tage, ab denen die Konfirmation als "noch weit weg" gilt. */

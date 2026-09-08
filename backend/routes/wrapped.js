@@ -3,7 +3,8 @@ const router = express.Router();
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { waehleKacheln, waehleTeamerKacheln } = require('../utils/wrappedKacheln');
+const { waehleKacheln, waehleTeamerKacheln, teamerJahrIstLeer } = require('../utils/wrappedKacheln');
+const { waehleSegen } = require('../utils/wrappedSegen');
 const { seiteFuerKategorie, datumsFenster, orgHatSommerfreizeit, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
@@ -1774,6 +1775,28 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       'Challenge-Freigaben (Migration 146)'
     );
 
+    // GESTELLTE CHALLENGES -- was diese Person dem Jahrgang aufgegeben hat.
+    //
+    // SIMON, 09.09.2026: "Challenges und Zertifikate koennten sich bei
+    // Teamern eine wrapped Seite erzeugen. Das waere ja richtig wichtig.
+    // [...] Wir sind ja auch froh wenn die das machen."
+    //
+    // Die Moderations-Zahl daneben zaehlt FREIGABEN, also die Arbeit an
+    // fremden Beitraegen. Eine Challenge zu stellen ist etwas anderes: Sie
+    // gibt dem Jahrgang etwas zu tun. Entwuerfe zaehlen nicht -- sie hat
+    // niemand gesehen.
+    const gestellteChallenges = await zahlAusNeuerSpalte(
+      client,
+      `SELECT COUNT(*)::int AS anzahl FROM challenges c
+        WHERE c.created_by = $1
+          AND c.organization_id = $2
+          AND c.is_draft = false
+          AND c.created_at >= $3::date
+          AND c.created_at < ($4::date + INTERVAL '1 day')`,
+      [userId, orgId, zeitraumStart, zeitraumEnde],
+      'gestellte Challenges'
+    );
+
     // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
     // wurden.
     //
@@ -1914,6 +1937,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         team: {
           mitstreitende: teamGroesse
         },
+        // Additiv (09.09.2026): Wer Challenges stellt, bekommt eine Seite
+        // dafuer. Alte Apps kennen das Feld nicht und ignorieren es.
+        challenges_gestellt: {
+          total: gestellteChallenges
+        },
         moderation: {
           freigegeben: freigegebeneBeitraege
         },
@@ -1955,6 +1983,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Additiv: Alte App-Versionen kennen `kacheln` nicht und rendern weiter
     // ueber ihre feste Siebener-Reihenfolge. Der Vertrag bleibt gewahrt.
     schnappschuss.kacheln = waehleTeamerKacheln(schnappschuss.slides);
+
+    // DER ZUSPRUCH statt eines leeren Rueckblicks (Simon, 09.09.2026).
+    // Kam fuer diese Person nichts zusammen, traegt `kacheln` die drei
+    // Segens-Seiten -- dann braucht die App auch den Text dazu.
+    //
+    // Additiv: `segen` steht nur in diesem Fall im Snapshot. Alte
+    // App-Versionen kennen weder die Kachel-Schluessel noch das Feld und
+    // zeigen weiter ihre feste Reihenfolge -- der Vertrag bleibt gewahrt.
+    if (teamerJahrIstLeer(schnappschuss.slides)) {
+      const segen = waehleSegen(userId, year);
+      schnappschuss.slides.segen = { text: segen.text, quelle: segen.quelle };
+    }
+
     return schnappschuss;
   }
 
@@ -2570,10 +2611,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * erst 2026 (nachgemessen 08.09.2026) -- die Jahre davor haetten leere
    * Rueckblicke ergeben.
    *
-   * Ein Jahr gilt als lieferbar, wenn darin irgendetwas passiert ist, das im
-   * Rueckblick vorkommt: ein Termin, eine Aktivitaet, ein verliehenes
-   * Abzeichen oder ein Zertifikat. Dazu kommen Jahre, fuer die schon eine
-   * Ausgabe besteht -- die soll nicht aus der Liste verschwinden.
+   * Ein Jahr gilt als lieferbar, wenn darin einer TEAMER:IN etwas passiert
+   * ist, das im Rueckblick vorkommt: ein Termin mit Anwesenheit, eine
+   * Teamer-Aktivitaet, ein verliehenes Abzeichen oder ein Zertifikat. Dazu
+   * kommen Jahre, fuer die schon eine Ausgabe besteht -- die soll nicht aus
+   * der Liste verschwinden.
+   *
+   * DIE TEAMER-GRENZE IST DER PUNKT (Simon, 09.09.2026: "Wenn es fuer Teamer
+   * nichts zu verarbeiten gibt aus einem Jahr dann darf das auch nicht
+   * angezeigt werden."). Organisationsweit zu zaehlen genuegt nicht: Ein
+   * reiner Konfi-Termin aus 2022 machte das Jahr lieferbar, obwohl es damals
+   * noch gar keine Teamer:innen gab -- der Rueckblick waere leer gewesen.
+   * Jede Quelle zieht deshalb dieselbe Grenze wie der Rueckblick selbst.
    *
    * Das laufende Jahr wird mitgeliefert, aber als gesperrt: Es ist noch nicht
    * vorbei, und wer es nicht sieht, haelt sein Fehlen fuer einen Fehler.
@@ -2588,14 +2637,40 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         const { rows } = await db.query(
           `SELECT DISTINCT jahr FROM (
+             -- Termine: nur, wo ein Teamer auch WAR. Die blosse Existenz
+             -- eines Termins sagt nichts -- ein reiner Konfi-Termin
+             -- erzeugt keine einzige Zeile im Teamer-Rueckblick.
              SELECT EXTRACT(YEAR FROM e.event_date)::int AS jahr
-               FROM events e WHERE e.organization_id = $1
+               FROM event_bookings eb
+               JOIN events e ON eb.event_id = e.id
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE e.organization_id = $1 AND r.name = 'teamer'
+                AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
              UNION ALL
+             -- Aktivitaeten: nur Teamer-Aktivitaeten von Teamer:innen,
+             -- dieselbe Grenze wie im Rueckblick selbst (target_role).
              SELECT EXTRACT(YEAR FROM ua.completed_date)::int
-               FROM user_activities ua WHERE ua.organization_id = $1
+               FROM user_activities ua
+               JOIN activities a ON ua.activity_id = a.id
+               JOIN users u ON ua.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE ua.organization_id = $1 AND r.name = 'teamer'
+                AND a.target_role = 'teamer'
              UNION ALL
              SELECT EXTRACT(YEAR FROM ub.awarded_date)::int
-               FROM user_badges ub WHERE ub.organization_id = $1
+               FROM user_badges ub
+               JOIN users u ON ub.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE ub.organization_id = $1 AND r.name = 'teamer'
+             UNION ALL
+             -- Zertifikate: sie haben im Teamer-Rueckblick eine eigene
+             -- Seite, gehoeren also zu den Quellen.
+             SELECT EXTRACT(YEAR FROM uc.issued_date)::int
+               FROM user_certificates uc
+               JOIN users u ON uc.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE uc.organization_id = $1 AND r.name = 'teamer'
              UNION ALL
              SELECT EXTRACT(YEAR FROM a.zeitraum_start)::int
                FROM wrapped_ausgaben a

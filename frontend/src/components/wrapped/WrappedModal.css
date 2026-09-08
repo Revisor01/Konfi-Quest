@@ -2005,6 +2005,9 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-antworten-slide,
 .teamer-jahre-slide,
 .teamer-konfi-zeit-slide,
+.teamer-challenges-slide,
+.teamer-segen-slide,
+.teamer-segen-abschluss-slide,
 .teamer-abschluss-slide {
   display: flex;
   flex-direction: column;
@@ -2043,6 +2046,25 @@ ion-modal.wrapped-modal-fullscreen {
 /* Warmes Bernstein-Blau: der Blick zurueck auf die eigene Konfi-Zeit. */
 .teamer-konfi-zeit-slide { --seiten-verlauf: linear-gradient(135deg, #0ea5e9 0%, #0369a1 55%, #075985 100%); background: var(--seiten-verlauf); }
 .teamer-abschluss-slide  { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%); background: var(--seiten-verlauf); }
+/* Was du dem Jahrgang aufgegeben hast (09.09.2026) -- dieselbe Familie wie
+   die Moderationsseite daneben, aber heller: Es ist der froehlichere Teil. */
+.teamer-challenges-slide { --seiten-verlauf: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%); background: var(--seiten-verlauf); }
+
+/* Der Zuspruch statt eines leeren Rueckblicks (09.09.2026). Ruhigere,
+   waermere Toene als der uebrige Teamer-Rueckblick: Die Seite traegt keine
+   Zahl, sondern einen Satz -- sie darf leiser sein. */
+.teamer-segen-slide { --seiten-verlauf: linear-gradient(135deg, #7c3aed 0%, #6d28d9 55%, #4c1d95 100%); background: var(--seiten-verlauf); }
+.teamer-segen-abschluss-slide { --seiten-verlauf: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%); background: var(--seiten-verlauf); }
+
+/* Der Segensspruch selbst. Groesser als ein Nachsatz, kleiner als eine
+   Schlagzeile -- er will gelesen, nicht verkuendet werden. */
+.teamer-segen-slide__spruch {
+  font-size: var(--app-text-untertitel);
+  font-weight: var(--app-schrift-mittel);
+  line-height: 1.45;
+  margin: var(--app-abstand-basis) 0;
+  max-width: 22em;
+}
 
 .wrapped-slide:has(.wrapped-bg-form),
 .wrapped-slide.wrapped-slide--active:has(.wrapped-bg-form) {

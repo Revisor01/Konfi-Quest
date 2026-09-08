@@ -587,6 +587,63 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           );
         }
 
+        case 'teamer-challenges': {
+          const gestellt = teamer?.slides.challenges_gestellt?.total;
+          if (!gestellt) return null;
+          return (
+            <>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.6)', marginBottom: 32 }}>
+                Deine Challenges
+              </div>
+              <div style={{ fontSize: 140, fontWeight: 700, lineHeight: 1 }}>{gestellt}</div>
+              <div style={{ fontSize: 36, marginTop: 32 }}>
+                {gestellt === 1
+                  ? 'Eine Challenge, die es ohne mich nicht gegeben hätte.'
+                  : `Challenges, die es ohne mich nicht gegeben hätte.`}
+              </div>
+            </>
+          );
+        }
+
+        // DER ZUSPRUCH statt eines leeren Rueckblicks (Simon, 09.09.2026).
+        // Er ist teilbar wie jede andere Seite -- gerade er: Ein Segensspruch
+        // ist das, was man weiterschickt.
+        case 'teamer-segen': {
+          if (!teamer?.slides.segen) return null;
+          const { text, quelle } = teamer.slides.segen;
+          return (
+            <>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.6)', marginBottom: 48 }}>
+                Für dich
+              </div>
+              <div style={{ fontSize: 44, fontWeight: 600, lineHeight: 1.4, maxWidth: 820 }}>
+                „{text}"
+              </div>
+              {quelle ? (
+                <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)', marginTop: 40 }}>
+                  {quelle}
+                </div>
+              ) : null}
+            </>
+          );
+        }
+
+        case 'teamer-segen-abschluss':
+          if (!teamer) return null;
+          return (
+            <>
+              <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.6)', marginBottom: 48 }}>
+                Dein Teamerjahr {year}
+              </div>
+              <div style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.3 }}>
+                Danke, dass es dich gibt.
+              </div>
+              <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)', marginTop: 40 }}>
+                Ohne Leute wie dich gäbe es keine Konfi-Zeit.
+              </div>
+            </>
+          );
+
         case 'teamer-abschluss':
           if (!teamer) return null;
           return (

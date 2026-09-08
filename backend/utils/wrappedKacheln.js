@@ -422,6 +422,9 @@ const GRUND_HAEUFIGKEIT_TEAMER = {
   'teamer-jahre': 55,
   // Mindestens fuenf Freigaben. Moderation macht nur ein Teil des Teams.
   'teamer-moderation': 30,
+  // Seltener als die Moderation: Freigeben tun viele, eine eigene Challenge
+  // stellen deutlich weniger.
+  'teamer-challenges': 20,
   // Das erste Jahr -- per Definition wenige zur selben Zeit.
   'teamer-neu-dabei': 25,
   // Wer heute im Team ist UND frueher selbst Konfi in DIESER Gemeinde war.
@@ -817,6 +820,10 @@ const TEAMER_DRAMATURGIE = [
   // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
   // 7b: Die Challenge-Begleiterin -- die Moderationsarbeit, die sonst
   // niemand sieht. Steht bei den Taetigkeits-Seiten, vor dem Chat.
+  // 7a: Was du dem Jahrgang aufgegeben hast (09.09.2026). Steht VOR der
+  // Moderation: erst die Challenge stellen, dann die Beitraege freigeben --
+  // das ist die Reihenfolge, in der es passiert.
+  'teamer-challenges',   // 7a was du gestellt hast
   'teamer-moderation',   // 7b was du freigegeben hast
   'teamer-antworten',    // 8  wie oft du geantwortet hast
   'teamer-jahre',        // 9  "seit x Jahren dabei"
@@ -856,6 +863,11 @@ const TEAMER_BEDINGUNGEN = {
   // Erst ab fuenf Freigaben. Eine einzelne ist keine Geschichte -- dieselbe
   // Schwelle wie bei den Antworten.
   'teamer-moderation': (s) => (s.moderation?.freigegeben || 0) >= 5,
+  // SCHON AB DER ERSTEN, anders als bei Freigaben und Antworten: Eine
+  // Challenge zu stellen ist keine Wiederholungstat, sondern ein Einfall,
+  // den jemand aufgeschrieben und dem Jahrgang gegeben hat (Simon,
+  // 09.09.2026: "Wir sind ja auch froh wenn die das machen.").
+  'teamer-challenges': (s) => (s.challenges_gestellt?.total || 0) > 0,
   // Nur im ERSTEN Jahr. Und nur, wenn das Startjahr ueberhaupt bekannt ist:
   // "unbekannt" ist nicht "neu" -- wer seit Jahren dabei ist, aber kein
   // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst werden.
@@ -877,8 +889,65 @@ const TEAMER_BEDINGUNGEN = {
  * @param {object} slides die `slides` des Teamer-Snapshots
  * @returns {string[]} Seiten-Schluessel in Anzeigereihenfolge
  */
+/**
+ * Die Seiten des Zuspruchs -- kein Rueckblick, sondern ein Segen.
+ *
+ * SIMON, 09.09.2026: "Angenommen es gibt einen Teamer fuer den nichts zu
+ * berechnen ist in dem Jahr. Dann soll der was bekommen aber keinen
+ * Rueckblick und kein wir vermissen dich. Eher ein Segen, ein positiver
+ * Zuspruch."
+ *
+ * Drei Seiten wie ein Rueckblick, aber ohne eine einzige Zahl: ankommen,
+ * der Zuspruch, danke. Der Abschluss traegt bewusst NICHT die Uebersicht
+ * ('teamer-abschluss') -- die fasste Termine, Konfis und Abzeichen
+ * zusammen, also genau die Nullen, um die es hier geht.
+ */
+const SEGEN_KACHELN = ['teamer-intro', 'teamer-segen', 'teamer-segen-abschluss'];
+
+/**
+ * Kam fuer diese Person ueberhaupt etwas zusammen?
+ *
+ * Geprueft wird gegen dieselben Bedingungen, die auch die Seiten aussuchen
+ * (TEAMER_BEDINGUNGEN) -- ohne die vier, die nichts ueber das JAHR sagen:
+ *   teamer-jahre / teamer-neu-dabei  hae1ngen am Eintrittsdatum, nicht am Jahr
+ *   teamer-konfi-zeit                haengt an der eigenen Konfi-Zeit
+ *   stavanger-2026                   ist eine Sonderseite
+ * Wer nur eine dieser vier haette, saesse vor einem Rueckblick, der ihm
+ * ueber DIESES Jahr nichts erzaehlt.
+ *
+ * SIMONS SCHWELLE (09.09.2026): nur bei WIRKLICH nichts. Ein einziger
+ * begleiteter Termin genuegt fuer den normalen Rueckblick.
+ *
+ * @param {object} slides die `slides` des Teamer-Snapshots
+ * @returns {boolean} true, wenn nichts zusammenkam
+ */
+const OHNE_AUSSAGE_UEBERS_JAHR = ['teamer-jahre', 'teamer-neu-dabei', 'teamer-konfi-zeit', 'stavanger-2026'];
+
+function teamerJahrIstLeer(slides) {
+  // KAPUTTE DATEN SIND NICHT "LEER". Einen Segen zu schicken hiesse zu
+  // behaupten, die Person haette nichts getan -- das darf aus einem
+  // Datenfehler nie folgen. Erkennbar am fehlenden `zeitraum`: Den traegt
+  // jeder echte Snapshot, auch der einer Teamer:in ganz ohne Eintraege.
+  if (!slides || typeof slides !== 'object') return false;
+  if (!slides.zeitraum) return false;
+  for (const [key, bedingung] of Object.entries(TEAMER_BEDINGUNGEN)) {
+    if (OHNE_AUSSAGE_UEBERS_JAHR.includes(key)) continue;
+    try {
+      if (bedingung(slides) === true) return false;
+    } catch {
+      // Eine kaputte Bedingung darf niemanden faelschlich in den Segen
+      // schicken -- im Zweifel gilt das Jahr als nicht leer.
+      return false;
+    }
+  }
+  return true;
+}
+
 function waehleTeamerKacheln(slides) {
   if (!slides || typeof slides !== 'object') return [...FESTE_TEAMER_KACHELN];
+
+  // Kam nichts zusammen, gibt es keinen Rueckblick, sondern den Zuspruch.
+  if (teamerJahrIstLeer(slides)) return [...SEGEN_KACHELN];
 
   const infrage = [];
   for (const key of TEAMER_DRAMATURGIE) {
@@ -914,6 +983,8 @@ function waehleTeamerKacheln(slides) {
 module.exports = {
   waehleKacheln,
   waehleTeamerKacheln,
+  teamerJahrIstLeer,
+  SEGEN_KACHELN,
   waehleKategorieSeiten,
   FESTE_KACHELN,
   DRAMATURGIE,

@@ -1067,6 +1067,7 @@ const setzeTeamerBedingung = (t, kachel) => {
     case 'teamer-antworten': t.chat = { antworten: 5 }; break;
     case 'teamer-team': t.team = { mitstreitende: 1 }; break;
     case 'teamer-moderation': t.moderation = { freigegeben: 5 }; break;
+    case 'teamer-challenges': t.challenges_gestellt = { total: 1 }; break;
     case 'teamer-neu-dabei': t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 }; break;
     case 'teamer-jahre': t.engagement = { teamer_seit: '2021-09-01' }; break;
     case 'teamer-konfi-zeit': t.konfi_zeit = { jahrgang: '2019/2020' }; break;
@@ -1087,6 +1088,7 @@ const aktiverTeamer = () => ({
   erstes_abzeichen: { name: 'Mutig', icon: 'flame', color: '#f00', datum: '2025-10-01' },
   team: { mitstreitende: 5 },
   moderation: { freigegeben: 18 },
+  challenges_gestellt: { total: 3 },
   neu_dabei: { erstes_jahr: false, start_jahr: 2021 },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
@@ -1106,6 +1108,7 @@ const neuerTeamer = () => ({
   erstes_abzeichen: null,
   team: { mitstreitende: 0 },
   moderation: { freigegeben: 0 },
+  challenges_gestellt: { total: 0 },
   neu_dabei: { erstes_jahr: false, start_jahr: null },
   chat: { antworten: 0 },
   konfi_zeit: null,
@@ -1157,17 +1160,91 @@ describe('Teamer-Dramaturgie', () => {
     }
   });
 
-  test('eine neue Teamer:in bekommt keine Seite mit einer Null darauf', () => {
-    // Genau der Befund: frueher standen hier sieben Seiten, fuenf davon
-    // mit einer Null.
+  test('kam nichts zusammen, gibt es den Zuspruch statt eines Rueckblicks', () => {
+    // SIMON, 09.09.2026: "Angenommen es gibt einen Teamer fuer den nichts zu
+    // berechnen ist in dem Jahr. Dann soll der was bekommen aber keinen
+    // Rueckblick und kein wir vermissen dich. Eher ein Segen, ein positiver
+    // Zuspruch."
+    //
+    // Vorher standen hier 'teamer-intro' und 'teamer-abschluss'. Der
+    // Abschluss fasst Termine, Konfis und Abzeichen zusammen -- also genau
+    // die Nullen. Eine Uebersicht ueber nichts ist keine bessere Auskunft
+    // als eine Seite mit einer Null darauf.
     const kacheln = waehleTeamerKacheln(neuerTeamer());
-    expect(kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
+    expect(kacheln).toEqual(['teamer-intro', 'teamer-segen', 'teamer-segen-abschluss']);
+    expect(kacheln).not.toContain('teamer-abschluss');
   });
 
-  test('die festen Seiten erscheinen immer', () => {
+  test('die festen Seiten erscheinen immer, wenn es einen Rueckblick gibt', () => {
     for (const fest of FESTE_TEAMER_KACHELN) {
-      expect(waehleTeamerKacheln(neuerTeamer())).toContain(fest);
+      expect(waehleTeamerKacheln(aktiverTeamer())).toContain(fest);
     }
+  });
+
+  test('ein einziger begleiteter Termin genuegt fuer den normalen Rueckblick', () => {
+    // SIMONS SCHWELLE: nur bei WIRKLICH nichts kommt der Zuspruch.
+    const t = neuerTeamer();
+    t.events_geleitet = { total: 1, meiste_teilnehmer_event: null };
+    const kacheln = waehleTeamerKacheln(t);
+    expect(kacheln).not.toContain('teamer-segen');
+    expect(kacheln).toContain('teamer-events');
+    expect(kacheln).toContain('teamer-abschluss');
+  });
+
+  test('das Eintrittsdatum allein macht aus dem Jahr keinen Rueckblick', () => {
+    // 'teamer-jahre' haengt am Eintrittsdatum, nicht am Jahr: Wer seit 2021
+    // dabei ist, in DIESEM Jahr aber nichts getan hat, saesse sonst vor
+    // einem Rueckblick, der ihm ueber dieses Jahr nichts erzaehlt.
+    const t = neuerTeamer();
+    t.engagement = { teamer_seit: '2021-09-01', jahre_aktiv: 4 };
+    expect(waehleTeamerKacheln(t)).toEqual(['teamer-intro', 'teamer-segen', 'teamer-segen-abschluss']);
+  });
+
+  test('auch die eigene Konfi-Zeit allein reicht nicht', () => {
+    const t = neuerTeamer();
+    t.konfi_zeit = { jahrgang: '2019/2020' };
+    expect(waehleTeamerKacheln(t)).toEqual(['teamer-intro', 'teamer-segen', 'teamer-segen-abschluss']);
+  });
+
+  test('eine gestellte Challenge bekommt eine eigene Seite', () => {
+    // SIMON, 09.09.2026: "Challenges und Zertifikate koennten sich bei
+    // Teamern eine wrapped Seite erzeugen. Das waere ja richtig wichtig."
+    const t = aktiverTeamer();
+    expect(waehleTeamerKacheln(t)).toContain('teamer-challenges');
+  });
+
+  test('wer keine gestellt hat, bekommt die Seite nicht', () => {
+    const t = aktiverTeamer();
+    t.challenges_gestellt = { total: 0 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-challenges');
+  });
+
+  test('schon die erste gestellte Challenge zaehlt', () => {
+    // Anders als Freigaben (ab 5) und Antworten (ab 5): Eine Challenge zu
+    // stellen ist keine Wiederholungstat, sondern ein Einfall.
+    const t = neuerTeamer();
+    t.challenges_gestellt = { total: 1 };
+    const kacheln = waehleTeamerKacheln(t);
+    expect(kacheln).toContain('teamer-challenges');
+    expect(kacheln).not.toContain('teamer-segen');
+  });
+
+  test('eine gestellte Challenge steht vor der Moderation', () => {
+    // Erst stellen, dann freigeben -- die Reihenfolge, in der es passiert.
+    const k = waehleTeamerKacheln(aktiverTeamer());
+    if (k.includes('teamer-challenges') && k.includes('teamer-moderation')) {
+      expect(k.indexOf('teamer-challenges')).toBeLessThan(k.indexOf('teamer-moderation'));
+    }
+  });
+
+  test('ein Zertifikat allein zaehlt dagegen als Jahresinhalt', () => {
+    // Es ist in diesem Jahr ausgestellt worden -- eine Aussage ueber das
+    // Jahr, anders als das Eintrittsdatum.
+    const t = neuerTeamer();
+    t.zertifikate = { total: 1, zertifikate: [{ name: 'Juleica' }] };
+    const kacheln = waehleTeamerKacheln(t);
+    expect(kacheln).not.toContain('teamer-segen');
+    expect(kacheln).toContain('teamer-zertifikate');
   });
 
   test('ohne Termine faellt die Termin-Seite weg', () => {
@@ -1306,9 +1383,29 @@ describe('Teamer-Dramaturgie', () => {
   });
 
   test('ab fuenf Antworten erscheint die Antworten-Seite', () => {
-    const t = aktiverTeamer();
+    // AM SCHLANKEN FIXTURE, nicht am vollen: Geprueft wird die SCHWELLE
+    // (ab fuenf), nicht die Seltenheits-Auswahl. Wer ueberall etwas
+    // vorzuweisen hat, hat mehr Kandidaten als die zehn Plaetze hergeben --
+    // dann entscheidet die Seltenheit, und die Antworten-Seite (50 %) kann
+    // gegen seltenere verlieren. Das ist gewollt und steht weiter unten
+    // unter der Seltenheits-Auswahl.
+    const t = schlankerTeamer();
     t.chat = { antworten: 5 };
     expect(waehleTeamerKacheln(t)).toContain('teamer-antworten');
+  });
+
+  test('bei voller Auslastung entscheidet die Seltenheit, nicht die Reihenfolge', () => {
+    // Gegenprobe zum Test darueber: Am VOLLEN Fixture passen nicht alle
+    // Kandidaten in die zehn Plaetze. Dass dann die selteneren gewinnen,
+    // ist genau der Sinn der Auswahl -- hier festgehalten, damit ein
+    // kuenftiges Verdraengen nicht wie ein Fehler aussieht.
+    const t = aktiverTeamer();
+    t.chat = { antworten: 22 };
+    const k = waehleTeamerKacheln(t);
+    expect(k.length).toBe(10);
+    // 'teamer-challenges' (20 %) ist seltener als 'teamer-antworten' (50 %).
+    expect(k).toContain('teamer-challenges');
+    expect(k).not.toContain('teamer-antworten');
   });
 
   test('bei vier Antworten gibt es die Seite nicht', () => {
@@ -1337,11 +1434,14 @@ describe('Teamer-Dramaturgie', () => {
     expect(k.indexOf('teamer-konfi-zeit')).toBeLessThan(k.indexOf('teamer-abschluss'));
   });
 
-  test('das Intro ist erste, der Abschluss letzte Seite', () => {
+  test('das Intro ist erste, ein Abschluss die letzte Seite', () => {
+    // Geprueft wird die ABSICHT -- es faengt mit einer Begruessung an und
+    // hoert mit einem Abschluss auf --, nicht der Schluessel: Wer den
+    // Zuspruch bekommt, endet auf 'teamer-segen-abschluss'.
     for (const snap of [aktiverTeamer(), neuerTeamer()]) {
       const k = waehleTeamerKacheln(snap);
       expect(k[0]).toBe('teamer-intro');
-      expect(k[k.length - 1]).toBe('teamer-abschluss');
+      expect(k[k.length - 1]).toMatch(/abschluss$/);
     }
   });
 

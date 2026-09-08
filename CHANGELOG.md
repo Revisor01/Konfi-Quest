@@ -10,6 +10,17 @@ Versionsüberschrift.
 ## [Unreleased] - 2.1.1
 
 ### Hinzugefügt
+- Teamer:innen, für die in einem Jahr nichts zusammengekommen ist, bekommen
+  keinen Rückblick voller Nullen mehr, sondern einen Zuspruch: eine
+  Begrüßung, ein Segenswort und einen Dank. Der Spruch bleibt derselbe, so
+  oft man den Rückblick auch öffnet, und lässt sich teilen wie jede andere
+  Seite.
+- Der Team-Rückblick hat eine neue Seite für selbst gestellte Challenges.
+  Schon die erste zählt.
+- JuLeiCa und Teamer-Card werden auf der Zertifikate-Seite des Rückblicks
+  eigens genannt.
+- Neue Gemeinden starten mit neun Abzeichen für ihr Team. Bisher gab es dort
+  nur Abzeichen für Konfis.
 - Ein neues Handbuch-Kapitel „Die App bedienen" erklärt, was überall gleich
   funktioniert: nach links wischen zum Löschen, nach unten ziehen zum
   Aktualisieren, der Aufbau der Reiter und was ohne Internet geht.
@@ -145,6 +156,9 @@ Versionsüberschrift.
 - Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
   entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
   Löschen wieder.
+- Beim Team-Rückblick wurden Jahre zur Auswahl angeboten, in denen es noch
+  gar kein Team gab. Gezählt wurde alles, was in der Gemeinde passiert ist —
+  auch reine Konfi-Termine. Jetzt zählt nur, was Teamer:innen betrifft.
 - Das Handbuch behauptete, beim Anlegen eines Rückblicks lasse sich nichts
   einstellen und kein Name vergeben. Konfi-Rückblicke bekommen sehr wohl einen
   Namen, der auf der Begrüßungsfolie und in der Liste erscheint.

@@ -28,6 +28,9 @@ import WerdeTeamerSlide from './slides/WerdeTeamerSlide';
 import Stavanger2026Slide from './slides/Stavanger2026Slide';
 import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
+import TeamerChallengesSlide from './slides/teamer/TeamerChallengesSlide';
+import TeamerSegenSlide from './slides/teamer/TeamerSegenSlide';
+import TeamerSegenAbschlussSlide from './slides/teamer/TeamerSegenAbschlussSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
 import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
 import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
@@ -506,6 +509,20 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const buildTeamerSlides = (teamerData: TeamerWrappedData, slideYear: number) => {
     const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
       'teamer-intro': (a) => <TeamerIntroSlide isActive={a} displayName={displayName} year={slideYear} />,
+      'teamer-challenges': (a) => (
+        teamerData.slides.challenges_gestellt
+          ? <TeamerChallengesSlide isActive={a} gestellt={teamerData.slides.challenges_gestellt.total} />
+          : null
+      ),
+      // DER ZUSPRUCH statt eines leeren Rueckblicks (Simon, 09.09.2026).
+      // Das Backend liefert diese beiden Schluessel nur, wenn fuer die
+      // Person im Jahr nichts zusammenkam; `segen` steht dann daneben.
+      'teamer-segen': (a) => (
+        teamerData.slides.segen
+          ? <TeamerSegenSlide isActive={a} text={teamerData.slides.segen.text} quelle={teamerData.slides.segen.quelle} />
+          : null
+      ),
+      'teamer-segen-abschluss': (a) => <TeamerSegenAbschlussSlide isActive={a} year={slideYear} />,
       'teamer-events': (a) => <TeamerEventsSlide isActive={a} events={teamerData.slides.events_geleitet} />,
       'teamer-konfis': (a) => <TeamerKonfisSlide isActive={a} konfis={teamerData.slides.konfis_betreut} />,
       'teamer-badges': (a) => <TeamerBadgesSlide isActive={a} badges={teamerData.slides.badges} />,

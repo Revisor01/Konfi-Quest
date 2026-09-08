@@ -673,7 +673,15 @@ describe('Wrapped Routes', () => {
       expect(snap.kacheln[snap.kacheln.length - 1]).toBe('teamer-abschluss');
     });
 
-    it('Ein Team-Mitglied ohne alles bekommt keine Seite mit einer Null', async () => {
+    it('Ein Team-Mitglied ohne alles bekommt den Zuspruch statt einer Bilanz', async () => {
+      // SIMON, 09.09.2026: "Angenommen es gibt einen Teamer fuer den nichts
+      // zu berechnen ist in dem Jahr. Dann soll der was bekommen aber keinen
+      // Rueckblick und kein wir vermissen dich. Eher ein Segen, ein
+      // positiver Zuspruch."
+      //
+      // Vorher endete dieser Fall auf 'teamer-abschluss' -- der fasst
+      // Termine, Konfis und Abzeichen zusammen, also genau die Nullen.
+      //
       // teamer1 hat im leergeraeumten Zustand keine Termine, keine
       // Abzeichen, keine Zertifikate und kein Eintrittsdatum.
       await db.query('DELETE FROM user_certificates');
@@ -681,7 +689,29 @@ describe('Wrapped Routes', () => {
       await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
 
       const snap = await snapshotVonTeamer1();
-      expect(snap.kacheln).toEqual(['teamer-intro', 'teamer-abschluss']);
+      expect(snap.kacheln).toEqual(['teamer-intro', 'teamer-segen', 'teamer-segen-abschluss']);
+      expect(snap.kacheln).not.toContain('teamer-abschluss');
+    });
+
+    it('Zum Zuspruch gehoert auch sein Text im Snapshot', async () => {
+      // Ohne den Text rendert die Seite nichts -- die Kachel allein
+      // genuegt nicht.
+      await db.query('DELETE FROM user_certificates');
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.segen).toBeDefined();
+      expect(typeof snap.slides.segen.text).toBe('string');
+      expect(snap.slides.segen.text.length).toBeGreaterThan(10);
+      expect(snap.slides.segen.quelle.length).toBeGreaterThan(0);
+    });
+
+    it('Wer etwas vorzuweisen hat, bekommt keinen Zuspruch, sondern den Rueckblick', async () => {
+      // Simons Schwelle: nur bei WIRKLICH nichts.
+      const snap = await snapshotVonTeamer1();
+      expect(snap.kacheln).not.toContain('teamer-segen');
+      expect(snap.slides.segen).toBeUndefined();
     });
 
     /** Der heutige Tag als ISO-Datum, nach Ortszeit wie im Backend. */
@@ -3308,6 +3338,86 @@ describe('Wrapped Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.map(a => a.titel)).not.toContain('Org1 Ausgabe');
+    });
+  });
+
+  // ================================================================
+  // GET /team-jahre
+  // ================================================================
+  describe('GET /api/wrapped/team-jahre', () => {
+    // SIMON, 09.09.2026: "Ich meine das mir in meiner org 2022 angeboten
+    // wird. Da existierte nichtmal ein Teamer." -- Die Auswahl zaehlte
+    // organisationsweit und bot deshalb Jahre an, in denen es nur
+    // Konfi-Daten gab. Der Rueckblick waere leer geblieben.
+    const JAHR_OHNE_TEAMER = 2022;
+
+    async function terminMitAnwesenheit(userId, datum) {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (organization_id, name, event_date, points, created_by)
+         VALUES ($1, $2, $3::date, 0, $4) RETURNING id`,
+        [ORGS.testGemeinde.id, 'Termin ' + datum, datum, USERS.orgAdmin1.id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status)
+         VALUES ($1, $2, 'confirmed', 'present')`,
+        [ev.id, userId]
+      );
+      return ev.id;
+    }
+
+    it('ein Jahr mit reinem Konfi-Termin wird NICHT angeboten', async () => {
+      await terminMitAnwesenheit(USERS.konfi1.id, JAHR_OHNE_TEAMER + '-05-01');
+
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(j => j.jahr)).not.toContain(JAHR_OHNE_TEAMER);
+    });
+
+    it('dasselbe Jahr wird angeboten, sobald eine Teamer:in dabei war', async () => {
+      await terminMitAnwesenheit(USERS.teamer1.id, JAHR_OHNE_TEAMER + '-05-01');
+
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const jahr = res.body.find(j => j.jahr === JAHR_OHNE_TEAMER);
+      expect(jahr).toBeDefined();
+      expect(jahr.gesperrt).toBe(false);
+    });
+
+    it('ein Zertifikat allein macht das Jahr lieferbar -- es hat eine eigene Seite', async () => {
+      const { rows: [typ] } = await db.query(
+        `INSERT INTO certificate_types (name, icon, organization_id)
+         VALUES ('JuLeiCa', 'ribbon', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, organization_id, issued_date)
+         VALUES ($1, $2, $3, $4::date)`,
+        [USERS.teamer1.id, typ.id, ORGS.testGemeinde.id, JAHR_OHNE_TEAMER + '-11-20']
+      );
+
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(j => j.jahr)).toContain(JAHR_OHNE_TEAMER);
+    });
+
+    it('das laufende Jahr steht in der Liste, aber gesperrt', async () => {
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const laufend = res.body.find(j => j.jahr === new Date().getFullYear());
+      expect(laufend).toBeDefined();
+      expect(laufend.gesperrt).toBe(true);
     });
   });
 

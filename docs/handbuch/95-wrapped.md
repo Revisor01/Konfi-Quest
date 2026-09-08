@@ -63,9 +63,14 @@ Team-Rückblicke tragen keinen eingetippten Namen; sie heißen nach ihrem Jahr.
 
 ### Beim Team das Jahr wählen
 
-Angeboten werden nur Jahre, in denen es tatsächlich Daten gibt — Termine,
-Aktivitäten, Abzeichen oder einen früheren Team-Rückblick. Eine Gemeinde, deren
-Daten 2026 beginnen, bekommt also keine leeren Jahre 2022 bis 2025 zur Auswahl.
+Angeboten werden nur Jahre, in denen es für **Teamer:innen** tatsächlich etwas
+zu berichten gibt: ein Termin, bei dem eine Teamer:in anwesend war, eine
+Teamer-Aktivität, ein verliehenes Abzeichen, ein Zertifikat oder ein früherer
+Team-Rückblick.
+
+Dass in einem Jahr überhaupt etwas los war, genügt nicht. Ein Jahr, in dem nur
+Konfis unterwegs waren, ergäbe einen leeren Team-Rückblick und steht deshalb
+nicht in der Liste — auch dann nicht, wenn es damals reichlich Termine gab.
 
 Anlegen lassen sich nur **abgeschlossene** Jahre. Das laufende steht sichtbar in
 der Liste, aber gesperrt, mit dem Hinweis „verfügbar ab 1.1." und der nächsten
@@ -442,13 +447,31 @@ etwas zusammengekommen ist.
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
 | **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
 | **Das erste** | das zuerst verliehene Abzeichen des Jahres | mindestens ein Abzeichen im Zeitraum | 70 % |
-| **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat | mindestens ein Zertifikat im Zeitraum | 40 % |
+| **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat; JuLeiCa und Teamer-Card werden eigens genannt | mindestens ein Zertifikat im Zeitraum | 40 % |
+| **Deine Challenges** | wie viele Challenges du selbst gestellt hast | mindestens eine gestellte Challenge (kein Entwurf) | 20 % |
 | **Hinter den Kulissen** | wie viele Challenge-Beiträge freigegeben wurden | mindestens fünf eigene Freigaben | 30 % |
 | **Im Gespräch** | wie oft im Chat auf andere geantwortet wurde | mindestens fünf echte Antworten | 50 % |
 | **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
 | **Dein erstes Jahr** | die Begrüßung für alle, die neu dazugekommen sind | im Rückblicksjahr ins Team gekommen, Eintrittsdatum bekannt | 25 % |
 | **Wie alles anfing** | „Du saßt mal auf der anderen Seite", mit eigenem Jahrgang | war selbst einmal Konfi in dieser Gemeinde | 20 % |
 | **Auf einen Blick** | Termine, Konfis, Abzeichen nebeneinander, „Danke, dass du da warst." | immer, als letzte Seite | immer |
+
+### Den Zuspruch statt eines Rückblicks bekommen
+
+Kam für eine Teamer:in im ganzen Jahr nichts zusammen — kein Termin, kein
+Konfi, kein Abzeichen, kein Zertifikat, keine Challenge, keine Freigabe —,
+bekommt sie **keinen Rückblick aus Nullen**, sondern drei Seiten mit einem
+Zuspruch: eine Begrüßung, ein Segenswort und ein Dank.
+
+Der Spruch steht fest im System und bleibt für dieselbe Person im selben Jahr
+immer derselbe, auch wenn sie den Rückblick mehrfach öffnet. Er lässt sich
+teilen wie jede andere Seite.
+
+Ein einziger begleiteter Termin genügt, damit stattdessen der normale
+Rückblick erscheint.
+
+Bei Konfis gibt es das nicht — wer noch keine Punkte hat, steht am Anfang
+seiner Konfi-Zeit, und sein Rückblick kommt später.
 
 ### Nachvollziehen, warum eine Teamer-Seite fehlt
 
@@ -460,6 +483,10 @@ zweimal, einmal davon mit einer Eins.
 „Teamer:in seit" leer, entfällt sie. „Unbekannt" gilt dabei ausdrücklich nicht
 als „neu": Wer seit Jahren dabei ist, aber kein Datum hinterlegt hat, wird nicht
 als Neuling begrüßt.
+
+**„Deine Challenges" und „Hinter den Kulissen" sind zweierlei.** Die eine
+zählt, was du dem Jahrgang aufgegeben hast, die andere, welche Beiträge du
+freigegeben hast. Entwürfe zählen nicht — die hat niemand gesehen.
 
 **„Hinter den Kulissen" zählt nur die eigene Freigabe** — nie, wie viel jemand
 ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch freigegebene

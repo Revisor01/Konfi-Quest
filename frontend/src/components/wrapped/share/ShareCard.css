@@ -305,6 +305,24 @@
   --karten-schleier: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);
 }
 
+/* Was du dem Jahrgang aufgegeben hast (09.09.2026). */
+.share-card--teamer.share-card--teamer-challenges {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+  --karten-schleier: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+}
+
+/* Der Zuspruch statt eines leeren Rueckblicks (09.09.2026) -- dieselben
+   Farben wie die Seiten im Rueckblick selbst. */
+.share-card--teamer.share-card--teamer-segen {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 55%, #4c1d95 100%);
+  --karten-schleier: linear-gradient(135deg, #7c3aed 0%, #6d28d9 55%, #4c1d95 100%);
+}
+
+.share-card--teamer.share-card--teamer-segen-abschluss {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);
+  --karten-schleier: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #9f1239 100%);
+}
+
 .share-card--highlight {
   background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%);
   --karten-schleier: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #1e3a8a 100%);

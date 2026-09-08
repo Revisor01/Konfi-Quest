@@ -396,15 +396,47 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         { name: "Durchstarter", icon: "flash-outline", description: "6 Wochen am Stück aktiv - was für eine Serie!", criteria_type: "streak", criteria_value: 6 }
       ];
 
+      // TEAMER-ABZEICHEN. Sie brauchen einen eigenen Satz: custom_badges.
+      // target_role steht per DEFAULT auf 'konfi' (Migration 076), und die
+      // Teamer-Ansicht fragt ausschliesslich target_role = 'teamer' ab. Ohne
+      // diese Zeilen startet eine neue Gemeinde mit einer leeren Abzeichen-
+      // Seite fuer ihr Team, waehrend die bestehenden Gemeinden welche haben.
+      //
+      // Nur Kriterien, die OHNE weitere Einrichtung rechnen: Der Teamer-Zweig
+      // (routes/badges.js) kennt zehn Typen, aber specific_activity,
+      // category_activities, category_combination und activity_combination
+      // verlangen konkrete Aktivitaeten oder Kategorien -- die es in einer
+      // frischen Gemeinde noch nicht gibt. Uebrig bleiben activity_count
+      // (Aktivitaeten UND Termine), event_count, unique_activities,
+      // teamer_year und streak.
+      const defaultTeamerBadges = [
+        { name: "Willkommen im Team", icon: "hand-right-outline", description: "Dein erster Einsatz als Teamer:in ist eingetragen.", criteria_type: "activity_count", criteria_value: 1 },
+        { name: "Mit dabei", icon: "people-circle-outline", description: "5 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 5 },
+        { name: "Feste Größe", icon: "shield-checkmark-outline", description: "15 Einsätze als Teamer:in.", criteria_type: "activity_count", criteria_value: 15 },
+        { name: "Erste Begleitung", icon: "calendar-outline", description: "Du warst bei deinem ersten Termin dabei.", criteria_type: "event_count", criteria_value: 1 },
+        { name: "Verlässlich dabei", icon: "calendar-number-outline", description: "Bei 10 Terminen dabei gewesen.", criteria_type: "event_count", criteria_value: 10 },
+        { name: "Vielseitig im Einsatz", icon: "color-palette-outline", description: "5 verschiedene Aktivitäten begleitet.", criteria_type: "unique_activities", criteria_value: 5 },
+        { name: "Ein Jahr im Team", icon: "ribbon-outline", description: "Ein Jahr als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 1 },
+        { name: "Drei Jahre im Team", icon: "trophy-outline", description: "Drei Jahre als Teamer:in aktiv gewesen.", criteria_type: "teamer_year", criteria_value: 3 },
+        { name: "Am Ball geblieben", icon: "flame-outline", description: "3 Wochen in Folge im Einsatz.", criteria_type: "streak", criteria_value: 3 }
+      ];
+
       const badgeQuery = `INSERT INTO custom_badges (
         organization_id, name, icon, description, criteria_type, criteria_value, 
-        is_active, is_hidden, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, true, false, $7)`;
+        is_active, is_hidden, created_by, target_role
+      ) VALUES ($1, $2, $3, $4, $5, $6, true, false, $7, $8)`;
 
       for (const badge of defaultBadges) {
         await db.query(badgeQuery, [
           organizationId, badge.name, badge.icon, badge.description,
-          badge.criteria_type, badge.criteria_value, newAdmin.id
+          badge.criteria_type, badge.criteria_value, newAdmin.id, 'konfi'
+        ]);
+      }
+
+      for (const badge of defaultTeamerBadges) {
+        await db.query(badgeQuery, [
+          organizationId, badge.name, badge.icon, badge.description,
+          badge.criteria_type, badge.criteria_value, newAdmin.id, 'teamer'
         ]);
       }
 
@@ -593,13 +625,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       res.status(201).json({
         id: organizationId,
         admin_user_id: newAdmin.id,
-        default_badges_created: defaultBadges.length,
+        // Wie bei den Aktivitaeten: Konfi- und Teamer-Vorlagen zusammen.
+        default_badges_created: defaultBadges.length + defaultTeamerBadges.length,
         default_certificates_created: defaultCertificates.length,
         default_levels_created: defaultLevels.length,
         default_categories_created: defaultCategories.length,
         default_activities_created: defaultActivities.length + defaultTeamerActivities.length,
         default_challenges_created: defaultChallenges.length,
-        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
+        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length + defaultTeamerBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       });
 
       // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst

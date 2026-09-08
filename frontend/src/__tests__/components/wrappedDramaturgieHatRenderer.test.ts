@@ -95,8 +95,23 @@ function teamerDramaturgie(): string[] {
   return [...block[1].matchAll(/^\s*'([a-z0-9-]+)',?/gm)].map(m => m[1]);
 }
 
+/**
+ * Der zweite Weg zu einer Teamer-Seite: der Zuspruch (Simon, 09.09.2026).
+ *
+ * Wer im Jahr nichts vorzuweisen hat, bekommt keinen Rueckblick, sondern
+ * SEGEN_KACHELN. Diese Seiten stehen bewusst NICHT in der Dramaturgie --
+ * sie ersetzen sie. Fuer den Waechter unten zaehlen sie trotzdem als
+ * "wird gewaehlt": Ein Renderer dafuer ist kein toter Code.
+ */
+function segenKacheln(): string[] {
+  const block = kacheln.match(/const SEGEN_KACHELN = \[([^\]]*)\]/);
+  if (!block) throw new Error('SEGEN_KACHELN nicht gefunden');
+  return [...block[1].matchAll(/'([a-z0-9-]+)'/g)].map(m => m[1]);
+}
+
 const TEAMER_RENDERER = teamerRendererSchluessel();
 const TEAMER_DRAMATURGIE = teamerDramaturgie();
+const SEGEN_KACHELN = segenKacheln();
 
 describe('Dramaturgie und Renderer passen zueinander', () => {
   it('die Listen sind ueberhaupt gefunden worden', () => {
@@ -140,7 +155,20 @@ describe('Teamer-Dramaturgie und Renderer passen zueinander', () => {
     expect(TEAMER_DRAMATURGIE.filter(k => !TEAMER_RENDERER.includes(k))).toEqual([]);
   });
 
-  it('jeder Teamer-Renderer wird von der Dramaturgie auch gewaehlt', () => {
-    expect(TEAMER_RENDERER.filter(k => !TEAMER_DRAMATURGIE.includes(k))).toEqual([]);
+  it('jeder Teamer-Renderer wird auch tatsaechlich gewaehlt', () => {
+    // Zwei Wege fuehren zu einer Seite: die Dramaturgie (der normale
+    // Rueckblick) und SEGEN_KACHELN (der Zuspruch, wenn nichts zusammenkam).
+    // Ein Renderer, den WEDER der eine NOCH der andere waehlt, ist toter
+    // Code -- genau das faengt diese Pruefung.
+    const erreichbar = [...TEAMER_DRAMATURGIE, ...SEGEN_KACHELN];
+    expect(TEAMER_RENDERER.filter(k => !erreichbar.includes(k))).toEqual([]);
+  });
+
+  it('die Segens-Seiten sind gefunden und haben Renderer', () => {
+    // Ohne diese Absicherung machte ein umbenanntes SEGEN_KACHELN die
+    // Pruefung oben still nachsichtiger, statt sie fehlschlagen zu lassen.
+    expect(SEGEN_KACHELN).toContain('teamer-segen');
+    expect(SEGEN_KACHELN).toContain('teamer-segen-abschluss');
+    expect(SEGEN_KACHELN.filter(k => !TEAMER_RENDERER.includes(k))).toEqual([]);
   });
 });
