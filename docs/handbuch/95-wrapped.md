@@ -13,31 +13,19 @@ weiterschickt.
 Es gibt ihn in zwei Fassungen: eine für **Konfis** und eine für
 **Teamer:innen**. Welche jemand sieht, hängt an der Rolle.
 
-## Der Rückblick ist eine Momentaufnahme
+## Einen Rückblick anlegen
 
-Das ist das Wichtigste an diesem Kapitel.
+Tippe unten auf **Mehr**, dort im Abschnitt **Inhalt** auf
+**Jahresrückblick**. Auf der Seite stehen alle bisherigen Rückblicke; über das
+**Plus oben rechts** legst du einen neuen an. Oben schaltest du zwischen
+**Konfis** und **Team** um.
 
-Wenn du den Rückblick erstellst, werden **alle Zahlen einmal berechnet und
-festgeschrieben**. Ab dann ändert sich nichts mehr daran. Der Rückblick liest
-die Daten nicht jedes Mal neu, sondern zeigt den Stand von dem Moment.
+Für Konfis läuft nichts von selbst an — du entscheidest, wann.
 
-*Beispiel:* Du erstellst ihn am 1. Mai. Ein Konfi bekommt am 3. Mai noch fünf
-Bonuspunkte. Sein Rückblick zeigt weiterhin den Stand vom 1. Mai — die fünf
-Punkte tauchen dort nicht auf.
-
-> **Deshalb gilt:** Erst alles nachtragen, was noch fehlt, dann erstellen. Wer
-> zuerst erstellt und dann noch Punkte einträgt, hat einen Rückblick, der nicht
-> zu den Zahlen in der App passt.
-
-Korrigieren lässt sich das, indem du denselben Rückblick **erneut erstellst** —
-dann wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis
-dabei nicht: Der Push geht nur beim ersten Mal raus.
-
-## Wo du den Rückblick erstellst
-
-Unter **Mehr → Jahresrückblick**. Dort stehen alle bisherigen Rückblicke, und
-über das Plus oben rechts legst du einen neuen an. Er läuft für Konfis nie von
-selbst an — du entscheidest, wann.
+> **Einen Schalter im Jahrgang gibt es nicht mehr.** Bis Anfang September 2026
+> wurde der Rückblick dort freigegeben. Das ist entfallen: Ein Schalter kennt
+> nur an und aus, er konnte weder mehrere Ausgaben verwalten noch eine einzelne
+> löschen. Im Jahrgang steht heute nur noch, ob schon ein Rückblick läuft.
 
 **Du stellst nichts ein.** Beim Konfi-Rückblick wählst du nur den **Jahrgang**,
 beim Team-Rückblick nur das **Jahr**. Keinen Namen, keinen Zeitraum. Was der
@@ -52,7 +40,11 @@ Rückblick umfasst, steht fest:
 > falsch einstellen — und der Rückblick zeigte dann Zahlen, die niemand mehr
 > nachvollziehen konnte.
 
-**Beim Erstellen** passiert zweierlei:
+**Erstellen heißt zugleich freigeben.** Einen zweiten Schritt gibt es nicht:
+Sobald du bestätigst, ist der Rückblick für alle sichtbar. Der Hinweis im
+Formular sagt es auch — „Der Rückblick wird sofort erstellt und freigegeben."
+
+Dabei passiert zweierlei:
 
 1. Für jede aktive Person wird der Rückblick berechnet und gespeichert.
    Gelöschte Konten werden übersprungen.
@@ -62,14 +54,14 @@ Rückblick umfasst, steht fest:
 > Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da,
 > nur hat niemand eine Benachrichtigung bekommen.
 
-### Das Jahr beim Team-Rückblick
+### Beim Team wählst du das Jahr
 
 Wählbar sind nur **abgeschlossene** Jahre. Das laufende steht sichtbar in der
 Liste, aber gesperrt, mit dem Hinweis „verfügbar ab 1.1." und der nächsten
 Jahreszahl. Der Grund ist einfach: Ein Jahr, das noch läuft, kann man nicht
 zurückblicken — es ist ja noch nicht vorbei.
 
-## Mehrere Rückblicke pro Jahrgang
+### Mehrere Rückblicke für denselben Jahrgang anlegen
 
 Ein Konfi-Jahrgang läuft über zwei oder drei Jahre. Ein einziger Rückblick am
 Ende wird dem nicht gerecht — deshalb kannst du **mehrere** anlegen: einen
@@ -95,7 +87,7 @@ Abschluss erstellst. Die Konfis sehen beide.
 > statt gedoppelt. Das ist der Weg, wenn nachträglich Punkte dazugekommen
 > sind.
 
-### Was in der Überschrift steht
+### Die Überschrift entsteht von selbst
 
 Der Rückblick trägt keinen Namen, den jemand eintippt. Seine Überschrift ergibt
 sich aus dem, was er ist:
@@ -110,13 +102,51 @@ Gerechnet wird gegen den Tag, an dem der Rückblick entstanden ist — nicht geg
 heute. Ein im Mai erstellter Zwischenstand trägt sein „(bis jetzt)" also auch
 im November noch.
 
-### Einen einzelnen Rückblick löschen
+## Verstehen, dass die Zahlen einfrieren
 
-Du kannst einen gezielt entfernen, ohne die anderen anzurühren — etwa einen
-Zwischenstand, der nicht mehr gebraucht wird. Die Rückblicke aller Konfis
-verschwinden mit ihm; die übrigen bleiben stehen.
+Das ist das Wichtigste an diesem Kapitel.
 
-### Wer was darf
+Wenn du den Rückblick erstellst, werden **alle Zahlen einmal berechnet und
+festgeschrieben**. Ab dann ändert sich nichts mehr daran. Der Rückblick liest
+die Daten nicht jedes Mal neu, sondern zeigt den Stand von dem Moment.
+
+*Beispiel:* Du erstellst ihn am 1. Mai. Ein Konfi bekommt am 3. Mai noch fünf
+Bonuspunkte. Sein Rückblick zeigt weiterhin den Stand vom 1. Mai — die fünf
+Punkte tauchen dort nicht auf.
+
+> **Deshalb gilt:** Erst alles nachtragen, was noch fehlt, dann erstellen. Wer
+> zuerst erstellt und dann noch Punkte einträgt, hat einen Rückblick, der nicht
+> zu den Zahlen in der App passt.
+
+Korrigieren lässt sich das, indem du denselben Rückblick **erneut erstellst** —
+dann wird er neu berechnet. Eine zweite Benachrichtigung bekommen die Konfis
+dabei nicht: Der Push geht nur beim ersten Mal raus.
+
+## Neu berechnen und löschen
+
+**Denselben Rückblick erneut erstellen = neu berechnen.** Er wird vollständig
+neu gerechnet und überschreibt den bisherigen Stand.
+
+> **Achtung:** Der vorherige Stand **desselben Rückblicks** ist danach
+> unwiderruflich weg — auch aus „Meine Rückblicke". Die anderen bleiben
+> unberührt: Ein Zwischenstand vom Januar verschwindet nicht, wenn du im Mai
+> den Abschluss neu rechnest.
+
+**Gelöscht wird mit einer Wischgeste.** Einen Löschknopf gibt es nicht: Wische
+den Eintrag in der Liste nach links, dann erscheint die Schaltfläche. Das ist
+Absicht — Löschen trifft die Rückblicke aller Konfis auf einmal und soll nicht
+mit einem Fehlgriff passieren.
+
+**Es trifft immer nur diesen einen Rückblick.** Die Rückfrage lautet „Ausgabe
+löschen?". Die gespeicherten Rückblicke werden dabei **wirklich gelöscht**,
+nicht nur ausgeblendet — bei allen Personen des Jahrgangs. Die anderen Ausgaben
+bleiben stehen. Nur ein erneutes Erstellen bringt sie zurück, dann mit neu
+berechneten Zahlen.
+
+Team-Rückblicke lassen sich auf demselben Weg löschen — sie stehen in derselben
+Liste, nur ohne Jahrgang daneben.
+
+## Wissen, wer was darf
 
 | | Eigene Jahrgänge | Alle Jahrgänge | Teamer-Rückblicke |
 |---|---|---|---|
@@ -128,37 +158,7 @@ Leitung sieht alle Jahrgänge und ist zusätzlich die einzige Rolle, die
 Team-Rückblicke erstellen und löschen darf — die betreffen die ganze Gemeinde
 und hängen an keinem Jahrgang.
 
-### Im Profil der Konfis und Teamer:innen
-
-Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
-Rückblicke** mit Datum. So kannst du bei Rückfragen nachvollziehen, was die
-Person selbst sieht.
-
-### Was seit Version 2.1 dazugekommen ist
-
-**Der Rückblick ist persönlich geworden.** Statt für alle dieselben Zahlen zu
-zeigen, sucht er heraus, was gerade diese Konfi ausmacht — der Termin, an dem
-sie war, das Abzeichen, das sonst kaum jemand hat, die Wochen, in denen sie
-durchgehalten hat. Vergleiche mit anderen bleiben anonym (nur die Zahl, nie
-ein Name) und werden nur gezogen, wenn sie **freundlich ausfallen**.
-
-Eine Seite fürs Absagen gibt es bewusst nicht und wird es nicht geben.
-
-**Und seit 2.1.1 sieht nicht mehr jede Konfi dasselbe.** Der Rückblick zeigt
-höchstens zehn Seiten statt bis zu neunzehn — und ausgewählt werden die
-seltensten. Wer etwas erlebt hat, das nur wenige im Jahrgang erlebt haben,
-bekommt genau dafür eine Seite. Wie das im Einzelnen funktioniert, steht weiter
-unten unter [„Wie viele Seiten jemand sieht"](#wie-viele-seiten-jemand-sieht-und-welche).
-
-**Fotos sind größer.** Beiträge aus Challenges füllen jetzt die Seite statt als
-Miniatur zu erscheinen. Bei ein oder zwei Beiträgen werden sie noch größer.
-
-**Der Rückblick der Teamer:innen ist auch für dich sichtbar.** In der Ansicht
-einer Teamer:in findest du ihren Rückblick genauso wie bei einer Konfi. Für
-Teamer:innen kommt **jedes Jahr einer dazu**, und die alten bleiben stehen — in
-der Liste stehen sie mit Jahreszahl untereinander.
-
-### Der Team-Rückblick läuft anders
+## Den Team-Rückblick anlegen — oder ihn laufen lassen
 
 | | Konfis | Team |
 |---|---|---|
@@ -183,25 +183,7 @@ Rückblick auf 2025, der schon dasteht, hält den auf 2026 nicht auf.
 > richtige ist, weiß nur ihr: Konfirmation, Abschlussfahrt, letzter Abend. Ein
 > Datum im Kalender kann das nicht wissen.
 
-## Neu berechnen und löschen
-
-**Denselben Rückblick erneut erstellen = neu berechnen.** Er wird vollständig
-neu gerechnet und überschreibt den bisherigen Stand.
-
-> **Achtung:** Der vorherige Stand **desselben Rückblicks** ist danach
-> unwiderruflich weg — auch aus „Meine Wrappeds". Die anderen bleiben
-> unberührt: Ein Zwischenstand vom Januar verschwindet nicht, wenn du im Mai
-> den Abschluss neu rechnest.
-
-**Löschen betrifft immer einen einzelnen Rückblick.** Die Rückfrage lautet
-„Ausgabe löschen?". Die gespeicherten Rückblicke werden dabei **wirklich
-gelöscht**, nicht nur ausgeblendet. Nur ein erneutes Erstellen bringt sie
-zurück, dann mit neu berechneten Zahlen.
-
-Team-Rückblicke lassen sich auf demselben Weg löschen — sie stehen in derselben
-Liste, nur ohne Jahrgang daneben.
-
-## Wie viele Seiten jemand sieht — und welche
+## Nachvollziehen, welche Seiten jemand sieht
 
 Das ist die Stelle, an der am häufigsten nachgefragt wird. In einem Satz:
 
@@ -278,7 +260,7 @@ Einladung ins Team, und ganz zuletzt steht die Übersicht — die Seite, die
 geteilt wird. Nach Seltenheit sortiert wäre es eine Rangliste, keine
 Erzählung.
 
-## Die Seiten des Konfi-Rückblicks
+## Die Seiten des Konfi-Rückblicks nachschlagen
 
 Die Spalte **Wie selten** ist ein grober Anhaltspunkt: Sie sagt, wie viel
 Prozent eines Jahrgangs diese Seite typischerweise bekommen. Kleiner heißt
@@ -436,7 +418,7 @@ Beim **Team-Rückblick** ist es das gewählte Kalenderjahr, vom 1. Januar bis zu
 31. Dezember. Wer erst im Laufe des Jahres dazugekommen ist, bekommt trotzdem
 den Rückblick auf das Jahr — gezählt wird eben nur, was seither war.
 
-## Die Seiten des Teamer-Rückblicks
+## Die Seiten des Teamer-Rückblicks nachschlagen
 
 Auch hier sind es **höchstens zehn Seiten**, und auch hier entscheidet die
 Seltenheit, welche. Wer neu im Team ist, bekommt keine Reihe von Seiten mit
@@ -488,13 +470,13 @@ denselben Jahrgängen, keine Admins.
 zugewiesen ist, steht hier bei null und bekommt die Seite nicht — meist ein
 Zeichen dafür, dass die Zuweisung fehlt, nicht dass niemand betreut wurde.
 
-## Wo man den Rückblick wiederfindet
+## Einen Rückblick wiederfinden
 
 Solange er freigegeben ist, liegt er als auffällige Karte oben auf dem
-Dashboard: bei Konfis violett („Dein Wrapped ist da!“), bei Teamer:innen pink
+Dashboard: bei Konfis violett („Dein Jahresrückblick ist da!“), bei Teamer:innen pink
 („Dein Teamer-Jahr ist da!“).
 
-Ältere Rückblicke stehen im **Profil** unter **„Meine Wrappeds“**:
+Ältere Rückblicke stehen im **Profil** unter **„Meine Rückblicke“**:
 
 - **Konfis:** Tab *Profil*, nach unten scrollen.
 - **Teamer:innen:** *Profil*, unterhalb von „App-Tour ansehen“.
@@ -502,14 +484,20 @@ Dashboard: bei Konfis violett („Dein Wrapped ist da!“), bei Teamer:innen pin
 Dort ist pro Eintrag das Jahr genannt, etwa „Konfi-Wrapped 2026“. Ein Tippen
 öffnet **genau den gespeicherten Stand** von damals.
 
-> Der Abschnitt „Meine Wrappeds“ erscheint **nur**, wenn es mindestens einen
+> Der Abschnitt „Meine Rückblicke“ erscheint **nur**, wenn es mindestens einen
 > Rückblick gibt. Ist keiner da, fehlt er ganz — das ist kein Fehler.
 
 Wer den Rückblick eines Konfis von außen ansehen will, findet ihn in dessen
 Detailansicht. Das klappt allerdings nur für die **Leitung**: Bei Teamer:innen
 bleibt die Karte leer, weil die Berechtigung dafür fehlt.
 
-## Teilen
+### Im Profil einer Konfi oder Teamer:in nachsehen
+
+Öffnest du das Profil einer Konfi oder einer Teamer:in, siehst du **alle ihre
+Rückblicke** mit Datum. So kannst du bei Rückfragen nachvollziehen, was die
+Person selbst sieht.
+
+## Eine Seite teilen
 
 Über den Teilen-Knopf oben im Rückblick lässt sich die **gerade sichtbare
 Seite** weitergeben.
@@ -540,3 +528,27 @@ kennen den Gemeindenamen nicht; dort bleibt die Zeile weg, alles andere steht
 unverändert da.
 
 Jede Seite, die der Rückblick zeigen kann, lässt sich teilen.
+
+## Was sich mit Version 2.1 geändert hat
+
+**Der Rückblick ist persönlich geworden.** Statt für alle dieselben Zahlen zu
+zeigen, sucht er heraus, was gerade diese Konfi ausmacht — der Termin, an dem
+sie war, das Abzeichen, das sonst kaum jemand hat, die Wochen, in denen sie
+durchgehalten hat. Vergleiche mit anderen bleiben anonym (nur die Zahl, nie
+ein Name) und werden nur gezogen, wenn sie **freundlich ausfallen**.
+
+Eine Seite fürs Absagen gibt es bewusst nicht und wird es nicht geben.
+
+**Und seit 2.1.1 sieht nicht mehr jede Konfi dasselbe.** Der Rückblick zeigt
+höchstens zehn Seiten statt bis zu neunzehn — und ausgewählt werden die
+seltensten. Wer etwas erlebt hat, das nur wenige im Jahrgang erlebt haben,
+bekommt genau dafür eine Seite. Wie das im Einzelnen funktioniert, steht weiter
+unten unter [„Nachvollziehen, welche Seiten jemand sieht"](#nachvollziehen-welche-seiten-jemand-sieht).
+
+**Fotos sind größer.** Beiträge aus Challenges füllen jetzt die Seite statt als
+Miniatur zu erscheinen. Bei ein oder zwei Beiträgen werden sie noch größer.
+
+**Der Rückblick der Teamer:innen ist auch für dich sichtbar.** In der Ansicht
+einer Teamer:in findest du ihren Rückblick genauso wie bei einer Konfi. Für
+Teamer:innen kommt **jedes Jahr einer dazu**, und die alten bleiben stehen — in
+der Liste stehen sie mit Jahreszahl untereinander.

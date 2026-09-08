@@ -80,6 +80,10 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Handbuch-Kapitel zum Jahresrückblick ist nach Aufgaben geordnet: einen
+  Rückblick anlegen, neu berechnen, löschen, wiederfinden, teilen. Dazu waren
+  drei Angaben veraltet — der Weg dorthin, der Name des Bereichs im Profil und
+  wie gelöscht wird.
 - Die Jahrgangs-Verwaltung kündigt keine Rückblick-Freigabe mehr an. Die gibt
   es dort seit der letzten Version nicht mehr — verwaltet wird der Rückblick
   unter „Mehr“. Die Beschriftungen zeigten weiterhin an den alten Ort.
