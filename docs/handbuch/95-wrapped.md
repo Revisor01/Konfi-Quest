@@ -179,10 +179,14 @@ selbst erstellt, bekommt am 6. **keinen zweiten** — der Automatiklauf sieht, d
 es für dieses Jahr schon einen gibt, und lässt ihn aus. Ein Rückblick auf 2025,
 der schon dasteht, hält den auf 2026 dagegen nicht auf.
 
-> **Umgekehrt greift die Sperre nicht.** Erstellst du den Team-Rückblick für
-> dasselbe Jahr zweimal **von Hand**, entstehen zwei Ausgaben — und anders als
-> bei den Konfis geht dabei auch zweimal eine Benachrichtigung raus. Vor dem
-> Anlegen also kurz in die Liste sehen, ob das Jahr schon dasteht.
+> **Auch von Hand entsteht ein Jahr nur einmal.** Legst du den Team-Rückblick
+> für ein Jahr an, das schon dasteht, passiert nichts weiter — keine zweite
+> Ausgabe, keine zweite Benachrichtigung. Die Seite sagt dir das: „bestand
+> schon — es wurde nichts geändert."
+
+> **Anders als bei den Konfis:** Dort ergibt jedes Erstellen eine weitere
+> Ausgabe, weil ein Zwischenstand und ein Abschluss beide ihren Sinn haben. Ein
+> Kalenderjahr dagegen gibt es nur einmal.
 
 > **Warum es beim Konfi-Rückblick keine Automatik gibt:** Er umfasst die ganze
 > Konfi-Zeit bis zu dem Tag, an dem er entsteht — und wann dieser Tag der
