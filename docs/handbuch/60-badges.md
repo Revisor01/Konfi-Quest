@@ -22,7 +22,7 @@ Ein Abzeichen besteht aus vier Dingen:
   der Bedingung, damit verwandte Abzeichen zusammen wirken: Punkte-Abzeichen
   sind golden, Gottesdienst-Abzeichen orange, Gemeinde-Abzeichen grün. Du
   kannst jede Farbe von Hand ändern.
-- **Bedingung** — wofür es vergeben wird (die 15 Möglichkeiten unten)
+- **Bedingung** — wofür es vergeben wird (die sechzehn Möglichkeiten unten)
 - **Zielgruppe** — für Konfis oder für Teamer:innen
 
 ## Wissen, was vor dem Anlegen zu bedenken ist
@@ -52,30 +52,43 @@ musst du ein neues Abzeichen anlegen.
 | | Deaktivieren | Löschen |
 |---|---|---|
 | Neue Vergabe | stoppt | stoppt |
-| Bereits Verliehene | bleiben in der Datenbank | **werden mitgelöscht** |
-| Konfi sieht es weiter | **nein, es verschwindet** | nein |
-| Teamer:in sieht es weiter | ja | nein |
+| Bereits Verliehene | bleiben | **werden mitgelöscht** |
+| Wer es hatte, sieht es weiter | ja, bei Konfis wie Teamer:innen | nein |
+| Zählt noch als offenes Ziel | nein | nein |
 | Rückgängig | ja | nein |
 
-> **Unstimmigkeit, die du kennen solltest:** Deaktivierst du ein Abzeichen,
-> verschwindet es bei **Konfis** auch dann aus der App, wenn sie es schon hatten.
-> Bei **Teamer:innen** bleibt es sichtbar. Wenn du ein Abzeichen aus dem Verkehr
-> ziehen willst, ohne jemandem etwas wegzunehmen, ist das derzeit nicht
-> zufriedenstellend lösbar.
+> **Deaktivieren ist der Weg, ein Abzeichen aus dem Verkehr zu ziehen, ohne
+> jemandem etwas wegzunehmen.** Wer es schon hat, behält es und sieht es
+> weiterhin in seiner Liste. Für alle anderen ist es weg — es taucht nicht mehr
+> als erreichbares Ziel auf und wird nicht mehr vergeben. Löschen dagegen nimmt
+> es auch denen weg, die es verdient hatten.
 
 ### Geheime Abzeichen
 
 Ein „geheimes" Abzeichen sehen Konfis erst, **wenn sie es haben**. Vorher taucht
-es weder in der Liste noch als Fortschritt auf — nur die Anzahl unentdeckter
-Geheimnisse wird angezeigt („3 geheime Abzeichen").
+weder Name noch Beschreibung noch Fortschritt auf — die Angaben verlassen den
+Server gar nicht erst.
+
+Sichtbar ist nur, **dass** es etwas zu entdecken gibt: auf dem Dashboard als
+„2/5 geheim" mit einem gestrichelten Fragezeichen für jedes noch unentdeckte,
+auf der Abzeichen-Seite als Kennzahl **GEHEIM**. Verdient man eines, erscheint
+es ganz normal in der Liste, mit einem kleinen Eselsohr in der Ecke.
+
+> **Deshalb kommt niemand auf 100 Prozent, solange ein Geheimnis offen ist.**
+> Die geheimen zählen in die Gesamtzahl mit hinein — die Anzeige springt erst
+> auf 100 %, wenn auch sie alle gefunden sind. Bis dahin steht dort „100%?".
 
 Die Bedingung wird ganz normal geprüft. „Geheim" betrifft nur die Anzeige.
+
+> Im Moment der Verleihung verrät sich das Abzeichen allerdings selbst: Push und
+> Mitteilung nennen Name und Beschreibung wie bei jedem anderen. Das ist kein
+> Fehler — zu dem Zeitpunkt ist es ja verdient.
 
 ---
 
 ## Die passende Bedingung wählen
 
-Es gibt fünfzehn Bedingungen. Die meiste Zeit braucht nicht das Einstellen,
+Es gibt sechzehn Bedingungen. Die meiste Zeit braucht nicht das Einstellen,
 sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:
 
 | Du willst auszeichnen … | Nimm |
@@ -98,8 +111,12 @@ sondern die Frage, welche überhaupt gemeint ist. Deshalb zuerst der kurze Weg:
 
 Zwei Dinge vorweg, die für alle gelten:
 
-- **Der Zahlenwert** wird über einen Schieberegler von **1 bis 20** eingestellt.
-  Höhere Werte sind über die App nicht möglich.
+- **Der Zahlenwert** wird über einen Schieberegler eingestellt, bei einem neuen
+  Abzeichen von **1 bis 20**. Hat ein bestehendes Abzeichen einen höheren Wert,
+  reicht sein Regler bis dorthin — sonst würde er den Wert beim ersten Anfassen
+  auf 20 herunterziehen und das Abzeichen schlagartig an alle mit 20 Punkten
+  vergeben. Zurückholen ließe sich das nicht.
+- **„Zeitbasiert" hat einen zweiten Regler** für den Zeitraum, 1 bis 26 Wochen.
 - **Was der Wert bedeutet, ist je Bedingung verschieden** — mal „so viele
   Punkte", mal „so oft", mal „aus so vielen Kategorien". Bei jeder Bedingung
   unten steht es dabei. Wer das überliest, baut ein Abzeichen, das zu früh oder
@@ -140,9 +157,8 @@ Die **Summe** aller vergebenen [Bonuspunkte](40-punkte.md#weg-3-bonuspunkte) err
 
 *Beispiel:* Wert 2 → sobald du insgesamt 2 Bonuspunkte vergeben hast.
 
-> Der Hilfetext in der App sagt „Anzahl der Vergaben" — das stimmt nicht,
-> gezählt wird die Punktesumme. Zwei Bonuspunkte auf einmal erfüllen die
-> Bedingung also genauso wie zweimal ein Punkt.
+> Zwei Bonuspunkte auf einmal erfüllen die Bedingung genauso wie zweimal ein
+> Punkt — es zählt die Summe, nicht wie oft du etwas vergeben hast.
 
 ### Nach Anzahl
 
@@ -204,6 +220,12 @@ Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.
 [Kategorien](45-jahrgaenge.md#kategorien) nutzt.**
 
 Gezählt wird alles aus einer Kategorie — **Aktivitäten und Termine zusammen**.
+
+> **Bei Teamer-Abzeichen zählen nur Teamer-Aktivitäten mit.** Eine Aktivität,
+> die für Konfis gedacht ist, bleibt außen vor, auch wenn sie in derselben
+> Kategorie steckt. Bei Terminen ist es umgekehrt großzügiger: Dort zählt für
+> Teamer:innen jeder Termin mit Anwesenheit, auch Pflichttermine — sie arbeiten
+> dort ja mit. Dasselbe gilt für die Kategorie-Kombination.
 
 *Beispiel:* Wert 3 + Kategorie „Kasualien" → drei Kasualien, egal ob als
 Aktivität gemeldet oder als Termin besucht.
@@ -306,18 +328,23 @@ Jahr der ältesten Aktivität genommen; fehlt auch das, zählt es null.
 | Gesamtpunkte, Gottesdienst, Gemeinde, Beide Kategorien | ja | nein |
 | Bonuspunkte | ja | nein |
 | Aktivitäten & Events | ja | ja |
-| Event-Teilnahmen | ja | nein |
+| Event-Teilnahmen | ja | nur im Bestand |
 | Verschiedene Aktivitäten | ja | ja |
 | Pflicht-Anwesenheit | ja | nein |
 | Spezifische Aktivität | ja | ja |
 | Aktivitäts-Kombination | ja | ja |
 | Kategorie-Aktivitäten | ja | ja |
 | Kategorie-Kombination | ja | ja |
-| Zeitbasiert, Serie | ja | nein |
+| Zeitbasiert, Serie | ja | nur im Bestand |
 | Teamer-Jahr | nein | ja |
 
 Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten
-Bedingungen. Bei Termin-Bedingungen zählen für Teamer:innen **alle** besuchten
+Bedingungen.
+
+**„Nur im Bestand" heißt:** Diese drei lassen sich für die Zielgruppe „Team"
+nicht mehr **auswählen** — im Anlegeformular stehen sie dort nicht zur Wahl.
+Ein Abzeichen dieser Art, das es schon gibt, wird aber weiterhin ganz normal
+**vergeben**. Wer eines vorfindet, muss es also nicht ersetzen. Bei Termin-Bedingungen zählen für Teamer:innen **alle** besuchten
 Termine, auch Pflichttermine: Sie arbeiten dort mit.
 
 ## Nachvollziehen, wann geprüft wird
@@ -325,11 +352,18 @@ Termine, auch Pflichttermine: Sie arbeiten dort mit.
 Sofort bei:
 
 - einer genehmigten Aktivitäts-Meldung
-- einer direkt zugewiesenen Aktivität
-- vergebenen Bonuspunkten
-- [eingetragener Anwesenheit](70-termine.md#anwesenheit) bei einem Termin
+- einer direkt zugewiesenen Aktivität — und ebenso, wenn du eine wieder entfernst
+- vergebenen Bonuspunkten — und ebenso, wenn du welche zurücknimmst
+- [eingetragener Anwesenheit](70-termine.md#anwesenheit) bei einem Termin,
+  einzeln wie für die ganze Liste
+- einem Check-in per QR-Code
 - dem Anlegen oder Bearbeiten eines Abzeichens selbst — ändert sich die
   Bedingung, holt das System die Vergabe für alle direkt nach
+- dem Knopf „Abzeichen neu prüfen" (siehe unten)
+
+> Dass auch das **Zurücknehmen** eine Prüfung auslöst, klingt widersinnig — es
+> kann ja nichts wegnehmen. Der Grund: Die Prüfung läuft immer über alle
+> Bedingungen, und eine davon könnte durch die Änderung erstmals erfüllt sein.
 
 Zusätzlich **stündlich** im Hintergrund. Das betrifft in der Praxis nur die
 Bedingungen, die ohne Zutun fällig werden können — „Serie", „Zeitbasiert" und
@@ -349,6 +383,11 @@ das Abzeichen selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
 Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push, damit ein
 Nachhol-Lauf niemanden mit Benachrichtigungen überschüttet.
 
+Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf **eine
+Minute lang gesperrt** — drückst du früher erneut, kommt „Die Prüfung lief
+gerade eben." Und bei einem **deaktivierten** Abzeichen verweigert er den
+Dienst mit „Das Abzeichen ist nicht aktiv"; dort gibt es nichts nachzuholen.
+
 > **Mitteilungen sind dafür nicht nötig.** Der Hintergrundlauf geht alle aktiven
 > Konfis und Teamer:innen durch, ganz gleich ob jemand die App installiert oder
 > Mitteilungen erlaubt hat. Ohne Mitteilungen erfährt man von dem Abzeichen nur
@@ -358,8 +397,10 @@ Nachhol-Lauf niemanden mit Benachrichtigungen überschüttet.
 ## Wissen, was beim Verleihen passiert
 
 1. Das Abzeichen wird eingetragen
-2. Mitteilung in der App: „Neues Badge erhalten!"
-3. Push aufs Gerät
+2. Mitteilung in der App: „Neues Badge erhalten!" mit dem Symbol des Abzeichens
+   dahinter, darunter „Herzlichen Glückwunsch! Du hast das Badge … erhalten"
+   samt Beschreibung
+3. Push aufs Gerät, dort ohne das Symbol
 4. Der Zähler in der Tab-Leiste aktualisiert sich
 
 Ein Abzeichen kann nie doppelt vergeben werden.

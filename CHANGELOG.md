@@ -80,6 +80,10 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Das Handbuch riet davon ab, Abzeichen zu deaktivieren — angeblich
+  verschwinden sie dann auch bei denen, die sie schon hatten. Das stimmt seit
+  Ende August nicht mehr: Verdiente Abzeichen bleiben sichtbar. Deaktivieren
+  ist damit der richtige Weg, ein Abzeichen aus dem Verkehr zu ziehen.
 - Das Handbuch behauptete, zeitabhängige Abzeichen („Serie", „Zeitbasiert")
   kämen nur bei eingeschalteten Mitteilungen. Das stimmt nicht: Sie werden
   jedem verliehen. Ohne Mitteilungen erfährt man nur später davon.
