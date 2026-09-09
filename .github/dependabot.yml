@@ -27,6 +27,21 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+    # REACT-ROUTER BLEIBT AUF 6 (nachgemessen 09.09.2026):
+    # @ionic/react-router@9 verlangt `react-router: >=6.4.0 <7`. Version 7
+    # und 8 sind mit Ionic 9 UNVEREINBAR, nicht bloss riskant -- Dependabot
+    # legte dafuer trotzdem PRs an (#159, #160), die niemand mergen kann.
+    # Ein Wechsel geht nur zusammen mit einem Ionic-Hauptversionssprung.
+    #
+    # Patch- und Minor-Updates INNERHALB von 6 kommen weiterhin durch; nur
+    # die Hauptversionen sind ausgenommen.
+    ignore:
+      - dependency-name: react-router
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-router-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@ionic/react-router"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /backend

@@ -45,7 +45,14 @@ const linkifyText = (text: string): React.ReactNode => {
   const parts = text.split(URL_REGEX);
   return parts.map((part, i) => {
     if (i % 2 === 1) {
-      const href = part.startsWith('www.') ? `https://${part}` : part;
+      // NUR http/https ins href. Die Regex oben laesst ohnehin nichts
+      // anderes durch -- aber sie und diese Zeile stehen getrennt, und wer
+      // die Regex einmal erweitert, soll hier nicht versehentlich ein
+      // `javascript:`-Ziel oeffnen. CodeQL (js/xss-through-dom) hat die
+      // Stelle gemeldet, weil es dem Wert nicht bis zur Regex folgt; der
+      // Schutz gehoert trotzdem dorthin, wo der Link entsteht.
+      const roh = part.startsWith('www.') ? `https://${part}` : part;
+      const href = /^https?:\/\//i.test(roh) ? roh : `https://${roh}`;
       return (
         <a
           key={i}
