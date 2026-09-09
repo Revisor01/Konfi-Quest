@@ -161,6 +161,10 @@ Versionsüberschrift.
 - Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
   entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
   Löschen wieder.
+- Beiträge in einer Challenge-Galerie und Nachrichten im Chat konnten ihre
+  Reihenfolge zwischen zwei Aufrufen wechseln, wenn sie in derselben Sekunde
+  entstanden waren. Beim Blättern im Chat konnte dadurch eine Nachricht
+  doppelt erscheinen oder fehlen.
 - Ein Name für einen Rückblick, der zu lang war oder Steuerzeichen enthielt,
   wurde stillschweigend zurechtgeschnitten — bei einem Emoji am Ende blieb
   ein kaputtes Zeichen auf der Folie stehen. Solche Eingaben werden jetzt

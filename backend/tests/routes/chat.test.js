@@ -593,6 +593,65 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    // BEFUND 09.09.2026: Sortiert wurde allein nach `created_at DESC`. Bei
+    // gleichem Zeitstempel ist die Reihenfolge nach SQL UNDEFINIERT --
+    // PostgreSQL darf sie beliebig liefern. Im Chat ist das der Normalfall:
+    // Zwei Nachrichten in derselben Sekunde sind in einem lebhaften
+    // Jahrgangs-Raum keine Seltenheit.
+    //
+    // Beim BLAETTERN (LIMIT/OFFSET) wiegt das schwerer als eine vertauschte
+    // Anzeige: Wechselt die Reihenfolge zwischen zwei Seiten, erscheint eine
+    // Nachricht doppelt oder faellt ganz heraus.
+    describe('Die Reihenfolge der Nachrichten ist eindeutig', () => {
+      async function dreiGleichzeitig() {
+        const ids = [];
+        for (const text of ['Erste', 'Zweite', 'Dritte']) {
+          const res = await request(app)
+            .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+            .set('Authorization', `Bearer ${konfi1Token}`)
+            .send({ content: text });
+          ids.push(res.body.id ?? res.body.message?.id);
+        }
+        // DERSELBE Zeitstempel -- so wie es bei schnellem Tippen ohnehin
+        // passiert.
+        await db.query(
+          `UPDATE chat_messages SET created_at = '2026-06-01 12:00:00'::timestamp
+            WHERE id = ANY($1::int[])`,
+          [ids]
+        );
+        return ids;
+      }
+
+      it('Bei gleichem Zeitstempel bleibt die Reihenfolge ueber Aufrufe gleich', async () => {
+        await dreiGleichzeitig();
+
+        const reihen = [];
+        for (let i = 0; i < 5; i++) {
+          const res = await request(app)
+            .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+            .set('Authorization', `Bearer ${konfi1Token}`);
+          expect(res.status).toBe(200);
+          reihen.push(res.body.map(m => m.id).join(','));
+        }
+        expect(new Set(reihen).size).toBe(1);
+      });
+
+      it('Beim Blaettern erscheint keine Nachricht doppelt', async () => {
+        await dreiGleichzeitig();
+
+        const seite = async (offset) => {
+          const res = await request(app)
+            .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages?limit=2&offset=${offset}`)
+            .set('Authorization', `Bearer ${konfi1Token}`);
+          expect(res.status).toBe(200);
+          return res.body.map(m => m.id);
+        };
+
+        const alle = [...await seite(0), ...await seite(2)];
+        expect(new Set(alle).size).toBe(alle.length);
+      });
+    });
   });
 
   // ================================================================

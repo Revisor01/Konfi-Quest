@@ -801,7 +801,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               FROM chat_messages m
               JOIN users u ON m.user_id = u.id
               WHERE m.room_id = r.id AND m.deleted_at IS NULL
-              ORDER BY m.created_at DESC
+              -- Die id als zweites Kriterium (09.09.2026): Bei gleichem
+              -- Zeitstempel ist die Reihenfolge nach SQL undefiniert, und
+              -- die Vorschau zeigte dann mal die eine, mal die andere der
+              -- beiden letzten Nachrichten.
+              ORDER BY m.created_at DESC, m.id DESC
               LIMIT 1
           ) as last_message,
           lm.last_message_at
@@ -821,7 +825,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           SELECT created_at as last_message_at
           FROM chat_messages
           WHERE room_id = r.id AND deleted_at IS NULL
-          ORDER BY created_at DESC
+          -- Eindeutig sortieren, siehe oben.
+          ORDER BY created_at DESC, id DESC
           LIMIT 1
       ) lm ON true
       WHERE r.organization_id = $3
@@ -956,7 +961,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       } else {
         messagesQuery = `${selectColumns}
         WHERE m.room_id = $1
-        ORDER BY m.created_at DESC
+        -- Eindeutig sortieren -- hier wiegt es am schwersten: Beim
+        -- Blaettern mit LIMIT/OFFSET kann eine mehrdeutige Reihenfolge
+        -- dieselbe Nachricht zweimal liefern oder eine ganz auslassen.
+        ORDER BY m.created_at DESC, m.id DESC
         LIMIT $2 OFFSET $3`;
         queryParams = [roomId, limit, offset];
       }

@@ -592,7 +592,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
            WHERE cs.challenge_id = $1
              AND cs.user_id <> $2
              AND ${PUBLIC_SUBMISSION_SQL}
-           ORDER BY cs.created_at DESC`,
+           -- Die id als zweites Kriterium (09.09.2026): Ohne sie ist die
+           -- Reihenfolge bei gleichem Zeitstempel nach SQL UNDEFINIERT --
+           -- PostgreSQL darf sie beliebig liefern. Zwei Beitraege in
+           -- derselben Sekunde sind in einer Gruppe von Konfis normal, und
+           -- die Galerie sortierte sich dann zwischen zwei Aufrufen um.
+           -- Die id waechst monoton, der spaeter eingefuegte steht also
+           -- oben -- genau das, was "neueste zuerst" meint.
+           ORDER BY cs.created_at DESC, cs.id DESC`,
           [challengeId, req.user.id]
         );
 
@@ -602,7 +609,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                   moderation_note, created_at
            FROM challenge_submissions
            WHERE challenge_id = $1 AND user_id = $2
-           ORDER BY created_at DESC`,
+           -- Eindeutig sortieren, siehe Galerie oben.
+           ORDER BY created_at DESC, id DESC`,
           [challengeId, req.user.id]
         );
 
@@ -1568,7 +1576,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
            LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
            LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
            WHERE cs.challenge_id = $1
-           ORDER BY cs.created_at DESC`,
+           -- Eindeutig sortieren, siehe Galerie oben. Hier faellt es beim
+           -- Moderieren auf: Eine Liste, die sich bei jedem Aktualisieren
+           -- umsortiert, laesst einen den Ueberblick verlieren.
+           ORDER BY cs.created_at DESC, cs.id DESC`,
           [challengeId]
         );
 

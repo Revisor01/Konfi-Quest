@@ -148,6 +148,86 @@ describe('Challenges Routes', () => {
   }
 
   // ================================================================
+  // 0. Stabile Reihenfolge -- gegen sporadisch fallende Tests
+  // ================================================================
+  describe('Die Reihenfolge der Beitraege ist eindeutig', () => {
+    // BEFUND 09.09.2026: Zwei Tests dieser Datei fielen sporadisch, im
+    // Gesamtlauf und nur manchmal. Die Ursache lag NICHT im Test: Die
+    // Galerie sortierte allein nach `created_at DESC`. Werden zwei
+    // Beitraege in derselben Sekunde eingefuegt -- im Test die Regel, in
+    // einer Gruppe von Konfis durchaus moeglich -- ist die Reihenfolge
+    // nach SQL undefiniert. PostgreSQL darf sie beliebig liefern, und
+    // `gallery[0]` traf mal den einen, mal den anderen Beitrag.
+    //
+    // Das ist kein Testproblem: Auch fuer die Konfis wechselte die
+    // Reihenfolge der Galerie zwischen zwei Aufrufen.
+    async function zweiGleichzeitig() {
+      const challenge = await createChallenge({ visibility: 'public', moderated: false });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      // DERSELBE Zeitstempel, ausdruecklich gesetzt -- so wie es der
+      // Standardwert bei schnellem Einfuegen ohnehin tut.
+      const zeit = '2026-06-01 12:00:00';
+      const a = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi2.id,
+        text_content: 'Erster', moderation_status: 'approved',
+      });
+      const b = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.teamer1.id,
+        text_content: 'Zweiter', moderation_status: 'approved',
+      });
+      await db.query(
+        `UPDATE challenge_submissions SET created_at = $1::timestamp WHERE id = ANY($2::int[])`,
+        [zeit, [a.id, b.id]]
+      );
+      return { challenge, a, b };
+    }
+
+    it('Bei gleichem Zeitstempel bleibt die Galerie-Reihenfolge ueber Aufrufe gleich', async () => {
+      const { challenge } = await zweiGleichzeitig();
+
+      const reihen = [];
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app)
+          .get(`/api/challenges/konfi/${challenge.id}`)
+          .set('Authorization', `Bearer ${konfi1Token}`);
+        expect(res.status).toBe(200);
+        reihen.push(res.body.gallery.map(g => g.id).join(','));
+      }
+      // Alle fuenf Abrufe muessen dieselbe Reihenfolge liefern.
+      expect(new Set(reihen).size).toBe(1);
+    });
+
+    it('Der neuere Beitrag steht bei gleichem Zeitstempel vorn', async () => {
+      // Die zweite Sortierspalte ist die id: Sie waechst monoton, also
+      // steht bei gleicher Sekunde der spaeter eingefuegte oben -- genau
+      // das, was "DESC nach Zeit" meint.
+      const { challenge, a, b } = await zweiGleichzeitig();
+
+      const res = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.gallery.map(g => g.id);
+      expect(ids.indexOf(b.id)).toBeLessThan(ids.indexOf(a.id));
+    });
+
+    it('Auch die Moderationsliste ist eindeutig sortiert', async () => {
+      const { challenge } = await zweiGleichzeitig();
+
+      const reihen = [];
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app)
+          .get(`/api/challenges/admin/${challenge.id}/submissions`)
+          .set('Authorization', `Bearer ${admin1Token}`);
+        expect(res.status).toBe(200);
+        const liste = res.body.submissions || res.body;
+        reihen.push(liste.map(x => x.id).join(','));
+      }
+      expect(new Set(reihen).size).toBe(1);
+    });
+  });
+
+  // ================================================================
   // 1. Sichtbarkeitslogik der Galerie
   //    visibility x konfi_consent x moderation_status -> sichtbar? mit Name?
   // ================================================================
