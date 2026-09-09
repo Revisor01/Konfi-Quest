@@ -421,10 +421,12 @@ const GRUND_HAEUFIGKEIT_TEAMER = {
   // "Seit x Jahren dabei" -- nur, wer NICHT im ersten Jahr ist.
   'teamer-jahre': 55,
   // Mindestens fuenf Freigaben. Moderation macht nur ein Teil des Teams.
-  'teamer-moderation': 30,
   // Seltener als die Moderation: Freigeben tun viele, eine eigene Challenge
   // stellen deutlich weniger.
   'teamer-challenges': 20,
+  // Haeufig -- Simon: "Alle machen mit." Dieselbe Groessenordnung wie die
+  // Challenge-Seite im Konfi-Zweig (60 %).
+  'teamer-challenge-beitraege': 60,
   // Das erste Jahr -- per Definition wenige zur selben Zeit.
   'teamer-neu-dabei': 25,
   // Wer heute im Team ist UND frueher selbst Konfi in DIESER Gemeinde war.
@@ -818,13 +820,13 @@ const TEAMER_DRAMATURGIE = [
   'teamer-zertifikate',  // 7  Zertifikate
   // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
   // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
-  // 7b: Die Challenge-Begleiterin -- die Moderationsarbeit, die sonst
-  // niemand sieht. Steht bei den Taetigkeits-Seiten, vor dem Chat.
-  // 7a: Was du dem Jahrgang aufgegeben hast (09.09.2026). Steht VOR der
-  // Moderation: erst die Challenge stellen, dann die Beitraege freigeben --
-  // das ist die Reihenfolge, in der es passiert.
-  'teamer-challenges',   // 7a was du gestellt hast
-  'teamer-moderation',   // 7b was du freigegeben hast
+  // 7a: Deine eigenen Beitraege (09.09.2026, Simon: "Teamer posten auch in
+  // Challenge. Alle machen mit."). Dieselbe Seite wie bei den Konfis --
+  // dieselbe Sache, dieselbe Komponente.
+  'teamer-challenge-beitraege', // 7a wie oft du mitgemacht hast
+  // 7b: Was du dem Jahrgang aufgegeben hast -- erst mitmachen, dann selbst
+  // eine stellen.
+  'teamer-challenges',   // 7b was du gestellt hast
   'teamer-antworten',    // 8  wie oft du geantwortet hast
   'teamer-jahre',        // 9  "seit x Jahren dabei"
   // 7: Die eigene Geschichte -- wer heute im Team ist und frueher selbst
@@ -860,14 +862,12 @@ const TEAMER_BEDINGUNGEN = {
   'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
   'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
   'teamer-team': (s) => (s.team?.mitstreitende || 0) > 0,
-  // Erst ab fuenf Freigaben. Eine einzelne ist keine Geschichte -- dieselbe
-  // Schwelle wie bei den Antworten.
-  'teamer-moderation': (s) => (s.moderation?.freigegeben || 0) >= 5,
-  // SCHON AB DER ERSTEN, anders als bei Freigaben und Antworten: Eine
-  // Challenge zu stellen ist keine Wiederholungstat, sondern ein Einfall,
-  // den jemand aufgeschrieben und dem Jahrgang gegeben hat (Simon,
-  // 09.09.2026: "Wir sind ja auch froh wenn die das machen.").
-  'teamer-challenges': (s) => (s.challenges_gestellt?.total || 0) > 0,
+  // Ab DREI gestellten Challenges (Simon, 09.09.2026: "Wie viele gestellt
+  // und welche mit Titel ist ok. Aber auch erst ab 3.").
+  'teamer-challenges': (s) => (s.challenges_gestellt?.total || 0) >= 3,
+  // Dieselbe Bedingung wie im Konfi-Zweig ('challenges'): ab dem ersten
+  // eigenen Beitrag.
+  'teamer-challenge-beitraege': (s) => (s.challenges?.beitraege || 0) > 0,
   // Nur im ERSTEN Jahr. Und nur, wenn das Startjahr ueberhaupt bekannt ist:
   // "unbekannt" ist nicht "neu" -- wer seit Jahren dabei ist, aber kein
   // Eintrittsdatum hinterlegt hat, darf nicht als Neuling begruesst werden.

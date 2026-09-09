@@ -259,9 +259,12 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           );
         }
 
-        case 'challenges': {
-          if (!konfi) return null;
-          const ch = konfi.slides.challenges;
+        // Beide Rueckblicke, ein Zweig: Teamer:innen bekommen seit dem
+        // 09.09.2026 dieselbe Seite (Simon: "Teamer posten auch in
+        // Challenge. Alle machen mit.").
+        case 'challenges':
+        case 'teamer-challenge-beitraege': {
+          const ch = konfi?.slides.challenges || teamer?.slides.challenges;
           if (!ch) return null;
           return (
             <>
@@ -492,19 +495,6 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </>
           );
 
-        case 'teamer-moderation': {
-          if (!teamer) return null;
-          const mod = teamer.slides.moderation;
-          if (!mod?.freigegeben) return null;
-          return (
-            <>
-              <div className="share-label">Hinter den Kulissen</div>
-              <div className="share-big-number">{mod.freigegeben}</div>
-              <div className="share-subtitle">Beiträge freigegeben</div>
-            </>
-          );
-        }
-
         case 'teamer-team': {
           if (!teamer) return null;
           const tm = teamer.slides.team;
@@ -588,19 +578,23 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         }
 
         case 'teamer-challenges': {
-          const gestellt = teamer?.slides.challenges_gestellt?.total;
-          if (!gestellt) return null;
+          const gestellt = teamer?.slides.challenges_gestellt;
+          if (!gestellt?.total) return null;
+          const titel = (gestellt.titel || []).filter(Boolean);
           return (
             <>
               <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.6)', marginBottom: 32 }}>
-                Deine Challenges
+                Meine Challenges
               </div>
-              <div style={{ fontSize: 140, fontWeight: 700, lineHeight: 1 }}>{gestellt}</div>
+              <div style={{ fontSize: 140, fontWeight: 700, lineHeight: 1 }}>{gestellt.total}</div>
               <div style={{ fontSize: 36, marginTop: 32 }}>
-                {gestellt === 1
-                  ? 'Eine Challenge, die es ohne mich nicht gegeben hätte.'
-                  : `Challenges, die es ohne mich nicht gegeben hätte.`}
+                Aufgaben, die ich gestellt habe
               </div>
+              {titel.length > 0 && (
+                <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.7)', marginTop: 32, maxWidth: 820 }}>
+                  {titel.join(' · ')}
+                </div>
+              )}
             </>
           );
         }

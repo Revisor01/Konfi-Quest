@@ -216,6 +216,16 @@
   --karten-schleier: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
 }
 
+/* Dieselbe Seite im Teamer-Rueckblick (09.09.2026). Bewusst als EIGENER
+   Block und nicht als Selektorliste an der Regel darueber: Der Waechter
+   (wrappedTeilenAlleSeiten.test.ts) sucht je Seite einen eigenen Block mit
+   --karten-schleier. Eine Sammelregel liest er nicht -- und ohne Schleier
+   traegt das geteilte Bild eine andere Farbe als die Seite. */
+.share-card--teamer-challenge-beitraege {
+  background: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
+  --karten-schleier: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
+}
+
 .share-card--challenge-momente {
   background: linear-gradient(135deg, #be185d 0%, #9d174d 50%, #831843 100%);
   --karten-schleier: linear-gradient(135deg, #be185d 0%, #9d174d 50%, #831843 100%);
@@ -263,11 +273,6 @@
 .share-card--teamer.share-card--teamer-jahre {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
   --karten-schleier: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #15803d 100%);
-}
-
-.share-card--teamer.share-card--teamer-moderation {
-  background: linear-gradient(135deg, #312e81 0%, #0a0a0a 60%);
-  --karten-schleier: linear-gradient(135deg, #312e81 0%, #0a0a0a 60%);
 }
 
 .share-card--teamer.share-card--teamer-team {

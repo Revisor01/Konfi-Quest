@@ -15,8 +15,10 @@ Versionsüberschrift.
   Begrüßung, ein Segenswort und einen Dank. Der Spruch bleibt derselbe, so
   oft man den Rückblick auch öffnet, und lässt sich teilen wie jede andere
   Seite.
-- Der Team-Rückblick hat eine neue Seite für selbst gestellte Challenges.
-  Schon die erste zählt.
+- Teamer:innen bekommen im Rückblick dieselbe Challenge-Seite wie Konfis:
+  wie oft sie selbst mitgemacht haben und bei welcher Challenge am liebsten.
+- Der Team-Rückblick zeigt außerdem, wie viele Challenges jemand selbst
+  gestellt hat, mit den drei neuesten Titeln — ab drei gestellten.
 - JuLeiCa und Teamer-Card werden auf der Zertifikate-Seite des Rückblicks
   eigens genannt.
 - Neue Gemeinden starten mit neun Abzeichen für ihr Team. Bisher gab es dort
@@ -62,6 +64,8 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Die Seite „Hinter den Kulissen" im Team-Rückblick, die freigegebene
+  Beiträge zählte, entfällt.
 - Das Bild zum Teilen zeigt jetzt das Konfirmationsdatum groß statt der
   Punktzahl, dazu das Konfi-Quest-Logo. Ohne eingetragene Konfirmation
   bleiben Gemeinde und Spruch.

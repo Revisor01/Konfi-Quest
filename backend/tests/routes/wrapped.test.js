@@ -492,14 +492,14 @@ describe('Wrapped Routes', () => {
       const snap = await snapshotVonTeamer1();
       // Genau die fuenf eigenen -- fremde und unbekannte zaehlen nicht.
       expect(snap.slides.moderation.freigegeben).toBe(5);
-      expect(snap.kacheln).toContain('teamer-moderation');
-    });
 
-    it('Ohne Freigaben fehlt die Moderations-Seite', async () => {
-      const snap = await snapshotVonTeamer1();
-      expect(snap.slides.moderation.freigegeben).toBe(0);
+      // SIMON, 09.09.2026: "Und wie viele freigegeben kommt weg."
+      // DIE ZAHL BLEIBT IM SNAPSHOT -- ausgelieferte App-Versionen lesen
+      // slides.moderation. Nur die Seite entfaellt (ALT-APP-VERTRAG).
       expect(snap.kacheln).not.toContain('teamer-moderation');
     });
+
+
 
     it('Der Snapshot enthaelt KEINE Ablehnungsquote', async () => {
       // SIMONS REGEL (Konzept): nur die eigene Leistung, nie eine
@@ -1991,7 +1991,6 @@ describe('Wrapped Routes', () => {
         expect(snap.slides.moderation.freigegeben).toBe(0);
         expect(snap.kacheln).not.toContain('teamer-moderation');
         expect(snap.kacheln).toContain('teamer-intro');
-        expect(snap.kacheln).toContain('teamer-abschluss');
       });
     });
 

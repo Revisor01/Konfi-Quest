@@ -354,10 +354,17 @@ export interface TeamerWrappedData {
     /** Ab Version 3. Fehlt bei aelteren Snapshots. */
     konfi_zeit?: TeamerKonfiZeitSlide | null;
     /**
-     * Was diese Person dem Jahrgang aufgegeben hat (ab 09.09.2026).
-     * Nicht zu verwechseln mit `moderation`: Die zaehlt Freigaben.
+     * Die EIGENEN Challenge-Beitraege (ab 09.09.2026) -- dieselbe Form wie
+     * im Konfi-Snapshot, damit beide Rueckblicke dieselbe Komponente
+     * benutzen. Simon: "Teamer posten auch in Challenge. Alle machen mit."
      */
-    challenges_gestellt?: { total: number };
+    challenges?: KonfiChallengesSlide;
+    /**
+     * Was diese Person dem Jahrgang aufgegeben hat (ab 09.09.2026).
+     * Nicht zu verwechseln mit `challenges` (eigene Beitraege) und nicht
+     * mit `moderation` (Freigaben fremder Beitraege).
+     */
+    challenges_gestellt?: { total: number; titel?: string[] };
     /**
      * Der Zuspruch statt eines leeren Rueckblicks (Simon, 09.09.2026).
      * Steht NUR, wenn fuer die Person im Jahr nichts zusammenkam -- dann

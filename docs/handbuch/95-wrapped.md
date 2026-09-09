@@ -448,8 +448,8 @@ etwas zusammengekommen ist.
 | **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
 | **Das erste** | das zuerst verliehene Abzeichen des Jahres | mindestens ein Abzeichen im Zeitraum | 70 % |
 | **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat; JuLeiCa und Teamer-Card werden eigens genannt | mindestens ein Zertifikat im Zeitraum | 40 % |
-| **Deine Challenges** | wie viele Challenges du selbst gestellt hast | mindestens eine gestellte Challenge (kein Entwurf) | 20 % |
-| **Hinter den Kulissen** | wie viele Challenge-Beiträge freigegeben wurden | mindestens fünf eigene Freigaben | 30 % |
+| **Deine Kraftproben** | wie oft du selbst bei einer Challenge mitgemacht hast, und wobei am liebsten | mindestens ein eigener Beitrag | 60 % |
+| **Deine Challenges** | wie viele du selbst gestellt hast, mit den drei neuesten Titeln | mindestens drei gestellte Challenges (kein Entwurf) | 20 % |
 | **Im Gespräch** | wie oft im Chat auf andere geantwortet wurde | mindestens fünf echte Antworten | 50 % |
 | **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
 | **Dein erstes Jahr** | die Begrüßung für alle, die neu dazugekommen sind | im Rückblicksjahr ins Team gekommen, Eintrittsdatum bekannt | 25 % |
@@ -484,14 +484,10 @@ zweimal, einmal davon mit einer Eins.
 als „neu": Wer seit Jahren dabei ist, aber kein Datum hinterlegt hat, wird nicht
 als Neuling begrüßt.
 
-**„Deine Challenges" und „Hinter den Kulissen" sind zweierlei.** Die eine
-zählt, was du dem Jahrgang aufgegeben hast, die andere, welche Beiträge du
-freigegeben hast. Entwürfe zählen nicht — die hat niemand gesehen.
-
-**„Hinter den Kulissen" zählt nur die eigene Freigabe** — nie, wie viel jemand
-ausgeblendet hat, und nie eine Ablehnungsquote. Automatisch freigegebene
-Beiträge unmoderierter Challenges zählen nicht mit; dort hat niemand
-hingesehen.
+**„Deine Kraftproben" und „Deine Challenges" sind zweierlei.** Die eine zählt,
+wo du selbst mitgemacht hast — dieselbe Seite, die auch Konfis bekommen. Die
+andere zählt, was du dem Jahrgang aufgegeben hast. Entwürfe zählen nicht, die
+hat niemand gesehen.
 
 **„Nicht allein" nennt keine Namen.** Gezählt werden nur Teamer:innen auf
 denselben Jahrgängen, keine Admins.

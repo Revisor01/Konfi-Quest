@@ -1066,8 +1066,8 @@ const setzeTeamerBedingung = (t, kachel) => {
     case 'teamer-erstes-abzeichen': t.erstes_abzeichen = { name: 'Mutig' }; break;
     case 'teamer-antworten': t.chat = { antworten: 5 }; break;
     case 'teamer-team': t.team = { mitstreitende: 1 }; break;
-    case 'teamer-moderation': t.moderation = { freigegeben: 5 }; break;
-    case 'teamer-challenges': t.challenges_gestellt = { total: 1 }; break;
+    case 'teamer-challenges': t.challenges_gestellt = { total: 3 }; break;
+    case 'teamer-challenge-beitraege': t.challenges = { beitraege: 1 }; break;
     case 'teamer-neu-dabei': t.neu_dabei = { erstes_jahr: true, start_jahr: 2026 }; break;
     case 'teamer-jahre': t.engagement = { teamer_seit: '2021-09-01' }; break;
     case 'teamer-konfi-zeit': t.konfi_zeit = { jahrgang: '2019/2020' }; break;
@@ -1088,7 +1088,8 @@ const aktiverTeamer = () => ({
   erstes_abzeichen: { name: 'Mutig', icon: 'flame', color: '#f00', datum: '2025-10-01' },
   team: { mitstreitende: 5 },
   moderation: { freigegeben: 18 },
-  challenges_gestellt: { total: 3 },
+  challenges: { beitraege: 4, top_challenge: { title: 'Stille suchen', badge_icon: 'star', count: 2 } },
+  challenges_gestellt: { total: 3, titel: ['Stille suchen', 'Danke sagen', 'Licht teilen'] },
   neu_dabei: { erstes_jahr: false, start_jahr: 2021 },
   chat: { antworten: 22 },
   konfi_zeit: { jahrgang: '2019/2020' },
@@ -1108,7 +1109,8 @@ const neuerTeamer = () => ({
   erstes_abzeichen: null,
   team: { mitstreitende: 0 },
   moderation: { freigegeben: 0 },
-  challenges_gestellt: { total: 0 },
+  challenges: { beitraege: 0, top_challenge: null },
+  challenges_gestellt: { total: 0, titel: [] },
   neu_dabei: { erstes_jahr: false, start_jahr: null },
   chat: { antworten: 0 },
   konfi_zeit: null,
@@ -1219,22 +1221,61 @@ describe('Teamer-Dramaturgie', () => {
     expect(waehleTeamerKacheln(t)).not.toContain('teamer-challenges');
   });
 
-  test('schon die erste gestellte Challenge zaehlt', () => {
-    // Anders als Freigaben (ab 5) und Antworten (ab 5): Eine Challenge zu
-    // stellen ist keine Wiederholungstat, sondern ein Einfall.
+  test('unter drei gestellten Challenges gibt es die Seite nicht', () => {
+    // SIMON, 09.09.2026: "Wie viele gestellt und welche mit Titel ist ok.
+    // Aber auch erst ab 3."
+    for (const total of [1, 2]) {
+      const t = aktiverTeamer();
+      t.challenges_gestellt = { total };
+      expect(waehleTeamerKacheln(t)).not.toContain('teamer-challenges');
+    }
+  });
+
+  test('ab drei gestellten Challenges erscheint sie', () => {
+    const t = aktiverTeamer();
+    t.challenges_gestellt = { total: 3 };
+    expect(waehleTeamerKacheln(t)).toContain('teamer-challenges');
+  });
+
+  test('eine einzelne gestellte Challenge rettet nicht vor dem Zuspruch', () => {
+    // Die Seite erscheint erst ab drei -- aber die Challenge ist trotzdem
+    // etwas, das in diesem Jahr passiert ist. Wer eine gestellt hat, hat
+    // etwas getan und bekommt keinen Segen.
     const t = neuerTeamer();
     t.challenges_gestellt = { total: 1 };
     const kacheln = waehleTeamerKacheln(t);
-    expect(kacheln).toContain('teamer-challenges');
+    expect(kacheln).not.toContain('teamer-challenges');
+    expect(kacheln).toContain('teamer-segen');
+  });
+
+  test('eigene Beitraege bekommen dieselbe Seite wie bei den Konfis', () => {
+    // SIMON, 09.09.2026: "Teamer posten auch in Challenge. Alle machen mit.
+    // Da kannst du auch einfach die gleiche dritte wie bei Konfis machen."
+    const t = neuerTeamer();
+    t.challenges = { beitraege: 1, top_challenge: null };
+    const kacheln = waehleTeamerKacheln(t);
+    expect(kacheln).toContain('teamer-challenge-beitraege');
     expect(kacheln).not.toContain('teamer-segen');
   });
 
-  test('eine gestellte Challenge steht vor der Moderation', () => {
-    // Erst stellen, dann freigeben -- die Reihenfolge, in der es passiert.
+  test('ohne eigene Beitraege keine Beitrags-Seite', () => {
+    const t = aktiverTeamer();
+    t.challenges = { beitraege: 0, top_challenge: null };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-challenge-beitraege');
+  });
+
+  test('mitmachen steht vor selbst stellen', () => {
     const k = waehleTeamerKacheln(aktiverTeamer());
-    if (k.includes('teamer-challenges') && k.includes('teamer-moderation')) {
-      expect(k.indexOf('teamer-challenges')).toBeLessThan(k.indexOf('teamer-moderation'));
+    if (k.includes('teamer-challenge-beitraege') && k.includes('teamer-challenges')) {
+      expect(k.indexOf('teamer-challenge-beitraege')).toBeLessThan(k.indexOf('teamer-challenges'));
     }
+  });
+
+  test('die Moderations-Seite gibt es nicht mehr', () => {
+    // SIMON, 09.09.2026: "Und wie viele freigegeben kommt weg."
+    const t = aktiverTeamer();
+    t.moderation = { freigegeben: 40 };
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-moderation');
   });
 
   test('ein Zertifikat allein zaehlt dagegen als Jahresinhalt', () => {
@@ -1316,18 +1357,6 @@ describe('Teamer-Dramaturgie', () => {
     expect(k).not.toContain('teamer-erstes-abzeichen');
   });
 
-  test('ab fuenf Freigaben erscheint die Moderations-Seite', () => {
-    const t = aktiverTeamer();
-    t.moderation = { freigegeben: 5 };
-    expect(waehleTeamerKacheln(t)).toContain('teamer-moderation');
-  });
-
-  test('bei vier Freigaben gibt es die Seite nicht', () => {
-    const t = aktiverTeamer();
-    t.moderation = { freigegeben: 4 };
-    expect(waehleTeamerKacheln(t)).not.toContain('teamer-moderation');
-  });
-
   test('das Team steht direkt nach den Konfis', () => {
     // Schlanker Fall, damit der Deckel die Team-Seite (75 %) nicht kuerzt --
     // geprueft wird die Reihenfolge, nicht die Auswahl.
@@ -1399,13 +1428,20 @@ describe('Teamer-Dramaturgie', () => {
     // Kandidaten in die zehn Plaetze. Dass dann die selteneren gewinnen,
     // ist genau der Sinn der Auswahl -- hier festgehalten, damit ein
     // kuenftiges Verdraengen nicht wie ein Fehler aussieht.
+    //
+    // GEPRUEFT WIRD DAS PRINZIP, nicht eine bestimmte Seite: Welche genau
+    // herausfaellt, verschiebt sich mit jeder neuen Seite. Dass die
+    // haeufigste unter den Verdraengten ist und die seltenste bleibt, gilt
+    // dagegen immer.
     const t = aktiverTeamer();
     t.chat = { antworten: 22 };
     const k = waehleTeamerKacheln(t);
     expect(k.length).toBe(10);
-    // 'teamer-challenges' (20 %) ist seltener als 'teamer-antworten' (50 %).
+
+    // 'teamer-challenges' (20 %) ist die seltenste im Wettbewerb und bleibt.
     expect(k).toContain('teamer-challenges');
-    expect(k).not.toContain('teamer-antworten');
+    // 'teamer-challenge-beitraege' (60 %) ist die haeufigste und faellt raus.
+    expect(k).not.toContain('teamer-challenge-beitraege');
   });
 
   test('bei vier Antworten gibt es die Seite nicht', () => {

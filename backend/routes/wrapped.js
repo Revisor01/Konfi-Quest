@@ -1775,6 +1775,51 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       'Challenge-Freigaben (Migration 146)'
     );
 
+    // EIGENE CHALLENGE-BEITRAEGE -- dieselbe Seite wie bei den Konfis.
+    //
+    // SIMON, 09.09.2026: "Teamer posten auch in Challenge. Alle machen mit.
+    // Da kannst du auch einfach die gleiche dritte wie bei Konfis machen."
+    //
+    // Bewusst DIESELBE Abfrage und DIESELBE Komponente wie im Konfi-Zweig:
+    // Es ist dieselbe Sache -- jemand hat mitgemacht. Eine zweite, leicht
+    // abweichende Fassung waere die alte Kopie mit einem `if` davor.
+    let teamerChallengeBeitraege = 0;
+    let teamerTopChallenge = null;
+    try {
+      const { rows: [beitragRow] } = await client.query(
+        `SELECT COUNT(*) as count FROM challenge_submissions cs
+         WHERE cs.user_id = $1 AND cs.organization_id = $2
+           AND cs.moderation_status <> 'hidden'
+           AND cs.created_at >= $3::date
+           AND cs.created_at < ($4::date + INTERVAL '1 day')`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      teamerChallengeBeitraege = parseInt(beitragRow.count, 10) || 0;
+
+      const { rows: topRows } = await client.query(
+        `SELECT c.title, c.badge_icon, COUNT(*) as count
+         FROM challenge_submissions cs
+         JOIN challenges c ON cs.challenge_id = c.id
+         WHERE cs.user_id = $1 AND cs.organization_id = $2
+           AND cs.moderation_status <> 'hidden'
+           AND cs.created_at >= $3::date
+           AND cs.created_at < ($4::date + INTERVAL '1 day')
+         GROUP BY c.id, c.title, c.badge_icon
+         ORDER BY count DESC, c.title
+         LIMIT 1`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      if (topRows.length > 0) {
+        teamerTopChallenge = {
+          title: topRows[0].title,
+          badge_icon: topRows[0].badge_icon,
+          count: parseInt(topRows[0].count, 10)
+        };
+      }
+    } catch (challengeErr) {
+      console.warn('Wrapped: Teamer-Challenge-Zahlen konnten nicht geladen werden:', challengeErr.message);
+    }
+
     // GESTELLTE CHALLENGES -- was diese Person dem Jahrgang aufgegeben hat.
     //
     // SIMON, 09.09.2026: "Challenges und Zertifikate koennten sich bei
@@ -1796,6 +1841,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId, zeitraumStart, zeitraumEnde],
       'gestellte Challenges'
     );
+
+    // WELCHE es waren -- Simon, 09.09.2026: "Wie viele gestellt und welche
+    // mit Titel ist ok." Die Seite erscheint ohnehin erst ab drei, also
+    // reichen die drei neuesten Titel; mehr passen nicht auf eine Folie.
+    let gestellteTitel = [];
+    if (gestellteChallenges > 0) {
+      try {
+        const { rows } = await client.query(
+          `SELECT c.title FROM challenges c
+            WHERE c.created_by = $1
+              AND c.organization_id = $2
+              AND c.is_draft = false
+              AND c.created_at >= $3::date
+              AND c.created_at < ($4::date + INTERVAL '1 day')
+            ORDER BY c.created_at DESC
+            LIMIT 3`,
+          [userId, orgId, zeitraumStart, zeitraumEnde]
+        );
+        gestellteTitel = rows.map(r => r.title);
+      } catch (titelErr) {
+        console.warn('Wrapped: Titel gestellter Challenges nicht ladbar:', titelErr.message);
+      }
+    }
 
     // DEIN TEAM -- mit wie vielen anderen zusammen die Jahrgaenge betreut
     // wurden.
@@ -1937,10 +2005,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         team: {
           mitstreitende: teamGroesse
         },
+        // Additiv (09.09.2026): dieselbe Form wie im Konfi-Snapshot, damit
+        // beide Rueckblicke dieselbe Komponente benutzen koennen.
+        challenges: {
+          beitraege: teamerChallengeBeitraege,
+          top_challenge: teamerTopChallenge
+        },
         // Additiv (09.09.2026): Wer Challenges stellt, bekommt eine Seite
         // dafuer. Alte Apps kennen das Feld nicht und ignorieren es.
         challenges_gestellt: {
-          total: gestellteChallenges
+          total: gestellteChallenges,
+          // Additiv: die drei neuesten Titel. Aeltere Apps ignorieren sie.
+          titel: gestellteTitel
         },
         moderation: {
           freigegeben: freigegebeneBeitraege
