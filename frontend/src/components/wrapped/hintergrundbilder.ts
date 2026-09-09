@@ -17,28 +17,51 @@
 // einem hellen Himmel auf dem Handy in der Sonne unlesbar.
 
 /**
- * Die Motive. Bewusst ruhige, weite Bilder ohne erkennbare Gesichter:
- * Der Rückblick gehört der Konfi, nicht fremden Models auf einem Stockfoto.
+ * Die Motive. Keine erkennbaren Gesichter: Der Rückblick gehört der Konfi,
+ * nicht fremden Models auf einem Stockfoto. Silhouetten, Menschen von
+ * hinten und Menschenmengen aus der Ferne sind in Ordnung — ein Model, das
+ * in die Kamera lächelt, nicht.
+ *
+ * NEU AM 09.09.2026: 30 Motive statt der bisherigen 17. Simons Vorgabe war,
+ * dass die Bilder "wild sind und Spaß machen ... Watt und Meer und Deich
+ * aber auch Stadt und Land und Wald und Wild. Und schön und Party. Aber für
+ * 14jährige." Der alte Satz war dafür zu brav — Schafe auf dem Deich,
+ * leere Kirchenbänke und dreimal freigestelltes Konfetti als "Party".
+ *
+ * ALLE MOTIVE SIND HOCHKANT (1080x1920). Die Folien sind hochformatig;
+ * von den 17 alten Bildern waren 16 quer, davon wurde die Hälfte
+ * weggeschnitten.
  *
  * Die Dateien liegen im Frontend unter /assets/wrapped/ und werden
  * mitgeliefert — kein Netzabruf zur Laufzeit, damit der Rückblick auch
  * offline vollständig ist (die App funktioniert ohne Netz, siehe
  * Offline-Warteschlange).
  *
- * Format WebP, auf 1080 px Breite begrenzt: 640 KB für alle sieben Motive
- * statt 1,8 MB als JPEG (gemessen 02.09.2026). Die Bilder liegen ohnehin
- * unter einer 82-Prozent-Abdunklung, Detailschärfe wäre dort verschenkt.
+ * Format WebP, 1080 px breit: 1,6 MB für alle 30 Motive (gemessen
+ * 09.09.2026) — als JPEG wären es rund 8 MB. Weil im CSS ohnehin
+ * blur(1.5px) über dem Bild liegt, ist es vor dem Packen leicht
+ * vorgeglättet; das halbiert die Datei, ohne dass am Bildschirm ein
+ * Unterschied zu sehen wäre. Detailschärfe wäre unter der
+ * 82-Prozent-Abdunklung ohnehin verschenkt.
  * WebP ist sicher — iOS ab 16.4 (App-Mindestversion), Android ab API 24,
  * und die App verarbeitet WebP im Chat bereits.
+ *
+ * Herkunft und Fotograf jedes Bildes stehen in docs/bildnachweise.md.
  */
 export type Motiv =
-  // ruhig, kirchlich
-  | 'kirchenschiff' | 'fenster' | 'kerzen' | 'turm' | 'weg'
-  // Landschaft Dithmarschen und Weite
-  | 'deich' | 'watt' | 'feld' | 'weite' | 'wald' | 'wasser' | 'himmel'
-  // fröhlich und feiernd (Simons Wunsch: "gerne auch ein bisschen
-  // verrückte Bilder oder was lustiges")
-  | 'konfetti' | 'luftschlangen' | 'feuerwerk' | 'gitarre'
+  // Weite: Watt, Meer, Deich, Land, Wald — und Stadt bei Nacht.
+  | 'watt-abend' | 'priel' | 'nordsee' | 'wald-oben' | 'regenschauer'
+  | 'sturmwolken' | 'feld-abend' | 'feld-sturm' | 'duenen' | 'nebel'
+  | 'regen' | 'sterne' | 'stadt-nacht' | 'strasse-weit'
+  // Feier: laut, hell, in Bewegung.
+  | 'lagerfeuer' | 'lagerfeuer-strand' | 'wunderkerze' | 'wunderkerze-blau'
+  | 'konfetti-buehne' | 'konzert' | 'haende-hoch' | 'sprung' | 'skatepark'
+  | 'graffiti'
+  // Ruhig und kirchlich. HÖCHSTENS ZWEI KIRCHEN (Simon: "Ja Kirche darf
+  // eine Dorf und eine Stadtkirche sein. Aber nicht zu viel.") — mehr
+  // Kirchenbilder machen aus dem Rückblick einen Gemeindebrief.
+  | 'dorfkirche' | 'kirchenschiff' | 'kerze' | 'kerzen' | 'kirchenfenster'
+  | 'weg'
   // Sonderseite Sommerfreizeit 2026: der Preikestolen bei Stavanger.
   // Wikimedia Commons, CC0 -- keine Namensnennungspflicht. Bewusst dieses
   // Bild und nicht die Variante mit Touristengruppe: Hier steht eine
@@ -47,22 +70,36 @@ export type Motiv =
   | 'preikestolen';
 
 const MOTIV_DATEI: Record<Motiv, string> = {
+  'watt-abend': '/assets/wrapped/watt-abend.webp',
+  priel: '/assets/wrapped/priel.webp',
+  nordsee: '/assets/wrapped/nordsee.webp',
+  'wald-oben': '/assets/wrapped/wald-oben.webp',
+  regenschauer: '/assets/wrapped/regenschauer.webp',
+  sturmwolken: '/assets/wrapped/sturmwolken.webp',
+  'feld-abend': '/assets/wrapped/feld-abend.webp',
+  'feld-sturm': '/assets/wrapped/feld-sturm.webp',
+  duenen: '/assets/wrapped/duenen.webp',
+  nebel: '/assets/wrapped/nebel.webp',
+  regen: '/assets/wrapped/regen.webp',
+  sterne: '/assets/wrapped/sterne.webp',
+  'stadt-nacht': '/assets/wrapped/stadt-nacht.webp',
+  'strasse-weit': '/assets/wrapped/strasse-weit.webp',
+  lagerfeuer: '/assets/wrapped/lagerfeuer.webp',
+  'lagerfeuer-strand': '/assets/wrapped/lagerfeuer-strand.webp',
+  wunderkerze: '/assets/wrapped/wunderkerze.webp',
+  'wunderkerze-blau': '/assets/wrapped/wunderkerze-blau.webp',
+  'konfetti-buehne': '/assets/wrapped/konfetti-buehne.webp',
+  konzert: '/assets/wrapped/konzert.webp',
+  'haende-hoch': '/assets/wrapped/haende-hoch.webp',
+  sprung: '/assets/wrapped/sprung.webp',
+  skatepark: '/assets/wrapped/skatepark.webp',
+  graffiti: '/assets/wrapped/graffiti.webp',
+  dorfkirche: '/assets/wrapped/dorfkirche.webp',
   kirchenschiff: '/assets/wrapped/kirchenschiff.webp',
-  fenster: '/assets/wrapped/fenster.webp',
+  kerze: '/assets/wrapped/kerze.webp',
   kerzen: '/assets/wrapped/kerzen.webp',
-  turm: '/assets/wrapped/turm.webp',
+  kirchenfenster: '/assets/wrapped/kirchenfenster.webp',
   weg: '/assets/wrapped/weg.webp',
-  deich: '/assets/wrapped/deich.webp',
-  watt: '/assets/wrapped/watt.webp',
-  feld: '/assets/wrapped/feld.webp',
-  weite: '/assets/wrapped/weite.webp',
-  wald: '/assets/wrapped/wald.webp',
-  wasser: '/assets/wrapped/wasser.webp',
-  himmel: '/assets/wrapped/himmel.webp',
-  konfetti: '/assets/wrapped/konfetti.webp',
-  luftschlangen: '/assets/wrapped/luftschlangen.webp',
-  feuerwerk: '/assets/wrapped/feuerwerk.webp',
-  gitarre: '/assets/wrapped/gitarre.webp',
   preikestolen: '/assets/wrapped/preikestolen.webp',
 };
 /**
@@ -70,98 +107,83 @@ const MOTIV_DATEI: Record<Motiv, string> = {
  *
  * Die Auswahl folgt dem Inhalt: Die Momente-Seite zeigt ohnehin echte Fotos
  * der Konfis und braucht keinen weiteren Hintergrund; die Intro-Seite
- * eröffnet mit Weite; das Highlight bekommt ein ruhiges Motiv, damit die
- * Zahl darauf steht und nicht dagegen.
+ * eröffnet mit Weite; das Highlight bekommt ein lautes Motiv, damit die
+ * Seite trägt, von der der Rückblick erzählt.
+ *
+ * ACHTUNG: Diese Tabelle und KACHEL_ZWEITMOTIV müssen DIESELBEN Schlüssel
+ * abdecken, und je Kachel müssen sich beide Motive unterscheiden — zweimal
+ * dasselbe Bild wirkt wie ein Fehler, nicht wie Absicht. Zwei Tests wachen
+ * darüber (wrappedSeitenHabenBilder, wrappedHintergrundbilder).
  */
 const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
-  intro: 'watt',
-  highlight: 'konfetti',
+  intro: 'watt-abend',
+  highlight: 'konfetti-buehne',
   events: 'kirchenschiff',
-  'lieblings-event': 'deich',
-  badges: 'feuerwerk',
-  stempel: 'luftschlangen',
-  chat: 'gitarre',
-  reaktionen: 'konfetti',
-  verlaesslich: 'turm',
-  'aktivster-monat': 'feld',
-  kategorie: 'fenster',
-  'kategorie-allgemein': 'fenster',
+  'lieblings-event': 'nordsee',
+  badges: 'wunderkerze',
+  stempel: 'konfetti-buehne',
+  chat: 'stadt-nacht',
+  reaktionen: 'haende-hoch',
+  verlaesslich: 'dorfkirche',
+  'aktivster-monat': 'feld-abend',
+  kategorie: 'kirchenfenster',
+  'kategorie-allgemein': 'kirchenfenster',
   konfirmation: 'kerzen',
-  zeitraum: 'weite',
-  gottesdienst: 'kerzen',
+  zeitraum: 'sterne',
+  gottesdienst: 'kerze',
   gemeinde: 'weg',
-  'jahrgang-vergleich': 'watt',
-  challenges: 'luftschlangen',
-
-  // Die 14 Kategorie-Seiten (Simons Standardkategorien, 03.09.2026).
-  // Jede bekommt ein Motiv, das zum Anlass passt -- ohne Eintrag hier
-  // rendert die Seite nackt, ohne Fehler und ohne dass es jemandem
-  // auffaellt. Genau diese Art stiller Luecke soll es nicht mehr geben.
-  'kategorie:fest': 'konfetti',
-  'kategorie:senioren': 'fenster',
-  'kategorie:jugend': 'gitarre',
-  'kategorie:oeffentlichkeit': 'turm',
-  'kategorie:freizeit': 'deich',
+  'jahrgang-vergleich': 'priel',
+  challenges: 'skatepark',
+  'kategorie:fest': 'konfetti-buehne',
+  'kategorie:senioren': 'kirchenfenster',
+  'kategorie:jugend': 'skatepark',
+  'kategorie:oeffentlichkeit': 'stadt-nacht',
+  'kategorie:freizeit': 'duenen',
   'kategorie:weihnachten': 'kerzen',
-  'kategorie:konzert': 'gitarre',
-  'kategorie:kinder': 'feld',
-  'kategorie:kreativ': 'luftschlangen',
+  'kategorie:konzert': 'konzert',
+  'kategorie:kinder': 'feld-abend',
+  'kategorie:kreativ': 'graffiti',
   'kategorie:seelsorge': 'weg',
-  'kategorie:kasualien': 'kerzen',
+  'kategorie:kasualien': 'kerze',
   'kategorie:gottesdienst': 'kirchenschiff',
   'kategorie:gemeinde': 'weg',
-
-  // Die Datums-Seiten. Sie haengen nicht an der Kategorie, sondern am
-  // event_date -- deshalb eigene Motive.
   'datum:weihnachten': 'kerzen',
-  'datum:advent': 'kerzen',
-  'datum:jahreswechsel': 'feuerwerk',
-  'datum:ostern': 'fenster',
-  'datum:erntedank': 'feld',
-  'datum:sommer': 'watt',
-
-  // JEDE Seite bekommt ein Bild (Simon, 03.09.2026: "pro Wrapped-Seite").
-  // Frueher blieben punkte/abschluss bewusst ohne Motiv -- die Begruendung
-  // war, dass die grosse Zahl sonst mit dem Bild konkurriert. Seit der
-  // Schleier abgestuft ist (unten dicht, oben offen) gilt das nicht mehr:
-  // Die Zahl steht im abgedunkelten Bereich, das Motiv darueber.
-  punkte: 'weite',
-  abschluss: 'himmel',
-  endspurt: 'weg',
-  'ueber-das-ziel': 'feuerwerk',
-  bonus: 'konfetti',
-  pflicht: 'turm',
-  warteliste: 'turm',
+  'datum:advent': 'kerze',
+  'datum:jahreswechsel': 'wunderkerze',
+  'datum:ostern': 'kirchenfenster',
+  'datum:erntedank': 'feld-sturm',
+  'datum:sommer': 'watt-abend',
+  punkte: 'sterne',
+  abschluss: 'sturmwolken',
+  endspurt: 'strasse-weit',
+  'ueber-das-ziel': 'sprung',
+  bonus: 'wunderkerze-blau',
+  pflicht: 'dorfkirche',
+  warteliste: 'nebel',
   'langer-atem': 'weg',
-  wochentag: 'kirchenschiff',
-  vielseitig: 'konfetti',
-  'challenge-momente': 'wald',
-  // Das seltenste Abzeichen -- Feuerwerk, weil es ein Moment ist.
-  seltenstes: 'feuerwerk',
-  'werde-teamer': 'gitarre',
-  // Die Sonderseite zur Sommerfreizeit 2026. Sie ist die EINZIGE Seite mit
-  // diesem Motiv -- das Bild ist der Ort, von dem die Seite erzaehlt.
+  wochentag: 'regen',
+  vielseitig: 'lagerfeuer',
+  'challenge-momente': 'wald-oben',
+  seltenstes: 'lagerfeuer',
+  'werde-teamer': 'lagerfeuer-strand',
   'stavanger-2026': 'preikestolen',
-
-  // Teamer-Rueckblick (03.09.2026).
-  'teamer-intro': 'weite',
+  'teamer-intro': 'watt-abend',
   'teamer-events': 'kirchenschiff',
-  'teamer-konfis': 'konfetti',
-  'teamer-badges': 'feuerwerk',
-  'teamer-zertifikate': 'fenster',
-  'teamer-challenge-beitraege': 'luftschlangen',
-  'teamer-challenges': 'wald',
-  'teamer-team': 'feld',
-  'teamer-neu-dabei': 'deich',
+  'teamer-konfis': 'haende-hoch',
+  'teamer-badges': 'wunderkerze',
+  'teamer-zertifikate': 'kirchenfenster',
+  'teamer-challenge-beitraege': 'konfetti-buehne',
+  'teamer-challenges': 'skatepark',
+  'teamer-team': 'lagerfeuer-strand',
+  'teamer-neu-dabei': 'duenen',
   'teamer-anfang': 'weg',
-  'teamer-erstes-abzeichen': 'feuerwerk',
-  'teamer-antworten': 'fenster',
-  'teamer-jahre': 'weg',
-  'teamer-konfi-zeit': 'kirchenschiff',
-  'teamer-abschluss': 'himmel',
-  // Der Zuspruch statt eines leeren Rueckblicks (09.09.2026).
-  'teamer-segen': 'weite',
-  'teamer-segen-abschluss': 'himmel',
+  'teamer-erstes-abzeichen': 'wunderkerze-blau',
+  'teamer-antworten': 'kirchenfenster',
+  'teamer-jahre': 'wald-oben',
+  'teamer-konfi-zeit': 'nordsee',
+  'teamer-abschluss': 'sturmwolken',
+  'teamer-segen': 'sterne',
+  'teamer-segen-abschluss': 'regenschauer',
 };
 /**
  * Das ZWEITE, schwächere Motiv unten links. Simons Entwurf legt zwei
@@ -173,81 +195,74 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
  * Fehler, nicht wie Absicht.
  */
 const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
-  intro: 'himmel',
-  highlight: 'luftschlangen',
-  events: 'turm',
-  'lieblings-event': 'wasser',
-  badges: 'konfetti',
-  stempel: 'feuerwerk',
-  chat: 'wald',
-  reaktionen: 'luftschlangen',
-  verlaesslich: 'feld',
-  'aktivster-monat': 'himmel',
+  intro: 'sterne',
+  highlight: 'haende-hoch',
+  events: 'dorfkirche',
+  'lieblings-event': 'duenen',
+  badges: 'konfetti-buehne',
+  stempel: 'wunderkerze',
+  chat: 'strasse-weit',
+  reaktionen: 'konzert',
+  verlaesslich: 'feld-abend',
+  'aktivster-monat': 'sterne',
   kategorie: 'kirchenschiff',
   'kategorie-allgemein': 'kirchenschiff',
-  konfirmation: 'fenster',
-  zeitraum: 'deich',
+  konfirmation: 'kirchenfenster',
+  zeitraum: 'nebel',
   gottesdienst: 'kirchenschiff',
-  gemeinde: 'watt',
-  'jahrgang-vergleich': 'weite',
-  challenges: 'konfetti',
-
-  'kategorie:fest': 'luftschlangen',
-  'kategorie:senioren': 'wald',
-  'kategorie:jugend': 'wald',
-  'kategorie:oeffentlichkeit': 'himmel',
-  'kategorie:freizeit': 'watt',
-  'kategorie:weihnachten': 'fenster',
-  'kategorie:konzert': 'luftschlangen',
-  'kategorie:kinder': 'himmel',
-  'kategorie:kreativ': 'konfetti',
-  'kategorie:seelsorge': 'wald',
+  gemeinde: 'watt-abend',
+  'jahrgang-vergleich': 'regenschauer',
+  challenges: 'graffiti',
+  'kategorie:fest': 'haende-hoch',
+  'kategorie:senioren': 'nebel',
+  'kategorie:jugend': 'graffiti',
+  'kategorie:oeffentlichkeit': 'strasse-weit',
+  'kategorie:freizeit': 'nordsee',
+  'kategorie:weihnachten': 'kirchenfenster',
+  'kategorie:konzert': 'konfetti-buehne',
+  'kategorie:kinder': 'regen',
+  'kategorie:kreativ': 'konfetti-buehne',
+  'kategorie:seelsorge': 'nebel',
   'kategorie:kasualien': 'kirchenschiff',
-  'kategorie:gottesdienst': 'fenster',
-  'kategorie:gemeinde': 'watt',
-
+  'kategorie:gottesdienst': 'kirchenfenster',
+  'kategorie:gemeinde': 'watt-abend',
   'datum:weihnachten': 'kirchenschiff',
-  'datum:advent': 'fenster',
-  'datum:jahreswechsel': 'himmel',
-  'datum:ostern': 'weite',
-  'datum:erntedank': 'wald',
-  'datum:sommer': 'deich',
-
-  // Auch hier jede Seite -- das Zweitmotiv gibt der Flaeche Tiefe.
-  // Bewusst ein ANDERES Motiv als oben: zweimal dasselbe Bild wirkt wie
-  // ein Fehler, nicht wie Absicht.
-  punkte: 'feld',
-  abschluss: 'watt',
-  endspurt: 'himmel',
-  'ueber-das-ziel': 'konfetti',
-  bonus: 'luftschlangen',
+  'datum:advent': 'kirchenfenster',
+  'datum:jahreswechsel': 'sterne',
+  'datum:ostern': 'regenschauer',
+  'datum:erntedank': 'wald-oben',
+  'datum:sommer': 'duenen',
+  punkte: 'feld-abend',
+  abschluss: 'watt-abend',
+  endspurt: 'sterne',
+  'ueber-das-ziel': 'konfetti-buehne',
+  bonus: 'wunderkerze',
   pflicht: 'kirchenschiff',
-  warteliste: 'kerzen',
-  'langer-atem': 'himmel',
-  wochentag: 'fenster',
-  vielseitig: 'luftschlangen',
-  'challenge-momente': 'wasser',
-  seltenstes: 'konfetti',
+  warteliste: 'kerze',
+  'langer-atem': 'sterne',
+  wochentag: 'kirchenfenster',
+  vielseitig: 'haende-hoch',
+  'challenge-momente': 'nebel',
+  seltenstes: 'konfetti-buehne',
   'werde-teamer': 'weg',
-  'stavanger-2026': 'weite',
-
-  'teamer-intro': 'himmel',
-  'teamer-events': 'turm',
-  'teamer-konfis': 'luftschlangen',
-  'teamer-badges': 'konfetti',
+  'stavanger-2026': 'sturmwolken',
+  'teamer-intro': 'sterne',
+  'teamer-events': 'dorfkirche',
+  'teamer-konfis': 'konfetti-buehne',
+  'teamer-badges': 'haende-hoch',
   'teamer-zertifikate': 'kirchenschiff',
-  'teamer-challenge-beitraege': 'konfetti',
-  'teamer-challenges': 'luftschlangen',
-  'teamer-team': 'weite',
-  'teamer-neu-dabei': 'watt',
-  'teamer-anfang': 'himmel',
-  'teamer-erstes-abzeichen': 'konfetti',
-  'teamer-antworten': 'gitarre',
-  'teamer-jahre': 'wald',
-  'teamer-konfi-zeit': 'weite',
-  'teamer-abschluss': 'watt',
-  'teamer-segen': 'himmel',
-  'teamer-segen-abschluss': 'watt',
+  'teamer-challenge-beitraege': 'graffiti',
+  'teamer-challenges': 'konzert',
+  'teamer-team': 'feld-abend',
+  'teamer-neu-dabei': 'watt-abend',
+  'teamer-anfang': 'sterne',
+  'teamer-erstes-abzeichen': 'konfetti-buehne',
+  'teamer-antworten': 'stadt-nacht',
+  'teamer-jahre': 'nebel',
+  'teamer-konfi-zeit': 'priel',
+  'teamer-abschluss': 'watt-abend',
+  'teamer-segen': 'nebel',
+  'teamer-segen-abschluss': 'watt-abend',
 };
 /**
  * Liefert den Bildpfad für eine Kachel, oder null wenn sie ohne Foto bleibt.
@@ -280,14 +295,15 @@ export { KACHEL_MOTIV, KACHEL_ZWEITMOTIV, MOTIV_DATEI };
  * zweimal die gleichen Bilder im bg sein bei einem Konfi").
  *
  * WARUM DIE FESTE ZUORDNUNG DAS NICHT KONNTE: Ein Rueckblick hat bis zu
- * 14 Seiten mit je zwei Motiven -- also bis zu 28 Bildplaetze -- bei nur
- * 16 Motiven. Gemessen am 03.09.2026 kam `watt` bei einem einzigen Konfi
+ * 14 Seiten mit je zwei Motiven -- also bis zu 28 Bildplaetze -- bei damals
+ * nur 16 Motiven. Gemessen am 03.09.2026 kam `watt` bei einem einzigen Konfi
  * DREIMAL vor (intro, freizeit, abschluss), fuenf weitere Motive doppelt.
  *
  * Diese Funktion verteilt stattdessen: Jede Seite bekommt ihr Wunschmotiv,
  * wenn es noch frei ist -- sonst das naechste freie aus derselben Stimmung.
- * Erst wenn alle 16 vergeben sind, faengt die Vergabe von vorn an (bei mehr
- * als 8 Seiten unvermeidlich, dann aber mit groesstmoeglichem Abstand).
+ * Erst wenn alle 31 vergeben sind, faengt die Vergabe von vorn an -- seit
+ * dem 09.09.2026 kommt das in der Praxis nicht mehr vor: Der laengste
+ * Rueckblick hat rund 26 Seiten, es gibt 30 Motive plus den Preikestolen.
  *
  * DIE REIHENFOLGE DER SEITEN ENTSCHEIDET, nicht der Zufall: Derselbe
  * Rueckblick sieht bei jedem Oeffnen gleich aus. Das ist dieselbe
@@ -295,14 +311,33 @@ export { KACHEL_MOTIV, KACHEL_ZWEITMOTIV, MOTIV_DATEI };
  * nicht bei jedem Ansehen veraendern.
  */
 
-/** Motive nach Stimmung -- fuer den Ersatz, wenn das Wunschmotiv weg ist. */
+/**
+ * Motive nach Stimmung -- fuer den Ersatz, wenn das Wunschmotiv weg ist.
+ *
+ * WIE GROSS JEDE LISTE SEIN MUSS: Laeuft eine Stimmung leer, greift
+ * verteileMotive auf IRGENDEIN freies Motiv zurueck -- dann steht ein
+ * Lagerfeuer hinter der Konfirmation. Gemessen am 09.09.2026 braucht ein
+ * voller Konfi-Rueckblick hoechstens 14 Motive aus 'weite', 9 aus 'feier'
+ * und 3 aus 'ruhig'; ein Teamer-Rueckblick 15 / 2 / 0. Die Listen sind
+ * genau darauf ausgelegt (14 / 10 / 6). Simons Regel dahinter: "es gibt
+ * aber immer 3 passende oder so pro slide. Also es muss schon passen."
+ *
+ * PREIKESTOLEN STEHT BEWUSST IN KEINER LISTE. Er ist der Ort, von dem die
+ * Stavanger-Seite erzaehlt, und darf nicht als Ersatz an eine fruehere
+ * Seite fallen. Vorher stand er in 'weite' -- gemessen: Bei neun Seiten
+ * vor ihr bekam 'langer-atem' den Felsen und die Stavanger-Seite ging leer
+ * aus. Der Test wrappedStavanger2026 deckt genau diesen Fall ab.
+ */
 const STIMMUNG: Record<string, Motiv[]> = {
   // ruhig, kirchlich
-  ruhig: ['kirchenschiff', 'fenster', 'kerzen', 'turm', 'weg'],
-  // Weite und Landschaft
-  weite: ['deich', 'watt', 'feld', 'weite', 'wald', 'wasser', 'himmel', 'preikestolen'],
+  ruhig: ['kirchenschiff', 'kirchenfenster', 'kerzen', 'kerze', 'dorfkirche', 'weg'],
+  // Weite: Watt, Meer, Land, Wald -- und Stadt bei Nacht.
+  weite: ['watt-abend', 'priel', 'nordsee', 'wald-oben', 'regenschauer',
+    'sturmwolken', 'feld-abend', 'feld-sturm', 'duenen', 'nebel', 'regen',
+    'sterne', 'stadt-nacht', 'strasse-weit'],
   // feiern
-  feier: ['konfetti', 'luftschlangen', 'feuerwerk', 'gitarre'],
+  feier: ['lagerfeuer', 'lagerfeuer-strand', 'wunderkerze', 'wunderkerze-blau',
+    'konfetti-buehne', 'konzert', 'haende-hoch', 'sprung', 'skatepark', 'graffiti'],
 };
 
 /** Welche Stimmung passt zu einer Seite? */
@@ -344,7 +379,7 @@ export function verteileMotive(kacheln: string[]): Record<string, { haupt: strin
     // zweimal die gleichen Bilder im bg sein bei einem Konfi").
     //
     // Der erste Anlauf vergab zwei Motive je Seite -- Haupt- und
-    // Zweitbild. Bei 13 Seiten sind das 26 Bildplaetze auf 16 Motive:
+    // Zweitbild. Bei 13 Seiten waren das 26 Bildplaetze auf 16 Motive:
     // Wiederholung ist dann mathematisch unvermeidlich, und der Test hat
     // das sofort gezeigt (10 doppelte Motive).
     //

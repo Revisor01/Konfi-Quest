@@ -65,6 +65,11 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Der Jahresrückblick hat 30 neue Hintergrundbilder statt bisher 17: Watt,
+  Priel, Nordsee, Sturm und Sterne, dazu Lagerfeuer, Wunderkerzen,
+  Konzertlichter und ein Sprung von der Klippe. Alle im Hochformat — die
+  alten waren querformatig und wurden zur Hälfte abgeschnitten. Bei einem
+  Rückblick sieht niemand ein Bild zweimal.
 - Auf Android-Geräten war die untere Leiste breiter als der Bildschirm: Der
   erste und der letzte Reiter waren angeschnitten, aus „Material" wurde
   „Materia". Jetzt sind alle fünf vollständig lesbar.

@@ -24,7 +24,10 @@ describe('Jede Rueckblick-Seite bekommt ein Motiv', () => {
 
   it.each(NEUE_SEITEN)('%s hat ein Wunschmotiv hinterlegt', (kachel) => {
     expect(KACHEL_MOTIV[kachel]).toBeDefined();
-    expect(MOTIV_DATEI[KACHEL_MOTIV[kachel]!]).toMatch(/^\/assets\/wrapped\/\w+\.webp$/);
+    // Bindestrich erlaubt: Seit dem 09.09.2026 heissen Motive z. B.
+    // 'konfetti-buehne' oder 'watt-abend'. Geprueft wird weiterhin, dass der
+    // Pfad auf ein ausgeliefertes WebP unter /assets/wrapped/ zeigt.
+    expect(MOTIV_DATEI[KACHEL_MOTIV[kachel]!]).toMatch(/^\/assets\/wrapped\/[\w-]+\.webp$/);
   });
 
   it('ein voller Teamer-Rueckblick bekommt lauter verschiedene Bilder', () => {
@@ -59,6 +62,26 @@ describe('Jede Rueckblick-Seite bekommt ein Motiv', () => {
     const vergeben = verteileMotive(viele);
     for (const s of viele) {
       expect(vergeben[s]?.haupt).toMatch(/\.webp$/);
+    }
+  });
+
+  it('Stavanger behaelt seinen Felsen, auch wenn die Motive knapp werden', () => {
+    // BEFUND 09.09.2026: `preikestolen` stand in der STIMMUNG.weite-Liste
+    // und konnte damit als ERSATZ an eine fruehere Seite fallen. Das Bild
+    // IST die Aussage seiner Seite ("Du warst dabei"); auf einer anderen
+    // ist es eine Behauptung ueber eine Fahrt, die dort niemand gemacht hat.
+    //
+    // DAMIT DER TEST GREIFT, muessen VOR Stavanger mehr Seiten der Stimmung
+    // 'weite' stehen, als es dort Motive gibt (14) -- erst dann kommt der
+    // Ersatzgriff ueberhaupt zum Zug. Eine kuerzere Liste waere gruen, ohne
+    // etwas zu beweisen; genau daran scheiterte der erste Anlauf.
+    const vieleWeite = Array.from({ length: 16 }, (_, i) => `platz-${i}`);
+    const seiten = [...vieleWeite, 'stavanger-2026'];
+    const vergeben = verteileMotive(seiten);
+
+    expect(vergeben['stavanger-2026'].haupt).toContain('preikestolen');
+    for (const k of vieleWeite) {
+      expect(vergeben[k].haupt, `${k} hat den Preikestolen abbekommen`).not.toContain('preikestolen');
     }
   });
 
