@@ -161,6 +161,10 @@ Versionsüberschrift.
 - Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
   entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
   Löschen wieder.
+- Ein Name für einen Rückblick, der zu lang war oder Steuerzeichen enthielt,
+  wurde stillschweigend zurechtgeschnitten — bei einem Emoji am Ende blieb
+  ein kaputtes Zeichen auf der Folie stehen. Solche Eingaben werden jetzt
+  abgelehnt statt heimlich verändert.
 - Die Liste der Jahresrückblicke blieb für Admins ohne Jahrgangs-Zuweisung
   leer und riet trotzdem, einen anzulegen. Sie nennt jetzt den Grund, wie es
   die Konfi-, Termin-, Material- und Challenge-Listen schon tun.

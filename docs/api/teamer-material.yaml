@@ -1681,8 +1681,11 @@ paths:
         POST /api/wrapped/generate/{jahrgangId} und
         POST /api/wrapped/generate-teamer (dort optional `jahr`). Der
         Konfi-Weg nimmt seit dem 08.09.2026 wieder einen optionalen `titel`
-        entgegen (getrimmt, auf 40 Zeichen gekuerzt; ohne Angabe ein
-        Platzhalter). Einen ZEITRAUM nimmt keiner der beiden entgegen.
+        entgegen: Text, getrimmt, hoechstens 40 Zeichen, ohne Steuerzeichen
+        (Emoji und Umlaute sind erlaubt). Verstoesse werden mit 400
+        abgelehnt statt still weggetragen; nur Leerzeichen gilt wie keine
+        Angabe und faellt auf einen Platzhalter zurueck. Einen ZEITRAUM
+        nimmt keiner der beiden entgegen.
         Diese Route listet sie nur - es gibt bewusst keine eigene
         Anlege-Route, weil das Anlegen derselbe Vorgang wie das Erzeugen ist.
       parameters:

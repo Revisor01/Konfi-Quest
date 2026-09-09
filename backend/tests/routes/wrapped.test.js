@@ -3341,6 +3341,92 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // POST /generate/:jahrgangId — der Name der Ausgabe
+  // ================================================================
+  describe('Der Name einer Konfi-Ausgabe', () => {
+    const anlegen = (titel) => request(app)
+      .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(titel === undefined ? {} : { titel });
+
+    const titelAusDb = async () => {
+      const { rows } = await db.query(
+        `SELECT titel FROM wrapped_ausgaben WHERE jahrgang_id = $1
+          ORDER BY id DESC LIMIT 1`,
+        [JAHRGAENGE.jahrgang1.id]
+      );
+      return rows[0]?.titel;
+    };
+
+    it('Ein normaler Name wird uebernommen', async () => {
+      const res = await anlegen('Zwischenstand');
+      expect(res.status).toBe(200);
+      expect(await titelAusDb()).toBe('Zwischenstand');
+    });
+
+    it('Ohne Angabe steht ein Platzhalter', async () => {
+      const res = await anlegen(undefined);
+      expect(res.status).toBe(200);
+      expect(await titelAusDb()).toMatch(/^Konfi-Rückblick /);
+    });
+
+    it('Ein Name, der kein Text ist, wird abgelehnt statt still verschluckt', async () => {
+      // GEMESSEN (09.09.2026): `titel: 42` lief in den Platzhalter --
+      // ohne Fehler, ohne Hinweis. Wer sich vertippt, bekommt kommentarlos
+      // "Konfi-Rückblick 2026" und sucht den Grund bei sich.
+      for (const unsinn of [42, ['a'], { a: 1 }, true]) {
+        const res = await anlegen(unsinn);
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it('Ein zu langer Name wird abgelehnt statt still gekuerzt', async () => {
+      // GEMESSEN: 200 Zeichen wurden auf 40 geschnitten, ohne dass es
+      // jemandem gesagt wurde. Die Spalte fasst 120 -- die 40 sind eine
+      // Anzeige-Entscheidung, und die gehoert vor die Speicherung.
+      const res = await anlegen('x'.repeat(41));
+      expect(res.status).toBe(400);
+    });
+
+    it('Genau 40 Zeichen gehen noch durch', async () => {
+      const res = await anlegen('x'.repeat(40));
+      expect(res.status).toBe(200);
+      expect(await titelAusDb()).toBe('x'.repeat(40));
+    });
+
+    it('Ein Emoji-Name wird nicht mitten im Zeichen zerschnitten', async () => {
+      // GEMESSEN: slice(0,40) trennte ein Emoji in eine kaputte Haelfte
+      // (\ud83d) -- die Folie zeigte ein Ersatzquadrat.
+      const name = 'Sommer 2026 \u{1F31E}';
+      const res = await anlegen(name);
+      expect(res.status).toBe(200);
+      const gespeichert = await titelAusDb();
+      expect(gespeichert).toBe(name);
+      expect(gespeichert).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+    });
+
+    it('Steuerzeichen kommen nicht in die Datenbank', async () => {
+      // GEMESSEN: Sie gingen ungeprueft durch, bis auf die Folie.
+      const res = await anlegen('Te' + String.fromCharCode(7) + 'st');
+      expect(res.status).toBe(400);
+    });
+
+    it('Nur Leerzeichen gilt wie keine Angabe', async () => {
+      // Bewusst KEIN Fehler: Ein leeres Feld ist eine Nicht-Angabe, kein
+      // Vertipper. Der Platzhalter greift.
+      const res = await anlegen('   ');
+      expect(res.status).toBe(200);
+      expect(await titelAusDb()).toMatch(/^Konfi-Rückblick /);
+    });
+
+    it('Umlaute bleiben Umlaute', async () => {
+      const res = await anlegen('Abschluss für Jahrgänge');
+      expect(res.status).toBe(200);
+      expect(await titelAusDb()).toBe('Abschluss für Jahrgänge');
+    });
+  });
+
+  // ================================================================
   // GET /ausgaben — der Hinweis fuer Admins ohne Jahrgang
   // ================================================================
   describe('GET /api/wrapped/ausgaben ohne Jahrgangs-Zuweisung', () => {

@@ -20,7 +20,7 @@
  */
 
 import { chromium } from 'playwright';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, rename } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,6 +44,26 @@ if (!PASSWORT) {
 }
 
 /**
+ * Android-Kennung fuer die Play-Bilder.
+ *
+ * Ionic waehlt seinen Look ueber die Plattformerkennung: ohne Android-Kennung
+ * haelt sich der Browser fuer ein iPhone und die App rendert im iOS-Modus.
+ * Die Play-Bilder zeigten deshalb den iOS-Look in Android-Maessen.
+ *
+ * Es gaebe zwei Wege, das zu drehen — diese Kennung oder der Abfrageparameter
+ * "?ionic:mode=md". Gemessen wirken beide (ion-app traegt danach die Klasse
+ * "md" statt "ios"). Die Kennung gewinnt trotzdem: Sie gilt fuer die ganze
+ * Sitzung, also auch nach jedem Wechsel innerhalb der App, bei dem die
+ * Adresszeile den Parameter verliert — und sie stellt zugleich die
+ * CSS-Medienabfragen und alles andere auf Android um, nicht nur den
+ * Ionic-Modus. Der Parameter muesste an jede einzelne Adresse gehaengt werden
+ * und faellt beim ersten Sprung im Router still wieder weg.
+ */
+const ANDROID_KENNUNG =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+
+/**
  * Bildschirmgrössen. Die iPhone-Grösse entspricht dem, was die Stores erwarten.
  *
  * "play" liefert 1080x2160 — genau 1:2.0. Google Play zeigt Bilder mit einem
@@ -53,7 +73,16 @@ if (!PASSWORT) {
  */
 const GERAETE = {
   iphone: { width: 393, height: 852, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-  play: { width: 360, height: 720, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  // "kennung" nur hier: iPhone und iPad sollen ausdruecklich im iOS-Look
+  // bleiben, dafuer genuegt die Voreinstellung des Browsers.
+  play: {
+    width: 360,
+    height: 720,
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    kennung: ANDROID_KENNUNG,
+  },
   ipad: { width: 1024, height: 1366, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   desktop: { width: 1440, height: 900, deviceScaleFactor: 2, isMobile: false, hasTouch: false },
 };
@@ -164,8 +193,13 @@ async function zumFeedScrollen(page) {
 async function anmelden(page, benutzer) {
   await page.goto(`${BASIS}/login`, { waitUntil: 'networkidle' });
 
-  const nutzerfeld = page.locator('ion-input[placeholder="Dein Nutzername"] input');
-  const passwortfeld = page.locator('ion-input[placeholder="Dein Passwort"] input');
+  // Angesetzt wird am inneren <input> ueber dessen Platzhalter, NICHT ueber
+  // ein Attribut an <ion-input>: Ionic reicht den Platzhalter an das innere
+  // Feld durch, am aeusseren Element steht er nicht mehr. Der alte Ausdruck
+  // 'ion-input[placeholder="..."] input' fand deshalb nichts und jede
+  // Anmeldung lief in die Zeitgrenze.
+  const nutzerfeld = page.locator('input[placeholder="Dein Nutzername"]');
+  const passwortfeld = page.locator('input[placeholder="Dein Passwort"]');
 
   await nutzerfeld.waitFor({ state: 'visible', timeout: 20_000 });
   await nutzerfeld.fill(benutzer);
@@ -230,9 +264,16 @@ async function main() {
     }
   }
 
+  // Erst in einen Nebenordner aufnehmen und den alten Bestand NUR ersetzen,
+  // wenn wirklich Bilder entstanden sind. Vorher raeumte das Skript den
+  // Zielordner gleich zu Beginn leer — scheiterte danach die Anmeldung, war
+  // der alte Stand weg und der neue nie da. Genau so passiert, als der
+  // Platzhalter des Anmeldefelds von <ion-input> ans innere <input>
+  // gewandert war: 21 brauchbare Bilder geloescht, null neue.
   const ziel = join(WURZEL, 'docs', 'screenshots', GERAET);
-  await rm(ziel, { recursive: true, force: true });
-  await mkdir(ziel, { recursive: true });
+  const werkbank = `${ziel}.neu`;
+  await rm(werkbank, { recursive: true, force: true });
+  await mkdir(werkbank, { recursive: true });
 
   const browser = await chromium.launch();
   let geschossen = 0;
@@ -248,6 +289,7 @@ async function main() {
         hasTouch: geraet.hasTouch,
         locale: 'de-DE',
         timezoneId: 'Europe/Berlin',
+        ...(geraet.kennung ? { userAgent: geraet.kennung } : {}),
       });
       const page = await context.newPage();
 
@@ -257,7 +299,7 @@ async function main() {
         await stoererSchliessen(page);
 
         for (const seite of seiten) {
-          const datei = join(ziel, `${rolle}-${seite.name}.png`);
+          const datei = join(werkbank, `${rolle}-${seite.name}.png`);
           try {
             await page.goto(`${BASIS}${seite.pfad}`, { waitUntil: 'networkidle' });
             await beruhigen(page);
@@ -281,6 +323,16 @@ async function main() {
     }
   } finally {
     await browser.close();
+  }
+
+  // Umziehen statt kopieren: entweder steht der neue Satz vollstaendig da
+  // oder der alte bleibt unangetastet.
+  if (geschossen > 0) {
+    await rm(ziel, { recursive: true, force: true });
+    await rename(werkbank, ziel);
+  } else {
+    await rm(werkbank, { recursive: true, force: true });
+    console.error('Kein einziges Bild entstanden — der bisherige Bestand bleibt stehen.');
   }
 
   console.log(`\n${geschossen} Bildschirmfotos in docs/screenshots/${GERAET}/`);

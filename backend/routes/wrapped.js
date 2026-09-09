@@ -2202,6 +2202,31 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Aeltere App-Versionen schicken den Zeitraum moeglicherweise noch mit
     // -- er wird ohne Fehler ignoriert, statt die Anfrage abzulehnen
     // (ALT-APP-VERTRAG).
+    //
+    // DER TITEL WIRD GEPRUEFT (09.09.2026). Vorher stand hier nichts, und
+    // `trim().slice(0, 40)` weiter unten trug alles still weg. Gemessen:
+    //   `titel: 42`      -> landete im Platzhalter, ohne Fehler. Wer sich
+    //                       vertippt, bekommt "Konfi-Rueckblick 2026" und
+    //                       sucht den Grund bei sich.
+    //   200 Zeichen      -> still auf 40 geschnitten, ohne Hinweis.
+    //   Steuerzeichen    -> ungeprueft bis auf die Folie.
+    //   Emoji an Stelle 40 -> slice() trennte es mitten im Zeichen, die
+    //                       Folie zeigte ein Ersatzquadrat.
+    //
+    // KEIN BRUCH FUER AUSGELIEFERTE APPS: Die Oberflaeche kuerzt selbst auf
+    // 40 (AdminWrappedPage.tsx) und schickt nie mehr. Die Grenze trifft
+    // also nur direkte Aufrufe. Nur-Leerzeichen bleibt bewusst erlaubt --
+    // ein leeres Feld ist eine Nicht-Angabe, kein Vertipper, und faellt
+    // unten auf den Platzhalter zurueck.
+    body('titel')
+      .optional({ nullable: true })
+      .isString().withMessage('Der Name muss Text sein')
+      .bail()
+      .trim()
+      .isLength({ max: 40 }).withMessage('Der Name darf hoechstens 40 Zeichen lang sein')
+      // Steuerzeichen (auch Zeilenumbrueche) haben in einer Ueberschrift
+      // nichts zu suchen. Emoji und Umlaute bleiben ausdruecklich erlaubt.
+      .matches(/^[^\p{Cc}\p{Cf}]*$/u).withMessage('Der Name enthaelt unerlaubte Zeichen'),
     handleValidationErrors,
     async (req, res) => {
       const client = await db.getClient();
@@ -2270,10 +2295,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Name kann das nicht: Er beschriftet nur, er rechnet nichts.
         //
         // Ohne Angabe ein sachlicher Platzhalter wie bisher.
+        // KEIN slice() mehr: Die Laenge ist oben geprueft, und slice(0, 40)
+        // trennte ein Emoji mitten im Zeichen (gemessen 09.09.2026).
         const eingegeben = typeof req.body?.titel === 'string' ? req.body.titel.trim() : '';
-        const titel = eingegeben
-          ? eingegeben.slice(0, 40)
-          : `Konfi-Rückblick ${jahrgang.name || currentYear}`;
+        const titel = eingegeben || `Konfi-Rückblick ${jahrgang.name || currentYear}`;
 
         // KEIN ZEITRAUM AUS DEM FORMULAR MEHR (Simon, 07.09.2026: "wir
         // lassen das mit dem Datum"). Der Konfi-Rueckblick geht immer vom
