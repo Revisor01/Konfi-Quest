@@ -65,6 +65,16 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Auf Android-Geräten war die untere Leiste breiter als der Bildschirm: Der
+  erste und der letzte Reiter waren angeschnitten, aus „Material" wurde
+  „Materia". Jetzt sind alle fünf vollständig lesbar.
+- Auf Android wurden Umschalter wie „Ungelesen", „Verbuchen" und „Vergangen"
+  abgeschnitten. Sie stehen jetzt in normaler Schreibweise statt in
+  Großbuchstaben und passen damit.
+- Der QR-Knopf auf der Termin-Seite lag auf der letzten Terminkarte und
+  verdeckte Text. Die Liste lässt jetzt Platz für ihn.
+- Der Zähler über den Challenges hieß „ABZEICHEN", obwohl der Abschnitt
+  darunter „Deine Stempel" heißt. Jetzt heißt auch der Zähler „Stempel".
 - Die Seite „Hinter den Kulissen" im Team-Rückblick, die freigegebene
   Beiträge zählte, entfällt.
 - Das Bild zum Teilen zeigt jetzt das Konfirmationsdatum groß statt der

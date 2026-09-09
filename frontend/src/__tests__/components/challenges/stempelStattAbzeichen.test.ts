@@ -39,10 +39,21 @@ describe('Challenge-Stempel: das alte Wort ist weg', () => {
     // aufnahm, wurde der Kommentar richtiger und der Test rot — die Ausnahme
     // prueft deshalb jetzt auf "Bildsprache", also auf die BEGRUENDUNG statt
     // auf eine bestimmte Aufzaehlung.
+    //
+    // 09.09.2026: Der Filter suchte nur nach 'Abzeichen' in genau dieser
+    // Schreibweise. Die Zaehler-Beschriftung stand aber in GROSSBUCHSTABEN
+    // ("ABZEICHEN") und rutschte deshalb jahrelang durch -- direkt ueber
+    // einem Abschnitt namens "Deine Stempel". Jetzt ohne Ruecksicht auf
+    // Gross- und Kleinschreibung.
+    //
+    // ICON_ABZEICHEN bleibt erlaubt: Der Bezeichner benennt den
+    // Icon-Vorrat, nicht die Sache -- dieselbe Begruendung wie bei
+    // "Bildsprache".
     const zeilen = lies(pfad)
       .split('\n')
-      .filter((z) => z.includes('Abzeichen'))
-      .filter((z) => !z.includes('Bildsprache'));
+      .filter((z) => /abzeichen/i.test(z))
+      .filter((z) => !z.includes('Bildsprache'))
+      .filter((z) => !/ICON_ABZEICHEN/.test(z));
     expect(zeilen).toEqual([]);
   });
 

@@ -923,13 +923,32 @@ ion-tab-bar.md {
 /* Aeussere Tab-Buttons leicht einruecken, damit lange Labels (Aktivitäten)
    nicht am Bildschirmrand abgeschnitten werden. */
 ion-tab-bar.md ion-tab-button {
-  padding-left: var(--app-abstand-haar) !important;
-  padding-right: var(--app-abstand-haar) !important;
+  /* Ohne seitlichen Innenabstand: Bei fuenf Reitern auf 360px fehlte
+     "Challenges" und "Mitmachen" sonst genau ein Pixel (gemessen: 46
+     sichtbar, 47 noetig) und beide standen mit Auslassungspunkten da. */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  /* MD3 gibt jedem Reiter eine Mindestbreite von 80px. Bei FUENF Reitern
+     (Team-Ansicht: Start, Chat, Challenges, Mitmachen, Material) ergibt das
+     410px — auf einem 360px breiten Geraet laeuft die Leiste damit ueber
+     beide Raender hinaus. Gemessen am 09.09.2026 auf 360px: Leiste 385px
+     breit, erster Reiter bei -25px, letzter bis 385px. Sichtbar wurde es
+     als "Materia" statt "Material" am rechten Rand.
+     Aufgehoben, damit sich die Reiter den vorhandenen Platz teilen. Der
+     iOS-Look ist nicht betroffen — er kennt diese Mindestbreite nicht. */
+  min-width: 0 !important;
+  flex: 1 1 0 !important;
 }
 
 ion-tab-bar.md ion-tab-button ion-label,
 ion-tab-bar.md ion-tab-button .tab-button-text {
-  font-size: var(--app-text-winzig) !important;
+  /* Etwas kleiner als --app-text-winzig (0.6rem): Nachdem die
+     MD3-Mindestbreite aufgehoben ist, teilen sich fuenf Reiter 360px, also
+     72px je Reiter. "Challenges" braucht bei 0.6rem 51px und passte damit
+     knapp NICHT -- es stand "Challen..." und "Mitmac..." da. Gemessen am
+     09.09.2026; bei 0.55rem bleiben alle fuenf Woerter vollstaendig.
+     Der iOS-Look ist nicht betroffen. */
+  font-size: var(--app-text-schmal) !important;
   white-space: nowrap !important;
   /* Frueher overflow: visible — damit lief eine zu lange Beschriftung über
      den Reiter hinaus, statt sich zu kuerzen, und schob die Nachbarn optisch
@@ -3376,4 +3395,45 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-offline-platzhalter ion-icon {
   flex-shrink: 0;
   font-size: var(--app-text-standard);
+}
+
+/* SCHWEBENDER KNOPF UND LISTENENDE (09.09.2026)
+   Der QR-Knopf auf der Termin-Seite schwebt ueber dem Inhalt -- so ist ein
+   Material-FAB gedacht. Ohne Platz am Listenende legt er sich aber auf die
+   letzte Karte: Gemessen auf 360px verdeckte er das Wort "Gemeinde" in der
+   Zeile der ersten Termin-Karte. Im iOS-Look faellt es weniger auf, weil die
+   Reiterleiste dort schwebt und ohnehin Abstand haelt.
+   Der Zuschlag entspricht Knopfgroesse (56px) plus zweimal seinem Abstand
+   zum Rand. */
+ion-content:has(ion-fab[vertical="bottom"]) {
+  --padding-bottom: calc(56px + 2 * var(--app-abstand-basis));
+}
+
+/* SEGMENT-BESCHRIFTUNGEN IM MD3-LOOK (09.09.2026)
+   MD3 setzt sie in GROSSBUCHSTABEN. Deutsche Woerter sind ohnehin laenger
+   als englische, und in Versalien passen sie nicht mehr: Gemessen auf 360px
+   brauchte "Ungelesen" 92px und hatte 58 -- es stand "UNGELE..." da, ebenso
+   "VERBUC..." und "VERGAN...". Im iOS-Look faellt es nicht auf, weil der
+   Text dort in gemischter Schreibweise steht und schmaler ist.
+   Die normale Schreibweise ist hier die bessere Wahl: Sie ist schmaler,
+   besser lesbar und stimmt mit dem ueberein, was im Handbuch steht. */
+ion-segment.md ion-segment-button {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Dazu etwas kleiner: Die Chat-Uebersicht hat VIER Segmente auf 360px, also
+   90px je Segment und 58px fuer den Text. "Ungelesen" braucht in normaler
+   Schreibweise 68px -- das fehlt gerade noch. Gemessen 09.09.2026. */
+ion-segment.md ion-segment-button ion-label {
+  font-size: var(--app-text-klein);
+  /* MD3 setzt 16px Innenabstand je Seite. Bei vier Segmenten kostet das
+     128px -- "Ungelesen" fehlte damit genau ein Pixel (58 statt 59). */
+  margin-left: var(--app-abstand-haar);
+  margin-right: var(--app-abstand-haar);
+}
+
+ion-segment.md ion-segment-button {
+  --padding-start: var(--app-abstand-eng);
+  --padding-end: var(--app-abstand-eng);
 }

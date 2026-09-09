@@ -137,7 +137,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
           // Aktiv und Archiv springen zum jeweiligen Reiter; Stempel haben
           // keinen eigenen Reiter und bleiben reine Anzeige.
           { value: active.length, label: 'AKTIV', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
-          { value: marks.length, label: 'ABZEICHEN' },
+          { value: marks.length, label: 'STEMPEL' },
           { value: archive.length, label: 'ARCHIV', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
         ]}
       />

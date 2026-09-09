@@ -123,18 +123,22 @@ const AUFNAHMEN = {
       { name: 'mitmachen', pfad: '/konfi/events' },
       { name: 'challenges', pfad: '/konfi/challenges' },
       {
+        // Die Titel stehen bewusst NICHT fest verdrahtet: Welche Challenge
+        // laeuft, haengt am Datum, und eine abgelaufene ist aus der Liste
+        // verschwunden. Frueher standen hier zwei feste Titel — als deren
+        // Frist ablief, schlugen beide Aufnahmen still fehl. Genommen wird
+        // jetzt, was oben in der Liste steht.
         name: 'challenge-detail',
         pfad: '/konfi/challenges',
-        aktion: (page) => challengeOeffnen(page, 'Dein Lieblingsort in der Kirche'),
+        aktion: (page) => challengeOeffnen(page, 1),
       },
       {
-        // Bewusst eine andere Challenge als beim Detail: hier stehen drei
-        // freigegebene Beitraege im Feed, davon zwei anonym — das zeigt, wie
-        // die Gruppe sich zeigt, ohne dass jemand seinen Namen nennen muss.
+        // Bewusst eine andere Challenge als beim Detail — so zeigen die
+        // beiden Bilder nicht zweimal dasselbe.
         name: 'challenge-feed',
         pfad: '/konfi/challenges',
         aktion: async (page) => {
-          await challengeOeffnen(page, 'Was glaubst du eigentlich?');
+          await challengeOeffnen(page, 2);
           await zumFeedScrollen(page);
         },
       },
@@ -150,8 +154,17 @@ const AUFNAHMEN = {
  * Das Detail ist ein Modal ohne eigene Adresse — es gibt also keinen Weg,
  * es direkt anzusteuern.
  */
-async function challengeOeffnen(page, titel) {
-  const karte = page.locator(`.app-list-item--challenges:has-text("${titel}")`).first();
+async function challengeOeffnen(page, welche) {
+  // "welche" ist die Position in der Liste (1 = die oberste), nicht der
+  // Titel — siehe Begruendung bei den Aufnahmen.
+  const karte = page.locator('.app-list-item--challenges').nth(welche - 1);
+  // Erst ins Bild rollen: Die Liste ist nach Frist sortiert, eine bestimmte
+  // Challenge steht deshalb je nach Datenstand weit unten und ist beim
+  // Seitenaufbau gar nicht sichtbar. Ohne das lief das Warten auf
+  // "sichtbar" in die Zeitgrenze, obwohl die Karte da war.
+  await karte.waitFor({ state: 'attached', timeout: 15_000 });
+  await karte.scrollIntoViewIfNeeded().catch(() => {});
+  await page.waitForTimeout(400);
   await karte.waitFor({ state: 'visible', timeout: 15_000 });
   await karte.click();
   await page.locator('ion-modal ion-segment-button').first().waitFor({ state: 'visible', timeout: 15_000 });
@@ -190,6 +203,45 @@ async function zumFeedScrollen(page) {
   await page.waitForTimeout(900);
 }
 
+/**
+ * Innerhalb der laufenden App zur Seite wechseln, statt die Adresse neu zu
+ * laden.
+ *
+ * Zwei Gruende. Erstens ist es das, was Nutzer:innen tun — sie tippen auf
+ * einen Reiter, sie laden die Seite nicht neu; ein Neuladen wirft ausserdem
+ * jedes Mal die ganze App weg und baut sie wieder auf. Zweitens umgeht es
+ * einen Fehler in der Wegleitung davor: Unter /konfi haengt ein zweiter
+ * Dienst (die Konfi-Programme), dessen Regel Vorrang vor der App hat. Ein
+ * echtes Neuladen von /konfi/... landet deshalb bei ihm und liefert eine
+ * 404-Seite — die Bilder der Konfi-Rolle zeigten genau diese Seite. Der
+ * Wechsel im Router fragt den Server dazu gar nicht erst.
+ *
+ * Faellt der Wechsel im Router aus (kein History-Objekt erreichbar), bleibt
+ * das Neuladen als Rueckfallweg.
+ */
+async function hingehen(page, pfad) {
+  const gewechselt = await page.evaluate((ziel) => {
+    const nav = window.__ionicRouterNavigate;
+    if (typeof nav === 'function') { nav(ziel); return true; }
+    // React Router haengt seine History nicht global aus. Ein pushState mit
+    // anschliessendem popstate bringt den Router trotzdem zum Umschalten.
+    window.history.pushState({}, '', ziel);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    return true;
+  }, pfad).catch(() => false);
+
+  if (!gewechselt) {
+    await page.goto(`${BASIS}${pfad}`, { waitUntil: 'networkidle' });
+    return;
+  }
+  await page.waitForFunction(
+    (ziel) => window.location.pathname === ziel,
+    pfad,
+    { timeout: 10_000 }
+  ).catch(() => {});
+}
+
+
 async function anmelden(page, benutzer) {
   await page.goto(`${BASIS}/login`, { waitUntil: 'networkidle' });
 
@@ -224,21 +276,56 @@ async function beruhigen(page) {
   await page.waitForTimeout(900);
 }
 
-/** Overlays, die auf einem Bildschirmfoto nur stören. */
+/**
+ * Overlays, die auf einem Bildschirmfoto nur stören.
+ *
+ * "Überspringen" steht bewusst vorn: Die Einführung legt sich beim ersten
+ * Anmelden ganzflächig über die App und schluckt zugleich jeden Wechsel im
+ * Router. Ohne dieses Wegtippen zeigten alle Bilder einer Rolle dieselbe
+ * Begrüssungsseite. Sie hat keinen "Schliessen"-Knopf, deshalb reichten die
+ * bisherigen Beschriftungen nicht.
+ *
+ * Mehrfach durchlaufen, weil hinter der Einführung noch ein Hinweis auf
+ * Neuerungen liegen kann — einer deckt den anderen zu.
+ *
+ * Die wegklickbaren Hinweiskarten gehen hier ebenfalls zu. Sie bleiben in
+ * der App (Simon, 09.09.2026) und stehen nur den Store-Bildern im Weg.
+ */
 async function stoererSchliessen(page) {
   const knoepfe = [
+    'ion-button:has-text("Überspringen")',
+    'ion-button:has-text("Ueberspringen")',
     'ion-button:has-text("Schliessen")',
     'ion-button:has-text("Schließen")',
     'ion-button:has-text("Später")',
     'ion-button:has-text("Verstanden")',
+    'ion-button:has-text("Los geht")',
+    'ion-button:has-text("Alles klar")',
+    // Die wegklickbaren Hinweiskarten (09.09.2026, Simons Entscheidung:
+    // nur fuer die Bilder wegklicken, in der App bleiben sie). Alle drei
+    // -- "Was ist neu in Version 2.1?" sowie die Wrapped-Karten fuer Konfi
+    // und Team -- tragen dasselbe aria-label, also genuegt ein Ausdruck.
+    '[aria-label="Hinweis ausblenden"]',
   ];
-  for (const auswahl of knoepfe) {
-    const k = page.locator(auswahl).first();
-    if (await k.isVisible().catch(() => false)) {
-      await k.click().catch(() => {});
-      await page.waitForTimeout(400);
+  for (let runde = 0; runde < 3; runde++) {
+    let getroffen = false;
+    for (const auswahl of knoepfe) {
+      const k = page.locator(auswahl).first();
+      if (await k.isVisible().catch(() => false)) {
+        await k.click().catch(() => {});
+        await page.waitForTimeout(600);
+        getroffen = true;
+      }
     }
+    if (!getroffen) break;
   }
+  // Wartet noch ein Overlay im Vordergrund, ist das nächste Bild wertlos —
+  // lieber laut sein als ein verdecktes Bild abliefern.
+  await page
+    .locator('.app-onboarding, ion-modal.app-walkthrough')
+    .first()
+    .waitFor({ state: 'hidden', timeout: 3_000 })
+    .catch(() => {});
 }
 
 /** Ein offenes Detail wieder zumachen, damit das nächste Bild sauber anfängt. */
@@ -301,7 +388,7 @@ async function main() {
         for (const seite of seiten) {
           const datei = join(werkbank, `${rolle}-${seite.name}.png`);
           try {
-            await page.goto(`${BASIS}${seite.pfad}`, { waitUntil: 'networkidle' });
+            await hingehen(page, seite.pfad);
             await beruhigen(page);
             await stoererSchliessen(page);
             if (seite.aktion) await seite.aktion(page);

@@ -38,6 +38,10 @@ const istAusnahme = (pfad: string) => AUSNAHMEN.some(a => pfad.endsWith(a));
 // den gemessenen Bestand vor der Konsolidierung ab — wer hier etwas aendert,
 // aendert die Schrift der ganzen App und sollte das absichtlich tun.
 const SKALA: Record<string, string> = {
+  // Kleinste Stufe, eigens fuer die Reiterleiste im MD3-Look (09.09.2026):
+  // Dort teilen sich fuenf Reiter 360px, und bei 0.6rem stand "Challen..."
+  // statt "Challenges". Im iOS-Look bleibt --app-text-winzig.
+  '--app-text-schmal': '0.55rem',
   '--app-text-winzig': '0.6rem',
   '--app-text-mini': '0.65rem',
   '--app-text-meta': '0.7rem',
