@@ -162,3 +162,42 @@ describe('AdminMaterialPage: Leerzustand erklaert fehlenden Jahrgang', () => {
     expect(material).toContain("res.set('X-Kein-Jahrgang-Zugewiesen', 'true');");
   });
 });
+
+// Nachzug Jahresrueckblick (09.09.2026): Die Ausgabenliste filtert nach
+// Jahrgangs-Zuweisung, meldete das aber nicht. Ein Admin ohne Zuweisung las
+// "Noch kein Rueckblick -- ueber das Plus legst du einen an", obwohl es
+// welche gibt und das Plus ihm nicht weiterhilft. Letzte Stelle des Musters.
+describe('AdminWrappedPage: Leerzustand erklaert fehlenden Jahrgang', () => {
+  const lies = (pfad: string) =>
+    readFileSync(resolve(process.cwd(), pfad), 'utf8');
+
+  const seite = lies('src/components/admin/pages/AdminWrappedPage.tsx');
+
+  it('die Seite liest den Header beim Laden aus', () => {
+    expect(seite).toContain("a.headers?.['x-kein-jahrgang-zugewiesen'] === 'true'");
+  });
+
+  it('mit Header-Grund: Hinweis statt "Noch kein Rueckblick"', () => {
+    expect(seite).toContain("'Kein Jahrgang zugewiesen'");
+    expect(seite).toContain('Dir ist noch kein Jahrgang zugewiesen');
+  });
+
+  it('der urspruengliche Text bleibt fuer den echten Leerfall', () => {
+    // Gegenprobe: Wer eine Zuweisung hat und wirklich keinen Rueckblick,
+    // bekommt weiter die Anleitung zum Anlegen.
+    expect(seite).toContain("'Noch kein Rückblick'");
+    expect(seite).toContain('Über das Plus oben legst du einen an');
+  });
+
+  it('der Server setzt den Header in der Ausgabenliste', () => {
+    const wrapped = readFileSync(resolve(process.cwd(), '../backend/routes/wrapped.js'), 'utf8');
+    expect(wrapped).toContain("res.set('X-Kein-Jahrgang-Zugewiesen', 'true');");
+  });
+
+  it('die Leitung bekommt den Hinweis nie', () => {
+    // org_admin und super_admin sehen alle Ausgaben -- eine leere Liste
+    // heisst bei ihnen wirklich "keine da".
+    const wrapped = readFileSync(resolve(process.cwd(), '../backend/routes/wrapped.js'), 'utf8');
+    expect(wrapped).toContain('if (!istOrgAdmin) {');
+  });
+});

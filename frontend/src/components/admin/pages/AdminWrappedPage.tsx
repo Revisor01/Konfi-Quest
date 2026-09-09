@@ -116,6 +116,10 @@ const AdminWrappedPage: React.FC = () => {
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   const [ausgaben, setAusgaben] = useState<Ausgabe[]>([]);
+  // Admin ohne Jahrgangs-Zuweisung: Die Liste bleibt leer, weil er nichts
+  // sehen DARF -- nicht, weil es nichts gibt. Ohne diesen Unterschied liest
+  // er "lege einen an" und landet in einer Sackgasse (Simon, 31.08.2026).
+  const [ohneJahrgang, setOhneJahrgang] = useState(false);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [segment, setSegment] = useState<'konfi' | 'teamer'>('konfi');
@@ -158,6 +162,7 @@ const AdminWrappedPage: React.FC = () => {
         istLeitung ? api.get('/wrapped/team-jahre').catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
       ]);
       setAusgaben(Array.isArray(a.data) ? a.data : []);
+      setOhneJahrgang(a.headers?.['x-kein-jahrgang-zugewiesen'] === 'true');
       setJahrgaenge(Array.isArray(j.data) ? j.data : []);
       setTeamJahre(Array.isArray(tj.data) ? tj.data : []);
     } catch {
@@ -311,20 +316,25 @@ const AdminWrappedPage: React.FC = () => {
               <IonCardContent>
                 <EmptyState
                   icon={ICON_FUNKELN}
-                  title="Noch kein Rückblick"
+                  title={ohneJahrgang ? 'Kein Jahrgang zugewiesen' : 'Noch kein Rückblick'}
                   // Beide Texte etwa gleich lang, damit der Leerzustand auf
                   // beiden Reitern gleich hoch steht (Simon, 05.09.2026).
                   // Der Team-Text richtet sich nach der Berechtigung: Das
                   // Plus ist fuer Admins ohne Leitungsrecht gesperrt, ein
                   // "lege einen an" waere dort eine Sackgasse.
-                  // Kein "mit eigenem Namen" mehr (08.09.2026): Titel und
-                  // Zeitraum sind am 07.09. entfallen, die Ueberschrift
-                  // entsteht aus Jahrgang bzw. Jahr.
-                  message={segment === 'konfi'
-                    ? 'Über das Plus oben legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
-                    : istLeitung
-                      ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.'
-                      : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Leitung deiner Gemeinde an.'}
+                  // Der Zeitraum ist am 07.09. entfallen; der Name kam am
+                  // 08.09. zurueck. Er wird beim Anlegen vorgeschlagen und
+                  // muss hier nicht beworben werden.
+                  message={ohneJahrgang
+                    // Derselbe Wortlaut wie in der Konfi-Liste
+                    // (KonfisView.tsx): Es GIBT Rückblicke, dieser Zugang
+                    // darf sie nur nicht sehen.
+                    ? 'Dir ist noch kein Jahrgang zugewiesen. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.'
+                    : segment === 'konfi'
+                      ? 'Über das Plus oben legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
+                      : istLeitung
+                        ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.'
+                        : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Leitung deiner Gemeinde an.'}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>

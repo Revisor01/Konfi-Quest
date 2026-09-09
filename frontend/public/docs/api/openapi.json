@@ -11962,7 +11962,7 @@
           "Wrapped"
         ],
         "summary": "Rueckblick-Ausgaben der Organisation auflisten",
-        "description": "Seit 03.09.2026 (Migration 143/144). Ein Jahrgang laeuft ueber mehrere Jahre und braucht mehrere Rueckblicke - \"Dein erstes Jahr\", \"Zwischenstand\", \"Dein Abschluss\". Jede Freigabe erzeugt eine eigene AUSGABE mit frei waehlbarem Titel; die vorherige bleibt bestehen.\nAngelegt werden Ausgaben ueber die bestehenden Routen POST /api/wrapped/generate/{jahrgangId} und POST /api/wrapped/generate-teamer (dort optional `jahr`; einen `titel` nimmt seit dem 07.09.2026 keine der beiden mehr entgegen). Diese Route listet sie nur - es gibt bewusst keine eigene Anlege-Route, weil das Anlegen derselbe Vorgang wie das Erzeugen ist.\n",
+        "description": "Seit 03.09.2026 (Migration 143/144). Ein Jahrgang laeuft ueber mehrere Jahre und braucht mehrere Rueckblicke - \"Dein erstes Jahr\", \"Zwischenstand\", \"Dein Abschluss\". Jede Freigabe erzeugt eine eigene AUSGABE mit frei waehlbarem Titel; die vorherige bleibt bestehen.\nAngelegt werden Ausgaben ueber die bestehenden Routen POST /api/wrapped/generate/{jahrgangId} und POST /api/wrapped/generate-teamer (dort optional `jahr`). Der Konfi-Weg nimmt seit dem 08.09.2026 wieder einen optionalen `titel` entgegen (getrimmt, auf 40 Zeichen gekuerzt; ohne Angabe ein Platzhalter). Einen ZEITRAUM nimmt keiner der beiden entgegen. Diese Route listet sie nur - es gibt bewusst keine eigene Anlege-Route, weil das Anlegen derselbe Vorgang wie das Erzeugen ist.\n",
         "parameters": [
           {
             "name": "typ",
@@ -11992,7 +11992,18 @@
         },
         "responses": {
           "200": {
-            "description": "Array: id, typ, jahrgang_id, jahrgang_name, titel, zeitraum_start, zeitraum_ende, freigegeben, freigegeben_at, snapshots, created_at"
+            "description": "Array: id, typ, jahrgang_id, jahrgang_name, titel, zeitraum_start, zeitraum_ende, freigegeben, freigegeben_at, snapshots, created_at.\nHat ein Admin GAR KEINE Jahrgangs-Zuweisung, kommt seit dem 09.09.2026 der Header X-Kein-Jahrgang-Zugewiesen: true mit (additiv; die Antwortform bleibt ein Array). Die Oberflaeche unterscheidet damit \"es gibt keine Ausgaben\" von \"dieser Zugang darf keine sehen\". org_admin und super_admin bekommen ihn nie.\n",
+            "headers": {
+              "X-Kein-Jahrgang-Zugewiesen": {
+                "description": "Nur bei Admins ohne jede Jahrgangs-Zuweisung. Fehlt sonst.\n",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

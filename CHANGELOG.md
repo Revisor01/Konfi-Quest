@@ -161,6 +161,9 @@ Versionsüberschrift.
 - Aktivitäten von Teamer:innen ließen sich nicht mehr aus dem Profil
   entfernen — der Versuch endete mit einer Fehlermeldung. Jetzt klappt das
   Löschen wieder.
+- Die Liste der Jahresrückblicke blieb für Admins ohne Jahrgangs-Zuweisung
+  leer und riet trotzdem, einen anzulegen. Sie nennt jetzt den Grund, wie es
+  die Konfi-, Termin-, Material- und Challenge-Listen schon tun.
 - Beim Team-Rückblick wurden Jahre zur Auswahl angeboten, in denen es noch
   gar kein Team gab. Gezählt wurde alles, was in der Gemeinde passiert ist —
   auch reine Konfi-Termine. Jetzt zählt nur, was Teamer:innen betrifft.

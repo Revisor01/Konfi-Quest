@@ -3341,6 +3341,53 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // GET /ausgaben — der Hinweis fuer Admins ohne Jahrgang
+  // ================================================================
+  describe('GET /api/wrapped/ausgaben ohne Jahrgangs-Zuweisung', () => {
+    // SIMONS ENTSCHEIDUNG (31.08.2026): Ein Admin OHNE Jahrgang ist ein
+    // gueltiger Fall -- "angenommen ich will nur einen admin haben der mit
+    // dem teamer spricht". Dann muss die Oberflaeche aber erklaeren koennen,
+    // warum eine Liste leer ist, sonst haelt man die App fuer kaputt.
+    //
+    // Dasselbe Muster wie GET /admin/konfis, /events, /material,
+    // /challenges: der Header X-Kein-Jahrgang-Zugewiesen. Als HEADER, damit
+    // die Antwortform ein Array bleibt (ALT-APP-VERTRAG).
+    it('Admin ohne Jahrgang bekommt den Hinweis-Header', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.admin1.id]);
+      require('../../middleware/rbac').invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBe('true');
+    });
+
+    it('Admin MIT Jahrgang bekommt ihn nicht', async () => {
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+
+    it('Die Leitung bekommt ihn nie — sie sieht ohnehin alles', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.orgAdmin1.id]);
+      require('../../middleware/rbac').invalidateUserCache(USERS.orgAdmin1.id);
+
+      const res = await request(app)
+        .get('/api/wrapped/ausgaben')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-kein-jahrgang-zugewiesen']).toBeUndefined();
+    });
+  });
+
+  // ================================================================
   // GET /team-jahre
   // ================================================================
   describe('GET /api/wrapped/team-jahre', () => {

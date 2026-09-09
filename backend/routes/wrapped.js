@@ -2806,6 +2806,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [req.user.organization_id, typ, istOrgAdmin, req.user.id]
         );
 
+        // ADMIN OHNE JAHRGANG -- Simons Entscheidung (31.08.2026): Ein
+        // Admin ohne Jahrgangs-Zuweisung ist ein gueltiger Fall
+        // ("angenommen ich will nur einen admin haben der mit dem teamer
+        // spricht"). Die Liste bleibt dann leer, und ohne Hinweis liest er
+        // "Noch kein Rueckblick -- ueber das Plus legst du einen an",
+        // obwohl es welche gibt und das Plus ihm nicht hilft.
+        //
+        // Als HEADER gemeldet, damit die Antwortform ein Array bleibt --
+        // dasselbe Muster wie GET /admin/konfis, /events, /material und
+        // /challenges (ALT-APP-VERTRAG).
+        if (!istOrgAdmin) {
+          const { rows: [zuweisung] } = await db.query(
+            `SELECT 1 FROM user_jahrgang_assignments WHERE user_id = $1 LIMIT 1`,
+            [req.user.id]
+          );
+          if (!zuweisung) res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+        }
+
         res.json(rows.map(r => ({
           id: r.id,
           typ: r.wrapped_type,

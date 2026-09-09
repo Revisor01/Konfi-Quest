@@ -194,6 +194,7 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
+| Jahresrückblick: Liste der Ausgaben | zeigt nur Ausgaben der eigenen Jahrgänge; ohne jede Zuweisung bleibt sie leer und nennt den Grund („Kein Jahrgang zugewiesen“) |
 | Jahresrückblick freigeben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Chat: Teamer:in oder Admin schreibt Konfi an | „Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“ |
 | Chat: Konfi schreibt Teamer:in an | „Diese Teamer:in ist nicht für deinen Jahrgang zuständig“ (Admins darf ein Konfi dagegen immer anschreiben) |
