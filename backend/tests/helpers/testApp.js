@@ -46,6 +46,12 @@ async function warteAufAlleNachwehen() {
   for (const app of erzeugteApps) {
     await warteAufNachwehen(app);
   }
+  // Live-Updates laufen an nachAntwort() vorbei: Sie werden an 118 Stellen
+  // ohne await gerufen und melden ihren Nachlauf deshalb selbst an
+  // (utils/liveUpdate.js). Ohne dieses Warten blieb der sporadische
+  // "Parse Error: Expected HTTP/" bestehen -- er kam von dort, nicht aus
+  // nachAntwort (Befund 09.09.2026).
+  await require('../../utils/liveUpdate').warteAufLiveUpdates();
 }
 
 /**

@@ -777,7 +777,7 @@ const TeamerEventsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonContent className="app-gradient-background" fullscreen>
+        <IonContent className="app-gradient-background app-inhalt-mit-fab" fullscreen>
           <IonHeader collapse="condense">
             <IonToolbar className="app-condense-toolbar">
               <IonTitle size="large">{selectedEvent.name}</IonTitle>

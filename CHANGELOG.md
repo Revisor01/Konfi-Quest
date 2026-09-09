@@ -72,7 +72,7 @@ Versionsüberschrift.
   abgeschnitten. Sie stehen jetzt in normaler Schreibweise statt in
   Großbuchstaben und passen damit.
 - Der QR-Knopf auf der Termin-Seite lag auf der letzten Terminkarte und
-  verdeckte Text. Die Liste lässt jetzt Platz für ihn.
+  verdeckte Text. Er steht jetzt unter der Liste statt über ihr.
 - Der Zähler über den Challenges hieß „ABZEICHEN", obwohl der Abschnitt
   darunter „Deine Stempel" heißt. Jetzt heißt auch der Zähler „Stempel".
 - Die Seite „Hinter den Kulissen" im Team-Rückblick, die freigegebene
@@ -702,6 +702,8 @@ Versionsüberschrift.
   nächsten Erzeugen die gesamte Historie weg gewesen wäre.
 
 ### Sonstiges
+- Gelegentlich fehlschlagende Tests im Entwicklungsbetrieb behoben. Für
+  Nutzer:innen ändert sich nichts.
 - Sicherheitsmeldungen zu verwendeten Fremdbibliotheken abgearbeitet.
 - Die Testumgebung rechnet jetzt in derselben Zeitzone wie der Betrieb. Zuvor
   schlugen die Prüfungen der Termin-Erinnerungen zwischen Mitternacht und
