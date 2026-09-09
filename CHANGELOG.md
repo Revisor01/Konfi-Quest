@@ -22,7 +22,8 @@ Versionsüberschrift.
 - JuLeiCa und Teamer-Card werden auf der Zertifikate-Seite des Rückblicks
   eigens genannt.
 - Neue Gemeinden starten mit neun Abzeichen für ihr Team. Bisher gab es dort
-  nur Abzeichen für Konfis.
+  nur Abzeichen für Konfis. Das Handbuch nennt die mitgelieferten Abzeichen
+  jetzt beim Namen.
 - Ein neues Handbuch-Kapitel „Die App bedienen" erklärt, was überall gleich
   funktioniert: nach links wischen zum Löschen, nach unten ziehen zum
   Aktualisieren, der Aufbau der Reiter und was ohne Internet geht.

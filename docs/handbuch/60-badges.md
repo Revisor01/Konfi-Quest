@@ -9,6 +9,17 @@ Abzeichen (im System „Badges") bekommen Konfis und Teamer:innen **automatisch*
 sobald sie eine Bedingung erfüllen. Von Hand verleihen oder aberkennen lässt
 sich keines. Anlegen und Bearbeiten darf die Leitung, ansehen dürfen alle.
 
+## Die mitgelieferten Abzeichen sichten
+
+Eine neue Gemeinde startet nicht bei null: **27 Abzeichen für Konfis** und
+**neun für Teamer:innen** sind bereits angelegt und aktiv. Sie decken die
+gängigen Fälle ab — Punktestände, Anzahl von Aktivitäten und Terminen, Serien,
+bei Teamer:innen zusätzlich die Jahre im Team.
+
+Sie sind als Startpunkt gedacht, nicht als Vorgabe: Du kannst jedes umbenennen,
+seine Bedingung ändern oder es
+[aus dem Verkehr ziehen](#ein-abzeichen-aus-dem-verkehr-ziehen).
+
 ## Ein Abzeichen anlegen
 
 Du legst es einmal an und beschreibst dabei, wofür es vergeben wird. Ab dann
