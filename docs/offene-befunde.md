@@ -148,3 +148,61 @@ weiterzureichen.
     grep -rn 'navigate(`\|push(`\|routerLink={`' frontend/src
 
 Erwartet: ausschließlich feste Pfade mit eingesetzten IDs.
+
+---
+
+## 3. Nächtlicher Datenbank-Dump war leer (10.09.2026) — BEHOBEN
+
+In der Nacht des Ausfalls vom 09./10.09. lief der nächtliche Dump um 2:30,
+während die Container verschwunden waren. Er hinterließ eine Datei von
+**20 Byte** — das ist der leere gzip-Rahmen, ausgepackt 0 Byte. Der Lauf
+davor (09.09., 448 kB) war der letzte brauchbare Stand.
+
+### Warum der Fehlschlag still blieb
+
+Zwei Fehler, die sich gegenseitig verdeckten:
+
+1. **Im Sicherungsskript fehlte `pipefail`.** In einer Pipe bestimmt der
+   letzte Befehl den Rückgabewert. `pg_dump | gzip` endet deshalb
+   erfolgreich, auch wenn `pg_dump` gar nicht startet — `gzip` gelingt ja,
+   es packt nur nichts ein. Das Skript meldete „Backup ok".
+2. **Die Backup-Überwachung prüfte am Fall vorbei.** Sie kennt einen
+   eigenen Schritt für verdächtig kleine Dumps, sah aber nur eines der
+   beiden Dump-Verzeichnisse — ausgerechnet nicht das von Konfi Quest.
+   Für Konfi Quest prüfte sie nur, ob eine Datei jung genug ist, nicht ob
+   Inhalt darin steht. Um 7:30 meldete sie „OK, 2 frische Dateien" — eine
+   davon war die leere.
+
+Dazu kam ein dritter, davon unabhängiger Punkt: Das übergreifende
+Sicherungsskript für alle Datenbanken führte noch die **Staging-Datenbank**,
+die es seit dem 24.08.2026 nicht mehr gibt. Es meldete jede Nacht folgenlos
+„SKIP" und sah dabei aus, als sei Konfi Quest dort abgedeckt. Die Produktion
+hat einen eigenen Weg und war nie gemeint.
+
+### Was geändert wurde
+
+- Das Sicherungsskript prüft jetzt **vorher**, ob die Datenbank überhaupt
+  läuft, setzt `pipefail`, prüft das Ergebnis auf Inhalt (unter 1 kB gilt als
+  Fehlschlag — der kleinste je gemessene echte Dump war 236 kB) und **löscht**
+  eine unbrauchbare Datei, statt sie liegen zu lassen. Bricht mit Exit 1 ab.
+- Die Überwachung prüft beide Dump-Verzeichnisse auf leere Dateien.
+- Die tote Staging-Zeile ist durch einen Verweis ersetzt, der sagt, wo die
+  Produktion tatsächlich gesichert wird.
+
+### Gegenprobe (alle drei am 10.09.2026 gelaufen)
+
+| Fall | Erwartet | Gemessen |
+|---|---|---|
+| Datenbank läuft | Dump entsteht, Exit 0 | 468 kB, Exit 0 |
+| Container fehlt | kein Dump, Exit 1 | keine Datei, Exit 1 |
+| `pg_dump` liefert nichts | Datei gelöscht, Exit 1 | gelöscht, Exit 1 |
+| Leere Datei im Verzeichnis | Überwachung schlägt an | „PROBLEM: Leere Dumps" |
+
+Der leere Dump wurde ersetzt; der neue Stand enthält **111 Nutzer** und deckt
+sich mit der Zählung in der laufenden Datenbank.
+
+### Was daraus für andere Sicherungen folgt
+
+`pg_dump | gzip > datei` ohne `set -o pipefail` meldet Erfolg, auch wenn nichts
+ankommt. Wer so etwas schreibt, prüft danach die Dateigröße — sonst merkt es
+niemand, bis die Sicherung gebraucht wird.
