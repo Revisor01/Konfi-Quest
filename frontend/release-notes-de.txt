@@ -1,5 +1,7 @@
-Der Jahresrückblick erzählt jetzt eine Geschichte statt einer Liste — mit eigenen Seiten für das, was du erlebt hast.
+Push-Nachrichten kommen wieder zuverlässig an. Wer zuletzt keine mehr bekam, braucht nur die App zu öffnen.
 
-Beim Termin sagst du ausdrücklich zu oder ab. Die Terminliste zeigt Kategorie und Punkteart. Abzeichen haben wieder die Farbe ihrer Kategorie.
+Der Jahresrückblick fürs Team ist da: eigene Seiten für Challenges und Zertifikate, und wer ein Jahr pausiert hat, bekommt einen Zuspruch statt leerer Zahlen.
 
-Behoben: Beim Material lassen sich wieder Dateien anhängen. Beim Öffnen bleibt der Bildschirm nicht mehr weiß. Abmelden beendet die Sitzung zuverlässig.
+Neue Gemeinden starten mit Abzeichen fürs Team. Ein neues Handbuch-Kapitel erklärt, was überall gleich funktioniert.
+
+Behoben: Vier Anzeigefehler in der Oberfläche. Der QR-Scanner sitzt jetzt oben in der Leiste.
