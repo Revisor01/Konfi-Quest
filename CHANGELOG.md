@@ -718,6 +718,7 @@ Versionsüberschrift.
   Reihenfolge. Sie blockierte sonst die Auslieferung.
 - Zwei Konfigurationsdateien der Entwicklungsumgebung sind nicht mehr Teil des
   Projekts. Für Nutzer:innen ändert sich nichts.
+- Die Regeln für die Mitarbeit am Projekt stehen jetzt im Projekt selbst.
 
 ## [Unreleased] - 2.2.0
 

@@ -148,13 +148,18 @@ frontend/ios/App/build_export*/
 deploy/.env
 .env.production
 
+# CLAUDE.md stand bis zum 10.09.2026 ebenfalls hier. Sie ist jetzt bewusst
+# versioniert und enthaelt nur Projektregeln (Changelog-Pflicht, Testregeln,
+# API-Vertrag). Die Warnung gilt weiter: Wer dort Hostnamen, Serverpfade oder
+# Zugangsdaten eintraegt, veroeffentlicht sie. Betriebswissen gehoert nach
+# ~/Documents/konfi-quest-intern/.
+
 # Interne Arbeitsdokumente — NICHT ins Repo, es ist oeffentlich.
 # Sie enthalten Betriebswissen (Hostnamen, Container- und Nutzernamen,
 # Serverpfade). Keine Zugangsdaten, aber eine Landkarte, die niemanden
 # ausserhalb etwas angeht. Liegen lokal unter ~/Documents/konfi-quest-intern/.
 BAUSTELLEN.md
 HANDOFF.md
-CLAUDE.md
 docs/agenten-berichte/
 .planning/
 
