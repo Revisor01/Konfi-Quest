@@ -112,7 +112,7 @@ ios/App/Podfile.lock
 # Claude settings
 .claude/backend/push/firebase-service-account.json
 backend/push/firebase-service-account.json
-.claude/settings.local.json
+**/.claude/settings.local.json
 
 # Persistent data (bind mounts)
 postgres/

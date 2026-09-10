@@ -716,6 +716,8 @@ Versionsüberschrift.
   zwei Uhr fehl, obwohl die Erinnerungen selbst korrekt verschickt wurden.
 - Die Prüfung der Tab-Leiste im Team-Bereich folgt wieder der tatsächlichen
   Reihenfolge. Sie blockierte sonst die Auslieferung.
+- Zwei Konfigurationsdateien der Entwicklungsumgebung sind nicht mehr Teil des
+  Projekts. Für Nutzer:innen ändert sich nichts.
 
 ## [Unreleased] - 2.2.0
 
