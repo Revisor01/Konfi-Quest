@@ -23,6 +23,7 @@ import { chromium } from 'playwright';
 import { mkdir, rm, rename } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const WURZEL = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -92,36 +93,42 @@ const GERAETE = {
  * eigenen Komponentenbaum hat — ein Bild aus der Leitungsansicht sagt nichts
  * darüber, wie dieselbe Sache bei Konfis aussieht.
  */
+// "reiter" ist die Beschriftung des Reiters, ueber den die Seite auch ein
+// Mensch erreicht. Wo eine steht, wird sie ANGETIPPT statt per History
+// angesteuert — gemessen der einzige Weg, der zuverlaessig traegt (siehe
+// hingehenUndPruefen). Seiten ohne eigenen Reiter (Abzeichen bei Teamer und
+// Leitung, Profil, Jahrgaenge) behalten den History-Weg; dort trat der Fehler
+// bisher nicht auf, weil sie am Ende der Liste stehen.
 const AUFNAHMEN = {
   leitung: {
     benutzer: 'demo.leitung',
     seiten: [
-      { name: 'konfis', pfad: '/admin/konfis' },
-      { name: 'mitmachen', pfad: '/admin/events' },
-      { name: 'challenges', pfad: '/admin/challenges' },
+      { name: 'konfis', pfad: '/admin/konfis', reiter: 'Konfis' },
+      { name: 'mitmachen', pfad: '/admin/events', reiter: 'Mitmachen' },
+      { name: 'challenges', pfad: '/admin/challenges', reiter: 'Challenges' },
       { name: 'abzeichen', pfad: '/admin/badges' },
-      { name: 'chat', pfad: '/admin/chat' },
+      { name: 'chat', pfad: '/admin/chat', reiter: 'Chat' },
       { name: 'jahrgaenge', pfad: '/admin/settings/jahrgaenge' },
-      { name: 'einstellungen', pfad: '/admin/settings' },
+      { name: 'einstellungen', pfad: '/admin/settings', reiter: 'Mehr' },
     ],
   },
   teamer: {
     benutzer: 'demo.teamer',
     seiten: [
-      { name: 'startseite', pfad: '/teamer/dashboard' },
-      { name: 'mitmachen', pfad: '/teamer/events' },
-      { name: 'challenges', pfad: '/teamer/challenges' },
+      { name: 'startseite', pfad: '/teamer/dashboard', reiter: 'Start' },
+      { name: 'mitmachen', pfad: '/teamer/events', reiter: 'Mitmachen' },
+      { name: 'challenges', pfad: '/teamer/challenges', reiter: 'Challenges' },
       { name: 'abzeichen', pfad: '/teamer/badges' },
-      { name: 'chat', pfad: '/teamer/chat' },
+      { name: 'chat', pfad: '/teamer/chat', reiter: 'Chat' },
       { name: 'profil', pfad: '/teamer/profile' },
     ],
   },
   konfi: {
     benutzer: 'demo.emilia',
     seiten: [
-      { name: 'startseite', pfad: '/konfi/dashboard' },
-      { name: 'mitmachen', pfad: '/konfi/events' },
-      { name: 'challenges', pfad: '/konfi/challenges' },
+      { name: 'startseite', pfad: '/konfi/dashboard', reiter: 'Start' },
+      { name: 'mitmachen', pfad: '/konfi/events', reiter: 'Mitmachen' },
+      { name: 'challenges', pfad: '/konfi/challenges', reiter: 'Challenges' },
       {
         // Die Titel stehen bewusst NICHT fest verdrahtet: Welche Challenge
         // laeuft, haengt am Datum, und eine abgelaufene ist aus der Liste
@@ -142,8 +149,8 @@ const AUFNAHMEN = {
           await zumFeedScrollen(page);
         },
       },
-      { name: 'abzeichen', pfad: '/konfi/badges' },
-      { name: 'chat', pfad: '/konfi/chat' },
+      { name: 'abzeichen', pfad: '/konfi/badges', reiter: 'Badges' },
+      { name: 'chat', pfad: '/konfi/chat', reiter: 'Chat' },
       { name: 'profil', pfad: '/konfi/profile' },
     ],
   },
@@ -239,6 +246,50 @@ async function hingehen(page, pfad) {
     pfad,
     { timeout: 10_000 }
   ).catch(() => {});
+
+}
+
+/**
+ * Hingehen und sich vergewissern, dass die Seite auch wirklich vorn steht.
+ *
+ * Die URL steht sofort, die Seite nicht. Kommt der Wechsel per History, waehrend
+ * auf der vorigen Seite noch ein Hinweis weggeklickt wird, verwirft Ionic ihn
+ * still: Die Adresse zeigt das neue Ziel, im Bild steht die alte Seite. Genau so
+ * entstanden am 10.09.2026 teamer-abzeichen.png und teamer-mitmachen.png Byte
+ * fuer Byte identisch — beide zeigten die Events-Seite. Betroffen war jede
+ * Rolle: Nach /…/challenges kam die Badges-Seite in keiner nach vorn.
+ *
+ * Laengeres Warten hilft nicht (gemessen: auch nach zehn Sekunden bleibt die
+ * alte Seite stehen). Was zuverlaessig traegt, ist der Weg, den auch ein Mensch
+ * nimmt: den Reiter ANTIPPEN. Im Test wechselten so alle Reiter fehlerfrei,
+ * waehrend derselbe Wechsel per History haengen blieb.
+ *
+ * Die App ist davon nicht betroffen — sie hat fuer die Abzeichen gar keinen
+ * Reiter, dort fuehrt nur der Weg ueber das Profil hin, und der traegt.
+ */
+async function hingehenUndPruefen(page, pfad, reiterLabel) {
+  for (let versuch = 1; versuch <= 3; versuch++) {
+    let getippt = false;
+    if (reiterLabel) {
+      const reiter = page.locator(`ion-tab-button:has-text("${reiterLabel}")`).first();
+      if (await reiter.isVisible().catch(() => false)) {
+        await reiter.click({ timeout: 5_000 }).catch(() => {});
+        getippt = true;
+      }
+    }
+    if (!getippt) await hingehen(page, pfad);
+
+    await page.waitForFunction(
+      (ziel) => window.location.pathname === ziel,
+      pfad,
+      { timeout: 8_000 }
+    ).catch(() => {});
+    await beruhigen(page);
+
+    if (new URL(page.url()).pathname === pfad) return;
+    await page.waitForTimeout(800);
+  }
+  throw new Error(`Seite ${pfad} kam nach drei Versuchen nicht in den Vordergrund`);
 }
 
 
@@ -274,6 +325,17 @@ async function beruhigen(page) {
     .waitFor({ state: 'hidden', timeout: 8_000 })
     .catch(() => {});
   await page.waitForTimeout(900);
+
+  // Das .catch() oben schluckt einen Zeitüberlauf — sonst bräche der Lauf ab,
+  // wenn eine Seite gar keinen Ladebalken hat. Es schluckte aber auch den Fall,
+  // dass der Balken nach acht Sekunden immer noch dreht: Am 10.09.2026 landeten
+  // so zwei Ladeseiten ("Profil wird geladen...", 38 kB statt 886 kB) als
+  // vermeintlich gelungene Aufnahmen im Repo. Deshalb hier die Gegenprobe —
+  // wer jetzt noch dreht, lässt die Aufnahme scheitern statt sie zu verfälschen.
+  const dreht = await page.locator('ion-spinner').first().isVisible().catch(() => false);
+  if (dreht) {
+    throw new Error('Seite lädt nach dem Warten immer noch (ion-spinner sichtbar)');
+  }
 }
 
 /**
@@ -385,14 +447,31 @@ async function main() {
         await anmelden(page, benutzer);
         await stoererSchliessen(page);
 
+        // Fingerabdruecke aller bisher aufgenommenen Seiten dieser Rolle. Ionic
+        // tauscht die Seite verzoegert aus: hingehen() wartet nur darauf, dass
+        // sich die URL aendert, nicht darauf, dass der neue Baum steht. Am
+        // 10.09.2026 kamen so teamer-abzeichen.png und teamer-mitmachen.png Byte
+        // fuer Byte identisch heraus — zweimal die Events-Seite, einmal unter
+        // falschem Namen. Nur an der Dateigroesse faellt das nicht auf, beide
+        // waren 525 kB gross und sahen fuer sich genommen tadellos aus.
+        //
+        // Verglichen wird gegen ALLE vorherigen Bilder, nicht nur das letzte:
+        // Zwischen den beiden Doppelgaengern lag noch die Challenges-Seite.
+        const abdruecke = new Map();
         for (const seite of seiten) {
           const datei = join(werkbank, `${rolle}-${seite.name}.png`);
           try {
-            await hingehen(page, seite.pfad);
-            await beruhigen(page);
+            await hingehenUndPruefen(page, seite.pfad, seite.reiter);
             await stoererSchliessen(page);
             if (seite.aktion) await seite.aktion(page);
-            await page.screenshot({ path: datei });
+            const bild = await page.screenshot({ path: datei });
+            const abdruck = createHash('sha256').update(bild).digest('hex');
+            if (abdruecke.has(abdruck)) {
+              throw new Error(
+                `Bild gleicht ${rolle}-${abdruecke.get(abdruck)}.png — die Seite hat nicht gewechselt`
+              );
+            }
+            abdruecke.set(abdruck, seite.name);
             await modalSchliessen(page);
             console.log(`  ${rolle}-${seite.name}.png`);
             geschossen++;
