@@ -206,3 +206,65 @@ sich mit der Zählung in der laufenden Datenbank.
 `pg_dump | gzip > datei` ohne `set -o pipefail` meldet Erfolg, auch wenn nichts
 ankommt. Wer so etwas schreibt, prüft danach die Dateigröße — sonst merkt es
 niemand, bis die Sicherung gebraucht wird.
+
+---
+
+## 4. Screenshots zeigten die falsche Seite (10.09.2026) — BEHOBEN
+
+Drei Fehler im Aufnahmeskript, alle **am Bild** aufgefallen und keiner am
+Protokoll — das meldete durchweg Erfolg.
+
+### 4.1 Ladeseiten als gelungene Aufnahme
+
+`teamer-chat.png` zeigte „Chaträume werden geladen…", `teamer-profil.png`
+„Profil wird geladen…". Beide waren rund 40 kB groß statt der üblichen 500 kB.
+
+Das Skript wartet auf das Verschwinden des Ladebalkens, schluckte einen
+Zeitüberlauf dabei aber still — obwohl der Kommentar an der Stelle genau das
+Gegenteil versprach („Ohne das landen halb aufgebaute Listen auf den Bildern").
+Jetzt folgt die Gegenprobe: Dreht danach noch etwas, fällt die Aufnahme durch.
+
+### 4.2 Zwei Namen, ein Bild
+
+`teamer-abzeichen.png` und `teamer-mitmachen.png` waren **Byte für Byte
+identisch** — beide zeigten die Events-Seite, eine davon unter falschem Namen.
+An der Dateigröße fiel das nicht auf: beide 525 kB, beide für sich genommen
+tadellos.
+
+**Gemessen:** Kommt der Seitenwechsel über die Verlaufssteuerung, während auf
+der vorigen Seite noch ein Hinweis weggeklickt wird, verwirft die Oberfläche ihn
+still. Die Adresse zeigt das neue Ziel, im Bild steht die alte Seite. Längeres
+Warten hilft nicht — auch nach zehn Sekunden bleibt sie stehen.
+
+Was trägt, ist der Weg, den auch ein Mensch nimmt: **den Reiter antippen.** Im
+Test wechselten so alle Reiter fehlerfrei, während derselbe Wechsel über die
+Verlaufssteuerung hängen blieb.
+
+**Betroffen war jede Rolle und beide Gerätegrößen** — auch die Bilder für den
+App Store, dort ebenfalls dreimal (Leitung, Team, Konfi).
+
+### 4.3 Ein Netz darunter
+
+Jede Aufnahme bekommt einen Fingerabdruck. Gleicht sie einer früheren derselben
+Rolle, fällt sie durch und nennt den Doppelgänger beim Namen. Verglichen wird
+gegen **alle** vorherigen, nicht nur die letzte — zwischen den beiden
+Doppelgängern lag noch eine dritte Seite.
+
+### Die App ist nicht betroffen
+
+Mit echten Klicks wechselt jeder Reiter sauber (gemessen für alle fünf). Zu den
+Abzeichen führt für Team und Leitung ohnehin nur der Weg über das Profil, und
+der trägt — einen eigenen Reiter gibt es dort nicht. Der Fehler traf allein die
+Automatik.
+
+### Ergebnis
+
+Alle 42 Bilder neu gezogen (21 je Gerät). Keine Duplikate, keine Datei unter
+100 kB, jedes angesehen.
+
+### Was daraus folgt
+
+Ein `.catch(() => {})` um eine Wartebedingung hebt genau die Prüfung auf, für
+die sie gedacht war. Wo eine Aufnahme fehlschlagen *soll*, muss sie es auch
+dürfen — ein Bild, das niemand ansieht, ist kein Beleg. Und Dateigröße allein
+beweist nichts: Zwei identische Bilder waren beide „richtig groß".
