@@ -23,57 +23,6 @@ async function checkExistingBooking(client, userId, eventId) {
 }
 
 /**
- * Laedt Event mit confirmed_count und waitlist_count (FOR UPDATE)
- *
- * ABGELOEST (01.09.2026): Kein Aufrufer mehr. `excludeTeamers` schloss nur die
- * Rolle `teamer` aus — eine dem Termin zugeordnete Leitung zaehlte damit gegen
- * das Konfi-Kontingent, entgegen Migration 136; ein deleted_at-Filter fehlte
- * ganz. Wer eine Zaehlung braucht, nimmt `zaehleBuchungen` weiter unten. Die
- * Funktion bleibt vorerst stehen und exportiert, damit kein parallel laufender
- * Umbau ins Leere greift; sie kann entfernt werden, sobald feststeht, dass
- * niemand sie mehr einbindet.
- *
- * @param {object} client - DB-Client (innerhalb Transaktion)
- * @param {number} eventId - Event ID
- * @param {number} orgId - Organisation ID
- * @param {object} options - { excludeTeamers: boolean }
- * @returns {object|null} Event mit confirmed_count und waitlist_count oder null
- */
-async function getEventWithCounts(client, eventId, orgId, options = {}) {
-  const { excludeTeamers = false } = options;
-
-  // Postgres erlaubt FOR UPDATE nicht mit GROUP BY.
-  // Lösung: Event zuerst mit FOR UPDATE sperren, Counts als Subqueries.
-  const confirmedCountSql = excludeTeamers
-    ? `(SELECT COUNT(*) FROM event_bookings eb
-         LEFT JOIN users u ON eb.user_id = u.id
-         LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
-         WHERE eb.event_id = e.id AND eb.status = 'confirmed' AND r.id IS NULL)`
-    : `(SELECT COUNT(*) FROM event_bookings eb
-         WHERE eb.event_id = e.id AND eb.status = 'confirmed')`;
-
-  const waitlistCountSql = excludeTeamers
-    ? `(SELECT COUNT(*) FROM event_bookings eb
-         LEFT JOIN users u ON eb.user_id = u.id
-         LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
-         WHERE eb.event_id = e.id AND eb.status = 'waitlist' AND r.id IS NULL)`
-    : `(SELECT COUNT(*) FROM event_bookings eb
-         WHERE eb.event_id = e.id AND eb.status = 'waitlist')`;
-
-  const query = `
-    SELECT e.*,
-           ${confirmedCountSql} AS confirmed_count,
-           ${waitlistCountSql} AS waitlist_count
-    FROM events e
-    WHERE e.id = $1 AND e.organization_id = $2
-    FOR UPDATE OF e
-  `;
-
-  const { rows: [event] } = await client.query(query, [eventId, orgId]);
-  return event || null;
-}
-
-/**
  * Bestimmt den Buchungsstatus basierend auf Kapazität und Warteliste
  *
  * Rollenagnostisch: über `options` laesst sich waehlen, welche Wartelisten-
@@ -790,7 +739,6 @@ async function setzeTeamerZusage(client, eingabe) {
 module.exports = {
   takeBackEventPoints,
   checkExistingBooking,
-  getEventWithCounts,
   determineBookingStatus,
   promoteFromWaitlist,
   validateRegistrationWindow,

@@ -414,25 +414,6 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
-/**
- * Testet die E-Mail-Konfiguration
- */
-const testEmailConnection = async () => {
-  if (!validateSmtpConfig()) {
-    return false;
-  }
-
-  try {
-    const transporter = getTransporter();
-    await transporter.verify();
-    return true;
-  } catch (error) {
-    console.error('SMTP-Verbindungsfehler:', error);
-    cachedTransporter = null;
-    return false;
-  }
-};
-
 module.exports = {
   sendEmail,
   sendPasswordResetEmail,
@@ -440,5 +421,4 @@ module.exports = {
   sendLicenseExpiryReminderEmail,
   sendJahrgangDeletionWarningEmail,
   sendKonfiMatrixEmail,
-  testEmailConnection
 };

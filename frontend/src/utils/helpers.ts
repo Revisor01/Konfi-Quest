@@ -1,28 +1,3 @@
-import { getYearWeek } from './dateUtils';
-
-interface Activity {
-  id: number;
-  created_at: string;
-  type?: string;
-}
-
-interface Konfi {
-  id: number;
-  name: string;
-  total_points?: number;
-  activities_count?: number;
-  activities?: Activity[];
-  konfi_days_attended?: number;
-  jahrgang?: string;
-}
-
-interface Badge {
-  id: number;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_activity_id?: number;
-}
-
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -31,17 +6,12 @@ export const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-export const getProgressColor = (current: number, target: number): string => {
-  const percentage = (current / target) * 100;
-  if (percentage >= 100) return 'success';
-  if (percentage >= 75) return 'warning';
-  return 'primary';
-};
-
-export const getProgressPercentage = (current: number, target: number): number => {
-  return Math.min((current / target) * 100, 100);
-};
-
+// Am 10.09.2026 entfernt, alle ohne einen einzigen Aufrufer im Frontend
+// (gesucht ueber alle getrackten Dateien): getProgressColor,
+// getProgressPercentage, calculateBadgeProgress, calculateWeekStreak,
+// sortByDate und groupByType. Den Fortschritt der Abzeichen rechnet heute das
+// Backend, sortiert und gruppiert wird an Ort und Stelle.
+//
 // generatePassword wurde am 28.08.2026 entfernt.
 //
 // Sie war toter Code — kein Aufrufer im gesamten Frontend — und hatte
@@ -52,61 +22,6 @@ export const getProgressPercentage = (current: number, target: number): number =
 // Passwoerter werden ausschliesslich im Backend erzeugt
 // (utils/passwordUtils.js, jetzt gegen die echte Verszaehlung). Eine zweite
 // Fassung im Frontend waere eine zweite Wahrheit, die wieder auseinanderlaeuft.
-
-export const calculateBadgeProgress = (konfi: Konfi, badge: Badge) => {
-  if (!konfi || !badge) return { current: 0, target: badge?.criteria_value || 0, percentage: 0 };
-  
-  const target = parseInt(badge.criteria_value.toString()) || 0;
-  let current: number;
-  
-  switch (badge.criteria_type) {
-    case 'total_points':
-      current = konfi.total_points || 0;
-      break;
-    case 'activities_count':
-      current = konfi.activities_count || 0;
-      break;
-    case 'specific_activity':
-      current = konfi.activities?.filter(a => a.id === badge.criteria_activity_id).length || 0;
-      break;
-    case 'streak':
-      current = calculateWeekStreak(konfi.activities || []);
-      break;
-    case 'konfi_days':
-      current = konfi.konfi_days_attended || 0;
-      break;
-    default:
-      current = 0;
-  }
-  
-  const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-  
-  return { current, target, percentage };
-};
-
-export const calculateWeekStreak = (activities: Activity[]): number => {
-  if (!activities || activities.length === 0) return 0;
-  
-  const sortedActivities = activities
-    .map(a => new Date(a.created_at))
-    .sort((a, b) => b.getTime() - a.getTime());
-  
-  let streak = 0;
-  let currentWeek = getYearWeek(new Date());
-  
-  for (const activityDate of sortedActivities) {
-    const activityWeek = getYearWeek(activityDate);
-    
-    if (activityWeek === currentWeek) {
-      streak++;
-      currentWeek = `${parseInt(currentWeek.split('-W')[0])}-W${(parseInt(currentWeek.split('-W')[1]) - 1).toString().padStart(2, '0')}`;
-    } else if (activityWeek < currentWeek) {
-      break;
-    }
-  }
-  
-  return streak;
-};
 
 export const filterByJahrgang = <T extends { jahrgang?: string }>(items: T[], selectedJahrgang: string): T[] => {
   if (selectedJahrgang === 'alle' || !selectedJahrgang) {
@@ -132,27 +47,4 @@ export const filterBySearchTerm = <T>(
       return typeof wert === 'string' && wert.toLowerCase().includes(lowerSearch);
     })
   );
-};
-
-export const sortByDate = <T>(
-  items: T[],
-  field: string = 'created_at',
-  ascending: boolean = false
-): T[] => {
-  return [...items].sort((a, b) => {
-    const dateA = new Date(String((a as Record<string, unknown>)[field] ?? ''));
-    const dateB = new Date(String((b as Record<string, unknown>)[field] ?? ''));
-    return ascending ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-  });
-};
-
-export const groupByType = (activities: Activity[]): Record<string, Activity[]> => {
-  return activities.reduce((groups, activity) => {
-    const type = activity.type || 'unknown';
-    if (!groups[type]) {
-      groups[type] = [];
-    }
-    groups[type].push(activity);
-    return groups;
-  }, {} as Record<string, Activity[]>);
 };

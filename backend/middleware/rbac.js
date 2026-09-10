@@ -292,25 +292,12 @@ const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Pu
 // ============================================
 // ORGANISATIONS-ISOLATION
 // ============================================
-
-const requireSameOrganization = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Nicht angemeldet' });
-  }
-
-  // Super-Admin kann auf alle Organisationen zugreifen
-  if (req.user.role_name === 'super_admin') {
-    return next();
-  }
-
-  const requestedOrgId = parseInt(req.params.organizationId || req.body.organization_id);
-
-  if (requestedOrgId && requestedOrgId !== req.user.organization_id) {
-    return res.status(403).json({ error: 'Kein Zugriff auf andere Organisationen' });
-  }
-
-  next();
-};
+// Hier stand bis zum 10.09.2026 eine Middleware requireSameOrganization. Sie
+// war an keiner Route verdrahtet und deshalb wirkungslos. Die Trennung laeuft
+// tatsaechlich ueber die Abfragen: 345-mal wird die Organisation aus dem Token
+// genommen (req.user.organization_id), nur einmal aus der Anfrage -- in
+// POST /auth/switch-org, und dort prueft die Route die Mitgliedschaft selbst
+// gegen user_organizations und lehnt sonst mit 403 ab.
 
 module.exports = {
   verifyTokenRBAC,
@@ -320,8 +307,6 @@ module.exports = {
   requireSuperAdmin,
   requireOrgAdmin,
   requireAdmin,
-  requireTeamer,
+  requireTeamer
   // Jahrgang-Zugriff: siehe utils/jahrgangsZugriff.js (darfJahrgang/darfKonfi)
-  // Organisation
-  requireSameOrganization
 };

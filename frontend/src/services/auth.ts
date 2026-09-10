@@ -2,7 +2,7 @@ import axios from 'axios';
 import api, { API_URL } from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
+import { setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
 import {
   mitBiometrieEntsperren,
   gespeichertenTokenAuffrischen,
@@ -195,14 +195,6 @@ export const logout = async (): Promise<void> => {
     // vom Push-Cleanup noch unterdrueckt wird, dann wieder normales Verhalten.
     setTimeout(() => setLoggingOut(false), 2000);
   }
-};
-
-export const checkAuth = (): BaseUser | null => {
-  return getUser();
-};
-
-export const checkAuthAsync = async (): Promise<BaseUser | null> => {
-  return getUser();
 };
 
 
