@@ -76,8 +76,9 @@ Versionsüberschrift.
 - Auf Android wurden Umschalter wie „Ungelesen", „Verbuchen" und „Vergangen"
   abgeschnitten. Sie stehen jetzt in normaler Schreibweise statt in
   Großbuchstaben und passen damit.
-- Der QR-Knopf auf der Termin-Seite lag auf der letzten Terminkarte und
-  verdeckte Text. Er steht jetzt unter der Liste statt über ihr.
+- Der QR-Scanner steht auf der Termin-Seite jetzt oben in der Leiste. Als
+  schwebender Knopf unten rechts lag er auf der Terminkarte und verdeckte
+  Text.
 - Der Zähler über den Challenges hieß „ABZEICHEN", obwohl der Abschnitt
   darunter „Deine Stempel" heißt. Jetzt heißt auch der Zähler „Stempel".
 - Die Seite „Hinter den Kulissen" im Team-Rückblick, die freigegebene

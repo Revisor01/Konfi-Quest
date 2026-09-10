@@ -20,6 +20,7 @@ import {
   ICON_ORT_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_QRCODE,
+  ICON_SCANNEN,
   ICON_SCHUTZ_GEFUELLT,
   ICON_SUCHE_GEFUELLT,
   ICON_TERMIN,
@@ -33,7 +34,7 @@ import {
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonFab, IonFabButton, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
@@ -777,7 +778,7 @@ const TeamerEventsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonContent className="app-gradient-background app-inhalt-mit-fab" fullscreen>
+        <IonContent className="app-gradient-background" fullscreen>
           <IonHeader collapse="condense">
             <IonToolbar className="app-condense-toolbar">
               <IonTitle size="large">{selectedEvent.name}</IonTitle>
@@ -1308,6 +1309,20 @@ const TeamerEventsPage: React.FC = () => {
                 <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
               </IonButton>
             )}
+            {/* SCANNER OBEN STATT SCHWEBEND (Simon, 10.09.2026: "so wie auf
+                ios oben in den knoepfen"). Vorher sass er als schwebender
+                Knopf unten rechts und lag auf der Terminkarte -- im
+                MD3-Look verdeckte er das Wort "Gemeinde" in der Punktzeile.
+                Vier Versuche, ihn unten freizustellen, trugen nicht: Ein FAB
+                schwebt ueber dem Inhalt, und ohne slot="fixed" rendert Ionic
+                ihn gar nicht. Oben deckt er nichts zu.
+                NUR IN DER TERMIN-LISTE: Bei den Antraegen gibt es nichts zu
+                scannen. */}
+            {!isAntraege && (
+              <IonButton onClick={() => presentScannerModal()} aria-label="QR-Code scannen">
+                <IonIcon icon={ICON_SCANNEN} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -1621,12 +1636,6 @@ const TeamerEventsPage: React.FC = () => {
               })}
             </ListSection>
 
-            {/* FAB für QR-Scanner */}
-            <IonFab vertical="bottom" horizontal="end" slot="fixed">
-              <IonFabButton onClick={() => presentScannerModal()}>
-                <IonIcon icon={ICON_QRCODE} />
-              </IonFabButton>
-            </IonFab>
           </>
         )}
       </IonContent>

@@ -69,29 +69,6 @@ describe('MD3-Layout: die deutschen Beschriftungen passen', () => {
     });
   });
 
-  describe('Schwebender Knopf', () => {
-    it('die Seite laesst unten Platz fuer ihn', () => {
-      // Sonst legt er sich auf die letzte Karte — gemessen verdeckte er das
-      // Wort "Gemeinde" auf der Termin-Seite.
-      //
-      // ALS KLASSE, NICHT ALS :has()-SELEKTOR: Der erste Versuch setzte
-      // --padding-bottom ueber `ion-content:has(ion-fab[...])`. Die Regel
-      // stand im ausgelieferten CSS, wirkte aber nicht -- Ionic setzt den
-      // Innenabstand intern am ::part(scroll). Am Bild geprueft, nicht nur
-      // am Stylesheet (09.09.2026).
-      // Der Knopf scrollt MIT, statt zu schweben -- so steht er unter der
-      // letzten Karte und deckt nie etwas zu. Zwei Wege waren vorher
-      // falsch: mehr Platz am Listenende (ein FAB schwebt unabhaengig vom
-      // Scrollstand) und schmalere Karten (verengt die ganze Liste fuer
-      // einen Knopf). Beide am BILD widerlegt, nicht am Stylesheet.
-      const block = css.match(/\.app-inhalt-mit-fab ion-fab\[vertical="bottom"\] \{[^}]*\}/);
-      expect(block).not.toBeNull();
-      expect(block![0]).toMatch(/position:\s*static/);
-      const seite = lies('src/components/teamer/pages/TeamerEventsPage.tsx');
-      expect(seite).toContain('app-inhalt-mit-fab');
-    });
-  });
-
   describe('Der iOS-Look bleibt unberuehrt', () => {
     it('alle MD3-Regeln sind auf .md eingegrenzt', () => {
       // Eine Regel ohne .md-Praefix traefe beide Looks — und die drei

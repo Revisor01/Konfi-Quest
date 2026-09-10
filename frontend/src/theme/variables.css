@@ -3397,30 +3397,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   font-size: var(--app-text-standard);
 }
 
-/* DER SCHWEBENDE QR-KNOPF (09.09.2026)
-   Er lag auf der Termin-Karte und verdeckte das Wort "Gemeinde" -- gemessen
-   auf 360px im MD3-Look.
-
-   ERST VERSUCHT, DANN VERWORFEN: mehr Platz am Listenende. Das half nicht,
-   weil ein FAB ueber dem Inhalt schwebt, unabhaengig vom Scrollstand -- er
-   deckt immer die Karte zu, die gerade neben ihm steht. Ein Abstand ganz
-   unten aendert daran nichts. Am Bild geprueft, nicht am Stylesheet.
-
-   AUCH VERWORFEN: die Karten schmaler machen. Das haette die ganze Liste
-   verengt, damit ein Knopf Platz hat -- der Preis steht in keinem
-   Verhaeltnis.
-
-   Was bleibt: Der Knopf scrollt MIT statt zu schweben. Er steht damit unter
-   der letzten Karte, deckt nie etwas zu und ist am Listenende genau dort,
-   wo man ihn nach dem Durchsehen der Termine sucht. Der Preis: Er ist nicht
-   mehr dauerhaft sichtbar -- vertretbar, weil das Scannen dem Durchsehen
-   folgt, nicht davor kommt. */
-.app-inhalt-mit-fab ion-fab[vertical="bottom"] {
-  position: static;
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 var(--app-abstand-basis) var(--app-abstand-weit);
-}
 
 /* SEGMENT-BESCHRIFTUNGEN IM MD3-LOOK (09.09.2026)
    MD3 setzt sie in GROSSBUCHSTABEN. Deutsche Woerter sind ohnehin laenger
@@ -3450,3 +3426,4 @@ ion-segment.md ion-segment-button {
   --padding-start: var(--app-abstand-eng);
   --padding-end: var(--app-abstand-eng);
 }
+
