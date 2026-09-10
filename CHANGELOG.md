@@ -130,6 +130,12 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Auf Android kamen bei vielen keine Push-Nachrichten mehr an — weder für
+  Chat-Nachrichten noch für Termine. Das Gerät meldete sich beim Anmelden nur
+  ein einziges Mal an; ging diese eine Meldung unter, gab es keinen zweiten
+  Versuch, und zwar dauerhaft. Auch Neuinstallieren half nicht. Jetzt meldet
+  sich die App bei jedem Öffnen neu an. Wer betroffen war, bekommt beim
+  nächsten Start wieder Nachrichten.
 - Die Konfirmations-Folie nannte die Tage zweimal.
 - Das Zurücksetzen des Passworts scheiterte bei Teamer:innen mit „Fehler beim
   Zurücksetzen". Es funktioniert wieder, und wenn doch etwas schiefgeht,

@@ -65,10 +65,29 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     }
   }
 
-  // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert)
+  // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert).
+  //
+  // WETTRENNEN BEIM ERSTEN START (10.09.2026, Fall Malte, Android):
+  // Die Device-ID beschafft ein eigener Effect ueber `await Device.getId()`.
+  // Bei einer Neuinstallation ist sie beim Start leer, und auf Android feuert
+  // `registration` sofort, sobald FCM den Token hat — oft frueher. Hier stand
+  // dann ein blankes `return`: Der Token war weg, ohne Merker, ohne zweiten
+  // Versuch. Auf iOS faellt das kaum auf, weil der Token dort ueber
+  // FCM.forceTokenRetrieval() in einem setTimeout(..., 2000) nachgereicht wird
+  // — nach zwei Sekunden ist die Device-ID laengst da.
+  //
+  // Deshalb wird der Token jetzt wie im POST-Fehlerpfad gemerkt UND kurz
+  // darauf erneut versucht. `sendTokenToServer` faengt Doppelsendungen selbst
+  // ab, ein Versuch zu viel schadet also nicht.
   const deviceId = getDeviceId();
   if (!deviceId) {
-    console.warn('Keine Device ID verfügbar - Token-Send wird übersprungen');
+    pendingFcmToken = token;
+    const wartezeiten = [500, 2000, 5000];
+    if (retryCount < wartezeiten.length) {
+      setTimeout(() => sendTokenToServer(token, retryCount + 1), wartezeiten[retryCount]);
+    } else {
+      console.warn('Keine Device ID verfügbar - Token bleibt fuer den naechsten Anlauf gemerkt');
+    }
     return;
   }
 
@@ -628,10 +647,32 @@ useEffect(() => {
         if (Capacitor.isNativePlatform()) {
           const lastTokenRefresh = getPushTokenTimestamp();
           const twelveHours = 12 * 60 * 60 * 1000;
-          if (now - lastTokenRefresh > twelveHours) {
+          // ANDROID BRAUCHT DAS BEI JEDER AKTIVIERUNG (10.09.2026):
+          // Auf iOS reicht AppDelegate.applicationDidBecomeActive den Token
+          // jedes Mal von sich aus an die Oberflaeche nach. Android hat kein
+          // solches Netz — MainActivity ist eine leere Klasse, und das
+          // 'registration'-Ereignis feuert pro Installation praktisch nur
+          // EINMAL, weil FCM bei unveraenderter Installation immer denselben
+          // Token liefert. Verpuffte dieser eine Token, gab es keinen zweiten
+          // Anlauf: kein Push mehr, dauerhaft, ohne Fehler irgendwo.
+          //
+          // PushNotifications.register() holt auf Android den Token frisch bei
+          // Firebase und feuert 'registration' erneut (siehe register() im
+          // Push-Plugin). Deshalb hier ohne Zeitfenster — der Aufruf ist
+          // billig, und sendTokenToServer faengt ueberfluessige POSTs selbst ab.
+          //
+          // Gemessen vor der Korrektur: 8 Android-Token bei Konfis, 0 bei
+          // Teamer:innen und Admins ausser einem Testkonto; 29 aktive
+          // Nutzer:innen ganz ohne Token.
+          const istAndroid = Capacitor.getPlatform() === 'android';
+          if (istAndroid || now - lastTokenRefresh > twelveHours) {
             try {
+              // NUR registrieren. Den Zeitstempel setzt sendTokenToServer nach
+              // einem ERFOLGREICHEN POST — hier stand er frueher direkt
+              // dahinter und belegte damit bloss, dass registriert wurde, nicht
+              // dass der Token ankam. Ein Token, der es nie zum Server schaffte,
+              // sperrte so den naechsten Anlauf fuer zwoelf Stunden.
               await PushNotifications.register();
-              await setPushTokenTimestamp(now);
             } catch (err) {
               console.warn('Token refresh failed:', err);
             }

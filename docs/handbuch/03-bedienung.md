@@ -80,6 +80,23 @@ wenn du es genau wissen willst.
 > Auf der Seite mit den **Einladungscodes** fehlt die Geste. Wer dort einen
 > frischen Stand braucht, verlässt die Seite und öffnet sie erneut.
 
+## Benachrichtigungen wieder zum Laufen bringen
+
+Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles
+erlaubt ist, hilft fast immer dasselbe: **die App einmal ganz schließen und neu
+öffnen.** Beim Öffnen meldet sie sich beim Benachrichtigungsdienst neu an.
+
+Führt das nicht weiter, in dieser Reihenfolge weiterprobieren:
+
+1. In den Einstellungen des Geräts prüfen, ob Konfi Quest Benachrichtigungen
+   senden darf — und ob der Energiesparmodus die App im Hintergrund bremst.
+2. Ab- und wieder anmelden.
+3. Die App neu installieren.
+
+> Benachrichtigungen brauchen Internet. Was während einer Funklücke passiert
+> ist, kommt nach, sobald das Gerät wieder online ist — steht in der Liste aber
+> ohnehin.
+
 ## Ohne Internet weiterarbeiten
 
 Die App ist dafür gebaut, dass unterwegs das Netz fehlt — im Gemeindehaus, auf
