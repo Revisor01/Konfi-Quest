@@ -534,18 +534,6 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           );
         }
 
-        case 'teamer-erstes-abzeichen': {
-          if (!teamer) return null;
-          const ab = teamer.slides.erstes_abzeichen;
-          if (!ab) return null;
-          return (
-            <>
-              <div className="share-label">Das erste</div>
-              <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15 }}>{ab.name}</div>
-              <div className="share-subtitle">Damit ging es los</div>
-            </>
-          );
-        }
 
         case 'teamer-antworten': {
           if (!teamer) return null;
@@ -808,10 +796,11 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           );
         }
 
-        // Die Einladung ins Team -- letzte Seite jedes Konfi-Rueckblicks.
-        // Sie bekommt JEDE Konfi (feste Kachel im Backend), also wurde sie
-        // auch am haeufigsten geteilt -- und kam bis 06.09.2026 schwarz
-        // heraus.
+        // Die Einladung ins Team. Sie bekam bis zum 11.09.2026 JEDE Konfi
+        // (feste Kachel im Backend) und wurde deshalb am haeufigsten geteilt
+        // -- bis 06.09.2026 kam sie dabei schwarz heraus. Seit dem
+        // 11.09.2026 erscheint sie erst NACH der Konfirmation; waehrend der
+        // Konfizeit steht an ihrer Stelle 'weiter-so'.
         case 'werde-teamer':
           return (
             <>
@@ -826,6 +815,42 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               </div>
             </>
           );
+
+        // Der Blick nach vorn waehrend der Konfizeit. Dieselben drei Stufen
+        // wie in WeiterSoSlide -- der Text muss mitgepflegt werden, wenn sich
+        // dort etwas aendert.
+        case 'weiter-so': {
+          if (!konfi) return null;
+          const e = konfi.slides.endspurt;
+          const ziel = e?.ziel_total ?? 0;
+          const fehlend = e?.fehlende_punkte ?? 0;
+          const geschafft = ziel > 0 && fehlend === 0;
+          const nahDran = ziel > 0 && fehlend > 0 && fehlend <= 5;
+          return (
+            <>
+              <div className="share-auge">
+                {geschafft ? 'Dein Ziel' : nahDran ? 'Fast geschafft' : 'Und weiter'}
+              </div>
+              <div className="share-slogan">
+                {(geschafft
+                  ? ['Du hast', 'dein Ziel.']
+                  : nahDran
+                    ? ['Der Rest', 'ist ein', 'Katzensprung.']
+                    : ['Deine Zeit', 'geht', 'weiter.']
+                ).map((z, i) => (
+                  <span key={i} style={{ display: 'block' }}>{z}</span>
+                ))}
+              </div>
+              <div className="share-nachsatz">
+                {geschafft
+                  ? 'Alles, was jetzt noch kommt, machst du, weil du willst — nicht, weil du musst.'
+                  : nahDran
+                    ? `Noch ${fehlend} ${fehlend === 1 ? 'Punkt' : 'Punkte'}.`
+                    : 'Es ist noch Zeit. Und es zählt nicht, wie schnell du bist — sondern dass du da bist.'}
+              </div>
+            </>
+          );
+        }
 
         // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Sie steht
         // in BEIDEN Rueckblicken -- Konfis wie Team -- und braucht deshalb

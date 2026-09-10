@@ -150,7 +150,7 @@ describe('Teilen-Karte kennt jede Seite des Rueckblicks', () => {
     // Ersetzung traf den Mehrfach-Auswahlblock und ueberschrieb seinen
     // Inhalt. Aufgefallen ist es nur am fertigen Bild.
     const block = shareCss.match(
-      /\.share-card--kategorie-seite,\s*\.share-card--datums-seite,\s*\.share-card--konfirmation,\s*\.share-card--werde-teamer\s*\{([^}]*)\}/
+      /\.share-card--kategorie-seite,\s*\.share-card--datums-seite,\s*\.share-card--konfirmation,\s*\.share-card--werde-teamer,\s*\.share-card--weiter-so\s*\{([^}]*)\}/
     );
     expect(block, 'der Block fuer die Slogan-Seiten fehlt').toBeTruthy();
     const regeln = block![1];

@@ -395,7 +395,8 @@
 .share-card--kategorie-seite,
 .share-card--datums-seite,
 .share-card--konfirmation,
-.share-card--werde-teamer {
+.share-card--werde-teamer,
+.share-card--weiter-so {
   justify-content: flex-end;
   align-items: flex-start;
   text-align: left;
@@ -435,6 +436,13 @@
 .share-card--werde-teamer {
   background: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #831843 100%);
   --karten-schleier: linear-gradient(135deg, #ec4899 0%, #db2777 55%, #831843 100%);
+}
+
+/* Der Blick nach vorn waehrend der Konfizeit (11.09.2026). Waermer als die
+   Team-Einladung und heller als der Abschluss: Es geht noch weiter. */
+.share-card--weiter-so {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #9a3412 100%);
+  --karten-schleier: linear-gradient(135deg, #f97316 0%, #ea580c 55%, #9a3412 100%);
 }
 
 /* Sommerfreizeit 2026, Stavanger. Kaltes Nordmeerblau -- dieselbe Farbe wie

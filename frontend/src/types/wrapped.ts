@@ -294,6 +294,14 @@ export interface TeamerAnfangSlide {
 }
 
 /** Das erste Abzeichen des Jahres -- ab Snapshot-Version 3. */
+/**
+ * Das erste Abzeichen eines Teamer-Jahres.
+ *
+ * Die zugehoerige SEITE gibt es seit dem 11.09.2026 nicht mehr (15 von 16
+ * Teamer-Abzeichen sind Zeit-Abzeichen, die Seite zeigte deshalb fast immer
+ * "1 Jahr Teamer:in"). Der Typ und das Feld `erstes_abzeichen` BLEIBEN: Die
+ * API liefert es weiter, und ausgelieferte App-Versionen lesen es.
+ */
 export interface TeamerErstesAbzeichenSlide {
   name: string;
   icon: string;

@@ -445,8 +445,10 @@ describe('Wrapped Routes', () => {
       await abzeichen(USERS.teamer1.id, BADGES.streak.id, `${JAHR - 1}-10-05`);
 
       const snap = await snapshotVonTeamer1();
+      // Das FELD bleibt (ausgelieferte Apps lesen es), die SEITE ist seit dem
+      // 11.09.2026 weg -- 15 von 16 Teamer-Abzeichen sind Zeit-Abzeichen.
       expect(snap.slides.erstes_abzeichen.name).toBe(BADGES.streak.name);
-      expect(snap.kacheln).toContain('teamer-erstes-abzeichen');
+      expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
     });
 
     it('Ohne Termine und Abzeichen fehlen beide Seiten', async () => {
@@ -454,7 +456,6 @@ describe('Wrapped Routes', () => {
       expect(snap.slides.anfang).toBe(null);
       expect(snap.slides.erstes_abzeichen).toBe(null);
       expect(snap.kacheln).not.toContain('teamer-anfang');
-      expect(snap.kacheln).not.toContain('teamer-erstes-abzeichen');
     });
 
     it('Freigaben zaehlen nur mit ausdruecklichem approved_by', async () => {

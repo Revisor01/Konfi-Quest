@@ -105,6 +105,11 @@ const setzeBedingung = (s, kachel) => {
       s.badges = { ...s.badges, seltenstes: { name: 'Selten', icon: 'x', color: '#fff', haben_es: 1, konfis: 13, prozent: 8 } };
       break;
     case 'konfirmation': s.zeitraum = { ...(s.zeitraum || {}), konfirmation: '2027-05-01' }; break;
+    // Der Blick nach vorn (11.09.2026): Beide Seiten haengen am selben Feld
+    // und schliessen sich aus -- ein VERGANGENER Termin macht aus dem
+    // Zuspruch die Einladung ins Team.
+    case 'weiter-so': s.zeitraum = { ...(s.zeitraum || {}), konfirmation: '2099-05-01' }; break;
+    case 'werde-teamer': s.zeitraum = { ...(s.zeitraum || {}), konfirmation: '2020-05-01' }; break;
     case 'stavanger-2026': s.stavanger_2026 = true; break;
     default: break; // feste Seiten brauchen nichts
   }
@@ -180,14 +185,17 @@ describe('Keine Seite mit einer Null darauf', () => {
 
   test('eine Konfi ohne jede Zahl bekommt genau die drei tragenden Seiten', () => {
     // Kein leerer Rueckblick, aber auch keine drei Nullen: Intro (Name und
-    // Jahrgang), Abschluss (Simons Botschaft) und die Einladung ins Team
+    // Jahrgang), Abschluss (Simons Botschaft) und der Blick nach vorn
     // (reiner Text) koennen gar keine Null tragen.
-    expect(waehleKacheln(stillerSnapshot())).toEqual(['intro', 'werde-teamer', 'abschluss']);
+    //
+    // 'weiter-so' und nicht 'werde-teamer' (11.09.2026): Der stille Snapshot
+    // hat keinen Konfirmationstermin, die Konfizeit gilt also als laufend.
+    expect(waehleKacheln(stillerSnapshot())).toEqual(['intro', 'weiter-so', 'abschluss']);
   });
 
   test('fehlende slides ergeben denselben Mindestrueckblick', () => {
-    expect(waehleKacheln(null)).toEqual(['intro', 'werde-teamer', 'abschluss']);
-    expect(waehleKacheln({})).toEqual(['intro', 'werde-teamer', 'abschluss']);
+    expect(waehleKacheln(null)).toEqual(['intro', 'weiter-so', 'abschluss']);
+    expect(waehleKacheln({})).toEqual(['intro', 'weiter-so', 'abschluss']);
   });
 
   test('keine der drei Zahl-Seiten steht noch bedingungslos in FESTE_KACHELN', () => {
@@ -235,11 +243,55 @@ describe('Dramaturgie', () => {
     expect(waehleKacheln(stillerSnapshot()).slice(-1)[0]).toBe('abschluss');
   });
 
-  test('die Einladung ins Team steht direkt davor', () => {
-    const k = waehleKacheln(aktiverSnapshot());
-    expect(k[k.length - 2]).toBe('werde-teamer');
-    const still = waehleKacheln(stillerSnapshot());
-    expect(still[still.length - 2]).toBe('werde-teamer');
+  test('der Blick nach vorn steht direkt davor', () => {
+    // Seit dem 11.09.2026 sind es ZWEI Seiten an dieser Stelle, die sich
+    // gegenseitig ausschliessen: 'werde-teamer' nach der Konfirmation,
+    // 'weiter-so' waehrend der Konfizeit. Genau eine von beiden ist da.
+    const vorletzte = (snap) => {
+      const k = waehleKacheln(snap);
+      return k[k.length - 2];
+    };
+    expect(['weiter-so', 'werde-teamer']).toContain(vorletzte(aktiverSnapshot()));
+    expect(['weiter-so', 'werde-teamer']).toContain(vorletzte(stillerSnapshot()));
+  });
+
+  test('waehrend der Konfizeit kommt der Zuspruch, nicht die Team-Einladung', () => {
+    // SIMONS VORGABE (11.09.2026): "Wenn es ein bis jetzt Rueckblick ist,
+    // kein Verweis auf 'werde Teamer'. Sondern was Motivierendes fuer die
+    // noch ausstehende Zeit."
+    const s = stillerSnapshot();
+    s.zeitraum.konfirmation = '2099-05-01';
+    const k = waehleKacheln(s);
+    expect(k).toContain('weiter-so');
+    expect(k).not.toContain('werde-teamer');
+  });
+
+  test('nach der Konfirmation kommt die Team-Einladung, nicht der Zuspruch', () => {
+    const s = stillerSnapshot();
+    s.zeitraum.konfirmation = '2020-05-01';
+    const k = waehleKacheln(s);
+    expect(k).toContain('werde-teamer');
+    expect(k).not.toContain('weiter-so');
+  });
+
+  test('ohne Konfirmationstermin gilt die Konfizeit als laufend', () => {
+    // Drei von fuenf Jahrgaengen haben keinen Termin. Zuspruch ist dann nie
+    // falsch, die Einladung ins Team schon.
+    const s = stillerSnapshot();
+    s.zeitraum.konfirmation = null;
+    const k = waehleKacheln(s);
+    expect(k).toContain('weiter-so');
+    expect(k).not.toContain('werde-teamer');
+  });
+
+  test('genau EINE der beiden Seiten erscheint, nie beide und nie keine', () => {
+    for (const termin of ['2099-05-01', '2020-05-01', null, 'kaputt']) {
+      const s = stillerSnapshot();
+      s.zeitraum.konfirmation = termin;
+      const k = waehleKacheln(s);
+      const treffer = k.filter((x) => x === 'weiter-so' || x === 'werde-teamer');
+      expect(treffer, `Termin ${termin}`).toHaveLength(1);
+    }
   });
 
   test("in der DRAMATURGIE steht 'werde-teamer' vor 'abschluss'", () => {
@@ -249,10 +301,15 @@ describe('Dramaturgie', () => {
     // auch wenn eine Bedingung die eine der beiden Seiten gerade
     // herausfiltert.
     const iTeamer = DRAMATURGIE.indexOf('werde-teamer');
+    const iWeiterSo = DRAMATURGIE.indexOf('weiter-so');
     const iAbschluss = DRAMATURGIE.indexOf('abschluss');
     expect(iTeamer).toBeGreaterThan(-1);
+    expect(iWeiterSo).toBeGreaterThan(-1);
     expect(iAbschluss).toBe(DRAMATURGIE.length - 1);
+    // Beide stehen unmittelbar vor dem Abschluss -- sie teilen sich denselben
+    // Platz "der Blick nach vorn" und schliessen sich gegenseitig aus.
     expect(iTeamer).toBe(DRAMATURGIE.length - 2);
+    expect(iWeiterSo).toBe(DRAMATURGIE.length - 3);
   });
 
   test('das Intro ist immer die erste Seite', () => {
@@ -301,7 +358,11 @@ describe('Dramaturgie', () => {
     expect(kacheln).not.toContain('vielseitig');
     expect(kacheln).not.toContain('challenge-momente');
     expect(kacheln).not.toContain('konfirmation');
-    expect(kacheln).toEqual(FESTE_KACHELN);
+    // Auftakt, der Blick nach vorn, Abschluss. 'weiter-so' steht seit dem
+    // 11.09.2026 nicht mehr in FESTE_KACHELN (es traegt jetzt eine
+    // Bedingung), gehoert bei einer stillen Konfi ohne Konfirmationstermin
+    // aber genauso dazu -- gerade sie braucht den Zuspruch.
+    expect(kacheln).toEqual(['intro', 'weiter-so', 'abschluss']);
   });
 
   test('jede Seite kommt hoechstens einmal vor', () => {
@@ -376,8 +437,14 @@ describe('Der Deckel', () => {
       // Nur pruefen, was bei diesem Snapshot ueberhaupt zutrifft.
       if (geschuetzt === 'seltenstes' && !s.badges?.seltenstes?.name) continue;
       if (geschuetzt === 'konfirmation' && !s.zeitraum?.konfirmation) continue;
+      // 'weiter-so' und 'werde-teamer' schliessen sich gegenseitig aus --
+      // je Snapshot trifft nur eine von beiden zu. Sie werden unten
+      // gemeinsam geprueft.
+      if (geschuetzt === 'weiter-so' || geschuetzt === 'werde-teamer') continue;
       expect(kacheln, `${geschuetzt} wurde weggekuerzt`).toContain(geschuetzt);
     }
+    const blick = kacheln.filter((x) => x === 'weiter-so' || x === 'werde-teamer');
+    expect(blick, 'der Blick nach vorn wurde weggekuerzt').toHaveLength(1);
   });
 });
 
@@ -877,10 +944,16 @@ describe('Die Seltenheits-Auswahl (Simons Entscheidung 07.09.2026)', () => {
     // ... und die drei Zahl-Seiten, die der Abschluss zusammenfasst --
     // obwohl sie mit 90 bis 95 % die haeufigsten ueberhaupt sind und ohne
     // den Schutz als Erste herausfielen.
-    for (const zahl of GESCHUETZTE_KACHELN) {
+    for (const zahl of ['events', 'punkte', 'badges']) {
       expect(haeufigkeitFuer(zahl, s)).toBeGreaterThanOrEqual(90);
       expect(k, `${zahl} fehlt`).toContain(zahl);
     }
+    // Der Blick nach vorn steht seit dem 11.09.2026 ebenfalls unter Schutz,
+    // ist aber KEINE Zahl-Seite -- die 90-Prozent-Aussage gilt fuer ihn
+    // nicht. Geprueft wird deshalb nur, dass genau eine der beiden Seiten
+    // den Deckel ueberlebt.
+    const blick = k.filter((x) => x === 'weiter-so' || x === 'werde-teamer');
+    expect(blick, 'der Blick nach vorn wurde weggekuerzt').toHaveLength(1);
   });
 
   test('mindestens eine Schwerpunkt-Seite ist dabei, hoechstens zwei', () => {
@@ -932,10 +1005,16 @@ describe('Die Seltenheits-Auswahl (Simons Entscheidung 07.09.2026)', () => {
 
 describe('Robustheit', () => {
   test('kaputte Eingaben liefern die feste Dramaturgie statt eines Fehlers', () => {
-    expect(waehleKacheln(null)).toEqual(FESTE_KACHELN);
-    expect(waehleKacheln(undefined)).toEqual(FESTE_KACHELN);
+    // Auftakt, der Blick nach vorn, Abschluss. Ohne verwertbare Daten gilt
+    // die Konfizeit als laufend -- das ist die richtige Annahme, wenn nichts
+    // bekannt ist (11.09.2026).
+    const mindest = ['intro', 'weiter-so', 'abschluss'];
+    expect(waehleKacheln(null)).toEqual(mindest);
+    expect(waehleKacheln(undefined)).toEqual(mindest);
     expect(() => waehleKacheln({})).not.toThrow();
-    expect(waehleKacheln({})).toEqual(FESTE_KACHELN);
+    expect(waehleKacheln({})).toEqual(mindest);
+    // Und die festen Seiten sind darin enthalten -- die Garantie bleibt.
+    for (const fest of FESTE_KACHELN) expect(mindest).toContain(fest);
   });
 
   test('kaputte Termindaten kippen nicht den ganzen Rueckblick', () => {
@@ -949,9 +1028,12 @@ describe('Robustheit', () => {
   test('jede Seite der Dramaturgie ist erreichbar', () => {
     // Verhindert, dass ein Tippfehler in DRAMATURGIE eine Seite still
     // unerreichbar macht.
-    // 'kategorie' ist ein Platzhalter, 'konfirmation' braucht einen Termin --
-    // beide werden in eigenen Tests geprueft.
-    const erwartet = DRAMATURGIE.filter(k => k !== 'kategorie' && k !== 'konfirmation');
+    // 'kategorie' ist ein Platzhalter, 'konfirmation' braucht einen Termin,
+    // 'werde-teamer' einen VERGANGENEN Termin (der Standard-Snapshot hat gar
+    // keinen) -- alle drei werden in eigenen Tests geprueft.
+    const erwartet = DRAMATURGIE.filter(
+      k => k !== 'kategorie' && k !== 'konfirmation' && k !== 'werde-teamer'
+    );
 
     // OHNE DIE FRUEHERE SONDERBEHANDLUNG DER ZEIT-SEITEN: Bis zum
     // 07.09.2026 musste dieser Test die jeweils anderen zwei Zeit-Seiten
@@ -1001,7 +1083,13 @@ describe('Robustheit', () => {
       if (k !== 'seltenstes' && haeufigkeitFuer('seltenstes', s) < meine) s.badges.seltenstes = null;
       if (k !== 'warteliste' && haeufigkeitFuer('warteliste', s) < meine) s.warteliste = { nachgerueckt: 0 };
       if (k !== 'wochentag' && haeufigkeitFuer('wochentag', s) < meine) s.wochentag = null;
-      if (k !== 'konfirmation' && haeufigkeitFuer('konfirmation', s) < meine) s.zeitraum = { ...(s.zeitraum || {}), konfirmation: null };
+      if (k !== 'konfirmation' && k !== 'weiter-so' && k !== 'werde-teamer'
+          && haeufigkeitFuer('konfirmation', s) < meine) {
+        // NICHT bei 'weiter-so'/'werde-teamer': Die beiden haengen selbst am
+        // Konfirmationstermin -- ihn hier zu leeren wuerde die gerade
+        // gepruefte Seite abschalten statt eine Mitbewerberin.
+        s.zeitraum = { ...(s.zeitraum || {}), konfirmation: null };
+      }
       if (k !== 'vielseitig' && haeufigkeitFuer('vielseitig', s) < meine) s.medienarten = [];
       if (k !== 'langer-atem' && haeufigkeitFuer('langer-atem', s) < meine) s.langer_atem = null;
       // Schwerpunkt-Seiten: nur die behalten, die haeufiger sind als die
@@ -1063,7 +1151,6 @@ const setzeTeamerBedingung = (t, kachel) => {
     case 'teamer-badges': t.badges = { total_earned: 1 }; break;
     case 'teamer-zertifikate': t.zertifikate = { total: 1 }; break;
     case 'teamer-anfang': t.anfang = { name: 'Konfifahrt', datum: '2025-09-20' }; break;
-    case 'teamer-erstes-abzeichen': t.erstes_abzeichen = { name: 'Mutig' }; break;
     case 'teamer-antworten': t.chat = { antworten: 5 }; break;
     case 'teamer-team': t.team = { mitstreitende: 1 }; break;
     case 'teamer-challenges': t.challenges_gestellt = { total: 3 }; break;
@@ -1334,27 +1421,37 @@ describe('Teamer-Dramaturgie', () => {
     expect(waehleTeamerKacheln(t)).not.toContain('teamer-anfang');
   });
 
-  test('das erste Abzeichen steht direkt nach der Abzeichen-Seite', () => {
-    // SCHLANKER FALL: Beim vollen Fixture greift der Deckel von 10, und
-    // 'teamer-erstes-abzeichen' (70 %) verliert gegen seltenere Seiten --
-    // richtig so. Geprueft wird hier die REIHENFOLGE, nicht die Auswahl.
+  test('die Erstes-Abzeichen-Seite erscheint nicht mehr', () => {
+    // ENTFERNT AM 11.09.2026. Gemessen an der Produktion: 15 von 16
+    // vergebenen Teamer-Abzeichen sind Zeit-Abzeichen (teamer_year), die
+    // Seite zeigte deshalb fast immer "1 Jahr Teamer:in" -- eine
+    // Selbstverstaendlichkeit, keine Erinnerung.
+    //
+    // Auch MIT gefuelltem erstes_abzeichen darf sie nicht mehr auftauchen:
+    // Genau das faengt diese Pruefung, falls jemand die Kachel zurueckbaut,
+    // ohne den Grund zu kennen.
     const t = aktiverTeamer();
     delete t.stavanger_2026;
     t.konfi_zeit = null;
     t.moderation = { freigegeben: 0 };
     t.zertifikate = { total: 0 };
-    const k = waehleTeamerKacheln(t);
-    expect(k).toContain('teamer-erstes-abzeichen');
-    expect(k.indexOf('teamer-badges') + 1).toBe(k.indexOf('teamer-erstes-abzeichen'));
+    expect(t.erstes_abzeichen).toBeTruthy();
+    expect(waehleTeamerKacheln(t)).not.toContain('teamer-erstes-abzeichen');
   });
 
-  test('ohne Abzeichen gibt es auch die Erstes-Abzeichen-Seite nicht', () => {
+  test('das Feld erstes_abzeichen bleibt trotzdem erhalten', () => {
+    // Ausgelieferte App-Versionen lesen es. Ein Feld wegzunehmen bricht sie
+    // -- die SEITE ist weg, das FELD bleibt.
+    const t = aktiverTeamer();
+    expect(t).toHaveProperty('erstes_abzeichen');
+  });
+
+  test('ohne Abzeichen gibt es auch die Abzeichen-Seite nicht', () => {
     const t = aktiverTeamer();
     t.badges = { total_earned: 0, badges: [] };
     t.erstes_abzeichen = null;
     const k = waehleTeamerKacheln(t);
     expect(k).not.toContain('teamer-badges');
-    expect(k).not.toContain('teamer-erstes-abzeichen');
   });
 
   test('das Team steht direkt nach den Konfis', () => {

@@ -25,6 +25,7 @@ import AbschlussSlide from './slides/AbschlussSlide';
 import KonfirmationsSlide from './slides/KonfirmationsSlide';
 import KategorieSeiteSlide from './slides/KategorieSeiteSlide';
 import WerdeTeamerSlide from './slides/WerdeTeamerSlide';
+import WeiterSoSlide from './slides/WeiterSoSlide';
 import Stavanger2026Slide from './slides/Stavanger2026Slide';
 import SeltenstesAbzeichenSlide from './slides/SeltenstesAbzeichenSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
@@ -39,7 +40,6 @@ import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
 import TeamerTeamSlide from './slides/teamer/TeamerTeamSlide';
 import TeamerNeuDabeiSlide from './slides/teamer/TeamerNeuDabeiSlide';
 import TeamerAnfangSlide from './slides/teamer/TeamerAnfangSlide';
-import TeamerErstesAbzeichenSlide from './slides/teamer/TeamerErstesAbzeichenSlide';
 import TeamerAntwortenSlide from './slides/teamer/TeamerAntwortenSlide';
 import TeamerKonfiZeitSlide from './slides/teamer/TeamerKonfiZeitSlide';
 import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
@@ -235,7 +235,6 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'teamer-team': return { ...base, slideValue: `Mit ${t.slides.team?.mitstreitende || 0} anderen im Team` };
         case 'teamer-neu-dabei': return { ...base, slideValue: 'Mein erstes Jahr im Team' };
         case 'teamer-anfang': return { ...base, slideValue: `Erster Termin: ${t.slides.anfang?.name || ''}` };
-        case 'teamer-erstes-abzeichen': return { ...base, slideValue: `Erstes Abzeichen: ${t.slides.erstes_abzeichen?.name || ''}` };
         case 'teamer-antworten': return { ...base, slideValue: `${t.slides.chat?.antworten || 0} Mal geantwortet` };
         case 'teamer-konfi-zeit': return { ...base, slideValue: 'Selbst mal Konfi gewesen — heute im Team' };
         case 'stavanger-2026': return { ...base, slideValue: '14 unvergessliche Tage in Himmel og Hav' };
@@ -345,6 +344,9 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfirmationsTermin(konfiData) || ''} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} konfirmation={konfiKonfirmation} />,
       'werde-teamer': (a) => <WerdeTeamerSlide isActive={a} />,
+      // Das Gegenstueck waehrend der Konfizeit (11.09.2026). Das Backend
+      // liefert immer nur EINE der beiden Kacheln.
+      'weiter-so': (a) => <WeiterSoSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       // Die Sonderseite zur Sommerfreizeit 2026 (Stavanger). Der Schluessel
       // traegt BEWUSST KEIN 'kategorie:'- oder 'datum:'-Praefix: Der
       // ausgelieferte Build 176 behandelt diese beiden Praefixe als MUSTER
@@ -543,11 +545,6 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'teamer-anfang': (a) => (
         teamerData.slides.anfang
           ? <TeamerAnfangSlide isActive={a} anfang={teamerData.slides.anfang} />
-          : null
-      ),
-      'teamer-erstes-abzeichen': (a) => (
-        teamerData.slides.erstes_abzeichen
-          ? <TeamerErstesAbzeichenSlide isActive={a} abzeichen={teamerData.slides.erstes_abzeichen} />
           : null
       ),
       'teamer-antworten': (a) => (

@@ -224,7 +224,9 @@ zehn Seiten übrig, kommen sie alle mit und es wird nichts ausgewählt.
 Diese Seiten nehmen nicht am Wettbewerb teil:
 
 - **Begrüßung** und **Auf einen Blick** — Anfang und Ende der Erzählung.
-- **Werde Teamer:in** — die Einladung, kurz vor Schluss.
+- **Der Blick nach vorn** — kurz vor Schluss. Während der Konfizeit ist das
+  ein Zuspruch für die verbleibende Zeit, nach der Konfirmation die Einladung
+  ins Team.
 - **Termine**, **Punkte** und **Abzeichen**. Der Grund ist die Abschluss-Seite:
   Sie fasst genau diese drei Zahlen noch einmal zusammen. Ohne sie fasste sie
   etwas zusammen, das nie gezeigt wurde. (Auch sie nur, wenn wirklich etwas
@@ -258,8 +260,8 @@ Hälfte des Jahrgangs hat, ist keine Besonderheit.
 ### Die Reihenfolge als Erzählung lesen
 
 Die Seltenheit entscheidet, *wer* mitkommt — nicht, in welcher Reihenfolge
-erzählt wird. Der Rückblick fängt immer mit der Begrüßung an, dann kommt die
-Einladung ins Team, und ganz zuletzt steht die Übersicht — die Seite, die
+erzählt wird. Der Rückblick fängt immer mit der Begrüßung an, dann kommt der
+Blick nach vorn, und ganz zuletzt steht die Übersicht — die Seite, die
 geteilt wird. Nach Seltenheit sortiert wäre es eine Rangliste, keine Erzählung.
 
 ## Die Seiten des Konfi-Rückblicks nachschlagen
@@ -289,7 +291,8 @@ behalten die Schätzwerte aus der Tabelle.
 | **Deine Abzeichen** | Zahl der Abzeichen, „von N", bis zu sechs Symbole | mindestens ein Abzeichen | 90 % |
 | **Das haben nur x %** | das seltenste eigene Abzeichen und wie viele es haben | ein Abzeichen im Zeitraum **und** mindestens 5 Konfis in der Gemeinde | so selten wie das Abzeichen — ab 20 % oder darunter ist die Seite gesetzt |
 | **Deine Konfirmation** | das Konfirmationsdatum; steht sie noch bevor, die Zahl der Tage | der Jahrgang hat einen als Konfirmation gekennzeichneten Termin | 35 % |
-| **Werde Teamer:in** | die Einladung, dabeizubleiben | immer, als vorletzte Seite | immer |
+| **Und weiter** | Zuspruch für die restliche Konfizeit; der Text richtet sich danach, wie viele Punkte zum Ziel noch fehlen | die Konfirmation steht noch bevor oder der Jahrgang hat keinen Termin | immer, als vorletzte Seite |
+| **Werde Teamer:in** | die Einladung, dabeizubleiben | die Konfirmation war schon | immer, als vorletzte Seite |
 | **Auf einen Blick** | Kirchengemeinde, Punkte, Termine, Abzeichen und der Konfirmationstermin unter „Dein Weg. Deine Zeit. Dein Glaube." | immer, als letzte Seite | immer |
 
 Die Konfirmations-Seite nennt die Zahl der Tage nur einmal — als große Zahl oben.
@@ -446,7 +449,6 @@ etwas zusammengekommen ist.
 | **Deine Konfis** | Zahl der betreuten Konfis, die Jahrgänge | mindestens ein Konfi über die Jahrgangs-Zuweisung | 90 % |
 | **Nicht allein** | mit wie vielen anderen zusammen die Jahrgänge betreut wurden | mindestens eine weitere Teamer:in auf denselben Jahrgängen | 75 % |
 | **Deine Abzeichen** | Zahl und bis zu sechs Abzeichen | mindestens ein Abzeichen im Zeitraum | 80 % |
-| **Das erste** | das zuerst verliehene Abzeichen des Jahres | mindestens ein Abzeichen im Zeitraum | 70 % |
 | **Deine Zertifikate** | Zahl und das zuletzt erhaltene Zertifikat; JuLeiCa und Teamer-Card werden eigens genannt | mindestens ein Zertifikat im Zeitraum | 40 % |
 | **Deine Kraftproben** | wie oft du selbst bei einer Challenge mitgemacht hast, und wobei am liebsten | mindestens ein eigener Beitrag | 60 % |
 | **Deine Challenges** | wie viele du selbst gestellt hast, mit den drei neuesten Titeln | mindestens drei gestellte Challenges (kein Entwurf) | 20 % |
@@ -454,7 +456,7 @@ etwas zusammengekommen ist.
 | **Dein Engagement** | Jahre im Team, „Dabei seit …" | Eintrittsdatum hinterlegt **und** nicht im ersten Jahr | 55 % |
 | **Dein erstes Jahr** | die Begrüßung für alle, die neu dazugekommen sind | im Rückblicksjahr ins Team gekommen, Eintrittsdatum bekannt | 25 % |
 | **Wie alles anfing** | „Du saßt mal auf der anderen Seite", mit eigenem Jahrgang | war selbst einmal Konfi in dieser Gemeinde | 20 % |
-| **Auf einen Blick** | Termine, Konfis, Abzeichen nebeneinander, „Danke, dass du da warst." | immer, als letzte Seite | immer |
+| **Auf einen Blick** | Termine, Konfis, Abzeichen nebeneinander, „Danke, dass du dabei bist." | immer, als letzte Seite | immer |
 
 ### Den Zuspruch statt eines Rückblicks bekommen
 

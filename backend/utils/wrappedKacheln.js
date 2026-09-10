@@ -52,9 +52,16 @@ const { seiteFuerKategorie, datumsFenster, NUR_TEAMER } = require('./wrappedKate
  * die drei Zahlen darunter sind eine Zusammenfassung, kein Highlight. Ohne
  * diese drei entstuende bei einer stillen Konfi ueberhaupt kein Rueckblick.
  */
-// Reihenfolge wie in der DRAMATURGIE: Auftakt, dann die Einladung ins Team,
+// Reihenfolge wie in der DRAMATURGIE: Auftakt, dann der Blick nach vorn,
 // dann der Abschluss als letzte Seite (Simon, 07.09.2026).
-const FESTE_KACHELN = ['intro', 'werde-teamer', 'abschluss'];
+//
+// 'werde-teamer' STAND HIER BIS ZUM 11.09.2026 und erschien damit IMMER --
+// auch mitten in der Konfizeit. Simon: "Wenn es ein bis jetzt Rueckblick ist,
+// kein Verweis auf 'werde Teamer'. Sondern was Motivierendes fuer die noch
+// ausstehende Zeit." Beide Seiten stehen jetzt an derselben Stelle der
+// Dramaturgie und schliessen sich gegenseitig aus (siehe BEDINGUNGEN):
+// 'werde-teamer' erst ab der Konfirmation, davor 'weiter-so'.
+const FESTE_KACHELN = ['intro', 'abschluss'];
 
 /**
  * Die Reihenfolge der Erzaehlung. Jede Seite -- fest wie dynamisch -- hat
@@ -119,7 +126,12 @@ const DRAMATURGIE = [
   // Gemeinde, Punkte, Konfirmationstermin und Simons Botschaft "Dein Weg.
   // Deine Zeit. Dein Glaube." Was am Ende stehen bleibt, soll das sein,
   // was man weitergibt, nicht die Einladung ins Team.
-  'werde-teamer',       // 10 der Blick nach vorn
+  // Beide Seiten stehen an Position 10 "der Blick nach vorn" und schliessen
+  // sich gegenseitig aus: Wer noch mitten in der Konfizeit steckt, bekommt
+  // Zuspruch fuer den Rest des Wegs; wer konfirmiert ist, die Einladung ins
+  // Team.
+  'weiter-so',          // 10 der Blick nach vorn (waehrend der Konfizeit)
+  'werde-teamer',       // 10 der Blick nach vorn (nach der Konfirmation)
   'abschluss'           // 11 Uebersicht und Schlusswort -- die letzte Seite
 ];
 
@@ -222,7 +234,13 @@ const ZEIT_SEITEN = ['aktivster-monat', 'langer-atem', 'wochentag'];
  * Der Unterschied ist nicht kosmetisch: Ein Schutz ist eine Ausnahme von
  * der Regel und muss gepflegt werden. Die Seltenheit IST die Regel.
  */
-const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges'];
+//
+// 'weiter-so' und 'werde-teamer' kamen am 11.09.2026 dazu. Sie standen vorher
+// als FESTE_KACHELN unter Schutz; seit sie eine Bedingung tragen (nur eine der
+// beiden trifft je zu), muessen sie hier stehen -- sonst faellt der Blick nach
+// vorn bei einem vollen Rueckblick der Seltenheits-Auswahl zum Opfer. Genau
+// EINE der beiden ist immer dabei, der Platz ist also derselbe wie vorher.
+const GESCHUETZTE_KACHELN = ['events', 'punkte', 'badges', 'weiter-so', 'werde-teamer'];
 
 /**
  * DAS SELTENSTE ABZEICHEN IST AB 20 % GESETZT.
@@ -412,7 +430,6 @@ const GRUND_HAEUFIGKEIT_TEAMER = {
   'teamer-badges': 80,
   // Der erste Termin des Jahres. Wer ueberhaupt einen hatte, hat ihn.
   'teamer-anfang': 85,
-  'teamer-erstes-abzeichen': 70,
   // Wer mit anderen zusammen im Einsatz war.
   'teamer-team': 75,
   // Mindestens fuenf Antworten im Chat.
@@ -489,6 +506,35 @@ function haeufigkeitFuer(kachel, slides) {
  * deshalb faengt waehleKacheln() Fehler ab.
  */
 const BEDINGUNGEN = {
+  // DER BLICK NACH VORN -- zwei Seiten, eine Stelle (11.09.2026).
+  //
+  // 'werde-teamer' erscheint erst, wenn die Konfirmation VORBEI ist. Vorher
+  // war sie eine feste Kachel und stand in jedem Rueckblick, auch im ersten
+  // Konfi-Jahr -- eine Einladung, das Team zu verstaerken, an jemanden, der
+  // gerade erst angefangen hat.
+  //
+  // Ohne Konfirmationstermin (drei von fuenf Jahrgaengen haben keinen) laesst
+  // sich nicht sagen, ob die Zeit vorbei ist. Dann gilt sie als laufend --
+  // Zuspruch ist in dem Fall nie falsch, die Einladung schon.
+  'werde-teamer': (s) => {
+    // s?. statt s.: waehleKacheln(null) und waehleKacheln({}) muessen den
+    // Mindestrueckblick liefern. Ohne das Fragezeichen wirft die Bedingung,
+    // die Auswahl faengt den Fehler ab -- und der Blick nach vorn fiele
+    // still weg, genau bei den Faellen, die ihn am noetigsten haben.
+    const termin = s?.zeitraum?.konfirmation;
+    if (!termin) return false;
+    const d = new Date(termin);
+    return !Number.isNaN(d.getTime()) && d.getTime() < Date.now();
+  },
+  // Das Gegenstueck: solange die Konfizeit laeuft. Die Seite formuliert sich
+  // im Frontend nach den fehlenden Punkten (Ziel erreicht / kurz davor /
+  // noch ein Stueck).
+  'weiter-so': (s) => {
+    const termin = s?.zeitraum?.konfirmation;
+    if (!termin) return true;
+    const d = new Date(termin);
+    return Number.isNaN(d.getTime()) || d.getTime() >= Date.now();
+  },
   // Die drei Zahl-Seiten der Erzaehlung. Sie standen bis zum 07.09.2026 in
   // FESTE_KACHELN und hatten deshalb gar keine Bedingung -- siehe die
   // Begruendung dort.
@@ -623,7 +669,15 @@ function waehleKategorieSeiten(slides) {
  * @returns {string[]} Seiten-Schluessel in Anzeigereihenfolge
  */
 function waehleKacheln(slides, schnitt = null) {
-  if (!slides || typeof slides !== 'object') return [...FESTE_KACHELN];
+  // Ohne brauchbare Daten bleibt der Mindestrueckblick: Auftakt, der Blick
+  // nach vorn, Abschluss. 'weiter-so' steht hier ausdruecklich mit drin --
+  // es ist die richtige Annahme, wenn nichts bekannt ist (die Konfizeit gilt
+  // dann als laufend), und ohne diese Zeile fiele die Seite bei genau den
+  // Faellen weg, die sonst gar nichts haetten.
+  if (!slides || typeof slides !== 'object') {
+    const [auftakt, ...rest] = FESTE_KACHELN;
+    return [auftakt, 'weiter-so', ...rest];
+  }
 
   const kategorieSeiten = (() => {
     try { return waehleKategorieSeiten(slides); } catch { return []; }
@@ -813,10 +867,15 @@ const TEAMER_DRAMATURGIE = [
   // erzaehlen: erst wen du begleitet hast, dann mit wem zusammen.
   'teamer-team',         // 4b mit wem zusammen
   'teamer-badges',       // 5  Abzeichen
-  // 6: Das erste Abzeichen -- direkt nach der Abzeichen-Seite, weil es
-  // dieselbe Sache aus der Naehe zeigt: nicht wie viele, sondern welches
-  // zuerst.
-  'teamer-erstes-abzeichen', // 6  womit es losging
+  // Hier stand bis zum 11.09.2026 'teamer-erstes-abzeichen' ("Damit ging es
+  // los"). GEMESSEN an der Produktion: 15 von 16 vergebenen Teamer-Abzeichen
+  // sind Zeit-Abzeichen vom Typ teamer_year -- die Seite zeigte deshalb fast
+  // immer "1 Jahr Teamer:in". Das ist keine Erinnerung, sondern eine
+  // Selbstverstaendlichkeit (Simon: "Da kommt immer das Teamer Jahr, das ist
+  // doof").
+  //
+  // Das Feld `erstes_abzeichen` bleibt in der API-Antwort: Ausgelieferte
+  // App-Versionen lesen es, und ein Feld wegzunehmen bricht sie.
   'teamer-zertifikate',  // 7  Zertifikate
   // 6: Der Antwortende -- die Zuwendung, die im Team selten jemand sieht.
   // Steht bei den Menschen-Seiten (nach den Konfis), nicht bei den Zahlen.
@@ -859,7 +918,6 @@ const TEAMER_BEDINGUNGEN = {
   // Erst ab fuenf Antworten. Eine einzelne Antwort ist keine Geschichte --
   // dieselbe Schwelle, die im Konfi-Zweig fuer den Chat galt.
   'teamer-anfang': (s) => Boolean(s.anfang?.name),
-  'teamer-erstes-abzeichen': (s) => Boolean(s.erstes_abzeichen?.name),
   'teamer-antworten': (s) => (s.chat?.antworten || 0) >= 5,
   'teamer-team': (s) => (s.team?.mitstreitende || 0) > 0,
   // Ab DREI gestellten Challenges (Simon, 09.09.2026: "Wie viele gestellt

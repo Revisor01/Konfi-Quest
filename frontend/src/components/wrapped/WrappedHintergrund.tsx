@@ -76,16 +76,28 @@ const WrappedHintergrund: React.FC<Props> = ({ kachel, verlauf, haupt, zweit: zw
           <div
             className="wrapped-bg-schleier"
             style={{
+              // 0.55 statt 0.72 (11.09.2026, Simon: "Die Farben der Bilder
+              // duerfen staerker durchkommen. Etwas viel Overlay, etwas zu
+              // viel klassisch kirchlich"). Der Schleier faerbt die Seite ein
+              // und macht Text lesbar -- bei 0.72 nahm er den Fotos aber ihre
+              // eigene Farbe.
               background: verlauf,
-              opacity: 0.72,
-              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, black 78%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 35%, black 78%)',
+              opacity: 0.55,
+              // Oben zusaetzlich zurueckgenommen (0.35 -> 0.22): Dort steht
+              // kein Text, dort darf das Motiv am staerksten sprechen.
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.45) 35%, black 78%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.45) 35%, black 78%)',
             }}
           />
           <div
             className="wrapped-bg-schleier"
             style={{
-              background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.28) 62%, rgba(0,0,0,0.55) 100%)',
+              // Der neutrale Abdunkler unter dem Text wird im Gegenzug
+              // KRAEFTIGER (0.28/0.55 -> 0.34/0.66). Er wirkt nur im unteren
+              // Drittel und haelt weisse Schrift auch auf einem hellen Himmel
+              // lesbar -- genau das, was der Farbschleier vorher nebenbei
+              // miterledigt hat.
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.34) 62%, rgba(0,0,0,0.66) 100%)',
             }}
           />
         </>

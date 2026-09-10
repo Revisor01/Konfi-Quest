@@ -56,7 +56,7 @@ export type Motiv =
   // Feier: laut, hell, in Bewegung.
   | 'lagerfeuer' | 'lagerfeuer-strand' | 'wunderkerze' | 'wunderkerze-blau'
   | 'konfetti-buehne' | 'konzert' | 'haende-hoch' | 'sprung' | 'skatepark'
-  | 'graffiti'
+  | 'graffiti' | 'ballons'
   // Ruhig und kirchlich. HÖCHSTENS ZWEI KIRCHEN (Simon: "Ja Kirche darf
   // eine Dorf und eine Stadtkirche sein. Aber nicht zu viel.") — mehr
   // Kirchenbilder machen aus dem Rückblick einen Gemeindebrief.
@@ -94,6 +94,7 @@ const MOTIV_DATEI: Record<Motiv, string> = {
   sprung: '/assets/wrapped/sprung.webp',
   skatepark: '/assets/wrapped/skatepark.webp',
   graffiti: '/assets/wrapped/graffiti.webp',
+  ballons: '/assets/wrapped/ballons.webp',
   dorfkirche: '/assets/wrapped/dorfkirche.webp',
   kirchenschiff: '/assets/wrapped/kirchenschiff.webp',
   kerze: '/assets/wrapped/kerze.webp',
@@ -128,7 +129,10 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'aktivster-monat': 'feld-abend',
   kategorie: 'kirchenfenster',
   'kategorie-allgemein': 'kirchenfenster',
-  konfirmation: 'kerzen',
+  // Ballons statt Kerzen (11.09.2026, Simon: "Die Seite mit der Zeit bis zur
+  // Konfi ist mit Kerzen zu klassisch. Eher auch Ballons."). Eine
+  // Konfirmation ist ein Fest, kein Trauergottesdienst.
+  konfirmation: 'ballons',
   zeitraum: 'sterne',
   gottesdienst: 'kerze',
   gemeinde: 'weg',
@@ -166,6 +170,8 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'challenge-momente': 'wald-oben',
   seltenstes: 'lagerfeuer',
   'werde-teamer': 'lagerfeuer-strand',
+  // Der Blick nach vorn waehrend der Konfizeit: ein Weg, der weitergeht.
+  'weiter-so': 'strasse-weit',
   'stavanger-2026': 'preikestolen',
   'teamer-intro': 'watt-abend',
   'teamer-events': 'kirchenschiff',
@@ -177,7 +183,6 @@ const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   'teamer-team': 'lagerfeuer-strand',
   'teamer-neu-dabei': 'duenen',
   'teamer-anfang': 'weg',
-  'teamer-erstes-abzeichen': 'wunderkerze-blau',
   'teamer-antworten': 'kirchenfenster',
   'teamer-jahre': 'wald-oben',
   'teamer-konfi-zeit': 'nordsee',
@@ -207,7 +212,9 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'aktivster-monat': 'sterne',
   kategorie: 'kirchenschiff',
   'kategorie-allgemein': 'kirchenschiff',
-  konfirmation: 'kirchenfenster',
+  // Zweitmotiv ebenfalls weg vom Kirchlichen: Kirchenfenster stand hier und
+  // machte die Seite zusammen mit den Kerzen doppelt feierlich-kirchlich.
+  konfirmation: 'konfetti-buehne',
   zeitraum: 'nebel',
   gottesdienst: 'kirchenschiff',
   gemeinde: 'watt-abend',
@@ -245,6 +252,7 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'challenge-momente': 'nebel',
   seltenstes: 'konfetti-buehne',
   'werde-teamer': 'weg',
+  'weiter-so': 'duenen',
   'stavanger-2026': 'sturmwolken',
   'teamer-intro': 'sterne',
   'teamer-events': 'dorfkirche',
@@ -256,7 +264,6 @@ const KACHEL_ZWEITMOTIV: Partial<Record<string, Motiv>> = {
   'teamer-team': 'feld-abend',
   'teamer-neu-dabei': 'watt-abend',
   'teamer-anfang': 'sterne',
-  'teamer-erstes-abzeichen': 'konfetti-buehne',
   'teamer-antworten': 'stadt-nacht',
   'teamer-jahre': 'nebel',
   'teamer-konfi-zeit': 'priel',
@@ -337,13 +344,19 @@ const STIMMUNG: Record<string, Motiv[]> = {
     'sterne', 'stadt-nacht', 'strasse-weit'],
   // feiern
   feier: ['lagerfeuer', 'lagerfeuer-strand', 'wunderkerze', 'wunderkerze-blau',
-    'konfetti-buehne', 'konzert', 'haende-hoch', 'sprung', 'skatepark', 'graffiti'],
+    'konfetti-buehne', 'konzert', 'haende-hoch', 'sprung', 'skatepark', 'graffiti',
+    'ballons'],
 };
 
 /** Welche Stimmung passt zu einer Seite? */
 function stimmungFuer(kachel: string): keyof typeof STIMMUNG {
-  if (/badges|seltenstes|challenges|stempel|fest|konzert|kreativ|jugend|ueber-das-ziel|bonus/.test(kachel)) return 'feier';
-  if (/gottesdienst|kasualien|konfirmation|advent|weihnachten|ostern|seelsorge|senioren|erntedank|pflicht/.test(kachel)) return 'ruhig';
+  // 'konfirmation' steht bewusst bei 'feier' und NICHT bei 'ruhig'
+  // (11.09.2026): Als "ruhig" eingestuft bekam die Seite Kerzen und
+  // Kirchenfenster zugelost -- genau das "zu klassisch kirchlich", das Simon
+  // aufgefallen ist. Eine Konfirmation ist der Festtag, auf den alles
+  // zulaeuft.
+  if (/badges|seltenstes|challenges|stempel|fest|konzert|kreativ|jugend|ueber-das-ziel|bonus|konfirmation/.test(kachel)) return 'feier';
+  if (/gottesdienst|kasualien|advent|weihnachten|ostern|seelsorge|senioren|erntedank|pflicht/.test(kachel)) return 'ruhig';
   return 'weite';
 }
 

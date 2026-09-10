@@ -33,8 +33,14 @@ function ohneKommentare(quelle: string): string {
 // - ShareCard: versteckter 1080x1920-Renderer fuer den Bild-Export, eigener
 //   Massstab — App-Rhythmus-Tokens waeren dort semantisch falsch.
 // - WerdeTeamerSlide: 22px Wrapped-Feinjustierung ausserhalb der Skala.
+// - WeiterSoSlide: dasselbe Mass. Sie steht an DERSELBEN Stelle der
+//   Dramaturgie (der Blick nach vorn) und muss deshalb denselben Abstand
+//   halten -- ein anderer Wert waere an genau dieser Stelle sichtbar.
 const AUSGENOMMENE_DATEIEN = ['ShareCard.tsx'];
-const AUSGENOMMENE_FUNDE = [{ datei: 'WerdeTeamerSlide.tsx', fund: 'marginTop: 22' }];
+const AUSGENOMMENE_FUNDE = [
+  { datei: 'WerdeTeamerSlide.tsx', fund: 'marginTop: 22' },
+  { datei: 'WeiterSoSlide.tsx', fund: 'marginTop: 22' },
+];
 
 const ABSTAND_PROPS =
   '(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap|borderRadius)';

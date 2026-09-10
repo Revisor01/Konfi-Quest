@@ -33,7 +33,7 @@ describe('Jede Rueckblick-Seite bekommt ein Motiv', () => {
   it('ein voller Teamer-Rueckblick bekommt lauter verschiedene Bilder', () => {
     const seiten = [
       'teamer-intro', 'teamer-anfang', 'teamer-events', 'teamer-konfis',
-      'teamer-badges', 'teamer-erstes-abzeichen', 'teamer-zertifikate',
+      'teamer-badges', 'teamer-zertifikate',
       'teamer-challenge-beitraege', 'teamer-challenges', 'teamer-abschluss',
     ];
     const vergeben = verteileMotive(seiten);

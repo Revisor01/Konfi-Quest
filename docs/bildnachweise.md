@@ -46,7 +46,7 @@ Zugeordnet werden die Motive in
 | `stadt-nacht.webp` | [Benjamin Sow](https://unsplash.com/@bensow) | `5hQMCo5qtSs` | I was on my way to vivid when it started raining and as I cr |
 | `strasse-weit.webp` | [Jonny Gios](https://unsplash.com/@supergios) | `49Z5cnyrxss` | a long exposure photo of a highway at night |
 
-## Feier — laut, hell, in Bewegung (10)
+## Feier — laut, hell, in Bewegung (11)
 
 | Datei | Fotograf:in | Unsplash-ID | Motiv |
 | --- | --- | --- | --- |
@@ -60,6 +60,7 @@ Zugeordnet werden die Motive in
 | `sprung.webp` | [Hossein Ghodsi](https://unsplash.com/@mhghodsi) | `6ErQio7WJHs` | a person jumping off a cliff into the ocean |
 | `skatepark.webp` | [Maxime Doré](https://unsplash.com/@maxime_dore) | `-WklneVKtE8` | Skateboarder silhouetted against a bright, hazy sunset |
 | `graffiti.webp` | [T](https://unsplash.com/@tanyabarrow) | `66jR3twzXO4` | Graffiti art on a weathered brick wall |
+| `ballons.webp` | [Diya Pokharel](https://unsplash.com/@diya1998) | `EOebHxC4DaA` | white, blue, and purple balloons |
 
 ## Ruhig — kirchlich und still (6)
 

@@ -30,9 +30,13 @@ const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year }) => {
       <div className="kat-auge">{teamerUeberschrift(year).join(' ')}</div>
 
       <div className="kat-slogan">
+        {/* Gegenwart statt Vergangenheit (11.09.2026, Simons Wortlaut:
+            "Danke das du dabei bist"). "Da warst" klang nach Abschied --
+            der Rueckblick erscheint aber mitten im Dienst, nicht zum
+            Ausscheiden. */}
         <span style={{ display: 'block' }}>Danke,</span>
         <span style={{ display: 'block' }}>dass du</span>
-        <span style={{ display: 'block' }}>da warst.</span>
+        <span style={{ display: 'block' }}>dabei bist.</span>
       </div>
 
       <div className="w-bilanz">
@@ -46,7 +50,11 @@ const TeamerAbschlussSlide: React.FC<Props> = ({ isActive, data, year }) => {
       </div>
 
       <div className="kat-nachsatz" style={{ marginTop: 'var(--app-abstand-basis)'}}>
-        Ohne Leute wie dich gäbe es keine Konfi-Zeit.
+        {/* Simons Wortlaut (11.09.2026): "Ohne Menschen wie die gaebe es keine
+            Konfi Zeit so wie wir sie machen." Der Zusatz ist der Punkt --
+            Konfi-Zeit gaebe es auch ohne sie, aber nicht DIESE. */}
+        Ohne Menschen wie dich gäbe es keine Konfi-Zeit — nicht so,
+        wie wir sie machen.
       </div>
     </SlideBase>
   );

@@ -130,6 +130,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Im Team-Rückblick fiel die Seite „Das erste Abzeichen" weg. Sie zeigte fast
+  immer das Abzeichen fürs erste Teamer-Jahr — eine Selbstverständlichkeit,
+  keine Erinnerung.
 - Auf Android kamen bei vielen keine Push-Nachrichten mehr an — weder für
   Chat-Nachrichten noch für Termine. Das Gerät meldete sich beim Anmelden nur
   ein einziges Mal an; ging diese eine Meldung unter, gab es keinen zweiten
