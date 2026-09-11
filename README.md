@@ -1,343 +1,184 @@
-# Konfi Quest
+<p align="center">
+  <img src="frontend/public/apple-touch-icon.png" alt="Konfi Quest" width="128" height="128">
+</p>
 
-**Konfirmandenpunkte-App für Kirchengemeinden**
+<h1 align="center">Konfi Quest</h1>
 
-Ionic Hybrid-App (iOS/Android) zur spielerischen Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Version v2.7 — 93 Phasen, 146 Plans, ~36.800 Zeilen (TS/TSX/CSS).
+<p align="center">
+  Die App für die Konfizeit — für Konfis, Teamer:innen und die Gemeindeleitung.<br>
+  Punkte sammeln, Termine finden, miteinander reden. Auf iPhone, Android und im Browser.
+</p>
 
----
+<p align="center">
+  <img src="https://img.shields.io/badge/Plattform-iOS%20%C2%B7%20Android%20%C2%B7%20Web-blue" alt="Plattform">
+  <img src="https://img.shields.io/badge/Version-2.1.1-green" alt="Version">
+  <img src="https://img.shields.io/badge/Ionic-9-3880ff?logo=ionic" alt="Ionic">
+  <img src="https://img.shields.io/badge/React-19-61dafb?logo=react" alt="React">
+  <img src="https://img.shields.io/badge/Tests-4095-blue" alt="Tests">
+  <img src="https://img.shields.io/github/license/Revisor01/Konfi-Quest" alt="Lizenz">
+</p>
 
-## Was ist Konfi Quest?
+## Worum es geht
 
-Konfi Quest ist eine Hybrid-App, in der Konfis Punkte sammeln, während sie am Gemeindeleben teilnehmen. Zwei Punktetypen — Gottesdienst und Gemeinde — dokumentieren unterschiedliche Formen der Beteiligung. Durch Aktivitäten, Events und Bonuspunkte sollen Konfis motiviert werden, aktiv dabei zu sein.
+In der Konfizeit passiert viel: Gottesdienste, Freizeiten, Projekte, das
+Mitarbeiten in der Gemeinde. Konfi Quest hält fest, wer wobei dabei war —
+nicht als Pflichtheft, sondern als etwas, das man gern in die Hand nimmt.
 
-Kirchengemeinden verwalten das System über ein rollenbasiertes Admin-Interface: Teamer:innen betreuen Konfis direkt, Admins verwalten Jahrgänge und Inhalte, Orgadmins überwachen die gesamte Organisation. Das System unterstützt mehrere Organisationen gleichzeitig (Multi-Tenancy) mit vollständiger Datentrennung.
+Konfis sammeln zwei Arten von Punkten: für Gottesdienste und für die Gemeinde.
+Sie melden sich zu Terminen an, stellen sich Challenges, sammeln Abzeichen und
+bekommen am Ende des Jahres einen Rückblick auf ihre Konfizeit.
 
-Die App läuft produktiv auf Docker (server.godsapp.de) und wird über Portainer mit automatischem Build-Deployment betrieben. Ein öffentlicher Launch unter dem EKD-Kontext ist für v3.0 geplant.
+Teamer:innen begleiten ihre Gruppen, tragen Punkte ein und bekommen einen
+eigenen Rückblick. Die Leitung verwaltet Jahrgänge, gibt Anträge frei und behält
+den Überblick — auch über mehrere Gemeinden hinweg, sauber voneinander getrennt.
 
----
+## Funktionen
 
-## Features
+### Für Konfis
+- **Punkte** — Gottesdienst und Gemeinde getrennt, mit Zielen je Jahrgang
+- **Termine** — anmelden, abmelden, Warteliste, Check-in per QR-Code
+- **Challenges** — Aufgaben mit Foto, Video oder Text, sichtbar im Jahrgangs-Feed
+- **Abzeichen** — für Meilensteine, Serien und besondere Anlässe
+- **Rückblick** — der eigene Jahresrückblick, teilbar wie eine Story
+- **Chat** — Jahrgang, Gruppen, Termine und Direktnachrichten
 
-### Punktesystem
+### Für Teamer:innen
+- Eigenes Dashboard mit den betreuten Jahrgängen
+- Punkte eintragen, Anträge sichten, Challenges stellen
+- Zertifikate und Nachweise (JuLeiCa, Teamer-Card)
+- Eigener Jahresrückblick über die geleistete Arbeit
 
-- Zwei Punktetypen: **Gottesdienst** und **Gemeinde**, pro Jahrgang einzeln aktivierbar
-- Individuelle Zielwerte pro Jahrgang und Punktetyp
-- ActivityRings-Visualisierung (1–3 Ringe, dynamisch nach aktiven Typen)
-- Bonus-Punkte mit Beschreibung und Admin-Zuweisung
-- Transaktionssichere Punkteoperationen (BEGIN/COMMIT, GREATEST(0,...))
-- Ranking-Liste und Punkte-Historie
+### Für die Leitung
+- Jahrgänge, Konfis und Team verwalten
+- Aktivitäten, Kategorien und Punkteziele festlegen
+- Anträge freigeben, Abzeichen gestalten, Termine anlegen
+- Mehrere Gemeinden in einer Anmeldung, streng getrennte Daten
 
-### Aktivitäten und Kategorien
+### Überall
+- **Ohne Netz nutzbar** — Eingetragenes wird gespeichert und später gesendet
+- **Benachrichtigungen** — für Nachrichten, Termine, Punkte und Freigaben
+- **Anmeldung per Face ID, Touch ID oder Fingerabdruck**
+- **Handbuch in der App** — [auch online lesbar](https://konfi-quest.de/docs/)
 
-- Aktivitäten mit Kategorien und konfigurierbaren Punktwerten
-- Antragsystem: Konfis stellen Anträge, Teamer:innen und Admins genehmigen
-- Offline-fähige Antragsstellung via WriteQueue
-- IonSegment-Filter nach Kategorie im Antragsmodal
+## Installation
 
-### Event-System
+### App Store
 
-- Buchung mit Timeslots und automatischer Warteliste
-- Pflicht-Events mit Auto-Enrollment aller Jahrgangs-Konfis
-- Opt-out mit Freitext-Begründung und Admin-Übersicht
-- QR-Code Self-Check-in mit konfigurierbarem Zeitfenster (5–120 Min)
-- Manuelle Admin-Korrektur der Anwesenheit
-- "Was mitbringen"-Feld mit Dashboard-Widget-Integration
-- Pro-Konfi Anwesenheitsstatistik mit Farbcodierung
+**[Im App Store laden »](https://apps.apple.com/de/app/konfi-quest/id6748016619)**
 
-### Badge-System
+### Google Play
 
-- 13 Kriterientypen für automatische Badge-Vergabe
-- Levels mit konfigurierbaren Schwellenwerten
-- Streak-Logik mit Jahreswechsel-Behandlung
-- Badge-Progress mit percentage und points
-- Geheime Badges (nicht sichtbar bis zur Vergabe)
+**[Bei Google Play laden »](https://play.google.com/store/apps/details?id=de.godsapp.konfiquest)**
 
-### Chat
+### Im Browser
 
-- Echtzeit-Messaging via Socket.IO
-- Gruppen-Chats, Direkt-Nachrichten
-- Polls und Datei-Uploads (Bilder, Dokumente, Videos)
-- Org-Isolation: Org-übergreifende Room-Beitritte blockiert
-- Nachrichtenlimit: 4.000 Zeichen
-- Fullscreen FileViewerModal mit Pinch-to-Zoom, Multi-Datei-Swipe
-- LATERAL Joins eliminieren N+1-Queries bei DM-Namen
-- Button springt ans Ende der Nachrichtenliste (ab 300 px Abstand sichtbar)
+**[konfi-quest.de »](https://konfi-quest.de)** — dieselbe Oberfläche, ohne Installation.
 
-### Push-Notifications
+### Eigene Gemeinde
 
-- 18 dokumentierte Notification-Types
-- Event-Erinnerungen (15-Min-Intervall vor Event)
-- Admin-Alert bei Konfi-Registrierung
-- Level-Up-Notifications
-- Selbstreinigendes Token-System (6h-Cleanup)
-- Firebase (Android) und APNS (iOS)
+Konfi Quest lässt sich für die eigene Gemeinde nutzen. Schreib einfach an
+[moin@konfi-quest.de](mailto:moin@konfi-quest.de).
 
-### Konfi + Teamer Wrapped
+## Bildschirmfotos
 
-- Spotify-Wrapped-Style Jahresrückblick
-- Konfi: 9 Slides (Intro, Punkte, Events, Badges, Aktivster Monat, Chat, Endspurt, Abschluss)
-- Teamer: 7 Slides mit Rosa-Farbschema
-- Swiper 12 mit EffectCreative 3D-Übergängen und Count-up-Animationen
-- Share-Funktion: 1080x1920 Story-Export via html-to-image + natives Share-Sheet
-- highlight_type-basierte Slide-Reihenfolge, seed-gesteuerte Formulierungsvarianten
-- Kategorie-Balkendiagramm, Gottesdienst-Counter, Über-das-Ziel-Konfetti
-- Wiederansicht "Meine Wrappeds" in Konfi- und Teamer-Profilen
-- Dashboard-Cards und Push-Notification bei Freischaltung
+<p align="center">
+  <img src="docs/screenshots/iphone/konfi-startseite.png" width="200" alt="Startseite">
+  <img src="docs/screenshots/iphone/konfi-challenges.png" width="200" alt="Challenges">
+  <img src="docs/screenshots/iphone/konfi-chat.png" width="200" alt="Chat">
+  <img src="docs/screenshots/iphone/konfi-abzeichen.png" width="200" alt="Abzeichen">
+</p>
 
-### Dashboard
+Weitere Ansichten für alle drei Rollen liegen in
+[docs/screenshots/](docs/screenshots/).
 
-- Konfigurierbare Widgets: Konfirmation, Events, Losung, Badges, Ranking
-- 5 Sektionen vom Orgadmin ein-/ausblendbar
-- Tageslosung-Integration (externe API, kein Request bei deaktivierter Losung)
-- Tageszeitabhängige Begrüßung, Badge-Stats als Glass-Chips
-
-### Multi-Tenancy und RBAC
-
-- 5 Rollen: **Konfi**, **Teamer**, **Admin**, **Orgadmin**, **Superadmin**
-- Vollständige Datentrennung pro Organisation auf allen 15 Backend-Routes
-- Gesperrte User werden sofort bei Token-Validierung blockiert (LRU-Cache 30s TTL)
-- QR-Code Onboarding mit Multi-Use Invite Codes und Auto-Login
-
-### Offline-First
-
-- SWR-Cache via `useOfflineQuery` auf allen 30 Pages
-- WriteQueue (FIFO, persistent): Chat, Anträge, Admin-CRUD (30 Queue-Aktionen)
-- Corner-Badge-System für Queue-Status und Fehler
-- 42 Online-Only-Buttons mit `isOnline`-Guard
-- axios-retry mit Exponential Backoff + Jitter
-- Idempotency-Keys (client_id UUID) gegen Doppel-Ausführung
-- Koordinierter Reconnect-Sync: flush → invalidateAll → badge-refresh
-
-### Sicherheit
-
-- helmet Security Headers auf allen Responses
-- express-validator Input-Validierung auf allen 15 Routes
-- JWT mit Refresh-Token-Rotation (Access 15 Min, Refresh 90 Tage, Soft-Revoke)
-- Magic-Bytes Upload-Validierung (file-type@19) — Client-MIME nicht vertrauenswürdig
-- Rate-Limiting mit deutscher Fehlermeldung
-- SQL-Injection-Schutz via getPointField-Whitelist
-- Serverseitiges Refresh-Token-Revoke beim Logout
-- Passwort-Minimum 8 Zeichen
-
----
-
-## Tech-Stack
-
-| Bereich | Technologie |
-|---------|-------------|
-| **Frontend Framework** | React 19, Ionic 8, TypeScript |
-| **Mobile** | Capacitor 7 (iOS / Android) |
-| **Build** | Vite 5.2 |
-| **Slides** | Swiper 12 (EffectCreative) |
-| **Themes** | iOS 26 Theme + Material Design 3 (platform-scoped) |
-| **Backend** | Node.js, Express |
-| **Datenbank** | PostgreSQL |
-| **Echtzeit** | Socket.IO |
-| **Auth** | JWT (jose), bcrypt |
-| **E-Mail** | Nodemailer (SMTP) |
-| **Cron** | node-cron |
-| **Deployment** | Docker, Portainer (Auto-Deploy via git push) |
-
----
-
-## Architektur
-
-### Frontend
-
-```
-src/
-  components/
-    admin/          -- Admin-Views (mit Sektionen-Dateien)
-    konfi/          -- Konfi-Views
-    teamer/         -- Teamer-Views
-    shared/         -- SectionHeader, EmptyState, ListSection
-    wrapped/        -- Wrapped-Slides (Konfi + Teamer)
-  context/
-    AppContext       -- Globaler State (User, Auth, Online-Status)
-    LiveUpdateContext -- Triggerbasiertes Daten-Refresh-System
-  services/
-    tokenStore      -- sync Memory-Cache + async Capacitor Preferences
-    offlineCache    -- useOfflineQuery SWR-Pattern
-    writeQueue      -- FIFO persistent für Offline-Aktionen
-    networkMonitor  -- Capacitor Network Plugin Singleton
-  theme/
-    variables.css   -- 100+ CSS-Utility-Klassen, Design-System
-```
-
-**Schlüsselmuster:**
-- `useOfflineQuery`: SWR-Hook mit stale-while-revalidate und dataRef (kein Stale-Closure)
-- `useIonModal`: Einziges erlaubtes Modal-Pattern (kein `isOpen`-State)
-- `useIonRouter`: Ionic 8 native Navigation (kein React Router v6)
-- `WriteQueue`: FIFO-Queue mit Auto-Flush bei Online/Resume
-
-### Backend
-
-```
-backend/
-  routes/           -- 15 Express-Routes (vollständig PostgreSQL)
-  migrations/       -- SQL-Dateien, via Migration-Runner beim Start ausgeführt
-  middleware/       -- verifyTokenRBAC (LRU-Cache 30s), upload
-  services/
-    liveUpdate      -- Socket.IO Dependency Injection
-    losungService   -- Tageslosung-API
-    emailService    -- Nodemailer SMTP
-    pushService     -- Firebase / APNS
-  utils/
-    bookingUtils    -- 5 geteilte Booking-Funktionen
-    chatUtils       -- Dynamischer Admin-Lookup
-```
-
-**Schlüsselmuster:**
-- RBAC Middleware: `verifyTokenRBAC` mit LRU-Cache (500 Einträge, 30s TTL)
-- Migration-Runner: alle .sql-Dateien aus `migrations/` beim Server-Start
-- Dependency Injection: `liveUpdate.init(io)` statt `global.io`
-- Schema-Tracking: `schema_migrations`-Tabelle
-
-### Datenbank
-
-- ~30 Tabellen, 73 Indizes, 23 Foreign Keys
-- Kern-Tabellen: `users`, `konfi_profiles`, `konfi_activities`, `bonus_points`, `konfi_badges`, `event_bookings`, `chat_rooms`, `chat_messages`, `wrapped_snapshots`
-
----
-
-## Screenshots
-
-_Screenshots folgen vor dem v3.0 Launch._
-
-```
-![Dashboard](docs/screenshots/dashboard.png)
-![Events](docs/screenshots/events.png)
-![Chat](docs/screenshots/chat.png)
-![Wrapped](docs/screenshots/wrapped.png)
-![Admin](docs/screenshots/admin.png)
-```
-
----
-
-## Entwicklung und Setup
-
-### Voraussetzungen
-
-- Node.js 20+
-- PostgreSQL 15+
-- Docker (für Deployment)
-- Capacitor CLI (für iOS/Android Build)
-
-### Umgebungsvariablen
-
-```env
-# Backend (.env oder docker-compose.yml)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=konfi_user
-DB_PASSWORD=...
-DB_NAME=konfi_db
-JWT_SECRET=...
-REFRESH_TOKEN_SECRET=...
-QR_SECRET=...
-LOSUNG_API_KEY=...
-SMTP_HOST=...
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASS=...
-PG_POOL_MAX=10
-FRONTEND_URL=https://konfi-points.de
-
-# Frontend
-VITE_API_URL=https://konfi-points.de/api
-```
-
-### Backend starten
+## Selbst betreiben
 
 ```bash
+git clone https://github.com/Revisor01/Konfi-Quest.git
+cd Konfi-Quest
+
+# Backend
 cd backend && npm install && npm start
-```
 
-### Frontend (Development)
-
-```bash
+# Frontend (zweites Terminal)
 cd frontend && npm install && npm run dev
 ```
 
-Dev-Server läuft auf `http://localhost:5173`.
+Das Backend braucht PostgreSQL 15 und eine `.env` mit `DATABASE_URL`,
+`JWT_SECRET`, `QR_SECRET` und `ACTIVITY_PHOTO_ENCRYPTION_KEY`. Für
+Benachrichtigungen und E-Mail kommen Firebase- und SMTP-Zugangsdaten dazu;
+ohne sie läuft alles andere weiter.
 
-### iOS-Build (Xcode)
+Die Mitarbeit am Projekt beschreibt [CLAUDE.md](CLAUDE.md) — vor allem die
+Regel, dass ausgelieferte App-Versionen niemals brechen dürfen.
 
-```bash
-cd frontend
-npm run build
-npx cap sync ios
-open ios/App/App.xcworkspace
+## Versionen
+
+Die vollständige Liste steht in [CHANGELOG.md](CHANGELOG.md).
+
+| Version | Datum | Schwerpunkt |
+|---------|-------|-------------|
+| **2.1.1** | 2026-09-11 | Fortschritt beim Senden und Laden von Dateien, einzeln einstellbare Benachrichtigungen, Rückblick fürs Team |
+| **2.1.0** | 2026-08-29 | Konfispruch im Wortlaut, Ausstehendes ohne Netz sichtbar, Zustellung nach langer Pause |
+| **2.0.0** | 2026-08-27 | Challenges, kürzere Ladezeiten, iOS 16.4 als Mindestversion |
+
+## Aufbau
+
+```
+Konfi-Quest
+├── frontend/          — Ionic 9 + React 19, TypeScript
+│   ├── src/
+│   │   ├── components/  — nach Rolle getrennt: konfi, teamer, admin, shared
+│   │   ├── contexts/    — App-Zustand, Abzeichen, Anmeldung
+│   │   ├── services/    — API, Offline-Warteschlange, Biometrie, Push
+│   │   └── __tests__/   — 1625 Tests
+│   ├── ios/ · android/  — Capacitor 8
+│   └── public/docs/     — erzeugtes Handbuch und API-Referenz
+├── backend/           — Node 22 + Express 5, PostgreSQL 15
+│   ├── routes/          — nach Bereich getrennt, RBAC je Route
+│   ├── services/        — Push, Abzeichen, Rückblick, E-Mail
+│   ├── migrations/      — additiv, nie zerstörend
+│   └── tests/           — 2470 Tests gegen eine echte Datenbank
+├── docs/              — Quelle für Handbuch, API-Doku und Store-Texte
+└── e2e/               — Playwright, gegen den vollen Stack
 ```
 
-### Deployment
+**Worauf es beim Bauen ankommt:**
+- **Ausgelieferte Apps nie brechen.** Antwortformen sind ein Vertrag: Aus einem
+  Array wird kein Objekt, Felder verschwinden nicht. Wer die Form ändern will,
+  legt eine neue Route an.
+- **Migrationen laufen additiv** — erst die Spalte dazu, dann beide Stände
+  bedienen, Altes erst entfernen, wenn keine alte App mehr darauf zugreift.
+- **Jede Verhaltensänderung bekommt Tests, Handbuch und CHANGELOG** im selben
+  Commit.
+- **Rollentrennung bis in die Datenbank.** Mehrere Gemeinden teilen sich eine
+  Instanz, sehen aber nie Daten der anderen.
 
-Deployment läuft vollautomatisch über Portainer:
+## Mitmachen
 
-```bash
-git push
-# Portainer erkennt den Push, baut Docker-Images neu und startet Container
-```
+Fehlermeldungen und Vorschläge sind willkommen — gern als
+[Issue](https://github.com/Revisor01/Konfi-Quest/issues).
 
-Manueller Datenbankzugriff (nur im Notfall):
+## Lizenz
 
-```bash
-ssh root@server.godsapp.de "docker exec -it konfi-quest-db-1 psql -U konfi_user -d konfi_db"
-```
+Konfi Quest steht unter der
+[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0),
+ergänzt um eine Zusatzbedingung zur Veröffentlichung von Änderungen. Der
+vollständige Text steht in [LICENSE](LICENSE).
 
----
-
-## Milestone-Historie
-
-| Version | Datum | Beschreibung | Phasen | Plans |
-|---------|-------|--------------|--------|-------|
-| v1.0 | 2026-03-01 | Security Hardening: helmet, express-validator, SQL-Injection-Fix, TabBar-Stabilisierung | 2 | 5 |
-| v1.1 | 2026-03-02 | Design-Konsistenz: Shared Components, 100+ CSS-Klassen, 28 Modals auf useIonModal | 5 | 17 |
-| v1.2 | 2026-03-02 | Polishing + Tech Debt: ActivityRings, Dashboard-Design, console.log-Cleanup | 4 | 6 |
-| v1.3 | 2026-03-04 | Layout-Polishing: Konfi-Views, Admin-Views, Settings, Super-Admin Vollbild | 9 | 18 |
-| v1.4 | 2026-03-05 | Logik-Debug: Event-Transaktionen, Badge-Kriterien, Punkte-Atomarität, RBAC-Härtung | 5 | 9 |
-| v1.5 | 2026-03-07 | Push-Notifications: 18 Types, Token-Lifecycle, BadgeContext, Event-Erinnerungen | 5 | 8 |
-| v1.6 | 2026-03-09 | Dashboard-Konfig + Punkte-Logik: Jahrgangs-Konfiguration, Widget-Toggles | 4 | 7 |
-| v1.7 | 2026-03-09 | Pflicht-Events: Auto-Enrollment, Opt-out, QR-Check-in, Anwesenheitsstatistik | 4 | 8 |
-| v1.8 | 2026-03-12 | Teamer-Rolle: Dashboard, Konfi-Betreuung, Badges, Events, Zertifikate, Material | 5 | 14 |
-| v1.9 | 2026-03-19 | Bugfix + Polish: Ghost-Push-Fix, Event-Filter, Chat-Erstellung, Badge-UI | 10 | 13 |
-| v2.0 | 2026-03-19 | Ionic Update + Theme: Ionic 8.8.1, Ionicons 8, iOS 26 Theme, MD3 1.1.0 | 10 | 13 |
-| v2.1 | 2026-03-21 | App-Resilienz: Offline-First, SWR, WriteQueue (30 Aktionen), Corner-Badges | 15 | 23 |
-| v2.2 | 2026-03-21 | Codebase-Hardening: Types, 73 DB-Indizes, Token-Refresh, Datei-Viewer, Performance-Splits | 19 | 25 |
-| v2.3 | 2026-03-22 | Konfi + Teamer Wrapped: 9+7 Slides, Swiper 12, Share, Individualisierung | 6 | 11 |
-| v2.4 | 2026-03-22 | Codebase-Cleanup: useIonRouter, Socket.IO Org-Isolation, node-cron, Chat Bulk-Queries | 5 | 12 |
-| v2.5 | 2026-03-23 | Security-Hardening: Logout-Revoke, Magic-Bytes-Upload, LATERAL Joins, DI für Socket.IO | 4 | 6 |
-| v2.6 | 2026-03-23 | Final Polish + Bugfixes: bcrypt async, Notification Bulk-INSERT, Badge-Progress | 2 | 3 |
-| v2.7 | 2026-03-24 | Backend-Hardening: verifyTokenRBAC LRU-Cache, bookingUtils, fetcherRef-Stabilisierung | 2 | 3 |
-
-**Gesamt: 93 Phasen, 146 Plans, 17 Milestones (v1.0–v2.7)**
-
-Diese Tabelle bildet die interne Entwicklungs-Historie bis März 2026 ab. Die
-seither an die Stores ausgelieferten Versionen (1.3.0 ff.) sind in
-[CHANGELOG.md](CHANGELOG.md) dokumentiert — das ist ab dort die maßgebliche
-Quelle für den Release-Stand.
-
----
-
-## Geplant: v3.0 Onboarding + Landing
-
-- Onboarding-Flow für neue Gemeinden
-- Landing Website mit Projektbeschreibung
-- GitHub Wiki und Dokumentation
-- Vorbereitung für öffentlichen Launch (EKD-Kontext, 4.000+ User)
-
----
-
-## Lizenz und Kontakt
-
-Konfi Quest steht unter der [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0), ergänzt um eine Zusatzbedingung zur Veröffentlichung von Änderungen. Der vollständige Text steht in [LICENSE](LICENSE).
-
-**Was das bedeutet:**
-
-- **Erlaubt:** Kirchengemeinden, Kirchenkreise und andere gemeinnützige Einrichtungen dürfen Konfi Quest nutzen, selbst hosten, anpassen und weitergeben. Ebenso erlaubt sind private Nutzung, Forschung und Lehre.
-- **Nicht erlaubt:** jede kommerzielle Nutzung, insbesondere der Weiterverkauf oder der entgeltliche Betrieb als Dienstleistung.
-- **Pflicht bei Änderungen:** Wer den Code verändert und die veränderte Fassung Dritten bereitstellt — auch als gehosteten Dienst —, muss den Quelltext der Änderungen öffentlich und unentgeltlich zugänglich machen, unter denselben Lizenzbedingungen.
+- **Erlaubt:** Kirchengemeinden, Kirchenkreise und andere gemeinnützige
+  Einrichtungen dürfen Konfi Quest nutzen, selbst hosten, anpassen und
+  weitergeben. Ebenso private Nutzung, Forschung und Lehre.
+- **Nicht erlaubt:** jede kommerzielle Nutzung, insbesondere Weiterverkauf oder
+  der entgeltliche Betrieb als Dienstleistung.
+- **Pflicht bei Änderungen:** Wer den Code verändert und die veränderte Fassung
+  Dritten bereitstellt — auch als gehosteten Dienst —, muss den Quelltext der
+  Änderungen öffentlich und unentgeltlich zugänglich machen, unter denselben
+  Bedingungen.
 
 Für kommerzielle Nutzung oder abweichende Vereinbarungen: einfach anfragen.
 
-**Kontakt:** Pastor Simon Luthe · [moin@konfi-quest.de](mailto:moin@konfi-quest.de) · [konfi-quest.de](https://konfi-quest.de)
+## Kontakt
+
+Pastor Simon Luthe · [moin@konfi-quest.de](mailto:moin@konfi-quest.de) ·
+[konfi-quest.de](https://konfi-quest.de)
