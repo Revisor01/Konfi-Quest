@@ -130,6 +130,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Auf Android fehlte die Anmeldung per Fingerabdruck: Der Schalter ließ sich
+  nicht einschalten, das Gerät meldete die Funktion als nicht verfügbar. Sie
+  steht jetzt auch auf Android zur Verfügung.
 - Wer einen Einladungslink mit Code öffnete, konnte sich nicht registrieren:
   Die Seite flackerte und lud endlos neu. Sie steht jetzt still, und die
   Anmeldung funktioniert.
