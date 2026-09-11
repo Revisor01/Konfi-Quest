@@ -17,17 +17,18 @@
 //      nicht kennt, und alles landet wieder unter "Sonstiges".
 const fs = require('fs');
 const path = require('path');
-// firebase.js bindet getMessaging beim Laden fest
+// firebase.js bindet die SDK-Funktionen beim Laden fest
 // (`const { getMessaging } = require(...)` in Zeile 7). Ein Spy, der ERST
 // danach gesetzt wird, erreicht diese Bindung nicht mehr — er ersetzt nur die
-// Eigenschaft am Modul-Objekt. Der Spy muss deshalb stehen, BEVOR firebase.js
-// zum ersten Mal geladen wird; dasselbe Vorgehen wie in pushService.test.js,
-// wo vi.spyOn ebenfalls vor dem Require steht.
+// Eigenschaft am Modul-Objekt. Die Spies muessen deshalb stehen, BEVOR
+// firebase.js zum ersten Mal geladen wird; dasselbe Vorgehen wie in
+// pushService.test.js, wo vi.spyOn ebenfalls vor dem Require steht.
 const messagingModul = require('firebase-admin/messaging');
+const appModul = require('firebase-admin/app');
 
-// Alle an FCM uebergebenen Nachrichten. Der Spy steht hier auf Modulebene und
-// bleibt fuer die ganze Datei bestehen — kein restoreAllMocks, das ihn
-// abraeumen wuerde, waehrend firebase.js weiter die gespiete Bindung haelt.
+// Alle an FCM uebergebenen Nachrichten. Die Spies stehen hier auf Modulebene
+// und bleiben fuer die ganze Datei bestehen — kein restoreAllMocks, das sie
+// abraeumen wuerde, waehrend firebase.js weiter die gespieten Bindungen haelt.
 const gesendet = [];
 vi.spyOn(messagingModul, 'getMessaging').mockReturnValue({
   send: async (message) => {
@@ -36,10 +37,22 @@ vi.spyOn(messagingModul, 'getMessaging').mockReturnValue({
   }
 });
 
+// Die Initialisierung am SDK abfangen, NICHT per Spy auf
+// firebaseModul.initializeFirebase: Die Sendefunktionen rufen
+// `initializeFirebase()` lokal gebunden auf (firebase.js:125 und :174), ein
+// Spy am Modul-Objekt erreicht diesen Aufruf also nie.
+//
+// Warum das in der CI auffiel und lokal nicht (11.09.2026): Auf dem
+// Entwicklerrechner liegt eine echte push/firebase-service-account.json, die
+// Initialisierung gelang dort auch ohne Spy. Im CI-Lauf fehlt die Datei — sie
+// gehoert nicht ins oeffentliche Repo —, `initializeFirebase()` lieferte null
+// und der Versand brach ab, bevor die Nachricht gebaut war. Mit diesen beiden
+// Spies laeuft der Test unabhaengig davon, ob die Datei da ist.
+vi.spyOn(appModul, 'cert').mockReturnValue({});
+vi.spyOn(appModul, 'initializeApp').mockReturnValue({});
+process.env.FIREBASE_SERVICE_ACCOUNT = JSON.stringify({ project_id: 'test' });
+
 const firebaseModul = require('../../push/firebase');
-// Ohne echte Zugangsdaten schlaegt die Initialisierung fehl; der Versand
-// braeche dann ab, bevor die Nachricht gebaut ist.
-vi.spyOn(firebaseModul, 'initializeFirebase').mockReturnValue({});
 
 const {
   kanalFuerTyp,
