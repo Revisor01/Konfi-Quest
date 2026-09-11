@@ -292,3 +292,35 @@ nächste Sitzung nicht von vorn anfängt.
 
 Kommt eine Meldung an einer **neuen** Stelle dazu, ist sie ungeprüft — die
 Tabelle oben gilt nur für die genannten Orte.
+
+---
+
+## 6. Rückblick las die falsche Kategorie-Quelle (02.09.2026) — BEHOBEN
+
+> **Behoben.** `routes/wrapped.js` liest die Kategorien seit dem Umbau aus
+> `activity_categories` bzw. `event_categories`; die Begründung steht als
+> Kommentar an der Abfrage (`wrapped.js:415 ff.`). Abgesichert durch
+> `tests/utils/wrappedKategorien.test.js`.
+
+Der Befund stand im Konzeptpapier zum Wrapped-Umbau, das mit dessen Abschluss
+entfallen ist. Die Messung bleibt hier, weil sie eine Falle beschreibt, die
+sich wiederholen kann.
+
+**Gemessen am 02.09.2026:** Die Abfrage las die Kategorie über
+`COALESCE(a.category, a.type)` — also das Textfeld `activities.category`.
+Dieses Feld war bei **allen 48 Aktivitäten NULL** und wurde nirgends befüllt.
+Der Rückblick fiel deshalb immer auf `a.type` zurück und kannte nur
+„gottesdienst" und „gemeinde". Die echten Zuordnungen lagen in
+`activity_categories` (35 Zuordnungen: Kasualien 12, Gottesdienst 6,
+Gemeinde 5, Sonntag 5, Konfitreff 2).
+
+**Was daraus folgt:** Ein Feld, das es gibt, heißt nicht, dass es gefüllt ist.
+Wer eine Spalte in eine Abfrage nimmt, zählt einmal nach, wie viele Zeilen
+darin nicht NULL sind — sonst liefert die Abfrage stillschweigend den
+Rückfallwert.
+
+**Verwandt, ebenfalls geprüft:** Gelöschte Kategorien brechen den Rückblick
+nicht. `activity_categories` und `event_categories` hängen mit
+`ON DELETE CASCADE` an `categories`; beim Löschen verschwinden nur die
+Zuordnungen, die Aktivitäten und Termine bleiben. Eine Kategorie-Seite prüft
+deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.

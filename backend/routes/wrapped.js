@@ -1744,8 +1744,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
     // DIE CHALLENGE-BEGLEITERIN -- wie viele Beitraege jemand freigegeben hat.
     //
-    // NUR DIE EIGENE LEISTUNG, NIE EINE ABLEHNUNGSQUOTE (Konzept
-    // docs/wrapped-kacheln-konzept.md): Gezaehlt wird ausschliesslich, was
+    // NUR DIE EIGENE LEISTUNG, NIE EINE ABLEHNUNGSQUOTE (Vorgabe Simon,
+    // 02.09.2026): Gezaehlt wird ausschliesslich, was
     // diese Person FREIGEGEBEN hat. Eine Quote "x % abgelehnt" waere eine
     // Bewertung der Moderation und hat im Rueckblick nichts verloren --
     // deshalb wird hidden_by hier gar nicht erst gelesen.
