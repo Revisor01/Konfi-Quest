@@ -80,6 +80,26 @@ wenn du es genau wissen willst.
 > Auf der Seite mit den **Einladungscodes** fehlt die Geste. Wer dort einen
 > frischen Stand braucht, verlässt die Seite und öffnet sie erneut.
 
+## Einstellen, worüber das Handy Bescheid gibt
+
+Auf Android sortiert Konfi Quest seine Mitteilungen in vier Gruppen. In den
+Android-Einstellungen unter *Apps → Konfi Quest → Benachrichtigungen* lässt
+sich jede einzeln lauter, leiser oder ganz stumm stellen:
+
+| Gruppe | Was darüber kommt |
+|---|---|
+| Nachrichten | Neue Nachrichten in den Chats |
+| Termine | Anmeldungen, Änderungen, Absagen und Erinnerungen |
+| Punkte und Abzeichen | Punkte, Abzeichen, Level, Challenges und der Rückblick |
+| Zu erledigen | Anfragen und Meldungen, die auf eine Entscheidung warten |
+
+So bleibt der Chat hörbar, während die Terminerinnerungen still ankommen — oder
+umgekehrt. Wer alles stummschalten will, schaltet die Benachrichtigungen der App
+im Ganzen ab.
+
+Auf dem iPhone gibt es diese Aufteilung nicht: Dort lässt sich unter
+*Einstellungen → Mitteilungen → Konfi Quest* nur die App als Ganzes einstellen.
+
 ## Benachrichtigungen wieder zum Laufen bringen
 
 Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles

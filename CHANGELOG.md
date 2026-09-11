@@ -65,6 +65,11 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Android sortiert die Mitteilungen von Konfi Quest jetzt in vier Gruppen:
+  Nachrichten, Termine, Punkte und Abzeichen sowie „Zu erledigen". In den
+  Einstellungen des Geräts lässt sich damit jede Gruppe einzeln leiser oder
+  stumm stellen — der Chat kann hörbar bleiben, während Terminerinnerungen
+  still ankommen. Bisher gab es dort nur einen Eintrag „Sonstiges" für alles.
 - Der Jahresrückblick hat 30 neue Hintergrundbilder statt bisher 17: Watt,
   Priel, Nordsee, Sturm und Sterne, dazu Lagerfeuer, Wunderkerzen,
   Konzertlichter und ein Sprung von der Klippe. Alle im Hochformat — die

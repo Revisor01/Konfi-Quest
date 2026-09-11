@@ -8,7 +8,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { ensureSocketConnected, reconnectWithToken } from '../services/websocket';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { removeDeliveredById, removeAllDelivered } from '../services/notifications';
+import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
 import { logout as performLogout } from '../services/auth';
@@ -476,6 +476,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     pushRegistrationInProgress = true;
 
     try {
+      // Kanaele VOR dem Registrieren anlegen: sonst kann die erste Mitteilung
+      // eintreffen, bevor es den Kanal gibt — sie landet dann im Notfallkanal
+      // "Sonstiges" und bleibt dort, bis sie weggewischt wird. Auf iOS ein
+      // No-op (siehe services/notifications.ts).
+      await benachrichtigungskanaeleAnlegen();
+
       // Check current permission status
       const permStatus = await PushNotifications.checkPermissions();
 

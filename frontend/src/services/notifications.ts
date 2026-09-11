@@ -28,6 +28,82 @@ export interface PushNutzdaten {
   [feld: string]: unknown;
 }
 
+// ---------------------------------------------------------------------------
+// Benachrichtigungskanaele (nur Android)
+//
+// Ab Android 8 haengt jede Mitteilung an einem Kanal, und die Einstellungen des
+// Betriebssystems lassen sich nur PRO KANAL bedienen: Ton, Vibration,
+// Stummschalten. Legt die App keinen an, landet alles im Notfallkanal des
+// FCM-SDK — der heisst "Sonstiges" und vibriert nicht. Wer dann die
+// Terminmeldungen leiser stellen wollte, schaltete den Chat zwangslaeufig mit
+// ab (gemessen 11.09.2026).
+//
+// Die Kennungen muessen zu KANAL_JE_TYP in backend/push/firebase.js passen —
+// der Server schickt die channelId mit. Wer hier einen Kanal ergaenzt, traegt
+// ihn DORT ebenfalls ein, sonst wird er nie benutzt.
+//
+// Nur Android: iOS kennt keine Kanaele, dort ist createChannel nicht
+// verfuegbar. Ein erneuter Aufruf fuer einen bestehenden Kanal ist harmlos —
+// Android aktualisiert dann nur Name und Beschreibung. Was Nutzer:innen selbst
+// eingestellt haben (Ton, Wichtigkeit), bleibt dabei unangetastet; deshalb ist
+// das hier bei jedem App-Start gefahrlos.
+// ---------------------------------------------------------------------------
+
+interface Kanal {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const KANAELE: Kanal[] = [
+  {
+    id: 'konfi_chat',
+    name: 'Nachrichten',
+    description: 'Neue Nachrichten in deinen Chats',
+  },
+  {
+    id: 'konfi_termine',
+    name: 'Termine',
+    description: 'Anmeldungen, Aenderungen, Absagen und Erinnerungen',
+  },
+  {
+    id: 'konfi_fortschritt',
+    name: 'Punkte und Abzeichen',
+    description: 'Punkte, Abzeichen, Level, Challenges und der Rueckblick',
+  },
+  {
+    id: 'konfi_verwaltung',
+    name: 'Zu erledigen',
+    description: 'Anfragen und Meldungen, die auf eine Entscheidung warten',
+  },
+];
+
+// IMPORTANCE_DEFAULT (3): Ton und Einblendung, aber kein Vollbild-Overlay.
+// Bewusst derselbe Wert wie beim bisherigen Notfallkanal, damit sich fuer
+// niemanden die Lautstaerke aendert — neu ist nur, dass es mehrere Kanaele
+// gibt und sie Namen haben.
+const WICHTIGKEIT_STANDARD = 3;
+
+export const benachrichtigungskanaeleAnlegen = async (): Promise<void> => {
+  if (Capacitor.getPlatform() !== 'android') return;
+  for (const kanal of KANAELE) {
+    try {
+      await PushNotifications.createChannel({
+        id: kanal.id,
+        name: kanal.name,
+        description: kanal.description,
+        importance: WICHTIGKEIT_STANDARD,
+        visibility: 1, // VISIBILITY_PUBLIC: auch auf dem Sperrbildschirm lesbar
+        vibration: true,
+      });
+    } catch (error) {
+      // Kein Hard-Fail: ohne Kanal landet die Mitteilung im Notfallkanal und
+      // kommt trotzdem an. Das darf den App-Start nicht aufhalten.
+      console.warn(`notifications: Kanal ${kanal.id} nicht angelegt:`, error);
+    }
+  }
+};
+
 // ALLE zugestellten Notifications entfernen. Bewusst sparsam einsetzen
 // (z.B. für Admins, die ohnehin laufend Erinnerungen bekommen) — für
 // normale Nutzer wäre "beim App-Start alles weg" zu aggressiv.
