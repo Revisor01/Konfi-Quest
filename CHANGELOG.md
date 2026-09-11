@@ -130,6 +130,9 @@ Versionsüberschrift.
   eingestellt hat, bekommt alles sofort und unbewegt.
 
 ### Behoben
+- Wer einen Einladungslink mit Code öffnete, konnte sich nicht registrieren:
+  Die Seite flackerte und lud endlos neu. Sie steht jetzt still, und die
+  Anmeldung funktioniert.
 - Im Team-Rückblick fiel die Seite „Das erste Abzeichen" weg. Sie zeigte fast
   immer das Abzeichen fürs erste Teamer-Jahr — eine Selbstverständlichkeit,
   keine Erinnerung.
