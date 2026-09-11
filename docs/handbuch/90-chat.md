@@ -246,6 +246,12 @@ An jede Nachricht lässt sich eine Datei hängen, ein Text darf dabeistehen.
 Bilder und Videos erscheinen direkt im Chat, alles andere als Anhang mit
 Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert.
 
+Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
+(*„Wird gesendet… 40 %"*), darunter ein Balken. Bei 100 % wechselt der Text auf
+*„Wird verarbeitet…"* — der Server rechnet dann noch. Dasselbe beim Antippen
+einer empfangenen Datei: Sie zeigt *„Wird geladen…"* mit Prozentzahl, bis sie
+sich öffnet. Ein zweites Antippen währenddessen bewirkt nichts; einmal reicht.
+
 > **Achtung, bekannter Stolperstein:** Die App warnt erst ab 10 MB (*„Datei ist
 > zu groß (max. 10MB)"*), der Server nimmt aber nur 5 MB an. Eine Datei
 > dazwischen scheitert deshalb ohne verständliche Meldung. Wenn eine Datei sich

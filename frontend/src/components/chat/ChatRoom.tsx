@@ -126,9 +126,19 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     handleFileSelect,
     clearSelectedFile,
     handleFileClick,
+    ladendeDatei,
   } = useChatDateien({ messages });
 
   const [uploading, setUploading] = useState(false);
+  // Die gerade hochgeladene Nachricht und ihr Fortschritt. Ohne sichtbare
+  // Rueckmeldung tippen Leute bei grossen PDFs mehrfach auf Senden, weil
+  // nichts zu passieren scheint (Simon, 11.09.2026).
+  //
+  // Die Anzeige haengt an der optimistischen Nachricht, NICHT an der
+  // Datei-Vorschau: Die wird beim Senden sofort geleert (clearSelectedFile),
+  // damit das Eingabefeld wieder frei ist — ein Balken dort waere nie zu
+  // sehen. `localId` ordnet den Fortschritt der richtigen Blase zu.
+  const [uploadFortschritt, setUploadFortschritt] = useState<{ localId: string; prozent: number } | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   // Scroll-Verhalten (Initial-Scroll, Auto-Scroll, Tages-Chip, "Nach unten"-
@@ -402,6 +412,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (networkMonitor.isOnline) {
       // Online: Normal senden
       setUploading(true);
+      // Nur bei einer Datei: Reiner Text ist sofort durch, ein Balken wuerde
+      // dabei nur aufblitzen.
+      setUploadFortschritt(file ? { localId, prozent: 0 } : null);
       pendingSendsRef.current.add(clientId);
       try {
         const formData = new FormData();
@@ -413,7 +426,17 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         await api.post(`/chat/rooms/${room.id}/messages`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           // Mit Datei kann der Upload auf Mobilfunk laenger als die globalen 20s dauern
-          timeout: file ? 60000 : 20000
+          timeout: file ? 60000 : 20000,
+          onUploadProgress: file ? (ereignis) => {
+            // `total` fehlt, wenn der Server die Groesse nicht meldet — dann
+            // bleibt der Balken unbestimmt statt auf einer geratenen Zahl zu
+            // stehen.
+            if (!ereignis.total) return;
+            const prozent = Math.round((ereignis.loaded / ereignis.total) * 100);
+            // Bei 100 bleibt der Balken stehen, bis die Antwort da ist: Der
+            // Server verarbeitet danach noch (Bild umrechnen, verschluesseln).
+            setUploadFortschritt({ localId, prozent: Math.min(prozent, 100) });
+          } : undefined
         });
 
         // Die Server-Kopie kommt per newMessage-Socket-Event und ersetzt die
@@ -449,6 +472,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         }
       } finally {
         setUploading(false);
+        setUploadFortschritt(null);
       }
     } else {
       // Offline: In Queue schreiben (Datei wird dabei lokal gesichert)
@@ -708,6 +732,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           onOpenReactionPicker={openReactionPicker}
           onVoteInPoll={voteInPoll}
           onFileClick={handleFileClick}
+          ladendeDatei={ladendeDatei}
+          uploadFortschritt={uploadFortschritt}
           onError={setError}
           onDeselectMessage={() => setSelectedMessage(null)}
           textareaRef={textareaRef}

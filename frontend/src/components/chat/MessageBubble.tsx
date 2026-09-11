@@ -1,5 +1,5 @@
 import React from 'react';
-import { IonIcon, IonAvatar } from '@ionic/react';
+import { IonIcon, IonAvatar, IonSpinner } from '@ionic/react';
 import {
   ICON_ANHANG_GEFUELLT,
   ICON_CHATS_GEFUELLT,
@@ -94,6 +94,13 @@ interface MessageBubbleProps {
   onOpenReactionPicker: (message: Message) => void;
   onVoteInPoll: (messageId: number, optionIndex: number) => void;
   onFileClick: (filePath: string, fileName: string, mimeType: string) => void;
+  // Die gerade geladene Datei und ihr Fortschritt (null = Groesse unbekannt,
+  // die Anzeige laeuft dann unbestimmt). Ohne Rueckmeldung sieht man beim
+  // Antippen einer PDF nichts passieren und tippt weiter.
+  ladendeDatei?: { pfad: string; prozent: number | null } | null;
+  // Die gerade hochgeladene Nachricht und ihr Fortschritt. Zuordnung ueber
+  // localId, weil die optimistische Nachricht noch keine Server-ID hat.
+  uploadFortschritt?: { localId: string; prozent: number } | null;
   onError: (error: string) => void;
   onDeselectMessage: () => void;
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
@@ -132,12 +139,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onOpenReactionPicker,
   onVoteInPoll,
   onFileClick,
+  ladendeDatei,
+  uploadFortschritt,
   onError,
   onDeselectMessage,
   textareaRef,
   onRetry,
 }) => {
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
+
+  // Laedt GENAU diese Datei gerade? Der Vergleich laeuft ueber den Pfad, damit
+  // bei mehreren Dateien im Raum nur die angetippte den Fortschritt zeigt.
+  const laedtGerade = ladendeDatei != null && ladendeDatei.pfad === message.file_path;
+
+  // Laeuft der Upload GENAU dieser Nachricht? Die optimistische Nachricht hat
+  // noch keine Server-ID, deshalb der Vergleich ueber localId.
+  const sendetGerade =
+    uploadFortschritt != null &&
+    message.localId != null &&
+    uploadFortschritt.localId === message.localId;
 
   // Merkt sich, ob die aktuelle Long-Press-Geste schon behandelt wurde. Android
   // löst bei einem langen Druck BEIDE Wege aus (eigener Touch-Timer und danach
@@ -579,19 +599,54 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   <div style={{ fontSize: 'var(--app-text-basis)', fontWeight: 'var(--app-schrift-fett)' }}>
                     {message.file_name}
                   </div>
-                  {message.file_size && (
+                  {laedtGerade ? (
+                    <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.9 }}>
+                      {ladendeDatei?.prozent != null
+                        ? `Wird geladen… ${ladendeDatei.prozent} %`
+                        : 'Wird geladen…'}
+                    </div>
+                  ) : message.file_size ? (
                     <div style={{ fontSize: 'var(--app-text-klein)', opacity: 0.8 }}>
                       {formatFileSize(message.file_size)}
                     </div>
+                  ) : null}
+                  {laedtGerade && ladendeDatei?.prozent != null && (
+                    <div
+                      role="progressbar"
+                      aria-valuenow={ladendeDatei.prozent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`Datei wird geladen: ${ladendeDatei.prozent} Prozent`}
+                      style={{
+                        height: '3px',
+                        marginTop: 'var(--app-abstand-mini)',
+                        borderRadius: 'var(--app-abstand-winzig)',
+                        backgroundColor: 'currentColor',
+                        opacity: 0.25,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <div style={{
+                        width: `${ladendeDatei.prozent}%`,
+                        height: '100%',
+                        backgroundColor: 'currentColor',
+                        borderRadius: 'var(--app-abstand-winzig)',
+                        transition: 'width 0.2s ease-out'
+                      }} />
+                    </div>
                   )}
                 </div>
-                <IonIcon
-                  icon={ICON_WEITER_GEFUELLT}
-                  style={{
-                    fontSize: 'var(--app-text-untertitel)',
-                    opacity: 0.7
-                  }}
-                />
+                {laedtGerade ? (
+                  <IonSpinner name="crescent" style={{ width: '18px', height: '18px', opacity: 0.8 }} />
+                ) : (
+                  <IonIcon
+                    icon={ICON_WEITER_GEFUELLT}
+                    style={{
+                      fontSize: 'var(--app-text-untertitel)',
+                      opacity: 0.7
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -606,8 +661,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           textAlign: 'right'
         }}>
           {formatMessageTime(message.created_at)}
-          {message.queueStatus === 'pending' && (
+          {message.queueStatus === 'pending' && !sendetGerade && (
             <IonIcon icon={ICON_UHRZEIT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle' }} />
+          )}
+          {sendetGerade && (
+            <span style={{ marginLeft: 'var(--app-abstand-mini)' }}>
+              {uploadFortschritt!.prozent >= 100
+                ? 'Wird verarbeitet…'
+                : `Wird gesendet… ${uploadFortschritt!.prozent} %`}
+            </span>
           )}
           {isOwnMessage && !message.queueStatus && (
             <IonIcon icon={ICON_HAKEN_GEFUELLT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle', opacity: 0.7 }} />
@@ -623,6 +685,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             />
           )}
         </div>
+
+        {sendetGerade && (
+          <div
+            role="progressbar"
+            aria-valuenow={uploadFortschritt!.prozent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Datei wird gesendet: ${uploadFortschritt!.prozent} Prozent`}
+            style={{
+              height: '3px',
+              marginTop: 'var(--app-abstand-mini)',
+              borderRadius: 'var(--app-abstand-winzig)',
+              backgroundColor: 'currentColor',
+              opacity: 0.25,
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{
+              width: `${uploadFortschritt!.prozent}%`,
+              height: '100%',
+              backgroundColor: 'currentColor',
+              borderRadius: 'var(--app-abstand-winzig)',
+              transition: 'width 0.2s ease-out'
+            }} />
+          </div>
+        )}
 
         {/* Reaktionen Anzeige */}
         {message.reactions && message.reactions.length > 0 && (

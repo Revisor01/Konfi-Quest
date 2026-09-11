@@ -217,7 +217,12 @@ export {
   chatbubbles as ICON_CHATS_GEFUELLT,
   chatbubblesOutline as ICON_CHATS,
   paperPlaneOutline as ICON_SENDEN,
-  paperPlane as ICON_SENDEN_GEFUELLT,
+  // send statt paperPlane: Der Papierflieger ist im SVG selbst diagonal
+  // gezeichnet (er zeigt nach rechts oben) und sah im runden Chat-Knopf
+  // schief aus. `send` stammt aus derselben Familie, liegt aber waagerecht.
+  // Die Outline-Variante ICON_SENDEN bleibt der Papierflieger — sie steht bei
+  // den Challenges fuer "eingereicht", nicht fuer einen Senden-Knopf.
+  send as ICON_SENDEN_GEFUELLT,
   returnUpBack as ICON_ANTWORTEN,
   mail as ICON_MAIL_GEFUELLT,
   mailOutline as ICON_MAIL,

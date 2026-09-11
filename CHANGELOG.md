@@ -65,6 +65,11 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Beim Senden und Öffnen von Dateien im Chat zeigt die Nachricht jetzt, wie
+  weit sie ist — mit Prozentzahl und Balken. Vorher passierte scheinbar
+  nichts, besonders bei größeren PDFs.
+- Der Senden-Knopf im Chat zeigt einen geraden Pfeil statt des schräg
+  liegenden Papierfliegers.
 - Android sortiert die Mitteilungen von Konfi Quest jetzt in vier Gruppen:
   Nachrichten, Termine, Punkte und Abzeichen sowie „Zu erledigen". In den
   Einstellungen des Geräts lässt sich damit jede Gruppe einzeln leiser oder
