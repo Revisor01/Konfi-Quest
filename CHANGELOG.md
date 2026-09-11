@@ -71,7 +71,8 @@ Versionsüberschrift.
 - Der Senden-Knopf im Chat zeigt einen geraden Pfeil statt des schräg
   liegenden Papierfliegers.
 - Android sortiert die Mitteilungen von Konfi Quest jetzt in vier Gruppen:
-  Nachrichten, Termine, Punkte und Abzeichen sowie „Zu erledigen". In den
+  Nachrichten, Termine, Punkte und Abzeichen sowie „Anfragen und
+  Freigaben". In den
   Einstellungen des Geräts lässt sich damit jede Gruppe einzeln leiser oder
   stumm stellen — der Chat kann hörbar bleiben, während Terminerinnerungen
   still ankommen. Bisher gab es dort nur einen Eintrag „Sonstiges" für alles.

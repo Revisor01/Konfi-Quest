@@ -72,9 +72,15 @@ const KANAELE: Kanal[] = [
     description: 'Punkte, Abzeichen, Level, Challenges und der Rueckblick',
   },
   {
+    // Geht an Leitung und org_admin; bei der Challenge-Einreichung zusaetzlich
+    // an die Teamer:innen des betroffenen Jahrgangs (siehe
+    // sendChallengeSubmissionToLeadership). Deshalb kein Name wie "Fuer die
+    // Leitung" — Teamer:innen bekaemen sonst Meldungen in einer Kategorie, die
+    // ihnen sagt, sie sei nicht fuer sie. Bei Konfis bleibt der Kanal leer und
+    // Android blendet ihn aus.
     id: 'konfi_verwaltung',
-    name: 'Zu erledigen',
-    description: 'Anfragen und Meldungen, die auf eine Entscheidung warten',
+    name: 'Anfragen und Freigaben',
+    description: 'Was auf deine Entscheidung wartet',
   },
 ];
 

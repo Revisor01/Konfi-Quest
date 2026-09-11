@@ -91,11 +91,15 @@ sich jede einzeln lauter, leiser oder ganz stumm stellen:
 | Nachrichten | Neue Nachrichten in den Chats |
 | Termine | Anmeldungen, Änderungen, Absagen und Erinnerungen |
 | Punkte und Abzeichen | Punkte, Abzeichen, Level, Challenges und der Rückblick |
-| Zu erledigen | Anfragen und Meldungen, die auf eine Entscheidung warten |
+| Anfragen und Freigaben | Was auf deine Entscheidung wartet — nur für Leitung und Team |
 
 So bleibt der Chat hörbar, während die Terminerinnerungen still ankommen — oder
 umgekehrt. Wer alles stummschalten will, schaltet die Benachrichtigungen der App
 im Ganzen ab.
+
+Es tauchen nur die Gruppen auf, in denen auch etwas ankommt. Konfis sehen
+„Anfragen und Freigaben" deshalb gar nicht erst; Android führt ungenutzte
+Gruppen weiter unten unter „Nicht verwendete Kategorien".
 
 Auf dem iPhone gibt es diese Aufteilung nicht: Dort lässt sich unter
 *Einstellungen → Mitteilungen → Konfi Quest* nur die App als Ganzes einstellen.
