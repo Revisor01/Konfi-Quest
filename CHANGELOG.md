@@ -66,6 +66,11 @@ iOS-Build 182 · Android versionCode 90
   Abzeichen-Verwaltung lässt sich die Prüfung für Sonderfälle zusätzlich von
   Hand anstoßen.
 
+- Nach dem Update erklärt ein Hinweis auf der Startseite, was in Version 2.1
+  neu ist — für Konfis, Teamer:innen und die Leitung jeweils das, was ihre
+  Rolle betrifft. Einmal weggeklickt, kommt er nicht wieder; im Profil bleibt
+  er dauerhaft erreichbar.
+
 ### Geändert
 - Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
   Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
@@ -145,6 +150,191 @@ iOS-Build 182 · Android versionCode 90
   Schlag: erst die Überschrift, dann die Zahl, dann der Spruch Zeile für
   Zeile, zuletzt der Satz darunter. Wer im Gerät „Bewegung reduzieren"
   eingestellt hat, bekommt alles sofort und unbewegt.
+
+- Der Jahresrückblick zeigt jetzt höchstens zehn Seiten statt bis zu neunzehn
+  — und ausgewählt werden die seltensten. Wie viele andere im Jahrgang
+  dieselbe Seite auch bekommen, entscheidet darüber, wer sie sieht: Wer bei
+  etwas dabei war, das nur wenige erlebt haben, bekommt genau dafür eine
+  Seite. Auftakt, Abschluss, die eigenen Zahlen und mindestens ein
+  Schwerpunkt sind dabei immer dabei. Das gilt für Konfis und fürs Team.
+
+- Der Rückblick einer Konfi umfasst jetzt die ganze Konfi-Zeit — vom Beginn
+  bis heute, auch wenn das zwei Jahre sind. Der Konfirmationstermin schneidet
+  nichts mehr ab; er wird weiterhin auf der eigenen Seite gezeigt.
+- Ein Teamer-Rückblick schließt jetzt lückenlos an den vorigen an: Der erste
+  beginnt beim Eintritt ins Team, jeder weitere am Ende des letzten.
+- Beim Anlegen eines Rückblicks bleibt der Zeitraum leer und wird automatisch
+  bestimmt. Nur für einen Zwischenbericht trägt die Leitung eigene Daten ein;
+  ein Hinweis im Formular erklärt beides.
+- Statt „Dein Konfi-Jahr 2026" heißt es im Rückblick jetzt „Deine Konfi-Zeit" —
+  eine einzelne Jahreszahl passt nicht mehr, wenn der Zeitraum länger ist.
+- Die Gruppe heißt in der App jetzt durchgehend „Team“ — in Titeln, Reitern,
+  Listen und Hinweisen. Die einzelne Person bleibt „Teamer:in“.
+- Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,
+  Gemeinde und der Reiter „Mitmachen" trugen je nach Ansicht verschiedene
+  Symbole, teils sogar verschiedene Farben. Auch Kopfbereiche und Hinweise
+  stehen bei Konfis, Team und Leitung jetzt gleich hoch.
+- Challenges haben eine eigene Farbe bekommen und teilen sich das Rot nicht
+  mehr mit dem Team-Bereich.
+- Zu- und Absage zu einem Termin stehen für das Team jetzt von Anfang an
+  nebeneinander. Wer geantwortet hat, sieht nur noch den Gegenknopf —
+  „Nicht mehr dabei" nach einer Zusage, „Doch dabei" nach einer Absage.
+  Absagen geht jetzt auch, wenn kein Platz mehr frei ist oder man auf der
+  Warteliste steht.
+- Der Zurück-Pfeil ist feiner gezeichnet und wirkt dadurch leichter.
+- Das Rot im Team-Bereich ist durchgehend dunkler statt pink — im Profilkopf
+  wie auf der Rückblick-Kachel des Startbildschirms.
+- Umlaute stehen in den Rückblick-Seiten und in den vorgeschlagenen Titeln
+  jetzt überall richtig.
+- Im Team-Profil steht die App-Tour zwischen Bibelübersetzung und
+  Medien-Cache und hat wieder Abstand zum Eintrag darüber.
+- Der Willkommensrundgang erklärt jetzt zu Beginn noch einmal, was Challenges
+  eigentlich sind, und jede Seite trägt die Farbe ihres Bereichs.
+- Die Seite für den Jahresrückblick ist aufgebaut wie die übrigen Seiten:
+  mit Zurück-Weg, Kennzahlen im Kopf und den gewohnten Listen-Symbolen.
+  Gelöscht wird durch Wischen statt über einen Knopf in der Zeile.
+- Überschriften in Listen werden nicht mehr früh abgeschnitten, sondern
+  laufen aus.
+- Links im Material entfernt man jetzt durch Wischen, wie die Dateien
+  darunter.
+- Die Profile von Konfis und Teamer:innen sind neu sortiert: erst die
+  Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
+  Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
+  Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
+- Abzeichen tragen wieder die Farbe ihrer Kategorie statt durchgehend
+  Blau. Eine eigens gewählte Farbe bleibt erhalten.
+- Der Jahresrückblick steht im Profil jetzt direkt über den Einstellungen.
+- Der Hinweis auf einen neuen Jahresrückblick lässt sich auf der Startseite
+  wegklicken; im Profil bleibt er erreichbar. Er trägt den Namen, den die
+  Gemeinde der Ausgabe gegeben hat.
+- Ohne gebuchten Konfirmationstermin steht im Profil keine leere Karte mehr.
+- Beim Termin steht die Beschreibung jetzt vor der Zusage — erst lesen,
+  worum es geht, dann zusagen.
+- Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
+  die übrigen Knöpfe der Seite.
+- Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im
+  einzelnen Termin. Bei Pflichtterminen, der Konfirmation und reinen
+  Team-Terminen bleibt die Punkteart weg — dort gibt es keine Punkte zu holen.
+- Der Rückblick zeigt endlich die tatsächlichen Kategorien der Termine und
+  Aktivitäten. Bisher stand dort nur eine grobe Einteilung, weil die
+  Auswertung an der falschen Stelle nachsah.
+- Der Jahresrückblick ist jetzt persönlich: Direkt nach der Begrüßung zeigt
+  eine eigene Seite, was diesen Konfi besonders macht — Chat-Star,
+  Reaktions-Magnet, Challenge-Fan oder Fels in der Brandung (nie abgesagt).
+  Ausgewählt wird, worin jemand im Vergleich zum eigenen Jahrgang
+  heraussticht; der Vergleich bleibt anonym und erscheint nur, wenn er
+  freundlich ist. Ein Highlight fürs Absagen gibt es bewusst nicht.
+- Fotos aus Challenge-Beiträgen erscheinen im Rückblick größer; bei ein oder
+  zwei Beiträgen füllen sie die Seite.
+- Die letzte Seite des Rückblicks endet mit „Dein Weg. Deine Zeit. Dein
+  Glaube.“ und der Einladung, Teamer:in zu werden.
+- Teamer:innen sagen zu Terminen ausdrücklich zu oder ab („Bin dabei" /
+  „Bin nicht dabei") und können ihre Antwort jederzeit ändern — auch zurück
+  zur Zusage. Ein Grund für die Absage ist freiwillig; wer nach einer Zusage
+  absagt, muss einen angeben, damit die Leitung umplanen kann. Bei einer
+  Absage wird der Platz frei und die Warteliste rückt nach.
+- Die Leitung sieht in der Terminansicht, wer abgesagt hat und warum — eine
+  Absage nach vorheriger Zusage ist eigens gekennzeichnet. Die Mitteilung
+  über eine Teamer-Absage nennt jetzt auch den Grund.
+- Liegt in den Stores eine neuere App-Version, weist die Startseite dezent
+  darauf hin. Ein Tipp öffnet die Store-Seite zum Aktualisieren; das X blendet
+  den Hinweis für diese Version dauerhaft aus. Nichts wird erzwungen, ohne
+  Internet erscheint der Hinweis nicht.
+- Wer Material sieht, entscheidet allein die Jahrgangs-Zuordnung: mit
+  Jahrgang nur dessen Teamer:innen, ohne Jahrgang alle Teamer:innen der
+  Gemeinde. Material für alle steht bei den Teamer:innen in einem eigenen
+  Abschnitt ganz oben und ist in der Leitung am Globus zu erkennen. Ein
+  eigener Sichtbarkeits-Schalter ist dafür nicht mehr nötig. Konfis sehen
+  Material weiterhin grundsätzlich nicht; bestehendes Material bleibt
+  sichtbar wie bisher.
+- Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
+  Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
+  Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
+  Admins ohne Zuweisung keine Konfis sehen.
+- Material trägt Dateien und Links jetzt zusammen — zum Beispiel ein PDF
+  und dazu mehrere YouTube-Videos. Beide Bereiche stehen im Formular immer
+  offen, nichts muss vorher ausgewählt werden. Teamer:innen erkennen Links
+  am Link-Symbol; ein Tipp darauf öffnet sie im Browser.
+- Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
+  Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
+  ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
+- Die Leitung lässt sich einem Termin zuordnen — genau wie Teamer:innen, über
+  „Leitung hinzufügen" in der Terminansicht. Wer zugeordnet ist, ist auch im
+  Chat zum Termin dabei. Das geschieht bewusst für jeden Termin einzeln;
+  niemand landet automatisch in einem Termin-Chat, und bestehende Chats
+  ändern sich dadurch nicht.
+
+- Material an einem Termin steht für Leitung und Teamer:innen jetzt direkt
+  bei den Eckdaten der Detailansicht und ist dort klickbar: Ein einzelnes
+  Material öffnet sich sofort, bei mehreren springt die Seite zur
+  Materialliste weiter unten — die bleibt unverändert bestehen.
+- Der Kopf der Materialseite zählt neben Material und Dateien jetzt auch die
+  hinterlegten Links — bei Leitung und Teamer:innen gleichermaßen.
+- Die Jahrgangs-Bindung für Admins gilt jetzt auch im Direktchat: Ein Admin
+  kann nur noch Konfis seiner zugewiesenen Jahrgänge anschreiben oder in
+  Gruppenchats aufnehmen — wie Teamer:innen. Der Org-Admin erreicht
+  weiterhin alle Konfis. Bereits bestehende Gespräche bleiben unverändert
+  bestehen.
+- Die Jahrgangs-Grenze im Chat gilt jetzt in beide Richtungen: Konfis
+  erreichen nur noch die Admins und Teamer:innen ihres eigenen Jahrgangs —
+  die Leitung (Org-Admin) bleibt für jeden Konfi erreichbar, auch wenn dem
+  Jahrgang niemand zugewiesen ist. Die Kontaktliste zeigt nur noch, wer
+  auch wirklich anschreibbar ist. Bereits bestehende Gespräche bleiben
+  unverändert bestehen.
+- Eine Gemeindeleitung, die in mehreren Gemeinden tätig ist, ist jetzt auch
+  in ihren weiteren Gemeinden für Konfis im Chat erreichbar — vorher fand
+  die Kontaktliste sie dort nicht.
+- Material bearbeiten und löschen kann nur noch, wer es angelegt hat — dazu
+  gehört auch das Anhängen und Entfernen von Dateien. Die Gemeindeleitung
+  darf weiterhin alles, damit Material verwaltbar bleibt, wenn die
+  erstellende Person die Gemeinde verlässt. Bei fremdem Material öffnet
+  sich die Ansicht schreibgeschützt und nennt, wer es angelegt hat; Anlegen
+  von neuem Material geht unverändert für die ganze Leitung.
+- Die Jahrgangs-Bindung für Admins greift jetzt überall: Terminliste,
+  Konfi-Auswahl im Chat, Material, Jahrgangs-Liste und die Meldungs-Zähler an
+  den Reitern und die Zahl am App-Symbol zeigen einem Admin nur noch seine
+  zugewiesenen Jahrgänge —
+  genau wie die Konfi-Liste schon zuvor. Teamer:innen, Termine ohne Jahrgang,
+  Team-Runden und Material „für alle" sieht er weiterhin. Der Org-Admin sieht
+  unverändert die ganze Gemeinde.
+- Konfis löschen oder befördern, ihr Passwort zurücksetzen, Punkte und
+  Aktivitäten zurücknehmen sowie Anwesenheits- und Spruchlisten abrufen geht
+  für Admins nur noch in den eigenen Jahrgängen; auch Jahrgänge bearbeiten
+  oder löschen und den Jahresrückblick freigeben ist an die eigene Zuweisung
+  gebunden.
+- Neue Jahrgänge legt nur noch der Org-Admin an — Admins sehen den
+  Anlege-Knopf nicht mehr. Dafür wählt der Org-Admin schon beim Anlegen aus,
+  welche Admins und Teamer:innen den neuen Jahrgang sehen und bearbeiten
+  sollen; die Ausgewählten sind sofort zuständig und im Jahrgangs-Chat. Die
+  Auswahl ist freiwillig, zuweisen geht weiterhin auch später über die
+  Benutzerverwaltung.
+- Beim Befördern eines Konfis zur Teamer:in wird der alte Jahrgang nicht mehr
+  automatisch als Zuweisung übernommen. Die frisch beförderte Person hatte
+  dadurch sofort vollen Blick auf ihre bisherige Gruppe samt Bearbeitungsrecht
+  — jetzt vergibt die Leitung die Zuweisung bewusst, sobald die neue
+  Teamer:in aktiv werden soll. Die eigenen Punkte und Abzeichen aus der
+  Konfi-Zeit bleiben unverändert sichtbar.
+- Die Startseite der Konfis ist schneller da: Die Abzeichen laden erst, wenn
+  die Startseite steht, statt den Start mit auszubremsen. Sichtbar bleibt
+  alles wie bisher.
+- Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
+  (vor/nach Beginn)".
+- Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
+  „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
+- Ist einem Admin oder einer Teamer:in kein Jahrgang zugewiesen, sagen jetzt
+  auch die Challenge-Verwaltung und die Aktivitäts-Meldungen den Grund für die
+  leere Liste — wie es die Konfi-Liste schon tut. Vorher stand dort „keine
+  Challenges" bzw. „keine Aktivitäten", was nach einem Fehler aussah. Ein
+  Admin ohne Jahrgang ist weiterhin ausdrücklich erlaubt, etwa wenn er nur
+  mit den Teamer:innen arbeitet.
+- Auch die Material-Liste nennt jetzt den Grund, wenn sie wegen fehlender
+  Jahrgangs-Zuweisung leer bleibt — Material „für alle“ und Material ohne
+  Jahrgang bleiben unverändert sichtbar. Vorher stand dort „keine
+  Materialien“, was nach einem Fehler aussah.
+
+- Der Hinweis auf eine neue App-Version sieht jetzt aus wie die anderen
+  Hinweise auf der Startseite, nur in Blau. Ein Tippen führt weiterhin in
+  den Store, das X blendet ihn dauerhaft aus.
 
 ### Behoben
 - Auf Android fehlte die Anmeldung per Fingerabdruck: Der Schalter ließ sich
@@ -380,190 +570,6 @@ iOS-Build 182 · Android versionCode 90
 - Unter „Einstellungen" öffnete „Was ist neu" noch den Rückblick der
   vorherigen Version, obwohl daneben die aktuelle Versionsnummer stand.
 
-### Geändert
-- Der Jahresrückblick zeigt jetzt höchstens zehn Seiten statt bis zu neunzehn
-  — und ausgewählt werden die seltensten. Wie viele andere im Jahrgang
-  dieselbe Seite auch bekommen, entscheidet darüber, wer sie sieht: Wer bei
-  etwas dabei war, das nur wenige erlebt haben, bekommt genau dafür eine
-  Seite. Auftakt, Abschluss, die eigenen Zahlen und mindestens ein
-  Schwerpunkt sind dabei immer dabei. Das gilt für Konfis und fürs Team.
-
-- Der Rückblick einer Konfi umfasst jetzt die ganze Konfi-Zeit — vom Beginn
-  bis heute, auch wenn das zwei Jahre sind. Der Konfirmationstermin schneidet
-  nichts mehr ab; er wird weiterhin auf der eigenen Seite gezeigt.
-- Ein Teamer-Rückblick schließt jetzt lückenlos an den vorigen an: Der erste
-  beginnt beim Eintritt ins Team, jeder weitere am Ende des letzten.
-- Beim Anlegen eines Rückblicks bleibt der Zeitraum leer und wird automatisch
-  bestimmt. Nur für einen Zwischenbericht trägt die Leitung eigene Daten ein;
-  ein Hinweis im Formular erklärt beides.
-- Statt „Dein Konfi-Jahr 2026" heißt es im Rückblick jetzt „Deine Konfi-Zeit" —
-  eine einzelne Jahreszahl passt nicht mehr, wenn der Zeitraum länger ist.
-- Die Gruppe heißt in der App jetzt durchgehend „Team“ — in Titeln, Reitern,
-  Listen und Hinweisen. Die einzelne Person bleibt „Teamer:in“.
-- Gleiche Dinge sehen jetzt überall gleich aus: Gottesdienst, Abzeichen,
-  Gemeinde und der Reiter „Mitmachen" trugen je nach Ansicht verschiedene
-  Symbole, teils sogar verschiedene Farben. Auch Kopfbereiche und Hinweise
-  stehen bei Konfis, Team und Leitung jetzt gleich hoch.
-- Challenges haben eine eigene Farbe bekommen und teilen sich das Rot nicht
-  mehr mit dem Team-Bereich.
-- Zu- und Absage zu einem Termin stehen für das Team jetzt von Anfang an
-  nebeneinander. Wer geantwortet hat, sieht nur noch den Gegenknopf —
-  „Nicht mehr dabei" nach einer Zusage, „Doch dabei" nach einer Absage.
-  Absagen geht jetzt auch, wenn kein Platz mehr frei ist oder man auf der
-  Warteliste steht.
-- Der Zurück-Pfeil ist feiner gezeichnet und wirkt dadurch leichter.
-- Das Rot im Team-Bereich ist durchgehend dunkler statt pink — im Profilkopf
-  wie auf der Rückblick-Kachel des Startbildschirms.
-- Umlaute stehen in den Rückblick-Seiten und in den vorgeschlagenen Titeln
-  jetzt überall richtig.
-- Im Team-Profil steht die App-Tour zwischen Bibelübersetzung und
-  Medien-Cache und hat wieder Abstand zum Eintrag darüber.
-- Der Willkommensrundgang erklärt jetzt zu Beginn noch einmal, was Challenges
-  eigentlich sind, und jede Seite trägt die Farbe ihres Bereichs.
-- Die Seite für den Jahresrückblick ist aufgebaut wie die übrigen Seiten:
-  mit Zurück-Weg, Kennzahlen im Kopf und den gewohnten Listen-Symbolen.
-  Gelöscht wird durch Wischen statt über einen Knopf in der Zeile.
-- Überschriften in Listen werden nicht mehr früh abgeschnitten, sondern
-  laufen aus.
-- Links im Material entfernt man jetzt durch Wischen, wie die Dateien
-  darunter.
-- Die Profile von Konfis und Teamer:innen sind neu sortiert: erst die
-  Konfirmation, dann der Rückblick, danach die Listen und zuletzt die
-  Abzeichen. Bei übernommenen Teamer:innen stehen Konfispruch und
-  Konfirmationstermin jetzt ebenfalls oben, zusammen mit "Teamer:in seit".
-- Abzeichen tragen wieder die Farbe ihrer Kategorie statt durchgehend
-  Blau. Eine eigens gewählte Farbe bleibt erhalten.
-- Der Jahresrückblick steht im Profil jetzt direkt über den Einstellungen.
-- Der Hinweis auf einen neuen Jahresrückblick lässt sich auf der Startseite
-  wegklicken; im Profil bleibt er erreichbar. Er trägt den Namen, den die
-  Gemeinde der Ausgabe gegeben hat.
-- Ohne gebuchten Konfirmationstermin steht im Profil keine leere Karte mehr.
-- Beim Termin steht die Beschreibung jetzt vor der Zusage — erst lesen,
-  worum es geht, dann zusagen.
-- Die Zusage-Knöpfe bei einem Termin sitzen jetzt so eng in ihrer Karte wie
-  die übrigen Knöpfe der Seite.
-- Die Terminliste zeigt jetzt auch Kategorie und Punkteart, nicht mehr nur im
-  einzelnen Termin. Bei Pflichtterminen, der Konfirmation und reinen
-  Team-Terminen bleibt die Punkteart weg — dort gibt es keine Punkte zu holen.
-- Der Rückblick zeigt endlich die tatsächlichen Kategorien der Termine und
-  Aktivitäten. Bisher stand dort nur eine grobe Einteilung, weil die
-  Auswertung an der falschen Stelle nachsah.
-- Der Jahresrückblick ist jetzt persönlich: Direkt nach der Begrüßung zeigt
-  eine eigene Seite, was diesen Konfi besonders macht — Chat-Star,
-  Reaktions-Magnet, Challenge-Fan oder Fels in der Brandung (nie abgesagt).
-  Ausgewählt wird, worin jemand im Vergleich zum eigenen Jahrgang
-  heraussticht; der Vergleich bleibt anonym und erscheint nur, wenn er
-  freundlich ist. Ein Highlight fürs Absagen gibt es bewusst nicht.
-- Fotos aus Challenge-Beiträgen erscheinen im Rückblick größer; bei ein oder
-  zwei Beiträgen füllen sie die Seite.
-- Die letzte Seite des Rückblicks endet mit „Dein Weg. Deine Zeit. Dein
-  Glaube.“ und der Einladung, Teamer:in zu werden.
-- Teamer:innen sagen zu Terminen ausdrücklich zu oder ab („Bin dabei" /
-  „Bin nicht dabei") und können ihre Antwort jederzeit ändern — auch zurück
-  zur Zusage. Ein Grund für die Absage ist freiwillig; wer nach einer Zusage
-  absagt, muss einen angeben, damit die Leitung umplanen kann. Bei einer
-  Absage wird der Platz frei und die Warteliste rückt nach.
-- Die Leitung sieht in der Terminansicht, wer abgesagt hat und warum — eine
-  Absage nach vorheriger Zusage ist eigens gekennzeichnet. Die Mitteilung
-  über eine Teamer-Absage nennt jetzt auch den Grund.
-- Liegt in den Stores eine neuere App-Version, weist die Startseite dezent
-  darauf hin. Ein Tipp öffnet die Store-Seite zum Aktualisieren; das X blendet
-  den Hinweis für diese Version dauerhaft aus. Nichts wird erzwungen, ohne
-  Internet erscheint der Hinweis nicht.
-- Wer Material sieht, entscheidet allein die Jahrgangs-Zuordnung: mit
-  Jahrgang nur dessen Teamer:innen, ohne Jahrgang alle Teamer:innen der
-  Gemeinde. Material für alle steht bei den Teamer:innen in einem eigenen
-  Abschnitt ganz oben und ist in der Leitung am Globus zu erkennen. Ein
-  eigener Sichtbarkeits-Schalter ist dafür nicht mehr nötig. Konfis sehen
-  Material weiterhin grundsätzlich nicht; bestehendes Material bleibt
-  sichtbar wie bisher.
-- Das Handbuch hat ein neues Kapitel „Rollen und Rechte": Es erklärt Konfis,
-  Teamer:innen, Admins und Org-Admins, wer wen anlegen darf und was die
-  Jahrgangs-Zuweisung je Rolle bedeutet — samt der Klarstellung, dass auch
-  Admins ohne Zuweisung keine Konfis sehen.
-- Material trägt Dateien und Links jetzt zusammen — zum Beispiel ein PDF
-  und dazu mehrere YouTube-Videos. Beide Bereiche stehen im Formular immer
-  offen, nichts muss vorher ausgewählt werden. Teamer:innen erkennen Links
-  am Link-Symbol; ein Tipp darauf öffnet sie im Browser.
-- Wird ein Challenge-Beitrag im Feed sichtbar, bekommen die Konfis des
-  Jahrgangs eine Mitteilung — mit Namen, oder ohne, wenn der Beitrag anonym
-  ist. Dabei steht dabei, um was für einen Beitrag es sich handelt.
-- Die Leitung lässt sich einem Termin zuordnen — genau wie Teamer:innen, über
-  „Leitung hinzufügen" in der Terminansicht. Wer zugeordnet ist, ist auch im
-  Chat zum Termin dabei. Das geschieht bewusst für jeden Termin einzeln;
-  niemand landet automatisch in einem Termin-Chat, und bestehende Chats
-  ändern sich dadurch nicht.
-
-### Geändert
-- Material an einem Termin steht für Leitung und Teamer:innen jetzt direkt
-  bei den Eckdaten der Detailansicht und ist dort klickbar: Ein einzelnes
-  Material öffnet sich sofort, bei mehreren springt die Seite zur
-  Materialliste weiter unten — die bleibt unverändert bestehen.
-- Der Kopf der Materialseite zählt neben Material und Dateien jetzt auch die
-  hinterlegten Links — bei Leitung und Teamer:innen gleichermaßen.
-- Die Jahrgangs-Bindung für Admins gilt jetzt auch im Direktchat: Ein Admin
-  kann nur noch Konfis seiner zugewiesenen Jahrgänge anschreiben oder in
-  Gruppenchats aufnehmen — wie Teamer:innen. Der Org-Admin erreicht
-  weiterhin alle Konfis. Bereits bestehende Gespräche bleiben unverändert
-  bestehen.
-- Die Jahrgangs-Grenze im Chat gilt jetzt in beide Richtungen: Konfis
-  erreichen nur noch die Admins und Teamer:innen ihres eigenen Jahrgangs —
-  die Leitung (Org-Admin) bleibt für jeden Konfi erreichbar, auch wenn dem
-  Jahrgang niemand zugewiesen ist. Die Kontaktliste zeigt nur noch, wer
-  auch wirklich anschreibbar ist. Bereits bestehende Gespräche bleiben
-  unverändert bestehen.
-- Eine Gemeindeleitung, die in mehreren Gemeinden tätig ist, ist jetzt auch
-  in ihren weiteren Gemeinden für Konfis im Chat erreichbar — vorher fand
-  die Kontaktliste sie dort nicht.
-- Material bearbeiten und löschen kann nur noch, wer es angelegt hat — dazu
-  gehört auch das Anhängen und Entfernen von Dateien. Die Gemeindeleitung
-  darf weiterhin alles, damit Material verwaltbar bleibt, wenn die
-  erstellende Person die Gemeinde verlässt. Bei fremdem Material öffnet
-  sich die Ansicht schreibgeschützt und nennt, wer es angelegt hat; Anlegen
-  von neuem Material geht unverändert für die ganze Leitung.
-- Die Jahrgangs-Bindung für Admins greift jetzt überall: Terminliste,
-  Konfi-Auswahl im Chat, Material, Jahrgangs-Liste und die Meldungs-Zähler an
-  den Reitern und die Zahl am App-Symbol zeigen einem Admin nur noch seine
-  zugewiesenen Jahrgänge —
-  genau wie die Konfi-Liste schon zuvor. Teamer:innen, Termine ohne Jahrgang,
-  Team-Runden und Material „für alle" sieht er weiterhin. Der Org-Admin sieht
-  unverändert die ganze Gemeinde.
-- Konfis löschen oder befördern, ihr Passwort zurücksetzen, Punkte und
-  Aktivitäten zurücknehmen sowie Anwesenheits- und Spruchlisten abrufen geht
-  für Admins nur noch in den eigenen Jahrgängen; auch Jahrgänge bearbeiten
-  oder löschen und den Jahresrückblick freigeben ist an die eigene Zuweisung
-  gebunden.
-- Neue Jahrgänge legt nur noch der Org-Admin an — Admins sehen den
-  Anlege-Knopf nicht mehr. Dafür wählt der Org-Admin schon beim Anlegen aus,
-  welche Admins und Teamer:innen den neuen Jahrgang sehen und bearbeiten
-  sollen; die Ausgewählten sind sofort zuständig und im Jahrgangs-Chat. Die
-  Auswahl ist freiwillig, zuweisen geht weiterhin auch später über die
-  Benutzerverwaltung.
-- Beim Befördern eines Konfis zur Teamer:in wird der alte Jahrgang nicht mehr
-  automatisch als Zuweisung übernommen. Die frisch beförderte Person hatte
-  dadurch sofort vollen Blick auf ihre bisherige Gruppe samt Bearbeitungsrecht
-  — jetzt vergibt die Leitung die Zuweisung bewusst, sobald die neue
-  Teamer:in aktiv werden soll. Die eigenen Punkte und Abzeichen aus der
-  Konfi-Zeit bleiben unverändert sichtbar.
-- Die Startseite der Konfis ist schneller da: Die Abzeichen laden erst, wenn
-  die Startseite steht, statt den Start mit auszubremsen. Sichtbar bleibt
-  alles wie bisher.
-- Die Angabe zum Check-in-Fenster bei Terminen ist kürzer: „QR-Code 30 Min.
-  (vor/nach Beginn)".
-- Mitteilungen zu Chat-Nachrichten sagen jetzt, was ankam: „Foto",
-  „Sprachnachricht" oder „Datei" samt Namen, statt nur „Anhang".
-- Ist einem Admin oder einer Teamer:in kein Jahrgang zugewiesen, sagen jetzt
-  auch die Challenge-Verwaltung und die Aktivitäts-Meldungen den Grund für die
-  leere Liste — wie es die Konfi-Liste schon tut. Vorher stand dort „keine
-  Challenges" bzw. „keine Aktivitäten", was nach einem Fehler aussah. Ein
-  Admin ohne Jahrgang ist weiterhin ausdrücklich erlaubt, etwa wenn er nur
-  mit den Teamer:innen arbeitet.
-- Auch die Material-Liste nennt jetzt den Grund, wenn sie wegen fehlender
-  Jahrgangs-Zuweisung leer bleibt — Material „für alle“ und Material ohne
-  Jahrgang bleiben unverändert sichtbar. Vorher stand dort „keine
-  Materialien“, was nach einem Fehler aussah.
-
-### Behoben
 - Team-Runden erscheinen jetzt auch dann in der Challenge-Verwaltung, wenn
   der Teamer:in oder dem Admin kein Jahrgang zugewiesen ist. Vorher blieb die
   Liste grundlos leer, obwohl Team-Runden ausdrücklich für das ganze Team
@@ -711,18 +717,6 @@ iOS-Build 182 · Android versionCode 90
 - Nach dem Anlegen einer Konfi steht im Passwort-Hinweis wieder ihr Name.
   Bisher stand dort „Konfi "undefined" erstellt".
 
-### Hinzugefügt
-- Nach dem Update erklärt ein Hinweis auf der Startseite, was in Version 2.1
-  neu ist — für Konfis, Teamer:innen und die Leitung jeweils das, was ihre
-  Rolle betrifft. Einmal weggeklickt, kommt er nicht wieder; im Profil bleibt
-  er dauerhaft erreichbar.
-
-### Geändert
-- Der Hinweis auf eine neue App-Version sieht jetzt aus wie die anderen
-  Hinweise auf der Startseite, nur in Blau. Ein Tippen führt weiterhin in
-  den Store, das X blendet ihn dauerhaft aus.
-
-### Behoben
 - Ein geöffneter Chat gilt jetzt zuverlässig als gelesen: Die Zahl am Chat
   verschwindet sofort, und nach einem Neustart der App sind weder die Zahl
   noch der rote Strich „Neue Nachrichten" wieder da.
