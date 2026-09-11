@@ -1,7 +1,7 @@
-Push-Nachrichten kommen wieder zuverlässig an. Wer zuletzt keine mehr bekam, braucht nur die App zu öffnen.
+Benachrichtigungen lassen sich jetzt einzeln einstellen: Nachrichten, Termine, Punkte und Abzeichen sowie Anfragen und Freigaben. Jede Gruppe kann für sich leiser oder stumm gestellt werden.
 
-Der Jahresrückblick fürs Team ist da: eigene Seiten für Challenges und Zertifikate, und wer ein Jahr pausiert hat, bekommt einen Zuspruch statt leerer Zahlen.
+Beim Senden und Öffnen von Dateien im Chat zeigt die Nachricht, wie weit sie ist. Vorher passierte scheinbar nichts.
 
-Neue Gemeinden starten mit Abzeichen fürs Team. Ein neues Handbuch-Kapitel erklärt, was überall gleich funktioniert.
+Die Anmeldung per Fingerabdruck steht wieder zur Verfügung.
 
-Behoben: Vier Anzeigefehler in der Oberfläche. Der QR-Scanner sitzt jetzt oben in der Leiste.
+Behoben: Ein Einladungslink mit Code ließ die Seite endlos neu laden.

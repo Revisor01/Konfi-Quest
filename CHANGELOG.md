@@ -7,7 +7,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.1.1
+## [2.1.1] - 2026-09-11
+
+iOS-Build 182 · Android versionCode 90
 
 ### Hinzugefügt
 - Teamer:innen, für die in einem Jahr nichts zusammengekommen ist, bekommen
@@ -65,6 +67,10 @@ Versionsüberschrift.
   Hand anstoßen.
 
 ### Geändert
+- Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
+  Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
+  restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
+  Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
 - Beim Senden und Öffnen von Dateien im Chat zeigt die Nachricht jetzt, wie
   weit sie ist — mit Prozentzahl und Balken. Vorher passierte scheinbar
   nichts, besonders bei größeren PDFs.
@@ -745,14 +751,6 @@ Versionsüberschrift.
 - Zwei Konfigurationsdateien der Entwicklungsumgebung sind nicht mehr Teil des
   Projekts. Für Nutzer:innen ändert sich nichts.
 - Die Regeln für die Mitarbeit am Projekt stehen jetzt im Projekt selbst.
-
-## [Unreleased] - 2.2.0
-
-### Geändert
-- Die App startet schneller: Beim Öffnen wird nur noch geladen, was die eigene
-  Rolle braucht — Konfis laden die Leitungsoberfläche nicht mehr mit. Die
-  restlichen Seiten der eigenen Rolle werden kurz nach dem Start im
-  Hintergrund nachgeladen, damit auch ohne Netz alles erreichbar bleibt.
 
 ## [2.1.0] - 2026-08-29
 

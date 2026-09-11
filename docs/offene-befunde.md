@@ -268,3 +268,27 @@ Ein `.catch(() => {})` um eine Wartebedingung hebt genau die Prüfung auf, für
 die sie gedacht war. Wo eine Aufnahme fehlschlagen *soll*, muss sie es auch
 dürfen — ein Bild, das niemand ansieht, ist kein Beleg. Und Dateigröße allein
 beweist nichts: Zwei identische Bilder waren beide „richtig groß".
+
+---
+
+## 5. CodeQL-Meldungen vor dem Release (11.09.2026) — GEPRÜFT, KEINE BLOCKIERT
+
+Acht offene Code-Scanning-Meldungen, vor dem Release Build 182 einzeln am Code
+nachgesehen. Keine hält einer Prüfung stand; die Liste steht hier, damit die
+nächste Sitzung nicht von vorn anfängt.
+
+| Meldung | Ort | Befund |
+|---|---|---|
+| `js/xss-through-dom` | `chat/MessageBubble.tsx:59` | Greift nicht. `linkifyText` erzwingt `https?://` im `href`, unabhängig von der Regex davor. Der Kommentar an der Stelle begründet es. |
+| `js/xss-through-dom` | `konfi/modals/ChallengeSubmitModal.tsx:672` | Greift nicht. `mediaPreview` ist eine Blob-Adresse aus `URL.createObjectURL()` der eigenen Kamera-/Dateiauswahl — kein Fremdwert. |
+| `js/missing-rate-limiting` | `events/checkin.js:39`, `events/verwaltung.js:672` | Greift nicht. Ein globaler Limiter hängt vor allen Routen (`createApp.js:121`): 2000 Anfragen je 15 Minuten pro Konto oder Adresse. CodeQL sieht ihn nicht, weil er nicht an der einzelnen Route steht. |
+| `js/cors-permissive-configuration` | `createApp.js:57` | Greift nicht. Der Block läuft nur, wenn `corsOrigins` gesetzt ist — das ist allein im E2E-Stack der Fall. In Produktion liegen Oberfläche und API auf derselben Domain, die Liste bleibt leer. |
+| `js/incomplete-sanitization` (3×) | `e2e/…`, `__tests__/…` | Testdateien, nicht ausgeliefert. |
+
+### Zum Gegenprüfen
+
+    gh api "repos/Revisor01/konfi-quest/code-scanning/alerts?state=open&per_page=50" \
+      --jq '.[] | "\(.rule.security_severity_level)\t\(.rule.id)\t\(.most_recent_instance.location.path)"'
+
+Kommt eine Meldung an einer **neuen** Stelle dazu, ist sie ungeprüft — die
+Tabelle oben gilt nur für die genannten Orte.
