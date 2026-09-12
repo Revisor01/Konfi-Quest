@@ -119,7 +119,9 @@
 #    j) PUT /api/admin/activities/requests/:id/reset         org_admin, admin
 #       (Reset eines genehmigten Antrags zieht die Punkte zurück).
 #       admin seit 31.08.2026 nur in eigenen Jahrgängen.
-#    k) PUT .../attendance (attendance_status=absent)        org_admin, admin, teamer.
+#    k) PUT .../attendance (attendance_status=absent oder excused)
+#       org_admin, admin, teamer. 'excused' (12.09.2026) ist die von der
+#       Leitung nachgetragene Abmeldung und zieht Punkte wie 'absent' zurueck.
 #    l) PUT /api/events/:id/participants/:participantId/status (-> waitlist)
 #       org_admin, admin, teamer (Degradierung löscht event_points).
 #    m) DELETE /api/events/:id/bookings/:bookingId           org_admin, admin, teamer
@@ -1184,6 +1186,12 @@ paths:
         und zeigte deshalb "Geschlossen" an offenen Terminen (sichtbar vor
         allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein
         vorhandenes Feld aendert Form oder Typ.
+        ADDITIV 12.09.2026 (Migration 147): participants[]-Eintraege tragen
+        zusaetzlich excuse_reason und attendance_note (beide text, nullbar),
+        und attendance_status kann jetzt auch 'excused' sein. Ausgelieferte
+        Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht —
+        sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form
+        oder Typ.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1544,10 +1552,21 @@ paths:
       tags: ["Termine (Verwaltung)"]
       summary: Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)
       description: >
-        attendance_status present | absent. present: Konfis erhalten einmalig
-        die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem
-        Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte
-        werden zurückgenommen.
+        attendance_status present | absent | excused. present: Konfis erhalten
+        einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei
+        deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene
+        Event-Punkte werden zurückgenommen.
+        ADDITIV 12.09.2026 (Migration 147): 'excused' ist die von der Leitung
+        nachgetragene Abmeldung — jemand wurde ausserhalb der App abgemeldet.
+        Punkte verhalten sich wie bei 'absent' (keine Vergabe, Abzug bereits
+        vergebener); der Unterschied liegt in der Dokumentation. Bewusst KEIN
+        Push an die Konfi, die Abmeldung kam von den Eltern.
+        Dazu zwei optionale Freitexte, je auf 500 Zeichen gekuerzt, leer ->
+        NULL: excuse_reason (Grund; gehoert zu 'excused' und wird beim Wechsel
+        auf einen anderen Status geleert) und attendance_note (freier Vermerk,
+        unabhaengig vom Status, z. B. "ging um 14 Uhr"; bleibt stehen, solange
+        nichts Neues geschickt wird). Kein bestehendes Feld aendert Form oder
+        Typ — ausgelieferte Apps schicken weiterhin nur present/absent.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1569,7 +1588,15 @@ paths:
               type: object
               required: [attendance_status]
               properties:
-                attendance_status: { type: string, enum: [present, absent] }
+                attendance_status: { type: string, enum: [present, absent, excused] }
+                excuse_reason:
+                  type: string
+                  maxLength: 500
+                  description: "Grund der nachgetragenen Abmeldung; nur bei attendance_status='excused' gespeichert, sonst geleert"
+                attendance_note:
+                  type: string
+                  maxLength: 500
+                  description: "Freier Vermerk zur Anwesenheit, unabhaengig vom Status; ohne Angabe bleibt der bestehende Vermerk stehen"
       responses:
         "200": { description: "message, points_awarded / points_removed" }
         "400": { description: Ungueltiger Status oder Punkt-Typ im Jahrgang deaktiviert }

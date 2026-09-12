@@ -628,6 +628,32 @@ describe('Jahrgaenge Routes', () => {
       expect(absent.attendance_status).toBe('absent');
     });
 
+    // 12.09.2026: Die Matrix zeichnet die nachgetragene Abmeldung als eigenen
+    // Zellstatus und blendet Grund und Vermerk als Hinweis ein. Beides muss
+    // die Abfrage mitliefern -- sonst hat das Frontend nur den Status.
+    it('liefert excused samt Grund und Vermerk mit', async () => {
+      await db.query(
+        `UPDATE event_bookings
+            SET attendance_status = 'excused',
+                excuse_reason = 'krank, Mutter hat angerufen',
+                attendance_note = 'Attest liegt vor'
+          WHERE event_id = $1 AND user_id = $2`,
+        [EVENTS.pflichtEvent.id, USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/attendance-matrix`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const b = res.body.bookings.find(
+        x => x.user_id === USERS.konfi1.id && x.event_id === EVENTS.pflichtEvent.id
+      );
+      expect(b.attendance_status).toBe('excused');
+      expect(b.excuse_reason).toBe('krank, Mutter hat angerufen');
+      expect(b.attendance_note).toBe('Attest liegt vor');
+    });
+
     it('Teamer bekommt 403 (requireAdmin)', async () => {
       const res = await request(app)
         .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/attendance-matrix`)

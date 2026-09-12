@@ -17,6 +17,7 @@ import {
   ICON_ANHANG,
   ICON_ANTWORTEN,
   ICON_DATEI_GEFUELLT,
+  ICON_ENTFERNEN_GEFUELLT,
   ICON_ENTSPERRT,
   ICON_GEMEINDE_GEFUELLT,
   ICON_GESPERRT,
@@ -785,11 +786,18 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
               {slotParticipants.length > 0 && (
                 <div className="app-event-detail__slot-participants">
                   {slotParticipants.map((participant) => {
-                    const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
+                    // 'excused' (12.09.2026): von der Leitung nachgetragene
+                    // Abmeldung — grau, weil sie weder ein Erfolg noch ein
+                    // Fehlen ist. Gleiche Darstellung wie in der Hauptliste.
+                    const istAbgemeldet = participant.attendance_status === 'excused';
+                    const statusText = istAbgemeldet ? 'Abgemeldet (nachgetragen)' :
+                                       participant.attendance_status === 'present' ? 'Anwesend' :
                                        participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht';
-                    const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                    const cornerBadgeClass = istAbgemeldet ? 'app-corner-badge--neutral' :
+                                             participant.attendance_status === 'present' ? 'app-corner-badge--success' :
                                              participant.attendance_status === 'absent' ? 'app-corner-badge--danger' : 'app-corner-badge--info';
-                    const listItemClass = participant.attendance_status === 'present' ? 'app-list-item--success' :
+                    const listItemClass = istAbgemeldet ? 'app-list-item--neutral' :
+                                          participant.attendance_status === 'present' ? 'app-list-item--success' :
                                           participant.attendance_status === 'absent' ? 'app-list-item--danger' : 'app-list-item--booked';
                     return (
                       <IonItemSliding key={participant.id} className="app-event-detail__sliding-item">
@@ -808,15 +816,27 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div className={`app-icon-circle ${
+                                  istAbgemeldet ? 'app-icon-circle--neutral' :
                                   participant.attendance_status === 'present' ? 'app-icon-circle--success' :
                                   participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
                                 }`}>
-                                  <IonIcon icon={participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
+                                  <IonIcon icon={istAbgemeldet ? ICON_ENTFERNEN_GEFUELLT :
+                                        participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
                                         participant.attendance_status === 'absent' ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT} />
                                 </div>
                                 <div className="app-list-item__content">
                                   <div className="app-list-item__title app-list-item__title--badge-space-lg">{participant.participant_name}</div>
                                   <div className="app-list-item__subtitle">{participant.jahrgang_name || ''}</div>
+                                  {istAbgemeldet && participant.excuse_reason && (
+                                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      <strong>Abgemeldet: </strong>{participant.excuse_reason}
+                                    </div>
+                                  )}
+                                  {participant.attendance_note && (
+                                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      <strong>Vermerk: </strong>{participant.attendance_note}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>

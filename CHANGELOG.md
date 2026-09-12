@@ -7,12 +7,24 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.1.2
+## [Unreleased] - 2.2.0
 
 ### Hinzugefügt
 - Das eigene Profil zeigt hinter den Abzeichen auch die gesammelten
   Challenge-Stempel — bei Konfis wie bei Teamer:innen. Wer noch keinen
   Stempel hat, sieht den Abschnitt nicht.
+- Die Anwesenheit kennt einen dritten Eintrag: **Abgemeldet**. Wird jemand
+  außerhalb der App abgemeldet, etwa weil die Eltern anrufen und das Kind
+  krank ist, lässt sich das mit Grund festhalten. Der Grund steht in der
+  Teilnehmerliste, damit das ganze Team ihn sieht. Punkte gibt es dabei keine;
+  schon vergebene werden zurückgenommen. Die Konfi bekommt keine Mitteilung —
+  die Abmeldung kam ja von zu Hause.
+- Zu jeder Anwesenheit lässt sich ein **Vermerk** eintragen, etwa „ging um
+  14 Uhr". Er ändert nichts am Status: Wer anwesend war, bleibt anwesend und
+  behält seine Punkte.
+- Die Anwesenheits-Matrix zeigt nachgetragene Abmeldungen als eigenen grauen
+  Punkt; der Termin zählt dort nicht in die Pflicht-Summe, genau wie bei einer
+  Abmeldung, die der Konfi selbst vorgenommen hat.
 
 ### Behoben
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem

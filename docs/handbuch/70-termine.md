@@ -339,9 +339,10 @@ aufgestiegen ist.
 
 ### Punkte zurücknehmen
 
-In zwei Fällen nimmt das System die Punkte vollständig zurück, inklusive Abzug
-vom Punktestand: Du stellst die Anwesenheit von **anwesend auf fehlend**, oder
-die Person **meldet sich ab**, obwohl sie schon als anwesend verbucht war. Der
+In drei Fällen nimmt das System die Punkte vollständig zurück, inklusive Abzug
+vom Punktestand: Du stellst die Anwesenheit von **anwesend auf fehlend**, du
+trägst eine [Abmeldung nach](#eine-abmeldung-nachtragen), oder die Person
+**meldet sich ab**, obwohl sie schon als anwesend verbucht war. Der
 Punktestand fällt dabei nie unter null.
 
 Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
@@ -352,10 +353,49 @@ Ein Abzeichen, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
 Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
 einmal, oder die Leute checken sich selbst per QR-Code ein.
 
-**Einzeln** geht es in der Teilnehmerliste über die
-[Wischgeste](03-bedienung.md#etwas-loeschen-nach-links-wischen) am jeweiligen
-Eintrag: **Anwesend** oder **Fehlend**. Punkte werden sofort vergeben oder
-abgezogen, und die Person bekommt einen Push.
+**Einzeln** geht es in der Teilnehmerliste: Tipp auf den Eintrag, dann
+**Anwesend**, **Abwesend** oder **Abgemeldet**. Punkte werden sofort vergeben
+oder abgezogen, und bei „Anwesend" und „Abwesend" bekommt die Person einen
+Push.
+
+### Eine Abmeldung nachtragen
+
+Wird jemand außerhalb der App abgemeldet — die Mutter ruft an, das Kind ist
+krank —, trägst du das als **Abgemeldet** ein und schreibst den Grund dazu.
+Der Eintrag wird grau, der Grund steht direkt in der Teilnehmerliste, und alle
+im Team sehen ihn.
+
+Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
+bei „Abwesend". Die Konfi bekommt **keinen Push** — die Abmeldung kam ja von
+den Eltern, sie über etwas zu benachrichtigen, das sie selbst veranlasst
+haben, hätte keinen Sinn.
+
+In der [Anwesenheits-Matrix](30-leitung.md#konfis-und-teamer-innen-verwalten) steht dafür ein
+grauer Punkt, und der Termin zählt nicht in die Pflicht-Summe — so wie bei
+einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
+
+> **Zwei Wege zur selben Aussage.** Meldet sich die Konfi
+> [selbst in der App ab](#eine-abmeldung-vom-pflicht-event-entgegennehmen),
+> steht das als „Abgemeldet" mit ihrer eigenen Begründung. Trägst du eine
+> Abmeldung nach, heißt sie in der Übersicht „Abgemeldet (nachgetragen)".
+> Für Punkte und Summe zählt beides gleich.
+
+### Einen Vermerk hinzufügen
+
+Manches ist kein eigener Status, gehört aber festgehalten: „ging um 14 Uhr",
+„kam erst zur zweiten Hälfte", „Attest liegt vor". Dafür gibt es den
+**Vermerk** — ein freies Feld, das du zu **jedem** Anwesenheitsstatus
+eintragen kannst.
+
+Der Vermerk ändert nichts: Wer anwesend ist, bleibt anwesend und behält seine
+Punkte. Er steht in der Teilnehmerliste unter dem Namen und bleibt stehen,
+auch wenn du den Status später änderst.
+
+Grund und Vermerk sind zwei getrennte Felder. Der Grund gehört zur Abmeldung
+und verschwindet, sobald du den Status auf anwesend oder abwesend stellst —
+der Vermerk bleibt.
+
+Beides einzutragen geht erst, wenn ein Anwesenheitsstatus gesetzt ist.
 
 ### Alle auf einmal verbuchen
 
@@ -369,7 +409,7 @@ Nicht angefasst werden dabei:
 | | wird verbucht |
 |---|---|
 | Angemeldete Konfis ohne Status | **ja** |
-| Bereits verbuchte (anwesend oder fehlend) | nein, bleiben wie sie sind |
+| Bereits verbuchte (anwesend, fehlend oder abgemeldet) | nein, bleiben wie sie sind |
 | Wartelisten-Einträge | **nein** |
 | Abgemeldete (Pflicht-Event) | nein |
 | Teamer:innen | **nein — die verbuchst du einzeln** |

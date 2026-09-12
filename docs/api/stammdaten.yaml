@@ -755,6 +755,11 @@ paths:
         Pflicht-Events mit Jahrgangs-Zuweisung und die dazugehoerigen
         Buchungen (status, attendance_status) als drei getrennte Arrays; die
         Matrix baut das Frontend daraus zusammen.
+        ADDITIV 12.09.2026 (Migration 147): bookings[] traegt zusaetzlich
+        excuse_reason und attendance_note, und attendance_status kann
+        'excused' sein (von der Leitung nachgetragene Abmeldung). Die Matrix
+        zeigt sie wie eine Selbstabmeldung — grauer Punkt, nicht im
+        Pflicht-Nenner. Kein vorhandenes Feld aendert Form oder Typ.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
       responses:

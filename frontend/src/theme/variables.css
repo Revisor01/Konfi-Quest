@@ -473,6 +473,9 @@ ion-item-sliding:last-child {
 .app-list-item--material, ion-item.app-list-item--material { border-left-color: var(--app-color-material); }
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: var(--app-color-activities); }
 .app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: var(--app-color-jahrgang); }
+/* Grau fuer Zustaende ohne Wertung: die nachgetragene Abmeldung ist weder
+   ein Erfolg (gruen) noch ein Fehlen (rot). */
+.app-list-item--neutral, ion-item.app-list-item--neutral { border-left-color: var(--app-color-neutral); }
 
 /* Chat-Raumtyp-Farben */
 /* (verschoben — siehe app-list-item--teamer Block) */
@@ -635,6 +638,8 @@ ion-item-sliding:last-child {
 .app-corner-badge--chat-jahrgang { background-color: var(--app-color-chat); }
 .app-corner-badge--konfi { background-color: var(--app-color-konfis); }
 .app-corner-badge--group { background-color: var(--app-color-group); }
+/* Grau fuer Zustaende ohne Wertung (nachgetragene Abmeldung). */
+.app-corner-badge--neutral { background-color: var(--app-color-neutral); }
 /* Queue-Badge (orange, Icon-only, schmaler Padding) */
 .app-corner-badge--queue {
   background-color: var(--app-color-warning);
@@ -769,6 +774,8 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--group { background-color: var(--app-color-bonus); }
 .app-icon-circle--material { background-color: var(--app-color-material); }
 .app-icon-circle--jahrgang { background-color: var(--app-color-jahrgang); }
+/* Grau fuer Zustaende ohne Wertung (nachgetragene Abmeldung). */
+.app-icon-circle--neutral { background-color: var(--app-color-neutral); }
 .app-icon-circle ion-icon {
   color: white;
   font-size: var(--app-text-basis);
@@ -3052,6 +3059,13 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
    Dunkles Grau + gefuelltes Icon, damit die Zelle klar von "Offen"
    (helles Outline-Grau) und "Fehlt" (rot) unterscheidbar ist. */
 .attendance-matrix__dot--opted_out {
+  color: var(--app-color-neutral);
+}
+/* Nachgetragene Abmeldung (12.09.2026): Die Leitung traegt ein, was
+   ausserhalb der App gemeldet wurde. Fachlich dieselbe Aussage wie die
+   Selbstabmeldung -- keine Punkte, nicht im Pflicht-Nenner -- deshalb
+   auch dasselbe Grau. Unterschieden wird in der Legende, nicht in der Farbe. */
+.attendance-matrix__dot--excused {
   color: var(--app-color-neutral);
 }
 .attendance-matrix__legend {

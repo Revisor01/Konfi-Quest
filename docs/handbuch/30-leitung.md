@@ -102,7 +102,10 @@ Beim Anlegen eines Termins legst du fest:
 - [**Serie**](70-termine.md#eine-serie-anlegen) — täglich, wöchentlich, zweiwöchentlich
   oder monatlich
 
-In der Detailansicht trägst du Anwesenheit ein, bestätigst die Warteliste,
+In der Detailansicht trägst du Anwesenheit ein — anwesend, abwesend oder
+[abgemeldet](70-termine.md#eine-abmeldung-nachtragen), dazu auf Wunsch einen
+[Vermerk](70-termine.md#einen-vermerk-hinzufuegen) —, bestätigst die
+Warteliste,
 [fügst Teilnehmende von Hand hinzu](70-termine.md#teilnehmende-von-hand-hinzufuegen)
 und siehst die Abmeldungen samt Begründung. Bei Team-Terminen stehen dort auch
 die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwalten).

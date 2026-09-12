@@ -149,11 +149,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Update participant attendance and award event points
   router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, participantId } = req.params;
-    const { attendance_status } = req.body;
+    const { attendance_status, excuse_reason, attendance_note } = req.body;
 
-    if (!['present', 'absent'].includes(attendance_status)) {
+    // 'excused' (abgemeldet) kam am 12.09.2026 dazu: Wird jemand ausserhalb
+    // der App abgemeldet -- die Mutter ruft an, das Kind ist krank --, war
+    // bisher nur die Wahl zwischen 'present' (falsch) und 'absent' (sieht aus
+    // wie unentschuldigt). Bei den Punkten verhaelt sich 'excused' wie
+    // 'absent'; der Unterschied liegt in der Dokumentation.
+    if (!['present', 'absent', 'excused'].includes(attendance_status)) {
       return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
     }
+
+    // Freitexte begrenzen und leere Eingaben auf NULL normalisieren, damit
+    // "gar kein Vermerk" und "Vermerk aus Leerzeichen" nicht zweierlei sind.
+    const textOderNull = (wert) => {
+      if (typeof wert !== 'string') return null;
+      const getrimmt = wert.trim();
+      return getrimmt === '' ? null : getrimmt.slice(0, 500);
+    };
+    const grund = textOderNull(excuse_reason);
+    const vermerk = textOderNull(attendance_note);
 
     // Dedizierter Client für Transaction - pool.query() kann verschiedene
     // Connections nutzen, was BEGIN/COMMIT auf unterschiedliche Connections verteilt!
@@ -183,7 +198,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // checkPointTypeEnabled, das ein konfi_profile voraussetzt) ueberspringen.
       const isKonfiParticipant = eventData.participant_role === 'konfi';
 
-      await client.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
+      // Der Grund gehoert zu 'excused' und wird beim Wechsel auf einen anderen
+      // Status geleert -- sonst bliebe "krank" an einer Buchung stehen, die
+      // inzwischen auf anwesend steht. Der Vermerk dagegen haengt NICHT am
+      // Status ("ging um 14 Uhr" gilt bei Anwesenheit) und bleibt, solange
+      // nichts Neues geschickt wird.
+      await client.query(
+        `UPDATE event_bookings
+            SET attendance_status = $1,
+                excuse_reason = CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END,
+                attendance_note = COALESCE($4, attendance_note)
+          WHERE id = $2`,
+        [attendance_status, participantId, grund, vermerk]
+      );
 
       let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
       let pointsAwarded = false;
@@ -228,7 +255,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           responseData = { message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false };
         }
 
-      } else if (isKonfiParticipant && attendance_status === 'absent') {
+      } else if (isKonfiParticipant && (attendance_status === 'absent' || attendance_status === 'excused')) {
         const { rows: [existingPoints] } = await client.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
 
         if (existingPoints) {
@@ -274,6 +301,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             if (pointsRemoved) {
               liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
             }
+          }
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+        } else if (attendance_status === 'excused') {
+          // BEWUSST KEIN PUSH an die Konfi (Entscheidung Simon, 12.09.2026):
+          // Die Abmeldung kam von den Eltern. Eine Mitteilung darueber waere
+          // eine Benachrichtigung ueber etwas, das sie selbst veranlasst
+          // haben. Die Leitung traegt hier nur nach.
+          //
+          // Wurden Punkte abgezogen, muss das Dashboard der Konfi das trotzdem
+          // erfahren -- sonst zeigt es eine Zahl, die es nicht mehr gibt.
+          if (isKonfiParticipant && pointsRemoved) {
+            liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         }

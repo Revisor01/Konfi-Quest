@@ -4,6 +4,7 @@ import {
   ICON_ANTWORTEN,
   ICON_BEARBEITEN,
   ICON_CHAT,
+  ICON_ENTFERNEN_GEFUELLT,
   ICON_GESPERRT,
   ICON_GRUPPE_GEFUELLT,
   ICON_HAKEN_GEFUELLT,
@@ -11,6 +12,7 @@ import {
   ICON_PERSON_HINZUFUEGEN_GEFUELLT,
   ICON_QRCODE,
   ICON_TERMIN_GEFUELLT,
+  ICON_TEXTDOKUMENT,
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
@@ -449,22 +451,123 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     return 'Termin';
   };
 
-  const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
+  // Grund und Vermerk gehen mit derselben Route mit. Der Grund gehoert zu
+  // 'excused' und wird vom Backend beim Wechsel auf einen anderen Status
+  // geleert; der Vermerk ("ging um 14 Uhr") haengt NICHT am Status und bleibt
+  // stehen, solange nichts Neues geschickt wird.
+  const handleAttendanceUpdate = async (
+    participant: Participant,
+    status: 'present' | 'absent' | 'excused',
+    texte?: { excuse_reason?: string; attendance_note?: string }
+  ) => {
     if (offlineBlockiert(isOnline, setError)) return;
+    const grund = status === 'excused' ? (texte?.excuse_reason || null) : null;
+    const vermerk = texte?.attendance_note !== undefined
+      ? (texte.attendance_note || null)
+      : (participant.attendance_note ?? null);
     setParticipants(prev => prev.map(p =>
-      p.id === participant.id ? { ...p, attendance_status: status } : p
+      p.id === participant.id
+        ? { ...p, attendance_status: status, excuse_reason: grund, attendance_note: vermerk }
+        : p
     ));
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
-        attendance_status: status
+        attendance_status: status,
+        ...(texte?.excuse_reason !== undefined ? { excuse_reason: texte.excuse_reason } : {}),
+        ...(texte?.attendance_note !== undefined ? { attendance_note: texte.attendance_note } : {})
       });
       triggerRefresh('events');
     } catch {
       setParticipants(prev => prev.map(p =>
-        p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
+        p.id === participant.id
+          ? {
+              ...p,
+              attendance_status: participant.attendance_status,
+              excuse_reason: participant.excuse_reason,
+              attendance_note: participant.attendance_note
+            }
+          : p
       ));
       setError('Fehler beim Aktualisieren der Anwesenheit');
     }
+  };
+
+  // Abmeldung nachtragen: Grund UND Vermerk in einem Schritt. Zwei getrennte
+  // Felder (Entscheidung Simon, 12.09.2026) — ein gemeinsames haette je nach
+  // Status eine andere Bedeutung, und beide koennen nebeneinander stehen.
+  const showAbmeldungAlert = (participant: Participant) => {
+    presentAlert({
+      header: participant.participant_name,
+      subHeader: 'Abmeldung nachtragen',
+      message: 'Die Person wird als abgemeldet geführt und bekommt keine Punkte. Sie erfährt davon nichts — die Abmeldung kam von außerhalb der App.',
+      inputs: [
+        {
+          name: 'excuse_reason',
+          type: 'textarea',
+          placeholder: 'Grund, z. B. „krank, Mutter hat angerufen"',
+          value: participant.excuse_reason || '',
+          attributes: { maxlength: 500 }
+        },
+        {
+          name: 'attendance_note',
+          type: 'textarea',
+          placeholder: 'Vermerk (optional)',
+          value: participant.attendance_note || '',
+          attributes: { maxlength: 500 }
+        }
+      ],
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Abmelden',
+          handler: (data) => {
+            handleAttendanceUpdate(participant, 'excused', {
+              excuse_reason: typeof data?.excuse_reason === 'string' ? data.excuse_reason : '',
+              attendance_note: typeof data?.attendance_note === 'string' ? data.attendance_note : ''
+            });
+          }
+        }
+      ]
+    });
+  };
+
+  // Vermerk allein aendern, ohne am Status zu ruehren. Der Status wird dabei
+  // mitgeschickt, weil die Route ihn verlangt — es ist derselbe wie zuvor.
+  const showVermerkAlert = (participant: Participant) => {
+    const status = participant.attendance_status;
+    if (!status) {
+      setError('Erst die Anwesenheit setzen, dann den Vermerk eintragen');
+      return;
+    }
+    presentAlert({
+      header: participant.participant_name,
+      subHeader: 'Vermerk',
+      message: 'Ein freier Vermerk zur Anwesenheit, den auch die Kolleg:innen sehen — zum Beispiel „ging um 14 Uhr". Am Status ändert er nichts.',
+      inputs: [
+        {
+          name: 'attendance_note',
+          type: 'textarea',
+          placeholder: 'Vermerk, z. B. „ging um 14 Uhr"',
+          value: participant.attendance_note || '',
+          attributes: { maxlength: 500 }
+        }
+      ],
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Speichern',
+          handler: (data) => {
+            handleAttendanceUpdate(participant, status, {
+              // Der Grund bleibt, was er war: Bei 'excused' wuerde ein
+              // fehlendes Feld ihn sonst loeschen (die Route setzt ihn bei
+              // jedem 'excused'-Schreiben neu).
+              ...(status === 'excused' ? { excuse_reason: participant.excuse_reason || '' } : {}),
+              attendance_note: typeof data?.attendance_note === 'string' ? data.attendance_note : ''
+            });
+          }
+        }
+      ]
+    });
   };
 
   const showAttendanceActionSheet = (participant: Participant) => {
@@ -475,6 +578,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
     if (participant.attendance_status !== 'absent') {
       buttons.push({ text: 'Abwesend', icon: ICON_ABSAGE, handler: () => handleAttendanceUpdate(participant, 'absent') });
+    }
+    // Immer angeboten, auch wenn schon 'excused': dann ist es das Bearbeiten
+    // des Grundes.
+    buttons.push({
+      text: participant.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet',
+      icon: ICON_ENTFERNEN_GEFUELLT,
+      handler: () => showAbmeldungAlert(participant)
+    });
+    if (participant.attendance_status) {
+      buttons.push({
+        text: participant.attendance_note ? 'Vermerk bearbeiten' : 'Vermerk hinzufügen',
+        icon: ICON_TEXTDOKUMENT,
+        handler: () => showVermerkAlert(participant)
+      });
     }
     buttons.push({ text: 'Abbrechen', role: 'cancel' });
     presentActionSheet({ header: participant.participant_name, subHeader: 'Anwesenheit verwalten', buttons });
@@ -699,22 +816,31 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const renderParticipant = (participant: Participant) => {
     const isWaitlist = participant.status === 'waitlist';
     const isOptedOut = participant.status === 'opted_out';
+    // Nachgetragene Abmeldung (12.09.2026): grau, nicht rot. Rot hiesse
+    // "hat gefehlt" — hier war die Abmeldung gemeldet, das ist keine
+    // Verfehlung, sondern eine geklaerte Lage.
+    const isExcused = !isOptedOut && participant.attendance_status === 'excused';
     const listItemClass = isOptedOut ? 'app-list-item--danger' :
+                          isExcused ? 'app-list-item--neutral' :
                           participant.attendance_status === 'present' ? 'app-list-item--success' :
                           participant.attendance_status === 'absent' ? 'app-list-item--danger' :
                           isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
     const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
+                            isExcused ? 'app-icon-circle--neutral' :
                             participant.attendance_status === 'present' ? 'app-icon-circle--success' :
                             participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
                             isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
     const statusIcon = isOptedOut ? ICON_ABSAGE :
+                       isExcused ? ICON_ENTFERNEN_GEFUELLT :
                        participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
                        participant.attendance_status === 'absent' ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT;
     const statusText = isOptedOut ? 'Abgemeldet' :
+                       isExcused ? 'Abgemeldet (nachgetragen)' :
                        participant.attendance_status === 'present' ? 'Anwesend' :
                        participant.attendance_status === 'absent' ? 'Abwesend' :
                        isWaitlist ? 'Warteliste' : 'Gebucht';
     const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
+                             isExcused ? 'app-corner-badge--neutral' :
                              participant.attendance_status === 'present' ? 'app-corner-badge--success' :
                              participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
                              isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
@@ -776,6 +902,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                         <strong>Nach Zusage abgesagt{participant.opt_out_reason ? ': ' : ''}</strong>
                       )}
                       {participant.opt_out_reason}
+                    </div>
+                  )}
+                  {/* Nachgetragene Abmeldung und Vermerk (12.09.2026): Beides
+                      steht direkt in der Liste — es ist genau dafuer da, dass
+                      die Kolleg:innen es sehen, ohne die Zeile zu oeffnen. */}
+                  {isExcused && participant.excuse_reason && (
+                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      <strong>Abgemeldet: </strong>{participant.excuse_reason}
+                    </div>
+                  )}
+                  {participant.attendance_note && (
+                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      <strong>Vermerk: </strong>{participant.attendance_note}
                     </div>
                   )}
                 </div>

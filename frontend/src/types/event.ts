@@ -73,8 +73,8 @@ export interface Event {
   booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
   registration_status_detail?: string;
   is_opted_out?: boolean;
-  // Attendance
-  attendance_status?: 'present' | 'absent' | null;
+  // Attendance ('excused' seit Migration 147: nachgetragene Abmeldung)
+  attendance_status?: 'present' | 'absent' | 'excused' | null;
   cancelled?: boolean;
   // Timeslots
   has_timeslots?: boolean;
@@ -130,7 +130,17 @@ export interface Participant {
   role_name?: string;
   created_at: string;
   status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
-  attendance_status?: 'present' | 'absent' | null;
+  /**
+   * 'excused' (Migration 147, 12.09.2026): von der Leitung nachgetragene
+   * Abmeldung — jemand wurde ausserhalb der App abgemeldet (Anruf der
+   * Eltern, Krankheit). Punkte verhalten sich wie bei 'absent'; der
+   * Unterschied liegt in der Dokumentation.
+   */
+  attendance_status?: 'present' | 'absent' | 'excused' | null;
+  /** Grund der nachgetragenen Abmeldung; gehoert zu attendance_status='excused'. */
+  excuse_reason?: string | null;
+  /** Freier Vermerk unabhaengig vom Status ("ging um 14 Uhr"). */
+  attendance_note?: string | null;
   timeslot_id?: number;
   timeslot_start_time?: string;
   timeslot_end_time?: string;

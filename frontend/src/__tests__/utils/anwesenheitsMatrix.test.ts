@@ -27,6 +27,16 @@ describe('Anwesenheitsmatrix: Zellstatus', () => {
   it('Abmeldung schlägt eine fälschlich erfasste Anwesenheit', () => {
     expect(getZellStatus({ status: 'opted_out', attendance_status: 'present' })).toBe('opted_out');
   });
+
+  // Von der Leitung nachgetragene Abmeldung (12.09.2026): eigener Zellstatus,
+  // nicht 'absent' (das hiesse unentschuldigt) und nicht 'open'.
+  it('nachgetragene Abmeldung ist excused, NICHT absent oder open', () => {
+    expect(getZellStatus({ status: 'confirmed', attendance_status: 'excused' })).toBe('excused');
+  });
+
+  it('die Selbstabmeldung bleibt sichtbar, auch wenn zusaetzlich excused erfasst wurde', () => {
+    expect(getZellStatus({ status: 'opted_out', attendance_status: 'excused' })).toBe('opted_out');
+  });
 });
 
 describe('Anwesenheitsmatrix: Zeilen-Summe', () => {
@@ -46,8 +56,32 @@ describe('Anwesenheitsmatrix: Zeilen-Summe', () => {
     expect(stats.absent).toBe(1);
   });
 
+  // Simons Fall (12.09.2026): krank abgemeldet, telefonisch. Das zaehlt wie
+  // eine Abmeldung — der Termin faellt aus dem Pflicht-Nenner, genau wie bei
+  // der Selbstabmeldung in der App.
+  it('Nenner zählt nachgetragene Abmeldungen (excused) nicht mit', () => {
+    const stats = berechneZeilenStats(['present', 'present', 'excused', 'open']);
+    expect(stats.present).toBe(2);
+    expect(stats.excused).toBe(1);
+    expect(stats.open).toBe(1);
+    expect(stats.nenner).toBe(3);
+  });
+
+  it('beide Abmelde-Wege nebeneinander kürzen den Nenner je einmal', () => {
+    const stats = berechneZeilenStats(['present', 'excused', 'opted_out', 'absent']);
+    expect(stats.excused).toBe(1);
+    expect(stats.opted_out).toBe(1);
+    expect(stats.absent).toBe(1);
+    expect(stats.nenner).toBe(2); // 4 Termine minus 2 Abmeldungen
+  });
+
+  it('ein Fehlen (absent) bleibt im Nenner — nur Abmeldungen fallen heraus', () => {
+    const stats = berechneZeilenStats(['absent', 'absent', 'present']);
+    expect(stats.nenner).toBe(3);
+  });
+
   it('leere Zeile: alles 0', () => {
     const stats = berechneZeilenStats([]);
-    expect(stats).toEqual({ present: 0, absent: 0, opted_out: 0, open: 0, nenner: 0 });
+    expect(stats).toEqual({ present: 0, absent: 0, excused: 0, opted_out: 0, open: 0, nenner: 0 });
   });
 });
