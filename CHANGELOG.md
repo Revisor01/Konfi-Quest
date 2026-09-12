@@ -7,6 +7,12 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.1.2
+
+### Behoben
+- In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem
+  leeren Reiter jetzt die Farbe der Challenges statt der des Teams.
+
 ## [2.1.1] - 2026-09-11
 
 iOS-Build 182 · Android versionCode 90

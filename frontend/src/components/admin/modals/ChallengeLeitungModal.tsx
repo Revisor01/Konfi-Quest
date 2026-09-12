@@ -839,7 +839,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                           ? 'Sobald Beiträge freigegeben sind, erscheinen sie hier — wie bei den Konfis.'
                           : 'Hier ist gerade nichts.'
                     }
-                    iconColor="var(--app-color-teamer)"
+                    iconColor="var(--app-color-challenges)"
                   />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-schmal)' }}>
