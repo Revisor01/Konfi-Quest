@@ -324,3 +324,35 @@ nicht. `activity_categories` und `event_categories` hängen mit
 `ON DELETE CASCADE` an `categories`; beim Löschen verschwinden nur die
 Zuordnungen, die Aktivitäten und Termine bleiben. Eine Kategorie-Seite prüft
 deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.
+
+---
+
+## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — OFFEN
+
+Beim Einbau der Stempel ins Profil aufgefallen, beide am Code nachgesehen.
+Keiner davon ist ein Fehler, den jemand gemeldet hat — aber beide führen dazu,
+dass etwas nicht erscheint, das erscheinen soll.
+
+### 7.1 Die Karte „Nächstes Badge" rendert nie
+
+`ProfileView.tsx:471` prüft `profile.progress_overview?.next_badge`.
+`GET /konfi/profile` (`konfi.js:521 ff.`) baut `progress_overview` aber
+ausschließlich aus `achievements` — das Feld `next_badge` gibt es dort nicht.
+Der Kommentar im Backend nennt den Block selbst „Mock progress overview".
+Ebenso ist `recent_activities` an derselben Stelle fest `[]`.
+
+**Folge:** Die Karte ist seit ihrer Entstehung unsichtbar. Entweder das
+Backend liefert `next_badge` (die Abzeichen-Logik dafür gibt es in
+`services/badgeService.js`), oder die Karte im Frontend entfällt.
+
+### 7.2 Der Einstieg „Konfi-Historie" hängt am Jahrgangsnamen
+
+`TeamerProfilePage.tsx:606` zeigt den Einstieg nur, wenn
+`profile.konfi_data?.jahrgang_name` gesetzt ist. Ist der Jahrgang einer
+früheren Konfizeit gelöscht, verschwindet der Einstieg — obwohl die Abzeichen
+aus dieser Zeit weiter existieren. Ein Kommentar in `teamer.js:82-86` warnt
+ausdrücklich davor, sich auf den Jahrgang zu verlassen.
+
+**Folge:** Wer als Teamer:in einen gelöschten Jahrgang hatte, kommt an die
+eigene Konfi-Historie nicht mehr heran. Die Bedingung müsste an den Daten
+hängen (gibt es Badges/Punkte?), nicht am Namen des Jahrgangs.

@@ -64,6 +64,8 @@ import { writeQueue } from '../../../services/writeQueue';
 import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
+import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import type { ChallengeMark } from '../../../types/challenges';
 
 interface TeamerProfile {
   user: {
@@ -190,6 +192,19 @@ const TeamerProfilePage: React.FC = () => {
   const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
     onClose: () => dismissDeleteAccount()
   });
+
+  // Eigene Challenge-Stempel. Teamer:innen machen bei Challenges selbst mit
+  // (audience 'konfis_und_team' und 'nur_team'), deshalb liefert derselbe
+  // Teilnehmer-Einstieg GET /challenges/konfi auch ihnen ihre Stempel.
+  // Fehler bewusst still: der Abschnitt bleibt dann aus.
+  const [challengeMarks, setChallengeMarks] = useState<ChallengeMark[]>([]);
+  React.useEffect(() => {
+    api.get('/challenges/konfi')
+      .then(res => {
+        setChallengeMarks(Array.isArray(res.data?.marks) ? res.data.marks : []);
+      })
+      .catch(() => { /* optionaler Zusatz — stiller Fehler */ });
+  }, []);
 
   // Wrapped-Historie
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
@@ -627,6 +642,11 @@ const TeamerProfilePage: React.FC = () => {
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Deine Stempel -- direkt hinter "Inhalt" mit den Badges (Simon,
+            12.09.2026: "nach den badges auch die stempel sehen"). Ohne
+            Stempel faellt der Abschnitt ganz weg. */}
+        <ChallengeStempelSektion marks={challengeMarks} />
 
         {/* D. Logout-Button */}
         <div style={{ padding: '0 var(--app-abstand-basis)', marginTop: 'var(--app-abstand-basis)' }}>

@@ -110,6 +110,8 @@ im Kapitel [Abzeichen](60-badges.md#die-passende-bedingung-waehlen).
 Über das Personen-Symbol oben rechts auf der Startseite. Dort findest du:
 
 - **Punkte-Übersicht** — jeder Punkt einzeln aufgelistet
+- **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
+  die du gesammelt hast. Solange du keinen hast, steht der Abschnitt nicht da.
 - **Meine Rückblicke** — dein [Jahresrückblick](95-wrapped.md), sobald er
   freigegeben ist
 - **E-Mail-Adresse ändern** und **Passwort ändern**

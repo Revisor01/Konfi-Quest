@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.1.2
 
+### Hinzugefügt
+- Das eigene Profil zeigt hinter den Abzeichen auch die gesammelten
+  Challenge-Stempel — bei Konfis wie bei Teamer:innen. Wer noch keinen
+  Stempel hat, sieht den Abschnitt nicht.
+
 ### Behoben
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem
   leeren Reiter jetzt die Farbe der Challenges statt der des Teams.

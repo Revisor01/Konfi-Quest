@@ -22,10 +22,12 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import type { BadgeUebersicht } from '../../../types/dashboard';
+import type { ChallengeMark } from '../../../types/challenges';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
+import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
@@ -114,9 +116,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
-  // Anzahl der eigenen Challenge-Stempel (marks). Schlanker Zusatzabruf —
-  // fällt er aus, bleibt die Kachel bei 0 statt das Profil zu stoeren.
-  const [challengeMarksCount, setChallengeMarksCount] = useState<number>(0);
+  // Die eigenen Challenge-Stempel (marks). Schlanker Zusatzabruf — faellt er
+  // aus, bleibt die Kachel bei 0 und der Stempel-Abschnitt aus, statt das
+  // Profil zu stoeren.
+  const [challengeMarks, setChallengeMarks] = useState<ChallengeMark[]>([]);
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
   // Wrapped-Historie laden
@@ -166,14 +169,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     loadBadges();
   }, []);
 
-  // Challenge-Stempel zählen. Fehler bewusst still: die Kachel zeigt dann 0.
+  // Challenge-Stempel laden — sie speisen die Kachel UND den Abschnitt unter
+  // den Badges. Fehler bewusst still: die Kachel zeigt dann 0, der Abschnitt
+  // bleibt aus.
   React.useEffect(() => {
     api.get('/challenges/konfi')
       .then(res => {
         const marks = Array.isArray(res.data?.marks) ? res.data.marks : [];
-        setChallengeMarksCount(marks.length);
+        setChallengeMarks(marks);
       })
-      .catch(() => { /* optionale Kachel — stiller Fehler */ });
+      .catch(() => { /* optionaler Zusatz — stiller Fehler */ });
   }, []);
 
   const handleTranslationChange = async (translation: string) => {
@@ -342,7 +347,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         stats={[
           { value: profile.total_points || 0, label: 'PUNKTE' },
           { value: earnedBadgesCount, label: 'BADGES' },
-          { value: challengeMarksCount, label: 'CHALLENGES' }
+          { value: challengeMarks.length, label: 'CHALLENGES' }
         ]}
       />
 
@@ -491,6 +496,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           </IonCardContent>
         </IonCard>
       )}
+
+      {/* Deine Stempel -- direkt hinter dem Badge-Block (Simon, 12.09.2026:
+          "nach den badges auch die stempel sehen"). Ohne Stempel faellt der
+          Abschnitt ganz weg. */}
+      <ChallengeStempelSektion marks={challengeMarks} />
 
       {/* Recent Activities */}
       {profile.recent_activities && profile.recent_activities.length > 0 && (

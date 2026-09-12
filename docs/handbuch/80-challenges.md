@@ -314,7 +314,7 @@ Ein Abzeichen sammelt man, ein Stempel belegt, dass man dabei war.
 | Wofür | eine Bedingung erfüllen | einen Beitrag einreichen |
 | Zählen | ja, Bedingungen mit Werten | nein, es gibt nichts zu zählen |
 | Abstufungen | ja, verschiedene Abzeichen | nein, für alle derselbe |
-| Wo er steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung |
+| Wo er steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung und im Profil |
 
 Wann er kommt, hängt an der Freigabe-Pflicht:
 
@@ -325,6 +325,10 @@ Wann er kommt, hängt an der Freigabe-Pflicht:
 
 An der Anzahl hängt nichts: Wer fünf Beiträge schickt, hat trotzdem genau einen
 Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
+
+Gesammelte Stempel stehen im Challenges-Tab und außerdem im eigenen Profil,
+gleich hinter den Abzeichen — bei Konfis wie bei Teamer:innen. Wer noch keinen
+hat, sieht den Abschnitt im Profil gar nicht.
 
 > **Achtung:** Änderst du Name oder Symbol nachträglich, ändert sich das auch
 > für alle, die den Stempel schon haben — er hängt an der Challenge, nicht an

@@ -106,6 +106,9 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
 - **Badges** — deine Abzeichen; welche
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
   steht im Abzeichen-Kapitel
+- **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
+  die du selbst gesammelt hast. Solange du keinen hast, steht der Abschnitt
+  nicht da.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
