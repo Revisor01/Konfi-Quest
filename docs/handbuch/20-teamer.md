@@ -102,7 +102,9 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
   oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
-- **App-Tour ansehen** und **Medien-Cache leeren**
+- **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
+  Chat-Dateien weg, die zum schnelleren Öffnen auf dem Gerät liegen (siehe
+  [Chat](90-chat.md#eine-datei-mitschicken))
 - **Badges** — deine Abzeichen; welche
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
   steht im Abzeichen-Kapitel

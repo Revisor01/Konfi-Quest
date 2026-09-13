@@ -252,6 +252,12 @@ Während eine Datei gesendet wird, steht an der Nachricht, wie weit sie ist
 einer empfangenen Datei: Sie zeigt *„Wird geladen…"* mit Prozentzahl, bis sie
 sich öffnet. Ein zweites Antippen währenddessen bewirkt nichts; einmal reicht.
 
+Geladen wird jede Datei nur einmal. Danach liegt sie auf dem Gerät und öffnet
+sich beim nächsten Antippen sofort, ohne Ladeanzeige — auch ohne Netz. Das gilt
+für alle Anhänge: Bilder, Videos, PDFs, Dokumente und Tondateien. Wird der Platz
+knapp, räumt die App von allein auf und wirft weg, was am längsten niemand
+geöffnet hat. Von Hand geht das über **Medien-Cache leeren** im eigenen Profil.
+
 > **Achtung, bekannter Stolperstein:** Die App warnt erst ab 10 MB (*„Datei ist
 > zu groß (max. 10MB)"*), der Server nimmt aber nur 5 MB an. Eine Datei
 > dazwischen scheitert deshalb ohne verständliche Meldung. Wenn eine Datei sich

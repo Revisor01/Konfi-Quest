@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import App from './App';
 import { migrateToPreferences } from './services/migrateStorage';
 import { initTokenStore } from './services/tokenStore';
+import { tempDateienAufraeumen } from './utils/nativeFileViewer';
 
 // Umami-Reichweitenmessung NUR im Web laden, niemals im nativen App-Build.
 // Die native App (iOS/Android) erhebt damit selbst keine Analytics-Daten —
@@ -52,4 +53,10 @@ const mitZeitlimit = <T,>(p: Promise<T>, ms: number): Promise<T | void> =>
       <App />
     // </React.StrictMode>
   );
+
+  // NACH dem Rendern und bewusst ohne await (siehe oben: der Start darf an
+  // nichts haengenbleiben). Raeumt die temporaeren Kopien weg, die das native
+  // Oeffnen von Dateien in Documents/temp hinterlaesst — bis 13.09.2026 blieben
+  // die dort fuer immer liegen und wanderten ins Backup.
+  void tempDateienAufraeumen();
 })();

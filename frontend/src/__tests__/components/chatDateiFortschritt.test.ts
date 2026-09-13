@@ -19,6 +19,7 @@ const raum = lies('src/components/chat/ChatRoom.tsx');
 const sektionen = lies('src/components/chat/ChatRoomSections.tsx');
 const dateien = lies('src/components/chat/useChatDateien.ts');
 const blase = lies('src/components/chat/MessageBubble.tsx');
+const cache = lies('src/services/mediaCache.ts');
 
 describe('Senden: der Fortschritt kommt von axios, nicht aus einer Schaetzung', () => {
   it('haengt den Fortschritt an onUploadProgress', () => {
@@ -81,15 +82,33 @@ describe('Senden: der Fortschritt kommt von axios, nicht aus einer Schaetzung', 
 });
 
 describe('Laden: eine angetippte Datei zeigt, dass sie laedt', () => {
+  // 13.09.2026: Der Download liegt nicht mehr in useChatDateien, sondern im
+  // Medien-Cache — seit alle Dateitypen gecacht werden, nicht nur Bild und
+  // Video. Die Anzeige haengt unveraendert an echten Bytes, nur eine Ebene
+  // tiefer; deshalb wird die Erwartung auf mediaCache.ts umgezogen statt
+  // aufgeweicht.
   it('haengt den Fortschritt an onDownloadProgress', () => {
-    expect(dateien).toContain('onDownloadProgress');
-    expect(dateien).toContain('ereignis.loaded / gesamt');
+    expect(cache).toContain('onDownloadProgress');
+    expect(cache).toContain('ereignis.loaded / gesamt');
   });
 
   it('laesst den Fortschritt bei unbekannter Groesse offen', () => {
     // prozent bleibt null -> die Anzeige laeuft unbestimmt ("Wird geladen…")
     // statt auf einer geratenen Zahl zu stehen.
-    expect(dateien).toContain('gesamt ? Math.min(Math.round((ereignis.loaded / gesamt) * 100), 100) : null');
+    expect(cache).toContain('gesamt ? Math.min(Math.round((ereignis.loaded / gesamt) * 100), 100) : null');
+  });
+
+  it('reicht den Fortschritt aus dem Cache bis in die Anzeige durch', () => {
+    // Die Bruecke zwischen beiden Dateien: ohne den Rueckruf gaebe es beim
+    // Laden keine Rueckmeldung mehr.
+    expect(dateien).toContain('getMediaBlob(filePath, (prozent) => {');
+    expect(dateien).toContain('setLadendeDatei({ pfad: filePath, prozent });');
+  });
+
+  it('zeigt beim Cache-Treffer gar keine Ladeanzeige', () => {
+    // Sie waere sofort wieder weg und wuerde nur aufblitzen.
+    expect(dateien).toContain('const schonDa = await istGecacht(filePath);');
+    expect(dateien).toContain('if (!schonDa) setLadendeDatei({ pfad: filePath, prozent: 0 });');
   });
 
   it('ignoriert einen zweiten Tipp, solange geladen wird', () => {

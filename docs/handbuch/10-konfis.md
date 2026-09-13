@@ -117,7 +117,11 @@ im Kapitel [Abzeichen](60-badges.md#die-passende-bedingung-waehlen).
 - **E-Mail-Adresse ändern** und **Passwort ändern**
 - **Bibelübersetzung** — welche Übersetzung du bei der Tageslosung siehst
 - **App-Tour ansehen** — die Einführung noch einmal
-- **Medien-Cache leeren**
+- **Medien-Cache leeren** — Dateien aus dem Chat bleiben nach dem ersten Laden
+  auf dem Gerät, damit sie beim nächsten Mal sofort da sind. Hier lässt sich
+  dieser Speicher leeren; die Dateien laden dann beim nächsten Antippen neu.
+  Nötig ist das selten, die App räumt selbst auf (siehe
+  [Chat](90-chat.md#eine-datei-mitschicken))
 
 Ganz unten kannst du dich abmelden oder dein Konto löschen. Wie du dich in der
 App bewegst, steht im Kapitel [Die App bedienen](03-bedienung.md).

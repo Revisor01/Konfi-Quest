@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useIonModal } from '@ionic/react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
 import { compressImage } from '../../services/mediaCompression';
+import { getMediaBlob, istGecacht } from '../../services/mediaCache';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
 import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
@@ -112,22 +112,25 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     if (ladendeDatei) return;
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
-      setLadendeDatei({ pfad: filePath, prozent: 0 });
 
-      // Angeklickte Datei als Blob laden
-      const response = await api.get(`/chat/files/${filePath}`, {
-        responseType: 'blob',
-        onDownloadProgress: (ereignis) => {
-          const gesamt = ereignis.total;
-          setLadendeDatei({
-            pfad: filePath,
-            prozent: gesamt ? Math.min(Math.round((ereignis.loaded / gesamt) * 100), 100) : null
-          });
-        }
+      // Ueber den Medien-Cache statt direkt per api.get (13.09.2026, Simon:
+      // "Sonst muss man ja immer laden. Die moeglichst alle Dateien.").
+      // Vorher lief GENAU dieser Zweig — PDFs, Office-Dokumente, Audio, alles
+      // ausser Bild und Video — an mediaCache vorbei: jedes Antippen war ein
+      // voller Download. Die Ladeanzeige hier stammt aus derselben Not.
+      //
+      // Beim Cache-Treffer gar keine Anzeige zeigen: Sie waere sofort wieder
+      // weg und wuerde nur aufblitzen.
+      const schonDa = await istGecacht(filePath);
+      if (!schonDa) setLadendeDatei({ pfad: filePath, prozent: 0 });
+
+      const blob = await getMediaBlob(filePath, (prozent) => {
+        setLadendeDatei({ pfad: filePath, prozent });
       });
-      const blob = response.data;
-      const contentType = response.headers?.['content-type'];
-      const mime: string = typeof contentType === 'string' ? contentType : mimeType;
+      // Der MIME-Typ kommt jetzt aus dem Dateinamen statt aus dem
+      // Antwort-Header — beim Cache-Treffer gibt es keine Antwort mehr.
+      // mimeType ist der vom Aufrufer gemeldete Typ der Nachricht.
+      const mime: string = mimeType || getMimeFromFileName(fileName);
 
       // Nativ oeffnen versuchen (per D-12)
       const openedNatively = await openFileNatively(blob, fileName, mime);
