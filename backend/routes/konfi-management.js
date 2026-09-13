@@ -665,6 +665,31 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(404).json({ error: 'Benutzer nicht gefunden' });
             }
 
+            // Jahrgangs-Bindung (13.09.2026): Bis hierher genuegte die
+            // Organisation — wer einen Teamer- oder Admin-Token hatte, bekam
+            // ueber eine geratene ID das volle Profil jeder Konfi der Gemeinde,
+            // samt Punktehistorie, Aktivitaeten und Bonuspunkten, auch aus
+            // fremden Jahrgaengen. Die Schwesterroute /:id/event-points zeigt
+            // dieselben Daten und ist seit dem 01.09.2026 gebunden; ihr
+            // Kommentar verweist ausdruecklich auf "die Detailansicht GET /:id".
+            //
+            // Bei Konfis entscheidet der Jahrgang (darfKonfi). Teamer:innen
+            // haengen an mehreren Jahrgaengen oder an keinem — dieselbe
+            // Ausnahme wie ueberall sonst ("ein Admin sieht ALLE Teamer:innen",
+            // siehe utils/jahrgangsZugriff.js). Fuer sie genuegt die
+            // Organisation, die die Abfrage oben schon geprueft hat.
+            //
+            // Die ausgelieferten Apps bricht das nicht: KonfiDetailView.tsx
+            // haengt nur im Admin-Rollenbaum, und die ID stammt dort aus
+            // GET /admin/konfis — einer bereits jahrgangsgefilterten Liste
+            // (nachgemessen 13.09.2026).
+            if (konfi.role_name === 'konfi') {
+                const zugriff = await darfKonfi(db, req, konfiId);
+                if (!zugriff.erlaubt) {
+                    return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+                }
+            }
+
             const activitiesQuery = `
                 SELECT ka.*, a.name, a.points, a.type, a.target_role, u.display_name as admin_name
                 FROM user_activities ka
@@ -701,34 +726,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Abzeichen vergibt. Ein Stempel je Challenge, auch bei mehreren
             // freigegebenen Beitraegen — deshalb DISTINCT ueber challenge_id.
             //
-            // Die Jahrgangsgrenze gilt auch hier: Diese Route prueft bisher
-            // nur die Organisation, nicht den Jahrgang (anders als
-            // /:id/event-points). Das ist Bestand, und die Antwortform darf
-            // sich fuer die ausgelieferten Apps nicht aendern — deshalb wird
-            // hier NICHT die ganze Route verschaerft, sondern das NEUE Feld
-            // an darfKonfi gebunden: Wer den Jahrgang nicht sehen darf,
-            // bekommt eine leere Stempel-Liste statt fremder Stempel.
-            // Teamer:innen ohne konfi_profiles-Zeile liefert darfKonfi
-            // gefunden=false; fuer sie gilt die Teamer-Ausnahme der Sollregel
-            // ("admin sieht alle Teamer:innen"), sie sind also nicht an einen
-            // Jahrgang gebunden.
-            let challengeMarks = [];
-            const stempelZugriff = konfi.role_name === 'teamer'
-                ? { gefunden: false, erlaubt: false }
-                : await darfKonfi(db, req, konfiId);
-            if (konfi.role_name === 'teamer' || !stempelZugriff.gefunden || stempelZugriff.erlaubt) {
-                const stempelQuery = `
-                    SELECT DISTINCT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title
-                    FROM challenge_submissions s
-                    JOIN challenges c ON c.id = s.challenge_id
-                    WHERE s.user_id = $1
-                      AND s.moderation_status = 'approved'
-                      AND c.organization_id = $2
-                    ORDER BY c.title
-                `;
-                const { rows: stempelRows } = await db.query(stempelQuery, [konfiId, req.user.organization_id]);
-                challengeMarks = stempelRows;
-            }
+            // Die Jahrgangsgrenze steht seit dem 13.09.2026 am Kopf der Route
+            // und gilt damit fuer ALLE Felder — das Feld braucht seither keine
+            // eigene Pruefung mehr. Bis dahin hing nur dieses eine Feld an
+            // darfKonfi, weil die uebrige Route ungebunden war.
+            const stempelQuery = `
+                SELECT DISTINCT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title
+                FROM challenge_submissions s
+                JOIN challenges c ON c.id = s.challenge_id
+                WHERE s.user_id = $1
+                  AND s.moderation_status = 'approved'
+                  AND c.organization_id = $2
+                ORDER BY c.title
+            `;
+            const { rows: challengeMarks } = await db.query(stempelQuery, [konfiId, req.user.organization_id]);
 
             // Zertifikate für Teamer mitladen
             let certificates = [];

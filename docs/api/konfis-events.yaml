@@ -2224,21 +2224,23 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL"
         jahrgangs-bindung: >
-          Nur fuer das Feld `challengeMarks` (seit 13.09.2026): Steht die
-          angesehene Person in einem Jahrgang ausserhalb der eigenen
-          Zuweisungen, kommt die Liste LEER zurueck (darfKonfi, view-Stufe) —
-          statt fremde Stempel zu zeigen. org_admin und super_admin sind
-          ausgenommen. Teamer:innen als Zielobjekt sind nicht an einen
-          Jahrgang gebunden ("admin sieht alle Teamer:innen"), ihre Stempel
-          erscheinen immer.
+          Die GANZE Route (seit 13.09.2026): Steht die angesehene Person in
+          einem Jahrgang ausserhalb der eigenen Zuweisungen, antwortet die
+          Route mit 403 (darfKonfi, view-Stufe). org_admin und super_admin
+          sind ausgenommen. Teamer:innen als Zielobjekt sind nicht an einen
+          Jahrgang gebunden ("admin sieht alle Teamer:innen"), ihr Profil
+          bleibt fuer die ganze Leitung erreichbar. Gleiche Stufe wie die
+          Schwesterroute GET /:id/event-points, die dieselben Daten zeigt.
         hinweis: >
-          # HINWEIS: Die uebrige Route hat weiterhin KEINEN Jahrgangs-Check.
-          Eine Teamer:in kann über eine direkt geratene ID das vollstaendige
-          Profil samt Punktehistorie jedes Konfis der Organisation abrufen,
-          auch aus Jahrgängen ohne Zuweisung. Die Liste GET /api/admin/konfis
-          filtert dagegen korrekt. Das am 13.09.2026 ergaenzte Feld
-          `challengeMarks` weitet diese Luecke NICHT aus (siehe
-          jahrgangs-bindung).
+          BEHOBEN 13.09.2026: Bis dahin hatte die uebrige Route KEINEN
+          Jahrgangs-Check — eine Teamer:in konnte ueber eine direkt geratene
+          ID das vollstaendige Profil samt Punktehistorie jedes Konfis der
+          Organisation abrufen, auch aus Jahrgaengen ohne Zuweisung. Nur das
+          am selben Tag ergaenzte Feld `challengeMarks` war gebunden; seit der
+          Bindung am Kopf der Route braucht es dort keine eigene Pruefung mehr.
+          Die Oberflaeche war nicht betroffen: Die Detailansicht haengt allein
+          im Admin-Rollenbaum, und die ID stammt dort aus der bereits
+          gefilterten Liste GET /api/admin/konfis (nachgemessen 13.09.2026).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Konfi-/Teamer-Detaildaten }

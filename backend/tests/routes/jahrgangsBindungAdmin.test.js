@@ -494,6 +494,98 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
   });
 
   // ================================================================
+  // GET /api/admin/konfis/:id — die Detailansicht selbst
+  //
+  // Bis 13.09.2026 prueften hier NUR die Organisation: Wer einen Teamer- oder
+  // Admin-Token hatte, bekam ueber eine geratene ID das volle Profil jeder
+  // Konfi der Gemeinde, samt Punktehistorie, Aktivitaeten und Bonuspunkten —
+  // auch aus Jahrgaengen, die er gar nicht sehen darf. Die Schwesterroute
+  // /:id/event-points zeigt seit dem 01.09.2026 dieselben Daten und war
+  // bereits gebunden; ihr Kommentar verweist ausdruecklich auf "die
+  // Detailansicht GET /:id". Die Inkonsistenz ist damit aufgeloest.
+  //
+  // Die Oberflaeche bricht davon nicht: KonfiDetailView.tsx haengt nur im
+  // Admin-Rollenbaum, und die ID stammt aus GET /admin/konfis — einer bereits
+  // jahrgangsgefilterten Liste (nachgemessen 13.09.2026).
+  // ================================================================
+  describe('GET /api/admin/konfis/:id', () => {
+    it('Admin DARF die Detailansicht im eigenen Jahrgang oeffnen', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(KONFI_A);
+      expect(res.body.display_name).toBe('Konfi JG-A');
+    });
+
+    it('Admin DARF NICHT in einen fremden Jahrgang — 403, keine Profildaten', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(403);
+      // Kein Datenleck im Fehlerkoerper: weder Name noch Punktehistorie.
+      expect(res.body.display_name).toBeUndefined();
+      expect(res.body.activities).toBeUndefined();
+      expect(res.body.bonusPoints).toBeUndefined();
+    });
+
+    it('Admin mit Jahrgang A kommt nicht an eine Konfi in Jahrgang B — 403', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.display_name).toBeUndefined();
+    });
+
+    it('Teamer bleibt an seinen Jahrgang gebunden — 403', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.display_name).toBeUndefined();
+    });
+
+    it('REGRESSION org_admin oeffnet JEDE Detailansicht der Organisation', async () => {
+      const resA = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      const resB = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(resA.status).toBe(200);
+      expect(resA.body.display_name).toBe('Konfi JG-A');
+      expect(resB.status).toBe(200);
+      expect(resB.body.display_name).toBe('Konfi JG-B');
+    });
+
+    it('Teamer:in als ZIEL bleibt ohne Jahrgang erreichbar (Ausnahme der Regel)', async () => {
+      // "ein admin ist bis auf bei den teamern immer an seine jahrgaenge
+      // gebunden" (Simon, 31.08.2026). TEAMER_ZIEL hat keine
+      // konfi_profiles-Zeile, darfKonfi liefert also gefunden=false — das
+      // darf NICHT als 404 durchschlagen, die Person existiert ja.
+      const res = await request(app)
+        .get(`/api/admin/konfis/${TEAMER_ZIEL}`)
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.display_name).toBe('Teamer Ziel');
+    });
+
+    it('Unbekannte ID bleibt 404, nicht 403 — kein Rueckschluss auf Existenz', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/999999')
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
   // Foto-Routen
   // ================================================================
   describe('Foto-Routen', () => {
@@ -1594,15 +1686,24 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       ]);
     });
 
-    it('VERBOTEN: Admin ohne diesen Jahrgang bekommt KEINE Stempel der fremden Konfi', async () => {
+    it('VERBOTEN: Admin ohne diesen Jahrgang kommt gar nicht erst an die fremde Konfi', async () => {
       const res = await request(app)
         .get(`/api/admin/konfis/${KONFI_B}`)
         .set('Authorization', `Bearer ${adminMitJgToken}`);
 
-      // Die Route selbst bleibt unveraendert erreichbar (Bestand, Org-Grenze);
-      // das NEUE Feld bleibt leer.
-      expect(res.status).toBe(200);
-      expect(res.body.challengeMarks).toEqual([]);
+      // UMGEDREHT am 13.09.2026, von 200 mit leerer Stempel-Liste auf 403.
+      //
+      // Die alte Erwartung war fuer ihren Stand richtig: Als nur das FELD
+      // challengeMarks an darfKonfi hing, blieb die Route selbst erreichbar —
+      // ihr eigener Kommentar nannte das "Bestand, Org-Grenze". Seit die
+      // Jahrgangsgrenze am Kopf der Route steht, ist genau dieser Bestand weg:
+      // Wer den Jahrgang nicht sehen darf, bekommt das Profil gar nicht mehr,
+      // nicht bloss ein leeres Feld darin.
+      //
+      // Die Absicht des Tests bleibt dieselbe und wird sogar besser erfuellt:
+      // keine fremden Stempel. Jetzt auch keine fremde Punktehistorie.
+      expect(res.status).toBe(403);
+      expect(res.body.challengeMarks).toBeUndefined();
     });
 
     it('org_admin ist von der Jahrgangsgrenze ausgenommen und sieht die Stempel auch im fremden Jahrgang', async () => {
