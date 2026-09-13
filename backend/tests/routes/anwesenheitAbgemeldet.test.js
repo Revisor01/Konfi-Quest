@@ -292,11 +292,12 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
     });
   });
 
-  describe('Kein Push bei excused', () => {
-    // Entscheidung Simon: Die Abmeldung kam von den Eltern. Eine Mitteilung
-    // darueber waere eine Benachrichtigung ueber etwas, das sie selbst
-    // veranlasst haben.
-    it('excused schickt der Konfi keinen Push', async () => {
+  describe('Push bei excused', () => {
+    // UMENTSCHIEDEN am 13.09.2026 (Simon: "Abmeldung darf auch nen Push
+    // bekommen"). Am 12.09. galt noch das Gegenteil, mit der Ueberlegung, die
+    // Abmeldung komme ja von den Eltern. In der Praxis ist die Rueckmeldung
+    // aber genau der Punkt: Die Konfi sieht, dass es angekommen ist.
+    it('excused schickt der Konfi einen Push', async () => {
       const spy = vi.spyOn(PushService, 'sendEventAttendanceToKonfi').mockResolvedValue(undefined);
       const { eventId, bookingId } = await setupEvent();
       await request(app)
@@ -304,7 +305,32 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ attendance_status: 'excused', excuse_reason: 'krank' });
 
-      expect(spy).not.toHaveBeenCalled();
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.mock.calls[0][3]).toBe('excused');
+      spy.mockRestore();
+    });
+
+    it('nennt die Abmeldung beim Namen statt "nicht erschienen"', async () => {
+      // Der Wortlaut ist hier die eigentliche Sache: "Du wurdest als nicht
+      // erschienen markiert" waere bei einer ordentlichen Abmeldung ein
+      // Vorwurf. Deshalb wird der TEXT geprueft, nicht nur der Aufruf.
+      const echterService = require('../../services/pushService');
+      const titel = [];
+      const spy = vi.spyOn(echterService, 'sendToUser').mockImplementation(async (_db, _id, benachrichtigung) => {
+        titel.push(benachrichtigung);
+        return { success: true };
+      });
+      const { eventId, bookingId } = await setupEvent();
+      await request(app)
+        .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'excused', excuse_reason: 'krank' });
+
+      expect(titel.length).toBe(1);
+      expect(titel[0].title).toBe('Abmeldung eingetragen');
+      expect(titel[0].body).toContain('Abmeldung');
+      expect(titel[0].body).not.toContain('nicht erschienen');
+      expect(titel[0].data.status).toBe('excused');
       spy.mockRestore();
     });
 

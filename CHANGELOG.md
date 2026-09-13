@@ -17,8 +17,8 @@ Versionsüberschrift.
   außerhalb der App abgemeldet, etwa weil die Eltern anrufen und das Kind
   krank ist, lässt sich das mit Grund festhalten. Der Grund steht in der
   Teilnehmerliste, damit das ganze Team ihn sieht. Punkte gibt es dabei keine;
-  schon vergebene werden zurückgenommen. Die Konfi bekommt keine Mitteilung —
-  die Abmeldung kam ja von zu Hause.
+  schon vergebene werden zurückgenommen. Die Konfi bekommt eine Mitteilung,
+  dass die Abmeldung eingetragen wurde.
 - Zu jeder Anwesenheit lässt sich ein **Vermerk** eintragen, etwa „ging um
   14 Uhr". Er ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte.

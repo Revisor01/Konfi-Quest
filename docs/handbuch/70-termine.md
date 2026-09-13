@@ -368,9 +368,8 @@ Der Eintrag wird grau, der Grund steht direkt in der Teilnehmerliste, und alle
 im Team sehen ihn.
 
 Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
-bei „Abwesend". Die Konfi bekommt **keinen Push** — die Abmeldung kam ja von
-den Eltern, sie über etwas zu benachrichtigen, das sie selbst veranlasst
-haben, hätte keinen Sinn.
+bei „Abwesend". Die Konfi bekommt eine Mitteilung, dass die Abmeldung
+eingetragen wurde — so sieht sie, dass der Anruf von zu Hause angekommen ist.
 
 In der [Anwesenheits-Matrix](30-leitung.md#konfis-und-teamer-innen-verwalten) steht dafür ein
 grauer Punkt, und der Termin zählt nicht in die Pflicht-Summe — so wie bei

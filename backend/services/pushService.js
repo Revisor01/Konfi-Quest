@@ -1452,10 +1452,20 @@ class PushService {
     try {
 
       const isPresent = status === 'present';
+      // 'excused' (13.09.2026) braucht einen EIGENEN Wortlaut. Der Text fuer
+      // 'absent' waere hier schlicht falsch: "nicht erschienen" klingt nach
+      // unentschuldigtem Fehlen, dabei wurde ordentlich abgemeldet -- meist
+      // von den Eltern. Die Konfi soll sehen, dass es angekommen ist, nicht
+      // einen Vorwurf lesen.
+      const isExcused = status === 'excused';
       const notification = {
-        title: isPresent ? 'Teilnahme bestätigt!' : 'Nicht erschienen',
+        title: isPresent ? 'Teilnahme bestätigt!'
+          : isExcused ? 'Abmeldung eingetragen'
+          : 'Nicht erschienen',
         body: isPresent
           ? `Deine Teilnahme an "${eventName}" wurde bestätigt.${points > 0 ? ` Du erhältst +${points} Punkte!` : ''}`
+          : isExcused
+          ? `Deine Abmeldung für "${eventName}" wurde eingetragen.`
           : `Du wurdest als "nicht erschienen" für "${eventName}" markiert.`,
         data: {
           type: 'event_attendance',

@@ -319,15 +319,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         } else if (attendance_status === 'excused') {
-          // BEWUSST KEIN PUSH an die Konfi (Entscheidung Simon, 12.09.2026):
-          // Die Abmeldung kam von den Eltern. Eine Mitteilung darueber waere
-          // eine Benachrichtigung ueber etwas, das sie selbst veranlasst
-          // haben. Die Leitung traegt hier nur nach.
+          // Push MIT eigenem Wortlaut (Entscheidung Simon, 13.09.2026:
+          // "Abmeldung darf auch nen Push bekommen"). Am 12.09. war das noch
+          // anders entschieden -- die Ueberlegung war, die Abmeldung komme ja
+          // von den Eltern. In der Praxis ist die Rueckmeldung aber genau der
+          // Punkt: Die Konfi sieht, dass es angekommen und eingetragen ist.
           //
-          // Wurden Punkte abgezogen, muss das Dashboard der Konfi das trotzdem
-          // erfahren -- sonst zeigt es eine Zahl, die es nicht mehr gibt.
-          if (isKonfiParticipant && pointsRemoved) {
-            liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+          // Der Text ist NICHT der von 'absent' ("nicht erschienen") -- das
+          // klaenge nach unentschuldigtem Fehlen. Siehe
+          // pushService.sendEventAttendanceToKonfi.
+          if (isKonfiParticipant) {
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'excused', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+            if (pointsRemoved) {
+              liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+            }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         }
