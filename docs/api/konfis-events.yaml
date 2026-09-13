@@ -1080,6 +1080,11 @@ paths:
         erhalten bei points > 0 und nicht-Pflicht-Event die Event-Punkte
         (einmalig, ON CONFLICT DO NOTHING) inkl. Badge-/Level-Check; Teamer
         werden nur als anwesend verbucht.
+        KEIN Urheber (13.09.2026, Migration 148): attendance_set_by/_at
+        bleiben hier bewusst NULL. Anders als beim Verbuchen durch die Leitung
+        checkt sich die Person SELBST ein; die Spalte beantwortet "wer von uns
+        hat das eingetragen" und hat darauf keine Antwort. Die Anzeige laesst
+        die Urheber-Zeile dann weg.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1192,6 +1197,14 @@ paths:
         Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht —
         sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form
         oder Typ.
+        ADDITIV 13.09.2026 (Migration 148): participants[]-Eintraege tragen
+        zusaetzlich attendance_set_by (integer, nullbar), attendance_set_at
+        (date-time, nullbar) und attendance_set_by_name (string, nullbar) —
+        wer die Anwesenheit zuletzt gesetzt hat und wann. NULL heisst
+        UNBEKANNT, nicht "niemand": Buchungen von vor der Migration und
+        Selbst-Check-ins per QR-Code tragen keinen Urheber. Der Name kommt
+        ueber einen LEFT JOIN auf users — eine Buchung ohne Urheber bleibt
+        in der Liste. Kein vorhandenes Feld aendert Form oder Typ.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1532,7 +1545,14 @@ paths:
         Setzt für alle bestaetigten Konfis ohne attendance_status 'present'
         und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ)
         die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits
-        Verbuchte bleiben unberuehrt.
+        Verbuchte bleiben unberuehrt. Abgemeldete (status <> 'confirmed')
+        ebenfalls: eine Abmeldung bleibt eine ausdrueckliche Einzelentscheidung
+        (PUT .../{participantId}/attendance).
+        ADDITIV 13.09.2026 (Migration 148): Jede verbuchte Zeile haelt Urheber
+        und Zeitpunkt fest (attendance_set_by = req.user.id, attendance_set_at
+        = NOW()) — "Alle verbuchen" ist eine Entscheidung der Leitung, und
+        dass es viele auf einmal waren, aendert nichts daran, wer sie getroffen
+        hat. Am Request aendert sich nichts.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1567,6 +1587,17 @@ paths:
         unabhaengig vom Status, z. B. "ging um 14 Uhr"; bleibt stehen, solange
         nichts Neues geschickt wird). Kein bestehendes Feld aendert Form oder
         Typ — ausgelieferte Apps schicken weiterhin nur present/absent.
+        KEIN Buchungsstatus-Check (festgehalten 13.09.2026): Die Route setzt
+        die Anwesenheit auch bei status='opted_out'. Das ist gewollt — die
+        Leitung muss eine Selbstabmeldung nachtraeglich verbuchen koennen
+        ("hatte sich abgemeldet, kam dann doch"). Der Buchungsstatus bleibt
+        dabei 'opted_out' und wird NICHT umgeschrieben; die Abmeldung ist die
+        Vorgeschichte des Eintrags. Anzeigen richten sich nach dem
+        Anwesenheits-Status, sobald einer gesetzt ist.
+        ADDITIV 13.09.2026 (Migration 148): Jedes Schreiben haelt Urheber und
+        Zeitpunkt fest (attendance_set_by = req.user.id, attendance_set_at =
+        NOW()) — auch, wenn nur der Vermerk geaendert wurde. Festgehalten wird
+        der aktuelle Stand, keine Historie. Am Request aendert sich nichts.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

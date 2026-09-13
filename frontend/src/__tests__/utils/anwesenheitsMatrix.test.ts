@@ -24,8 +24,24 @@ describe('Anwesenheitsmatrix: Zellstatus', () => {
     expect(getZellStatus({ status: 'opted_out', attendance_status: null })).toBe('opted_out');
   });
 
-  it('Abmeldung schlägt eine fälschlich erfasste Anwesenheit', () => {
-    expect(getZellStatus({ status: 'opted_out', attendance_status: 'present' })).toBe('opted_out');
+  // UMGEDREHT am 13.09.2026. Die alte Erwartung war "Abmeldung schlägt eine
+  // fälschlich erfasste Anwesenheit" — richtig, solange es keinen Weg gab,
+  // eine Selbstabmeldung zu verbuchen: ein attendance_status daneben konnte
+  // nur ein Versehen sein. Seit die Leitung eine Selbstabmeldung ausdrücklich
+  // bearbeiten darf ("hatte sich abgemeldet, kam dann doch"), ist ein
+  // gesetzter Status eine getroffene Entscheidung. Bliebe 'opted_out' vorn,
+  // wäre die nachträglich verbuchte Anwesenheit in der Matrix unsichtbar.
+  it('eine nachträglich verbuchte Anwesenheit schlägt die Selbstabmeldung', () => {
+    expect(getZellStatus({ status: 'opted_out', attendance_status: 'present' })).toBe('present');
+  });
+
+  it('auch ein nachgetragenes Fehlen schlägt die Selbstabmeldung', () => {
+    expect(getZellStatus({ status: 'opted_out', attendance_status: 'absent' })).toBe('absent');
+  });
+
+  it('ohne gesetzten Status bleibt die Selbstabmeldung stehen', () => {
+    // Gegenprobe zur Umkehrung: Der häufige Fall darf sich nicht ändern.
+    expect(getZellStatus({ status: 'opted_out', attendance_status: null })).toBe('opted_out');
   });
 
   // Von der Leitung nachgetragene Abmeldung (12.09.2026): eigener Zellstatus,
@@ -34,8 +50,11 @@ describe('Anwesenheitsmatrix: Zellstatus', () => {
     expect(getZellStatus({ status: 'confirmed', attendance_status: 'excused' })).toBe('excused');
   });
 
-  it('die Selbstabmeldung bleibt sichtbar, auch wenn zusaetzlich excused erfasst wurde', () => {
-    expect(getZellStatus({ status: 'opted_out', attendance_status: 'excused' })).toBe('opted_out');
+  it('hat die Leitung die Abmeldung nachgetragen, steht excused — auch über einer Selbstabmeldung', () => {
+    // Beide Wege sagen fachlich dasselbe (keine Punkte, kein unentschuldigtes
+    // Fehlen) und zählen gleich wenig in den Pflicht-Nenner. Angezeigt wird
+    // der Stand, den die Leitung zuletzt gesetzt hat.
+    expect(getZellStatus({ status: 'opted_out', attendance_status: 'excused' })).toBe('excused');
   });
 });
 

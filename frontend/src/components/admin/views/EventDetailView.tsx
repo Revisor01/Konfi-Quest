@@ -48,6 +48,7 @@ import type { Participant, Unregistration, EventData } from './EventDetailSectio
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { urheberZeile } from '../../../utils/anwesenheitUrheber';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
@@ -815,7 +816,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Helper: Einzelnen Teilnehmer rendern
   const renderParticipant = (participant: Participant) => {
     const isWaitlist = participant.status === 'waitlist';
-    const isOptedOut = participant.status === 'opted_out';
+    // Eine SELBSTabmeldung, die von der Leitung verbucht wurde, ist keine
+    // Abmeldung mehr, sondern eine Anwesenheitsentscheidung (13.09.2026):
+    // Wer sich abgemeldet hatte und dann doch kam, steht als anwesend da.
+    // Deshalb zaehlt ab hier der Anwesenheits-Status, sobald einer gesetzt
+    // ist — sonst bliebe die Zeile rot und "Abgemeldet", obwohl die Leitung
+    // genau das gerade korrigiert hat. Dieselbe Reihenfolge wie in
+    // utils/anwesenheitsMatrix.ts (getZellStatus); die beiden muessen
+    // zusammenpassen, sonst zeigen Liste und Matrix Verschiedenes.
+    const isOptedOut = participant.status === 'opted_out' && !participant.attendance_status;
     // Nachgetragene Abmeldung (12.09.2026): grau, nicht rot. Rot hiesse
     // "hat gefehlt" — hier war die Abmeldung gemeldet, das ist keine
     // Verfehlung, sondern eine geklaerte Lage.
@@ -858,7 +867,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           className="app-item-transparent"
           button detail={false} lines="none"
           onClick={() => {
-            if (participant.status === 'confirmed') showAttendanceActionSheet(participant);
+            // 'opted_out' oeffnet DASSELBE Anwesenheits-Menue wie 'confirmed'
+            // (Simon, 13.09.2026): "Ich als Admin will eine Selbstabmeldung
+            // bearbeiten koennen. Doch anwesend. Vermerk etc." Wer sich
+            // vorher abgemeldet hat und dann doch kommt, muss verbucht werden
+            // koennen -- vorher passierte auf den Tipp gar nichts, ohne jeden
+            // Hinweis warum. Das Backend liess das ohnehin zu; die Sperre sass
+            // allein hier.
+            if (participant.status === 'confirmed' || participant.status === 'opted_out') showAttendanceActionSheet(participant);
             else if (participant.status === 'waitlist') showWaitlistActionSheet(participant);
           }}
         >
@@ -896,10 +912,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       Kennzeichen aus Migration 141 — eine Absage, die eine
                       Zusage zurueckgenommen hat, heisst fuer die Leitung
                       "kurzfristig umplanen" und wird eigens benannt. */}
-                  {isOptedOut && (participant.opt_out_reason || participant.absage_nach_zusage) && (
+                  {/* Am BUCHUNGSSTATUS, nicht an isOptedOut: Hat die Leitung
+                      eine Selbstabmeldung nachtraeglich verbucht ("kam doch"),
+                      faerbt die Zeile oben nach dem Anwesenheits-Status um —
+                      die Absage samt Grund bleibt aber die Vorgeschichte, die
+                      erklaert, warum ueberhaupt jemand nachgetragen hat. */}
+                  {participant.status === 'opted_out' && (participant.opt_out_reason || participant.absage_nach_zusage) && (
                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       {participant.absage_nach_zusage && (
                         <strong>Nach Zusage abgesagt{participant.opt_out_reason ? ': ' : ''}</strong>
+                      )}
+                      {!participant.absage_nach_zusage && participant.attendance_status && (
+                        <strong>Hatte sich abgemeldet{participant.opt_out_reason ? ': ' : ''}</strong>
                       )}
                       {participant.opt_out_reason}
                     </div>
@@ -915,6 +939,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   {participant.attendance_note && (
                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       <strong>Vermerk: </strong>{participant.attendance_note}
+                    </div>
+                  )}
+                  {/* Wer den Eintrag gemacht hat (13.09.2026), klein unter
+                      Grund und Vermerk. Fehlt der Urheber — Altbestand oder
+                      Selbst-Check-in per QR-Code —, faellt die Zeile weg
+                      statt "unbekannt" zu behaupten. */}
+                  {urheberZeile(participant) && (
+                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      {urheberZeile(participant)}
                     </div>
                   )}
                 </div>
@@ -1018,7 +1051,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               ? eventData?.teamer_max_participants : '\u221E';
             const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
             const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
-            const konfiOptedOut = konfiOnly.filter(p => p.status === 'opted_out').length;
+            // Eine Selbstabmeldung, die die Leitung inzwischen verbucht hat
+            // ("kam dann doch"), zaehlt nicht mehr als abgemeldet (13.09.2026)
+            // — sonst stuende dieselbe Person zugleich unter "Anwesend" und
+            // unter "Abgemeldet". Dieselbe Reihenfolge wie in der
+            // Teilnehmerliste und in getZellStatus.
+            const konfiOptedOut = konfiOnly.filter(p => p.status === 'opted_out' && !p.attendance_status).length;
 
             // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
             // Kacheln müssen komplett vom Team erzaehlen (vorher stand hier

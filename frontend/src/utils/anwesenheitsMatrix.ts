@@ -21,14 +21,31 @@ export interface MatrixBookingLike {
 }
 
 // Status einer einzelnen Zelle (Konfi x Pflichttermin).
-// Reihenfolge: Abmeldung schlägt eine (fälschlich) erfasste Anwesenheit —
-// wer abgemeldet ist, wird nicht verbucht.
+//
+// Reihenfolge UMGEDREHT (13.09.2026): Der ausdrücklich gesetzte
+// Anwesenheits-Status schlägt jetzt die Selbstabmeldung, nicht umgekehrt.
+//
+// Vorher stand 'opted_out' zuerst, weil es keinen Weg gab, eine
+// Selbstabmeldung zu verbuchen — ein attendance_status daneben konnte nur
+// versehentlich entstanden sein. Seit die Leitung genau das darf ("hatte sich
+// abgemeldet, kam dann doch"), ist es das Gegenteil: Ein gesetzter Status ist
+// eine getroffene Entscheidung, die Abmeldung nur die Vorgeschichte. Bliebe
+// 'opted_out' vorn, wäre die nachträglich verbuchte Anwesenheit in der Matrix
+// unsichtbar — und die Konfi zählte trotz Teilnahme nicht in den
+// Pflicht-Nenner.
+//
+// Die Teilnehmerliste (EventDetailView, renderParticipant) färbt nach
+// derselben Reihenfolge. Die beiden müssen zusammenpassen, sonst zeigen
+// Liste und Matrix Verschiedenes über dieselbe Person.
+//
+// Ohne gesetzten Status bleibt alles wie gehabt: Eine Abmeldung ist keine
+// offene Verbuchung, sondern eine abgeschlossene Rückmeldung.
 export const getZellStatus = (b: MatrixBookingLike | undefined): MatrixZellStatus => {
   if (!b) return 'open';
-  if (b.status === 'opted_out') return 'opted_out';
   if (b.attendance_status === 'present') return 'present';
   if (b.attendance_status === 'absent') return 'absent';
   if (b.attendance_status === 'excused') return 'excused';
+  if (b.status === 'opted_out') return 'opted_out';
   return 'open';
 };
 

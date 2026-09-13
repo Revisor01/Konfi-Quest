@@ -25,8 +25,17 @@ Versionsüberschrift.
 - Die Anwesenheits-Matrix zeigt nachgetragene Abmeldungen als eigenen grauen
   Punkt; der Termin zählt dort nicht in die Pflicht-Summe, genau wie bei einer
   Abmeldung, die der Konfi selbst vorgenommen hat.
+- Unter Grund und Vermerk steht klein, wer die Anwesenheit zuletzt eingetragen
+  hat und wann — bei einer Rückfrage ist damit klar, wen man fragt. Bei einem
+  Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort gibt es
+  niemanden aus dem Team, der sie eingetragen hätte.
 
 ### Behoben
+- Wer sich selbst von einem Pflichttermin abgemeldet hat und dann doch kommt,
+  lässt sich jetzt ganz normal verbuchen — anwesend, abwesend, abgemeldet oder
+  mit einem Vermerk. Vorher passierte beim Tippen auf den Eintrag nichts. Die
+  ursprüngliche Abmeldung bleibt als Vorgeschichte darunter stehen, und der
+  Termin zählt wieder in die Pflicht-Summe.
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem
   leeren Reiter jetzt die Farbe der Challenges statt der des Teams.
 

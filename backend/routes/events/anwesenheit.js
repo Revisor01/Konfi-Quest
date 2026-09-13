@@ -66,7 +66,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const pointType = event.point_type || 'gemeinde';
 
       for (const b of unprocessed) {
-        await client.query("UPDATE event_bookings SET attendance_status = 'present' WHERE id = $1", [b.booking_id]);
+        // Urheber wird hier MITGESCHRIEBEN (Migration 148): "Alle verbuchen"
+        // ist eine Entscheidung der Leitung -- sie drueckt den Knopf und
+        // erklaert damit alle Angemeldeten fuer anwesend. Dass es viele auf
+        // einmal waren, aendert nichts daran, wer es war; bei einer Rueckfrage
+        // ("wer hat das verbucht?") ist genau diese Person gemeint.
+        await client.query(
+          "UPDATE event_bookings SET attendance_status = 'present', attendance_set_by = $2, attendance_set_at = NOW() WHERE id = $1",
+          [b.booking_id, req.user.id]
+        );
         marked.push(b.user_id);
 
         // Punkte-Logik identisch zum Einzel-Handler: nur nicht-Pflicht-Events
@@ -203,13 +211,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // inzwischen auf anwesend steht. Der Vermerk dagegen haengt NICHT am
       // Status ("ging um 14 Uhr" gilt bei Anwesenheit) und bleibt, solange
       // nichts Neues geschickt wird.
+      //
+      // Urheber und Zeitpunkt (Migration 148) werden bei JEDEM Schreiben neu
+      // gesetzt -- auch wenn nur der Vermerk geaendert wurde. Festgehalten
+      // wird, wer den Stand zu verantworten hat, der jetzt dasteht; das ist
+      // die Person, bei der man nachfragt.
       await client.query(
         `UPDATE event_bookings
             SET attendance_status = $1,
                 excuse_reason = CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END,
-                attendance_note = COALESCE($4, attendance_note)
+                attendance_note = COALESCE($4, attendance_note),
+                attendance_set_by = $5,
+                attendance_set_at = NOW()
           WHERE id = $2`,
-        [attendance_status, participantId, grund, vermerk]
+        [attendance_status, participantId, grund, vermerk, req.user.id]
       );
 
       let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };

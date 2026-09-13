@@ -141,6 +141,15 @@ export interface Participant {
   excuse_reason?: string | null;
   /** Freier Vermerk unabhaengig vom Status ("ging um 14 Uhr"). */
   attendance_note?: string | null;
+  /**
+   * Wer die Anwesenheit zuletzt gesetzt hat (Migration 148, 13.09.2026).
+   * NULL/fehlend heisst UNBEKANNT, nicht "niemand": Bestandszeilen von vor
+   * der Migration und Selbst-Check-ins per QR-Code haben keinen Urheber.
+   * Die Anzeige laesst die Zeile dann weg.
+   */
+  attendance_set_by?: number | null;
+  attendance_set_by_name?: string | null;
+  attendance_set_at?: string | null;
   timeslot_id?: number;
   timeslot_start_time?: string;
   timeslot_end_time?: string;

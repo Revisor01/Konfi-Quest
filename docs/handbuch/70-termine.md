@@ -129,7 +129,8 @@ bleibt gespeichert. Beides geht nur, solange der Termin in der Zukunft liegt.
 
 > **Wer abgemeldet ist, kann sich nicht per QR-Code einchecken** — der Scanner
 > meldet „Du hast dich von diesem Event abgemeldet". Wer doch spontan kommt,
-> meldet sich vorher wieder an oder wird von dir von Hand als anwesend verbucht.
+> meldet sich vorher wieder an oder wird von dir
+> [von Hand verbucht](#eine-selbstabmeldung-nachtraeglich-verbuchen).
 
 ## Einen Termin als Konfirmation kennzeichnen
 
@@ -356,7 +357,8 @@ einmal, oder die Leute checken sich selbst per QR-Code ein.
 **Einzeln** geht es in der Teilnehmerliste: Tipp auf den Eintrag, dann
 **Anwesend**, **Abwesend** oder **Abgemeldet**. Punkte werden sofort vergeben
 oder abgezogen, und bei „Anwesend" und „Abwesend" bekommt die Person einen
-Push.
+Push. Das Menü gibt es auch bei Leuten, die sich
+[selbst abgemeldet haben](#eine-selbstabmeldung-nachtraeglich-verbuchen).
 
 ### Eine Abmeldung nachtragen
 
@@ -379,6 +381,37 @@ einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
 > steht das als „Abgemeldet" mit ihrer eigenen Begründung. Trägst du eine
 > Abmeldung nach, heißt sie in der Übersicht „Abgemeldet (nachgetragen)".
 > Für Punkte und Summe zählt beides gleich.
+
+### Eine Selbstabmeldung nachträglich verbuchen
+
+Hat sich jemand selbst von einem Pflichttermin abgemeldet und kommt dann doch,
+tippst du den Eintrag genauso an wie jeden anderen. Du bekommst dasselbe Menü:
+**Anwesend**, **Abwesend**, **Abgemeldet** und den **Vermerk**.
+
+Sobald du etwas einträgst, richtet sich die Anzeige danach: Der Eintrag wird
+grün, in der Anwesenheits-Matrix steht ein grüner Punkt, und der Termin zählt
+wieder in die Pflicht-Summe. Die ursprüngliche Abmeldung bleibt als
+Vorgeschichte darunter stehen — „Hatte sich abgemeldet: Familienfeier an dem
+Tag" —, damit im Team nachvollziehbar ist, warum hier von Hand nachgetragen
+wurde.
+
+> **„Alle auf einmal" lässt Abmeldungen in Ruhe.** Der Sammelknopf verbucht nur
+> die Angemeldeten. Wer sich abgemeldet hat, bleibt unangetastet, bis du dich
+> ausdrücklich für ihn entscheidest.
+
+### Sehen, wer den Eintrag gemacht hat
+
+Unter Grund und Vermerk steht klein, wer zuletzt etwas eingetragen hat und wann:
+„Eingetragen von Simon Luthe, 13.09." So ist bei einer Rückfrage klar, wen man
+fragt — wer mit der Mutter telefoniert hat, wer den Vermerk geschrieben hat.
+
+Festgehalten wird immer der **aktuelle** Stand. Ändert später jemand anderes
+den Status oder den Vermerk, steht dessen Name da.
+
+Bei manchen Einträgen fehlt die Zeile. Das heißt „nicht bekannt", nicht
+„niemand": Bei einem **Check-in per QR-Code** hat sich die Person selbst
+eingecheckt — da gibt es keine Person aus dem Team, die es eingetragen hätte.
+Ältere Einträge tragen die Angabe ebenfalls nicht.
 
 ### Einen Vermerk hinzufügen
 

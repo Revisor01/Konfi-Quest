@@ -500,9 +500,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 kp.jahrgang_id,
                 et.start_time as timeslot_start_time,
                 et.end_time as timeslot_end_time,
-                r.name as role_name
+                r.name as role_name,
+                -- Urheber der Anwesenheit (Migration 148), ADDITIV: eb.* bringt
+                -- attendance_set_by/_at schon mit, der Name fehlt aber. LEFT
+                -- JOIN, weil NULL hier "unbekannt" heisst -- Bestandszeilen und
+                -- Selbst-Check-ins per QR-Code haben keinen. Ein INNER JOIN
+                -- wuerde genau die Buchungen aus der Liste werfen.
+                u_att.display_name as attendance_set_by_name
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
+        LEFT JOIN users u_att ON eb.attendance_set_by = u_att.id
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id

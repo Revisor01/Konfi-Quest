@@ -40,6 +40,7 @@ import {
 } from '../../shared/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { urheberZeile } from '../../../utils/anwesenheitUrheber';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -835,6 +836,14 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                                   {participant.attendance_note && (
                                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                                       <strong>Vermerk: </strong>{participant.attendance_note}
+                                    </div>
+                                  )}
+                                  {/* Wer den Eintrag gemacht hat (13.09.2026) —
+                                      dieselbe Zeile wie in der Teilnehmerliste.
+                                      Ohne Urheber faellt sie weg. */}
+                                  {urheberZeile(participant) && (
+                                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      {urheberZeile(participant)}
                                     </div>
                                   )}
                                 </div>

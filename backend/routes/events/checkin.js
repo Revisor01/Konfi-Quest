@@ -139,6 +139,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       // Attendance setzen
+      //
+      // KEIN Urheber (attendance_set_by, Migration 148, Entscheidung
+      // 13.09.2026): Hier checkt sich die Konfi SELBST ein. Traegt man sie als
+      // Urheberin ein, laese sich die Zeile "Eingetragen von Emilia" in der
+      // Teilnehmerliste wie eine Leitungsentscheidung -- und genau das war es
+      // nicht. Die Spalte beantwortet "wer von uns hat das eingetragen"; ein
+      // Selbst-Check-in hat darauf keine Antwort und bleibt NULL, wie jeder
+      // Altbestand. Die Zeile fehlt dann in der Anzeige einfach.
       await client.query("UPDATE event_bookings SET attendance_status = 'present' WHERE id = $1", [booking.id]);
 
       // Punkte-Vergabe (nur für Konfis, Teamer erhalten keine Punkte)

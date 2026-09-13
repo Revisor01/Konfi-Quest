@@ -119,6 +119,74 @@ describe('Typen tragen die neuen Felder', () => {
   });
 });
 
+// Simon in TestFlight (13.09.2026): "wenn die sich selbst abgemeldet haben
+// kann ich deren Status nicht ändern. Kein Action Sheet." Auf Rueckfrage:
+// "Ich als Admin will eine Selbstabmeldung bearbeiten können. Doch anwesend.
+// Vermerk etc."
+//
+// Die Sperre sass allein im Frontend: Das Backend prueft den Buchungsstatus
+// gar nicht und haette die Anwesenheit auch bei 'opted_out' gesetzt.
+describe('Selbstabmeldung bearbeiten', () => {
+  it('der Tipp oeffnet auch bei opted_out das Anwesenheits-Menue', () => {
+    expect(detail).toContain("if (participant.status === 'confirmed' || participant.status === 'opted_out') showAttendanceActionSheet(participant);");
+  });
+
+  it('es ist DASSELBE Menue, kein eigenes mit weniger Auswahl', () => {
+    // Simon will das volle Menue: anwesend, abwesend, abgemeldet, Vermerk.
+    // Ein zweites Menue waere eine zweite Wahrheit darueber, was geht.
+    const menueAufrufe = detail.match(/showAttendanceActionSheet\(participant\)/g) || [];
+    expect(menueAufrufe.length).toBeGreaterThanOrEqual(1);
+    expect(detail).not.toContain('showOptedOutActionSheet');
+  });
+
+  it('die Warteliste behaelt ihr eigenes Menue', () => {
+    // Gegenprobe: Der Umbau darf den funktionierenden Fall nicht mitnehmen.
+    expect(detail).toContain("else if (participant.status === 'waitlist') showWaitlistActionSheet(participant);");
+  });
+
+  it('verbucht die Leitung die Abmeldung, faerbt die Zeile nach dem Anwesenheits-Status', () => {
+    // Sonst bliebe die Zeile rot und "Abgemeldet", obwohl die Leitung das
+    // gerade korrigiert hat.
+    expect(detail).toContain("const isOptedOut = participant.status === 'opted_out' && !participant.attendance_status;");
+  });
+
+  it('der Absagegrund bleibt als Vorgeschichte stehen', () => {
+    // Am BUCHUNGSSTATUS, nicht an isOptedOut: Er erklaert, warum ueberhaupt
+    // jemand nachgetragen hat.
+    expect(detail).toContain("{participant.status === 'opted_out' && (participant.opt_out_reason || participant.absage_nach_zusage) && (");
+    expect(detail).toContain('Hatte sich abgemeldet');
+  });
+
+  it('die Kachel zaehlt eine verbuchte Selbstabmeldung nicht mehr als abgemeldet', () => {
+    // Sonst stuende dieselbe Person zugleich unter "Anwesend" und
+    // unter "Abgemeldet".
+    expect(detail).toContain("konfiOnly.filter(p => p.status === 'opted_out' && !p.attendance_status).length");
+  });
+});
+
+describe('Wer hat den Eintrag gemacht (Urheber)', () => {
+  it('die Zeile steht in der Teilnehmerliste, klein unter Grund und Vermerk', () => {
+    expect(detail).toContain('{urheberZeile(participant) && (');
+    expect(detail).toContain("import { urheberZeile } from '../../../utils/anwesenheitUrheber';");
+  });
+
+  it('der Zeitfenster-Abschnitt zeigt dieselbe Zeile', () => {
+    expect(abschnitte).toContain('{urheberZeile(participant) && (');
+  });
+
+  it('die Zeile steht NACH dem Vermerk, nicht davor', () => {
+    // "In der Teilnehmerliste, klein darunter" (Simon).
+    expect(detail.indexOf('{urheberZeile(participant) && (')).toBeGreaterThan(
+      detail.indexOf('{participant.attendance_note && (')
+    );
+  });
+
+  it('die Typen tragen Name und Zeitpunkt', () => {
+    expect(typen).toContain('attendance_set_by_name?: string | null;');
+    expect(typen).toContain('attendance_set_at?: string | null;');
+  });
+});
+
 describe('Anwesenheitsmatrix zeigt die Abmeldung', () => {
   it('das Modal kennt den Zellstatus und zeichnet ihn grau', () => {
     expect(matrixModal).toContain("s === 'opted_out' || s === 'excused' ? ICON_ENTFERNEN_GEFUELLT");
