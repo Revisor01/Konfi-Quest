@@ -80,7 +80,10 @@ interface TeamerProfile {
   konfi_data: {
     gottesdienst_points: number;
     gemeinde_points: number;
-    jahrgang_name: string;
+    // Leer, wenn der Jahrgang der Konfizeit geloescht wurde — die Punkte und
+    // Abzeichen daneben bleiben. Deshalb optional: Wer hierauf eine Anzeige
+    // stuetzt, blendet sie fuer genau diese Leute aus (siehe Befund 7.2).
+    jahrgang_name?: string;
     badges: Array<{
       badge_id: number;
       name: string;
@@ -619,7 +622,16 @@ const TeamerProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              {profile.konfi_data?.jahrgang_name && (
+              {/* An den DATEN, nicht am Jahrgangsnamen (Befund 7.2, behoben
+                  13.09.2026): Wird der Jahrgang einer frueheren Konfizeit
+                  geloescht, liefert das Backend konfi_data weiter — nur
+                  jahrgang_name ist dann leer. Der Einstieg verschwand damit,
+                  obwohl Punkte und Abzeichen dahinter unveraendert liegen.
+                  Das Backend warnt an der Quelle ausdruecklich davor
+                  (teamer.js). Reine Teamer:innen ohne Konfi-Vergangenheit
+                  haben konfi_data=null und sehen den Einstieg weiterhin
+                  nicht — er fuehrte fuer sie ins Leere. */}
+              {profile.konfi_data && (
                 <div
                   className="app-list-item app-list-item--konfi"
                   onClick={() => router.push('/teamer/profile/konfi-stats')}

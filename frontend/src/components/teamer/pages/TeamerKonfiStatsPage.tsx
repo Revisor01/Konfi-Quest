@@ -66,7 +66,9 @@ interface KonfiBadge {
 interface KonfiData {
   gottesdienst_points: number;
   gemeinde_points: number;
-  jahrgang_name: string;
+  // Leer, wenn der Jahrgang der Konfizeit geloescht wurde. Die Ueberschrift
+  // faengt das ab ("Konfi-Zeit" statt "Jahrgang …"); der Typ sagt es jetzt auch.
+  jahrgang_name?: string;
   badges: KonfiBadge[];
 }
 

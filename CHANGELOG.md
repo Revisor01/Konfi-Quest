@@ -37,6 +37,13 @@ Versionsüberschrift.
   gibt es niemanden aus dem Team, der sie eingetragen hätte.
 
 ### Geändert
+- Dateien aus dem Chat werden nur noch einmal geladen. Wer eine PDF, ein
+  Dokument oder eine Tondatei ein zweites Mal antippt, hat sie sofort vor sich —
+  ohne Ladeanzeige und ohne Netz. Bisher galt das nur für Bilder und Videos,
+  alles andere lud jedes Mal neu.
+- Der Speicher für diese Dateien räumt sich selbst auf: Wird es eng, verschwindet
+  zuerst, was am längsten niemand geöffnet hat. Vorher wuchs er immer weiter, bis
+  jemand von Hand „Medien-Cache leeren" drückte.
 - Knöpfe, die etwas löschen oder abmelden, sehen überall gleich aus: rot
   umrandet, über die volle Breite. Der Knopf zum Löschen einer Notiz stand
   bisher als blasser Text daneben.
@@ -49,6 +56,14 @@ Versionsüberschrift.
   Termin zählt wieder in die Pflicht-Summe.
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem
   leeren Reiter jetzt die Farbe der Challenges statt der des Teams.
+- Wer nur bestimmte Jahrgänge betreut, kommt an die Profile der übrigen Konfis
+  nicht mehr heran. Die Detailansicht folgt damit derselben Grenze wie alles
+  andere; Teamer:innen bleiben wie bisher für die ganze Leitung sichtbar.
+- Nach dem Öffnen einer Datei blieb auf dem Gerät jedes Mal eine Kopie zurück,
+  die nie wieder verschwand. Sie wird jetzt aufgeräumt.
+- Teamer:innen, die selbst einmal Konfi waren, kommen wieder an ihre
+  Konfi-Historie — auch wenn ihr damaliger Jahrgang gelöscht wurde. Der
+  Einstieg fehlte dann, obwohl Punkte und Abzeichen von damals noch da sind.
 
 ### Sonstiges
 - Zwei Kacheln im Konfi-Profil, die seit ihrer Entstehung nie erschienen sind

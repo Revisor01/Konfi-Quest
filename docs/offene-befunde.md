@@ -355,7 +355,7 @@ Typen, Hilfsfunktionen und Symbol-Importe gefallen.
 
     grep -rn 'next_badge\|recent_activities' frontend/src
 
-### 7.2 Der Einstieg „Konfi-Historie" hängt am Jahrgangsnamen
+### 7.2 Der Einstieg „Konfi-Historie" hängt am Jahrgangsnamen — BEHOBEN 13.09.2026
 
 `TeamerProfilePage.tsx:606` zeigt den Einstieg nur, wenn
 `profile.konfi_data?.jahrgang_name` gesetzt ist. Ist der Jahrgang einer
@@ -366,3 +366,17 @@ ausdrücklich davor, sich auf den Jahrgang zu verlassen.
 **Folge:** Wer als Teamer:in einen gelöschten Jahrgang hatte, kommt an die
 eigene Konfi-Historie nicht mehr heran. Die Bedingung müsste an den Daten
 hängen (gibt es Badges/Punkte?), nicht am Namen des Jahrgangs.
+
+**Behoben am 13.09.2026:** Der Einstieg hängt jetzt an `profile.konfi_data` —
+also daran, ob es überhaupt eine Konfi-Vergangenheit gibt. Genau das Kriterium,
+das das Backend schon benutzt (`isPromotedKonfi`, `teamer.js`), inklusive seiner
+Warnung an derselben Stelle. Reine Teamer:innen ohne Konfi-Vergangenheit haben
+weiter `konfi_data: null` und sehen den Einstieg nicht; für sie führte er ins
+Leere. Die Zielseite kannte den leeren Namen bereits und überschreibt dann mit
+„Konfi-Zeit" statt „Jahrgang …". In beiden Dateien ist `jahrgang_name` jetzt
+auch im Typ optional, damit sich die nächste Änderung nicht wieder darauf
+verlässt.
+
+**Zum Gegenprüfen:**
+
+    grep -n 'konfi_data' frontend/src/components/teamer/pages/TeamerProfilePage.tsx
