@@ -758,12 +758,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           expand="block"
           fill="outline"
           color="danger"
+          className="app-gefahr-knopf"
           onClick={handleLogout}
-          style={{
-            height: '48px',
-            borderRadius: 'var(--app-radius-karte)',
-            fontWeight: 'var(--app-schrift-halbfett)'
-          }}
         >
           <IonIcon icon={ICON_ABMELDEN} slot="start" />
           Abmelden
@@ -773,13 +769,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           expand="block"
           fill="outline"
           color="danger"
+          className="app-gefahr-knopf"
           onClick={() => presentDeleteAccount({ presentingElement: pageRef?.current || presentingElement || undefined })}
-          style={{
-            height: '48px',
-            marginTop: 'var(--app-abstand-eng)',
-            borderRadius: 'var(--app-radius-karte)',
-            fontWeight: 'var(--app-schrift-halbfett)'
-          }}
         >
           <IonIcon icon={ICON_LOESCHEN} slot="start" />
           Account löschen

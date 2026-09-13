@@ -278,8 +278,9 @@ const TeamerProfilePage: React.FC = () => {
               expand="block"
               fill="outline"
               color="danger"
+              className="app-gefahr-knopf"
               onClick={handleLogout}
-              style={{ marginTop: 'var(--app-abstand-weit)', height: '48px', borderRadius: 'var(--app-radius-karte)', fontWeight: 'var(--app-schrift-halbfett)' }}
+              style={{ marginTop: 'var(--app-abstand-weit)' }}
             >
               <IonIcon icon={ICON_ABMELDEN} slot="start" />
               Abmelden
@@ -654,12 +655,8 @@ const TeamerProfilePage: React.FC = () => {
             expand="block"
             fill="outline"
             color="danger"
+            className="app-gefahr-knopf"
             onClick={handleLogout}
-            style={{
-              height: '48px',
-              borderRadius: 'var(--app-radius-karte)',
-              fontWeight: 'var(--app-schrift-halbfett)'
-            }}
           >
             <IonIcon icon={ICON_ABMELDEN} slot="start" />
             Abmelden
@@ -669,13 +666,8 @@ const TeamerProfilePage: React.FC = () => {
             expand="block"
             fill="outline"
             color="danger"
+            className="app-gefahr-knopf"
             onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
-            style={{
-              height: '48px',
-              marginTop: 'var(--app-abstand-eng)',
-              borderRadius: 'var(--app-radius-karte)',
-              fontWeight: 'var(--app-schrift-halbfett)'
-            }}
           >
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
             Account löschen

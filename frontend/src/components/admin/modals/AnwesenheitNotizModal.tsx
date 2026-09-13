@@ -151,10 +151,16 @@ const AnwesenheitNotizModal: React.FC<AnwesenheitNotizModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonCard className="app-card">
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
+                {/* Derselbe Knopf wie "Account löschen" und "Abmelden" in den
+                    Profilen: rot umrandet, volle Breite, Karten-Radius. Das
+                    Aussehen steht als .app-gefahr-knopf in der globalen CSS
+                    (Simon, 13.09.2026: "Schau dir andere an nutze globale
+                    css"), nicht hier als Inline-Style. */}
                 <IonButton
                   expand="block"
-                  fill="clear"
+                  fill="outline"
                   color="danger"
+                  className="app-gefahr-knopf"
                   aria-label="Notiz löschen"
                   onClick={handleLoeschen}
                   disabled={isSubmitting || !isOnline}

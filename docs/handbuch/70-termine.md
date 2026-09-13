@@ -363,9 +363,14 @@ Push. Das Menü gibt es auch bei Leuten, die sich
 ### Eine Abmeldung nachtragen
 
 Wird jemand außerhalb der App abgemeldet — die Mutter ruft an, das Kind ist
-krank —, trägst du das als **Abgemeldet** ein und schreibst den Grund dazu.
-Der Eintrag wird grau, der Grund steht direkt in der Teilnehmerliste, und alle
-im Team sehen ihn.
+krank —, tippst du den Eintrag an und wählst **Abgemeldet**. Es öffnet sich ein
+Fenster mit zwei Feldern: dem **Grund** und einer **Notiz**. Der Grund gehört
+zur Abmeldung („krank, Mutter hat angerufen"), die Notiz zu allem anderen, was
+festgehalten gehört („Attest liegt vor"). Beides ist freiwillig, beides lässt
+sich später über denselben Weg ändern.
+
+Nach dem Speichern wird der Eintrag grau, der Grund steht direkt in der
+Teilnehmerliste, und alle im Team sehen ihn.
 
 Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
 bei „Abwesend". Die Konfi bekommt eine Mitteilung, dass die Abmeldung

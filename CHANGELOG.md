@@ -15,10 +15,10 @@ Versionsüberschrift.
   Stempel hat, sieht den Abschnitt nicht.
 - Die Anwesenheit kennt einen dritten Eintrag: **Abgemeldet**. Wird jemand
   außerhalb der App abgemeldet, etwa weil die Eltern anrufen und das Kind
-  krank ist, lässt sich das mit Grund festhalten. Der Grund steht in der
-  Teilnehmerliste, damit das ganze Team ihn sieht. Punkte gibt es dabei keine;
-  schon vergebene werden zurückgenommen. Die Konfi bekommt eine Mitteilung,
-  dass die Abmeldung eingetragen wurde.
+  krank ist, lässt sich das in einem eigenen Fenster mit Grund und Notiz
+  festhalten. Der Grund steht in der Teilnehmerliste, damit das ganze Team ihn
+  sieht. Punkte gibt es dabei keine; schon vergebene werden zurückgenommen.
+  Die Konfi bekommt eine Mitteilung, dass die Abmeldung eingetragen wurde.
 - Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
   14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte. Notizen lassen sich auch wieder löschen.
@@ -31,6 +31,11 @@ Versionsüberschrift.
   nach, bleibt bei der Abmeldung der Name stehen, der dorthin gehört. Bei
   einem Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort
   gibt es niemanden aus dem Team, der sie eingetragen hätte.
+
+### Geändert
+- Knöpfe, die etwas löschen oder abmelden, sehen überall gleich aus: rot
+  umrandet, über die volle Breite. Der Knopf zum Löschen einer Notiz stand
+  bisher als blasser Text daneben.
 
 ### Behoben
 - Wer sich selbst von einem Pflichttermin abgemeldet hat und dann doch kommt,

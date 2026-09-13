@@ -31,6 +31,7 @@ const matrixModal = lies('src/components/admin/modals/AttendanceMatrixModal.tsx'
 const css = lies('src/theme/variables.css');
 const typen = lies('src/types/event.ts');
 const notizModal = lies('src/components/admin/modals/AnwesenheitNotizModal.tsx');
+const abmeldungModal = lies('src/components/admin/modals/AbmeldungNachtragenModal.tsx');
 const handbuch = lies('../docs/handbuch/70-termine.md');
 
 describe('Abmeldung nachtragen (excused)', () => {
@@ -39,12 +40,13 @@ describe('Abmeldung nachtragen (excused)', () => {
   });
 
   it('das Auswahlmenue bietet "Abgemeldet" an', () => {
-    expect(detail).toContain("showAbmeldungAlert(participant)");
+    expect(detail).toContain("showAbmeldungModal(participant)");
     expect(detail).toContain("'Abmeldung bearbeiten' : 'Abgemeldet'");
   });
 
   it('der Grund wird als eigenes Feld erfragt und geschickt', () => {
-    expect(detail).toContain("name: 'excuse_reason'");
+    expect(abmeldungModal).toContain('value={grundText}');
+    expect(detail).toContain('excuse_reason: neuerGrund');
     expect(detail).toContain('excuse_reason: texte.excuse_reason');
   });
 
@@ -92,8 +94,8 @@ describe('Notiz (unabhaengig vom Status)', () => {
 
   it('ist ein eigenes Feld, getrennt vom Grund', () => {
     // Der Grund wird beim Abmelden erfragt, die Notiz im eigenen Modal —
-    // und die Ansicht schickt sie als eigenes Feld mit.
-    expect(detail).toContain("name: 'excuse_reason'");
+    // und die Ansicht schickt beide als eigene Felder mit.
+    expect(detail).toContain('excuse_reason: neuerGrund');
     expect(detail).toContain('attendance_note: neueNotiz');
   });
 
@@ -116,7 +118,103 @@ describe('Notiz (unabhaengig vom Status)', () => {
     expect(abschnitte).toContain('<strong>Notiz: </strong>');
     expect(detail).not.toContain('<strong>Vermerk: </strong>');
     expect(abschnitte).not.toContain('<strong>Vermerk: </strong>');
-    expect(detail).toContain("placeholder: 'Notiz (optional)'");
+    expect(abmeldungModal).toContain('label="Notiz (optional)"');
+  });
+});
+
+// Simon, 13.09.2026: Die Notiz wurde zum Modal, die Abmeldung blieb ein Alert
+// stehen — inkonsequent, denn dieselbe Begruendung traegt bei beiden. Mit zwei
+// Textfeldern (Grund UND Notiz) erst recht.
+describe('Die Abmeldung nachtragen ist ein Modal', () => {
+  it('es gibt ein eigenes Modal, das ueber useIonModal geoeffnet wird', () => {
+    expect(detail).toContain("import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';");
+    expect(detail).toContain('useIonModal(AbmeldungNachtragenModal, {');
+    expect(detail).toContain('presentAbmeldungModal({');
+  });
+
+  it('der Alert fuer die Abmeldung ist weg', () => {
+    // Gegenprobe: Bleibt der alte Weg daneben stehen, gibt es zwei Wahrheiten
+    // darueber, wie eine Abmeldung nachgetragen wird.
+    expect(detail).not.toContain('showAbmeldungAlert');
+    expect(detail).not.toContain("subHeader: 'Abmeldung nachtragen'");
+  });
+
+  it('das Modal folgt dem Muster der anderen Modals', () => {
+    expect(abmeldungModal).toContain('<IonPage>');
+    expect(abmeldungModal).toContain('app-modal-close-btn');
+    expect(abmeldungModal).toContain('app-modal-submit-btn');
+    expect(abmeldungModal).toContain('useActionGuard');
+  });
+
+  it('es hat BEIDE Felder: Grund und Notiz', () => {
+    expect(abmeldungModal).toContain('label="Grund"');
+    expect(abmeldungModal).toContain('label="Notiz (optional)"');
+    const textfelder = abmeldungModal.match(/<IonTextarea/g) || [];
+    expect(textfelder.length).toBe(2);
+  });
+
+  it('beide Felder gehen zusammen an den Handler', () => {
+    expect(abmeldungModal).toContain('await onSave(grundText.trim(), notizText.trim());');
+    expect(detail).toContain("await handleAttendanceUpdate(teilnehmer, 'excused', {");
+  });
+});
+
+// Der zweite Satz des alten Alert-Hinweises war seit der Umstellung auf den
+// Abmelde-Push schlicht falsch.
+describe('Der Hinweis im Abmeldungs-Modal ist kurz und richtig', () => {
+  it('die alte Zusage "erfährt davon nichts" steht nirgends mehr', () => {
+    // Gegenprobe zum Push: Die Konfi bekommt sehr wohl eine Mitteilung.
+    expect(detail).not.toContain('Sie erfährt davon nichts');
+    expect(abmeldungModal).not.toContain('erfährt davon nichts');
+    expect(handbuch).not.toContain('erfährt davon nichts');
+  });
+
+  it('stattdessen steht die tatsaechliche Folge da', () => {
+    expect(abmeldungModal).toContain('Die Konfi bekommt eine Mitteilung, dass die Abmeldung eingetragen wurde.');
+  });
+
+  it('der Erklaertext bleibt im Handbuch, nicht in der Oberflaeche', () => {
+    // Simons Regel von der Notiz. Ein Satz zur Folge darf stehen, der
+    // Vergleich mit der Selbstabmeldung gehoert ins Handbuch.
+    expect(abmeldungModal).not.toContain('Abgemeldet (nachgetragen)');
+    expect(handbuch).toContain('### Eine Abmeldung nachtragen');
+    expect(handbuch).toContain('Abgemeldet (nachgetragen)');
+  });
+});
+
+// Simon, 13.09.2026: "Der löschen Button hat keine ordentliche Stil. Nichts.
+// Was soll das. Schau dir andere an nutze globale css und dann fertig."
+describe('Gefahren-Knoepfe nutzen eine globale Klasse', () => {
+  it('die Klasse ist in der globalen CSS definiert, mit Tokens', () => {
+    expect(css).toContain('.app-gefahr-knopf {');
+    expect(css).toContain('height: var(--app-abstand-block);');
+    expect(css).toContain('--border-radius: var(--app-radius-karte);');
+    expect(css).toContain('font-weight: var(--app-schrift-halbfett);');
+  });
+
+  it('der Loeschen-Knopf im Notiz-Modal benutzt sie', () => {
+    expect(notizModal).toContain('className="app-gefahr-knopf"');
+    // Gegenprobe: Der blasse Textknopf war genau das Problem.
+    expect(notizModal).not.toContain('fill="clear"');
+  });
+
+  it('die Profile schreiben das Aussehen nicht mehr selbst ab', () => {
+    const konfiProfil = lies('src/components/konfi/views/ProfileView.tsx');
+    const teamerProfil = lies('src/components/teamer/pages/TeamerProfilePage.tsx');
+    for (const datei of [konfiProfil, teamerProfil]) {
+      // Jeder rot umrandete Knopf traegt die Klasse — und keiner schreibt
+      // das Aussehen daneben noch einmal selbst hin. Die Hoehe stand vier
+      // Mal als rohe 48px im Code, die Rundung ebenso oft.
+      const knoepfe = datei.match(/<IonButton[\s\S]*?>/g) || [];
+      const gefahrKnoepfe = knoepfe.filter(k => k.includes('color="danger"'));
+      expect(gefahrKnoepfe.length).toBeGreaterThanOrEqual(2);
+      for (const knopf of gefahrKnoepfe) {
+        expect(knopf).toContain('className="app-gefahr-knopf"');
+        expect(knopf).not.toContain("height: '48px'");
+        expect(knopf).not.toContain("borderRadius:");
+        expect(knopf).not.toContain('fontWeight:');
+      }
+    }
   });
 });
 

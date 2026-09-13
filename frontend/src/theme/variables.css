@@ -1760,6 +1760,39 @@ ion-toggle.app-toggle--events {
   margin-bottom: -4px;
 }
 
+/* === Gefahren-Knopf (loeschen, abmelden, entfernen) ===
+   Simon, 13.09.2026: "Der löschen Button hat keine ordentliche Stil. Nichts.
+   Was soll das. Schau dir andere an nutze globale css und dann fertig."
+
+   Das Muster gab es laengst — nur vier Mal als Inline-Style abgeschrieben
+   (Abmelden und Account loeschen in Konfi- und Teamer-Profil): rot umrandet,
+   volle Breite, Karten-Radius, halbfett. Der Loeschen-Knopf im Notiz-Modal
+   hatte es nicht und stand als blasser Textknopf daneben.
+
+   Hier steht es einmal, damit der naechste Loeschen-Knopf es einfach benutzt.
+   Zu ergaenzen ist am Aufrufer nur noch expand="block" fill="outline"
+   color="danger" — Farbe und Rahmen kommen von Ionic, Groesse und Rundung
+   von hier. */
+.app-gefahr-knopf {
+  height: var(--app-abstand-block);
+  --border-radius: var(--app-radius-karte);
+  font-weight: var(--app-schrift-halbfett);
+}
+/* Steht der Knopf unter einem anderen, braucht er Luft nach oben. */
+.app-gefahr-knopf + .app-gefahr-knopf {
+  margin-top: var(--app-abstand-eng);
+}
+
+/* === Hinweiszeile unter einem Eingabefeld ===
+   Eine kurze Folge, die beim Speichern eintritt ("keine Punkte", "die Konfi
+   bekommt eine Mitteilung") — nicht der Erklaertext, der gehoert ins
+   Handbuch. */
+.app-hinweis-text {
+  display: block;
+  padding: var(--app-abstand-eng) var(--app-abstand-eng) 0;
+  font-size: var(--app-text-hinweis);
+}
+
 /* === Flex-Fill (flex: 1) === */
 .app-flex-fill {
   flex: 1;

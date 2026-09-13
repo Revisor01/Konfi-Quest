@@ -50,6 +50,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
+import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
@@ -217,6 +218,43 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       });
     },
     dismiss: () => dismissNotizModal()
+  });
+
+  // ABMELDUNGS-MODAL (13.09.2026)
+  //
+  // WO ALERT, WO MODAL — die Linie, damit sie nicht wieder auseinanderlaeuft:
+  //
+  //   TEXTEINGABE  -> Modal. Grund und Notiz sind Freitext, der bleibt und den
+  //     andere lesen. Ein Modal gibt ihm ein mitwachsendes Feld, eine
+  //     Kopfzeile mit Schliessen links und Speichern rechts, und auf kleinen
+  //     Geraeten genug Platz. So laufen alle Texteingaben in dieser App
+  //     (UnregisterModal, BonusModal, MaterialFormModal).
+  //
+  //   JA/NEIN-RUECKFRAGE -> Alert. "Alle bestätigen?", "Auf die Warteliste
+  //     setzen?", "Anmeldung entfernen?" fragen nichts ab, sie holen eine
+  //     Bestaetigung fuer etwas, das sonst still passiert waere (die beiden
+  //     letzten haengen an einer Wisch-Geste, ein Fehlwisch soll nicht
+  //     durchgehen). Daraus ein Modal zu machen, waere ein Seitenwechsel fuer
+  //     eine Frage, die in zwei Zeilen beantwortet ist — und zwei der drei
+  //     muessen die Wisch-Geste beim Abbrechen wieder zurueckfahren, was im
+  //     Alert-Handler direkt danebensteht.
+  //
+  // Kurz: Wer etwas SCHREIBT, bekommt ein Modal. Wer nur BESTAETIGT, einen
+  // Alert.
+  const abmeldungTeilnehmerRef = useRef<Participant | null>(null);
+  const [presentAbmeldungModal, dismissAbmeldungModal] = useIonModal(AbmeldungNachtragenModal, {
+    get teilnehmerName() { return abmeldungTeilnehmerRef.current?.participant_name ?? ''; },
+    get grund() { return abmeldungTeilnehmerRef.current?.excuse_reason ?? null; },
+    get notiz() { return abmeldungTeilnehmerRef.current?.attendance_note ?? null; },
+    onSave: async (neuerGrund: string, neueNotiz: string) => {
+      const teilnehmer = abmeldungTeilnehmerRef.current;
+      if (!teilnehmer) return;
+      await handleAttendanceUpdate(teilnehmer, 'excused', {
+        excuse_reason: neuerGrund,
+        attendance_note: neueNotiz
+      });
+    },
+    dismiss: () => dismissAbmeldungModal()
   });
 
   // QR Display Modal
@@ -554,40 +592,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Abmeldung nachtragen: Grund UND Notiz in einem Schritt. Zwei getrennte
   // Felder (Entscheidung Simon, 12.09.2026) — ein gemeinsames haette je nach
   // Status eine andere Bedeutung, und beide koennen nebeneinander stehen.
-  const showAbmeldungAlert = (participant: Participant) => {
-    presentAlert({
-      header: participant.participant_name,
-      subHeader: 'Abmeldung nachtragen',
-      message: 'Die Person wird als abgemeldet geführt und bekommt keine Punkte. Sie erfährt davon nichts — die Abmeldung kam von außerhalb der App.',
-      inputs: [
-        {
-          name: 'excuse_reason',
-          type: 'textarea',
-          placeholder: 'Grund, z. B. „krank, Mutter hat angerufen"',
-          value: participant.excuse_reason || '',
-          attributes: { maxlength: 500 }
-        },
-        {
-          name: 'attendance_note',
-          type: 'textarea',
-          placeholder: 'Notiz (optional)',
-          value: participant.attendance_note || '',
-          attributes: { maxlength: 500 }
-        }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Abmelden',
-          handler: (data) => {
-            handleAttendanceUpdate(participant, 'excused', {
-              excuse_reason: typeof data?.excuse_reason === 'string' ? data.excuse_reason : '',
-              attendance_note: typeof data?.attendance_note === 'string' ? data.attendance_note : ''
-            });
-          }
-        }
-      ]
-    });
+  //
+  // Ein MODAL, kein Alert (13.09.2026): siehe AbmeldungNachtragenModal. Die
+  // Abmeldung war beim Umbau der Notiz als Alert stehengeblieben — dieselbe
+  // Begruendung traegt hier genauso, und mit zwei Textfeldern erst recht.
+  const showAbmeldungModal = (participant: Participant) => {
+    abmeldungTeilnehmerRef.current = participant;
+    presentAbmeldungModal({ presentingElement: presentingElement || undefined });
   };
 
   // Notiz allein aendern, ohne am Status zu ruehren. Der Status wird dabei
@@ -620,7 +631,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     buttons.push({
       text: participant.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet',
       icon: ICON_ENTFERNEN_GEFUELLT,
-      handler: () => showAbmeldungAlert(participant)
+      handler: () => showAbmeldungModal(participant)
     });
     if (participant.attendance_status) {
       buttons.push({
@@ -683,6 +694,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const punkteHinweis = rolle === 'teamer'
       ? ' Das Team bekommt dabei keine Punkte.'
       : ' (inkl. Punktevergabe)';
+    // ALERT, kein Modal: reine Ja/Nein-Rueckfrage ohne Eingabe. Die Linie
+    // steht beim Abmeldungs-Modal weiter oben.
     presentAlert({
       header: 'Alle bestätigen?',
       message: `${unprocessedCount} angemeldete ${wen} werden als anwesend verbucht${punkteHinweis}. Bereits Verbuchte bleiben unverändert.${waitlistHint}`,
@@ -722,6 +735,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Rueckfrage vor dem Verschieben auf die Warteliste: ausgelöst wird das per
   // Wisch-Geste, ein Fehlwisch hätte sonst still eine Anmeldung zurueckgestuft
   // (Audit 10.08.). Das Absagen des Events fragt hier laengst nach.
+  //
+  // ALERT, kein Modal: nichts einzugeben, nur zu bestaetigen — und der
+  // Abbrechen-Zweig muss die Wisch-Geste wieder zufahren, was hier direkt
+  // danebensteht. Die Linie steht beim Abmeldungs-Modal weiter oben.
   const handleDemoteParticipant = (participant: Participant) => {
     presentAlert({
       header: 'Auf die Warteliste setzen?',
@@ -747,6 +764,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   // Ebenfalls per Wisch-Geste erreichbar und nicht umkehrbar -> Rueckfrage.
+  // ALERT, kein Modal: Bestaetigung ohne Eingabe, siehe oben.
   const handleRemoveParticipant = (participant: Participant) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
