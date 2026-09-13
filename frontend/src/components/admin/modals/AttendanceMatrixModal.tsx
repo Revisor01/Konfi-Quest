@@ -424,7 +424,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                           {data.events.map(e => {
                             const s = getCellStatus(k.user_id, e.id);
                             const b = bookingMap.get(`${k.user_id}-${e.id}`);
-                            // Grund und Vermerk als Tooltip an der Zelle: Die
+                            // Grund und Notiz als Tooltip an der Zelle: Die
                             // Matrix ist die Uebersicht, in der die Kolleginnen
                             // nachsehen -- ohne das waere nur das graue Zeichen
                             // da und die Frage "warum?" unbeantwortet.

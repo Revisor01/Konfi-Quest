@@ -114,7 +114,7 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
   const buchung = async (bookingId) => {
     const { rows } = await db.query(
       `SELECT status, attendance_status, excuse_reason, attendance_note,
-              attendance_set_by, attendance_set_at
+              attendance_set_by, attendance_set_at, note_set_by, note_set_at
          FROM event_bookings WHERE id = $1`,
       [bookingId]
     );
@@ -161,7 +161,7 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
       expect(b.opt_out_reason).toBe('Familienfeier an dem Tag');
     });
 
-    it('auch abgemeldet (nachgetragen) und ein Vermerk gehen', async () => {
+    it('auch abgemeldet (nachgetragen) und eine Notiz gehen', async () => {
       // Simon: "Doch anwesend. Vermerk etc." -- das volle Menue, nicht nur
       // anwesend.
       const { eventId, bookingId } = await setupPflichtterminMitAbmeldung();
@@ -251,9 +251,18 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
       expect(b.attendance_status).toBe('present');
     });
 
-    it('auch ein reiner Vermerk setzt den Urheber neu', async () => {
-      // Wer den Vermerk geschrieben hat, ist genauso eine Frage wie wer den
-      // Status gesetzt hat -- es ist derselbe Eintrag.
+    it('eine reine Notiz laesst den Urheber des Status in Ruhe', async () => {
+      // UMENTSCHIEDEN am 13.09.2026 (Migration 149). Bis dahin galt hier das
+      // Gegenteil: "es ist derselbe Eintrag", also setzte auch eine reine
+      // Notiz den einen Urheber neu.
+      //
+      // Simons Rueckfrage entkraeftete die Annahme: "Was ist wenn einer einen
+      // Vermerk schreibt und einer den Grund. Wie wird das angezeigt." Gar
+      // nicht -- wer zuletzt schrieb, ueberschrieb den anderen, und die Zeile
+      // behauptete, er habe beides eingetragen. Es sind eben ZWEI Eintraege.
+      // Seither hat die Notiz ihr eigenes Paar (note_set_by/_at); die
+      // ausfuehrliche Abdeckung steht in
+      // anwesenheitNotizLoeschenUndUrheber.test.js.
       const { eventId, bookingId } = await setupFreiwilligerTermin();
       await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
@@ -266,7 +275,8 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
         .send({ attendance_status: 'present', attendance_note: 'ging um 14 Uhr' });
 
       const b = await buchung(bookingId);
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
+      expect(b.attendance_set_by).toBe(USERS.admin1.id);
+      expect(b.note_set_by).toBe(USERS.teamer1.id);
       expect(b.attendance_note).toBe('ging um 14 Uhr');
     });
 

@@ -169,14 +169,43 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
 
     // Freitexte begrenzen und leere Eingaben auf NULL normalisieren, damit
-    // "gar kein Vermerk" und "Vermerk aus Leerzeichen" nicht zweierlei sind.
+    // "gar keine Notiz" und "Notiz aus Leerzeichen" nicht zweierlei sind.
     const textOderNull = (wert) => {
       if (typeof wert !== 'string') return null;
       const getrimmt = wert.trim();
       return getrimmt === '' ? null : getrimmt.slice(0, 500);
     };
     const grund = textOderNull(excuse_reason);
-    const vermerk = textOderNull(attendance_note);
+    const notiz = textOderNull(attendance_note);
+
+    // NOTIZ LOESCHEN (13.09.2026, Simon: "Außerdem Vermerk löschen")
+    //
+    // Bis hierher stand im UPDATE `attendance_note = COALESCE($4,
+    // attendance_note)`. Das hielt die Notiz fest, wenn das Feld gar nicht
+    // mitkam -- gewollt, denn ein Statuswechsel soll sie nicht wegwerfen --,
+    // machte sie aber zugleich unloeschbar: NULL kam durch COALESCE nie
+    // durch. Setzen und aendern ging, entfernen nicht.
+    //
+    // WARUM EIN LEERER STRING UND KEIN EIGENES FLAG:
+    // Die Route muss drei Faelle auseinanderhalten koennen --
+    //   (a) Feld fehlt         -> Notiz bleibt, wie sie ist
+    //   (b) Feld hat Text      -> Notiz wird gesetzt
+    //   (c) Feld ist leer ("") -> Notiz wird geloescht
+    // Ein zusaetzliches Flag (z. B. attendance_note_loeschen: true) waere ein
+    // zweites Feld fuer dieselbe Sache und liesse den Widerspruch zu, Text
+    // UND Loeschwunsch gleichzeitig zu schicken. Der leere String sagt
+    // dagegen genau das, was die Nutzerin tut: Sie leert das Feld und
+    // speichert. Die Unterscheidung "fehlt" gegen "ist leer" trifft
+    // `attendance_note !== undefined` -- der Fall (a) bleibt damit exakt so,
+    // wie er war.
+    //
+    // ALT-APP-VERTRAG: Ausgelieferte App-Fassungen schicken das Feld gar
+    // nicht mit (Fall a) oder mit Text (Fall b). Beide verhalten sich
+    // unveraendert. Nur der Fall, der bisher nichts bewirken KONNTE -- ein
+    // leer geschicktes Feld -- bekommt eine Bedeutung. Keine alte Fassung
+    // stuetzt sich darauf, dass das Leeren folgenlos bleibt; sie bietet das
+    // Leeren gar nicht an.
+    const notizMitgeschickt = attendance_note !== undefined;
 
     // Dedizierter Client für Transaction - pool.query() kann verschiedene
     // Connections nutzen, was BEGIN/COMMIT auf unterschiedliche Connections verteilt!
@@ -208,23 +237,61 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Der Grund gehoert zu 'excused' und wird beim Wechsel auf einen anderen
       // Status geleert -- sonst bliebe "krank" an einer Buchung stehen, die
-      // inzwischen auf anwesend steht. Der Vermerk dagegen haengt NICHT am
+      // inzwischen auf anwesend steht. Die Notiz dagegen haengt NICHT am
       // Status ("ging um 14 Uhr" gilt bei Anwesenheit) und bleibt, solange
-      // nichts Neues geschickt wird.
+      // nichts Neues geschickt wird. Kommt sie leer mit, wird sie geloescht
+      // (siehe notizMitgeschickt oben).
       //
-      // Urheber und Zeitpunkt (Migration 148) werden bei JEDEM Schreiben neu
-      // gesetzt -- auch wenn nur der Vermerk geaendert wurde. Festgehalten
-      // wird, wer den Stand zu verantworten hat, der jetzt dasteht; das ist
-      // die Person, bei der man nachfragt.
+      // ZWEI URHEBER-PAARE (Migration 149, Entscheidung Simon 13.09.2026:
+      // "Getrennt führen: Status und Notiz je eigener Urheber"):
+      //
+      //   attendance_set_by/_at -- Status samt Abmeldegrund
+      //   note_set_by/_at       -- die Notiz
+      //
+      // Simons Fall: A meldet ab und traegt den Grund ein, B schreibt spaeter
+      // nur die Notiz dazu. Mit einem gemeinsamen Paar ueberschrieb B dabei A
+      // -- die Zeile behauptete danach, B habe auch mit der Mutter
+      // telefoniert. Bei genau der Rueckfrage, fuer die die Angabe da ist,
+      // fuehrte sie also zur falschen Person.
+      //
+      // GESCHRIEBEN WIRD, WAS SICH TATSAECHLICH GEAENDERT HAT -- nicht, was
+      // mitgeschickt wurde. Die Route verlangt attendance_status bei JEDEM
+      // Aufruf; wer nur eine Notiz nachtraegt, muss den bestehenden Status
+      // (und bei 'excused' den Grund) mitschicken, damit er nicht verloren
+      // geht. "Feld kam mit" heisst hier also nicht "jemand hat es
+      // geaendert". Der Vergleich mit dem Bestand (IS DISTINCT FROM, das
+      // NULL richtig behandelt) trennt beides.
+      //
+      // Aendert ein Aufruf beides, werden beide Paare gesetzt. Aendert er
+      // nichts, bleibt jeder Urheber stehen -- ein erneutes Speichern
+      // desselben Standes macht niemanden zur Urheberin.
+      //
+      // Beim LOESCHEN der Notiz faellt ihr Paar zurueck auf NULL: Es gibt
+      // dann nichts mehr, dessen Urheberschaft festzuhalten waere, und ein
+      // stehengebliebener Name behauptete eine Notiz, die nicht existiert.
       await client.query(
         `UPDATE event_bookings
             SET attendance_status = $1,
                 excuse_reason = CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END,
-                attendance_note = COALESCE($4, attendance_note),
-                attendance_set_by = $5,
-                attendance_set_at = NOW()
+                attendance_note = CASE WHEN $6 THEN $4 ELSE attendance_note END,
+                attendance_set_by = CASE
+                  WHEN attendance_status IS DISTINCT FROM $1
+                    OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
+                  THEN $5::integer ELSE attendance_set_by END,
+                attendance_set_at = CASE
+                  WHEN attendance_status IS DISTINCT FROM $1
+                    OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
+                  THEN NOW() ELSE attendance_set_at END,
+                note_set_by = CASE
+                  WHEN $6 AND attendance_note IS DISTINCT FROM $4::text
+                  THEN (CASE WHEN $4::text IS NULL THEN NULL ELSE $5::integer END)
+                  ELSE note_set_by END,
+                note_set_at = CASE
+                  WHEN $6 AND attendance_note IS DISTINCT FROM $4::text
+                  THEN (CASE WHEN $4::text IS NULL THEN NULL ELSE NOW() END)
+                  ELSE note_set_at END
           WHERE id = $2`,
-        [attendance_status, participantId, grund, vermerk, req.user.id]
+        [attendance_status, participantId, grund, notiz, req.user.id, notizMitgeschickt]
       );
 
       let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };

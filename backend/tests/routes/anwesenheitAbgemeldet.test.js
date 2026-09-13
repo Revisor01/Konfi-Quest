@@ -1,4 +1,4 @@
-// Anwesenheit: dritter Status 'excused' plus Grund und Vermerk (12.09.2026).
+// Anwesenheit: dritter Status 'excused' plus Grund und Notiz (12.09.2026).
 //
 // Simons Fall: Eine Mutter meldet ihre Tochter telefonisch ab, wegen
 // Krankheit -- nicht in der App. Bisher gab es nur 'present' (falsch) und
@@ -6,9 +6,9 @@
 // ging verloren, und die Kolleginnen sahen nicht, dass abgemeldet wurde.
 //
 // Zweiter Fall: Eine Konfirmandin bittet, schon um 14 Uhr zu gehen. Sie war
-// da, bekommt ihre Punkte, ist ANWESEND -- der Vermerk soll trotzdem stehen.
+// da, bekommt ihre Punkte, ist ANWESEND -- der Notiz soll trotzdem stehen.
 //
-// Gefragt ist also beides: ein eigener Status MIT Grund, und ein Vermerk
+// Gefragt ist also beides: ein eigener Status MIT Grund, und eine Notiz
 // UNABHAENGIG vom Status.
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
@@ -17,7 +17,7 @@ const { seed, USERS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const PushService = require('../../services/pushService');
 
-describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
+describe('Anwesenheit: abgemeldet (excused), Grund und Notiz', () => {
   let app;
   let db;
   let adminToken;
@@ -219,7 +219,7 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
     });
   });
 
-  describe('Der Vermerk haengt NICHT am Status', () => {
+  describe('Der Notiz haengt NICHT am Status', () => {
     it('steht auch bei anwesend ("ging um 14 Uhr")', async () => {
       const { eventId, bookingId } = await setupEvent();
       await request(app)
@@ -232,7 +232,7 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
       expect(b.attendance_note).toBe('ging um 14 Uhr');
     });
 
-    it('die Punkte bleiben trotz Vermerk erhalten', async () => {
+    it('die Punkte bleiben trotz Notiz erhalten', async () => {
       const { eventId, bookingId } = await setupEvent({ points: 5 });
       await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
@@ -275,7 +275,7 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Vermerk', () => {
 
     it('steht neben einem Abmeldegrund, ohne ihn zu verdraengen', async () => {
       // Zwei getrennte Felder (Entscheidung Simon): beide koennen nebeneinander
-      // stehen -- abgemeldet MIT Grund und zusaetzlich ein Vermerk.
+      // stehen -- abgemeldet MIT Grund und zusaetzlich eine Notiz.
       const { eventId, bookingId } = await setupEvent();
       await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)

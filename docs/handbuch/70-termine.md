@@ -385,7 +385,7 @@ einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
 
 Hat sich jemand selbst von einem Pflichttermin abgemeldet und kommt dann doch,
 tippst du den Eintrag genauso an wie jeden anderen. Du bekommst dasselbe Menü:
-**Anwesend**, **Abwesend**, **Abgemeldet** und den **Vermerk**.
+**Anwesend**, **Abwesend**, **Abgemeldet** und die **Notiz**.
 
 Sobald du etwas einträgst, richtet sich die Anzeige danach: Der Eintrag wird
 grün, in der Anwesenheits-Matrix steht ein grüner Punkt, und der Termin zählt
@@ -400,34 +400,51 @@ wurde.
 
 ### Sehen, wer den Eintrag gemacht hat
 
-Unter Grund und Vermerk steht klein, wer zuletzt etwas eingetragen hat und wann:
-„Eingetragen von Simon Luthe, 13.09." So ist bei einer Rückfrage klar, wen man
-fragt — wer mit der Mutter telefoniert hat, wer den Vermerk geschrieben hat.
+Unter dem Eintrag steht klein, wer ihn gemacht hat und wann: „Eingetragen von
+Simon Luthe, 13.09." So ist bei einer Rückfrage klar, wen man fragt — wer mit
+der Mutter telefoniert hat.
+
+**Status und Notiz werden getrennt geführt.** Wer die Anwesenheit setzt und wer
+die Notiz schreibt, ist oft nicht dieselbe Person. Deshalb nennt jede Zeile
+ihren eigenen Urheber: „Eingetragen von …" steht unter Status und Grund,
+„Notiz von …" unter der Notiz. Trägt eine Kollegin nachträglich nur eine Notiz
+ein, bleibt der Name bei der Abmeldung stehen, wo er hingehört.
 
 Festgehalten wird immer der **aktuelle** Stand. Ändert später jemand anderes
-den Status oder den Vermerk, steht dessen Name da.
+den Status oder die Notiz, steht dessen Name da. Speicherst du denselben Stand
+noch einmal, ohne etwas zu ändern, bleiben die Namen, wie sie waren.
 
 Bei manchen Einträgen fehlt die Zeile. Das heißt „nicht bekannt", nicht
 „niemand": Bei einem **Check-in per QR-Code** hat sich die Person selbst
 eingecheckt — da gibt es keine Person aus dem Team, die es eingetragen hätte.
 Ältere Einträge tragen die Angabe ebenfalls nicht.
 
-### Einen Vermerk hinzufügen
+### Eine Notiz hinzufügen
 
 Manches ist kein eigener Status, gehört aber festgehalten: „ging um 14 Uhr",
-„kam erst zur zweiten Hälfte", „Attest liegt vor". Dafür gibt es den
-**Vermerk** — ein freies Feld, das du zu **jedem** Anwesenheitsstatus
-eintragen kannst.
+„kam erst zur zweiten Hälfte", „Attest liegt vor". Dafür gibt es die **Notiz**
+— ein freies Feld, das du zu **jedem** Anwesenheitsstatus eintragen kannst.
 
-Der Vermerk ändert nichts: Wer anwesend ist, bleibt anwesend und behält seine
-Punkte. Er steht in der Teilnehmerliste unter dem Namen und bleibt stehen,
-auch wenn du den Status später änderst.
+Die Notiz ändert nichts am Status: Wer anwesend ist, bleibt anwesend und
+behält seine Punkte. Sie steht in der Teilnehmerliste unter dem Namen, damit
+das ganze Team sie sieht, und bleibt stehen, auch wenn du den Status später
+änderst.
 
-Grund und Vermerk sind zwei getrennte Felder. Der Grund gehört zur Abmeldung
-und verschwindet, sobald du den Status auf anwesend oder abwesend stellst —
-der Vermerk bleibt.
+Grund und Notiz sind zwei getrennte Felder. Der Grund gehört zur Abmeldung und
+verschwindet, sobald du den Status auf anwesend oder abwesend stellst — die
+Notiz bleibt.
 
 Beides einzutragen geht erst, wenn ein Anwesenheitsstatus gesetzt ist.
+
+### Eine Notiz ändern oder löschen
+
+Tipp auf den Eintrag und wähle **Notiz bearbeiten**. Der bisherige Text steht
+schon da; du überschreibst ihn und speicherst.
+
+Zum Entfernen gibt es darunter **Notiz löschen**. Dasselbe passiert, wenn du
+das Feld leerst und speicherst. Danach ist auch die Zeile weg, die nannte, wer
+die Notiz geschrieben hatte — es gibt ja keine mehr. Am Anwesenheitsstatus,
+an den Punkten und am Abmeldegrund ändert das Löschen nichts.
 
 ### Alle auf einmal verbuchen
 

@@ -19,21 +19,23 @@ Versionsüberschrift.
   Teilnehmerliste, damit das ganze Team ihn sieht. Punkte gibt es dabei keine;
   schon vergebene werden zurückgenommen. Die Konfi bekommt eine Mitteilung,
   dass die Abmeldung eingetragen wurde.
-- Zu jeder Anwesenheit lässt sich ein **Vermerk** eintragen, etwa „ging um
-  14 Uhr". Er ändert nichts am Status: Wer anwesend war, bleibt anwesend und
-  behält seine Punkte.
+- Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
+  14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
+  behält seine Punkte. Notizen lassen sich auch wieder löschen.
 - Die Anwesenheits-Matrix zeigt nachgetragene Abmeldungen als eigenen grauen
   Punkt; der Termin zählt dort nicht in die Pflicht-Summe, genau wie bei einer
   Abmeldung, die der Konfi selbst vorgenommen hat.
-- Unter Grund und Vermerk steht klein, wer die Anwesenheit zuletzt eingetragen
-  hat und wann — bei einer Rückfrage ist damit klar, wen man fragt. Bei einem
-  Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort gibt es
-  niemanden aus dem Team, der sie eingetragen hätte.
+- Unter dem Eintrag steht klein, wer die Anwesenheit zuletzt eingetragen hat
+  und wann — bei einer Rückfrage ist damit klar, wen man fragt. Anwesenheit
+  und Notiz werden dabei getrennt geführt: Trägt eine Kollegin nur eine Notiz
+  nach, bleibt bei der Abmeldung der Name stehen, der dorthin gehört. Bei
+  einem Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort
+  gibt es niemanden aus dem Team, der sie eingetragen hätte.
 
 ### Behoben
 - Wer sich selbst von einem Pflichttermin abgemeldet hat und dann doch kommt,
   lässt sich jetzt ganz normal verbuchen — anwesend, abwesend, abgemeldet oder
-  mit einem Vermerk. Vorher passierte beim Tippen auf den Eintrag nichts. Die
+  mit einer Notiz. Vorher passierte beim Tippen auf den Eintrag nichts. Die
   ursprüngliche Abmeldung bleibt als Vorgeschichte darunter stehen, und der
   Termin zählt wieder in die Pflicht-Summe.
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem

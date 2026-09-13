@@ -103,8 +103,8 @@ Beim Anlegen eines Termins legst du fest:
   oder monatlich
 
 In der Detailansicht trägst du Anwesenheit ein — anwesend, abwesend oder
-[abgemeldet](70-termine.md#eine-abmeldung-nachtragen), dazu auf Wunsch einen
-[Vermerk](70-termine.md#einen-vermerk-hinzufuegen) —, bestätigst die
+[abgemeldet](70-termine.md#eine-abmeldung-nachtragen), dazu auf Wunsch eine
+[Notiz](70-termine.md#eine-notiz-hinzufuegen) —, bestätigst die
 Warteliste,
 [fügst Teilnehmende von Hand hinzu](70-termine.md#teilnehmende-von-hand-hinzufuegen)
 und siehst die Abmeldungen samt Begründung. Bei Team-Terminen stehen dort auch

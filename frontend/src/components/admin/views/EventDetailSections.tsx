@@ -40,7 +40,7 @@ import {
 } from '../../shared/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { urheberZeile } from '../../../utils/anwesenheitUrheber';
+import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -833,17 +833,26 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                                       <strong>Abgemeldet: </strong>{participant.excuse_reason}
                                     </div>
                                   )}
-                                  {participant.attendance_note && (
-                                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                                      <strong>Vermerk: </strong>{participant.attendance_note}
-                                    </div>
-                                  )}
-                                  {/* Wer den Eintrag gemacht hat (13.09.2026) —
-                                      dieselbe Zeile wie in der Teilnehmerliste.
-                                      Ohne Urheber faellt sie weg. */}
+                                  {/* Wer den Status samt Grund gesetzt hat
+                                      (13.09.2026) — dieselben Zeilen wie in
+                                      der Teilnehmerliste. Ohne Urheber faellt
+                                      die Zeile weg. */}
                                   {urheberZeile(participant) && (
                                     <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                                       {urheberZeile(participant)}
+                                    </div>
+                                  )}
+                                  {participant.attendance_note && (
+                                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      <strong>Notiz: </strong>{participant.attendance_note}
+                                    </div>
+                                  )}
+                                  {/* Die Notiz hat ihren eigenen Urheber
+                                      (Migration 149) — sie kann von jemand
+                                      anderem stammen als der Status. */}
+                                  {participant.attendance_note && notizUrheberZeile(participant) && (
+                                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      {notizUrheberZeile(participant)}
                                     </div>
                                   )}
                                 </div>

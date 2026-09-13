@@ -629,9 +629,9 @@ describe('Jahrgaenge Routes', () => {
     });
 
     // 12.09.2026: Die Matrix zeichnet die nachgetragene Abmeldung als eigenen
-    // Zellstatus und blendet Grund und Vermerk als Hinweis ein. Beides muss
+    // Zellstatus und blendet Grund und Notiz als Hinweis ein. Beides muss
     // die Abfrage mitliefern -- sonst hat das Frontend nur den Status.
-    it('liefert excused samt Grund und Vermerk mit', async () => {
+    it('liefert excused samt Grund und Notiz mit', async () => {
       await db.query(
         `UPDATE event_bookings
             SET attendance_status = 'excused',

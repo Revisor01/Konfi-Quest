@@ -48,7 +48,8 @@ import type { Participant, Unregistration, EventData } from './EventDetailSectio
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { urheberZeile } from '../../../utils/anwesenheitUrheber';
+import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';
+import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
@@ -184,6 +185,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       });
     });
   };
+
+  // NOTIZ-MODAL (13.09.2026, Simon: "Die Frage ist ob es nicht ein Modal sein
+  // müsste in unseren Logiken. Ich glaube schon.")
+  //
+  // Vorher lief die Notiz-Eingabe ueber useIonAlert und fiel damit aus dem
+  // Muster: Der Absagegrund der Konfi laeuft ueber UnregisterModal, alle
+  // Texteingaben der Leitung sind Modals. Der Alert bot ausserdem keinen
+  // Loeschen-Knopf.
+  //
+  // Ref-Getter wie beim Material-Modal darueber: Welche Person gemeint ist,
+  // steht erst beim Oeffnen fest, die Props werden aber schon beim Rendern
+  // deklariert.
+  const notizTeilnehmerRef = useRef<Participant | null>(null);
+  const [presentNotizModal, dismissNotizModal] = useIonModal(AnwesenheitNotizModal, {
+    get teilnehmerName() { return notizTeilnehmerRef.current?.participant_name ?? ''; },
+    get notiz() { return notizTeilnehmerRef.current?.attendance_note ?? null; },
+    onSave: async (neueNotiz: string) => {
+      const teilnehmer = notizTeilnehmerRef.current;
+      if (!teilnehmer?.attendance_status) return;
+      await handleAttendanceUpdate(teilnehmer, teilnehmer.attendance_status, {
+        // Der Grund bleibt, was er war: Bei 'excused' wuerde ein fehlendes
+        // Feld ihn sonst loeschen (die Route setzt ihn bei jedem
+        // 'excused'-Schreiben neu).
+        ...(teilnehmer.attendance_status === 'excused'
+          ? { excuse_reason: teilnehmer.excuse_reason || '' }
+          : {}),
+        // Leerer String heisst loeschen — die Route unterscheidet "Feld
+        // fehlt" (Notiz bleibt) von "Feld ist leer" (Notiz weg).
+        attendance_note: neueNotiz
+      });
+    },
+    dismiss: () => dismissNotizModal()
+  });
 
   // QR Display Modal
   const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
@@ -452,10 +486,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     return 'Termin';
   };
 
-  // Grund und Vermerk gehen mit derselben Route mit. Der Grund gehoert zu
+  // Grund und Notiz gehen mit derselben Route mit. Der Grund gehoert zu
   // 'excused' und wird vom Backend beim Wechsel auf einen anderen Status
-  // geleert; der Vermerk ("ging um 14 Uhr") haengt NICHT am Status und bleibt
-  // stehen, solange nichts Neues geschickt wird.
+  // geleert; die Notiz ("ging um 14 Uhr") haengt NICHT am Status und bleibt
+  // stehen, solange nichts Neues geschickt wird. Kommt sie LEER mit, wird sie
+  // geloescht — die Route unterscheidet "Feld fehlt" von "Feld ist leer".
   const handleAttendanceUpdate = async (
     participant: Participant,
     status: 'present' | 'absent' | 'excused',
@@ -463,19 +498,38 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   ) => {
     if (offlineBlockiert(isOnline, setError)) return;
     const grund = status === 'excused' ? (texte?.excuse_reason || null) : null;
-    const vermerk = texte?.attendance_note !== undefined
-      ? (texte.attendance_note || null)
+    const notizMitgeschickt = texte?.attendance_note !== undefined;
+    const notiz = notizMitgeschickt
+      ? (texte!.attendance_note!.trim() || null)
       : (participant.attendance_note ?? null);
     setParticipants(prev => prev.map(p =>
       p.id === participant.id
-        ? { ...p, attendance_status: status, excuse_reason: grund, attendance_note: vermerk }
+        ? {
+            ...p,
+            attendance_status: status,
+            excuse_reason: grund,
+            attendance_note: notiz,
+            // Die Urheber-Zeilen zeigen ab sofort die eigene Person: Der
+            // Status wird bei jedem Aufruf geschrieben, die Notiz nur, wenn
+            // sie mitkam. Der genaue Zeitstempel kommt mit dem naechsten
+            // Laden nach; hier zaehlt, dass die Zeile nicht weiter jemand
+            // anderen nennt, waehrend gerade die eigene Aenderung dasteht.
+            attendance_set_by_name: user?.display_name ?? p.attendance_set_by_name,
+            attendance_set_at: new Date().toISOString(),
+            ...(notizMitgeschickt
+              ? {
+                  note_set_by_name: notiz ? (user?.display_name ?? null) : null,
+                  note_set_at: notiz ? new Date().toISOString() : null
+                }
+              : {})
+          }
         : p
     ));
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status,
         ...(texte?.excuse_reason !== undefined ? { excuse_reason: texte.excuse_reason } : {}),
-        ...(texte?.attendance_note !== undefined ? { attendance_note: texte.attendance_note } : {})
+        ...(notizMitgeschickt ? { attendance_note: texte!.attendance_note } : {})
       });
       triggerRefresh('events');
     } catch {
@@ -485,7 +539,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               ...p,
               attendance_status: participant.attendance_status,
               excuse_reason: participant.excuse_reason,
-              attendance_note: participant.attendance_note
+              attendance_note: participant.attendance_note,
+              attendance_set_by_name: participant.attendance_set_by_name,
+              attendance_set_at: participant.attendance_set_at,
+              note_set_by_name: participant.note_set_by_name,
+              note_set_at: participant.note_set_at
             }
           : p
       ));
@@ -493,7 +551,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
-  // Abmeldung nachtragen: Grund UND Vermerk in einem Schritt. Zwei getrennte
+  // Abmeldung nachtragen: Grund UND Notiz in einem Schritt. Zwei getrennte
   // Felder (Entscheidung Simon, 12.09.2026) — ein gemeinsames haette je nach
   // Status eine andere Bedeutung, und beide koennen nebeneinander stehen.
   const showAbmeldungAlert = (participant: Participant) => {
@@ -512,7 +570,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {
           name: 'attendance_note',
           type: 'textarea',
-          placeholder: 'Vermerk (optional)',
+          placeholder: 'Notiz (optional)',
           value: participant.attendance_note || '',
           attributes: { maxlength: 500 }
         }
@@ -532,43 +590,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
   };
 
-  // Vermerk allein aendern, ohne am Status zu ruehren. Der Status wird dabei
+  // Notiz allein aendern, ohne am Status zu ruehren. Der Status wird dabei
   // mitgeschickt, weil die Route ihn verlangt — es ist derselbe wie zuvor.
-  const showVermerkAlert = (participant: Participant) => {
-    const status = participant.attendance_status;
-    if (!status) {
-      setError('Erst die Anwesenheit setzen, dann den Vermerk eintragen');
+  //
+  // Ein MODAL, kein Alert (13.09.2026): siehe AnwesenheitNotizModal. Der
+  // erklaerende Hinweistext, der frueher im Alert stand, steht jetzt im
+  // Handbuch (Simon: "Den Hinweis bei Notiz nicht ins Sheet sondern ins
+  // Handbuch.").
+  const showNotizModal = (participant: Participant) => {
+    if (!participant.attendance_status) {
+      setError('Erst die Anwesenheit setzen, dann die Notiz eintragen');
       return;
     }
-    presentAlert({
-      header: participant.participant_name,
-      subHeader: 'Vermerk',
-      message: 'Ein freier Vermerk zur Anwesenheit, den auch die Kolleg:innen sehen — zum Beispiel „ging um 14 Uhr". Am Status ändert er nichts.',
-      inputs: [
-        {
-          name: 'attendance_note',
-          type: 'textarea',
-          placeholder: 'Vermerk, z. B. „ging um 14 Uhr"',
-          value: participant.attendance_note || '',
-          attributes: { maxlength: 500 }
-        }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Speichern',
-          handler: (data) => {
-            handleAttendanceUpdate(participant, status, {
-              // Der Grund bleibt, was er war: Bei 'excused' wuerde ein
-              // fehlendes Feld ihn sonst loeschen (die Route setzt ihn bei
-              // jedem 'excused'-Schreiben neu).
-              ...(status === 'excused' ? { excuse_reason: participant.excuse_reason || '' } : {}),
-              attendance_note: typeof data?.attendance_note === 'string' ? data.attendance_note : ''
-            });
-          }
-        }
-      ]
-    });
+    notizTeilnehmerRef.current = participant;
+    presentNotizModal({ presentingElement: presentingElement || undefined });
   };
 
   const showAttendanceActionSheet = (participant: Participant) => {
@@ -589,9 +624,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
     if (participant.attendance_status) {
       buttons.push({
-        text: participant.attendance_note ? 'Vermerk bearbeiten' : 'Vermerk hinzufügen',
+        text: participant.attendance_note ? 'Notiz bearbeiten' : 'Notiz hinzufügen',
         icon: ICON_TEXTDOKUMENT,
-        handler: () => showVermerkAlert(participant)
+        handler: () => showNotizModal(participant)
       });
     }
     buttons.push({ text: 'Abbrechen', role: 'cancel' });
@@ -928,26 +963,37 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       {participant.opt_out_reason}
                     </div>
                   )}
-                  {/* Nachgetragene Abmeldung und Vermerk (12.09.2026): Beides
+                  {/* Nachgetragene Abmeldung und Notiz (12.09.2026): Beides
                       steht direkt in der Liste — es ist genau dafuer da, dass
-                      die Kolleg:innen es sehen, ohne die Zeile zu oeffnen. */}
+                      die Kolleg:innen es sehen, ohne die Zeile zu oeffnen.
+                      JEDE Zeile nennt ihren eigenen Urheber gleich darunter
+                      (13.09.2026, Migration 149): Simons Fall — "einer
+                      schreibt die Notiz, einer den Grund" — laesst sich mit
+                      einem Namen am Ende nicht beantworten. */}
                   {isExcused && participant.excuse_reason && (
                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       <strong>Abgemeldet: </strong>{participant.excuse_reason}
                     </div>
                   )}
-                  {participant.attendance_note && (
-                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                      <strong>Vermerk: </strong>{participant.attendance_note}
-                    </div>
-                  )}
-                  {/* Wer den Eintrag gemacht hat (13.09.2026), klein unter
-                      Grund und Vermerk. Fehlt der Urheber — Altbestand oder
-                      Selbst-Check-in per QR-Code —, faellt die Zeile weg
-                      statt "unbekannt" zu behaupten. */}
+                  {/* Wer den Status samt Grund gesetzt hat. Fehlt der Urheber
+                      — Altbestand oder Selbst-Check-in per QR-Code —, faellt
+                      die Zeile weg statt "unbekannt" zu behaupten. */}
                   {urheberZeile(participant) && (
                     <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       {urheberZeile(participant)}
+                    </div>
+                  )}
+                  {participant.attendance_note && (
+                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      <strong>Notiz: </strong>{participant.attendance_note}
+                    </div>
+                  )}
+                  {/* Wer die Notiz geschrieben hat — eigener Urheber, eigener
+                      Wortlaut ("Notiz von ..."), damit bei zwei Zeilen
+                      untereinander klar bleibt, welcher Name wozu gehoert. */}
+                  {participant.attendance_note && notizUrheberZeile(participant) && (
+                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      {notizUrheberZeile(participant)}
                     </div>
                   )}
                 </div>

@@ -139,10 +139,15 @@ export interface Participant {
   attendance_status?: 'present' | 'absent' | 'excused' | null;
   /** Grund der nachgetragenen Abmeldung; gehoert zu attendance_status='excused'. */
   excuse_reason?: string | null;
-  /** Freier Vermerk unabhaengig vom Status ("ging um 14 Uhr"). */
+  /** Freie Notiz unabhaengig vom Status ("ging um 14 Uhr"). */
   attendance_note?: string | null;
   /**
-   * Wer die Anwesenheit zuletzt gesetzt hat (Migration 148, 13.09.2026).
+   * Wer den Anwesenheits-STATUS (samt excuse_reason) zuletzt gesetzt hat
+   * (Migration 148, 13.09.2026). Seit Migration 149 gilt das Paar NICHT
+   * mehr fuer die Notiz -- die hat mit note_set_by/_at einen eigenen
+   * Urheber, weil Status und Notiz von verschiedenen Personen stammen
+   * koennen.
+   *
    * NULL/fehlend heisst UNBEKANNT, nicht "niemand": Bestandszeilen von vor
    * der Migration und Selbst-Check-ins per QR-Code haben keinen Urheber.
    * Die Anzeige laesst die Zeile dann weg.
@@ -150,6 +155,14 @@ export interface Participant {
   attendance_set_by?: number | null;
   attendance_set_by_name?: string | null;
   attendance_set_at?: string | null;
+  /**
+   * Wer die NOTIZ zuletzt geschrieben hat (Migration 149, 13.09.2026).
+   * Gleiche Regel: NULL heisst unbekannt, nicht niemand -- Notizen von vor
+   * der Migration tragen keinen Urheber, und ohne Notiz gibt es keinen.
+   */
+  note_set_by?: number | null;
+  note_set_by_name?: string | null;
+  note_set_at?: string | null;
   timeslot_id?: number;
   timeslot_start_time?: string;
   timeslot_end_time?: string;

@@ -506,10 +506,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 -- JOIN, weil NULL hier "unbekannt" heisst -- Bestandszeilen und
                 -- Selbst-Check-ins per QR-Code haben keinen. Ein INNER JOIN
                 -- wuerde genau die Buchungen aus der Liste werfen.
-                u_att.display_name as attendance_set_by_name
+                u_att.display_name as attendance_set_by_name,
+                -- Urheber der NOTIZ (Migration 149), getrennt gefuehrt: Wer
+                -- die Notiz geschrieben hat, muss nicht die Person sein, die
+                -- den Status gesetzt hat. Ebenfalls LEFT JOIN und aus
+                -- demselben Grund -- eine Buchung ohne Notiz-Urheber (keine
+                -- Notiz, oder eine von vor der Migration) bleibt in der Liste.
+                u_note.display_name as note_set_by_name
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
         LEFT JOIN users u_att ON eb.attendance_set_by = u_att.id
+        LEFT JOIN users u_note ON eb.note_set_by = u_note.id
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id

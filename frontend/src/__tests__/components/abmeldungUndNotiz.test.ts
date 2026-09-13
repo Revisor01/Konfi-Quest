@@ -9,10 +9,14 @@ import { resolve } from 'path';
 // nicht, dass abgemeldet wurde.
 //
 // Zweiter Fall: Eine Konfirmandin bittet, schon um 14 Uhr zu gehen. Sie war
-// da, bekommt ihre Punkte, ist ANWESEND — der Vermerk soll trotzdem stehen.
+// da, bekommt ihre Punkte, ist ANWESEND — die Notiz soll trotzdem stehen.
 //
 // Zwei getrennte Felder (Entscheidung Simon): Ein gemeinsames haette je nach
 // Status eine andere Bedeutung, und beide koennen nebeneinander stehen.
+//
+// "Vermerk" heisst seit dem 13.09.2026 ueberall NOTIZ (Simon: "nennen wir es
+// lieber insgesamt Notiz."). Die Spalte attendance_note bleibt, wie sie
+// heisst — sie trug den Namen ohnehin schon.
 //
 // Dieser Test liest die Quelldateien, statt die Ansicht zu rendern: Die
 // Sichtbarkeit haengt an mehreren geladenen Datenstaenden (Teilnehmer, Rollen,
@@ -26,6 +30,8 @@ const abschnitte = lies('src/components/admin/views/EventDetailSections.tsx');
 const matrixModal = lies('src/components/admin/modals/AttendanceMatrixModal.tsx');
 const css = lies('src/theme/variables.css');
 const typen = lies('src/types/event.ts');
+const notizModal = lies('src/components/admin/modals/AnwesenheitNotizModal.tsx');
+const handbuch = lies('../docs/handbuch/70-termine.md');
 
 describe('Abmeldung nachtragen (excused)', () => {
   it('der Handler kennt den dritten Status', () => {
@@ -78,33 +84,111 @@ describe('Abmeldung nachtragen (excused)', () => {
   });
 });
 
-describe('Vermerk (unabhaengig vom Status)', () => {
+describe('Notiz (unabhaengig vom Status)', () => {
   it('wird bei JEDEM gesetzten Status angeboten, nicht nur bei excused', () => {
     expect(detail).toContain('if (participant.attendance_status) {');
-    expect(detail).toContain("'Vermerk bearbeiten' : 'Vermerk hinzufügen'");
+    expect(detail).toContain("'Notiz bearbeiten' : 'Notiz hinzufügen'");
   });
 
   it('ist ein eigenes Feld, getrennt vom Grund', () => {
-    expect(detail).toContain("name: 'attendance_note'");
+    // Der Grund wird beim Abmelden erfragt, die Notiz im eigenen Modal —
+    // und die Ansicht schickt sie als eigenes Feld mit.
     expect(detail).toContain("name: 'excuse_reason'");
+    expect(detail).toContain('attendance_note: neueNotiz');
   });
 
-  it('aendert den Status nicht', () => {
-    // showVermerkAlert schickt den vorhandenen Status mit, weil die Route
-    // ihn verlangt — es ist derselbe wie zuvor.
-    expect(detail).toContain('handleAttendanceUpdate(participant, status, {');
-  });
-
-  it('behaelt den Grund, wenn nur der Vermerk geaendert wird', () => {
+  it('behaelt den Grund, wenn nur die Notiz geaendert wird', () => {
     // Die Route setzt excuse_reason bei jedem 'excused'-Schreiben neu —
-    // ohne Mitschicken waere er nach dem Vermerk-Speichern weg.
-    expect(detail).toContain("...(status === 'excused' ? { excuse_reason: participant.excuse_reason || '' } : {})");
+    // ohne Mitschicken waere er nach dem Speichern der Notiz weg.
+    expect(detail).toContain("? { excuse_reason: teilnehmer.excuse_reason || '' }");
   });
 
   it('steht in der Teilnehmerliste bei jedem Status', () => {
     // Nicht an isExcused gebunden: "ging um 14 Uhr" gilt bei Anwesenheit.
     expect(detail).toContain('{participant.attendance_note && (');
     expect(abschnitte).toContain('{participant.attendance_note && (');
+  });
+
+  it('heisst in der Oberflaeche ueberall "Notiz", nicht mehr "Vermerk"', () => {
+    // Simon: "nennen wir es lieber insgesamt Notiz." Geprueft werden die
+    // sichtbaren Texte — Kommentare mit Simons woertlichem Zitat bleiben.
+    expect(detail).toContain('<strong>Notiz: </strong>');
+    expect(abschnitte).toContain('<strong>Notiz: </strong>');
+    expect(detail).not.toContain('<strong>Vermerk: </strong>');
+    expect(abschnitte).not.toContain('<strong>Vermerk: </strong>');
+    expect(detail).toContain("placeholder: 'Notiz (optional)'");
+  });
+});
+
+// Simon in TestFlight (13.09.2026): "Die Frage ist ob es nicht ein Modal sein
+// müsste in unseren Logiken. Ich glaube schon." — Die Notiz lief bis dahin
+// ueber useIonAlert und fiel damit aus dem Muster: Der Absagegrund der Konfi
+// laeuft ueber UnregisterModal, alle Texteingaben der Leitung sind Modals.
+describe('Die Notiz-Eingabe ist ein Modal', () => {
+  it('es gibt ein eigenes Modal, das ueber useIonModal geoeffnet wird', () => {
+    expect(detail).toContain("import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';");
+    expect(detail).toContain('useIonModal(AnwesenheitNotizModal, {');
+    expect(detail).toContain('presentNotizModal({');
+  });
+
+  it('der Alert fuer die Notiz ist weg', () => {
+    // Gegenprobe: Bleibt der alte Weg daneben stehen, gibt es zwei
+    // Wahrheiten darueber, wie eine Notiz erfasst wird.
+    expect(detail).not.toContain('showVermerkAlert');
+    expect(detail).not.toContain("subHeader: 'Vermerk'");
+  });
+
+  it('das Modal folgt dem Muster der anderen Modals', () => {
+    // Wie UnregisterModal und BonusModal: IonPage mit Kopfzeile,
+    // Schliessen-Knopf links, Speichern rechts.
+    expect(notizModal).toContain('<IonPage>');
+    expect(notizModal).toContain('app-modal-close-btn');
+    expect(notizModal).toContain('app-modal-submit-btn');
+    expect(notizModal).toContain('<IonTextarea');
+  });
+
+  it('der erklaerende Hinweistext steht NICHT mehr in der Oberflaeche', () => {
+    // Simon: "Den Hinweis bei Notiz nicht ins Sheet sondern ins Handbuch."
+    expect(detail).not.toContain('Ein freier Vermerk zur Anwesenheit');
+    expect(notizModal).not.toContain('Am Status ändert er nichts');
+  });
+
+  it('das Handbuch erklaert die Notiz stattdessen', () => {
+    expect(handbuch).toContain('## Die Anwesenheit verbuchen');
+    expect(handbuch).toContain('Eine Notiz hinzufügen');
+  });
+});
+
+// Simon: "Außerdem Vermerk löschen". Setzen und Aendern ging, Entfernen
+// nicht.
+describe('Eine Notiz laesst sich loeschen', () => {
+  it('das Modal hat einen Loeschen-Knopf', () => {
+    expect(notizModal).toContain('Notiz löschen');
+    expect(notizModal).toContain('color="danger"');
+  });
+
+  it('der Knopf erscheint nur, wenn es etwas zu loeschen gibt', () => {
+    // An einer leeren Notiz waere er ohne Wirkung.
+    expect(notizModal).toContain('{hatBestehendeNotiz && (');
+  });
+
+  it('geloescht wird mit einem leeren String, nicht mit einem zweiten Feld', () => {
+    // Ein Flag neben dem Textfeld liesse den Widerspruch zu, Text UND
+    // Loeschwunsch gleichzeitig zu schicken.
+    expect(notizModal).toContain("await onSave('');");
+    expect(notizModal).not.toContain('loeschen: true');
+  });
+
+  it('ein leeres Feld wird beim Speichern ebenfalls als Loeschen gewertet', () => {
+    expect(notizModal).toContain('const darfSpeichern = hatAenderung && (getrimmt.length > 0 || hatBestehendeNotiz);');
+  });
+
+  it('die Ansicht schickt den leeren Wert weiter, statt ihn wegzufiltern', () => {
+    // Gegenprobe zum Alt-App-Vertrag: Die Unterscheidung "Feld fehlt" gegen
+    // "Feld ist leer" traegt das Loeschen. Ein `|| undefined` haette sie
+    // eingeebnet — dann bliebe die Notiz stehen.
+    expect(detail).toContain('const notizMitgeschickt = texte?.attendance_note !== undefined;');
+    expect(detail).toContain('...(notizMitgeschickt ? { attendance_note: texte!.attendance_note } : {})');
   });
 });
 
@@ -132,7 +216,7 @@ describe('Selbstabmeldung bearbeiten', () => {
   });
 
   it('es ist DASSELBE Menue, kein eigenes mit weniger Auswahl', () => {
-    // Simon will das volle Menue: anwesend, abwesend, abgemeldet, Vermerk.
+    // Simon will das volle Menue: anwesend, abwesend, abgemeldet, Notiz.
     // Ein zweites Menue waere eine zweite Wahrheit darueber, was geht.
     const menueAufrufe = detail.match(/showAttendanceActionSheet\(participant\)/g) || [];
     expect(menueAufrufe.length).toBeGreaterThanOrEqual(1);
@@ -165,25 +249,55 @@ describe('Selbstabmeldung bearbeiten', () => {
 });
 
 describe('Wer hat den Eintrag gemacht (Urheber)', () => {
-  it('die Zeile steht in der Teilnehmerliste, klein unter Grund und Vermerk', () => {
+  it('die Zeile steht in der Teilnehmerliste, klein unter dem Eintrag', () => {
     expect(detail).toContain('{urheberZeile(participant) && (');
-    expect(detail).toContain("import { urheberZeile } from '../../../utils/anwesenheitUrheber';");
+    expect(detail).toContain("import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';");
   });
 
-  it('der Zeitfenster-Abschnitt zeigt dieselbe Zeile', () => {
+  it('der Zeitfenster-Abschnitt zeigt dieselben Zeilen', () => {
     expect(abschnitte).toContain('{urheberZeile(participant) && (');
-  });
-
-  it('die Zeile steht NACH dem Vermerk, nicht davor', () => {
-    // "In der Teilnehmerliste, klein darunter" (Simon).
-    expect(detail.indexOf('{urheberZeile(participant) && (')).toBeGreaterThan(
-      detail.indexOf('{participant.attendance_note && (')
-    );
+    expect(abschnitte).toContain('{participant.attendance_note && notizUrheberZeile(participant) && (');
   });
 
   it('die Typen tragen Name und Zeitpunkt', () => {
     expect(typen).toContain('attendance_set_by_name?: string | null;');
     expect(typen).toContain('attendance_set_at?: string | null;');
+  });
+});
+
+// Simons Rueckfrage (13.09.2026): "Was ist wenn einer einen Vermerk schreibt
+// und einer den Grund. Wie wird das angezeigt." Mit einem gemeinsamen Urheber
+// gar nicht — wer zuletzt schrieb, ueberschrieb den anderen. Entscheidung:
+// "Getrennt führen: Status und Notiz je eigener Urheber."
+describe('Zwei Urheber, je eine eigene Zeile', () => {
+  it('die Notiz hat ihre eigene Urheber-Zeile', () => {
+    expect(detail).toContain('{participant.attendance_note && notizUrheberZeile(participant) && (');
+  });
+
+  it('jede Zeile steht direkt unter dem, was sie erklaert', () => {
+    // "Klein darunter" (Simon): Der Status-Urheber unter Status und Grund,
+    // der Notiz-Urheber unter der Notiz. Sonst waeren am Ende zwei Namen
+    // untereinander und keiner wuesste, welcher wozu gehoert.
+    const grundZeile = detail.indexOf('<strong>Abgemeldet: </strong>');
+    const statusUrheber = detail.indexOf('{urheberZeile(participant) && (');
+    const notizZeile = detail.indexOf('<strong>Notiz: </strong>');
+    const notizUrheber = detail.indexOf('{participant.attendance_note && notizUrheberZeile(participant) && (');
+
+    expect(statusUrheber).toBeGreaterThan(grundZeile);
+    expect(notizZeile).toBeGreaterThan(statusUrheber);
+    expect(notizUrheber).toBeGreaterThan(notizZeile);
+  });
+
+  it('die Notiz-Urheber-Zeile haengt an der Notiz, nicht am Status', () => {
+    // Gegenprobe: Ohne die Bedingung auf attendance_note stuende "Notiz von
+    // ..." auch dort, wo es gar keine Notiz gibt.
+    expect(detail).toContain('participant.attendance_note && notizUrheberZeile(participant)');
+    expect(abschnitte).toContain('participant.attendance_note && notizUrheberZeile(participant)');
+  });
+
+  it('die Typen tragen das zweite Paar', () => {
+    expect(typen).toContain('note_set_by_name?: string | null;');
+    expect(typen).toContain('note_set_at?: string | null;');
   });
 });
 
@@ -198,7 +312,7 @@ describe('Anwesenheitsmatrix zeigt die Abmeldung', () => {
     expect(matrixModal).toContain('<span>Abgemeldet (nachgetragen)</span>');
   });
 
-  it('Grund und Vermerk haengen als Hinweis an der Zelle', () => {
+  it('Grund und Notiz haengen als Hinweis an der Zelle', () => {
     expect(matrixModal).toContain('title={hinweis || undefined}');
   });
 
