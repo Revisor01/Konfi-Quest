@@ -59,6 +59,7 @@ interface OffenerAntrag {
   photo_filename?: string;
 }
 import KonfiBadgesSection from './KonfiBadgesSection';
+import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -971,6 +972,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         {isTeamer && (
           <KonfiBadgesSection konfiId={konfiId} role="teamer" />
         )}
+
+        {/* Challenge-Stempel — direkt unter den Abzeichen, wie im eigenen
+            Profil (Simon, 13.09.2026: "welche Stempel die Teamer und Konfis
+            haben. In deren Profil Details unter Badges."). Ohne Stempel faellt
+            der Abschnitt ganz weg, genau wie dort. */}
+        <ChallengeStempelSektion
+          marks={currentKonfi?.challengeMarks || []}
+          titel="Stempel"
+        />
 
         {/* Teamer-Beförderung - nur für Konfis */}
         {!isTeamer && (

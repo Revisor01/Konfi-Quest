@@ -21,9 +21,15 @@ import type { ChallengeMark } from '../../types/challenges';
  */
 interface ChallengeStempelSektionProps {
   marks: ChallengeMark[];
+  /**
+   * Ueberschrift des Abschnitts. Im eigenen Profil bleibt es bei "Deine
+   * Stempel"; in der Detailansicht der Leitung schaut jemand auf eine ANDERE
+   * Person, dort waere "Deine" schlicht falsch.
+   */
+  titel?: string;
 }
 
-const ChallengeStempelSektion: React.FC<ChallengeStempelSektionProps> = ({ marks }) => {
+const ChallengeStempelSektion: React.FC<ChallengeStempelSektionProps> = ({ marks, titel = 'Deine Stempel' }) => {
   if (!marks || marks.length === 0) return null;
 
   return (
@@ -32,7 +38,7 @@ const ChallengeStempelSektion: React.FC<ChallengeStempelSektionProps> = ({ marks
         <div className="app-section-icon app-section-icon--challenges">
           <IonIcon icon={ICON_ABZEICHEN} />
         </div>
-        <IonLabel>Deine Stempel</IonLabel>
+        <IonLabel>{titel}</IonLabel>
       </IonListHeader>
       <IonCard className="app-card">
         <IonCardContent style={{ padding: 'var(--app-abstand-basis) var(--app-abstand-mittel)' }}>

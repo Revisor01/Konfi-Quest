@@ -6331,7 +6331,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Einzelner Konfi oder Teamer mit voller Historie",
-        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.\n",
+        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen, Challenge-Stempel und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie. Seit 13.09.2026 liefert die Antwort zusaetzlich `challengeMarks`: die Challenges, zu denen die angesehene Person einen EIGENEN und FREIGEGEBENEN Beitrag hat (moderation_status='approved'), je Challenge genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert seinen Typ.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6344,7 +6344,8 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL",
-          "hinweis": "# HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in kann über eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgängen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt.\n"
+          "jahrgangs-bindung": "Nur fuer das Feld `challengeMarks` (seit 13.09.2026): Steht die angesehene Person in einem Jahrgang ausserhalb der eigenen Zuweisungen, kommt die Liste LEER zurueck (darfKonfi, view-Stufe) — statt fremde Stempel zu zeigen. org_admin und super_admin sind ausgenommen. Teamer:innen als Zielobjekt sind nicht an einen Jahrgang gebunden (\"admin sieht alle Teamer:innen\"), ihre Stempel erscheinen immer.\n",
+          "hinweis": "# HINWEIS: Die uebrige Route hat weiterhin KEINEN Jahrgangs-Check. Eine Teamer:in kann über eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgängen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt. Das am 13.09.2026 ergaenzte Feld `challengeMarks` weitet diese Luecke NICHT aus (siehe jahrgangs-bindung).\n"
         },
         "parameters": [
           {

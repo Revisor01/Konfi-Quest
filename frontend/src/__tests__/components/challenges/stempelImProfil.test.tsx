@@ -35,11 +35,14 @@ describe('Stempel-Abschnitt: Darstellung', () => {
     expect(screen.getByText('Zuhörer')).toBeInTheDocument();
   });
 
-  it('ueberschreibt den Abschnitt mit "Deine Stempel"', () => {
+  it('ueberschreibt den Abschnitt im eigenen Profil mit "Deine Stempel"', () => {
+    // Seit die Leitungs-Ansicht dieselbe Komponente nutzt, ist der Titel ein
+    // Prop: dort heisst er "Stempel" ("Deine" waere ueber eine fremde Person
+    // falsch). Der Standardwert traegt weiter das eigene Profil.
     // Der Text steht in einem IonLabel; das Ionic-Stub der Testumgebung
     // rendert dessen Inhalt nicht, deshalb hier gegen die Quelle geprueft.
     expect(lies('src/components/shared/ChallengeStempelSektion.tsx'))
-      .toContain('<IonLabel>Deine Stempel</IonLabel>');
+      .toContain("titel = 'Deine Stempel'");
   });
 
   it('zeichnet genau so viele Kacheln, wie es Stempel gibt', () => {
@@ -91,7 +94,7 @@ describe('Stempel-Abschnitt: Verdrahtung in beiden Profilen', () => {
 
   it('Konfi-Profil stellt die Stempel hinter den Badge-Block', () => {
     expect(pos(konfiProfil, '<ChallengeStempelSektion'))
-      .toBeGreaterThan(pos(konfiProfil, '{/* Next Badge Progress */}'));
+      .toBeGreaterThan(pos(konfiProfil, 'BADGES'));
   });
 
   it('Team-Profil stellt die Stempel hinter den Badge-Eintrag unter "Inhalt"', () => {

@@ -43,6 +43,11 @@ lassen kannst.
 - **Aktivitäten** [hinzufügen](40-punkte.md#eine-aktivitaet-direkt-zuschreiben)
   oder [entfernen](40-punkte.md#punkte-wieder-wegnehmen)
 - [**Abzeichen**](60-badges.md) ansehen
+- [**Challenge-Stempel**](80-challenges.md) ansehen — direkt unter den
+  Abzeichen. Es erscheinen nur Stempel aus eigenen, freigegebenen Beiträgen;
+  wer keinen hat, bei dem fehlt der Abschnitt ganz. Als **Admin** siehst du
+  die Stempel der Konfis aus deinen Jahrgängen; bei Teamer:innen siehst du sie
+  immer.
 - **Konfirmation** — Termin und Konfispruch
 - [**Passwort zurücksetzen**](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
 - **Zur Teamer:in befördern** — Punkte und Abzeichen bleiben als Konfi-Historie

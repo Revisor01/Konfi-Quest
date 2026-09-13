@@ -1541,4 +1541,105 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
       expect(neu.status).toBe(403);
     });
   });
+  // ================================================================
+  // Challenge-Stempel in der Detailansicht (13.09.2026)
+  // ================================================================
+  // Die Detailansicht GET /admin/konfis/:id liefert seit dem 13.09.2026
+  // `challengeMarks`. Fuer das NEUE Feld gilt die Jahrgangsgrenze — sonst
+  // saehe ein Admin ueber den Umweg der Stempel, woran eine Konfi aus einem
+  // fremden Jahrgang teilgenommen hat.
+  describe('GET /api/admin/konfis/:id — challengeMarks', () => {
+    const CHALLENGE_A = 401;
+    const CHALLENGE_FREMD = 402;
+
+    beforeEach(async () => {
+      for (const [id, titel, badge] of [
+        [CHALLENGE_A, 'Challenge A', 'Stempel A'],
+        [CHALLENGE_FREMD, 'Challenge Fremd', 'Stempel Fremd']
+      ]) {
+        await db.query(
+          `INSERT INTO challenges (id, organization_id, title, description, badge_name,
+                                   starts_at, ends_at, is_draft)
+           VALUES ($1, 1, $2, 'Beschreibung', $3, NOW() - INTERVAL '2 days',
+                   NOW() + INTERVAL '2 days', false)`,
+          [id, titel, badge]
+        );
+      }
+
+      // KONFI_A (eigener Jahrgang): ein FREIGEGEBENER und ein OFFENER Beitrag
+      // zur selben Challenge -> genau EIN Stempel, nicht zwei.
+      await db.query(
+        `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, moderation_status)
+         VALUES ($1, $2, 1, 'text', 'approved'), ($1, $2, 1, 'text', 'approved'),
+                ($3, $2, 1, 'text', 'pending')`,
+        [CHALLENGE_A, KONFI_A, CHALLENGE_FREMD]
+      );
+
+      // KONFI_B (fremder Jahrgang): ein freigegebener Beitrag.
+      await db.query(
+        `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, moderation_status)
+         VALUES ($1, $2, 1, 'text', 'approved')`,
+        [CHALLENGE_FREMD, KONFI_B]
+      );
+    });
+
+    it('ERLAUBT: Admin mit Jahrgang sieht die Stempel seiner Konfi — nur freigegebene, je Challenge einer', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.challengeMarks).toEqual([
+        { challenge_id: CHALLENGE_A, badge_icon: 'flag', badge_name: 'Stempel A', title: 'Challenge A' }
+      ]);
+    });
+
+    it('VERBOTEN: Admin ohne diesen Jahrgang bekommt KEINE Stempel der fremden Konfi', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      // Die Route selbst bleibt unveraendert erreichbar (Bestand, Org-Grenze);
+      // das NEUE Feld bleibt leer.
+      expect(res.status).toBe(200);
+      expect(res.body.challengeMarks).toEqual([]);
+    });
+
+    it('org_admin ist von der Jahrgangsgrenze ausgenommen und sieht die Stempel auch im fremden Jahrgang', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_B}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.challengeMarks).toEqual([
+        { challenge_id: CHALLENGE_FREMD, badge_icon: 'flag', badge_name: 'Stempel Fremd', title: 'Challenge Fremd' }
+      ]);
+    });
+
+    it('Teamer:innen sind nicht an einen Jahrgang gebunden: ihre Stempel erscheinen auch fuer den Admin ohne Zuweisung', async () => {
+      await db.query(
+        `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, moderation_status)
+         VALUES ($1, $2, 1, 'text', 'approved')`,
+        [CHALLENGE_A, TEAMER_ZIEL]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${TEAMER_ZIEL}`)
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.challengeMarks).toEqual([
+        { challenge_id: CHALLENGE_A, badge_icon: 'flag', badge_name: 'Stempel A', title: 'Challenge A' }
+      ]);
+    });
+
+    it('Ohne freigegebenen Beitrag bleibt die Liste leer (kein Abschnitt in der Ansicht)', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${TEAMER_ZIEL}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.challengeMarks).toEqual([]);
+    });
+  });
 });

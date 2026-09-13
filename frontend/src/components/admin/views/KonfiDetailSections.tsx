@@ -1,5 +1,6 @@
 import React from 'react';
 import { IonCard, IonCardContent, IonLabel, IonList, IonListHeader, IonItem, IonItemSliding, IonItemOptions, IonItemOption, IonIcon, IonButton, IonDatetimeButton, IonDatetime, IonModal } from '@ionic/react';
+import type { ChallengeMark } from '../../../types/challenges';
 import {
   ICON_ABSAGE,
   ICON_ABZEICHEN_GEFUELLT,
@@ -67,6 +68,12 @@ export interface Konfi {
   bonusPoints?: number;
   totalBonus?: number;
   badgeCount?: number;
+  /**
+   * Freigegebene Challenge-Stempel dieser Person (GET /admin/konfis/:id).
+   * Leer, wenn es keine gibt — oder wenn der Jahrgang ausserhalb der eigenen
+   * Zuweisung liegt.
+   */
+  challengeMarks?: ChallengeMark[];
   activities_count?: number;
   role_name?: string;
   user_type?: string;

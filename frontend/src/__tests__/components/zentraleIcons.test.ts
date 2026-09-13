@@ -77,7 +77,11 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // den winkenden Pfeil auf der Team-Seite des Rueckblicks gestrichen hat
     // ("Sprich jemanden an kommt der Pfeil weg") -- er war der einzige
     // Verwender. Die gefuellte Fassung (ICON_PFEIL_WEITER_GEFUELLT) bleibt.
-    expect(namen.length).toBe(189);
+    // 13.09.2026: 189 -> 188. ICON_RAKETE ist entfallen: Es hing allein an
+    // der Karte "Naechstes Badge" im Konfi-Profil, und die rendert nie --
+    // GET /konfi/profile liefert das Feld next_badge nicht (siehe
+    // docs/offene-befunde.md 7.1). Mit der toten Karte faellt auch das Icon.
+    expect(namen.length).toBe(188);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

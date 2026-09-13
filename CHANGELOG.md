@@ -13,6 +13,10 @@ Versionsüberschrift.
 - Das eigene Profil zeigt hinter den Abzeichen auch die gesammelten
   Challenge-Stempel — bei Konfis wie bei Teamer:innen. Wer noch keinen
   Stempel hat, sieht den Abschnitt nicht.
+- In der Detailansicht der Leitung stehen unter den Abzeichen auch die
+  Challenge-Stempel der angesehenen Person, bei Konfis wie bei Teamer:innen.
+  Gezählt werden nur eigene, freigegebene Beiträge. Wer nur bestimmte
+  Jahrgänge betreut, sieht die Stempel auch nur dort.
 - Die Anwesenheit kennt einen dritten Eintrag: **Abgemeldet**. Wird jemand
   außerhalb der App abgemeldet, etwa weil die Eltern anrufen und das Kind
   krank ist, lässt sich das in einem eigenen Fenster mit Grund und Notiz
@@ -45,6 +49,10 @@ Versionsüberschrift.
   Termin zählt wieder in die Pflicht-Summe.
 - In der Challenge-Ansicht für Leitung und Team trägt das Symbol über einem
   leeren Reiter jetzt die Farbe der Challenges statt der des Teams.
+
+### Sonstiges
+- Zwei Kacheln im Konfi-Profil, die seit ihrer Entstehung nie erschienen sind
+  („Nächstes Badge" und „Letzte Aktivitäten"), sind entfernt.
 
 ## [2.1.1] - 2026-09-11
 

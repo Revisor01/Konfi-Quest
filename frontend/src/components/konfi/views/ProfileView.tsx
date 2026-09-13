@@ -1,19 +1,15 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
-import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader, IonProgressBar, useIonModal, useIonAlert } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader, useIonModal, useIonAlert } from '@ionic/react';
 import {
   ICON_ABMELDEN,
-  ICON_AKTION_GEFUELLT,
   ICON_BUCH,
   ICON_GALERIE,
-  ICON_HAKEN_GEFUELLT,
   ICON_KOMPASS,
   ICON_LOESCHEN,
   ICON_MAIL,
   ICON_ORT,
   ICON_PERSON,
-  ICON_POKAL_GEFUELLT,
-  ICON_RAKETE,
   ICON_SCHLUESSEL,
   ICON_STERN,
   ICON_TERMIN,
@@ -72,25 +68,10 @@ interface KonfiProfile {
   pending_requests: number;
   rank_in_jahrgang?: number;
   total_in_jahrgang?: number;
-  recent_activities: RecentActivity[];
   progress_overview: ProgressOverview;
 }
 
-interface RecentActivity {
-  id: number;
-  title: string;
-  type: 'activity' | 'event' | 'badge' | 'request';
-  points: number;
-  date: string;
-  icon?: string;
-}
-
 interface ProgressOverview {
-  next_badge?: {
-    name: string;
-    points_needed: number;
-    progress_percentage: number;
-  };
   monthly_points: {
     month: string;
     points: number;
@@ -300,17 +281,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   });
 
 
-  const getActivityIcon = (activity: RecentActivity) => {
-    switch (activity.type) {
-      case 'badge': return ICON_POKAL_GEFUELLT;
-      case 'event': return ICON_TERMIN;
-      case 'activity': return ICON_AKTION_GEFUELLT;
-      case 'request': return ICON_HAKEN_GEFUELLT;
-      default: return ICON_STERN;
-    }
-  };
-
-
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
@@ -319,18 +289,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       day: 'numeric',
       month: 'short',
       year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString: string | undefined) => {
-    if (!dateString) return 'Unbekannt';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Ungültiges Datum';
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -467,77 +425,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       </div>
       )}
 
-      {/* Next Badge Progress */}
-      {profile.progress_overview?.next_badge && (
-        <IonCard style={{ margin: 'var(--app-abstand-basis)', borderRadius: 'var(--app-radius-klein)' }}>
-          <IonCardContent>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--app-abstand-mittel)' }}>
-              <IonIcon icon={ICON_RAKETE} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-color-rakete)', marginRight: 'var(--app-abstand-eng)' }} />
-              <h3 style={{ margin: '0', fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-halbfett)' }}>
-                Nächstes Badge
-              </h3>
-            </div>
-            <p style={{ margin: '0 0 var(--app-abstand-eng) 0', fontSize: 'var(--app-text-standard)', fontWeight: 'var(--app-schrift-mittel)' }}>
-              {profile.progress_overview.next_badge.name}
-            </p>
-            <IonProgressBar 
-              value={profile.progress_overview.next_badge.progress_percentage / 100}
-              style={{ 
-                height: '8px', 
-                borderRadius: 'var(--app-radius-fein)',
-                marginBottom: 'var(--app-abstand-eng)',
-                '--progress-background': 'var(--app-gradient-rakete-quer)'
-              }}
-            />
-            <p style={{ margin: '0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)' }}>
-              Noch {profile.progress_overview.next_badge.points_needed} Punkte bis zum nächsten Badge
-              ({Math.round(profile.progress_overview.next_badge.progress_percentage)}%)
-            </p>
-          </IonCardContent>
-        </IonCard>
-      )}
-
       {/* Deine Stempel -- direkt hinter dem Badge-Block (Simon, 12.09.2026:
           "nach den badges auch die stempel sehen"). Ohne Stempel faellt der
           Abschnitt ganz weg. */}
       <ChallengeStempelSektion marks={challengeMarks} />
-
-      {/* Recent Activities */}
-      {profile.recent_activities && profile.recent_activities.length > 0 && (
-        <IonCard style={{ margin: 'var(--app-abstand-basis)', borderRadius: 'var(--app-radius-klein)' }}>
-          <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
-            <h3 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-halbfett)' }}>
-              Letzte Aktivitäten
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {profile.recent_activities.slice(0, 5).map((activity, index) => {
-                const colorVariant = activity.type === 'badge' ? 'warning' : activity.type === 'event' ? 'info' : activity.type === 'activity' ? 'success' : 'warning';
-                return (
-                  <div key={index} className={`app-list-item app-list-item--${colorVariant}`}>
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className={`app-icon-circle app-icon-circle--${colorVariant}`}>
-                          <IonIcon icon={getActivityIcon(activity)} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">
-                            {activity.title}
-                          </div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              {formatDateTime(activity.date)} -- {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </IonCardContent>
-        </IonCard>
-      )}
 
       {/* Die beiden Neuerungs-Banner, dauerhaft und ohne X. Bewusst KEINE
           Listeneintraege: Es sind keine Einstellungen, die man zwischen

@@ -327,13 +327,13 @@ deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.
 
 ---
 
-## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — OFFEN
+## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — TEILS BEHOBEN
 
 Beim Einbau der Stempel ins Profil aufgefallen, beide am Code nachgesehen.
 Keiner davon ist ein Fehler, den jemand gemeldet hat — aber beide führen dazu,
 dass etwas nicht erscheint, das erscheinen soll.
 
-### 7.1 Die Karte „Nächstes Badge" rendert nie
+### 7.1 Die Karte „Nächstes Badge" rendert nie — BEHOBEN 13.09.2026
 
 `ProfileView.tsx:471` prüft `profile.progress_overview?.next_badge`.
 `GET /konfi/profile` (`konfi.js:521 ff.`) baut `progress_overview` aber
@@ -344,6 +344,16 @@ Ebenso ist `recent_activities` an derselben Stelle fest `[]`.
 **Folge:** Die Karte ist seit ihrer Entstehung unsichtbar. Entweder das
 Backend liefert `next_badge` (die Abzeichen-Logik dafür gibt es in
 `services/badgeService.js`), oder die Karte im Frontend entfällt.
+
+**Behoben am 13.09.2026:** Die Karte ist entfernt, ebenso der Block „Letzte
+Aktivitäten" — beide hingen an Feldern, die das Backend nie geliefert hat.
+Niemand hat die Funktion vermisst, weil sie nie sichtbar war; das Backend
+wurde deshalb bewusst NICHT erweitert. Mit den Blöcken sind auch die toten
+Typen, Hilfsfunktionen und Symbol-Importe gefallen.
+
+**Zum Gegenprüfen:**
+
+    grep -rn 'next_badge\|recent_activities' frontend/src
 
 ### 7.2 Der Einstieg „Konfi-Historie" hängt am Jahrgangsnamen
 

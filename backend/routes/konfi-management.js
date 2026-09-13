@@ -691,6 +691,45 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             `;
             const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name]);
 
+            // Challenge-Stempel der angesehenen Person (Simon, 13.09.2026:
+            // "Also ich als Admin will sehen welche Stempel die Teamer und
+            // Konfis haben. In deren Profil Details unter Badges.").
+            //
+            // Gezaehlt wird GENAU wie im eigenen Profil (challenges.js,
+            // GET /challenges/konfi): nur EIGENE und FREIGEGEBENE Beitraege
+            // (moderation_status='approved'), nicht jede Challenge, die ein
+            // Abzeichen vergibt. Ein Stempel je Challenge, auch bei mehreren
+            // freigegebenen Beitraegen — deshalb DISTINCT ueber challenge_id.
+            //
+            // Die Jahrgangsgrenze gilt auch hier: Diese Route prueft bisher
+            // nur die Organisation, nicht den Jahrgang (anders als
+            // /:id/event-points). Das ist Bestand, und die Antwortform darf
+            // sich fuer die ausgelieferten Apps nicht aendern — deshalb wird
+            // hier NICHT die ganze Route verschaerft, sondern das NEUE Feld
+            // an darfKonfi gebunden: Wer den Jahrgang nicht sehen darf,
+            // bekommt eine leere Stempel-Liste statt fremder Stempel.
+            // Teamer:innen ohne konfi_profiles-Zeile liefert darfKonfi
+            // gefunden=false; fuer sie gilt die Teamer-Ausnahme der Sollregel
+            // ("admin sieht alle Teamer:innen"), sie sind also nicht an einen
+            // Jahrgang gebunden.
+            let challengeMarks = [];
+            const stempelZugriff = konfi.role_name === 'teamer'
+                ? { gefunden: false, erlaubt: false }
+                : await darfKonfi(db, req, konfiId);
+            if (konfi.role_name === 'teamer' || !stempelZugriff.gefunden || stempelZugriff.erlaubt) {
+                const stempelQuery = `
+                    SELECT DISTINCT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title
+                    FROM challenge_submissions s
+                    JOIN challenges c ON c.id = s.challenge_id
+                    WHERE s.user_id = $1
+                      AND s.moderation_status = 'approved'
+                      AND c.organization_id = $2
+                    ORDER BY c.title
+                `;
+                const { rows: stempelRows } = await db.query(stempelQuery, [konfiId, req.user.organization_id]);
+                challengeMarks = stempelRows;
+            }
+
             // Zertifikate für Teamer mitladen
             let certificates = [];
             let teamerEvents = [];
@@ -807,6 +846,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
                 badgeCount: badgeResult ? badgeResult.badgeCount : 0,
+                // Neues Feld (13.09.2026), additiv: alte App-Versionen lesen es
+                // nicht, nichts Bestehendes faellt weg oder aendert den Typ.
+                challengeMarks,
                 ...(konfi.role_name === 'teamer' ? { certificates, teamerEvents, konfiHistory } : {})
             });
 
