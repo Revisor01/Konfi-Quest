@@ -23,7 +23,6 @@ import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
-import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
@@ -151,9 +150,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     loadBadges();
   }, []);
 
-  // Challenge-Stempel laden — sie speisen die Kachel UND den Abschnitt unter
-  // den Badges. Fehler bewusst still: die Kachel zeigt dann 0, der Abschnitt
-  // bleibt aus.
+  // Challenge-Stempel laden — sie speisen NUR die Zahl in der Kachel
+  // "CHALLENGES". Die Stempel selbst stehen unter Challenges, nicht im
+  // Profil (Simon, 14.09.2026: "Das ist doch unter Challenges. Das finden
+  // Teamer, Admins und Konfis unter Challenges, nie in ihrem Profil.").
+  // Fehler bewusst still: die Kachel zeigt dann 0.
   React.useEffect(() => {
     api.get('/challenges/konfi')
       .then(res => {
@@ -425,11 +426,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </div>
       </div>
       )}
-
-      {/* Deine Stempel -- direkt hinter dem Badge-Block (Simon, 12.09.2026:
-          "nach den badges auch die stempel sehen"). Ohne Stempel faellt der
-          Abschnitt ganz weg. */}
-      <ChallengeStempelSektion marks={challengeMarks} />
 
       {/* Die beiden Neuerungs-Banner, dauerhaft und ohne X. Bewusst KEINE
           Listeneintraege: Es sind keine Einstellungen, die man zwischen

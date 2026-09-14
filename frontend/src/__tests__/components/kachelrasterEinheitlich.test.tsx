@@ -80,6 +80,75 @@ describe('Kachelraster: eine Loesung fuer Abzeichen und Stempel', () => {
   });
 });
 
+describe('Kachelraster: Namen brechen nicht mitten im Wort, Kacheln bleiben gleich hoch', () => {
+  // Simon, 14.09.2026 am Geraet (Build 191): "Wenn einer der Titel umbricht
+  // bei den Badges, dann wird die ganze Zeile hoeher. Und 'Punktemeiste-r'
+  // wird vor dem r umgebrochen. Das geht nicht."
+  //
+  // Nachgemessen (14.09.2026, Browser, 390px Viewport): fuer den Namen
+  // bleiben je nach Verschachtelung 70-91 px. "Punktemeister" ist 81 px
+  // breit, das laengste tatsaechlich vergebene Einzelwort
+  // "Gottesdienstbesucher" 124 px (125 verschiedene Namen aus der
+  // Produktion, laengster Name 29 Zeichen).
+  //
+  // Die Ursache war NICHT eine falsche Umbruchstelle, sondern eine fehlende:
+  // ohne overflow-wrap bricht ein zu breites Wort gar nicht um, laeuft aus
+  // der Kachel heraus und die Kuerzung schneidet es mitten im Wort ab.
+  // Gemessen: scrollWidth 81 px in einer 78 px breiten Box, Namensbereich
+  // 13,4 px statt 26,9 px.
+  const css = lies('src/theme/variables.css');
+  /** Block ohne Kommentare -- sonst trifft eine Suche die Begruendung statt
+   *  der Regel (genau darueber ist dieser Test beim Schreiben gestolpert). */
+  const ohneKommentare = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, '');
+  const nameBlock = (() => {
+    const start = css.indexOf('.app-kachel__name {');
+    expect(start, '.app-kachel__name fehlt').toBeGreaterThan(-1);
+    return ohneKommentare(css.slice(start, css.indexOf('}', start)));
+  })();
+  const rasterBlock = (() => {
+    const start = css.indexOf('.app-kachelraster {');
+    return ohneKommentare(css.slice(start, css.indexOf('}', start)));
+  })();
+
+  it('bricht ein zu langes Wort ueberhaupt um', () => {
+    // Ohne diese Regel laeuft "Gottesdienstbesucher" aus der Kachel heraus
+    // und wird mitten im Wort abgeschnitten.
+    expect(nameBlock).toContain('overflow-wrap: break-word;');
+  });
+
+  it('setzt keine Silbentrennung, die je nach Geraet anders bricht', () => {
+    // Nachgemessen: hyphens:auto bricht "Gottesdienstb-esucher" -- derselbe
+    // harte Schnitt wie overflow-wrap, nur unzuverlaessig obendrein. Die
+    // Seite steht auf lang="en", und auf Android-WebViews ist das deutsche
+    // Woerterbuch nicht garantiert.
+    expect(nameBlock).not.toContain('hyphens:');
+    expect(nameBlock).not.toContain('hyphens :');
+  });
+
+  it('bricht nicht an beliebiger Stelle, solange das Wort passt', () => {
+    // anywhere/break-all wuerden auch dann trennen, wenn der Name als Ganzes
+    // in die Zeile passt. break-word greift nur im Notfall.
+    expect(nameBlock).not.toContain('overflow-wrap: anywhere');
+    expect(nameBlock).not.toContain('word-break: break-all');
+  });
+
+  it('haelt fuer den Namen immer zwei Zeilen frei', () => {
+    // Sonst sitzt der Fortschritt in der Nachbarkachel eine Zeile hoeher.
+    // Gemessen: 26,9 px bei line-height 1.2 -- ein- wie zweizeilig.
+    expect(nameBlock).toContain('min-height: calc(2 * 1.2em);');
+    // Die Zeilenhoehe, auf die sich die Rechnung stuetzt.
+    expect(nameBlock).toContain('line-height: 1.2;');
+    // Mehr als zwei Zeilen darf der Name weiterhin nicht bekommen.
+    expect(nameBlock).toContain('-webkit-line-clamp: 2;');
+  });
+
+  it('gibt allen Kacheln einer Reihe dieselbe Hoehe', () => {
+    // Ohne das richtet sich die Grid-Zeile am hoechsten Kind aus und eine
+    // zweizeilige Beschriftung zieht die Nachbarn mit in die Hoehe.
+    expect(rasterBlock).toContain('grid-auto-rows: 1fr;');
+  });
+});
+
 describe('Kachelraster: die inhaltlichen Unterschiede bleiben', () => {
   const STEMPEL = [
     { schluessel: 1, icon: 'star', name: 'Nachtwanderer', farbe: 'var(--app-color-challenges)' },

@@ -5,17 +5,24 @@ import { resolve } from 'path';
 import ChallengeStempelSektion from '../../../components/shared/ChallengeStempelSektion';
 import type { ChallengeMark } from '../../../types/challenges';
 
-// Simon, 12.09.2026: "im konfi und teamer profil nach den badges auch die
-// stempel sehen die gesammelt wurden."
+// Simon, 14.09.2026: "Konfis haben in ihrem Profil jetzt seine Stempel.
+// Warum? Das ist doch unter Challenges. Das finden Teamer, Admins und Konfis
+// unter Challenges, nie in ihrem Profil."
 //
-// Geprueft wird beides: die Darstellung selbst UND die Verdrahtung in beiden
-// Profilen -- ein Abschnitt, den niemand einbindet, ist unsichtbar, egal wie
-// gut er rendert.
+// Der Abschnitt ist deshalb aus den EIGENEN Profilen raus. Er bleibt in der
+// Detailansicht der Leitung: dort sieht sie die Stempel einer ANDEREN
+// Person, und die findet sie unter Challenges nicht.
+//
+// Die Darstellungs-Tests bleiben -- die Komponente lebt weiter. Die
+// Verdrahtungs-Tests sind umgedreht: sie halten jetzt fest, wo der
+// Abschnitt NICHT mehr steht, damit ihn niemand versehentlich wieder
+// einbaut.
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
 const konfiProfil = lies('src/components/konfi/views/ProfileView.tsx');
 const teamerProfil = lies('src/components/teamer/pages/TeamerProfilePage.tsx');
+const leitungsDetail = lies('src/components/admin/views/KonfiDetailView.tsx');
 
 const pos = (quelle: string, marke: string): number => {
   const i = quelle.indexOf(marke);
@@ -72,46 +79,48 @@ describe('Stempel-Abschnitt: Darstellung', () => {
   });
 });
 
-describe('Stempel-Abschnitt: Verdrahtung in beiden Profilen', () => {
+describe('Stempel-Abschnitt: nicht mehr im eigenen Profil', () => {
   it.each([
     ['Konfi', konfiProfil],
     ['Team', teamerProfil],
-  ])('%s-Profil bindet den Abschnitt ein', (_rolle, quelle) => {
-    expect(quelle).toContain('ChallengeStempelSektion');
-    expect(quelle).toContain('<ChallengeStempelSektion marks={challengeMarks} />');
+  ])('%s-Profil bindet den Abschnitt NICHT ein', (_rolle, quelle) => {
+    // Die Stempel stehen unter Challenges. Wer sie hier wieder einbaut,
+    // zeigt dieselbe Sache an zwei Stellen.
+    expect(quelle).not.toContain('<ChallengeStempelSektion');
+    // Auch der Import muss weg, sonst bleibt toter Code stehen.
+    expect(quelle).not.toMatch(/import\s+ChallengeStempelSektion/);
   });
 
-  it.each([
-    ['Konfi', konfiProfil],
-    ['Team', teamerProfil],
-  ])('%s-Profil holt die Stempel aus dem Teilnehmer-Einstieg', (_rolle, quelle) => {
-    // GET /challenges/konfi bedient Konfis UND Team (backend/routes/
-    // challenges.js) -- es braucht keine zweite Route und keine Aenderung an
-    // der Antwortform der Profil-Route.
-    expect(quelle).toContain("api.get('/challenges/konfi')");
-    expect(quelle).toContain('res.data?.marks');
+  it('das Team-Profil spart sich den Abruf ganz', () => {
+    // Dort speisten die Stempel nur den Abschnitt. Ohne ihn faellt ein
+    // Request je Profilaufruf weg.
+    expect(teamerProfil).not.toContain("api.get('/challenges/konfi')");
+    expect(teamerProfil).not.toContain('ChallengeMark');
   });
 
-  it('Konfi-Profil stellt die Stempel hinter den Badge-Block', () => {
-    expect(pos(konfiProfil, '<ChallengeStempelSektion'))
-      .toBeGreaterThan(pos(konfiProfil, 'BADGES'));
+  it('das Konfi-Profil behaelt die Zahl in der Kachel "CHALLENGES"', () => {
+    // Hier speisen dieselben Daten weiter den Zaehler ganz oben -- der
+    // Abruf bleibt deshalb stehen, nur der Abschnitt ist weg.
+    expect(konfiProfil).toContain("api.get('/challenges/konfi')");
+    expect(konfiProfil).toContain("{ value: challengeMarks.length, label: 'CHALLENGES' }");
   });
 
-  it('Team-Profil stellt die Stempel hinter den Badge-Eintrag unter "Inhalt"', () => {
-    expect(pos(teamerProfil, '<ChallengeStempelSektion'))
-      .toBeGreaterThan(pos(teamerProfil, '<div className="app-list-item__title">Badges</div>'));
+  it('der Konfi-Abruf faellt weiterhin still aus, wenn er fehlschlaegt', () => {
+    const start = pos(konfiProfil, "api.get('/challenges/konfi')");
+    expect(konfiProfil.slice(start, start + 400)).toContain('.catch(');
+  });
+});
+
+describe('Stempel-Abschnitt: bleibt in der Detailansicht der Leitung', () => {
+  it('die Leitung sieht die Stempel einer anderen Person weiterhin', () => {
+    // Anders als im eigenen Profil ist das hier die EINZIGE Stelle: unter
+    // Challenges sieht die Leitung nur ihre eigenen Stempel.
+    expect(leitungsDetail).toContain('<ChallengeStempelSektion');
+    expect(leitungsDetail).toMatch(/import\s+ChallengeStempelSektion/);
   });
 
-  it.each([
-    ['Konfi', konfiProfil],
-    ['Team', teamerProfil],
-  ])('%s-Profil laesst einen fehlgeschlagenen Abruf still durchgehen', (_rolle, quelle) => {
-    // Die Stempel sind ein Zusatz. Faellt der Abruf aus, bleibt das Profil
-    // stehen, statt eine Fehlermeldung zu werfen.
-    const block = quelle.slice(
-      pos(quelle, "api.get('/challenges/konfi')"),
-      pos(quelle, "api.get('/challenges/konfi')") + 400
-    );
-    expect(block).toContain('.catch(');
+  it('sie bekommt die Stempel aus dem ohnehin geladenen Konfi-Objekt', () => {
+    // Kein eigener Request: die Detailansicht hat die Daten schon.
+    expect(leitungsDetail).toContain('currentKonfi?.challengeMarks');
   });
 });

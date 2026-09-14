@@ -3717,6 +3717,12 @@ ion-segment.md ion-segment-button {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--app-abstand-mittel);
+  /* Alle Kacheln einer Reihe gleich hoch: ohne das richtet sich die Zeile am
+     hoechsten Kind aus und eine zweizeilige Beschriftung zieht die Nachbarn
+     mit in die Hoehe. Mit 1fr bekommen alle Kacheln der Reihe dieselbe
+     Hoehe, und weil der Namensbereich unten zwei Zeilen fest reserviert,
+     sitzen Symbol, Name und Fortschritt ueberall auf derselben Linie. */
+  grid-auto-rows: 1fr;
 }
 .app-kachel {
   --kachel-farbe: var(--app-color-badges);
@@ -3802,6 +3808,25 @@ ion-segment.md ion-segment-button {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  /* Umbruchregel. Gemessen (14.09.2026): fuer den Namen bleiben je nach
+     Verschachtelung nur 70-91 px; "Punktemeister" ist 81 px breit, das
+     laengste vergebene Einzelwort "Gottesdienstbesucher" 124 px. OHNE Regel
+     bricht ein solches Wort gar nicht um -- es laeuft aus der Kachel heraus
+     und die Kuerzung schneidet es mitten im Wort ab ("Punktemeiste-/r").
+     Deshalb overflow-wrap: der Umbruch greift NUR, wenn ein Wort allein zu
+     breit ist; alles, was passt, bleibt unangetastet.
+
+     Bewusst NICHT hyphens: auto: nachgemessen bricht es "Gottesdienstb-
+     esucher" -- gleicher harter Schnitt wie overflow-wrap, nur unzuverlaessig
+     obendrein. Silbentrennung braucht ein Woerterbuch und ein passendes
+     lang-Attribut; die Seite steht auf lang="en", und auf Android-WebViews
+     ist das Woerterbuch nicht garantiert. Eine Regel, die je nach Geraet
+     etwas anderes tut, ist hier schlechter als eine, die ueberall gleich
+     wirkt. */
+  overflow-wrap: break-word;
+  /* Der Namensbereich belegt IMMER zwei Zeilen, auch bei einem kurzen Namen.
+     Sonst sitzt der Fortschritt in der Nachbarkachel eine Zeile hoeher. */
+  min-height: calc(2 * 1.2em);
 }
 .app-kachel--gesperrt .app-kachel__name {
   color: var(--app-text-muted);
