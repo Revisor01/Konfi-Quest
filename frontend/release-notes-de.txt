@@ -1,7 +1,7 @@
-Neu: Die Anwesenheit kennt einen dritten Eintrag – Abgemeldet, mit Grund und Notiz. Challenge-Stempel stehen jetzt im Profil neben den Abzeichen, und für Abzeichen gibt es 95 Symbole zur Auswahl.
+Neu: Die App lässt sich mit Fingerabdruck sperren. Im Profil wählst du, nach welcher Zeit im Hintergrund die Abfrage kommt – sofort, nach 1, 5 oder 15 Minuten. Angemeldet bleibst du dabei.
 
-Die App startet schneller, Chat-Dateien werden nur einmal geladen, und große Anhänge brechen bei langsamer Verbindung nicht mehr ab.
+Die Anwesenheit kennt einen dritten Eintrag: Abgemeldet, mit Grund und Notiz. Challenge-Stempel stehen im Profil neben den Abzeichen.
+
+Die App startet schneller, große Anhänge brechen bei langsamer Verbindung nicht mehr ab.
 
 Termine, Profile und Nachweisfotos bleiben auf die eigenen Jahrgänge beschränkt.
-
-Behoben: Abmeldung von Pflichtterminen, Konfi-Historie, Emoji auf Abzeichen.
