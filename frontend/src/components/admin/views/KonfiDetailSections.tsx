@@ -1196,7 +1196,12 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                         <IonIcon icon={entryIcon} />
                       </div>
                       <div className="app-list-item__content">
-                        <div className="app-list-item__title app-list-item__title--badge-space">{entry.title}</div>
+                        {/* Dieselbe Doppel-Badge-Lage wie in der Punkte-Uebersicht
+                            der Konfis: mit vorgestelltem Typ-Badge braucht der
+                            Titel mehr Platz als die 50 px der Standardklasse,
+                            sonst laeuft eine Zeile unter das Badge (gemessen
+                            14.09.2026). */}
+                        <div className={`app-list-item__title ${typeBadgeColor ? 'app-list-item__title--punkte-badge-doppelt' : 'app-list-item__title--punkte-badge'}`}>{entry.title}</div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">{formatDate(entry.date)}</span>
                         </div>

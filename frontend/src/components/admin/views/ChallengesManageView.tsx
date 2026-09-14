@@ -30,6 +30,7 @@ import {
   ICON_VERBORGEN,
 } from '../../shared/icons';
 import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
+import KachelRaster from '../../shared/KachelRaster';
 import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
@@ -545,44 +546,20 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   iconColor="var(--app-color-challenges)"
                 />
               ) : (
-              <div
-                style={{
-                  display: 'flex', gap: 'var(--app-abstand-mittelweit)', overflowX: 'auto',
-                  paddingBottom: 'var(--app-abstand-mini)', WebkitOverflowScrolling: 'touch'
-                }}
-              >
-                {marks.map((mark) => (
-                  <div
-                    key={mark.challenge_id}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      gap: 'var(--app-abstand-kompakt)', minWidth: '74px', maxWidth: '92px', flexShrink: 0
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '52px', height: '52px', borderRadius: 'var(--app-radius-kreis)',
-                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: 'var(--app-schatten-glow-challenges)'
-                      }}
-                    >
-                      <IonIcon
-                        icon={getChallengeBadgeIcon(mark.badge_icon)}
-                        style={{ fontSize: 'var(--app-text-ueberschrift)', color: 'white' }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 'var(--app-text-meta)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-ios)',
-                        textAlign: 'center', lineHeight: 1.2
-                      }}
-                    >
-                      {mark.badge_name}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              /* Dasselbe Kachelraster wie im Profil
+                 (Simon, 14.09.2026: "Konfi und Teamer und Admin unter
+                 Challenges, da sollten wir dann auch das gleiche Grid
+                 nutzen"). Vorher lief die Reihe hier seitlich aus dem Bild
+                 und sah dadurch anders aus als dieselben Stempel im Profil. */
+              <KachelRaster
+                eintraege={marks.map((mark) => ({
+                  schluessel: mark.challenge_id,
+                  icon: getChallengeBadgeIcon(mark.badge_icon),
+                  name: mark.badge_name,
+                  titel: mark.title,
+                  farbe: 'var(--app-color-challenges)'
+                }))}
+              />
               )}
             </IonCardContent>
           </IonCard>

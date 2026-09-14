@@ -1656,6 +1656,24 @@ ion-card-content.app-card-content {
 .app-list-item__title--with-dual-badge {
   padding-right: var(--app-freiraum-aktion-xxxl);
 }
+/* Nach der wirklichen Badge-Breite bemessen, nicht geschaetzt (gemessen
+   14.09.2026 im Browser): das Punkte-Badge ist je nach Punktzahl 48,0 bis
+   55,5 px breit, mit vorgestelltem Typ-Badge (Bonus/Termin) 74,0 bis
+   81,5 px. Die Punkte-Uebersicht der Konfis hielt dafuer 70 bzw. 120 px
+   frei und brach Titel dadurch zwei bis vier Zeilen zu frueh um (Simon,
+   14.09.2026: "Die Titel brechen viel zu frueh um ... Die absolute Breite
+   ist falsch eingestellt").
+
+   Die schmalere Klasse der Leitungsansicht (--badge-space, 50 px) ist hier
+   KEIN Ersatz: bei zwei Badges laeuft der Titel darunter durch — nachgemessen
+   lief genau eine Zeile in das Badge hinein. Deshalb zwei eigene Werte mit
+   ein paar Pixeln Luft auf das breiteste gemessene Badge. */
+.app-list-item__title--punkte-badge {
+  padding-right: 58px;
+}
+.app-list-item__title--punkte-badge-doppelt {
+  padding-right: 84px;
+}
 
 /* === Toolbar-Grundfarbe gegen System-Dark-Mode festnageln ===
    Die App hat KEIN eigenes Dark-Theme (Ionic-Dark-Palettes in App.tsx alle
@@ -3672,4 +3690,125 @@ ion-segment.md ion-segment-button {
   height: 48px;
   font-weight: var(--app-schrift-halbfett);
   margin: 0;
+}
+
+/* === Kachelraster fuer Abzeichen und Stempel ===
+   EIN Aussehen fuer beides, in allen Rollen (Simon, 14.09.2026: "Die Badges
+   sollten genauso aussehen wie bei den Konfis, also drei nebeneinander und
+   dann auf die Breite gezogen. Auch da waere es dann ja einfach, dass wir nur
+   einen CSS haben."). Vorher stand das Raster acht Mal als Inline-Style im
+   Baum und lief auseinander: drei Spalten im Profil, VIER in der
+   Detailansicht der Leitung, und in den Challenges gar kein Raster, sondern
+   eine seitlich scrollende Reihe.
+
+   Die Farbe kommt von aussen ueber --kachel-farbe (Abzeichen tragen ihre
+   eigene, Stempel die Challenge-Farbe), damit eine Klasse alle Faelle
+   bedient. Zustand und Inhalt bleiben Sache der Komponente: ein noch nicht
+   verdientes Abzeichen setzt --gesperrt, Stempel gibt es nur verdient.
+
+   Bewusst OHNE color-mix(): die App laeuft ab Android minSdk 24, und auf
+   ungepflegten Geraeten steckt dort eine System-WebView vor Chrome 111 --
+   color-mix faellt dann ersatzlos aus und die Kachel waere durchsichtig
+   statt getoent. Die Komponente uebergibt deshalb wie bisher fertige
+   Flaechen- und Rahmenfarben (--kachel-flaeche/--kachel-rahmen); die Werte
+   bildet sie aus derselben Farbe, aus der sie heute schon `${farbe}10` und
+   `${farbe}40` zusammensetzt. */
+.app-kachelraster {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--app-abstand-mittel);
+}
+.app-kachel {
+  --kachel-farbe: var(--app-color-badges);
+  --kachel-flaeche: transparent;
+  --kachel-rahmen: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  padding: var(--app-abstand-mittel) var(--app-abstand-eng);
+  border-radius: var(--app-radius-gross);
+  background: var(--kachel-flaeche);
+  border: 2px solid var(--kachel-rahmen);
+  /* minWidth:0 + overflow: lange Namen sprengen sonst die Spalte. */
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+/* Anklickbare Kacheln (Abzeichen oeffnen ein Popover) */
+.app-kachel--klickbar {
+  cursor: pointer;
+}
+/* Noch nicht verdient: ausgegraut, aber weiter lesbar. Nur Abzeichen kennen
+   diesen Zustand -- ein Stempel existiert erst, wenn er verdient ist. */
+.app-kachel--gesperrt {
+  background: var(--app-surface-muted);
+  border-color: transparent;
+}
+.app-kachel__symbol {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--app-radius-kreis);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--kachel-verlauf, linear-gradient(135deg, var(--kachel-farbe) 0%, var(--kachel-farbe) 100%));
+  box-shadow: var(--kachel-schatten, 0 4px 12px rgba(0, 0, 0, 0.18));
+  position: relative;
+  flex-shrink: 0;
+}
+.app-kachel__symbol ion-icon {
+  font-size: var(--app-text-ueberschrift);
+  color: white;
+}
+.app-kachel--gesperrt .app-kachel__symbol {
+  background: var(--app-gradient-badge-gesperrt);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.app-kachel--gesperrt .app-kachel__symbol ion-icon {
+  color: var(--app-text-muted);
+}
+/* Eckzeichen am Symbol: Haken (verdient) oder Schloss (gesperrt). */
+.app-kachel__zeichen {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--app-radius-kreis);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  background: var(--app-color-success);
+}
+.app-kachel__zeichen ion-icon {
+  font-size: var(--app-text-mini);
+  color: white;
+}
+.app-kachel__zeichen--gesperrt {
+  background: var(--app-text-system);
+}
+.app-kachel__name {
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--app-text-ios);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Zwei Zeilen: ein Name wie "Gemeindefest-Held:in" passt sonst nie. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.app-kachel--gesperrt .app-kachel__name {
+  color: var(--app-text-muted);
+}
+/* Fortschritt in Prozent unter dem Namen (nur Abzeichen). */
+.app-kachel__fortschritt {
+  font-size: var(--app-text-mini);
+  font-weight: var(--app-schrift-fett);
+  color: var(--app-color-users);
 }
