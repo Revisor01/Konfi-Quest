@@ -49,19 +49,22 @@ module.exports = (db, rbacVerifier) => {
 
       if (!ergebnis.ok) {
         await client.query('ROLLBACK');
-        client.release();
-        const antwort = { error: ergebnis.error };
-        if (ergebnis.error_code) antwort.error_code = ergebnis.error_code;
-        return res.status(ergebnis.status).json(antwort);
+      } else {
+        await client.query('COMMIT');
       }
-
-      await client.query('COMMIT');
-      client.release();
     } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in POST /events/:eventId/book:', eventId, err);
       return res.status(500).json({ error: 'Datenbankfehler bei der Anmeldung' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
+      client.release();
+    }
+
+    if (!ergebnis.ok) {
+      const antwort = { error: ergebnis.error };
+      if (ergebnis.error_code) antwort.error_code = ergebnis.error_code;
+      return res.status(ergebnis.status).json(antwort);
     }
 
     const { bookingId, status, event } = ergebnis;

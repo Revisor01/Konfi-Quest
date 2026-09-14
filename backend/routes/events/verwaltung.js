@@ -337,39 +337,41 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const effectiveHasTimeslots = (mandatory || is_konfirmation) ? false : (has_timeslots || false);
 
     const client = await db.getClient();
+    // Vor dem try: die Nacharbeit hinter dem finally braucht diese Werte.
+    let oldEvent = null;
+    let fruehAntwort = null;
+    const promotedUsers = [];
+    const promotedTeamers = [];
     try {
       await client.query('BEGIN');
 
       // Alte Werte lesen: mandatory/registration_open_notified für Auto-Enrollment-Logik,
       // name/event_date/event_end_time/location/cancelled für den Aenderungs-Push-Vergleich unten,
       // teamer_max_participants für das Teamer-Nachruecken bei Kapazitaetserhoehung
-      const { rows: [oldEvent] } = await client.query(
+      const { rows: [alterStand] } = await client.query(
         'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled, teamer_max_participants FROM events WHERE id = $1',
         [id]
       );
+      oldEvent = alterStand;
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js).
       // Geprueft wird der BISHERIGE Stand des Termins: Sonst koennte sich
       // jemand einen fremden Termin dadurch zugaenglich machen, dass er im
       // selben Aufruf jahrgang_ids auf den eigenen Jahrgang umschreibt.
       const zugriff = await darfTermin(client, req, id);
-      if (!zugriff.erlaubt) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
-      }
-
       // Und der ZIEL-Jahrgang muss ebenfalls ein eigener sein — dieselbe
       // Doppelpruefung wie beim Verschieben einer Konfi
       // (konfi-management.js, PUT /:id).
-      if (Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
-        const alleErlaubt = jahrgang_ids.every(jid => darfJahrgang(req, jid, { edit: true }));
-        if (!alleErlaubt) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
-        }
-      }
+      const zielJahrgangErlaubt = !(Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0)
+        || jahrgang_ids.every(jid => darfJahrgang(req, jid, { edit: true }));
+
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else if (!zielJahrgangErlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Jahrgang' } };
+      } else {
 
       // Teamer-Kontingent: nachträglich editierbar. Wird ein Feld nicht mitgeschickt,
       // bleibt der bisherige Wert erhalten (COALESCE über den Parameter).
@@ -409,9 +411,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
 
       if (rowCount === 0) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden oder keine Berechtigung' });
-      }
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden oder keine Berechtigung' } };
+      } else {
 
       // Clear and re-add categories and jahrgaenge
       await client.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
@@ -512,8 +513,6 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // Konfis, Team-Seite = Teamer:innen UND zugeordnete Leitung, geloeschte
       // Konten nie. Vorher stand hier `r.name != 'teamer'` — eine zugeordnete
       // Leitung belegte damit einen Konfi-Platz und blockierte das Nachruecken.
-      const promotedUsers = [];
-      const promotedTeamers = [];
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Bei Timeslot-Events: Für jeden Timeslot separat prüfen
         for (const slot of timeslots) {
@@ -589,8 +588,23 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
 
       await client.query('COMMIT');
+      }
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in PUT /events/:id:', id, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier. Die Nacharbeit (Pushes,
+      // Live-Updates, Antwort) steht bewusst dahinter.
       client.release();
+    }
 
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    try {
       // Push-Notifications und Live-Updates für nachgerückte Konfis (nach COMMIT)
       if (promotedUsers.length > 0) {
         const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
@@ -618,14 +632,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           liveUpdate.sendToUser('teamer', userId, 'events', 'update', { eventId: id, action: 'promoted' });
         }
       }
+    } catch (nachErr) {
+      // Die Aenderung ist festgeschrieben — ein Fehler beim Benachrichtigen
+      // darf die Antwort nicht mehr in einen 500 kippen.
+      console.error('Post-commit error in PUT /events/:id:', id, nachErr);
+    }
 
-      res.json({
-        message: 'Event erfolgreich aktualisiert',
-        promoted_count: promotedUsers.length,
-        promoted_teamer_count: promotedTeamers.length
-      });
+    res.json({
+      message: 'Event erfolgreich aktualisiert',
+      promoted_count: promotedUsers.length,
+      promoted_teamer_count: promotedTeamers.length
+    });
 
-      nachAntwort(req, async () => {
+    nachAntwort(req, async () => {
         // Live Update: Notify all konfis and admins about the event update
         liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
 
@@ -694,42 +713,39 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         } catch (pushErr) {
           console.error('Push notification failed for event change:', pushErr);
         }
-      }, 'PUT /events/:id');
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
-      console.error('Database error in PUT /events/:id:', id, err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+    }, 'PUT /events/:id');
   });
-  
+
   // Delete event
   router.delete('/:id', rbacVerifier, requireTeamer, validateEventId, async (req, res) => {
     const { id } = req.params;
     
     const client = await db.getClient();
+    // Vor dem try: die Nacharbeit hinter dem finally braucht diese Werte.
+    let event = null;
+    let fruehAntwort = null;
+    let bookedKonfiUserIds = [];
+    let awardedPoints = [];
     try {
       await client.query('BEGIN');
 
       // First, verify the event belongs to the organization
-      const { rows: [event] } = await client.query("SELECT id, name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
-      if (!event) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden' });
-      }
+      const { rows: [gefunden] } = await client.query("SELECT id, name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
+      event = gefunden;
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
       // Loeschen reisst Anmeldungen, Chat und vergebene Punkte mit — das darf
       // nur, wer den Termin auch sehen darf. Bis hierher genuegte die
       // Organisation.
-      const zugriff = await darfTermin(client, req, id);
-      if (!zugriff.erlaubt) {
+      const zugriff = event ? await darfTermin(client, req, id) : null;
+
+      if (!event) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
-      }
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else {
 
       // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
       // bestaetigt (?force=true). Fachlich wäre "absagen" der saubere Weg,
@@ -753,21 +769,22 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         const bookingsBlockieren = !event.cancelled && usage.booking_count > 0;
         if (bookingsBlockieren || usage.message_count > 0 || usage.points_count > 0) {
           await client.query('ROLLBACK');
-          client.release();
           const verluste = [];
           if (usage.booking_count > 0) verluste.push(`${usage.booking_count} Anmeldung(en)`);
           if (usage.message_count > 0) verluste.push(`${usage.message_count} Chat-Nachricht(en)`);
           if (usage.points_count > 0) verluste.push(`${usage.points_total} bereits vergebene Punkte`);
-          return res.status(409).json({
+          fruehAntwort = { status: 409, body: {
             error: `Beim Löschen dieses Events geht verloren: ${verluste.join(', ')}.`,
             error_code: 'event_delete_confirm',
             booking_count: usage.booking_count,
             message_count: usage.message_count,
             points_count: usage.points_count,
             points_total: usage.points_total
-          });
+          } };
         }
       }
+
+      if (!fruehAntwort) {
 
       // Push an angemeldete Konfis wenn abgesagtes Event gelöscht wird
       // IMMER einsammeln (nicht nur bei abgesagten Events): wer angemeldet war,
@@ -780,7 +797,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
          WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
         [id]
       );
-      const bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
+      bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
 
       // Get event chat rooms and their files before deletion
       const { rows: eventChatRooms } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
@@ -820,10 +837,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // stehen — ohne Beleg, nicht rekonstruierbar. Muster wie beim
       // Einzel-Storno (PUT /:id/participants/:participantId/status): pro
       // Punkt-Typ abziehen, GREATEST(0, ...) gegen negative Salden.
-      const { rows: awardedPoints } = await client.query(
+      const { rows: vergebenePunkte } = await client.query(
         "SELECT konfi_id, points, point_type FROM event_points WHERE event_id = $1",
         [id]
       );
+      awardedPoints = vergebenePunkte;
       for (const pts of awardedPoints) {
         const updateProfileQuery = pts.point_type === 'gottesdienst'
           ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
@@ -858,38 +876,43 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
 
       if (rowCount === 0) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden' });
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else {
+        await client.query('COMMIT');
+      }
+      }
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in DELETE /events/:id:', id, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
+      client.release();
+    }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    res.json({ message: 'Event erfolgreich gelöscht' });
+
+    nachAntwort(req, async () => {
+      // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
+      if (bookedKonfiUserIds.length > 0) {
+        const eventDateFormatted = formatDatum(event.event_date);
+        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
 
-      await client.query('COMMIT');
-      client.release();
+      // Live Update: Notify all konfis and admins about the event deletion
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
 
-      res.json({ message: 'Event erfolgreich gelöscht' });
-
-      nachAntwort(req, async () => {
-        // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
-        if (bookedKonfiUserIds.length > 0) {
-          const eventDateFormatted = formatDatum(event.event_date);
-          try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
-        }
-
-        // Live Update: Notify all konfis and admins about the event deletion
-        liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
-
-        // Konfis, deren Punkte zurueckgenommen wurden: Dashboard aktualisieren
-        // (analog Einzel-Storno in PUT /:id/participants/:participantId/status).
-        for (const konfiId of new Set(awardedPoints.map(p => p.konfi_id))) {
-          liveUpdate.sendToUserByRole(konfiId, 'dashboard', 'update');
-        }
-      }, 'DELETE /events/:id');
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
-      console.error('Database error in DELETE /events/:id:', id, err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+      // Konfis, deren Punkte zurueckgenommen wurden: Dashboard aktualisieren
+      // (analog Einzel-Storno in PUT /:id/participants/:participantId/status).
+      for (const konfiId of new Set(awardedPoints.map(p => p.konfi_id))) {
+        liveUpdate.sendToUserByRole(konfiId, 'dashboard', 'update');
+      }
+    }, 'DELETE /events/:id');
   });
 
   // Create group chat for event
@@ -897,35 +920,34 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const eventId = req.params.id;
     
     const client = await db.getClient();
+    // Vor dem try: die Antwort steht hinter dem finally.
+    let fruehAntwort = null;
+    let chatRoomId = null;
+    let hinzugefuegt = 0;
     try {
       await client.query('BEGIN');
 
       const { rows: [event] } = await client.query("SELECT name FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
-      if (!event) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden' });
-      }
 
       // Jahrgangs-Bindung (14.09.2026): Der Event-Chat nimmt alle Angemeldeten
       // auf — wer den Termin nicht sehen darf, legt auch keinen Raum dazu an.
-      const zugriff = await darfTermin(client, req, eventId);
-      if (!zugriff.erlaubt) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
-      }
+      const zugriff = event ? await darfTermin(client, req, eventId) : null;
+      const { rows: [existingChat] } = event ? await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]) : { rows: [] };
 
-      const { rows: [existingChat] } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]);
-      if (existingChat) {
+      if (!event) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(409).json({ error: 'Chat existiert bereits für dieses Event' });
-      }
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else if (existingChat) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 409, body: { error: 'Chat existiert bereits für dieses Event' } };
+      } else {
 
       const chatName = `${event.name} - Chat`;
       const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id) VALUES ($1, 'group', $2, $3, $4) RETURNING id", [chatName, eventId, req.user.id, req.user.organization_id]);
-      const chatRoomId = newChat.id;
+      chatRoomId = newChat.id;
 
       // user_type des Erstellers aus dem Token — hartes 'admin' machte den Raum
       // für Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
@@ -935,23 +957,28 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // beides nicht auseinanderentwickelt. Vorher standen hier nur die
       // bestaetigten, und Wartende blieben aussen vor, obwohl sie beim Anmelden
       // hineinkommen (24.08.2026 vereinheitlicht).
-      const hinzugefuegt = await syncEventChat(client, eventId, req.user.organization_id);
+      hinzugefuegt = await syncEventChat(client, eventId, req.user.organization_id);
 
       await client.query('COMMIT');
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in POST /events/:eventId/chat:', eventId, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
       client.release();
-
-      res.status(201).json({
-        chat_room_id: chatRoomId,
-        message: 'Chat erstellt und Teilnehmer erfolgreich hinzugefügt',
-        participants_added: hinzugefuegt
-      });
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
-      console.error('Database error in POST /events/:eventId/chat:', eventId, err);
-      res.status(500).json({ error: 'Datenbankfehler' });
     }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    res.status(201).json({
+      chat_room_id: chatRoomId,
+      message: 'Chat erstellt und Teilnehmer erfolgreich hinzugefügt',
+      participants_added: hinzugefuegt
+    });
   });
 
   // Cancel event (Admin only)
@@ -960,36 +987,35 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const { notification_message = 'Das Event wurde abgesagt.' } = req.body;
     
     const client = await db.getClient();
+    // Vor dem try: Push, Antwort und Live-Update stehen hinter dem finally.
+    let event = null;
+    let fruehAntwort = null;
+    let participants = [];
     try {
       await client.query('BEGIN');
 
       // Get event details
-      const { rows: [event] } = await client.query(
+      const { rows: [gefunden] } = await client.query(
         "SELECT name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2",
         [eventId, req.user.organization_id]
       );
-
-      if (!event) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event nicht gefunden' });
-      }
-
-      if (event.cancelled) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Event ist bereits abgesagt' });
-      }
+      event = gefunden;
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
       // Eine Absage schickt allen Angemeldeten einen Push und storniert ihre
       // Buchungen — das darf nur, wer den Termin auch sehen darf.
-      const zugriff = await darfTermin(client, req, eventId);
-      if (!zugriff.erlaubt) {
+      const zugriff = (event && !event.cancelled) ? await darfTermin(client, req, eventId) : null;
+
+      if (!event) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
-      }
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else if (event.cancelled) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 400, body: { error: 'Event ist bereits abgesagt' } };
+      } else if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else {
 
       // Mark event as cancelled
       await client.query(
@@ -998,36 +1024,46 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       );
 
       // Get all participants to notify
-      const { rows: participants } = await client.query(`
+      const { rows: teilnehmende } = await client.query(`
         SELECT DISTINCT eb.user_id, u.display_name, u.username
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
         WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL
       `, [eventId]);
+      participants = teilnehmende;
 
       await client.query('COMMIT');
-      client.release();
-
-      // Push und LiveUpdate NACH COMMIT und client.release()
-      const userIds = participants.map(p => p.user_id);
-      const eventDateFormatted = formatDatum(event.event_date);
-      if (userIds.length > 0) {
-        try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
-
-      res.json({
-        message: `Event "${event.name}" wurde abgesagt`,
-        participants_notified: participants.length,
-        notification_message
-      });
-
-      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in PUT /events/:eventId/cancel:', eventId, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
       client.release();
-      console.error('Database error in PUT /events/:eventId/cancel:', eventId, err);
-      res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
+    }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    // Push und LiveUpdate NACH COMMIT und client.release()
+    const userIds = participants.map(p => p.user_id);
+    const eventDateFormatted = formatDatum(event.event_date);
+    if (userIds.length > 0) {
+      try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+    }
+
+    res.json({
+      message: `Event "${event.name}" wurde abgesagt`,
+      participants_notified: participants.length,
+      notification_message
+    });
+
+    try {
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
+    } catch (liveErr) {
+      console.error('Live-Update nach PUT /events/:eventId/cancel fehlgeschlagen:', liveErr);
     }
   });
 

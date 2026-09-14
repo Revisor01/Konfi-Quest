@@ -220,6 +220,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // Dedizierter Client für Transaction - pool.query() kann verschiedene
     // Connections nutzen, was BEGIN/COMMIT auf unterschiedliche Connections verteilt!
     const client = await db.getClient();
+    // Im try steht NUR die Transaktion. Frueher Ausstieg und Nacharbeit
+    // (Badges, Push, Live-Update, Antwort) laufen hinter dem finally — sonst
+    // rollt ein Fehler aus der Nacharbeit eine Verbindung zurueck, die
+    // inzwischen ein anderer Request aus dem Pool hat.
+    let fruehAntwort = null;
+    let eventData = null;
+    let isKonfiParticipant = false;
+    let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
+    let pointsAwarded = false;
+    let pointsRemoved = false;
+    let removedPointsAmount = 0;
     try {
       await client.query('BEGIN');
 
@@ -233,26 +244,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE e.id = $1 AND eb.id = $2 AND e.organization_id = $3
       `;
-      const { rows: [eventData] } = await client.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
+      const { rows: [gefunden] } = await client.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
+      eventData = gefunden;
       if (!eventData) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
-      }
+        fruehAntwort = { status: 404, body: { error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' } };
+      } else {
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
       // Diese Route schreibt Punkte gut und schickt einen Push an die Person.
       const zugriff = await darfTermin(client, req, eventId);
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
-      }
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else {
 
       // Punkte gibt es NUR für Konfis. Teamer:innen nehmen zwar teil (Anwesenheit
       // wird gesetzt), bekommen aber keine Punkte -> Punkte-Logik (inkl.
       // checkPointTypeEnabled, das ein konfi_profile voraussetzt) ueberspringen.
-      const isKonfiParticipant = eventData.participant_role === 'konfi';
+      isKonfiParticipant = eventData.participant_role === 'konfi';
 
       // Der Grund gehoert zu 'excused' und wird beim Wechsel auf einen anderen
       // Status geleert -- sonst bliebe "krank" an einer Buchung stehen, die
@@ -313,19 +323,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         [attendance_status, participantId, grund, notiz, req.user.id, notizMitgeschickt]
       );
 
-      let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
-      let pointsAwarded = false;
-      let pointsRemoved = false;
-      let removedPointsAmount = 0;
+      // Ab hier entscheidet `punkteGesperrt`, ob die Route noch weiterlaeuft:
+      // Der fruehe 400 bei abgeschaltetem Punkt-Typ darf nicht mehr mitten im
+      // try zurueckkehren (siehe Kommentar oben am Client).
+      let punkteGesperrt = false;
 
       if (isKonfiParticipant && attendance_status === 'present' && eventData.points > 0 && !eventData.mandatory) {
         const pointType = eventData.point_type || 'gemeinde';
         const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(client, eventData.user_id, pointType);
         if (!ptEnabled) {
           await client.query('ROLLBACK');
-          client.release();
-          return res.status(400).json({ error: ptError });
-        }
+          fruehAntwort = { status: 400, body: { error: ptError } };
+          punkteGesperrt = true;
+        } else {
 
         const description = `Event-Teilnahme: ${eventData.name}`;
         const awardPointsQuery = `
@@ -356,6 +366,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           responseData = { message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false };
         }
 
+        } // Punkt-Typ freigeschaltet
       } else if (isKonfiParticipant && (attendance_status === 'absent' || attendance_status === 'excused')) {
         const { rows: [existingPoints] } = await client.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
 
@@ -371,9 +382,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      await client.query('COMMIT');
+      if (!punkteGesperrt) {
+        await client.query('COMMIT');
+      }
+      } // Jahrgangs-Zugriff
+      } // Event/Teilnehmer gefunden
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in PUT /events/:eventId/participants/:participantId/attendance:', eventId, participantId, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier. Die Nacharbeit (Badges,
+      // Pushes, Live-Updates, Antwort) steht bewusst dahinter.
       client.release();
+    }
 
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    try {
       // Badge-Check NACH COMMIT für alle User (Teamer + Konfis)
       if (attendance_status === 'present') {
         try {
@@ -386,7 +414,6 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client.
       // Konfi-spezifische Pushes/Dashboard-Updates nur für Konfis; das Admin-
       // LiveUpdate (Liste/Badge) feuert immer.
-      try {
         if (attendance_status === 'present') {
           if (isKonfiParticipant && pointsAwarded) {
             try { await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
@@ -422,18 +449,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         }
-      } catch (notifyErr) {
-        console.error('Post-commit notification error:', notifyErr);
-      }
-
-      res.json(responseData);
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
-      console.error('Database error in PUT /events/:eventId/participants/:participantId/attendance:', eventId, participantId, err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+    } catch (nachErr) {
+      // Die Anwesenheit ist festgeschrieben — ein Fehler in der Nacharbeit
+      // darf die Antwort nicht mehr kippen.
+      console.error('Post-commit error in PUT /events/:eventId/participants/:participantId/attendance:', eventId, participantId, nachErr);
     }
+
+    res.json(responseData);
   });
 
   return router;

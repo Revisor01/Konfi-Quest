@@ -53,28 +53,32 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const userId = req.user.id;
 
     const client = await db.getClient();
+    // Im try steht NUR die Transaktion. Frueher Ausstieg und Nacharbeit
+    // (Badges, Push, Live-Update, Antwort) laufen hinter dem finally — sonst
+    // rollt ein Fehler aus der Nacharbeit eine Verbindung zurueck, die
+    // inzwischen ein anderer Request aus dem Pool hat.
+    let fruehAntwort = null;
+    let event = null;
+    let pointsAwarded = false;
     try {
       await client.query('BEGIN');
 
       // Event laden und qr_token abgleichen
-      const { rows: [event] } = await client.query(
+      const { rows: [gefunden] } = await client.query(
         `SELECT id, name, event_date, checkin_window, mandatory, points, point_type, qr_token, organization_id
          FROM events WHERE id = $1 AND qr_token = $2`,
         [eventId, token]
       );
+      event = gefunden;
 
       if (!event) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Ungültiger QR-Code', error_type: 'invalid_token' });
-      }
-
-      // Organization-Check
-      if (event.organization_id !== req.user.organization_id) {
+        fruehAntwort = { status: 400, body: { error: 'Ungültiger QR-Code', error_type: 'invalid_token' } };
+      } else if (event.organization_id !== req.user.organization_id) {
+        // Organization-Check
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event', error_type: 'wrong_organization' });
-      }
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event', error_type: 'wrong_organization' } };
+      } else {
 
       // Zeitfenster-Prüfung (komplett in PostgreSQL für korrekte Zeitzonen)
       const { rows: [timeCheck] } = await client.query(
@@ -87,22 +91,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       if (timeCheck.too_early) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({
+        fruehAntwort = { status: 400, body: {
           error: 'Check-in ist noch nicht möglich',
           error_type: 'too_early',
           event_date: event.event_date,
           checkin_window: event.checkin_window
-        });
-      }
-      if (timeCheck.too_late) {
+        } };
+      } else if (timeCheck.too_late) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({
+        fruehAntwort = { status: 400, body: {
           error: 'Der Check-in-Zeitraum ist abgelaufen',
           error_type: 'too_late'
-        });
-      }
+        } };
+      } else {
 
       // Booking prüfen
       const { rows: [booking] } = await client.query(
@@ -112,31 +113,23 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       if (!booking) {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet', error_type: 'not_registered' });
-      }
-      if (booking.status === 'opted_out') {
+        fruehAntwort = { status: 400, body: { error: 'Du bist nicht für dieses Event angemeldet', error_type: 'not_registered' } };
+      } else if (booking.status === 'opted_out') {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Du hast dich von diesem Event abgemeldet', error_type: 'opted_out' });
-      }
-      if (booking.status !== 'confirmed') {
+        fruehAntwort = { status: 400, body: { error: 'Du hast dich von diesem Event abgemeldet', error_type: 'opted_out' } };
+      } else if (booking.status !== 'confirmed') {
         await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Deine Anmeldung ist nicht bestätigt', error_type: 'not_confirmed' });
-      }
-
-      // Duplikat-Check
-      if (booking.attendance_status === 'present') {
+        fruehAntwort = { status: 400, body: { error: 'Deine Anmeldung ist nicht bestätigt', error_type: 'not_confirmed' } };
+      } else if (booking.attendance_status === 'present') {
+        // Duplikat-Check
         await client.query('ROLLBACK');
-        client.release();
-        return res.json({
+        fruehAntwort = { status: 200, body: {
           message: 'Du bist bereits eingecheckt',
           already_checked_in: true,
           event_name: event.name,
           event_id: event.id
-        });
-      }
+        } };
+      } else {
 
       // Attendance setzen
       //
@@ -150,7 +143,6 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query("UPDATE event_bookings SET attendance_status = 'present' WHERE id = $1", [booking.id]);
 
       // Punkte-Vergabe (nur für Konfis, Teamer erhalten keine Punkte)
-      let pointsAwarded = false;
       if (event.points > 0 && !event.mandatory && req.user.type === 'konfi') {
         const pointType = event.point_type || 'gemeinde';
         const { enabled: ptEnabled } = await checkPointTypeEnabled(client, userId, pointType);
@@ -182,8 +174,23 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       await client.query('COMMIT');
+      } // Duplikat-Check
+      } // Zeitfenster
+      } // Event gefunden + richtige Organisation
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in POST /events/qr-checkin:', txErr);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
       client.release();
+    }
 
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    try {
       // Badge-Check für Teamer NACH COMMIT (Konfis bekommen Badge-Check schon oben)
       if (req.user.type === 'teamer') {
         try {
@@ -212,19 +219,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         console.error('Post-commit notification error:', notifyErr);
       }
 
-      res.json({
-        message: 'Erfolgreich eingecheckt',
-        event_name: event.name,
-        event_id: event.id,
-        points_awarded: pointsAwarded
-      });
-
-    } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
-      console.error('Database error in POST /events/qr-checkin:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+    } catch (nachErr) {
+      // Der Check-in ist festgeschrieben — ein Fehler in der Nacharbeit darf
+      // die Antwort nicht mehr kippen.
+      console.error('Post-commit error in POST /events/qr-checkin:', nachErr);
     }
+
+    res.json({
+      message: 'Erfolgreich eingecheckt',
+      event_name: event.name,
+      event_id: event.id,
+      points_awarded: pointsAwarded
+    });
   });
 
   // Generate QR token for event (Admin/Teamer)

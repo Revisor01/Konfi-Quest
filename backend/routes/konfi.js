@@ -1499,19 +1499,24 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       if (!ergebnis.ok) {
         await client.query('ROLLBACK');
-        client.release();
-        // Diese Route hat den error_code nie mitgeliefert und tut es weiterhin
-        // nicht — sonst waere es eine Formaenderung fuer die Konfi-App.
-        return res.status(ergebnis.status).json({ error: ergebnis.error });
+      } else {
+        await client.query('COMMIT');
       }
-
-      await client.query('COMMIT');
-      client.release();
     } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-      client.release();
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in POST /events/:id/register:', err);
       return res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      // KEIN client.release() im try — nur hier. Sonst faellt jede spaetere
+      // Nacharbeit in den Transaktions-catch und rollt eine Verbindung zurueck,
+      // die inzwischen ein anderer Request aus dem Pool hat.
+      client.release();
+    }
+
+    if (!ergebnis.ok) {
+      // Diese Route hat den error_code nie mitgeliefert und tut es weiterhin
+      // nicht — sonst waere es eine Formaenderung fuer die Konfi-App.
+      return res.status(ergebnis.status).json({ error: ergebnis.error });
     }
 
     const { bookingId, status, event, timeslot, waitlistPosition } = ergebnis;
