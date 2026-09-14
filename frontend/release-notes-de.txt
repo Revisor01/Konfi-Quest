@@ -1,7 +1,7 @@
-Benachrichtigungen lassen sich jetzt einzeln einstellen: Nachrichten, Termine, Punkte und Abzeichen sowie Anfragen und Freigaben. Jede Gruppe kann für sich leiser oder stumm gestellt werden.
+Neu: Die Anwesenheit kennt einen dritten Eintrag – Abgemeldet, mit Grund und Notiz. Challenge-Stempel stehen jetzt im Profil neben den Abzeichen, und für Abzeichen gibt es 95 Symbole zur Auswahl.
 
-Beim Senden und Öffnen von Dateien im Chat zeigt die Nachricht, wie weit sie ist. Vorher passierte scheinbar nichts.
+Die App startet schneller, Chat-Dateien werden nur einmal geladen, und große Anhänge brechen bei langsamer Verbindung nicht mehr ab.
 
-Die Anmeldung per Fingerabdruck steht wieder zur Verfügung.
+Termine, Profile und Nachweisfotos bleiben auf die eigenen Jahrgänge beschränkt.
 
-Behoben: Ein Einladungslink mit Code ließ die Seite endlos neu laden.
+Behoben: Abmeldung von Pflichtterminen, Konfi-Historie, Emoji auf Abzeichen.
