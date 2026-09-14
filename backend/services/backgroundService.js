@@ -5,6 +5,7 @@ const emailService = require('./emailService');
 const apm = require('../utils/apm');
 const { formatUhrzeit, heuteBerlin } = require('../utils/zeitformat');
 const { appIconSummenFuerAlle } = require('../utils/appIconBadge');
+const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -25,6 +26,36 @@ class BackgroundService {
   // jeder Takt dieselbe Zahl erneut schickt, und erlaubt trotzdem das
   // Zuruecknehmen auf null (siehe updateAllUserBadges).
   static letzterZaehler = new Map();
+  // Fingerabdruck der Datenlage je Person beim letzten Abzeichen-Lauf. Wer
+  // denselben Abdruck hat wie vorher, kann kein Abzeichen neu verdient haben
+  // und wird uebersprungen (Begruendung in utils/abzeichenKandidaten.js).
+  static letzterAbzeichenAbdruck = new Map();
+
+  // Wie viele Personen am Stueck geprueft werden, bevor der Lauf kurz
+  // pausiert. Die Pause gibt die Pool-Verbindung frei, damit ein grosser
+  // Lauf nicht dauerhaft einen von 20 Plaetzen belegt.
+  static ABZEICHEN_BLOCK = 50;
+  static ABZEICHEN_PAUSE_MS = 50;
+
+  // Obergrenze je Lauf. Wozu, obwohl doch nur noch Veraenderte geprueft
+  // werden: Beim ERSTEN Lauf nach einem Neustart ist der Merker leer, dann
+  // steht jede Person auf der Liste. Gemessen am 14.09.2026 mit 10.000
+  // Personen dauerte genau dieser Kaltstart 123 Sekunden am Stueck — und
+  // belegte die ganze Zeit eine von 20 Pool-Verbindungen. Das ist der Fall,
+  // den der Umbau vermeiden soll, und er traete ausgerechnet beim Deploy ein.
+  //
+  // Mit der Grenze bearbeitet ein Lauf hoechstens 800 Personen (gemessen
+  // rund 10 Sekunden) und der Rest kommt in den naechsten Laeufen dran. Ein
+  // Kaltstart mit 10.000 Personen ist so nach 13 Stunden aufgearbeitet, ohne
+  // dass irgendein Lauf den Pool blockiert. Das ist vertretbar: Der Kaltstart
+  // holt ohnehin nur nach, was waehrend der Auszeit liegen blieb, und der
+  // regulaere Weg (Aktivitaet eintragen) vergibt weiterhin sofort.
+  //
+  // Wer zuerst: die kleinsten user_id zuerst waere unfair gegenueber den
+  // hinteren. Deshalb merkt sich der Dienst, wo er stehen geblieben ist, und
+  // setzt dort fort (abzeichenZeiger).
+  static ABZEICHEN_MAX_JE_LAUF = 800;
+  static abzeichenZeiger = 0;
 
   /**
    * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
@@ -43,12 +74,19 @@ class BackgroundService {
     //   288-mal täglich etwas ab, das sich höchstens einmal täglich ändert.
     //
     // Das ist keine Feinheit, sondern eine Frage der Tragfaehigkeit: Gemessen
-    // am 24.08.2026 kostet eine Prüfung rund 24 Datenbankabfragen und 95 bis
-    // 292 ms pro Person. Bei den heutigen 82 Personen sind das 5 Sekunden, bei
-    // 1000 wären es über 24.000 Abfragen und rund drei Minuten — in einem
-    // Fuenf-Minuten-Takt liefe der Dienst sich selbst hinterher. Stuendlich
-    // bleibt derselbe Aufwand tragbar, ohne dass ein Abzeichen spuerbar
-    // später kommt.
+    // am 14.09.2026 gegen eine echte Postgres-Instanz kostet EINE Prüfung
+    // 26,8 Abfragen und 12,9 ms. Der Aufwand waechst streng linear mit der
+    // Personenzahl (nachgemessen bei 10, 50, 200 und 1000 Personen — die
+    // Kosten je Person bleiben gleich, es gibt keine Abfrage, die mit der
+    // Gesamtzahl waechst).
+    //
+    // Frueher lief die Prüfung ueber JEDE Person. Das waeren bei 2.500
+    // Personen 67.000 Abfragen und rund 32 Sekunden gewesen, bei 10.000
+    // 268.000 Abfragen und ueber zwei Minuten — durchgehend auf einer von
+    // 20 Pool-Verbindungen. Seit dem 14.09.2026 prüft der Stundenlauf nur
+    // noch, wer sich seit dem letzten Lauf tatsaechlich geaendert hat
+    // (updateAllUserBadges); in einer ruhigen Stunde sind das sieben
+    // Abfragen insgesamt statt zehntausender.
     const FUENF_MINUTEN = 5 * 60 * 1000;
     const EINE_STUNDE = 60 * 60 * 1000;
 
@@ -248,6 +286,73 @@ class BackgroundService {
         }
       }
 
+      // AUSWAHL FUER DIE ABZEICHEN-PRUEFUNG (14.09.2026).
+      //
+      // Bis hierher lief die teure Pruefung ueber JEDE Person, jede Stunde —
+      // rund 27 Abfragen und 12,9 ms pro Person, gemessen gegen eine echte
+      // Postgres-Instanz. Bei 110 Personen faellt das nicht auf; bei 2.500
+      // waeren es 67.000 Abfragen und rund 32 Sekunden, bei 10.000 rund
+      // 268.000 Abfragen und ueber zwei Minuten am Stueck, die ganze Zeit auf
+      // einer von 20 Pool-Verbindungen.
+      //
+      // Kein Kriterium kann allein durch Zeitablauf neu erfuellt werden
+      // (Herleitung Kriterium fuer Kriterium in utils/abzeichenKandidaten.js).
+      // Wessen Datenlage sich seit dem letzten Lauf nicht geaendert hat, kann
+      // also auch kein Abzeichen neu verdient haben. Der Fingerabdruck kostet
+      // sieben Abfragen fuer ALLE zusammen — unabhaengig von der Anzahl.
+      //
+      // Beim ERSTEN Lauf nach dem Start ist der Merker leer: dann steht jeder
+      // auf der Liste. Das ist Absicht — ein Neustart darf nichts
+      // verschlucken, was waehrend der Auszeit faellig wurde. Damit dieser
+      // eine Lauf den Pool nicht minutenlang belegt, begrenzt
+      // ABZEICHEN_MAX_JE_LAUF ihn; der Rest kommt in den Folgelaeufen dran.
+      const abzeichenPersonen = (!nurZaehler)
+        ? users.filter(u => u.user_type === 'konfi' || u.user_type === 'teamer')
+        : [];
+      let zuPruefen = new Set();
+      let neueAbdruecke = null;
+      if (abzeichenPersonen.length > 0) {
+        try {
+          neueAbdruecke = await abzeichenFingerabdruecke(db, abzeichenPersonen);
+          for (const u of abzeichenPersonen) {
+            const jetzt = neueAbdruecke.get(u.user_id);
+            const vorher = this.letzterAbzeichenAbdruck.get(u.user_id);
+            // Unbekannt (erster Lauf, neues Konto) ODER veraendert -> pruefen.
+            if (vorher === undefined || vorher !== jetzt) zuPruefen.add(u.user_id);
+          }
+        } catch (abdruckErr) {
+          // Der Fingerabdruck ist eine Abkuerzung, kein Tor. Faellt er aus,
+          // wird geprueft wie frueher — lieber zu viel Arbeit als ein
+          // verschlucktes Abzeichen.
+          console.error('Abzeichen-Fingerabdruck fehlgeschlagen, prüfe alle:', abdruckErr);
+          neueAbdruecke = null;
+          zuPruefen = new Set(abzeichenPersonen.map(u => u.user_id));
+        }
+
+        // Obergrenze je Lauf (siehe ABZEICHEN_MAX_JE_LAUF). Nur wenn mehr
+        // anstehen, als ein Lauf tragen soll — im Regelbetrieb greift das nie.
+        if (zuPruefen.size > this.ABZEICHEN_MAX_JE_LAUF) {
+          // Ab dem Zeiger weiterlaufen und hinten wieder vorn anfangen, damit
+          // ueber die Laeufe hinweg jeder drankommt und niemand dauerhaft
+          // hinten liegen bleibt.
+          const warteschlange = abzeichenPersonen
+            .map(u => u.user_id)
+            .filter(id => zuPruefen.has(id));
+          const start = this.abzeichenZeiger % warteschlange.length;
+          const dranheute = new Set();
+          for (let i = 0; i < this.ABZEICHEN_MAX_JE_LAUF; i++) {
+            dranheute.add(warteschlange[(start + i) % warteschlange.length]);
+          }
+          this.abzeichenZeiger = (start + this.ABZEICHEN_MAX_JE_LAUF) % warteschlange.length;
+          console.warn(
+            `Abzeichen-Prüfung: ${zuPruefen.size} Personen stehen an, ` +
+            `${dranheute.size} in diesem Lauf — der Rest folgt in den nächsten Läufen.`
+          );
+          zuPruefen = dranheute;
+        }
+      }
+
+      let geprueft = 0;
       for (const user of users) {
         try {
           // App-Icon-Zähler nachfuehren. Nur für Geraete mit Token — ohne
@@ -286,15 +391,49 @@ class BackgroundService {
           // wuerde `checkAndAwardBadges` sonst je Lauf und je Leitungskonto
           // eine Rollen-Abfrage machen, um dann mit `{count: 0}`
           // abzubrechen (`badges.js:107-131`). Hier gespart statt dort.
-          if (!nurZaehler && (user.user_type === 'konfi' || user.user_type === 'teamer')) {
+          //
+          // Seit dem 14.09.2026 zusaetzlich: nur wer sich seit dem letzten
+          // Lauf veraendert hat (siehe die Auswahl oben).
+          if (!nurZaehler && zuPruefen.has(user.user_id)) {
             await checkAndAwardBadges(db, user.user_id);
+            geprueft++;
+
+            // In Bloecken arbeiten statt am Stueck: Nach je
+            // ABZEICHEN_BLOCK Personen einen Takt pausieren. Das gibt die
+            // Pool-Verbindung zwischendurch frei, damit ein grosser Lauf
+            // nicht dauerhaft einen von 20 Plaetzen belegt und die API
+            // daneben weiter antworten kann.
+            if (geprueft % this.ABZEICHEN_BLOCK === 0) {
+              await new Promise(r => setTimeout(r, this.ABZEICHEN_PAUSE_MS));
+            }
           }
         } catch (error) {
           console.error(`Badge update failed for user ${user.user_id}:`, error);
         }
       }
 
-      return { updated: updatedCount, total: users.length };
+      // Den Merker erst NACH dem Lauf fortschreiben, und nur fuer die
+      // Personen, die auch tatsaechlich geprueft wurden. Waere er vorher
+      // gesetzt, ginge eine Aenderung verloren, sobald eine Pruefung
+      // unterwegs scheitert — beim naechsten Lauf sähe der Abdruck dann
+      // unveraendert aus und die Person fiele still heraus.
+      if (neueAbdruecke) {
+        for (const u of abzeichenPersonen) {
+          if (zuPruefen.has(u.user_id)) {
+            this.letzterAbzeichenAbdruck.set(u.user_id, neueAbdruecke.get(u.user_id));
+          }
+        }
+        // Geloeschte Konten aus dem Merker werfen, sonst waechst er mit der
+        // Laufzeit (dieselbe Vorsorge wie bei letzterZaehler oben).
+        if (this.letzterAbzeichenAbdruck.size > abzeichenPersonen.length) {
+          const aktuell = new Set(abzeichenPersonen.map(u => u.user_id));
+          for (const id of this.letzterAbzeichenAbdruck.keys()) {
+            if (!aktuell.has(id)) this.letzterAbzeichenAbdruck.delete(id);
+          }
+        }
+      }
+
+      return { updated: updatedCount, total: users.length, geprueft };
 
     } catch (error) {
       console.error('Error in updateAllUserBadges:', error);
@@ -1332,8 +1471,17 @@ class BackgroundService {
            VALUES ($1, $2, $3, $4, $5)`,
           [s.totalRequests, s.totalErrors, s.maxInFlight, s.worstP95Ms, s.worstRoute]
         );
-        // Aufräumen: nur die letzten 30 Tage behalten.
-        await db.query("DELETE FROM apm_snapshots WHERE captured_at < NOW() - INTERVAL '30 days'");
+        // Aufräumen: die letzten zwei Jahre behalten — bewusst grosszügig,
+        // damit sich das Wachstum überhaupt erst beobachten lässt und danach
+        // mit Zahlen entschieden werden kann.
+        //
+        // Gemessen am 14.09.2026: 276 Zeilen und 1,8 MB je 30 Tage. Zwei Jahre
+        // sind damit rund 201.000 Zeilen und 44 MB, bei einer Datenbank von
+        // 21 MB und einem Speicherlimit von 1 GB. Die Snapshots entstehen
+        // zeitgesteuert (alle fünf Minuten), NICHT je Nutzer:in — die Zeilenzahl
+        // wächst also nicht mit der Gemeindegrösse, sondern nur mit der Anzahl
+        // schreibender Replicas (heute eine von dreien).
+        await db.query("DELETE FROM apm_snapshots WHERE captured_at < NOW() - INTERVAL '2 years'");
       } catch (error) {
         console.error('APM-Snapshot fehlgeschlagen:', error.message);
       }
