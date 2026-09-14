@@ -114,6 +114,21 @@ Versionsüberschrift.
   Bestehende Gemeinden waren nicht betroffen.
 - Zusätzliche Absicherung beim Zuordnen von Jahrgängen, damit Zuweisungen die
   Grenze der eigenen Gemeinde in keinem Fall überschreiten können.
+- Die stündliche Abzeichen-Prüfung sieht nur noch Personen an, bei denen sich
+  seit dem letzten Mal etwas getan hat. Vergeben wird unverändert dasselbe; in
+  großen Gemeinden spart das erheblich Rechenzeit.
+- Die anonyme Nutzungsmessung erfasst zusätzlich, welche Art von Arbeit in der
+  App geschieht — Punkte vergeben, Anwesenheit erfassen, Beiträge durchsehen,
+  Termine anlegen, Material bereitstellen. Übertragen werden ausschließlich die
+  Art der Handlung und die Rolle, keinerlei Angaben zu einzelnen Personen.
+- Bei einer Fehlermeldung wird zusätzlich vermerkt, welcher Art der Fehler war
+  (etwa Zeitüberschreitung oder fehlende Verbindung) und an welcher Stelle der
+  App er auftrat. Das hilft, wiederkehrende Fehler zu finden.
+- Die Zählung der Werbeseite trennt jetzt sauber von der App: Aufrufe aus der
+  App landen nicht mehr in der Werbestatistik, und wer die Startseite nur als
+  Einstieg zur Anmeldung nutzt, wird als solcher erkannt.
+- Die Verlaufszahlen im Betriebs-Dashboard reichen jetzt zwei Jahre zurück
+  statt 30 Tage.
 
 ## [2.1.1] - 2026-09-11
 
