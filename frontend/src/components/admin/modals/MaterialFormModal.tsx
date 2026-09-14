@@ -46,7 +46,7 @@ import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
+import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../shared/FileViewerModal';
@@ -197,7 +197,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
       const response = await api.get(`/material/files/${file.stored_name}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: DATEI_TIMEOUT_MS
       });
       const blob = response.data;
       const base64Data = await new Promise<string>((resolve) => {
@@ -233,7 +234,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     } catch (err) {
       console.warn('Native file viewer failed, using in-app fallback:', err);
       try {
-        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
+        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
         openInAppViewer(response.data, file.original_name, file.mime_type);
       } catch {
         setError('Fehler beim Öffnen der Datei');

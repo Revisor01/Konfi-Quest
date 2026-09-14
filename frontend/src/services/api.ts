@@ -16,6 +16,24 @@ const api = axios.create({
   timeout: 20000,
 });
 
+/**
+ * Zeitlimit fuer Datei-Downloads (Blob), getrennt vom globalen der API.
+ *
+ * Warum (gemessen 14.09.2026): Das globale Limit von 20 s galt auch fuer
+ * Downloads. Material erlaubt 20 MB — das verlangt durchgehend mindestens
+ * 8 Mbit/s, sonst bricht der Download ab. In einem Gemeindehaus mit 1-5 Mbit/s
+ * ist das Scheitern sicher. Schlimmer noch: axios-retry wiederholt
+ * ECONNABORTED dreimal, und jeder Versuch laedt von vorn in dasselbe Limit —
+ * vier Fehlschlaege statt eines langsamen Erfolgs.
+ *
+ * In der Umami-Auswertung 14.08.-13.09.2026 war "Fehler beim Oeffnen der
+ * Datei" mit 12 Faellen die haeufigste Fehlermeldung ueberhaupt.
+ *
+ * 180 s reichen fuer 20 MB ab etwa 0,9 Mbit/s. Ein totes Netz faengt weiterhin
+ * der networkMonitor ab; hier geht es um langsame, nicht um fehlende Leitungen.
+ */
+export const DATEI_TIMEOUT_MS = 180000;
+
 // Automatischer Retry für transiente Fehler (5xx, 408) — NICHT für 429.
 // WICHTIG: 429 (Rate-Limit) darf NICHT retried werden. Ein Retry-auf-429 zählt
 // erneut gegen das Limit und macht die Ueberschreitung schlimmer (Retry-Lawine) —

@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
-import api from '../../services/api';
+import api, { DATEI_TIMEOUT_MS } from '../../services/api';
 import './FileViewerModal.css';
 
 // --- Hilfsfunktion: API-Pfade erkennen und per Auth-fetch in Blob-URL wandeln ---
@@ -17,7 +17,7 @@ const resolveUrl = async (url: string): Promise<string> => {
   if (!isApiPath(url)) return url;
   // Relativer API-Pfad → per axios (mit Auth-Header) laden
   const cleanPath = url.startsWith('/api/') ? url.substring(4) : url.startsWith('api/') ? '/' + url.substring(4) : url;
-  const response = await api.get(cleanPath, { responseType: 'blob' });
+  const response = await api.get(cleanPath, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
   const contentType = response.headers?.['content-type'];
   const mime: string = typeof contentType === 'string' ? contentType : 'application/octet-stream';
   return URL.createObjectURL(new Blob([response.data], { type: mime }));

@@ -17,6 +17,10 @@ vi.mock('../../services/api', () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
+  // Muss mitgemockt werden: Die Komponente liest das Zeitlimit fuer
+  // Datei-Downloads aus demselben Modul (14.09.2026). Fehlt der Export hier,
+  // ist er in der Komponente undefined.
+  DATEI_TIMEOUT_MS: 180000,
 }));
 
 vi.mock('../../contexts/AppContext', () => ({

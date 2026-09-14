@@ -14,7 +14,7 @@
 // AUFRUFER beim Unmount per URL.revokeObjectURL() freigeben muss.
 
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import api from './api';
+import api, { DATEI_TIMEOUT_MS } from './api';
 
 const CACHE_DIR = 'media-cache';
 
@@ -152,6 +152,9 @@ export type FortschrittHandler = (prozent: number | null) => void;
 async function downloadBlob(filePath: string, onFortschritt?: FortschrittHandler): Promise<Blob> {
   const response = await api.get(`/chat/files/${filePath}`, {
     responseType: 'blob',
+    // Eigenes, hoeheres Zeitlimit fuer Dateien (siehe api.ts): Das globale
+    // von 20 s liess grosse Anhaenge auf langsamer Leitung scheitern.
+    timeout: DATEI_TIMEOUT_MS,
     onDownloadProgress: onFortschritt
       ? (ereignis) => {
           const gesamt = ereignis.total;

@@ -2,7 +2,7 @@ import { fehlerStatus } from '../../utils/fehler';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import api from '../../services/api';
+import api, { DATEI_TIMEOUT_MS } from '../../services/api';
 import { Message } from '../../types/chat';
 
 /**
@@ -20,7 +20,7 @@ export async function nachrichtTeilen(
   try {
     if (message.file_path) {
       // For files, share the actual file natively (with auth token)
-      const response = await api.get(`/chat/files/${message.file_path}`, { responseType: 'blob' });
+      const response = await api.get(`/chat/files/${message.file_path}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
       const blob = response.data;
       const fileName = message.file_name || 'file';
 
@@ -79,7 +79,7 @@ export async function chatVerlaufExportieren(
   setError: (msg: string) => void
 ): Promise<void> {
   try {
-    const res = await api.get(`/chat/rooms/${roomId}/export`, { responseType: 'blob' });
+    const res = await api.get(`/chat/rooms/${roomId}/export`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
     const dateiname = `${anzeigename.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50) || 'chat'}_${new Date().toISOString().slice(0, 10)}.txt`;
 
     if (Capacitor.isNativePlatform()) {

@@ -25,7 +25,7 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import api from '../../../services/api';
+import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { offlineCache } from '../../../services/offlineCache';
@@ -640,7 +640,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     if (activity.hasPhoto && activity.requestId) {
       try {
         const response = await api.get(`/admin/activities/requests/${activity.requestId}/photo`, {
-          responseType: 'blob'
+          responseType: 'blob',
+          timeout: DATEI_TIMEOUT_MS
         });
         const photoUrl = URL.createObjectURL(response.data);
         // Vorherige Blob-URL freigeben, falls direkt ein weiteres Foto geoeffnet wird

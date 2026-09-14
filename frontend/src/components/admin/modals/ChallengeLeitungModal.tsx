@@ -53,7 +53,7 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
+import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
@@ -94,7 +94,7 @@ const ChallengeMedia: React.FC<{
     let objectUrl = '';
     (async () => {
       try {
-        const res = await api.get(`/challenges/files/${filePath}`, { responseType: 'blob' });
+        const res = await api.get(`/challenges/files/${filePath}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
         if (cancelled) return;
         objectUrl = URL.createObjectURL(res.data as Blob);
         setSrc(objectUrl);
