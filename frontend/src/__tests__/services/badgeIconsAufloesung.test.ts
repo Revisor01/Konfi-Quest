@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { getIconFromIoniconsName, istEmojiIcon, ICON_MAP } from '../../utils/badgeIcons';
+import { getIconFromIoniconsName, istEmojiIcon, ICON_MAP, ICON_CHOICES } from '../../utils/badgeIcons';
 
 // Aufloesung gespeicherter Icon-Namen (14.09.2026).
 //
@@ -121,5 +121,51 @@ describe('Die Wrapped-Folie stellt Emoji als Text dar', () => {
   it('gibt das Emoji nicht an IonIcon weiter', () => {
     // IonIcon kann es nicht darstellen; als icon-Attribut bliebe die Kachel leer.
     expect(slide).toContain('<span className="selt-abzeichen-emoji">');
+  });
+});
+
+describe('Die Auswahl fuer Badges und Stempel', () => {
+  // Simon, 14.09.2026: "Es geht darum das fuer Badges und Stempel eine
+  // groessere passende Auswahl da sein soll. Das man einfach mehr Vielfalt
+  // hat." 54 -> 95, also 41 neue.
+  //
+  // Die Zahl steht hier fest, damit ein versehentliches Entfernen auffaellt —
+  // dasselbe Muster wie bei den zentralen Icons (zentraleIcons.test.ts). Wer
+  // ergaenzt, zieht sie mit und schreibt die Begruendung dazu.
+  it('haelt 95 Symbole bereit', () => {
+    expect(Object.keys(ICON_CHOICES).length).toBe(95);
+  });
+
+  it('hat keine doppelten Schluessel-Bedeutungen mit gleichem Namen', () => {
+    const namen = Object.values(ICON_CHOICES).map(w => w.name);
+    expect(new Set(namen).size).toBe(namen.length);
+  });
+
+  it('ordnet jedes Symbol einer Kategorie zu', () => {
+    for (const [schluessel, wert] of Object.entries(ICON_CHOICES)) {
+      expect(wert.category, schluessel).toBeTruthy();
+      expect(wert.name, schluessel).toBeTruthy();
+      expect(typeof wert.icon, schluessel).toBe('string');
+    }
+  });
+
+  it('verteilt sich auf die neun Kategorien, keine bleibt leer', () => {
+    // Die Auswahl-Dialoge gruppieren automatisch nach category; eine leere
+    // Kategorie gaebe es dort gar nicht, eine ueberladene waere unbrauchbar.
+    const kategorien = new Set(Object.values(ICON_CHOICES).map(w => w.category));
+    expect(kategorien.size).toBe(9);
+    for (const k of kategorien) {
+      const anzahl = Object.values(ICON_CHOICES).filter(w => w.category === k).length;
+      expect(anzahl, k).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('bleibt bei den bisherigen Schluesseln — sie sind Datenvertrag', () => {
+    // Umbenennen braeche die Anzeige in ausgelieferten Apps: In der Datenbank
+    // steht der Schluessel, nicht das Glyph.
+    for (const alt of ['trophy', 'medal', 'ribbon', 'star', 'heart', 'people',
+                       'book', 'sunny', 'calendar', 'home', 'flag', 'medkit']) {
+      expect(ICON_CHOICES[alt], alt).toBeDefined();
+    }
   });
 });

@@ -28,7 +28,9 @@ prüft das System selbst.
 Ein Abzeichen besteht aus vier Dingen:
 
 - **Name und Beschreibung** — was drauf steht
-- **Symbol und Farbe** — wie es aussieht. Die Farbe richtet sich zunächst nach
+- **Symbol und Farbe** — wie es aussieht. Zur Auswahl stehen 95 Symbole,
+  gruppiert nach Erfolg, Engagement, Gemeinschaft, Lernen, Natur, Zeit,
+  Aktivitäten, Orte und Sonstiges. Die Farbe richtet sich zunächst nach
   der Bedingung, damit verwandte Abzeichen zusammen wirken: Punkte-Abzeichen
   sind golden, Gottesdienst-Abzeichen orange, Gemeinde-Abzeichen grün. Du
   kannst jede Farbe von Hand ändern.

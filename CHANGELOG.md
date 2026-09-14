@@ -55,6 +55,8 @@ Versionsüberschrift.
 - Nachweisfotos sehen nur noch Verantwortliche der betreffenden Jahrgänge.
 - Die App startet spürbar schneller: Beim Öffnen wird rund ein Drittel weniger
   geladen.
+- Für Abzeichen, Stempel und Zertifikate stehen 95 Symbole zur Auswahl statt
+  bisher 54 — mehr aus Musik, Sport, Spiel, Essen, Wetter und Unterwegssein.
 - Knöpfe, die etwas löschen oder abmelden, sehen überall gleich aus: rot
   umrandet, über die volle Breite. Der Knopf zum Löschen einer Notiz stand
   bisher als blasser Text daneben.

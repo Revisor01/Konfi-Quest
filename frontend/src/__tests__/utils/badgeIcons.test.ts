@@ -97,7 +97,10 @@ describe('ein gemeinsamer Vorrat', () => {
   it('bietet allen Aufrufstellen denselben Umfang an', () => {
     // Der Vorrat ist die eine Quelle — ICON_MAP wird daraus abgeleitet.
     expect(Object.keys(ICON_MAP).sort()).toEqual(Object.keys(ICON_CHOICES).sort());
-    expect(Object.keys(ICON_CHOICES)).toHaveLength(54);
+    // 14.09.2026: 54 -> 95. Simons Wunsch: "dass fuer Badges und Stempel eine
+    // groessere passende Auswahl da sein soll. Das man einfach mehr Vielfalt
+    // hat." 41 Symbole dazu, verteilt auf die bestehenden Kategorien.
+    expect(Object.keys(ICON_CHOICES)).toHaveLength(95);
   });
 
   it('enthaelt die Symbole, die frueher nur die Challenge-Liste fuehrte', () => {

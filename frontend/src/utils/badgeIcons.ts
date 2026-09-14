@@ -70,6 +70,51 @@ import {
   todayOutline as today,
   trophyOutline as trophy,
 
+  // 40 weitere fuer die Auswahl (Simon, 14.09.2026: "dass fuer Badges und
+  // Stempel eine groessere passende Auswahl da sein soll. Das man einfach mehr
+  // Vielfalt hat."). Alle aus Ionicons; kirchliche Symbole (Kreuz, Kirche,
+  // Kerze, Taube, Glocke) gibt es dort nachweislich nicht.
+  bonfireOutline as bonfire,
+  bookmarkOutline as bookmark,
+  bulbOutline as bulb,
+  busOutline as bus,
+  cafeOutline as cafe,
+  clipboardOutline as clipboardIcon,
+  diceOutline as dice,
+  earthOutline as earth,
+  easelOutline as easel,
+  extensionPuzzleOutline as extensionPuzzle,
+  fishOutline as fish,
+  flowerOutline as flower,
+  footballOutline as football,
+  gameControllerOutline as gameController,
+  handLeftOutline as handLeft,
+  happyOutline as happy,
+  headsetOutline as headset,
+  hourglassOutline as hourglass,
+  iceCreamOutline as iceCream,
+  infiniteOutline as infinite,
+  keyOutline as schluessel,
+  libraryOutline as library,
+  megaphoneOutline as megaphone,
+  micOutline as mic,
+  musicalNotesOutline as musicalNotes2,
+  nutritionOutline as nutrition,
+  partlySunnyOutline as partlySunny,
+  pawOutline as paw,
+  pizzaOutline as pizza,
+  planetOutline as planet,
+  podiumOutline as podium,
+  rainyOutline as rainy,
+  shapesOutline as shapes,
+  snowOutline as snow,
+  telescopeOutline as telescope,
+  ticketOutline as ticket,
+  trailSignOutline as trailSign,
+  umbrellaOutline as umbrella,
+  walkOutline as walk,
+  waterOutline as wasser,
+
   // Zusaetzlich (14.09.2026): Namen, die in Produktion gespeichert sind, aber
   // nicht in der Auswahlliste stehen — siehe WEITERE_GESPEICHERTE_ICONS unten.
   // Sie ersetzen den frueheren `import * as alleIonicons`, der alle 1389
@@ -175,7 +220,75 @@ export const ICON_CHOICES: Record<string, IconChoice> = {
   // Zertifikats-Symbole: standen nur im Teamer-Dashboard-Vorrat. Ohne sie
   // zeigten Erste-Hilfe- und Fuehrungszeugnis-Zertifikate die Trophaee.
   medkit: { icon: medkit, name: 'Erste Hilfe', category: 'Sonstiges' },
-  documentOutline: { icon: documentOutline, name: 'Dokument', category: 'Sonstiges' }
+  documentOutline: { icon: documentOutline, name: 'Dokument', category: 'Sonstiges' },
+
+  // ---------------------------------------------------------------------
+  // Erweiterung 14.09.2026 (Simon: "dass fuer Badges und Stempel eine
+  // groessere passende Auswahl da sein soll. Das man einfach mehr Vielfalt
+  // hat."). 54 -> 95 Symbole, also 41 neue.
+  //
+  // Ausgewaehlt nach Konfi-Arbeit, nicht nach Vollstaendigkeit: Freizeit,
+  // Musik und Kreatives, Sport und Spiel, Essen, Wetter und Schoepfung,
+  // Wegzeichen. Buero- und Technik-Symbole bleiben bewusst draussen.
+  //
+  // KEINE kirchlichen Symbole: Ionicons hat weder Kreuz noch Kirche, Kerze,
+  // Taube oder Glocke — im vollen Namensraum von 1357 Symbolen gepruft, null
+  // Treffer. Was hier steht, sind weltliche Symbole, die sich fuer kirchliche
+  // Bedeutungen einsetzen lassen (Wasser fuer die Taufe, Hand fuer den Segen,
+  // Lagerfeuer fuer die Freizeitandacht) — wer echte braucht, muss eigene
+  // SVGs zeichnen, so wie ICON_ZURUECK eines ist.
+  //
+  // Die SCHLUESSEL sind Datenvertrag mit den ausgelieferten Apps: Neue
+  // hinzufuegen ist erlaubt, vorhandene umbenennen bricht sie.
+  // ---------------------------------------------------------------------
+
+  podium: { icon: podium, name: 'Siegertreppe', category: 'Erfolg' },
+  hourglass: { icon: hourglass, name: 'Sanduhr', category: 'Erfolg' },
+  infinite: { icon: infinite, name: 'Unendlich', category: 'Erfolg' },
+  bookmark: { icon: bookmark, name: 'Lesezeichen', category: 'Erfolg' },
+
+  megaphone: { icon: megaphone, name: 'Megafon', category: 'Engagement' },
+  bulb: { icon: bulb, name: 'Gluehbirne', category: 'Engagement' },
+  handLeft: { icon: handLeft, name: 'Hand', category: 'Engagement' },
+  walk: { icon: walk, name: 'Unterwegs', category: 'Engagement' },
+
+  happy: { icon: happy, name: 'Laecheln', category: 'Gemeinschaft' },
+  peopleCircleGruppe: { icon: peopleCircle, name: 'Gruppenkreis', category: 'Gemeinschaft' },
+  bonfire: { icon: bonfire, name: 'Lagerfeuer', category: 'Gemeinschaft' },
+  ticket: { icon: ticket, name: 'Eintrittskarte', category: 'Gemeinschaft' },
+
+  library: { icon: library, name: 'Buecherei', category: 'Lernen' },
+  easel: { icon: easel, name: 'Staffelei', category: 'Lernen' },
+  shapes: { icon: shapes, name: 'Formen', category: 'Lernen' },
+  clipboardListe: { icon: clipboardIcon, name: 'Klemmbrett', category: 'Lernen' },
+  telescope: { icon: telescope, name: 'Fernrohr', category: 'Lernen' },
+
+  flower: { icon: flower, name: 'Blume', category: 'Natur' },
+  wasser: { icon: wasser, name: 'Wasser', category: 'Natur' },
+  earth: { icon: earth, name: 'Erde', category: 'Natur' },
+  planet: { icon: planet, name: 'Planet', category: 'Natur' },
+  partlySunny: { icon: partlySunny, name: 'Wolkig', category: 'Natur' },
+  rainy: { icon: rainy, name: 'Regen', category: 'Natur' },
+  snow: { icon: snow, name: 'Schnee', category: 'Natur' },
+  paw: { icon: paw, name: 'Pfote', category: 'Natur' },
+  fish: { icon: fish, name: 'Fisch', category: 'Natur' },
+
+  musicalNotesMehr: { icon: musicalNotes2, name: 'Noten', category: 'Aktivitäten' },
+  mic: { icon: mic, name: 'Mikrofon', category: 'Aktivitäten' },
+  headset: { icon: headset, name: 'Kopfhoerer', category: 'Aktivitäten' },
+  football: { icon: football, name: 'Fussball', category: 'Aktivitäten' },
+  gameController: { icon: gameController, name: 'Spielkonsole', category: 'Aktivitäten' },
+  dice: { icon: dice, name: 'Wuerfel', category: 'Aktivitäten' },
+  extensionPuzzle: { icon: extensionPuzzle, name: 'Puzzleteil', category: 'Aktivitäten' },
+  pizza: { icon: pizza, name: 'Pizza', category: 'Aktivitäten' },
+  iceCream: { icon: iceCream, name: 'Eis', category: 'Aktivitäten' },
+  cafe: { icon: cafe, name: 'Heissgetraenk', category: 'Aktivitäten' },
+  nutrition: { icon: nutrition, name: 'Obst', category: 'Aktivitäten' },
+
+  bus: { icon: bus, name: 'Bus', category: 'Orte' },
+  trailSign: { icon: trailSign, name: 'Wegweiser', category: 'Orte' },
+  schluessel: { icon: schluessel, name: 'Schluessel', category: 'Orte' },
+  umbrella: { icon: umbrella, name: 'Schirm', category: 'Orte' }
 };
 
 /** Flache Map (Name -> Icon) zum Rendern. */
