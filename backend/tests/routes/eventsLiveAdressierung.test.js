@@ -106,7 +106,12 @@ describe('Events: Live-Updates treffen den richtigen Raum', () => {
 
       const res = await request(app)
         .post(`/api/events/${EVENTS.gottesdienstEvent.id}/participants`)
-        .set('Authorization', `Bearer ${generateToken('admin1')}`)
+        // orgAdmin1 statt admin1 (14.09.2026): Die Termin-Schreibrouten sind
+        // seither an den Jahrgang gebunden, und admin1 hat im Seed bewusst
+        // KEINE Zuweisung. Der Test prueft die Live-Update-Adressierung, nicht
+        // die Berechtigung — org_admin ist von der Bindung ausgenommen und
+        // laesst den geprueften Weg unveraendert.
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
         .send({ user_id: USERS.teamer1.id });
 
       expect(res.status).toBe(201);
@@ -123,7 +128,12 @@ describe('Events: Live-Updates treffen den richtigen Raum', () => {
 
       const res = await request(app)
         .post(`/api/events/${EVENTS.gottesdienstEvent.id}/participants`)
-        .set('Authorization', `Bearer ${generateToken('admin1')}`)
+        // orgAdmin1 statt admin1 (14.09.2026): Die Termin-Schreibrouten sind
+        // seither an den Jahrgang gebunden, und admin1 hat im Seed bewusst
+        // KEINE Zuweisung. Der Test prueft die Live-Update-Adressierung, nicht
+        // die Berechtigung — org_admin ist von der Bindung ausgenommen und
+        // laesst den geprueften Weg unveraendert.
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
         .send({ user_id: USERS.konfi1.id });
 
       expect(res.status).toBe(201);

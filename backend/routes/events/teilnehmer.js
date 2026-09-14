@@ -9,6 +9,7 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { promoteFromWaitlist, takeBackEventPoints } = require('../../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
+const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -29,6 +30,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+      // Wer den Termin nicht sehen darf, traegt dort auch niemanden ein.
+      const zugriff = await darfTermin(client, req, eventId);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
       }
 
       // 2. Validate user
@@ -248,6 +258,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           return res.status(403).json({ error: 'Zugriff verweigert' });
         }
 
+        // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+        // Eine Buchung zu loeschen nimmt vergebene Punkte zurueck und traegt
+        // die Person aus dem Event-Chat aus.
+        const zugriff = await darfTermin(client, req, eventId);
+        if (!zugriff.erlaubt) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+        }
+
         // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
         // Event-Punkte zuruecknehmen (sonst behält er Punkte für ein Event, an dem
         // er nicht mehr als Teilnehmer geführt wird). Nur für Konfis relevant.
@@ -431,6 +450,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           await client.query('ROLLBACK');
           return res.status(403).json({ error: 'Zugriff verweigert' });
         }
+
+        // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+        // Der Weg auf die Warteliste nimmt Event-Punkte zurueck.
+        const zugriff = await darfTermin(client, req, eventId);
+        if (!zugriff.erlaubt) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+        }
+
         if (booking.status === status) {
           await client.query('ROLLBACK');
           return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });

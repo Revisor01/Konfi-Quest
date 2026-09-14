@@ -5,6 +5,7 @@ const express = require('express');
 const liveUpdate = require('../../utils/liveUpdate');
 const { formatDatum } = require('../../utils/zeitformat');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
+const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { validateTeamerQuota } = require('./validierung');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
@@ -77,6 +78,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
         return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+
+      // Jahrgangs-Bindung (14.09.2026), wortgleich zu POST / in verwaltung.js.
+      // Der Kommentar am Kopf dieser Route sagt es selbst: Die Feldliste muss
+      // mit dem Einzel-Event synchron bleiben. Beim Jahrgangs-Check war sie es
+      // zunaechst nicht — waehrend der Einzeltermin schon gebunden war, blieb
+      // die Serie ein offener Weg, Termine in fremde Jahrgaenge zu legen, und
+      // zwar gleich bis zu 26 auf einmal.
+      if (Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+        const alleErlaubt = jahrgang_ids.every(jid => darfJahrgang(req, jid, { edit: true }));
+        if (!alleErlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+        }
       }
     } catch (err) {
       console.error('Org-Ownership-Check fehlgeschlagen:', err);

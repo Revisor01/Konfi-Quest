@@ -7,6 +7,7 @@ const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
 const { checkPointTypeEnabled } = require('../../utils/pointTypeGuard');
 const { nachAntwort } = require('../../utils/nachAntwort');
+const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   const router = express.Router();
@@ -39,6 +40,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       );
       if (!event) { return res.status(404).json({ error: 'Event nicht gefunden' }); }
       if (event.organization_id !== req.user.organization_id) { return res.status(403).json({ error: 'Zugriff verweigert' }); }
+
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+      // Anwesenheit verbuchen schreibt PUNKTE gut — bis hierher konnte das
+      // jede:r Teamer:in fuer jeden Termin der Gemeinde tun, auch aus
+      // Jahrgaengen, die sie nicht einmal in der Liste sieht.
+      const zugriff = await darfTermin(client, req, eventId);
+      if (!zugriff.erlaubt) {
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+      }
 
       await client.query('BEGIN');
 
@@ -228,6 +238,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
+      }
+
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+      // Diese Route schreibt Punkte gut und schickt einen Push an die Person.
+      const zugriff = await darfTermin(client, req, eventId);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
       }
 
       // Punkte gibt es NUR für Konfis. Teamer:innen nehmen zwar teil (Anwesenheit

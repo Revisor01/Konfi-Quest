@@ -9,6 +9,7 @@ describe('Events Routes', () => {
   let app;
   let db;
   let adminToken;
+  let orgAdminToken;
   let teamerToken;
   let konfiToken;
   let konfi2Token;
@@ -23,6 +24,7 @@ describe('Events Routes', () => {
     await truncateAll(db);
     await seed(db);
     adminToken = generateToken('admin1');
+    orgAdminToken = generateToken('orgAdmin1');
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
     konfi2Token = generateToken('konfi2');
@@ -2227,6 +2229,11 @@ describe('Events Routes', () => {
     // Termin, der schon Pflicht ist, ein weiterer Jahrgang ergaenzt, blieben
     // dessen Konfis ungebucht — still, ohne Hinweis in der Leitungsansicht.
     it('Ein zusaetzlicher Jahrgang an einem bestehenden Pflicht-Event bucht dessen Konfis nach', async () => {
+      // orgAdminToken statt adminToken (14.09.2026): Termine duerfen seither
+      // nur noch eigenen Jahrgaengen zugeordnet werden, und admin1 hat im Seed
+      // bewusst KEINE Zuweisung. Der Test prueft das Nachbuchen bei einem
+      // ergaenzten Jahrgang, nicht die Berechtigung — org_admin ist von der
+      // Bindung ausgenommen und laesst den geprueften Weg unveraendert.
       const zukunft = new Date();
       zukunft.setDate(zukunft.getDate() + 14);
 
@@ -2249,7 +2256,7 @@ describe('Events Routes', () => {
 
       const createRes = await request(app)
         .post('/api/events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
           name: 'Pflichttermin mit spaeterem Jahrgang',
           event_date: zukunft.toISOString(),
@@ -2269,7 +2276,7 @@ describe('Events Routes', () => {
       // Jetzt den zweiten Jahrgang ergaenzen — mandatory bleibt true.
       const updateRes = await request(app)
         .put(`/api/events/${eventId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
           name: 'Pflichttermin mit spaeterem Jahrgang',
           event_date: zukunft.toISOString(),

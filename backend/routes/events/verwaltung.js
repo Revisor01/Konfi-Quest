@@ -13,6 +13,7 @@ const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
 const { validateTeamerQuota } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
+const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -104,6 +105,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
       if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
         return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+
+      // Jahrgangs-Bindung (14.09.2026): Ein Termin darf nur in eigenen
+      // Jahrgaengen entstehen — sonst waere er unmittelbar nach dem Anlegen
+      // fuer die Erstellerin selbst unsichtbar (die Liste filtert) und die
+      // Schreibrouten wiesen sie ab. Dieselbe Doppelpruefung wie beim
+      // Verschieben einer Konfi (konfi-management.js, PUT /:id).
+      if (Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+        const alleErlaubt = jahrgang_ids.every(jid => darfJahrgang(req, jid, { edit: true }));
+        if (!alleErlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+        }
       }
     } catch (err) {
       console.error('Org-Ownership-Check fehlgeschlagen:', err);
@@ -334,6 +347,29 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled, teamer_max_participants FROM events WHERE id = $1',
         [id]
       );
+
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js).
+      // Geprueft wird der BISHERIGE Stand des Termins: Sonst koennte sich
+      // jemand einen fremden Termin dadurch zugaenglich machen, dass er im
+      // selben Aufruf jahrgang_ids auf den eigenen Jahrgang umschreibt.
+      const zugriff = await darfTermin(client, req, id);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+      }
+
+      // Und der ZIEL-Jahrgang muss ebenfalls ein eigener sein — dieselbe
+      // Doppelpruefung wie beim Verschieben einer Konfi
+      // (konfi-management.js, PUT /:id).
+      if (Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+        const alleErlaubt = jahrgang_ids.every(jid => darfJahrgang(req, jid, { edit: true }));
+        if (!alleErlaubt) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+        }
+      }
 
       // Teamer-Kontingent: nachträglich editierbar. Wird ein Feld nicht mitgeschickt,
       // bleibt der bisherige Wert erhalten (COALESCE über den Parameter).
@@ -684,6 +720,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+      // Loeschen reisst Anmeldungen, Chat und vergebene Punkte mit — das darf
+      // nur, wer den Termin auch sehen darf. Bis hierher genuegte die
+      // Organisation.
+      const zugriff = await darfTermin(client, req, id);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+      }
+
       // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
       // bestaetigt (?force=true). Fachlich wäre "absagen" der saubere Weg,
       // praktisch ist Löschen oft das, was gemeint ist (User-Entscheid
@@ -860,6 +907,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
+      // Jahrgangs-Bindung (14.09.2026): Der Event-Chat nimmt alle Angemeldeten
+      // auf — wer den Termin nicht sehen darf, legt auch keinen Raum dazu an.
+      const zugriff = await darfTermin(client, req, eventId);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
+      }
+
       const { rows: [existingChat] } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]);
       if (existingChat) {
         await client.query('ROLLBACK');
@@ -923,6 +979,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(400).json({ error: 'Event ist bereits abgesagt' });
+      }
+
+      // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
+      // Eine Absage schickt allen Angemeldeten einen Push und storniert ihre
+      // Buchungen — das darf nur, wer den Termin auch sehen darf.
+      const zugriff = await darfTermin(client, req, eventId);
+      if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf diesen Termin' });
       }
 
       // Mark event as cancelled
