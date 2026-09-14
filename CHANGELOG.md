@@ -10,9 +10,6 @@ Versionsüberschrift.
 ## [Unreleased] - 2.2.0
 
 ### Hinzugefügt
-- Das eigene Profil zeigt hinter den Abzeichen auch die gesammelten
-  Challenge-Stempel — bei Konfis wie bei Teamer:innen. Wer noch keinen
-  Stempel hat, sieht den Abschnitt nicht.
 - In der Detailansicht der Leitung stehen unter den Abzeichen auch die
   Challenge-Stempel der angesehenen Person, bei Konfis wie bei Teamer:innen.
   Gezählt werden nur eigene, freigegebene Beiträge. Wer nur bestimmte
