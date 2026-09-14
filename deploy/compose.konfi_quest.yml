@@ -15,6 +15,14 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
+    # Verbindungsgrenze und Speicher angehoben (14.09.2026). Drei Backends
+    # teilen sich diese Datenbank, jedes mit eigenem Pool (3x20 = 60). Gemessen
+    # vorher: 28 Verbindungen offen von 100 erlaubt, 106 MB von 256 MB belegt.
+    # shared_buffers (128 MB) liegt fest, jede Verbindung kostet 5-10 MB
+    # obendrauf -- ohne mehr Speicher waere max_connections eine Attrappe.
+    # Die 200 sind dadurch nicht voll durch Speicher gedeckt (rechnerisch
+    # reichen sie fuer ~90 gleichzeitige); die Pools schoepfen das nie aus.
+    command: ["postgres", "-c", "max_connections=200"]
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
@@ -34,7 +42,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 1G
           cpus: '0.3'
     security_opt:
       - no-new-privileges:true
