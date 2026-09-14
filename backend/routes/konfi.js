@@ -9,7 +9,8 @@ const liveUpdate = require('../utils/liveUpdate');
 const { heuteBerlin } = require('../utils/zeitformat');
 const { beantworteTageslosung } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
-const { deletePhotoFile } = require('../utils/photoStorage');
+const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
+const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist } = require('../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
@@ -38,6 +39,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     body('activity_id').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
     body('requested_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
     body('client_id').optional().isUUID().withMessage('client_id muss eine UUID sein'),
+    // photo_filename kommt aus dem Body und landete ungeprueft in der DB und
+    // spaeter in path.join() — '../../../../etc/passwd' verliess damit das
+    // Upload-Verzeichnis (Befund 14.09.2026). Die Kette war allein mit
+    // Konfi-Rechten geschlossen: eigener Antrag, status='pending', also greift
+    // isOwnRequest beim Abruf; decryptBuffer reicht unverschluesselte Dateien
+    // unveraendert durch.
+    //
+    // Die Upload-Route erzeugt crypto.randomBytes(32).toString('hex') — genau
+    // 64 Hexzeichen. Etwas anderes kann es nie geben, also wird auch nichts
+    // anderes angenommen. Dieselbe Linie wie in chat.js/material.js.
+    body('photo_filename').optional({ nullable: true })
+      .matches(/^[a-f0-9]{64}$/).withMessage('Ungültiger Dateiname'),
     handleValidationErrors
   ];
 
@@ -804,9 +817,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const requestId = parseInt(req.params.id);
 
-      // Get request with photo filename + status
+      // Get request with photo filename + status.
+      // target_role wird fuer die Jahrgangs-Bindung unten gebraucht. LEFT JOIN,
+      // weil activity_id NULL sein kann (geloeschte Aktivitaet) — ein INNER
+      // JOIN liesse den Antrag dann verschwinden.
       const { rows: [request] } = await db.query(
-        'SELECT photo_filename, user_id, status FROM activity_requests WHERE id = $1 AND organization_id = $2',
+        `SELECT ar.photo_filename, ar.user_id, ar.status, a.target_role
+         FROM activity_requests ar
+         LEFT JOIN activities a ON ar.activity_id = a.id
+         WHERE ar.id = $1 AND ar.organization_id = $2`,
         [requestId, req.user.organization_id]
       );
 
@@ -833,8 +852,35 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(403).json({ error: 'Foto nach Bearbeitung nicht mehr verfügbar' });
       }
 
+      // Jahrgangs-Bindung fuer die Leitung (14.09.2026). req.user.type bildet
+      // in rbac.js JEDE Nicht-Konfi/Nicht-Teamer-Rolle auf 'admin' ab — bis
+      // hierher genuegte das, um JEDES offene Nachweisfoto der Organisation zu
+      // sehen, auch aus fremden Jahrgaengen. Nachweisfotos zeigen ueberwiegend
+      // Minderjaehrige.
+      //
+      // Wortgleich zur Schwesterroute in activities.js, die dieselbe Datei
+      // ausliefert und die Bindung seit dem 31.08.2026 hat: "Wer die Konfi
+      // nicht sehen darf, darf ihr Foto erst recht nicht sehen."
+      // Teamer:innen als Antragsteller bleiben ausgenommen (Teamer-Ausnahme
+      // der Sollregel), org_admin/super_admin ebenfalls (ueber darfKonfi).
+      if (isAdmin && request.target_role !== 'teamer') {
+        const zugriff = await darfKonfi(db, req, request.user_id);
+        if (zugriff.gefunden && !zugriff.erlaubt) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
+      }
+
       const fs = require('fs');
       const path = require('path');
+
+      // Ausgangspruefung des Dateinamens (Befund 14.09.2026): Der Wert kommt
+      // aus der Datenbank und kann aus der Zeit VOR der Eingangspruefung
+      // stammen. Ohne diese Zeile verlaesst '../../../..' das Verzeichnis.
+      if (!istSichererDateiname(request.photo_filename)) {
+        console.error('Foto-Abruf: verdaechtiger Dateiname abgewiesen:', request.photo_filename);
+        return res.status(400).json({ error: 'Ungültiger Dateiname' });
+      }
+
       const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
 
       if (!fs.existsSync(photoPath)) {

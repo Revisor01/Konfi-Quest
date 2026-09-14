@@ -586,6 +586,89 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
   });
 
   // ================================================================
+  // GET /api/konfi/activity-requests/:id/photo — die ZWEITE Foto-Route
+  //
+  // Sie liefert dieselbe Datei wie /api/admin/activities/requests/:id/photo,
+  // hatte aber bis zum 14.09.2026 keine Jahrgangs-Bindung: req.user.type
+  // bildet in rbac.js jede Nicht-Konfi/Nicht-Teamer-Rolle auf 'admin' ab, und
+  // damit genuegte die Organisation, um JEDES offene Nachweisfoto zu sehen.
+  // Nachweisfotos zeigen ueberwiegend Minderjaehrige.
+  // ================================================================
+  describe('GET /api/konfi/activity-requests/:id/photo', () => {
+    // Gueltiger Dateiname: 64 Hexzeichen, wie ihn die Upload-Route erzeugt.
+    // Mit 'test.jpg' griffe seit dem 14.09.2026 die Ausgangspruefung des
+    // Dateinamens zuerst — der Test pruefte dann nicht mehr den Jahrgang.
+    const HEX = 'b'.repeat(64);
+
+    it('Admin bekommt das Foto einer fremden Konfi NICHT — 403', async () => {
+      const id = await antragAnlegen(KONFI_B);
+      await db.query('UPDATE activity_requests SET photo_filename = $2 WHERE id = $1', [id, HEX]);
+
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${id}/photo`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Kein Zugriff auf diesen Konfi');
+    });
+
+    it('Admin DARF das Foto seiner eigenen Konfi abrufen (404 = Datei fehlt, nicht 403)', async () => {
+      const id = await antragAnlegen(KONFI_A);
+      await db.query('UPDATE activity_requests SET photo_filename = $2 WHERE id = $1', [id, HEX]);
+
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${id}/photo`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      // Die Berechtigung greift durch; erst die fehlende Datei stoppt.
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Foto-Datei nicht gefunden');
+    });
+
+    it('REGRESSION org_admin kommt weiterhin an jedes Foto heran', async () => {
+      const id = await antragAnlegen(KONFI_B);
+      await db.query('UPDATE activity_requests SET photo_filename = $2 WHERE id = $1', [id, HEX]);
+
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${id}/photo`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Foto-Datei nicht gefunden');
+    });
+
+    it('Teamer:in als Antragsteller bleibt ohne Jahrgang erreichbar (Ausnahme der Regel)', async () => {
+      // Teamer-Aktivitaet -> target_role='teamer'. TEAMER_ZIEL hat keine
+      // konfi_profiles-Zeile; die Bindung darf hier nicht greifen.
+      const { rows: [row] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id, photo_filename)
+         VALUES ($1, $2, CURRENT_DATE, 'pending', 1, $3) RETURNING id`,
+        [TEAMER_ZIEL, TEAMER_AKTIVITAET, HEX]
+      );
+
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${row.id}/photo`)
+        .set('Authorization', `Bearer ${adminOhneJgToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Foto-Datei nicht gefunden');
+    });
+
+    it('Die Konfi selbst kommt weiterhin an ihr eigenes Foto', async () => {
+      const id = await antragAnlegen(KONFI_A);
+      await db.query('UPDATE activity_requests SET photo_filename = $2 WHERE id = $1', [id, HEX]);
+
+      const konfiAToken = tokenFuer(KONFI_A, 1, 1, 'konfi');
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${id}/photo`)
+        .set('Authorization', `Bearer ${konfiAToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Foto-Datei nicht gefunden');
+    });
+  });
+
+  // ================================================================
   // Foto-Routen
   // ================================================================
   describe('Foto-Routen', () => {

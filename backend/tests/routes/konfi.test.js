@@ -2180,4 +2180,108 @@ describe('Konfi Routes', () => {
       expect(res.body.map(r => r.id)).toContain(antrag.id);    });
   });
 
+
+  // ================================================================
+  // Pfad-Traversal ueber photo_filename (Befund 14.09.2026)
+  //
+  // photo_filename kommt aus dem Request-Body und wurde weder beim Anlegen
+  // geprueft noch beim Ausliefern: path.join(uploads/requests, '../../..')
+  // verlaesst das Verzeichnis. Die Kette war allein mit KONFI-Rechten
+  // geschlossen -- eigener Antrag, status='pending' (der Standard), also
+  // greift isOwnRequest. decryptBuffer reicht unverschluesselte Dateien
+  // unveraendert durch (photoCrypto.js), die Datei kam im Klartext zurueck.
+  //
+  // Die Pruefung gab es im Repo laengst: photoStorage.js weist beim LOESCHEN
+  // alles ab, dessen basename nicht gleich dem Namen ist. Nur die beiden
+  // Lesepfade hatten sie nicht.
+  //
+  // Der Upload erzeugt randomBytes(32).toString('hex') -- genau 64 Hexzeichen.
+  // Danach richtet sich die Pruefung.
+  // ================================================================
+  describe('Pfad-Traversal ueber photo_filename', () => {
+    it('VERBOTEN: Antrag mit ../-Dateinamen wird abgewiesen', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-09-14',
+          photo_filename: '../../../../etc/passwd'
+        });
+
+      expect(res.status).toBe(400);
+
+      // Gegenprobe in der Datenbank: nichts angelegt.
+      const { rows } = await db.query(
+        "SELECT photo_filename FROM activity_requests WHERE user_id = $1",
+        [USERS.konfi1.id]
+      );
+      expect(rows.map(r => r.photo_filename)).not.toContain('../../../../etc/passwd');
+    });
+
+    it('VERBOTEN: auch ein Name mit Schraegstrich ohne .. wird abgewiesen', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-09-14',
+          photo_filename: 'unterordner/datei.jpg'
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('VERBOTEN: Foto-Abruf mit manipuliertem Namen liefert die Datei NICHT', async () => {
+      // Direkt an der Route vorbei in die DB geschrieben -- so sieht ein
+      // Bestandsdatensatz aus, der vor der Pruefung entstanden ist. Der
+      // AUSGANG muss ihn ebenfalls abweisen, nicht nur der Eingang.
+      const { rows: [antrag] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, status, organization_id, photo_filename)
+         VALUES ($1, $2, CURRENT_DATE, 'pending', 1, $3) RETURNING id`,
+        [USERS.konfi1.id, ACTIVITIES.sonntagsgottesdienst.id, '../../../package.json']
+      );
+
+      const res = await request(app)
+        .get(`/api/konfi/activity-requests/${antrag.id}/photo`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(400);
+      // Kein Dateiinhalt im Koerper.
+      expect(res.text || '').not.toContain('"name"');
+    });
+
+    it('ERLAUBT: ein regulaerer Dateiname (64 Hexzeichen) geht durch', async () => {
+      const echterName = 'a'.repeat(64);
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-09-14',
+          photo_filename: echterName
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows: [gespeichert] } = await db.query(
+        "SELECT photo_filename FROM activity_requests WHERE id = $1",
+        [res.body.id]
+      );
+      expect(gespeichert.photo_filename).toBe(echterName);
+    });
+
+    it('ERLAUBT: ein Antrag ganz ohne Foto bleibt moeglich', async () => {
+      const res = await request(app)
+        .post('/api/konfi/requests')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          activity_id: ACTIVITIES.sonntagsgottesdienst.id,
+          requested_date: '2026-09-14'
+        });
+
+      expect(res.status).toBe(201);
+    });
+  });
+
 });
