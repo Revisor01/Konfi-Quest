@@ -94,6 +94,113 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
   });
 });
 
+// ====================================================================
+// Foto-Pfad der Warteschlange (gemeldete Aktivitaeten mit Bild)
+//
+// Der Upload laeuft ZWEISTUFIG: erst das Bild an /konfi/upload-photo, dann der
+// eigentliche Request mit dem zurueckgegebenen Dateinamen im Body. Zwischen
+// beiden Schritten wird der Body persistiert — ohne dieses Speichern waere der
+// Dateiname nach einem Fehlschlag des Hauptrequests weg, die lokale Datei aber
+// bereits geloescht: Das Bild waere unwiederbringlich verloren und der Retry
+// wuerde eine Meldung ohne Foto absetzen.
+//
+// Das Verhalten ist korrekt; diese Tests halten es fest.
+// ====================================================================
+describe('writeQueue — Foto-Pfad: Serverreferenz ueberlebt einen Fehlschlag', () => {
+  beforeEach(() => {
+    store = {};
+    mockOnline = true;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  const fotoItem = (clientId: string) => ({
+    method: 'POST' as const,
+    url: '/konfi/requests',
+    body: {
+      activity_id: 7,
+      client_id: clientId,
+      _localPhotoPath: 'queue-uploads/foto.jpg',
+      _photoFileName: 'foto.jpg',
+    },
+    maxRetries: 5,
+    hasFileUpload: true,
+    metadata: { type: 'request' as const, clientId, label: 'Antrag' },
+  });
+
+  // Upload gelingt immer, der Hauptrequest antwortet nach Bedarf.
+  const postMitUpload = (hauptantwort: () => Promise<unknown>) =>
+    mockPost.mockImplementation(async (url: string) => {
+      if (url === '/konfi/upload-photo') return { data: { filename: 'server-123.jpg' } };
+      return hauptantwort();
+    });
+
+  const uploadAufrufe = () =>
+    mockPost.mock.calls.filter((c) => c[0] === '/konfi/upload-photo').length;
+
+  it('der Dateiname liegt SOFORT nach dem Upload im Speicher — noch vor dem Hauptrequest', async () => {
+    // Der entscheidende Moment: Das Bild ist beim Server, die lokale Datei
+    // geloescht, der Hauptrequest laeuft noch. Stirbt die App genau jetzt
+    // (Absturz, Swipe-Kill, Speicherdruck), ist allein entscheidend, was
+    // BEREITS persistiert ist. Steht der Dateiname dort nicht, ist das Bild
+    // beim naechsten Start unwiederbringlich weg.
+    let standBeimHauptrequest: string | undefined;
+    mockPost.mockImplementation(async (url: string) => {
+      if (url === '/konfi/upload-photo') return { data: { filename: 'server-123.jpg' } };
+      // Zustand des PERSISTENTEN Speichers festhalten, nicht den des
+      // Arbeitsobjekts im Arbeitsspeicher.
+      standBeimHauptrequest = store['queue:items'];
+      throw { response: { status: 503 }, message: 'Service Unavailable' };
+    });
+
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue(fotoItem('foto-1'));
+
+    await writeQueue.flush();
+
+    const beimAbsturz = JSON.parse(standBeimHauptrequest || '[]');
+    expect(beimAbsturz).toHaveLength(1);
+    expect(beimAbsturz[0].body.photo_filename).toBe('server-123.jpg');
+    expect(beimAbsturz[0].body._localPhotoPath).toBeUndefined();
+    expect(beimAbsturz[0].body._photoFileName).toBeUndefined();
+
+    // Und nach dem fehlgeschlagenen Versuch bleibt das Item mit Referenz liegen.
+    const persisted = JSON.parse(store['queue:items'] || '[]');
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0].body.photo_filename).toBe('server-123.jpg');
+    expect(persisted[0].retryCount).toBe(1);
+    expect(uploadAufrufe()).toBe(1);
+  });
+
+  it('nach einem App-Neustart gelingt der zweite Flush ohne erneuten Upload', async () => {
+    postMitUpload(() => Promise.reject({ response: { status: 503 }, message: 'Service Unavailable' }));
+
+    const { writeQueue } = await import('../../services/writeQueue');
+    await writeQueue.enqueue(fotoItem('foto-2'));
+    await writeQueue.flush();
+
+    // App-Neustart: Das Modul wird neu geladen, der Arbeitsspeicher-Zwischen-
+    // speicher ist weg. Es zaehlt nur noch, was persistiert wurde.
+    vi.resetModules();
+    const { writeQueue: nachNeustart } = await import('../../services/writeQueue');
+
+    // Zweiter Anlauf: Hauptrequest geht jetzt durch.
+    postMitUpload(() => Promise.resolve({ data: { id: 42 } }));
+    const ergebnis = await nachNeustart.flush();
+
+    expect(ergebnis.succeeded).toHaveLength(1);
+    expect(JSON.parse(store['queue:items'] || '[]')).toHaveLength(0);
+
+    // Der gesendete Body traegt die Serverreferenz aus dem ERSTEN Anlauf.
+    const hauptAufrufe = mockPost.mock.calls.filter((c) => c[0] === '/konfi/requests');
+    expect(hauptAufrufe).toHaveLength(2);
+    expect(hauptAufrufe[1][1].photo_filename).toBe('server-123.jpg');
+
+    // Und das Bild wurde ueber beide Fluesse hinweg genau EINMAL hochgeladen.
+    expect(uploadAufrufe()).toBe(1);
+  });
+});
+
 // Hilfen für die neuen Faelle
 const chatItem = (clientId: string, extra: Record<string, unknown> = {}) => ({
   method: 'POST' as const,
