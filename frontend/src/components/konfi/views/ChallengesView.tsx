@@ -19,8 +19,8 @@ import {
   ICON_UHRZEIT,
 } from '../../shared/icons';
 import { EmptyState, SectionHeader } from '../../shared';
-import KachelRaster from '../../shared/KachelRaster';
-import type { KonfiChallenge, ChallengeMark } from '../../../types/challenges';
+import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import type { KonfiChallenge, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
 /**
@@ -40,6 +40,8 @@ interface ChallengesViewProps {
   active: KonfiChallenge[];
   archive: KonfiChallenge[];
   marks: ChallengeMark[];
+  /** Noch nicht erhaltene Stempel (grau). Fehlt bei aelteren Servern. */
+  offeneStempel?: OffenerStempel[];
   onSelectChallenge: (challenge: KonfiChallenge) => void;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Leitungs-Sicht:
   // Verwalten|Mitmachen). Gleiches Muster wie EventsView/RequestsView.
@@ -104,6 +106,7 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
   active,
   archive,
   marks,
+  offeneStempel = [],
   onSelectChallenge,
   headerSlot
 }) => {
@@ -330,42 +333,33 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
       </>
       )}
 
-      {/* --- 2. Deine Stempel (bewusst OHNE Zaehler) --- */}
-      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--challenges">
-            <IonIcon icon={ICON_ABZEICHEN} />
-          </div>
-          <IonLabel>Deine Stempel</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: marks.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-basis) var(--app-abstand-mittel)' }}>
-            {marks.length === 0 ? (
+      {/* --- 2. Deine Stempel (bewusst OHNE Zaehler) ---
+           Seit 14.09.2026 dieselbe Komponente wie in der Detailansicht der
+           Leitung: Popover beim Antippen, nicht erhaltene Stempel grau. Vorher
+           lag das Raster hier ein zweites Mal im Baum und lief mit der Zeit
+           auseinander. */}
+      {marks.length === 0 && offeneStempel.length === 0 ? (
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={ICON_ABZEICHEN} />
+            </div>
+            <IonLabel>Deine Stempel</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <EmptyState
                 icon={ICON_ABZEICHEN}
                 title="Noch keine Stempel"
                 message="Für jede Challenge, bei der du mitmachst, bekommst du einen eigenen Stempel."
                 iconColor="var(--app-color-challenges)"
               />
-            ) : (
-              /* Dasselbe Kachelraster wie im Profil
-                 (Simon, 14.09.2026: "Konfi und Teamer und Admin unter
-                 Challenges, da sollten wir dann auch das gleiche Grid
-                 nutzen"). Vorher lief die Reihe hier seitlich aus dem Bild
-                 und sah dadurch anders aus als dieselben Stempel im Profil. */
-              <KachelRaster
-                eintraege={marks.map((mark) => ({
-                  schluessel: mark.challenge_id,
-                  icon: getChallengeBadgeIcon(mark.badge_icon),
-                  name: mark.badge_name,
-                  titel: mark.title,
-                  farbe: 'var(--app-color-challenges)'
-                }))}
-              />
-            )}
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      ) : (
+        <ChallengeStempelSektion marks={marks} offeneStempel={offeneStempel} />
+      )}
 
 
     </div>

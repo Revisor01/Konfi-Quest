@@ -3808,22 +3808,28 @@ ion-segment.md ion-segment-button {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  /* Umbruchregel. Gemessen (14.09.2026): fuer den Namen bleiben je nach
-     Verschachtelung nur 70-91 px; "Punktemeister" ist 81 px breit, das
-     laengste vergebene Einzelwort "Gottesdienstbesucher" 124 px. OHNE Regel
-     bricht ein solches Wort gar nicht um -- es laeuft aus der Kachel heraus
-     und die Kuerzung schneidet es mitten im Wort ab ("Punktemeiste-/r").
-     Deshalb overflow-wrap: der Umbruch greift NUR, wenn ein Wort allein zu
-     breit ist; alles, was passt, bleibt unangetastet.
+  /* Umbruch NUR an echten Wortgrenzen -- ein zu langes Wort wird NICHT
+     zerlegt.
 
-     Bewusst NICHT hyphens: auto: nachgemessen bricht es "Gottesdienstb-
-     esucher" -- gleicher harter Schnitt wie overflow-wrap, nur unzuverlaessig
-     obendrein. Silbentrennung braucht ein Woerterbuch und ein passendes
-     lang-Attribut; die Seite steht auf lang="en", und auf Android-WebViews
-     ist das Woerterbuch nicht garantiert. Eine Regel, die je nach Geraet
-     etwas anderes tut, ist hier schlechter als eine, die ueberall gleich
-     wirkt. */
-  overflow-wrap: break-word;
+     WARUM HIER KEINE CSS-KUERZUNG STEHT (gemessen 14.09.2026, Chromium bei
+     320 px Fensterbreite; fuer den Namen bleiben dann 79 px):
+       - overflow-wrap: break-word bricht das Wort zwar um, aber per
+         Definition MITTEN DRIN: "Punktemeiste" / "r". Genau der gemeldete
+         Fehler -- die Regel stand hier den Tag ueber und war die Ursache.
+       - text-overflow: ellipsis greift im -webkit-box-Container bei einem
+         waagerecht ueberlaufenden Einzelwort NICHT. Nachgemessen steht dort
+         scrollWidth 124 gegen clientWidth 79, geschnitten wird hart, ohne "…".
+       - hyphens: auto bricht "Gottesdienstb-/esucher" und braucht ein
+         Woerterbuch samt passendem lang-Attribut; die Seite steht auf
+         lang="en", auf Android-WebViews ist das Woerterbuch nicht garantiert.
+       - Kleiner setzen faellt aus: "Gottesdienstbesucher" braeuchte 7,15 px,
+         um in 79 px zu passen, selbst ohne jeden Innenabstand noch 8,57 px.
+
+     Gekuerzt wird deshalb GEMESSEN in JavaScript (shared/useKachelName.ts):
+     wortweise, mit sichtbarem "…", nie mitten im Wort. Der volle Name steht
+     im title-Attribut und bei Abzeichen im Popover. */
+  overflow-wrap: normal;
+  word-break: normal;
   /* Der Namensbereich belegt IMMER zwei Zeilen, auch bei einem kurzen Namen.
      Sonst sitzt der Fortschritt in der Nachbarkachel eine Zeile hoeher. */
   min-height: calc(2 * 1.2em);
@@ -3836,4 +3842,19 @@ ion-segment.md ion-segment-button {
   font-size: var(--app-text-mini);
   font-weight: var(--app-schrift-fett);
   color: var(--app-color-users);
+}
+
+/* LADEBILDSCHIRM VOR DEM ROUTER (14.09.2026)
+   Gehoert zu AppLaedt in App.tsx. Er steht ausserhalb jedes
+   IonRouterOutlet und ist bewusst KEINE IonPage: Eine Seite wuerde im
+   Outlet registriert und spaeter getauscht -- genau das Muster, das in
+   dieser App wiederholt zu leeren Bildschirmen gefuehrt hat (siehe den
+   Kommentar an AppContent und keinTauschImOutlet.test.ts).
+   Die Grundfarbe deckend, damit beim Start nichts durchscheint. */
+.app-laedt {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-background-color, var(--app-weiss));
 }

@@ -980,6 +980,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             der Abschnitt ganz weg, genau wie dort. */}
         <ChallengeStempelSektion
           marks={currentKonfi?.challengeMarks || []}
+          offeneStempel={currentKonfi?.offeneStempel || []}
           titel="Stempel"
         />
 

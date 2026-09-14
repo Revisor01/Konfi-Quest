@@ -235,37 +235,35 @@ const MainTabs: React.FC = () => {
   // Outlet bekam einen Platzhalter, den er spaeter tauschen musste. Genau
   // daher die weissen Seiten auf dem Geraet (Simons Test, Build 153/154).
   //
-  // Die Chunks liegen nativ auf der Platte und im Browser meist im Cache;
-  // der Start verzoegert sich dadurch kaum. Schlaegt das Laden fehl
-  // (offline), geht es trotzdem weiter — dann rendert React die Seite
-  // selbst nach, sobald ihr Modul da ist.
-  const [seitenBereit, setSeitenBereit] = React.useState(false);
-  useEffect(() => {
-    if (!user) return;
-    let abgebrochen = false;
-    void ladeRolleVor(rolle).finally(() => {
-      if (!abgebrochen) setSeitenBereit(true);
-    });
-    return () => { abgebrochen = true; };
-  }, [rolle, user?.id]);
+  // Das Warten selbst liegt seit dem 14.09.2026 in navigation/useSeitenBereit
+  // und wird in App.tsx OBERHALB des Routers ausgewertet -- siehe die
+  // Begruendung weiter unten. Hier bleibt nur das Vorladen fuer den Fall,
+  // dass sich die Rolle bei laufender App aendert (An-/Abmelden ohne
+  // Neustart); das Ergebnis tauscht dann MainTabs ueber key={rolle} aus,
+  // nicht das Outlet.
 
-  // NIEMALS null (Simons Befund 04.09.2026: "Nach dem Ausschalten und wieder
-  // Starten ist es weiss, wenn man eingeloggt ist"). Beim Kaltstart mit
-  // gespeicherter Sitzung ist user fuer einen Moment noch nicht geladen --
-  // ein null hier haengt eine LEERE Seite in den IonRouterOutlet, und Ionic
-  // bemerkt den spaeteren Tausch nicht (dasselbe Muster wie beim Platzhalter
-  // aus Build 153/154). Ergebnis: weisse Seite, bis man einen Tab antippt.
-  // Ohne gespeicherte Sitzung greift der Login-Zweig in App.tsx, deshalb kam
-  // die Anmeldeseite immer -- weiss wurde es nur im angemeldeten Fall.
-  if (!user) {
-    return <SeiteLaedt />;
-  }
-
-  // Bis die Seiten-Chunks da sind: der bekannte Startbildschirm. Danach
-  // rendert das Outlet EINMAL mit fertigen Seiten — kein Tausch, kein Weiss.
-  if (!seitenBereit) {
-    return <SeiteLaedt />;
-  }
+  // WICHTIG: Hier steht KEIN Ladezustand mehr.
+  //
+  // Bis zum 14.09.2026 gab MainTabs bei fehlendem `user` und bei noch nicht
+  // geladenen Chunks ein <SeiteLaedt/> zurueck und tauschte es spaeter gegen
+  // <IonTabs>. Beides steht aber INNERHALB des IonRouterOutlet aus App.tsx --
+  // also genau der Tausch, vor dem die Kommentare in dieser Datei warnen, nur
+  // eine Ebene hoeher: Ionic registriert die zuerst eingehaengte IonPage als
+  // Seite des Outlets und bemerkt den spaeteren Austausch nicht. Ergebnis:
+  // leerer Bildschirm beim Kaltstart, bis man einen Tab antippt und damit
+  // eine echte Navigation ausloest.
+  //
+  // Dass der Tausch IMMER passiert, ist nachgesehen und nicht vermutet:
+  // ladeRolleVor() wartet auf dynamische Importe (rollenBaeume.ts:133,
+  // `await Promise.allSettled`), kommt also fruehestens einen Microtask
+  // spaeter zurueck -- seitenBereit ist im ersten Durchgang zwangslaeufig
+  // false.
+  //
+  // Der Ladezustand liegt jetzt in App.tsx OBERHALB des Routers: Dort wird
+  // der Router erst montiert, wenn der Baum endgueltig ist, und das Outlet
+  // sieht nie einen Tausch. Siehe AppContent in App.tsx.
+  //
+  // Der Test __tests__/navigation/keinTauschImOutlet.test.ts haelt das fest.
 
   // EIN Renderer fuer alle Rollen — die Routen, Tabs und Umleitungen stehen
   // als Daten in navigation/rollenBaeume.ts.

@@ -326,9 +326,18 @@ Wann er kommt, hängt an der Freigabe-Pflicht:
 An der Anzahl hängt nichts: Wer fünf Beiträge schickt, hat trotzdem genau einen
 Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
 
-Gesammelte Stempel stehen im Challenges-Tab und außerdem im eigenen Profil,
-gleich hinter den Abzeichen — bei Konfis wie bei Teamer:innen. Wer noch keinen
-hat, sieht den Abschnitt im Profil gar nicht.
+Gesammelte Stempel stehen im Challenges-Tab. Die Leitung sieht die Stempel
+einer Person außerdem in deren Detailansicht, gleich hinter den Abzeichen.
+
+Neben den erhaltenen stehen dort auch die **noch nicht erhaltenen** — grau, mit
+Name und Symbol. Grau erscheint alles, was es je zu holen gab: laufende
+Challenges ebenso wie abgelaufene. So ist zu sehen, was noch möglich ist und
+was nicht mehr.
+
+Ein Tipp auf einen Stempel öffnet ein kleines Fenster mit Stempelname,
+zugehöriger Challenge und ihrer Beschreibung. Bei einem erhaltenen Stempel steht
+dort das Datum, an dem er verliehen wurde; bei einem grauen, ob die Challenge
+noch läuft oder vorbei ist.
 
 > **Achtung:** Änderst du Name oder Symbol nachträglich, ändert sich das auch
 > für alle, die den Stempel schon haben — er hängt an der Challenge, nicht an

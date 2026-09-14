@@ -6353,7 +6353,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Einzelner Konfi oder Teamer mit voller Historie",
-        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen, Challenge-Stempel und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie. Seit 13.09.2026 liefert die Antwort zusaetzlich `challengeMarks`: die Challenges, zu denen die angesehene Person einen EIGENEN und FREIGEGEBENEN Beitrag hat (moderation_status='approved'), je Challenge genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert seinen Typ.\n",
+        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen, Challenge-Stempel und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie. Seit 13.09.2026 liefert die Antwort zusaetzlich `challengeMarks`: die Challenges, zu denen die angesehene Person einen EIGENEN und FREIGEGEBENEN Beitrag hat (moderation_status='approved'), je Challenge genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert seinen Typ. ERGAENZT 14.09.2026, ebenfalls additiv: Jeder Eintrag in `challengeMarks` traegt zusaetzlich `earned_at` (Zeitpunkt der Verleihung: der FRUEHESTE freigegebene eigene Beitrag, Rueckfall auf created_at bei Bestandszeilen vor Migration 146) und `description` (Challenge-Text) fuers Stempel-Popover. Daneben steht das neue Feld `offeneStempel`: die Challenges des Jahrgangs der angesehenen Person, die einen Stempel vergeben, zu denen sie aber KEINEN freigegebenen Beitrag hat — in der Oberflaeche grau. Laufende und abgelaufene, unterschieden ueber `status` (active|ended). Ohne Jahrgang (Teamer:innen haben keinen in konfi_profiles) bleibt die Liste leer statt org-weit zu werden. BEWUSST EIN EIGENES FELD statt eines Merkers in `challengeMarks`: die ausgelieferten Apps zeichnen jeden Eintrag daraus als erhaltenen Stempel.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -8696,6 +8696,7 @@
                       }
                     },
                     "marks": {
+                      "description": "ERHALTENE Stempel. Die Form ist ein Vertrag der ausgelieferten Apps (2.1.1 zeichnet jeden Eintrag als erhaltenen Stempel) — die Liste bleibt ein Array und enthaelt ausschliesslich erhaltene Stempel. Nicht erhaltene stehen in `offene_stempel`. ERGAENZT 2026-09-14 (additiv): `earned_at` und `description` fuers Stempel-Popover.\n",
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -8711,6 +8712,54 @@
                           },
                           "title": {
                             "type": "string"
+                          },
+                          "earned_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true,
+                            "description": "Zeitpunkt der Verleihung — der FRUEHESTE freigegebene eigene Beitrag (challenge_submissions.approved_at, Rueckfall auf created_at bei Bestandszeilen vor Migration 146).\n"
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Beschreibung der Challenge, fuers Popover."
+                          }
+                        }
+                      }
+                    },
+                    "offene_stempel": {
+                      "description": "NEU 2026-09-14, additiv. Stempel, die es zu holen gab oder gibt, zu denen aber KEIN freigegebener eigener Beitrag vorliegt — in der Oberflaeche grau. Enthaelt laufende UND abgelaufene Challenges (Entscheid: alle, die man je haette holen koennen), unterschieden ueber `status`. Gleiches Scoping wie `active`/`archive`. BEWUSST EIN EIGENES FELD statt eines Merkers in `marks`: alte App-Versionen wuerden einen Merker ignorieren und fremde Stempel als eigene zeigen.\n",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "challenge_id": {
+                            "type": "integer"
+                          },
+                          "badge_icon": {
+                            "type": "string"
+                          },
+                          "badge_name": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "ended"
+                            ]
+                          },
+                          "ends_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
                           }
                         }
                       }

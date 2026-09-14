@@ -149,6 +149,34 @@ export interface ChallengeMark {
   badge_icon: string;
   badge_name: string;
   title: string;
+  /**
+   * Wann der Stempel verliehen wurde — der früheste freigegebene eigene
+   * Beitrag. Optional, weil ältere Server das Feld nicht liefern; das
+   * Popover zeigt dann nur den Text.
+   */
+  earned_at?: string | null;
+  /** Beschreibung der Challenge, fürs Popover. */
+  description?: string | null;
+}
+
+/**
+ * Ein Stempel, den es zu holen gab oder gibt, den diese Person aber NICHT hat.
+ * Erscheint grau im Kachelraster.
+ *
+ * BEWUSST EIN EIGENER TYP und ein eigenes Antwortfeld, nicht ein Merker in
+ * `ChallengeMark`: Die Apps im Store zeichnen jeden Eintrag aus `marks` als
+ * erhaltenen Stempel — ein Merker dort würde dort ignoriert und fremde
+ * Stempel erschienen als eigene.
+ */
+export interface OffenerStempel {
+  challenge_id: number;
+  badge_icon: string;
+  badge_name: string;
+  title: string;
+  description?: string | null;
+  /** 'active' = läuft noch, 'ended' = Challenge ist vorbei. */
+  status?: string;
+  ends_at?: string | null;
 }
 
 /** Challenge in der Konfi-Übersicht (GET /challenges/konfi). */
@@ -162,6 +190,8 @@ export interface KonfiChallengesResponse {
   active: KonfiChallenge[];
   archive: KonfiChallenge[];
   marks: ChallengeMark[];
+  /** Noch nicht erhaltene Stempel (grau). Fehlt bei älteren Servern. */
+  offene_stempel?: OffenerStempel[];
 }
 
 /** Detail-Antwort (GET /challenges/konfi/:id). */

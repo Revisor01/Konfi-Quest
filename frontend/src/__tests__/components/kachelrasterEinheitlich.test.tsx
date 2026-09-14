@@ -39,7 +39,24 @@ const KACHEL_ANSICHTEN: Array<[string, string]> = [
 
 describe('Kachelraster: eine Loesung fuer Abzeichen und Stempel', () => {
   it.each(KACHEL_ANSICHTEN)('%s nutzt das gemeinsame Raster', (_name, pfad) => {
-    expect(lies(pfad)).toContain('<KachelRaster');
+    const quelle = lies(pfad);
+    // Entweder direkt das Raster -- oder der gemeinsame Stempel-Abschnitt,
+    // der es seinerseits nutzt. Seit dem 14.09.2026 gilt Letzteres fuer die
+    // Konfi-Sicht unter Challenges: sie baute das Raster vorher ein zweites
+    // Mal selbst auf und haette den Stempel-Popover und die grauen Kacheln
+    // erneut nachziehen muessen. Die Absicht des Tests bleibt dieselbe --
+    // niemand macht sein eigenes Raster auf.
+    expect(
+      quelle.includes('<KachelRaster') || quelle.includes('<ChallengeStempelSektion'),
+      `weder <KachelRaster noch <ChallengeStempelSektion in ${pfad}`
+    ).toBe(true);
+  });
+
+  it('der gemeinsame Stempel-Abschnitt landet wirklich beim Raster', () => {
+    // GEGENPROBE zur gelockerten Zeile darueber: der Umweg ueber den
+    // Abschnitt darf kein Schlupfloch sein.
+    expect(lies('src/components/shared/ChallengeStempelSektion.tsx'))
+      .toContain('<KachelRaster');
   });
 
   it.each(KACHEL_ANSICHTEN)('%s macht kein eigenes Raster mehr auf', (_name, pfad) => {
@@ -110,10 +127,18 @@ describe('Kachelraster: Namen brechen nicht mitten im Wort, Kacheln bleiben glei
     return ohneKommentare(css.slice(start, css.indexOf('}', start)));
   })();
 
-  it('bricht ein zu langes Wort ueberhaupt um', () => {
-    // Ohne diese Regel laeuft "Gottesdienstbesucher" aus der Kachel heraus
-    // und wird mitten im Wort abgeschnitten.
-    expect(nameBlock).toContain('overflow-wrap: break-word;');
+  it('zerlegt ein langes Wort NICHT mitten drin', () => {
+    // KORRIGIERTE ERWARTUNG (14.09.2026, nachgemessen statt aufgeweicht):
+    // Dieser Test verlangte zuvor `overflow-wrap: break-word`. Die Regel
+    // beseitigt zwar den Ueberlauf, bricht das Wort aber per Definition
+    // MITTEN DRIN -- am Geraet gemeldet und im Browser bestaetigt:
+    // "Punktemeister" wurde zu "Punktemeiste" / "r",
+    // "Gemeinde-Unterstuetzer" zu "Gemeinde-" / "Unterstuetze" / "r".
+    // Die Erwartung war also selbst falsch und wird umgedreht, nicht
+    // gelockert: gekuerzt wird gemessen in useKachelName, mit "…".
+    expect(nameBlock).toContain('overflow-wrap: normal;');
+    expect(nameBlock).not.toContain('overflow-wrap: break-word');
+    expect(nameBlock).not.toContain('word-break: break-word');
   });
 
   it('setzt keine Silbentrennung, die je nach Geraet anders bricht', () => {
@@ -125,11 +150,12 @@ describe('Kachelraster: Namen brechen nicht mitten im Wort, Kacheln bleiben glei
     expect(nameBlock).not.toContain('hyphens :');
   });
 
-  it('bricht nicht an beliebiger Stelle, solange das Wort passt', () => {
-    // anywhere/break-all wuerden auch dann trennen, wenn der Name als Ganzes
-    // in die Zeile passt. break-word greift nur im Notfall.
+  it('bricht an keiner Stelle innerhalb eines Wortes', () => {
+    // anywhere/break-all trennen mitten im Wort -- genau das, was der
+    // gemeldete Fehler ist.
     expect(nameBlock).not.toContain('overflow-wrap: anywhere');
     expect(nameBlock).not.toContain('word-break: break-all');
+    expect(nameBlock).toContain('word-break: normal;');
   });
 
   it('haelt fuer den Namen immer zwei Zeilen frei', () => {

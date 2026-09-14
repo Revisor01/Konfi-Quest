@@ -1203,6 +1203,14 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/KonfiChallenge' }
                   marks:
+                    description: >
+                      ERHALTENE Stempel. Die Form ist ein Vertrag der
+                      ausgelieferten Apps (2.1.1 zeichnet jeden Eintrag als
+                      erhaltenen Stempel) — die Liste bleibt ein Array und
+                      enthaelt ausschliesslich erhaltene Stempel. Nicht
+                      erhaltene stehen in `offene_stempel`.
+                      ERGAENZT 2026-09-14 (additiv): `earned_at` und
+                      `description` fuers Stempel-Popover.
                     type: array
                     items:
                       type: object
@@ -1211,6 +1219,43 @@ paths:
                         badge_icon: { type: string }
                         badge_name: { type: string }
                         title: { type: string }
+                        earned_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: >
+                            Zeitpunkt der Verleihung — der FRUEHESTE
+                            freigegebene eigene Beitrag
+                            (challenge_submissions.approved_at, Rueckfall auf
+                            created_at bei Bestandszeilen vor Migration 146).
+                        description:
+                          type: string
+                          nullable: true
+                          description: Beschreibung der Challenge, fuers Popover.
+                  offene_stempel:
+                    description: >
+                      NEU 2026-09-14, additiv. Stempel, die es zu holen gab
+                      oder gibt, zu denen aber KEIN freigegebener eigener
+                      Beitrag vorliegt — in der Oberflaeche grau. Enthaelt
+                      laufende UND abgelaufene Challenges (Entscheid: alle,
+                      die man je haette holen koennen), unterschieden ueber
+                      `status`. Gleiches Scoping wie `active`/`archive`.
+                      BEWUSST EIN EIGENES FELD statt eines Merkers in
+                      `marks`: alte App-Versionen wuerden einen Merker
+                      ignorieren und fremde Stempel als eigene zeigen.
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        challenge_id: { type: integer }
+                        badge_icon: { type: string }
+                        badge_name: { type: string }
+                        title: { type: string }
+                        description: { type: string, nullable: true }
+                        status:
+                          type: string
+                          enum: [active, ended]
+                        ends_at: { type: string, format: date-time, nullable: true }
         '403': { description: Rolle weder konfi noch Team (z.B. super_admin) }
         '500': { description: Datenbankfehler }
       x-berechtigung:

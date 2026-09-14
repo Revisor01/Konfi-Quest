@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { Navigate, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact, isPlatform, useIonAlert } from '@ionic/react';
+import { IonApp, IonRouterOutlet, IonSpinner, setupIonicReact, isPlatform, useIonAlert } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 // iOS26 Theme Animationen
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios26';
@@ -20,6 +20,20 @@ import GlobalToasts from './components/common/GlobalToasts';
 import WartendeVorgaengeLeiste from './components/common/WartendeVorgaengeLeiste';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import { useAppSperre } from './hooks/useAppSperre';
+import { useSeitenBereit } from './navigation/useSeitenBereit';
+
+/**
+ * Ladebildschirm VOR dem Router — bewusst KEINE IonPage.
+ *
+ * Eine IonPage waere eine Seite und wuerde, sobald sie in einem Outlet
+ * landet, genau den Tausch ausloesen, den dieser Bildschirm vermeiden soll.
+ * Hier steht deshalb schlichtes Markup ausserhalb jedes Outlets.
+ */
+const AppLaedt: React.FC = () => (
+  <div className="app-laedt">
+    <IonSpinner name="crescent" />
+  </div>
+);
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -73,6 +87,10 @@ const AppContent: React.FC = () => {
   // erscheint aber nur ueber der angemeldeten App — auf der Anmeldeseite gibt
   // es nichts zu verdecken, und ein Schloss vor dem Login waere eine Sackgasse.
   const { gesperrt, entsperren } = useAppSperre();
+
+  // Seitenbaum der Rolle vorladen. Das Ergebnis entscheidet unten, ob der
+  // Router schon montiert werden darf — siehe die Begruendung dort.
+  const seitenBereit = useSeitenBereit();
 
   // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
   // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
@@ -153,6 +171,34 @@ const AppContent: React.FC = () => {
   // key={orgVersion}: Bei einem Org-Wechsel (Multi-Org-Switcher) wird orgVersion
   // erhöht -> der gesamte Router-Subtree remountet frisch und alle Views laden
   // mit dem neuen aktiven-Org-Header neu. Ersetzt den fragilen location-Reload.
+  // Der Seitenbaum der Rolle muss stehen, BEVOR der Router montiert wird.
+  //
+  // WARUM HIER UND NICHT IN MainTabs (Simons Befund 14.09.2026, Build 192:
+  // "App zeigt blank Screen beim Oeffnen. Erst wenn irgendwohin navigiert
+  // wird und zurueck, ist das Dashboard da."):
+  // MainTabs gab bis dahin selbst einen Ladezustand zurueck und tauschte ihn
+  // spaeter gegen die fertigen Tabs. Beides stand INNERHALB des
+  // IonRouterOutlet weiter unten -- also genau der Tausch, an dem diese App
+  // schon zweimal haengengeblieben ist: Ionic registriert die zuerst
+  // eingehaengte IonPage und bemerkt den Austausch nicht.
+  //
+  // Jetzt wird der Router erst montiert, wenn der Baum endgueltig ist. Das
+  // Outlet sieht dadurch nie einen Tausch. Bis dahin steht ein Ladebildschirm
+  // AUSSERHALB jedes Outlets -- er ist keine Seite und kann keine verdraengen.
+  if (!seitenBereit) {
+    return (
+      <IonApp>
+        <AppLaedt />
+        {gesperrt && (
+          <AppSperrbildschirm
+            onEntsperrt={entsperren}
+            onAbmelden={async () => { entsperren(); await signOut(); }}
+          />
+        )}
+      </IonApp>
+    );
+  }
+
   return (
     <IonApp>
       {/* key NUR aus orgVersion (Simons Befund 04.09.2026, zweiter Teil:

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonCard, IonCardContent, IonLabel, IonList, IonListHeader, IonItem, IonItemSliding, IonItemOptions, IonItemOption, IonIcon, IonButton, IonDatetimeButton, IonDatetime, IonModal } from '@ionic/react';
-import type { ChallengeMark } from '../../../types/challenges';
+import type { ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import {
   ICON_ABSAGE,
   ICON_ABZEICHEN_GEFUELLT,
@@ -74,6 +74,8 @@ export interface Konfi {
    * Zuweisung liegt.
    */
   challengeMarks?: ChallengeMark[];
+  /** Noch nicht erhaltene Stempel (grau). Fehlt bei aelteren Servern. */
+  offeneStempel?: OffenerStempel[];
   activities_count?: number;
   role_name?: string;
   user_type?: string;

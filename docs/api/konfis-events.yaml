@@ -2415,6 +2415,19 @@ paths:
         genau einmal. Dieselbe Zaehlung wie GET /api/challenges/konfi (Feld
         `marks`). Rein additiv — kein bestehendes Feld faellt weg oder aendert
         seinen Typ.
+        ERGAENZT 14.09.2026, ebenfalls additiv: Jeder Eintrag in
+        `challengeMarks` traegt zusaetzlich `earned_at` (Zeitpunkt der
+        Verleihung: der FRUEHESTE freigegebene eigene Beitrag, Rueckfall auf
+        created_at bei Bestandszeilen vor Migration 146) und `description`
+        (Challenge-Text) fuers Stempel-Popover. Daneben steht das neue Feld
+        `offeneStempel`: die Challenges des Jahrgangs der angesehenen Person,
+        die einen Stempel vergeben, zu denen sie aber KEINEN freigegebenen
+        Beitrag hat — in der Oberflaeche grau. Laufende und abgelaufene,
+        unterschieden ueber `status` (active|ended). Ohne Jahrgang
+        (Teamer:innen haben keinen in konfi_profiles) bleibt die Liste leer
+        statt org-weit zu werden. BEWUSST EIN EIGENES FELD statt eines
+        Merkers in `challengeMarks`: die ausgelieferten Apps zeichnen jeden
+        Eintrag daraus als erhaltenen Stempel.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

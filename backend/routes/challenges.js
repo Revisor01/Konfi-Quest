@@ -451,7 +451,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       if (role === 'konfi') {
         const jahrgangId = await konfiJahrgangId(req.user.id);
         if (!jahrgangId) {
-          return res.json({ active: [], archive: [], marks: [] });
+          return res.json({ active: [], archive: [], marks: [], offene_stempel: [] });
         }
         jahrgangIds = [jahrgangId];
       } else {
@@ -497,7 +497,20 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 (
                   SELECT COUNT(*) FROM challenge_submissions s2
                   WHERE s2.challenge_id = c.id AND s2.user_id = $2
-                ) AS own_submission_count
+                ) AS own_submission_count,
+                -- Wann der Stempel verliehen wurde: der FRUEHESTE freigegebene
+                -- eigene Beitrag. Bei mehreren zaehlt der erste — der Stempel
+                -- entstand mit ihm, spaetere Beitraege wiederholen ihn nur.
+                -- approved_at ist nullable (Bestandszeilen vor Migration 146
+                -- tragen es nicht), deshalb faellt es auf created_at zurueck:
+                -- ein Datum, das um Stunden danebenliegt, ist im Popover
+                -- brauchbarer als gar keins.
+                (
+                  SELECT MIN(COALESCE(s3.approved_at, s3.created_at))
+                  FROM challenge_submissions s3
+                  WHERE s3.challenge_id = c.id AND s3.user_id = $2
+                    AND s3.moderation_status = 'approved'
+                ) AS earned_at
          FROM challenges c
          LEFT JOIN users au ON c.author_user_id = au.id
          WHERE c.organization_id = $1
@@ -512,6 +525,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       const active = [];
       const archive = [];
       const marks = [];
+      // Stempel, die es zu holen gab oder gibt, die diese Person aber nicht
+      // hat. BEWUSST EIN EIGENES FELD, nicht mit einem Merker in `marks`:
+      // Die Apps im Store (2.1.1) zeichnen JEDEN Eintrag aus `marks` als
+      // erhaltenen Stempel. Ein Merker "nicht erhalten" wuerde dort schlicht
+      // ignoriert — fremde Stempel erschienen als eigene. `marks` bleibt
+      // deshalb unveraendert die Liste der ERHALTENEN; alte Apps sehen das
+      // neue Feld gar nicht und zeigen weiter genau das, was sie bisher
+      // zeigten.
+      const offene_stempel = [];
 
       for (const row of rows) {
         const mapped = mapChallengeForKonfi(row, now);
@@ -525,12 +547,29 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             challenge_id: row.id,
             badge_icon: row.badge_icon,
             badge_name: row.badge_name,
-            title: row.title
+            title: row.title,
+            // NEU: Datum der Verleihung und der Challenge-Text fuers Popover.
+            earned_at: row.earned_at ? new Date(row.earned_at).toISOString() : null,
+            description: row.description || null
+          });
+        } else if (row.badge_name) {
+          // Nur Challenges, die ueberhaupt einen Stempel vergeben — nicht
+          // jede hat einen. Laufende UND abgelaufene (Entscheid 14.09.2026:
+          // alle, die man je haette holen koennen), die Unterscheidung
+          // traegt `status`.
+          offene_stempel.push({
+            challenge_id: row.id,
+            badge_icon: row.badge_icon,
+            badge_name: row.badge_name,
+            title: row.title,
+            description: row.description || null,
+            status: mapped.status,
+            ends_at: row.ends_at ? new Date(row.ends_at).toISOString() : null
           });
         }
       }
 
-      res.json({ active, archive, marks });
+      res.json({ active, archive, marks, offene_stempel });
     } catch (err) {
       console.error('Database error in GET /challenges/konfi:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

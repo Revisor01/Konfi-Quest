@@ -748,16 +748,69 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // und gilt damit fuer ALLE Felder — das Feld braucht seither keine
             // eigene Pruefung mehr. Bis dahin hing nur dieses eine Feld an
             // darfKonfi, weil die uebrige Route ungebunden war.
+            //
+            // NEU 14.09.2026: earned_at und description fuers Stempel-Popover.
+            // earned_at ist der FRUEHESTE freigegebene eigene Beitrag — mit ihm
+            // entstand der Stempel, spaetere wiederholen ihn nur. Die Spalte
+            // approved_at ist nullable (Bestandszeilen vor Migration 146), der
+            // Rueckfall auf created_at liefert dann ein Datum statt keines.
+            // Das DISTINCT weicht deshalb einem GROUP BY: eine Zeile je
+            // Challenge, mit dem kleinsten Datum darin.
             const stempelQuery = `
-                SELECT DISTINCT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title
+                SELECT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title,
+                       c.description,
+                       MIN(COALESCE(s.approved_at, s.created_at)) AS earned_at
                 FROM challenge_submissions s
                 JOIN challenges c ON c.id = s.challenge_id
                 WHERE s.user_id = $1
                   AND s.moderation_status = 'approved'
                   AND c.organization_id = $2
+                GROUP BY c.id, c.badge_icon, c.badge_name, c.title, c.description
                 ORDER BY c.title
             `;
             const { rows: challengeMarks } = await db.query(stempelQuery, [konfiId, req.user.organization_id]);
+
+            // Die Stempel, die diese Person NICHT hat — grau im Raster
+            // (Simon, 14.09.2026: "wie wollen sich die zeigen, die man nicht
+            // bekommen hat, in grau", und zwar ALLE, die man je haette holen
+            // koennen, also auch aus abgelaufenen Challenges).
+            //
+            // Gescopet wie die Konfi-Sicht selbst (challenges.js GET /konfi):
+            // nur gestartete, keine Entwuerfe, und nur Challenges des eigenen
+            // Jahrgangs. Ohne Jahrgang (Teamer:innen haben keinen in
+            // konfi_profiles) bleibt die Liste leer statt org-weit zu werden —
+            // sonst saehe die Leitung dort Challenges, an denen die Person nie
+            // haette teilnehmen koennen.
+            //
+            // EIGENES FELD, nicht in challengeMarks gemischt: Die Apps im
+            // Store zeichnen jeden Eintrag daraus als erhaltenen Stempel.
+            let offeneStempel = [];
+            if (konfi.jahrgang_id) {
+                const offeneQuery = `
+                    SELECT c.id AS challenge_id, c.badge_icon, c.badge_name, c.title,
+                           c.description,
+                           CASE WHEN c.ends_at IS NOT NULL AND c.ends_at < NOW()
+                                THEN 'ended' ELSE 'active' END AS status,
+                           c.ends_at
+                    FROM challenges c
+                    JOIN challenge_jahrgang_assignments cja ON cja.challenge_id = c.id
+                    WHERE c.organization_id = $2
+                      AND cja.jahrgang_id = $3
+                      AND c.is_draft = false
+                      AND c.starts_at <= NOW()
+                      AND c.audience <> 'nur_team'
+                      AND c.badge_name IS NOT NULL
+                      AND NOT EXISTS (
+                        SELECT 1 FROM challenge_submissions s
+                        WHERE s.challenge_id = c.id AND s.user_id = $1
+                          AND s.moderation_status = 'approved'
+                      )
+                    ORDER BY c.title
+                `;
+                const { rows } = await db.query(offeneQuery,
+                    [konfiId, req.user.organization_id, konfi.jahrgang_id]);
+                offeneStempel = rows;
+            }
 
             // Zertifikate für Teamer mitladen
             let certificates = [];
@@ -878,6 +931,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 // Neues Feld (13.09.2026), additiv: alte App-Versionen lesen es
                 // nicht, nichts Bestehendes faellt weg oder aendert den Typ.
                 challengeMarks,
+                // Ebenfalls additiv (14.09.2026): die grauen Stempel.
+                offeneStempel,
                 ...(konfi.role_name === 'teamer' ? { certificates, teamerEvents, konfiHistory } : {})
             });
 

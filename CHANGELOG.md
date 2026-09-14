@@ -32,6 +32,10 @@ Versionsüberschrift.
   nach, bleibt bei der Abmeldung der Name stehen, der dorthin gehört. Bei
   einem Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort
   gibt es niemanden aus dem Team, der sie eingetragen hätte.
+- Ein Tippen auf einen Challenge-Stempel zeigt jetzt, woher er stammt: die
+  Challenge, ihre Beschreibung und das Datum, an dem er vergeben wurde.
+  Stempel, die es noch zu holen gibt oder deren Challenge vorbei ist, stehen
+  grau daneben — mit einem Hinweis, was noch geht.
 - Die App lässt sich mit Face ID, Touch ID oder Fingerabdruck **sperren**.
   Im Profil wählt man, nach welcher Zeit im Hintergrund die Abfrage kommt:
   sofort, nach 1, 5 oder 15 Minuten. Das ist praktisch, wenn das Handy einmal
@@ -70,6 +74,13 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Die App zeigt beim Start wieder sofort das Dashboard. Zuletzt blieb der
+  Bildschirm leer, bis man einen anderen Reiter antippte und zurückkam.
+- Lange Namen unter Abzeichen und Stempeln werden nicht mehr mitten im Wort
+  abgeschnitten. Passt ein Name nicht, endet er sauber mit drei Punkten; der
+  volle Name steht beim Antippen da.
+- Die Kacheln einer Reihe sind gleich hoch, auch wenn ein Name zwei Zeilen
+  braucht und der daneben nur eine.
 - Wer sich selbst von einem Pflichttermin abgemeldet hat und dann doch kommt,
   lässt sich jetzt ganz normal verbuchen — anwesend, abwesend, abgemeldet oder
   mit einer Notiz. Vorher passierte beim Tippen auf den Eintrag nichts. Die

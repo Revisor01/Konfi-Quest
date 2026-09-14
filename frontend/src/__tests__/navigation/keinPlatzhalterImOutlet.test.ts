@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const mainTabs = readFileSync(
-  join(process.cwd(), 'src/components/layout/MainTabs.tsx'),
-  'utf8'
-);
+const lies = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
+const mainTabs = lies('src/components/layout/MainTabs.tsx');
+const app = lies('src/App.tsx');
 
 // Befund aus Simons Geraetetests mit Build 153 und 154 (31.08.2026):
 // "Erster Aufruf weiss, zweiter dann da. Bei jeder Seite, auch Detailseiten
@@ -48,10 +47,15 @@ describe('IonRouterOutlet: kein Platzhalter zwischen Outlet und Seite', () => {
   it('laedt die Rollen-Seiten VOR dem ersten Rendern des Outlets', () => {
     // ladeRolleVor darf nicht mehr in einem setTimeout haengen: Genau das
     // Zeitfenster war die Luecke, in der Seiten weiss blieben.
-    expect(mainTabs).toMatch(/ladeRolleVor\(rolle\)/);
-    expect(mainTabs).not.toMatch(/setTimeout\(\(\)\s*=>\s*\{\s*void ladeRolleVor/);
-    // Und das Outlet wartet, bis sie da sind.
-    expect(mainTabs).toMatch(/if \(!seitenBereit\)/);
+    // Das Vorladen selbst liegt seit dem 14.09.2026 in
+    // navigation/useSeitenBereit und wird in App.tsx OBERHALB des Routers
+    // ausgewertet. Es darf weiterhin NICHT in einem setTimeout haengen --
+    // genau dieses Zeitfenster war die urspruengliche Luecke.
+    const hook = lies('src/navigation/useSeitenBereit.ts');
+    expect(hook).toMatch(/ladeRolleVor\(rolle\)/);
+    expect(hook).not.toMatch(/setTimeout\(\(\)\s*=>\s*\{\s*void ladeRolleVor/);
+    // Und der Router wartet, bis sie da sind.
+    expect(app).toMatch(/if\s*\(\s*!seitenBereit\s*\)/);
   });
 });
 
@@ -66,12 +70,24 @@ describe('MainTabs rendert nie null (weisse Seite beim Kaltstart)', () => {
   // (dasselbe Muster wie beim Platzhalter oben). Ohne gespeicherte Sitzung
   // greift der Login-Zweig in App.tsx -- deshalb kam die Anmeldeseite immer
   // und weiss wurde es nur im angemeldeten Fall.
-  it('gibt bei fehlendem user einen Ladezustand statt null zurueck', () => {
-    const block = mainTabs.slice(
-      mainTabs.indexOf('if (!user) {'),
-      mainTabs.indexOf('}', mainTabs.indexOf('if (!user) {')) + 1
+  //
+  // NACHTRAG 14.09.2026: Der Ladezustand steht nicht mehr IN MainTabs,
+  // sondern in App.tsx oberhalb des Routers -- er lag hier selbst innerhalb
+  // des Outlets und loeste denselben Tausch aus, den er verhindern sollte
+  // (siehe keinTauschImOutlet.test.ts). Die Aussage bleibt unveraendert:
+  // bei fehlendem Seitenbaum wird NIE null gerendert.
+  it('rendert bei fehlendem Seitenbaum einen Ladezustand statt null', () => {
+    const block = app.slice(
+      app.indexOf('if (!seitenBereit)'),
+      app.indexOf('return (', app.indexOf('if (!seitenBereit)'))
     );
     expect(block).not.toMatch(/return null/);
-    expect(block).toContain('SeiteLaedt');
+    expect(app).toContain('<AppLaedt />');
+  });
+
+  it('MainTabs selbst steigt nicht mehr mit einem Ladezustand aus', () => {
+    // Gegenprobe zur Verschiebung: Kaeme der Ausstieg hierher zurueck,
+    // waere der Fehler wieder da.
+    expect(mainTabs).not.toMatch(/return\s*<SeiteLaedt\s*\/>/);
   });
 });

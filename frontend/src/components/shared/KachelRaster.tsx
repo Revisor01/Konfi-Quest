@@ -1,6 +1,7 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_HAKEN_GEFUELLT, ICON_SPERRE_GEFUELLT } from './icons';
+import { useKachelName } from './useKachelName';
 
 /**
  * Das gemeinsame Kachelraster fuer Abzeichen UND Stempel (Simon, 14.09.2026:
@@ -93,6 +94,23 @@ const flaechenFarben = (farbe: string) => {
   } as React.CSSProperties;
 };
 
+/**
+ * Die Beschriftung einer Kachel. EIGENE Komponente, weil sie einen Hook
+ * braucht (gemessene Kuerzung) und Hooks nicht in einer Schleife stehen
+ * duerfen.
+ *
+ * Der volle Name bleibt ueber das title-Attribut erreichbar; bei Abzeichen
+ * steht er zusaetzlich im Popover.
+ */
+const KachelName: React.FC<{ name: string }> = ({ name }) => {
+  const [ref, anzeige] = useKachelName(name);
+  return (
+    <div className="app-kachel__name" ref={ref} title={name || undefined}>
+      {anzeige}
+    </div>
+  );
+};
+
 const KachelRaster: React.FC<KachelRasterProps> = ({ eintraege, onKachelClick }) => {
   if (!eintraege || eintraege.length === 0) return null;
 
@@ -125,7 +143,7 @@ const KachelRaster: React.FC<KachelRasterProps> = ({ eintraege, onKachelClick })
                 </div>
               )}
             </div>
-            <div className="app-kachel__name">{e.name || ''}</div>
+            <KachelName name={e.name || ''} />
             {hatFortschritt && (
               <div className="app-kachel__fortschritt">{Math.round(e.fortschritt || 0)}%</div>
             )}

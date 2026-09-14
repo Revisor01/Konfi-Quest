@@ -1741,6 +1741,15 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
         );
       }
 
+      // CHALLENGE_A ist dem Jahrgang des Admins zugeordnet -- ohne die
+      // Zuordnung koennte die Route die offenen (grauen) Stempel gar nicht
+      // finden, denn die haengen wie die Konfi-Sicht am Jahrgang.
+      await db.query(
+        `INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [CHALLENGE_A, JG_A]
+      );
+
       // KONFI_A (eigener Jahrgang): ein FREIGEGEBENER und ein OFFENER Beitrag
       // zur selben Challenge -> genau EIN Stempel, nicht zwei.
       await db.query(
@@ -1764,9 +1773,16 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
         .set('Authorization', `Bearer ${adminMitJgToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.challengeMarks).toEqual([
-        { challenge_id: CHALLENGE_A, badge_icon: 'flag', badge_name: 'Stempel A', title: 'Challenge A' }
-      ]);
+      expect(res.body.challengeMarks).toHaveLength(1);
+      const [stempel] = res.body.challengeMarks;
+      expect(stempel.challenge_id).toBe(CHALLENGE_A);
+      expect(stempel.badge_icon).toBe('flag');
+      expect(stempel.badge_name).toBe('Stempel A');
+      expect(stempel.title).toBe('Challenge A');
+      // NEU 14.09.2026 (Popover): Beschreibung und Verleihdatum.
+      expect(stempel.description).toBe('Beschreibung');
+      expect(typeof stempel.earned_at).toBe('string');
+      expect(Number.isNaN(Date.parse(stempel.earned_at))).toBe(false);
     });
 
     it('VERBOTEN: Admin ohne diesen Jahrgang kommt gar nicht erst an die fremde Konfi', async () => {
@@ -1795,9 +1811,10 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.challengeMarks).toEqual([
-        { challenge_id: CHALLENGE_FREMD, badge_icon: 'flag', badge_name: 'Stempel Fremd', title: 'Challenge Fremd' }
-      ]);
+      expect(res.body.challengeMarks).toHaveLength(1);
+      expect(res.body.challengeMarks[0].challenge_id).toBe(CHALLENGE_FREMD);
+      expect(res.body.challengeMarks[0].badge_name).toBe('Stempel Fremd');
+      expect(res.body.challengeMarks[0].title).toBe('Challenge Fremd');
     });
 
     it('Teamer:innen sind nicht an einen Jahrgang gebunden: ihre Stempel erscheinen auch fuer den Admin ohne Zuweisung', async () => {
@@ -1812,9 +1829,67 @@ describe('Jahrgangs-Bindung fuer admin (31.08.2026)', () => {
         .set('Authorization', `Bearer ${adminOhneJgToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.challengeMarks).toEqual([
-        { challenge_id: CHALLENGE_A, badge_icon: 'flag', badge_name: 'Stempel A', title: 'Challenge A' }
-      ]);
+      expect(res.body.challengeMarks).toHaveLength(1);
+      expect(res.body.challengeMarks[0].challenge_id).toBe(CHALLENGE_A);
+      expect(res.body.challengeMarks[0].badge_name).toBe('Stempel A');
+    });
+
+    // ----------------------------------------------------------------
+    // Offene (graue) Stempel, 14.09.2026
+    // ----------------------------------------------------------------
+    // Simon: "wie wollen sich die zeigen, die man nicht bekommen hat, in
+    // grau." EIGENES FELD neben challengeMarks, nicht hineingemischt: Die
+    // Apps im Store zeichnen jeden Eintrag aus challengeMarks als erhaltenen
+    // Stempel.
+    it('offeneStempel nennt die Challenges des Jahrgangs OHNE freigegebenen Beitrag', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.offeneStempel)).toBe(true);
+      // CHALLENGE_A hat KONFI_A freigegeben -> gehoert nicht hierher.
+      expect(res.body.offeneStempel.some(s => s.challenge_id === CHALLENGE_A)).toBe(false);
+      // NICHT-LEER-PROBE: CHALLENGE_A steht dafuer unter den erhaltenen --
+      // sonst bewiese der Test nur, dass beide Listen leer sind.
+      expect(res.body.challengeMarks.some(s => s.challenge_id === CHALLENGE_A)).toBe(true);
+      // GEGENPROBE zum Vertragsbruch: und umgekehrt steht kein offener
+      // Stempel in challengeMarks.
+      const offeneIds = res.body.offeneStempel.map(s => s.challenge_id);
+      const markIds = res.body.challengeMarks.map(s => s.challenge_id);
+      expect(offeneIds.filter(id => markIds.includes(id))).toEqual([]);
+    });
+
+    it('ein offener Stempel traegt Name, Titel und Zustand fuers Popover', async () => {
+      // CHALLENGE_FREMD ist dem Jahrgang von KONFI_A zugeordnet, aber ohne
+      // freigegebenen Beitrag (nur 'pending').
+      await db.query(
+        `INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [CHALLENGE_FREMD, JG_A]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      const offen = res.body.offeneStempel.find(s => s.challenge_id === CHALLENGE_FREMD);
+      expect(offen).toBeDefined();
+      expect(offen.badge_name).toBe('Stempel Fremd');
+      expect(offen.title).toBe('Challenge Fremd');
+      expect(offen.description).toBe('Beschreibung');
+      expect(offen.status).toBe('active');
+    });
+
+    it('eine Challenge aus einem FREMDEN Jahrgang steht nicht unter offeneStempel', async () => {
+      // GEGENPROBE zur Datenleckage: sonst saehe die Leitung ueber den Umweg
+      // der grauen Kacheln, welche Challenges in anderen Jahrgaengen laufen.
+      const res = await request(app)
+        .get(`/api/admin/konfis/${KONFI_A}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`);
+
+      // CHALLENGE_FREMD ist in diesem Test KEINEM Jahrgang zugeordnet.
+      expect(res.body.offeneStempel.some(s => s.challenge_id === CHALLENGE_FREMD)).toBe(false);
     });
 
     it('Ohne freigegebenen Beitrag bleibt die Liste leer (kein Abschnitt in der Ansicht)', async () => {

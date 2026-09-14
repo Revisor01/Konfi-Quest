@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import ChallengeStempelSektion from '../../../components/shared/ChallengeStempelSektion';
-import type { ChallengeMark } from '../../../types/challenges';
+import type { ChallengeMark, OffenerStempel } from '../../../types/challenges';
 
 // Simon, 14.09.2026: "Konfis haben in ihrem Profil jetzt seine Stempel.
 // Warum? Das ist doch unter Challenges. Das finden Teamer, Admins und Konfis
@@ -69,6 +69,11 @@ describe('Stempel-Abschnitt: Darstellung', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('macht die Kacheln klickbar -- sonst gaebe es keinen Popover', () => {
+    const { container } = render(<ChallengeStempelSektion marks={STEMPEL} />);
+    expect(container.querySelectorAll('.app-kachel--klickbar').length).toBe(STEMPEL.length);
+  });
+
   it('bleibt auch weg, wenn gar keine Liste kam', () => {
     // Ein fehlgeschlagener Abruf darf das Profil nicht mit einem leeren
     // Kasten verunstalten.
@@ -122,5 +127,64 @@ describe('Stempel-Abschnitt: bleibt in der Detailansicht der Leitung', () => {
   it('sie bekommt die Stempel aus dem ohnehin geladenen Konfi-Objekt', () => {
     // Kein eigener Request: die Detailansicht hat die Daten schon.
     expect(leitungsDetail).toContain('currentKonfi?.challengeMarks');
+  });
+});
+
+// Simon, 14.09.2026: "wie wollen sich die zeigen, die man nicht bekommen hat,
+// in grau." Die nicht erhaltenen Stempel nutzen denselben Weg wie die nicht
+// verdienten Abzeichen: .app-kachel--gesperrt.
+const OFFEN: OffenerStempel[] = [
+  { challenge_id: 21, badge_icon: 'flag', badge_name: 'Fruehaufsteher', title: 'Steh frueh auf', status: 'active' },
+  { challenge_id: 22, badge_icon: 'flag', badge_name: 'Wanderer', title: 'Geh wandern', status: 'ended' },
+];
+
+describe('Stempel-Abschnitt: nicht erhaltene Stempel in grau', () => {
+  it('zeichnet offene Stempel als GESPERRTE Kacheln, erhaltene nicht', () => {
+    const { container } = render(
+      <ChallengeStempelSektion marks={STEMPEL} offeneStempel={OFFEN} />
+    );
+    const alle = container.querySelectorAll('.app-kachel');
+    const gesperrt = container.querySelectorAll('.app-kachel--gesperrt');
+    expect(alle.length).toBe(STEMPEL.length + OFFEN.length);
+    // GEGENPROBE zum Alles-grau: genau die offenen sind gesperrt.
+    expect(gesperrt.length).toBe(OFFEN.length);
+  });
+
+  it('zeigt den Namen eines offenen Stempels -- man soll sehen, was es zu holen gibt', () => {
+    render(<ChallengeStempelSektion marks={STEMPEL} offeneStempel={OFFEN} />);
+    expect(screen.getByText('Fruehaufsteher')).toBeInTheDocument();
+    expect(screen.getByText('Wanderer')).toBeInTheDocument();
+  });
+
+  it('erhaltene Stempel stehen vorne, die grauen danach', () => {
+    const { container } = render(
+      <ChallengeStempelSektion marks={STEMPEL} offeneStempel={OFFEN} />
+    );
+    const kacheln = Array.from(container.querySelectorAll('.app-kachel'));
+    const gesperrtAb = kacheln.findIndex((k) => k.classList.contains('app-kachel--gesperrt'));
+    expect(gesperrtAb).toBe(STEMPEL.length);
+    // GEGENPROBE: ab dort ist ALLES gesperrt, nicht gemischt.
+    expect(kacheln.slice(gesperrtAb).every((k) => k.classList.contains('app-kachel--gesperrt')))
+      .toBe(true);
+  });
+
+  it('zeigt den Abschnitt auch, wenn es NUR offene Stempel gibt', () => {
+    // Wer noch keinen hat, soll sehen, was es zu holen gibt -- eine leere
+    // Flaeche sagt gar nichts.
+    const { container } = render(
+      <ChallengeStempelSektion marks={[]} offeneStempel={OFFEN} />
+    );
+    expect(container.querySelectorAll('.app-kachel--gesperrt').length).toBe(OFFEN.length);
+  });
+
+  it('bleibt weg, wenn es weder erhaltene noch offene gibt', () => {
+    const { container } = render(<ChallengeStempelSektion marks={[]} offeneStempel={[]} />);
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('kommt ohne das neue Feld aus (aelterer Server)', () => {
+    const { container } = render(<ChallengeStempelSektion marks={STEMPEL} />);
+    expect(container.querySelectorAll('.app-kachel').length).toBe(STEMPEL.length);
+    expect(container.querySelectorAll('.app-kachel--gesperrt').length).toBe(0);
   });
 });

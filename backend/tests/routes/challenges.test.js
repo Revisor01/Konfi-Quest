@@ -1550,6 +1550,237 @@ describe('Challenges Routes', () => {
   });
 
   // ================================================================
+  // 8b. Stempel-Popover: Datum, Beschreibung und die offenen Stempel
+  // ================================================================
+  // Simon, 14.09.2026: "wenn man auf einen Stempel klickt, waere auch das eine
+  // Popover-Info gut. Wann erhalten, welche Challenge ... Und wie wollen sich
+  // die zeigen, die man nicht bekommen hat, in grau."
+  //
+  // VERTRAG: `marks` bleibt ein Array erhaltener Stempel und behaelt seine
+  // vier Felder. Die grauen Stempel kommen in einem EIGENEN Feld
+  // `offene_stempel` — laege ein Merker "nicht erhalten" mit in `marks`,
+  // zeichneten die Apps im Store (2.1.1) sie als erhaltene Stempel.
+  describe('GET /konfi — Stempel-Popover-Daten', () => {
+    it('erhaltener Stempel traegt seine alten Felder UND Datum + Beschreibung', async () => {
+      const challenge = await createChallenge({ description: 'Geh nachts raus' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const vorher = Date.now();
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.marks)).toBe(true);
+      const mark = res.body.marks.find(m => m.challenge_id === challenge.id);
+      // Bestandsfelder — der Vertrag der Store-Apps.
+      expect(mark.badge_icon).toBe('flag');
+      expect(mark.badge_name).toBe('Testabzeichen');
+      expect(mark.title).toBe('Testchallenge');
+      // Neue Felder.
+      expect(mark.description).toBe('Geh nachts raus');
+      expect(typeof mark.earned_at).toBe('string');
+      const erhalten = Date.parse(mark.earned_at);
+      expect(Number.isNaN(erhalten)).toBe(false);
+      // Das Datum stammt aus DIESEM Lauf, nicht aus einem Default.
+      expect(erhalten).toBeGreaterThanOrEqual(vorher - 60000);
+      expect(erhalten).toBeLessThanOrEqual(Date.now() + 60000);
+    });
+
+    it('bei mehreren Freigaben zaehlt die FRUEHESTE — der Stempel entstand mit ihr', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const frueh = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+      const spaet = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+      await db.query(
+        `UPDATE challenge_submissions SET approved_at = $2 WHERE id = $1`,
+        [frueh.id, '2026-03-01T10:00:00Z']
+      );
+      await db.query(
+        `UPDATE challenge_submissions SET approved_at = $2 WHERE id = $1`,
+        [spaet.id, '2026-05-01T10:00:00Z']
+      );
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      const mark = res.body.marks.find(m => m.challenge_id === challenge.id);
+      expect(new Date(mark.earned_at).toISOString()).toBe('2026-03-01T10:00:00.000Z');
+      // GEGENPROBE: waere es das spaetere, stuende hier Mai.
+      expect(new Date(mark.earned_at).toISOString()).not.toBe('2026-05-01T10:00:00.000Z');
+      // Und weiterhin genau EIN Stempel, nicht zwei.
+      expect(res.body.marks.filter(m => m.challenge_id === challenge.id)).toHaveLength(1);
+    });
+
+    it('ohne approved_at (Bestandszeile vor Migration 146) faellt es auf created_at zurueck', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const sub = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+      await db.query(
+        `UPDATE challenge_submissions SET approved_at = NULL, created_at = $2 WHERE id = $1`,
+        [sub.id, '2026-01-15T08:00:00Z']
+      );
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      const mark = res.body.marks.find(m => m.challenge_id === challenge.id);
+      // GEGENPROBE zum leeren Popover: es steht ein Datum da, nicht null.
+      expect(mark.earned_at).not.toBeNull();
+      expect(new Date(mark.earned_at).toISOString()).toBe('2026-01-15T08:00:00.000Z');
+    });
+
+    it('eine Challenge mit Stempel ohne eigenen Beitrag steht unter offene_stempel, NICHT unter marks', async () => {
+      const challenge = await createChallenge({ description: 'Noch zu holen' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      // GEGENPROBE zum Vertragsbruch: kein grauer Stempel in marks.
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(false);
+      expect(Array.isArray(res.body.offene_stempel)).toBe(true);
+      const offen = res.body.offene_stempel.find(m => m.challenge_id === challenge.id);
+      expect(offen).toBeDefined();
+      expect(offen.badge_name).toBe('Testabzeichen');
+      expect(offen.badge_icon).toBe('flag');
+      expect(offen.title).toBe('Testchallenge');
+      expect(offen.description).toBe('Noch zu holen');
+      expect(offen.status).toBe('active');
+      expect(typeof offen.ends_at).toBe('string');
+    });
+
+    it('auch ABGELAUFENE Challenges liefern ihren offenen Stempel', async () => {
+      // Entscheid 14.09.2026: grau erscheinen ALLE, die man je haette holen
+      // koennen — nicht nur die laufenden.
+      const challenge = await createChallenge({
+        title: 'Vorbei',
+        starts_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        ends_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      const offen = res.body.offene_stempel.find(m => m.challenge_id === challenge.id);
+      expect(offen).toBeDefined();
+      expect(offen.status).toBe('ended');
+    });
+
+    it('jede sichtbare Challenge traegt einen Stempelnamen -- keine leere Kachel', async () => {
+      // NACHGEMESSEN 14.09.2026 an der Tabelle (Migration 118): badge_name und
+      // badge_icon sind NOT NULL, jede Challenge vergibt also einen Stempel.
+      // Die Ansicht darf deshalb nie eine namenlose Kachel bekommen. Der
+      // Merker `badge_name` in der Route ist die Absicherung dagegen, falls
+      // die Spalte einmal nullbar wird.
+      const a = await createChallenge({ title: 'Mit Stempel' });
+      await assignJahrgang(a.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.body.offene_stempel.length).toBeGreaterThan(0);
+      for (const offen of res.body.offene_stempel) {
+        expect(typeof offen.badge_name).toBe('string');
+        expect(offen.badge_name.length).toBeGreaterThan(0);
+        expect(typeof offen.badge_icon).toBe('string');
+        expect(offen.badge_icon.length).toBeGreaterThan(0);
+      }
+      for (const mark of res.body.marks) {
+        expect(typeof mark.badge_name).toBe('string');
+        expect(mark.badge_name.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('ein erhaltener Stempel wandert aus offene_stempel heraus', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      // Vorher: offen.
+      let res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.body.offene_stempel.some(m => m.challenge_id === challenge.id)).toBe(true);
+
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+
+      // Nachher: erhalten, und NUR dort.
+      res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(true);
+      expect(res.body.offene_stempel.some(m => m.challenge_id === challenge.id)).toBe(false);
+    });
+
+    it('ein nur EINGEREICHTER, noch nicht freigegebener Beitrag laesst den Stempel offen', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending'
+      });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(false);
+      expect(res.body.offene_stempel.some(m => m.challenge_id === challenge.id)).toBe(true);
+    });
+
+    it('offene Stempel halten die Jahrgangsgrenze ein', async () => {
+      // GEGENPROBE zur Datenleckage: eine Challenge ohne Jahrgangs-Zuordnung
+      // darf konfi1 auch grau nicht sehen.
+      const fremd = await createChallenge({ title: 'Ohne Zuordnung' });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.body.offene_stempel.some(m => m.challenge_id === fremd.id)).toBe(false);
+
+      // Gegenstueck: mit Zuordnung ist sie da — der Test prueft die Grenze,
+      // nicht ein generell leeres Feld.
+      await assignJahrgang(fremd.id, JAHRGAENGE.jahrgang1.id);
+      const res2 = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res2.body.offene_stempel.some(m => m.challenge_id === fremd.id)).toBe(true);
+    });
+
+    it('ohne Jahrgang kommt die Antwort in voller Form zurueck, beide Listen leer', async () => {
+      // Der fruehe Ausstieg darf offene_stempel nicht weglassen — sonst
+      // liefe das Frontend dort auf undefined.
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = NULL WHERE user_id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.marks).toEqual([]);
+      expect(res.body.offene_stempel).toEqual([]);
+    });
+  });
+
+  // ================================================================
   // 9. Export (GET /admin/:id/export)
   // ================================================================
   describe('Export GET /admin/:id/export', () => {
