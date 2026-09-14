@@ -1519,12 +1519,21 @@ paths:
       description: >
         Liefert die persistierten Snapshots aus apm_snapshots der letzten N
         Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.
+
+        ZEITRAUM AUF ZWEI JAHRE ERWEITERT (14.09.2026): Vorher waren 30 Tage
+        die Obergrenze. Die Aufbewahrung in services/backgroundService.js hält
+        seit demselben Datum zwei Jahre vor (vorher ebenfalls 30 Tage) —
+        gemessen 276 Zeilen und 1,8 MB je 30 Tage, also rund 44 MB für zwei
+        Jahre. Die Snapshots entstehen zeitgesteuert alle fünf Minuten, NICHT
+        je Nutzer:in; die Zeilenzahl wächst also nicht mit der Gemeindegrösse.
       parameters:
         - name: days
           in: query
           required: false
-          schema: { type: integer, minimum: 1, maximum: 30, default: 7 }
-          description: Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurück.
+          schema: { type: integer, minimum: 1, maximum: 730, default: 7 }
+          description: >
+            Auf 1..730 begrenzt (zwei Jahre, so weit die Aufbewahrung reicht);
+            ungueltige Werte und 0 fallen auf 7 zurück, negative auf 1.
       responses:
         "200": { description: "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
