@@ -86,10 +86,34 @@ Versionsüberschrift.
   bevor sie geladen sind.
 - Die Anwesenheitsanzeige mit QR-Code hört auf, im Hintergrund weiterzuzählen,
   nachdem man sie geschlossen hat.
+- Scheitert das Anlegen des Team-Rückblicks vollständig, sagt die Seite das
+  jetzt. Vorher meldete sie Erfolg, und das ganze Team bekam eine Nachricht für
+  einen Rückblick, den es gar nicht gab. Der Versuch lässt sich danach
+  wiederholen.
+- Einzelne fehlende Angaben lassen den Team-Rückblick nicht mehr scheitern.
+  Fehlte etwa die Angabe zu den Challenge-Beiträgen, blieb vorher die ganze
+  Erstellung stecken; jetzt entfällt nur die betroffene Seite.
+- Die Hintergrund-Aufgaben — Termin-Erinnerungen, das Aufräumen alter
+  Anmeldungen, die automatische Löschung — laufen auch dann weiter, wenn beim
+  Start einmal etwas schiefgeht. Vorher konnte sich der Server dabei in einer
+  Neustartschleife festfahren, ohne dass es nach außen auffiel.
+- Gleichzeitige Zugriffe kommen sich nicht mehr ins Gehege. In seltenen Fällen
+  konnte das Speichern einer Umfrage, eines Check-ins oder einer Termin-Änderung
+  eine fremde, parallel laufende Aktion abbrechen.
+- Eine eingetragene Anwesenheit wird nicht mehr als Fehler gemeldet, obwohl sie
+  gespeichert wurde. Wer daraufhin ein zweites Mal tippte, konnte vergebene
+  Punkte durcheinanderbringen.
 
 ### Sonstiges
 - Zwei Kacheln im Konfi-Profil, die seit ihrer Entstehung nie erschienen sind
   („Nächstes Badge" und „Letzte Aktivitäten"), sind entfernt.
+- Eine Vorbereitung der Chat-Räume beim Serverstart, die seit über einem Jahr
+  wirkungslos war, ist entfernt. Die Räume entstehen an anderer Stelle und
+  vollständiger; für Nutzer:innen ändert sich nichts.
+- Neu aufgesetzte Installationen legen ihre Datenbank wieder vollständig an.
+  Bestehende Gemeinden waren nicht betroffen.
+- Zusätzliche Absicherung beim Zuordnen von Jahrgängen, damit Zuweisungen die
+  Grenze der eigenen Gemeinde in keinem Fall überschreiten können.
 
 ## [2.1.1] - 2026-09-11
 
