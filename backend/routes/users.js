@@ -861,7 +861,32 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       // org-gescopt: id ist eindeutig, organization_id als defensiver Zusatzfilter (matcht den oben geladenen targetUser)
-      await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3', [hashedPassword, id, targetUser.organization_id]);
+      //
+      // token_invalidated_at seit 14.09.2026: Ohne das lief die alte Sitzung
+      // weiter. Genau dieser Weg wird beschritten, wenn ein Konto uebernommen
+      // wurde und die Person selbst nicht mehr hineinkommt — der Angreifer
+      // blieb drin, waehrend alle glaubten, das Problem sei geloest.
+      // Dieselbe Behandlung wie in der Selbstbedienungs-Route
+      // (auth.js, PUT /auth/change-password), die es seit jeher richtig macht.
+      await db.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW(), token_invalidated_at = NOW() WHERE id = $2 AND organization_id = $3',
+        [hashedPassword, id, targetUser.organization_id]
+      );
+
+      // Refresh-Tokens widerrufen. Ohne das ist die Invalidierung oben
+      // wirkungslos: Der Refresh-Token laeuft 90 Tage und holt sich laufend
+      // frische Access-Tokens.
+      await db.query(
+        'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+        [id]
+      );
+
+      // Push-Tokens der beendeten Sitzungen mitloeschen: Der Versand haengt im
+      // pushService nur an user_id, NICHT an einer gueltigen Sitzung. Ohne die
+      // Loeschung bekaeme ein gerade ausgesperrtes Geraet weiter Push-Nachrichten
+      // samt Chat-Inhalten — unbegrenzt, weil jede Zustellung updated_at
+      // auffrischt und die 30-Tage-Bereinigung dadurch nie greift.
+      await db.query('DELETE FROM push_tokens WHERE user_id = $1', [id]);
 
       // Bestehende Socket-Verbindungen des Users trennen: Nach einem Passwort-
       // Reset soll die alte Session nicht über einen offenen Socket weiterlaufen.

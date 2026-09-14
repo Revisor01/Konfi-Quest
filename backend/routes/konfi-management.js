@@ -602,8 +602,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 }
             }
 
+            // token_invalidated_at seit 14.09.2026: Ohne das lief die alte
+            // Sitzung der Person weiter, obwohl ihr Passwort neu gesetzt wurde.
+            // Genau dieser Weg wird beschritten, wenn ein Konto uebernommen
+            // wurde — der Angreifer blieb drin. Dieselbe Behandlung wie in der
+            // Selbstbedienungs-Route (auth.js, PUT /auth/change-password).
             const updateUserQuery = `
-                UPDATE users SET password_hash = $1
+                UPDATE users SET password_hash = $1, token_invalidated_at = NOW()
                 WHERE id = $2 AND organization_id = $3`;
             const { rowCount } = await client.query(updateUserQuery, [hashedPassword, req.params.id, req.user.organization_id]);
 
@@ -611,6 +616,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
+
+            // Refresh-Tokens widerrufen — sonst ist die Invalidierung oben
+            // wirkungslos: Der Refresh-Token laeuft 90 Tage und holt laufend
+            // frische Access-Tokens.
+            await client.query(
+                'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+                [req.params.id]
+            );
+
+            // Push-Tokens mitloeschen: Der Versand haengt nur an user_id, nicht
+            // an einer gueltigen Sitzung. Ein ausgesperrtes Geraet bekaeme sonst
+            // weiter Push-Nachrichten samt Chat-Inhalten.
+            await client.query('DELETE FROM push_tokens WHERE user_id = $1', [req.params.id]);
 
             const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
             await client.query(updateProfileQuery, [req.params.id]);
