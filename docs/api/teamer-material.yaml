@@ -1633,6 +1633,18 @@ paths:
         Datensatz, kein zweiter Push. Erkennbar an `benachrichtigt: false`
         und `generated: 0`. Vorher entstand bei jedem Aufruf eine weitere
         Ausgabe, und das ganze Team bekam erneut eine Benachrichtigung.
+
+        TOTALAUSFALL MELDET 500 (behoben 14.09.2026): Scheitert die Erzeugung
+        fuer JEDE Person (`generated: 0` bei vorhandenen Teamer:innen), wird
+        die Transaktion zurueckgerollt und 500 gemeldet - ohne Push. Vorher
+        kam 200 mit `generated: 0`, `benachrichtigt: true` und einer
+        `ausgabe_id`, die es nicht gab: Ein abgebrochenes Statement setzt die
+        Transaktion in PostgreSQL in den Fehlerzustand, das COMMIT wirkt dann
+        wie ein ROLLBACK und wirft nicht. Das Team bekam eine Nachricht fuer
+        einen Rueckblick, den es nicht gab; der naechste Versuch pushte
+        erneut, weil die Idempotenz-Sperre mangels Ausgabe nicht griff.
+        `generated: 0` mit `benachrichtigt: false` bleibt unveraendert der
+        gutartige Fall "Jahr bestand schon".
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
@@ -1665,7 +1677,7 @@ paths:
         "400": { description: "Das Jahr ist noch nicht abgeschlossen" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
-        "500": { $ref: '#/components/responses/ServerError' }
+        "500": { description: "Datenbankfehler - oder kein einziger Snapshot erzeugt (seit 14.09.2026; nichts angelegt, kein Push, Versuch wiederholbar)" }
 
   /api/wrapped/ausgaben:
     get:

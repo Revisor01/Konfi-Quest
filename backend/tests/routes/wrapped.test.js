@@ -234,6 +234,311 @@ describe('Wrapped Routes', () => {
   });
 
   // ================================================================
+  // Fehler INNERHALB der Schleife (Befund 14.09.2026)
+  // ================================================================
+  //
+  // DER FEHLER, den diese Tests festhalten: generateTeamerSnapshot hatte drei
+  // try/catch OHNE SAVEPOINT. In PostgreSQL bricht EIN fehlgeschlagenes
+  // Statement die ganze Transaktion ab -- der catch loggte brav weiter, aber
+  // jede folgende Query scheiterte mit "current transaction is aborted". Die
+  // erste Person riss damit alle anderen mit: generated=0, errors=Anzahl
+  // Teamer.
+  //
+  // SCHLIMMER ALS DER AUSFALL WAR DIE MELDUNG: COMMIT auf einer abgebrochenen
+  // Transaktion wirkt wie ROLLBACK und wirft NICHT. Die Route lief geradeaus
+  // zu res.json mit generated:0, benachrichtigt:true und HTTP 200 -- und
+  // pushte "Dein Teamerjahr ist da!" an das ganze Team, fuer einen Rueckblick,
+  // den es nicht gab. Die gemeldete ausgabe_id stand in keiner Tabelle, und
+  // weil keine Ausgabe geschrieben war, griff die Idempotenz-Sperre beim
+  // naechsten Klick nicht: Der zweite Versuch pushte erneut.
+  //
+  // Die vorhandenen Tests konnten das nicht sehen: Keiner provozierte einen
+  // Fehler INNERHALB der Schleife.
+  describe('POST /api/wrapped/generate-teamer: Fehler in der Schleife', () => {
+    const JAHR = new Date().getFullYear() - 1;
+
+    /** Zaehlt die Team-Ausgaben der Testgemeinde fuer das Rueckblicksjahr. */
+    async function ausgabenAnzahl() {
+      const { rows: [r] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_ausgaben
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'
+            AND zeitraum_start = $2::date AND zeitraum_ende = $3::date`,
+        [ORGS.testGemeinde.id, `${JAHR}-01-01`, `${JAHR}-12-31`]
+      );
+      return r.anzahl;
+    }
+
+    /** Zaehlt die Teamer-Snapshots der Testgemeinde. */
+    async function snapshotAnzahl() {
+      const { rows: [r] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'`,
+        [ORGS.testGemeinde.id]
+      );
+      return r.anzahl;
+    }
+
+    // DIE FEHLENDE SPALTE IST DER ECHTE FALL, nicht ein erfundener: Am
+    // 07.09.2026 stand Produktion auf Migration 144, waehrend der Code schon
+    // 145/146 voraussetzte. Genau so entsteht der Fehler mitten in der
+    // Transaktion. Das Umbenennen macht ihn hier reproduzierbar.
+    async function ohneSpalte(tabelle, spalte, fn) {
+      await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte} TO ${spalte}_weg`);
+      try {
+        return await fn();
+      } finally {
+        await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte}_weg TO ${spalte}`);
+      }
+    }
+
+    // DER ERLAUBTE FALL. Fehlt die Spalte, faellt genau die eine Seite weg --
+    // der Rueckblick selbst entsteht. Dafuer wurde zahlAusNeuerSpalte gebaut,
+    // und dasselbe muss fuer die drei Abfragen gelten, die bis zum 14.09.2026
+    // ohne SAVEPOINT dastanden.
+    //
+    // moderation_status wird von der Beitrags-Abfrage gelesen
+    // (:1788-1821, Teamer-Challenge-Beitraege) -- einer der drei Bloecke.
+    it('Fehlende Spalte in den Challenge-Beitraegen: Lauf geht trotzdem durch', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const res = await ohneSpalte('challenge_submissions', 'moderation_status', () =>
+        request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: JAHR })
+      );
+
+      expect(res.status).toBe(200);
+      // Ein Teamer in Org 1 (teamer1) -- und der bekommt seinen Rueckblick.
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(0);
+      expect(res.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(await ausgabenAnzahl()).toBe(1);
+      expect(await snapshotAnzahl()).toBe(1);
+
+      // Die Ausgabe existiert wirklich -- die gemeldete id ist keine Leiche
+      // einer zurueckgerollten Transaktion.
+      const { rows } = await db.query(
+        'SELECT id FROM wrapped_ausgaben WHERE id = $1', [res.body.ausgabe_id]
+      );
+      expect(rows).toHaveLength(1);
+
+      spy.mockRestore();
+    });
+
+    // Dasselbe fuer den zweiten Block (:1850, Titel gestellter Challenges).
+    it('Fehlende Spalte in den gestellten Challenges: Lauf geht trotzdem durch', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const res = await ohneSpalte('challenges', 'is_draft', () =>
+        request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: JAHR })
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(0);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(await snapshotAnzahl()).toBe(1);
+
+      spy.mockRestore();
+    });
+
+    // Und fuer den dritten Block (Teamer-Startjahr aus user_activities).
+    //
+    // WARUM HIER KEINE SPALTE UMBENANNT WIRD: Dieselbe Abfrage steht ein
+    // zweites Mal weiter oben in generateTeamerSnapshot -- fuer den Beginn
+    // des Zeitraums -- und zwar UNABGESICHERT. Sie liest exakt dieselben
+    // Spalten (user_activities.completed_date/activity_id, activities.
+    // target_role) und laeuft unter genau derselben Bedingung
+    // (teamer_since ist NULL). Eine fehlende Spalte trifft also immer zuerst
+    // die obere; der dritte Block waere ueber das Schema gar nicht
+    // erreichbar. Gemessen: Ein Lauf ohne activities.target_role bricht mit
+    // "column a.target_role does not exist" ab, bevor der dritte Block an
+    // die Reihe kommt -- was richtig ist, denn ohne die Spalte ist der
+    // Zeitraum selbst unbekannt.
+    //
+    // Deshalb faellt hier GENAU EINE Abfrage aus, ueber den Client: die des
+    // dritten Blocks. Das ist der Fall, den der SAVEPOINT abfangen muss.
+    it('Fehler beim Teamer-Startjahr reisst die Transaktion nicht mit', async () => {
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      // Die Abfrage des dritten Blocks ist an ihrem JOIN auf `activities a`
+      // erkennbar; die gleichlautende obere unterscheidet sich nur durch
+      // ihre Stelle im Ablauf. Wir lassen deshalb erst den ZWEITEN Treffer
+      // scheitern -- das ist der dritte Block.
+      // WICHTIG: Der Client kommt aus dem POOL und wird nach der Anfrage
+      // wiederverwendet. Die Attrappe muss deshalb beim release() wieder
+      // verschwinden -- sonst traegt der naechste Test (auch truncateAll,
+      // das ebenfalls getClient ruft) sie weiter mit sich herum.
+      const echterGetClient = db.getClient.bind(db);
+      let treffer = 0;
+      const clientSpy = vi.spyOn(db, 'getClient').mockImplementation(async () => {
+        const client = await echterGetClient();
+        const echtesQuery = client.query.bind(client);
+        const echtesRelease = client.release.bind(client);
+        client.query = (sql, params) => {
+          if (typeof sql === 'string'
+              && sql.includes('MIN(ua.completed_date)')
+              && ++treffer === 2) {
+            return Promise.reject(Object.assign(
+              new Error('column a.target_role does not exist'), { code: '42703' }
+            ));
+          }
+          return echtesQuery(sql, params);
+        };
+        client.release = (...args) => {
+          delete client.query;
+          delete client.release;
+          return echtesRelease(...args);
+        };
+        return client;
+      });
+
+      const res = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: JAHR });
+
+      clientSpy.mockRestore();
+
+      // Die Absicherung hat gegriffen: Der Fehler blieb bei seiner Abfrage,
+      // der Rueckblick entstand.
+      expect(treffer).toBe(2);
+      expect(res.status).toBe(200);
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(0);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(await snapshotAnzahl()).toBe(1);
+
+      // Und die Seite, die an der Abfrage haengt, faellt sauber weg:
+      // "unbekannt" ist nicht "neu dabei".
+      const { rows: [snap] } = await db.query(
+        `SELECT data FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'`,
+        [USERS.teamer1.id]
+      );
+      expect(snap.data.slides.neu_dabei.erstes_jahr).toBe(false);
+
+      spy.mockRestore();
+    });
+
+    // DIE ZWEITE VERTEIDIGUNGSLINIE: ein SAVEPOINT je Person in der Schleife.
+    //
+    // Hier scheitert eine Abfrage, die NICHT abgesichert ist (die Teamgroesse
+    // ueber user_jahrgang_assignments) -- also genau der Fall, den jede
+    // kuenftige neue Abfrage mitbringen kann. Ohne den Schleifen-SAVEPOINT
+    // faellt damit jede Person aus; mit ihm bleibt nur die Personen-Schleife
+    // ohne Erfolg, aber die Transaktion heil.
+    //
+    // Ein Teamer in Org 1 heisst hier: generated=0, errors=1 -- und damit
+    // Totalausfall, also 500 und KEIN Push.
+    it('Nicht abgesicherter Fehler: 500, kein Push, keine Ausgabe in der DB', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const res = await ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', () =>
+        request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: JAHR })
+      );
+
+      // KEIN 200 mit generated:0 mehr -- das war die eigentliche Luege.
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Fehler beim Generieren der Teamer-Wrapped-Snapshots');
+      // Kein Push an das ganze Team fuer einen Rueckblick, den es nicht gibt.
+      expect(spy).toHaveBeenCalledTimes(0);
+      // Und nichts bleibt liegen: weder die Ausgabe noch ein halber Snapshot.
+      expect(await ausgabenAnzahl()).toBe(0);
+      expect(await snapshotAnzahl()).toBe(0);
+
+      spy.mockRestore();
+    });
+
+    // DIE IDEMPOTENZ HING AN DER AUSGABE: Wurde sie (wie frueher) nie
+    // geschrieben, griff die Sperre beim naechsten Versuch nicht -- der
+    // zweite Klick pushte erneut. Nach dem Rollback muss ein zweiter Versuch
+    // deshalb wirklich neu erzeugen duerfen, und zwar genau einmal.
+    it('Nach dem Fehlschlag laesst sich der Rueckblick sauber erzeugen', async () => {
+      const fehl = await ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', () =>
+        request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: JAHR })
+      );
+      expect(fehl.status).toBe(500);
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      const zweiter = await request(app)
+        .post('/api/wrapped/generate-teamer')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahr: JAHR });
+
+      expect(zweiter.status).toBe(200);
+      expect(zweiter.body.generated).toBe(1);
+      expect(zweiter.body.errors).toBe(0);
+      expect(zweiter.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(await ausgabenAnzahl()).toBe(1);
+
+      spy.mockRestore();
+    });
+
+    // EINE PERSON DARF DIE ANDEREN NICHT MITREISSEN. Der Seed hat nur eine
+    // Teamer:in in Org 1 -- mit einer zweiten laesst sich zeigen, dass der
+    // Schleifen-SAVEPOINT wirklich pro Person begrenzt: Person A scheitert an
+    // ihren eigenen Daten, Person B bekommt trotzdem ihren Rueckblick.
+    //
+    // Ausgeloest wird der Fehler ueber einen Snapshot-Datensatz mit einer
+    // kaputten ausgabe_id: Das INSERT am Ende der Schleife verletzt fuer
+    // diese eine Person den Fremdschluessel.
+    it('Ein Fehler bei einer Person laesst die andere durchlaufen', async () => {
+      // Zweite Teamer:in in Org 1.
+      await db.query(
+        `INSERT INTO users (id, username, display_name, password_hash, role_id, organization_id)
+         VALUES (900, 'teamer_zwei', 'Teamer Zwei', 'x', $1, $2)`,
+        [USERS.teamer1.role_id, ORGS.testGemeinde.id]
+      );
+      // Diese Person hat schon einen Snapshot mit derselben Schluesselkombination,
+      // aber die ON-CONFLICT-Klausel greift -- also braucht es einen echten
+      // Fehler. Ein Trigger waere Ueberbau; wir nehmen eine CHECK-Bedingung,
+      // die genau diesen einen Nutzer beim Schreiben abweist.
+      await db.query(
+        `ALTER TABLE wrapped_snapshots
+           ADD CONSTRAINT test_kein_teamer_900 CHECK (user_id <> 900)`
+      );
+
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+      let res;
+      try {
+        res = await request(app)
+          .post('/api/wrapped/generate-teamer')
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ jahr: JAHR });
+      } finally {
+        await db.query('ALTER TABLE wrapped_snapshots DROP CONSTRAINT test_kein_teamer_900');
+      }
+
+      // Eine von zwei geht schief -- die andere kommt durch. Ohne den
+      // Schleifen-SAVEPOINT waeren es 0 von 2 gewesen.
+      expect(res.status).toBe(200);
+      expect(res.body.generated).toBe(1);
+      expect(res.body.errors).toBe(1);
+      expect(res.body.benachrichtigt).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(await ausgabenAnzahl()).toBe(1);
+      expect(await snapshotAnzahl()).toBe(1);
+
+      spy.mockRestore();
+    });
+  });
+
+  // ================================================================
   // Zahlen im Teamer-Snapshot: der Zeitraum (Befund 06.09.2026)
   // ================================================================
   //

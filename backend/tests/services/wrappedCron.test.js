@@ -19,6 +19,7 @@
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, ORGS, USERS } = require('../helpers/seed');
 const BackgroundService = require('../../services/backgroundService');
+const PushService = require('../../services/pushService');
 
 describe('Team-Rueckblick am 6. Januar (Wrapped-Cron)', () => {
   let db;
@@ -189,5 +190,104 @@ describe('Team-Rueckblick am 6. Januar (Wrapped-Cron)', () => {
     expect(await ausgabenVon(ORGS.andereGemeinde.id)).toHaveLength(1);
     // Und die andere Gemeinde ist trotzdem versorgt.
     expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(1);
+  });
+
+  // ================================================================
+  // Wenn gar nichts gelingt (Befund 14.09.2026)
+  // ================================================================
+  //
+  // Der Cron hat kein res und niemanden, der die Zahlen ansieht. Umso
+  // wichtiger ist, dass er einen Totalausfall nicht als Erfolg ablegt:
+  // Bis zum 14.09.2026 schrieb er bei generated=0 trotzdem die Ausgabe fest
+  // (COMMIT auf einer abgebrochenen Transaktion wirkt wie ROLLBACK und wirft
+  // NICHT) und schickte dem ganzen Team "Dein Teamerjahr ist da!" -- fuer
+  // einen Rueckblick, der nicht existierte. Und weil die Ausgabe fehlte,
+  // griff die Idempotenz beim naechsten Lauf nicht.
+  describe('Kein einziger Snapshot', () => {
+    /** Laesst jede Snapshot-Abfrage der Teamgroesse scheitern. */
+    async function ohneSpalte(tabelle, spalte, fn) {
+      await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte} TO ${spalte}_weg`);
+      try {
+        return await fn();
+      } finally {
+        await db.query(`ALTER TABLE ${tabelle} RENAME COLUMN ${spalte}_weg TO ${spalte}`);
+      }
+    }
+
+    it('wirft, statt eine leere Ausgabe festzuschreiben', async () => {
+      await expect(
+        ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', () =>
+          wrappedRouter.generateAllTeamerWrapped(db, ORGS.testGemeinde.id, RUECKBLICK_JAHR)
+        )
+      ).rejects.toThrow(/kein einziger Snapshot/);
+
+      // Nichts bleibt liegen -- weder Ausgabe noch halber Snapshot.
+      expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(0);
+      const { rows: [snap] } = await db.query(
+        `SELECT COUNT(*)::int AS anzahl FROM wrapped_snapshots
+          WHERE organization_id = $1 AND wrapped_type = 'teamer'`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(snap.anzahl).toBe(0);
+    });
+
+    // DER EIGENTLICHE SCHADEN WAR DER PUSH, nicht die Zeile in der Tabelle:
+    // Ohne die Wache lief der Code bei generated=0 geradeaus zum Versand.
+    // Die Ausgabe verschwand dabei ohnehin (COMMIT auf einer abgebrochenen
+    // Transaktion wirkt wie ROLLBACK) -- das ganze Team bekam also "Dein
+    // Teamerjahr ist da!" fuer etwas, das es nachweislich nicht gab. Genau
+    // deshalb wird hier der Versand geprueft und nicht nur die Datenlage.
+    it('benachrichtigt niemanden, wenn kein Rueckblick entstanden ist', async () => {
+      const spy = vi.spyOn(PushService, 'sendWrappedReleased').mockResolvedValue(undefined);
+
+      await ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', async () => {
+        await expect(
+          wrappedRouter.generateAllTeamerWrapped(db, ORGS.testGemeinde.id, RUECKBLICK_JAHR)
+        ).rejects.toThrow(/kein einziger Snapshot/);
+      });
+
+      expect(spy).toHaveBeenCalledTimes(0);
+      expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(0);
+
+      spy.mockRestore();
+    });
+
+    it('der Cron faengt den Fehlschlag ab und versorgt die anderen Gemeinden', async () => {
+      // checkWrappedTriggers faengt je Organisation ab. Eine Gemeinde, in der
+      // es schiefgeht, darf die uebrigen nicht mitreissen.
+      //
+      // Damit der Fehler nur EINE Gemeinde trifft, bekommt die andere ihren
+      // Rueckblick vorab: dort ueberspringt der Cron und ruehrt die kaputte
+      // Spalte gar nicht erst an.
+      await wrappedRouter.generateAllTeamerWrapped(
+        db, ORGS.andereGemeinde.id, RUECKBLICK_JAHR
+      );
+      expect(await ausgabenVon(ORGS.andereGemeinde.id)).toHaveLength(1);
+
+      await ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', () =>
+        BackgroundService.checkWrappedTriggers(db)
+      );
+
+      // Die kaputte Gemeinde hat nichts bekommen ...
+      expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(0);
+      // ... die andere behaelt ihren einen Rueckblick.
+      expect(await ausgabenVon(ORGS.andereGemeinde.id)).toHaveLength(1);
+    });
+
+    it('nach dem Fehlschlag laeuft der naechste Versuch sauber durch', async () => {
+      await expect(
+        ohneSpalte('user_jahrgang_assignments', 'jahrgang_id', () =>
+          wrappedRouter.generateAllTeamerWrapped(db, ORGS.testGemeinde.id, RUECKBLICK_JAHR)
+        )
+      ).rejects.toThrow(/kein einziger Snapshot/);
+
+      const erneut = await wrappedRouter.generateAllTeamerWrapped(
+        db, ORGS.testGemeinde.id, RUECKBLICK_JAHR
+      );
+      expect(erneut.uebersprungen).toBeUndefined();
+      expect(erneut.generated).toBe(1);
+      expect(erneut.errors).toBe(0);
+      expect(await ausgabenVon(ORGS.testGemeinde.id)).toHaveLength(1);
+    });
   });
 });

@@ -197,6 +197,11 @@ der schon dasteht, hält den auf 2026 dagegen nicht auf.
 > Ausgabe, weil ein Zwischenstand und ein Abschluss beide ihren Sinn haben. Ein
 > Kalenderjahr dagegen gibt es nur einmal.
 
+Geht beim Erstellen etwas schief und entsteht **kein einziger** Rückblick, sagt
+die Seite das und legt nichts an — auch keine Benachrichtigung geht dann raus.
+Der Versuch lässt sich danach unverändert wiederholen; die Sperre gegen ein
+zweites Jahr steht dem nicht im Weg, weil nichts angelegt wurde.
+
 Beim Konfi-Rückblick gibt es keine Automatik: Er umfasst die ganze Konfi-Zeit
 bis zu dem Tag, an dem er entsteht — und wann dieser Tag der richtige ist, weiß
 nur ihr.
