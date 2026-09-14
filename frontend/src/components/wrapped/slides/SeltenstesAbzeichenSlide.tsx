@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { getIconFromIoniconsName } from '../../../utils/badgeIcons';
+import { getIconFromIoniconsName, istEmojiIcon } from '../../../utils/badgeIcons';
 import SlideBase from './SlideBase';
 
 /**
@@ -78,7 +78,13 @@ const SeltenstesAbzeichenSlide: React.FC<Props> = ({ isActive, abzeichen }) => {
       {/* Das Abzeichen selbst, gross und in seiner eigenen Farbe --
           es ist der Held der Seite, nicht eine Statistikzeile. */}
       <div className="selt-abzeichen" style={{ backgroundColor: abzeichen.color || 'var(--app-color-badges)' }}>
-        <IonIcon icon={getIconFromIoniconsName(abzeichen.icon)} />
+        {/* In der Datenbank stehen neben Ionicons-Namen auch Emoji (gemessen
+            14.09.2026: 20 verschiedene, u.a. ⛪ 📖 🏆). IonIcon kann sie nicht
+            darstellen — sie liefen bisher ausnahmslos in den Trophaeen-Fallback.
+            Als Text gerendert erscheint endlich das, was gewaehlt wurde. */}
+        {istEmojiIcon(abzeichen.icon)
+          ? <span className="selt-abzeichen-emoji">{abzeichen.icon}</span>
+          : <IonIcon icon={getIconFromIoniconsName(abzeichen.icon)} />}
       </div>
 
       <div className="selt-name">{abzeichen.name}</div>

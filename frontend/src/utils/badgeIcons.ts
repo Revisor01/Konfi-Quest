@@ -9,7 +9,6 @@
 //   ICON_CHOICES — mit Name und Kategorie, für die Auswahl-Dialoge
 //   ICON_MAP     — flach (Name -> Icon), zum Rendern
 // ICON_MAP wird aus ICON_CHOICES abgeleitet, damit sie nicht auseinanderlaufen.
-import * as alleIonicons from 'ionicons/icons';
 // NUR-KONTUR-MODUS (Simon, 06.09.2026): Die Auswahlliste bildet in der
 // DATENBANK gespeicherte Namen ab (badge.icon, certificate.icon,
 // challenge.icon). Die SCHLUESSEL bleiben unveraendert -- das ist der
@@ -69,7 +68,46 @@ import {
   timeOutline as time,
   timerOutline as timer,
   todayOutline as today,
-  trophyOutline as trophy} from 'ionicons/icons';
+  trophyOutline as trophy,
+
+  // Zusaetzlich (14.09.2026): Namen, die in Produktion gespeichert sind, aber
+  // nicht in der Auswahlliste stehen — siehe WEITERE_GESPEICHERTE_ICONS unten.
+  // Sie ersetzen den frueheren `import * as alleIonicons`, der alle 1389
+  // Symbole ins Start-Bundle zog.
+  bookOutline,
+  calendarNumberOutline,
+  card,
+  checkmarkDoneOutline,
+  clipboard,
+  compassOutline,
+  diamondOutline,
+  fitnessOutline,
+  flagOutline,
+  flameOutline,
+  flashOutline,
+  footsteps,
+  footstepsOutline,
+  giftOutline,
+  gitCompareOutline,
+  handLeftOutline,
+  heartOutline,
+  homeOutline,
+  map,
+  medalOutline,
+  musicalNotes,
+  musicalNotesOutline,
+  peopleCircle,
+  peopleOutline,
+  person,
+  ribbonOutline,
+  starOutline,
+  statsChartOutline,
+  sunnyOutline,
+  telescopeOutline,
+  trophyOutline,
+  walkOutline,
+  water,
+} from 'ionicons/icons';
 
 export interface IconChoice { icon: string; name: string; category: string; }
 
@@ -178,20 +216,71 @@ export const getIconFromString = (iconName?: string | null, fallback: string = t
   return fallback;
 };
 
+// Zusaetzliche gespeicherte Namen, die es NICHT in ICON_CHOICES gibt.
+//
+// Gemessen gegen Produktion (14.09.2026): In custom_badges.icon,
+// challenges.badge_icon und certificate_types.icon stehen 66 verschiedene
+// Ionicons-Namen. Die meisten kennt ICON_CHOICES, diese hier nicht — sie
+// stammen aus der Zeit vor der Auswahlliste bzw. aus Importen.
+//
+// Warum eine feste Liste statt `import * as alleIonicons` (der vorherige Weg):
+// Der Namespace-Import zog ALLE 1389 Ionicons ins Bundle — gemessen
+// 1.978.519 Bytes roh, 447.574 gzip, also 38 % des gesamten JS. Geladen wurde
+// das bei JEDEM App-Start (modulepreload), gebraucht von genau EINER
+// Wrapped-Folie. Mit der Liste faellt der Brocken weg; aufloesbar bleibt alles,
+// was in den Daten wirklich vorkommt.
+//
+// WICHTIG beim Ergaenzen: Die gespeicherten Namen sind der Datenvertrag mit den
+// ausgelieferten Apps. Ein Name, der hier fehlt, bricht nichts — er faellt auf
+// die Trophaee zurueck, wie schon vorher bei unbekannten Namen. Wer neue
+// Symbole in die Auswahl aufnimmt, ergaenzt sie in ICON_CHOICES; hier stehen
+// nur die Altlasten.
+const WEITERE_GESPEICHERTE_ICONS: Record<string, string> = {
+  // calendarOutline und colorPaletteOutline sind oben schon als `calendar`
+  // bzw. `colorPalette` importiert — hier nur der gespeicherte Name darauf.
+  bookOutline, calendarNumberOutline, calendarOutline: calendar, card, checkmarkDoneOutline,
+  clipboard, colorPaletteOutline: colorPalette, compassOutline, diamondOutline, fitnessOutline,
+  flagOutline, flameOutline, flashOutline, footsteps, footstepsOutline, giftOutline,
+  gitCompareOutline, handLeftOutline, heartOutline, homeOutline, map, medalOutline,
+  musicalNotes, musicalNotesOutline, peopleCircle, peopleOutline, person, ribbonOutline,
+  starOutline, statsChartOutline, sunnyOutline, telescopeOutline, trophyOutline,
+  walkOutline, water,
+};
+
 /**
- * Ionicon-Namen aus der Datenbank gegen den VOLLEN Ionicons-Namensraum
- * aufloesen ('ribbon-outline' -> ribbonOutline), nicht nur gegen ICON_MAP.
+ * Ionicon-Namen aus der Datenbank aufloesen ('ribbon-outline' -> ribbonOutline).
  *
  * Hierher gezogen am 05.09.2026 (Icon-Konsolidierung): Der Jahresrueckblick
  * (SeltenstesAbzeichenSlide) hielt sich dafuer einen eigenen
  * `import * as icons from 'ionicons/icons'` — der einzige Namespace-Import
  * im Baum. Seit der Konsolidierung importieren Komponenten Icons nur noch
  * aus components/shared/icons; die Aufloesung GESPEICHERTER Namen gehoert
- * aber hierher, zu ICON_MAP und getIconFromString. Verhalten unveraendert:
- * voller Vorrat, Rueckfall auf die Trophaee.
+ * aber hierher, zu ICON_MAP und getIconFromString.
+ *
+ * Seit 14.09.2026 gegen zwei feste Tabellen statt gegen den vollen Namensraum
+ * (Begruendung bei WEITERE_GESPEICHERTE_ICONS). Unbekannte Namen fallen wie
+ * bisher auf die Trophaee zurueck.
  */
 export const getIconFromIoniconsName = (name?: string | null, fallback: string = trophy): string => {
   const sauber = (name || '').trim();
+  if (!sauber) return fallback;
+
+  // Emoji durchreichen: In Produktion stehen 20 verschiedene Emoji in den
+  // Icon-Spalten (gemessen 14.09.2026, u.a. ⛪ 📖 🏆). Die liefen bisher
+  // ausnahmslos in den Fallback — jedes dieser Abzeichen zeigte eine Trophaee.
+  // IonIcon kann sie nicht darstellen; der Aufrufer erkennt sie am fehlenden
+  // 'data:'/Pfad-Praefix und setzt sie als Text.
+  if (!/^[a-zA-Z0-9-]+$/.test(sauber)) return sauber;
+
   const alsCamel = sauber.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
-  return (alleIonicons as Record<string, string>)[alsCamel] || fallback;
+  return ICON_MAP[alsCamel] || WEITERE_GESPEICHERTE_ICONS[alsCamel] || fallback;
+};
+
+/**
+ * Ist der gespeicherte Wert ein Emoji (und kein Ionicons-Name)?
+ * Dann gehoert er als Text gerendert, nicht in ein IonIcon.
+ */
+export const istEmojiIcon = (name?: string | null): boolean => {
+  const sauber = (name || '').trim();
+  return sauber !== '' && !/^[a-zA-Z0-9-]+$/.test(sauber);
 };
