@@ -35,6 +35,13 @@ Versionsüberschrift.
   nach, bleibt bei der Abmeldung der Name stehen, der dorthin gehört. Bei
   einem Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort
   gibt es niemanden aus dem Team, der sie eingetragen hätte.
+- Die App lässt sich mit Face ID, Touch ID oder Fingerabdruck **sperren**.
+  Im Profil wählt man, nach welcher Zeit im Hintergrund die Abfrage kommt:
+  sofort, nach 1, 5 oder 15 Minuten. Das ist praktisch, wenn das Handy einmal
+  aus der Hand gegeben wird — angemeldet bleibt man dabei. Die Sperre ist von
+  Haus aus aus und erscheint nur, wenn auf dem Gerät eine Erkennung
+  eingerichtet ist. Wer nicht hineinkommt, meldet sich über einen Knopf auf
+  dem Sperrbildschirm ab und wieder neu an.
 
 ### Geändert
 - Dateien aus dem Chat werden nur noch einmal geladen. Wer eine PDF, ein

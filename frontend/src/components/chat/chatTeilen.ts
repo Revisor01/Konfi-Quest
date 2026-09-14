@@ -1,6 +1,6 @@
 import { fehlerStatus } from '../../utils/fehler';
 import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
+import { teilen } from '../../services/systemDialoge';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
 import { Message } from '../../types/chat';
@@ -48,14 +48,14 @@ export async function nachrichtTeilen(
         path
       });
 
-      await Share.share({
+      await teilen({
         title: 'Datei aus Konfi Quest',
         text: message.content || fileName,
         url: fileUri.uri
       });
     } else {
       // For text messages, share text content
-      await Share.share({
+      await teilen({
         text: message.content,
         title: 'Nachricht aus Konfi Quest'
       });
@@ -93,7 +93,7 @@ export async function chatVerlaufExportieren(
         encoding: Encoding.UTF8,
       });
       const { uri } = await Filesystem.getUri({ path: dateiname, directory: Directory.Cache });
-      await Share.share({ title: 'Chat-Verlauf', url: uri });
+      await teilen({ title: 'Chat-Verlauf', url: uri });
     } else {
       const url = URL.createObjectURL(res.data as Blob);
       const a = document.createElement('a');

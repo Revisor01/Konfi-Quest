@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_DATEI, ICON_HERUNTERLADEN, ICON_SCHLIESSEN, ICON_TEILEN } from './icons';
 import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
+import { teilen } from '../../services/systemDialoge';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileOpener } from '@capacitor-community/file-opener';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
@@ -361,7 +361,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
             directory: Directory.Cache
           });
           // Nach dem Speichern: Share öffnen für "Speichern unter"
-          await Share.share({
+          await teilen({
             title: currentFile.fileName,
             url: result.uri,
             dialogTitle: 'Datei speichern'
@@ -402,7 +402,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
           data: base64,
           directory: Directory.Cache
         });
-        await Share.share({
+        await teilen({
           title: currentFile.fileName,
           url: result.uri,
           dialogTitle: 'Datei teilen'

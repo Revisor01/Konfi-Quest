@@ -2,20 +2,23 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
-// Der Biometrie-Schalter ist am 27.08.2026 aus ALLEN DREI Profil-Ansichten
-// entfernt worden — er kommt in 2.1.0 wieder.
+// Der ANMELDE-Schalter (Biometrie statt Passwort auf der Anmeldeseite) ist am
+// 27.08.2026 aus allen drei Profil-Ansichten entfernt worden und bleibt draussen.
 //
 // Warum er rausgeflogen ist (Nutzerbefund beim Testen von 2.0.0):
-// Der Schalter hatte keine Wirkung. Beim Wiederöffnen der App wurde keine
-// Biometrie verlangt, und der Hinweis darunter versprach etwas anderes als
-// der Schalter — "Angemeldet bleiben für 90 Tage" beschreibt die Laufzeit
-// des gespeicherten Zugangs, nicht das, wofür ein Face-ID-Schalter da ist.
-// Ein Schalter, der nichts tut, ist schlimmer als keiner.
+// Der Schalter hatte keine sichtbare Wirkung. Beim Wiederöffnen der App wurde
+// keine Biometrie verlangt — er greift naemlich nur auf der Anmeldeseite, und
+// wer angemeldet bleibt (der Normalfall, 90 Tage), kommt dort nie vorbei.
 //
-// Die Komponente selbst (shared/BiometrieSchalter.tsx) und der Dienst
-// (services/biometrics.ts) BLEIBEN bestehen — nur die Einbindung ist raus.
-// Dieser Test haelt beides fest: keine Einbindung, aber die Bausteine sind
-// noch da, damit 2.1.0 nicht bei null anfaengt.
+// GENAU DIESE LUECKE schliesst seitdem die APP-SPERRE (shared/AppSperreSchalter,
+// services/appSperre): ein Schloss vor der bereits angemeldeten App. Sie ist
+// etwas anderes als der Anmelde-Weg hier und steht in allen drei Ansichten —
+// festgehalten in appSperreSchalter.test.tsx.
+//
+// Die Komponente (shared/BiometrieSchalter.tsx) und der Dienst
+// (services/biometrics.ts) BLEIBEN bestehen: die App-Sperre nutzt aus dem
+// Dienst die Verfuegbarkeitspruefung. Dieser Test haelt beides fest — keine
+// Einbindung des Anmelde-Schalters, aber die Bausteine sind da.
 
 const profilSeiten: { rolle: string; datei: string }[] = [
   { rolle: 'Leitung', datei: 'src/components/admin/pages/AdminProfilePage.tsx' },
@@ -23,11 +26,13 @@ const profilSeiten: { rolle: string; datei: string }[] = [
   { rolle: 'Konfis', datei: 'src/components/konfi/views/ProfileView.tsx' },
 ];
 
-describe('Biometrie-Schalter ist in 2.0.0 ueberall ausgebaut', () => {
+describe('Der Anmelde-Schalter bleibt ueberall ausgebaut', () => {
   for (const { rolle, datei } of profilSeiten) {
     it(`${rolle}: keine Einbindung mehr in ${datei.split('/').pop()}`, () => {
       const inhalt = readFileSync(resolve(__dirname, '../../..', datei), 'utf-8');
-      expect(inhalt).not.toContain('BiometrieSchalter');
+      // Gezielt der Anmelde-Schalter: AppSperreSchalter steht dort sehr wohl
+      // und darf hier nicht mitgefangen werden.
+      expect(inhalt).not.toMatch(/(?<!App)(?<!AppSperre)\bBiometrieSchalter\b/);
     });
   }
 

@@ -18,6 +18,8 @@ import MainTabs from './components/layout/MainTabs';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import GlobalToasts from './components/common/GlobalToasts';
 import WartendeVorgaengeLeiste from './components/common/WartendeVorgaengeLeiste';
+import AppSperrbildschirm from './components/common/AppSperrbildschirm';
+import { useAppSperre } from './hooks/useAppSperre';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -63,7 +65,14 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, setUser, orgVersion } = useApp();
+  const { user, setUser, orgVersion, signOut } = useApp();
+
+  // App-Sperre: Face ID / Fingerabdruck vor der bereits angemeldeten App.
+  // Der Hook laeuft immer mit (er muss den Hintergrundwechsel auch dann
+  // mitbekommen, wenn gerade niemand angemeldet ist), der Sperrbildschirm
+  // erscheint aber nur ueber der angemeldeten App — auf der Anmeldeseite gibt
+  // es nichts zu verdecken, und ein Schloss vor dem Login waere eine Sackgasse.
+  const { gesperrt, entsperren } = useAppSperre();
 
   // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
   // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
@@ -165,6 +174,23 @@ const AppContent: React.FC = () => {
       </IonReactRouter>
       <GlobalToasts />
       <WartendeVorgaengeLeiste />
+      {/* Der Sperrbildschirm liegt OBEN DRAUF, statt den Baum zu ersetzen.
+          Ein Austausch wuerde MainTabs bei jedem Sperren neu montieren — genau
+          das Muster, das in dieser App schon zu weissen Seiten gefuehrt hat
+          (siehe Kommentar zum orgVersion-Schluessel oben). Verdeckt wird
+          vollstaendig und deckend, es scheint nichts durch. */}
+      {gesperrt && (
+        <AppSperrbildschirm
+          onEntsperrt={entsperren}
+          onAbmelden={async () => {
+            // Erst die Sperre loesen, dann abmelden. Andernfalls stuende das
+            // Schloss nach dem naechsten Anmelden sofort wieder da — der
+            // Rueckweg fuehrte im Kreis statt heraus.
+            entsperren();
+            await signOut();
+          }}
+        />
+      )}
     </IonApp>
   );
 };

@@ -48,6 +48,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
+import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
@@ -585,6 +586,9 @@ const TeamerProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </IonItem>
+
+                {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App */}
+                <AppSperreSchalter variante="teamer" />
 
               </div>
             </IonCardContent>

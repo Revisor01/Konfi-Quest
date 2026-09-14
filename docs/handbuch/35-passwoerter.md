@@ -103,6 +103,73 @@ angemeldet war, muss sich überall neu anmelden, und die ausgesperrten Geräte
 bekommen auch keine Push-Nachrichten mehr. Das ist Absicht: Hatte jemand
 Fremdes Zugriff, ist er damit sofort draußen.
 
+## Die App mit Face ID sperren lassen
+
+**Die Sperre ist ein Schloss vor der angemeldeten App, kein Ersatz für die
+Anmeldung.** Wer die App nach einer Pause wieder öffnet, sieht zuerst einen
+Sperrbildschirm und kommt erst nach Face ID, Touch ID oder Fingerabdruck an die
+Inhalte. Angemeldet bleibst du dabei — es geht nur darum, wer auf dein Handy
+schauen kann.
+
+Du stellst sie im **Profil** unter **„Konto-Einstellungen"** ein, Eintrag
+**„App sperren"**. Der Eintrag steht in allen drei Rollen an derselben Stelle —
+bei Konfis, Teamer:innen und in der Leitung.
+
+| Auswahl | Wann gesperrt wird |
+|---|---|
+| **Aus** | nie — das ist die Voreinstellung |
+| **Sofort** | sobald du die App verlässt |
+| **Nach 1 Minute** | nach einer Minute im Hintergrund |
+| **Nach 5 Minuten** | nach fünf Minuten im Hintergrund |
+| **Nach 15 Minuten** | nach fünfzehn Minuten im Hintergrund |
+
+**Niemand bekommt die Sperre ungefragt.** Sie steht auf „Aus", bis du selbst
+etwas anderes wählst. Ist sie eingeschaltet, sperrt die App auch beim Starten —
+egal, welche Wartezeit du gewählt hast.
+
+**Den Eintrag gibt es nur dort, wo er etwas bewirkt:** in der App auf dem Handy
+oder Tablet und nur, wenn auf dem Gerät Face ID, Touch ID oder ein
+Fingerabdruck eingerichtet ist. Im Browser steht er nicht.
+
+### Kurze Abstecher sperren nicht
+
+Ein Foto auswählen, der Teilen-Dialog, ein Link, der eine Karte oder den Store
+öffnet, und die Face-ID-Abfrage selbst — all das schickt die App technisch in
+den Hintergrund, zählt aber nicht als Verlassen. Auch bei **„Sofort"** sperrt
+die App dabei nicht. Du wirst also nicht mitten in einer Challenge-Abgabe
+ausgesperrt.
+
+### Wieder hineinkommen
+
+Auf dem Sperrbildschirm steht **„Konfi Quest ist gesperrt"**, darunter der
+Knopf **„Mit Face ID entsperren"** — je nach Gerät heißt er „Touch ID" oder
+„Fingerabdruck". Ganz unten sitzt klein der Knopf **„Abmelden"**.
+
+Klappt die Erkennung nicht, versuchst du es beliebig oft neu. Es gibt keinen
+Zähler, der irgendwann dichtmacht.
+
+| Gerät | Wenn die Erkennung nicht klappt |
+|---|---|
+| **iPhone und iPad** | Das System bietet nach Fehlversuchen von sich aus den Gerätecode an |
+| **Android** | Kein Code-Rückweg — es bleiben erneut versuchen und abmelden |
+
+**„Abmelden" führt auf die normale Anmeldung** mit Benutzername und Passwort.
+Du kommst also immer wieder heraus, auch wenn die Biometrie am Gerät
+zwischendurch geändert oder entfernt wurde.
+
+> **Was die Sperre leistet und was nicht:** Sie ist ein Sichtschutz gegen
+> neugierige Blicke, wenn das Handy herumliegt. Sie verschlüsselt nichts und
+> hält niemanden auf, der das Gerät technisch auseinandernimmt. Für den Alltag
+> reicht das — mehr verspricht sie nicht.
+
+### Die Einstellung gilt nur auf diesem Gerät
+
+Sie hängt am Handy, nicht am Konto. Wer die App auf zwei Geräten nutzt, stellt
+sie zweimal ein. Beim Abmelden bleibt sie stehen und gilt weiter, wenn sich
+danach jemand anderes auf demselben Gerät anmeldet. Das ist Absicht: Eine
+Sperre, die beim Abmelden still verschwindet, schützt genau dann nicht mehr,
+wenn man es am wenigsten merkt.
+
 ## Ein gültiges Passwort wählen
 
 Wer selbst ein Passwort setzt — im Profil, beim Registrieren oder in der

@@ -50,7 +50,7 @@ import {
   ICON_ZUSAGE,
 } from '../../shared/icons';
 import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
+import { teilen } from '../../../services/systemDialoge';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api, { DATEI_TIMEOUT_MS } from '../../../services/api';
@@ -675,7 +675,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           encoding: Encoding.UTF8
         });
         const uri = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
-        await Share.share({ title: challenge.title, files: [uri.uri] });
+        await teilen({ title: challenge.title, files: [uri.uri] });
       } else {
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);

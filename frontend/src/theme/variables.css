@@ -3474,3 +3474,55 @@ ion-segment.md ion-segment-button {
   --padding-end: var(--app-abstand-eng);
 }
 
+
+/* ===================================================================
+   APP-SPERRE — der Sperrbildschirm vor der angemeldeten App
+   ===================================================================
+   Verdeckt die App vollstaendig, solange sie gesperrt ist. Deckende
+   Flaeche, keine Transparenz und keine Unschaerfe: Unschaerfe liesse
+   Fotos und Namen weiterhin erahnen, und genau davor schuetzt die
+   Sperre. Das z-index liegt ueber allem, was Ionic selbst aufbaut
+   (Modals liegen bei 20000, Toasts bei 60000) -- ein Modal, das noch
+   offen stand, als die App in den Hintergrund ging, darf den
+   Sperrbildschirm nicht ueberlagern. */
+.app-sperrbildschirm {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: var(--ion-background-color, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--app-abstand-weit);
+  gap: var(--app-abstand-basis);
+}
+
+.app-sperrbildschirm__schloss {
+  font-size: var(--app-icon-leerzustand);
+  color: var(--app-text-system);
+}
+
+.app-sperrbildschirm__titel {
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-halbfett);
+  margin: 0;
+}
+
+.app-sperrbildschirm__text {
+  margin: 0;
+  max-width: 22rem;
+  color: var(--app-text-secondary);
+}
+
+.app-sperrbildschirm__hinweis {
+  margin: 0;
+  max-width: 22rem;
+  color: var(--app-text-fehler);
+}
+
+.app-sperrbildschirm__knopf {
+  width: 100%;
+  max-width: 20rem;
+}

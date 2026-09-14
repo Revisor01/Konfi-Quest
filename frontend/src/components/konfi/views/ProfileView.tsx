@@ -26,6 +26,7 @@ import { SectionHeader } from '../../shared';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
+import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -615,8 +616,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 </div>
               </div>
 
-              {/* Biometrische Anmeldung (blendet sich selbst aus, wenn das
-                  Geraet keine eingerichtete Biometrie hat) */}
+              {/* App-Sperre: Face ID / Fingerabdruck vor der laufenden App.
+                  Blendet sich selbst aus, wenn das Geraet keine eingerichtete
+                  Biometrie hat. */}
+              <AppSperreSchalter variante="purple" />
 
               {/* Medien-Cache leeren */}
               <div
