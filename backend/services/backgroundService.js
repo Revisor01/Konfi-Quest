@@ -314,8 +314,14 @@ class BackgroundService {
       return;
     }
 
-    // Sofort einmal ausfuehren, dann alle 15 Minuten
-    this.sendEventReminders(db);
+    // Sofort einmal ausfuehren, dann alle 15 Minuten.
+    // .catch() ist Pflicht: sendEventReminders wirft den Fehler weiter (rethrow),
+    // ein nackter Aufruf ohne await/catch wuerde als unhandled rejection den
+    // Prozess beenden — und mit `restart: unless-stopped` eine Neustartschleife
+    // ausloesen, die von aussen unsichtbar bleibt (nur die Cron-Leader-Replica
+    // startet die Hintergrund-Jobs, die API antwortet weiter).
+    this.sendEventReminders(db).catch(err =>
+      console.error('Event reminder (initial) failed:', err));
 
     const FIFTEEN_MINUTES = 15 * 60 * 1000;
     this.eventReminderInterval = setInterval(async () => {
@@ -690,8 +696,11 @@ class BackgroundService {
       return;
     }
 
-    // Sofort einmal ausfuehren
-    this.cleanupStaleTokens(db);
+    // Sofort einmal ausfuehren. .catch() ist Pflicht — cleanupStaleTokens wirft
+    // den Fehler weiter (rethrow), ein nackter Aufruf wuerde den Prozess ueber
+    // eine unhandled rejection beenden (siehe startEventReminderService).
+    this.cleanupStaleTokens(db).catch(err =>
+      console.error('Token cleanup (initial) failed:', err));
 
     const SIX_HOURS = 6 * 60 * 60 * 1000;
     this.tokenCleanupInterval = setInterval(async () => {
