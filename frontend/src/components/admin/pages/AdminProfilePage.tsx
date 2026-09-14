@@ -212,16 +212,7 @@ const AdminProfilePage: React.FC = () => {
                   onClick={handleOpenRoleTitleModal}
                   detail={false}
                   lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto',
-                    marginBottom: 'var(--app-abstand-eng)'
-                  }}
+                  className="app-list-wrapper"
                 >
                   <div
                     className="app-list-item app-list-item--users"
@@ -251,16 +242,7 @@ const AdminProfilePage: React.FC = () => {
                   onClick={handleOpenEmailModal}
                   detail={false}
                   lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto',
-                    marginBottom: 'var(--app-abstand-eng)'
-                  }}
+                  className="app-list-wrapper"
                 >
                   <div
                     className="app-list-item app-list-item--users"
@@ -290,16 +272,7 @@ const AdminProfilePage: React.FC = () => {
                   onClick={handleOpenPasswordModal}
                   detail={false}
                   lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto',
-                    marginBottom: 'var(--app-abstand-eng)'
-                  }}
+                  className="app-list-wrapper"
                 >
                   <div
                     className="app-list-item app-list-item--users"
@@ -330,15 +303,7 @@ const AdminProfilePage: React.FC = () => {
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto'
-                  }}
+                  className="app-list-wrapper"
                 >
                   <div
                     className="app-list-item app-list-item--users"

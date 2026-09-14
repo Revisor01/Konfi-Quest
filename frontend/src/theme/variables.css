@@ -1482,6 +1482,39 @@ ion-item.app-item-transparent {
   --min-height: auto;
 }
 
+/* === Listen-Wrapper mit Abstand ===
+ * Wie app-item-transparent, aber zusaetzlich mit dem Listen-Abstand nach
+ * unten -- fuer Listen, in denen beide Bauformen nebeneinander stehen:
+ * ein direktes div.app-list-item UND ein IonItem, das innen ein
+ * div.app-list-item traegt.
+ *
+ * WARUM EINE EIGENE KLASSE: Bei Bauform A kommt der Abstand aus
+ * `.app-list-item { margin-bottom }` und faellt beim letzten Eintrag per
+ * :last-child weg. Bei Bauform B ist das innere div immer :last-child seines
+ * IonItem -- es hat also NIE einen Abstand, und der Abstand muss vom IonItem
+ * selbst kommen. Wurde er dort von Hand als Inline-Style gesetzt, fehlte er,
+ * sobald jemand nach dem bis dahin letzten IonItem noch einen Eintrag
+ * anhaengte (genau so entstand der fehlende Abstand ueber "App sperren").
+ * Hier haengt der Abstand an derselben Bedingung wie bei Bauform A -- an der
+ * Stellung in der Liste, nicht am Gedaechtnis der schreibenden Person.
+ *
+ * NICHT an app-item-transparent angehaengt: die Klasse dient anderswo auch
+ * Formularfeldern, die diesen Abstand nicht haben sollen.
+ */
+ion-item.app-list-wrapper {
+  --background: transparent;
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+  --inner-border-width: 0;
+  --border-style: none;
+  --min-height: auto;
+  margin-bottom: var(--app-abstand-eng);
+}
+ion-item.app-list-wrapper:last-child {
+  margin-bottom: 0;
+}
+
 /* === Swipe-Actions (global) ===
  * Einzige Quelle der Wahrheit für Swipe-Buttons (Größe, Form, Farbe, Abstaende).
  * Views setzen NUR die Klassen .app-swipe-actions / .app-swipe-action und je einen

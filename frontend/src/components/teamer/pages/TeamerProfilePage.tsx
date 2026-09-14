@@ -258,16 +258,6 @@ const TeamerProfilePage: React.FC = () => {
     });
   };
 
-  const itemStyle: Record<string, string> = {
-    '--background': 'transparent',
-    '--padding-start': '0',
-    '--padding-end': '0',
-    '--inner-padding-end': '0',
-    '--inner-border-width': '0',
-    '--border-style': 'none',
-    '--min-height': 'auto'
-  };
-
   if (loading) {
     return <LoadingSpinner message="Profil wird geladen..." />;
   }
@@ -437,7 +427,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentRoleTitleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
+                  className="app-list-wrapper"
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -464,7 +454,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentEmailModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
+                  className="app-list-wrapper"
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -491,7 +481,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentPasswordModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
+                  className="app-list-wrapper"
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -516,7 +506,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentBibleModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
+                  className="app-list-wrapper"
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
@@ -541,11 +531,13 @@ const TeamerProfilePage: React.FC = () => {
                 {/* App-Tour: zwischen Bibeluebersetzung und Medien-Cache
                     (Simon, 05.09.2026). Stand vorher ausserhalb des
                     Flex-Containers und hing deshalb ohne Abstand am
-                    vorherigen Eintrag. */}
+                    vorherigen Eintrag. Den Abstand nach unten gibt
+                    .app-list-item selbst -- von Hand gesetzt wuerde er auch
+                    dann stehen bleiben, wenn der Eintrag einmal ans Ende der
+                    Liste rutscht. */}
                 <div
                   className="app-list-item app-list-item--teamer"
                   onClick={() => setShowOnboarding(true)}
-                  style={{ marginBottom: 'var(--app-abstand-eng)' }}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
@@ -568,7 +560,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={handleClearMediaCache}
                   detail={false}
                   lines="none"
-                  style={{ ...itemStyle, marginBottom: 'var(--app-abstand-eng)' } as React.CSSProperties}
+                  className="app-list-wrapper"
                 >
                   <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
