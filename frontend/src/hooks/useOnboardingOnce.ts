@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useIonViewDidEnter } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 import { ermittleAppVersion } from '../utils/appVersion';
@@ -119,6 +119,21 @@ export function useOnboardingWithUpdateOnce(
   // Die Version, die beim Schliessen der Anzeige vermerkt wird. Steht erst
   // fest, wenn App.getInfo() geantwortet hat.
   const [zuMerkendeVersion, setZuMerkendeVersion] = useState<string | null>(null);
+  // Diese Sitzung hat die Anzeige schon behandelt (gezeigt oder geschlossen).
+  //
+  // WARUM NOETIG: useIonViewDidEnter feuert bei JEDEM Betreten der Seite, nicht
+  // nur beim ersten. Der Merker im Speicher wird aber ASYNCHRON geschrieben --
+  // auf dem Geraet ist Preferences.set ein Brueckenaufruf, keine Zuweisung. Wer
+  // die Anzeige wegklickt und sofort in einen anderen Tab und zurueck tippt,
+  // betritt die Seite, bevor der Merker steht: Der erneute Lesevorgang fand die
+  // alte Version und die Anzeige ging WIEDER auf. Nachgemessen am 14.09.2026 mit
+  // verzoegertem Preferences.set -- mit sofortigem Schreiben faellt es nicht auf,
+  // auf dem Geraet schon.
+  //
+  // Der Ref ueberlebt Neu-Renderings, aber nicht den App-Neustart -- genau
+  // richtig: Bleibt der Merker wegen eines Schreibfehlers aus, kommt die Anzeige
+  // beim naechsten Start wieder, innerhalb dieser Sitzung aber nicht.
+  const anzeigeBehandelt = useRef(false);
   const onboardingKey = `${onboardingKeyPrefix}_${userId ?? 'x'}`;
   const updateKey = `${UPDATE_WALKTHROUGH_KEY}_${userId ?? 'x'}`;
   const mitmachenKey = `${MITMACHEN_HINWEIS_KEY}_${userId ?? 'x'}`;
@@ -156,12 +171,20 @@ export function useOnboardingWithUpdateOnce(
       }
 
       if (entscheidung.art === 'zeigen') {
-        // Bestandsnutzer nach einem Update: die Anzeige oeffnet sich selbst.
-        // Vermerkt wird erst beim Schliessen; bis dahin nur merken, WAS zu
-        // vermerken waere. Die Update-Karte bleibt solange weg (siehe unten).
-        setZuMerkendeVersion(entscheidung.merkeVersion);
-        // Kleiner Versatz wie bei der Tour, damit die Seite erst rendert.
-        setTimeout(() => setShowNeuerungen(true), 400);
+        // Bestandsnutzer nach einem Update: die Anzeige oeffnet sich selbst --
+        // aber nur EINMAL je Sitzung. Beim erneuten Betreten der Seite steht
+        // der Merker im Speicher vielleicht noch nicht (er wird asynchron
+        // geschrieben), der Ref aber schon: Dann passiert hier nichts mehr,
+        // weder Anzeige noch Karte. Wer sie gerade gelesen hat, braucht beides
+        // nicht noch einmal.
+        if (!anzeigeBehandelt.current) {
+          anzeigeBehandelt.current = true;
+          // Vermerkt wird erst beim Schliessen; bis dahin nur merken, WAS zu
+          // vermerken waere. Die Update-Karte bleibt solange weg (siehe unten).
+          setZuMerkendeVersion(entscheidung.merkeVersion);
+          // Kleiner Versatz wie bei der Tour, damit die Seite erst rendert.
+          setTimeout(() => setShowNeuerungen(true), 400);
+        }
       } else {
         // Nichts Neues: die Karten wie bisher unabhaengig voneinander zeigen.
         // Flags werden NICHT gesetzt — erst eine bewusste Aktion (X oder
@@ -178,6 +201,10 @@ export function useOnboardingWithUpdateOnce(
     showNeuerungen,
     schliesseNeuerungen: () => {
       setShowNeuerungen(false);
+      // Auch wenn der Merker gleich nicht geschrieben werden kann: In DIESER
+      // Sitzung ist die Anzeige erledigt, sie darf beim naechsten Betreten der
+      // Seite nicht wieder aufgehen.
+      anzeigeBehandelt.current = true;
       // Dieselbe Version darf nicht wiederkommen -- auch nicht nach einem
       // App-Neustart. Zusaetzlich gilt die Update-Karte als erledigt: Wer
       // die Anzeige gerade gelesen hat, braucht daneben keinen Hinweis

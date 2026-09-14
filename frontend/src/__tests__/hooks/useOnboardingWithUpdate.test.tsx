@@ -4,18 +4,43 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 // In-Memory-Ersatz für Capacitor Preferences (geraetelokaler Flag-Speicher).
 const store = new Map<string, string>();
+// Wie lange ein Schreibvorgang dauert. Auf dem Geraet ist Preferences.set ein
+// Brueckenaufruf nach nativ, keine Zuweisung -- er braucht Zeit. Wer hier 0
+// stehen laesst, testet einen Speicher, den es auf keinem Handy gibt, und
+// uebersieht genau die Luecke zwischen Wegklicken und Vermerken
+// (siehe "erneut betreten, bevor der Merker steht").
+const schreibDauerMs = { wert: 0 };
+// Laufende Nummer des Testfalls. Ein verzoegerter Schreibvorgang aus dem
+// VORIGEN Test darf nicht in den frisch geleerten Speicher des naechsten
+// fallen -- sonst stehen dort Werte, die kein Test gesetzt hat, und ein
+// anderer Fall schlaegt scheinbar grundlos fehl.
+const testLauf = { nummer: 0 };
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     get: vi.fn(async ({ key }: { key: string }) => ({ value: store.get(key) ?? null })),
-    set: vi.fn(async ({ key, value }: { key: string; value: string }) => { store.set(key, value); }),
+    set: vi.fn(async ({ key, value }: { key: string; value: string }) => {
+      const lauf = testLauf.nummer;
+      if (schreibDauerMs.wert > 0) {
+        await new Promise((r) => setTimeout(r, schreibDauerMs.wert));
+      }
+      if (lauf !== testLauf.nummer) return;
+      store.set(key, value);
+    }),
   },
 }));
 
-// useIonViewDidEnter feuert im echten Ionic beim Betreten der Seite —
-// im Test genügt ein Effekt beim Mounten.
+// useIonViewDidEnter feuert im echten Ionic bei JEDEM Betreten der Seite —
+// im Test beim Mounten, und zusaetzlich auf Zuruf ueber `betreteSeiteErneut`
+// (ein Tab-Wechsel hin und zurueck).
+let seiteBetreten: (() => void) | null = null;
 vi.mock('@ionic/react', () => ({
-  useIonViewDidEnter: (cb: () => void) => { React.useEffect(() => { cb(); }, []); },
+  useIonViewDidEnter: (cb: () => void) => {
+    seiteBetreten = cb;
+    React.useEffect(() => { cb(); }, []);
+  },
 }));
+
+const betreteSeiteErneut = () => { act(() => { seiteBetreten?.(); }); };
 
 // Die LAUFENDE App-Version. Auf dem Geraet kommt sie aus App.getInfo(),
 // im Test wird sie je Fall gesetzt -- genau daran haengt die Entscheidung,
@@ -50,6 +75,8 @@ describe('Änderungsanzeige nach einem Update', () => {
   beforeEach(() => {
     store.clear();
     laufendeVersion.wert = '2.2.0';
+    testLauf.nummer++;
+    schreibDauerMs.wert = 0;
   });
 
   it('2.1.1 -> 2.2.0: die Anzeige meldet sich von selbst', async () => {
@@ -135,6 +162,50 @@ describe('Änderungsanzeige nach einem Update', () => {
     expect(zweite.result.current.showOnboarding).toBe(false);
   });
 
+  it('weggeklickt, dann Tab hin und zurueck: die Anzeige bleibt zu', async () => {
+    // Der Fall, der die App unbedienbar machte: Die Anzeige liegt als
+    // Vollbild ueber der Seite und faengt alle Klicks ab. Wer sie wegklickt
+    // und sofort in einen anderen Tab und zurueck tippt, betritt die Seite
+    // erneut -- und der Merker im Speicher steht noch nicht, weil er
+    // asynchron geschrieben wird. Vor dem Fix ging die Anzeige wieder auf,
+    // beliebig oft (gefunden ueber die E2E-Tests, 14.09.2026).
+    schreibDauerMs.wert = 300;
+    store.set(ONBOARDING_KEY, '1');
+    store.set(GESEHEN_KEY, '2.1');
+    const { result } = mounten();
+    await warteAufAnzeige(result);
+
+    act(() => { result.current.schliesseNeuerungen(); });
+    expect(result.current.showNeuerungen).toBe(false);
+
+    // Seite erneut betreten, BEVOR der Merker geschrieben ist.
+    expect(store.get(GESEHEN_KEY)).toBe('2.1');
+    betreteSeiteErneut();
+    await warteVersatzAb();
+
+    expect(result.current.showNeuerungen).toBe(false);
+    // Und auch die Karte poppt nicht als Ersatz auf.
+    expect(result.current.showUpdateHinweis).toBe(false);
+  });
+
+  it('erneut betreten, waehrend die Anzeige noch offen ist: kein zweites Oeffnen', async () => {
+    // Dieselbe Luecke, nur ohne Wegklicken: Der Merker steht erst beim
+    // Schliessen. Ein Tab-Wechsel bei offener Anzeige darf keine zweite
+    // Anzeige hinter der ersten stapeln.
+    schreibDauerMs.wert = 300;
+    store.set(ONBOARDING_KEY, '1');
+    const { result } = mounten();
+    await warteAufAnzeige(result);
+
+    betreteSeiteErneut();
+    await warteVersatzAb();
+
+    expect(result.current.showNeuerungen).toBe(true);
+    act(() => { result.current.schliesseNeuerungen(); });
+    // Ein einziges Schliessen genuegt -- es liegt nichts darunter.
+    expect(result.current.showNeuerungen).toBe(false);
+  });
+
   it('Bestandsgeraet aus 2.1.1: das alte Flag zaehlt als "2.1 gesehen"', async () => {
     // Bruecke: Vor 2.2.0 gab es keinen Merker, nur das alte Flag. Wer die
     // 2.1-Karte weggeklickt hatte, hat 2.1 gesehen -- und bekommt 2.2.
@@ -174,6 +245,8 @@ describe('Die Neuigkeiten-Karten daneben', () => {
   beforeEach(() => {
     store.clear();
     laufendeVersion.wert = '2.2.0';
+    testLauf.nummer++;
+    schreibDauerMs.wert = 0;
   });
 
   it('nichts Neues: die Update-Karte steht, ihr Flag bleibt UNGESETZT', async () => {
