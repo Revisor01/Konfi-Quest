@@ -224,7 +224,7 @@ const TeamerEventsPage: React.FC = () => {
               await api.delete(`/teamer/requests/${request.id}`);
               refreshRequests();
             } catch (error) {
-              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'));
+              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'), { ort: 'antrag-loeschen-teamer', fehler: error });
             }
           }
         }

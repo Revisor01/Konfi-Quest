@@ -212,7 +212,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
               await api.delete(`/konfi/requests/${request.id}`);
               refreshRequests();
             } catch (error) {
-              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'));
+              setError(fehlerText(error, 'Fehler beim Löschen der Aktivität'), { ort: 'antrag-loeschen-konfi', fehler: error });
             }
           }
         }

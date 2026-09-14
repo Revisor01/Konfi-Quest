@@ -22,6 +22,7 @@ import {
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
 import { fehlerDaten } from '../../../utils/fehler';
+import { trackHandlung } from '../../../services/analytics';
 
 interface EventModalProps {
   event?: Event | null;
@@ -272,9 +273,20 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         } else {
           if (formData.is_series) {
             await api.post('/events/series', payload);
+            // Anonyme Messung NACH der erfolgreichen Antwort. Nur Form und
+            // Zielgruppe — kein Titel, kein Datum, kein Jahrgang, keine
+            // Teilnehmerzahl und auch nicht die Laenge der Serie.
+            trackHandlung('termin-angelegt', {
+              form: 'serie',
+              zielgruppe: isTeamerOnly ? 'teamer' : 'konfi'
+            });
             setSuccess(`Event-Serie mit ${formData.series_count} Events erstellt`);
           } else {
             await api.post('/events', payload);
+            trackHandlung('termin-angelegt', {
+              form: 'einzeln',
+              zielgruppe: isTeamerOnly ? 'teamer' : 'konfi'
+            });
           }
         }
       } else {

@@ -572,8 +572,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
               await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
               await loadKonfiData();
               triggerRefresh('konfis');
-            } catch {
-              setError('Fehler beim Löschen der Aktivität');
+            } catch (err) {
+              setError('Fehler beim Löschen der Aktivität', { ort: 'aktivitaet-loeschen-konfidetail', fehler: err });
             }
           }
         }

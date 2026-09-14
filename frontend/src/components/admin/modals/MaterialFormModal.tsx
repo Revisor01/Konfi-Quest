@@ -53,6 +53,7 @@ import FileViewerModal from '../../shared/FileViewerModal';
 import { safeUUID } from '../../../utils/uuid';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
+import { trackHandlung } from '../../../services/analytics';
 
 interface MaterialFile {
   id: number;
@@ -236,8 +237,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
       try {
         const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
         openInAppViewer(response.data, file.original_name, file.mime_type);
-      } catch {
-        setError('Fehler beim Öffnen der Datei');
+      } catch (fallbackErr) {
+        setError('Fehler beim Öffnen der Datei', { ort: 'material-admin-formular', fehler: fallbackErr });
       }
     }
   };
@@ -344,6 +345,23 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             });
             await api.post(`/material/${materialId}/files`, formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+
+          // Anonyme Messung, erst wenn ALLE Aufrufe des Online-Zweigs durch
+          // sind — also nach dem Anlegen UND dem Datei-Upload. Gemessen wird
+          // nur neu eingestelltes Material, nicht das Nachbessern eines
+          // vorhandenen: gezaehlt werden soll bereitgestellte Arbeit.
+          //
+          // Nur die Art des Inhalts — kein Titel, kein Dateiname, keine
+          // Anzahl, keine Jahrgaenge.
+          if (!material) {
+            const hatDatei = newFiles.length > 0;
+            const hatLink = bereinigt.length > 0;
+            trackHandlung('material-bereitgestellt', {
+              inhalt: hatDatei && hatLink
+                ? 'beides'
+                : hatDatei ? 'datei' : hatLink ? 'link' : 'nur-text'
             });
           }
 

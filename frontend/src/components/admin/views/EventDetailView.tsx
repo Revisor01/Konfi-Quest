@@ -52,6 +52,7 @@ import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheb
 import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
 import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { trackHandlung } from '../../../services/analytics';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -416,8 +417,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       } catch {
         if (gilt()) setEventMaterials([]);
       }
-    } catch {
-      if (gilt()) setError('Fehler beim Laden der Event-Daten');
+    } catch (err) {
+      if (gilt()) setError('Fehler beim Laden der Event-Daten', { ort: 'event-detail-laden', fehler: err });
     } finally {
       if (gilt()) setLoading(false);
     }
@@ -569,6 +570,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         ...(texte?.excuse_reason !== undefined ? { excuse_reason: texte.excuse_reason } : {}),
         ...(notizMitgeschickt ? { attendance_note: texte!.attendance_note } : {})
       });
+      // Anonyme Messung NACH der erfolgreichen Antwort: die Anwesenheit ist
+      // wirklich verbucht. Nur Umfang und Gruppe — keine Person, kein Termin,
+      // kein Status-Detail, kein Grund und keine Notiz.
+      trackHandlung('anwesenheit-erfasst', {
+        umfang: 'einzeln',
+        gruppe: participant.role_name === 'konfi' ? 'konfi' : 'teamer'
+      });
       triggerRefresh('events');
     } catch {
       setParticipants(prev => prev.map(p =>
@@ -706,6 +714,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           handler: async () => {
             try {
               const res = await api.put(`/events/${eventId}/participants/attendance-all`, { rolle });
+              // Anonyme Messung NACH der erfolgreichen Antwort. Bewusst OHNE
+              // die Anzahl: bei einer kleinen Gemeinde waere die Gruppengroesse
+              // ein Fingerabdruck.
+              trackHandlung('anwesenheit-erfasst', {
+                umfang: 'alle',
+                gruppe: rolle === 'teamer' ? 'teamer' : 'konfi'
+              });
               await loadEventData();
               triggerRefresh('events');
               setSuccess(res.data?.message || 'Teilnahmen verbucht');

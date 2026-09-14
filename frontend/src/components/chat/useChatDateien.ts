@@ -152,8 +152,8 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
       const clickedIndex = allFileMessages.findIndex(m => m.file_path === filePath);
       viewerRef.current = { files, initialIndex: Math.max(0, clickedIndex) };
       presentFileViewer({ cssClass: 'file-viewer-modal' });
-    } catch {
-      setError('Fehler beim Öffnen der Datei');
+    } catch (err) {
+      setError('Fehler beim Öffnen der Datei', { ort: 'chat-datei', fehler: err });
     } finally {
       // finally statt einzelner Aufrufe: Der Zweig "nativ geoeffnet" steigt
       // per return aus, und ohne finally bliebe die Anzeige dort haengen.

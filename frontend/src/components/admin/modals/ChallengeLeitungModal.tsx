@@ -62,11 +62,21 @@ import MusikLink from '../../shared/MusikLink';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import { getChallengeStatus } from '../views/ChallengesManageView';
 import { anzahlBeitraege } from '../../../utils/challengeTexte';
+import { trackHandlung } from '../../../services/analytics';
 import type {
   AdminChallenge,
   KonfiChallenge,
   ChallengeSubmission
 } from '../../../types/challenges';
+
+// Die vier Moderations-Aktionen als grobe Messwerte. Fest verdrahtet, damit
+// nie ein technischer Bezeichner aus dem Backend an die Messung durchrutscht.
+const MODERATION_MESSWERT: Record<'approve' | 'hide' | 'unhide' | 'anonymize', string> = {
+  approve: 'freigegeben',
+  hide: 'ausgeblendet',
+  unhide: 'wieder-sichtbar',
+  anonymize: 'anonymisiert'
+};
 
 // VEREINTES Challenge-Detail für Leitung und Teamer:innen (11.08.): Verwalten
 // UND Mitmachen in EINEM Modal, statt eines Segments, das die ganze Seite
@@ -464,6 +474,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         // — das Ausblenden scheitert NIE am fehlenden Grund.
         ...(reason ? { reason } : {})
       });
+      // Anonyme Messung NACH der erfolgreichen Antwort: der Beitrag wurde
+      // wirklich durchgesehen. Nur die Entscheidung — kein Beitrag, keine
+      // Person, keine Begruendung.
+      trackHandlung('beitrag-moderiert', { entscheidung: MODERATION_MESSWERT[action] });
       await loadSubmissions();
       onChanged?.();
     } catch (err) {
