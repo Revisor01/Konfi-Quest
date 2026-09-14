@@ -45,7 +45,7 @@ import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 // Diese Seite war die einzige der sechs Einbindungen, die beim Update auf
 // 2.1.1 nicht mitgezogen wurde -- Dashboard, Profil und Konfis-Seite zeigten
 // laengst den neuen.
-import AdminUpdate211WalkthroughModal from '../modals/AdminUpdate211WalkthroughModal';
+import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -550,7 +550,7 @@ const AdminSettingsPage: React.FC = () => {
       )}
 
       {showUpdateWalkthrough && (
-        <AdminUpdate211WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <AdminUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

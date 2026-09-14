@@ -3484,7 +3484,15 @@ ion-segment.md ion-segment-button {
    Sperre. Das z-index liegt ueber allem, was Ionic selbst aufbaut
    (Modals liegen bei 20000, Toasts bei 60000) -- ein Modal, das noch
    offen stand, als die App in den Hintergrund ging, darf den
-   Sperrbildschirm nicht ueberlagern. */
+   Sperrbildschirm nicht ueberlagern.
+
+   Bildsprache wie die Anmeldeseite (.app-auth-background): beide sind
+   Torhueter vor der App und gehoeren optisch zusammen -- Aurora-Verlauf
+   mit zwei radialen Lichtpunkten, darueber das freigestellte Logo als
+   grosses Wasserzeichen. Der Verlauf liegt bewusst auf ::before und
+   nicht auf dieser Regel: hier bleibt eine deckende Grundfarbe stehen,
+   damit selbst dann nichts durchscheint, wenn der Verlauf (oder eine
+   der darin genutzten Variablen) einmal nicht greift. */
 .app-sperrbildschirm {
   position: fixed;
   inset: 0;
@@ -3495,34 +3503,140 @@ ion-segment.md ion-segment-button {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--app-abstand-weit);
+  overflow: hidden;
+  padding:
+    calc(var(--app-abstand-weit) + env(safe-area-inset-top, 0px))
+    calc(var(--app-abstand-weit) + env(safe-area-inset-right, 0px))
+    calc(var(--app-abstand-weit) + env(safe-area-inset-bottom, 0px))
+    calc(var(--app-abstand-weit) + env(safe-area-inset-left, 0px));
   gap: var(--app-abstand-basis);
+}
+
+/* Der Aurora-Verlauf, deckend ueber die ganze Flaeche. Farbwerte und
+   Lichtpunkte sind dieselben wie auf der Anmeldeseite. */
+.app-sperrbildschirm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 8%, rgba(255, 255, 255, 0.30) 0%, transparent 45%),
+    radial-gradient(circle at 92% 100%, rgba(var(--app-aurora-tuerkis-rgb), 0.80) 0%, transparent 52%),
+    var(--app-gradient-aurora);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Freigestelltes Logo (Lutherrose+Herz) als Wasserzeichen -- wie auf der
+   Anmeldeseite oben rechts aus dem Rahmen laufend, einfarbig weiss. */
+.app-sperrbildschirm__wasserzeichen {
+  position: absolute;
+  top: -10vh;
+  right: -22vw;
+  left: auto;
+  transform: rotate(-10deg);
+  width: 95vw;
+  height: 95vw;
+  max-width: none;
+  object-fit: contain;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Alles Bedienbare liegt ueber Verlauf und Wasserzeichen. */
+.app-sperrbildschirm > *:not(.app-sperrbildschirm__wasserzeichen) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Das Schloss ist der Mittelpunkt: weiss in einem hellen Kreis, damit es
+   auf dem farbigen Grund traegt (grau wie zuvor verschwaende darin). */
+.app-sperrbildschirm__schloss-kreis {
+  width: 112px;
+  height: 112px;
+  flex: 0 0 auto;
+  border-radius: var(--app-radius-kreis);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--app-abstand-eng);
+  box-shadow: var(--app-schatten-hoch);
 }
 
 .app-sperrbildschirm__schloss {
   font-size: var(--app-icon-leerzustand);
-  color: var(--app-text-system);
+  color: var(--app-weiss);
 }
 
 .app-sperrbildschirm__titel {
-  font-size: var(--app-text-titel);
-  font-weight: var(--app-schrift-halbfett);
+  font-family: var(--app-schriftart-marke);
+  font-size: var(--app-text-ueberschrift-gross);
+  font-weight: var(--app-schrift-normal);
+  letter-spacing: 4px;
+  text-transform: uppercase;
   margin: 0;
+  color: var(--app-weiss);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
 .app-sperrbildschirm__text {
   margin: 0;
   max-width: 22rem;
-  color: var(--app-text-secondary);
+  font-size: var(--app-text-standard);
+  color: var(--app-weiss);
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Der Hinweis nach einem Fehlversuch. Das sonst uebliche Dunkelrot
+   (--app-text-fehler) ist auf dem Verlauf nicht lesbar -- hier traegt
+   stattdessen eine eigene helle Flaeche mit weisser Schrift. */
 .app-sperrbildschirm__hinweis {
   margin: 0;
   max-width: 22rem;
-  color: var(--app-text-fehler);
+  padding: var(--app-abstand-schmal) var(--app-abstand-basis);
+  border-radius: var(--app-radius-karte);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  font-size: var(--app-text-sekundaer);
+  color: var(--app-weiss);
 }
 
+/* Haupt-Aktion: weiss auf dem Verlauf, wie die Anmeldeseite es auf der
+   Card umgekehrt macht -- die kraeftigste Flaeche ist die Aktion. */
 .app-sperrbildschirm__knopf {
   width: 100%;
   max-width: 20rem;
+  --background: var(--app-weiss);
+  --background-hover: var(--app-weiss);
+  --background-activated: rgba(255, 255, 255, 0.85);
+  --color: var(--app-color-konfis);
+  --border-radius: var(--app-radius-gross);
+  --box-shadow: var(--app-schatten-hoch);
+  height: 52px;
+  font-weight: var(--app-schrift-halbfett);
+  margin: 0;
+}
+
+/* Der Rueckweg. Bleibt waehrend der laufenden Abfrage bedienbar und
+   darf deshalb NICHT so weit zuruecktreten, dass man ihn in einer
+   Notlage nicht findet: weisse Schrift in voller Deckkraft, eigener
+   Rahmen, volle Knopfhoehe -- sichtbar zweite Wahl, aber nie ein
+   Fussnotenlink. */
+.app-sperrbildschirm__abmelden {
+  width: 100%;
+  max-width: 20rem;
+  --background: rgba(255, 255, 255, 0.12);
+  --background-hover: rgba(255, 255, 255, 0.22);
+  --background-activated: rgba(255, 255, 255, 0.28);
+  --color: var(--app-weiss);
+  --border-radius: var(--app-radius-gross);
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: rgba(255, 255, 255, 0.55);
+  height: 48px;
+  font-weight: var(--app-schrift-halbfett);
+  margin: 0;
 }

@@ -84,6 +84,56 @@ describe('Der Sperrbildschirm', () => {
     const zIndex = Number(regeln.match(/z-index:\s*(\d+)/)?.[1]);
     expect(zIndex).toBeGreaterThan(60000);
   });
+
+  it('legt den Verlauf deckend ueber die ganze Flaeche', () => {
+    // Der Aurora-Verlauf liegt auf ::before, damit die Grundfarbe der
+    // Hauptregel deckend bleibt. Dann muss aber auch dieses ::before die
+    // ganze Flaeche fuellen und selbst undurchsichtig sein — sonst waere
+    // der Verlauf nur Zierde ueber durchscheinendem Inhalt.
+    const css = readFileSync(
+      resolve(__dirname, '../../..', 'src/theme/variables.css'),
+      'utf-8'
+    );
+    const block = css.slice(css.indexOf('.app-sperrbildschirm::before {'));
+    const regeln = block.slice(0, block.indexOf('}'));
+
+    expect(regeln).toContain('inset: 0');
+    expect(regeln).toContain('var(--app-gradient-aurora)');
+    expect(regeln).not.toContain('backdrop-filter');
+    // Eine Deckkraft auf der Verlaufsflaeche selbst wuerde alles darunter
+    // durchscheinen lassen (das Wasserzeichen darf sie haben, diese nicht).
+    expect(regeln).not.toMatch(/(^|[\s;{])opacity\s*:/);
+  });
+
+  it('haelt den sicheren Bereich frei', () => {
+    // Notch und Home-Indicator: der Inhalt darf nicht darunter liegen.
+    const css = readFileSync(
+      resolve(__dirname, '../../..', 'src/theme/variables.css'),
+      'utf-8'
+    );
+    const block = css.slice(css.indexOf('.app-sperrbildschirm {'));
+    const regeln = block.slice(0, block.indexOf('}'));
+
+    expect(regeln).toContain('env(safe-area-inset-top');
+    expect(regeln).toContain('env(safe-area-inset-bottom');
+  });
+
+  it('verraet nichts ueber die angemeldete Person', async () => {
+    // Diesen Bildschirm sieht, wer das Geraet in die Hand bekommt. Er darf
+    // nur sagen, dass es Konfi Quest ist — kein Name, keine Rolle, keine
+    // Gemeinde. Geprueft wird der gesamte sichtbare Text.
+    mockOeffnen.mockResolvedValue('fehler');
+    const { container } = render(<AppSperrbildschirm onEntsperrt={vi.fn()} onAbmelden={vi.fn()} />);
+    await screen.findByText(/nicht geklappt/);
+
+    // "Konfi Quest" als App-Name ist erlaubt und soll auch dastehen — der
+    // Rest des Textes darf die Rolle "Konfi" dagegen nicht nennen.
+    expect(container.textContent).toContain('Konfi Quest ist gesperrt');
+    const text = (container.textContent ?? '').toLowerCase().split('konfi quest').join(' ');
+    for (const wort of ['konfi', 'teamer', 'admin', 'leitung', 'gemeinde', 'jahrgang', 'angemeldet als']) {
+      expect(text).not.toContain(wort);
+    }
+  });
 });
 
 describe('Entsperren', () => {
@@ -163,6 +213,48 @@ describe('Der Rueckweg — niemand darf sich aussperren', () => {
     await waitFor(() => expect(mockOeffnen).toHaveBeenCalled());
     await act(async () => { fireEvent.click(screen.getByText('Abmelden')); });
     expect(abmelden).toHaveBeenCalledTimes(1);
+  });
+
+  it('laesst "Abmelden" waehrend der laufenden Abfrage bedienbar', async () => {
+    // Der Entsperren-Knopf ist waehrend der Abfrage gesperrt — der Rueckweg
+    // ausdruecklich NICHT. Wer hier festhaengt, soll nicht warten muessen,
+    // bis ein Spinner fertig ist.
+    const abmelden = vi.fn();
+    let freigeben: (w: string) => void = () => {};
+    mockOeffnen.mockImplementation(() => new Promise((f) => { freigeben = f; }));
+
+    render(<AppSperrbildschirm onEntsperrt={vi.fn()} onAbmelden={abmelden} />);
+    await waitFor(() => expect(mockOeffnen).toHaveBeenCalledTimes(1));
+
+    const knopf = screen.getByText('Abmelden').closest('ion-button') as HTMLElement;
+    expect(knopf.hasAttribute('disabled')).toBe(false);
+    await act(async () => { fireEvent.click(screen.getByText('Abmelden')); });
+    expect(abmelden).toHaveBeenCalledTimes(1);
+
+    await act(async () => { freigeben('abgebrochen'); });
+  });
+
+  it('gestaltet den Rueckweg als vollen Knopf, nicht als blassen Link', () => {
+    // Auf dem Verlauf muesste ein "clear"-Knopf in Grau untergehen. Der
+    // Rueckweg darf gestalterisch zweite Wahl sein, aber nie so weit
+    // zuruecktreten, dass man ihn in einer Notlage nicht findet.
+    const quelle = readFileSync(
+      resolve(__dirname, '../../..', 'src/components/common/AppSperrbildschirm.tsx'),
+      'utf-8'
+    );
+    expect(quelle).toContain('app-sperrbildschirm__abmelden');
+    expect(quelle).not.toContain('color="medium"');
+    expect(quelle).not.toContain('fill="clear"');
+
+    const css = readFileSync(
+      resolve(__dirname, '../../..', 'src/theme/variables.css'),
+      'utf-8'
+    );
+    const block = css.slice(css.indexOf('.app-sperrbildschirm__abmelden {'));
+    const regeln = block.slice(0, block.indexOf('}'));
+    // Weisse Schrift in voller Deckkraft plus eigener Rahmen.
+    expect(regeln).toContain('--color: var(--app-weiss)');
+    expect(regeln).toContain('--border-width: 1px');
   });
 
   it('bleibt bedienbar, wenn die Biometrie dauerhaft scheitert', async () => {

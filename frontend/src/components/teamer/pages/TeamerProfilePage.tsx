@@ -53,7 +53,7 @@ import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import TeamerUpdate211WalkthroughModal from '../modals/TeamerUpdate211WalkthroughModal';
+import TeamerUpdate220WalkthroughModal from '../modals/TeamerUpdate220WalkthroughModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -703,7 +703,7 @@ const TeamerProfilePage: React.FC = () => {
       )}
 
       {showUpdateWalkthrough && (
-        <TeamerUpdate211WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <TeamerUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

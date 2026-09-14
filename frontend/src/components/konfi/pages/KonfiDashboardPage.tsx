@@ -15,7 +15,7 @@ import {
 } from '@ionic/react';
 import { ICON_FUNKELN_GEFUELLT, ICON_PROFIL, ICON_SCHLIESSEN } from '../../shared/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
+import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -281,12 +281,13 @@ const KonfiDashboardPage: React.FC = () => {
     });
   };
 
-  // --- Onboarding-Tour (frische Accounts) bzw. Neuigkeiten-Karte
-  // "Was ist neu in Version 2.0" (Bestandsnutzer) — nie beides. Der
-  // Walkthrough poppt nicht mehr von selbst auf, sondern öffnet sich über
-  // die Karte oder dauerhaft über "Was ist neu?" im Profil.
+  // --- Onboarding-Tour (Neuinstallation) bzw. Änderungsanzeige nach einem
+  // Update (Bestandsnutzer) — nie beides, dafür sorgt der Hook. Die Anzeige
+  // meldet sich genau einmal je Minor-Version von selbst; dauerhaft
+  // erreichbar bleibt sie über "Was ist neu?" im Profil.
   const {
     showOnboarding, closeOnboarding,
+    showNeuerungen, schliesseNeuerungen,
     showUpdateHinweis, markUpdateHinweisGesehen,
     showMitmachenHinweis, markMitmachenHinweisGesehen
   } = useOnboardingWithUpdateOnce('konfi_onboarding_seen', user?.id);
@@ -502,9 +503,17 @@ const KonfiDashboardPage: React.FC = () => {
         />
       )}
 
-      {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
+      {/* Änderungsanzeige nach einem Update — meldet sich VON SELBST, genau
+          einmal je Minor-Version (useOnboardingWithUpdateOnce). Sie und die
+          Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
+          Karte bleibt weg, solange sie offen ist. */}
+      {showNeuerungen && (
+        <KonfiUpdate220WalkthroughModal onClose={schliesseNeuerungen} />
+      )}
+
+      {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
       {showUpdateWalkthrough && (
-        <KonfiUpdate211WalkthroughModal
+        <KonfiUpdate220WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}

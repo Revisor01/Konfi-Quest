@@ -34,7 +34,7 @@ import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
-import KonfiUpdate211WalkthroughModal from '../modals/KonfiUpdate211WalkthroughModal';
+import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -683,11 +683,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         />
       )}
 
-      {/* "Was ist neu?" — derselbe Walkthrough wie nach dem Update */}
+      {/* "Was ist neu?" — derselbe Walkthrough wie nach dem Update. Ohne
+          displayName: Die Begrüßung mit Namen gehört zur Onboarding-Tour,
+          nicht zur Änderungsanzeige. */}
       {showUpdateWalkthrough && (
-        <KonfiUpdate211WalkthroughModal
+        <KonfiUpdate220WalkthroughModal
           onClose={() => setShowUpdateWalkthrough(false)}
-          displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
         />
       )}
 

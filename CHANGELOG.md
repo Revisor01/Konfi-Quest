@@ -44,6 +44,10 @@ Versionsüberschrift.
   dem Sperrbildschirm ab und wieder neu an.
 
 ### Geändert
+- Nach einem Update zeigt die App einmal, was sich geändert hat — je nach
+  Rolle das, was für Konfis, Team oder Leitung wichtig ist. Wer die App neu
+  installiert, bekommt sie nicht zu sehen, und zwischen zwei Testversionen
+  derselben Ausgabe erscheint sie auch nicht.
 - Dateien aus dem Chat werden nur noch einmal geladen. Wer eine PDF, ein
   Dokument oder eine Tondatei ein zweites Mal antippt, hat sie sofort vor sich —
   ohne Ladeanzeige und ohne Netz. Bisher galt das nur für Bilder und Videos,

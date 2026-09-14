@@ -77,6 +77,12 @@ const AppSperrbildschirm: React.FC<Props> = ({ onEntsperrt, onAbmelden }) => {
   // Nichts von den Inhalten darf durchscheinen, solange gesperrt ist. Keine
   // Transparenz, keine Unschaerfe — Unschaerfe liesse Fotos und Namen
   // weiterhin erahnen.
+  //
+  // Die Bildsprache ist die der Anmeldeseite (Aurora-Verlauf, freigestelltes
+  // Logo als Wasserzeichen): beide sind Torhueter vor der App. Was hier NICHT
+  // steht, steht bewusst nicht da — kein Name, keine Rolle, keine Gemeinde.
+  // Diesen Bildschirm sehen auch Unbefugte, die das Geraet in die Hand
+  // bekommen; er verraet nur, dass es Konfi Quest ist.
   return (
     <div
       className="app-sperrbildschirm"
@@ -84,11 +90,22 @@ const AppSperrbildschirm: React.FC<Props> = ({ onEntsperrt, onAbmelden }) => {
       aria-modal="true"
       aria-label="Konfi Quest ist gesperrt"
     >
-      <IonIcon
-        className="app-sperrbildschirm__schloss"
-        icon={ICON_SPERRE_GEFUELLT}
+      {/* Freigestelltes Logo als grosses, angedeutetes Wasserzeichen —
+          dasselbe Bild wie auf der Anmeldeseite. */}
+      <img
+        src="/assets/icon/logo-mark.png"
+        alt=""
+        className="app-sperrbildschirm__wasserzeichen"
         aria-hidden="true"
       />
+
+      <div className="app-sperrbildschirm__schloss-kreis">
+        <IonIcon
+          className="app-sperrbildschirm__schloss"
+          icon={ICON_SPERRE_GEFUELLT}
+          aria-hidden="true"
+        />
+      </div>
 
       <h1 className="app-sperrbildschirm__titel">Konfi Quest ist gesperrt</h1>
 
@@ -115,8 +132,15 @@ const AppSperrbildschirm: React.FC<Props> = ({ onEntsperrt, onAbmelden }) => {
       </IonButton>
 
       {/* Der Rückweg. Steht immer da, auch während die Abfrage läuft — wer hier
-          festhängt, soll nicht warten müssen, bis ein Spinner fertig ist. */}
-      <IonButton fill="clear" size="small" color="medium" onClick={() => onAbmelden()}>
+          festhängt, soll nicht warten müssen, bis ein Spinner fertig ist.
+          Deshalb ist er auch gestalterisch ein richtiger Knopf mit Rahmen und
+          nicht bloss ein blasser Link: in einer Notlage muss man ihn finden. */}
+      <IonButton
+        className="app-sperrbildschirm__abmelden"
+        expand="block"
+        fill="outline"
+        onClick={() => onAbmelden()}
+      >
         <IonIcon slot="start" icon={ICON_ABMELDEN} aria-hidden="true" />
         Abmelden
       </IonButton>

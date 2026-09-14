@@ -170,3 +170,136 @@ describe('Update-Walkthrough 2.1.1', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Änderungsanzeige 2.2.0 (14.09.2026)
+// ---------------------------------------------------------------------------
+// Aus dem CHANGELOG-Abschnitt 2.2.0 wurde je Rolle ausgewählt, was sie in der
+// App auch merkt. Diese Tests halten fest, dass die Auswahl zur Rolle passt
+// und die Texte an der Wirklichkeit bleiben.
+import { SLIDES as konfi220 } from '../../components/konfi/modals/KonfiUpdate220WalkthroughModal';
+import { SLIDES as teamer220 } from '../../components/teamer/modals/TeamerUpdate220WalkthroughModal';
+import { SLIDES as admin220 } from '../../components/admin/modals/AdminUpdate220WalkthroughModal';
+
+const WALKTHROUGHS_220: [string, Slide[]][] = [
+  ['Konfi 2.2.0', konfi220],
+  ['Teamer 2.2.0', teamer220],
+  ['Leitung 2.2.0', admin220],
+];
+
+const text220 = (slides: Slide[]) => slides.map((s) => `${s.title} ${s.text}`).join(' ');
+
+describe('Änderungsanzeige 2.2.0', () => {
+  it.each(WALKTHROUGHS_220)('%s hat Folien mit Titel und Text', (_name, slides) => {
+    expect(slides.length).toBeGreaterThanOrEqual(3);
+    for (const s of slides) {
+      expect(s.title.trim().length).toBeGreaterThan(0);
+      expect(s.text.trim().length).toBeGreaterThan(40);
+    }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s bleibt kurz genug zum Lesen', (_name, slides) => {
+    // Höchstens 4-6 Punkte je Rolle, lieber weniger. Fünf Folien sind die
+    // Grenze, ab der man wegtippt.
+    expect(slides.length).toBeLessThanOrEqual(5);
+    for (const s of slides) {
+      expect(s.text.length).toBeLessThanOrEqual(520);
+    }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s enthält keine Unicode-Emojis', (_name, slides) => {
+    for (const s of slides) {
+      expect(s.title).not.toMatch(/\p{Extended_Pictographic}/u);
+      expect(s.text).not.toMatch(/\p{Extended_Pictographic}/u);
+    }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nennt die App-Sperre — sie betrifft alle', (_name, slides) => {
+    const text = text220(slides);
+    expect(text).toContain('Face ID');
+    // Wo die Sperre eingestellt wird, muss dabeistehen: eine Funktion, die
+    // man nicht findet, ist keine.
+    expect(text).toContain('Profil');
+    // Die Sperre ist von Haus aus AUS -- das ist die Zusage.
+    expect(text).toMatch(/von Haus aus (ist die Sperre )?aus/);
+  });
+
+  it.each(WALKTHROUGHS_220)('%s verspricht keine Abmeldung durch die Sperre', (_name, slides) => {
+    // Angemeldet bleibt man, das ist der Unterschied zum Abmelden.
+    // Gross/klein egal -- am Satzanfang steht "Angemeldet bleibst du dabei".
+    expect(text220(slides)).toMatch(/angemeldet bleibst du dabei/i);
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nennt keine Interna', (_name, slides) => {
+    // Messung, Migrationen, Testumgebung und Verbindungsfreigabe stehen im
+    // CHANGELOG unter "Sonstiges" und interessieren niemanden in der App.
+    const text = text220(slides);
+    for (const wort of ['Messung', 'Migration', 'Testumgebung', 'Verbindungsfreigabe', 'Datenbank', 'Server']) {
+      expect(text, wort).not.toContain(wort);
+    }
+  });
+
+  it('Konfi-Folien nennen Stempel und Tempo, nicht die Arbeit der Leitung', () => {
+    const text = text220(konfi220);
+    expect(text).toContain('Challenge-Stempel');
+    // Dateien aus dem Chat nur noch einmal laden.
+    expect(text).toMatch(/nur noch einmal|zweiten Antippen/);
+    expect(text).toContain('schneller');
+    // Abzeichen mit Emoji im Rückblick.
+    expect(text).toContain('Emoji');
+    // Was die Leitung tut, gehört nicht in die Konfi-Fassung.
+    expect(text).not.toContain('Abgemeldet');
+    expect(text).not.toContain('95 Symbole');
+    expect(text).not.toContain('Jahrgäng');
+  });
+
+  it('Teamer-Folien nennen Abmeldung, Notiz und wer eingetragen hat', () => {
+    const text = text220(teamer220);
+    expect(text).toContain('Abgemeldet');
+    expect(text).toContain('Notiz');
+    // Der Grund landet in der Teilnehmerliste, damit das Team ihn sieht.
+    expect(text).toContain('Teilnehmerliste');
+    // Wer eingetragen hat -- der Punkt, wegen dem man bei Rückfragen weiß,
+    // wen man fragt.
+    expect(text).toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
+    // Punkte gibt es bei einer Abmeldung keine, schon vergebene gehen zurück.
+    expect(text).toMatch(/Punkte gibt es dabei keine|zurückgenommen/);
+    // Die Symbolauswahl legt die Leitung an, nicht das Team.
+    expect(text).not.toContain('95 Symbole');
+  });
+
+  it('Leitungs-Folien nennen die Jahrgangsgrenzen als Grenze, nicht als Fehler', () => {
+    const text = text220(admin220);
+    expect(text).toContain('Jahrgäng');
+    // Eine leere Liste ist kein Fehler -- dieselbe Zusage wie in 2.1.1.
+    expect(text).toContain('kein Fehler');
+    // Allgemeine und Team-Termine bleiben offen; ohne diesen Satz klänge die
+    // Grenze schärfer, als sie ist.
+    expect(text).toMatch(/Team-Termine bleiben für alle offen/);
+    expect(text).toContain('95 Symbole');
+    expect(text).toContain('Abgemeldet');
+  });
+
+  it('nur die Leitung bekommt die Folie zu den Jahrgangsgrenzen', () => {
+    // Konfis und Teamer:innen legen keine Termine an -- die Grenze betrifft
+    // sie nicht, und ein Hinweis darauf wäre nur Lärm.
+    expect(text220(admin220)).toContain('Serientermine');
+    expect(text220(konfi220)).not.toContain('Serientermine');
+    expect(text220(teamer220)).not.toContain('Serientermine');
+  });
+
+  it('keine Folie verspricht Punkte für Challenges', () => {
+    for (const [name, slides] of WALKTHROUGHS_220) {
+      expect(text220(slides), name).not.toMatch(/Punkte für (Challenges|Beiträge)/);
+    }
+  });
+
+  it('echte Umlaute, keine Umschreibungen', () => {
+    for (const [name, slides] of WALKTHROUGHS_220) {
+      const text = text220(slides);
+      expect(text, name).not.toMatch(/\b(ae|oe|ue|ss)\b/);
+      expect(text, name).not.toContain('Jahrgaeng');
+      expect(text, name).not.toContain('spuerbar');
+    }
+  });
+});

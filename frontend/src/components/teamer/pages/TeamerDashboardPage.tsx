@@ -46,7 +46,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import TeamerUpdate211WalkthroughModal from '../modals/TeamerUpdate211WalkthroughModal';
+import TeamerUpdate220WalkthroughModal from '../modals/TeamerUpdate220WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -211,11 +211,13 @@ const TeamerDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
-  // Startseite) — bzw. für Bestandsnutzer die Neuigkeiten-Karte "Was ist neu
-  // in Version 2.0". Nie beides gleichzeitig; der Walkthrough öffnet sich
-  // über die Karte oder dauerhaft über "Was ist neu?" im Profil.
+  // Startseite) — bzw. für Bestandsnutzer die Änderungsanzeige nach einem
+  // Update. Nie beides gleichzeitig, dafür sorgt der Hook; die Anzeige meldet
+  // sich genau einmal je Minor-Version von selbst und bleibt dauerhaft über
+  // "Was ist neu?" im Profil erreichbar.
   const {
     showOnboarding, closeOnboarding,
+    showNeuerungen, schliesseNeuerungen,
     showUpdateHinweis, markUpdateHinweisGesehen,
     showMitmachenHinweis, markMitmachenHinweisGesehen
   } = useOnboardingWithUpdateOnce('teamer_onboarding_seen', user?.id);
@@ -1219,9 +1221,17 @@ const TeamerDashboardPage: React.FC = () => {
         />
       )}
 
-      {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
+      {/* Änderungsanzeige nach einem Update — meldet sich VON SELBST, genau
+          einmal je Minor-Version (useOnboardingWithUpdateOnce). Sie und die
+          Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
+          Karte bleibt weg, solange sie offen ist. */}
+      {showNeuerungen && (
+        <TeamerUpdate220WalkthroughModal onClose={schliesseNeuerungen} />
+      )}
+
+      {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
       {showUpdateWalkthrough && (
-        <TeamerUpdate211WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+        <TeamerUpdate220WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
 
       {showMitmachenErklaerung && (

@@ -38,6 +38,25 @@ Bereichen: *Konto* (das eigene Profil), *Verwaltung* (Benutzer:innen,
 Einladungen) und *Inhalt* (Aktivitäten, Abzeichen, Jahrgänge, Kategorien,
 Level, Material, Jahresrückblick, Zertifikate).
 
+## Nachlesen, was sich geändert hat
+
+Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze
+Übersicht der Neuerungen. Sie zeigt nur, was die eigene Rolle betrifft: Konfis
+lesen anderes als das Team, das Team anderes als die Leitung. Ein Wisch oder
+ein Tipp auf „Weiter" führt hindurch, danach ist sie weg und kommt auch nach
+einem Neustart nicht wieder.
+
+Wer die App zum ersten Mal installiert, bekommt sie nicht — dort läuft
+stattdessen die Einführung, die die App von Grund auf erklärt.
+
+Sie meldet sich außerdem nur bei größeren Sprüngen, etwa von Version 2.1 auf
+2.2. Zwischenstände mit reinen Korrekturen lösen sie nicht aus.
+
+Nachlesen lässt sie sich jederzeit: über den Banner **„Was ist neu?"** —
+Konfis und Teamer:innen finden ihn im eigenen Profil, die Leitung unter
+„Mehr". Dort steht er dauerhaft, auch wenn die Übersicht längst weggetippt
+wurde.
+
 ## Etwas löschen: nach links wischen
 
 **Es gibt keine Löschknöpfe in Listen.** Wische den Eintrag stattdessen **nach
