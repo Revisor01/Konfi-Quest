@@ -44,6 +44,17 @@ Versionsüberschrift.
 - Der Speicher für diese Dateien räumt sich selbst auf: Wird es eng, verschwindet
   zuerst, was am längsten niemand geöffnet hat. Vorher wuchs er immer weiter, bis
   jemand von Hand „Medien-Cache leeren" drückte.
+- Termine lassen sich nur noch in den eigenen Jahrgängen anlegen, ändern,
+  absagen und löschen — auch Serientermine. Dasselbe gilt fürs Eintragen von
+  Personen und fürs Verbuchen der Anwesenheit. Bisher galt diese Grenze nur
+  beim Ansehen und Buchen. Allgemeine Termine und reine Team-Termine bleiben
+  für alle offen.
+- Wer ein Passwort für eine andere Person zurücksetzt, beendet damit auch deren
+  laufende Sitzungen. Vorher blieb ein fremder Zugriff bestehen, obwohl das
+  Passwort neu war.
+- Nachweisfotos sehen nur noch Verantwortliche der betreffenden Jahrgänge.
+- Die App startet spürbar schneller: Beim Öffnen wird rund ein Drittel weniger
+  geladen.
 - Knöpfe, die etwas löschen oder abmelden, sehen überall gleich aus: rot
   umrandet, über die volle Breite. Der Knopf zum Löschen einer Notiz stand
   bisher als blasser Text daneben.
@@ -64,6 +75,15 @@ Versionsüberschrift.
 - Teamer:innen, die selbst einmal Konfi waren, kommen wieder an ihre
   Konfi-Historie — auch wenn ihr damaliger Jahrgang gelöscht wurde. Der
   Einstieg fehlte dann, obwohl Punkte und Abzeichen von damals noch da sind.
+- Große Anhänge brechen beim Öffnen nicht mehr ab, wenn die Verbindung langsam
+  ist. Bisher galt dieselbe knappe Wartezeit wie für alles andere — ein großes
+  PDF im Gemeindehaus scheiterte damit zuverlässig.
+- Abzeichen, für die ein Emoji gewählt wurde, zeigen im Rückblick endlich
+  dieses Emoji statt einer Trophäe.
+- Videos im Chat geben ihren Speicher wieder frei, wenn man vorbeiscrollt,
+  bevor sie geladen sind.
+- Die Anwesenheitsanzeige mit QR-Code hört auf, im Hintergrund weiterzuzählen,
+  nachdem man sie geschlossen hat.
 
 ### Sonstiges
 - Zwei Kacheln im Konfi-Profil, die seit ihrer Entstehung nie erschienen sind

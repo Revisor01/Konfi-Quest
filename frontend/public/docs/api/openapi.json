@@ -2291,6 +2291,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "Passwort eines Users administrativ setzen",
+        "description": "GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen des Ziel-Users — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n",
         "parameters": [
           {
             "name": "id",
@@ -2323,7 +2324,7 @@
         },
         "responses": {
           "200": {
-            "description": "Passwort gesetzt; aktive Sockets des Users getrennt"
+            "description": "Passwort gesetzt; aktive Sockets des Users getrennt und seit 14.09.2026 alle Sitzungen beendet"
           },
           "400": {
             "description": "Policy verletzt"
@@ -2707,7 +2708,7 @@
         },
         "responses": {
           "200": {
-            "description": "Passwort gesetzt; aktive Sockets des Users getrennt"
+            "description": "Passwort gesetzt; aktive Sockets des Users getrennt und seit 14.09.2026 alle Sitzungen beendet"
           },
           "400": {
             "description": "Policy verletzt"
@@ -2730,7 +2731,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "wie PUT /users/{id}/reset-password (Inline-Check statt requireOrgAdmin)",
-          "hinweis": "Alias-Mount, kein eigener Code."
+          "hinweis": "Alias-Mount, kein eigener Code. Beendet die Sitzungen des Ziel-Users deshalb genauso (BEHOBEN 14.09.2026, siehe PUT /users/{id}/reset-password).\n"
         }
       }
     },
@@ -3296,7 +3297,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Neuen Aktivitaets-Antrag einreichen",
-        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026 ging die In-App-Mitteilung nur an admin (Befund M6, behoben).\n\nDie Aktivität muss target_role='konfi' haben; sonst 404. Bis 27.08.2026 fehlte diese Prüfung — ein Antrag auf eine Teamer-Aktivität wurde angenommen und war von der Leitung bestätigbar (Befund N3, behoben).\n",
+        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt die gesamte Leitung (Rollen admin UND org_admin) per In-App-Mitteilung und Push — bis 26.08.2026 ging die In-App-Mitteilung nur an admin (Befund M6, behoben).\n\nDie Aktivität muss target_role='konfi' haben; sonst 404. Bis 27.08.2026 fehlte diese Prüfung — ein Antrag auf eine Teamer-Aktivität wurde angenommen und war von der Leitung bestätigbar (Befund N3, behoben).\n\nEin mitgeschicktes photo_filename muss genau 64 Hexzeichen lang sein (der Name, den POST /api/konfi/upload-photo vergibt); jeder andere Wert wird mit 400 \"Ungültiger Dateiname\" abgewiesen (seit 14.09.2026).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3306,7 +3307,8 @@
             "validateCreateRequest"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören UND target_role='konfi' sein (404 sonst)"
+          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören UND target_role='konfi' sein (404 sonst); photo_filename wird gegen ^[a-f0-9]{64}$ geprüft (utils/photoStorage.istSichererDateiname), sonst 400.\n",
+          "hinweis": "BEHOBEN 14.09.2026 (Pfad-Traversal): Der Dateiname aus dem Body ging ungeprüft in den Pfad der gespeicherten Datei — ein Wert wie '../../../../etc/passwd' verließ damit das Upload-Verzeichnis. Zum Auslesen genügten Konfi-Rechte: eigener Antrag, Status 'pending', Abruf über GET /api/konfi/activity-requests/{id}/photo. Der Dateiname wird jetzt hier beim Anlegen und beim Abruf erneut geprüft.\n"
         },
         "requestBody": {
           "required": true,
@@ -3332,7 +3334,8 @@
                   },
                   "photo_filename": {
                     "type": "string",
-                    "description": "Dateiname aus POST /api/konfi/upload-photo"
+                    "pattern": "^[a-f0-9]{64}$",
+                    "description": "Dateiname aus POST /api/konfi/upload-photo — genau 64 Hexzeichen. Jeder andere Wert wird mit 400 \"Ungültiger Dateiname\" abgewiesen (seit 14.09.2026).\n"
                   },
                   "client_id": {
                     "type": "string",
@@ -3351,7 +3354,7 @@
             "description": "id + message"
           },
           "400": {
-            "description": "Validierungsfehler"
+            "description": "Validierungsfehler; seit 14.09.2026 auch 'Ungültiger Dateiname' bei einem photo_filename ausserhalb von ^[a-f0-9]{64}$"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -3479,8 +3482,8 @@
         "tags": [
           "Aktivitäten & Anträge"
         ],
-        "summary": "Nachweisfoto eines Antrags abrufen (Eigentuemer/Admin)",
-        "description": "Liefert das entschluesselte Bild (image/jpeg).",
+        "summary": "Nachweisfoto eines Antrags abrufen (Eigentuemer/Leitung im eigenen Jahrgang)",
+        "description": "Liefert das entschluesselte Bild (image/jpeg). Der in der Datenbank hinterlegte Dateiname wird vor dem Lesen geprüft (genau 64 Hexzeichen); ein Antrag mit abweichendem Namen antwortet mit 400 \"Ungültiger Dateiname\" (seit 14.09.2026, greift auch für Bestandsdaten aus der Zeit davor).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -3492,8 +3495,9 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfi/Teamer nur den EIGENEN Antrag (user_id-Vergleich) und nur solange status='pending' (danach 403); req.user.type==='admin' (org_admin/admin) sieht alle Fotos der Org statusunabhaengig.\n",
-          "hinweis": "Antrag wird org-gescopt geladen; fremde Org -> 404."
+          "objekt-pruefung": "Konfi/Teamer nur den EIGENEN Antrag (user_id-Vergleich) und nur solange status='pending' (danach 403); Leitung (req.user.type==='admin') sieht Fotos statusunabhaengig, seit 14.09.2026 aber nur im eigenen Jahrgang. Der Dateiname aus der Datenbank wird zusaetzlich gegen ^[a-f0-9]{64}$ geprüft (utils/photoStorage.istSichererDateiname), sonst 400.\n",
+          "jahrgangs-bindung": "Für Leitungsrollen seit 14.09.2026: Gehört die antragstellende Person zu einem Jahrgang ausserhalb der eigenen Zuweisungen, antwortet die Route mit 403 \"Kein Zugriff auf diesen Konfi\" (darfKonfi, view-Stufe). org_admin und super_admin sind ausgenommen, ebenso Anträge auf Teamer-Aktivitäten (target_role='teamer') — Teamer:innen hängen an keinem Jahrgang. Die Konfi selbst kommt weiterhin an ihr eigenes Foto (nur solange status='pending').\n",
+          "hinweis": "Antrag wird org-gescopt geladen; fremde Org -> 404. BEHOBEN 14.09.2026: Bis dahin sah jede Leitungsrolle jedes offene Nachweisfoto der Organisation, auch aus fremden Jahrgängen. Die Schwesterroute GET /api/admin/activities/requests/{id}/photo trägt dieselbe Bindung seit 31.08.2026 — das Nachweisfoto ist das persoenlichste Datum am Antrag. BEHOBEN 14.09.2026 (Pfad-Traversal): Der gespeicherte Dateiname ging ungeprüft in den Dateipfad; ein selbst gesetzter Wert aus POST /api/konfi/requests liess damit Dateien ausserhalb des Upload-Verzeichnisses lesen (unverschluesselte Dateien reicht die Entschluesselung unveraendert durch). Geprüft wird jetzt beim Anlegen UND hier beim Abruf.\n"
         },
         "parameters": [
           {
@@ -3507,11 +3511,14 @@
               "image/jpeg": {}
             }
           },
+          "400": {
+            "description": "Ungültiger Dateiname (seit 14.09.2026: gespeicherter Name ausserhalb von ^[a-f0-9]{64}$)"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Fremder Antrag oder Antrag bereits bearbeitet (Nicht-Admin)"
+            "description": "Fremder Antrag oder Antrag bereits bearbeitet (Nicht-Leitung); seit 14.09.2026 fuer Leitung zusaetzlich 'Kein Zugriff auf diesen Konfi' bei fremdem Jahrgang"
           },
           "404": {
             "description": "Antrag/Foto/Datei nicht gefunden"
@@ -4278,7 +4285,8 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "jahrgang_ids/category_ids müssen der eigenen Org gehören",
-          "hinweis": "Teamer duerfen Events für ALLE Jahrgänge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
+          "jahrgangs-bindung": "Seit 14.09.2026: Jeder Jahrgang in jahrgang_ids muss ein eigener sein (darfJahrgang, can_edit-Stufe) — sonst 403 \"Kein Zugriff auf diesen Jahrgang\". Ein Termin ohne jahrgang_ids bleibt allen Leitungsrollen offen (allgemeiner Termin), ebenso ein reiner Teamer-Termin (teamer_only), der an keinem Jahrgang haengt. org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Vorher durften Teamer:innen und admins Termine für JEDEN Jahrgang der Organisation anlegen — und sahen sie danach nicht mehr, weil die Liste sie ausblendet.\n"
         },
         "requestBody": {
           "required": true,
@@ -4430,7 +4438,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Jahrgang (seit 14.09.2026, wenn jahrgang_ids einen fremden Jahrgang nennt)"
           },
           "409": {
             "description": "Unique-Konflikt"
@@ -4720,7 +4728,9 @@
             "validateUpdateEvent"
           ],
           "org-scope": true,
-          "objekt-pruefung": "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprüft"
+          "objekt-pruefung": "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprüft",
+          "jahrgangs-bindung": "Seit 14.09.2026 zweifach: Der BISHERIGE Stand des Termins muss erreichbar sein (darfTermin, can_view-Stufe) — sonst 403 \"Kein Zugriff auf diesen Termin\"; und jeder Jahrgang in den NEUEN jahrgang_ids muss ein eigener sein (darfJahrgang, can_edit-Stufe) — sonst 403 \"Kein Zugriff auf diesen Jahrgang\". So laesst sich ein fremder Termin weder aendern noch ein eigener in einen fremden Jahrgang verschieben. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Die Route kannte die Jahrgangsgrenze nicht. Ein fremder Termin liess sich ueber eine geratene ID vollstaendig umschreiben, obwohl er in der Liste gar nicht auftauchte.\n"
         },
         "parameters": [
           {
@@ -4749,7 +4759,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin oder auf diesen Jahrgang (seit 14.09.2026)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -4777,7 +4787,9 @@
             "validateEventId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt"
+          "objekt-pruefung": "Event org-gescopt",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen. Dieselbe Regel wie in der Liste GET /api/events.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Ein Termin eines fremden Jahrgangs war ueber eine geratene ID loeschbar — samt Buchungen, Chat und Rueckrechnung der vergebenen Punkte.\n"
         },
         "parameters": [
           {
@@ -4804,7 +4816,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -4939,7 +4951,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören; kein Jahrgang-Check"
+          "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine Teamer:in konnte Personen in einen Termin eintragen, den sie selbst nicht sah.\n"
         },
         "parameters": [
           {
@@ -4991,7 +5005,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
           },
           "404": {
             "description": "Event/Benutzer/Zeitslot nicht gefunden"
@@ -5023,8 +5037,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check",
-          "hinweis": "Punkte-Entzugs-Weg m) der Analyse."
+          "objekt-pruefung": "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst)",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "Punkte-Entzugs-Weg m) der Analyse. BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine fremde Buchung liess sich samt Punkteentzug loeschen, ohne den Termin sehen zu koennen.\n"
         },
         "parameters": [
           {
@@ -5048,7 +5063,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Fremde Organisation; seit 14.09.2026 auch 'Kein Zugriff auf diesen Termin' bei fremdem Jahrgang"
           },
           "404": {
             "description": "Buchung nicht gefunden"
@@ -5182,8 +5197,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Buchung muss zu Event der eigenen Org gehören (403 sonst); kein Jahrgang-Check",
-          "hinweis": "Punkte-Entzugs-Weg l) der Analyse."
+          "objekt-pruefung": "Buchung muss zu Event der eigenen Org gehören (403 sonst)",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "Punkte-Entzugs-Weg l) der Analyse. BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — die Degradierung auf die Warteliste und der damit verbundene Punkteentzug waren an jedem Termin der Organisation moeglich.\n"
         },
         "parameters": [
           {
@@ -5233,7 +5249,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Fremde Organisation; seit 14.09.2026 auch 'Kein Zugriff auf diesen Termin' bei fremdem Jahrgang"
           },
           "404": {
             "description": "Buchung nicht gefunden"
@@ -5262,8 +5278,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event-Org muss der eigenen Org entsprechen (403); kein Jahrgang-Check",
-          "hinweis": "Punkte-Vergabe-Weg f) der Analyse."
+          "objekt-pruefung": "Event-Org muss der eigenen Org entsprechen (403)",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "Punkte-Vergabe-Weg f) der Analyse. BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — die Sammelbuchung samt Punktegutschrift lief an jedem Termin der Organisation, auch an einem, den die aufrufende Person gar nicht sehen konnte.\n"
         },
         "parameters": [
           {
@@ -5278,7 +5295,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Fremde Organisation; seit 14.09.2026 auch 'Kein Zugriff auf diesen Termin' bei fremdem Jahrgang"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -5307,8 +5324,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event + Buchung org-gescopt (404 sonst); kein Jahrgang-Check",
-          "hinweis": "Punkte-Wege e) und k) der Analyse."
+          "objekt-pruefung": "Event + Buchung org-gescopt (404 sonst)",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "Punkte-Wege e) und k) der Analyse. BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — Anwesenheit, Punktegutschrift und Punkteentzug waren an jedem Termin der Organisation moeglich, obwohl die Liste ihn ausblendet.\n"
         },
         "parameters": [
           {
@@ -5369,7 +5387,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -5398,7 +5416,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt"
+          "objekt-pruefung": "Event org-gescopt",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — der Chat zu einem fremden Termin liess sich anlegen, und wer ihn anlegt, sitzt darin.\n"
         },
         "parameters": [
           {
@@ -5413,7 +5433,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -5445,7 +5465,9 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt"
+          "objekt-pruefung": "Event org-gescopt",
+          "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf diesen Termin\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
+          "hinweis": "BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — ein fremder Termin liess sich absagen, samt Push an alle Gebuchten.\n"
         },
         "parameters": [
           {
@@ -5478,7 +5500,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -6482,7 +6504,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Neues Startpasswort für einen Konfi erzeugen",
-        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück.",
+        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück. GEAENDERT 14.09.2026: Der Reset beendet jetzt alle Sitzungen der betroffenen Person — token_invalidated_at wird gesetzt, alle Refresh-Tokens werden widerrufen und die Push-Tokens geloescht. Die Person muss sich auf jedem Geraet mit dem neuen Passwort neu anmelden. Am Request und an der Antwortform aendert sich nichts.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6495,7 +6517,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org",
-          "hinweis": "BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen Organisation zurück, auch von Teamer:innen und Leitung, und ein admin konnte damit jedes Konfi-Konto der Gemeinde uebernehmen. Teamer-Passwoerter setzt die Benutzerverwaltung (routes/users.js) zurueck.\n"
+          "hinweis": "BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen Organisation zurück, auch von Teamer:innen und Leitung, und ein admin konnte damit jedes Konfi-Konto der Gemeinde uebernehmen. Teamer-Passwoerter setzt die Benutzerverwaltung (routes/users.js) zurueck. BEHOBEN 14.09.2026: Der Reset beendet jetzt die bestehenden Sitzungen (token_invalidated_at, Widerruf aller Refresh-Tokens, Loeschen der Push-Tokens). Vorher lief die alte Sitzung weiter — das Access-Token bis zu 15 Minuten, das Refresh-Token mit Rotation bis zu 90 Tage. Genau diese Route wird benutzt, wenn ein Konto uebernommen wurde; das neue Passwort allein half dann nicht. Gleiche Behandlung wie bei PUT /api/auth/change-password.\n"
         },
         "parameters": [
           {
@@ -6504,7 +6526,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Neues Passwort (Klartext, einmalig)"
+            "description": "Neues Passwort (Klartext, einmalig); seit 14.09.2026 sind alle Sitzungen der Person beendet"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

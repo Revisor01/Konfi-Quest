@@ -46,14 +46,19 @@ Zeitfenster aus. Beim Speichern werden zusätzlich Punkte, Konfi-Plätze,
 Jahrgänge und der Anmeldezeitraum auf null gesetzt. „Konfis, Team gesucht"
 und „Nur Team" schließen sich gegenseitig aus.
 
-### Nachvollziehen, welche Termine das Team sieht
+### Nachvollziehen, welche Termine das Team sieht und bearbeitet
 
-**Teamer:innen sehen und buchen nur Termine der Jahrgänge, die sie betreuen.**
-Dieselbe Regel wie im [Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch
-nur Konfis der eigenen Jahrgänge anschreiben kann. Wer den Jahrgang nicht
-betreut, findet den Termin gar nicht erst in seiner Liste; eine Buchung über
-einen Umweg lehnt der Server ab („Dieser Termin gehört zu einem Jahrgang, dem
-du nicht zugewiesen bist").
+**Teamer:innen sehen, buchen und bearbeiten nur Termine der Jahrgänge, die sie
+betreuen.** Dieselbe Regel wie im
+[Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch nur Konfis der eigenen
+Jahrgänge anschreiben kann. Wer den Jahrgang nicht betreut, findet den Termin
+gar nicht erst in seiner Liste; eine Buchung über einen Umweg lehnt der Server
+ab („Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist").
+
+Das Bearbeiten folgt derselben Grenze: Anlegen — einzeln wie als Serie —,
+Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die Anwesenheit
+verbuchen gehen nur in den eigenen Jahrgängen. Ein Termin lässt sich auch nur
+Jahrgängen zuordnen, die man selbst betreut.
 
 Zwei Ausnahmen: Termine mit der Zielgruppe **„Nur Team"** und Termine **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen

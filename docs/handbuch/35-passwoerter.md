@@ -36,6 +36,12 @@ Der Weg funktioniert für **Konfis und Teamer:innen**. Bei Konfis brauchst du
 den passenden [Jahrgang](05-rollen.md#an-die-eigenen-jahrgaenge-gebunden-sein),
 bei Teamer:innen nicht.
 
+Mit dem neuen Passwort endet zugleich jede laufende Sitzung der Person: Wer
+gerade auf einem anderen Gerät angemeldet ist, fliegt heraus und muss sich neu
+anmelden — auch wenn dieses Gerät jemand anderem gehört. Genau darum geht es,
+wenn ein Passwort zurückgesetzt wird, weil ein Konto in falsche Hände geraten
+ist. Dasselbe gilt, wenn ein Org-Admin ein Leitungspasswort setzt.
+
 **Leitungskonten laufen anders:** Für Admins und Org-Admins gibt es kein
 Einmalpasswort. Ein Org-Admin öffnet
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-org-admin)**, wählt die
