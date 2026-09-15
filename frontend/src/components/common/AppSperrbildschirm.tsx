@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { IonButton, IonIcon, IonSpinner } from '@ionic/react';
-import { ICON_SPERRE_GEFUELLT, ICON_FINGERABDRUCK, ICON_ABMELDEN } from '../shared/icons';
+import { ICON_SPERRE_GEFUELLT, ICON_ABMELDEN } from '../shared/icons';
+import { biometrieIcon } from '../shared/biometrieSymbol';
 import { sperreOeffnen } from '../../services/appSperre';
-import { biometrieVerfuegbar } from '../../services/biometrics';
+import { biometrieVerfuegbar, BiometrieSinnbild } from '../../services/biometrics';
 
 interface Props {
   /** Erfolgreich entsperrt — die App wird wieder freigegeben. */
@@ -30,14 +31,21 @@ interface Props {
  * Texte versprechen deshalb nichts weiter als "gesperrt".
  */
 const AppSperrbildschirm: React.FC<Props> = ({ onEntsperrt, onAbmelden }) => {
-  const [bezeichnung, setBezeichnung] = useState('Face ID');
+  // Vor der Antwort des Geraets steht hier bewusst das NEUTRALE "Biometrie" mit
+  // Schloss-Symbol und nicht "Face ID": Auf einem Fingerabdruck-Geraet waere
+  // ein kurz aufblitzendes "Mit Face ID entsperren" schlicht falsch. Ein
+  // neutraler Text, der sich gleich praezisiert, ist die ehrlichere Zwischenzeit.
+  const [bezeichnung, setBezeichnung] = useState('Biometrie');
+  const [sinnbild, setSinnbild] = useState<BiometrieSinnbild>('schloss');
   const [laeuft, setLaeuft] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
 
   useEffect(() => {
     let abgemeldet = false;
     biometrieVerfuegbar().then((v) => {
-      if (!abgemeldet) setBezeichnung(v.bezeichnung);
+      if (abgemeldet) return;
+      setBezeichnung(v.bezeichnung);
+      setSinnbild(v.sinnbild);
     });
     return () => { abgemeldet = true; };
   }, []);
@@ -125,7 +133,7 @@ const AppSperrbildschirm: React.FC<Props> = ({ onEntsperrt, onAbmelden }) => {
           <IonSpinner name="crescent" />
         ) : (
           <>
-            <IonIcon slot="start" icon={ICON_FINGERABDRUCK} aria-hidden="true" />
+            <IonIcon slot="start" icon={biometrieIcon(sinnbild)} aria-hidden="true" />
             Mit {bezeichnung} entsperren
           </>
         )}

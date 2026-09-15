@@ -40,7 +40,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockVerfuegbar.mockResolvedValue(true);
   mockLesen.mockResolvedValue('aus');
-  mockBiometrie.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID' });
+  mockBiometrie.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht' });
 });
 
 describe('Sichtbarkeit', () => {

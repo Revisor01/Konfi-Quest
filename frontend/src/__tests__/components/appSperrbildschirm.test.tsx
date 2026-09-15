@@ -22,7 +22,7 @@ import AppSperrbildschirm from '../../components/common/AppSperrbildschirm';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID' });
+  mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht' });
   mockOeffnen.mockResolvedValue('ok');
 });
 
@@ -41,8 +41,7 @@ describe('Der Sperrbildschirm', () => {
 
   it('nennt den Fingerabdruck, wenn das Geraet einen Fingerabdruck hat', async () => {
     mockVerfuegbar.mockResolvedValue({
-      verfuegbar: true, art: 'fingerabdruck', bezeichnung: 'Fingerabdruck'
-    });
+      verfuegbar: true, art: 'fingerabdruck', bezeichnung: 'Fingerabdruck', sinnbild: 'finger' });
     mockOeffnen.mockResolvedValue('abgebrochen');
     render(<AppSperrbildschirm onEntsperrt={vi.fn()} onAbmelden={vi.fn()} />);
     await waitFor(() => expect(screen.getByText(/Mit Fingerabdruck entsperren/)).toBeInTheDocument());

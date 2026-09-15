@@ -137,6 +137,85 @@ describe('biometrieVerfuegbar', () => {
     expect(ergebnis.bezeichnung).toBe('Fingerabdruck');
   });
 
+  it('meldet Touch ID auf entsprechenden Geraeten', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 1 };
+    const { biometrieVerfuegbar } = await laden();
+    const ergebnis = await biometrieVerfuegbar();
+    expect(ergebnis.art).toBe('touchId');
+    expect(ergebnis.bezeichnung).toBe('Touch ID');
+  });
+
+  it('meldet die Android-Gesichtserkennung mit deutschem Namen', async () => {
+    // FACE_AUTHENTICATION (4) gibt es nur auf Android. Vorher landete der Wert
+    // im Sammelfall "biometrie" — richtig war das nicht falsch, aber es
+    // verschenkte das Gesicht als Sinnbild.
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 4 };
+    const { biometrieVerfuegbar } = await laden();
+    const ergebnis = await biometrieVerfuegbar();
+    expect(ergebnis.art).toBe('gesichtserkennung');
+    expect(ergebnis.bezeichnung).toBe('Gesichtserkennung');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DAS SINNBILD — Anlass: Geraetetest Simon, 15.09.2026.
+// Ein Geraet mit Face ID zeigte ein Fingerabdruck-Symbol. Die Art war richtig
+// erkannt, das Symbol hing in der Oberflaeche fest. Seither liefert der Dienst
+// das passende Sinnbild gleich mit, und im Zweifel ist es das Schloss.
+// ---------------------------------------------------------------------------
+describe('biometrieVerfuegbar: das Sinnbild', () => {
+  it('gibt Face ID ein Gesicht', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 2 };
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('gesicht');
+  });
+
+  it('gibt der Android-Gesichtserkennung ein Gesicht', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 4 };
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('gesicht');
+  });
+
+  it('gibt Touch ID einen Finger', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 1 };
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('finger');
+  });
+
+  it('gibt dem Fingerabdruck einen Finger', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 3 };
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('finger');
+  });
+
+  it('bleibt bei MULTIPLE neutral — das Geraet weiss selbst nicht, womit', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 6 };
+    const { biometrieVerfuegbar } = await laden();
+    const ergebnis = await biometrieVerfuegbar();
+    expect(ergebnis.art).toBe('biometrie');
+    expect(ergebnis.bezeichnung).toBe('Biometrie');
+    expect(ergebnis.sinnbild).toBe('schloss');
+  });
+
+  it('bleibt beim Iris-Scan neutral — weder Gesicht noch Finger', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, biometryType: 5 };
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('schloss');
+  });
+
+  it('ist auch bei "nicht verfuegbar" neutral, nie ein Finger', async () => {
+    verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, isAvailable: false };
+    const { biometrieVerfuegbar } = await laden();
+    const ergebnis = await biometrieVerfuegbar();
+    expect(ergebnis.sinnbild).toBe('schloss');
+  });
+
+  it('ist bei einem Plugin-Fehler neutral, nie ein Finger', async () => {
+    verfuegbarkeitsAntwort = new Error('Plugin kaputt');
+    const { biometrieVerfuegbar } = await laden();
+    expect((await biometrieVerfuegbar()).sinnbild).toBe('schloss');
+  });
+
   it('meldet NICHT verfuegbar, wenn keine Biometrie eingerichtet ist', async () => {
     verfuegbarkeitsAntwort = { ...verfuegbarkeitsAntwort, isAvailable: false };
     const { biometrieVerfuegbar } = await laden();

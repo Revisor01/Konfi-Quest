@@ -145,6 +145,13 @@ Auf dem Sperrbildschirm steht **„Konfi Quest ist gesperrt"**, darunter der
 Knopf **„Mit Face ID entsperren"** — je nach Gerät heißt er „Touch ID" oder
 „Fingerabdruck". Ganz unten sitzt klein der Knopf **„Abmelden"**.
 
+Das Symbol auf dem Knopf richtet sich nach dem Gerät: ein Gesicht bei Face ID
+und bei der Gesichtserkennung auf Android, ein Finger bei Touch ID und beim
+Fingerabdruck. Kann die App nicht sicher erkennen, womit dein Gerät entsperrt,
+zeigt sie ein Schloss und schreibt schlicht „Biometrie" — lieber neutral als
+das falsche Bild. Dasselbe Symbol steht auch am Eintrag in den
+**„Konto-Einstellungen"** und auf dem Knopf der Anmeldeseite.
+
 Klappt die Erkennung nicht, versuchst du es beliebig oft neu. Es gibt keinen
 Zähler, der irgendwann dichtmacht.
 
@@ -156,6 +163,26 @@ Zähler, der irgendwann dichtmacht.
 **„Abmelden" führt auf die normale Anmeldung** mit Benutzername und Passwort.
 Du kommst also immer wieder heraus, auch wenn die Biometrie am Gerät
 zwischendurch geändert oder entfernt wurde.
+
+### Was die Übersicht der offenen Apps zeigt
+
+**Bei eingeschalteter Sperre gibt die App auch dort nichts preis.** Wischst du
+die App weg oder wechselst zu einer anderen, steht in der Übersicht der offenen
+Apps nur noch das Logo — keine Namen, keine Punkte, keine Beiträge. Erst nach
+Face ID, Touch ID oder Fingerabdruck siehst du die Inhalte wieder.
+
+Das gilt auch, wenn du die App aus einem Foto- oder Teilen-Dialog heraus
+verlässt, und unabhängig von der gewählten Wartezeit: Verdeckt wird sofort,
+gesperrt erst nach der Zeit, die du eingestellt hast.
+
+**Auf Android-Geräten sind dann auch Bildschirmfotos innerhalb der App
+gesperrt.** Das System lässt sie nicht zu, solange die Sperre eingeschaltet ist
+— anders ließe sich das Vorschaubild dort nicht zuverlässig verdecken. Willst
+du etwas abfotografieren, etwa einen Termin oder einen QR-Code, stellst du die
+Sperre kurz auf „Aus".
+
+**Steht die Sperre auf „Aus", ändert sich nichts.** Dann bleibt die Übersicht
+wie gewohnt, und Bildschirmfotos gehen auf allen Geräten.
 
 > **Was die Sperre leistet und was nicht:** Sie ist ein Sichtschutz gegen
 > neugierige Blicke, wenn das Handy herumliegt. Sie verschlüsselt nichts und

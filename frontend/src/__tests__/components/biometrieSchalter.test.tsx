@@ -35,8 +35,7 @@ beforeEach(() => {
   mockVerfuegbar.mockResolvedValue({
     verfuegbar: true,
     art: 'faceId',
-    bezeichnung: 'Face ID',
-  });
+    bezeichnung: 'Face ID', sinnbild: 'gesicht' });
   mockIstAktiv.mockResolvedValue(false);
   mockAktivieren.mockResolvedValue(true);
 });
@@ -51,8 +50,7 @@ describe('BiometrieSchalter', () => {
     mockVerfuegbar.mockResolvedValue({
       verfuegbar: true,
       art: 'touchId',
-      bezeichnung: 'Touch ID',
-    });
+      bezeichnung: 'Touch ID', sinnbild: 'finger' });
     render(<BiometrieSchalter variante="users" />);
     expect(await screen.findByText('Anmelden mit Touch ID')).toBeInTheDocument();
   });
@@ -61,8 +59,7 @@ describe('BiometrieSchalter', () => {
     mockVerfuegbar.mockResolvedValue({
       verfuegbar: false,
       art: 'biometrie',
-      bezeichnung: 'Biometrie',
-    });
+      bezeichnung: 'Biometrie', sinnbild: 'schloss' });
     const { container } = render(<BiometrieSchalter variante="teamer" />);
 
     await waitFor(() => expect(mockVerfuegbar).toHaveBeenCalled());

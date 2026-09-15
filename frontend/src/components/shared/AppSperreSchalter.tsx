@@ -40,7 +40,10 @@ interface Props {
 const AppSperreSchalter: React.FC<Props> = ({ variante }) => {
   const [zeigeAuswahl] = useIonActionSheet();
   const [verfuegbar, setVerfuegbar] = useState(false);
-  const [bezeichnung, setBezeichnung] = useState('Face ID');
+  // Neutral bis das Geraet geantwortet hat — "Face ID" waere auf einem
+  // Fingerabdruck-Geraet geraten. Das Symbol dieses Eintrags bleibt bewusst das
+  // Schloss: Er benennt die App-Sperre, nicht das Verfahren.
+  const [bezeichnung, setBezeichnung] = useState('Biometrie');
   const [wert, setWert] = useState<SperrVerzoegerung>('aus');
   const [laedt, setLaedt] = useState(true);
   const [speichert, setSpeichert] = useState(false);
