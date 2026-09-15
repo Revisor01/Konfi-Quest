@@ -25,6 +25,12 @@ Versionsüberschrift.
   eingetragen, sehen ihn alle Teilnehmenden am Termin, und er steht in der
   Mitteilung, die auf den Handys ankommt. Darunter steht klein, wer abgesagt
   hat und wann.
+- Der Absagegrund lässt sich bei einem bereits abgesagten Termin nachtragen,
+  ändern oder wieder entfernen — wer beim Absagen in Eile nichts eingetragen
+  oder sich vertippt hat, kommt jetzt noch einmal heran. Eine neue Mitteilung
+  geht dabei nicht raus; die Absage war schon gemeldet. Korrigiert jemand
+  anderes als die absagende Person, steht das darunter, und „Abgesagt von"
+  nennt weiterhin, wer den Termin tatsächlich abgesagt hat.
 - Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
   14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte. Notizen lassen sich auch wieder löschen.
@@ -60,6 +66,14 @@ Versionsüberschrift.
   lässt, merkt davon nichts.
 
 ### Geändert
+- Wird ein Termin abgesagt, sind alle Angemeldeten und alle auf der Warteliste
+  automatisch **abgemeldet** — mit dem Absagegrund als Grund, ohne Grund mit dem
+  Vermerk „Termin abgesagt". Punkte gibt es dafür keine; schon vergebene werden
+  zurückgenommen, denn der Termin hat nicht stattgefunden. Der Termin steht damit
+  nicht mehr als „noch zu verbuchen" im Zähler. Wer trotzdem da war und geholfen
+  hat, lässt sich weiterhin einzeln auf anwesend setzen und bekommt seine Punkte.
+  Eine zusätzliche Mitteilung geht nicht raus — die Absage war schon gemeldet.
+  Bereits abgesagte Termine bleiben, wie sie sind.
 - Nach einem Update zeigt die App einmal, was sich geändert hat — je nach
   Rolle das, was für Konfis, Team oder Leitung wichtig ist. Wer die App neu
   installiert, bekommt sie nicht zu sehen, und zwischen zwei Testversionen

@@ -625,7 +625,7 @@ Zwei verschiedene Dinge, die oft verwechselt werden.
 | | Absagen | Löschen |
 |---|---|---|
 | Termin bleibt sichtbar | **ja, durchgestrichen als „Abgesagt"** | nein, weg |
-| Anmeldungen | bleiben erhalten | **werden mitgelöscht** |
+| Anmeldungen | bleiben erhalten, alle werden abgemeldet | **werden mitgelöscht** |
 | Termin-Chat und Nachrichten | bleiben | **werden mitgelöscht** |
 | Wer wird benachrichtigt | Angemeldete **und** Wartende | Angemeldete und Wartende |
 | Rückgängig | nein, aber der Termin ist noch da | **nein** |
@@ -656,10 +656,66 @@ wurden, fehlt diese Zeile — da ist schlicht nicht festgehalten, wer es war.
 > Sperrbildschirm. Was intern bleiben soll, gehört nicht in dieses Feld,
 > sondern in den Termin-Chat oder ins Gespräch.
 
-Wo er steht, richtet sich nach dem Datum: Solange der Termin noch bevorsteht
-oder läuft, findest du ihn unter **„Aktuell"**, danach unter **„Vergangen"** —
+### Angemeldete nach einer Absage verbuchen
+
+Mit der Absage sind alle Angemeldeten und alle auf der Warteliste **abgemeldet**.
+In der Teilnehmerliste stehen sie grau als „Abgemeldet", als Grund steht der
+Absagegrund — hast du keinen angegeben, steht dort „Termin abgesagt". Punkte
+gibt es dafür keine, und bereits vergebene sind zurückgenommen: Der Termin hat
+nicht stattgefunden.
+
+Das erspart dir das Nacharbeiten. Ein abgesagter Termin gilt damit als erledigt
+und taucht nicht mehr als „noch zu verbuchen" in der roten Zahl am Reiter auf.
+
+**Das ist die Voreinstellung, nicht das Ende.** Waren drei Konfis trotzdem da
+und haben beim Abbauen geholfen, tippst du sie in der Teilnehmerliste an und
+setzt sie auf **anwesend** — sie bekommen ihre Punkte wie an jedem anderen
+Termin. Die übrigen bleiben abgemeldet. Genauso lässt sich der Grund bei
+einzelnen Personen durch einen eigenen ersetzen, etwa „krank, Mutter hat
+angerufen".
+
+Wen du vor der Absage schon verbucht hattest — anwesend, abwesend oder
+abgemeldet —, den rührt die Absage nicht an. Eine Entscheidung, die du getroffen
+hast, wird nicht überschrieben.
+
+### Den Grund nachtragen oder ändern
+
+Der Grund lässt sich an einem abgesagten Termin jederzeit nachtragen, ändern
+oder wieder entfernen. Eine Absage ist oft eilig — wer morgens um sieben in
+Eile nichts eingetragen hat oder sich vertippt, kommt so noch einmal heran.
+
+Zwei Wege führen dorthin:
+
+- In der **Detailansicht** steht unter dem Grund „Grund bearbeiten"; fehlt
+  einer, heißt der Knopf „Grund nachtragen".
+- In der **Terminliste** wischst du den abgesagten Termin nach links — dort,
+  wo bei den übrigen „Absagen" steht.
+
+Es öffnet sich dasselbe Fenster wie beim Absagen, mit dem Text, der bisher
+dasteht. Leerst du das Feld und speicherst, fällt der Grund weg und der Termin
+steht wieder nur als abgesagt da.
+
+**Eine neue Mitteilung geht dabei nicht raus.** Die Absage ist schon gemeldet;
+eine Korrektur am Begleittext ist keine zweite Absage. Wer möchte, dass alle
+von der Änderung erfahren, schreibt sie in den Termin-Chat.
+
+Ändert jemand anderes den Grund als die Person, die abgesagt hat, steht das
+darunter („Grund geändert von Anna Meier, 16.09."). „Abgesagt von" nennt
+weiterhin, wer den Termin tatsächlich abgesagt hat — wer einen Tippfehler
+korrigiert, hat den Termin nicht abgesagt. Ändert die absagende Person ihren
+eigenen Grund, bleibt es bei der einen Zeile.
+
+Wer bearbeiten darf, richtet sich nach denselben Regeln wie das Absagen: Wer
+den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht.
+
+### Wo ein abgesagter Termin steht
+
+Das richtet sich nach dem Datum: Solange der Termin noch bevorsteht oder
+läuft, findest du ihn unter **„Aktuell"**, danach unter **„Vergangen"** —
 durchgestrichen in beiden Fällen. Unter **„Verbuchen"** taucht er nicht auf:
 An einem abgesagten Termin gibt es nichts zu verbuchen.
+
+### Einen Termin löschen
 
 **Löschen** ist endgültig. Gelöscht werden der Termin selbst, alle Anmeldungen,
 alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie der komplette

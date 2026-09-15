@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n250 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n251 Operationen."
   },
   "servers": [
     {
@@ -5453,7 +5453,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event absagen (mit Teilnehmer-Benachrichtigung)",
-        "description": "Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).\nABSAGEGRUND (Migration 150, 15.09.2026): Optional laesst sich cancelled_reason mitschicken — Freitext, getrimmt, auf 500 Zeichen begrenzt, leer wird zu NULL. Der Grund wird gespeichert (events.cancelled_reason), an ALLE Teilnehmenden ausgeliefert und im Push-Text sowie unter data.cancelled_reason mitgeschickt. Ohne Grund bleibt der Push-Text unveraendert. cancelled_by haelt fest, wer abgesagt hat.\nnotification_message bleibt unveraendert bestehen: Das Feld wurde nie gespeichert oder verschickt, es kommt nur in der Antwort zurueck. Ausgelieferte App-Fassungen schicken es mit — es ist NICHT der Absagegrund.\n",
+        "description": "Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).\nAUTOMATISCHES ABMELDEN (15.09.2026): In DERSELBEN Transaktion werden alle Buchungen mit status IN ('confirmed','waitlist') und attendance_status IS NULL auf attendance_status='excused' gesetzt, excuse_reason = der Absagegrund (ohne Grund: der feste Text \"Termin abgesagt\"). Bereits vergebene event_points werden geloescht und die Salden in konfi_profiles zurueckgerechnet. Schlaegt das Abmelden fehl, faellt auch die Absage zurueck (500).\nANTWORTFORM UNVERAENDERT: eb.status bleibt 'confirmed'/'waitlist' -- NUR attendance_status wird gesetzt. Ausgelieferte App-Fassungen filtern Teilnehmerlisten ueber status === 'confirmed'; ein Wechsel dort haette die Personen aus ihren Listen entfernt.\nNICHT angetastet werden bereits verbuchte Buchungen (attendance_status IS NOT NULL) -- eine getroffene Entscheidung wird nicht ueberschrieben, und Punkte werden nicht doppelt abgezogen. attendance_set_by und checkin_quelle bleiben NULL: Die Absage ist keine Anwesenheitsbeurteilung (Begruendung Migration 148/151); wer abgesagt hat, steht in events.cancelled_by.\nKEIN BACKFILL: gilt nur fuer Absagen ab dem 15.09.2026, bereits abgesagte Termine bleiben unveraendert.\nDER TERMIN BLEIBT BEARBEITBAR: PUT /:id/participants/:pid/attendance und /:id/participants/attendance-all funktionieren an einem abgesagten Termin unveraendert weiter -- die Leitung kann einzelne Personen nachtraeglich auf 'present' setzen und ihnen Punkte vergeben.\nABSAGEGRUND (Migration 150, 15.09.2026): Optional laesst sich cancelled_reason mitschicken — Freitext, getrimmt, auf 500 Zeichen begrenzt, leer wird zu NULL. Der Grund wird gespeichert (events.cancelled_reason), an ALLE Teilnehmenden ausgeliefert und im Push-Text sowie unter data.cancelled_reason mitgeschickt. Ohne Grund bleibt der Push-Text unveraendert. cancelled_by haelt fest, wer abgesagt hat.\nnotification_message bleibt unveraendert bestehen: Das Feld wurde nie gespeichert oder verschickt, es kommt nur in der Antwort zurueck. Ausgelieferte App-Fassungen schicken es mit — es ist NICHT der Absagegrund.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5501,13 +5501,78 @@
             "description": "message, participants_notified, notification_message, cancelled_reason (seit 15.09.2026, null wenn kein Grund)"
           },
           "400": {
-            "description": "Event bereits abgesagt"
+            "description": "Event bereits abgesagt. BLEIBT SO (15.09.2026): Der Nachtrage-Fall laeuft ueber die eigene Route PUT /{id}/absagegrund, damit sich diese hier fuer ausgelieferte App-Fassungen nicht aendert."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
             "description": "Kein Zugriff auf diesen Termin (seit 14.09.2026, fremder Jahrgang)"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/api/events/{id}/absagegrund": {
+      "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
+        "summary": "Absagegrund eines bereits abgesagten Termins aendern, nachtragen oder loeschen",
+        "description": "NEU 15.09.2026 (Migration 152). Setzt allein events.cancelled_reason an einem Termin, der BEREITS abgesagt ist.\nBEHOBEN 15.09.2026: Bis hierher liess sich der Absagegrund nach der Absage nicht mehr anfassen — PUT /{id}/cancel lehnt einen bereits abgesagten Termin mit 400 ab. Wer beim Absagen in Eile nichts eingetragen oder sich vertippt hatte, kam nie wieder heran.\nEIGENE ROUTE STATT ERWEITERUNG VON /cancel: Die 400 dort ist Vertrag. Ausgelieferte App-Fassungen verlassen sich darauf, dass ein zweiter Aufruf abprallt (Doppeltippen auf wackeligem Netz). Naehme /cancel den Fall mit, wuerde aus einem folgenlosen Fehlschlag ein zweiter Schreibvorgang — und weil alte Apps kein cancelled_reason schicken, waere ein vorhandener Grund nach jedem Doppeltipp weg.\nNORMALISIERUNG wie bei /cancel: getrimmt, auf 500 Zeichen begrenzt, leer wird NULL. Ein fehlendes Feld ist dasselbe wie ein leeres — die Route SETZT den Grund, sie ergaenzt ihn nicht.\ncancelled, cancelled_at und cancelled_by BLEIBEN UNVERAENDERT: Wer abgesagt hat, hat abgesagt; eine spaetere Korrektur am Begleittext aendert daran nichts. Festgehalten wird stattdessen cancelled_reason_set_by/_at (Migration 152). Beide Lese-Pfade liefern zusaetzlich cancelled_reason_set_by_name.\nKEIN PUSH (Entscheidung Simon, 15.09.2026): Die Absage ist schon gemeldet. Ein zweiter \"Leider abgesagt\"-Push wegen eines getauschten Buchstabens laese sich wie eine zweite Absage. Das Live-Update ('events'/'update', action 'cancelled') geht raus — es aktualisiert nur, was ohnehin offen auf dem Bildschirm steht.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Event org-gescopt; muss cancelled = TRUE sein, sonst 400",
+          "jahrgangs-bindung": "darfTermin (can_view-Stufe) — identisch zur Absage: Wer den Termin nicht haette absagen duerfen, aendert auch den Grund nicht. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancelled_reason": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500,
+                    "description": "Der neue Absagegrund. Wird getrimmt, auf 500 Zeichen gekuerzt; leer oder fehlend loescht ihn (NULL). Sichtbar fuer ALLE Teilnehmenden.\n"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "message, cancelled_reason (null wenn geloescht)"
+          },
+          "400": {
+            "description": "Event ist nicht abgesagt — einen Absagegrund gibt es nur an einem abgesagten Termin"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Kein Zugriff auf diesen Termin (fremder Jahrgang oder Konfi-Rolle)"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
