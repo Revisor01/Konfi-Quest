@@ -145,3 +145,60 @@ export const zeigtPunkteart = (event: {
 // einmal die Ursache dafuer, dass ueberall "Gemeinde" stand.
 export const punkteartText = (event: { point_type?: string }): string =>
   event.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+
+// --- Die drei Reiter der Leitungs-Terminliste ---------------------------
+//
+// Die Aufteilung steht hier und nicht in AdminEventsPage, damit sie sich
+// ohne die halbe Seite pruefen laesst.
+//
+// `offen` sind die nicht abgesagten Termine (GET /events, der Client filtert
+// registration_status === 'cancelled' heraus), `abgesagt` die aus
+// GET /events/cancelled (e.cancelled = TRUE). Die beiden Mengen sind
+// komplementaer -- derselbe Termin kann nie in beiden stehen.
+
+interface ReiterTermin {
+  event_date: string;
+  event_end_time?: string | null;
+  pending_bookings_count?: number;
+  registration_status?: string;
+}
+
+const hatOffeneBuchungen = (event: ReiterTermin): boolean =>
+  !!event.pending_bookings_count && event.pending_bookings_count > 0;
+
+const nachDatumAufsteigend = <T extends ReiterTermin>(a: T, b: T) =>
+  new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
+
+const nachDatumAbsteigend = <T extends ReiterTermin>(a: T, b: T) =>
+  new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
+
+// Reiter "Aktuell": alles, was noch laeuft oder bevorsteht -- ABGESAGTE
+// EINGESCHLOSSEN. Sie stehen dort durchgestrichen; verschwaenden sie ganz,
+// saehe die Leitung nicht mehr, dass der Termin existierte und abgesagt
+// wurde (Fund 22.08.2026).
+export const aktuelleTermine = <T extends ReiterTermin>(offen: T[], abgesagt: T[]): T[] =>
+  [...offen, ...abgesagt].filter(e => eventEnde(e) >= new Date()).sort(nachDatumAufsteigend);
+
+// Reiter "Verbuchen": beendete Termine mit offenen Buchungen. Abgesagte
+// gehoeren bewusst NICHT dazu -- an einem abgesagten Termin gibt es nichts
+// zu verbuchen.
+export const zuVerbuchendeTermine = <T extends ReiterTermin>(offen: T[]): T[] =>
+  offen
+    .filter(e => eventEnde(e) < new Date() && hatOffeneBuchungen(e) && e.registration_status !== 'cancelled')
+    .sort(nachDatumAbsteigend);
+
+// Reiter "Vergangen": beendete Termine ohne offene Buchungen (fertig
+// verbucht), plus ALLE bereits beendeten abgesagten Termine.
+//
+// Der Filter auf offene Buchungen gilt nur fuer die nicht abgesagten. Eine
+// Absage laesst die Buchungen auf 'confirmed' stehen (backgroundService.js),
+// ein abgesagter Termin behaelt also seinen pending_bookings_count. Wurde er
+// mitgefiltert, fiel er hier heraus -- und weil "Verbuchen" abgesagte
+// ausschliesst und "Aktuell" ihn nach dem Enddatum loslaesst, stand er in
+// KEINEM Reiter mehr (Fund 15.09.2026).
+export const vergangeneTermine = <T extends ReiterTermin>(offen: T[], abgesagt: T[]): T[] => {
+  const jetzt = new Date();
+  const verbucht = offen.filter(e => eventEnde(e) < jetzt && !hatOffeneBuchungen(e));
+  const abgesagtVorbei = abgesagt.filter(e => eventEnde(e) < jetzt);
+  return [...verbucht, ...abgesagtVorbei].sort(nachDatumAbsteigend);
+};

@@ -19,9 +19,10 @@ import ActivityRequestsView from '../ActivityRequestsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
+import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { eventEnde } from '../../shared';
+import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine } from '../../shared';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -159,6 +160,46 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     }
   });
 
+  // ABSAGE-MODAL (15.09.2026): Bis hierher war die Absage ein Action Sheet --
+  // richtig, solange sie nur zu bestaetigen war. Mit dem freiwilligen Grund
+  // (Migration 150) wird daraus eine Texteingabe, und die laeuft in dieser App
+  // ueber ein Modal (dieselbe Linie wie bei AbmeldungNachtragenModal).
+  //
+  // Ref-Getter wie beim Abmelde-Modal: Welcher Termin gemeint ist, steht erst
+  // beim Oeffnen fest, die Props werden aber schon beim Rendern deklariert.
+  const absageTerminRef = useRef<Event | null>(null);
+  const [presentAbsageModal, dismissAbsageModal] = useIonModal(TerminAbsagenModal, {
+    get terminName() { return absageTerminRef.current?.name ?? ''; },
+    get terminDatum() {
+      const termin = absageTerminRef.current;
+      if (!termin) return '';
+      return new Date(termin.event_date).toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    },
+    // registered_count IST bereits die Konfi-Zahl: Das Backend filtert Teamer
+    // heraus und zaehlt sie in teamer_count getrennt. Ein Abzug zog sie ein
+    // zweites Mal ab und machte aus 19 Konfis 15 (Bugreport 25.08.2026).
+    get konfiAnzahl() { return absageTerminRef.current?.registered_count || 0; },
+    onSave: async (grund: string) => {
+      const termin = absageTerminRef.current;
+      if (!termin) return;
+      await api.put(`/events/${termin.id}/cancel`, {
+        // notification_message bleibt mitgeschickt: Die Route nimmt es
+        // weiterhin entgegen, und es hier wegzulassen aendert nichts am
+        // Verhalten — aber der Vertrag bleibt so unangetastet.
+        notification_message: 'Das Event wurde leider abgesagt.',
+        // Leerer Grund => das Backend macht NULL daraus, und alles verhaelt
+        // sich wie vor dem 15.09.2026.
+        cancelled_reason: grund
+      });
+      setSuccess(`Event "${termin.name}" wurde abgesagt`);
+      await refreshEvents();
+      await refreshCancelled();
+    },
+    dismiss: () => dismissAbsageModal()
+  });
+
   const [presentRequestModalHook, dismissRequestModalHook] = useIonModal(ActivityRequestModal, {
     requestId: modalRequestId,
     onClose: () => {
@@ -220,45 +261,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
-  // Massgeblicher Zeitpunkt für "vergangen?": bei mehrtaegigen Events das ENDE
-  // (event_end_time), sonst der Start. So rutscht ein Event erst NACH dem letzten
-  // Tag aus "Aktuell" und ins "Verbuchen"/"Vergangen" — nicht schon nach dem Start.
-  // Seit Befund N6 (27.08.2026) aus der geteilten Quelle.
-  const eventEndDate = eventEnde;
-
-  // Tab "Aktuell": zukuenftige/laufende Events, ABGESAGTE EINGESCHLOSSEN.
-  // Sie stehen dort durchgestrichen — verschwinden sie ganz, sieht die Leitung
-  // nicht mehr, dass der Termin existierte und abgesagt wurde (Fund 22.08.2026).
-  // `events` enthält sie nicht mehr (Zeile mit dem cancelled-Filter), deshalb
-  // kommen sie aus der separaten Abfrage dazu.
-  const getAktuellEvents = () => {
-    const now = new Date();
-    const abgesagteZukuenftig = (cancelledEvents || []).filter(e => eventEndDate(e) >= now);
-    const list = [...events, ...abgesagteZukuenftig].filter(event => eventEndDate(event) >= now);
-    return list.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-  };
-
-  // Tab "Verbuchen": beendete Events mit offenen (unverbuchten) Buchungen.
-  const getVerbuchenEvents = () => {
-    const now = new Date();
-    const list = events.filter(event => {
-      const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
-      return eventEndDate(event) < now && hasPendingBookings && event.registration_status !== 'cancelled';
-    });
-    return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
-  };
-
-  // Tab "Vergangen": beendete Events ohne offene Buchungen (fertig verbucht),
-  // plus die bereits vergangenen abgesagten Termine.
-  const getVergangenEvents = () => {
-    const now = new Date();
-    const abgesagteVergangen = (cancelledEvents || []).filter(e => eventEndDate(e) < now);
-    const list = [...events, ...abgesagteVergangen].filter(event => {
-      const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
-      return eventEndDate(event) < now && !hasPendingBookings;
-    });
-    return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
-  };
+  // Die drei Reiter rechnen in shared/eventFormatting.ts — dort steht auch,
+  // warum abgesagte Termine in "Aktuell" und "Vergangen" stehen, in
+  // "Verbuchen" aber nicht.
+  const getAktuellEvents = () => aktuelleTermine(events, cancelledEvents || []);
+  const getVerbuchenEvents = () => zuVerbuchendeTermine(events);
+  const getVergangenEvents = () => vergangeneTermine(events, cancelledEvents || []);
 
   const handleDeleteEvent = async (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -486,40 +494,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
+  // Absagen oeffnet jetzt das Modal mit dem optionalen Grund (15.09.2026).
+  // Eckdaten (Datum, Konfi-Zahl) stehen dort im Kopf, wie vorher im Sheet.
   const handleCancelEvent = async (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    const eventDate = new Date(event.event_date).toLocaleDateString('de-DE', {
-      weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-    // registered_count IST bereits die Konfi-Zahl: Das Backend filtert
-    // Teamer heraus (events.js:145, seit Migration 120) und zaehlt sie in
-    // teamer_count getrennt. Ein Abzug zog sie ein zweites Mal ab und
-    // machte aus 19 Konfis 15 (Bugreport 25.08.2026).
-    const konfiCount = (event.registered_count || 0);
-    presentActionSheet({
-      header: `"${event.name}" absagen?`,
-      subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
-      buttons: [
-        {
-          text: 'Event absagen',
-          role: 'destructive',
-          icon: ICON_GESPERRT,
-          handler: async () => {
-            try {
-              await api.put(`/events/${event.id}/cancel`, {
-                notification_message: 'Das Event wurde leider abgesagt.'
-              });
-              setSuccess(`Event "${event.name}" wurde abgesagt`);
-              await refreshEvents();
-              await refreshCancelled();
-            } catch (error) {
-              setError(fehlerText(error, 'Fehler beim Absagen'));
-            }
-          }
-        },
-        { text: 'Abbrechen', role: 'cancel' }
-      ]
-    });
+    absageTerminRef.current = event;
+    presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
   const handleSelectEvent = (event: Event) => {
