@@ -22,7 +22,7 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine } from '../../shared';
+import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine, istAbgesagt } from '../../shared';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -181,19 +181,32 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     // heraus und zaehlt sie in teamer_count getrennt. Ein Abzug zog sie ein
     // zweites Mal ab und machte aus 19 Konfis 15 (Bugreport 25.08.2026).
     get konfiAnzahl() { return absageTerminRef.current?.registered_count || 0; },
+    // Ein abgesagter Termin bedeutet: Grund bearbeiten, kein zweites Absagen.
+    // Die Entscheidung faellt hier und nicht im Modal, weil hier steht,
+    // welcher Termin gemeint ist.
+    get modus() { return istAbgesagt(absageTerminRef.current) ? 'grund' as const : 'absagen' as const; },
+    get grundVorgabe() { return absageTerminRef.current?.cancelled_reason ?? ''; },
     onSave: async (grund: string) => {
       const termin = absageTerminRef.current;
       if (!termin) return;
-      await api.put(`/events/${termin.id}/cancel`, {
-        // notification_message bleibt mitgeschickt: Die Route nimmt es
-        // weiterhin entgegen, und es hier wegzulassen aendert nichts am
-        // Verhalten — aber der Vertrag bleibt so unangetastet.
-        notification_message: 'Das Event wurde leider abgesagt.',
-        // Leerer Grund => das Backend macht NULL daraus, und alles verhaelt
-        // sich wie vor dem 15.09.2026.
-        cancelled_reason: grund
-      });
-      setSuccess(`Event "${termin.name}" wurde abgesagt`);
+      if (istAbgesagt(termin)) {
+        // Eigene Route (Migration 152): /cancel lehnt einen bereits abgesagten
+        // Termin mit 400 ab und muss das fuer ausgelieferte App-Fassungen auch
+        // weiterhin tun.
+        await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
+        setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
+      } else {
+        await api.put(`/events/${termin.id}/cancel`, {
+          // notification_message bleibt mitgeschickt: Die Route nimmt es
+          // weiterhin entgegen, und es hier wegzulassen aendert nichts am
+          // Verhalten — aber der Vertrag bleibt so unangetastet.
+          notification_message: 'Das Event wurde leider abgesagt.',
+          // Leerer Grund => das Backend macht NULL daraus, und alles verhaelt
+          // sich wie vor dem 15.09.2026.
+          cancelled_reason: grund
+        });
+        setSuccess(`Event "${termin.name}" wurde abgesagt`);
+      }
       await refreshEvents();
       await refreshCancelled();
     },

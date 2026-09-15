@@ -84,6 +84,12 @@ export interface Event {
   cancelled_reason?: string | null;
   cancelled_by?: number | null;
   cancelled_by_name?: string | null;
+  // Wer den Grund zuletzt gesetzt hat (Migration 152). Beim Absagen dieselbe
+  // Person wie cancelled_by; erst nach einer nachtraeglichen Korrektur gehen
+  // die beiden auseinander (siehe absagegrundUrheberZeile).
+  cancelled_reason_set_by?: number | null;
+  cancelled_reason_set_by_name?: string | null;
+  cancelled_reason_set_at?: string | null;
   // Timeslots
   has_timeslots?: boolean;
   booked_timeslot_id?: number;

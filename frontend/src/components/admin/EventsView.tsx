@@ -2,6 +2,7 @@ import React from 'react';
 import { IonIcon, IonItem, IonLabel, IonInput, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonList, IonListHeader, useIonModal } from '@ionic/react';
 import {
   ICON_ANHANG,
+  ICON_BEARBEITEN,
   ICON_FILTER,
   ICON_GEMEINDE_GEFUELLT,
   ICON_GESPERRT,
@@ -23,7 +24,7 @@ import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, format
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
-import { absageUrheberZeile } from '../../utils/anwesenheitUrheber';
+import { absageUrheberZeile, absagegrundUrheberZeile } from '../../utils/anwesenheitUrheber';
 
 interface EventsViewProps {
   events: Event[];
@@ -368,6 +369,14 @@ const EventsView: React.FC<EventsViewProps> = ({
                               {absageUrheberZeile(event)}
                             </div>
                           )}
+                          {/* Zweite Zeile nur, wenn der Grund von jemand
+                              anderem stammt als die Absage (Migration 152) —
+                              sonst staende hier zweimal derselbe Name. */}
+                          {isCancelled && event.cancelled_reason && absagegrundUrheberZeile(event) && (
+                            <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                              {absagegrundUrheberZeile(event)}
+                            </div>
+                          )}
 
                           {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte.
                               Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme \u2014
@@ -473,13 +482,18 @@ const EventsView: React.FC<EventsViewProps> = ({
                 {(onDeleteEvent || onCancelEvent) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     {onCancelEvent && (
+                      // Bei einem ABGESAGTEN Termin fuehrt derselbe Wisch zum
+                      // Absagegrund (15.09.2026, Migration 152) — absagen
+                      // laesst er sich ja nicht mehr. Bis hierher war die
+                      // Aktion an abgesagten Terminen sichtbar und lief ins
+                      // Leere: Das Backend antwortete mit 400.
                       <IonItemOption
                         onClick={() => { closeOpenSlidingItems(); onCancelEvent(event); }}
-                        aria-label="Event absagen"
+                        aria-label={isCancelled ? 'Absagegrund bearbeiten' : 'Event absagen'}
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                          <IonIcon icon={ICON_GESPERRT} />
+                          <IonIcon icon={isCancelled ? ICON_BEARBEITEN : ICON_GESPERRT} />
                         </div>
                       </IonItemOption>
                     )}

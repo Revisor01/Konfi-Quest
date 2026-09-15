@@ -146,6 +146,20 @@ export const zeigtPunkteart = (event: {
 export const punkteartText = (event: { point_type?: string }): string =>
   event.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
 
+/**
+ * Ist dieser Termin abgesagt? (15.09.2026)
+ *
+ * ZWEI FELDER, WEIL ZWEI ROUTEN: GET /events/cancelled liefert
+ * registration_status = 'cancelled' (fest gesetzt), die Detailansicht
+ * zusaetzlich das Feld cancelled aus der Tabelle. Beide Listen laufen durch
+ * dieselben Ansichten, und wer nur eines der beiden prueft, sieht den Termin
+ * je nach Herkunft mal als abgesagt und mal nicht. Genau diese Doppelung
+ * stand vorher an vier Stellen einzeln im Code.
+ */
+export const istAbgesagt = (
+  event: { cancelled?: boolean; registration_status?: string } | null | undefined
+): boolean => !!event && (event.cancelled === true || event.registration_status === 'cancelled');
+
 // --- Die drei Reiter der Leitungs-Terminliste ---------------------------
 //
 // Die Aufteilung steht hier und nicht in AdminEventsPage, damit sie sich

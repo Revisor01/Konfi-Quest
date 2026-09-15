@@ -41,6 +41,8 @@ export interface UrheberAngabe {
 export interface AbsageAngabe {
   cancelled_by_name?: string | null;
   cancelled_at?: string | null;
+  cancelled_reason_set_by_name?: string | null;
+  cancelled_reason_set_at?: string | null;
 }
 
 /**
@@ -113,6 +115,47 @@ export const checkinZeile = (angabe: UrheberAngabe | null | undefined): string |
  */
 export const absageUrheberZeile = (angabe: AbsageAngabe | null | undefined): string | null =>
   zeile('Abgesagt von', angabe?.cancelled_by_name, angabe?.cancelled_at);
+
+/**
+ * Wer den GRUND zuletzt geaendert hat, z. B. "Grund geändert von Anna Meier,
+ * 16.09." (Migration 152, 15.09.2026).
+ *
+ * WARUM DIESE ZEILE MEISTENS FEHLT: Beim Absagen setzt die Route beide Paare
+ * auf dieselbe Person -- der Normalfall. Zwei Zeilen mit demselben Namen
+ * untereinander waeren nur Laerm, deshalb gibt es sie erst, wenn die beiden
+ * auseinandergehen. Genau derselbe Fall wie bei Status und Notiz einer
+ * Buchung (Migration 149): Erst wenn zwei verschiedene Leute geschrieben
+ * haben, muss die Anzeige beide nennen.
+ *
+ * WARUM SIE BEI FEHLENDER ABSAGE-ZEILE TROTZDEM ERSCHEINT: Termine, die vor
+ * Migration 150 abgesagt wurden, haben keinen cancelled_by -- dort faellt
+ * "Abgesagt von ..." ersatzlos weg. Traegt jetzt jemand den Grund nach, ist
+ * das die einzige Person, die ueberhaupt bekannt ist; sie zu verschweigen,
+ * weil zufaellig kein Absagender daneben steht, hiesse die Auskunft an genau
+ * der Stelle zu verlieren, an der sie neu entsteht.
+ *
+ * WARUM "geändert" UND NICHT "eingetragen": Der Wortlaut soll zu dem passen,
+ * was passiert ist -- und passiert ist eine Korrektur an etwas, das schon
+ * dastand. "Eingetragen von" laese sich wie die urspruengliche Absage und
+ * wuerde neben "Abgesagt von ..." zwei Urheber desselben Vorgangs behaupten.
+ *
+ * Gibt null zurueck, wenn kein Name vorliegt oder es derselbe ist wie beim
+ * Absagen.
+ */
+export const absagegrundUrheberZeile = (angabe: AbsageAngabe | null | undefined): string | null => {
+  const grundName = angabe?.cancelled_reason_set_by_name?.trim();
+  if (!grundName) return null;
+
+  // Vergleich ueber den ANGEZEIGTEN Namen und nicht ueber die Kennung: Genau
+  // dieser Name steht in der Zeile darueber, und genau seine Wiederholung
+  // soll vermieden werden. Zwei Konten mit demselben Anzeigenamen sind der
+  // einzige Fall, in dem das danebengeht -- und dann waeren die zwei Zeilen
+  // fuer die Lesenden ohnehin nicht zu unterscheiden.
+  const absagerName = angabe?.cancelled_by_name?.trim();
+  if (absagerName && absagerName === grundName) return null;
+
+  return zeile('Grund geändert von', grundName, angabe?.cancelled_reason_set_at);
+};
 
 const zeile = (
   vorspann: string,

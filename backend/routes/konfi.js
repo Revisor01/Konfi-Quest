@@ -1176,9 +1176,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                -- die Konfi-Liste ist der Ort, an dem er ankommen muss.
                -- LEFT JOIN, weil NULL hier "unbekannt" heisst: Termine, die
                -- vor der Migration abgesagt wurden, haben keinen Urheber.
-               u_cancel.display_name as cancelled_by_name
+               u_cancel.display_name as cancelled_by_name,
+               -- Wer den GRUND zuletzt gesetzt hat (Migration 152). Auch die
+               -- Konfi bekommt das: Sie liest den Grund, also soll auch bei
+               -- ihr die richtige Person darunterstehen, wenn jemand anderes
+               -- als der Absagende ihn nachgetragen hat.
+               u_grund.display_name as cancelled_reason_set_by_name
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
+        LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         -- Zahlen aus event_booking_stats statt aus einer eigenen Kopie
         -- (28.08.2026). Konfi-Sicht: registered_count UND waitlist_count

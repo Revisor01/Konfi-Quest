@@ -86,9 +86,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 -- Urheber. Ein INNER JOIN wuerde die halbe Terminliste
                 -- verschlucken.
                 u_cancel.display_name as cancelled_by_name,
+                -- Wer den GRUND zuletzt gesetzt hat (Migration 152). Beim
+                -- Absagen dieselbe Person wie cancelled_by; erst bei einer
+                -- nachtraeglichen Korrektur gehen die beiden auseinander.
+                u_grund.display_name as cancelled_reason_set_by_name,
                 mat.material_count
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
+        LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         -- Zahlen aus der View statt aus einer eigenen Kopie (28.08.2026).
         --
         -- event_booking_stats liegt seit Migration 128 bereit und wurde von
@@ -321,9 +326,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 -- LEFT JOIN: Termine, die vor der Migration abgesagt wurden,
                 -- haben keinen Urheber und muessen trotzdem in der Liste
                 -- stehen -- gerade hier, wo ausschliesslich Altbestand liegt.
-                u_cancel.display_name as cancelled_by_name
+                u_cancel.display_name as cancelled_by_name,
+                -- Wer den GRUND zuletzt gesetzt hat (Migration 152) -- gerade
+                -- in dieser Liste relevant: Hier stehen ausschliesslich
+                -- abgesagte Termine, und hier wird nachgetragen.
+                u_grund.display_name as cancelled_reason_set_by_name
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
+        LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
@@ -337,9 +347,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         -- Aggregat, und e.id allein deckt ihn nicht ab (Postgres erkennt die
         -- funktionale Abhaengigkeit nur ueber den Primaerschluessel DER
         -- gruppierten Tabelle, nicht ueber einen mitgejointen).
+        -- u_grund.display_name aus demselben Grund (Migration 152): Auch er
+        -- kommt aus einer mitgejointen Tabelle.
         GROUP BY e.id, ebs.konfi_confirmed, ebs.konfi_waitlist, ebs.konfi_offen,
                  ebs.teamer_confirmed, ebs.teamer_waitlist, ebs.teamer_offen,
-                 u_cancel.display_name
+                 u_cancel.display_name, u_grund.display_name
         ORDER BY e.cancelled_at DESC
       `;
       
@@ -462,6 +474,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                -- Der Name kommt per LEFT JOIN (NULL = unbekannt, siehe
                -- Migration 150 -- kein Backfill fuer Altabsagen).
                e.cancelled_reason, e.cancelled_by, u_cancel.display_name as cancelled_by_name,
+               -- Wer den GRUND zuletzt gesetzt hat (Migration 152), samt
+               -- Zeitpunkt -- dieselbe Begruendung wie eine Zeile hoeher.
+               e.cancelled_reason_set_by, e.cancelled_reason_set_at,
+               u_grund.display_name as cancelled_reason_set_by_name,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
                  bestaetigt: 'bstats.registered_count',
@@ -489,6 +505,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                END as teamer_registration_status
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
+        LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         LEFT JOIN LATERAL (
           SELECT
             COALESCE(ebs.konfi_confirmed, 0)  as registered_count,

@@ -52,6 +52,24 @@ import { useApp } from '../../../contexts/AppContext';
 // verpennt") in ein Feld, das zwanzig Konfis lesen. Dieselbe Regel wie beim
 // Abmelde-Modal: eine Folge, die in diesem Moment eintritt und nicht
 // rueckgaengig zu machen ist, gehoert dorthin, wo man sie ausloest.
+//
+// ZWEITER MODUS: GRUND NACHTRAGEN ODER AENDERN (15.09.2026, Migration 152)
+//
+// Simons Fall: Ein Termin ist abgesagt, der Grund fehlt oder hat einen
+// Tippfehler. Rankommen ging nicht -- die Absage laesst sich nicht wiederholen.
+//
+// DASSELBE MODAL, KEIN ZWEITES: Beide Wege zeigen genau ein Textfeld mit
+// denselben 500 Zeichen, derselben Normalisierung und derselben Folge (alle
+// Teilnehmenden lesen mit). Ein eigenes Modal waere eine Kopie, die beim
+// naechsten Textwechsel auseinanderliefe. Was sich unterscheidet, ist der
+// Rahmen -- Ueberschrift, Hinweistext und die Frage, ob eine Mitteilung
+// rausgeht --, und das sind drei Zeichenketten, kein zweites Bauteil.
+//
+// WAS DER MODUS AENDERT, STEHT AUCH DA: Beim Nachtragen geht KEIN Push raus
+// (Entscheidung Simon, 15.09.2026) -- die Absage ist schon gemeldet, eine
+// Korrektur ist keine neue Nachricht. Der Hinweis sagt das ausdruecklich,
+// damit niemand den Grund als stille Mitteilung missversteht und darauf
+// wartet, dass die Handys klingeln.
 
 interface TerminAbsagenModalProps {
   /** Name des Termins — steht im Kopf des Modals. */
@@ -60,7 +78,14 @@ interface TerminAbsagenModalProps {
   terminDatum: string;
   /** Wie viele Konfis angemeldet sind — dieselbe Zahl wie bisher im Sheet. */
   konfiAnzahl: number;
-  /** Sagt den Termin ab. Leerer Grund heisst: kein Grund. */
+  /**
+   * 'absagen' (Vorgabe) sagt den Termin ab, 'grund' aendert nur den Grund
+   * eines bereits abgesagten Termins.
+   */
+  modus?: 'absagen' | 'grund';
+  /** Beim Modus 'grund': der Grund, der heute dasteht. Leer = keiner. */
+  grundVorgabe?: string;
+  /** Speichert. Leerer Grund heisst: kein Grund. */
   onSave: (grund: string) => Promise<void> | void;
   dismiss: () => void;
 }
@@ -69,11 +94,17 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
   terminName,
   terminDatum,
   konfiAnzahl,
+  modus = 'absagen',
+  grundVorgabe = '',
   onSave,
   dismiss,
 }) => {
   const { isOnline } = useApp();
-  const [grundText, setGrundText] = useState('');
+  const istGrundModus = modus === 'grund';
+  // Vorgabe nur als Startwert: Wer tippt, soll nicht bei jedem Rendern
+  // zurueckgesetzt werden. Das Modal wird pro Oeffnen neu aufgebaut, deshalb
+  // reicht der Initialwert.
+  const [grundText, setGrundText] = useState(grundVorgabe);
   const { isSubmitting, guard } = useActionGuard();
 
   const handleSave = async () => {
@@ -87,7 +118,7 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Absagen</IonTitle>
+          <IonTitle>{istGrundModus ? 'Absagegrund' : 'Absagen'}</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Abbrechen" className="app-modal-close-btn" onClick={dismiss} disabled={isSubmitting}>
               <IonIcon icon={ICON_SCHLIESSEN} />
@@ -95,7 +126,7 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
-              aria-label="Termin absagen"
+              aria-label={istGrundModus ? 'Absagegrund speichern' : 'Termin absagen'}
               className="app-modal-submit-btn app-modal-submit-btn--events"
               onClick={handleSave}
               disabled={isSubmitting || !isOnline}
@@ -112,7 +143,9 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={ICON_GESPERRT} />
             </div>
-            <IonLabel>„{terminName}“ absagen</IonLabel>
+            <IonLabel>
+              {istGrundModus ? `Warum „${terminName}“ ausfällt` : `„${terminName}“ absagen`}
+            </IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -121,11 +154,12 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
                   Termin es geht und wie viele Leute es trifft. */}
               <IonNote className="app-hinweis-text">
                 {terminDatum} · {konfiAnzahl} {konfiAnzahl === 1 ? 'Konfi angemeldet' : 'Konfis angemeldet'}
+                {istGrundModus ? ' · abgesagt' : ''}
               </IonNote>
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonTextarea
-                    label="Grund (optional)"
+                    label={istGrundModus ? 'Grund' : 'Grund (optional)'}
                     labelPlacement="stacked"
                     value={grundText}
                     onIonInput={(e) => setGrundText(e.detail.value ?? '')}
@@ -138,8 +172,9 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
                 </IonItem>
               </IonList>
               <IonNote className="app-hinweis-text">
-                Alle Angemeldeten sehen den Grund am Termin und bekommen ihn in der Mitteilung.
-                Ohne Grund wird nur die Absage gemeldet.
+                {istGrundModus
+                  ? 'Alle Angemeldeten sehen den Grund am Termin. Es geht keine neue Mitteilung raus — die Absage ist schon gemeldet. Leerst du das Feld, fällt der Grund weg.'
+                  : 'Alle Angemeldeten sehen den Grund am Termin und bekommen ihn in der Mitteilung. Ohne Grund wird nur die Absage gemeldet.'}
               </IonNote>
             </IonCardContent>
           </IonCard>

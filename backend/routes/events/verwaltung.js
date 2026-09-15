@@ -7,7 +7,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { isRegistrationOpenForKonfis, zaehleBestaetigte } = require('../../utils/bookingUtils');
+const { isRegistrationOpenForKonfis, zaehleBestaetigte, meldeAlleAbBeiAbsage } = require('../../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -1040,8 +1040,21 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // bleibt cancelled_reason NULL — und damit alles so, wie es war.
       // cancelled_by wird IMMER gesetzt, auch ohne Grund: Wer abgesagt hat,
       // ist unabhaengig davon interessant, ob eine Begruendung dabeistand.
+      //
+      // cancelled_reason_set_by kommt dazu (Migration 152, 15.09.2026): Beim
+      // Absagen ist es dieselbe Person wie cancelled_by -- die Anzeige laesst
+      // die zweite Zeile dann weg. Erst wenn spaeter jemand anderes ueber
+      // PUT /:id/absagegrund korrigiert, gehen die beiden auseinander, und
+      // genau dann soll unter dem Termin nicht die falsche Person stehen.
       await client.query(
-        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW(), cancelled_reason = $2, cancelled_by = $3 WHERE id = $1",
+        `UPDATE events
+            SET cancelled = TRUE,
+                cancelled_at = NOW(),
+                cancelled_reason = $2,
+                cancelled_by = $3,
+                cancelled_reason_set_by = $3,
+                cancelled_reason_set_at = NOW()
+          WHERE id = $1`,
         [eventId, grund, req.user.id]
       );
 
@@ -1053,6 +1066,29 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL
       `, [eventId]);
       participants = teilnehmende;
+
+      // ALLE ANGEMELDETEN ABMELDEN (Entscheidung Simon, 15.09.2026)
+      //
+      // Bis hierher blieben die Buchungen nach einer Absage auf 'confirmed'
+      // mit attendance_status NULL stehen. Der Termin galt dadurch weiter als
+      // "noch zu verbuchen", zaehlte im Badge mit und fiel aus dem
+      // Vergangen-Reiter -- genau die zwei Fehler vom Morgen des 15.09.2026
+      // (siehe backgroundService.js, Befund H1). Der Termin hat nicht
+      // stattgefunden: niemand war anwesend, niemand muss ihn verbuchen.
+      //
+      // IN DERSELBEN TRANSAKTION wie die Absage. Schlaegt das Abmelden fehl,
+      // faellt auch das cancelled = TRUE zurueck -- ein halb abgesagter
+      // Termin waere schlimmer als ein nicht abgesagter, weil ihn niemand
+      // mehr als offen erkennt.
+      //
+      // Der Push bleibt, wie er ist: die Absage-Meldung. Eine zusaetzliche
+      // Abmelde-Benachrichtigung waere dieselbe Nachricht ein zweites Mal.
+      //
+      // NUR AB JETZT, kein Backfill: Bereits abgesagte Termine bleiben, wie
+      // sie sind (Entscheidung Simon). Der Zaehler-Fix vom Morgen deckt den
+      // Altbestand bereits ab -- er filtert abgesagte Termine heraus,
+      // unabhaengig davon, worauf ihre Buchungen stehen.
+      await meldeAlleAbBeiAbsage(client, eventId, grund);
 
       await client.query('COMMIT');
       }
@@ -1093,6 +1129,121 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
     } catch (liveErr) {
       console.error('Live-Update nach PUT /events/:eventId/cancel fehlgeschlagen:', liveErr);
+    }
+  });
+
+  // Absagegrund eines BEREITS abgesagten Termins aendern, nachtragen oder
+  // loeschen (15.09.2026, Migration 152).
+  //
+  // Simons Fall: Ein Termin ist abgesagt, der Grund fehlt oder hat einen
+  // Tippfehler. Rankommen ging nicht -- die Cancel-Route oben lehnt einen
+  // bereits abgesagten Termin mit 400 ab.
+  //
+  // WARUM EINE EIGENE ROUTE UND NICHT DIE CANCEL-ROUTE ERWEITERT:
+  // Die 400 ist Vertrag. Ausgelieferte App-Fassungen rufen /cancel auf und
+  // verlassen sich darauf, dass ein zweiter Aufruf abprallt -- etwa beim
+  // Doppeltippen auf einem wackeligen Netz. Naehme /cancel den Fall mit,
+  // wuerde aus einem folgenlosen Fehlschlag stillschweigend ein zweiter
+  // Schreibvorgang, und der Absagegrund kaeme aus einem Feld, das alte Apps
+  // gar nicht schicken -- ein vorhandener Grund waere nach jedem Doppeltipp
+  // weg. Eine neue Route aendert am Verhalten der alten nichts.
+  //
+  // UND WARUM NICHT PUT /events/:id (Bearbeiten): Das Bearbeiten-Formular
+  // schickt den ganzen Termin. Ein abgesagter Termin ist aber gerade nicht
+  // mehr zu bearbeiten -- und ein Feld, das nur bei abgesagten Terminen
+  // ueberhaupt eine Bedeutung hat, gehoert nicht in eine Route, die
+  // hauptsaechlich fuer die anderen da ist.
+  //
+  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireTeamer + darfTermin auf
+  // can_view-Stufe. Wer den Termin nicht haette absagen duerfen, aendert auch
+  // den Grund nicht -- der Grund ist Teil der Absage, und er steht bei allen
+  // Teilnehmenden auf dem Bildschirm.
+  router.put('/:id/absagegrund', rbacVerifier, requireTeamer, async (req, res) => {
+    const eventId = req.params.id;
+    const { cancelled_reason } = req.body;
+
+    // Exakt dieselbe Normalisierung wie in /cancel (und wie bei excuse_reason
+    // und attendance_note in events/anwesenheit.js): getrimmt, auf 500 Zeichen
+    // begrenzt, leer wird NULL. Sonst hiesse derselbe Text hier und dort
+    // zweierlei, je nachdem, ueber welchen Weg er hereinkam.
+    const grund = (() => {
+      if (typeof cancelled_reason !== 'string') return null;
+      const getrimmt = cancelled_reason.trim();
+      return getrimmt === '' ? null : getrimmt.slice(0, 500);
+    })();
+
+    const client = await db.getClient();
+    let fruehAntwort = null;
+    let event = null;
+    try {
+      await client.query('BEGIN');
+
+      const { rows: [gefunden] } = await client.query(
+        "SELECT name, cancelled FROM events WHERE id = $1 AND organization_id = $2",
+        [eventId, req.user.organization_id]
+      );
+      event = gefunden;
+
+      const zugriff = (event && event.cancelled) ? await darfTermin(client, req, eventId) : null;
+
+      if (!event) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else if (!event.cancelled) {
+        // Spiegelbild zur 400 in /cancel: Dort ist "schon abgesagt" der
+        // Fehlerfall, hier "noch gar nicht abgesagt". Einen Absagegrund an
+        // einem laufenden Termin gaebe es keinen Ort, an dem er angezeigt
+        // wuerde -- die Anzeige haengt ueberall an cancelled.
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
+      } else if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else {
+        // cancelled, cancelled_at, cancelled_by BLEIBEN UNANGETASTET
+        // (Migration 152): Wer den Termin abgesagt hat, hat ihn abgesagt --
+        // daran aendert eine spaetere Korrektur am Begleittext nichts.
+        // Festgehalten wird stattdessen, wer den GRUND zuletzt gesetzt hat.
+        await client.query(
+          `UPDATE events
+              SET cancelled_reason = $2,
+                  cancelled_reason_set_by = $3,
+                  cancelled_reason_set_at = NOW()
+            WHERE id = $1`,
+          [eventId, grund, req.user.id]
+        );
+        await client.query('COMMIT');
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in PUT /events/:eventId/absagegrund:', eventId, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler beim Ändern des Absagegrunds' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
+      client.release();
+    }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    // KEIN PUSH (Entscheidung Simon, 15.09.2026): Die Absage selbst ist schon
+    // rausgegangen, samt Grund, falls einer dabeistand. Eine Korrektur ist
+    // keine neue Nachricht -- ein zweiter Push "Leider abgesagt" an dieselben
+    // zwanzig Konfis, weil jemand einen Buchstaben getauscht hat, laese sich
+    // wie eine zweite Absage und wuerde beim naechsten Mal ignoriert. Wer den
+    // Grund nachtraegt und will, dass alle ihn lesen, hat den Termin-Chat.
+    // Das Live-Update bleibt: Es aktualisiert nur, was ohnehin offen auf dem
+    // Bildschirm steht, und klingelt bei niemandem.
+    res.json({
+      message: `Absagegrund für "${event.name}" wurde ${grund ? 'gespeichert' : 'entfernt'}`,
+      cancelled_reason: grund
+    });
+
+    try {
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
+    } catch (liveErr) {
+      console.error('Live-Update nach PUT /events/:eventId/absagegrund fehlgeschlagen:', liveErr);
     }
   });
 

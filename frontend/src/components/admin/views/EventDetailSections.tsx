@@ -111,6 +111,10 @@ export interface EventData {
   cancelled_at?: string | null;
   cancelled_reason?: string | null;
   cancelled_by_name?: string | null;
+  // Wer den Grund zuletzt gesetzt hat (Migration 152) — steht nur dann in
+  // einer eigenen Zeile, wenn es jemand anderes war als der Absagende.
+  cancelled_reason_set_by_name?: string | null;
+  cancelled_reason_set_at?: string | null;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
 }

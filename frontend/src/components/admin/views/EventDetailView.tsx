@@ -47,7 +47,7 @@ import {
 import type { Participant, Unregistration, EventData } from './EventDetailSections';
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
+import { absageUrheberZeile, absagegrundUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
@@ -285,6 +285,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       onBack();
     },
     dismiss: () => dismissAbsageModal()
+  });
+
+  // ABSAGEGRUND NACHTRAGEN ODER AENDERN (15.09.2026, Migration 152)
+  //
+  // Zweite Instanz desselben Modals statt eines Umschalters am ersten: Die
+  // beiden unterscheiden sich in drei Props, und useIonModal bindet die Props
+  // beim Deklarieren. Ein gemeinsames Modal muesste den Modus ueber einen
+  // weiteren State fuehren, der zwischen zwei Oeffnungen haengenbleiben kann —
+  // und dann stuende beim Absagen "Grund bearbeiten" im Kopf.
+  //
+  // Anders als beim Absagen KEIN onBack(): Der Termin bleibt, wo er ist, und
+  // die Ansicht laedt nur neu. Wer einen Tippfehler korrigiert, will danach
+  // sehen, dass er weg ist, und nicht in der Liste landen.
+  const [presentAbsagegrundModal, dismissAbsagegrundModal] = useIonModal(TerminAbsagenModal, {
+    get terminName() { return eventData?.name ?? ''; },
+    get terminDatum() {
+      if (!eventData?.event_date) return '';
+      return new Date(eventData.event_date).toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    },
+    get konfiAnzahl() { return participants.filter(p => p.role_name === 'konfi').length; },
+    modus: 'grund' as const,
+    get grundVorgabe() { return eventData?.cancelled_reason ?? ''; },
+    onSave: async (grund: string) => {
+      if (!eventData) return;
+      // Eigene Route: /cancel lehnt einen bereits abgesagten Termin mit 400
+      // ab und muss das fuer ausgelieferte App-Fassungen weiterhin tun.
+      await api.put(`/events/${eventData.id}/absagegrund`, { cancelled_reason: grund });
+      setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
+      await loadEventData();
+    },
+    dismiss: () => dismissAbsagegrundModal()
   });
 
   // QR Display Modal
@@ -832,6 +865,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
+  // Grund nachtragen oder aendern — nur bei einem bereits abgesagten Termin
+  // (15.09.2026, Migration 152).
+  const handleAbsagegrundBearbeiten = () => {
+    if (!isOnline || !eventData) return;
+    presentAbsagegrundModal({ presentingElement: presentingElement || undefined });
+  };
+
   const handleCreateEventChat = async () => {
     if (offlineBlockiert(isOnline, setError)) return;
     try {
@@ -1207,14 +1247,54 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             genau dieser Text ging an alle Angemeldeten und in den Push
             (Entscheidung Simon). Ohne Grund faellt der Block weg; die Absage
             selbst steht schon im Kopf. */}
-        {isCancelled && eventData?.cancelled_reason && (
+        {/* GRUND NACHTRAGEN ODER AENDERN (15.09.2026, Migration 152): Der
+            Block steht jetzt bei JEDEM abgesagten Termin, auch ohne Grund.
+            Vorher fiel er ohne Grund ganz weg — und damit gab es keinen Ort,
+            an dem sich einer nachtragen liess. Wer beim Absagen in Eile nichts
+            eingetragen hatte, kam nie wieder ran (Simons Befund).
+
+            Die Detailansicht ist der richtige Ort dafuer: Hier steht der Text,
+            um den es geht, in voller Laenge — anders als in der Liste, wo er
+            zwischen Zaehlern und Kategorien haengt. Die Liste bietet den
+            Bearbeiten-Wisch zusaetzlich an, fuer den schnellen Weg. */}
+        {isCancelled && eventData && (
           <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
-            <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
+            {eventData.cancelled_reason ? (
+              <>
+                <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
+              </>
+            ) : (
+              // Kein Grund ist kein Fehler (er war immer freiwillig, Migration
+              // 150) — der Satz sagt nur, dass hier einer stehen koennte.
+              <span style={{ color: 'var(--app-text-secondary)' }}>Kein Grund zur Absage angegeben.</span>
+            )}
             {absageUrheberZeile(eventData) && (
               <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                 {absageUrheberZeile(eventData)}
               </div>
             )}
+            {/* Nur, wenn der Grund von jemand anderem stammt als die Absage
+                (Migration 152) — sonst staende zweimal derselbe Name da. */}
+            {absagegrundUrheberZeile(eventData) && (
+              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                {absagegrundUrheberZeile(eventData)}
+              </div>
+            )}
+            {/* Kein Rechte-Gate an dieser Stelle — wie beim Bearbeiten-Knopf
+                im Kopf dieser Ansicht. Die Berechtigung sitzt im Backend
+                (requireTeamer + darfTermin, dieselbe wie beim Absagen); wer
+                nicht darf, bekommt 403. */}
+            <IonButton
+              size="small"
+              fill="clear"
+              color="danger"
+              disabled={!isOnline}
+              onClick={handleAbsagegrundBearbeiten}
+              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
+            >
+              <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
+              {eventData.cancelled_reason ? 'Grund bearbeiten' : 'Grund nachtragen'}
+            </IonButton>
           </div>
         )}
 
