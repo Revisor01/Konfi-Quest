@@ -1,18 +1,30 @@
 name: Android Release Build
 
-# Baut das signierte AAB und laedt es per Google-Play-API in die Tracks
-# (internal, alpha, production — Google startet die Review automatisch).
+# Baut das signierte AAB und laedt es per Google-Play-API in die Tracks.
+# Google startet die Review automatisch, sobald "production" dabei ist.
 #
 # Version/versionCode kommen aus frontend/version.json (Quelle der Wahrheit,
 # build.gradle liest sie direkt). Vor dem Dispatch: versionCode bumpen,
 # frontend/release-notes-de.txt aktualisieren, committen.
+#
+# WARUM DIE VORGABE NUR DIE TESTKANAELE NENNT (15.09.2026): Sie stand auf
+# "internal,alpha,production". Ein Dispatch ohne gesetzte Eingabe — per CLI
+# der Normalfall, dort ist die Vorgabe unsichtbar — reichte damit
+# ungefragt einen Production-Release ein und ersetzte die laufende
+# Google-Pruefung. Genau so ist versionCode 102 am 15.09.2026
+# versehentlich in die Produktion gegangen.
+#
+# Ein Produktions-Release ist nicht umkehrbar: Eine falsche Einreichung
+# laesst sich nicht zurueckziehen, nur durch eine weitere ersetzen. Deshalb
+# muss "production" ausdruecklich hingeschrieben werden. Wer nichts angibt,
+# bekommt die Testkanaele — der sichere Fall.
 
 on:
   workflow_dispatch:
     inputs:
       tracks:
-        description: "Ziel-Tracks (kommagetrennt)"
-        default: "internal,alpha,production"
+        description: "Ziel-Tracks (kommagetrennt). production NUR bewusst setzen — das reicht sofort zur Pruefung ein."
+        default: "internal,alpha"
         required: true
       dry_run:
         description: "Dry-Run: kompletter Durchlauf, aber Play-Edit wird verworfen (kein Release)"
