@@ -19,6 +19,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import GlobalToasts from './components/common/GlobalToasts';
 import WartendeVorgaengeLeiste from './components/common/WartendeVorgaengeLeiste';
 import AppSperrbildschirm from './components/common/AppSperrbildschirm';
+import AppAbdeckung from './components/common/AppAbdeckung';
 import { useAppSperre } from './hooks/useAppSperre';
 import { useSeitenBereit } from './navigation/useSeitenBereit';
 
@@ -86,7 +87,7 @@ const AppContent: React.FC = () => {
   // mitbekommen, wenn gerade niemand angemeldet ist), der Sperrbildschirm
   // erscheint aber nur ueber der angemeldeten App — auf der Anmeldeseite gibt
   // es nichts zu verdecken, und ein Schloss vor dem Login waere eine Sackgasse.
-  const { gesperrt, entsperren } = useAppSperre();
+  const { gesperrt, verdeckt, entsperren } = useAppSperre();
 
   // Seitenbaum der Rolle vorladen. Das Ergebnis entscheidet unten, ob der
   // Router schon montiert werden darf — siehe die Begruendung dort.
@@ -163,6 +164,11 @@ const AppContent: React.FC = () => {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </IonRouterOutlet>
         </IonReactRouter>
+        {/* Auch hier: Auf der Anmeldeseite kann ein eingetippter Benutzername
+            stehen, und nach dem Abmelden ist die letzte Ansicht unter Umstaenden
+            noch im Vorschaubild. Die Abdeckung liegt deshalb ueber JEDEM
+            Zustand, nicht nur ueber der angemeldeten App. */}
+        {verdeckt && <AppAbdeckung />}
       </IonApp>
     );
   }
@@ -195,6 +201,7 @@ const AppContent: React.FC = () => {
             onAbmelden={async () => { entsperren(); await signOut(); }}
           />
         )}
+        {verdeckt && <AppAbdeckung />}
       </IonApp>
     );
   }
@@ -237,6 +244,11 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
+      {/* Die Abdeckung steht ZULETZT und damit ueber dem Sperrbildschirm.
+          Beim Wegwechseln kann beides gleichzeitig anstehen — dann gehoert
+          ins Vorschaubild die neutrale Flaeche, nicht der bedienbare
+          Sperrbildschirm. */}
+      {verdeckt && <AppAbdeckung />}
     </IonApp>
   );
 };

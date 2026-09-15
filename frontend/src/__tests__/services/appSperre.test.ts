@@ -54,7 +54,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockIsNative.mockReturnValue(true);
   mockGet.mockResolvedValue({ value: null });
-  mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID' });
+  mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht' });
   // Ausflug-Zaehler aus einem vorherigen Test sicher auf null.
   while (laeuftAusflug()) ausflugBeenden();
 });
@@ -204,13 +204,13 @@ describe('Verfuegbarkeit', () => {
   });
 
   it('ist NICHT verfuegbar ohne eingerichtete Biometrie', async () => {
-    mockVerfuegbar.mockResolvedValue({ verfuegbar: false, art: 'biometrie', bezeichnung: 'Biometrie' });
+    mockVerfuegbar.mockResolvedValue({ verfuegbar: false, art: 'biometrie', bezeichnung: 'Biometrie', sinnbild: 'schloss' });
     expect(await sperreVerfuegbar()).toBe(false);
   });
 
   it('ist im Browser NICHT verfuegbar, auch wenn die Biometrie ja sagt', async () => {
     mockIsNative.mockReturnValue(false);
-    mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID' });
+    mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht' });
     expect(await sperreVerfuegbar()).toBe(false);
     // Im Browser wird gar nicht erst gefragt.
     expect(mockVerfuegbar).not.toHaveBeenCalled();

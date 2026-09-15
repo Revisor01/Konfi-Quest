@@ -25,12 +25,35 @@ import {
 export interface AppSperrZustand {
   /** true, solange der Sperrbildschirm die App verdecken muss. */
   gesperrt: boolean;
+  /**
+   * true, solange die App im Hintergrund ist UND die Sperre eingeschaltet ist.
+   *
+   * WARUM DAS NICHT DASSELBE IST WIE `gesperrt` (Simons Befund 15.09.2026,
+   * echtes Geraet): Im App-Umschalter war die App MIT INHALT zu sehen, obwohl
+   * sie gesperrt war — Namen, Punkte und Beitraege lesbar, ohne die Sperre zu
+   * ueberwinden.
+   *
+   * Der Grund ist die Reihenfolge: iOS macht die Momentaufnahme fuer den
+   * Umschalter beim WEGWECHSELN (willResignActive). `gesperrt` wird aber erst
+   * beim ZURUECKKOMMEN berechnet — da ist das Bild laengst gemacht. Eine
+   * Abdeckung, die an `gesperrt` haengt, kommt also grundsaetzlich zu spaet.
+   *
+   * Deshalb dieser zweite Zustand: Er kippt im SELBEN Ereignis, das die
+   * Momentaufnahme ausloest, und braucht dafuer keine Rechnung ueber
+   * Wartezeiten — beim Wegwechseln steht noch gar nicht fest, ob die Rueckkehr
+   * spaeter sperren wird. Verdeckt wird deshalb IMMER, sobald die Sperre
+   * ueberhaupt eingeschaltet ist. Das ist die konservative Richtung: lieber
+   * eine Abdeckung zu viel im Umschalter (dort sieht man ohnehin nur ein
+   * Vorschaubild) als ein lesbares Bild zu wenig.
+   */
+  verdeckt: boolean;
   /** Vom Sperrbildschirm nach erfolgreicher Biometrie aufzurufen. */
   entsperren: () => void;
 }
 
 export const useAppSperre = (): AppSperrZustand => {
   const [gesperrt, setGesperrt] = useState(false);
+  const [verdeckt, setVerdeckt] = useState(false);
 
   // Refs statt State: der appStateChange-Listener wird EINMAL angemeldet und
   // liest hier immer den aktuellen Stand. Als State im Dependency-Array müsste
@@ -83,6 +106,25 @@ export const useAppSperre = (): AppSperrZustand => {
     (async () => {
       const angemeldet = await App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive) {
+          // ABDECKUNG ZUERST — vor jeder anderen Entscheidung in diesem Zweig.
+          //
+          // Dieses Ereignis IST der Moment der Momentaufnahme: Das App-Plugin
+          // meldet `isActive: false` auf UIApplication.willResignActiveNotification
+          // (nachgesehen in @capacitor/app, ios/Sources/AppPlugin/AppPlugin.swift),
+          // und genau dann friert iOS das Bild fuer den Umschalter ein. Was
+          // hier nicht sofort passiert, ist im Vorschaubild nicht zu sehen.
+          //
+          // Deshalb steht das VOR der Ausflug-Pruefung: Auch waehrend eines
+          // Systemdialogs (Foto, Teilen) kann der Umschalter aufgerufen werden,
+          // und dann darf dort genauso wenig stehen. Der Ausflug-Merker regelt,
+          // ob spaeter GESPERRT wird — nicht, ob jetzt verdeckt wird. Das sind
+          // zwei verschiedene Fragen, und sie hier zu vermischen war der
+          // Fehler.
+          //
+          // Nur bei eingeschalteter Sperre: Wer sie auf 'aus' stehen hat (die
+          // Voreinstellung), darf ueberhaupt keine Verhaltensaenderung merken.
+          if (verzoegerungRef.current !== 'aus') setVerdeckt(true);
+
           // Läuft gerade ein Systemdialog (Foto, Teilen, Face ID), wird KEIN
           // Zeitstempel gesetzt — ohne Zeitstempel kann beim Zurückkommen
           // nichts sperren, egal wie lange der Dialog offen steht.
@@ -94,6 +136,12 @@ export const useAppSperre = (): AppSperrZustand => {
         if (mussSperren(verzoegerungRef.current, hintergrundSeitRef.current, Date.now())) {
           setGesperrt(true);
         }
+        // Die Abdeckung faellt beim Zurueckkommen IMMER. Ist die Rueckkehr
+        // sperrpflichtig, steht der Sperrbildschirm schon darunter und
+        // uebernimmt; war es nur ein kurzer Abstecher, gibt sie die App wieder
+        // frei. Bliebe sie stehen, haetten wir aus einem Sichtschutz eine
+        // zweite, unbedienbare Sperre gemacht.
+        setVerdeckt(false);
         // In jedem Fall zurücksetzen: ein verbrauchter Zeitstempel darf nicht
         // stehen bleiben und beim nächsten Wechsel ein zweites Mal zählen.
         hintergrundSeitRef.current = null;
@@ -114,9 +162,12 @@ export const useAppSperre = (): AppSperrZustand => {
   const entsperren = useCallback(() => {
     hintergrundSeitRef.current = null;
     setGesperrt(false);
+    // Auch die Abdeckung faellt. Nach erfolgreicher Biometrie darf nichts mehr
+    // vor der App stehen — weder Sperrbildschirm noch Sichtschutz.
+    setVerdeckt(false);
   }, []);
 
-  return { gesperrt, entsperren };
+  return { gesperrt, verdeckt, entsperren };
 };
 
 export default useAppSperre;

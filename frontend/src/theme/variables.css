@@ -3692,6 +3692,54 @@ ion-segment.md ion-segment-button {
   margin: 0;
 }
 
+/* === Neutrale Abdeckung fuer den App-Umschalter ===
+   Simons Befund 15.09.2026 (echtes Geraet): Die gesperrte App war im
+   App-Umschalter mit Inhalt zu sehen. Diese Flaeche legt sich beim
+   Wegwechseln davor -- vor der Momentaufnahme, nicht danach.
+
+   z-index LIEGT UEBER dem Sperrbildschirm (100000): Beim Wegwechseln kann
+   BEIDES gleichzeitig anstehen (die App war schon gesperrt und wandert erneut
+   in den Hintergrund). Dann muss die neutrale Flaeche gewinnen -- der
+   Sperrbildschirm nennt zwar auch keine Namen, ist aber der bedienbare
+   Bildschirm und gehoert nicht ins Vorschaubild.
+
+   Deckend ohne Transparenz und ohne Unschaerfe, aus demselben Grund wie beim
+   Sperrbildschirm: Unschaerfe liesse Fotos und Namen weiterhin erahnen. */
+.app-abdeckung {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  background: var(--app-gradient-aurora, var(--ion-background-color, #ffffff));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-weit);
+  text-align: center;
+  overflow: hidden;
+}
+
+.app-abdeckung__logo {
+  width: 120px;
+  height: 120px;
+  max-width: 40vw;
+  max-height: 40vw;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.app-abdeckung__name {
+  margin: 0;
+  font-family: var(--app-schriftart-marke);
+  font-size: var(--app-text-ueberschrift-gross);
+  font-weight: var(--app-schrift-normal);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--app-weiss);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
 /* === Kachelraster fuer Abzeichen und Stempel ===
    EIN Aussehen fuer beides, in allen Rollen (Simon, 14.09.2026: "Die Badges
    sollten genauso aussehen wie bei den Konfis, also drei nebeneinander und
