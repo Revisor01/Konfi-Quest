@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useIonModal } from '@ionic/react';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { haptik, ImpactStyle } from '../../utils/haptics';
 import { useApp } from '../../contexts/AppContext';
 import { compressImage } from '../../services/mediaCompression';
 import { getMediaBlob, istGecacht } from '../../services/mediaCache';
@@ -111,7 +111,7 @@ export function useChatDateien({ messages }: ChatDateienDeps) {
     // einen zweiten Download zu starten.
     if (ladendeDatei) return;
     try {
-      await Haptics.impact({ style: ImpactStyle.Light });
+      await haptik(ImpactStyle.Light);
 
       // Ueber den Medien-Cache statt direkt per api.get (13.09.2026, Simon:
       // "Sonst muss man ja immer laden. Die moeglichst alle Dateien.").

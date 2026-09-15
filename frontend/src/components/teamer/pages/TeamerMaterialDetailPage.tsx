@@ -34,7 +34,6 @@ import {
   ICON_VIDEO,
   ICON_WELT,
 } from '../../shared/icons';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 // Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
@@ -45,7 +44,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
 import { SectionHeader } from '../../shared';
 import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
-import { triggerPullHaptic } from '../../../utils/haptics';
+import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 
 interface MaterialFile {
@@ -129,7 +128,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
 
   const openFile = async (file: MaterialFile) => {
     try {
-      await Haptics.impact({ style: ImpactStyle.Medium });
+      await haptik(ImpactStyle.Medium);
       const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob', timeout: DATEI_TIMEOUT_MS });
       const blob = response.data;
       const contentType = response.headers?.['content-type'];
@@ -166,7 +165,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       setError('Der Link konnte nicht geöffnet werden');
       return;
     }
-    await Haptics.impact({ style: ImpactStyle.Medium });
+    await haptik(ImpactStyle.Medium);
     window.open(url, '_blank');
   };
 

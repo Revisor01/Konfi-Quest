@@ -40,7 +40,7 @@ import {
   ICON_SCHLIESSEN,
   ICON_VIDEO,
 } from '../../shared/icons';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { haptik, ImpactStyle } from '../../../utils/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
@@ -196,7 +196,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
 
   const openFile = async (file: MaterialFile) => {
     try {
-      await Haptics.impact({ style: ImpactStyle.Medium });
+      await haptik(ImpactStyle.Medium);
       const response = await api.get(`/material/files/${file.stored_name}`, {
         responseType: 'blob',
         timeout: DATEI_TIMEOUT_MS

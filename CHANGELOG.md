@@ -89,6 +89,13 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Im Browser am Rechner ließen sich Bilder und Dateien im Chat nicht mehr
+  öffnen: Statt der Datei kam die Meldung „Fehler beim Öffnen der Datei", ohne
+  dass die Datei überhaupt geladen wurde. Ursache war die kurze Vibration, die
+  beim Antippen ausgelöst wird — Geräte ohne Vibration brachen den ganzen
+  Vorgang damit ab. Betroffen waren neben dem Chat auch das Öffnen von
+  Material und das Abspielen von Videos; Links aus dem Material gingen aus
+  demselben Grund gar nicht erst auf.
 - Die App zeigte überall ein Fingerabdruck-Symbol, auch auf Geräten mit Face ID.
   Jetzt passt das Symbol zum Verfahren des Geräts: ein Gesicht bei Face ID und
   bei der Gesichtserkennung auf Android, ein Finger bei Touch ID und beim

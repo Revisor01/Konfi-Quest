@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { haptik, ImpactStyle } from '../../utils/haptics';
 import { getMediaBlob } from '../../services/mediaCache';
 import { Message } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
@@ -148,7 +148,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
 
   const handleVideoClick = async () => {
     try {
-      await Haptics.impact({ style: ImpactStyle.Light });
+      await haptik(ImpactStyle.Light);
 
       if (videoRef.current) {
         if (isPlaying) {
