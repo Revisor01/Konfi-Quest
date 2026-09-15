@@ -115,6 +115,134 @@ async function takeBackEventPoints(client, userId, eventId) {
   return { points: pts.points, point_type: pts.point_type };
 }
 
+/** Fester Text, wenn eine Absage ohne Grund ausgesprochen wurde. */
+const ABSAGE_OHNE_GRUND = 'Termin abgesagt';
+
+/**
+ * Meldet beim Absagen eines Termins alle Angemeldeten und Wartenden ab.
+ *
+ * WARUM UEBERHAUPT: Eine Absage setzte bis zum 15.09.2026 nur events.cancelled
+ * und liess die Buchungen auf 'confirmed' mit attendance_status NULL stehen.
+ * Der Termin galt damit weiter als "noch zu verbuchen" -- er zaehlte im Badge
+ * mit und fiel aus dem Vergangen-Reiter (siehe den Kommentar in
+ * services/backgroundService.js zu Befund H1). Der Termin hat nicht
+ * stattgefunden; niemand war anwesend, und niemand muss ihn noch verbuchen.
+ *
+ * 'excused' UND NICHT 'absent' (Entscheidung Simon, 15.09.2026): 'absent'
+ * liest sich wie unentschuldigtes Fehlen. Ferngeblieben ist hier aber
+ * niemand -- es gab nichts, wozu man haette erscheinen koennen. Bei den
+ * Punkten verhaelt sich beides gleich (Migration 147), der Unterschied liegt
+ * in der Dokumentation.
+ *
+ * DIE WARTELISTE WIRD MIT ABGEMELDET (Entscheidung 15.09.2026): Sie bekommt
+ * denselben Absage-Push wie die Angemeldeten (die cancel-Route adressiert
+ * `status IN ('confirmed','waitlist')`), und eine Wartende, die weiter auf
+ * NULL stuende, waere genau der offene Posten, gegen den diese Aenderung
+ * antritt. Nachruecken kann sie ohnehin nicht mehr -- der Termin ist weg.
+ *
+ * KEIN attendance_set_by (Entscheidung 15.09.2026, Begruendung in Migration
+ * 148): Die Spalte beantwortet "wer von uns hat DIESE ANWESENHEIT
+ * eingetragen". Hier hat niemand eine Anwesenheit beurteilt -- die Absage
+ * des Termins zieht den Status nach sich. Traegt man die absagende Person
+ * ein, stuende an zwanzig Konfis "Eingetragen von Simon Luthe", als haette
+ * er zwanzigmal eine Anwesenheit beurteilt. Wer abgesagt hat, steht bereits
+ * an genau einer richtigen Stelle: events.cancelled_by. Aus demselben Grund
+ * bleibt checkin_quelle NULL -- es gab keinen Check-in, weder 'qr' noch
+ * 'manuell'.
+ *
+ * NUR UNVERBUCHTE (attendance_status IS NULL): Eine bereits getroffene
+ * Entscheidung -- jemand war anwesend, abwesend oder schon abgemeldet -- wird
+ * nicht ueberschrieben. Das ist dieselbe Regel wie bei der Sammelverbuchung
+ * ("Alle verbuchen" fasst Verbuchte nicht an) und verhindert zugleich, dass
+ * Punkte doppelt abgezogen werden: Wessen Punkte schon zurueckgenommen sind,
+ * steht nicht mehr auf NULL.
+ *
+ * ABMELDEN IST DIE VOREINSTELLUNG, NICHT DAS ENDE (Simon, 15.09.2026): Die
+ * Leitung kann danach einzelne Personen ueber den normalen Weg wieder auf
+ * 'present' setzen und ihnen Punkte geben -- etwa wenn drei Konfis schon da
+ * waren und geholfen haben. Diese Funktion laeuft genau einmal, beim Absagen;
+ * sie kommt nicht zurueck, um eine spaetere Entscheidung zu kassieren.
+ *
+ * EIN MENGEN-UPDATE, keine Schleife pro Person: Ein Termin kann viele
+ * Angemeldete haben. Die Punkte-Ruecknahme laeuft ebenso in zwei
+ * Mengen-Anweisungen ueber alle Betroffenen statt in einer Abfrage je Person.
+ *
+ * ERWARTET EINEN CLIENT in laufender Transaktion: Abmeldung und
+ * Punkte-Ruecknahme gehoeren zur Absage. Schlaegt eines fehl, darf der Termin
+ * nicht halb abgesagt zurueckbleiben.
+ *
+ * @param {object} client - Client aus db.getClient(), NICHT der Pool
+ * @param {number} eventId
+ * @param {string|null} grund - der Absagegrund; ohne ihn ABSAGE_OHNE_GRUND
+ * @returns {{abgemeldet: number, punkteZurueckgenommen: Array<{konfi_id: number, points: number, point_type: string}>}}
+ */
+async function meldeAlleAbBeiAbsage(client, eventId, grund) {
+  verlangeClient(client, 'meldeAlleAbBeiAbsage');
+
+  // Der Grund ist der Absagegrund. Ohne ihn ein fester Text statt NULL: Die
+  // Zeile in der Teilnehmerliste liest sich sonst als "abgemeldet, Grund
+  // unbekannt" -- der Grund ist aber bekannt, der Termin faellt aus.
+  const abmeldeGrund = grund || ABSAGE_OHNE_GRUND;
+
+  // 1. Punkte zuerst LESEN -- fuer genau die Buchungen, die gleich umgestellt
+  //    werden. Nach dem UPDATE waere die Auswahl "war unverbucht" nicht mehr
+  //    zu treffen.
+  const { rows: punkte } = await client.query(
+    `SELECT ep.konfi_id, ep.points, ep.point_type
+       FROM event_points ep
+      WHERE ep.event_id = $1
+        AND EXISTS (
+          SELECT 1 FROM event_bookings eb
+           WHERE eb.event_id = ep.event_id AND eb.user_id = ep.konfi_id
+             AND eb.status IN ('confirmed', 'waitlist')
+             AND eb.attendance_status IS NULL
+        )`,
+    [eventId]
+  );
+
+  // 2. Punkte-Salden in EINER Anweisung zurueckrechnen, getrennt nach
+  //    Punkt-Typ. GREATEST(0, ...) wie ueberall sonst gegen den Unterlauf.
+  if (punkte.length > 0) {
+    const konfiIds = punkte.map(p => p.konfi_id);
+    await client.query(
+      `UPDATE konfi_profiles kp
+          SET gemeinde_points = GREATEST(0, kp.gemeinde_points - summe.gemeinde),
+              gottesdienst_points = GREATEST(0, kp.gottesdienst_points - summe.gottesdienst)
+         FROM (
+           SELECT konfi_id,
+                  COALESCE(SUM(points) FILTER (WHERE point_type <> 'gottesdienst'), 0) AS gemeinde,
+                  COALESCE(SUM(points) FILTER (WHERE point_type = 'gottesdienst'), 0) AS gottesdienst
+             FROM event_points
+            WHERE event_id = $1 AND konfi_id = ANY($2::int[])
+            GROUP BY konfi_id
+         ) AS summe
+        WHERE kp.user_id = summe.konfi_id`,
+      [eventId, konfiIds]
+    );
+    await client.query(
+      'DELETE FROM event_points WHERE event_id = $1 AND konfi_id = ANY($2::int[])',
+      [eventId, konfiIds]
+    );
+  }
+
+  // 3. Das Mengen-UPDATE. `status` bleibt unangetastet ('confirmed' /
+  //    'waitlist') -- nur der Anwesenheitsstatus wird gesetzt. Das ist der
+  //    Alt-App-Vertrag: Ausgelieferte Fassungen filtern ihre Teilnehmerlisten
+  //    ueber `status === 'confirmed'`; wuerde der auf 'cancelled' wechseln,
+  //    verschwaenden die Personen dort aus der Liste.
+  const { rowCount } = await client.query(
+    `UPDATE event_bookings
+        SET attendance_status = 'excused',
+            excuse_reason = $2
+      WHERE event_id = $1
+        AND status IN ('confirmed', 'waitlist')
+        AND attendance_status IS NULL`,
+    [eventId, abmeldeGrund]
+  );
+
+  return { abgemeldet: rowCount, punkteZurueckgenommen: punkte };
+}
+
 /**
  * Rueckt den ersten Wartelisten-Eintrag nach (timeslot-aware, rollen-gefiltert)
  *
@@ -737,6 +865,8 @@ async function setzeTeamerZusage(client, eingabe) {
 }
 
 module.exports = {
+  ABSAGE_OHNE_GRUND,
+  meldeAlleAbBeiAbsage,
   takeBackEventPoints,
   checkExistingBooking,
   determineBookingStatus,
