@@ -20,6 +20,11 @@ Versionsüberschrift.
   festhalten. Der Grund steht in der Teilnehmerliste, damit das ganze Team ihn
   sieht. Punkte gibt es dabei keine; schon vergebene werden zurückgenommen.
   Die Konfi bekommt eine Mitteilung, dass die Abmeldung eingetragen wurde.
+- Beim Absagen eines Termins lässt sich ein **Grund** angeben. Er ist
+  freiwillig — ohne ihn wird wie bisher nur die Absage gemeldet. Wird einer
+  eingetragen, sehen ihn alle Teilnehmenden am Termin, und er steht in der
+  Mitteilung, die auf den Handys ankommt. Darunter steht klein, wer abgesagt
+  hat und wann.
 - Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
   14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte. Notizen lassen sich auch wieder löschen.
@@ -32,6 +37,11 @@ Versionsüberschrift.
   nach, bleibt bei der Abmeldung der Name stehen, der dorthin gehört. Bei
   einem Check-in per QR-Code und bei älteren Einträgen fehlt die Zeile: dort
   gibt es niemanden aus dem Team, der sie eingetragen hätte.
+- Wer sich per QR-Code eingecheckt hat, ist daran jetzt auch zu erkennen:
+  Unter dem Eintrag steht „Eingecheckt per QR-Code" mit dem Datum. Vorher war
+  ein Selbst-Check-in nicht von einem alten Eintrag zu unterscheiden — bei
+  beiden stand dort gar nichts. Trägst du den Status später von Hand nach,
+  tritt dein Name an die Stelle dieser Zeile.
 - Ein Tippen auf einen Challenge-Stempel zeigt jetzt, woher er stammt: die
   Challenge, ihre Beschreibung und das Datum, an dem er vergeben wurde.
   Stempel, die es noch zu holen gibt oder deren Challenge vorbei ist, stehen
@@ -43,6 +53,11 @@ Versionsüberschrift.
   Haus aus aus und erscheint nur, wenn auf dem Gerät eine Erkennung
   eingerichtet ist. Wer nicht hineinkommt, meldet sich über einen Knopf auf
   dem Sperrbildschirm ab und wieder neu an.
+- Bei eingeschalteter Sperre zeigt die App auch in der Übersicht der offenen
+  Apps nichts mehr her: Statt Namen, Punkten und Beiträgen steht dort nur noch
+  das Logo. Auf Android sind bei eingeschalteter Sperre zusätzlich
+  Bildschirmfotos innerhalb der App gesperrt. Wer die Sperre auf „Aus" stehen
+  lässt, merkt davon nichts.
 
 ### Geändert
 - Nach einem Update zeigt die App einmal, was sich geändert hat — je nach
@@ -74,6 +89,14 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Die App zeigte überall ein Fingerabdruck-Symbol, auch auf Geräten mit Face ID.
+  Jetzt passt das Symbol zum Verfahren des Geräts: ein Gesicht bei Face ID und
+  bei der Gesichtserkennung auf Android, ein Finger bei Touch ID und beim
+  Fingerabdruck. Lässt sich nicht sicher sagen, womit das Gerät entsperrt,
+  stehen ein Schloss und der neutrale Text „Biometrie" da statt einer Vermutung.
+- Abgesagte Termine verschwanden in der Terminübersicht der Leitung aus allen
+  Reitern, sobald ihr Datum vorbei war. Sie stehen jetzt durchgestrichen unter
+  „Vergangen".
 - Die App zeigt beim Start wieder sofort das Dashboard. Zuletzt blieb der
   Bildschirm leer, bis man einen anderen Reiter antippte und zurückkam.
 - Lange Namen unter Abzeichen und Stempeln werden nicht mehr mitten im Wort
@@ -91,6 +114,10 @@ Versionsüberschrift.
 - Wer nur bestimmte Jahrgänge betreut, kommt an die Profile der übrigen Konfis
   nicht mehr heran. Die Detailansicht folgt damit derselben Grenze wie alles
   andere; Teamer:innen bleiben wie bisher für die ganze Leitung sichtbar.
+- Abgesagte Termine treiben die rote Zahl am Reiter „Verbuchen" nicht mehr
+  hoch. Bisher stand dort eine Zahl, hinter der eine leere Liste wartete, weil
+  abgesagte Termine gar nicht zum Verbuchen angezeigt werden. Das gilt auch für
+  die Zahl am App-Symbol.
 - Nach dem Öffnen einer Datei blieb auf dem Gerät jedes Mal eine Kopie zurück,
   die nie wieder verschwand. Sie wird jetzt aufgeräumt.
 - Teamer:innen, die selbst einmal Konfi waren, kommen wieder an ihre

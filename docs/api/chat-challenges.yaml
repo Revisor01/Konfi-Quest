@@ -1704,6 +1704,12 @@ paths:
         Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der
         Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle
         Reiter-Zahlen aus dieser einen Abfrage.
+        Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr
+        (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst
+        "nicht abgesagt"). Der Verbuchen-Tab blendet sie aus, die Zahl stand
+        also vor einer leeren Liste. Dieselbe Bedingung gilt in der
+        App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich
+        zaehlen.
       responses:
         '200':
           description: Zähler
