@@ -47,10 +47,12 @@ import {
 import type { Participant, Unregistration, EventData } from './EventDetailSections';
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';
+import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
 import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
+import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { trackHandlung } from '../../../services/analytics';
 
@@ -256,6 +258,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       });
     },
     dismiss: () => dismissAbmeldungModal()
+  });
+
+  // TERMIN-ABSAGE-MODAL (15.09.2026, Migration 150): Beim Absagen laesst sich
+  // ein Grund erfassen. Er ist freiwillig und geht an ALLE Teilnehmenden --
+  // am Termin und im Push (Entscheidung Simon).
+  //
+  // Kein Ref-Getter noetig wie bei den Teilnehmer-Modals: Welcher Termin
+  // gemeint ist, steht in dieser Ansicht von vornherein fest.
+  const [presentAbsageModal, dismissAbsageModal] = useIonModal(TerminAbsagenModal, {
+    get terminName() { return eventData?.name ?? ''; },
+    get terminDatum() {
+      if (!eventData?.event_date) return '';
+      return new Date(eventData.event_date).toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    },
+    get konfiAnzahl() { return participants.filter(p => p.role_name === 'konfi').length; },
+    onSave: async (grund: string) => {
+      if (!eventData) return;
+      await api.put(`/events/${eventData.id}/cancel`, {
+        notification_message: 'Das Event wurde leider abgesagt.',
+        cancelled_reason: grund
+      });
+      setSuccess('Event wurde abgesagt');
+      onBack();
+    },
+    dismiss: () => dismissAbsageModal()
   });
 
   // QR Display Modal
@@ -794,35 +823,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
 
+  // Absagen oeffnet das Modal mit dem optionalen Grund (15.09.2026) — bis
+  // hierher ein Action Sheet, was richtig war, solange es nur zu bestaetigen
+  // gab. Mit dem Freitext gilt die Linie aus AbmeldungNachtragenModal: Wer
+  // etwas SCHREIBT, bekommt ein Modal.
   const handleCancelEvent = async () => {
     if (!isOnline || !eventData) return;
-    const eventDate = new Date(eventData.event_date).toLocaleDateString('de-DE', {
-      weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-    const konfiCount = participants.filter(p => p.role_name === 'konfi').length;
-    presentActionSheet({
-      header: `"${eventData.name}" absagen?`,
-      subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
-      buttons: [
-        {
-          text: 'Event absagen',
-          role: 'destructive',
-          icon: ICON_GESPERRT,
-          handler: async () => {
-            try {
-              await api.put(`/events/${eventData.id}/cancel`, {
-                notification_message: 'Das Event wurde leider abgesagt.'
-              });
-              setSuccess('Event wurde abgesagt');
-              onBack();
-            } catch (error) {
-              setError(fehlerText(error, 'Fehler beim Absagen'));
-            }
-          }
-        },
-        { text: 'Abbrechen', role: 'cancel' }
-      ]
-    });
+    presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
   const handleCreateEventChat = async () => {
@@ -1016,6 +1023,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       {urheberZeile(participant)}
                     </div>
                   )}
+                  {/* Beim Selbst-Check-in gibt es keinen Namen (Migration 148)
+                      — stattdessen sagt die Quelle, WOHER die Anwesenheit kam
+                      (Migration 151). Die beiden Zeilen schliessen einander
+                      aus: checkinZeile() liefert nur bei 'qr' etwas, und wer
+                      danach von Hand eintraegt, setzt die Quelle auf
+                      'manuell'. Sonst stuende hier "eingecheckt" unter einem
+                      Namen, der etwas anderes eingetragen hat. */}
+                  {checkinZeile(participant) && (
+                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                      {checkinZeile(participant)}
+                    </div>
+                  )}
                   {participant.attendance_note && (
                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                       <strong>Notiz: </strong>{participant.attendance_note}
@@ -1182,6 +1201,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             ];
           })()}
         />
+
+        {/* Absagegrund (Migration 150, 15.09.2026): Der Grund, den die Leitung
+            beim Absagen eingetragen hat — hier steht er zur Kontrolle, denn
+            genau dieser Text ging an alle Angemeldeten und in den Push
+            (Entscheidung Simon). Ohne Grund faellt der Block weg; die Absage
+            selbst steht schon im Kopf. */}
+        {isCancelled && eventData?.cancelled_reason && (
+          <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
+            <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
+            {absageUrheberZeile(eventData) && (
+              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                {absageUrheberZeile(eventData)}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Event Details */}
         {eventData && (

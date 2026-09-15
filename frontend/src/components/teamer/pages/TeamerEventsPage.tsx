@@ -75,6 +75,7 @@ import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 // Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
 // RequestDetailModal weiter, und zwei gleichnamige Typen mit
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
@@ -831,6 +832,24 @@ const TeamerEventsPage: React.FC = () => {
             );
           })()}
 
+          {/* Absagegrund (Migration 150, 15.09.2026): Der Grund geht an ALLE
+              Teilnehmenden, also auch ans Team (Entscheidung Simon). Steht
+              unter dem Kopf, wo "Abgesagt" schon dasteht — wer den Termin
+              aufmacht, will als Erstes wissen, warum.
+
+              NICHT zu verwechseln mit "Abgesagt von dir" weiter oben: Das
+              meint die eigene Teilnahme, hier geht es um den TERMIN. */}
+          {selectedEvent.registration_status === 'cancelled' && selectedEvent.cancelled_reason && (
+            <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
+              <span className="app-reason-box__label">Abgesagt:</span> {selectedEvent.cancelled_reason}
+              {absageUrheberZeile(selectedEvent) && (
+                <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                  {absageUrheberZeile(selectedEvent)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Details Card - wie Admin EventDetailView */}
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
@@ -1508,6 +1527,22 @@ const TeamerEventsPage: React.FC = () => {
                               {event.jahrgang_names && (
                                 <div className="app-list-item__subtitle" style={{ color: shouldGrayOut ? 'var(--app-text-muted)' : undefined }}>
                                   {event.jahrgang_names.split(',').join(' · ')}
+                                </div>
+                              )}
+
+                              {/* Absagegrund (Migration 150, 15.09.2026): Der Grund ist
+                                  fuer ALLE Rollen sichtbar (Entscheidung Simon). Gemeint
+                                  ist der abgesagte TERMIN (registration_status), NICHT die
+                                  eigene Teamer-Absage ("Abgesagt von dir", opted_out).
+                                  Ohne Grund faellt der Block weg — das Badge sagt es schon. */}
+                              {event.registration_status === 'cancelled' && event.cancelled_reason && (
+                                <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                  <strong>Abgesagt: </strong>{event.cancelled_reason}
+                                </div>
+                              )}
+                              {event.registration_status === 'cancelled' && event.cancelled_reason && absageUrheberZeile(event) && (
+                                <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                  {absageUrheberZeile(event)}
                                 </div>
                               )}
 

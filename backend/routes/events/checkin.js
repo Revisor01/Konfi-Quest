@@ -139,8 +139,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Teilnehmerliste wie eine Leitungsentscheidung -- und genau das war es
       // nicht. Die Spalte beantwortet "wer von uns hat das eingetragen"; ein
       // Selbst-Check-in hat darauf keine Antwort und bleibt NULL, wie jeder
-      // Altbestand. Die Zeile fehlt dann in der Anzeige einfach.
-      await client.query("UPDATE event_bookings SET attendance_status = 'present' WHERE id = $1", [booking.id]);
+      // Altbestand. Die Zeile "Eingetragen von ..." fehlt hier also weiterhin.
+      //
+      // DIE QUELLE WIRD SEIT MIGRATION 151 GETRENNT FESTGEHALTEN
+      // (15.09.2026): checkin_quelle = 'qr' und checked_in_at sagen, WOHER
+      // die Anwesenheit kam, ohne eine Person zu benennen. Vorher stand der
+      // Selbst-Check-in im selben NULL wie der Altbestand von vor Migration
+      // 148 -- beides "unbekannt", obwohl hier sehr wohl etwas bekannt ist.
+      // Die Anzeige macht daraus "Checkin via QR-Code am 15.09." statt gar
+      // keiner Zeile. attendance_set_by/_at bleiben davon unberuehrt.
+      await client.query(
+        "UPDATE event_bookings SET attendance_status = 'present', checkin_quelle = 'qr', checked_in_at = NOW() WHERE id = $1",
+        [booking.id]
+      );
 
       // Punkte-Vergabe (nur für Konfis, Teamer erhalten keine Punkte)
       if (event.points > 0 && !event.mandatory && req.user.type === 'konfi') {

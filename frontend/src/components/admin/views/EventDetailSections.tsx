@@ -40,7 +40,7 @@ import {
 } from '../../shared/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';
+import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -104,6 +104,13 @@ export interface EventData {
   created_at: string;
   chat_room_id?: number | null;
   cancelled?: boolean;
+  // Absage: Grund und Urheber (Migration 150, 15.09.2026). Der Grund ist
+  // freiwillig — null heisst "kein Grund angegeben". Der Name fehlt bei
+  // Terminen, die vor der Migration abgesagt wurden; dann faellt die
+  // Urheberzeile ersatzlos weg (siehe absageUrheberZeile).
+  cancelled_at?: string | null;
+  cancelled_reason?: string | null;
+  cancelled_by_name?: string | null;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
 }
@@ -840,6 +847,15 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                                   {urheberZeile(participant) && (
                                     <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                                       {urheberZeile(participant)}
+                                    </div>
+                                  )}
+                                  {/* Der Selbst-Check-in nennt keine Person,
+                                      sondern die Quelle (Migration 151) —
+                                      dieselbe Zeile wie in der
+                                      Teilnehmerliste. */}
+                                  {checkinZeile(participant) && (
+                                    <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      {checkinZeile(participant)}
                                     </div>
                                   )}
                                   {participant.attendance_note && (

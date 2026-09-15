@@ -424,10 +424,16 @@ Festgehalten wird immer der **aktuelle** Stand. Ändert später jemand anderes
 den Status oder die Notiz, steht dessen Name da. Speicherst du denselben Stand
 noch einmal, ohne etwas zu ändern, bleiben die Namen, wie sie waren.
 
-Bei manchen Einträgen fehlt die Zeile. Das heißt „nicht bekannt", nicht
-„niemand": Bei einem **Check-in per QR-Code** hat sich die Person selbst
-eingecheckt — da gibt es keine Person aus dem Team, die es eingetragen hätte.
-Ältere Einträge tragen die Angabe ebenfalls nicht.
+**Beim Check-in per QR-Code steht kein Name, sondern der Weg.** Dort hat sich
+die Person selbst eingecheckt — es gibt niemanden aus dem Team, der es
+eingetragen hätte, und ein Name an dieser Stelle läse sich wie eine
+Entscheidung von euch. Stattdessen steht dort „Eingecheckt per QR-Code,
+15.09.". Trägst du den Status später von Hand nach, tritt dein Name an die
+Stelle dieser Zeile: Es gilt immer, was zuletzt gesetzt wurde.
+
+Bei älteren Einträgen fehlt jede Zeile. Das heißt „nicht bekannt", nicht
+„niemand" — für diese Buchungen wurde weder der Name noch der Weg
+festgehalten.
 
 ### Eine Notiz hinzufügen
 
@@ -629,6 +635,31 @@ Zwei verschiedene Dinge, die oft verwechselt werden.
 Angemeldeten und alle auf der Warteliste bekommen einen Push, der Termin bleibt
 durchgestrichen in der Liste stehen. Ein bereits abgesagter Termin lässt sich
 nicht nochmal absagen.
+
+### Einen Grund zur Absage angeben
+
+Beim Absagen öffnet sich ein Fenster mit einem Feld für den Grund. Das Feld ist
+freiwillig: Lässt du es leer, wird der Termin abgesagt und es wird nur die
+Absage gemeldet — wie bei jeder Absage zuvor.
+
+Schreibst du etwas hinein, geht der Grund an **alle Teilnehmenden**. Er steht
+am Termin — in der Liste und in der Detailansicht, für Leitung, Team und Konfis
+gleichermaßen — und er steht in der Mitteilung, die auf den Handys ankommt:
+„Leider abgesagt: ‚Konfifreizeit' am Sa., 20.09. um 10:00 Uhr. Heizung im
+Gemeindehaus defekt."
+
+Unter dem Grund steht klein, wer abgesagt hat und wann („Abgesagt von Simon
+Luthe, 15.09."). Bei Terminen, die vor der Einführung des Grundes abgesagt
+wurden, fehlt diese Zeile — da ist schlicht nicht festgehalten, wer es war.
+
+> **Der Grund ist öffentlich.** Zwanzig Konfis lesen ihn auf dem
+> Sperrbildschirm. Was intern bleiben soll, gehört nicht in dieses Feld,
+> sondern in den Termin-Chat oder ins Gespräch.
+
+Wo er steht, richtet sich nach dem Datum: Solange der Termin noch bevorsteht
+oder läuft, findest du ihn unter **„Aktuell"**, danach unter **„Vergangen"** —
+durchgestrichen in beiden Fällen. Unter **„Verbuchen"** taucht er nicht auf:
+An einem abgesagten Termin gibt es nichts zu verbuchen.
 
 **Löschen** ist endgültig. Gelöscht werden der Termin selbst, alle Anmeldungen,
 alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie der komplette

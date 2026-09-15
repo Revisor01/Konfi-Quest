@@ -76,6 +76,14 @@ export interface Event {
   // Attendance ('excused' seit Migration 147: nachgetragene Abmeldung)
   attendance_status?: 'present' | 'absent' | 'excused' | null;
   cancelled?: boolean;
+  // Absage: Grund und Urheber (Migration 150). Der Grund ist freiwillig --
+  // null heisst "kein Grund angegeben" und ist der Normalfall. Der Name fehlt
+  // bei Terminen, die vor der Migration abgesagt wurden; dann faellt die
+  // Urheberzeile ersatzlos weg (siehe absageUrheberZeile).
+  cancelled_at?: string | null;
+  cancelled_reason?: string | null;
+  cancelled_by?: number | null;
+  cancelled_by_name?: string | null;
   // Timeslots
   has_timeslots?: boolean;
   booked_timeslot_id?: number;
@@ -163,6 +171,21 @@ export interface Participant {
   note_set_by?: number | null;
   note_set_by_name?: string | null;
   note_set_at?: string | null;
+  /**
+   * WOHER die Anwesenheit kam (Migration 151, 15.09.2026): 'qr' = die Person
+   * hat sich selbst per QR-Code eingecheckt, 'manuell' = die Leitung hat den
+   * Status gesetzt.
+   *
+   * Ergaenzt die Urheber-Felder, ersetzt sie nicht: Beim QR-Check-in bleibt
+   * attendance_set_by bewusst leer (Migration 148) -- ein Selbst-Check-in ist
+   * keine Leitungsentscheidung und traegt keinen Namen. Vorher stand er damit
+   * im selben NULL wie der Altbestand; die Quelle trennt beides.
+   *
+   * NULL/fehlend heisst weiterhin UNBEKANNT: Bestandszeilen von vor der
+   * Migration. Dort faellt jede Zeile weg.
+   */
+  checkin_quelle?: 'qr' | 'manuell' | null;
+  checked_in_at?: string | null;
   timeslot_id?: number;
   timeslot_start_time?: string;
   timeslot_end_time?: string;

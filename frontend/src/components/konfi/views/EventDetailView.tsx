@@ -65,6 +65,7 @@ import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -635,6 +636,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             { value: konfiRegistered, label: 'Dabei' }
           ]}
         />
+
+        {/* Absagegrund (Migration 150, 15.09.2026): Der Grund ist ausdruecklich
+            fuer ALLE Teilnehmenden da (Entscheidung Simon) — die Konfi, die den
+            Termin aufmacht, ist genau die Adressatin. Steht direkt unter dem
+            Kopf, wo "Abgesagt" ohnehin schon dasteht, statt weiter unten bei
+            den Eckdaten: Wer hier landet, will als Erstes wissen, warum.
+
+            Ohne Grund faellt der ganze Block weg — die Absage allein steht
+            schon im Kopf, eine leere Box daruntersagt nichts. */}
+        {eventData.cancelled && eventData.cancelled_reason && (
+          <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
+            <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
+            {/* Wer abgesagt hat, klein darunter. Fehlt der Name — Termine von
+                vor der Migration —, faellt die Zeile ersatzlos weg, statt
+                "Abgesagt von unbekannt" zu behaupten. */}
+            {absageUrheberZeile(eventData) && (
+              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                {absageUrheberZeile(eventData)}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* QR Check-in Status / Button */}
         {eventData.attendance_status === 'present' ? (

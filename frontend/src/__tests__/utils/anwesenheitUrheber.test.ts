@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { urheberZeile, notizUrheberZeile } from '../../utils/anwesenheitUrheber';
+import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../utils/anwesenheitUrheber';
 
 // Simon (13.09.2026): "vielleicht wäre es noch gut zu wissen wer den Eintrag
 // gemacht hat" — in der Teilnehmerliste, klein unter Grund und Notiz.
@@ -108,5 +108,93 @@ describe('Urheber-Zeile der Notiz', () => {
     };
     expect(urheberZeile(buchung)).toBe('Eingetragen von Simon Luthe, 13.09.');
     expect(notizUrheberZeile(buchung)).toBe('Notiz von Anna Meier, 14.09.');
+  });
+});
+
+// Simon (15.09.2026): Eine per QR-Code gesetzte Anwesenheit soll als solche
+// gekennzeichnet sein. Der Urheber bleibt dabei leer (Migration 148): Die
+// Konfi checkt sich SELBST ein, "Eingetragen von Emilia" laese sich wie eine
+// Leitungsentscheidung. Genau dadurch stand der Selbst-Check-in aber im
+// selben Nichts wie der Altbestand. Die Quelle (Migration 151) trennt beides.
+describe('Zeile beim Selbst-Check-in per QR-Code', () => {
+  it('nennt den Weg und das kurze Datum, aber keine Person', () => {
+    const zeile = checkinZeile({ checkin_quelle: 'qr', checked_in_at: '2026-09-15T18:30:00Z' });
+    expect(zeile).toBe('Eingecheckt per QR-Code, 15.09.');
+  });
+
+  it('fuegt sich in die Nachbarzeilen ein: Partizip vorn, Datum hinten', () => {
+    // "Checkin via QR-Code am 15.09." braeche in derselben kurzen Zeile
+    // zweimal aus -- Anglizismus und anderer Datumsanschluss -- obwohl alle
+    // drei Zeilen dasselbe beantworten.
+    const zeile = checkinZeile({ checkin_quelle: 'qr', checked_in_at: '2026-09-15T18:30:00Z' })!;
+    expect(zeile.startsWith('Eingecheckt')).toBe(true);
+    expect(zeile.endsWith(', 15.09.')).toBe(true);
+    expect(zeile).not.toContain(' am ');
+    expect(zeile).not.toContain('via');
+  });
+
+  it('das Jahr steht NICHT in der Zeile', () => {
+    expect(checkinZeile({ checkin_quelle: 'qr', checked_in_at: '2026-09-15T18:30:00Z' }))
+      .not.toContain('2026');
+  });
+
+  it('der Altbestand erzeugt KEINE Zeile — weder hier noch beim Urheber', () => {
+    // Beide Felder NULL: Buchungen von vor Migration 151. Nichts ist bekannt,
+    // also wird nichts behauptet.
+    const alt = {
+      attendance_set_by_name: null,
+      attendance_set_at: null,
+      checkin_quelle: null,
+      checked_in_at: null
+    };
+    expect(checkinZeile(alt)).toBeNull();
+    expect(urheberZeile(alt)).toBeNull();
+    expect(checkinZeile({})).toBeNull();
+    expect(checkinZeile(null)).toBeNull();
+    expect(checkinZeile(undefined)).toBeNull();
+  });
+
+  it('ein manueller Eintrag erzeugt die QR-Zeile NICHT', () => {
+    // Sonst stuenden "Eingetragen von Simon Luthe" und "Eingecheckt per
+    // QR-Code" untereinander und widersprechen sich.
+    const manuell = {
+      checkin_quelle: 'manuell',
+      checked_in_at: '2026-09-15T18:30:00Z',
+      attendance_set_by_name: 'Simon Luthe',
+      attendance_set_at: '2026-09-15T18:30:00Z'
+    };
+    expect(checkinZeile(manuell)).toBeNull();
+    expect(urheberZeile(manuell)).toBe('Eingetragen von Simon Luthe, 15.09.');
+  });
+
+  it('beim QR-Check-in steht die Quelle allein, ohne Namenszeile', () => {
+    // Der Gegenfall: Hier gibt es keinen Urheber, also auch keine
+    // "Eingetragen von"-Zeile — nur die Quelle.
+    const perQr = {
+      checkin_quelle: 'qr',
+      checked_in_at: '2026-09-15T18:30:00Z',
+      attendance_set_by_name: null,
+      attendance_set_at: null
+    };
+    expect(checkinZeile(perQr)).toBe('Eingecheckt per QR-Code, 15.09.');
+    expect(urheberZeile(perQr)).toBeNull();
+  });
+
+  it('ein unlesbarer Zeitstempel ergibt kein "Invalid Date"', () => {
+    const zeile = checkinZeile({ checkin_quelle: 'qr', checked_in_at: 'kaputt' });
+    expect(zeile).toBe('Eingecheckt per QR-Code');
+    expect(zeile).not.toContain('Invalid');
+  });
+
+  it('ohne Zeitpunkt bleibt der Weg allein stehen', () => {
+    expect(checkinZeile({ checkin_quelle: 'qr', checked_in_at: null }))
+      .toBe('Eingecheckt per QR-Code');
+  });
+
+  it('eine unbekannte Quelle erzeugt nichts', () => {
+    // Kaeme spaeter ein dritter Weg dazu, darf er nicht stillschweigend als
+    // QR-Code durchgehen.
+    expect(checkinZeile({ checkin_quelle: 'import', checked_in_at: '2026-09-15T18:30:00Z' }))
+      .toBeNull();
   });
 });

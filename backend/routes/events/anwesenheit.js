@@ -81,8 +81,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // erklaert damit alle Angemeldeten fuer anwesend. Dass es viele auf
         // einmal waren, aendert nichts daran, wer es war; bei einer Rueckfrage
         // ("wer hat das verbucht?") ist genau diese Person gemeint.
+        //
+        // Die QUELLE wird ebenfalls mitgeschrieben (Migration 151): 'manuell'
+        // trennt diesen Weg vom Selbst-Check-in per QR-Code. Ohne ihn stuenden
+        // "von Hand gesetzt" und "Altbestand" im selben NULL.
         await client.query(
-          "UPDATE event_bookings SET attendance_status = 'present', attendance_set_by = $2, attendance_set_at = NOW() WHERE id = $1",
+          "UPDATE event_bookings SET attendance_status = 'present', attendance_set_by = $2, attendance_set_at = NOW(), checkin_quelle = 'manuell', checked_in_at = NOW() WHERE id = $1",
           [b.booking_id, req.user.id]
         );
         marked.push(b.user_id);
@@ -298,6 +302,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Beim LOESCHEN der Notiz faellt ihr Paar zurueck auf NULL: Es gibt
       // dann nichts mehr, dessen Urheberschaft festzuhalten waere, und ein
       // stehengebliebener Name behauptete eine Notiz, die nicht existiert.
+      //
+      // DIE QUELLE (Migration 151, 15.09.2026) haengt am STATUS, nicht an der
+      // Notiz: Sie sagt, WOHER die Anwesenheit kam. Deshalb wird sie nach
+      // derselben Regel gesetzt wie attendance_set_by/_at -- nur wenn sich
+      // Status oder Grund tatsaechlich geaendert haben. Wer hier von Hand
+      // eintraegt, ueberschreibt damit auch ein vorheriges 'qr': Die Leitung
+      // hat den Stand zuletzt gesetzt, also gilt ihre Zeile ("Eingetragen von
+      // ...") und nicht mehr die des Selbst-Check-ins. Beides untereinander
+      // wuerde sich widersprechen.
+      //
+      // Die NOTIZ allein aendert die Quelle NICHT: Ein nachgetragener Vermerk
+      // macht aus einem QR-Check-in keine Leitungsentscheidung.
       await client.query(
         `UPDATE event_bookings
             SET attendance_status = $1,
@@ -318,7 +334,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 note_set_at = CASE
                   WHEN $6 AND attendance_note IS DISTINCT FROM $4::text
                   THEN (CASE WHEN $4::text IS NULL THEN NULL ELSE NOW() END)
-                  ELSE note_set_at END
+                  ELSE note_set_at END,
+                checkin_quelle = CASE
+                  WHEN attendance_status IS DISTINCT FROM $1
+                    OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
+                  THEN 'manuell' ELSE checkin_quelle END,
+                checked_in_at = CASE
+                  WHEN attendance_status IS DISTINCT FROM $1
+                    OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
+                  THEN NOW() ELSE checked_in_at END
           WHERE id = $2`,
         [attendance_status, participantId, grund, notiz, req.user.id, notizMitgeschickt]
       );

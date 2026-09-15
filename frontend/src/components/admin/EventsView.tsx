@@ -23,6 +23,7 @@ import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, format
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import { absageUrheberZeile } from '../../utils/anwesenheitUrheber';
 
 interface EventsViewProps {
   events: Event[];
@@ -349,6 +350,22 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {event.jahrgang_names && (
                             <div className="app-list-item__subtitle" style={{ color: shouldGrayOut ? 'var(--app-text-muted)' : undefined }}>
                               {event.jahrgang_names.split(',').join(' \u00B7 ')}
+                            </div>
+                          )}
+
+                          {/* Absagegrund (Migration 150, 15.09.2026): Der Grund steht
+                              fuer ALLE Rollen in der Liste (Entscheidung Simon) \u2014 die
+                              Leitung sieht damit ohne Umweg ueber das Detail, was sie
+                              oder jemand anderes eingetragen hat. Ohne Grund faellt der
+                              Block weg, "Abgesagt" sagt das Status-Badge schon. */}
+                          {isCancelled && event.cancelled_reason && (
+                            <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                              <strong>Abgesagt: </strong>{event.cancelled_reason}
+                            </div>
+                          )}
+                          {isCancelled && event.cancelled_reason && absageUrheberZeile(event) && (
+                            <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                              {absageUrheberZeile(event)}
                             </div>
                           )}
 

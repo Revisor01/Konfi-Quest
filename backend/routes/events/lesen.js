@@ -79,8 +79,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 CASE WHEN eb_user.status = 'confirmed' THEN true ELSE false END as is_registered,
                 eb_user.status as booking_status,
                 eb_user.attendance_status,
+                -- Wer den Termin abgesagt hat (Migration 150), ADDITIV: e.*
+                -- bringt cancelled_reason und cancelled_by schon mit, der Name
+                -- fehlt aber. LEFT JOIN, weil NULL hier "unbekannt" heisst --
+                -- Termine, die vor der Migration abgesagt wurden, haben keinen
+                -- Urheber. Ein INNER JOIN wuerde die halbe Terminliste
+                -- verschlucken.
+                u_cancel.display_name as cancelled_by_name,
                 mat.material_count
         FROM events e
+        LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         -- Zahlen aus der View statt aus einer eigenen Kopie (28.08.2026).
         --
         -- event_booking_stats liegt seit Migration 128 bereit und wurde von
@@ -307,8 +315,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
                 STRING_AGG(DISTINCT c.name, ', ') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
-                STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names
+                STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names,
+                -- Wer abgesagt hat (Migration 150), ADDITIV. e.* bringt
+                -- cancelled_reason und cancelled_by mit, nur der Name fehlt.
+                -- LEFT JOIN: Termine, die vor der Migration abgesagt wurden,
+                -- haben keinen Urheber und muessen trotzdem in der Liste
+                -- stehen -- gerade hier, wo ausschliesslich Altbestand liegt.
+                u_cancel.display_name as cancelled_by_name
         FROM events e
+        LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
@@ -318,8 +333,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         -- Die ebs-Spalten muessen ins GROUP BY: Das STRING_AGG fuer Kategorien
         -- und Jahrgaenge verlangt es, und die View liefert pro Termin genau
         -- eine Zeile, gruppiert also nichts zusammen.
+        -- u_cancel.display_name muss mit ins GROUP BY: Der Name ist kein
+        -- Aggregat, und e.id allein deckt ihn nicht ab (Postgres erkennt die
+        -- funktionale Abhaengigkeit nur ueber den Primaerschluessel DER
+        -- gruppierten Tabelle, nicht ueber einen mitgejointen).
         GROUP BY e.id, ebs.konfi_confirmed, ebs.konfi_waitlist, ebs.konfi_offen,
-                 ebs.teamer_confirmed, ebs.teamer_waitlist, ebs.teamer_offen
+                 ebs.teamer_confirmed, ebs.teamer_waitlist, ebs.teamer_offen,
+                 u_cancel.display_name
         ORDER BY e.cancelled_at DESC
       `;
       
@@ -435,6 +455,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                e.series_id, e.mandatory, e.is_konfirmation, e.bring_items,
                e.checkin_window, e.teamer_needed, e.teamer_only, e.cancelled,
                e.cancelled_at, e.qr_token, e.created_by, e.organization_id, e.created_at,
+               -- Absagegrund und Urheber (Migration 150), ADDITIV: drei neue
+               -- Felder, kein bestehendes aendert Form oder Typ. Die
+               -- Detailansicht hat im Gegensatz zur Liste eine feste
+               -- Spaltenliste, deshalb muessen sie hier ausdruecklich dazu.
+               -- Der Name kommt per LEFT JOIN (NULL = unbekannt, siehe
+               -- Migration 150 -- kein Backfill fuer Altabsagen).
+               e.cancelled_reason, e.cancelled_by, u_cancel.display_name as cancelled_by_name,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
                  bestaetigt: 'bstats.registered_count',
@@ -461,6 +488,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                  ELSE 'open'
                END as teamer_registration_status
         FROM events e
+        LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN LATERAL (
           SELECT
             COALESCE(ebs.konfi_confirmed, 0)  as registered_count,

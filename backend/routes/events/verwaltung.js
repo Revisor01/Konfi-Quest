@@ -984,8 +984,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   // Cancel event (Admin only)
   router.put('/:id/cancel', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
-    const { notification_message = 'Das Event wurde abgesagt.' } = req.body;
-    
+    // notification_message BLEIBT (Alt-App-Vertrag): Ausgelieferte
+    // App-Fassungen schicken das Feld mit und lesen es aus der Antwort zurueck.
+    // Gespeichert oder verschickt wurde es nie — es ist ein Echo, kein Grund
+    // (siehe Migration 150). Es anzufassen, um daraus den Absagegrund zu
+    // machen, haette genau die Bedeutungsverschiebung erzeugt, vor der der
+    // Vertrag schuetzt: Alte Apps schicken hier einen festen Satz ("Das Event
+    // wurde leider abgesagt."), der dann als Begruendung an allen Konfis
+    // gestanden haette.
+    const { notification_message = 'Das Event wurde abgesagt.', cancelled_reason } = req.body;
+
+    // Freitext begrenzen und leere Eingabe auf NULL normalisieren — genauso
+    // wie bei excuse_reason und attendance_note (events/anwesenheit.js), damit
+    // "kein Grund" und "Grund aus Leerzeichen" nicht zweierlei sind.
+    const grund = (() => {
+      if (typeof cancelled_reason !== 'string') return null;
+      const getrimmt = cancelled_reason.trim();
+      return getrimmt === '' ? null : getrimmt.slice(0, 500);
+    })();
+
     const client = await db.getClient();
     // Vor dem try: Push, Antwort und Live-Update stehen hinter dem finally.
     let event = null;
@@ -1018,9 +1035,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       } else {
 
       // Mark event as cancelled
+      //
+      // Grund und Urheber kommen additiv dazu (Migration 150). Ohne Grund
+      // bleibt cancelled_reason NULL — und damit alles so, wie es war.
+      // cancelled_by wird IMMER gesetzt, auch ohne Grund: Wer abgesagt hat,
+      // ist unabhaengig davon interessant, ob eine Begruendung dabeistand.
       await client.query(
-        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1",
-        [eventId]
+        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW(), cancelled_reason = $2, cancelled_by = $3 WHERE id = $1",
+        [eventId, grund, req.user.id]
       );
 
       // Get all participants to notify
@@ -1051,13 +1073,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     const userIds = participants.map(p => p.user_id);
     const eventDateFormatted = formatDatum(event.event_date);
     if (userIds.length > 0) {
-      try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+      // Der Grund geht in den Push mit (Entscheidung Simon, 15.09.2026): Er
+      // ist genau dafuer da, dass die Konfis ihn lesen, ohne die App zu
+      // oeffnen. Ohne Grund bleibt der Text Zeichen fuer Zeichen derselbe wie
+      // bisher — der Parameter ist optional, siehe pushService.
+      try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id, grund); } catch (e) { console.error('Push notification failed:', e); }
     }
 
     res.json({
       message: `Event "${event.name}" wurde abgesagt`,
       participants_notified: participants.length,
-      notification_message
+      notification_message,
+      // Additiv: Alte Apps ignorieren das Feld, neue zeigen den Grund direkt
+      // an, ohne den Termin nochmal zu laden.
+      cancelled_reason: grund
     });
 
     try {

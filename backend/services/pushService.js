@@ -1059,8 +1059,21 @@ class PushService {
 
   /**
    * Event abgesagt - Push an alle angemeldeten Konfis
+   *
+   * @param {string|null} grund - Freiwilliger Absagegrund (Migration 150).
+   *
+   * Der Grund haengt hinten an, durch einen Punkt getrennt. OHNE Grund bleibt
+   * der Text Zeichen fuer Zeichen derselbe wie vor dem 15.09.2026 — der
+   * Parameter ist optional und steht am Ende, damit die beiden bestehenden
+   * Aufrufstellen (events/verwaltung.js) unveraendert weiterlaufen koennen.
+   *
+   * WARUM DER GRUND UEBERHAUPT IN DEN PUSH GEHT (Entscheidung Simon,
+   * 15.09.2026): Eine Absage erreicht die Konfis als Mitteilung auf dem
+   * Sperrbildschirm. Steht der Grund nur in der App, muss jede Einzelne sie
+   * erst oeffnen, um zu erfahren, warum — und genau die Rueckfragen, die der
+   * Grund ersparen soll, laufen trotzdem auf.
    */
-  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate, organizationId = null) {
+  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate, organizationId = null, grund = null) {
     try {
 
       let dateInfo = eventDate;
@@ -1069,12 +1082,19 @@ class PushService {
         dateInfo = `${formatDatum(date, { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
       }
 
+      const grundText = typeof grund === 'string' && grund.trim() !== '' ? grund.trim() : null;
+
       const notification = {
         title: 'Event abgesagt',
-        body: `Leider abgesagt: "${eventName}" am ${dateInfo}`,
+        body: `Leider abgesagt: "${eventName}" am ${dateInfo}`
+          + (grundText ? `. ${grundText}` : ''),
         data: {
           type: 'event_cancelled',
           event_name: eventName,
+          // Additiv im data-Teil: Alte App-Fassungen lesen den Schluessel
+          // nicht und ignorieren ihn. Ohne Grund faellt er ganz weg, statt
+          // als leerer String dazustehen.
+          ...(grundText ? { cancelled_reason: grundText } : {}),
           // Event-Org explizit: unter den Gebuchten können Teamer:innen mit
           // anderer Primär-Org sein.
           ...(organizationId != null ? { organization_id: String(organizationId) } : {})

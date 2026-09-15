@@ -349,7 +349,9 @@ describe('Selbstabmeldung bearbeiten', () => {
 describe('Wer hat den Eintrag gemacht (Urheber)', () => {
   it('die Zeile steht in der Teilnehmerliste, klein unter dem Eintrag', () => {
     expect(detail).toContain('{urheberZeile(participant) && (');
-    expect(detail).toContain("import { urheberZeile, notizUrheberZeile } from '../../../utils/anwesenheitUrheber';");
+    // checkinZeile kam am 15.09.2026 dazu (Migration 151) — die beiden
+    // Urheber-Zeilen stehen weiter in derselben Einfuhr.
+    expect(detail).toContain("import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';");
   });
 
   it('der Zeitfenster-Abschnitt zeigt dieselben Zeilen', () => {
@@ -417,5 +419,70 @@ describe('Anwesenheitsmatrix zeigt die Abmeldung', () => {
   it('der leere Statistik-Rueckfall kennt excused', () => {
     // Sonst stuende dort undefined, sobald eine Zeile keine Stats hat.
     expect(matrixModal).toContain('{ present: 0, absent: 0, excused: 0, open: 0, opted_out: 0, nenner: 0 }');
+  });
+});
+
+// Simon (15.09.2026): "Checkin via QR-Code am ..." — eine per QR-Code
+// gesetzte Anwesenheit soll als solche gekennzeichnet sein.
+//
+// Der Urheber bleibt dabei leer (Migration 148, Entscheidung 13.09.2026):
+// Die Konfi checkt sich SELBST ein, ein Name laese die Zeile wie eine
+// Leitungsentscheidung aussehen. Dadurch stand der Selbst-Check-in aber im
+// selben Nichts wie der Altbestand. Die Quelle (Migration 151) trennt beides.
+//
+// Geprueft wird die VERDRAHTUNG, nicht der Kommentar daneben: dass die
+// Funktion importiert, aufgerufen und ihr Ergebnis gerendert wird, und dass
+// die Zeile an der richtigen Stelle steht.
+describe('Selbst-Check-in per QR-Code kennzeichnen', () => {
+  it('die Zeile steht in der Teilnehmerliste', () => {
+    expect(detail).toContain('{checkinZeile(participant) && (');
+    expect(detail).toContain("import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';");
+  });
+
+  it('der Zeitfenster-Abschnitt zeigt dieselbe Zeile', () => {
+    expect(abschnitte).toContain('{checkinZeile(participant) && (');
+    expect(abschnitte).toContain("import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';");
+  });
+
+  it('die Zeile wird auch ausgegeben, nicht nur abgefragt', () => {
+    // Gegenprobe zur Bedingung allein: Ohne den zweiten Aufruf im Rumpf
+    // stuende dort eine leere graue Zeile.
+    for (const datei of [detail, abschnitte]) {
+      const vorkommen = datei.split('checkinZeile(participant)').length - 1;
+      expect(vorkommen).toBe(2);
+    }
+  });
+
+  it('sie traegt dieselben Styles wie die Urheber-Zeilen', () => {
+    // Sie gehoert in dieselbe leise Reihe -- eine abweichende Farbe machte
+    // aus einer Randnotiz eine Meldung.
+    for (const datei of [detail, abschnitte]) {
+      const stelle = datei.indexOf('{checkinZeile(participant) && (');
+      const block = datei.slice(stelle, stelle + 400);
+      expect(block).toContain("color: 'var(--app-text-tertiary)'");
+      expect(block).toContain("fontSize: 'var(--app-text-hinweis)'");
+    }
+  });
+
+  it('sie steht direkt unter der Urheber-Zeile, vor der Notiz', () => {
+    // Beide beantworten "woher kommt dieser Status" und gehoeren zusammen;
+    // die Notiz ist eine andere Frage und kommt danach.
+    for (const datei of [detail, abschnitte]) {
+      const statusUrheber = datei.indexOf('{urheberZeile(participant) && (');
+      const qrZeile = datei.indexOf('{checkinZeile(participant) && (');
+      const notizZeile = datei.indexOf('<strong>Notiz: </strong>');
+
+      expect(qrZeile).toBeGreaterThan(statusUrheber);
+      expect(notizZeile).toBeGreaterThan(qrZeile);
+    }
+  });
+
+  it('die Typen tragen Quelle und Zeitpunkt', () => {
+    expect(typen).toContain("checkin_quelle?: 'qr' | 'manuell' | null;");
+    expect(typen).toContain('checked_in_at?: string | null;');
+  });
+
+  it('das Handbuch beschreibt die Zeile', () => {
+    expect(handbuch).toContain('Eingecheckt per QR-Code');
   });
 });

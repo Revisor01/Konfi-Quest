@@ -30,6 +30,7 @@ import {
 } from '../../shared/icons';
 import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
+import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import { Event } from '../../../types/event';
 
 interface EventsViewProps {
@@ -404,6 +405,22 @@ const EventsView: React.FC<EventsViewProps> = ({
                         >
                           {event.name}
                         </div>
+
+                        {/* Absagegrund (Migration 150, 15.09.2026): Der Grund ist
+                            fuer ALLE Rollen sichtbar (Entscheidung Simon) — die Konfi
+                            soll ihn schon in der Liste lesen und nicht erst den Termin
+                            aufmachen muessen. Ohne Grund faellt der Block weg, das
+                            Status-Badge sagt "Abgesagt" ohnehin schon. */}
+                        {isCancelled && event.cancelled_reason && (
+                          <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            <strong>Abgesagt: </strong>{event.cancelled_reason}
+                          </div>
+                        )}
+                        {isCancelled && event.cancelled_reason && absageUrheberZeile(event) && (
+                          <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            {absageUrheberZeile(event)}
+                          </div>
+                        )}
 
                         {/* Zeile 2: Buchungen + Warteliste + Punkte */}
                         <div className="app-list-item__meta">

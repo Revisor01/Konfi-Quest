@@ -1168,8 +1168,17 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                CASE
                  WHEN eb_konfi.status = 'waitlist' THEN wpos.waitlist_position
                  ELSE NULL
-               END as waitlist_position
+               END as waitlist_position,
+               -- Wer den Termin abgesagt hat (Migration 150), ADDITIV: e.*
+               -- bringt cancelled_reason und cancelled_by schon mit, nur der
+               -- Name fehlt. Der Grund ist ausdruecklich fuer ALLE
+               -- Teilnehmenden gedacht (Entscheidung Simon, 15.09.2026) --
+               -- die Konfi-Liste ist der Ort, an dem er ankommen muss.
+               -- LEFT JOIN, weil NULL hier "unbekannt" heisst: Termine, die
+               -- vor der Migration abgesagt wurden, haben keinen Urheber.
+               u_cancel.display_name as cancelled_by_name
         FROM events e
+        LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         -- Zahlen aus event_booking_stats statt aus einer eigenen Kopie
         -- (28.08.2026). Konfi-Sicht: registered_count UND waitlist_count
