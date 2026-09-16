@@ -363,7 +363,21 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Backend mit 409 und konkreten Zahlen — erst nach dieser zweiten,
   // deutlichen Rueckfrage wird mit force=true gelöscht. Vorher wurde IMMER
   // force gesendet, die Warnung erreichte also nie jemanden.
+  //
+  // WARUM DIE ZWEITE RUECKFRAGE UEBER onDidDismiss LAEUFT (Befund 16.09.2026):
+  // Sie erschien nie. Zwei Mechaniken greifen ineinander —
+  //   1. Der Knopf-Handler eines Alerts wird ABGEWARTET, bevor der Alert
+  //      schliesst. Der `await api.delete(...)` unten laeuft also im noch
+  //      OFFENEN Alert.
+  //   2. Ein zweiter Alert, der aufgehen soll, waehrend noch einer offen ist,
+  //      wird STILL verworfen — ohne Fehler, ohne Log.
+  // Direkt aus dem catch heraus nachzufragen hiess also: Dialog weg, nichts
+  // passiert, der Termin bleibt stehen. Deshalb wird die Rueckfrage nur
+  // GEMERKT und erst angestossen, wenn der erste Alert wirklich zu ist —
+  // dasselbe Muster wie bei eventModalCanDismiss weiter oben.
+  // NICHT auf einen Aufruf direkt im catch zurueckdrehen.
   const deleteSingleEvent = async (event: Event) => {
+    let nachDemSchliessen: (() => void) | null = null;
     presentAlert({
       header: 'Event löschen',
       message: `Event "${event.name}" wirklich löschen?`,
@@ -379,14 +393,16 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await refreshCancelled();
             } catch (error) {
               if (fehlerStatus(error) === 409) {
-                confirmForceDelete(event, fehlerDaten(error));
+                const daten = fehlerDaten(error);
+                nachDemSchliessen = () => confirmForceDelete(event, daten);
               } else {
                 setError(fehlerText(error, 'Fehler beim Löschen des Events'));
               }
             }
           }
         }
-      ]
+      ],
+      onDidDismiss: () => { nachDemSchliessen?.(); nachDemSchliessen = null; }
     });
   };
 
@@ -423,7 +439,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Punkten melden 409 und werden erst nach einer zweiten Rueckfrage mit den
   // aufsummierten Zahlen endgültig gelöscht (Befund M2/M3). Andere Fehler
   // werden gesammelt gemeldet (Promise.allSettled).
+  // Die zweite Rueckfrage laeuft aus demselben Grund wie beim Einzeltermin
+  // ueber onDidDismiss (siehe deleteSingleEvent).
   const deleteSeriesEvents = async (seriesEvents: Event[], label: string) => {
+    let nachDemSchliessen: (() => void) | null = null;
     presentAlert({
       header: 'Serie löschen',
       message: `Wirklich ${label} mit ${seriesEvents.length} Terminen löschen?`,
@@ -459,11 +478,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               );
             }
             if (konflikte.length > 0) {
-              confirmForceDeleteSeries(konflikte);
+              nachDemSchliessen = () => confirmForceDeleteSeries(konflikte);
             }
           }
         }
-      ]
+      ],
+      onDidDismiss: () => { nachDemSchliessen?.(); nachDemSchliessen = null; }
     });
   };
 
