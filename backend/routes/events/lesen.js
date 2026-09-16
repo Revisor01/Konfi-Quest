@@ -33,6 +33,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 bstats.total_participants,
                 bstats.teamer_count,
                 bstats.teamer_waitlist_count,
+                bstats.abgemeldet_count,
                 CASE
                   WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                   ELSE e.max_participants
@@ -131,7 +132,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
               + COALESCE(ebs.konfi_opted_out, 0)
               + COALESCE(ebs.teamer_opted_out, 0)
               + COALESCE(ebs.konfi_excused, 0)
-              + COALESCE(ebs.teamer_excused, 0) as total_participants
+              + COALESCE(ebs.teamer_excused, 0) as total_participants,
+            -- ABGEMELDETE KONFIS, ADDITIV (16.09.2026) -- dieselbe Zahl und
+            -- dieselbe Begruendung wie in konfi.js: beide Abmelde-Arten
+            -- zusammen, KONFI-rein wie registered_count daneben. Die Ansicht
+            -- kann damit bei einem abgesagten Termin sagen, um wie viele
+            -- Personen es ging, ohne registered_count umzudeuten.
+            --
+            -- NICHT total_participants nehmen: Die Zahl meint ausdruecklich
+            -- ALLE Buchungen einschliesslich Team-Seite und ist damit eine
+            -- andere Groesse als die Konfi-Zahl daneben.
+            COALESCE(ebs.konfi_opted_out, 0)
+              + COALESCE(ebs.konfi_excused, 0) as abgemeldet_count
           FROM event_booking_stats ebs
           WHERE ebs.event_id = e.id
         ) bstats ON true
@@ -657,12 +669,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // Get series events if this is part of a series
       let seriesEvents = [];
       if (event.is_series && event.series_id) {
+        // Zahlen aus event_booking_stats statt aus einer eigenen Kopie
+        // (16.09.2026). Die alte Abfrage war die letzte Stelle, an der
+        // `registered_count` etwas anderes hiess als ueberall sonst:
+        //
+        //   COUNT(eb.id) ... LEFT JOIN event_bookings eb ON eb.status = 'confirmed'
+        //
+        // Kein Rollenfilter -- Teamer und zugeordnete Leitung zaehlten als
+        // Konfis mit. Kein deleted_at-Filter -- die Buchung eines geloeschten
+        // Kontos zaehlte weiter. Angezeigt wird die Zahl in der Serienliste
+        // des Termindetails als "N/max TN", mit demselben Wort und demselben
+        // Nenner wie die Kachel darueber, die nur Konfis meint. Ein
+        // Serientermin mit 19 Konfis und 4 Teamer:innen meldete dort 23.
+        //
+        // Das ist derselbe Fehler, den Migration 128 fuer fuenf Endpunkte
+        // behoben hat; diese Stelle wurde damals uebersehen.
         const seriesQuery = `
-          SELECT e.*, COUNT(eb.id) as registered_count
+          SELECT e.*, COALESCE(ebs.konfi_confirmed, 0) as registered_count
           FROM events e
-          LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
+          LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
           WHERE e.series_id = $1 AND e.organization_id = $2 AND e.id != $3
-          GROUP BY e.id
           ORDER BY e.event_date ASC
         `;
         const { rows } = await db.query(seriesQuery, [event.series_id, req.user.organization_id, eventId]);

@@ -1148,6 +1148,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                bstats.registered_count,
                bstats.waitlist_count,
                bstats.teamer_count,
+               bstats.abgemeldet_count,
                CASE
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
@@ -1206,7 +1207,29 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           SELECT
             COALESCE(ebs.konfi_confirmed, 0)  as registered_count,
             COALESCE(ebs.konfi_waitlist, 0)   as waitlist_count,
-            COALESCE(ebs.teamer_confirmed, 0) as teamer_count
+            COALESCE(ebs.teamer_confirmed, 0) as teamer_count,
+            -- ABGEMELDETE KONFIS, ADDITIV (16.09.2026).
+            --
+            -- Beide Abmelde-Arten in einer Zahl: die Selbstabmeldung
+            -- ('opted_out') und die Abmeldung durch die Leitung ('excused').
+            -- Aus Konfi-Sicht ist das derselbe Sachverhalt -- diese Person
+            -- ist nicht dabei --, und die Konfi-Ansicht hat keinen Anlass,
+            -- den Unterschied zu zeigen: Wer wen abgemeldet hat, geht sie
+            -- nichts an. Die Leitungsansicht trennt es weiterhin, sie liest
+            -- die Spalten einzeln.
+            --
+            -- WOZU: Ist der Termin abgesagt, stehen ALLE auf 'excused'
+            -- (meldeAlleAbBeiAbsage). registered_count ist dann 0 -- richtig,
+            -- niemand nimmt teil --, aber allein steht diese 0 sinnlos da:
+            -- Simon sah am Pflichttermin "0 frei, 0 dabei, 0 von unendlich"
+            -- und konnte nicht erkennen, dass dort 13 Konfis eingetragen
+            -- waren. Mit dieser Zahl kann die Ansicht bei einer Absage
+            -- sagen, um wie viele es ging, ohne registered_count umzudeuten.
+            --
+            -- NEUES FELD, kein bestehendes geaendert: Aeltere App-Fassungen
+            -- kennen es nicht und zeigen weiter, was sie bisher zeigten.
+            COALESCE(ebs.konfi_opted_out, 0)
+              + COALESCE(ebs.konfi_excused, 0) as abgemeldet_count
           FROM event_booking_stats ebs
           WHERE ebs.event_id = e.id
         ) bstats ON true

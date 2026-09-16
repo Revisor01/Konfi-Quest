@@ -288,7 +288,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
       });
     },
-    get konfiAnzahl() { return participants.filter(p => p.role_name === 'konfi').length; },
+    // BEFUND 16.09.2026: Hier stand `participants.filter(p => p.role_name ===
+    // 'konfi').length` -- ALLE Konfi-Buchungen, gleich welchen Status. Simons
+    // Pflichttermin hatte 13 eingetragene Konfis, eine hatte sich selbst
+    // abgemeldet, eine war von der Leitung abgemeldet worden. Die Rueckfrage
+    // vor dem Absagen sagte trotzdem "13 Konfis angemeldet", waehrend die
+    // Kacheln im selben Bild "11 von 13 TN" zeigten. Angemeldet sind 11.
+    //
+    // DIESELBE REGEL WIE UEBERALL SONST: Abgemeldete sind keine
+    // Teilnehmenden -- weder die Selbstabmeldung ('opted_out') noch die
+    // Abmeldung durch die Leitung ('excused'). `status === 'confirmed'` deckt
+    // beide ab, weil beide Vorgaenge den Buchungsstatus verlassen; es ist
+    // genau die Bedingung, aus der die View konfi_confirmed bildet, und
+    // dieselbe, die die Kachel darueber benutzt.
+    get konfiAnzahl() {
+      return participants.filter(p => p.role_name === 'konfi' && p.status === 'confirmed').length;
+    },
     onSave: async (grund: string) => {
       if (!eventData) return;
       await api.put(`/events/${eventData.id}/cancel`, {

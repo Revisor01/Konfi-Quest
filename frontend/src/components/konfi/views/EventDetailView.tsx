@@ -572,6 +572,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const isUnlimited = (eventData.max_participants || 0) === 0;
   const spotsLeft = isUnlimited ? null : eventData.max_participants - konfiRegistered;
 
+  // ABGESAGTE TERMINE ZEIGEN KEINE PLATZ-ZAHLEN (16.09.2026).
+  //
+  // BEFUND: Ein abgesagter Pflichttermin zeigte hier "0 Frei", "0 Dabei" und
+  // "Teilnehmer:innen 0 / unendlich". Die Null war nicht falsch -- die Absage
+  // meldet alle ab (meldeAlleAbBeiAbsage setzt jede Buchung auf 'excused'),
+  // und wer abgemeldet ist, nimmt nicht teil. Aber drei Nullen nebeneinander
+  // lesen sich wie ein Fehler, und sie beantworten die einzige Frage nicht,
+  // die an einem abgesagten Termin offen ist: Ging es mich etwas an?
+  //
+  // ENTSCHEIDUNG: 0 bleibt die richtige Zahl fuer "dabei" -- sie wird aber
+  // nicht mehr als Platz-Zaehler dargestellt. Stattdessen steht dort, wie
+  // viele Konfis der Termin erreicht hat (abgemeldet_count, additiv seit
+  // 16.09.2026). Freie Plaetze entfallen ganz: An einem Termin, der ausfaellt,
+  // ist kein Platz frei -- weder null noch unendlich viele, die Frage stellt
+  // sich nicht.
+  //
+  // NICHT die urspruengliche Zahl in registered_count stehen lassen: Das Feld
+  // heisst ueberall "wer ist angemeldet". Waere es bei einer Absage etwas
+  // anderes, haette derselbe Name wieder zwei Bedeutungen -- genau die
+  // Fehlerklasse, gegen die event_booking_stats gebaut wurde.
+  const istAbgesagterTermin = istAbgesagt(eventData);
+  const abgemeldetCount = eventData.abgemeldet_count ?? 0;
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent>
@@ -627,7 +650,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           colors={getStatusColors()}
           stats={[
             // Unbegrenzt -> "∞ Frei" statt einer irrefuehrenden 0.
-            { value: isUnlimited ? '∞' : Math.max(0, spotsLeft ?? 0), label: 'Frei' },
+            // Abgesagt: keine Platz-Zahl, sondern wie viele der Termin
+            // erreicht hat (Begruendung oben bei istAbgesagterTermin).
+            // Sonst: unbegrenzt -> "∞ Frei" statt einer irrefuehrenden 0.
+            istAbgesagterTermin
+              ? { value: abgemeldetCount, label: 'Abgemeldet' }
+              : { value: isUnlimited ? '∞' : Math.max(0, spotsLeft ?? 0), label: 'Frei' },
             // Punkte-Kachel nur, wenn es welche gibt (Pflicht/Konfirmation: 0).
             ...((eventData.points || 0) > 0 && !eventData.mandatory && !eventData.is_konfirmation
               ? [{ value: eventData.points, label: 'Punkte' }]
@@ -761,7 +789,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon app-icon-color--participants" />
                 <div>
                   <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">{(eventData.registered_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : <IonIcon icon={ICON_UNENDLICH} style={{ verticalAlign: 'middle', fontSize: 'var(--app-icon-inline)' }} />}</div>
+                  {/* Abgesagt: kein "0 / unendlich" (16.09.2026, Begruendung
+                      oben bei istAbgesagterTermin). Der Nenner beschreibt eine
+                      Kapazitaet, die es an einem ausfallenden Termin nicht
+                      mehr gibt, und der Zaehler waere immer 0 -- alle stehen
+                      nach der Absage auf abgemeldet. Stattdessen die Zahl,
+                      um die es ging. */}
+                  <div className="app-info-row__value">
+                    {istAbgesagterTermin
+                      ? `${abgemeldetCount} abgemeldet`
+                      : <>{(eventData.registered_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : <IonIcon icon={ICON_UNENDLICH} style={{ verticalAlign: 'middle', fontSize: 'var(--app-icon-inline)' }} />}</>}
+                  </div>
                 </div>
               </div>
 

@@ -115,6 +115,13 @@ export interface Event {
   teamer_waitlist_enabled?: boolean;
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
+  /**
+   * Abgemeldete Konfis -- Selbstabmeldung und Abmeldung durch die Leitung
+   * zusammen (16.09.2026). KONFI-rein wie registered_count; das Team zaehlt
+   * hier nicht mit. Optional, weil aeltere Serverstaende das Feld nicht
+   * liefern.
+   */
+  abgemeldet_count?: number;
   // Serien
   is_series?: boolean;
   series_id?: number;
