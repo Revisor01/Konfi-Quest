@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 
@@ -144,32 +144,36 @@ vi.mock('../../contexts/AppContext', () => ({
 import TeamerDashboardPage from '../../components/teamer/pages/TeamerDashboardPage';
 
 describe('Startseite beim ERSTEN Aufbau (Teamer)', () => {
-  // FESTE UHRZEIT (16.09.2026): Erkannt wird "der Inhalt ist da" an der
-  // Begruessung -- und die haengt an der Stunde. Hier stand zuerst ein
-  // toContain('Guten'), das drei von vier Tageszeiten traf: Ab 22 Uhr sagt
-  // die Seite "Gute Nacht", und der Test fiel jede Nacht, ohne dass am Code
-  // etwas anders war. Mit fester Uhrzeit prueft er immer dasselbe.
+  // NICHT AN DER BEGRUESSUNG ERKENNEN (zweimal korrigiert):
+  //
+  // Zuerst stand hier toContain('Guten') -- das traf drei von vier
+  // Tageszeiten, und ab 22 Uhr sagt die Seite "Gute Nacht". Der Test fiel
+  // also jede Nacht (16.09.2026).
+  //
+  // Dann eine feste Uhrzeit plus toContain('Guten Morgen'). Auch das war
+  // falsch: Die Begruessung wuerfelt VOR der Uhrzeitpruefung
+  // (Math.random() < 0.2 -> "Moin"). Der Test fiel damit statistisch bei
+  // jedem fuenften Lauf -- unabhaengig von der Uhrzeit (17.09.2026).
+  //
+  // Die Begruessung taugt als Erkennungsmerkmal also gar nicht. Geprueft
+  // wird jetzt der Anzeigename, der in JEDER Variante vorkommt ("Moin, Test!"
+  // ebenso wie "Guten Morgen, Test!") -- und genau das soll der Test ja
+  // wissen: Steht ueberhaupt Inhalt da, oder nur der Ladebildschirm?
   beforeEach(() => {
     gesehenePages.length = 0;
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-09-16T10:00:00'));
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it('zeigt nach dem ersten Laden den Inhalt, nicht nur den Ladebildschirm', async () => {
     const { container } = render(<TeamerDashboardPage />);
-    await vi.waitFor(() => {
-      expect(container.textContent).toContain('Guten Morgen');
+    await waitFor(() => {
+      expect(container.textContent).toContain('Test');
     }, { timeout: 3000 });
   });
 
   it('behaelt beim Umschlag von "laedt" auf "fertig" DASSELBE Wurzel-Element', async () => {
     const { container } = render(<TeamerDashboardPage />);
-    await vi.waitFor(() => {
-      expect(container.textContent).toContain('Guten Morgen');
+    await waitFor(() => {
+      expect(container.textContent).toContain('Test');
     }, { timeout: 3000 });
     // Genau EIN Wurzel-Element ueber beide Zustaende. Waeren es zwei, haette
     // Ionic dem zweiten `ion-page-invisible` angehaengt, ohne dass ein
