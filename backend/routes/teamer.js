@@ -87,6 +87,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const isPromotedKonfi = !!konfiProfile;
       let badges = [];
       if (isPromotedKonfi) {
+        // NUR KONFI-ABZEICHEN (16.09.2026, Simon am Geraet: "er zeigt bei
+        // meinem teamer die badges teamer year. teamer badges niemals in der
+        // konfi history").
+        //
+        // Der Befund: user_badges kennt die Art des Abzeichens NICHT -- die
+        // Tabelle hat nur user_id und badge_id. Ob ein Abzeichen zur
+        // Konfi-Zeit oder zur Teamer-Zeit gehoert, steht allein in
+        // custom_badges.target_role. Der JOIN war hier zwar schon da, die
+        // Spalte wurde aber weder gelesen noch gefiltert: Wer als Konfi
+        // angefangen hat und heute Teamer:in ist, sah in der Konfi-Historie
+        // seine Teamer-Abzeichen ("teamer_year") zwischen den Konfi-Abzeichen
+        // stehen. Die Konfi-Historie zeigt die Konfi-Zeit -- die
+        // Teamer-Abzeichen haben ihre eigene Ansicht (GET /teamer/badges/v2).
+        //
+        // organization_id kommt im selben Zug dazu: Ohne sie zaehlte die
+        // Abfrage Abzeichen aus JEDER Organisation, in der die Person je ein
+        // Konto hatte. So macht es der Rest des Hauses auch
+        // (konfi-management.js:764, badges.js:208, konfi.js:1077).
         const badgesQuery = `
           SELECT kb.badge_id, b.name, b.description, b.icon, b.color,
                  b.criteria_type, b.criteria_value,
@@ -94,9 +112,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           FROM user_badges kb
           JOIN custom_badges b ON kb.badge_id = b.id
           WHERE kb.user_id = $1
+            AND b.target_role = 'konfi'
+            AND b.organization_id = $2
           ORDER BY kb.awarded_date DESC
         `;
-        const result = await db.query(badgesQuery, [userId]);
+        const result = await db.query(badgesQuery, [userId, req.user.organization_id]);
         badges = result.rows;
       }
 
