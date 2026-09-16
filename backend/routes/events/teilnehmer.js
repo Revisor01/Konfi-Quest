@@ -99,6 +99,20 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
       // 5. Determine final status
       let finalStatus = status;
+
+      // Die Rolle wird IMMER bestimmt, nicht nur im 'auto'-Zweig: Sie
+      // entscheidet unten auch darueber, ueber welchen Einstiegspunkt der
+      // Push rausgeht. Mit explizitem status ('confirmed'/'waitlist') war sie
+      // frueher gar nicht gesetzt.
+      const { rows: [addedUser] } = await client.query(
+        `SELECT r.name AS role_name FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $1 AND u.organization_id = $2`,
+        [user_id, req.user.organization_id]
+      );
+      const addedIsKonfi = addedUser?.role_name === 'konfi';
+      const addedIsTeamer = !addedIsKonfi;
+
       if (status === 'auto') {
         // Rolle des hinzugefuegten Users bestimmt, GEGEN WELCHES Kontingent
         // gezählt wird. Ohne diese Weiche landete ein per Admin hinzugefuegter
@@ -111,15 +125,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // Mit der alten Abfrage waeren sie als Konfi durchgegangen — sie
         // haetten einen Konfi-Platz belegt, waeren in der Konfi-Liste
         // gelandet und an einem Nur-Teamer-Termin abgewiesen worden.
-        const { rows: [addedUser] } = await client.query(
-          `SELECT r.name AS role_name FROM users u
-           JOIN roles r ON u.role_id = r.id
-           WHERE u.id = $1 AND u.organization_id = $2`,
-          [user_id, req.user.organization_id]
-        );
-        const addedIsKonfi = addedUser?.role_name === 'konfi';
-        const addedIsTeamer = !addedIsKonfi;
-
+        //
+        // addedIsKonfi/addedIsTeamer stehen oben, vor dieser Weiche — sie
+        // werden auch beim Push gebraucht.
         if (addedIsTeamer && !event.teamer_needed && !event.teamer_only) {
           await client.query('ROLLBACK');
           client.release();
@@ -209,12 +217,57 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         message: responseMessage
       });
 
-      // Live Update: Notify the booked person and admins about the admin-booking.
-      // sendToUserByRole statt hart 'konfi': die Leitung kann hier auch
-      // Teamer:innen eintragen (siehe addedIsTeamer oben) — die sitzen im Raum
-      // user_teamer_<id> und bekamen ihr eigenes Ereignis sonst nie.
-      liveUpdate.sendToUserByRole(user_id, 'events', 'update', { eventId, status: finalStatus });
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
+      // Seiteneffekte NACH der Antwort (siehe utils/nachAntwort.js): Die
+      // Leitung soll nicht warten, bis der Push draussen ist, und ein
+      // Push-Fehler darf die laengst committete Buchung nicht kippen.
+      nachAntwort(req, async () => {
+        // WER VON DER LEITUNG ANGEMELDET WIRD, ERFAEHRT ES AUCH (16.09.2026,
+        // Simon woertlich): "wenn ein admin jemanden zu einem evnt anmeldet,
+        // muss derjenige einen push bekommen. teamer, leitung oder auch
+        // konfi. bisher bekommt derjenige nichts."
+        //
+        // Vorher gab es hier nur Live-Updates: Die erreichen eine offene
+        // Sitzung, aber kein Handy. Es ist derselbe Wortlaut wie bei der
+        // Selbstanmeldung (routes/events/buchung.js) — die Meldung ist
+        // dieselbe, egal ob man sich selbst anmeldet oder angemeldet wird.
+        //
+        // AUCH BEI DER WARTELISTE (bewusst so entschieden): Wer direkt auf
+        // die Warteliste gesetzt wird, bekommt die passende Meldung "Du
+        // stehst auf der Warteliste" — sendEventRegisteredToKonfi
+        // unterscheidet den Wortlaut ueber den status. Schweigen waere hier
+        // falsch: Die Person weiss sonst nicht einmal, dass die Leitung sie
+        // ueberhaupt vorgemerkt hat, und hielte sich den Termin nicht frei.
+        //
+        // NICHT an die ausloesende Person: Die Leitung kann sich selbst
+        // einem Termin zuordnen (seit 31.08.2026, um in den Termin-Chat zu
+        // kommen). Wer gerade selbst auf den Knopf gedrueckt hat, braucht
+        // darueber keine Mitteilung aufs eigene Handy.
+        // Number(...) beidseitig: user_id kommt aus dem JSON-Rumpf und kann
+        // als Zeichenkette ankommen ("4"), req.user.id ist eine Zahl. Ein
+        // strikter Vergleich haette die Selbstzuordnung durchrutschen lassen.
+        if (Number(user_id) !== Number(req.user.id)) {
+          try {
+            if (addedIsTeamer) {
+              await PushService.sendEventRegisteredToTeamer(
+                db, user_id, event.name, event.event_date, finalStatus, eventId, req.user.organization_id
+              );
+            } else {
+              await PushService.sendEventRegisteredToKonfi(
+                db, user_id, event.name, event.event_date, finalStatus, eventId, timeslot, req.user.organization_id
+              );
+            }
+          } catch (pushErr) {
+            console.error('Push notification failed for admin booking:', pushErr);
+          }
+        }
+
+        // Live Update: Notify the booked person and admins about the admin-booking.
+        // sendToUserByRole statt hart 'konfi': die Leitung kann hier auch
+        // Teamer:innen eintragen (siehe addedIsTeamer oben) — die sitzen im Raum
+        // user_teamer_<id> und bekamen ihr eigenes Ereignis sonst nie.
+        liveUpdate.sendToUserByRole(user_id, 'events', 'update', { eventId, status: finalStatus });
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
+      }, 'POST /events/:id/participants');
 
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
