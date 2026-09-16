@@ -37,7 +37,14 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
 
   // Legt einen Termin zum übergebenen Zeitpunkt an und bucht konfi1 bestätigt darauf.
   // `cancelled` steuert, ob der Termin abgesagt ist.
-  async function createEventWithBooking({ eventDateSql, cancelled, userId = USERS.konfi1.id }) {
+  // `attendanceStatus` spiegelt eine bereits verbuchte Teilnahme
+  // (present/absent/excused); NULL = noch offen, der Normalfall vor dem Termin.
+  async function createEventWithBooking({
+    eventDateSql,
+    cancelled,
+    userId = USERS.konfi1.id,
+    attendanceStatus = null
+  }) {
     const eventId = nextEventId++;
     await db.query(
       `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
@@ -45,9 +52,9 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
       [eventId, ORG_ID, cancelled]
     );
     await db.query(
-      `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
-       VALUES ($1, $2, 'confirmed', $3)`,
-      [eventId, userId, ORG_ID]
+      `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+       VALUES ($1, $2, 'confirmed', $3, $4)`,
+      [eventId, userId, attendanceStatus, ORG_ID]
     );
     return eventId;
   }
@@ -58,6 +65,16 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
       [eventId, reminderType]
     );
     return rows[0].anzahl;
+  }
+
+  // Wer wurde tatsaechlich erinnert? Deckt den Fall auf, dass die Erinnerung
+  // an die falsche Person geht — eine reine Anzahl wuerde das verschlucken.
+  async function reminderEmpfaenger(eventId, reminderType) {
+    const { rows } = await db.query(
+      'SELECT user_id FROM event_reminders WHERE event_id = $1 AND reminder_type = $2 ORDER BY user_id',
+      [eventId, reminderType]
+    );
+    return rows.map(r => r.user_id);
   }
 
   it('Test 1: Abgesagter Termin morgen loest KEINE 1-Tages-Erinnerung aus', async () => {
@@ -123,6 +140,177 @@ describe('sendEventReminders (Event-Erinnerungen)', () => {
     await BackgroundService.sendEventReminders(db);
 
     expect(await countReminders(eventId, '1_day')).toBe(1);
+  });
+
+  // ------------------------------------------------------------------
+  // Abgemeldet = keine Erinnerung (Befund 15.09.2026)
+  //
+  // Traegt die Leitung eine Abmeldung ein, setzt das eb.attendance_status
+  // auf 'excused'; eb.status bleibt 'confirmed'. Ohne den Filter bekam die
+  // abgemeldete Konfi nach "Abmeldung eingetragen" trotzdem "Morgen: Event!"
+  // und "Gleich: Event!".
+  // ------------------------------------------------------------------
+
+  it('Test 8: Abgemeldete Person (excused) bekommt KEINE 1-Tages-Erinnerung', async () => {
+    const eventId = await createEventWithBooking({
+      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      cancelled: false,
+      attendanceStatus: 'excused'
+    });
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(eventId, '1_day')).toBe(0);
+    expect(await reminderEmpfaenger(eventId, '1_day')).toEqual([]);
+  });
+
+  it('Test 9: Abgemeldete Person (excused) bekommt KEINE 1-Stunden-Erinnerung', async () => {
+    const eventId = await createEventWithBooking({
+      eventDateSql: "NOW() + INTERVAL '60 minutes'",
+      cancelled: false,
+      attendanceStatus: 'excused'
+    });
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(eventId, '1_hour')).toBe(0);
+    expect(await reminderEmpfaenger(eventId, '1_hour')).toEqual([]);
+  });
+
+  it('Test 10: Gegenprobe — attendance_status NULL bekommt beide Erinnerungen', async () => {
+    // Beweist, dass der Filter nicht zu viel wegnimmt: derselbe Aufbau wie
+    // Test 8/9, nur ohne Verbuchung.
+    const morgen = await createEventWithBooking({
+      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      cancelled: false,
+      attendanceStatus: null
+    });
+    const gleich = await createEventWithBooking({
+      eventDateSql: "NOW() + INTERVAL '60 minutes'",
+      cancelled: false,
+      attendanceStatus: null
+    });
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(morgen, '1_day')).toBe(1);
+    expect(await reminderEmpfaenger(morgen, '1_day')).toEqual([USERS.konfi1.id]);
+    expect(await countReminders(gleich, '1_hour')).toBe(1);
+    expect(await reminderEmpfaenger(gleich, '1_hour')).toEqual([USERS.konfi1.id]);
+  });
+
+  it('Test 11: Verbuchte Teilnahme (present/absent) bekommt keine Erinnerung mehr', async () => {
+    const present = await createEventWithBooking({
+      eventDateSql: "CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours'",
+      cancelled: false,
+      attendanceStatus: 'present'
+    });
+    const absent = await createEventWithBooking({
+      eventDateSql: "NOW() + INTERVAL '60 minutes'",
+      cancelled: false,
+      attendanceStatus: 'absent'
+    });
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(present, '1_day')).toBe(0);
+    expect(await countReminders(absent, '1_hour')).toBe(0);
+  });
+
+  it('Test 12: Am selben Termin wird nur die nicht abgemeldete Person erinnert', async () => {
+    // Der scharfe Fall: EIN Termin, zwei Buchungen. Eine Anzahl allein wuerde
+    // nicht zeigen, dass die richtige Person uebrig bleibt.
+    const eventId = nextEventId++;
+    await db.query(
+      `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
+       VALUES ($1, 'Gemischter Termin', CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours', $2, false, false, false)`,
+      [eventId, ORG_ID]
+    );
+    await db.query(
+      `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+       VALUES ($1, $2, 'confirmed', 'excused', $3), ($1, $4, 'confirmed', NULL, $3)`,
+      [eventId, USERS.konfi1.id, ORG_ID, USERS.konfi2.id]
+    );
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(eventId, '1_day')).toBe(1);
+    expect(await reminderEmpfaenger(eventId, '1_day')).toEqual([USERS.konfi2.id]);
+  });
+
+  it('Test 13: Abmeldung auch mit Buchungsstatus "excused" bekommt keine Erinnerung', async () => {
+    // Das Abmelden setzt zusaetzlich zum attendance_status auch den
+    // BUCHUNGSstatus auf 'excused'. Der Filter haengt bewusst am
+    // attendance_status und muss deshalb in beiden Welten greifen — auch
+    // wenn eb.status nicht mehr 'confirmed' ist.
+    const eventId = nextEventId++;
+    await db.query(
+      `INSERT INTO events (id, name, event_date, organization_id, cancelled, mandatory, has_timeslots)
+       VALUES ($1, 'Abgemeldet-Termin', CURRENT_DATE + INTERVAL '1 day' + INTERVAL '10 hours', $2, false, false, false)`,
+      [eventId, ORG_ID]
+    );
+    await db.query(
+      `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+       VALUES ($1, $2, 'excused', 'excused', $3)`,
+      [eventId, USERS.konfi1.id, ORG_ID]
+    );
+
+    await BackgroundService.sendEventReminders(db);
+
+    expect(await countReminders(eventId, '1_day')).toBe(0);
+    expect(await reminderEmpfaenger(eventId, '1_day')).toEqual([]);
+  });
+
+  describe('sendRegistrationOpenPushes ("Anmeldung moeglich")', () => {
+    // Befund 15.09.2026: Die Query filterte `cancelled = false`, waehrend die
+    // Nachbarzeilen teamer_only und mandatory ausdruecklich gegen NULL
+    // absichern. Ein Termin mit cancelled = NULL fiel deshalb still heraus —
+    // ohne Push und ohne Spur. Messpunkt ist registration_open_notified: Der
+    // Service flippt das Flag genau fuer die Termine, fuer die er den Push
+    // ausloest.
+    async function createAnmeldbarenTermin(cancelledSql) {
+      const eventId = nextEventId++;
+      await db.query(
+        `INSERT INTO events (id, name, event_date, organization_id, cancelled,
+                             mandatory, teamer_only, has_timeslots, registration_open_notified)
+         VALUES ($1, 'Anmeldbarer Termin', CURRENT_DATE + INTERVAL '10 days', $2, ${cancelledSql},
+                 false, false, false, false)`,
+        [eventId, ORG_ID]
+      );
+      return eventId;
+    }
+
+    async function wurdeBenachrichtigt(eventId) {
+      const { rows } = await db.query(
+        'SELECT registration_open_notified FROM events WHERE id = $1',
+        [eventId]
+      );
+      return rows[0].registration_open_notified;
+    }
+
+    it('Test 14: cancelled = NULL (Altbestand) bekommt den "Anmeldung moeglich"-Push', async () => {
+      const eventId = await createAnmeldbarenTermin('NULL');
+
+      await BackgroundService.sendRegistrationOpenPushes(db);
+
+      expect(await wurdeBenachrichtigt(eventId)).toBe(true);
+    });
+
+    it('Test 15: Gegenprobe — abgesagter Termin bekommt ihn nicht', async () => {
+      const eventId = await createAnmeldbarenTermin('true');
+
+      await BackgroundService.sendRegistrationOpenPushes(db);
+
+      expect(await wurdeBenachrichtigt(eventId)).toBe(false);
+    });
+
+    it('Test 16: Gegenprobe — nicht abgesagter Termin bekommt ihn', async () => {
+      const eventId = await createAnmeldbarenTermin('false');
+
+      await BackgroundService.sendRegistrationOpenPushes(db);
+
+      expect(await wurdeBenachrichtigt(eventId)).toBe(true);
+    });
   });
 
   describe('checkPendingEvents (Admin-Erinnerung an unverbuchte Termine)', () => {

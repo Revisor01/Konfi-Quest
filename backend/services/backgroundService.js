@@ -1,6 +1,7 @@
 const PushService = require('./pushService');
 const cron = require('node-cron');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
 const { formatUhrzeit, heuteBerlin } = require('../utils/zeitformat');
@@ -527,11 +528,20 @@ class BackgroundService {
       // false->true setzt, ist allein für den Push zustaendig.
       // Anmeldbar = Fenster offen, nicht abgesagt, kein reines Teamer-Event,
       // kein Pflicht-Event (eigener Erstellungs-Push).
+      //
+      // Befund 15.09.2026: Hier stand `cancelled = false`, waehrend die beiden
+      // Nachbarzeilen teamer_only und mandatory ausdruecklich gegen NULL
+      // absichern — und waehrend die Erinnerungs-Queries `IS NOT TRUE` nutzen.
+      // events.cancelled ist nachgemessen nullable (Prod, 15.09.2026: 165
+      // Termine, davon 0 mit NULL — der Fehler traf also noch niemanden).
+      // Eine einzige Zeile mit cancelled = NULL waere aber still aus dem
+      // "Anmeldung moeglich"-Push gefallen, ohne Spur im Log. `IS NOT TRUE`
+      // behandelt NULL wie "nicht abgesagt", genau wie an allen anderen Stellen.
       const { rows: events } = await db.query(`
         UPDATE events
         SET registration_open_notified = true
         WHERE registration_open_notified = false
-          AND cancelled = false
+          AND cancelled IS NOT TRUE
           AND (teamer_only IS NULL OR teamer_only = false)
           AND (mandatory IS NULL OR mandatory = false)
           AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
@@ -631,6 +641,21 @@ class BackgroundService {
    * stehen — ohne den Filter kam nach "Leider abgesagt" am Vortag trotzdem
    * "Morgen: Event!". `IS NOT TRUE` statt `= false`, damit Altbestand mit
    * cancelled = NULL weiterhin erinnert wird und nicht still ausfaellt.
+   *
+   * Befund 15.09.2026: Dasselbe galt fuer die EINZELNE Abmeldung. Traegt die
+   * Leitung eine Abmeldung ein, setzt das eb.attendance_status ('excused'),
+   * die Buchung bleibt aber 'confirmed' — die abgemeldete Konfi bekam trotzdem
+   * "Morgen: Event!" und "Gleich: Event!". Beide Queries filtern deshalb jetzt
+   * `eb.attendance_status IS NULL`, genau wie checkPendingEvents es vormacht:
+   * Wer schon verbucht ist (present/absent/excused), braucht keine Erinnerung.
+   *
+   * Der Filter haengt bewusst NICHT an eb.status: sollte das Abmelden spaeter
+   * zusaetzlich status='excused' setzen, greift `attendance_status IS NULL`
+   * unveraendert. `eb.status = 'confirmed'` bleibt als Positivliste stehen —
+   * ein kuenftiges 'excused' faellt dort ohnehin heraus, das ist dieselbe
+   * Entscheidung, nur doppelt getroffen. Eine Aufweichung zu
+   * `status <> 'cancelled'` waere falsch: Warteliste und Absage duerfen keine
+   * Erinnerung bekommen.
    */
   static async sendEventReminders(db) {
     try {
@@ -646,6 +671,7 @@ class BackgroundService {
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
+          AND eb.attendance_status IS NULL
           AND e.cancelled IS NOT TRUE
           AND e.event_date::date = $1::date
           AND NOT EXISTS (
@@ -696,6 +722,7 @@ class BackgroundService {
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
+          AND eb.attendance_status IS NULL
           AND e.cancelled IS NOT TRUE
           AND e.event_date BETWEEN $1 AND $2
           AND NOT EXISTS (
@@ -1407,9 +1434,14 @@ class BackgroundService {
           }
           try {
             await client.query('BEGIN');
-            await deleteKonfiCascade(client, konfi.id, jg.organization_id);
+            // Mit dem Konto verschwinden die Buchungen — auf die frei
+            // gewordenen Plaetze rueckt nach (Luecke geschlossen 15.09.2026).
+            const nachgerueckt = await deleteKonfiCascade(client, konfi.id, jg.organization_id);
             await client.query('COMMIT');
             totalHard++;
+            // Benachrichtigung nach dem COMMIT; Fehler werden dort je Person
+            // geschluckt und duerfen den Lauf nicht abbrechen.
+            await meldeNachrueckern(db, jg.organization_id, nachgerueckt);
           } catch (delErr) {
             try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
             console.error(`Auto-Deletion: Hard-Delete fuer Konfi ${konfi.id} (Jahrgang ${jg.id}) fehlgeschlagen:`, delErr.message);
