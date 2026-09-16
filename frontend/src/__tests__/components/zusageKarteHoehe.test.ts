@@ -52,7 +52,7 @@ describe('Die Zusage-Knoepfe der Leitung bleiben auf Nachbar-Hoehe', () => {
   // Der Abschnitt zwischen "Bist du dabei?" und dem Ende der Karte.
   const abschnitt = adminDetail.slice(
     adminDetail.indexOf('Bist du dabei?'),
-    adminDetail.indexOf('Bin nicht dabei') + 200
+    adminDetail.indexOf('{absageBeschriftung(eigeneTeilnahme?.status)}') + 200
   );
 
   it('setzt kein app-action-button (das waere 48px statt 40px)', () => {
@@ -61,9 +61,14 @@ describe('Die Zusage-Knoepfe der Leitung bleiben auf Nachbar-Hoehe', () => {
     expect(abschnitt).not.toContain('className="app-action-button"');
   });
 
-  it('beide Knoepfe stehen weiterhin in der Reihe', () => {
-    expect(abschnitt).toContain('Bin dabei');
-    expect(abschnitt).toContain('Bin nicht dabei');
+  it('beide Knoepfe stehen weiterhin in derselben Reihe', () => {
+    // Seit dem 16.09.2026 stehen sie im Wechsel (Simons Regel "erste abfrage
+    // beide danach im wechsel") und holen ihre Beschriftung aus
+    // utils/zusageKnoepfe.ts -- fest verdrahtete Texte gibt es hier nicht
+    // mehr. Die Reihe selbst bleibt: eine Zeile, zwei gleich breite Knoepfe.
+    expect(abschnitt).toContain('app-button-row app-button-row--in-card');
+    expect(abschnitt).toContain('{zusageBeschriftung(eigeneTeilnahme?.status)}');
+    expect(abschnitt).toContain('{absageBeschriftung(eigeneTeilnahme?.status)}');
   });
 });
 

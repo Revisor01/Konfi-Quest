@@ -33,6 +33,7 @@ import {
   ICON_ORT_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_QRCODE,
+  ICON_RUECKGAENGIG,
   ICON_SCHUTZ_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
   ICON_UHRZEIT_GEFUELLT,
@@ -689,33 +690,62 @@ interface EventActionsSectionProps {
   isCancelled: boolean;
   isOnline: boolean;
   handleCancelEvent: () => void;
+  // Fehlt der Rueckruf, steht am abgesagten Termin gar kein Knopf -- so
+  // verhaelt sich die Leitungsliste beim Wisch auch.
+  handleAbsageZuruecknehmen?: () => void;
 }
 
-// Chat-Zugriff läuft über den Button im Header (EventDetailView), hier nur noch Absage
+// Chat-Zugriff läuft über den Button im Header (EventDetailView), hier nur
+// noch der eine Knopf ganz unten. WELCHER Knopf, haengt am Zustand des
+// Termins (Simons Wunsch 16.09.2026: "sodass wir da eine Symmetrie haben"):
+// am aktiven "Event absagen", am abgesagten stattdessen die Ruecknahme.
+// Beide sitzen an derselben Stelle, in derselben Karte, in derselben Groesse
+// -- nur die Farbe dreht von danger auf success, wie schon beim Wisch in der
+// Liste (app-icon-circle--success, EventsView).
+//
+// NICHT die Absage-Karte (AbsageBlock): die bleibt reine Auskunft. Simons
+// Entscheidung vom selben Tag -- "grund und ruecknahme machen wir nur per
+// slide auf der liste nicht im termin unter absage". Hier geht es um den
+// Knopf am Seitenende, einen anderen Ort.
 export const EventActionsSection = React.memo<EventActionsSectionProps>(({
   eventData,
   isCancelled,
   isOnline,
-  handleCancelEvent
+  handleCancelEvent,
+  handleAbsageZuruecknehmen
 }) => {
-  if (!eventData || isCancelled) return null;
+  if (!eventData) return null;
+  if (isCancelled && !handleAbsageZuruecknehmen) return null;
   return (
     <>
-      {/* Event absagen */}
+      {/* Event absagen bzw. Absage zurücknehmen */}
       <IonList className="app-section-inset" inset={true}>
         <IonCard className="app-card">
           <IonCardContent className="app-card-content">
             <div className="app-event-detail__add-button-wrapper">
-              <IonButton
-                expand="block"
-                fill="outline"
-                color="danger"
-                disabled={!isOnline}
-                onClick={handleCancelEvent}
-              >
-                <IonIcon icon={ICON_GESPERRT} className="app-event-detail__icon-gap" />
-                {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : 'Event absagen'}
-              </IonButton>
+              {isCancelled ? (
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  color="success"
+                  disabled={!isOnline}
+                  onClick={handleAbsageZuruecknehmen}
+                >
+                  <IonIcon icon={ICON_RUECKGAENGIG} className="app-event-detail__icon-gap" />
+                  {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : 'Absage zurücknehmen'}
+                </IonButton>
+              ) : (
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  color="danger"
+                  disabled={!isOnline}
+                  onClick={handleCancelEvent}
+                >
+                  <IonIcon icon={ICON_GESPERRT} className="app-event-detail__icon-gap" />
+                  {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : 'Event absagen'}
+                </IonButton>
+              )}
             </div>
           </IonCardContent>
         </IonCard>

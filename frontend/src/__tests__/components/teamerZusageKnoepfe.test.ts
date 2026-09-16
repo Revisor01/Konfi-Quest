@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { zusageBeschriftung, absageBeschriftung } from '../../utils/zusageKnoepfe';
 
 // Simons Regel vom 05.09.2026, woertlich:
 //
@@ -69,8 +70,17 @@ describe('Teamer: Zusage- und Absage-Knoepfe', () => {
   });
 
   it('beschriften den Gegenknopf als "Doch dabei" bzw. "Nicht mehr dabei"', () => {
-    expect(komponente).toContain("abgesagt ? 'Doch dabei'");
-    expect(komponente).toContain("zugesagt ? 'Nicht mehr dabei' : 'Nicht dabei'");
+    // Die Texte stehen seit dem 16.09.2026 in utils/zusageKnoepfe.ts, weil die
+    // Leitungssicht dieselben braucht. Hier wird geprueft, dass die Seite sie
+    // von dort holt UND dass dabei dieselben Texte herauskommen wie vorher --
+    // die Zeichenketten selbst pruefen adminEigeneZusage.test.ts am Helfer.
+    expect(komponente).toContain("zusageBeschriftung(abgesagt ? 'opted_out' : null, zusageText)");
+    expect(komponente).toContain("absageBeschriftung(zugesagt ? 'confirmed' : null)");
+    expect(zusageBeschriftung('opted_out')).toBe('Doch dabei');
+    expect(zusageBeschriftung(null)).toBe('Dabei');
+    expect(zusageBeschriftung(null, 'Warteliste (1/3)')).toBe('Warteliste (1/3)');
+    expect(absageBeschriftung('confirmed')).toBe('Nicht mehr dabei');
+    expect(absageBeschriftung(null)).toBe('Nicht dabei');
   });
 
   it('faerben Zusage gruen und Absage rot', () => {

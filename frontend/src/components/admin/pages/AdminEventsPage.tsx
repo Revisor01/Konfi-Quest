@@ -1,4 +1,5 @@
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
@@ -520,39 +521,20 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Simon: "Wir drücken es zurück, alle kriegen einen Push: Findet doch statt.
   // Dann sind alle einfach angemeldet und gut."
   //
-  // DIE RUECKFRAGE NENNT DIE ZAHL: Das Zuruecknehmen verschickt Push-Meldungen
-  // -- und meldet Leute wieder an, ohne sie zu fragen. Wer das ausloest, soll
-  // vorher wissen, wie viele das sind. Die Zahl kommt vom Server
-  // (durch_absage_abgemeldet_count) und meint genau die, die zurueckkommen:
-  // Wer sich vorher selbst abgemeldet hat oder von der Leitung abgemeldet
-  // wurde, bleibt abgemeldet und bekommt auch keinen Push.
+  // Rueckfrage und Aufruf stehen in utils/absageZuruecknehmen.ts, weil es
+  // zwei Wege dorthin gibt: den Wisch hier in der Liste und den Knopf ganz
+  // unten in der Detailansicht. Zwei Kopien derselben Rueckfrage waeren zwei
+  // Stellen, an denen sie auseinanderlaufen koennen.
   const handleAbsageZuruecknehmen = (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    const anzahl = event.durch_absage_abgemeldet_count ?? 0;
-    const wenText = anzahl === 1
-      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
-      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
-    presentAlert({
-      header: 'Absage zurücknehmen?',
-      message: anzahl > 0
-        ? `"${event.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
-        : `"${event.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Zurücknehmen',
-          handler: async () => {
-            try {
-              await api.put(`/events/${event.id}/reaktivieren`);
-              setSuccess(`"${event.name}" findet wieder statt`);
-              await refreshEvents();
-              await refreshCancelled();
-            } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
-            }
-          }
-        }
-      ]
+    absageZuruecknehmenFragen(event, {
+      presentAlert,
+      setSuccess,
+      setError,
+      onErfolg: async () => {
+        await refreshEvents();
+        await refreshCancelled();
+      }
     });
   };
 

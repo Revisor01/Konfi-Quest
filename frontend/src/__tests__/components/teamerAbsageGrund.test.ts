@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { absageBrauchtGrund } from '../../utils/zusageKnoepfe';
 
 // Teamer-Absage mit Grund (Anforderung 01.09.2026): Zu- und Absagen lassen
 // sich jederzeit aendern, ein Grund ist freiwillig — AUSSER die Absage nimmt
@@ -26,9 +27,16 @@ describe('Teamer-Absage: Grund-Abfrage in der Oberflaeche', () => {
   it('eine Absage nach Zusage gilt ab confirmed UND waitlist (und Alt-Status pending)', () => {
     // Die Aussage "Ich bin dabei" zaehlt, nicht der zugeteilte Platz —
     // dieselbe Regel wie im Backend (setzeTeamerZusage).
-    expect(seite).toContain("event.booking_status === 'confirmed'");
-    const brauchtGrund = /absageBrauchtGrund[\s\S]{0,300}'waitlist'[\s\S]{0,120}'pending'/.test(seite);
-    expect(brauchtGrund).toBe(true);
+    //
+    // Die Regel steht seit dem 16.09.2026 in utils/zusageKnoepfe.ts, weil die
+    // Leitungssicht dieselbe braucht. Geprueft wird beides: dass die Seite sie
+    // von dort holt, und dass sie dieselben drei Status abdeckt wie vorher.
+    expect(seite).toContain('absageBrauchtGrund(selectedEvent.booking_status)');
+    expect(absageBrauchtGrund('confirmed')).toBe(true);
+    expect(absageBrauchtGrund('waitlist')).toBe(true);
+    expect(absageBrauchtGrund('pending')).toBe(true);
+    expect(absageBrauchtGrund('opted_out')).toBe(false);
+    expect(absageBrauchtGrund(null)).toBe(false);
   });
 
   it('jede Absage oeffnet den Dialog statt direkt zu senden', () => {

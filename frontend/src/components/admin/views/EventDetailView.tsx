@@ -32,6 +32,7 @@ import type { ActionSheetButton } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { offlineCache } from '../../../services/offlineCache';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
+import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import api from '../../../services/api';
 import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
@@ -40,6 +41,7 @@ import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../../shared/QRDisplayModal';
 import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
+import TeamerAbsageModal from '../../teamer/modals/TeamerAbsageModal';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import {
   EventInfoCard, DescriptionSection, SeriesEventsSection,
@@ -157,8 +159,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       setZusageLaeuft(false);
     }
   };
+
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+
+  // ABSAGE-DIALOG DER EIGENEN TEILNAHME (16.09.2026, Simon woertlich:
+  // "bei admins haben wir die buttons nebeneinander ... und dann ein action
+  // modal. da muss die logik einfach identisch sein wie bei teamerinnen")
+  //
+  // HIER STAND BIS DAHIN window.prompt() -- das einzige im ganzen Frontend.
+  // In der nativen App ist das ein System-Dialog ausserhalb des App-Designs,
+  // ohne mitwachsendes Feld und ohne den Hinweis, warum ein Grund noetig ist.
+  // Jetzt derselbe Dialog wie beim Team: TeamerAbsageModal, mit derselben
+  // Grund-Regel aus utils/zusageKnoepfe.ts.
+  // Namen mit "Eigene": presentAbsageModal weiter unten sagt den TERMIN ab
+  // (TerminAbsagenModal, Leitungssache). Hier geht es nur um die eigene
+  // Teilnahme -- zwei verschiedene Dinge am selben Termin.
+  const [presentEigeneAbsageModal, dismissEigeneAbsageModal] = useIonModal(TeamerAbsageModal, {
+    eventName: eventData?.name || '',
+    grundPflicht: absageBrauchtGrund(eigeneTeilnahme?.status),
+    onAbsage: (grund: string) => { setzeEigeneZusage(false, grund); },
+    dismiss: (data?: string, role?: string) => dismissEigeneAbsageModal(data, role)
+  });
+
+  const oeffneEigeneAbsage = () => {
+    presentEigeneAbsageModal({ presentingElement: presentingElement || undefined });
+  };
 
   // Material Detail Modal (wie Teamer)
   const materialIdRef = useRef<number | null>(null);
@@ -318,10 +344,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     dismiss: () => dismissAbsageModal()
   });
 
-  // Absagegrund und Ruecknahme sitzen seit dem 16.09.2026 NICHT mehr hier:
-  // Beides laeuft ueber den Wisch an der Zeile in der Terminliste
-  // (AdminEventsPage). Die Detailansicht zeigt den Stand, sie aendert ihn
-  // nicht -- so gibt es fuer jede der beiden Aktionen genau einen Ort.
+  // Der ABSAGEGRUND wird nur ueber den Wisch an der Zeile in der Terminliste
+  // (AdminEventsPage) bearbeitet -- die Absage-Karte hier bleibt reine
+  // Auskunft (Simon, 16.09.2026).
+  //
+  // Die RUECKNAHME dagegen steht seit dem 16.09.2026 auch hier: als Knopf
+  // ganz unten, dort wo am aktiven Termin "Event absagen" steht. Zwei Wege,
+  // genau wie beim Absagen -- Wisch in der Liste und Knopf im Termin. Die
+  // Rueckfrage ist dieselbe (utils/absageZuruecknehmen.ts), nicht eine
+  // zweite.
 
   // QR Display Modal
   const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
@@ -916,6 +947,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
+  // ABSAGE ZURUECKNEHMEN, der Knopf ganz unten (Simon, 16.09.2026):
+  // "Könnten wir diesen Button genau so bauen, ganz unten bei einem Event
+  // [...] sodass wir da eine Symmetrie haben?" Am aktiven Termin steht dort
+  // "Event absagen", am abgesagten stattdessen dieser hier.
+  //
+  // DIESELBE RUECKFRAGE WIE DER WISCH IN DER LISTE: Sie steht in
+  // utils/absageZuruecknehmen.ts, damit es sie nur einmal gibt. Heute wurde
+  // hier schon einmal eine zweite Rueckfrage entfernt -- eine Kopie waere der
+  // Rueckweg dorthin.
+  //
+  // DIE ZAHL STIMMT AUCH HIER: durch_absage_abgemeldet_count liefert GET
+  // /events/:id mit (lesen.js), nicht nur die beiden Listen.
+  const handleAbsageZuruecknehmen = () => {
+    if (offlineBlockiert(isOnline, setError) || !eventData) return;
+    absageZuruecknehmenFragen(eventData, {
+      presentAlert,
+      setSuccess,
+      setError,
+      onErfolg: () => loadEventData()
+    });
+  };
+
   const handleCreateEventChat = async () => {
     if (offlineBlockiert(isOnline, setError)) return;
     try {
@@ -1340,42 +1393,49 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
-                {/* Zwei gleich breite Knoepfe nebeneinander (Simon, 03.09.2026).
+                {/* GENAU WIE BEIM TEAM (Simon, 16.09.2026): "erste abfrage
+                    beide danach im wechsel". Solange nichts entschieden ist,
+                    stehen beide Knoepfe da; danach nur noch der GEGENTEILIGE
+                    Weg. Welcher das ist und wie er heisst, entscheidet
+                    utils/zusageKnoepfe.ts -- dieselbe Stelle wie in
+                    teamer/pages/TeamerEventsPage.tsx.
+
+                    VORHER standen hier dauerhaft beide Knoepfe, der eigene
+                    Stand steckte in fill="solid" und die Absage-Beschriftung
+                    war ein Zustand ("Abgesagt") statt ein Weg. Simons Regel
+                    fuer das Team lautet ausdruecklich "immer immer immer nur
+                    line buttons" -- deshalb hier jetzt auch nur outline.
+
                     --in-card nimmt Ionics eigenen Button-Rand zurueck, sonst
                     polstert die Karte doppelt und die Reihe steht hoeher als
                     "Event absagen" weiter unten (Simons Hinweis 03.09.2026).
                     Bewusst OHNE app-action-button (48px): die Nachbarknoepfe
                     dieser Seite sind 40px hoch. */}
                 <div className="app-button-row app-button-row--in-card">
-                  <IonButton
-                    expand="block"
-                    fill={eigeneTeilnahme?.status === 'confirmed' ? 'solid' : 'outline'}
-                    color="success"
-                    disabled={zusageLaeuft || !isOnline}
-                    onClick={() => setzeEigeneZusage(true)}
-                  >
-                    {eigeneTeilnahme?.status === 'confirmed' ? 'Du bist dabei' : 'Bin dabei'}
-                  </IonButton>
-                  <IonButton
-                    expand="block"
-                    fill={eigeneTeilnahme?.status === 'opted_out' ? 'solid' : 'outline'}
-                    color="danger"
-                    disabled={zusageLaeuft || !isOnline}
-                    onClick={() => {
-                      // Nach einer Zusage verlangt das Backend einen
-                      // Grund -- danach fragen, statt in den Fehler zu
-                      // laufen.
-                      if (eigeneTeilnahme?.status === 'confirmed') {
-                        const grund = window.prompt('Warum kannst du nicht? (Die Leitung muss umplanen)');
-                        if (grund === null) return;
-                        setzeEigeneZusage(false, grund);
-                      } else {
-                        setzeEigeneZusage(false);
-                      }
-                    }}
-                  >
-                    {eigeneTeilnahme?.status === 'opted_out' ? 'Abgesagt' : 'Bin nicht dabei'}
-                  </IonButton>
+                  {welcheKnoepfe(eigeneTeilnahme?.status) !== 'absage' && (
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      color="success"
+                      disabled={zusageLaeuft || !isOnline}
+                      onClick={() => setzeEigeneZusage(true)}
+                    >
+                      <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                      {zusageBeschriftung(eigeneTeilnahme?.status)}
+                    </IonButton>
+                  )}
+                  {welcheKnoepfe(eigeneTeilnahme?.status) !== 'zusage' && (
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      color="danger"
+                      disabled={zusageLaeuft || !isOnline}
+                      onClick={oeffneEigeneAbsage}
+                    >
+                      <IonIcon icon={ICON_ABSAGE} slot="start" />
+                      {absageBeschriftung(eigeneTeilnahme?.status)}
+                    </IonButton>
+                  )}
                 </div>
                 {!isOnline && (
                   <p className="app-text-sub" style={{ marginTop: 'var(--app-abstand-mittel)', marginBottom: 0 }}>
@@ -1438,6 +1498,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           // (vorher stand hier ausschliesslich "Konfi hinzufügen", und die
           // Teamer-Sektion darunter wurde durch den Return nie erreicht).
           if (displayParticipants.length === 0 && teamerParticipants.length === 0) {
+            // An einem abgesagten Termin gibt es nichts einzutragen — und ohne
+            // Angemeldete auch nichts anzuzeigen. Dann bleibt der Block leer,
+            // statt drei tote Knoepfe zu zeigen.
+            if (!darfEintragen) return null;
             const teamerErlaubt = !!(eventData?.teamer_needed || eventData?.teamer_only);
             return (
               <IonList className="app-section-inset" inset={true}>
