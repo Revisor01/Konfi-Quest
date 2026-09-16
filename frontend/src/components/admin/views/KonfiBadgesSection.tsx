@@ -1,17 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FARBEN } from '../../../theme/colors';
-import {
-  IonCard,
-  IonCardContent,
-  IonIcon,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  useIonPopover
-} from '@ionic/react';
+import { useIonPopover } from '@ionic/react';
 import { ICON_POKAL, ICON_POKAL_GEFUELLT } from '../../shared/icons';
 import api from '../../../services/api';
-import { EmptyState } from '../../shared';
+import { ListSection } from '../../shared';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import KachelRaster from '../../shared/KachelRaster';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
@@ -104,42 +96,32 @@ const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId, role =
   if (loading) return null;
 
   return (
-    <IonList className="app-section-inset" inset={true}>
-      <IonListHeader>
-        <div className="app-section-icon app-section-icon--badges">
-          <IonIcon icon={ICON_POKAL_GEFUELLT} />
-        </div>
-        <IonLabel>Badges ({earnedBadges.length})</IonLabel>
-      </IonListHeader>
-      <IonCard className="app-card">
-        <IonCardContent style={{ padding: earnedBadges.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
-          {earnedBadges.length === 0 ? (
-            <EmptyState
-              icon={ICON_POKAL}
-              title="Keine Badges"
-              message="Noch keine Badges erreicht"
-              iconColor="var(--app-color-badges)"
-            />
-          ) : (
-            <KachelRaster
-              eintraege={earnedBadges.map((badge) => ({
-                schluessel: badge.id,
-                icon: getIconFromString(badge.icon),
-                name: badge.name || '',
-                farbe: getBadgeColor(badge),
-                // Diese Ansicht laedt ausschliesslich ERREICHTE Abzeichen,
-                // der Haken ist deshalb immer richtig.
-                zeichen: true
-              }))}
-              onKachelClick={(schluessel, e) => {
-                const badge = earnedBadges.find((b) => b.id === schluessel);
-                if (badge) handleBadgeClick(badge, e);
-              }}
-            />
-          )}
-        </IonCardContent>
-      </IonCard>
-    </IonList>
+    <ListSection
+      icon={ICON_POKAL_GEFUELLT}
+      title="Badges"
+      count={earnedBadges.length}
+      iconColorClass="badges"
+      emptyIcon={ICON_POKAL}
+      emptyTitle="Keine Badges"
+      emptyMessage="Noch keine Badges erreicht"
+      emptyIconColor="var(--app-color-badges)"
+    >
+      <KachelRaster
+        eintraege={earnedBadges.map((badge) => ({
+          schluessel: badge.id,
+          icon: getIconFromString(badge.icon),
+          name: badge.name || '',
+          farbe: getBadgeColor(badge),
+          // Diese Ansicht laedt ausschliesslich ERREICHTE Abzeichen,
+          // der Haken ist deshalb immer richtig.
+          zeichen: true
+        }))}
+        onKachelClick={(schluessel, e) => {
+          const badge = earnedBadges.find((b) => b.id === schluessel);
+          if (badge) handleBadgeClick(badge, e);
+        }}
+      />
+    </ListSection>
   );
 };
 

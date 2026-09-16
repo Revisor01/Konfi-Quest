@@ -1213,6 +1213,17 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                   WHERE s.challenge_id = c.id AND s.user_id = $2
                     AND s.moderation_status = 'approved'
                 ) AS has_badge,
+                -- Wann der eigene Stempel verdient wurde. ADDITIV (16.09.2026)
+                -- und wortgleich zur Konfi-Liste oben: Ohne dieses Feld konnte
+                -- das Stempel-Popover in der Leitungs- und Teamer-Ansicht kein
+                -- Datum zeigen -- dieselbe Kachel nannte bei Konfis den Tag und
+                -- hier nichts. Ausgelieferte Apps ignorieren das neue Feld.
+                (
+                  SELECT MIN(COALESCE(s3.approved_at, s3.created_at))
+                  FROM challenge_submissions s3
+                  WHERE s3.challenge_id = c.id AND s3.user_id = $2
+                    AND s3.moderation_status = 'approved'
+                ) AS earned_at,
                 (SELECT COUNT(*) FROM challenge_submissions s
                   WHERE s.challenge_id = c.id AND s.user_id = $2) AS own_submission_count,
                 COALESCE(

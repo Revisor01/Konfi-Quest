@@ -82,7 +82,42 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
         challenge_id: c.id,
         badge_icon: c.badge_icon,
         badge_name: c.badge_name,
-        title: c.title
+        title: c.title,
+        // earned_at und description gehoeren zum Stempel, nicht nur zur
+        // Kachel: Das Popover zeigt daraus "Erhalten am ..." und den Text.
+        // Ohne sie stand dort eine leere Karte (16.09.2026).
+        earned_at: c.earned_at ?? null,
+        description: c.description ?? null
+      })),
+    [challenges]
+  );
+
+  // Die NOCH NICHT erhaltenen Stempel — dieselbe Rechnung wie in der
+  // Konfi-Liste (backend/routes/challenges.js, GET /challenges/konfi:
+  // `if (has_badge) marks.push(...) else if (badge_name) offene.push(...)`).
+  //
+  // WARUM HIER UND NICHT IM SERVER (16.09.2026, Simons Befund: "aber die
+  // nicht erreichten sind nicht da, und bei klick gibt es keine infos,
+  // obwohl wir das ja bei konfis und admins laengst haben, das darf doch
+  // auch an nur einer stelle programmiert werden"): GET /challenges/admin
+  // liefert bereits JEDE Challenge samt badge_name und status — die Angaben
+  // sind da, sie wurden nur nie zu offenen Stempeln zusammengefasst. Ein
+  // zweiter Endpunkt waere eine zweite Quelle fuer dieselbe Liste.
+  //
+  // Angezeigt wird das Ergebnis von ChallengeStempelSektion — DERSELBEN
+  // Komponente, aus der auch Konfi-Ansicht (konfi/views/ChallengesView.tsx)
+  // und Leitungs-Detailansicht (admin/views/KonfiDetailView.tsx) lesen.
+  const offeneStempel = useMemo(
+    () => (Array.isArray(challenges) ? challenges : [])
+      .filter((c) => !c.has_badge && !!c.badge_name)
+      .map((c) => ({
+        challenge_id: c.id,
+        badge_icon: c.badge_icon,
+        badge_name: c.badge_name,
+        title: c.title,
+        description: c.description ?? null,
+        status: c.status,
+        ends_at: c.ends_at ?? null
       })),
     [challenges]
   );
@@ -215,6 +250,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
             challenges={challenges || []}
             ohneJahrgang={ohneJahrgang}
             marks={marks}
+            offeneStempel={offeneStempel}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}

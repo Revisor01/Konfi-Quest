@@ -30,9 +30,8 @@ import {
   ICON_VERBORGEN,
 } from '../../shared/icons';
 import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
-import KachelRaster from '../../shared/KachelRaster';
-import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
-import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
+import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
+import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { anzahlBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
 
@@ -58,6 +57,13 @@ interface ChallengesManageViewProps {
    * Teilnahme — Leitung und Team machen selbst mit.
    */
   marks?: ChallengeMark[];
+  /**
+   * Noch NICHT erhaltene Stempel — grau, aber da (16.09.2026). Sie fehlten
+   * hier ganz, waehrend die Konfi-Ansicht sie seit dem 14.09.2026 zeigt:
+   * "aber die nicht erreichten sind nicht da" (Simon). Optional, weil
+   * aeltere Server die Angaben nicht liefern.
+   */
+  offeneStempel?: OffenerStempel[];
   /**
    * true, wenn der Server die leere Liste mit dem Header
    * X-Kein-Jahrgang-Zugewiesen begruendet hat (Admin/Teamer ohne
@@ -177,6 +183,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   presentingElement,
   headerSlot,
   marks: marksRaw = [],
+  offeneStempel: offeneStempelRaw = [],
   ohneJahrgang = false
 }) => {
   // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
@@ -195,6 +202,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   const darfLoeschen = user?.type === 'admin';
 
   const marks: ChallengeMark[] = Array.isArray(marksRaw) ? marksRaw : [];
+  const offeneStempel: OffenerStempel[] = Array.isArray(offeneStempelRaw) ? offeneStempelRaw : [];
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const challenges: AdminChallenge[] = Array.isArray(challengesRaw) ? challengesRaw : [];
 
@@ -529,7 +537,29 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           IMMER anzeigen, auch leer: war der Abschnitt bei 0 Stempeln
           ausgeblendet, sah man nie, dass es ihn ueberhaupt gibt — und damit
           auch nicht, dass Mitmachen vorgesehen ist (User-Hinweis 11.08.). */}
-      <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
+      {/* EINE Komponente fuer alle drei Rollen (16.09.2026).
+          Simon woertlich: "obwohl wir das ja bei konfis und admins laengst
+          haben, das darf doch auch an nur einer stelle programmiert werden".
+
+          HIER STAND BIS DAHIN ein von Hand gebautes KachelRaster. Es kannte
+          nur die ERHALTENEN Stempel und hatte keinen onKachelClick -- also
+          weder graue Kacheln fuer das, was noch zu holen ist, noch ein
+          Popover beim Antippen. Die Konfi-Ansicht
+          (konfi/views/ChallengesView.tsx) und die Leitungs-Detailansicht
+          (admin/views/KonfiDetailView.tsx) nutzen seit dem 14.09.2026 beide
+          ChallengeStempelSektion und hatten beides laengst; nur diese Liste
+          -- und damit Leitung UND Team, die beide ueber shared/ChallengesPage
+          hierher kommen -- war aussen vor.
+
+          Der Leerzustand steckt jetzt in der Komponente selbst: Sie gibt
+          null zurueck, wenn es weder erhaltene noch offene Stempel gibt.
+          Sind offene da, zeigt sie sie grau -- was hier vorher der
+          EmptyState behauptete ("Noch keine Stempel"), obwohl es sehr wohl
+          welche zu holen gab. */}
+      {(marks.length > 0 || offeneStempel.length > 0) ? (
+        <ChallengeStempelSektion marks={marks} offeneStempel={offeneStempel} />
+      ) : (
+        <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--challenges">
               <IonIcon icon={ICON_ABZEICHEN} />
@@ -537,33 +567,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
             <IonLabel>Deine Stempel</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: marks.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-basis) var(--app-abstand-mittel)' }}>
-              {marks.length === 0 ? (
-                <EmptyState
-                  icon={ICON_ABZEICHEN}
-                  title="Noch keine Stempel"
-                  message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
-                  iconColor="var(--app-color-challenges)"
-                />
-              ) : (
-              /* Dasselbe Kachelraster wie im Profil
-                 (Simon, 14.09.2026: "Konfi und Teamer und Admin unter
-                 Challenges, da sollten wir dann auch das gleiche Grid
-                 nutzen"). Vorher lief die Reihe hier seitlich aus dem Bild
-                 und sah dadurch anders aus als dieselben Stempel im Profil. */
-              <KachelRaster
-                eintraege={marks.map((mark) => ({
-                  schluessel: mark.challenge_id,
-                  icon: getChallengeBadgeIcon(mark.badge_icon),
-                  name: mark.badge_name,
-                  titel: mark.title,
-                  farbe: 'var(--app-color-challenges)'
-                }))}
+            <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
+              <EmptyState
+                icon={ICON_ABZEICHEN}
+                title="Noch keine Stempel"
+                message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
+                iconColor="var(--app-color-challenges)"
               />
-              )}
             </IonCardContent>
           </IonCard>
-      </IonList>
+        </IonList>
+      )}
 
       {/* --- 3. Archiv — heisst in der Konfi-Sicht "Vorbei"; hier bleibt es
               "Archiv", weil die Leitung dort weiter bearbeitet und loescht. --- */}

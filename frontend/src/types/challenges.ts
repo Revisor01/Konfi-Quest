@@ -76,6 +76,12 @@ export interface AdminChallenge extends ChallengeBase {
    */
   has_badge?: boolean;
   own_submission_count?: number;
+  /**
+   * Wann der eigene Stempel verdient wurde — fuers Stempel-Popover, genau wie
+   * in der Konfi-Liste. Optional, weil aeltere Server das Feld nicht
+   * liefern; das Popover zeigt dann nur den Text (16.09.2026).
+   */
+  earned_at?: string | null;
 }
 
 /**
