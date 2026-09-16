@@ -1,8 +1,8 @@
 Die Startseite ist beim ersten Öffnen nicht mehr leer.
 
-Team: Ihr seht am Termin, wer kommt. Termine anlegen und absagen bleibt bei der Leitung.
+Team: Ihr seht am Termin, wer kommt. Termine anlegen und absagen macht die Leitung.
 
-Wer abgemeldet wurde, kann sich wieder anmelden. Ein falscher Anwesenheitseintrag lässt sich zurücknehmen.
+Wer abgemeldet wurde, kann sich wieder anmelden. Falsche Anwesenheitseinträge lassen sich zurücknehmen.
 
 Wer von der Leitung angemeldet wird, bekommt eine Mitteilung.
 
