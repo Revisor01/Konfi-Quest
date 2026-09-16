@@ -773,6 +773,16 @@ paths:
         'excused', registered_count ist 0 (richtig — niemand nimmt teil), und
         ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging.
         Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.
+        BEHOBEN 16.09.2026: registered_count, waitlist_count, teamer_count und
+        abgemeldet_count kamen an einem Termin OHNE jede Buchung als null statt
+        als 0. Die Zaehler stammen aus einer LATERAL-Unterabfrage auf
+        event_booking_stats; diese View entsteht mit GROUP BY ueber
+        event_bookings und hat fuer einen leeren Termin keine Zeile. Das
+        COALESCE stand INNERHALB der Unterabfrage und wurde deshalb nie
+        ausgewertet — es schuetzt vor einer NULL-Spalte, nicht vor einer
+        fehlenden Zeile. Jetzt steht es aussen, wie bei
+        GET /api/konfi/events/{id}/status. Alle vier Zaehler sind damit
+        durchgaengig integer und nie null.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1611,9 +1621,36 @@ paths:
         reaktiviert statt mit 409 abgewiesen — "Ich bin doch dabei" nach
         einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und
         absage_nach_zusage geleert), alle Kapazitaetsregeln gelten
-        unveraendert. Fuer Konfis bleibt der 409: Ein Pflicht-Opt-out wird
-        ausschliesslich ueber POST /api/konfi/events/{id}/opt-in
-        zurueckgenommen.
+        unveraendert.
+
+
+        ERWEITERT 16.09.2026 — DIE REAKTIVIERUNG GILT JETZT FUER BEIDE
+        ABMELDE-ARTEN UND BEIDE ROLLEN: Eine Buchung mit status opted_out
+        ODER excused wird reaktiviert statt mit 409 abgewiesen, auf dem
+        Konfi- wie auf dem Teamer-Pfad.
+
+
+        Die frueher hier dokumentierte Einschraenkung ("Fuer Konfis bleibt
+        der 409, ein Pflicht-Opt-out wird ausschliesslich ueber
+        POST /api/konfi/events/{id}/opt-in zurueckgenommen") war nicht
+        haltbar: Das UPDATE jener Route filtert fest auf status = 'opted_out'
+        und antwortet bei excused mit 400 "Keine Opt-out-Anmeldung gefunden" —
+        selbst an einem Pflichttermin. Wer von der Leitung abgemeldet worden
+        war (status excused, Migration 153 vom 15.09.2026), hatte damit gar
+        keinen Weg zurueck; der 409-Text "Du bist bereits fuer dieses Event
+        angemeldet" war zudem sachlich falsch. Der Kommentar, der die
+        Einschraenkung begruendete, stammte vom 01.09.2026 — zwei Wochen vor
+        Einfuehrung des Status.
+
+
+        KEINE SONDERREGEL: Nach der Reaktivierung laeuft die Buchung den
+        normalen Weg (Anmeldefenster, Konfirmations-Sperre, Kapazitaet,
+        Timeslot-Zwang, Warteliste). Eine abgemeldete Zeile belegt keinen
+        Platz. Beim Reaktivieren werden attendance_status, excuse_reason und
+        attendance_set_by/_at geleert — die neue Anmeldung ersetzt die
+        Abmeldung. UNVERAENDERT bleibt die Check-in-Sperre in
+        POST /api/events/qr-checkin (error_type excused): Der Weg zurueck
+        fuehrt ueber die Anmeldung, nicht ueber den QR-Code.
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC]
@@ -1684,6 +1721,17 @@ paths:
         Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm
         einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen.
         Die Antwortform ist unveraendert.
+
+
+        BEHOBEN 16.09.2026: Die Route schickte KEINEN Push. Wer von der
+        Leitung angemeldet wurde, erfuhr es nicht — es gab nur Live-Updates,
+        die eine offene Sitzung erreichen, aber kein Handy. Jetzt geht nach
+        der Antwort ein event_registered-Push an die eingetragene Person,
+        rollenrichtig ueber sendEventRegisteredToTeamer (Nicht-Konfis) bzw.
+        sendEventRegisteredToKonfi (Konfis) — derselbe Wortlaut wie bei der
+        Selbstanmeldung. Auch finalStatus='waitlist' meldet sich (mit dem
+        Wartelisten-Wortlaut). KEIN Push an die ausloesende Person, wenn die
+        Leitung sich selbst zuordnet. Die Antwortform ist unveraendert.
 
 
         ABGESAGTE TERMINE seit 16.09.2026 mit 400 "Dieser Termin ist

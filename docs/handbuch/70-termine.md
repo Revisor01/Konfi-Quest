@@ -464,6 +464,17 @@ wurdest von diesem Termin abgemeldet". Steht sie doch vor dir, trägst du sie
 über dasselbe Menü als **Anwesend** ein — damit zählt die Anmeldung wieder,
 und die Punkte gibt es auch.
 
+**Wieder anmelden kann sie sich aber selbst.** Wird das Kind rechtzeitig
+gesund, steht der Termin für sie wieder da wie jeder andere offene Termin, und
+sie meldet sich neu an. Dabei gilt, was für alle gilt: Ist der Anmeldeschluss
+vorbei, kommt sie nicht mehr hinein; ist der Termin voll, landet sie auf der
+Warteliste; bei Zeitfenstern wählt sie wieder eines aus. Der Abmeldegrund
+verschwindet in dem Moment aus der Teilnehmerliste — die neue Anmeldung ersetzt
+die Abmeldung.
+
+Am Termin selbst bleibt es beim Weg über dich: Der QR-Scanner ist gesperrt,
+damit niemand sich die Punkte zurückholt, die die Abmeldung genommen hat.
+
 ### Einen falschen Eintrag zurücknehmen
 
 Hast du jemanden versehentlich abgemeldet oder auf der falschen Zeile
@@ -918,10 +929,15 @@ eine Lücke.
 **Löschen** ist endgültig. Gelöscht werden der Termin selbst, alle Anmeldungen,
 alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie der komplette
 Termin-Chat mit allen Nachrichten, Umfragen und Dateien. Damit das nicht
-versehentlich passiert, fragt das System nach — einmal wegen der Anmeldungen
-(„Für dieses Event gibt es 12 Anmeldung(en). Beim Löschen werden alle
-benachrichtigt.") und einmal wegen des Chats („Der Event-Chat enthält 34
-Nachricht(en). Beim Löschen gehen sie verloren.").
+versehentlich passiert, fragt das System zweimal nach. Die erste Frage ist die
+gewöhnliche Sicherheitsfrage. Hängt am Termin noch etwas dran, kommt danach eine
+zweite und nennt genau, was verloren geht: die Zahl der Anmeldungen, die Zahl
+der Chat-Nachrichten samt Dateien und die bereits vergebenen Punkte, die den
+Konfis wieder abgezogen werden. Erst nach **Endgültig löschen** ist der Termin
+weg. Ist der Termin leer, entfällt die zweite Frage.
+
+Löschst du eine ganze Serie oder „diesen und alle folgenden", zählt die zweite
+Frage über alle betroffenen Termine zusammen.
 
 Benachrichtigt wird beim Löschen nur, wer es noch nicht weiß: Löschst du einen
 Termin, der **noch nicht abgesagt** war, bekommen alle Angemeldeten und alle
@@ -942,6 +958,10 @@ Speichern, du musst es nicht auslösen.
 
 Änderst du nur den Namen, die Beschreibung, die Punkte oder die Platzzahl,
 kommt kein Push. Bei vergangenen Terminen ebenfalls nicht.
+
+Eine Mitteilung geht außerdem raus, wenn du jemanden
+[von Hand einträgst](#teilnehmende-von-hand-hinzufuegen) und wenn jemand
+[von der Warteliste nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
 
 ## Einen Termin-Chat einrichten
 
@@ -978,6 +998,12 @@ Sonst gelten dieselben Regeln wie bei der Selbstanmeldung:
 - Ein Konfi lässt sich nicht in einen reinen Team-Termin eintragen
 - Bei Zeitfenster-Terminen musst du ein Fenster auswählen
 - Doppelte Anmeldungen werden abgewiesen
+
+**Wer eingetragen wird, bekommt einen Push** — Konfis, Teamer:innen und
+Leitung gleichermaßen, mit derselben Meldung wie bei der Selbstanmeldung. Ist
+kein Platz mehr frei oder trägst du jemanden bewusst auf die Warteliste ein,
+steht das in der Meldung. Trägst du dich selbst ein, bekommst du nichts aufs
+eigene Handy.
 
 ## Material an einem Termin finden
 

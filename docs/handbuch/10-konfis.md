@@ -67,7 +67,11 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 
 ### Events
 
-Alle Termine deiner Gemeinde. Tippe einen an, dann siehst du Datum, Ort, was du
+Alle Termine deiner Gemeinde, gefiltert über **Meine**, **Alle** und
+**Konfirmation**. Unter **Meine** stehen alle Termine, zu denen du dich
+gemeldet hast — angemeldet, auf der Warteliste, selbst abgemeldet oder von der
+Leitung abgemeldet. Auch abgesagte Termine bleiben dort stehen, solange du
+dafür angemeldet warst. Tippe einen an, dann siehst du Datum, Ort, was du
 mitbringen sollst und wie viele Plätze frei sind.
 
 - **Anmelden** — solange Plätze frei sind

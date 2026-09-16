@@ -176,6 +176,29 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Ein Termin mit Anmeldungen ließ sich **nicht löschen**: Die Rückfrage, ob die
+  Anmeldungen wirklich verloren gehen sollen, erschien nie. Der Dialog
+  verschwand, der Termin blieb stehen. Jetzt kommt die Rückfrage und nennt, was
+  verloren geht — bei einzelnen Terminen wie bei ganzen Serien.
+- Wer von der Leitung zu einem Termin angemeldet wurde, **erfuhr es nicht** —
+  weder Konfis noch Teamer:innen bekamen eine Mitteilung, die Anmeldung tauchte
+  irgendwann kommentarlos in der eigenen Liste auf. Jetzt kommt dieselbe
+  Mitteilung an wie bei der Selbstanmeldung; wer direkt auf die Warteliste
+  gesetzt wird, erfährt auch das.
+- Auf dem Anmelde-Knopf eines Termins, zu dem sich noch niemand angemeldet
+  hatte, stand „null" statt der Zahl der Angemeldeten. Dort steht jetzt „0".
+- Ein Termin, auf dessen **Warteliste** man steht, fehlte unter „Meine" — bei
+  Konfis wie im Team. Er steht dort jetzt wieder, zusammen mit den Terminen,
+  die man selbst abgesagt hat: Unter „Meine" stehen alle Termine, zu denen es
+  eine eigene Rückmeldung gibt, egal welche. Die Zähler über der Liste zählen
+  genauso.
+- Wer von der Leitung abgemeldet wurde, kam **nicht mehr auf den Termin
+  zurück**: Die Anmeldung wurde mit „Du bist bereits angemeldet" abgelehnt,
+  obwohl das Gegenteil der Fall war, und es gab auch sonst keinen Weg. Wird
+  das Kind rechtzeitig gesund, steht der Termin jetzt wieder da wie jeder
+  andere offene Termin — mit Anmeldeschluss, Warteliste und Zeitfenstern wie
+  gewohnt. Am Termin selbst bleibt der QR-Code gesperrt, damit niemand sich
+  die zurückgenommenen Punkte selbst wiederholt.
 - Im Fenster zum **Anlegen und Bearbeiten eines Termins wurden Texte und
   Knöpfe abgeschnitten**: Die Beschriftungen über den Datumsfeldern — „Event
   Datum & Uhrzeit", „Endzeit", „Anmeldeschluss" sowie Start- und Endzeit eines

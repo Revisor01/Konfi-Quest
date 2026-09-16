@@ -68,8 +68,10 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 
 ### Events
 
-Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Zu jedem Termin
-siehst du die Details und das hinterlegte
+Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Unter **Meine**
+stehen alle Termine, zu denen du dich gemeldet hast — zugesagt, auf der
+Warteliste oder selbst abgesagt. Die Zahlen über der Liste zählen genauso. Zu
+jedem Termin siehst du die Details und das hinterlegte
 [Material](70-termine.md#material-an-einem-termin-finden). Reine Konfi-Termine stehen nur
 zur Information da, ohne Anmeldung.
 
