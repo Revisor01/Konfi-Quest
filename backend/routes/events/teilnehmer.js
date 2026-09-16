@@ -6,7 +6,8 @@ const express = require('express');
 const { formatUhrzeit } = require('../../utils/zeitformat');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { promoteFromWaitlist, takeBackEventPoints } = require('../../utils/bookingUtils');
+const { rueckeNach, takeBackEventPoints } = require('../../utils/bookingUtils');
+const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
@@ -282,87 +283,33 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         // (Befund 24.08.2026).
         await removeFromEventChat(client, eventId, booking.user_id, req.user.organization_id);
 
-      // Auto-promote from waitlist if the deleted booking was confirmed.
-      // Konfi- und Teamer-Kontingent sind strikt getrennt: ein frei gewordener
-      // Konfi-Platz wird nur aus der Konfi-Warteliste nachbesetzt und umgekehrt.
-      // promoteFromWaitlist filtert die Rolle und schließt geloeschte User aus.
+      // Ein frei gewordener Platz wird nachbesetzt. Konfi- und Team-Kontingent
+      // sind strikt getrennt: ein frei gewordener Konfi-Platz wird nur aus der
+      // Konfi-Warteliste nachbesetzt und umgekehrt.
+      //
+      // SEIT 15.09.2026 UEBER rueckeNach: Hier standen drei handgeschriebene
+      // Kapazitaets-Abfragen -- und zwei davon filterten users.deleted_at
+      // NICHT, zaehlten also geloeschte Konten als belegte Plaetze und
+      // verhinderten damit das Nachruecken. Dieselbe Rechnung stand an vier
+      // weiteren Stellen als Kopie. rueckeNach holt die Kapazitaet selbst und
+      // zaehlt ueber zaehleBestaetigte (Sicht aus Migration 136).
         if (booking.status === 'confirmed') {
           const removedIsTeamer = booking.is_teamer_booking === true;
-          // Kein eigener try/catch mehr um diesen Block: Ein geschluckter
-          // Fehler wuerde jetzt in ein COMMIT laufen und einen halben Zustand
-          // festschreiben. Scheitert das Nachruecken, rollt das Entfernen
-          // zurueck und laesst sich wiederholen.
-          let maxCapacity = 0;
-          let confirmedCount = 0;
-
-          if (removedIsTeamer) {
-            // Teamer-Buchungen haben nie einen Timeslot -> event-weite Zählung.
-            const { rows: [teamerCapInfo] } = await client.query(
-              "SELECT teamer_max_participants FROM events WHERE id = $1 AND organization_id = $2",
-              [eventId, req.user.organization_id]
+          // Kein eigener try/catch um diesen Block: Ein geschluckter Fehler
+          // wuerde in ein COMMIT laufen und einen halben Zustand festschreiben.
+          // Scheitert das Nachruecken, rollt das Entfernen zurueck.
+          const [nachgerueckt] = await rueckeNach(client, {
+            eventId,
+            timeslotId: removedIsTeamer ? null : booking.timeslot_id,
+            seite: removedIsTeamer ? 'team' : 'konfi'
+          });
+          if (nachgerueckt) {
+            promotedUserId = nachgerueckt;
+            const { rows: [eventInfo] } = await client.query(
+              "SELECT name FROM events WHERE id = $1", [eventId]
             );
-            const { rows: [teamerCountRes] } = await client.query(
-              `SELECT COUNT(*) as confirmed_count
-               FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-               WHERE eb.event_id = $1 AND eb.status = 'confirmed'
-                 AND r.name <> 'konfi' AND u.deleted_at IS NULL`,
-              [eventId]
-            );
-            maxCapacity = teamerCapInfo?.teamer_max_participants || 0;
-            confirmedCount = parseInt(teamerCountRes?.confirmed_count || '0', 10);
-          } else if (booking.timeslot_id) {
-            const { rows: [slotInfo] } = await client.query(
-              "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
-              [booking.timeslot_id, req.user.organization_id]
-            );
-            // Teamer:innen zählen NICHT gegen das Konfi-Kontingent (sie haben
-            // ihr eigenes) — sonst blockiert eine bestaetigte Teamer-Buchung
-            // den Nachrueckplatz eines Konfis.
-            const { rows: [slotCountRes] } = await client.query(
-              `SELECT COUNT(*) as confirmed_count
-               FROM event_bookings eb
-               LEFT JOIN users u ON eb.user_id = u.id
-               LEFT JOIN roles r ON u.role_id = r.id AND r.name <> 'konfi'
-               WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
-              [booking.timeslot_id]
-            );
-            maxCapacity = slotInfo?.max_participants || 0;
-            confirmedCount = parseInt(slotCountRes?.confirmed_count || '0', 10);
-          } else {
-            const { rows: [eventCapInfo] } = await client.query(
-              "SELECT max_participants FROM events WHERE id = $1 AND organization_id = $2",
-              [eventId, req.user.organization_id]
-            );
-            const { rows: [countResult] } = await client.query(
-              `SELECT COUNT(*) as confirmed_count
-               FROM event_bookings eb
-               LEFT JOIN users u ON eb.user_id = u.id
-               LEFT JOIN roles r ON u.role_id = r.id AND r.name <> 'konfi'
-               WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
-              [eventId]
-            );
-            maxCapacity = eventCapInfo?.max_participants || 0;
-            confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
-          }
-
-          // Nur nachruecken wenn unter Kapazität (0 = unbegrenzt, immer nachruecken).
-          if (maxCapacity === 0 || confirmedCount < maxCapacity) {
-            promotedUserId = await promoteFromWaitlist(
-              client,
-              eventId,
-              removedIsTeamer ? null : booking.timeslot_id,
-              removedIsTeamer ? 'teamer' : 'not_teamer'
-            );
-
-            if (promotedUserId) {
-              const { rows: [eventInfo] } = await client.query(
-                "SELECT name FROM events WHERE id = $1", [eventId]
-              );
-              promotedEventName = eventInfo?.name || null;
-              promotedType = removedIsTeamer ? 'teamer' : 'konfi';
-            }
+            promotedEventName = eventInfo?.name || null;
+            promotedType = removedIsTeamer ? 'teamer' : 'konfi';
           }
         }
 
@@ -437,10 +384,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       let betroffenerUser = null;
       let eventName = null;
       let eventDatum = null;
+      // Wer bei der Herabstufung nachgerueckt ist (Luecke geschlossen 15.09.2026).
+      let herabstufungNachrueckerIn = null;
+      let herabstufungSeite = 'konfi';
       try {
         await client.query('BEGIN');
 
-        const { rows: [booking] } = await client.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id, e.name AS event_name, e.event_date FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2 FOR UPDATE OF eb", [participantId, eventId]);
+        // eb.timeslot_id und die Rolle kommen seit dem 15.09.2026 mit: Die
+        // Herabstufung gibt einen Platz frei, und der gehoert dem richtigen
+        // Kontingent (Konfi/Team) und ggf. dem richtigen Zeitfenster.
+        const { rows: [booking] } = await client.query(
+          `SELECT eb.status, eb.attendance_status, eb.user_id, eb.timeslot_id,
+                  e.organization_id, e.name AS event_name, e.event_date,
+                  COALESCE(r.name, '') <> 'konfi' AS ist_team
+             FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             JOIN users u ON eb.user_id = u.id
+             LEFT JOIN roles r ON u.role_id = r.id
+            WHERE eb.id = $1 AND eb.event_id = $2 FOR UPDATE OF eb`,
+          [participantId, eventId]
+        );
         if (!booking) {
           await client.query('ROLLBACK');
           // KEIN client.release() hier — das finally unten released.
@@ -479,8 +442,45 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           // Punkte-Ruecknahme ueber den gemeinsamen Helfer: Derselbe Block lag
           // vorher viermal im Code, zweimal transaktional und zweimal nicht.
           punkteZurueck = await takeBackEventPoints(client, booking.user_id, eventId);
+
+          // NACHRUECKEN (Luecke geschlossen 15.09.2026): Die Herabstufung gibt
+          // einen bestaetigten Platz frei -- und bis hierher rueckte niemand
+          // nach. Das war doppelt verdreht: Die gerade herabgestufte Person
+          // stand danach selbst auf der Warteliste und konkurrierte um den
+          // Platz, den sie eben geraeumt hatte.
+          //
+          // Sie kann dabei nicht sich selbst nachruecken: Der FIFO-Zugriff
+          // nimmt den AELTESTEN Wartelisten-Eintrag (ORDER BY created_at), und
+          // ihr Eintrag ist der aelteste nur, wenn sonst niemand wartet -- dann
+          // aber stuende sie ohnehin allein da, und die Herabstufung waere
+          // wirkungslos. Deshalb wird sie ausgeschlossen.
+          const [nachgerueckt] = await rueckeNach(client, {
+            eventId,
+            timeslotId: booking.ist_team ? null : booking.timeslot_id,
+            seite: booking.ist_team ? 'team' : 'konfi'
+          });
+          if (nachgerueckt && nachgerueckt !== booking.user_id) {
+            herabstufungNachrueckerIn = nachgerueckt;
+            herabstufungSeite = booking.ist_team ? 'team' : 'konfi';
+          } else if (nachgerueckt === booking.user_id) {
+            // Sie hat sich selbst zurueckgeholt -- das macht die Herabstufung
+            // zunichte. Rueckgaengig: zurueck auf die Warteliste.
+            await client.query("UPDATE event_bookings SET status = 'waitlist', war_auf_warteliste = false WHERE id = $1", [participantId]);
+          }
         } else {
-          await client.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
+          // BEFOERDERUNG VON HAND: Die Leitung waehlt eine bestimmte Person aus
+          // -- FIFO gilt hier bewusst nicht, also kann promoteFromWaitlist das
+          // nicht uebernehmen. Was es aber tut und hier fehlte:
+          // war_auf_warteliste setzen (Migration 145). Ohne die Spalte verliert
+          // der Jahresrueckblick im Moment der Befoerderung die Information,
+          // dass diese Person gewartet hat.
+          await client.query(
+            `UPDATE event_bookings
+                SET status = $1,
+                    war_auf_warteliste = CASE WHEN $3::boolean THEN true ELSE war_auf_warteliste END
+              WHERE id = $2`,
+            [status, participantId, wasWaitlist]
+          );
         }
 
         // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
@@ -508,6 +508,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           } catch (pushErr) {
             console.error('Error sending waitlist promotion push:', pushErr);
           }
+        }
+
+        // Wer durch die Herabstufung nachgerueckt ist, erfaehrt es — ueber
+        // denselben Weg wie an allen anderen Nachrueck-Stellen.
+        if (herabstufungNachrueckerIn) {
+          await meldeNachrueckern(db, req.user.organization_id, [{
+            eventId,
+            userId: herabstufungNachrueckerIn,
+            seite: herabstufungSeite
+          }]);
         }
 
         // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).

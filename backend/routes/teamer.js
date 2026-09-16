@@ -691,16 +691,46 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       //
       // Der Filter auf teamer_only/teamer_needed fehlte ebenfalls ganz; ohne
       // ihn stuenden auch reine Konfi-Termine auf der Teamer-Startseite.
+      // ABGESAGTE TERMINE STEHEN HIER -- ABER NUR FUER DIE EIGENE BUCHUNG
+      // (15.09.2026).
+      //
+      // Der Befund: `AND (e.cancelled IS NOT TRUE)` warf sie restlos heraus,
+      // und die Spaltenliste holte zwar e.cancelled, aber weder den Grund noch
+      // die Namen. Der cancelled-Zweig der Teamer-Startseite konnte also gar
+      // nicht greifen -- toter Code, der aussah, als waere der Fall behandelt.
+      //
+      // WARUM SIE HINEINGEHOEREN: Wer fuer morgen zugesagt hat, muss auf der
+      // Startseite sehen, dass der Termin ausfaellt. Genau dafuer schaut man
+      // dort hin. Ein Termin, der still aus der Liste verschwindet, sagt
+      // "nichts los" statt "faellt aus" -- und die Zusage bleibt im Kopf.
+      //
+      // WARUM NUR MIT EIGENER BUCHUNG: Dieselbe Regel wie in der Konfi-Liste
+      // (routes/konfi.js: `e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT
+      // NULL`, Entscheidung Simon 27.08.2026). Ein abgesagter Termin ist keine
+      // Einladung mehr: "Teamer:innen gesucht" fuer etwas, das nicht
+      // stattfindet, waere eine Aufforderung ins Leere. Nur wer selbst
+      // zugesagt hatte, hat dort noch etwas zu erfahren.
+      //
+      // Die drei Absage-Felder kommen ADDITIV dazu, Muster und LEFT JOINs wie
+      // in events/lesen.js: Termine, die vor Migration 150/152 abgesagt
+      // wurden, haben keinen Urheber -- ein INNER JOIN wuerde sie aus der
+      // Liste werfen. NULL heisst hier "kein Grund angegeben" bzw.
+      // "unbekannt", nicht "niemand".
       const eventsQuery = `
         SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
                e.teamer_only, e.teamer_needed, e.bring_items, e.cancelled,
+               e.cancelled_reason, e.cancelled_by, e.cancelled_at,
+               u_cancel.display_name as cancelled_by_name,
+               u_grund.display_name as cancelled_reason_set_by_name,
                CASE WHEN eb.id IS NOT NULL THEN true ELSE false END as is_registered,
                eb.status as booking_status
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
+        LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
+        LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
-          AND (e.cancelled IS NOT TRUE)
+          AND (e.cancelled IS NOT TRUE OR eb.id IS NOT NULL)
           AND (
             eb.id IS NOT NULL          -- eigene Buchung: immer zeigen
             OR e.teamer_only = true    -- reiner Team-Termin

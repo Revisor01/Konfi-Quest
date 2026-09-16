@@ -11,7 +11,8 @@ const { beantworteTageslosung } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
-const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist } = require('../utils/bookingUtils');
+const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach } = require('../utils/bookingUtils');
+const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
@@ -476,6 +477,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       let confirmationEventDate = null;
       let confirmationLocation = null;
       try {
+        // BEWUSST NUR 'confirmed' (nachgeprueft 15.09.2026, Migration 153):
+        // Der Konfirmationstermin ist der, zu dem die Konfi GEBUCHT ist. Wird
+        // sie von ihrem Konfirmationsgottesdienst abgemeldet, steht sie auf
+        // status = 'excused' und hat hier folgerichtig keinen Termin mehr --
+        // sie wird an dem Tag nicht konfirmiert. Setzt die Leitung sie wieder
+        // auf 'present'/'absent', kommt der Termin zurueck (der Status faellt
+        // dann auf 'confirmed'). Dieselbe Rechnung steht in
+        // routes/jahrgaenge.js und routes/konfi-management.js; wer sie hier
+        // aendert, muss dort mitziehen.
         const confirmationQuery = `
           SELECT e.event_date, e.location
           FROM events e
@@ -1400,6 +1410,14 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const eventId = req.params.id;
 
       // Get confirmed participants with anonymized names — Teamer rausfiltern
+      //
+      // BEWUSST NUR 'confirmed' (nachgeprueft 15.09.2026, Migration 153): Das
+      // ist die Konfi-Sicht "wer kommt mit?". Eine von der Leitung abgemeldete
+      // Person steht seither auf status = 'excused' und faellt hier heraus --
+      // richtig so, sie kommt ja nicht mit. Anders als in der Teilnehmerliste
+      // der LEITUNG (events/lesen.js), die alle Buchungen zeigt und die
+      // Abgemeldeten nur nach unten sortiert: Dort ist die Abmeldung eine
+      // Information, hier waere sie nur eine Person weniger im Bus.
       const participantsQuery = `
         SELECT
           u.id,
@@ -1790,35 +1808,83 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(400).json({ error: 'Event ist bereits vorbei' });
       }
 
-      // Status-Wechsel: confirmed -> opted_out
-      const { rowCount } = await db.query(
-        `UPDATE event_bookings SET status = 'opted_out', opt_out_reason = $3, opt_out_date = NOW()
-         WHERE user_id = $1 AND event_id = $2 AND status = 'confirmed'`,
-        [konfiId, eventId, reason.trim()]
-      );
+      // TRANSAKTIONAL seit 15.09.2026. Vorher lief die Route auf dem Pool —
+      // solange nur der Status umgesetzt wurde, ging das gut. Mit dem
+      // Nachruecken geht es nicht mehr: promoteFromWaitlist verlangt einen
+      // Client, damit der FOR-UPDATE-Lock bis zum COMMIT haelt und der
+      // Kapazitaets-Check nicht in einer anderen impliziten Transaktion liegt.
+      const client = await db.getClient();
+      let fruehAntwort = null;
+      let nachgerueckt = [];
+      try {
+        await client.query('BEGIN');
 
-      if (rowCount === 0) {
-        // Schon abgemeldet? Dann ist das Ziel erreicht (Befund 28.08.2026).
-        //
-        // Eine offline abgegebene Abmeldung kann zweimal ankommen: Die Anfrage
-        // erreicht den Server, die Antwort geht auf dem Rueckweg verloren
-        // (Funkloch, Timeout), und die Warteschlange legt sie erneut vor. Der
-        // zweite Lauf traf 0 Zeilen und meldete 400 — ein erfolgreicher
-        // Vorgang wurde also als Fehler angezeigt und im Fehl-Merker abgelegt.
-        //
-        // Eine client_id braucht es dafuer nicht: Der Zustand selbst sagt
-        // schon, dass nichts mehr zu tun ist.
-        const { rows: [bestehend] } = await db.query(
-          `SELECT status FROM event_bookings WHERE user_id = $1 AND event_id = $2`,
-          [konfiId, eventId]
+        // Status-Wechsel: confirmed -> opted_out
+        const { rows: [abgemeldet] } = await client.query(
+          `UPDATE event_bookings SET status = 'opted_out', opt_out_reason = $3, opt_out_date = NOW()
+           WHERE user_id = $1 AND event_id = $2 AND status = 'confirmed'
+           RETURNING timeslot_id`,
+          [konfiId, eventId, reason.trim()]
         );
-        if (bestehend && bestehend.status === 'opted_out') {
-          return res.json({ message: 'Abmeldung erfolgreich', bereits_abgemeldet: true });
+
+        if (!abgemeldet) {
+          // Schon abgemeldet? Dann ist das Ziel erreicht (Befund 28.08.2026).
+          //
+          // Eine offline abgegebene Abmeldung kann zweimal ankommen: Die Anfrage
+          // erreicht den Server, die Antwort geht auf dem Rueckweg verloren
+          // (Funkloch, Timeout), und die Warteschlange legt sie erneut vor. Der
+          // zweite Lauf traf 0 Zeilen und meldete 400 — ein erfolgreicher
+          // Vorgang wurde also als Fehler angezeigt und im Fehl-Merker abgelegt.
+          //
+          // Eine client_id braucht es dafuer nicht: Der Zustand selbst sagt
+          // schon, dass nichts mehr zu tun ist.
+          const { rows: [bestehend] } = await client.query(
+            `SELECT status FROM event_bookings WHERE user_id = $1 AND event_id = $2`,
+            [konfiId, eventId]
+          );
+          await client.query('ROLLBACK');
+          fruehAntwort = (bestehend && bestehend.status === 'opted_out')
+            ? { status: 200, body: { message: 'Abmeldung erfolgreich', bereits_abgemeldet: true } }
+            : { status: 400, body: { error: 'Keine aktive Anmeldung gefunden' } };
+        } else {
+          // NACHRUECKEN (Luecke geschlossen 15.09.2026): 'opted_out' zaehlt in
+          // zaehleBuchungen NIE als belegter Platz — die Abmeldung gibt den
+          // Platz also frei, genau wie die Teamer-Absage (setzeTeamerZusage),
+          // die dafuer schon nachrueckte. Hier fehlte es; der Platz verfiel.
+          //
+          // WIE OFT DAS GREIFT: Heute selten. Ein Pflichttermin bekommt beim
+          // Speichern max_participants = 0 (unbegrenzt) und die Warteliste
+          // ausgeschaltet (routes/events/verwaltung.js) — ohne Warteliste gibt
+          // es niemanden zum Nachruecken. Bestandsdaten und jede kuenftige
+          // Lockerung dieser Regel fallen aber sofort hier durch, und die
+          // Inkonsistenz zur Teamer-Absage war ohnehin keine.
+          nachgerueckt = await rueckeNach(client, {
+            eventId,
+            timeslotId: abgemeldet.timeslot_id,
+            seite: 'konfi'
+          });
+          await client.query('COMMIT');
         }
-        return res.status(400).json({ error: 'Keine aktive Anmeldung gefunden' });
+      } catch (txErr) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      if (fruehAntwort) {
+        return res.status(fruehAntwort.status).json(fruehAntwort.body);
       }
 
       res.json({ message: 'Abmeldung erfolgreich' });
+
+      // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt,
+      // ueber denselben Weg wie an allen anderen Nachrueck-Stellen.
+      await meldeNachrueckern(
+        db,
+        req.user.organization_id,
+        nachgerueckt.map((promotedUserId) => ({ eventId, userId: promotedUserId, seite: 'konfi' }))
+      );
 
       // Push an Admins (fire-and-forget)
       try {

@@ -358,6 +358,153 @@ describe('Absagegrund aendern: PUT /api/events/:id/absagegrund', () => {
     });
   });
 
+  describe('Der korrigierte Grund erreicht auch die Teilnehmenden', () => {
+    // DER FEHLER (15.09.2026): Die Absage meldet alle Angemeldeten ab und
+    // traegt den Absagegrund als excuse_reason ein. Diese Route schrieb
+    // danach nur an events.cancelled_reason — am Termin stand der korrigierte
+    // Grund, in der Teilnehmerliste bei jeder Person weiter der alte.
+    //
+    // UND DIE GRENZE: Wer einen EIGENEN Grund bekommen hat ("krank, Mutter
+    // hat angerufen"), behaelt ihn. Das Handbuch verspricht genau diesen Weg;
+    // er darf nicht von der naechsten Tippfehler-Korrektur ueberschrieben
+    // werden. Die Unterscheidung traegt abgemeldet_durch_absage
+    // (Migration 153).
+
+    const buchung = async (eventId, userId) => {
+      const { rows: [row] } = await db.query(
+        `SELECT excuse_reason, attendance_status, abgemeldet_durch_absage
+           FROM event_bookings WHERE event_id = $1 AND user_id = $2`,
+        [eventId, userId]
+      );
+      return row;
+    };
+
+    it('der neue Grund steht danach auch bei der abgemeldeten Konfi', async () => {
+      const eventId = await abgesagterTermin('Heizng defket');
+
+      // Ausgangslage pruefen, sonst bewiese der Test unten nichts: Die Absage
+      // hat wirklich abgemeldet, mit dem alten Text und als Absage erkennbar.
+      const vorher = await buchung(eventId, USERS.konfi1.id);
+      expect(vorher.attendance_status).toBe('excused');
+      expect(vorher.excuse_reason).toBe('Heizng defket');
+      expect(vorher.abgemeldet_durch_absage).toBe(true);
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/absagegrund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: 'Heizung im Gemeindehaus defekt' });
+      expect(res.status).toBe(200);
+
+      const nachher = await buchung(eventId, USERS.konfi1.id);
+      expect(nachher.excuse_reason).toBe('Heizung im Gemeindehaus defekt');
+      // Der Abmeldestand selbst bleibt, wie er war — korrigiert wurde ein
+      // Text, nicht die Abmeldung.
+      expect(nachher.attendance_status).toBe('excused');
+      expect(nachher.abgemeldet_durch_absage).toBe(true);
+      // Und Termin und Buchung sagen jetzt dasselbe. Genau das lief vorher
+      // auseinander.
+      expect((await termin(eventId)).cancelled_reason).toBe('Heizung im Gemeindehaus defekt');
+    });
+
+    it('VERBOTEN: ein von Hand eingetragener Grund bleibt unberuehrt', async () => {
+      const eventId = await abgesagterTermin('Heizung defekt');
+
+      // Die Leitung ersetzt bei EINER Person den Grund durch einen eigenen —
+      // der Weg, den das Handbuch beschreibt.
+      const einzeln = await request(app)
+        .put(`/api/events/${eventId}/participants/${USERS.konfi1.id}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'excused', excuse_reason: 'krank, Mutter hat angerufen' });
+      expect(einzeln.status).toBe(200);
+
+      // Gegenprobe zur Ausgangslage: Diese Abmeldung gilt jetzt als
+      // Einzelentscheidung, nicht mehr als Absage.
+      const vorher = await buchung(eventId, USERS.konfi1.id);
+      expect(vorher.excuse_reason).toBe('krank, Mutter hat angerufen');
+      expect(vorher.abgemeldet_durch_absage).toBe(false);
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/absagegrund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: 'Wasserrohrbruch im Gemeindehaus' });
+      expect(res.status).toBe(200);
+
+      const nachher = await buchung(eventId, USERS.konfi1.id);
+      expect(nachher.excuse_reason).toBe('krank, Mutter hat angerufen');
+      expect(nachher.abgemeldet_durch_absage).toBe(false);
+      // Am Termin steht trotzdem der neue Grund — die Korrektur ist
+      // angekommen, sie hat nur diese eine Person in Ruhe gelassen.
+      expect((await termin(eventId)).cancelled_reason).toBe('Wasserrohrbruch im Gemeindehaus');
+    });
+
+    it('ERLAUBT und VERBOTEN im selben Termin: die eine bekommt den neuen Text, die andere behaelt ihren', async () => {
+      // Der Fall, um den es wirklich geht: Ein Termin, zwei Personen, ein
+      // Durchlauf. Getrennte Tests koennten beide gruen sein, waehrend die
+      // Auswahl in der Menge trotzdem falsch greift.
+      const eventId = await abgesagterTermin('Heizng defket');
+
+      // konfi2 dazubuchen und den Termin erneut absagen geht nicht (400).
+      // Stattdessen wird die zweite Buchung direkt hergestellt — genau so,
+      // wie die Absage sie angelegt haette.
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status,
+                                     excuse_reason, abgemeldet_durch_absage)
+         VALUES ($1, $2, 'excused', 'excused', 'Heizng defket', TRUE)`,
+        [eventId, USERS.konfi2.id]
+      );
+      await request(app)
+        .put(`/api/events/${eventId}/participants/${USERS.konfi1.id}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'excused', excuse_reason: 'krank, Mutter hat angerufen' });
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/absagegrund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: 'Heizung im Gemeindehaus defekt' });
+      expect(res.status).toBe(200);
+
+      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason)
+        .toBe('krank, Mutter hat angerufen');
+      expect((await buchung(eventId, USERS.konfi2.id)).excuse_reason)
+        .toBe('Heizung im Gemeindehaus defekt');
+    });
+
+    it('wird der Grund geleert, steht bei den Abgemeldeten wieder "Termin abgesagt" — nicht NULL', async () => {
+      // Dieselbe Regel wie beim Absagen ohne Grund (bookingUtils,
+      // ABSAGE_OHNE_GRUND). NULL laese die Zeile als "abgemeldet, Grund
+      // unbekannt" lesen — der Grund ist aber bekannt: Der Termin faellt aus.
+      const eventId = await abgesagterTermin('Heizung defekt');
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/absagegrund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: '' });
+      expect(res.status).toBe(200);
+      expect((await termin(eventId)).cancelled_reason).toBeNull();
+
+      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Termin abgesagt');
+    });
+
+    it('bei 403 bleibt auch der Grund an den Buchungen stehen', async () => {
+      // Die Buchungen haengen an derselben Transaktion wie der Termin. Wird
+      // die Aenderung abgewiesen, darf auch dort nichts umgeschrieben sein.
+      const eventId = await abgesagterTermin('Heizung defekt');
+      await db.query('DELETE FROM event_jahrgang_assignments WHERE event_id = $1', [eventId]);
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [eventId, JG_FREMD]
+      );
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/absagegrund`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ cancelled_reason: 'Reingepfuscht' });
+
+      expect(res.status).toBe(403);
+      expect((await buchung(eventId, USERS.konfi1.id)).excuse_reason).toBe('Heizung defekt');
+    });
+  });
+
   describe('Kein Push bei einer Korrektur', () => {
     // Entscheidung Simon, 15.09.2026: Die Absage ist schon gemeldet. Ein
     // zweiter Push "Leider abgesagt" an dieselben zwanzig Konfis, weil jemand

@@ -1072,8 +1072,29 @@ class PushService {
    * Sperrbildschirm. Steht der Grund nur in der App, muss jede Einzelne sie
    * erst oeffnen, um zu erfahren, warum — und genau die Rueckfragen, die der
    * Grund ersparen soll, laufen trotzdem auf.
+   *
+   * @param {number|null} eventId - Termin-Kennung fuer den Sprung beim Antippen.
+   *
+   * WARUM DIE KENNUNG FEHLTE UND JETZT DAZUKOMMT (15.09.2026): Jeder
+   * vergleichbare Termin-Push traegt sie (sendEventChangedToKonfis,
+   * sendMandatoryEventCreated, sendEventRegisteredToKonfi) — der Absage-Push
+   * als einziger nicht. Ein Tipp auf "Leider abgesagt" landete deshalb auf
+   * der Terminliste statt am Termin, und genau dort steht der Grund
+   * ausfuehrlich, samt "Abgesagt von ...".
+   *
+   * DER SPRUNG GEHT AUCH BEI EINEM ABGESAGTEN TERMIN INS ZIEL (nachgemessen,
+   * 15.09.2026): Konfi- und Leitungsansicht haben eine Detailroute, beide
+   * oeffnen abgesagte Termine und zeigen den Grund oben rot an. Und die
+   * Konfi-Liste, aus der die Detailseite ihren Termin nimmt, behaelt
+   * abgesagte Termine fuer genau die, die angemeldet waren (routes/konfi.js)
+   * — also fuer genau die, die diesen Push bekommen.
+   *
+   * OHNE KENNUNG BLEIBT ES BEIM ALTEN: Der Parameter steht am Ende und ist
+   * optional; faellt er weg, fehlt der Schluessel im data-Teil und die App
+   * landet wie bisher auf der Terminliste. Genau so ruft ihn die Loeschroute,
+   * denn einen geloeschten Termin gibt es nicht mehr aufzuschlagen.
    */
-  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate, organizationId = null, grund = null) {
+  static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate, organizationId = null, grund = null, eventId = null) {
     try {
 
       let dateInfo = eventDate;
@@ -1095,6 +1116,13 @@ class PushService {
           // nicht und ignorieren ihn. Ohne Grund faellt er ganz weg, statt
           // als leerer String dazustehen.
           ...(grundText ? { cancelled_reason: grundText } : {}),
+          // Termin-Kennung fuer den Sprung beim Antippen. Wie beim Grund
+          // daneben faellt der Schluessel ganz weg, statt als leerer String
+          // dazustehen: Die Loeschroute ruft ohne Kennung, und ein
+          // event_id: '' an einem Termin, den es nicht mehr gibt, waere eine
+          // Behauptung ueber ein Ziel. Alte App-Fassungen lesen den Schluessel
+          // nicht und ignorieren ihn.
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
           // Event-Org explizit: unter den Gebuchten können Teamer:innen mit
           // anderer Primär-Org sein.
           ...(organizationId != null ? { organization_id: String(organizationId) } : {})

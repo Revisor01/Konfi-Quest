@@ -118,9 +118,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
             -- gebucht_gesamt laesst sie aus, deshalb hier wieder dazu, damit
             -- die Zahl nach aussen dieselbe bleibt. (Gelesen wird sie derzeit
             -- von niemandem — weder Backend noch App.)
+            --
+            -- konfi_excused/teamer_excused kommen am 15.09.2026 dazu
+            -- (Migration 154): Seit Migration 153 faellt eine von der Leitung
+            -- abgemeldete Buchung aus gebucht_gesamt heraus -- genau wie eine
+            -- Selbstabmeldung. Ohne diese beiden Summanden wuerde die Zahl
+            -- hier still kleiner, obwohl sie ausdruecklich "alle Buchungen,
+            -- auch die abgemeldeten" meint.
             COALESCE(ebs.gebucht_gesamt, 0)
               + COALESCE(ebs.konfi_opted_out, 0)
-              + COALESCE(ebs.teamer_opted_out, 0) as total_participants
+              + COALESCE(ebs.teamer_opted_out, 0)
+              + COALESCE(ebs.konfi_excused, 0)
+              + COALESCE(ebs.teamer_excused, 0) as total_participants
           FROM event_booking_stats ebs
           WHERE ebs.event_id = e.id
         ) bstats ON true
@@ -568,9 +577,21 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         LEFT JOIN event_timeslots et ON eb.timeslot_id = et.id
         WHERE eb.event_id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
         ORDER BY
+          -- Abgemeldete stehen UNTEN (Simon, 15.09.2026: "die Person rueckt
+          -- unten in die Liste der Abgemeldeten"). Seit Migration 153 traegt
+          -- eine von der Leitung abgemeldete Buchung status = 'excused' und
+          -- faellt damit in dieselbe Gruppe wie 'opted_out' -- vorher stand
+          -- sie als 'confirmed' ganz oben zwischen den Anwesenden.
+          --
+          -- 'excused' steht hier AUSDRUECKLICH und nicht nur im ELSE: Der
+          -- ELSE-Zweig traefe zwar dieselbe Zahl, sagt aber nicht, dass es so
+          -- gemeint ist. Wer die Reihenfolge spaeter aendert, soll sehen,
+          -- dass Abgemeldete absichtlich dort unten sitzen.
           CASE eb.status
             WHEN 'confirmed' THEN 1
             WHEN 'waitlist' THEN 2
+            WHEN 'excused' THEN 3
+            WHEN 'opted_out' THEN 3
             ELSE 3
           END,
           eb.created_at ASC

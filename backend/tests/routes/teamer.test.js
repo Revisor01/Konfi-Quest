@@ -1249,6 +1249,127 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    // ==============================================================
+    // ABGESAGTE TERMINE AUF DER STARTSEITE (15.09.2026)
+    //
+    // DER BEFUND: `AND (e.cancelled IS NOT TRUE)` warf abgesagte Termine
+    // restlos heraus, und die Spaltenliste holte weder cancelled_reason noch
+    // die Namen. Der cancelled-Zweig der Teamer-Startseite konnte deshalb nie
+    // greifen -- toter Code, der aussah, als waere der Fall behandelt.
+    //
+    // DIE REGEL ist dieselbe wie in der Konfi-Liste (routes/konfi.js,
+    // Entscheidung Simon 27.08.2026): abgesagt UND eigene Buchung -> zeigen;
+    // abgesagt OHNE eigene Buchung -> nicht zeigen. Wer zugesagt hat, muss
+    // erfahren, dass der Termin ausfaellt; eine Einladung zu etwas, das nicht
+    // stattfindet, ist keine.
+    // ==============================================================
+    describe('Abgesagte Termine', () => {
+      // teamer_needed, damit der Termin OHNE Buchung ueberhaupt in die Liste
+      // koennte -- sonst bewiese der Gegenprobe-Test nichts.
+      async function termin({ abgesagt = false, grund = null, absagenderId = null } = {}) {
+        const { rows: [event] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, teamer_needed,
+                               cancelled, cancelled_at, cancelled_reason,
+                               cancelled_by, cancelled_reason_set_by)
+           VALUES ('Konfifreizeit', NOW() + interval '3 days', $1, true,
+                   $2, CASE WHEN $2 THEN NOW() ELSE NULL END, $3, $4, $4)
+           RETURNING id`,
+          [ORGS.testGemeinde.id, abgesagt, grund, absagenderId]
+        );
+        return event.id;
+      }
+
+      const bucht = (eventId) => db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3)`,
+        [USERS.teamer1.id, eventId, ORGS.testGemeinde.id]
+      );
+
+      const startseite = async () => {
+        const res = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(res.status).toBe(200);
+        return res.body.events;
+      };
+
+      it('ERLAUBT: der eigene abgesagte Termin steht mit Grund und Urheber drin', async () => {
+        const eventId = await termin({
+          abgesagt: true, grund: 'Heizung im Gemeindehaus defekt', absagenderId: USERS.admin1.id
+        });
+        await bucht(eventId);
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag).toBeDefined();
+        expect(eintrag.cancelled).toBe(true);
+        expect(eintrag.cancelled_reason).toBe('Heizung im Gemeindehaus defekt');
+        expect(eintrag.cancelled_by).toBe(USERS.admin1.id);
+        expect(eintrag.cancelled_by_name).toBe(USERS.admin1.display_name);
+        expect(eintrag.cancelled_reason_set_by_name).toBe(USERS.admin1.display_name);
+        expect(eintrag.cancelled_at).not.toBeNull();
+      });
+
+      it('ohne Grund kommen die Felder als NULL -- nichts bricht', async () => {
+        // Der Grund ist freiwillig (Migration 150). NULL heisst hier "kein
+        // Grund angegeben", nicht "unbekannt" -- der Eintrag muss trotzdem
+        // vollstaendig in der Liste stehen.
+        const eventId = await termin({ abgesagt: true, absagenderId: USERS.admin1.id });
+        await bucht(eventId);
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag).toBeDefined();
+        expect(eintrag.cancelled).toBe(true);
+        expect(eintrag.cancelled_reason).toBeNull();
+        expect(eintrag.cancelled_by_name).toBe(USERS.admin1.display_name);
+      });
+
+      it('ein Altbestands-Termin ohne Urheber faellt NICHT aus der Liste', async () => {
+        // Termine, die vor Migration 150/152 abgesagt wurden, haben keinen
+        // cancelled_by. Ein INNER JOIN auf users wuerde genau diese
+        // verschlucken -- deshalb LEFT JOIN.
+        const eventId = await termin({ abgesagt: true });
+        await bucht(eventId);
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag).toBeDefined();
+        expect(eintrag.cancelled_by).toBeNull();
+        expect(eintrag.cancelled_by_name).toBeNull();
+        expect(eintrag.cancelled_reason_set_by_name).toBeNull();
+      });
+
+      it('VERBOTEN: ein abgesagter Termin OHNE eigene Buchung steht NICHT drin', async () => {
+        // Die Gegenprobe zur Regel. Der Termin hat teamer_needed = true und
+        // stuende ohne die Absage sehr wohl in der Liste (naechster Test) --
+        // es ist also wirklich die Absage, die ihn heraushaelt, nicht ein
+        // fehlender Filter.
+        const eventId = await termin({ abgesagt: true, grund: 'Sturm' });
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag).toBeUndefined();
+      });
+
+      it('GEGENPROBE: derselbe Termin OHNE Absage steht ohne Buchung sehr wohl drin', async () => {
+        const eventId = await termin();
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag).toBeDefined();
+        expect(eintrag.cancelled).toBe(false);
+        expect(eintrag.is_registered).toBe(false);
+      });
+
+      it('die bisherigen Felder bleiben unveraendert (Alt-App-Vertrag)', async () => {
+        // Rein additiv: Ausgelieferte Fassungen lesen diese Schluessel.
+        const eventId = await termin();
+        await bucht(eventId);
+
+        const eintrag = (await startseite()).find(e => e.id === eventId);
+        expect(eintrag.title).toBe('Konfifreizeit');
+        expect(eintrag.is_registered).toBe(true);
+        expect(eintrag.booking_status).toBe('confirmed');
+        expect(eintrag.teamer_needed).toBe(true);
+      });
+    });
   });
 
   // ================================================================

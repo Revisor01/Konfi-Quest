@@ -7,7 +7,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { isRegistrationOpenForKonfis, zaehleBestaetigte, meldeAlleAbBeiAbsage } = require('../../utils/bookingUtils');
+const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, meldeAlleAbBeiAbsage, ABSAGE_OHNE_GRUND } = require('../../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -513,46 +513,35 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // Konfis, Team-Seite = Teamer:innen UND zugeordnete Leitung, geloeschte
       // Konten nie. Vorher stand hier `r.name != 'teamer'` — eine zugeordnete
       // Leitung belegte damit einen Konfi-Platz und blockierte das Nachruecken.
+      //
+      // SEIT 15.09.2026 UEBER rueckeNach: Hier standen drei eigene
+      // UPDATE-Schleifen, die an promoteFromWaitlist VORBEI befoerderten. Zwei
+      // Folgen, beide still: `war_auf_warteliste` blieb ungesetzt (Migration
+      // 145 -- der Jahresrueckblick verlor die Information, dass diese Person
+      // gewartet hatte), und der Eintritt in den Termin-Chat unterblieb. Genau
+      // das Auseinanderlaufen, gegen das die gemeinsame Funktion angelegt
+      // wurde. Mehrere auf einmal kann sie: `anzahl` zaehlt nach jeder
+      // Befoerderung neu.
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Bei Timeslot-Events: Für jeden Timeslot separat prüfen
         for (const slot of timeslots) {
           if (!slot.id) continue; // Nur bestehende Timeslots prüfen
-          const bestaetigt = await zaehleBestaetigte(client, { timeslotId: slot.id }, 'konfi');
-          const freeSlots = slot.max_participants - bestaetigt;
-          if (freeSlots > 0) {
-            const { rows: waitlistEntries } = await client.query(
-              `SELECT eb.id, eb.user_id FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
-               WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist' AND eb.organization_id = $4
-                 AND r.name = 'konfi' AND u.deleted_at IS NULL
-               ORDER BY eb.created_at ASC LIMIT $3`,
-              [id, slot.id, freeSlots, req.user.organization_id]
-            );
-            for (const entry of waitlistEntries) {
-              await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
-              promotedUsers.push(entry.user_id);
-            }
+          const frei = await freiePlaetze(client, { eventId: id, timeslotId: slot.id, seite: 'konfi' }, slot.max_participants);
+          const { waitlist: wartendeSlot } = await zaehleBuchungen(client, { timeslotId: slot.id }, 'konfi');
+          const obergrenzeSlot = frei === null ? wartendeSlot : Math.min(frei, wartendeSlot);
+          if (obergrenzeSlot > 0) {
+            const nachgerueckt = await rueckeNach(client, {
+              eventId: id, timeslotId: slot.id, seite: 'konfi', anzahl: obergrenzeSlot
+            });
+            promotedUsers.push(...nachgerueckt);
           }
         }
       } else if (max_participants > 0) {
         // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit)
-        const bestaetigt = await zaehleBestaetigte(client, { eventId: id }, 'konfi');
-        const freeSlots = max_participants - bestaetigt;
-        if (freeSlots > 0) {
-          const { rows: waitlistEntries } = await client.query(
-            `SELECT eb.id, eb.user_id FROM event_bookings eb
-             JOIN users u ON eb.user_id = u.id
-             JOIN roles r ON u.role_id = r.id
-             WHERE eb.event_id = $1 AND eb.status = 'waitlist'
-               AND r.name = 'konfi' AND u.deleted_at IS NULL
-             ORDER BY eb.created_at ASC LIMIT $2`,
-            [id, freeSlots]
-          );
-          for (const entry of waitlistEntries) {
-            await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
-            promotedUsers.push(entry.user_id);
-          }
+        const frei = await freiePlaetze(client, { eventId: id, seite: 'konfi' }, max_participants);
+        if (frei > 0) {
+          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'konfi', anzahl: frei });
+          promotedUsers.push(...nachgerueckt);
         }
       }
 
@@ -563,27 +552,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       const newTeamerMax = effectiveTeamerMax !== null ? effectiveTeamerMax : (oldEvent?.teamer_max_participants ?? 0);
       const oldTeamerMax = oldEvent?.teamer_max_participants ?? 0;
       if (newTeamerMax === 0 || newTeamerMax > oldTeamerMax) {
-        const teamBestaetigt = await zaehleBestaetigte(client, { eventId: id }, 'team');
-        // 0 = unbegrenzt -> keine Obergrenze für die Anzahl der Nachruecker
-        const freeTeamerSlots = newTeamerMax === 0
-          ? null
-          : newTeamerMax - teamBestaetigt;
-        if (freeTeamerSlots === null || freeTeamerSlots > 0) {
-          const limitClause = freeTeamerSlots === null ? '' : 'LIMIT $2';
-          const limitParams = freeTeamerSlots === null ? [id] : [id, freeTeamerSlots];
-          const { rows: teamerWaitlistEntries } = await client.query(
-            `SELECT eb.id, eb.user_id FROM event_bookings eb
-             JOIN users u ON eb.user_id = u.id
-             JOIN roles r ON u.role_id = r.id
-             WHERE eb.event_id = $1 AND eb.status = 'waitlist'
-               AND r.name <> 'konfi' AND u.deleted_at IS NULL
-             ORDER BY eb.created_at ASC ${limitClause}`,
-            limitParams
-          );
-          for (const entry of teamerWaitlistEntries) {
-            await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
-            promotedTeamers.push(entry.user_id);
-          }
+        // 0 = unbegrenzt -> keine Obergrenze fuer die Anzahl der Nachruecker.
+        // Die Wartenden sind die natuerliche Obergrenze: rueckeNach hoert auf,
+        // sobald die Warteliste leer ist.
+        const frei = await freiePlaetze(client, { eventId: id, seite: 'team' }, newTeamerMax);
+        const { waitlist: wartende } = await zaehleBuchungen(client, { eventId: id }, 'team');
+        const obergrenze = frei === null ? wartende : Math.min(frei, wartende);
+        if (obergrenze > 0) {
+          const nachgerueckt = await rueckeNach(client, { eventId: id, seite: 'team', anzahl: obergrenze });
+          promotedTeamers.push(...nachgerueckt);
         }
       }
 
@@ -690,6 +667,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
 
           if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
+            // Die Auswahl bleibt, wie sie ist -- und faengt seit Migration
+            // 153 (15.09.2026) einen Fall mit, der vorher durchrutschte: Eine
+            // abgemeldete Person steht nicht mehr auf 'confirmed' und bekommt
+            // damit kein "Der Termin wurde verlegt" mehr fuer einen Termin,
+            // an dem sie nicht teilnimmt. Kein Eingriff noetig; die Regel
+            // "wer gebucht ist, wird benachrichtigt" stimmt jetzt einfach.
             const { rows: bookedParticipants } = await db.query(
               `SELECT eb.user_id FROM event_bookings eb
                JOIN users u ON eb.user_id = u.id
@@ -730,7 +713,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       await client.query('BEGIN');
 
       // First, verify the event belongs to the organization
-      const { rows: [gefunden] } = await client.query("SELECT id, name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
+      const { rows: [gefunden] } = await client.query("SELECT id, name, event_date, cancelled, cancelled_reason FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
       event = gefunden;
 
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
@@ -760,7 +743,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       if (!forceDelete) {
         const { rows: [usage] } = await client.query(`
           SELECT
-            (SELECT COUNT(*)::int FROM event_bookings WHERE event_id = $1 AND status IN ('confirmed', 'waitlist')) AS booking_count,
+            -- 'excused' zaehlt mit (Migration 153, 15.09.2026): Die Frage
+            -- lautet hier "was geht beim Loeschen verloren", nicht "wer
+            -- belegt einen Platz". Eine Abmeldung samt Grund, Urheber und
+            -- Vermerk ist genau so ein Verlust -- oft der einzige Vermerk,
+            -- den es zu diesem Termin ueberhaupt gibt. Ohne den Wert ginge
+            -- ein Termin, an dem alle abgemeldet sind, kommentarlos weg.
+            (SELECT COUNT(*)::int FROM event_bookings WHERE event_id = $1 AND status IN ('confirmed', 'waitlist', 'excused')) AS booking_count,
             (SELECT COUNT(*)::int FROM chat_messages cm JOIN chat_rooms cr ON cm.room_id = cr.id WHERE cr.event_id = $1) AS message_count,
             (SELECT COUNT(*)::int FROM event_points WHERE event_id = $1) AS points_count,
             (SELECT COALESCE(SUM(points), 0)::int FROM event_points WHERE event_id = $1) AS points_total
@@ -790,11 +779,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // IMMER einsammeln (nicht nur bei abgesagten Events): wer angemeldet war,
       // muss erfahren, dass der Termin weg ist — egal ob vorher abgesagt oder
       // direkt gelöscht.
+      //
+      // 'excused' MUSS DABEI SEIN (Migration 153, 15.09.2026). Genau hier
+      // haette der neue Status sonst eine Luecke gerissen: Eine Absage meldet
+      // alle ab, ihre Buchungen stehen danach auf 'excused'. Wird der
+      // abgesagte Termin spaeter geloescht -- der haeufigste Fall, denn
+      // geloescht wird meist, was schon abgesagt ist --, waere die Liste der
+      // zu Benachrichtigenden LEER gewesen und niemand haette erfahren, dass
+      // der Termin weg ist. Der Satz oben ("wer angemeldet war") gilt
+      // weiterhin; er umfasst jetzt einen Status mehr.
       const { rows: bookedKonfis } = await client.query(
         `SELECT eb.user_id FROM event_bookings eb
          JOIN users u ON eb.user_id = u.id
          JOIN roles r ON u.role_id = r.id
-         WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
+         WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist', 'excused') AND u.deleted_at IS NULL`,
         [id]
       );
       bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
@@ -898,8 +896,33 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     res.json({ message: 'Event erfolgreich gelöscht' });
 
     nachAntwort(req, async () => {
-      // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
-      if (bookedKonfiUserIds.length > 0) {
+      // EIN BEREITS ABGESAGTER TERMIN MELDET SICH NICHT EIN ZWEITES MAL AB
+      // (Entscheidung 15.09.2026).
+      //
+      // Bis hierher ging bei JEDEM Loeschen eine Absage-Meldung raus. Wer
+      // einen Termin erst absagt und ihn spaeter aufraeumt — der uebliche Weg,
+      // das Handbuch empfiehlt genau ihn —, schickte denselben zwanzig Konfis
+      // zweimal "Leider abgesagt: 'Konfifreizeit' am Sa., 20.09.". Beim
+      // zweiten Mal war der Termin in der App schon durchgestrichen; die
+      // Meldung erzaehlte nichts Neues und sah aus wie ein Fehler.
+      //
+      // Eine Mitteilung ist dafuer da, dass jemand etwas erfaehrt. Dass der
+      // Termin ausfaellt, wissen diese Leute bereits — samt Grund, denn seit
+      // dem 15.09.2026 steht er in der ersten Meldung. Dass der Eintrag
+      // danach auch noch aus der Liste verschwindet, ist Aufraeumen und kein
+      // Ereignis, fuer das sich ein Handy meldet.
+      //
+      // GELOESCHT WIRD DIE MELDUNG NICHT, NUR DIE DOPPLUNG: Wird ein NICHT
+      // abgesagter Termin mit Anmeldungen geloescht, geht sie wie bisher raus
+      // — dort ist sie die einzige Nachricht, die diese Leute je bekommen.
+      // Der Vertrag zur ausgelieferten App aendert sich dabei nicht: Der Push
+      // ist ein Ereignis, kein Antwortfeld; eine App, die eine Meldung
+      // weniger bekommt, bricht nicht.
+      //
+      // OHNE KENNUNG (letzter Parameter bleibt weg): Der Termin ist in
+      // derselben Transaktion geloescht worden. Ein Sprung dorthin fuehrte
+      // ins Leere — die Meldung bleibt auf der Terminliste.
+      if (bookedKonfiUserIds.length > 0 && !event.cancelled) {
         const eventDateFormatted = formatDatum(event.event_date);
         try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
       }
@@ -1059,11 +1082,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       );
 
       // Get all participants to notify
+      //
+      // 'excused' gehoert dazu (Migration 153, 15.09.2026): Wer VOR der
+      // Absage einzeln abgemeldet wurde -- die Mutter hat angerufen, das
+      // Kind ist krank --, steht auf 'excused' und ist trotzdem angemeldet
+      // gewesen. Die Absage betrifft sie genauso; sie soll erfahren, dass der
+      // Termin ausfaellt, statt bis zum Tag danach zu glauben, sie habe
+      // lediglich gefehlt. Die Abfrage laeuft VOR meldeAlleAbBeiAbsage, die
+      // uebrigen stehen hier also noch auf 'confirmed'/'waitlist'.
       const { rows: teilnehmende } = await client.query(`
         SELECT DISTINCT eb.user_id, u.display_name, u.username
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
-        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL
+        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist', 'excused') AND u.deleted_at IS NULL
       `, [eventId]);
       participants = teilnehmende;
 
@@ -1113,7 +1144,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // ist genau dafuer da, dass die Konfis ihn lesen, ohne die App zu
       // oeffnen. Ohne Grund bleibt der Text Zeichen fuer Zeichen derselbe wie
       // bisher — der Parameter ist optional, siehe pushService.
-      try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id, grund); } catch (e) { console.error('Push notification failed:', e); }
+      // Die Termin-Kennung geht mit (15.09.2026): Ein Tipp auf die Meldung
+      // soll den Termin aufschlagen, wo der Grund ausfuehrlich steht — bisher
+      // landete er auf der Terminliste.
+      try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id, grund, eventId); } catch (e) { console.error('Push notification failed:', e); }
     }
 
     res.json({
@@ -1212,6 +1246,52 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
             WHERE id = $1`,
           [eventId, grund, req.user.id]
         );
+
+        // DER KORRIGIERTE GRUND WANDERT ZU DEN ABGEMELDETEN MIT
+        // (15.09.2026).
+        //
+        // DER FEHLER, DEN DAS BEHEBT: Die Absage meldet alle Angemeldeten ab
+        // und traegt den Absagegrund als excuse_reason ein
+        // (bookingUtils.meldeAlleAbBeiAbsage). Aenderte danach jemand den
+        // Grund, schrieb diese Route nur an events.cancelled_reason. Am
+        // Termin stand danach "Heizung defekt", in der Teilnehmerliste bei
+        // jeder einzelnen Person weiter "Heizng defket" — derselbe Sachverhalt
+        // an zwei Stellen mit zwei Texten. Wer den Tippfehler korrigiert,
+        // korrigiert ihn erwartbar ueberall.
+        //
+        // NUR WER DURCH DIE ABSAGE ABGEMELDET WURDE (Migration 153,
+        // abgemeldet_durch_absage): Das Handbuch nennt den Gegenfall
+        // ausdruecklich — "Genauso laesst sich der Grund bei einzelnen
+        // Personen durch einen eigenen ersetzen, etwa 'krank, Mutter hat
+        // angerufen'". Dieser Satz waere sonst nach der naechsten
+        // Grund-Korrektur nicht mehr wahr: Ein von Hand eingetragener Grund
+        // gehoert der Person, nicht dem Termin, und wird hier nicht
+        // ueberschrieben.
+        //
+        // WARUM NICHT AM TEXT ERKENNEN ("steht der alte Absagegrund drin?"):
+        // Dieselbe Begruendung wie in Migration 153 — eine Leitung, die von
+        // Hand denselben Wortlaut eintippt, waere nicht zu unterscheiden, und
+        // nach der ersten Korrektur waere der Vergleichstext weg. Herkunft ist
+        // eine eigene Angabe, kein Rueckschluss aus einem Freitext.
+        //
+        // OHNE GRUND DERSELBE FESTE TEXT WIE BEIM ABSAGEN: Wird der Grund
+        // geleert, steht bei den Abgemeldeten wieder 'Termin abgesagt'
+        // (ABSAGE_OHNE_GRUND) und nicht NULL. Die Zeile in der
+        // Teilnehmerliste laese sich sonst als "abgemeldet, Grund unbekannt"
+        // — der Grund ist aber bekannt, der Termin faellt aus. Genau so legt
+        // es meldeAlleAbBeiAbsage beim Absagen an; beide Wege muessen
+        // denselben Stand herstellen.
+        //
+        // IN DERSELBEN TRANSAKTION: Termin und Buchungen duerfen nicht
+        // auseinanderlaufen — das ist der ganze Punkt dieser Aenderung.
+        await client.query(
+          `UPDATE event_bookings
+              SET excuse_reason = $2
+            WHERE event_id = $1
+              AND abgemeldet_durch_absage = TRUE`,
+          [eventId, grund || ABSAGE_OHNE_GRUND]
+        );
+
         await client.query('COMMIT');
       }
     } catch (txErr) {

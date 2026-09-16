@@ -412,4 +412,177 @@ describe('Absagegrund: PUT /api/events/:id/cancel', () => {
       expect(gespeichert.cancelled_reason).toBeNull();
     });
   });
+
+  describe('Die Absage-Meldung traegt die Termin-Kennung', () => {
+    // DER FEHLER (15.09.2026): Jeder vergleichbare Termin-Push schickt
+    // event_id mit -- der Absage-Push als einziger nicht. Ein Tipp auf
+    // "Leider abgesagt" landete deshalb auf der Terminliste statt am Termin,
+    // wo der Grund ausfuehrlich steht.
+
+    async function absagenUndPushLesen(eventId, koerper) {
+      let gesendet = null;
+      const spy = vi.spyOn(PushService, 'sendToMultipleUsers')
+        .mockImplementation(async (_db, _ids, benachrichtigung) => {
+          gesendet = benachrichtigung;
+          return { success: true };
+        });
+      const res = await request(app)
+        .put(`/api/events/${eventId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(koerper);
+      expect(res.status).toBe(200);
+      expect(spy).toHaveBeenCalledTimes(1);
+      return gesendet;
+    }
+
+    it('event_id steht im data-Teil und zeigt auf den abgesagten Termin', async () => {
+      const eventId = await terminMitKonfi();
+
+      const gesendet = await absagenUndPushLesen(eventId, { cancelled_reason: 'Heizung defekt' });
+
+      // Als Zeichenkette, wie bei jedem anderen Termin-Push (FCM/APNs nehmen
+      // im data-Teil nur Zeichenketten).
+      expect(gesendet.data.event_id).toBe(String(eventId));
+    });
+
+    it('ADDITIV: die bisherigen Felder stehen unveraendert daneben', async () => {
+      // Der Alt-App-Vertrag: Es kommt etwas dazu, nichts faellt weg und
+      // nichts wechselt die Bedeutung. Ausgelieferte Fassungen lesen
+      // event_id nicht und landen weiter auf der Terminliste.
+      const eventId = await terminMitKonfi();
+
+      const gesendet = await absagenUndPushLesen(eventId, { cancelled_reason: 'Heizung defekt' });
+
+      expect(gesendet.title).toBe('Event abgesagt');
+      expect(gesendet.body.startsWith('Leider abgesagt: "Konfifreizeit" am ')).toBe(true);
+      expect(gesendet.body.endsWith('. Heizung defekt')).toBe(true);
+      expect(gesendet.data.type).toBe('event_cancelled');
+      expect(gesendet.data.event_name).toBe('Konfifreizeit');
+      expect(gesendet.data.cancelled_reason).toBe('Heizung defekt');
+      expect(gesendet.data.organization_id).toBe('1');
+    });
+
+    it('auch OHNE Grund kommt die Kennung mit — sie haengt am Termin, nicht am Grund', async () => {
+      const eventId = await terminMitKonfi();
+
+      const gesendet = await absagenUndPushLesen(eventId, {});
+
+      expect(gesendet.data.event_id).toBe(String(eventId));
+      // Und der Grund fehlt weiterhin ganz, statt als leerer String
+      // dazustehen.
+      expect('cancelled_reason' in gesendet.data).toBe(false);
+    });
+  });
+
+  describe('Loeschen: eine zweite Absage-Meldung geht nicht raus', () => {
+    // ENTSCHEIDUNG (15.09.2026): Wer einen Termin erst absagt und ihn spaeter
+    // aufraeumt -- der Weg, den das Handbuch empfiehlt --, schickte denselben
+    // Konfis zweimal "Leider abgesagt". Beim zweiten Mal war der Termin in der
+    // App laengst durchgestrichen; die Meldung erzaehlte nichts Neues.
+    //
+    // Beim Loeschen eines NICHT abgesagten Termins bleibt sie: Dort ist sie
+    // die einzige Nachricht, die diese Leute je bekommen.
+
+    async function loeschenUndPushZaehlen(eventId) {
+      let gesendet = null;
+      const spy = vi.spyOn(PushService, 'sendToMultipleUsers')
+        .mockImplementation(async (_db, _ids, benachrichtigung) => {
+          gesendet = benachrichtigung;
+          return { success: true };
+        });
+      const res = await request(app)
+        .delete(`/api/events/${eventId}?force=true`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      // nachAntwort() laeuft nach der Antwort; ohne dieses Warten waere der
+      // Zaehler auch dann 0, wenn der Push sehr wohl kaeme (die Falle, die in
+      // konfi-quest schon einmal "Parse Error: Expected HTTP/" ausgeloest hat).
+      await new Promise(r => setTimeout(r, 200));
+      return { anzahl: spy.mock.calls.length, gesendet, empfaenger: spy.mock.calls[0]?.[1] };
+    }
+
+    it('ein BEREITS ABGESAGTER Termin meldet sich beim Loeschen nicht noch einmal ab', async () => {
+      const eventId = await terminMitKonfi();
+      const absage = await request(app)
+        .put(`/api/events/${eventId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: 'Heizung defekt' });
+      expect(absage.status).toBe(200);
+
+      // AUSGANGSLAGE HERSTELLEN, DIE DEN WAECHTER WIRKLICH PRUEFT:
+      //
+      // Die Absage setzt den Buchungsstatus auf 'excused' (Migration 153).
+      // Die Empfaengerliste der Loeschroute sammelt aber nur 'confirmed' und
+      // 'waitlist' ein — nach einer Absage steht dort also ohnehin niemand
+      // mehr, und der Zaehler bliebe auch ohne den Waechter auf 0. Der Test
+      // bewiese dann nichts (gegengeprobt am 15.09.2026: genau so war es).
+      //
+      // Der Fall, den das Handbuch beschreibt, stellt die Lage aber her:
+      // "Waren drei Konfis trotzdem da und haben beim Abbauen geholfen,
+      // tippst du sie an und setzt sie auf anwesend." Danach steht die
+      // Buchung wieder auf 'confirmed', an einem abgesagten Termin. Genau
+      // diese Person wuerde beim Loeschen eine zweite Absage bekommen.
+      const nachtraeglich = await request(app)
+        .put(`/api/events/${eventId}/participants/${USERS.konfi1.id}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'present' });
+      expect(nachtraeglich.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(rows[0].status).toBe('confirmed');
+
+      const { anzahl } = await loeschenUndPushZaehlen(eventId);
+
+      expect(anzahl).toBe(0);
+    });
+
+    it('GEGENSTUECK: ein NICHT abgesagter Termin meldet sich beim Loeschen sehr wohl ab', async () => {
+      const eventId = await terminMitKonfi();
+
+      const { anzahl, gesendet, empfaenger } = await loeschenUndPushZaehlen(eventId);
+
+      expect(anzahl).toBe(1);
+      // Genau eine Empfaengerin: die angemeldete konfi1.
+      expect(empfaenger).toEqual([USERS.konfi1.id]);
+      expect(gesendet.data.type).toBe('event_cancelled');
+      expect(gesendet.data.event_name).toBe('Konfifreizeit');
+    });
+
+    it('beim Loeschen kommt KEINE Kennung mit — den Termin gibt es nicht mehr', async () => {
+      // Ein Sprung auf einen geloeschten Termin fuehrte ins Leere. Ohne
+      // Kennung bleibt die App auf der Terminliste.
+      const eventId = await terminMitKonfi();
+
+      const { gesendet } = await loeschenUndPushZaehlen(eventId);
+
+      expect('event_id' in gesendet.data).toBe(false);
+    });
+
+    it('ein abgesagter Termin OHNE Anmeldungen loest ebenfalls nichts aus', async () => {
+      // Gegenprobe zur Auswahl: Der Zaehler steht hier aus einem zweiten
+      // Grund auf 0 (keine Empfaenger). Er darf nicht die einzige Stuetze des
+      // ersten Tests sein -- deshalb steht dieser hier daneben und nicht
+      // an seiner Stelle.
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Leerer Termin',
+          event_date: futureDate.toISOString(),
+          max_participants: 10,
+          points: 0,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(createRes.status).toBe(201);
+
+      const { anzahl } = await loeschenUndPushZaehlen(createRes.body.id);
+
+      expect(anzahl).toBe(0);
+    });
+  });
 });

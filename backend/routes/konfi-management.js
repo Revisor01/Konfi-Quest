@@ -17,6 +17,8 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { rueckeNach } = require('../utils/bookingUtils');
+const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -336,6 +338,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
         }
         const client = await db.getClient();
+        // Wer auf die beim Jahrgangswechsel frei werdenden Plaetze nachgerueckt
+        // ist (Luecke geschlossen 15.09.2026).
+        const nachgerueckteJahrgang = [];
         try {
             await client.query('BEGIN');
 
@@ -446,7 +451,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                          SELECT 1 FROM event_jahrgang_assignments eja
                          WHERE eja.event_id = e.id AND eja.jahrgang_id = $4
                        )
-                     RETURNING eb.event_id`,
+                     RETURNING eb.event_id, eb.status, eb.timeslot_id`,
                     [req.params.id, req.user.organization_id, currentProfile.jahrgang_id, jahrgang_id]
                   );
                   // Wer nicht mehr gebucht ist, gehört auch nicht mehr in den
@@ -456,6 +461,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                   // (Befund 24.08.2026).
                   for (const row of abgemeldet) {
                     await removeFromEventChat(client, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
+                  }
+
+                  // NACHRUECKEN (Luecke geschlossen 15.09.2026): Die Kommentare
+                  // ueber diesem DELETE beschreiben "ein Geisterplatz, auf den
+                  // niemand nachruecken konnte" als geloest. Geloest war aber
+                  // nur die Haelfte — dass die Buchung liegen blieb. Die andere
+                  // Haelfte, das Nachruecken, fehlte weiter: Der Platz wurde
+                  // jetzt zwar frei, aber niemand bekam ihn.
+                  //
+                  // Nur bestaetigte Buchungen geben einen Platz frei; eine
+                  // geloeschte Wartelisten-Buchung aendert an der Kapazitaet
+                  // nichts. Immer 'konfi' — hier wird ein Konfi verschoben.
+                  for (const row of abgemeldet) {
+                    if (row.status !== 'confirmed') continue;
+                    const [promoted] = await rueckeNach(client, {
+                      eventId: row.event_id,
+                      timeslotId: row.timeslot_id,
+                      seite: 'konfi'
+                    });
+                    if (promoted) nachgerueckteJahrgang.push({ eventId: row.event_id, userId: promoted });
                   }
               }
                 const enrollFutureEventsQuery = `
@@ -484,6 +509,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             await client.query('COMMIT');
 
             res.json({ message: 'Konfi erfolgreich aktualisiert' });
+
+            // Wer nachgerueckt ist, erfaehrt es — nach dem COMMIT.
+            await meldeNachrueckern(db, req.user.organization_id, nachgerueckteJahrgang);
 
             // Live-Update NACH der Response: geaenderter Konfi in der Admin-Liste.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
@@ -526,11 +554,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth)
-            await deleteKonfiCascade(client, userId, req.user.organization_id);
+            // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth).
+            // Sie raeumt auch die Wartelisten nach: Jede bestaetigte Buchung der
+            // geloeschten Person gibt einen Platz frei (Luecke geschlossen
+            // 15.09.2026) und liefert die Nachgerueckten zurueck.
+            const nachgerueckteLoeschung = await deleteKonfiCascade(client, userId, req.user.organization_id);
 
             await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich gelöscht' });
+
+            await meldeNachrueckern(db, req.user.organization_id, nachgerueckteLoeschung);
 
             // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
@@ -1455,6 +1488,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = parseInt(req.params.id);
 
         const client = await db.getClient();
+        // Wer auf die durch die Befoerderung frei werdenden Konfi-Plaetze
+        // nachgerueckt ist (Luecke geschlossen 15.09.2026).
+        const nachgerueckteBefoerderung = [];
         try {
             await client.query('BEGIN');
 
@@ -1506,8 +1542,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // 3. Rolle ändern + teamer_since setzen
             await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
 
-            // 4. Event-Buchungen löschen
+            // 4. Event-Buchungen löschen.
+            //
+            // NACHRUECKEN (Luecke geschlossen 15.09.2026): Hier verschwinden
+            // ALLE Buchungen auf einmal -- bei einem aktiven Konfi koennen das
+            // ein Dutzend bestaetigte Plaetze sein, und auf keinen davon
+            // rueckte jemand nach.
+            //
+            // seite: 'konfi' ist hier FEST verdrahtet und nicht aus der Rolle
+            // abgeleitet: Die Rolle ist eine Zeile weiter oben schon auf
+            // 'teamer' gewechselt. Die Plaetze, die gleich frei werden, waren
+            // aber Konfi-Plaetze -- die Person hat sie als Konfi belegt. Aus
+            // der neuen Rolle zu schliessen hiesse, einen Konfi-Platz an eine
+            // wartende Teamer:in zu geben.
+            const { rows: freiwerdend } = await client.query(
+                "SELECT event_id, timeslot_id FROM event_bookings WHERE user_id = $1 AND status = 'confirmed'",
+                [konfiId]
+            );
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
+            for (const platz of freiwerdend) {
+                const [promoted] = await rueckeNach(client, {
+                    eventId: platz.event_id,
+                    timeslotId: platz.timeslot_id,
+                    seite: 'konfi'
+                });
+                if (promoted) nachgerueckteBefoerderung.push({ eventId: platz.event_id, userId: promoted });
+            }
 
             // 5. Offene Anträge löschen. Nachweisfotos vorher einsammeln,
             // damit die Dateien nach dem COMMIT vom Dateisystem entfernt
@@ -1579,6 +1639,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     role_name: 'teamer'
                 }
             });
+
+            // Wer nachgerueckt ist, erfaehrt es — nach dem COMMIT und
+            // fehlertolerant: Ein Push-Fehler darf die Befoerderung nicht kippen.
+            await meldeNachrueckern(db, req.user.organization_id, nachgerueckteBefoerderung);
 
             // Live-Update NACH der Response: Konfi verschwindet aus der Konfi-Liste
             // und taucht als Teamer:in in der Benutzer-Liste auf.

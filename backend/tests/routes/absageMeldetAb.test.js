@@ -128,16 +128,37 @@ describe('Absage meldet alle Angemeldeten ab', () => {
       }
     });
 
-    // Der Alt-App-Vertrag: `status` bleibt 'confirmed'. Ausgelieferte
-    // App-Fassungen filtern ihre Teilnehmerlisten ueber
-    // `p.status === 'confirmed'` (EventDetailView, EventDetailSections) --
-    // wuerde der Wert wechseln, verschwaenden die Personen dort aus der Liste.
-    it('laesst status auf confirmed stehen (Alt-App-Vertrag)', async () => {
+    // UMENTSCHIEDEN am 15.09.2026 (Migration 153). Bis dahin stand hier das
+    // Gegenteil: "laesst status auf confirmed stehen (Alt-App-Vertrag)".
+    //
+    // Die Begruendung war, ausgelieferte App-Fassungen filterten ihre
+    // Teilnehmerlisten ueber `p.status === 'confirmed'`. Das stimmt -- nur
+    // kostete es mehr, als es einbrachte: Am Buchungsstatus haengen
+    // Erinnerung, Kapazitaet, Nachruecken und Sortierung. Solange er auf
+    // 'confirmed' stand, war die Abmeldung fuer all das unsichtbar, und die
+    // Fehler traten serverseitig auf, wo keine App-Fassung sie heilen kann.
+    // Nachgemessen stuerzt 2.1.1 an dem unbekannten Wert nicht ab; die
+    // Person erscheint dort als "Gebucht".
+    it('setzt status auf excused -- die Buchung zaehlt nicht mehr', async () => {
       const eventId = await termin();
       await bucht(eventId, USERS.konfi1.id);
 
       expect((await absagen(eventId)).status).toBe(200);
-      expect((await buchung(eventId, USERS.konfi1.id)).status).toBe('confirmed');
+      expect((await buchung(eventId, USERS.konfi1.id)).status).toBe('excused');
+    });
+
+    // DIE HERKUNFT, auf der das Zuruecknehmen der Absage aufbaut: Nur
+    // Abmeldungen AUS der Absage werden spaeter wieder aufgehoben.
+    it('kennzeichnet die Abmeldung als aus der Absage stammend', async () => {
+      const eventId = await termin();
+      await bucht(eventId, USERS.konfi1.id);
+
+      expect((await absagen(eventId)).status).toBe(200);
+      const { rows: [b] } = await db.query(
+        'SELECT abgemeldet_durch_absage FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(b.abgemeldet_durch_absage).toBe(true);
     });
 
     // Die Absage ist keine Anwesenheitsbeurteilung: Niemand hat hier eine
@@ -212,7 +233,11 @@ describe('Absage meldet alle Angemeldeten ab', () => {
   // auf NULL stehen bliebe, waere genau der offene Posten, gegen den diese
   // Aenderung antritt -- und nachruecken kann sie ohnehin nicht mehr.
   describe('Warteliste wird mit abgemeldet', () => {
-    it('meldet auch Wartende ab, ohne ihren status zu aendern', async () => {
+    it('meldet auch Wartende ab -- ihr status wird ebenfalls excused', async () => {
+      // Seit Migration 153 zieht der Buchungsstatus mit, auch auf der
+      // Warteliste. Das ist folgerichtig: Nachruecken kann sie ohnehin nicht
+      // mehr, der Termin ist weg. Stuende sie weiter auf 'waitlist', bliebe
+      // sie in der Wartelisten-Zaehlung der Sicht stehen.
       const eventId = await termin();
       await bucht(eventId, USERS.konfi1.id, 'confirmed');
       await bucht(eventId, USERS.konfi2.id, 'waitlist');
@@ -222,7 +247,7 @@ describe('Absage meldet alle Angemeldeten ab', () => {
       const w = await buchung(eventId, USERS.konfi2.id);
       expect(w.attendance_status).toBe('excused');
       expect(w.excuse_reason).toBe('Sturm');
-      expect(w.status).toBe('waitlist');
+      expect(w.status).toBe('excused');
     });
   });
 
@@ -426,6 +451,10 @@ describe('Absage meldet alle Angemeldeten ab', () => {
 
       const b = await buchung(eventId, USERS.konfi1.id);
       expect(b.attendance_status).toBe('present');
+      // Der Buchungsstatus kommt MIT zurueck (Migration 153): Wer doch da
+      // war, ist wieder gebucht -- sonst bliebe die Abmeldung endgueltig,
+      // obwohl die Anwesenheit das Gegenteil sagt.
+      expect(b.status).toBe('confirmed');
       // Der Absagegrund weicht beim Wechsel auf 'present' -- er gehoert zu
       // 'excused' (events/anwesenheit.js) und stuende sonst an einer
       // Buchung, die auf anwesend steht.
