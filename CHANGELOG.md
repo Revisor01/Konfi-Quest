@@ -180,6 +180,17 @@ Versionsüberschrift.
   Anmeldungen wirklich verloren gehen sollen, erschien nie. Der Dialog
   verschwand, der Termin blieb stehen. Jetzt kommt die Rückfrage und nennt, was
   verloren geht — bei einzelnen Terminen wie bei ganzen Serien.
+- **Die eigene Zusage der Leitung zeigte immer beide Knöpfe**, auch nachdem man
+  sich längst entschieden hatte. Jetzt ist es wie im Team: Solange nichts
+  gewählt ist, stehen beide da; danach nur noch der Weg zurück — „Nicht mehr
+  dabei" nach einer Zusage, „Doch dabei" nach einer Absage.
+- Im Team stand unter **„Bist du dabei?"** bei manchen Terminen eine leere
+  weiße Karte ohne Inhalt — etwa bei einem vergangenen Termin, an dem man nicht
+  teilgenommen hatte. Der Abschnitt entfällt jetzt ganz, wenn es dort nichts zu
+  sagen gibt.
+- Bei einem **abgesagten Termin** bot die Team-Ansicht als einzige weiter die
+  Zusage an, obwohl der Termin nicht stattfindet. Dort steht jetzt derselbe
+  Hinweis wie bei Konfis und Leitung.
 - Wer von der Leitung zu einem Termin angemeldet wurde, **erfuhr es nicht** —
   weder Konfis noch Teamer:innen bekamen eine Mitteilung, die Anmeldung tauchte
   irgendwann kommentarlos in der eigenen Liste auf. Jetzt kommt dieselbe
