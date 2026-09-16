@@ -70,10 +70,29 @@ const presentAlert = (optionen: AlertOptionen) => {
   offeneAlerts.push(optionen);
 };
 
+/**
+ * WICHTIG: DIE REIHENFOLGE HIER IST DER GANZE PUNKT (korrigiert 17.09.2026).
+ *
+ * Bis dahin stand hier `aktiverAlert = null` VOR dem onDidDismiss-Aufruf --
+ * genau umgekehrt zur Bibliothek. Der Test war damit gruen, waehrend das
+ * Loeschen in der App weiter nicht durchkam: Simon meldete "Loeschen geht
+ * nach wie vor nicht. Keine zweite Frage."
+ *
+ * @ionic/react (useController.present, dist/index.js) macht es so:
+ *
+ *   const handleDismiss = (event) => {
+ *     if (onDidDismiss) { onDidDismiss(event); }   // <- Callback zuerst
+ *     overlayRef.current = undefined;              // <- Freigabe DANACH
+ *   };
+ *
+ * Ein presentAlert AUS dem onDidDismiss heraus trifft also noch auf ein
+ * belegtes overlayRef und wird still verworfen. Wer diese zwei Zeilen
+ * vertauscht, macht den Test blind fuer genau den Fehler, den er pruefen soll.
+ */
 const dismissAlert = async () => {
   const alert = aktiverAlert;
-  aktiverAlert = null;
   alert?.onDidDismiss?.();
+  aktiverAlert = null;
 };
 
 /**

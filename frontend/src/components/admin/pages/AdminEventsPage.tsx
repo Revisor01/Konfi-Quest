@@ -402,7 +402,24 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           }
         }
       ],
-      onDidDismiss: () => { nachDemSchliessen?.(); nachDemSchliessen = null; }
+      // setTimeout 0, NICHT direkt aufrufen (17.09.2026): @ionic/react ruft
+      // onDidDismiss auf, BEVOR es overlayRef.current freigibt --
+      //
+      //   const handleDismiss = (event) => {
+      //     if (onDidDismiss) { onDidDismiss(event); }
+      //     overlayRef.current = undefined;
+      //   };
+      //
+      // Ein presentAlert von hier aus liefe also noch gegen ein belegtes
+      // overlayRef und wuerde still verworfen. Genau das war der erste,
+      // wirkungslose Anlauf dieser Korrektur. Der Timeout laesst den
+      // Aufrufstapel zu Ende laufen; die Freigabe steht synchron direkt hinter
+      // unserem Callback und ist dann durch.
+      onDidDismiss: () => {
+        const naechster = nachDemSchliessen;
+        nachDemSchliessen = null;
+        if (naechster) setTimeout(naechster, 0);
+      }
     });
   };
 
@@ -483,7 +500,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           }
         }
       ],
-      onDidDismiss: () => { nachDemSchliessen?.(); nachDemSchliessen = null; }
+      // setTimeout 0 aus demselben Grund wie beim Einzeltermin (siehe dort).
+      onDidDismiss: () => {
+        const naechster = nachDemSchliessen;
+        nachDemSchliessen = null;
+        if (naechster) setTimeout(naechster, 0);
+      }
     });
   };
 
