@@ -33,6 +33,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
+      // AN EINEN ABGESAGTEN TERMIN TRAEGT AUCH DIE LEITUNG NIEMANDEN EIN
+      // (Simons Entscheidung, 16.09.2026): "Nein, gar nicht" — zu einem
+      // abgesagten Termin kann sich niemand anmelden, weder Konfi noch
+      // Leitung. Der Termin findet nicht statt.
+      //
+      // Wer wieder Leute eintragen will, nimmt zuerst die Absage zurueck
+      // (PUT /:id/reaktivieren) — dort kommen die vorher Abgemeldeten
+      // ohnehin von selbst zurueck.
+      if (event.cancelled) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+      }
+
       // Jahrgangs-Bindung (14.09.2026, siehe utils/jahrgangsZugriff.js):
       // Wer den Termin nicht sehen darf, traegt dort auch niemanden ein.
       const zugriff = await darfTermin(client, req, eventId);

@@ -936,6 +936,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   const isPastEvent = istVergangen(eventData);
                   const isOptedOut = eventData.is_opted_out || eventData.booking_status === 'opted_out';
 
+                  // ZU EINEM ABGESAGTEN TERMIN MELDET SICH NIEMAND (WIEDER) AN
+                  // (Simons Befund 16.09.2026, am Geraet reproduziert): Wer
+                  // sich von einem Pflichttermin abgemeldet hatte und danach
+                  // die Absage erlebte, sah weiter "Wieder anmelden" — und der
+                  // Knopf ging auch durch. Vor isPastEvent und isOptedOut:
+                  // Abgesagt schlaegt alles, egal in welchem Zustand die
+                  // eigene Buchung ist.
+                  if (istAbgesagt(eventData)) {
+                    return (
+                      <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
+                        <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
+                        Dieser Termin ist abgesagt
+                      </IonNote>
+                    );
+                  }
+
                   if (isPastEvent) {
                     return (
                       <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
@@ -1039,6 +1055,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     </IonButton>
                   )}
                 </div>
+              ) : istAbgesagt(eventData) ? (
+                // Kein Anmelde-Knopf an einem abgesagten Termin (Simons
+                // Entscheidung 16.09.2026) — er findet nicht statt. Steht vor
+                // allen Anmelde-Zweigen; das Abmelden oben bleibt unberuehrt.
+                <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
+                  <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
+                  Dieser Termin ist abgesagt
+                </IonNote>
               ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
                 <IonButton
                   className="app-action-button"

@@ -1916,12 +1916,29 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Event laden
       const { rows: [event] } = await db.query(
-        'SELECT name, event_date, mandatory, organization_id FROM events WHERE id = $1 AND organization_id = $2',
+        'SELECT name, event_date, mandatory, cancelled, organization_id FROM events WHERE id = $1 AND organization_id = $2',
         [eventId, req.user.organization_id]
       );
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // ZU EINEM ABGESAGTEN TERMIN MELDET SICH NIEMAND (WIEDER) AN
+      // (Simons Entscheidung, 16.09.2026, live am Geraet reproduziert):
+      // Eine Konfi hatte sich von einem Pflichttermin abgemeldet, danach wurde
+      // der Termin abgesagt — "Wieder anmelden" stand weiter da und ging auch
+      // durch. Sie stand anschliessend als 'confirmed' an einem Termin, der
+      // nicht stattfindet. Der Termin findet nicht statt, also gibt es nichts,
+      // wozu man sich anmelden koennte.
+      //
+      // Das Zuruecknehmen der Absage beruehrt dieser Riegel NICHT:
+      // hebeAbsageAbmeldungenAuf stellt die Buchungen mit einem eigenen
+      // UPDATE her und laeuft nicht ueber diese Route.
+      //
+      // ABMELDEN bleibt erlaubt — nur das Anmelden ist gesperrt.
+      if (event.cancelled) {
+        return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
       }
 
       // Guard: Nur bei Pflicht-Events

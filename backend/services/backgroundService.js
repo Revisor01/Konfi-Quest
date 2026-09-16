@@ -1276,7 +1276,7 @@ class BackgroundService {
               WHERE eja.jahrgang_id = $1
                 AND e.is_konfirmation = true
                 AND e.organization_id = $2
-                AND (e.cancelled IS NULL OR e.cancelled = false)`,
+                AND e.cancelled IS NOT TRUE`,
             [jg.id, jg.organization_id]
           );
           const stichtag = stichtagRows[0] && stichtagRows[0].stichtag;
@@ -1393,7 +1393,7 @@ class BackgroundService {
             WHERE eja.jahrgang_id = $1
               AND e.is_konfirmation = true
               AND e.organization_id = $2
-              AND (e.cancelled IS NULL OR e.cancelled = false)`,
+              AND e.cancelled IS NOT TRUE`,
           [jg.id, jg.organization_id]
         );
         const stichtag = stichtagRows[0] && stichtagRows[0].stichtag;

@@ -125,6 +125,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const darfSichMelden = user?.role_name !== 'konfi' && nimmtTeamAn
     && !istAbgesagt(eventData) && !istVergangen(eventData);
 
+  /**
+   * Darf die Leitung hier ueberhaupt noch jemanden eintragen?
+   *
+   * An einem ABGESAGTEN Termin nicht (Simons Entscheidung, 16.09.2026:
+   * "Nein, gar nicht" — zu einem abgesagten Termin kann sich niemand
+   * anmelden, weder Konfi noch Leitung). Wer wieder Leute eintragen will,
+   * nimmt zuerst die Absage zurueck; dabei kommen die vorher Abgemeldeten
+   * ohnehin von selbst zurueck.
+   *
+   * istAbgesagt() statt eventData.cancelled von Hand: Es prueft beide Felder,
+   * weil die Listen- und die Detail-Route verschiedene liefern.
+   */
+  const darfEintragen = !istAbgesagt(eventData);
+
   const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
     if (!eventData || zusageLaeuft) return;
     setZusageLaeuft(true);
@@ -1465,13 +1479,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {displayParticipants.map(renderParticipant)}
                       </div>
-                      <div className="app-event-detail__add-button-wrapper">
-                        <IonButton expand="block" fill="outline"
-                          onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
-                          Konfi hinzufügen
-                        </IonButton>
-                      </div>
+                      {darfEintragen && (
+                        <div className="app-event-detail__add-button-wrapper">
+                          <IonButton expand="block" fill="outline"
+                            onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
+                            <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
+                            Konfi hinzufügen
+                          </IonButton>
+                        </div>
+                      )}
                     </IonCardContent>
                   </IonCard>
                 </IonList>
@@ -1505,23 +1521,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {teamerParticipants.map(renderParticipant)}
                       </div>
-                      <div className="app-event-detail__add-button-wrapper">
-                        <IonButton expand="block" fill="outline"
-                          onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
-                          Team hinzufügen
-                        </IonButton>
-                        <IonButton expand="block" fill="outline"
-                          onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
-                          <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
-                          Leitung hinzufügen
-                        </IonButton>
-                      </div>
+                      {darfEintragen && (
+                        <div className="app-event-detail__add-button-wrapper">
+                          <IonButton expand="block" fill="outline"
+                            onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
+                            <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
+                            Team hinzufügen
+                          </IonButton>
+                          <IonButton expand="block" fill="outline"
+                            onClick={() => presentLeitungModal({ presentingElement: presentingElement || undefined })}>
+                            <IonIcon icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} className="app-event-detail__icon-gap" />
+                            Leitung hinzufügen
+                          </IonButton>
+                        </div>
+                      )}
                     </IonCardContent>
                   </IonCard>
                 </IonList>
               )}
-              {!isTeamerOnlyEvent && displayParticipants.length === 0 && teamerParticipants.length > 0 && (
+              {darfEintragen && !isTeamerOnlyEvent && displayParticipants.length === 0 && teamerParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">
@@ -1551,13 +1569,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           />
         )}
 
-        {/* Event absagen */}
+        {/* Ganz unten genau EIN Knopf: am aktiven Termin "Event absagen",
+            am abgesagten "Absage zurücknehmen" (Simons Symmetrie-Wunsch
+            16.09.2026). Der Wisch in der Terminliste bleibt daneben
+            bestehen — zwei Wege, wie beim Absagen auch. */}
         {eventData && (
           <EventActionsSection
             eventData={eventData}
             isCancelled={!!isCancelled}
             isOnline={isOnline}
             handleCancelEvent={handleCancelEvent}
+            handleAbsageZuruecknehmen={handleAbsageZuruecknehmen}
           />
         )}
 

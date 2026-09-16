@@ -847,6 +847,21 @@ async function bucheTermin(client, eingabe) {
   );
   if (!event) return fehler(404, 'Event nicht gefunden');
 
+  // 1a. ABGESAGT SCHLAEGT ALLES (Simons Entscheidung, 16.09.2026): Zu einem
+  //     abgesagten Termin meldet sich niemand an — weder Konfi noch Team,
+  //     weder neu noch wieder. Der Termin findet nicht statt.
+  //
+  //     Stand bis dahin nur im Konfi-Zweig weiter unten; der Team-Zweig kam
+  //     ohne ihn aus und haette eine zurueckgenommene Team-Absage
+  //     (reaktivierung) auch an einem abgesagten Termin durchgelassen.
+  //     Jetzt zentral, vor der Rollenweiche — dasselbe Muster wie in
+  //     setzeTeamerZusage, das den Riegel schon hatte.
+  //
+  //     Das Zuruecknehmen der Absage laeuft NICHT hier durch, sondern ueber
+  //     hebeAbsageAbmeldungenAuf (eigenes UPDATE) — der Riegel behindert es
+  //     nicht.
+  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+
   // 2. Doppelbuchung — vor allen fachlichen Pruefungen, damit ein zweiter
   //    Versuch immer 409 meldet und nicht je nach Termin etwas anderes.
   //
@@ -921,7 +936,7 @@ async function bucheTermin(client, eingabe) {
 
   // ---------- KONFI-SEITE ----------
   if (event.teamer_only) return fehler(403, 'Dieses Event ist nur für das Team');
-  if (event.cancelled) return fehler(400, 'Dieser Termin ist abgesagt');
+  // (Der cancelled-Riegel steht jetzt zentral oben, vor der Rollenweiche.)
 
   const fenster = validateRegistrationWindow(event);
   if (!fenster.valid) return fehler(400, fenster.error);

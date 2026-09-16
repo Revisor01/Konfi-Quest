@@ -187,6 +187,48 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     expect(rows[0].deleted_at).toBeNull();
     expect(rows[0].archived_at).toBeNull();
   });
+
+  // Die Stichtag-Query filtert mit `cancelled IS NOT TRUE`. events.cancelled ist
+  // nullable: ein Altbestands-Termin mit NULL muss als "nicht abgesagt" zaehlen
+  // und den Stichtag liefern, ein wirklich abgesagter darf es nicht.
+  async function setKonfirmationDaysAgoRaw(jahrgangId, days, cancelledSql) {
+    const eventId = nextKonfirmationEventId++;
+    await db.query(
+      `INSERT INTO events (id, name, event_date, organization_id, is_konfirmation, cancelled, mandatory, has_timeslots)
+       VALUES ($1, 'Konfirmation', CURRENT_DATE - ($3 || ' days')::interval, $2, true, ${cancelledSql}, false, false)`,
+      [eventId, ORG_ID, String(days)]
+    );
+    await db.query(
+      `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)`,
+      [eventId, jahrgangId]
+    );
+  }
+
+  it('Test 8: Konfirmation mit cancelled = NULL (Altbestand) liefert den Stichtag und loescht soft', async () => {
+    await setKonfirmationDaysAgoRaw(JAHRGAENGE.jahrgang1.id, 60, 'NULL');
+
+    await BackgroundService.runAutoDeletion(db);
+
+    const { rows } = await db.query(
+      'SELECT deleted_at, archived_at FROM users WHERE id = $1',
+      [USERS.konfi1.id]
+    );
+    expect(rows[0].deleted_at).not.toBeNull();
+    expect(rows[0].archived_at).not.toBeNull();
+  });
+
+  it('Test 9: Gegenprobe — abgesagte Konfirmation liefert KEINEN Stichtag, nichts wird geloescht', async () => {
+    await setKonfirmationDaysAgoRaw(JAHRGAENGE.jahrgang1.id, 60, 'true');
+
+    await BackgroundService.runAutoDeletion(db);
+
+    const { rows } = await db.query(
+      'SELECT deleted_at, archived_at FROM users WHERE id = $1',
+      [USERS.konfi1.id]
+    );
+    expect(rows[0].deleted_at).toBeNull();
+    expect(rows[0].archived_at).toBeNull();
+  });
 });
 
 describe('runJahrgangDeletionReminders ("Letzte Chance"-Warnung)', () => {
@@ -243,6 +285,32 @@ describe('runJahrgangDeletionReminders ("Letzte Chance"-Warnung)', () => {
   });
 
   it('Jahrgang OHNE Konfirmations-Event: kein Reminder (sicherer Default)', async () => {
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).toBeNull();
+  });
+
+  // Dieselbe Stichtag-Query wie runAutoDeletion (`cancelled IS NOT TRUE`):
+  // NULL zaehlt als nicht abgesagt, true nicht.
+  async function setKonfirmationDaysAgoRaw(jahrgangId, days, cancelledSql) {
+    const eventId = remEventId++;
+    await db.query(
+      `INSERT INTO events (id, name, event_date, organization_id, is_konfirmation, cancelled, mandatory, has_timeslots)
+       VALUES ($1, 'Konfirmation', CURRENT_DATE - ($3 || ' days')::interval, $2, true, ${cancelledSql}, false, false)`,
+      [eventId, 1, String(days)]
+    );
+    await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)', [eventId, jahrgangId]);
+  }
+
+  it('Konfirmation mit cancelled = NULL (Altbestand): Reminder feuert trotzdem', async () => {
+    await setKonfirmationDaysAgoRaw(JAHRGAENGE.jahrgang1.id, 55, 'NULL');
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).not.toBeNull();
+  });
+
+  it('Gegenprobe: abgesagte Konfirmation liefert keinen Stichtag, kein Reminder', async () => {
+    await setKonfirmationDaysAgoRaw(JAHRGAENGE.jahrgang1.id, 55, 'true');
     await BackgroundService.runJahrgangDeletionReminders(db);
     const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
     expect(rows[0].deletion_reminder_sent_at).toBeNull();
