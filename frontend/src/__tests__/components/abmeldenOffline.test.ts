@@ -57,7 +57,15 @@ describe('Anmelden bleibt offline gesperrt — mit Grund', () => {
     // Begrenzte Plaetze sind offline nicht pruefbar. Eine eingereihte
     // Anmeldung, die Stunden spaeter am vollen Termin scheitert, waere
     // schlechter als ein ehrliches Nein.
-    expect(konfiTermin).toContain("`Anmelden (${eventData.registered_count}");
+    //
+    // 16.09.2026: Hier stand der Knopftext frueher woertlich
+    // ("`Anmelden (${eventData.registered_count}"). Der null/4-Fix desselben
+    // Tages haengte ein `|| 0` an den Zaehler — der Test fiel, obwohl am
+    // geprueften Verhalten (offline gesperrt) nichts anders war. Die
+    // Erwartung klebte am Wortlaut statt an der Sache; sie sollte den Knopf
+    // nur wiederfinden. Deshalb jetzt ein Muster, das den Zaehler-Ausdruck
+    // offen laesst.
+    expect(konfiTermin).toMatch(/`Anmelden \(\$\{eventData\.registered_count/);
     expect(konfiTermin).toMatch(/disabled=\{!isOnline\}/);
   });
 });

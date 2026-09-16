@@ -1111,7 +1111,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <IonIcon icon={ICON_WARNUNG_GEFUELLT} slot="start" />
                   Konfirmationstermin bereits gebucht
                 </IonButton>
-              ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || eventData.registered_count < eventData.max_participants) ? (
+              ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || (eventData.registered_count || 0) < eventData.max_participants) ? (
                 <IonButton
                   className="app-action-button"
                   expand="block"
@@ -1120,9 +1120,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   onClick={handleRegister}
                 >
                   <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
-                  {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
+                  {/* `|| 0` wie in der Wartelisten-Zeile darunter: Ein Termin
+                      ohne jede Buchung lieferte die Zahl als null, auf dem
+                      Knopf stand "Anmelden (null/4)". Das Backend gibt jetzt
+                      0 zurueck; die Absicherung bleibt trotzdem stehen, weil
+                      ausgelieferte App-Fassungen auch gegen aeltere Staende
+                      laufen. */}
+                  {!isOnline ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)'}} /> Du bist offline</> : `Anmelden (${eventData.registered_count || 0}/${eventData.max_participants})`}
                 </IonButton>
-              ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
+              ) : eventData.waitlist_enabled && eventData.max_participants > 0 && (eventData.registered_count || 0) >= eventData.max_participants && eventData.registration_status === 'open' ? (
                 <IonButton
                   className="app-action-button"
                   expand="block"

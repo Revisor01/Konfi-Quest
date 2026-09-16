@@ -1145,10 +1145,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // eigene Buchung als LEFT JOIN LATERAL mit LIMIT 1 — kein GROUP BY nötig.
       const query = `
         SELECT e.*,
-               bstats.registered_count,
-               bstats.waitlist_count,
-               bstats.teamer_count,
-               bstats.abgemeldet_count,
+               -- COALESCE AUF DER AEUSSEREN EBENE (16.09.2026).
+               --
+               -- DIE FALLE: Ein COALESCE INNERHALB der LATERAL-Unterabfrage
+               -- schuetzt vor einer NULL-SPALTE, nicht vor einer FEHLENDEN
+               -- ZEILE. event_booking_stats entsteht mit GROUP BY ueber
+               -- event_bookings -- ein Termin OHNE jede Buchung hat dort
+               -- keine Zeile. Die Unterabfrage liefert dann null Zeilen,
+               -- ON true fuellt alle Spalten mit NULL auf, und das innere
+               -- COALESCE wird nie ausgewertet. In der App stand daraufhin
+               -- "Anmelden (null/4)" auf dem Knopf.
+               --
+               -- Deshalb steht die Absicherung hier aussen, wie bei
+               -- GET /events/:id/status weiter unten in dieser Datei.
+               COALESCE(bstats.registered_count, 0)  as registered_count,
+               COALESCE(bstats.waitlist_count, 0)    as waitlist_count,
+               COALESCE(bstats.teamer_count, 0)      as teamer_count,
+               COALESCE(bstats.abgemeldet_count, 0)  as abgemeldet_count,
                CASE
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
@@ -1158,8 +1171,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                event_chat.id as chat_room_id,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
-                 bestaetigt: 'bstats.registered_count',
-                 warteliste: 'bstats.waitlist_count'
+                 // Auch hier ausdruecklich abgesichert: bstats liefert bei
+                 // einem Termin ohne Buchung gar keine Zeile (siehe oben).
+                 bestaetigt: 'COALESCE(bstats.registered_count, 0)',
+                 warteliste: 'COALESCE(bstats.waitlist_count, 0)'
                })} as registration_status,
                -- Konfi-specific data
                eb_konfi.status as booking_status,
