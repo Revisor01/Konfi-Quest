@@ -28,9 +28,8 @@ import {
   ICON_UNENDLICH,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, abgesagteAnsEnde, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
-import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import { Event } from '../../../types/event';
 
 interface EventsViewProps {
@@ -155,7 +154,10 @@ const EventsView: React.FC<EventsViewProps> = ({
     const attendanceStatus = event.attendance_status;
     // Warteliste: booking_status kann 'waitlist' oder 'pending' sein (Backend sendet beides)
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
-    const isCancelled = event.cancelled;
+    // istAbgesagt() statt event.cancelled von Hand: Die Konfi-Liste kommt
+    // aus GET /konfi/events und traegt beide Felder -- die Pruefung muss
+    // dieselbe sein wie in Leitung und Team.
+    const isCancelled = istAbgesagt(event);
     const isKonfirmationEvent = event.is_konfirmation;
     // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
     const isAusstehend = isPastEvent && event.is_registered && !isOnWaitlist && !attendanceStatus;
@@ -237,7 +239,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'meine':
         return events.filter(e => e.is_registered || e.booking_status === 'opted_out');
       case 'alle':
-        return nonKonfirmationEvents.filter(e => !istVergangen(e));
+        return nonKonfirmationEvents.filter(e => !istVergangen(e)).sort(abgesagteAnsEnde);
       case 'konfirmation':
         return konfirmationEvents;
       default:
@@ -327,7 +329,7 @@ const EventsView: React.FC<EventsViewProps> = ({
           const statusInfo = getEventStatusInfo(event);
           const { statusColor, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent } = statusInfo;
           let statusText = statusInfo.statusText;
-          const isCancelled = event.cancelled;
+          const isCancelled = istAbgesagt(event);
           const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
           // Konfirmations-Sperre: anderer Konfirmationstermin schon gebucht -> dieses
           // (nicht gebuchte, zukuenftige) Konfirmations-Event ist gesperrt/ausgegraut.
@@ -399,7 +401,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           className="app-list-item__title app-list-item__title--events"
                           style={{
                             color: isCancelled || shouldGrayOut ? 'var(--app-text-muted)' : undefined,
-                            textDecoration: isCancelled ? 'line-through' : 'none',
+                            textDecoration: titelDekoration('liste', event),
                             paddingRight: showBadge ? 'var(--app-freiraum-aktion-l)' : '0'
                           }}
                         >
@@ -411,16 +413,12 @@ const EventsView: React.FC<EventsViewProps> = ({
                             soll ihn schon in der Liste lesen und nicht erst den Termin
                             aufmachen muessen. Ohne Grund faellt der Block weg, das
                             Status-Badge sagt "Abgesagt" ohnehin schon. */}
-                        {isCancelled && event.cancelled_reason && (
-                          <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                            <strong>Abgesagt: </strong>{event.cancelled_reason}
-                          </div>
-                        )}
-                        {isCancelled && event.cancelled_reason && absageUrheberZeile(event) && (
-                          <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                            {absageUrheberZeile(event)}
-                          </div>
-                        )}
+                        {/* Seit 15.09.2026 derselbe Block wie in Leitung und
+                            Team -- einschliesslich der Zeile "Grund geändert
+                            von ...", die hier vorher fehlte: Die Konfi las
+                            "Abgesagt von Anna" ueber einem Text, den Bernd
+                            geschrieben hatte. */}
+                        <AbsageBlock event={event} variante="zeile" />
 
                         {/* Zeile 2: Buchungen + Warteliste + Punkte */}
                         <div className="app-list-item__meta">

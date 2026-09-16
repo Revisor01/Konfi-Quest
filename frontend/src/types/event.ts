@@ -143,7 +143,14 @@ export interface Participant {
   jahrgang_name?: string;
   role_name?: string;
   created_at: string;
-  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
+  /**
+   * 'excused' kam am 15.09.2026 dazu (Migration 153): Eine Abmeldung setzt
+   * seither NICHT mehr nur attendance_status, sondern auch den
+   * Buchungsstatus. Ohne diesen Wert im Typ meldet tsc jeden Vergleich damit
+   * als unmoeglich -- und die Anzeige haette ihn stillschweigend als
+   * "Gebucht" behandelt.
+   */
+  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | 'excused';
   /**
    * 'excused' (Migration 147, 12.09.2026): von der Leitung nachgetragene
    * Abmeldung — jemand wurde ausserhalb der App abgemeldet (Anruf der

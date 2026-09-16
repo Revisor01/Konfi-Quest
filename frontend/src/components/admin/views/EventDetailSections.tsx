@@ -41,6 +41,7 @@ import {
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
+import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import type { Participant, Unregistration, EventMaterial } from '../../../types/event';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -763,7 +764,17 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
             }
             return false;
           };
-          const slotParticipants = participants.filter(p => p.status === 'confirmed' && matchesSlot(p));
+          // 'excused' und 'opted_out' gehoeren dazu (15.09.2026): Meldet sich
+          // jemand von einem Termin mit Zeitfenstern ab, wechselt der
+          // Buchungsstatus (events/anwesenheit.js setzt seit dem 15.09.2026
+          // auch status = 'excused'; eine Selbstabmeldung schreibt
+          // 'opted_out'). Mit dem alten Filter auf 'confirmed' verschwand die
+          // Zeile daraufhin ganz aus dem Zeitfenster -- der Platz sah frei
+          // aus, und die Abmeldung samt Grund war nirgends mehr zu sehen.
+          // Die Liste OHNE Zeitfenster zeigt beide Zustaende seit jeher.
+          const slotParticipants = participants.filter(
+            p => ['confirmed', 'excused', 'opted_out'].includes(p.status || '') && matchesSlot(p)
+          );
           const slotWaitlist = participants.filter(p => p.status === 'waitlist' && matchesSlot(p));
           const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
           const waitlistCount = timeslot.waitlist_count || 0;
@@ -798,19 +809,17 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
               {slotParticipants.length > 0 && (
                 <div className="app-event-detail__slot-participants">
                   {slotParticipants.map((participant) => {
-                    // 'excused' (12.09.2026): von der Leitung nachgetragene
-                    // Abmeldung — grau, weil sie weder ein Erfolg noch ein
-                    // Fehlen ist. Gleiche Darstellung wie in der Hauptliste.
-                    const istAbgemeldet = participant.attendance_status === 'excused';
-                    const statusText = istAbgemeldet ? 'Abgemeldet (nachgetragen)' :
-                                       participant.attendance_status === 'present' ? 'Anwesend' :
-                                       participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht';
-                    const cornerBadgeClass = istAbgemeldet ? 'app-corner-badge--neutral' :
-                                             participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                                             participant.attendance_status === 'absent' ? 'app-corner-badge--danger' : 'app-corner-badge--info';
-                    const listItemClass = istAbgemeldet ? 'app-list-item--neutral' :
-                                          participant.attendance_status === 'present' ? 'app-list-item--success' :
-                                          participant.attendance_status === 'absent' ? 'app-list-item--danger' : 'app-list-item--booked';
+                    // EINE Quelle mit der Liste ohne Zeitfenster
+                    // (utils/teilnahmeStatus.ts, 15.09.2026). Vorher stand die
+                    // Rechnung hier ein zweites Mal -- mit vier Zustaenden
+                    // statt sechs: 'opted_out' und 'Warteliste' fehlten ganz,
+                    // dieselbe Abmeldung hiess hier "Gebucht" und dort
+                    // "Abgemeldet".
+                    const darstellung = teilnahmeDarstellung(participant);
+                    const istAbgemeldet = darstellung.istAbgemeldet || darstellung.istNachgetragen;
+                    const statusText = darstellung.statusText;
+                    const cornerBadgeClass = eckBadgeKlasse(darstellung);
+                    const listItemClass = listItemKlasse(darstellung);
                     return (
                       <IonItemSliding key={participant.id} className="app-event-detail__sliding-item">
                         <IonItem className="app-item-transparent" button detail={false} lines="none"
@@ -827,18 +836,31 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                             </div>
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
-                                <div className={`app-icon-circle ${
-                                  istAbgemeldet ? 'app-icon-circle--neutral' :
-                                  participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                  participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
-                                }`}>
-                                  <IonIcon icon={istAbgemeldet ? ICON_ENTFERNEN_GEFUELLT :
+                                <div className={`app-icon-circle ${iconKreisKlasse(darstellung)}`}>
+                                  <IonIcon icon={darstellung.istAbgemeldet ? ICON_ABSAGE :
+                                        darstellung.istNachgetragen ? ICON_ENTFERNEN_GEFUELLT :
                                         participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
                                         participant.attendance_status === 'absent' ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT} />
                                 </div>
                                 <div className="app-list-item__content">
                                   <div className="app-list-item__title app-list-item__title--badge-space-lg">{participant.participant_name}</div>
                                   <div className="app-list-item__subtitle">{participant.jahrgang_name || ''}</div>
+                                  {/* Die SELBSTabmeldung samt Grund -- dieselbe
+                                      Zeile wie in der Liste ohne Zeitfenster,
+                                      wo sie seit dem 01.09.2026 steht. Hier
+                                      fehlte sie, weil die Zeile bis zum
+                                      15.09.2026 gar nicht erst angezeigt wurde. */}
+                                  {participant.status === 'opted_out' && (participant.opt_out_reason || participant.absage_nach_zusage) && (
+                                    <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                                      {participant.absage_nach_zusage && (
+                                        <strong>Nach Zusage abgesagt{participant.opt_out_reason ? ': ' : ''}</strong>
+                                      )}
+                                      {!participant.absage_nach_zusage && participant.attendance_status && (
+                                        <strong>Hatte sich abgemeldet{participant.opt_out_reason ? ': ' : ''}</strong>
+                                      )}
+                                      {participant.opt_out_reason}
+                                    </div>
+                                  )}
                                   {istAbgemeldet && participant.excuse_reason && (
                                     <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
                                       <strong>Abgemeldet: </strong>{participant.excuse_reason}

@@ -32,6 +32,12 @@ const css = lies('src/theme/variables.css');
 const typen = lies('src/types/event.ts');
 const notizModal = lies('src/components/admin/modals/AnwesenheitNotizModal.tsx');
 const abmeldungModal = lies('src/components/admin/modals/AbmeldungNachtragenModal.tsx');
+// Seit dem 15.09.2026 stehen Text und Farbe einer Teilnehmerzeile EINMAL
+// hier statt zweimal in den beiden Listen (Befund "abgesagte Termine sehen
+// ueberall gleich aus"). Die Erwartungen unten sind deshalb von den
+// handgeschriebenen Ternaeren auf diese Datei umgezogen -- geprueft wird
+// dieselbe Regel, nur an der Stelle, an der sie jetzt steht.
+const teilnahme = lies('src/utils/teilnahmeStatus.ts');
 const handbuch = lies('../docs/handbuch/70-termine.md');
 
 describe('Abmeldung nachtragen (excused)', () => {
@@ -58,9 +64,12 @@ describe('Abmeldung nachtragen (excused)', () => {
 
   it('die Zeile wird grau, nicht rot', () => {
     // Rot hiesse "hat gefehlt" — die Abmeldung war gemeldet.
-    expect(detail).toContain("isExcused ? 'app-list-item--neutral'");
-    expect(detail).toContain("isExcused ? 'app-icon-circle--neutral'");
-    expect(detail).toContain("isExcused ? 'app-corner-badge--neutral'");
+    // Die Farbe kommt jetzt aus teilnahmeDarstellung(); beide Listen lesen
+    // sie dort ab, statt sie je fuer sich zu bilden.
+    expect(teilnahme).toContain("statusText: 'Abgemeldet (nachgetragen)', farbe: 'neutral'");
+    expect(detail).toContain('listItemKlasse(darstellung)');
+    expect(detail).toContain('iconKreisKlasse(darstellung)');
+    expect(detail).toContain('eckBadgeKlasse(darstellung)');
   });
 
   it('die grauen Klassen sind im CSS definiert', () => {
@@ -71,18 +80,24 @@ describe('Abmeldung nachtragen (excused)', () => {
 
   it('die Selbstabmeldung bleibt rot — sie wird nicht mit umgefaerbt', () => {
     // Gegenprobe: Der Umbau darf den funktionierenden Fall nicht mitnehmen.
-    expect(detail).toContain("isOptedOut ? 'app-list-item--danger'");
+    expect(teilnahme).toContain("statusText: 'Abgemeldet', farbe: 'danger'");
   });
 
   it('der Grund steht in der Teilnehmerliste, nicht nur im Menue', () => {
     // "Damit das auch die Kolleginnen sehen."
     expect(detail).toContain('{isExcused && participant.excuse_reason && (');
     expect(abschnitte).toContain('{istAbgemeldet && participant.excuse_reason && (');
+    // Und seit dem 15.09.2026 auch der Grund einer SELBSTabmeldung -- die
+    // Zeile wurde dort vorher gar nicht erst angezeigt.
+    expect(abschnitte).toContain('participant.opt_out_reason');
   });
 
   it('der Zeitfenster-Abschnitt faerbt ebenfalls grau', () => {
-    expect(abschnitte).toContain("const istAbgemeldet = participant.attendance_status === 'excused';");
-    expect(abschnitte).toContain("istAbgemeldet ? 'app-list-item--neutral'");
+    // Seit dem 15.09.2026 aus derselben Quelle wie die Liste ohne
+    // Zeitfenster -- vorher rechnete er es noch einmal selbst und kannte
+    // dabei nur vier der sechs Zustaende.
+    expect(abschnitte).toContain('teilnahmeDarstellung(participant)');
+    expect(abschnitte).toContain('listItemKlasse(darstellung)');
   });
 });
 
@@ -310,7 +325,18 @@ describe('Typen tragen die neuen Felder', () => {
 // gar nicht und haette die Anwesenheit auch bei 'opted_out' gesetzt.
 describe('Selbstabmeldung bearbeiten', () => {
   it('der Tipp oeffnet auch bei opted_out das Anwesenheits-Menue', () => {
-    expect(detail).toContain("if (participant.status === 'confirmed' || participant.status === 'opted_out') showAttendanceActionSheet(participant);");
+    expect(detail).toContain("participant.status === 'opted_out'");
+    expect(detail).toContain("showAttendanceActionSheet(participant);");
+  });
+
+  // ERWEITERT 15.09.2026 (Migration 153): Seit die von der Leitung
+  // eingetragene Abmeldung auch den BUCHUNGSSTATUS auf 'excused' setzt, faellt
+  // genau die Person aus der Bedingung, die man am haeufigsten noch einmal
+  // anfassen will -- "doch da, war nur zu spaet". Ohne den Wert passiert auf
+  // den Tipp wieder gar nichts: derselbe Fehler wie am 13.09., nur mit einem
+  // anderen Status.
+  it('der Tipp oeffnet es AUCH bei excused', () => {
+    expect(detail).toContain("if (participant.status === 'confirmed' || participant.status === 'opted_out' || participant.status === 'excused') showAttendanceActionSheet(participant);");
   });
 
   it('es ist DASSELBE Menue, kein eigenes mit weniger Auswahl', () => {
@@ -328,8 +354,12 @@ describe('Selbstabmeldung bearbeiten', () => {
 
   it('verbucht die Leitung die Abmeldung, faerbt die Zeile nach dem Anwesenheits-Status', () => {
     // Sonst bliebe die Zeile rot und "Abgemeldet", obwohl die Leitung das
-    // gerade korrigiert hat.
-    expect(detail).toContain("const isOptedOut = participant.status === 'opted_out' && !participant.attendance_status;");
+    // gerade korrigiert hat. Die Reihenfolge steht jetzt in
+    // istSelbstAbgemeldet(): ein gesetzter Anwesenheits-Status schlaegt die
+    // Abmeldung. Seit dem 15.09.2026 gilt das fuer beide Schreibweisen des
+    // Buchungsstatus ('opted_out' wie bisher, 'excused' neu).
+    expect(teilnahme).toContain("(p.status === 'opted_out' || p.status === 'excused') && !p.attendance_status");
+    expect(detail).toContain('const isOptedOut = darstellung.istAbgemeldet;');
   });
 
   it('der Absagegrund bleibt als Vorgeschichte stehen', () => {
@@ -342,7 +372,8 @@ describe('Selbstabmeldung bearbeiten', () => {
   it('die Kachel zaehlt eine verbuchte Selbstabmeldung nicht mehr als abgemeldet', () => {
     // Sonst stuende dieselbe Person zugleich unter "Anwesend" und
     // unter "Abgemeldet".
-    expect(detail).toContain("konfiOnly.filter(p => p.status === 'opted_out' && !p.attendance_status).length");
+    expect(detail).toContain('konfiOnly.filter(zaehltAlsAbgemeldet)');
+    expect(teilnahme).toContain("if (p.attendance_status === 'present' || p.attendance_status === 'absent') return false;");
   });
 });
 

@@ -62,7 +62,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, istAbgesagt, titelDekoration, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -70,12 +70,14 @@ import QRDisplayModal from '../../shared/QRDisplayModal';
 import RequestsView from '../../konfi/views/RequestsView';
 import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
 import TeamerAbsageModal from '../modals/TeamerAbsageModal';
+// Dasselbe Modal wie bei der Leitung, im Modus 'grund' -- siehe die
+// Begruendung an presentAbsagegrundModal weiter unten.
+import TerminAbsagenModal from '../../admin/modals/TerminAbsagenModal';
 import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
-import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 // Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
 // RequestDetailModal weiter, und zwei gleichnamige Typen mit
 // unterschiedlicher Nullbarkeit haben genau dort gebissen. Der Modal-Typ ist
@@ -461,6 +463,55 @@ const TeamerEventsPage: React.FC = () => {
     presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
+  // ABSAGEGRUND NACHTRAGEN ODER AENDERN, AUCH IM TEAM (15.09.2026)
+  //
+  // Der Befund: PUT /events/:id/absagegrund steht hinter requireTeamer
+  // (events/verwaltung.js) -- jede Teamer:in darf also schreiben. Den Knopf
+  // gab es trotzdem nur im Leitungs-Detail. Eine Berechtigung ohne Oberflaeche
+  // ist keine.
+  //
+  // DASSELBE MODAL WIE BEI DER LEITUNG, kein zweites: TerminAbsagenModal im
+  // Modus 'grund' zeigt genau ein Textfeld mit denselben 500 Zeichen,
+  // derselben Normalisierung und demselben Hinweis, dass keine neue Mitteilung
+  // rausgeht. Ein eigenes Modal waere eine Kopie, die beim naechsten
+  // Textwechsel auseinanderliefe -- genau der Fehler, den diese ganze Runde
+  // aufraeumt.
+  //
+  // KEIN ABSAGEN VON HIER AUS: Der Modus ist fest 'grund'. Das Team traegt
+  // einen Grund nach; einen Termin absagen bleibt der Leitungsansicht
+  // vorbehalten, wo die Folgen (Abmeldungen, Punkte, Push) zusammen mit der
+  // Teilnehmerliste sichtbar sind.
+  const [presentAbsagegrundModal, dismissAbsagegrundModal] = useIonModal(TerminAbsagenModal, {
+    get terminName() { return selectedEvent?.name ?? ''; },
+    get terminDatum() {
+      if (!selectedEvent) return '';
+      return new Date(selectedEvent.event_date).toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    },
+    get konfiAnzahl() { return selectedEvent?.registered_count || 0; },
+    modus: 'grund' as const,
+    get grundVorgabe() { return selectedEvent?.cancelled_reason ?? ''; },
+    onSave: async (grund: string) => {
+      const termin = selectedEvent;
+      if (!termin) return;
+      await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
+      setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
+      // Die geoeffnete Detailansicht haelt ihren eigenen Stand -- ohne dieses
+      // Nachziehen stuende der alte Grund noch da, bis man den Termin
+      // schliesst und neu oeffnet.
+      const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
+      if (aktualisiert) setSelectedEvent(aktualisiert);
+      await refresh();
+    },
+    dismiss: () => dismissAbsagegrundModal()
+  });
+
+  const handleAbsagegrundBearbeiten = () => {
+    if (!isOnline || !selectedEvent) return;
+    presentAbsagegrundModal({ presentingElement: presentingElement || pageRef.current || undefined });
+  };
+
   /**
    * Die Zusage/Absage-Knoepfe. EINE Stelle fuer alle vier Faelle, in denen
    * sie vorkommen (frei, Warteliste offen, kein Platz mehr, bereits dabei) --
@@ -561,7 +612,7 @@ const TeamerEventsPage: React.FC = () => {
     let statusColor = C.neutral;
     let statusText = 'Nur Info';
 
-    if (event.registration_status === 'cancelled') {
+    if (istAbgesagt(event)) {
       statusColor = C.danger;
       statusText = 'Abgesagt';
     } else if (isPastEvent && event.is_registered) {
@@ -684,7 +735,7 @@ const TeamerEventsPage: React.FC = () => {
     // Logik 1:1 wie Konfi (EventDetailView) — EINZIGER Unterschied: ein "offenes"
     // Event, zu dem sich der Teamer NICHT anmelden kann, wird NICHT gruen, sondern
     // neutral ("Nur Info"), damit keine Anmeldung suggeriert wird.
-    if (event.registration_status === 'cancelled') return danger;
+    if (istAbgesagt(event)) return danger;
     if (isPastEvent && event.attendance_status === 'present') return success;
     if (isPastEvent && event.attendance_status === 'absent') return danger;
     if (isPastEvent && event.is_registered && !event.attendance_status) return bonus;
@@ -704,7 +755,7 @@ const TeamerEventsPage: React.FC = () => {
     const isPastEvent = istVergangen(event);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
-    if (event.registration_status === 'cancelled') return 'Abgesagt';
+    if (istAbgesagt(event)) return 'Abgesagt';
     if (isPastEvent && event.attendance_status === 'present') return 'Anwesend';
     if (isPastEvent && event.attendance_status === 'absent') return 'Abwesend';
     if (isPastEvent && event.is_registered && !event.attendance_status) return 'Ausstehend';
@@ -839,16 +890,20 @@ const TeamerEventsPage: React.FC = () => {
 
               NICHT zu verwechseln mit "Abgesagt von dir" weiter oben: Das
               meint die eigene Teilnahme, hier geht es um den TERMIN. */}
-          {selectedEvent.registration_status === 'cancelled' && selectedEvent.cancelled_reason && (
-            <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
-              <span className="app-reason-box__label">Abgesagt:</span> {selectedEvent.cancelled_reason}
-              {absageUrheberZeile(selectedEvent) && (
-                <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                  {absageUrheberZeile(selectedEvent)}
-                </div>
-              )}
-            </div>
-          )}
+          {/* GRUND NACHTRAGEN AUCH IM TEAM (15.09.2026): Das Backend erlaubt
+              das jeder Teamer:in (PUT /events/:id/absagegrund, requireTeamer in
+              events/verwaltung.js) -- nur die Oberflaeche gab es allein bei der
+              Leitung. Die Berechtigung war also da, der Weg dorthin fehlte.
+              Der Platzhaltersatz gehoert dazu: Ohne ihn faellt der Kasten bei
+              einer Absage ohne Grund weg, und dann gaebe es keinen Ort fuer
+              den Knopf -- genau die Sackgasse, die im Leitungs-Detail schon
+              einmal behoben wurde (Migration 152). */}
+          <AbsageBlock
+            event={selectedEvent}
+            variante="kasten"
+            onGrundBearbeiten={handleAbsagegrundBearbeiten}
+            bearbeitenDeaktiviert={!isOnline}
+          />
 
           {/* Details Card - wie Admin EventDetailView */}
           <IonList className="app-section-inset" inset={true}>
@@ -1517,7 +1572,15 @@ const TeamerEventsPage: React.FC = () => {
                               <div
                                 className="app-list-item__title app-list-item__title--events"
                                 style={{
-                                  color: shouldGrayOut ? 'var(--app-text-muted)' : undefined,
+                                  // Abgesagte Termine werden hier seit dem
+                                  // 15.09.2026 genauso behandelt wie in der
+                                  // Leitungs- und der Konfi-Liste: grau und
+                                  // durchgestrichen. Vorher sah ein abgesagter
+                                  // ZUKUENFTIGER Termin im Team aus wie jeder
+                                  // andere -- nur ein kleines rotes Eck-Badge
+                                  // unterschied ihn.
+                                  color: istAbgesagt(event) || shouldGrayOut ? 'var(--app-text-muted)' : undefined,
+                                  textDecoration: titelDekoration('liste', event),
                                   paddingRight: showBadge ? 'var(--app-freiraum-aktion-l)' : '0',
                                   paddingTop: showBadge ? 'var(--app-abstand-mini)' : '0'
                                 }}
@@ -1535,16 +1598,7 @@ const TeamerEventsPage: React.FC = () => {
                                   ist der abgesagte TERMIN (registration_status), NICHT die
                                   eigene Teamer-Absage ("Abgesagt von dir", opted_out).
                                   Ohne Grund faellt der Block weg — das Badge sagt es schon. */}
-                              {event.registration_status === 'cancelled' && event.cancelled_reason && (
-                                <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                                  <strong>Abgesagt: </strong>{event.cancelled_reason}
-                                </div>
-                              )}
-                              {event.registration_status === 'cancelled' && event.cancelled_reason && absageUrheberZeile(event) && (
-                                <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                                  {absageUrheberZeile(event)}
-                                </div>
-                              )}
+                              <AbsageBlock event={event} variante="zeile" />
 
                               {/* Buchungen + Team + Punkte.
                                   Bei "Nur Team" erzaehlt die Zeile vom Team: Konfi-Zahl

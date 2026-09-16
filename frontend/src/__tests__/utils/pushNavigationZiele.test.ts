@@ -62,6 +62,25 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_changed', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
   });
 
+  it('Absage fuehrt zum Termin, wenn die Kennung mitkommt', () => {
+    // Bis zum 15.09.2026 landete die Absage immer auf der Terminliste --
+    // der Push trug als einziger Termin-Push keine Kennung. Am Termin steht
+    // der Grund ausfuehrlich, samt "Abgesagt von ...".
+    expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'admin')).toBe('/admin/events/7');
+  });
+
+  it('Absage ohne Kennung fuehrt weiter zur Liste', () => {
+    // So kommt sie beim LOESCHEN eines Termins an: Den Termin gibt es nicht
+    // mehr, ein Sprung dorthin fuehrte ins Leere.
+    expect(buildPushTargetUrl('event_cancelled', {}, 'konfi')).toBe('/konfi/events');
+    expect(buildPushTargetUrl('event_cancelled', {}, 'admin')).toBe('/admin/events');
+  });
+
+  it('Absage bei Teamer:innen bleibt auf der Liste — sie haben keine Detailroute', () => {
+    expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+  });
+
   it('Zertifikat fuehrt ins Profil', () => {
     expect(buildPushTargetUrl('certificate', {}, 'teamer')).toBe('/teamer/profile');
   });

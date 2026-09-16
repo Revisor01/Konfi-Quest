@@ -58,14 +58,13 @@ import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event } from '../../../types/event';
 import { useLiveUpdate, useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
-import { absageUrheberZeile } from '../../../utils/anwesenheitUrheber';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -482,7 +481,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
-    if (eventData.cancelled) return danger;
+    if (istAbgesagt(eventData)) return danger;
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return events;
     if (isKonfi && !isPastEvent) return info; // Konfirmation = blau (analog Admin)
     if (isPastEvent && eventData.attendance_status === 'present') return success;
@@ -506,7 +505,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
-    if (eventData.cancelled) return 'Abgesagt';
+    if (istAbgesagt(eventData)) return 'Abgesagt';
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return 'Abgemeldet';
     if (isKonfi && !isPastEvent) return eventData.is_registered ? 'Angemeldet' : 'Konfirmation';
     if (isPastEvent && eventData.attendance_status === 'present') return 'Verbucht';
@@ -645,19 +644,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
             Ohne Grund faellt der ganze Block weg — die Absage allein steht
             schon im Kopf, eine leere Box daruntersagt nichts. */}
-        {eventData.cancelled && eventData.cancelled_reason && (
-          <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
-            <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
-            {/* Wer abgesagt hat, klein darunter. Fehlt der Name — Termine von
-                vor der Migration —, faellt die Zeile ersatzlos weg, statt
-                "Abgesagt von unbekannt" zu behaupten. */}
-            {absageUrheberZeile(eventData) && (
-              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                {absageUrheberZeile(eventData)}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Seit 15.09.2026 derselbe Block wie bei Leitung und Team --
+            einschliesslich des Satzes "Kein Grund zur Absage angegeben." und
+            der Zeile "Grund geändert von ...". Ohne den Satz fiel der Kasten
+            bei einer Absage ohne Grund ganz weg, und die Konfi konnte nicht
+            unterscheiden, ob niemand einen Grund eingetragen hat oder ob die
+            Absage aus der Zeit vor dem Feld stammt.
+            KEIN Bearbeiten-Knopf: Konfis lesen den Grund, sie schreiben ihn
+            nicht (PUT /events/:id/absagegrund steht hinter requireTeamer). */}
+        <AbsageBlock event={eventData} variante="kasten" />
 
         {/* QR Check-in Status / Button */}
         {eventData.attendance_status === 'present' ? (

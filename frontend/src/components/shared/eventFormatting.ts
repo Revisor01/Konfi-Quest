@@ -160,6 +160,74 @@ export const istAbgesagt = (
   event: { cancelled?: boolean; registration_status?: string } | null | undefined
 ): boolean => !!event && (event.cancelled === true || event.registration_status === 'cancelled');
 
+/**
+ * Streicht die Ansicht den Titel eines abgesagten Termins durch? (15.09.2026)
+ *
+ * NUR IN LISTEN UND AUF KACHELN, NICHT IM DETAIL -- und das ist eine
+ * Entscheidung, keine Nachlaessigkeit:
+ *
+ * In einer Liste steht der Titel zwischen zwanzig anderen, alle gleich gross.
+ * Das Eck-Badge ist klein und liegt am Rand; wer die Liste ueberfliegt, liest
+ * die Titelspalte und sonst nichts. Der Durchstrich ist dort das einzige
+ * Zeichen, das im Vorbeilesen ankommt.
+ *
+ * In der Detailansicht steht der Titel gross und allein, darunter sagt der
+ * Kopf "Abgesagt" im Klartext, die Farbe ist danger, und unmittelbar darunter
+ * steht der Absagegrund in einem roten Kasten. Vier Aussagen ueber dieselbe
+ * Sache; eine fuenfte in Form eines durchgestrichenen Ueberschrift-Titels
+ * traegt nichts bei und liest sich wie geloeschter Text statt wie ein
+ * ausgefallener Termin.
+ *
+ * Die Funktion existiert, damit diese Entscheidung an EINER Stelle steht und
+ * nicht sieben Ansichten jeweils fuer sich entscheiden -- genau das war der
+ * Zustand bis zum 15.09.2026: Leitung und Konfi strichen in der Liste durch,
+ * das Team nicht, und im Detail strich keine der drei durch, ohne dass
+ * irgendwo stand, ob das Absicht war.
+ */
+export const streichtDurch = (
+  ort: 'liste' | 'detail' | 'kachel',
+  event: { cancelled?: boolean; registration_status?: string } | null | undefined
+): boolean => ort !== 'detail' && istAbgesagt(event);
+
+/**
+ * Die Textdekoration fuer den Titel -- fertig zum Einsetzen in style.
+ * Spart den Dreisatz an jeder Aufrufstelle und macht im Test pruefbar, dass
+ * alle Listen dieselbe Quelle benutzen.
+ */
+export const titelDekoration = (
+  ort: 'liste' | 'detail' | 'kachel',
+  event: { cancelled?: boolean; registration_status?: string } | null | undefined
+): 'line-through' | 'none' => (streichtDurch(ort, event) ? 'line-through' : 'none');
+
+/**
+ * Sortiert abgesagte Termine ans ENDE, sonst bleibt die Reihenfolge wie sie
+ * ist (der Server liefert nach event_date aufsteigend). 15.09.2026.
+ *
+ * WARUM DAS KONFI-REITER "ALLE" DAS BRAUCHT: Dort stehen die anmeldbaren
+ * Termine. Ein abgesagter ist der einzige darunter, bei dem Tippen zu nichts
+ * fuehrt -- er mischte sich aber nach Datum zwischen die anderen, und wer die
+ * Liste von oben durchgeht, laeuft mitten im Anmelden in eine Sackgasse.
+ *
+ * WARUM NICHT AUSBLENDEN: Die Konfi-Liste zeigt einen abgesagten Termin
+ * ueberhaupt nur, wenn sie selbst dafuer gebucht war (backend/routes/konfi.js:
+ * `e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL`). Er geht sie also an
+ * -- sie hat sich angemeldet und muss sehen, dass er ausfaellt. Ihn hier zu
+ * verstecken hiesse, die Absage vor genau der Person zu verbergen, die
+ * betroffen ist.
+ *
+ * WARUM KEIN EIGENER ABSCHNITT: Ein vierter Abschnitt fuer im Schnitt einen
+ * Eintrag kostet mehr Platz und Erklaerung, als er einspart. Am Ende der
+ * Liste, durchgestrichen und mit dem roten Eck-Badge, ist er zu finden und
+ * steht niemandem im Weg.
+ *
+ * Stabil: Bei gleicher Absage-Lage bleibt die Serverreihenfolge erhalten
+ * (Array.prototype.sort ist seit ES2019 stabil).
+ */
+export const abgesagteAnsEnde = <T extends { cancelled?: boolean; registration_status?: string }>(
+  a: T,
+  b: T
+): number => Number(istAbgesagt(a)) - Number(istAbgesagt(b));
+
 // --- Die drei Reiter der Leitungs-Terminliste ---------------------------
 //
 // Die Aufteilung steht hier und nicht in AdminEventsPage, damit sie sich

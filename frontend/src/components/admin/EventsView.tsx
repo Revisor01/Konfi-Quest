@@ -20,11 +20,10 @@ import {
   ICON_TERMIN_GEFUELLT,
   ICON_UHRZEIT_GEFUELLT,
 } from '../shared/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, eventEnde, kategorienText, zeigtPunkteart, punkteartText } from '../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, eventEnde, kategorienText, zeigtPunkteart, punkteartText } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
-import { absageUrheberZeile, absagegrundUrheberZeile } from '../../utils/anwesenheitUrheber';
 
 interface EventsViewProps {
   events: Event[];
@@ -230,7 +229,10 @@ const EventsView: React.FC<EventsViewProps> = ({
       >
         {filteredAndSortedEvents.map((event, index) => {
               const isPastEvent = istVergangen(event);
-              const isCancelled = event.registration_status === 'cancelled';
+              // istAbgesagt() prueft BEIDE Felder: GET /events liefert
+              // registration_status, GET /events/cancelled zusaetzlich
+              // cancelled. Beide Listen laufen durch diese Ansicht.
+              const isCancelled = istAbgesagt(event);
               // Konfirmations-Event über das is_konfirmation-Flag (Phase 117, Migration 091).
               const isKonfirmationEvent = event.is_konfirmation === true;
               // Befund 3 (25.08.2026): Karte und Verbuchen-Tab widersprachen sich.
@@ -336,7 +338,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                             className="app-list-item__title"
                             style={{
                               color: isCancelled || shouldGrayOut ? 'var(--app-text-muted)' : undefined,
-                              textDecoration: isCancelled ? 'line-through' : 'none',
+                              textDecoration: titelDekoration('liste', event),
                               display: 'flex',
                               alignItems: 'center',
                               gap: 'var(--app-abstand-kompakt)',
@@ -359,24 +361,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                               Leitung sieht damit ohne Umweg ueber das Detail, was sie
                               oder jemand anderes eingetragen hat. Ohne Grund faellt der
                               Block weg, "Abgesagt" sagt das Status-Badge schon. */}
-                          {isCancelled && event.cancelled_reason && (
-                            <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                              <strong>Abgesagt: </strong>{event.cancelled_reason}
-                            </div>
-                          )}
-                          {isCancelled && event.cancelled_reason && absageUrheberZeile(event) && (
-                            <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                              {absageUrheberZeile(event)}
-                            </div>
-                          )}
-                          {/* Zweite Zeile nur, wenn der Grund von jemand
-                              anderem stammt als die Absage (Migration 152) —
-                              sonst staende hier zweimal derselbe Name. */}
-                          {isCancelled && event.cancelled_reason && absagegrundUrheberZeile(event) && (
-                            <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                              {absagegrundUrheberZeile(event)}
-                            </div>
-                          )}
+                          {/* Seit 15.09.2026 rendert AbsageBlock diesen Block
+                              in allen Rollen wortgleich -- vorher stand er
+                              fuenfmal von Hand im Code und lief auseinander. */}
+                          <AbsageBlock event={event} variante="zeile" />
 
                           {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte.
                               Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme \u2014

@@ -32,7 +32,7 @@ import { offlineCache } from '../../../services/offlineCache';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import api from '../../../services/api';
-import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
@@ -47,9 +47,9 @@ import {
 import type { Participant, Unregistration, EventData } from './EventDetailSections';
 import type { EventMaterial } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { absageUrheberZeile, absagegrundUrheberZeile } from '../../../utils/anwesenheitUrheber';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
+import { teilnahmeDarstellung, zaehltAlsAbgemeldet, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
 import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
@@ -123,7 +123,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   /** Darf die angemeldete Person sich selbst melden? Alle ausser Konfis. */
   const darfSichMelden = user?.role_name !== 'konfi' && nimmtTeamAn
-    && !eventData?.cancelled && !istVergangen(eventData);
+    && !istAbgesagt(eventData) && !istVergangen(eventData);
 
   const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
     if (!eventData || zusageLaeuft) return;
@@ -538,7 +538,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!eventData) return events;
     const isPastEvent = istVergangen(eventData);
     const isKonfirmationEvent = eventData.is_konfirmation;
-    const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
+    // istAbgesagt() prueft beide Felder. GET /events/:id liefert
+    // registration_status; kommt der Stand aus dem Listen-Cache (offline),
+    // kann stattdessen nur cancelled gesetzt sein -- dann sagte der Kopf
+    // bis zum 15.09.2026 nicht "Abgesagt", obwohl der rote Kasten darunter
+    // schon dastand.
+    const isCancelledStatus = istAbgesagt(eventData);
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
@@ -565,7 +570,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (!eventData) return 'Event';
     const isPastEvent = istVergangen(eventData);
     const isKonfirmationEvent = eventData.is_konfirmation;
-    const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
+    // istAbgesagt() prueft beide Felder. GET /events/:id liefert
+    // registration_status; kommt der Stand aus dem Listen-Cache (offline),
+    // kann stattdessen nur cancelled gesetzt sein -- dann sagte der Kopf
+    // bis zum 15.09.2026 nicht "Abgesagt", obwohl der rote Kasten darunter
+    // schon dastand.
+    const isCancelledStatus = istAbgesagt(eventData);
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
@@ -854,7 +864,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
   };
 
-  const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
+  // istAbgesagt() prueft beide Felder an EINER Stelle (eventFormatting.ts)
+  // -- bis zum 15.09.2026 stand dieselbe Oder-Verknuepfung an vier Stellen
+  // im Code und an drei weiteren nur eine Haelfte davon.
+  const isCancelled = istAbgesagt(eventData);
 
   // Absagen oeffnet das Modal mit dem optionalen Grund (15.09.2026) — bis
   // hierher ein Action Sheet, was richtig war, solange es nur zu bestaetigen
@@ -930,44 +943,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   // Helper: Einzelnen Teilnehmer rendern
   const renderParticipant = (participant: Participant) => {
-    const isWaitlist = participant.status === 'waitlist';
-    // Eine SELBSTabmeldung, die von der Leitung verbucht wurde, ist keine
-    // Abmeldung mehr, sondern eine Anwesenheitsentscheidung (13.09.2026):
-    // Wer sich abgemeldet hatte und dann doch kam, steht als anwesend da.
-    // Deshalb zaehlt ab hier der Anwesenheits-Status, sobald einer gesetzt
-    // ist — sonst bliebe die Zeile rot und "Abgemeldet", obwohl die Leitung
-    // genau das gerade korrigiert hat. Dieselbe Reihenfolge wie in
-    // utils/anwesenheitsMatrix.ts (getZellStatus); die beiden muessen
-    // zusammenpassen, sonst zeigen Liste und Matrix Verschiedenes.
-    const isOptedOut = participant.status === 'opted_out' && !participant.attendance_status;
-    // Nachgetragene Abmeldung (12.09.2026): grau, nicht rot. Rot hiesse
-    // "hat gefehlt" — hier war die Abmeldung gemeldet, das ist keine
-    // Verfehlung, sondern eine geklaerte Lage.
-    const isExcused = !isOptedOut && participant.attendance_status === 'excused';
-    const listItemClass = isOptedOut ? 'app-list-item--danger' :
-                          isExcused ? 'app-list-item--neutral' :
-                          participant.attendance_status === 'present' ? 'app-list-item--success' :
-                          participant.attendance_status === 'absent' ? 'app-list-item--danger' :
-                          isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
-    const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
-                            isExcused ? 'app-icon-circle--neutral' :
-                            participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                            participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
-                            isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
+    // EINE Quelle fuer Text und Farbe (utils/teilnahmeStatus.ts, 15.09.2026).
+    // Vorher stand die Rechnung hier und noch einmal in EventDetailSections
+    // fuer die Zeitfenster-Liste -- mit vier statt sechs Zustaenden, weshalb
+    // eine abgemeldete Konfi dort blau als "Gebucht" stand. Die Reihenfolge
+    // (Anwesenheits-Status schlaegt Selbstabmeldung) ist dorthin
+    // mitgewandert, samt Begruendung.
+    const darstellung = teilnahmeDarstellung(participant);
+    const isOptedOut = darstellung.istAbgemeldet;
+    const isExcused = darstellung.istNachgetragen;
+    const listItemClass = listItemKlasse(darstellung);
+    const iconCircleClass = iconKreisKlasse(darstellung);
+    const cornerBadgeClass = eckBadgeKlasse(darstellung);
+    const statusText = darstellung.statusText;
     const statusIcon = isOptedOut ? ICON_ABSAGE :
                        isExcused ? ICON_ENTFERNEN_GEFUELLT :
                        participant.attendance_status === 'present' ? ICON_ZUSAGE_GEFUELLT :
                        participant.attendance_status === 'absent' ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT;
-    const statusText = isOptedOut ? 'Abgemeldet' :
-                       isExcused ? 'Abgemeldet (nachgetragen)' :
-                       participant.attendance_status === 'present' ? 'Anwesend' :
-                       participant.attendance_status === 'absent' ? 'Abwesend' :
-                       isWaitlist ? 'Warteliste' : 'Gebucht';
-    const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
-                             isExcused ? 'app-corner-badge--neutral' :
-                             participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                             participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
-                             isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
 
     return (
       <IonItemSliding
@@ -989,7 +981,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             // koennen -- vorher passierte auf den Tipp gar nichts, ohne jeden
             // Hinweis warum. Das Backend liess das ohnehin zu; die Sperre sass
             // allein hier.
-            if (participant.status === 'confirmed' || participant.status === 'opted_out') showAttendanceActionSheet(participant);
+            //
+            // 'excused' MUSS AUS DEMSELBEN GRUND MIT (15.09.2026, Migration
+            // 153): Seit eine von der Leitung eingetragene Abmeldung auch den
+            // BUCHUNGSSTATUS auf 'excused' setzt, faellt genau die Person aus
+            // dieser Bedingung, die man am haeufigsten noch einmal anfassen
+            // will -- "doch da, war nur zu spaet". Ohne den Wert passierte
+            // auf den Tipp wieder gar nichts: derselbe Fehler wie am 13.09.,
+            // nur mit einem anderen Status.
+            if (participant.status === 'confirmed' || participant.status === 'opted_out' || participant.status === 'excused') showAttendanceActionSheet(participant);
             else if (participant.status === 'waitlist') showWaitlistActionSheet(participant);
           }}
         >
@@ -1194,7 +1194,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             // — sonst stuende dieselbe Person zugleich unter "Anwesend" und
             // unter "Abgemeldet". Dieselbe Reihenfolge wie in der
             // Teilnehmerliste und in getZellStatus.
-            const konfiOptedOut = konfiOnly.filter(p => p.status === 'opted_out' && !p.attendance_status).length;
+            // BEFUND 15.09.2026: Die Kachel zaehlte nur
+            // `status === 'opted_out' && !attendance_status`. Nach einer
+            // TERMINABSAGE setzt der Hintergrunddienst alle Buchungen auf
+            // attendance_status = 'excused' -- die zweite Haelfte der
+            // Bedingung traf dann bei niemandem mehr, und die Kachel meldete
+            // "Abgemeldet: 0", obwohl alle abgemeldet waren.
+            // zaehltAlsAbgemeldet() deckt beide Schreibweisen ab (excused im
+            // Anwesenheits- ODER im Buchungsstatus, dazu opted_out wie bisher)
+            // und laesst anwesend/abwesend Verbuchte weiterhin heraus.
+            const konfiOptedOut = konfiOnly.filter(zaehltAlsAbgemeldet).length;
 
             // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
             // Kacheln müssen komplett vom Team erzaehlen (vorher stand hier
@@ -1257,46 +1266,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             um den es geht, in voller Laenge — anders als in der Liste, wo er
             zwischen Zaehlern und Kategorien haengt. Die Liste bietet den
             Bearbeiten-Wisch zusaetzlich an, fuer den schnellen Weg. */}
-        {isCancelled && eventData && (
-          <div className="app-reason-box app-reason-box--danger" style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
-            {eventData.cancelled_reason ? (
-              <>
-                <span className="app-reason-box__label">Abgesagt:</span> {eventData.cancelled_reason}
-              </>
-            ) : (
-              // Kein Grund ist kein Fehler (er war immer freiwillig, Migration
-              // 150) — der Satz sagt nur, dass hier einer stehen koennte.
-              <span style={{ color: 'var(--app-text-secondary)' }}>Kein Grund zur Absage angegeben.</span>
-            )}
-            {absageUrheberZeile(eventData) && (
-              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                {absageUrheberZeile(eventData)}
-              </div>
-            )}
-            {/* Nur, wenn der Grund von jemand anderem stammt als die Absage
-                (Migration 152) — sonst staende zweimal derselbe Name da. */}
-            {absagegrundUrheberZeile(eventData) && (
-              <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
-                {absagegrundUrheberZeile(eventData)}
-              </div>
-            )}
-            {/* Kein Rechte-Gate an dieser Stelle — wie beim Bearbeiten-Knopf
-                im Kopf dieser Ansicht. Die Berechtigung sitzt im Backend
-                (requireTeamer + darfTermin, dieselbe wie beim Absagen); wer
-                nicht darf, bekommt 403. */}
-            <IonButton
-              size="small"
-              fill="clear"
-              color="danger"
-              disabled={!isOnline}
-              onClick={handleAbsagegrundBearbeiten}
-              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
-            >
-              <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
-              {eventData.cancelled_reason ? 'Grund bearbeiten' : 'Grund nachtragen'}
-            </IonButton>
-          </div>
-        )}
+        <AbsageBlock
+          event={eventData}
+          variante="kasten"
+          onGrundBearbeiten={handleAbsagegrundBearbeiten}
+          bearbeitenDeaktiviert={!isOnline}
+        />
 
         {/* Event Details */}
         {eventData && (

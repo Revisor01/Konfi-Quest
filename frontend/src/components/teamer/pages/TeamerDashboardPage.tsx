@@ -41,7 +41,7 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
-import { ProfileHeaderButton, TrialBanner, StoreUpdateBanner } from '../../shared';
+import { ProfileHeaderButton, TrialBanner, StoreUpdateBanner, AbsageBlock, istAbgesagt, titelDekoration } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
@@ -940,7 +940,7 @@ const TeamerDashboardPage: React.FC = () => {
                               : undefined,
                             position: 'relative',
                             overflow: 'hidden',
-                            border: event.cancelled
+                            border: istAbgesagt(event)
                               ? '2px dashed rgba(255,255,255,0.3)'
                               : isWaitlist
                                 ? '2px solid rgba(var(--app-wrapped-gold-rgb), 0.5)'
@@ -954,7 +954,7 @@ const TeamerDashboardPage: React.FC = () => {
                             position: 'absolute',
                             top: '0',
                             right: '0',
-                            background: event.cancelled
+                            background: istAbgesagt(event)
                               ? 'rgba(255,255,255,0.3)'
                               : isWaitlist
                                 ? 'var(--app-gradient-badges)'
@@ -968,7 +968,7 @@ const TeamerDashboardPage: React.FC = () => {
                             textTransform: 'uppercase',
                             letterSpacing: '0.3px'
                           }}>
-                            {event.cancelled ? 'ABGESAGT' :
+                            {istAbgesagt(event) ? 'ABGESAGT' :
                              isWaitlist ?
                                'Warteliste' :
                                formatTimeUntil(event.event_date)}
@@ -980,10 +980,22 @@ const TeamerDashboardPage: React.FC = () => {
                               color: 'white',
                               marginBottom: 'var(--app-abstand-mini)',
                               paddingRight: 'var(--app-freiraum-aktion-xl)',
-                              textDecoration: event.cancelled ? 'line-through' : 'none'
+                              textDecoration: titelDekoration('kachel', event)
                             }}>
                               {event.title}
                             </div>
+                            {/* DER GRUND GEHOERT AUCH HIER AUF DIE STARTSEITE
+                                (15.09.2026) -- genau wie auf der Konfi-Start-
+                                seite: Wer den Push antippt, landet zuerst hier.
+                                ACHTUNG, OFFENE HAELFTE IM BACKEND: GET
+                                /teamer/dashboard filtert abgesagte Termine
+                                derzeit ganz heraus (`AND e.cancelled IS NOT
+                                TRUE`) und waehlt cancelled_reason gar nicht
+                                erst aus. Der Block bleibt deshalb vorerst leer
+                                -- er ist schon da, damit er ankommt, sobald die
+                                Route die Felder liefert, und nicht wieder
+                                vergessen wird. */}
+                            <AbsageBlock event={event} variante="zeile" aufDunkel />
                             <div className="app-dashboard-meta" style={{ flexWrap: 'wrap' }}>
                               <IonIcon icon={ICON_TERMIN_GEFUELLT} style={{ fontSize: 'var(--app-text-basis)' }} />
                               <span>{formatEventDate(event.event_date)}</span>
