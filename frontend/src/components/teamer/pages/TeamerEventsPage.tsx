@@ -1214,17 +1214,35 @@ const TeamerEventsPage: React.FC = () => {
               Beschreibung (Simons Reihenfolge 03.09.2026: erst lesen, worum
               es geht, dann zusagen) -- vorher stand sie als freistehende Knopfleiste ganz
               unten, unterhalb von Beschreibung und Material, und sah anders
-              aus als bei Konfis und Leitung. */}
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
+              aus als bei Konfis und Leitung.
+
+              DER INHALT WIRD VORAB BERECHNET (17.09.2026, Simons Befund:
+              "steht in abgesagten Elementen noch die Card [...] aber ohne
+              Button. Ganze Card muss raus"). Vorher haderte die Bedingung
+              INNERHALB der Karte: Der Vergangenheits-Zweig endete mit
+              `) : null`, und uebrig blieb die Ueberschrift "Bist du dabei?"
+              ueber einem leeren weissen Rahmen. Jetzt entscheidet
+              zusageKarteInhalt, OB es etwas zu zeigen gibt -- ist es null,
+              faellt die ganze Karte samt Ueberschrift weg. */}
+          {(() => {
+            const zusageKarteInhalt = istAbgesagt(selectedEvent) ? (
+              // ABGESAGT SCHLAEGT ALLES (17.09.2026) -- derselbe Wortlaut wie
+              // in der Konfi- und der Leitungsansicht, die ihn seit dem
+              // 16.09.2026 tragen.
+              //
+              // Die Teamer-Seite kannte `cancelled` bis hierher UEBERHAUPT
+              // NICHT: istAbgesagt() war nur fuer Farbe und Status-Label im
+              // Einsatz, nie als Riegel. An einem abgesagten Termin standen
+              // die Zusage-Knoepfe deshalb weiter da und luden zur Anmeldung
+              // ein -- das Backend lehnt sie seit dem 16.09.2026 ab
+              // (bucheTermin), die Oberflaeche bot sie trotzdem an. Der
+              // Commit, der genau diesen Riegel brachte, fasste nur admin/
+              // und konfi/ an.
+              <div className="app-status-box app-status-box--danger">
+                <IonIcon icon={ICON_ABSAGE} />
+                Dieser Termin ist abgesagt
               </div>
-              <IonLabel>Bist du dabei?</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {isPast ? (
+            ) : isPast ? (
                   selectedEvent.is_registered ? (
                     <div style={{ textAlign: 'center' }}>
                       {selectedEvent.attendance_status === 'present' && (
@@ -1299,10 +1317,30 @@ const TeamerEventsPage: React.FC = () => {
                       Nur zur Info - keine Anmeldung
                     </div>
                   )
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+                );
+
+            // GAR KEINE KARTE, wenn es nichts zu zeigen gibt: ein vergangener
+            // Termin, bei dem man nicht dabei war, hat unter "Bist du dabei?"
+            // nichts zu sagen. Frueher blieb hier der leere weisse Rahmen
+            // stehen.
+            if (!zusageKarteInhalt) return null;
+
+            return (
+              <IonList className="app-section-inset" inset={true}>
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--events">
+                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
+                  </div>
+                  <IonLabel>Bist du dabei?</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
+                  <IonCardContent className="app-card-content">
+                    {zusageKarteInhalt}
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            );
+          })()}
 
           {/* Teilnehmerliste — NUR LESEND (16.09.2026).
               Simon am Geraet: "teamer sehen die tn liste nicht!". Wer auf der
