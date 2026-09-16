@@ -7,7 +7,8 @@ import {
   VERZOEGERUNG_BEZEICHNUNG,
   sperreVerfuegbar,
   sperreLesen,
-  sperreSpeichern
+  sperreSpeichern,
+  sperreOeffnen
 } from '../../services/appSperre';
 import { biometrieVerfuegbar } from '../../services/biometrics';
 
@@ -47,6 +48,9 @@ const AppSperreSchalter: React.FC<Props> = ({ variante }) => {
   const [wert, setWert] = useState<SperrVerzoegerung>('aus');
   const [laedt, setLaedt] = useState(true);
   const [speichert, setSpeichert] = useState(false);
+  // Eine fehlgeschlagene Abfrage muss sichtbar werden: Sonst tippt jemand auf
+  // "Sofort", nichts passiert, und er haelt die Sperre fuer eingeschaltet.
+  const [fehler, setFehler] = useState<string | null>(null);
 
   useEffect(() => {
     let abgemeldet = false;
@@ -65,9 +69,44 @@ const AppSperreSchalter: React.FC<Props> = ({ variante }) => {
     return () => { abgemeldet = true; };
   }, []);
 
+  /**
+   * BEIM EINSCHALTEN WIRD DIE BIOMETRIE EINMAL ABGEFRAGT (Simon, 16.09.2026).
+   *
+   * WARUM: Wer die Sperre einschaltet, erfaehrt sonst erst beim naechsten
+   * Kaltstart, ob sie ueberhaupt funktioniert -- und steht dann vor der
+   * eigenen App, ohne hineinzukommen. Der einzige Ausweg waere der
+   * Abmelden-Knopf auf dem Sperrbildschirm. Die Abfrage hier verlegt genau
+   * diesen Moment dorthin, wo er harmlos ist: in die Einstellungen, bei
+   * offener App. Klappt sie nicht, bleibt die Sperre aus, und niemand sperrt
+   * sich aus. So machen es die anderen Apps auch.
+   *
+   * WARUM NICHT BEIM AUSSCHALTEN: Wer abschalten kann, sitzt bereits in der
+   * entsperrten App -- er hat sich beim Oeffnen ausgewiesen oder die Sperre
+   * stand nie. Eine zweite Huerde davor schuetzt niemanden zusaetzlich, kann
+   * aber genau den Fall verschlimmern, den die Abfrage oben verhindern soll:
+   * Geht die Biometrie kaputt (neues Gesicht angelernt, Sensor defekt), waere
+   * die Sperre dann weder zu oeffnen NOCH abzuschalten.
+   *
+   * WARUM NICHT BEIM WECHSEL DER WARTEZEIT: Die Sperre ist da schon an und
+   * schon einmal bestaetigt worden; es aendert sich nur eine Zahl, kein
+   * Zugang. Eine Abfrage bei jedem Umstellen waere Zeremonie ohne Gewinn.
+   */
   const setzen = useCallback(async (neu: SperrVerzoegerung) => {
     setSpeichert(true);
     try {
+      const schaltetEin = neu !== 'aus' && wert === 'aus';
+      if (schaltetEin) {
+        const ausgang = await sperreOeffnen();
+        if (ausgang !== 'ok') {
+          setFehler(
+            ausgang === 'abgebrochen'
+              ? `Die Sperre bleibt aus – ${bezeichnung} wurde abgebrochen.`
+              : `Die Sperre bleibt aus – ${bezeichnung} hat nicht geklappt.`
+          );
+          return;
+        }
+      }
+      setFehler(null);
       await sperreSpeichern(neu);
       setWert(neu);
       // Der laufende Sperr-Hook liest daraufhin neu. Ohne dieses Ereignis
@@ -76,7 +115,7 @@ const AppSperreSchalter: React.FC<Props> = ({ variante }) => {
     } finally {
       setSpeichert(false);
     }
-  }, []);
+  }, [wert, bezeichnung]);
 
   const oeffnen = useCallback(() => {
     zeigeAuswahl({
@@ -95,9 +134,11 @@ const AppSperreSchalter: React.FC<Props> = ({ variante }) => {
 
   if (laedt || !verfuegbar) return null;
 
-  const beschreibung = wert === 'aus'
-    ? `Die App nach einer Pause mit ${bezeichnung} schützen`
-    : `${VERZOEGERUNG_BEZEICHNUNG[wert]} im Hintergrund`;
+  const beschreibung = fehler
+    ? fehler
+    : wert === 'aus'
+      ? `Die App nach einer Pause mit ${bezeichnung} schützen`
+      : `${VERZOEGERUNG_BEZEICHNUNG[wert]} im Hintergrund`;
 
   return (
     <div
