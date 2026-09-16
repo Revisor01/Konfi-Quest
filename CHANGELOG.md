@@ -149,6 +149,11 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Teamer:innen können Termine jetzt auch absagen. Sie durften es längst — im
+  Menü fehlte der Weg dorthin.
+- In der Absage eines Termins stand „Abgesagt von" doppelt: einmal als
+  Überschrift und einmal davor im Namen.
+
 - Wird ein Platz frei, rückt jetzt in **jedem** Fall die nächste wartende
   Person nach — auch wenn eine Konfi sich von einem Pflichttermin abmeldet, die
   Leitung jemanden abmeldet, jemanden auf die Warteliste zurücksetzt, eine
