@@ -185,18 +185,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
 
 
   // Update participant attendance and award event points
-  router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId, participantId } = req.params;
-    const { attendance_status, excuse_reason, attendance_note } = req.body;
-
-    // 'excused' (abgemeldet) kam am 12.09.2026 dazu: Wird jemand ausserhalb
-    // der App abgemeldet -- die Mutter ruft an, das Kind ist krank --, war
-    // bisher nur die Wahl zwischen 'present' (falsch) und 'absent' (sieht aus
-    // wie unentschuldigt). Bei den Punkten verhaelt sich 'excused' wie
-    // 'absent'; der Unterschied liegt in der Dokumentation.
-    if (!['present', 'absent', 'excused'].includes(attendance_status)) {
-      return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
-    }
+    const { excuse_reason, attendance_note } = req.body;
 
     // Freitexte begrenzen und leere Eingaben auf NULL normalisieren, damit
     // "gar keine Notiz" und "Notiz aus Leerzeichen" nicht zweierlei sind.
@@ -205,6 +196,41 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       const getrimmt = wert.trim();
       return getrimmt === '' ? null : getrimmt.slice(0, 500);
     };
+
+    // EINTRAG ZURUECKSETZEN (16.09.2026, Simon: "ich kann eine abmeldung die
+    // ich eingetragen habe nicht loeschen und die person wieder zulassen")
+    //
+    // Bis hierher kannte diese Route nur die drei gesetzten Zustaende. Wer
+    // sich vertippt hatte, kam aus dem Eintrag nicht mehr heraus: Es gab
+    // keinen Weg zurueck auf "noch nicht verbucht". Das war eine LUECKE, keine
+    // Absicht -- die Notiz laesst sich loeschen (13.09.), der Abmeldegrund
+    // wird beim Statuswechsel geleert, die Terminabsage laesst sich
+    // zuruecknehmen. Nur der Status selbst hatte keinen Loeschweg.
+    //
+    // Simons Umweg war "zurueck auf die Warteliste und dann bestaetigen" --
+    // der raeumt den Eintrag zwar ab, verschiebt aber den BUCHUNGSstatus und
+    // loest an vollen Terminen ein Nachruecken aus (siehe teilnehmer.js).
+    //
+    // NULL ist der richtige Wert, kein vierter Status: "noch nicht verbucht"
+    // ist genau der Zustand, in dem jede Buchung anfaengt. Ein eigener Status
+    // waere ein zweiter Ausdruck fuer dasselbe -- und alle Abfragen, die
+    // heute `attendance_status IS NULL` schreiben (Sammelverbuchung, Zaehlung,
+    // Erinnerungen), muessten ihn zusaetzlich kennen.
+    //
+    // LEERER STRING UND undefined WIE NULL: Derselbe Weg, den die Notiz seit
+    // dem 13.09. geht -- ein geleertes Feld heisst "weg damit". Genutzt wird
+    // dafuer derselbe Helfer `textOderNull` statt eines neuen.
+    //
+    // ALT-APP-VERTRAG: Ausgelieferte Fassungen schicken immer einen der drei
+    // Werte; keine schickt null, leer oder gar nichts. Fuer sie aendert sich
+    // nichts. Der Fall, der bisher 400 lieferte, bekommt eine Bedeutung --
+    // keine alte Fassung stuetzt sich darauf, dass das fehlschlaegt.
+    const statusRoh = textOderNull(req.body.attendance_status);
+    if (statusRoh !== null && !['present', 'absent', 'excused'].includes(statusRoh)) {
+      return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
+    }
+    const attendance_status = statusRoh;
+
     const grund = textOderNull(excuse_reason);
     const notiz = textOderNull(attendance_note);
 
@@ -247,7 +273,15 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
     let fruehAntwort = null;
     let eventData = null;
     let isKonfiParticipant = false;
-    let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
+    // Der Grundtext haengt am Fall: "aktualisiert" passt nicht auf eine
+    // Ruecknahme. Die FELDER der Antwort bleiben in beiden Faellen dieselben
+    // (message/points_awarded/points_removed) -- alte App-Fassungen lesen die
+    // Form, nicht den Wortlaut.
+    let responseData = {
+      message: attendance_status === null ? 'Eintrag zurückgesetzt' : 'Anwesenheit aktualisiert',
+      points_awarded: false,
+      points_removed: false
+    };
     let pointsAwarded = false;
     let pointsRemoved = false;
     let removedPointsAmount = 0;
@@ -372,6 +406,29 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       // bleibt genau diese Person abgemeldet -- Simons Fall: "manche sind
       // entschuldigt, dann machen wir es doch. Status bei allen zurueck ausser
       // bei denen."
+      //
+      // BEIM ZURUECKSETZEN ($1 IS NULL) durchlaufen die Zweige der Reihe nach:
+      //   attendance_status        -> NULL (der Eintrag ist weg)
+      //   status                   -> war er 'excused', faellt er auf
+      //                               'confirmed' zurueck; 'opted_out',
+      //                               'cancelled', 'pending' und 'waitlist'
+      //                               bleiben unberuehrt. Genau derselbe Weg
+      //                               wie beim Wechsel 'excused' -> 'present'.
+      //   abgemeldet_durch_absage  -> FALSE, wenn die Abmeldung aufgeht
+      //   excuse_reason            -> NULL (der Grund gehoert zu 'excused')
+      //   attendance_note          -> BLEIBT. Sie haengt nicht am Status --
+      //                               dieselbe Regel wie beim Wechsel zwischen
+      //                               present und absent, wo sie auch stehen
+      //                               bleibt. "Mutter hat angerufen" ist auch
+      //                               dann noch wahr, wenn der Eintrag
+      //                               zurueckgenommen wird; wer sie loswerden
+      //                               will, loescht sie ueber ihren eigenen
+      //                               Weg (leeres Feld, seit 13.09.).
+      //   Urheber/Quelle/Zeit      -> NULL. Ein stehengebliebener Name
+      //                               behauptete einen Eintrag, den es nicht
+      //                               mehr gibt -- dieselbe Ueberlegung, die
+      //                               beim Loeschen der Notiz ihr Urheber-Paar
+      //                               zurueckfallen laesst.
       await client.query(
         `UPDATE event_bookings
             SET attendance_status = $1,
@@ -390,10 +447,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
                 excuse_reason = CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END,
                 attendance_note = CASE WHEN $6 THEN $4 ELSE attendance_note END,
                 attendance_set_by = CASE
+                  WHEN $1::text IS NULL THEN NULL
                   WHEN attendance_status IS DISTINCT FROM $1
                     OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
                   THEN $5::integer ELSE attendance_set_by END,
                 attendance_set_at = CASE
+                  WHEN $1::text IS NULL THEN NULL
                   WHEN attendance_status IS DISTINCT FROM $1
                     OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
                   THEN NOW() ELSE attendance_set_at END,
@@ -406,10 +465,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
                   THEN (CASE WHEN $4::text IS NULL THEN NULL ELSE NOW() END)
                   ELSE note_set_at END,
                 checkin_quelle = CASE
+                  WHEN $1::text IS NULL THEN NULL
                   WHEN attendance_status IS DISTINCT FROM $1
                     OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
                   THEN 'manuell' ELSE checkin_quelle END,
                 checked_in_at = CASE
+                  WHEN $1::text IS NULL THEN NULL
                   WHEN attendance_status IS DISTINCT FROM $1
                     OR excuse_reason IS DISTINCT FROM (CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END)
                   THEN NOW() ELSE checked_in_at END
@@ -461,7 +522,18 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
         }
 
         } // Punkt-Typ freigeschaltet
-      } else if (isKonfiParticipant && (attendance_status === 'absent' || attendance_status === 'excused')) {
+      } else if (isKonfiParticipant && (attendance_status === null || attendance_status === 'absent' || attendance_status === 'excused')) {
+        // NULL GEHOERT IN DIESEN ZWEIG (16.09.2026): Ein zurueckgesetzter
+        // Eintrag darf keine Punkte hinterlassen. Sonst stuende die Person
+        // danach als "noch nicht verbucht" in der Liste und haette die Punkte
+        // trotzdem -- und ein spaeteres 'present' liefe in den
+        // ON-CONFLICT-DO-NOTHING-Zweig ("Punkte bereits vergeben"), obwohl die
+        // Leitung sie gerade erst vergeben zu haben glaubt.
+        //
+        // Das ist derselbe Weg, den die Herabstufung auf die Warteliste geht
+        // (teilnehmer.js -> takeBackEventPoints): Wer keinen verbuchten
+        // Eintrag hat, hat keine Event-Punkte. Die Punkte kommen zurueck,
+        // sobald jemand wieder 'present' setzt.
         const { rows: [existingPoints] } = await client.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
 
         if (existingPoints) {
@@ -472,7 +544,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
           await client.query(updateProfileQuery, [existingPoints.points, eventData.user_id]);
           pointsRemoved = true;
           removedPointsAmount = existingPoints.points;
-          responseData = { message: `Anwesenheit aktualisiert und ${existingPoints.points} Punkte entfernt`, points_removed: true };
+          responseData = {
+            message: attendance_status === null
+              ? `Eintrag zurückgesetzt und ${existingPoints.points} Punkte entfernt`
+              : `Anwesenheit aktualisiert und ${existingPoints.points} Punkte entfernt`,
+            points_removed: true
+          };
         }
       }
 
@@ -579,6 +656,24 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
             }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+        } else {
+          // ZURUECKGESETZT (attendance_status === null): KEIN Push an die
+          // Person. Die drei Pushes oben melden ein Ergebnis ("du warst da",
+          // "du hast gefehlt", "deine Abmeldung ist eingetragen") -- ein
+          // zurueckgenommener Eintrag meldet nichts, er nimmt zurueck. Eine
+          // Nachricht "dein Eintrag wurde geloescht" verunsichert nur; die
+          // Leitung korrigiert hier einen eigenen Fehler.
+          //
+          // Das Live-Update an die Leitung feuert dagegen wie ueberall: Die
+          // Teilnehmerliste steht in mehreren Fenstern offen und muss die
+          // Ruecknahme sehen.
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+          if (isKonfiParticipant) {
+            liveUpdate.sendToUser('konfi', eventData.user_id, 'events', 'update', { eventId });
+            if (pointsRemoved) {
+              liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+            }
+          }
         }
     } catch (nachErr) {
       // Die Anwesenheit ist festgeschrieben — ein Fehler in der Nacharbeit

@@ -11,12 +11,14 @@ import {
   ICON_LOESCHEN_GEFUELLT,
   ICON_PERSON_HINZUFUEGEN_GEFUELLT,
   ICON_QRCODE,
+  ICON_RUECKGAENGIG,
   ICON_TERMIN_GEFUELLT,
   ICON_TEXTDOKUMENT,
   ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
+import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
@@ -603,9 +605,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // geleert; die Notiz ("ging um 14 Uhr") haengt NICHT am Status und bleibt
   // stehen, solange nichts Neues geschickt wird. Kommt sie LEER mit, wird sie
   // geloescht — die Route unterscheidet "Feld fehlt" von "Feld ist leer".
+  //
+  // status = null setzt den Eintrag ZURUECK: Die Person steht danach wieder
+  // als unverbucht in der Liste, Grund und Urheber sind weg, Punkte kommen
+  // zurueck. Die NOTIZ bleibt -- sie haengt nicht am Status (dieselbe Regel
+  // wie beim Wechsel zwischen anwesend und abwesend) und wird ueber ihren
+  // eigenen Weg geloescht.
   const handleAttendanceUpdate = async (
     participant: Participant,
-    status: 'present' | 'absent' | 'excused',
+    status: 'present' | 'absent' | 'excused' | null,
     texte?: { excuse_reason?: string; attendance_note?: string }
   ) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -626,8 +634,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             // sie mitkam. Der genaue Zeitstempel kommt mit dem naechsten
             // Laden nach; hier zaehlt, dass die Zeile nicht weiter jemand
             // anderen nennt, waehrend gerade die eigene Aenderung dasteht.
-            attendance_set_by_name: user?.display_name ?? p.attendance_set_by_name,
-            attendance_set_at: new Date().toISOString(),
+            // Beim Zuruecksetzen faellt die Urheber-Zeile mit weg: Es gibt
+            // keinen Eintrag mehr, dessen Urheberschaft festzuhalten waere.
+            attendance_set_by_name: status === null ? null : (user?.display_name ?? p.attendance_set_by_name),
+            attendance_set_at: status === null ? null : new Date().toISOString(),
+            ...(status === null ? { excuse_reason: null } : {}),
             ...(notizMitgeschickt
               ? {
                   note_set_by_name: notiz ? (user?.display_name ?? null) : null,
@@ -719,6 +730,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         text: participant.attendance_note ? 'Notiz bearbeiten' : 'Notiz hinzufügen',
         icon: ICON_TEXTDOKUMENT,
         handler: () => showNotizModal(participant)
+      });
+    }
+    // EINTRAG ZURUECKSETZEN (16.09.2026, Simon: "ich kann eine abmeldung die
+    // ich eingetragen habe nicht loeschen und die person wieder zulassen").
+    //
+    // Nur sichtbar, wenn ueberhaupt etwas eingetragen ist -- bei einer
+    // unverbuchten Person gaebe es nichts zurueckzusetzen, und der Eintrag
+    // waere ein Knopf ohne Wirkung.
+    //
+    // WORTLAUT: "Eintrag zuruecksetzen" und nicht "Loeschen". Geloescht wird
+    // im Repo, was verschwindet (Teilnehmer:in entfernen, Notiz loeschen);
+    // hier bleibt die Buchung bestehen, nur die Verbuchung faellt weg. Der
+    // Satz beschreibt genau das, was passiert: die Person steht danach wieder
+    // da, wo sie vor dem Eintrag stand.
+    //
+    // ROLLE: 'destructive'. Der Eintrag nimmt Punkte zurueck und loescht den
+    // Abmeldegrund samt Urheber -- dieselbe Art von Folge wie beim Entfernen
+    // eines Teilnehmers, das im Wartelisten-Sheet ebenfalls rot steht. Ein
+    // neutraler Eintrag stuende gleichrangig neben "Anwesend" und "Abwesend"
+    // und liesse sich im Vorbeitippen treffen.
+    if (participant.attendance_status) {
+      buttons.push({
+        text: 'Eintrag zurücksetzen',
+        icon: ICON_RUECKGAENGIG,
+        role: 'destructive',
+        handler: () => handleAttendanceUpdate(participant, null)
       });
     }
     buttons.push({ text: 'Abbrechen', role: 'cancel' });

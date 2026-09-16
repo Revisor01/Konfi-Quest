@@ -452,6 +452,15 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });
         }
 
+        // Von der Warteliste auf "bestaetigt" ist eine Anmeldung wie jede
+        // andere — und an einem abgesagten Termin meldet sich niemand an
+        // (Simons Entscheidung, 16.09.2026). Der Weg auf die Warteliste
+        // bleibt offen: das ist keine Anmeldung, sondern das Gegenteil.
+        if (booking.cancelled && status === 'confirmed') {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Dieser Termin ist abgesagt' });
+        }
+
         // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
         // Wartelisten-Befoerderung (Push an die betroffene Person). Bei 'confirmed'
         // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh nötig).
@@ -493,6 +502,49 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             await client.query("UPDATE event_bookings SET status = 'waitlist', war_auf_warteliste = false WHERE id = $1", [participantId]);
           }
         } else {
+          // KAPAZITAET PRUEFEN (16.09.2026) -- bis hierher gab es hier KEINE.
+          //
+          // Das fiel erst auf, seit das Nachruecken vollstaendig ist: Jede
+          // Abmeldung und jede Herabstufung befoerdert seit dem 15.09.
+          // automatisch die naechste wartende Person. Wer eine Abmeldung ueber
+          // den Umweg "zurueck auf die Warteliste, dann bestaetigen" rueckgaengig
+          // machen wollte -- der einzige Weg, den es bis heute gab --, buchte
+          // den Termin damit still ueber: Beim Herabstufen rueckt Y nach, beim
+          // Bestaetigen kommt X ungeprueft dazu. Zwei Personen auf einem Platz,
+          // und nirgends eine Zahl, die rot wird.
+          //
+          // ABGELEHNT STATT STILL UEBERBUCHT (Entscheidung): Die Leitung soll
+          // handlungsfaehig bleiben, aber nicht versehentlich ueber die eigene
+          // Obergrenze gehen. Wer bewusst mehr Leute mitnehmen will, hat dafuer
+          // den richtigen Weg -- die Kapazitaet des Termins erhoehen. Dann
+          // stimmt die Zahl hinterher auch, und die Wartenden ruecken von
+          // selbst korrekt nach. Eine stille Ueberbuchung dagegen ist kein
+          // Alltagsweg, sondern ein Unfall: Sie faellt erst am Termin auf, wenn
+          // die Stuehle nicht reichen.
+          //
+          // Ohne Obergrenze (0 oder NULL) aendert sich nichts -- dort gibt es
+          // nichts zu ueberschreiten. Die Zaehlung laeuft ueber dieselbe Regel
+          // wie das Nachruecken (zaehleBestaetigte ueber freiePlaetze), damit
+          // beide nicht auseinanderlaufen koennen.
+          const maxKapazitaet = booking.ist_team
+            ? (booking.teamer_max_participants || 0)
+            : (booking.timeslot_id ? (booking.timeslot_max || 0) : (booking.max_participants || 0));
+          const frei = await freiePlaetze(
+            client,
+            {
+              eventId,
+              timeslotId: booking.ist_team ? null : booking.timeslot_id,
+              seite: booking.ist_team ? 'team' : 'konfi'
+            },
+            maxKapazitaet
+          );
+          if (frei !== null && frei <= 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: 'Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.'
+            });
+          }
+
           // BEFOERDERUNG VON HAND: Die Leitung waehlt eine bestimmte Person aus
           // -- FIFO gilt hier bewusst nicht, also kann promoteFromWaitlist das
           // nicht uebernehmen. Was es aber tut und hier fehlte:
