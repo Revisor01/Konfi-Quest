@@ -708,6 +708,13 @@ Absagegrund — hast du keinen angegeben, steht dort „Termin abgesagt". Punkte
 gibt es dafür keine, und bereits vergebene sind zurückgenommen: Der Termin hat
 nicht stattgefunden.
 
+Das gilt auch für alle, **die du schon verbucht hattest**: Wer auf anwesend
+oder abwesend stand, steht danach ebenfalls auf abgemeldet, und seine Punkte
+für diesen Termin sind weg. Ein abgesagter Termin hat keine Anwesenden — wer
+dort als anwesend stünde, wäre bei etwas anwesend gewesen, das nicht
+stattgefunden hat. Auch der Vermerk, wer die Anwesenheit eingetragen hatte
+oder dass jemand sich per QR-Code eingecheckt hat, fällt damit weg.
+
 Das erspart dir das Nacharbeiten. Ein abgesagter Termin gilt damit als erledigt
 und taucht nicht mehr als „noch zu verbuchen" in der roten Zahl am Reiter auf.
 
@@ -718,9 +725,12 @@ Termin. Die übrigen bleiben abgemeldet. Genauso lässt sich der Grund bei
 einzelnen Personen durch einen eigenen ersetzen, etwa „krank, Mutter hat
 angerufen".
 
-Wen du vor der Absage schon verbucht hattest — anwesend, abwesend oder
-abgemeldet —, den rührt die Absage nicht an. Eine Entscheidung, die du getroffen
-hast, wird nicht überschrieben.
+Eine **Abmeldung mit eigenem Grund** bleibt dagegen stehen. Hast du jemanden
+vor der Absage abgemeldet, weil die Mutter angerufen hat, steht bei ihm
+weiterhin „krank, Mutter hat angerufen" und nicht der Absagegrund. Der Grund
+gehört der Person und nicht dem Termin. Dasselbe gilt für Konfis, die sich
+selbst von einem Pflichttermin abgemeldet haben, und für Teamer:innen, die
+schon abgesagt hatten: Ihre Rückmeldung bleibt so stehen, wie sie ist.
 
 ### Den Grund nachtragen oder ändern
 
@@ -728,12 +738,12 @@ Der Grund lässt sich an einem abgesagten Termin jederzeit nachtragen, ändern
 oder wieder entfernen. Eine Absage ist oft eilig — wer morgens um sieben in
 Eile nichts eingetragen hat oder sich vertippt, kommt so noch einmal heran.
 
-Zwei Wege führen dorthin:
+Der Weg dorthin führt über die **Terminliste**: Wisch den abgesagten Termin
+nach links — dort, wo bei den übrigen „Absagen" steht, liegt bei einem
+abgesagten Termin der Stift. Leitung und Team haben diesen Wisch.
 
-- In der **Detailansicht** steht unter dem Grund „Grund bearbeiten"; fehlt
-  einer, heißt der Knopf „Grund nachtragen". Diesen Weg hat auch das Team.
-- In der **Terminliste der Leitung** wischst du den abgesagten Termin nach
-  links — dort, wo bei den übrigen „Absagen" steht.
+Im Termin selbst steht der Grund nur zum Lesen. Der Abschnitt „Absage" nennt
+ihn und darunter, wer abgesagt hat; geändert wird er in der Liste.
 
 Es öffnet sich dasselbe Fenster wie beim Absagen, mit dem Text, der bisher
 dasteht. Leerst du das Feld und speicherst, fällt der Grund weg und der Termin
@@ -760,8 +770,8 @@ eigenen Grund, bleibt es bei der einen Zeile.
 
 Wer bearbeiten darf, richtet sich nach denselben Regeln wie das Absagen: Wer
 den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:innen
-gehören dazu — sie tragen den Grund in der Detailansicht des Termins nach.
-Konfis lesen ihn nur.
+gehören dazu — sie wischen den Termin in ihrer Terminliste genauso an. Konfis
+lesen ihn nur; sie haben den Wisch nicht.
 
 ### Eine Absage zurücknehmen
 
@@ -769,12 +779,10 @@ Die Heizung ist doch rechtzeitig repariert, der Sturm zieht vorbei: Ein
 abgesagter Termin lässt sich wieder aufleben lassen. Du musst ihn dafür nicht
 neu anlegen — Anmeldungen, Warteliste und Chat bleiben, wo sie waren.
 
-Zwei Wege führen dorthin:
-
-- In der **Detailansicht** steht im Abschnitt „Absage" der Knopf „Absage
-  zurücknehmen", neben dem Knopf für den Grund. Diesen Weg hat auch das Team.
-- In der **Terminliste der Leitung** wischst du den abgesagten Termin nach
-  links; bei abgesagten Terminen steht dort zusätzlich das Zurücknehmen.
+Der Weg dorthin führt über die **Terminliste**, denselben Wisch nach links wie
+beim Grund: An einem abgesagten Termin liegen dort zwei Aktionen nebeneinander
+— der grüne Pfeil nimmt die Absage zurück, der Stift daneben öffnet den Grund.
+Leitung und Team haben beide.
 
 Vorher fragt das System nach und nennt dir, **wie viele Personen wieder
 angemeldet werden** — denn genau die bekommen gleich eine Mitteilung.
@@ -794,8 +802,11 @@ Listen: Man kann sich anmelden, und die Warteliste rückt wieder nach.
 - **Punkte werden nicht wiederhergestellt.** Der Termin steht ja erst bevor.
   Punkte gibt es, wenn du die Anwesenheit verbuchst — wie an jedem anderen
   Termin.
-- Wen du schon auf **anwesend** oder **abwesend** gesetzt hattest, den rührt
-  auch das Zurücknehmen nicht an.
+- **Eine Anwesenheit von vor der Absage kommt nicht zurück.** Wen du damals
+  auf anwesend oder abwesend gesetzt hattest, steht nach dem Zurücknehmen
+  wieder als noch nicht verbucht in der Liste — die Absage hatte ihn
+  abgemeldet. Das überrascht, ist aber richtig: Der Termin steht jetzt ja
+  wieder bevor. Verbucht wird, wenn er gelaufen ist.
 
 **Alle Wiederangemeldeten bekommen eine Mitteilung:** „Termin findet doch
 statt" — mit dem Hinweis, dass sie wieder angemeldet sind und bitte prüfen
@@ -803,7 +814,8 @@ sollen, ob sie Zeit haben. Wer nicht kann, meldet sich über den Termin ab. Wer
 abgemeldet bleibt, bekommt keine Nachricht: Sie ginge ihn nichts an.
 
 Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen —
-Teamer:innen gehören dazu.
+Teamer:innen gehören dazu und wischen den Termin in ihrer Terminliste genauso
+an.
 
 ### Wo ein abgesagter Termin steht
 

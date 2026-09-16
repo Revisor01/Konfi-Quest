@@ -2005,8 +2005,8 @@ paths:
         (confirmed + waitlist).
 
         AUTOMATISCHES ABMELDEN (15.09.2026): In DERSELBEN Transaktion werden
-        alle Buchungen mit status IN ('confirmed','waitlist') und
-        attendance_status IS NULL auf attendance_status='excused' gesetzt,
+        alle Buchungen mit status IN ('confirmed','waitlist') auf
+        attendance_status='excused' gesetzt,
         excuse_reason = der Absagegrund (ohne Grund: der feste Text
         "Termin abgesagt"). Bereits vergebene event_points werden geloescht
         und die Salden in konfi_profiles zurueckgerechnet. Schlaegt das
@@ -2031,12 +2031,29 @@ paths:
         ANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt,
         keines wechselt den Typ — status traegt einen WERT mehr.
 
-        NICHT angetastet werden bereits verbuchte Buchungen
-        (attendance_status IS NOT NULL) -- eine getroffene Entscheidung wird
-        nicht ueberschrieben, und Punkte werden nicht doppelt abgezogen.
-        attendance_set_by und checkin_quelle bleiben NULL: Die Absage ist
-        keine Anwesenheitsbeurteilung (Begruendung Migration 148/151); wer
-        abgesagt hat, steht in events.cancelled_by.
+        GEAENDERT 16.09.2026 — AUCH BEREITS VERBUCHTE WERDEN ABGEMELDET
+        (Entscheidung Simon: "Auch die auf abgemeldet setzen"). Bis dahin
+        stand in der Auswahl zusaetzlich attendance_status IS NULL; wer schon
+        auf 'present' oder 'absent' stand, blieb unveraendert. Ein abgesagter
+        Termin hat keine Anwesenden -- die Bedingung ist entfallen, present
+        und absent fallen mit, und ihre event_points werden ebenfalls
+        zurueckgenommen (die Punkte-Abfrage fasst dieselbe Menge, ein
+        doppelter Abzug ist damit ausgeschlossen).
+
+        NICHT angetastet wird, wer bereits ABGEMELDET war: status='opted_out'
+        (Selbstabmeldung, Teamer-Absage) und status='excused'
+        (Einzelabmeldung ueber PUT .../attendance, Migration 153) stehen nicht
+        in der Auswahl. Ein eigener excuse_reason ("krank, Mutter hat
+        angerufen") wird deshalb NICHT vom Absagegrund ueberschrieben, und
+        abgemeldet_durch_absage bleibt dort FALSE.
+
+        attendance_set_by, attendance_set_at, checkin_quelle und
+        checked_in_at werden auf NULL gesetzt: Die Absage ist keine
+        Anwesenheitsbeurteilung (Begruendung Migration 148/151) und traegt
+        deshalb keine Urheberin ein -- sie raeumt die der aufgehobenen
+        Verbuchung nur mit ab, damit an einer abgemeldeten Zeile nicht
+        "Selbst eingecheckt" stehen bleibt. Wer abgesagt hat, steht in
+        events.cancelled_by.
 
         KEIN BACKFILL: gilt nur fuer Absagen ab dem 15.09.2026, bereits
         abgesagte Termine bleiben unveraendert.
@@ -2230,9 +2247,15 @@ paths:
         FALSE), BLEIBT abgemeldet — samt eigenem Grund. Simons Fall, woertlich:
         "Könnte ja auch sein wir sagen eine Pflicht ab, manche sind
         entschuldigt, dann machen wir es doch. Status bei allen zurück außer
-        bei denen." Wer schon auf 'present' oder 'absent' stand, wurde von der
-        Absage ohnehin nie angefasst (meldeAlleAbBeiAbsage waehlt nur
-        attendance_status IS NULL).
+        bei denen."
+
+
+        WER VOR DER ABSAGE 'present' ODER 'absent' WAR, KOMMT ALS UNVERBUCHT
+        ZURUECK (Folge der Entscheidung vom 16.09.2026, dass die Absage auch
+        Verbuchte abmeldet): Die Absage hat ihn abgemeldet und seine Punkte
+        zurueckgenommen; dieses UPDATE setzt attendance_status auf NULL. Die
+        alte Anwesenheit ist damit weg, die Punkte ebenfalls. Gewollt: Der
+        Termin steht wieder BEVOR, verbucht wird, wenn er gelaufen ist.
 
 
         JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK

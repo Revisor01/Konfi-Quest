@@ -79,10 +79,19 @@ Versionsüberschrift.
   Passworts — der Vorschlag ist sichtbar, damit er sich weitergeben lässt.
 
 ### Geändert
+- **Eine Absage meldet wirklich alle ab** — auch, wen du schon als anwesend
+  oder abwesend verbucht hattest. Ein abgesagter Termin hat keine Anwesenden;
+  Punkte, die dafür schon vergeben waren, werden zurückgenommen. Wer sich vor
+  der Absage selbst abgemeldet hatte oder von dir mit eigenem Grund abgemeldet
+  wurde, behält diesen Grund unverändert. Waren trotzdem welche da, setzt du
+  sie danach wie gewohnt auf anwesend und gibst ihnen Punkte. Nimmst du die
+  Absage später zurück, kommen alle als noch nicht verbucht zurück — eine
+  Anwesenheit von vor der Absage steht dann nicht mehr da.
 - Der Absagegrund steht in der Detailansicht eines Termins jetzt in einer
-  eigenen Karte „Absage" — in derselben weißen Form wie die Details und die
-  Beschreibung darunter. Rot bleiben nur das Zeichen im Kopf und das Wort
-  „Abgesagt:", damit die Absage weiterhin ins Auge fällt.
+  eigenen Karte „Absage" — in derselben weißen Form wie die Details darunter
+  und mit denselben Zeilen: ein rotes Zeichen am Anfang, darüber „Grund" und
+  „Abgesagt von", darunter der Text. Geändert wird beides nicht mehr hier,
+  sondern mit einem Wisch am Termin in der Liste.
 - **Abgesagte Termine sehen überall gleich aus.** In allen Listen und auf den
   Startseiten steht ein abgesagter Termin durchgestrichen und grau — bisher
   galt das für Konfis und Leitung, im Team sah er aus wie jeder andere. Der
@@ -91,7 +100,11 @@ Versionsüberschrift.
   wird für alle genannt und nicht nur der Leitung. Ist kein Grund angegeben,
   sagt die Detailansicht das auch — vorher war „kein Grund" nicht von einer
   alten Absage zu unterscheiden. Und das Team kann einen Grund jetzt selbst
-  nachtragen oder ändern; erlaubt war es längst, nur der Knopf fehlte.
+  nachtragen oder ändern; erlaubt war es längst, nur der Weg dorthin fehlte.
+- **Grund ändern und Absage zurücknehmen liegen jetzt beide auf dem Wisch** am
+  abgesagten Termin in der Terminliste — der grüne Pfeil nimmt die Absage
+  zurück, der Stift daneben öffnet den Grund. Leitung und Team haben beide
+  Wege; im Termin selbst steht die Absage nur noch zum Lesen.
 - Die Kachel „Abgemeldet" zählt nach einer Terminabsage wieder alle
   Abgemeldeten statt null. In Terminen mit Zeitfenstern stehen Abmeldungen
   jetzt ebenfalls in der Teilnehmerliste — mit Grund und in derselben Farbe
