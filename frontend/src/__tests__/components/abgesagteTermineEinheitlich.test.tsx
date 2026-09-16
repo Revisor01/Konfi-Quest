@@ -270,6 +270,67 @@ describe('Befund E: Grund nachtragen bzw. bearbeiten', () => {
 });
 
 // ------------------------------------------------------------------------
+// Absage zuruecknehmen (16.09.2026)
+// ------------------------------------------------------------------------
+
+describe('Absage zuruecknehmen', () => {
+  it('der Knopf steht im Kasten, wenn der Aufrufer ihn anbietet', () => {
+    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" onZuruecknehmen={() => {}} />);
+    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
+  });
+
+  it('er steht AUCH bei einer Absage ohne Grund -- die Absage laesst sich so oder so zuruecknehmen', () => {
+    render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" onZuruecknehmen={() => {}} />);
+    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
+  });
+
+  it('wer nicht schreiben darf (Konfi), bekommt ihn nicht', () => {
+    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    expect(screen.queryByText('Absage zurücknehmen')).toBeNull();
+  });
+
+  it('an einem NICHT abgesagten Termin gibt es ihn nicht', () => {
+    const { container } = render(
+      <AbsageBlock event={offenerTermin} variante="kasten" onZuruecknehmen={() => {}} />
+    );
+    expect(container.textContent).toBe('');
+  });
+
+  it('ohne Verbindung ist er gesperrt', () => {
+    render(
+      <AbsageBlock
+        event={abgesagtMitGrund}
+        variante="kasten"
+        onZuruecknehmen={() => {}}
+        bearbeitenDeaktiviert
+      />
+    );
+    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+  });
+
+  it('meldet den Klick an den Aufrufer -- er stellt die Rueckfrage mit der Zahl', () => {
+    const gerufen = vi.fn();
+    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" onZuruecknehmen={gerufen} />);
+    // Nur EIN Knopf im Kasten, weil onGrundBearbeiten hier fehlt.
+    screen.getByRole('button').click();
+    expect(gerufen).toHaveBeenCalledTimes(1);
+  });
+
+  it('steht neben dem Grund-Knopf, nicht statt seiner', () => {
+    render(
+      <AbsageBlock
+        event={abgesagtMitGrund}
+        variante="kasten"
+        onGrundBearbeiten={() => {}}
+        onZuruecknehmen={() => {}}
+      />
+    );
+    expect(screen.getByText('Grund bearbeiten')).toBeTruthy();
+    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
+  });
+});
+
+// ------------------------------------------------------------------------
 // Befund G: Die Kachel "Abgemeldet"
 // ------------------------------------------------------------------------
 

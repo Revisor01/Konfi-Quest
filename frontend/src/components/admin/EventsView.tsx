@@ -15,6 +15,7 @@ import {
   ICON_MATERIAL,
   ICON_ORT_GEFUELLT,
   ICON_POKAL_GEFUELLT,
+  ICON_RUECKGAENGIG,
   ICON_SUCHE_GEFUELLT,
   ICON_TERMIN,
   ICON_TERMIN_GEFUELLT,
@@ -30,6 +31,8 @@ interface EventsViewProps {
   onSelectEvent: (event: Event) => void;
   onDeleteEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
+  // Absage zuruecknehmen (16.09.2026) -- nur an abgesagten Terminen sichtbar.
+  onZuruecknehmen?: (event: Event) => void;
   activeTab?: 'aktuell' | 'verbuchen' | 'vergangen';
   onTabChange?: (tab: 'aktuell' | 'verbuchen' | 'vergangen') => void;
   eventCounts?: {
@@ -56,6 +59,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onDeleteEvent,
   onCancelEvent,
+  onZuruecknehmen,
   activeTab = 'aktuell',
   onTabChange,
   eventCounts,
@@ -467,8 +471,25 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </IonItem>
 
-                {(onDeleteEvent || onCancelEvent) && (
+                {(onDeleteEvent || onCancelEvent || onZuruecknehmen) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
+                    {/* ABSAGE ZURUECKNEHMEN (16.09.2026): nur an abgesagten
+                        Terminen, und dort als ERSTE Aktion — sie ist die
+                        aufbauende, waehrend die beiden daneben abbauen. Gruen
+                        statt rot, damit sie sich nicht wie "noch
+                        endgueltiger absagen" liest. Die Rueckfrage mit der
+                        Zahl der Betroffenen stellt der Aufrufer. */}
+                    {onZuruecknehmen && isCancelled && (
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); onZuruecknehmen(event); }}
+                        aria-label="Absage zurücknehmen"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
+                          <IonIcon icon={ICON_RUECKGAENGIG} />
+                        </div>
+                      </IonItemOption>
+                    )}
                     {onCancelEvent && (
                       // Bei einem ABGESAGTEN Termin fuehrt derselbe Wisch zum
                       // Absagegrund (15.09.2026, Migration 152) — absagen

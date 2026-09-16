@@ -27,6 +27,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
  * event_registered            | sendEventRegisteredToTeamer          | Teamer:in       | ja
  * waitlist_promotion          | sendWaitlistPromotionToTeamer        | Teamer:in       | ja
  * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
+ * event_reactivated           | sendEventReactivationToKonfis        | Konfi (multi)   | ja
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
  * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
@@ -1132,6 +1133,73 @@ class PushService {
       return await this.sendToMultipleUsers(db, userIds, notification);
     } catch (error) {
  console.error('sendEventCancellationToKonfis error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Die Absage ist zurueckgenommen — der Termin findet doch statt
+   * (16.09.2026). Das Gegenstueck zu sendEventCancellationToKonfis.
+   *
+   * SIMONS WORTLAUT-VORGABE (16.09.2026): "alle kriegen einen Push: Findet
+   * doch statt. Dann sind alle einfach angemeldet und gut. Können sich
+   * austragen. Vielleicht Hinweis im Push: Findet doch statt. Prüfe ob du
+   * noch Zeit hast oder so…"
+   *
+   * Der Hinweis gehoert in den Text, nicht in die App: Wer die Absage gelesen
+   * und sich anderweitig verabredet hat, muss die Nachricht als AUFFORDERUNG
+   * verstehen, nicht als blosse Mitteilung. Deshalb steht die Rueckfrage
+   * ausdruecklich drin — die Anmeldung ist wieder da, ohne dass jemand
+   * zugestimmt haette, und wer nicht kann, meldet sich ab.
+   *
+   * NUR AN DIE WIEDER ANGEMELDETEN (Route: die Rueckgabe von
+   * hebeAbsageAbmeldungenAuf). Wer vor der Absage selbst oder von der Leitung
+   * abgemeldet war, bleibt abgemeldet und bekommt DIESEN Push nicht: "Du bist
+   * wieder angemeldet" waere fuer sie schlicht falsch, und eine Nachricht
+   * ueber einen Termin, an dem sie nicht teilnehmen, ist Laerm.
+   *
+   * KEIN GRUND IM TEXT: Der Absagegrund ("Heizung defekt") beschreibt eine
+   * Absage, die es nicht mehr gibt. Ihn hier mitzuschicken wuerde die
+   * Nachricht in ihr Gegenteil verkehren.
+   *
+   * event_id GEHT MIT, wie bei der Absage seit dem 15.09.2026: Ein Tipp auf
+   * die Meldung soll den Termin aufschlagen — dort steht, wann und wo, und
+   * dort meldet sich ab, wer nicht kann. Ohne Kennung landete man auf der
+   * Terminliste und muesste suchen.
+   *
+   * @param {Array<number>} userIds - die wieder Angemeldeten
+   * @param {string} eventName
+   * @param {string|Date} eventDate - Datum fuer die Zeile im Text
+   * @param {number|null} organizationId - Organisation des TERMINS
+   * @param {number|null} eventId - Sprungziel beim Antippen
+   */
+  static async sendEventReactivationToKonfis(db, userIds, eventName, eventDate, organizationId = null, eventId = null) {
+    try {
+      let dateInfo = eventDate;
+      if (eventDate) {
+        const date = new Date(eventDate);
+        dateInfo = `${formatDatum(date, { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${formatUhrzeit(date)} Uhr`;
+      }
+
+      const notification = {
+        title: 'Termin findet doch statt',
+        body: `"${eventName}" am ${dateInfo} findet doch statt.`
+          + ' Du bist wieder angemeldet – prüf bitte, ob du Zeit hast, und melde dich sonst ab.',
+        data: {
+          type: 'event_reactivated',
+          event_name: eventName,
+          // Wie bei der Absage: faellt ganz weg statt als leerer String
+          // dazustehen. Alte App-Fassungen lesen den Schluessel nicht.
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
+          // Event-Org explizit: unter den Gebuchten können Teamer:innen mit
+          // anderer Primär-Org sein.
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, userIds, notification);
+    } catch (error) {
+      console.error('sendEventReactivationToKonfis error:', error);
       return { success: false, error: error.message };
     }
   }

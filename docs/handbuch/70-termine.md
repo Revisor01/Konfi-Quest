@@ -763,6 +763,48 @@ den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:in
 gehören dazu — sie tragen den Grund in der Detailansicht des Termins nach.
 Konfis lesen ihn nur.
 
+### Eine Absage zurücknehmen
+
+Die Heizung ist doch rechtzeitig repariert, der Sturm zieht vorbei: Ein
+abgesagter Termin lässt sich wieder aufleben lassen. Du musst ihn dafür nicht
+neu anlegen — Anmeldungen, Warteliste und Chat bleiben, wo sie waren.
+
+Zwei Wege führen dorthin:
+
+- In der **Detailansicht** steht im roten Kasten „Absage zurücknehmen", neben
+  dem Knopf für den Grund. Diesen Weg hat auch das Team.
+- In der **Terminliste der Leitung** wischst du den abgesagten Termin nach
+  links; bei abgesagten Terminen steht dort zusätzlich das Zurücknehmen.
+
+Vorher fragt das System nach und nennt dir, **wie viele Personen wieder
+angemeldet werden** — denn genau die bekommen gleich eine Mitteilung.
+
+**Was zurückkommt:** Alle, die durch diese Absage abgemeldet wurden, sind
+wieder angemeldet — jede genau dort, wo sie vorher stand. Wer einen festen
+Platz hatte, hat ihn wieder; wer auf der Warteliste war, wartet weiter. Der
+Absagegrund verschwindet, und der Termin steht wieder ganz normal in den
+Listen: Man kann sich anmelden, und die Warteliste rückt wieder nach.
+
+**Was nicht zurückkommt:**
+
+- **Wer schon vor der Absage abgemeldet war, bleibt abgemeldet.** Egal ob er
+  sich selbst abgemeldet hat oder du ihn abgemeldet hast, weil die Mutter
+  angerufen hatte: Diese Entscheidung galt unabhängig von der Absage und gilt
+  weiter. Auch der eigene Grund („krank, Mutter hat angerufen") bleibt stehen.
+- **Punkte werden nicht wiederhergestellt.** Der Termin steht ja erst bevor.
+  Punkte gibt es, wenn du die Anwesenheit verbuchst — wie an jedem anderen
+  Termin.
+- Wen du schon auf **anwesend** oder **abwesend** gesetzt hattest, den rührt
+  auch das Zurücknehmen nicht an.
+
+**Alle Wiederangemeldeten bekommen eine Mitteilung:** „Termin findet doch
+statt" — mit dem Hinweis, dass sie wieder angemeldet sind und bitte prüfen
+sollen, ob sie Zeit haben. Wer nicht kann, meldet sich über den Termin ab. Wer
+abgemeldet bleibt, bekommt keine Nachricht: Sie ginge ihn nichts an.
+
+Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen —
+Teamer:innen gehören dazu.
+
 ### Wo ein abgesagter Termin steht
 
 Das richtet sich nach dem Datum: Solange der Termin noch bevorsteht oder

@@ -113,6 +113,10 @@ export const buildPushTargetUrl = (
     case 'event_reminder':
       return `${routePrefix}/events`;
 
+    // Zuruecknahme der Absage (16.09.2026): dasselbe Ziel wie die Absage.
+    // Der Push sagt "prüf bitte, ob du Zeit hast, und melde dich sonst ab" —
+    // genau das geht am Termin, nicht auf der Liste.
+    case 'event_reactivated':
     case 'event_cancelled': {
       // Absage: zum Termin, wenn die Kennung mitkommt. Dort steht der Grund
       // ausfuehrlich und darunter, wer abgesagt hat — auf der Liste steht nur

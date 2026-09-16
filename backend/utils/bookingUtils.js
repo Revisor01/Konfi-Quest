@@ -260,9 +260,20 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   //    getroffene Entscheidung wird nicht ueberschrieben -- und eine bereits
   //    einzeln abgemeldete Person behaelt damit auch ihr
   //    abgemeldet_durch_absage = FALSE und ueberlebt die Zuruecknahme.
+  //
+  //    status_vor_absage HAELT FEST, WOHIN ES ZURUECKGEHT (Migration 155,
+  //    16.09.2026). `status` wird im selben UPDATE ueberschrieben -- danach
+  //    sehen eine abgemeldete Angemeldete und eine abgemeldete Wartende
+  //    identisch aus. Ohne diese Spalte muesste das Zuruecknehmen raten, und
+  //    beide Vermutungen waeren falsch: alle auf 'confirmed' loest die
+  //    Warteliste auf und ueberbucht den Termin, alle auf 'waitlist' stellt
+  //    die Angemeldeten hinten an. `status` steht rechts vom Komma noch auf
+  //    dem ALTEN Wert -- Postgres wertet alle SET-Ausdruecke gegen die Zeile
+  //    VOR dem UPDATE aus, die Reihenfolge der Zuweisungen spielt keine Rolle.
   const { rowCount } = await client.query(
     `UPDATE event_bookings
         SET attendance_status = 'excused',
+            status_vor_absage = status,
             status = 'excused',
             abgemeldet_durch_absage = TRUE,
             excuse_reason = $2
@@ -273,6 +284,85 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   );
 
   return { abgemeldet: rowCount, punkteZurueckgenommen: punkte };
+}
+
+/**
+ * Hebt beim Zuruecknehmen einer Absage genau die Abmeldungen auf, die AUS
+ * DIESER ABSAGE stammen. Das Gegenstueck zu meldeAlleAbBeiAbsage.
+ *
+ * SIMONS ENTSCHEIDUNG (16.09.2026), woertlich:
+ *   "Ich möchte es einfach wieder aufleben lassen. Ohne dass Status zurück
+ *    kommt. Wir drücken es zurück, alle kriegen einen Push: Findet doch statt.
+ *    Dann sind alle einfach angemeldet und gut. Können sich austragen."
+ *
+ * NUR abgemeldet_durch_absage = TRUE (Migration 153). Das ist der Kern:
+ *
+ *   "Könnte ja auch sein wir sagen eine Pflicht ab, manche sind entschuldigt,
+ *    dann machen wir es doch. Status bei allen zurück außer bei denen."
+ *
+ * Wer sich VOR der Absage selbst abgemeldet hat ('opted_out') oder von der
+ * Leitung einzeln abgemeldet wurde ('excused' mit abgemeldet_durch_absage =
+ * FALSE), bleibt abgemeldet. Die Mutter hat angerufen, das Kind ist krank --
+ * daran aendert sich nichts dadurch, dass der Termin nun doch stattfindet.
+ * Wer schon auf 'present' oder 'absent' stand, wurde von der Absage ohnehin
+ * nie angefasst (meldeAlleAbBeiAbsage waehlt nur attendance_status IS NULL).
+ *
+ * JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK
+ * (status_vor_absage, Migration 155): 'confirmed' bleibt 'confirmed',
+ * 'waitlist' bleibt 'waitlist'. Eine Wartende darf nicht als Angemeldete
+ * zurueckkommen -- sie haette dann einen Platz, den sie nie hatte, und der
+ * Termin waere ueberbucht. Fehlt der Wert (Bestandsdaten von vor Migration
+ * 155), faellt es auf 'confirmed' zurueck: der Normalfall, und von Hand
+ * geraderueckbar. Eine faelschlich fehlende Anmeldung faellt dagegen
+ * niemandem auf.
+ *
+ * DIE ABMELDE-SPUREN WERDEN GELOESCHT, nicht aufbewahrt: attendance_status,
+ * excuse_reason, abgemeldet_durch_absage und status_vor_absage gehen zurueck
+ * auf NULL bzw. FALSE. Die Abmeldung hat es nicht mehr gegeben -- der Termin
+ * findet statt und ist wieder unverbucht. Bliebe excuse_reason ("Heizung
+ * defekt") stehen, staende bei jeder Person ein Grund fuer eine Abmeldung,
+ * die aufgehoben ist.
+ *
+ * PUNKTE KOMMEN NICHT ZURUECK (Entscheidung Simon, 16.09.2026: "Bleiben weg,
+ * neu vergeben"). Die Absage hat sie zurueckgenommen, weil der Termin nicht
+ * stattgefunden hat. Er findet jetzt statt -- in der Zukunft. Punkte gibt es
+ * beim Verbuchen der Anwesenheit, wie bei jedem anderen Termin auch. Sie
+ * vorab wieder gutzuschreiben hiesse, eine Teilnahme zu behaupten, die noch
+ * aussteht.
+ *
+ * KEINE UEBERBUCHUNG MOEGLICH: An einem abgesagten Termin kann niemand
+ * nachgerueckt sein -- promoteFromWaitlist liefert dort null (der Guard steht
+ * zentral dort, nicht an den Aufrufstellen). Die Plaetze, die diese Buchungen
+ * vor der Absage belegt haben, sind seither also unberuehrt geblieben. Jede
+ * Person bekommt genau zurueck, was sie hatte.
+ *
+ * ERWARTET EINEN CLIENT in laufender Transaktion: Wiederaufnahme des Termins
+ * und Wiederherstellung der Buchungen gehoeren zusammen. Schlaegt eines fehl,
+ * darf kein halb reaktivierter Termin zurueckbleiben.
+ *
+ * @param {object} client - Client aus db.getClient(), NICHT der Pool
+ * @param {number} eventId
+ * @returns {Promise<Array<{user_id: number, status: string}>>} die
+ *   wiederhergestellten Buchungen -- genau die Empfaenger des
+ *   "Findet doch statt"-Pushes
+ */
+async function hebeAbsageAbmeldungenAuf(client, eventId) {
+  verlangeClient(client, 'hebeAbsageAbmeldungenAuf');
+
+  const { rows } = await client.query(
+    `UPDATE event_bookings
+        SET status = COALESCE(status_vor_absage, 'confirmed'),
+            status_vor_absage = NULL,
+            abgemeldet_durch_absage = FALSE,
+            attendance_status = NULL,
+            excuse_reason = NULL
+      WHERE event_id = $1
+        AND abgemeldet_durch_absage = TRUE
+      RETURNING user_id, status`,
+    [eventId]
+  );
+
+  return rows;
 }
 
 /**
@@ -1003,6 +1093,7 @@ async function setzeTeamerZusage(client, eingabe) {
 module.exports = {
   ABSAGE_OHNE_GRUND,
   meldeAlleAbBeiAbsage,
+  hebeAbsageAbmeldungenAuf,
   takeBackEventPoints,
   checkExistingBooking,
   determineBookingStatus,

@@ -81,6 +81,19 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_cancelled', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
   });
 
+  it('Zuruecknahme der Absage fuehrt zum Termin — dort meldet man sich ab', () => {
+    // "Findet doch statt. Du bist wieder angemeldet – prüf bitte, ob du Zeit
+    // hast, und melde dich sonst ab." Genau das geht nur am Termin, nicht auf
+    // der Liste. Dasselbe Ziel wie die Absage, aus demselben Grund.
+    expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'admin')).toBe('/admin/events/7');
+    expect(buildPushTargetUrl('event_reactivated', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+  });
+
+  it('Zuruecknahme ohne Kennung fuehrt zur Liste', () => {
+    expect(buildPushTargetUrl('event_reactivated', {}, 'konfi')).toBe('/konfi/events');
+  });
+
   it('Zertifikat fuehrt ins Profil', () => {
     expect(buildPushTargetUrl('certificate', {}, 'teamer')).toBe('/teamer/profile');
   });

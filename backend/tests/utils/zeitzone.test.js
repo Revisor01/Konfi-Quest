@@ -328,8 +328,17 @@ describe('Terminabsage: das Datum in der Push-Nachricht traegt die Zeitzone', ()
 
   it('formatiert das Termindatum ueber den gemeinsamen Helfer', () => {
     const treffer = quelle().match(/const eventDateFormatted = formatDatum\(event\.event_date\);/g);
-    // Beide Stellen: Termin geloescht und Termin abgesagt.
-    expect(treffer).toHaveLength(2);
+    // Alle drei Stellen, an denen ein Termindatum in eine Push-Nachricht
+    // geht: Termin geloescht, Termin abgesagt und -- seit dem 16.09.2026 --
+    // Absage zurueckgenommen ("Findet doch statt").
+    //
+    // DIE ZAHL IST EIN ZAEHLER, KEINE REGEL: Sie waechst mit, wenn eine
+    // weitere Push-Nachricht ein Termindatum nennt. Die Regel selbst steht
+    // im Test darunter (kein blankes toLocaleDateString) und im Muster hier
+    // -- formatDatum, nicht die Zeitzone des Prozesses. Wer hier eine Zahl
+    // hochsetzt, ohne dass eine neue Fundstelle DIESEM Muster folgt, hebelt
+    // den Waechter aus.
+    expect(treffer).toHaveLength(3);
   });
 
   it('formatiert kein Datum mehr ohne Zeitzone', () => {

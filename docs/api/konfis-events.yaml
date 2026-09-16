@@ -2207,6 +2207,120 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
 
+  /api/events/{id}/reaktivieren:
+    put:
+      tags: ["Termine (Verwaltung)"]
+      summary: Eine Absage zuruecknehmen — der Termin findet doch statt
+      description: >
+        NEU 16.09.2026 (Migration 155). Setzt events.cancelled zurueck und hebt
+        in derselben Transaktion GENAU DIE Abmeldungen auf, die aus dieser
+        Absage stammen.
+
+
+        BEHOBEN 16.09.2026: Bis dahin war eine Absage endgueltig. Ist die
+        Heizung doch rechtzeitig repariert, blieb nur, den Termin neu
+        anzulegen — ohne Angemeldete, ohne Chat, ohne Warteliste, mit neuer
+        Kennung; alle mussten sich neu anmelden.
+
+
+        NUR WER DURCH DIE ABSAGE ABGEMELDET WURDE: Das UPDATE waehlt ueber
+        event_bookings.abgemeldet_durch_absage = TRUE (Migration 153). Wer sich
+        VOR der Absage selbst abgemeldet hat ('opted_out') oder von der Leitung
+        einzeln abgemeldet wurde ('excused' mit abgemeldet_durch_absage =
+        FALSE), BLEIBT abgemeldet — samt eigenem Grund. Simons Fall, woertlich:
+        "Könnte ja auch sein wir sagen eine Pflicht ab, manche sind
+        entschuldigt, dann machen wir es doch. Status bei allen zurück außer
+        bei denen." Wer schon auf 'present' oder 'absent' stand, wurde von der
+        Absage ohnehin nie angefasst (meldeAlleAbBeiAbsage waehlt nur
+        attendance_status IS NULL).
+
+
+        JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK
+        (event_bookings.status_vor_absage, Migration 155): 'confirmed' bleibt
+        'confirmed', 'waitlist' bleibt 'waitlist'. Die Spalte ist noetig, weil
+        meldeAlleAbBeiAbsage beide Gruppen auf 'excused' setzt — danach sind
+        sie nicht mehr zu unterscheiden. Alle auf 'confirmed' zurueckzusetzen
+        haette die Warteliste aufgeloest und den Termin ueberbucht; alle auf
+        'waitlist' haette die Angemeldeten hinten angestellt. Fehlt der Wert
+        (Bestandszeilen von vor Migration 155), faellt es auf 'confirmed'
+        zurueck. Die Abmelde-Spuren (attendance_status, excuse_reason,
+        abgemeldet_durch_absage, status_vor_absage) werden geraeumt: Die
+        Abmeldung hat es nicht mehr gegeben.
+
+
+        PUNKTE KOMMEN NICHT ZURUECK (Entscheidung Simon, 16.09.2026: "Bleiben
+        weg, neu vergeben"). Die Absage hat sie zurueckgenommen; der Termin
+        steht jetzt wieder BEVOR. Punkte gibt es beim Verbuchen der
+        Anwesenheit, wie an jedem anderen Termin.
+
+
+        ALLE SECHS ABSAGE-FELDER WERDEN GERAEUMT: cancelled, cancelled_at,
+        cancelled_by, cancelled_reason, cancelled_reason_set_by,
+        cancelled_reason_set_at. Sie beschreiben EINEN Vorgang, und der ist
+        aufgehoben. Der Grund einzeln stehen zu lassen haette ihn bei der
+        naechsten Absage als Vorbelegung des Formulars zurueckgebracht
+        ("Heizung defekt" an einer Absage wegen Sturm).
+
+
+        KEINE UEBERBUCHUNG MOEGLICH, nachgeprueft: An einem abgesagten Termin
+        rueckt niemand nach — promoteFromWaitlist prueft events.cancelled
+        zentral und liefert null (bookingUtils, Guard vom 15.09.2026). Alle
+        Nachrueck-Wege laufen darueber. Die Plaetze der wiederhergestellten
+        Buchungen sind seit der Absage unberuehrt.
+
+
+        PUSH 'event_reactivated' AN GENAU DIE REAKTIVIERTEN
+        (sendEventReactivationToKonfis): "Termin findet doch statt" mit dem
+        Hinweis, die eigene Zeit zu pruefen und sich sonst abzumelden. NICHT an
+        die dauerhaft Abgemeldeten — "du bist wieder angemeldet" waere fuer sie
+        falsch. Der Absagegrund geht NICHT mit: Er beschreibt eine Absage, die
+        es nicht mehr gibt. event_id ist dabei, damit der Tipp am Termin landet
+        (dort meldet man sich ab). Das Live-Update geht als 'events'/'update'
+        mit action 'reactivated' raus.
+
+
+        EIGENE ROUTE STATT PUT /events/{id}: Dieselbe Begruendung wie bei
+        /absagegrund. Das Bearbeiten-Formular schickt den ganzen Termin; hier
+        geht es um genau einen Vorgang mit genau einer Wirkung. Ein Feld, das
+        eine alte App-Fassung versehentlich mitschicken koennte, haette einen
+        Termin unbeabsichtigt wiederbeleben und zwanzig Push-Meldungen
+        ausloesen koennen.
+
+
+        ADDITIV IN DEN LESE-PFADEN: GET /events, GET /events/cancelled und GET
+        /events/{id} liefern seit dem 16.09.2026 zusaetzlich
+        durch_absage_abgemeldet_count — wie viele beim Zuruecknehmen wieder
+        angemeldet wuerden. Die Rueckfrage in der Oberflaeche nennt genau diese
+        Zahl. Bewusst NICHT konfi_excused + teamer_excused (Migration 154):
+        Die zaehlen auch die einzeln Abgemeldeten, die abgemeldet BLEIBEN —
+        die Rueckfrage kuendigte sonst mehr an, als dann passiert. Geloeschte
+        Konten zaehlen nicht mit; sie bekommen keinen Push.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; muss cancelled = TRUE sein, sonst 400"
+        jahrgangs-bindung: >
+          darfTermin (can_view-Stufe) — identisch zur Absage: Wer den Termin
+          nicht haette absagen duerfen, nimmt die Absage auch nicht zurueck.
+          Es ist derselbe Vorgang, nur andersherum, und er erreicht dieselben
+          Leute mit einem Push. Reine Teamer-Termine (teamer_only) und Termine
+          ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin
+          und super_admin sind ausgenommen.
+        oberflaeche: >
+          Leitung und Team gleichermassen: der Knopf "Absage zurücknehmen" im
+          Absage-Kasten beider Detailansichten (AbsageBlock) und zusaetzlich
+          der Wisch in der Leitungs-Terminliste. Konfis bekommen ihn nicht —
+          requireTeamer laesst sie nicht durch.
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "message, reaktiviert (Anzahl wiederhergestellter Buchungen), participants_notified" }
+        "400": { description: "Event ist nicht abgesagt — zurueckzunehmen gibt es dann nichts" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Kein Zugriff auf diesen Termin (fremder Jahrgang oder Konfi-Rolle)" }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
   # ===================================================================
   # backend/routes/activities.js  (Prefix /api/admin/activities)
   # Masterliste der Aktivitäten + Antragsverwaltung.

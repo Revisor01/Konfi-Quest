@@ -90,6 +90,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 -- Absagen dieselbe Person wie cancelled_by; erst bei einer
                 -- nachtraeglichen Korrektur gehen die beiden auseinander.
                 u_grund.display_name as cancelled_reason_set_by_name,
+                -- Siehe das LATERAL absage_abm weiter unten.
+                COALESCE(absage_abm.anzahl, 0) as durch_absage_abgemeldet_count,
                 mat.material_count
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
@@ -133,6 +135,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           FROM event_booking_stats ebs
           WHERE ebs.event_id = e.id
         ) bstats ON true
+        LEFT JOIN LATERAL (
+          -- Wie viele beim Zuruecknehmen der Absage wieder angemeldet wuerden
+          -- (16.09.2026), ADDITIV -- fuer die Rueckfrage vor dem
+          -- Zuruecknehmen. Auch in DIESER Liste, nicht nur in
+          -- GET /events/cancelled: Die Team-Ansicht nimmt ihren Termin von
+          -- hier, und sie darf ebenso zuruecknehmen (requireTeamer).
+          -- Begruendung, warum nicht aus konfi_excused/teamer_excused: dort.
+          SELECT COUNT(*)::int as anzahl
+          FROM event_bookings eb
+          JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
+          WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+        ) absage_abm ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
                  STRING_AGG(DISTINCT c.name, ', ') as category_names
@@ -339,11 +353,36 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 -- Wer den GRUND zuletzt gesetzt hat (Migration 152) -- gerade
                 -- in dieser Liste relevant: Hier stehen ausschliesslich
                 -- abgesagte Termine, und hier wird nachgetragen.
-                u_grund.display_name as cancelled_reason_set_by_name
+                u_grund.display_name as cancelled_reason_set_by_name,
+                -- Wie viele beim Zuruecknehmen der Absage wieder angemeldet
+                -- wuerden (16.09.2026), ADDITIV. Die Rueckfrage vor dem
+                -- Zuruecknehmen kuendigt genau diese Zahl an -- sie schickt
+                -- allen einen Push, und wer sie ausloest, soll vorher wissen,
+                -- wie viele Leute das erreicht.
+                --
+                -- NICHT aus konfi_excused + teamer_excused: Die zaehlen JEDE
+                -- Abmeldung, auch die einzelne von vor der Absage. Genau die
+                -- bleibt beim Zuruecknehmen aber abgemeldet und bekommt
+                -- keinen Push. Die Zahl muss dasselbe meinen wie die Auswahl
+                -- der Route, sonst kuendigt die Rueckfrage etwas anderes an,
+                -- als dann passiert.
+                --
+                -- Eigenes LATERAL statt eines weiteren JOINs: event_bookings
+                -- haengt hier schon an keiner Stelle dran, und ein JOIN
+                -- vervielfachte die Zeilen, die STRING_AGG oben gruppiert.
+                COALESCE(absage_abm.anzahl, 0) as durch_absage_abgemeldet_count
         FROM events e
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
+        LEFT JOIN LATERAL (
+          -- Geloeschte Konten zaehlen nicht mit: Sie bekommen keinen Push
+          -- (getTokensForUser filtert sie) und stehen in keiner Liste.
+          SELECT COUNT(*)::int as anzahl
+          FROM event_bookings eb
+          JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
+          WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+        ) absage_abm ON true
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
         LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
@@ -358,9 +397,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         -- gruppierten Tabelle, nicht ueber einen mitgejointen).
         -- u_grund.display_name aus demselben Grund (Migration 152): Auch er
         -- kommt aus einer mitgejointen Tabelle.
+        -- absage_abm.anzahl ebenso (16.09.2026): Der Zaehler kommt aus einem
+        -- LATERAL und ist fuer Postgres kein Aggregat DIESER Abfrage.
         GROUP BY e.id, ebs.konfi_confirmed, ebs.konfi_waitlist, ebs.konfi_offen,
                  ebs.teamer_confirmed, ebs.teamer_waitlist, ebs.teamer_offen,
-                 u_cancel.display_name, u_grund.display_name
+                 u_cancel.display_name, u_grund.display_name, absage_abm.anzahl
         ORDER BY e.cancelled_at DESC
       `;
       
@@ -487,6 +528,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                -- Zeitpunkt -- dieselbe Begruendung wie eine Zeile hoeher.
                e.cancelled_reason_set_by, e.cancelled_reason_set_at,
                u_grund.display_name as cancelled_reason_set_by_name,
+               -- Wie viele beim Zuruecknehmen der Absage wieder angemeldet
+               -- wuerden (16.09.2026), ADDITIV -- fuer die Rueckfrage vor dem
+               -- Zuruecknehmen. Begruendung ausfuehrlich bei GET
+               -- /events/cancelled: nicht aus konfi_excused/teamer_excused,
+               -- weil die auch die einzeln Abgemeldeten zaehlen, die
+               -- abgemeldet BLEIBEN.
+               COALESCE(absage_abm.anzahl, 0) as durch_absage_abgemeldet_count,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
                  bestaetigt: 'bstats.registered_count',
@@ -524,6 +572,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           FROM event_booking_stats ebs
           WHERE ebs.event_id = e.id
         ) bstats ON true
+        LEFT JOIN LATERAL (
+          -- Geloeschte Konten zaehlen nicht mit: Sie bekommen keinen Push
+          -- und stehen in keiner Liste.
+          SELECT COUNT(*)::int as anzahl
+          FROM event_bookings eb
+          JOIN users u ON eb.user_id = u.id AND u.deleted_at IS NULL
+          WHERE eb.event_id = e.id AND eb.abgemeldet_durch_absage = TRUE
+        ) absage_abm ON true
         LEFT JOIN LATERAL (
           SELECT SUM(et.max_participants) as total_capacity
           FROM event_timeslots et

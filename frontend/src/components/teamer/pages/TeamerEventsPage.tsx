@@ -512,6 +512,51 @@ const TeamerEventsPage: React.FC = () => {
     presentAbsagegrundModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
+  // ABSAGE ZURUECKNEHMEN (16.09.2026) -- wortgleich zur Leitungsansicht.
+  //
+  // Die Rueckfrage nennt die Zahl: Das Zuruecknehmen meldet Leute wieder an,
+  // ohne sie zu fragen, und schickt allen einen Push. Wer sich vorher selbst
+  // abgemeldet hatte oder einzeln abgemeldet wurde, bleibt abgemeldet und
+  // bekommt keine Nachricht -- deshalb zaehlt die Zahl nur die
+  // Rueckkehrenden.
+  const handleAbsageZuruecknehmen = () => {
+    if (!selectedEvent) return;
+    if (!isOnline) {
+      setError('Zurücknehmen nicht möglich — du bist offline');
+      return;
+    }
+    const termin = selectedEvent;
+    const anzahl = termin.durch_absage_abgemeldet_count ?? 0;
+    const wenText = anzahl === 1
+      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
+      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
+    presentAlert({
+      header: 'Absage zurücknehmen?',
+      message: anzahl > 0
+        ? `"${termin.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
+        : `"${termin.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Zurücknehmen',
+          handler: async () => {
+            try {
+              await api.put(`/events/${termin.id}/reaktivieren`);
+              setSuccess(`"${termin.name}" findet wieder statt`);
+              // Wie beim Absagegrund: Die geoeffnete Detailansicht haelt
+              // ihren eigenen Stand und zeigte sonst weiter "Abgesagt".
+              const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
+              if (aktualisiert) setSelectedEvent(aktualisiert);
+              await refresh();
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
+            }
+          }
+        }
+      ]
+    });
+  };
+
   /**
    * Die Zusage/Absage-Knoepfe. EINE Stelle fuer alle vier Faelle, in denen
    * sie vorkommen (frei, Warteliste offen, kein Platz mehr, bereits dabei) --
@@ -898,11 +943,17 @@ const TeamerEventsPage: React.FC = () => {
               einer Absage ohne Grund weg, und dann gaebe es keinen Ort fuer
               den Knopf -- genau die Sackgasse, die im Leitungs-Detail schon
               einmal behoben wurde (Migration 152). */}
+          {/* ABSAGE ZURUECKNEHMEN AUCH IM TEAM (16.09.2026): dieselbe
+              Begruendung wie beim Grund eine Zeile hoeher -- PUT
+              /events/:id/reaktivieren steht hinter requireTeamer, die
+              Berechtigung ist also da. Wer absagen darf, darf auch
+              zuruecknehmen. */}
           <AbsageBlock
             event={selectedEvent}
             variante="kasten"
             onGrundBearbeiten={handleAbsagegrundBearbeiten}
             bearbeitenDeaktiviert={!isOnline}
+            onZuruecknehmen={handleAbsageZuruecknehmen}
           />
 
           {/* Details Card - wie Admin EventDetailView */}

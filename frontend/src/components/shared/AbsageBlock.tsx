@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonButton, IonIcon } from '@ionic/react';
-import { ICON_BEARBEITEN } from './icons';
+import { ICON_BEARBEITEN, ICON_RUECKGAENGIG } from './icons';
 import { absageUrheberZeile, absagegrundUrheberZeile, AbsageAngabe } from '../../utils/anwesenheitUrheber';
 import { istAbgesagt } from './eventFormatting';
 
@@ -60,6 +60,16 @@ interface AbsageBlockProps {
   /** Ohne Verbindung laesst sich nichts speichern. */
   bearbeitenDeaktiviert?: boolean;
 
+  /**
+   * Knopf "Absage zurücknehmen" (16.09.2026). Nur setzen, wo jemand schreiben
+   * darf -- dieselbe Berechtigung wie beim Absagen und beim Grund
+   * (requireTeamer + darfTermin). Konfis bekommen ihn nicht.
+   *
+   * Der Aufrufer stellt die Rueckfrage: Das Zuruecknehmen schickt allen
+   * Wiederangemeldeten einen Push, und wie viele das sind, weiss nur er.
+   */
+  onZuruecknehmen?: () => void;
+
   /** Hell auf dunklem Grund (Dashboard-Kacheln mit Farbverlauf). */
   aufDunkel?: boolean;
 }
@@ -70,6 +80,7 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   zeigePlatzhalter = variante === 'kasten',
   onGrundBearbeiten,
   bearbeitenDeaktiviert = false,
+  onZuruecknehmen,
   aufDunkel = false,
 }) => {
   if (!istAbgesagt(event) || !event) return null;
@@ -81,7 +92,7 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   // Nichts zu sagen und nichts zu tun -> gar nicht rendern. Eine leere Box
   // unter einem Termin, der ohnehin schon "Abgesagt" im Kopf traegt, ist nur
   // Flaeche.
-  if (!grund && !zeigePlatzhalter && !onGrundBearbeiten) return null;
+  if (!grund && !zeigePlatzhalter && !onGrundBearbeiten && !onZuruecknehmen) return null;
 
   const leiseFarbe = aufDunkel ? 'rgba(255,255,255,0.75)' : 'var(--app-text-tertiary)';
   const textFarbe = aufDunkel ? 'rgba(255,255,255,0.9)' : 'var(--app-text-secondary)';
@@ -150,6 +161,29 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
         >
           <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
           {grund ? 'Grund bearbeiten' : 'Grund nachtragen'}
+        </IonButton>
+      )}
+      {/* ABSAGE ZURUECKNEHMEN (16.09.2026): Die Heizung ist doch rechtzeitig
+          repariert. Steht neben dem Grund und nicht an einer eigenen Stelle,
+          weil beides dasselbe betrifft -- die Absage -- und dieselbe
+          Berechtigung hat (requireTeamer + darfTermin, wie das Absagen
+          selbst). Kein Rechte-Gate hier: Wer nicht darf, bekommt 403.
+
+          Nicht 'danger': Der Knopf hebt eine Absage AUF. In Rot gelesen,
+          zwischen zwei roten Zeilen, sieht er aus wie "noch endgueltiger
+          absagen". Die Rueckfrage stellt der Aufrufer -- sie muss sagen, wie
+          viele Leute dabei einen Push bekommen. */}
+      {onZuruecknehmen && (
+        <IonButton
+          size="small"
+          fill="clear"
+          color="success"
+          disabled={bearbeitenDeaktiviert}
+          onClick={onZuruecknehmen}
+          style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
+        >
+          <IonIcon icon={ICON_RUECKGAENGIG} className="app-event-detail__icon-gap" />
+          Absage zurücknehmen
         </IonButton>
       )}
     </div>

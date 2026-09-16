@@ -320,6 +320,43 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     dismiss: () => dismissAbsagegrundModal()
   });
 
+  // ABSAGE ZURUECKNEHMEN (16.09.2026)
+  //
+  // Die Rueckfrage nennt die Zahl: Das Zuruecknehmen meldet Leute wieder an,
+  // ohne sie zu fragen, und schickt allen einen Push. Wer das ausloest, soll
+  // vorher wissen, wie viele das sind. durch_absage_abgemeldet_count zaehlt
+  // genau die Rueckkehrenden -- wer sich vorher selbst abgemeldet hatte oder
+  // einzeln abgemeldet wurde, bleibt abgemeldet und bekommt keinen Push.
+  const handleAbsageZuruecknehmen = () => {
+    if (!eventData) return;
+    if (offlineBlockiert(isOnline, setError)) return;
+    const anzahl = eventData.durch_absage_abgemeldet_count ?? 0;
+    const wenText = anzahl === 1
+      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
+      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
+    presentAlert({
+      header: 'Absage zurücknehmen?',
+      message: anzahl > 0
+        ? `"${eventData.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
+        : `"${eventData.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Zurücknehmen',
+          handler: async () => {
+            try {
+              await api.put(`/events/${eventData.id}/reaktivieren`);
+              setSuccess(`"${eventData.name}" findet wieder statt`);
+              await loadEventData();
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
+            }
+          }
+        }
+      ]
+    });
+  };
+
   // QR Display Modal
   const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
     eventId: eventId,
@@ -1271,6 +1308,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           variante="kasten"
           onGrundBearbeiten={handleAbsagegrundBearbeiten}
           bearbeitenDeaktiviert={!isOnline}
+          onZuruecknehmen={handleAbsageZuruecknehmen}
         />
 
         {/* Event Details */}

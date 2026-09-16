@@ -515,6 +515,47 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
+  // ABSAGE ZURUECKNEHMEN (16.09.2026)
+  //
+  // Simon: "Wir drücken es zurück, alle kriegen einen Push: Findet doch statt.
+  // Dann sind alle einfach angemeldet und gut."
+  //
+  // DIE RUECKFRAGE NENNT DIE ZAHL: Das Zuruecknehmen verschickt Push-Meldungen
+  // -- und meldet Leute wieder an, ohne sie zu fragen. Wer das ausloest, soll
+  // vorher wissen, wie viele das sind. Die Zahl kommt vom Server
+  // (durch_absage_abgemeldet_count) und meint genau die, die zurueckkommen:
+  // Wer sich vorher selbst abgemeldet hat oder von der Leitung abgemeldet
+  // wurde, bleibt abgemeldet und bekommt auch keinen Push.
+  const handleAbsageZuruecknehmen = (event: Event) => {
+    if (offlineBlockiert(isOnline, setError)) return;
+    const anzahl = event.durch_absage_abgemeldet_count ?? 0;
+    const wenText = anzahl === 1
+      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
+      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
+    presentAlert({
+      header: 'Absage zurücknehmen?',
+      message: anzahl > 0
+        ? `"${event.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
+        : `"${event.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Zurücknehmen',
+          handler: async () => {
+            try {
+              await api.put(`/events/${event.id}/reaktivieren`);
+              setSuccess(`"${event.name}" findet wieder statt`);
+              await refreshEvents();
+              await refreshCancelled();
+            } catch (err) {
+              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const handleSelectEvent = (event: Event) => {
     // Split-View (iPad): Auswahl an den Wrapper melden, KEINE Navigation.
     // Sonst (iPhone/Portrait): wie bisher zur Detail-Route navigieren.
@@ -695,6 +736,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             selectedEventId={selectedEventId}
             onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
             onCancelEvent={canCancel ? handleCancelEvent : undefined}
+            // Wer absagen darf, darf auch zuruecknehmen -- dieselbe
+            // Berechtigung im Backend (requireTeamer + darfTermin).
+            onZuruecknehmen={canCancel ? handleAbsageZuruecknehmen : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{

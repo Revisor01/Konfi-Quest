@@ -31,6 +31,16 @@ Versionsüberschrift.
   geht dabei nicht raus; die Absage war schon gemeldet. Korrigiert jemand
   anderes als die absagende Person, steht das darunter, und „Abgesagt von"
   nennt weiterhin, wer den Termin tatsächlich abgesagt hat.
+- Eine **Absage lässt sich zurücknehmen**: Ist die Heizung doch rechtzeitig
+  repariert, findet der Termin wieder statt — ohne ihn neu anzulegen.
+  Anmeldungen, Warteliste und Chat bleiben, wie sie waren; jede Person kommt
+  genau dorthin zurück, wo sie vorher stand. Alle Wiederangemeldeten bekommen
+  die Mitteilung „Termin findet doch statt" mit der Bitte, ihre Zeit zu
+  prüfen und sich sonst abzumelden. Wer schon vor der Absage abgemeldet war —
+  selbst oder von der Leitung —, bleibt abgemeldet und bekommt keine
+  Nachricht. Punkte werden nicht wiederhergestellt; der Termin steht ja erst
+  bevor. Vor dem Zurücknehmen wird gefragt und genannt, wie viele Personen
+  wieder angemeldet werden. Auch Teamer:innen dürfen zurücknehmen.
 - Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
   14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte. Notizen lassen sich auch wieder löschen.

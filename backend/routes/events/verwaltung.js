@@ -7,7 +7,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, meldeAlleAbBeiAbsage, ABSAGE_OHNE_GRUND } = require('../../utils/bookingUtils');
+const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, meldeAlleAbBeiAbsage, hebeAbsageAbmeldungenAuf, ABSAGE_OHNE_GRUND } = require('../../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
@@ -1324,6 +1324,174 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
     } catch (liveErr) {
       console.error('Live-Update nach PUT /events/:eventId/absagegrund fehlgeschlagen:', liveErr);
+    }
+  });
+
+  // EINE ABSAGE ZURUECKNEHMEN -- der Termin findet doch statt (16.09.2026).
+  //
+  // Simons Entscheidung, woertlich:
+  //   "Ich möchte es einfach wieder aufleben lassen. Ohne dass Status zurück
+  //    kommt. Wir drücken es zurück, alle kriegen einen Push: Findet doch
+  //    statt. Dann sind alle einfach angemeldet und gut. Können sich
+  //    austragen. Vielleicht Hinweis im Push: Findet doch statt. Prüfe ob du
+  //    noch Zeit hast oder so…"
+  //
+  // Bis hierher war eine Absage endgueltig. Die Heizung ist doch rechtzeitig
+  // repariert, der Sturm zieht vorbei -- und der einzige Weg zurueck war, den
+  // Termin neu anzulegen: ohne die Angemeldeten, ohne den Chat, ohne die
+  // Warteliste, mit neuer Kennung. Alle mussten sich neu anmelden.
+  //
+  // WAS ZURUECKKOMMT UND WAS NICHT:
+  //
+  //   ZURUECK: die Abmeldungen AUS DIESER ABSAGE -- und jede auf ihren
+  //   eigenen alten Status (status_vor_absage, Migration 155). Wer einen
+  //   festen Platz hatte, hat ihn wieder; wer gewartet hat, wartet weiter.
+  //
+  //   NICHT ZURUECK: Abmeldungen, die es schon VOR der Absage gab. Das ist
+  //   Simons Kernfall -- "Könnte ja auch sein wir sagen eine Pflicht ab,
+  //   manche sind entschuldigt, dann machen wir es doch. Status bei allen
+  //   zurück außer bei denen." Die Unterscheidung traegt
+  //   abgemeldet_durch_absage (Migration 153), sie ist genau dafuer gebaut.
+  //
+  //   NICHT ZURUECK: die Punkte ("Bleiben weg, neu vergeben", Simon). Der
+  //   Termin hat noch nicht stattgefunden -- er steht wieder bevor. Punkte
+  //   gibt es beim Verbuchen der Anwesenheit, wie ueberall sonst.
+  //
+  //   NICHT ZURUECK: der Absagegrund. Er beschreibt eine Absage, die es nicht
+  //   mehr gibt. Stehen bliebe er sonst an einem stattfindenden Termin und
+  //   erschiene in jeder Ansicht, die ihn anzeigt (AbsageBlock haengt an
+  //   cancelled -- der Block verschwaende zwar, aber der Text bliebe in der
+  //   Datenbank und kaeme bei der naechsten Absage als Vorbelegung des
+  //   Formulars zurueck: "Heizung defekt" an einer Absage wegen Sturm).
+  //   Dasselbe gilt fuer cancelled_at/_by und cancelled_reason_set_by/_at:
+  //   Alle sechs Felder beschreiben EINEN Vorgang, und der ist aufgehoben.
+  //   Sie einzeln stehen zu lassen hiesse, eine halbe Absage aufzubewahren.
+  //   Wer die Historie braucht, hat den Termin-Chat und die Push-Meldungen;
+  //   eine Absage-Historie waere eine eigene Tabelle und ein eigener Auftrag.
+  //
+  // WARUM EINE EIGENE ROUTE UND NICHT PUT /events/:id (Bearbeiten): Dieselbe
+  // Begruendung wie bei /absagegrund. Das Bearbeiten-Formular schickt den
+  // ganzen Termin; hier geht es um genau einen Vorgang mit genau einer
+  // Wirkung -- Buchungen wiederherstellen und allen einen Push schicken. Das
+  // gehoert nicht in eine Route, die hauptsaechlich fuer anderes da ist, und
+  // schon gar nicht in ein Feld, das eine alte App-Fassung versehentlich
+  // mitschicken koennte.
+  //
+  // KEINE UEBERBUCHUNG MOEGLICH, nachgeprueft: An einem abgesagten Termin
+  // rueckt niemand nach -- promoteFromWaitlist prueft events.cancelled
+  // ZENTRAL und liefert null (bookingUtils, Guard vom 15.09.2026). Alle vier
+  // Nachrueck-Wege laufen darueber. Die Plaetze der hier wiederhergestellten
+  // Buchungen sind seit der Absage also unberuehrt geblieben.
+  //
+  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireTeamer + darfTermin auf
+  // can_view-Stufe. Wer absagen darf, darf auch zuruecknehmen -- es ist
+  // derselbe Vorgang, nur andersherum, und er erreicht dieselben Leute mit
+  // einem Push.
+  router.put('/:id/reaktivieren', rbacVerifier, requireTeamer, async (req, res) => {
+    const eventId = req.params.id;
+
+    const client = await db.getClient();
+    // Vor dem try: Push, Antwort und Live-Update stehen hinter dem finally.
+    let event = null;
+    let fruehAntwort = null;
+    let wiederAngemeldet = [];
+    try {
+      await client.query('BEGIN');
+
+      const { rows: [gefunden] } = await client.query(
+        "SELECT name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2",
+        [eventId, req.user.organization_id]
+      );
+      event = gefunden;
+
+      // Jahrgangs-Bindung wie beim Absagen (14.09.2026): Die Zuruecknahme
+      // schickt allen einen Push und stellt ihre Buchungen wieder her -- das
+      // darf nur, wer den Termin auch sehen darf.
+      const zugriff = (event && event.cancelled) ? await darfTermin(client, req, eventId) : null;
+
+      if (!event) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 404, body: { error: 'Event nicht gefunden' } };
+      } else if (!event.cancelled) {
+        // Spiegelbild zur 400 in /cancel ("bereits abgesagt"), genau wie bei
+        // /absagegrund. Einen nicht abgesagten Termin zurueckzunehmen hat
+        // keine Bedeutung -- und wuerde ohne diesen Riegel stillschweigend
+        // Abmeldungen aufheben, die mit einer Absage nichts zu tun haben.
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 400, body: { error: 'Event ist nicht abgesagt' } };
+      } else if (!zugriff.erlaubt) {
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf diesen Termin' } };
+      } else {
+        // Alle sechs Absage-Felder zurueck auf den Stand davor. Begruendung
+        // ausfuehrlich im Kopf dieser Route.
+        await client.query(
+          `UPDATE events
+              SET cancelled = FALSE,
+                  cancelled_at = NULL,
+                  cancelled_by = NULL,
+                  cancelled_reason = NULL,
+                  cancelled_reason_set_by = NULL,
+                  cancelled_reason_set_at = NULL
+            WHERE id = $1`,
+          [eventId]
+        );
+
+        // IN DERSELBEN TRANSAKTION: Ein Termin, der wieder stattfindet, aber
+        // dessen Angemeldete noch abgemeldet sind, waere schlimmer als ein
+        // abgesagter -- er stuende offen in der Liste, und niemand waere
+        // gebucht.
+        //
+        // Die Rueckgabe ist zugleich die Empfaengerliste des Pushes: genau
+        // die, die jetzt wieder angemeldet sind. Wer abgemeldet bleibt,
+        // steht nicht drin und bekommt keine Nachricht (siehe unten).
+        wiederAngemeldet = await hebeAbsageAbmeldungenAuf(client, eventId);
+
+        await client.query('COMMIT');
+      }
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Database error in PUT /events/:eventId/reaktivieren:', eventId, txErr);
+      return res.status(500).json({ error: 'Datenbankfehler beim Zurücknehmen der Absage' });
+    } finally {
+      // KEIN client.release() im try — nur hier.
+      client.release();
+    }
+
+    if (fruehAntwort) {
+      return res.status(fruehAntwort.status).json(fruehAntwort.body);
+    }
+
+    // Push und LiveUpdate NACH COMMIT und client.release()
+    //
+    // NUR AN DIE WIEDER ANGEMELDETEN (Entscheidung Simon, 16.09.2026). Die
+    // Absage-Route adressiert bewusst weiter gefasst -- dort sollen auch die
+    // einzeln Abgemeldeten erfahren, dass der Termin ausfaellt. Hier ist es
+    // umgekehrt: "Du bist wieder angemeldet" waere fuer jemanden, der
+    // abgemeldet bleibt, schlicht falsch. Sie bekommen eine Nachricht ueber
+    // einen Termin, an dem sie nicht teilnehmen -- das geht sie nichts an.
+    const userIds = wiederAngemeldet.map(b => b.user_id);
+    if (userIds.length > 0) {
+      const eventDateFormatted = formatDatum(event.event_date);
+      try {
+        await PushService.sendEventReactivationToKonfis(db, userIds, event.name, eventDateFormatted, req.user.organization_id, eventId);
+      } catch (e) {
+        console.error('Push notification failed:', e);
+      }
+    }
+
+    res.json({
+      message: `Die Absage für "${event.name}" wurde zurückgenommen`,
+      // Wie viele wieder angemeldet sind -- dieselbe Zahl, die die
+      // Rueckfrage vor dem Ausfuehren angekuendigt hat.
+      reaktiviert: wiederAngemeldet.length,
+      participants_notified: userIds.length
+    });
+
+    try {
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'reactivated' });
+    } catch (liveErr) {
+      console.error('Live-Update nach PUT /events/:eventId/reaktivieren fehlgeschlagen:', liveErr);
     }
   });
 

@@ -116,6 +116,11 @@ export interface EventData {
   // einer eigenen Zeile, wenn es jemand anderes war als der Absagende.
   cancelled_reason_set_by_name?: string | null;
   cancelled_reason_set_at?: string | null;
+  // Wie viele durch DIESE Absage abgemeldet wurden -- also wie viele beim
+  // Zuruecknehmen wieder angemeldet wuerden (16.09.2026). Die Rueckfrage
+  // nennt genau diese Zahl. NICHT alle Abgemeldeten: Wer sich vorher selbst
+  // abgemeldet hat oder einzeln abgemeldet wurde, bleibt abgemeldet.
+  durch_absage_abgemeldet_count?: number;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
 }

@@ -95,7 +95,12 @@ describe('Push-Kanaele: jeder Typ hat einen', () => {
 
     // Gegenprobe, dass das Auslesen ueberhaupt etwas gefunden hat: eine leere
     // Liste wuerde die Schleife darunter stillschweigend durchwinken.
-    expect(typen.length).toBe(30);
+    //
+    // DIE ZAHL IST EIN ZAEHLER, KEINE REGEL: Sie waechst mit jedem neuen
+    // Push-Typ (zuletzt 'event_reactivated' am 16.09.2026). Die Regel steht
+    // in der Zeile darunter -- KEIN Typ ohne Kanal. Wer hier hochzaehlt,
+    // ohne den neuen Typ in KANAL_JE_TYP einzutragen, faellt weiterhin auf.
+    expect(typen.length).toBe(31);
     expect(typen).toContain('chat');
     expect(typen).toContain('event_reminder');
 

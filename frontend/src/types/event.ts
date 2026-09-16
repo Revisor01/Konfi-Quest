@@ -90,6 +90,13 @@ export interface Event {
   cancelled_reason_set_by?: number | null;
   cancelled_reason_set_by_name?: string | null;
   cancelled_reason_set_at?: string | null;
+  // Wie viele durch DIESE Absage abgemeldet wurden -- also wie viele beim
+  // Zuruecknehmen wieder angemeldet wuerden (16.09.2026). Die Rueckfrage vor
+  // dem Zuruecknehmen nennt genau diese Zahl. NICHT alle Abgemeldeten: Wer
+  // sich vorher selbst abgemeldet hat oder einzeln abgemeldet wurde, bleibt
+  // abgemeldet und zaehlt hier nicht mit. Fehlt der Wert, ist die Antwort
+  // aelter als der 16.09.2026.
+  durch_absage_abgemeldet_count?: number;
   // Timeslots
   has_timeslots?: boolean;
   booked_timeslot_id?: number;
