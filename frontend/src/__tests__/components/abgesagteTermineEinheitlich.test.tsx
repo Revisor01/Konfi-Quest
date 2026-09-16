@@ -58,7 +58,13 @@ vi.mock('@ionic/react', () => {
     ({ children, className }: { children?: React.ReactNode; className?: string }) =>
       React.createElement(tag, { className }, children);
   return {
-    IonIcon: (props: { icon?: unknown }) => <span data-testid="icon" data-icon={String(props.icon)} />,
+    // className muss durchgereicht werden: An ihr haengt die Pruefung, dass
+    // jede Info-Zeile ihr Icon am Anfang traegt (app-info-row__icon) und dass
+    // es rot ist (app-icon-color--danger). Das echte IonIcon setzt die Klasse
+    // ebenso -- ein Mock, der sie schluckt, machte die Pruefung wertlos.
+    IonIcon: (props: { icon?: unknown; className?: string }) => (
+      <span data-testid="icon" data-icon={String(props.icon)} className={props.className} />
+    ),
     IonButton: ({ children, disabled, onClick }: { children?: React.ReactNode; disabled?: boolean; onClick?: () => void }) => (
       <button type="button" disabled={disabled} onClick={onClick}>{children}</button>
     ),
@@ -250,6 +256,21 @@ describe('AbsageBlock als Zeile (Listen und Dashboard-Kacheln)', () => {
     expect(screen.getByText('Grund geändert von Bernd Schulz, 16.09.')).toBeTruthy();
   });
 
+  // Der Umbau der Karte am 16.09.2026 betrifft NUR die Variante 'kasten'.
+  // Die Zeile steht in drei Listen und zwei Dashboard-Kacheln, wo kein Platz
+  // fuer Info-Zeilen ist -- sie behaelt ihren Fliesstext mit dem fetten
+  // "Abgesagt: " davor. Ohne diese Pruefung waere "unveraendert" nur eine
+  // Behauptung.
+  it('die Zeile behaelt ihren Fliesstext mit fettem "Abgesagt: " davor', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="zeile" />);
+    const fett = container.querySelector('strong');
+    expect(fett?.textContent).toBe('Abgesagt: ');
+    expect(container.querySelector('div')?.textContent).toBe('Abgesagt: Heizung im Gemeindehaus defekt');
+    // Und KEINE Info-Zeilen -- die gehoeren in die Karte.
+    expect(container.querySelector('.app-info-row')).toBeNull();
+    expect(container.querySelector('.app-info-row__label')).toBeNull();
+  });
+
   it('ohne Grund bleibt die Zeile leer -- das Eck-Badge sagt "Abgesagt" schon', () => {
     const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="zeile" />);
     expect(container.textContent).toBe('');
@@ -296,12 +317,13 @@ describe('der Kasten traegt das Karten-Muster der Nachbarabschnitte', () => {
     expect(c.querySelector('.app-reason-box--danger')).toBeNull();
   });
 
-  it('das Wort "Abgesagt:" bleibt rot ausgezeichnet (app-reason-box__label)', () => {
-    // Der Label-Stil faerbt nur die Schrift, nicht die Flaeche -- er darf
-    // bleiben und traegt das Rot in die Karte.
-    const label = kasten().querySelector('.app-reason-box__label');
-    expect(label).not.toBeNull();
-    expect(label?.textContent).toBe('Abgesagt:');
+  it('das Rot traegt jetzt das Zeilen-Icon, nicht mehr ein fett gesetztes Wort', () => {
+    // Bis zum 16.09.2026 stand hier "Abgesagt:" als rot gefaerbtes Label vor
+    // dem Fliesstext. Mit den Info-Zeilen sitzt das Rot am Icon am Anfang der
+    // Zeile -- dieselbe Stelle wie im Abschnitt Details.
+    const c = kasten();
+    expect(c.querySelector('.app-reason-box__label')).toBeNull();
+    expect(c.querySelector('.app-info-row__icon.app-icon-color--danger')).not.toBeNull();
   });
 
   it('auch ohne Grund steht der Platzhaltersatz IN der Karte, nicht daneben', () => {
@@ -311,10 +333,97 @@ describe('der Kasten traegt das Karten-Muster der Nachbarabschnitte', () => {
     expect(karte?.textContent).toContain('Kein Grund zur Absage angegeben.');
   });
 
-  it('beide Knoepfe stehen IN der Karte', () => {
-    const c = kasten({ onGrundBearbeiten: () => {}, onZuruecknehmen: () => {} });
-    const karte = c.querySelector('ion-card-content.app-card-content');
-    expect(karte?.querySelectorAll('button').length).toBe(2);
+  // GEAENDERTE ANFORDERUNG, KEINE AUFWEICHUNG (16.09.2026):
+  // Bis zum Vormittag pruefte diese Stelle, dass GENAU ZWEI Knoepfe in der
+  // Karte stehen ("Grund bearbeiten" und "Absage zuruecknehmen"). Simons
+  // Entscheidung nach dem Blick auf Build 196 dreht das um: "grund und
+  // ruecknahme machen wir nur per slide auf der liste nicht im termin unter
+  // absage. es braucht dann nur ein icon am anfang und die gleiche struktur
+  // wie bei details."
+  //
+  // Die Karte ist damit reine Auskunft. Der alte Test hatte recht fuer die
+  // alte Anforderung -- er wird nicht gelockert, sondern auf die neue gedreht:
+  // aus "genau zwei Knoepfe" wird "gar keiner". Das ist strenger, nicht
+  // weicher. Dass die Aktionen nicht verschwunden sind, prueft der
+  // Ansichten-Test nebenan an den Wisch-Aktionen beider Listen.
+  it('in der Karte steht KEIN Knopf -- Aendern laeuft ueber den Wisch in der Liste', () => {
+    const c = kasten();
+    expect(c.querySelectorAll('button').length).toBe(0);
+  });
+
+  it('auch nicht, wenn die Karte ohne Grund steht (frueher der Ort fuer "Grund nachtragen")', () => {
+    const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
+    expect(container.querySelectorAll('button').length).toBe(0);
+  });
+
+  it('die Beschriftungen der alten Knoepfe stehen nirgends mehr in der Karte', () => {
+    const text = kasten().textContent ?? '';
+    expect(text).not.toContain('Grund bearbeiten');
+    expect(text).not.toContain('Grund nachtragen');
+    expect(text).not.toContain('Absage zurücknehmen');
+  });
+});
+
+// ------------------------------------------------------------------------
+// Die Karte ist nach dem Muster der Info-Zeilen gebaut (16.09.2026)
+//
+// Simon: "wir brauchen ein icon am anfang ... es braucht dann nur ein icon am
+// anfang und die gleiche struktur wie bei details."
+//
+// Das Vorbild ist EventInfoCard in admin/views/EventDetailSections.tsx (dort
+// die Zeilen "Datum", "Zeitfenster", "Anmeldung"): pro Aussage eine
+// .app-info-row mit .app-info-row__icon links, .app-info-row__label als
+// kleiner Ueberschrift und .app-info-row__value als Wert. Geprueft wird auf
+// genau diese Klassen.
+// ------------------------------------------------------------------------
+
+describe('die Karte benutzt die Info-Zeilen des Details-Abschnitts', () => {
+  it('der Grund steht in einer app-info-row mit Icon, Label und Wert', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    const zeilen = container.querySelectorAll('.app-info-row');
+    expect(zeilen.length).toBe(2);
+
+    const grundZeile = zeilen[0];
+    expect(grundZeile.querySelector('.app-info-row__icon')).not.toBeNull();
+    expect(grundZeile.querySelector('.app-info-row__label')?.textContent).toBe('Grund');
+    expect(grundZeile.querySelector('.app-info-row__value')?.textContent).toBe('Heizung im Gemeindehaus defekt');
+  });
+
+  it('das Icon am Anfang jeder Zeile ist rot eingefaerbt wie der Kopf-Kreis', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    const icons = container.querySelectorAll('.app-info-row__icon.app-icon-color--danger');
+    expect(icons.length).toBe(2);
+  });
+
+  it('die Urheber stehen in einer zweiten Zeile unter dem Label "Abgesagt von"', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    const urheberZeile = container.querySelectorAll('.app-info-row')[1];
+    expect(urheberZeile.querySelector('.app-info-row__icon')).not.toBeNull();
+    expect(urheberZeile.querySelector('.app-info-row__label')?.textContent).toBe('Abgesagt von');
+    const werte = Array.from(urheberZeile.querySelectorAll('.app-info-row__value')).map(e => e.textContent);
+    expect(werte).toEqual(['Abgesagt von Anna Meier, 15.09.', 'Grund geändert von Bernd Schulz, 16.09.']);
+  });
+
+  it('auch der Platzhaltersatz steht als Wert in der Grund-Zeile', () => {
+    const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
+    const grundZeile = container.querySelectorAll('.app-info-row')[0];
+    expect(grundZeile.querySelector('.app-info-row__label')?.textContent).toBe('Grund');
+    expect(grundZeile.querySelector('.app-info-row__value')?.textContent).toBe('Kein Grund zur Absage angegeben.');
+  });
+
+  it('eine alte Absage ohne jeden Urheber bekommt gar keine zweite Zeile', () => {
+    // Kein "Abgesagt von unbekannt" und keine leere Zeile mit Icon.
+    const { container } = render(
+      <AbsageBlock event={{ cancelled: true, cancelled_reason: 'Sturm' }} variante="kasten" />
+    );
+    expect(container.querySelectorAll('.app-info-row').length).toBe(1);
+    expect(container.textContent).not.toContain('Abgesagt von');
+  });
+
+  it('das alte Fliesstext-Label "Abgesagt:" gibt es in der Karte nicht mehr', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    expect(container.querySelector('.app-reason-box__label')).toBeNull();
+    expect(container.textContent).not.toContain('Abgesagt:');
   });
 });
 
@@ -334,7 +443,13 @@ describe('Zeile und dunkle Kachel bekommen KEINE Karte', () => {
     );
     expect(container.querySelector('ion-list.app-section-inset')).toBeNull();
     expect(container.querySelector('ion-card.app-card')).toBeNull();
+    expect(container.querySelector('.app-info-row')).toBeNull();
     expect(container.textContent).toContain('Heizung im Gemeindehaus defekt');
+    // Heller Text auf dem Farbverlauf -- der Grund, warum es diese Variante
+    // gibt. Ein Umbau, der die Farbe verliert, macht den Text unlesbar.
+    const zeilen = Array.from(container.querySelectorAll('div'));
+    expect(zeilen[0].getAttribute('style')).toContain('rgba(255, 255, 255, 0.9)');
+    expect(zeilen[1].getAttribute('style')).toContain('rgba(255, 255, 255, 0.75)');
   });
 });
 
@@ -370,105 +485,45 @@ describe('keine festen Farbwerte in der neuen Auszeichnung', () => {
 });
 
 // ------------------------------------------------------------------------
-// Befund E: Der Knopf zum Nachtragen
+// Befund E und die Ruecknahme: beide Aktionen leben in der Liste
+// (16.09.2026, Simons Entscheidung)
+//
+// Frueher standen "Grund nachtragen/bearbeiten" und "Absage zuruecknehmen"
+// als Knoepfe IN der Karte -- und die Pruefungen dazu an dieser Stelle. Simon
+// hat entschieden, dass beides NUR noch ueber den Wisch an der Zeile in der
+// Terminliste laeuft. Der Baustein kennt die Aktionen deshalb gar nicht mehr;
+// dass es sie weiterhin gibt, prueft der Ansichten-Test nebenan
+// (abgesagteTermineAnsichten.test.ts) an den Wisch-Aktionen von Leitungs- und
+// Teamer-Liste.
+//
+// Hier bleibt nur die Gegenrichtung: Der Baustein darf keine Aktion mehr
+// anbieten, auch nicht versehentlich ueber eine durchgereichte Prop.
 // ------------------------------------------------------------------------
 
-describe('Befund E: Grund nachtragen bzw. bearbeiten', () => {
-  it('ohne Grund heisst der Knopf "Grund nachtragen"', () => {
-    render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" onGrundBearbeiten={() => {}} />);
-    expect(screen.getByText('Grund nachtragen')).toBeTruthy();
+describe('der Baustein bietet keine Aktionen mehr an', () => {
+  const quelle = ohneKommentare(
+    readFileSync(resolve(process.cwd(), 'src/components/shared/AbsageBlock.tsx'), 'utf8')
+  );
+
+  it('AbsageBlock.tsx kennt die Knopf-Props nicht mehr', () => {
+    expect(quelle).not.toContain('onGrundBearbeiten');
+    expect(quelle).not.toContain('onZuruecknehmen');
+    expect(quelle).not.toContain('bearbeitenDeaktiviert');
   });
 
-  it('mit Grund heisst er "Grund bearbeiten"', () => {
-    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" onGrundBearbeiten={() => {}} />);
-    expect(screen.getByText('Grund bearbeiten')).toBeTruthy();
+  it('und rendert gar keinen IonButton', () => {
+    expect(quelle).not.toContain('IonButton');
   });
 
-  it('ohne Verbindung ist der Knopf gesperrt', () => {
-    render(
-      <AbsageBlock
-        event={abgesagtMitGrund}
-        variante="kasten"
-        onGrundBearbeiten={() => {}}
-        bearbeitenDeaktiviert
-      />
-    );
-    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+  it('die Beschriftungen stehen nicht mehr im Code', () => {
+    expect(quelle).not.toContain('Grund bearbeiten');
+    expect(quelle).not.toContain('Grund nachtragen');
+    expect(quelle).not.toContain('Absage zurücknehmen');
   });
 
-  it('wer nicht schreiben darf (Konfi), bekommt keinen Knopf', () => {
-    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    expect(screen.queryByRole('button')).toBeNull();
-  });
-
-  it('der Knopf steht AUCH bei einer Absage ohne Grund -- sonst gaebe es keinen Ort zum Nachtragen', () => {
-    // Genau die Sackgasse, die im Leitungs-Detail schon einmal behoben wurde
-    // (Migration 152) und die es im Team noch gar nicht gab.
-    const { container } = render(
-      <AbsageBlock event={abgesagtOhneGrund} variante="kasten" onGrundBearbeiten={() => {}} />
-    );
-    expect(container.querySelector('button')).not.toBeNull();
-  });
-});
-
-// ------------------------------------------------------------------------
-// Absage zuruecknehmen (16.09.2026)
-// ------------------------------------------------------------------------
-
-describe('Absage zuruecknehmen', () => {
-  it('der Knopf steht im Kasten, wenn der Aufrufer ihn anbietet', () => {
-    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" onZuruecknehmen={() => {}} />);
-    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
-  });
-
-  it('er steht AUCH bei einer Absage ohne Grund -- die Absage laesst sich so oder so zuruecknehmen', () => {
-    render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" onZuruecknehmen={() => {}} />);
-    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
-  });
-
-  it('wer nicht schreiben darf (Konfi), bekommt ihn nicht', () => {
-    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    expect(screen.queryByText('Absage zurücknehmen')).toBeNull();
-  });
-
-  it('an einem NICHT abgesagten Termin gibt es ihn nicht', () => {
-    const { container } = render(
-      <AbsageBlock event={offenerTermin} variante="kasten" onZuruecknehmen={() => {}} />
-    );
+  it('an einem NICHT abgesagten Termin steht ueberhaupt nichts', () => {
+    const { container } = render(<AbsageBlock event={offenerTermin} variante="kasten" />);
     expect(container.textContent).toBe('');
-  });
-
-  it('ohne Verbindung ist er gesperrt', () => {
-    render(
-      <AbsageBlock
-        event={abgesagtMitGrund}
-        variante="kasten"
-        onZuruecknehmen={() => {}}
-        bearbeitenDeaktiviert
-      />
-    );
-    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
-  });
-
-  it('meldet den Klick an den Aufrufer -- er stellt die Rueckfrage mit der Zahl', () => {
-    const gerufen = vi.fn();
-    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" onZuruecknehmen={gerufen} />);
-    // Nur EIN Knopf im Kasten, weil onGrundBearbeiten hier fehlt.
-    screen.getByRole('button').click();
-    expect(gerufen).toHaveBeenCalledTimes(1);
-  });
-
-  it('steht neben dem Grund-Knopf, nicht statt seiner', () => {
-    render(
-      <AbsageBlock
-        event={abgesagtMitGrund}
-        variante="kasten"
-        onGrundBearbeiten={() => {}}
-        onZuruecknehmen={() => {}}
-      />
-    );
-    expect(screen.getByText('Grund bearbeiten')).toBeTruthy();
-    expect(screen.getByText('Absage zurücknehmen')).toBeTruthy();
   });
 });
 

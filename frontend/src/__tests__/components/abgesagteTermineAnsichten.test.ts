@@ -111,13 +111,31 @@ describe('Befund B: keine Detailansicht streicht durch', () => {
   });
 });
 
-describe('Befund E: der Knopf zum Nachtragen steht bei Leitung UND Team', () => {
-  it('die Leitungs-Detailansicht reicht onGrundBearbeiten durch', () => {
-    expect(code(ANSICHTEN.leitungDetail)).toContain('onGrundBearbeiten={handleAbsagegrundBearbeiten}');
+// ------------------------------------------------------------------------
+// Befund E, neu gefasst (16.09.2026)
+//
+// GEAENDERTE ANFORDERUNG, KEINE AUFWEICHUNG: Bis zum Vormittag pruefte dieser
+// Abschnitt, dass Leitungs- und Team-Detailansicht onGrundBearbeiten an den
+// AbsageBlock durchreichen. Simons Entscheidung nach Build 196 dreht das um --
+// "grund und ruecknahme machen wir nur per slide auf der liste nicht im
+// termin unter absage". Die Karte im Termin ist reine Auskunft; beide
+// Aktionen sitzen in den Wisch-Aktionen der LISTE, in beiden Rollen.
+//
+// Die Erwartung wird also nicht gelockert: Sie wandert von der Detailansicht
+// in die Liste und wird dort fuer BEIDE Aktionen geprueft, statt wie vorher
+// nur fuer eine.
+// ------------------------------------------------------------------------
+
+describe('Befund E neu: Grund bearbeiten laeuft ueber den Wisch in beiden Listen', () => {
+  it('die Leitungsliste bietet den Wisch "Absagegrund bearbeiten" an', () => {
+    const quelle = code(ANSICHTEN.leitungListe);
+    expect(quelle).toContain("aria-label={isCancelled ? 'Absagegrund bearbeiten' : 'Event absagen'}");
   });
 
-  it('die Team-Detailansicht reicht ihn ebenfalls durch', () => {
-    expect(code(ANSICHTEN.teamListe)).toContain('onGrundBearbeiten={handleAbsagegrundBearbeiten}');
+  it('die Teamer-Liste bietet ihn ebenfalls an -- an einem abgesagten Termin', () => {
+    const quelle = code(ANSICHTEN.teamListe);
+    expect(quelle).toContain('aria-label="Absagegrund bearbeiten"');
+    expect(quelle).toContain('handleAbsagegrundBearbeiten(event)');
   });
 
   it('das Team ruft dieselbe Route wie die Leitung auf', () => {
@@ -131,8 +149,72 @@ describe('Befund E: der Knopf zum Nachtragen steht bei Leitung UND Team', () => 
     expect(quelle).toContain("import TerminAbsagenModal from '../../admin/modals/TerminAbsagenModal'");
   });
 
-  it('die Konfi-Detailansicht bekommt KEINEN Knopf -- Konfis duerfen nicht schreiben', () => {
-    expect(code(ANSICHTEN.konfiDetail)).not.toContain('onGrundBearbeiten');
+  it('keine Detailansicht reicht noch einen Knopf an den AbsageBlock durch', () => {
+    for (const pfad of [ANSICHTEN.leitungDetail, ANSICHTEN.teamListe, ANSICHTEN.konfiDetail]) {
+      const quelle = code(pfad);
+      expect(quelle).not.toContain('onGrundBearbeiten={');
+      expect(quelle).not.toContain('onZuruecknehmen={handle');
+      expect(quelle).not.toContain('bearbeitenDeaktiviert');
+    }
+  });
+
+  it('die Konfi-Liste bekommt gar keine Wisch-Aktion -- Konfis duerfen nicht schreiben', () => {
+    const quelle = code(ANSICHTEN.konfiListe);
+    expect(quelle).not.toContain('Absagegrund bearbeiten');
+    expect(quelle).not.toContain('Absage zurücknehmen');
+  });
+});
+
+describe('Absage zuruecknehmen: der Wisch steht in BEIDEN Listen', () => {
+  it('die Leitungsliste bietet ihn an, nur an abgesagten Terminen', () => {
+    const quelle = code(ANSICHTEN.leitungListe);
+    expect(quelle).toContain('aria-label="Absage zurücknehmen"');
+    // Der Gate: ohne isCancelled staende die Aktion an jedem Termin und liefe
+    // ins Leere (das Backend antwortet mit 400).
+    expect(quelle).toContain('{onZuruecknehmen && isCancelled && (');
+  });
+
+  it('die Teamer-Liste bietet ihn ebenfalls an, ebenfalls nur an abgesagten', () => {
+    const quelle = code(ANSICHTEN.teamListe);
+    expect(quelle).toContain('aria-label="Absage zurücknehmen"');
+    expect(quelle).toContain('handleAbsageZuruecknehmen(event)');
+    // Das Item bekommt IonItemSliding nur, wenn es etwas zu wischen gibt --
+    // sonst federt der Wisch wirkungslos zurueck (Audit 10.08.).
+    expect(quelle).toContain('if (!istAbgesagt(event)) return zeile;');
+  });
+
+  it('beide Listen rufen dieselbe Route auf', () => {
+    expect(code('src/components/admin/pages/AdminEventsPage.tsx')).toContain('/reaktivieren');
+    expect(code(ANSICHTEN.teamListe)).toContain('/reaktivieren');
+  });
+
+  it('beide faerben die Ruecknahme gruen und das Bearbeiten warnfarben', () => {
+    for (const pfad of [ANSICHTEN.leitungListe, ANSICHTEN.teamListe]) {
+      const quelle = code(pfad);
+      expect(quelle).toContain('app-icon-circle--lg app-icon-circle--success');
+      expect(quelle).toContain('app-icon-circle--lg app-icon-circle--warning');
+    }
+  });
+
+  it('keine Detailansicht ruft die Route noch selbst auf', () => {
+    // Genau ein Ort pro Aktion: Sonst laufen die Rueckfragen auseinander.
+    expect(code(ANSICHTEN.leitungDetail)).not.toContain('/reaktivieren');
+  });
+
+  it('an einem NICHT abgesagten Termin bietet die Leitungsliste weiter "Event absagen"', () => {
+    // Derselbe Wisch, andere Beschriftung und anderes Icon -- der Weg zum
+    // Absagen darf durch die Ruecknahme nicht verschwinden.
+    const quelle = code(ANSICHTEN.leitungListe);
+    expect(quelle).toContain("isCancelled ? 'Absagegrund bearbeiten' : 'Event absagen'");
+    expect(quelle).toContain('icon={isCancelled ? ICON_BEARBEITEN : ICON_GESPERRT}');
+  });
+
+  it('die Teamer-Liste sagt einen Termin NICHT ab -- das bleibt der Leitung', () => {
+    // Im Team ist der Modus des Modals fest 'grund'. Ohne diese Pruefung
+    // koennte der neue Wisch unbemerkt zum Absage-Weg werden.
+    const quelle = code(ANSICHTEN.teamListe);
+    expect(quelle).not.toContain("modus: 'absagen'");
+    expect(quelle).not.toContain('aria-label="Event absagen"');
   });
 });
 

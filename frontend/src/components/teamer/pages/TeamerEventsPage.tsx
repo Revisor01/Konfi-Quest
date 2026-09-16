@@ -2,6 +2,7 @@ import { FARBEN } from '../../../theme/colors';
 import {
   ICON_ABSAGE,
   ICON_ANHANG,
+  ICON_BEARBEITEN,
   ICON_CHAT,
   ICON_DATEI_GEFUELLT,
   ICON_ENTSPERRT,
@@ -20,6 +21,7 @@ import {
   ICON_ORT_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_QRCODE,
+  ICON_RUECKGAENGIG,
   ICON_SCANNEN,
   ICON_SCHUTZ_GEFUELLT,
   ICON_SUCHE_GEFUELLT,
@@ -32,9 +34,10 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonItemSliding, IonItemOption, IonItemOptions, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
@@ -102,6 +105,11 @@ const TeamerEventsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  // Der Termin, dessen Absagegrund gerade bearbeitet wird (16.09.2026). Eigener
+  // Zustand neben selectedEvent, weil der Wisch aus der LISTE kommt -- dort ist
+  // kein Termin geoeffnet, und das Modal braucht trotzdem Namen, Datum und den
+  // bisherigen Grund.
+  const [absageTermin, setAbsageTermin] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
@@ -482,33 +490,40 @@ const TeamerEventsPage: React.FC = () => {
   // vorbehalten, wo die Folgen (Abmeldungen, Punkte, Push) zusammen mit der
   // Teilnehmerliste sichtbar sind.
   const [presentAbsagegrundModal, dismissAbsagegrundModal] = useIonModal(TerminAbsagenModal, {
-    get terminName() { return selectedEvent?.name ?? ''; },
+    get terminName() { return absageTermin?.name ?? ''; },
     get terminDatum() {
-      if (!selectedEvent) return '';
-      return new Date(selectedEvent.event_date).toLocaleDateString('de-DE', {
+      if (!absageTermin) return '';
+      return new Date(absageTermin.event_date).toLocaleDateString('de-DE', {
         weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
       });
     },
-    get konfiAnzahl() { return selectedEvent?.registered_count || 0; },
+    get konfiAnzahl() { return absageTermin?.registered_count || 0; },
     modus: 'grund' as const,
-    get grundVorgabe() { return selectedEvent?.cancelled_reason ?? ''; },
+    get grundVorgabe() { return absageTermin?.cancelled_reason ?? ''; },
     onSave: async (grund: string) => {
-      const termin = selectedEvent;
+      const termin = absageTermin;
       if (!termin) return;
       await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
       setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
-      // Die geoeffnete Detailansicht haelt ihren eigenen Stand -- ohne dieses
+      // Eine geoeffnete Detailansicht haelt ihren eigenen Stand -- ohne dieses
       // Nachziehen stuende der alte Grund noch da, bis man den Termin
-      // schliesst und neu oeffnet.
+      // schliesst und neu oeffnet. Nur, wenn es derselbe Termin ist: Der Wisch
+      // aus der Liste darf keinen fremden Termin in die Detailansicht setzen.
       const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
-      if (aktualisiert) setSelectedEvent(aktualisiert);
+      if (aktualisiert) {
+        setAbsageTermin(aktualisiert);
+        setSelectedEvent(vorher => (vorher && vorher.id === termin.id ? aktualisiert : vorher));
+      }
       await refresh();
     },
     dismiss: () => dismissAbsagegrundModal()
   });
 
-  const handleAbsagegrundBearbeiten = () => {
-    if (!isOnline || !selectedEvent) return;
+  // Aus der LISTE gewischt (16.09.2026): Der Termin kommt als Parameter, nicht
+  // aus selectedEvent -- in der Liste ist keiner geoeffnet.
+  const handleAbsagegrundBearbeiten = (termin: Event) => {
+    if (!isOnline || !termin) return;
+    setAbsageTermin(termin);
     presentAbsagegrundModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
@@ -519,13 +534,12 @@ const TeamerEventsPage: React.FC = () => {
   // abgemeldet hatte oder einzeln abgemeldet wurde, bleibt abgemeldet und
   // bekommt keine Nachricht -- deshalb zaehlt die Zahl nur die
   // Rueckkehrenden.
-  const handleAbsageZuruecknehmen = () => {
-    if (!selectedEvent) return;
+  const handleAbsageZuruecknehmen = (termin: Event) => {
+    if (!termin) return;
     if (!isOnline) {
       setError('Zurücknehmen nicht möglich — du bist offline');
       return;
     }
-    const termin = selectedEvent;
     const anzahl = termin.durch_absage_abgemeldet_count ?? 0;
     const wenText = anzahl === 1
       ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
@@ -543,10 +557,13 @@ const TeamerEventsPage: React.FC = () => {
             try {
               await api.put(`/events/${termin.id}/reaktivieren`);
               setSuccess(`"${termin.name}" findet wieder statt`);
-              // Wie beim Absagegrund: Die geoeffnete Detailansicht haelt
-              // ihren eigenen Stand und zeigte sonst weiter "Abgesagt".
+              // Wie beim Absagegrund: Eine geoeffnete Detailansicht haelt
+              // ihren eigenen Stand und zeigte sonst weiter "Abgesagt" --
+              // aber nur, wenn es derselbe Termin ist.
               const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
-              if (aktualisiert) setSelectedEvent(aktualisiert);
+              if (aktualisiert) {
+                setSelectedEvent(vorher => (vorher && vorher.id === termin.id ? aktualisiert : vorher));
+              }
               await refresh();
             } catch (err) {
               setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
@@ -935,25 +952,15 @@ const TeamerEventsPage: React.FC = () => {
 
               NICHT zu verwechseln mit "Abgesagt von dir" weiter oben: Das
               meint die eigene Teilnahme, hier geht es um den TERMIN. */}
-          {/* GRUND NACHTRAGEN AUCH IM TEAM (15.09.2026): Das Backend erlaubt
-              das jeder Teamer:in (PUT /events/:id/absagegrund, requireTeamer in
-              events/verwaltung.js) -- nur die Oberflaeche gab es allein bei der
-              Leitung. Die Berechtigung war also da, der Weg dorthin fehlte.
-              Der Platzhaltersatz gehoert dazu: Ohne ihn faellt der Kasten bei
-              einer Absage ohne Grund weg, und dann gaebe es keinen Ort fuer
-              den Knopf -- genau die Sackgasse, die im Leitungs-Detail schon
-              einmal behoben wurde (Migration 152). */}
-          {/* ABSAGE ZURUECKNEHMEN AUCH IM TEAM (16.09.2026): dieselbe
-              Begruendung wie beim Grund eine Zeile hoeher -- PUT
-              /events/:id/reaktivieren steht hinter requireTeamer, die
-              Berechtigung ist also da. Wer absagen darf, darf auch
-              zuruecknehmen. */}
+          {/* NUR AUSKUNFT, KEINE KNOEPFE (16.09.2026, Simons Entscheidung):
+              wortgleich zur Leitungsansicht. Grund bearbeiten und Absage
+              zuruecknehmen laufen ueber den Wisch an der Zeile in der
+              Terminliste -- auch im Team, denn beide Routen stehen hinter
+              requireTeamer (PUT /events/:id/absagegrund und
+              /events/:id/reaktivieren). Wer absagen darf, darf beides. */}
           <AbsageBlock
             event={selectedEvent}
             variante="kasten"
-            onGrundBearbeiten={handleAbsagegrundBearbeiten}
-            bearbeitenDeaktiviert={!isOnline}
-            onZuruecknehmen={handleAbsageZuruecknehmen}
           />
 
           {/* Details Card - wie Admin EventDetailView */}
@@ -1567,10 +1574,17 @@ const TeamerEventsPage: React.FC = () => {
                 const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut } = getEventStatusInfo(event);
                 const showBadge = !isPastEvent || event.is_registered;
 
-                // Kein IonItemSliding: es gab hier nie IonItemOptions, das Item
-                // liess sich also anwischen und federte wirkungslos zurück —
-                // das wirkt kaputt (Audit 10.08.).
-                return (
+                // DER WISCH GIBT ES SEIT DEM 16.09.2026 -- und NUR an einem
+                // abgesagten Termin. An allen anderen bleibt das Item ein
+                // schlichtes IonItem: Ein Wisch, der wirkungslos zurueckfedert,
+                // wirkt kaputt (Audit 10.08.), deshalb wird IonItemSliding nur
+                // dort gebaut, wo es auch etwas zu tun gibt.
+                //
+                // Warum hier und nicht in der Detailansicht: Simons
+                // Entscheidung -- "grund und ruecknahme machen wir nur per
+                // slide auf der liste". Beide Routen stehen hinter
+                // requireTeamer, das Team darf also beides.
+                const zeile = (
                     <IonItem
                       key={event.id}
                       button
@@ -1772,6 +1786,39 @@ const TeamerEventsPage: React.FC = () => {
                         </div>
                       </div>
                     </IonItem>
+                );
+
+                if (!istAbgesagt(event)) return zeile;
+
+                return (
+                  <IonItemSliding key={event.id}>
+                    {zeile}
+                    <IonItemOptions side="end" className="app-swipe-actions">
+                      {/* Zuruecknehmen zuerst und gruen -- sie ist die
+                          aufbauende Aktion. In Rot, neben einer roten Zeile,
+                          liest sie sich wie "noch endgueltiger absagen".
+                          Reihenfolge und Farben wie in der Leitungsliste
+                          (admin/EventsView.tsx). */}
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); handleAbsageZuruecknehmen(event); }}
+                        aria-label="Absage zurücknehmen"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
+                          <IonIcon icon={ICON_RUECKGAENGIG} />
+                        </div>
+                      </IonItemOption>
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); handleAbsagegrundBearbeiten(event); }}
+                        aria-label="Absagegrund bearbeiten"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                          <IonIcon icon={ICON_BEARBEITEN} />
+                        </div>
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
                 );
               })}
             </ListSection>

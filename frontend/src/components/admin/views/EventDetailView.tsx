@@ -287,75 +287,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     dismiss: () => dismissAbsageModal()
   });
 
-  // ABSAGEGRUND NACHTRAGEN ODER AENDERN (15.09.2026, Migration 152)
-  //
-  // Zweite Instanz desselben Modals statt eines Umschalters am ersten: Die
-  // beiden unterscheiden sich in drei Props, und useIonModal bindet die Props
-  // beim Deklarieren. Ein gemeinsames Modal muesste den Modus ueber einen
-  // weiteren State fuehren, der zwischen zwei Oeffnungen haengenbleiben kann —
-  // und dann stuende beim Absagen "Grund bearbeiten" im Kopf.
-  //
-  // Anders als beim Absagen KEIN onBack(): Der Termin bleibt, wo er ist, und
-  // die Ansicht laedt nur neu. Wer einen Tippfehler korrigiert, will danach
-  // sehen, dass er weg ist, und nicht in der Liste landen.
-  const [presentAbsagegrundModal, dismissAbsagegrundModal] = useIonModal(TerminAbsagenModal, {
-    get terminName() { return eventData?.name ?? ''; },
-    get terminDatum() {
-      if (!eventData?.event_date) return '';
-      return new Date(eventData.event_date).toLocaleDateString('de-DE', {
-        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-      });
-    },
-    get konfiAnzahl() { return participants.filter(p => p.role_name === 'konfi').length; },
-    modus: 'grund' as const,
-    get grundVorgabe() { return eventData?.cancelled_reason ?? ''; },
-    onSave: async (grund: string) => {
-      if (!eventData) return;
-      // Eigene Route: /cancel lehnt einen bereits abgesagten Termin mit 400
-      // ab und muss das fuer ausgelieferte App-Fassungen weiterhin tun.
-      await api.put(`/events/${eventData.id}/absagegrund`, { cancelled_reason: grund });
-      setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
-      await loadEventData();
-    },
-    dismiss: () => dismissAbsagegrundModal()
-  });
-
-  // ABSAGE ZURUECKNEHMEN (16.09.2026)
-  //
-  // Die Rueckfrage nennt die Zahl: Das Zuruecknehmen meldet Leute wieder an,
-  // ohne sie zu fragen, und schickt allen einen Push. Wer das ausloest, soll
-  // vorher wissen, wie viele das sind. durch_absage_abgemeldet_count zaehlt
-  // genau die Rueckkehrenden -- wer sich vorher selbst abgemeldet hatte oder
-  // einzeln abgemeldet wurde, bleibt abgemeldet und bekommt keinen Push.
-  const handleAbsageZuruecknehmen = () => {
-    if (!eventData) return;
-    if (offlineBlockiert(isOnline, setError)) return;
-    const anzahl = eventData.durch_absage_abgemeldet_count ?? 0;
-    const wenText = anzahl === 1
-      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
-      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
-    presentAlert({
-      header: 'Absage zurücknehmen?',
-      message: anzahl > 0
-        ? `"${eventData.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
-        : `"${eventData.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Zurücknehmen',
-          handler: async () => {
-            try {
-              await api.put(`/events/${eventData.id}/reaktivieren`);
-              setSuccess(`"${eventData.name}" findet wieder statt`);
-              await loadEventData();
-            } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
-            }
-          }
-        }
-      ]
-    });
-  };
+  // Absagegrund und Ruecknahme sitzen seit dem 16.09.2026 NICHT mehr hier:
+  // Beides laeuft ueber den Wisch an der Zeile in der Terminliste
+  // (AdminEventsPage). Die Detailansicht zeigt den Stand, sie aendert ihn
+  // nicht -- so gibt es fuer jede der beiden Aktionen genau einen Ort.
 
   // QR Display Modal
   const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
@@ -915,13 +850,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
-  // Grund nachtragen oder aendern — nur bei einem bereits abgesagten Termin
-  // (15.09.2026, Migration 152).
-  const handleAbsagegrundBearbeiten = () => {
-    if (!isOnline || !eventData) return;
-    presentAbsagegrundModal({ presentingElement: presentingElement || undefined });
-  };
-
   const handleCreateEventChat = async () => {
     if (offlineBlockiert(isOnline, setError)) return;
     try {
@@ -1293,22 +1221,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             genau dieser Text ging an alle Angemeldeten und in den Push
             (Entscheidung Simon). Ohne Grund faellt der Block weg; die Absage
             selbst steht schon im Kopf. */}
-        {/* GRUND NACHTRAGEN ODER AENDERN (15.09.2026, Migration 152): Der
-            Block steht jetzt bei JEDEM abgesagten Termin, auch ohne Grund.
-            Vorher fiel er ohne Grund ganz weg — und damit gab es keinen Ort,
-            an dem sich einer nachtragen liess. Wer beim Absagen in Eile nichts
-            eingetragen hatte, kam nie wieder ran (Simons Befund).
-
-            Die Detailansicht ist der richtige Ort dafuer: Hier steht der Text,
-            um den es geht, in voller Laenge — anders als in der Liste, wo er
-            zwischen Zaehlern und Kategorien haengt. Die Liste bietet den
-            Bearbeiten-Wisch zusaetzlich an, fuer den schnellen Weg. */}
+        {/* NUR AUSKUNFT, KEINE KNOEPFE (16.09.2026, Simons Entscheidung):
+            Der Block zeigt Grund und Urheber. Geaendert wird beides ueber den
+            Wisch an der Zeile in der Terminliste -- "grund und ruecknahme
+            machen wir nur per slide auf der liste nicht im termin unter
+            absage". Er steht bei JEDEM abgesagten Termin, auch ohne Grund:
+            sonst waere "kein Grund angegeben" von "alte Absage ohne
+            Datenbankfeld" nicht zu unterscheiden. */}
         <AbsageBlock
           event={eventData}
           variante="kasten"
-          onGrundBearbeiten={handleAbsagegrundBearbeiten}
-          bearbeitenDeaktiviert={!isOnline}
-          onZuruecknehmen={handleAbsageZuruecknehmen}
         />
 
         {/* Event Details */}

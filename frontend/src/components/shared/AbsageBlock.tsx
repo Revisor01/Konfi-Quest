@@ -1,6 +1,6 @@
 import React from 'react';
-import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader } from '@ionic/react';
-import { ICON_ABSAGE, ICON_BEARBEITEN, ICON_RUECKGAENGIG } from './icons';
+import { IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader } from '@ionic/react';
+import { ICON_ABSAGE, ICON_PERSON } from './icons';
 import { absageUrheberZeile, absagegrundUrheberZeile, AbsageAngabe } from '../../utils/anwesenheitUrheber';
 import { istAbgesagt } from './eventFormatting';
 
@@ -34,12 +34,24 @@ import { istAbgesagt } from './eventFormatting';
 // weisse Karte, roter Kopf-Kreis, der Grund darin. Genau so sitzt der
 // Absageblock jetzt auch.
 //
-// WIE VIEL ROT BLEIBT: der Kreis im Kopf (app-section-icon--danger), das
-// Wort "Abgesagt:" (app-reason-box__label faerbt es rot) und der Knopf
-// "Grund bearbeiten". Die FLAECHE ist weiss wie ueberall -- die rote
-// Tonung (app-reason-box--danger) faellt weg, sonst waere es wieder ein
-// Kasten in der Karte. Erkennbar bleibt die Absage damit dreifach: am Kopf
-// "Absage", am roten Kreis und am roten Label.
+// WIE VIEL ROT BLEIBT: der Kreis im Kopf (app-section-icon--danger) und die
+// beiden Zeilen-Icons (app-icon-color--danger). Die FLAECHE ist weiss wie
+// ueberall -- die rote Tonung (app-reason-box--danger) faellt weg, sonst
+// waere es wieder ein Kasten in der Karte.
+//
+// DER INHALT STEHT IN INFO-ZEILEN (16.09.2026, Simons zweiter Befund):
+// "wir brauchen ein icon am anfang ... es braucht dann nur ein icon am
+// anfang und die gleiche struktur wie bei details." Das Vorbild ist die
+// EventInfoCard in admin/views/EventDetailSections.tsx: pro Aussage eine
+// app-info-row mit Icon links, kleinem Label darueber und dem Wert darunter.
+// Genau so stehen hier jetzt "Grund" und "Abgesagt von" -- statt eines
+// Fliesstexts mit fett gesetztem "Abgesagt:".
+//
+// KEINE KNOEPFE MEHR IN DER KARTE (16.09.2026): "grund und ruecknahme machen
+// wir nur per slide auf der liste nicht im termin unter absage." Der Termin
+// zeigt den Stand, geaendert wird er ueber den Wisch an der Zeile in der
+// Liste -- Leitung wie Team. Die Karte ist damit reine Auskunft, und es gibt
+// nur noch EINEN Ort fuer beide Aktionen statt zweier, die auseinanderlaufen.
 
 interface AbsageBlockProps {
   /**
@@ -66,26 +78,6 @@ interface AbsageBlockProps {
    */
   zeigePlatzhalter?: boolean;
 
-  /**
-   * Knopf "Grund nachtragen" / "Grund bearbeiten". Nur setzen, wo jemand
-   * schreiben darf (Leitung und Team -- requireTeamer). Konfis bekommen ihn
-   * nicht: Sie lesen den Grund, sie schreiben ihn nicht.
-   */
-  onGrundBearbeiten?: () => void;
-
-  /** Ohne Verbindung laesst sich nichts speichern. */
-  bearbeitenDeaktiviert?: boolean;
-
-  /**
-   * Knopf "Absage zurücknehmen" (16.09.2026). Nur setzen, wo jemand schreiben
-   * darf -- dieselbe Berechtigung wie beim Absagen und beim Grund
-   * (requireTeamer + darfTermin). Konfis bekommen ihn nicht.
-   *
-   * Der Aufrufer stellt die Rueckfrage: Das Zuruecknehmen schickt allen
-   * Wiederangemeldeten einen Push, und wie viele das sind, weiss nur er.
-   */
-  onZuruecknehmen?: () => void;
-
   /** Hell auf dunklem Grund (Dashboard-Kacheln mit Farbverlauf). */
   aufDunkel?: boolean;
 }
@@ -94,9 +86,6 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   event,
   variante = 'kasten',
   zeigePlatzhalter = variante === 'kasten',
-  onGrundBearbeiten,
-  bearbeitenDeaktiviert = false,
-  onZuruecknehmen,
   aufDunkel = false,
 }) => {
   if (!istAbgesagt(event) || !event) return null;
@@ -105,10 +94,11 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   const absager = absageUrheberZeile(event);
   const grundUrheber = absagegrundUrheberZeile(event);
 
-  // Nichts zu sagen und nichts zu tun -> gar nicht rendern. Eine leere Box
-  // unter einem Termin, der ohnehin schon "Abgesagt" im Kopf traegt, ist nur
-  // Flaeche.
-  if (!grund && !zeigePlatzhalter && !onGrundBearbeiten && !onZuruecknehmen) return null;
+  // Nichts zu sagen -> gar nicht rendern. Eine leere Box unter einem Termin,
+  // der ohnehin schon "Abgesagt" im Kopf traegt, ist nur Flaeche. Die Knoepfe
+  // spielen hier seit dem 16.09.2026 keine Rolle mehr: Sie stehen jetzt in den
+  // Wisch-Aktionen der Liste, nicht in der Karte.
+  if (!grund && !zeigePlatzhalter) return null;
 
   const leiseFarbe = aufDunkel ? 'rgba(255,255,255,0.75)' : 'var(--app-text-tertiary)';
   const textFarbe = aufDunkel ? 'rgba(255,255,255,0.9)' : 'var(--app-text-secondary)';
@@ -154,60 +144,44 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
       </IonListHeader>
       <IonCard className="app-card">
         <IonCardContent className="app-card-content">
-          <div className="app-absage-block__text">
-            {grund ? (
-              <>
-                <span className="app-reason-box__label">Abgesagt:</span> {grund}
-              </>
-            ) : (
-              // Kein Grund ist kein Fehler (er war immer freiwillig, Migration 150)
-              // -- der Satz sagt nur, dass hier einer stehen koennte. Er steht
-              // ausdruecklich in ALLEN drei Rollen: Ohne ihn faellt der Block weg,
-              // und dann ist "kein Grund angegeben" von "alte Absage" nicht zu
-              // unterscheiden.
-              <span style={{ color: 'var(--app-text-secondary)' }}>Kein Grund zur Absage angegeben.</span>
-            )}
-            {urheberZeilen}
+          {/* Zeile 1: der Grund -- Icon links, Label darueber, Text darunter,
+              genau wie "Datum" und "Ort" im Abschnitt Details. */}
+          <div className="app-info-row app-info-row--top">
+            <IonIcon icon={ICON_ABSAGE} className="app-info-row__icon app-icon-color--danger app-event-detail__icon--align-top" />
+            <div>
+              <div className="app-info-row__label">Grund</div>
+              {grund ? (
+                <div className="app-info-row__value">{grund}</div>
+              ) : (
+                // Kein Grund ist kein Fehler (er war immer freiwillig, Migration 150)
+                // -- der Satz sagt nur, dass hier einer stehen koennte. Er steht
+                // ausdruecklich in ALLEN drei Rollen: Ohne ihn faellt der Block weg,
+                // und dann ist "kein Grund angegeben" von "alte Absage" nicht zu
+                // unterscheiden.
+                <div className="app-info-row__value" style={{ color: 'var(--app-text-secondary)' }}>
+                  Kein Grund zur Absage angegeben.
+                </div>
+              )}
+            </div>
           </div>
-          {/* Kein Rechte-Gate an dieser Stelle. Die Berechtigung sitzt im Backend
-              (requireTeamer + darfTermin, dieselbe wie beim Absagen); wer nicht
-              darf, bekommt 403. Genau deshalb steht der Knopf jetzt auch im Team:
-              Die Erlaubnis war da, nur die Oberflaeche fehlte. */}
-          {onGrundBearbeiten && (
-            <IonButton
-              size="small"
-              fill="clear"
-              color="danger"
-              disabled={bearbeitenDeaktiviert}
-              onClick={onGrundBearbeiten}
-              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
-            >
-              <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
-              {grund ? 'Grund bearbeiten' : 'Grund nachtragen'}
-            </IonButton>
-          )}
-          {/* ABSAGE ZURUECKNEHMEN (16.09.2026): Die Heizung ist doch rechtzeitig
-              repariert. Steht neben dem Grund und nicht an einer eigenen Stelle,
-              weil beides dasselbe betrifft -- die Absage -- und dieselbe
-              Berechtigung hat (requireTeamer + darfTermin, wie das Absagen
-              selbst). Kein Rechte-Gate hier: Wer nicht darf, bekommt 403.
-
-              Nicht 'danger': Der Knopf hebt eine Absage AUF. In Rot gelesen,
-              neben einer roten Zeile, sieht er aus wie "noch endgueltiger
-              absagen". Die Rueckfrage stellt der Aufrufer -- sie muss sagen, wie
-              viele Leute dabei einen Push bekommen. */}
-          {onZuruecknehmen && (
-            <IonButton
-              size="small"
-              fill="clear"
-              color="success"
-              disabled={bearbeitenDeaktiviert}
-              onClick={onZuruecknehmen}
-              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
-            >
-              <IonIcon icon={ICON_RUECKGAENGIG} className="app-event-detail__icon-gap" />
-              Absage zurücknehmen
-            </IonButton>
+          {/* Zeile 2: wer abgesagt hat und wer den Grund zuletzt geaendert hat.
+              Eine Zeile mit einem Icon, weil beide Angaben dieselbe Frage
+              beantworten -- "von wem". Fehlt beides (alte Absage vor
+              Migration 150), faellt die Zeile ersatzlos weg statt "von
+              unbekannt" zu behaupten. */}
+          {(absager || grundUrheber) && (
+            <div className="app-info-row app-info-row--top">
+              <IonIcon icon={ICON_PERSON} className="app-info-row__icon app-icon-color--danger app-event-detail__icon--align-top" />
+              <div>
+                <div className="app-info-row__label">Abgesagt von</div>
+                {absager && <div className="app-info-row__value">{absager}</div>}
+                {/* Zweite Zeile nur, wenn der Grund von jemand anderem stammt
+                    als die Absage (Migration 152) -- sonst staende hier zweimal
+                    derselbe Name. Die Entscheidung faellt in
+                    absagegrundUrheberZeile(). */}
+                {grundUrheber && <div className="app-info-row__value">{grundUrheber}</div>}
+              </div>
+            </div>
           )}
         </IonCardContent>
       </IonCard>
