@@ -112,18 +112,28 @@ describe('Befund B: keine Detailansicht streicht durch', () => {
 });
 
 // ------------------------------------------------------------------------
-// Befund E, neu gefasst (16.09.2026)
+// Befund E, zweimal neu gefasst (beides am 16.09.2026)
 //
-// GEAENDERTE ANFORDERUNG, KEINE AUFWEICHUNG: Bis zum Vormittag pruefte dieser
-// Abschnitt, dass Leitungs- und Team-Detailansicht onGrundBearbeiten an den
-// AbsageBlock durchreichen. Simons Entscheidung nach Build 196 dreht das um --
-// "grund und ruecknahme machen wir nur per slide auf der liste nicht im
-// termin unter absage". Die Karte im Termin ist reine Auskunft; beide
-// Aktionen sitzen in den Wisch-Aktionen der LISTE, in beiden Rollen.
+// ZUERST: Bis zum Vormittag pruefte dieser Abschnitt, dass Leitungs- und
+// Team-Detailansicht onGrundBearbeiten an den AbsageBlock durchreichen.
+// Simons Entscheidung nach Build 196 drehte das um -- "grund und ruecknahme
+// machen wir nur per slide auf der liste nicht im termin unter absage". Die
+// Karte im Termin ist seither reine Auskunft; die Aktionen sassen in den
+// Wisch-Aktionen der LISTE.
 //
-// Die Erwartung wird also nicht gelockert: Sie wandert von der Detailansicht
-// in die Liste und wird dort fuer BEIDE Aktionen geprueft, statt wie vorher
-// nur fuer eine.
+// DANN, AM NACHMITTAG DESSELBEN TAGES: Simon woertlich -- "teamer erstellen
+// keine veranstaltungen fertig. das machen admins und org admins. das ist
+// einfach nicht der weg. ich halte das fuer zu komplex. lass es uns
+// rausnehmen. also auch nicht loeschen und absagen". Die Teamer-Ansicht
+// verliert damit alle drei Wisch-Aktionen wieder; in der Leitungsliste
+// bleiben sie unveraendert stehen.
+//
+// GEAENDERTE ANFORDERUNG, KEINE AUFWEICHUNG: Die Erwartungen zur Teamer-Liste
+// werden nicht geloescht, sondern UMGEDREHT -- sie sichern jetzt ab, dass die
+// Aktionen dort fehlen. Die Leitungsliste wird unveraendert weiter geprueft,
+// damit sichtbar bleibt: Die Aktion ist nicht verschwunden, sie ist auf eine
+// Rolle zusammengezogen. Die 403/200-Gegenprobe im Backend steht in
+// backend/tests/routes/rbacTermine.test.js.
 // ------------------------------------------------------------------------
 
 describe('Befund E neu: Grund bearbeiten laeuft ueber den Wisch in beiden Listen', () => {
@@ -271,10 +281,27 @@ describe('Befund H: beide Teilnehmerlisten rechnen mit derselben Funktion', () =
   });
 });
 
-describe('Befund I: der Konfi-Reiter "Alle" sortiert abgesagte ans Ende', () => {
-  it('nutzt abgesagteAnsEnde aus eventFormatting', () => {
+describe('Befund I: der Konfi-Reiter "Alle" laesst abgesagte an ihrem Datum', () => {
+  // Umgedreht am 16.09.2026 (Entscheidung Simon): Bis zum 15.09. schob
+  // `abgesagteAnsEnde` sie ans Listenende. Ein abgesagter Termin soll aber an
+  // seinem Tag stehen, damit sichtbar ist, dass genau DIESER erwartete Termin
+  // ausfaellt. Der Test bleibt stehen und haelt die neue Richtung fest.
+  it('sortiert die Serverreihenfolge nicht um', () => {
     const quelle = code(ANSICHTEN.konfiListe);
-    expect(quelle).toContain('.sort(abgesagteAnsEnde)');
+    expect(quelle).not.toContain('abgesagteAnsEnde');
+    expect(quelle).toContain("nonKonfirmationEvents.filter(e => !istVergangen(e))");
+  });
+});
+
+describe('Befund II: ein abgesagter Termin bleibt im Reiter "Meine"', () => {
+  // Eine Terminabsage setzt seit Migration 153 alle Buchungen auf
+  // status='excused'. Der alte Filter fragte `is_registered ||
+  // booking_status === 'opted_out'` -- beides falsch fuer 'excused', der
+  // Termin verschwand aus "Meine".
+  it('filtert ueber zaehltAlsMeiner() statt an einzelnen Feldern', () => {
+    const quelle = code(ANSICHTEN.konfiListe);
+    expect(quelle).toContain('zaehltAlsMeiner');
+    expect(quelle).not.toContain("e.is_registered || e.booking_status === 'opted_out'");
   });
 });
 

@@ -28,7 +28,7 @@ import {
   ICON_UNENDLICH,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, abgesagteAnsEnde, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
@@ -81,10 +81,10 @@ const EventsView: React.FC<EventsViewProps> = ({
   // sagte das Abzeichen 'laeuft', die Liste zeigte sie aber nicht mehr an.
   const eventCounts = useMemo(() => ({
     all: events.length,
-    meine: events.filter(e => e.is_registered || e.booking_status === 'opted_out').length,
+    meine: events.filter(zaehltAlsMeiner).length,
     alle: nonKonfirmationEvents.filter(e => !istVergangen(e)).length,
-    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && !istVergangen(e)).length,
-    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && istVergangen(e)).length,
+    meineUpcoming: events.filter(e => zaehltAlsMeiner(e) && !istVergangen(e)).length,
+    meinePast: events.filter(e => zaehltAlsMeiner(e) && istVergangen(e)).length,
     konfirmation: konfirmationEvents.length,
     konfirmationUpcoming: konfirmationEvents.filter(e => !istVergangen(e)).length,
     konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
@@ -237,9 +237,12 @@ const EventsView: React.FC<EventsViewProps> = ({
   const getFilteredEvents = () => {
     switch (activeTab) {
       case 'meine':
-        return events.filter(e => e.is_registered || e.booking_status === 'opted_out');
+        return events.filter(zaehltAlsMeiner);
       case 'alle':
-        return nonKonfirmationEvents.filter(e => !istVergangen(e)).sort(abgesagteAnsEnde);
+        // ABGESAGTE BLEIBEN AN IHRER DATUMSPOSITION (Simon, 16.09.2026).
+        // Der Server liefert nach event_date aufsteigend; hier wird bewusst
+        // nicht umsortiert. Ausfuehrliche Begruendung in shared/eventFormatting.ts.
+        return nonKonfirmationEvents.filter(e => !istVergangen(e));
       case 'konfirmation':
         return konfirmationEvents;
       default:

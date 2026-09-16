@@ -81,7 +81,7 @@ import {
   istAbgesagt,
   streichtDurch,
   titelDekoration,
-  abgesagteAnsEnde,
+  istVergangen,
 } from '../../components/shared/eventFormatting';
 import {
   teilnahmeDarstellung,
@@ -657,34 +657,42 @@ describe('Befund H: Zeitfenster- und Nicht-Zeitfenster-Liste zeigen dasselbe Lab
 });
 
 // ------------------------------------------------------------------------
-// Befund I: Abgesagte ans Ende des Konfi-Reiters "Alle"
+// Befund I (16.09.2026): Abgesagte bleiben an ihrer Datumsposition
+//
+// Am 15.09.2026 gab es hier kurzzeitig `abgesagteAnsEnde`, das abgesagte
+// Termine im Konfi-Reiter "Alle" ans Listenende schob. Simon hat das am
+// 16.09.2026 zurueckgenommen: Der Termin soll an seinem Tag stehen, damit
+// sichtbar ist, dass GENAU DIESER erwartete Termin ausfaellt. Die Erwartung
+// dreht sich damit um -- die Tests bleiben stehen, damit niemand die
+// Sortierung versehentlich wieder einbaut.
 // ------------------------------------------------------------------------
 
-describe('Befund I: abgesagte Termine stehen am Ende des Reiters "Alle"', () => {
-  it('sortiert abgesagte hinter die anmeldbaren', () => {
-    const liste = [
-      { id: 1, cancelled: false },
-      { id: 2, cancelled: true },
-      { id: 3, cancelled: false },
-      { id: 4, registration_status: 'cancelled' },
-    ];
-    expect([...liste].sort(abgesagteAnsEnde).map(e => e.id)).toEqual([1, 3, 2, 4]);
+describe('Befund I: abgesagte Termine bleiben an ihrer Datumsposition', () => {
+  it('eventFormatting exportiert keine Sortierung mehr, die abgesagte verschiebt', async () => {
+    const modul = await import('../../components/shared/eventFormatting');
+    expect('abgesagteAnsEnde' in modul).toBe(false);
   });
 
-  it('laesst die Datumsreihenfolge des Servers innerhalb der beiden Gruppen stehen', () => {
-    // Array.prototype.sort ist seit ES2019 stabil -- wer nach Datum
-    // hereinkommt, bleibt nach Datum stehen.
-    const liste = [
-      { id: 10, cancelled: false },
-      { id: 20, cancelled: true },
-      { id: 30, cancelled: true },
-      { id: 40, cancelled: false },
-    ];
-    expect([...liste].sort(abgesagteAnsEnde).map(e => e.id)).toEqual([10, 40, 20, 30]);
+  it('der Konfi-Reiter "Alle" sortiert die Serverliste nicht um', () => {
+    const quelle = ohneKommentare(
+      readFileSync(resolve(process.cwd(), 'src/components/konfi/views/EventsView.tsx'), 'utf8')
+    );
+    // Der Server liefert nach event_date aufsteigend; der Reiter filtert nur.
+    expect(quelle).toContain("nonKonfirmationEvents.filter(e => !istVergangen(e))");
+    expect(quelle).not.toContain('.sort(abgesagteAnsEnde)');
+    expect(quelle).not.toContain('abgesagteAnsEnde');
   });
 
-  it('eine Liste ohne Absagen bleibt unveraendert', () => {
-    const liste = [{ id: 1 }, { id: 2 }, { id: 3 }];
-    expect([...liste].sort(abgesagteAnsEnde).map(e => e.id)).toEqual([1, 2, 3]);
+  it('die gefilterte Liste behaelt die Datumsreihenfolge -- der Abgesagte steht in der Mitte', () => {
+    // Genau Simons Fall: drei Termine, der mittlere faellt aus. Er muss an
+    // Position 2 stehen bleiben, nicht ans Ende wandern.
+    const jetzt = new Date('2026-09-16T12:00:00');
+    const liste = [
+      { id: 1, title: 'Mittwoch', event_date: '2026-09-17T18:00:00', cancelled: false },
+      { id: 2, title: 'Freitag', event_date: '2026-09-18T18:00:00', cancelled: true },
+      { id: 3, title: 'Montag', event_date: '2026-09-21T18:00:00', cancelled: false },
+    ];
+    const gefiltert = liste.filter(e => !istVergangen(e, jetzt));
+    expect(gefiltert.map(e => e.id)).toEqual([1, 2, 3]);
   });
 });

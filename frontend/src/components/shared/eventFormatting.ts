@@ -200,33 +200,57 @@ export const titelDekoration = (
 ): 'line-through' | 'none' => (streichtDurch(ort, event) ? 'line-through' : 'none');
 
 /**
- * Sortiert abgesagte Termine ans ENDE, sonst bleibt die Reihenfolge wie sie
- * ist (der Server liefert nach event_date aufsteigend). 15.09.2026.
+ * ABGESAGTE TERMINE BLEIBEN AN IHRER DATUMSPOSITION (Entscheidung Simon,
+ * 16.09.2026) -- und deshalb steht hier keine Sortierfunktion mehr.
  *
- * WARUM DAS KONFI-REITER "ALLE" DAS BRAUCHT: Dort stehen die anmeldbaren
- * Termine. Ein abgesagter ist der einzige darunter, bei dem Tippen zu nichts
- * fuehrt -- er mischte sich aber nach Datum zwischen die anderen, und wer die
- * Liste von oben durchgeht, laeuft mitten im Anmelden in eine Sackgasse.
+ * Am 15.09.2026 gab es kurzzeitig ein `abgesagteAnsEnde`, das die abgesagten
+ * Termine im Konfi-Reiter "Alle" ans Listenende schob. Die Begruendung damals:
+ * ein abgesagter Termin ist der einzige, bei dem Tippen zu nichts fuehrt, also
+ * soll er niemandem im Anmeldeweg stehen.
  *
- * WARUM NICHT AUSBLENDEN: Die Konfi-Liste zeigt einen abgesagten Termin
- * ueberhaupt nur, wenn sie selbst dafuer gebucht war (backend/routes/konfi.js:
- * `e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL`). Er geht sie also an
- * -- sie hat sich angemeldet und muss sehen, dass er ausfaellt. Ihn hier zu
- * verstecken hiesse, die Absage vor genau der Person zu verbergen, die
- * betroffen ist.
+ * Diese Begruendung sticht nicht. Der Termin steht im Kalender der Konfi an
+ * einem bestimmten Tag; sie sucht ihn dort und nirgendwo sonst. Wandert er ans
+ * Ende, sieht sie an seiner Datumsstelle eine Luecke und muss raten, ob der
+ * Termin je existierte. Steht er an seinem Platz -- durchgestrichen und mit
+ * rotem Eck-Badge --, dann beantwortet die Liste im Vorbeigehen genau die
+ * Frage, die sie hat: "Was ist mit dem Termin am Freitag?" Ausfallen ist eine
+ * Aussage ueber einen Tag, keine Zeile am Listenende.
  *
- * WARUM KEIN EIGENER ABSCHNITT: Ein vierter Abschnitt fuer im Schnitt einen
- * Eintrag kostet mehr Platz und Erklaerung, als er einspart. Am Ende der
- * Liste, durchgestrichen und mit dem roten Eck-Badge, ist er zu finden und
- * steht niemandem im Weg.
- *
- * Stabil: Bei gleicher Absage-Lage bleibt die Serverreihenfolge erhalten
- * (Array.prototype.sort ist seit ES2019 stabil).
+ * Das war eine Entscheidung, kein Versehen: Wer die Sortierung wieder
+ * einbauen will, hat es mit diesem Absatz zu tun.
  */
-export const abgesagteAnsEnde = <T extends { cancelled?: boolean; registration_status?: string }>(
-  a: T,
-  b: T
-): number => Number(istAbgesagt(a)) - Number(istAbgesagt(b));
+
+/**
+ * Gehoert dieser Termin in den Konfi-Reiter "Meine"? (16.09.2026)
+ *
+ * DER FEHLER, DEN DAS BEHEBT: Der Reiter fragte `is_registered ||
+ * booking_status === 'opted_out'`. `is_registered` setzt das Backend aber nur
+ * bei `status = 'confirmed'` (backend/routes/konfi.js). Seit Migration 153
+ * (15.09.2026) setzt eine Terminabsage ALLE Buchungen auf `status = 'excused'`
+ * -- damit kippte `is_registered` auf false, `booking_status` stand auf
+ * 'excused', und der Termin verschwand aus "Meine". Ausgerechnet die Person,
+ * die sich angemeldet hatte, verlor die Absage aus dem Blick: Im Reiter "Alle"
+ * stand sie zwar noch, aber "Meine" ist der Ort, an dem man nach den eigenen
+ * Terminen sieht. Ein Folgefehler der Umstellung, kein alter Zustand.
+ *
+ * WER HIER DAZUGEHOERT: jede Person mit einer Buchung an diesem Termin, egal
+ * in welchem Zustand. Wer angemeldet WAR, sieht den Termin weiter -- bestaetigt
+ * ('confirmed'), auf der Warteliste ('waitlist'), selbst abgemeldet
+ * ('opted_out') oder durch Absage bzw. Leitung abgemeldet ('excused').
+ * Die Karte sagt ueber ihr Badge, welcher Fall vorliegt; das Herausfiltern
+ * waere die falsche Stelle dafuer.
+ *
+ * WARUM NICHT EINFACH `booking_status`-LISTE: Weil jeder neue Zustand sonst
+ * wieder still Termine verschwinden liesse. Gefragt wird deshalb, OB eine
+ * Buchung existiert -- `booking_status` ist genau dann gesetzt, wenn
+ * `eb_konfi.id IS NOT NULL` ist. `is_registered` bleibt als zweites Kriterium
+ * stehen fuer Pflichttermine, bei denen das Backend die Anmeldung ohne
+ * eigene Buchungszeile herleitet.
+ */
+export const zaehltAlsMeiner = (event: {
+  is_registered?: boolean;
+  booking_status?: string | null;
+}): boolean => !!event.is_registered || !!event.booking_status;
 
 // --- Die drei Reiter der Leitungs-Terminliste ---------------------------
 //
