@@ -219,20 +219,37 @@ bereits ausgebucht".
 
 ### Nachvollziehen, wann jemand nachrückt
 
-Das passiert automatisch, in vier Fällen:
+**Wird ein belegter Platz frei, rückt nach.** Das gilt für jeden Weg, auf dem
+ein Platz frei wird — nicht nur für die Abmeldung durch die Person selbst:
 
 | Auslöser | Was passiert |
 |---|---|
-| Jemand meldet sich ab | die erste wartende Person rückt nach |
+| Jemand meldet sich selbst ab | die erste wartende Person rückt nach |
+| Eine Konfi meldet sich von einem Pflichttermin ab | dasselbe |
+| Du meldest jemanden ab („Abgemeldet") | dasselbe |
+| Du trägst jemanden aus | dasselbe |
+| Du setzt jemanden auf die Warteliste zurück | dasselbe |
+| Du löschst eine Konfi | auf jeden ihrer Plätze rückt jemand nach |
+| Du beförderst eine Konfi zur Teamer:in | dasselbe — ihre Konfi-Plätze werden frei |
+| Du verschiebst eine Konfi in einen anderen Jahrgang | auf den Plätzen der Termine des alten Jahrgangs rückt nach |
 | Du erhöhst die Teilnehmerzahl | so viele rücken nach, wie neue Plätze da sind |
 | Du erhöhst die Plätze eines Zeitfensters | dasselbe, aber nur in diesem Zeitfenster |
 | Du erhöhst das Teamer-Kontingent | die wartenden Teamer:innen rücken nach |
 
 Nachgerückt wird in der Reihenfolge der Anmeldung; die nachgerückte Person
-bekommt einen Push. Gelöschte Nutzer:innen rücken nie nach.
+bekommt einen Push und kommt in den Chat zum Termin, falls es einen gibt.
+Gelöschte Nutzer:innen rücken nie nach.
 
 > **Ein frei gewordener Konfi-Platz geht niemals an eine wartende Teamer:in** —
 > und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.
+
+> **An einem abgesagten Termin rückt niemand nach.** Der Termin findet nicht
+> statt; eine Meldung „Ein Platz ist frei geworden, du bist jetzt angemeldet"
+> wäre dort schlicht falsch. Wer auf der Warteliste steht, bleibt stehen.
+
+Setzt du jemanden auf die Warteliste zurück, geht der geräumte Platz an die
+**nächste wartende Person** — nicht an die eben herabgestufte zurück. Wartet
+sonst niemand, bleibt sie schlicht auf der Warteliste stehen.
 
 Reduzierst du die Plätze, wird **niemand zurückgestuft**. Wer bestätigt ist,
 bleibt bestätigt, auch wenn dadurch mehr Leute drin sind als erlaubt. Erst
@@ -301,6 +318,12 @@ ist ausgebucht und hat keine Warteliste."
 
 Die in der Übersicht angezeigte Gesamtzahl ist bei Zeitfenster-Terminen die
 Summe aller Fensterplätze.
+
+Unter jedem Fenster stehen die Angemeldeten, und zwar mit demselben Zustand wie
+in Terminen ohne Zeitfenster: anwesend, abwesend, abgemeldet oder gebucht, in
+denselben Farben und mit dem Abmeldegrund darunter. Wer sich abgemeldet hat,
+bleibt dort sichtbar — der Platz ist damit nicht frei, sondern belegt und
+abgemeldet.
 
 ### Zeitfenster nachträglich ändern
 
@@ -380,6 +403,22 @@ Teilnehmerliste, und alle im Team sehen ihn.
 Punkte gibt es dabei keine; schon vergebene werden zurückgenommen, genau wie
 bei „Abwesend". Die Konfi bekommt eine Mitteilung, dass die Abmeldung
 eingetragen wurde — so sieht sie, dass der Anruf von zu Hause angekommen ist.
+
+Danach ist für sie Ruhe: Die Terminerinnerungen am Vortag und kurz vor Beginn
+bleiben aus. Das gilt für jede verbuchte Anwesenheit — wer als anwesend,
+abwesend oder abgemeldet eingetragen ist, bekommt zu diesem Termin keine
+Erinnerung mehr.
+
+**Der Platz wird frei.** Eine Abmeldung zählt nicht mehr als Anmeldung: Der
+Termin hat wieder einen Platz mehr, und wartet jemand, [rückt er
+nach](#nachvollziehen-wann-jemand-nachrueckt). In der Teilnehmerliste rutscht
+die abgemeldete Person nach unten zu den anderen Abgemeldeten, statt zwischen
+den Anwesenden zu stehen.
+
+Einchecken kann sie sich danach nicht mehr selbst: Der QR-Scanner meldet „Du
+wurdest von diesem Termin abgemeldet". Steht sie doch vor dir, trägst du sie
+über dasselbe Menü als **Anwesend** ein — damit zählt die Anmeldung wieder,
+und die Punkte gibt es auch.
 
 In der [Anwesenheits-Matrix](30-leitung.md#konfis-und-teamer-innen-verwalten) steht dafür ein
 grauer Punkt, und der Termin zählt nicht in die Pflicht-Summe — so wie bei
@@ -652,6 +691,11 @@ Unter dem Grund steht klein, wer abgesagt hat und wann („Abgesagt von Simon
 Luthe, 15.09."). Bei Terminen, die vor der Einführung des Grundes abgesagt
 wurden, fehlt diese Zeile — da ist schlicht nicht festgehalten, wer es war.
 
+Hast du keinen Grund angegeben, steht in der Detailansicht „Kein Grund zur
+Absage angegeben." Der Satz steht für Leitung, Team und Konfis gleichermaßen
+da: Ohne ihn wäre nicht zu erkennen, ob niemand einen Grund geschrieben hat
+oder ob die Absage aus der Zeit vor diesem Feld stammt.
+
 > **Der Grund ist öffentlich.** Zwanzig Konfis lesen ihn auf dem
 > Sperrbildschirm. Was intern bleiben soll, gehört nicht in dieses Feld,
 > sondern in den Termin-Chat oder ins Gespräch.
@@ -687,9 +731,9 @@ Eile nichts eingetragen hat oder sich vertippt, kommt so noch einmal heran.
 Zwei Wege führen dorthin:
 
 - In der **Detailansicht** steht unter dem Grund „Grund bearbeiten"; fehlt
-  einer, heißt der Knopf „Grund nachtragen".
-- In der **Terminliste** wischst du den abgesagten Termin nach links — dort,
-  wo bei den übrigen „Absagen" steht.
+  einer, heißt der Knopf „Grund nachtragen". Diesen Weg hat auch das Team.
+- In der **Terminliste der Leitung** wischst du den abgesagten Termin nach
+  links — dort, wo bei den übrigen „Absagen" steht.
 
 Es öffnet sich dasselbe Fenster wie beim Absagen, mit dem Text, der bisher
 dasteht. Leerst du das Feld und speicherst, fällt der Grund weg und der Termin
@@ -699,6 +743,15 @@ steht wieder nur als abgesagt da.
 eine Korrektur am Begleittext ist keine zweite Absage. Wer möchte, dass alle
 von der Änderung erfahren, schreibt sie in den Termin-Chat.
 
+**Der neue Text kommt trotzdem überall an.** Er steht danach nicht nur am
+Termin, sondern auch in der Teilnehmerliste bei allen, die durch die Absage
+abgemeldet wurden — als ihr Abmeldegrund. Löschst du den Grund ganz, steht bei
+ihnen wieder „Termin abgesagt".
+
+Wem du vorher einen **eigenen Grund** eingetragen hast, etwa „krank, Mutter hat
+angerufen", der behält ihn. Dieser Grund gehört der Person und nicht dem
+Termin; eine Korrektur am Absagegrund rührt ihn nicht an.
+
 Ändert jemand anderes den Grund als die Person, die abgesagt hat, steht das
 darunter („Grund geändert von Anna Meier, 16.09."). „Abgesagt von" nennt
 weiterhin, wer den Termin tatsächlich abgesagt hat — wer einen Tippfehler
@@ -706,7 +759,9 @@ korrigiert, hat den Termin nicht abgesagt. Ändert die absagende Person ihren
 eigenen Grund, bleibt es bei der einen Zeile.
 
 Wer bearbeiten darf, richtet sich nach denselben Regeln wie das Absagen: Wer
-den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht.
+den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:innen
+gehören dazu — sie tragen den Grund in der Detailansicht des Termins nach.
+Konfis lesen ihn nur.
 
 ### Wo ein abgesagter Termin steht
 
@@ -714,6 +769,16 @@ Das richtet sich nach dem Datum: Solange der Termin noch bevorsteht oder
 läuft, findest du ihn unter **„Aktuell"**, danach unter **„Vergangen"** —
 durchgestrichen in beiden Fällen. Unter **„Verbuchen"** taucht er nicht auf:
 An einem abgesagten Termin gibt es nichts zu verbuchen.
+
+In allen Listen und auf den Startseiten steht ein abgesagter Termin
+durchgestrichen und grau, mit rotem Zeichen in der Ecke — für Leitung, Team und
+Konfis gleich. In der Detailansicht bleibt der Titel ungestrichen: Dort sagen
+die Überschrift „Abgesagt", die rote Farbe und der Kasten mit dem Grund
+ohnehin schon, woran man ist.
+
+Konfis sehen einen abgesagten Termin nur, wenn sie dafür angemeldet waren — er
+geht sie ja an. Im Reiter **„Alle"** steht er am Ende der Liste, hinter den
+Terminen, für die man sich noch anmelden kann.
 
 ### Einen Termin löschen
 
@@ -724,6 +789,12 @@ versehentlich passiert, fragt das System nach — einmal wegen der Anmeldungen
 („Für dieses Event gibt es 12 Anmeldung(en). Beim Löschen werden alle
 benachrichtigt.") und einmal wegen des Chats („Der Event-Chat enthält 34
 Nachricht(en). Beim Löschen gehen sie verloren.").
+
+Benachrichtigt wird beim Löschen nur, wer es noch nicht weiß: Löschst du einen
+Termin, der **noch nicht abgesagt** war, bekommen alle Angemeldeten und alle
+auf der Warteliste die Meldung, dass er ausfällt. Räumst du dagegen einen
+**bereits abgesagten** Termin auf, bleibt es still — die Absage war schon
+gemeldet, ein zweites Mal sagt sie niemandem etwas Neues.
 
 > **Faustregel:** Ein Termin, der stattfinden sollte und ausfällt, wird
 > **abgesagt**. Ein Termin, den es nie hätte geben sollen (Tippfehler,

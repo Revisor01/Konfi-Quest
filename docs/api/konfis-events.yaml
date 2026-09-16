@@ -936,6 +936,11 @@ paths:
         bekommt 200 mit bereits_abgemeldet=true statt eines Fehlers — ein
         Doppelversand aus der Offline-Warteschlange soll nicht als Fehlschlag
         ankommen (28.08.2026). Der Grund der ersten Abmeldung bleibt stehen.
+        Der frei gewordene Platz wird nachbesetzt: Die erste wartende Konfi
+        rueckt nach, bekommt einen Push und kommt in den Termin-Chat
+        (behoben 15.09.2026 — bis dahin verfiel der Platz). An einem
+        abgesagten Termin rueckt niemand nach. Die Route laeuft dafuer seit
+        dem 15.09.2026 transaktional.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -1206,6 +1211,18 @@ paths:
         benennen. Der manuelle Weg setzt 'manuell' (siehe PUT
         /api/events/{id}/participants/{participantId}/attendance); NULL heisst
         weiterhin unbekannt. Rein additiv, kein Backfill.
+        ADDITIV 15.09.2026 (Migration 153) — ABGEMELDETE WERDEN ABGEWIESEN:
+        Wer von der Leitung abgemeldet wurde, traegt status='excused' und
+        bekommt 400 mit error_type 'excused' ("Du wurdest von diesem Termin
+        abgemeldet"). Vorher fiel dieser Fall in den Sammelzweig
+        'not_confirmed', dessen Text die Warteliste beschreibt. Erlaubt wird
+        der Check-in bewusst NICHT: Er ist die Bestaetigung einer bestehenden
+        Anmeldung, und es gibt keine mehr — sonst koennte eine krank gemeldete
+        Person ihre Abmeldung selbst aufheben und sich Punkte gutschreiben.
+        Der Rueckweg laeuft ueber die Leitung (PUT .../attendance mit
+        'present', das holt status auf 'confirmed' zurueck). Ein neuer
+        error_type ist ein neuer WERT, kein neues Feld; ausgelieferte
+        Fassungen zeigen den mitgelieferten error-Text.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1223,7 +1240,7 @@ paths:
                 token: { type: string, description: JWT aus dem QR-Code }
       responses:
         "200": { description: "message, event_name, event_id, points_awarded (bzw. already_checked_in)" }
-        "400": { description: "error_type: missing_token | invalid_token | too_early | too_late | not_registered | opted_out | not_confirmed" }
+        "400": { description: "error_type: missing_token | invalid_token | too_early | too_late | not_registered | opted_out | excused (ADDITIV 15.09.2026, Migration 153: von der Leitung abgemeldet) | not_confirmed" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "error_type: wrong_organization" }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -1422,8 +1439,23 @@ paths:
         mit booking_count, message_count, points_count und points_total fuer
         die Rueckfrage im Frontend (Befund M2/M3, behoben 26.08.2026; vorher
         zwei getrennte 409er event_has_bookings/event_has_chat, die das
-        Frontend per pauschalem force=true umging). Gebuchte Konfis werden
-        per Push informiert.
+        Frontend per pauschalem force=true umging).
+
+
+        GEBUCHTE KONFIS WERDEN PER PUSH INFORMIERT — ABER NUR, WENN DER TERMIN
+        NICHT SCHON ABGESAGT WAR (BEHOBEN 15.09.2026). Bis dahin ging bei
+        JEDEM Loeschen ein event_cancelled-Push raus. Wer einen Termin erst
+        absagt und ihn spaeter aufraeumt (der Weg, den das Handbuch empfiehlt),
+        schickte denselben Konfis zweimal "Leider abgesagt" fuer denselben
+        Termin — beim zweiten Mal stand er in der App laengst durchgestrichen.
+        Kein Vertragsbruch gegenueber ausgelieferten Fassungen: Ein Push ist
+        ein Ereignis, kein Antwortfeld; die Antwortform bleibt unveraendert.
+
+
+        OHNE event_id IM PUSH: Der Termin ist in derselben Transaktion
+        geloescht, ein Sprung dorthin fuehrte ins Leere. Die Meldung landet
+        auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push
+        seit dem 15.09.2026 sehr wohl eine event_id.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateEventId]
@@ -1698,6 +1730,13 @@ paths:
         status confirmed <-> waitlist. Degradierung auf waitlist löscht
         attendance_status und nimmt vergebene Event-Punkte zurück;
         Befoerderung von der Warteliste pusht an die betroffene Person.
+        BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz
+        frei — dort rueckt jetzt die naechste wartende Person derselben
+        Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die
+        gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die
+        Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste
+        (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt
+        die Person aus. An einem abgesagten Termin rueckt niemand nach.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1830,6 +1869,28 @@ paths:
         dabei 'opted_out' und wird NICHT umgeschrieben; die Abmeldung ist die
         Vorgeschichte des Eintrags. Anzeigen richten sich nach dem
         Anwesenheits-Status, sobald einer gesetzt ist.
+        GEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT:
+        attendance_status='excused' setzt zusaetzlich status='excused',
+        ein Wechsel auf 'present'/'absent' holt ihn von 'excused' zurueck auf
+        'confirmed'. Grund: Am Buchungsstatus haengen Erinnerungen, Kapazitaet,
+        Nachruecken und die Sortierung der Teilnehmerliste — solange er auf
+        'confirmed' stand, war die Abmeldung fuer all das unsichtbar (die
+        abgemeldete Person bekam Erinnerungen, belegte einen Platz, die
+        Warteliste rueckte nicht nach, und sie stand in der Liste ganz oben).
+        Umgeschaltet wird NUR zwischen 'confirmed'/'waitlist' und 'excused';
+        'opted_out' (siehe oben), 'cancelled' und 'pending' bleiben
+        unangetastet. 'waitlist' -> 'excused' -> zurueck landet auf
+        'confirmed': Wer da war, hatte einen Platz.
+        Zugleich wird abgemeldet_durch_absage=FALSE gesetzt — diese Abmeldung
+        ist eine Einzelentscheidung und ueberlebt das Zuruecknehmen einer
+        Terminabsage (dort steht TRUE, siehe PUT /api/events/{id}/cancel).
+        ANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt,
+        keines wechselt den Typ — booking_status traegt lediglich einen WERT
+        mehr. Ausgelieferte Fassungen (2.1.1) stuerzen daran nachgemessen
+        nicht ab (alle Fundstellen haben Fallbacks); sie zeigen die Person als
+        "Gebucht" und zaehlen sie an sieben Stellen nicht mit. Bei den zum
+        Umstellungszeitpunkt sechs betroffenen Bestandsbuchungen bewusst
+        hingenommen (Entscheidung Simon, 15.09.2026).
         ADDITIV 13.09.2026 (Migration 148): Jedes Schreiben haelt Urheber und
         Zeitpunkt fest. Festgehalten wird der aktuelle Stand, keine Historie.
         Am Request aendert sich nichts.
@@ -1846,6 +1907,14 @@ paths:
         gesetzt; aendert er nichts, bleibt jeder Urheber stehen. Wird die
         Notiz geloescht, faellt ihr Paar auf NULL zurueck. Am Request aendert
         sich nichts.
+        BEHOBEN 15.09.2026 — NACHRUECKEN: Eine Abmeldung durch die Leitung
+        gibt den Platz frei (der Buchungsstatus zieht seit Migration 153 auf
+        'excused' mit). Die naechste wartende Person derselben
+        Kontingent-Seite rueckt jetzt nach, bekommt einen Push, traegt
+        war_auf_warteliste und kommt in den Termin-Chat. Bis dahin rief diese
+        Route bookingUtils gar nicht auf und der Platz verfiel. An einem
+        abgesagten Termin rueckt niemand nach. Die Antwortform aendert sich
+        nicht.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1943,10 +2012,24 @@ paths:
         und die Salden in konfi_profiles zurueckgerechnet. Schlaegt das
         Abmelden fehl, faellt auch die Absage zurueck (500).
 
-        ANTWORTFORM UNVERAENDERT: eb.status bleibt 'confirmed'/'waitlist' --
-        NUR attendance_status wird gesetzt. Ausgelieferte App-Fassungen
-        filtern Teilnehmerlisten ueber status === 'confirmed'; ein Wechsel
-        dort haette die Personen aus ihren Listen entfernt.
+        GEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT:
+        Dasselbe Mengen-UPDATE setzt jetzt auch status='excused' und
+        abgemeldet_durch_absage=TRUE. Bis dahin blieb status auf
+        'confirmed'/'waitlist' stehen, begruendet mit dem Alt-App-Vertrag
+        (ausgelieferte Fassungen filtern Teilnehmerlisten ueber
+        status === 'confirmed'). Der Preis war zu hoch: Am Buchungsstatus
+        haengen Erinnerungen, Kapazitaet, Nachruecken und Sortierung — dort
+        blieb die Abmeldung unsichtbar, und zwar SERVERSEITIG, wo keine
+        App-Fassung sie heilen kann. Nachgemessen stuerzt 2.1.1 an dem neuen
+        Wert nicht ab; die Person erscheint dort als "Gebucht".
+
+        abgemeldet_durch_absage=TRUE ist der Unterschied zur EINZELnen
+        Abmeldung ueber PUT .../attendance (dort FALSE). Nur Abmeldungen mit
+        TRUE werden aufgehoben, wenn die Absage zurueckgenommen wird; wer
+        vorher von Hand oder selbst abgemeldet wurde, bleibt abgemeldet.
+
+        ANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt,
+        keines wechselt den Typ — status traegt einen WERT mehr.
 
         NICHT angetastet werden bereits verbuchte Buchungen
         (attendance_status IS NOT NULL) -- eine getroffene Entscheidung wird
@@ -1971,6 +2054,15 @@ paths:
         Push-Text sowie unter data.cancelled_reason mitgeschickt. Ohne Grund
         bleibt der Push-Text unveraendert. cancelled_by haelt fest, wer
         abgesagt hat.
+
+        TERMIN-KENNUNG IM PUSH (BEHOBEN 15.09.2026): data.event_id kommt
+        additiv dazu. Der Absage-Push war der einzige Termin-Push ohne sie
+        (sendEventChangedToKonfis, sendMandatoryEventCreated und
+        sendEventRegisteredToKonfi tragen sie seit jeher) — ein Tipp auf die
+        Meldung landete deshalb auf der Terminliste statt am Termin, wo der
+        Grund ausfuehrlich steht. Alte App-Fassungen lesen den Schluessel
+        nicht und verhalten sich unveraendert. Beim LOESCHEN eines Termins
+        faellt er weg: Den Termin gibt es dann nicht mehr.
 
         notification_message bleibt unveraendert bestehen: Das Feld wurde nie
         gespeichert oder verschickt, es kommt nur in der Antwort zurueck.
@@ -2025,8 +2117,27 @@ paths:
       tags: ["Termine (Verwaltung)"]
       summary: Absagegrund eines bereits abgesagten Termins aendern, nachtragen oder loeschen
       description: >
-        NEU 15.09.2026 (Migration 152). Setzt allein events.cancelled_reason
-        an einem Termin, der BEREITS abgesagt ist.
+        NEU 15.09.2026 (Migration 152). Setzt events.cancelled_reason an einem
+        Termin, der BEREITS abgesagt ist — und schreibt den Text in derselben
+        Transaktion an die Buchungen der Abgemeldeten mit.
+
+
+        BEHOBEN 15.09.2026: Bis dahin schrieb die Route ALLEIN an
+        events.cancelled_reason. Die Absage traegt den Grund aber auch als
+        event_bookings.excuse_reason bei jeder abgemeldeten Person ein
+        (bookingUtils.meldeAlleAbBeiAbsage). Nach einer Korrektur stand am
+        Termin der neue Text und in der Teilnehmerliste bei jeder Einzelnen
+        weiter der alte — derselbe Sachverhalt an zwei Stellen mit zwei
+        Texten.
+
+
+        NUR WER DURCH DIE ABSAGE ABGEMELDET WURDE: Das UPDATE waehlt ueber
+        event_bookings.abgemeldet_durch_absage = TRUE (Migration 153). Ein von
+        Hand eingetragener Grund ("krank, Mutter hat angerufen") steht auf
+        FALSE und bleibt unberuehrt — er gehoert der Person, nicht dem Termin.
+        Wird der Grund geleert, steht bei den Abgemeldeten wieder der feste
+        Text 'Termin abgesagt' (ABSAGE_OHNE_GRUND) und nicht NULL, genau wie
+        beim Absagen ohne Grund.
 
         BEHOBEN 15.09.2026: Bis hierher liess sich der Absagegrund nach der
         Absage nicht mehr anfassen — PUT /{id}/cancel lehnt einen bereits
@@ -2066,6 +2177,13 @@ paths:
           Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung
           bleiben allen Leitungsrollen offen; org_admin und super_admin sind
           ausgenommen.
+        oberflaeche: >
+          BEHOBEN 15.09.2026: Die Rolle 'teamer' stand hier von Anfang an,
+          einen Weg dorthin gab es aber nur in der Leitungsansicht. Seither
+          zeigt auch die Teamer-Detailansicht den Knopf "Grund nachtragen" /
+          "Grund bearbeiten" (TeamerEventsPage). Konfis rufen die Route nicht
+          auf — requireTeamer laesst sie nicht durch, und sie bekommen dort
+          bewusst keinen Knopf.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         content:
@@ -2647,6 +2765,13 @@ paths:
         gemessen antwortete der PUT mit 200 und schrieb die Konfi in den
         Jahrgang einer FREMDEN Organisation. Ueber die App war das nicht
         erreichbar (kein Aufrufer im Frontend), die Route stand aber offen.
+        BEHOBEN 15.09.2026: Die ausgetragenen bestaetigten Buchungen geben
+        Plaetze frei — dort rueckt jetzt die naechste wartende Konfi nach
+        (Push, war_auf_warteliste, Termin-Chat). Der Kommentar im Code nannte
+        den "Geisterplatz, auf den niemand nachruecken konnte" schon als
+        geloest; geloest war aber nur das Liegenbleiben der Buchung.
+        Ausgetragene Wartelisten-Buchungen loesen nichts aus, an abgesagten
+        Terminen rueckt niemand nach.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateKonfi]
@@ -2685,6 +2810,13 @@ paths:
         deren Fremdschlüssel blockierte das Löschen vorher mit 500).
         Dieselbe Funktion trägt die Selbstloeschung über
         POST /auth/delete-account, dort für jede Rolle.
+        BEHOBEN 15.09.2026: deleteKonfiCascade sammelt die bestaetigten
+        Buchungen VOR dem Loeschen ein und laesst auf jeden frei gewordenen
+        Platz die naechste wartende Person nachruecken — Kontingent-Seite
+        nach der Rolle der geloeschten Person, damit ein Team-Platz nie an
+        eine wartende Konfi geht. Die Funktion liefert die Nachgerueckten
+        zurueck, der Push geht nach dem COMMIT raus. An abgesagten Terminen
+        rueckt niemand nach.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -2987,6 +3119,10 @@ paths:
         Jahrgang und die Zuweisung kommt bewusst spaeter ueber die
         Benutzerverwaltung. Die eigenen eingefrorenen Konfi-Daten bleiben
         davon unberuehrt (haengen an konfi_profiles, nicht an der Zuweisung).
+        BEHOBEN 15.09.2026: Die geloeschten Buchungen geben Konfi-Plaetze
+        frei — dort rueckt jetzt die naechste wartende KONFI nach (fest
+        'konfi', nicht aus der bereits gewechselten Rolle abgeleitet). An
+        abgesagten Terminen rueckt niemand nach.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

@@ -212,6 +212,19 @@ Benutzerverwaltung —, hält diese Regeln ein:
 Die App zeigt beim Eintippen an, was noch fehlt. Die erzeugten
 Einmalpasswörter erfüllen dieselben Regeln — das Komma zählt als Sonderzeichen.
 
+### Ein Passwort vorschlagen lassen
+
+Wo ein Org-Admin ein Passwort selbst vergibt, steht unter dem Feld der Knopf
+**„Sicheres Passwort vorschlagen"** — beim Setzen eines Leitungspassworts
+ebenso wie beim Anlegen einer neuen Organisation. Ein Tipp darauf füllt das
+Feld mit vierzehn zufälligen Zeichen, die alle Regeln oben erfüllen, und macht
+es zugleich sichtbar, damit du es notieren und weitergeben kannst.
+
+Verwechselbare Zeichen kommen darin nicht vor: kein großes I, kein großes O,
+kein kleines l, keine Null und keine Eins. Das Passwort lässt sich also auch
+vorlesen. Gefällt dir der Vorschlag nicht, tippst du einfach noch einmal auf
+den Knopf.
+
 ## Konfis kommen neu dazu: der Einladungscode
 
 Neue Konfis muss niemand von Hand anlegen: Die Leitung erzeugt eine Einladung,

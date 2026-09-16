@@ -23,6 +23,14 @@ Challenge, steht sie oben. Ist dein
 [Jahresrückblick](95-wrapped.md#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen)
 freigegeben, erscheint hier ein Banner dafür.
 
+Unter **Events** stehen die nächsten Termine: die, zu denen du zugesagt hast,
+und die, für die noch Team gesucht wird. **Fällt einer deiner Termine aus,
+steht er weiter da — als abgesagt, mit dem Grund** und darunter, wer abgesagt
+hat. Genau dafür ist die Startseite da: Ein Termin, der einfach verschwindet,
+sagt „nichts los" statt „fällt aus". Termine, für die Team gesucht wurde und
+die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts
+zugesagt.
+
 ## Mit Team und Konfis schreiben
 
 ![Die Chat-Übersicht der Teamer:innen.](/docs/bilder/iphone/teamer-chat.png)

@@ -832,8 +832,8 @@ paths:
       description: >
         Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit
         eigenem Status (valid | expired | not_earned), die nächsten bis zu
-        fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in
-        selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit
+        fuenf zukuenftigen Termine, für die die Teamer:in selbst gebucht ist
+        oder für die Team gesucht wird, die letzten drei erreichten Teamer-Abzeichen mit
         Zaehlern sowie die Dashboard-Konfiguration der Organisation
         (show_zertifikate, show_challenges, show_konfispruch, show_events,
         show_badges, show_losung und section_order aus den
@@ -843,6 +843,24 @@ paths:
         wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft,
         ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser
         selbst laedt das Frontend separat über GET /api/challenges/admin.
+        GEAENDERT 15.09.2026 — ABGESAGTE TERMINE: Bis dahin filterte die
+        Abfrage sie hart weg (AND e.cancelled IS NOT TRUE), und die
+        Spaltenliste holte zwar e.cancelled, aber weder cancelled_reason noch
+        die Namen — der cancelled-Zweig der Teamer-Startseite konnte gar nicht
+        greifen. Jetzt gilt dieselbe Regel wie in der Konfi-Liste
+        (GET /api/konfi/events, Entscheidung Simon 27.08.2026): abgesagt UND
+        eigene Buchung -> steht in der Liste; abgesagt OHNE eigene Buchung ->
+        steht NICHT darin. Wer zugesagt hat, muss auf der Startseite sehen,
+        dass der Termin ausfaellt; eine Einladung ("Teamer:innen gesucht") zu
+        etwas, das nicht stattfindet, ist dagegen keine.
+        ADDITIV dazu fuenf Felder je Termin: cancelled_reason, cancelled_by,
+        cancelled_at, cancelled_by_name und cancelled_reason_set_by_name
+        (Migration 150/152). Die beiden Namen kommen ueber LEFT JOIN — Termine,
+        die vor diesen Migrationen abgesagt wurden, haben keinen Urheber und
+        muessen trotzdem in der Liste stehen. NULL heisst bei cancelled_reason
+        "kein Grund angegeben", bei den Namen "unbekannt". Kein bestehendes
+        Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die
+        neuen Schluessel nicht und verhalten sich unveraendert.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
@@ -862,7 +880,7 @@ paths:
                 properties:
                   greeting: { type: object, description: "display_name, hour" }
                   certificates: { type: array, items: { type: object }, description: "id, name, icon, issued_date, expiry_date, status" }
-                  events: { type: array, items: { type: object }, description: "id, title, event_date, location, teamer_only, teamer_needed, is_registered, booking_status" }
+                  events: { type: array, items: { type: object }, description: "id, title, event_date, event_end_time, location, type, teamer_only, teamer_needed, bring_items, cancelled, is_registered, booking_status; ADDITIV 15.09.2026: cancelled_reason, cancelled_by, cancelled_at, cancelled_by_name, cancelled_reason_set_by_name (alle NULL, wenn nicht abgesagt bzw. ohne Grund/Urheber)" }
                   badges: { type: object, description: "recent[], earned_count, total_count" }
                   config: { type: object, description: "show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung, section_order" }
                   has_wrapped: { type: boolean }

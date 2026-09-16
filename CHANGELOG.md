@@ -64,8 +64,27 @@ Versionsüberschrift.
   das Logo. Auf Android sind bei eingeschalteter Sperre zusätzlich
   Bildschirmfotos innerhalb der App gesperrt. Wer die Sperre auf „Aus" stehen
   lässt, merkt davon nichts.
+- Beim Anlegen einer Organisation gibt es unter dem Passwortfeld denselben
+  Knopf „Sicheres Passwort vorschlagen" wie beim Setzen eines neuen
+  Passworts — der Vorschlag ist sichtbar, damit er sich weitergeben lässt.
 
 ### Geändert
+- **Abgesagte Termine sehen überall gleich aus.** In allen Listen und auf den
+  Startseiten steht ein abgesagter Termin durchgestrichen und grau — bisher
+  galt das für Konfis und Leitung, im Team sah er aus wie jeder andere. Der
+  Absagegrund steht jetzt auch auf den Startseiten, also genau dort, wo man
+  nach der Mitteilung zuerst landet. Wer den Grund nachträglich geändert hat,
+  wird für alle genannt und nicht nur der Leitung. Ist kein Grund angegeben,
+  sagt die Detailansicht das auch — vorher war „kein Grund" nicht von einer
+  alten Absage zu unterscheiden. Und das Team kann einen Grund jetzt selbst
+  nachtragen oder ändern; erlaubt war es längst, nur der Knopf fehlte.
+- Die Kachel „Abgemeldet" zählt nach einer Terminabsage wieder alle
+  Abgemeldeten statt null. In Terminen mit Zeitfenstern stehen Abmeldungen
+  jetzt ebenfalls in der Teilnehmerliste — mit Grund und in derselben Farbe
+  wie in Terminen ohne Zeitfenster; vorher fielen sie dort ganz heraus und der
+  Platz sah frei aus.
+- Im Reiter „Alle" stehen abgesagte Termine am Ende der Liste statt zwischen
+  den Terminen, für die man sich noch anmelden kann.
 - Wird ein Termin abgesagt, sind alle Angemeldeten und alle auf der Warteliste
   automatisch **abgemeldet** — mit dem Absagegrund als Grund, ohne Grund mit dem
   Vermerk „Termin abgesagt". Punkte gibt es dafür keine; schon vergebene werden
@@ -103,6 +122,49 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Wird ein Platz frei, rückt jetzt in **jedem** Fall die nächste wartende
+  Person nach — auch wenn eine Konfi sich von einem Pflichttermin abmeldet, die
+  Leitung jemanden abmeldet, jemanden auf die Warteliste zurücksetzt, eine
+  Konfi löscht, sie zur Teamer:in befördert oder in einen anderen Jahrgang
+  verschiebt. Bisher verfiel der Platz auf diesen Wegen stillschweigend: Die
+  Warteliste blieb stehen, obwohl er offen war.
+- An einem **abgesagten** Termin rückt niemand mehr nach. Bisher konnte dort
+  „Ein Platz ist frei geworden — du bist jetzt angemeldet" ankommen, für einen
+  Termin, der gar nicht stattfindet.
+- Holt die Leitung jemanden von Hand von der Warteliste, merkt sich der
+  Jahresrückblick jetzt, dass diese Person gewartet hat. Dasselbe gilt beim
+  Erhöhen der Plätze — dort kamen die Nachgerückten außerdem nicht in den Chat
+  zum Termin.
+- Wird der Absagegrund nachträglich geändert, kommt die Korrektur jetzt auch
+  bei den Teilnehmenden an. Bisher stand am Termin der neue Text und in der
+  Teilnehmerliste bei jeder einzelnen Person weiter der alte. Wer einen
+  eigenen Grund bekommen hat, etwa „krank, Mutter hat angerufen", behält ihn.
+- Ein Tipp auf die Absage-Meldung führt jetzt zum Termin statt nur zur
+  Terminliste — dort steht der Grund ausführlich und darunter, wer abgesagt
+  hat.
+- Wird ein bereits abgesagter Termin später gelöscht, geht keine zweite
+  Absage-Meldung mehr raus. Bisher bekamen die Angemeldeten denselben Termin
+  zweimal abgesagt. Beim Löschen eines Termins, der noch nicht abgesagt war,
+  wird weiterhin benachrichtigt.
+- Wer abgemeldet ist, bekommt keine Erinnerung mehr zu dem Termin. Bisher kam
+  nach „Abmeldung eingetragen" trotzdem am Vortag „Morgen: …" und kurz vor
+  Beginn „Gleich: …". Das gilt jetzt für jede verbuchte Anwesenheit — wer als
+  anwesend, abwesend oder abgemeldet eingetragen ist, wird nicht mehr erinnert.
+- Eine Abmeldung gibt den Platz jetzt wirklich frei. Bisher zählte die
+  abgemeldete Person weiter als angemeldet: Der Termin blieb ausgebucht,
+  niemand rückte von der Warteliste nach, und in der Teilnehmerliste stand sie
+  ganz oben zwischen den Anwesenden. Jetzt rutscht sie zu den Abgemeldeten
+  nach unten, der Platz ist wieder buchbar und die Warteliste rückt nach.
+  Wird die Anwesenheit später doch auf anwesend gesetzt, zählt die Anmeldung
+  wieder.
+- Wer abgemeldet ist, kann sich nicht mehr selbst per QR-Code einchecken. Die
+  Meldung sagt jetzt, dass abgemeldet wurde, statt von einer unbestätigten
+  Anmeldung zu sprechen. Wer doch da ist, wird von der Leitung eingetragen.
+- Auf der Startseite der Teamer:innen steht ein abgesagter Termin, zu dem man
+  zugesagt hat, weiterhin in der Liste — als abgesagt, mit Grund und mit dem
+  Namen der Person, die abgesagt hat. Bisher verschwand er wortlos, und die
+  Zusage blieb im Kopf. Termine, für die nur Team gesucht wurde, verschwinden
+  nach einer Absage wie bisher.
 - Im Browser am Rechner ließen sich Bilder und Dateien im Chat nicht mehr
   öffnen: Statt der Datei kam die Meldung „Fehler beim Öffnen der Datei", ohne
   dass die Datei überhaupt geladen wurde. Ursache war die kurze Vibration, die
@@ -170,6 +232,10 @@ Versionsüberschrift.
 - Eine eingetragene Anwesenheit wird nicht mehr als Fehler gemeldet, obwohl sie
   gespeichert wurde. Wer daraufhin ein zweites Mal tippte, konnte vergebene
   Punkte durcheinanderbringen.
+- Bei eingeschalteter App-Sperre blitzte beim Start aus dem ganz geschlossenen
+  Zustand kurz die App auf, bevor der Sperrbildschirm davorsprang. Jetzt ist bis
+  zur Sperre nichts davon zu sehen. Wer die Sperre nicht nutzt, startet
+  unverändert.
 
 ### Sonstiges
 - Zwei Kacheln im Konfi-Profil, die seit ihrer Entstehung nie erschienen sind
