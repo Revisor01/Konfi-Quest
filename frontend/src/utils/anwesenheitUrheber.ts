@@ -157,6 +157,35 @@ export const absagegrundUrheberZeile = (angabe: AbsageAngabe | null | undefined)
   return zeile('Grund geändert von', grundName, angabe?.cancelled_reason_set_at);
 };
 
+/**
+ * Dasselbe wie absageUrheberZeile(), aber OHNE den Vorspann: nur
+ * "Pastorin Kathrin Möller, 16.09."
+ *
+ * WARUM ES BEIDE GIBT (Simon, 16.09.2026): In der Absage-Karte steht das
+ * Label "Abgesagt von" schon als eigene Zeile darueber -- der volle Satz
+ * ergaebe dort "Abgesagt von" ueber "Abgesagt von Kathrin Möller". In Listen
+ * und Kacheln steht kein Label daneben, dort traegt die Zeile ihren Vorspann
+ * weiter selbst.
+ */
+export const absageUrheberName = (angabe: AbsageAngabe | null | undefined): string | null =>
+  zeile('', angabe?.cancelled_by_name, angabe?.cancelled_at);
+
+/**
+ * "Geändert von Anna Meier, 16.09." fuer die Karte -- kurz, weil das Label
+ * daneben schon "Abgesagt von" sagt und diese Zeile nur die Abweichung
+ * nachtraegt. Dieselbe Regel wie absagegrundUrheberZeile(): nur wenn es eine
+ * ANDERE Person war als beim Absagen.
+ */
+export const absagegrundUrheberName = (angabe: AbsageAngabe | null | undefined): string | null => {
+  const grundName = angabe?.cancelled_reason_set_by_name?.trim();
+  if (!grundName) return null;
+
+  const absagerName = angabe?.cancelled_by_name?.trim();
+  if (absagerName && absagerName === grundName) return null;
+
+  return zeile('Geändert von', grundName, angabe?.cancelled_reason_set_at);
+};
+
 const zeile = (
   vorspann: string,
   name: string | null | undefined,
@@ -165,7 +194,10 @@ const zeile = (
   const sauber = name?.trim();
   if (!sauber) return null;
 
-  return mitDatum(`${vorspann} ${sauber}`, zeitstempel);
+  // Leerer Vorspann heisst "nur der Name" (absageUrheberName) -- ohne diese
+  // Fallunterscheidung staende dort ein fuehrendes Leerzeichen.
+  const text = vorspann ? `${vorspann} ${sauber}` : sauber;
+  return mitDatum(text, zeitstempel);
 };
 
 /**

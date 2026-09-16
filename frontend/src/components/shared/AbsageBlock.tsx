@@ -1,7 +1,7 @@
 import React from 'react';
 import { IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader } from '@ionic/react';
 import { ICON_ABSAGE, ICON_PERSON } from './icons';
-import { absageUrheberZeile, absagegrundUrheberZeile, AbsageAngabe } from '../../utils/anwesenheitUrheber';
+import { absageUrheberZeile, absagegrundUrheberZeile, absageUrheberName, absagegrundUrheberName, AbsageAngabe } from '../../utils/anwesenheitUrheber';
 import { istAbgesagt } from './eventFormatting';
 
 // DER ABGESAGTE TERMIN, EINMAL GESCHRIEBEN (15.09.2026)
@@ -93,6 +93,9 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   const grund = event.cancelled_reason?.trim() || '';
   const absager = absageUrheberZeile(event);
   const grundUrheber = absagegrundUrheberZeile(event);
+  // Kurzformen fuer die Karte: dort steht das Label "Abgesagt von" daneben.
+  const absagerName = absageUrheberName(event);
+  const grundUrheberName = absagegrundUrheberName(event);
 
   // Nichts zu sagen -> gar nicht rendern. Eine leere Box unter einem Termin,
   // der ohnehin schon "Abgesagt" im Kopf traegt, ist nur Flaeche. Die Knoepfe
@@ -174,12 +177,15 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
               <IonIcon icon={ICON_PERSON} className="app-info-row__icon app-icon-color--danger app-event-detail__icon--align-top" />
               <div>
                 <div className="app-info-row__label">Abgesagt von</div>
-                {absager && <div className="app-info-row__value">{absager}</div>}
+                {/* Nur der Name, ohne Vorspann: "Abgesagt von" steht schon als
+                    Label darueber. Der volle Satz ergaebe hier "Abgesagt von"
+                    ueber "Abgesagt von Kathrin Möller" (Simon, 16.09.2026). */}
+                {absagerName && <div className="app-info-row__value">{absagerName}</div>}
                 {/* Zweite Zeile nur, wenn der Grund von jemand anderem stammt
                     als die Absage (Migration 152) -- sonst staende hier zweimal
                     derselbe Name. Die Entscheidung faellt in
-                    absagegrundUrheberZeile(). */}
-                {grundUrheber && <div className="app-info-row__value">{grundUrheber}</div>}
+                    absagegrundUrheberName(). */}
+                {grundUrheberName && <div className="app-info-row__value">{grundUrheberName}</div>}
               </div>
             </div>
           )}

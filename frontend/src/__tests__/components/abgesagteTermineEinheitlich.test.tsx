@@ -190,9 +190,13 @@ describe('AbsageBlock als Kasten (Detailansichten aller drei Rollen)', () => {
   it('zeigt Grund, Absagenden UND die Person, die den Grund geaendert hat', () => {
     render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
     expect(screen.getByText('Heizung im Gemeindehaus defekt', { exact: false })).toBeTruthy();
-    expect(screen.getByText('Abgesagt von Anna Meier, 15.09.')).toBeTruthy();
+    // Nur der Name: "Abgesagt von" steht als Label darueber (Simon, 16.09.2026
+    // -- "da steht jetzt abgesagt von und dann nochmal abgesagt von, das
+    // reicht wohl in der ueberschrift"). Die Zeile-Variante behaelt den
+    // Vorspann, dort gibt es kein Label.
+    expect(screen.getByText('Anna Meier, 15.09.')).toBeTruthy();
     // Befund C: Diese Zeile gab es vorher nur bei der Leitung.
-    expect(screen.getByText('Grund geändert von Bernd Schulz, 16.09.')).toBeTruthy();
+    expect(screen.getByText('Geändert von Bernd Schulz, 16.09.')).toBeTruthy();
   });
 
   it('nennt NICHT zweimal denselben Namen, wenn Absage und Grund von derselben Person stammen', () => {
@@ -202,15 +206,15 @@ describe('AbsageBlock als Kasten (Detailansichten aller drei Rollen)', () => {
         variante="kasten"
       />
     );
-    expect(screen.getByText('Abgesagt von Anna Meier, 15.09.')).toBeTruthy();
-    expect(screen.queryByText(/Grund geändert von/)).toBeNull();
+    expect(screen.getByText('Anna Meier, 15.09.')).toBeTruthy();
+    expect(screen.queryByText(/Geändert von/)).toBeNull();
   });
 
   it('Befund F: ohne Grund steht der Platzhaltersatz da -- in JEDER Rolle', () => {
     render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
     expect(screen.getByText('Kein Grund zur Absage angegeben.')).toBeTruthy();
     // Wer abgesagt hat, bleibt sichtbar -- die Auskunft ist ja da.
-    expect(screen.getByText('Abgesagt von Anna Meier, 15.09.')).toBeTruthy();
+    expect(screen.getByText('Anna Meier, 15.09.')).toBeTruthy();
   });
 
   it('ein Termin, der nicht abgesagt ist, rendert gar nichts', () => {
@@ -244,7 +248,7 @@ describe('AbsageBlock als Kasten (Detailansichten aller drei Rollen)', () => {
         variante="kasten"
       />
     );
-    expect(screen.getByText('Grund geändert von Bernd Schulz, 16.09.')).toBeTruthy();
+    expect(screen.getByText('Geändert von Bernd Schulz, 16.09.')).toBeTruthy();
   });
 });
 
@@ -401,7 +405,8 @@ describe('die Karte benutzt die Info-Zeilen des Details-Abschnitts', () => {
     expect(urheberZeile.querySelector('.app-info-row__icon')).not.toBeNull();
     expect(urheberZeile.querySelector('.app-info-row__label')?.textContent).toBe('Abgesagt von');
     const werte = Array.from(urheberZeile.querySelectorAll('.app-info-row__value')).map(e => e.textContent);
-    expect(werte).toEqual(['Abgesagt von Anna Meier, 15.09.', 'Grund geändert von Bernd Schulz, 16.09.']);
+    // Ohne Vorspann -- das Label darueber sagt schon "Abgesagt von".
+    expect(werte).toEqual(['Anna Meier, 15.09.', 'Geändert von Bernd Schulz, 16.09.']);
   });
 
   it('auch der Platzhaltersatz steht als Wert in der Grund-Zeile', () => {
