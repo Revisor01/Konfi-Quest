@@ -377,11 +377,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           <IonCard className="app-card">
           <IonCardContent>
             <IonList>
-              <IonItem lines="none">
+              <IonItem lines="none" className="app-datumsfeld">
                 <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
-              <IonItem lines="none">
+              <IonItem lines="none" className="app-datumsfeld">
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
@@ -442,12 +442,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                       />
                     </IonItem>
                     {!!formData.registration_opens_at && (
-                      <IonItem lines="none">
+                      <IonItem lines="none" className="app-datumsfeld">
                         <IonLabel position="stacked">Anmeldung ab</IonLabel>
                         <IonDatetimeButton datetime="registration-opens-picker" />
                       </IonItem>
                     )}
-                    <IonItem lines="none">
+                    <IonItem lines="none" className="app-datumsfeld">
                       <IonLabel position="stacked">Anmeldeschluss</IonLabel>
                       <IonDatetimeButton datetime="registration-closes-picker" />
                     </IonItem>
@@ -485,7 +485,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   }} disabled={loading} />
               </IonItem>
               {formData.has_timeslots && (
-                <div className="app-event-detail__add-button-wrapper" style={{ padding: '0 var(--app-abstand-basis)' }}>
+                <div className="app-modal-knopf-in-karte" style={{ padding: '0 var(--app-abstand-basis)' }}>
                   <IonButton
                     expand="block"
                     fill="outline"
@@ -516,11 +516,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
             <IonCard className="app-card">
               <IonCardContent>
                 <IonList>
-                  <IonItem lines="none">
+                  <IonItem lines="none" className="app-datumsfeld">
                     <IonLabel position="stacked">Startzeit</IonLabel>
                     <IonDatetimeButton datetime={`timeslot-start-${index}`} />
                   </IonItem>
-                  <IonItem lines="none">
+                  <IonItem lines="none" className="app-datumsfeld">
                     <IonLabel position="stacked">Endzeit</IonLabel>
                     <IonDatetimeButton datetime={`timeslot-end-${index}`} />
                   </IonItem>

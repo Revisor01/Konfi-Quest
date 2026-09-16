@@ -2065,6 +2065,47 @@ ion-toggle.app-toggle--events {
   margin: var(--app-abstand-basis);
 }
 
+/* === Datums-Knopf unter einer gestapelten Beschriftung ===
+   Ionic deckelt ein ion-item mit position="stacked" auf --min-height: 55px
+   und setzt overflow: hidden auf die innere Huelle. Das passt fuer ein
+   ion-input, das mitschrumpft -- ein ion-datetime-button ist aber fest 31px
+   hoch. Gemessen im Browser (16.09.2026): Beschriftung ab 12px, 18px hoch,
+   Knopf ab 12+18 = 31px bis 61px -- 6px mehr als die 55px, die das Item
+   hergibt. Ergebnis: die Unterlaengen der Beschriftung liegen unter dem
+   Knopf und werden am Item-Rand abgeschnitten.
+   Darum hier: Hoehe aufmachen statt deckeln, und nichts wegschneiden. */
+.app-datumsfeld {
+  --min-height: 0;
+  overflow: visible;
+}
+.app-datumsfeld::part(native) {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding-top: var(--app-abstand-eng);
+  padding-bottom: var(--app-abstand-eng);
+}
+/* Die gestapelte Beschriftung wird von Ionic per
+   transform: scale(.75) translateY(12px) verschoben. Der Text rutscht dabei
+   nach unten, ihr Layout-Kasten bleibt aber stehen -- ein margin-bottom an
+   der Beschriftung greift deshalb nicht (gemessen: bleibt 0). Der Abstand
+   muss vom Knopf kommen: 10px lassen gemessene 6,3px Luft zwischen dem
+   Ende des Beschriftungstextes und der Oberkante des Knopfes. */
+.app-datumsfeld ion-datetime-button {
+  margin-top: 10px;
+}
+
+/* === Knopf am unteren Rand einer Karte ===
+   app-event-detail__add-button-wrapper zieht mit margin-bottom: -7px Ionics
+   eigenen Button-Rand zurueck. In einer ion-card mit overflow: hidden
+   schneidet das die untere Kante des Knopfes ab (im Browser gesehen:
+   der Umriss von "Zeitfenster hinzufuegen" endete an der Kartenkante).
+   Hier nur so viel zuruecknehmen, wie Ionic wirklich setzt (4px). */
+.app-modal-knopf-in-karte {
+  margin-top: var(--app-abstand-eng);
+  margin-bottom: -4px;
+}
+
 /* === Modal Section Header === */
 /* Flexbox-Container für Section-Header in Modals */
 .app-modal-section-header {
