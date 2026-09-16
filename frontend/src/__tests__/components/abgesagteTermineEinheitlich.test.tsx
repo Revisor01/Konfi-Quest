@@ -31,15 +31,44 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+/**
+ * Quelltext ohne Kommentare -- wortgleich mit dem Helfer im Ansichten-Test
+ * nebenan (abgesagteTermineAnsichten.test.ts). Bewusst kopiert statt
+ * importiert: Ein Import aus einer *.test.ts-Datei liesse Vitest deren
+ * Suite ein zweites Mal registrieren.
+ *
+ * Ohne ihn schlaegt eine Pruefung an einer Zeichenkette an, die nur in der
+ * Erklaerung steht -- im Repo dreimal passiert.
+ */
+const ohneKommentare = (quelltext: string): string =>
+  quelltext
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
 
 // Ionic-Bausteine durch schlichte Elemente ersetzen: Der Test interessiert
 // sich fuer Text und Zustand, nicht fuer Web Components.
-vi.mock('@ionic/react', () => ({
-  IonIcon: (props: { icon?: unknown }) => <span data-testid="icon" data-icon={String(props.icon)} />,
-  IonButton: ({ children, disabled, onClick }: { children?: React.ReactNode; disabled?: boolean; onClick?: () => void }) => (
-    <button type="button" disabled={disabled} onClick={onClick}>{children}</button>
-  ),
-}));
+// Die Karten-Bausteine behalten ihre Klassennamen: Genau an ihnen haengt
+// die Pruefung, dass der Kasten im Karten-Muster der Nachbarabschnitte
+// steht (16.09.2026).
+vi.mock('@ionic/react', () => {
+  const alsTag = (tag: string) =>
+    ({ children, className }: { children?: React.ReactNode; className?: string }) =>
+      React.createElement(tag, { className }, children);
+  return {
+    IonIcon: (props: { icon?: unknown }) => <span data-testid="icon" data-icon={String(props.icon)} />,
+    IonButton: ({ children, disabled, onClick }: { children?: React.ReactNode; disabled?: boolean; onClick?: () => void }) => (
+      <button type="button" disabled={disabled} onClick={onClick}>{children}</button>
+    ),
+    IonList: alsTag('ion-list'),
+    IonListHeader: alsTag('ion-list-header'),
+    IonLabel: alsTag('ion-label'),
+    IonCard: alsTag('ion-card'),
+    IonCardContent: alsTag('ion-card-content'),
+  };
+});
 
 import AbsageBlock from '../../components/shared/AbsageBlock';
 import {
@@ -224,6 +253,119 @@ describe('AbsageBlock als Zeile (Listen und Dashboard-Kacheln)', () => {
   it('ohne Grund bleibt die Zeile leer -- das Eck-Badge sagt "Abgesagt" schon', () => {
     const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="zeile" />);
     expect(container.textContent).toBe('');
+  });
+});
+
+// ------------------------------------------------------------------------
+// Der Kasten steht in einer Karte wie seine Nachbarn (16.09.2026)
+//
+// Simons Befund: "das feld in einem termin das abgesagt sagt ist gut. aber es
+// muss in einer weissen card stehen im gleichen stil wie alle anderen."
+//
+// Das Vorbild ist UnregistrationsSection in
+// admin/views/EventDetailSections.tsx -- und mit ihr Details, Beschreibung
+// und Material: IonList.app-section-inset > IonListHeader mit rundem
+// Abschnitts-Icon > IonCard.app-card > IonCardContent.app-card-content.
+// Geprueft wird auf genau diese Klassen, nicht auf "irgendein Element ist da".
+// ------------------------------------------------------------------------
+
+describe('der Kasten traegt das Karten-Muster der Nachbarabschnitte', () => {
+  const kasten = (extra: Record<string, unknown> = {}) =>
+    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" {...extra} />).container;
+
+  it('sitzt in ion-list.app-section-inset wie Details, Beschreibung und Abmeldungen', () => {
+    expect(kasten().querySelector('ion-list.app-section-inset')).not.toBeNull();
+  });
+
+  it('hat einen Abschnittskopf mit rundem roten Icon -- das Rot bleibt als Akzent', () => {
+    const c = kasten();
+    expect(c.querySelector('ion-list-header')).not.toBeNull();
+    expect(c.querySelector('.app-section-icon.app-section-icon--danger')).not.toBeNull();
+    expect(screen.getByText('Absage')).toBeTruthy();
+  });
+
+  it('die Flaeche ist die gemeinsame weisse Karte (ion-card.app-card)', () => {
+    const c = kasten();
+    expect(c.querySelector('ion-card.app-card')).not.toBeNull();
+    expect(c.querySelector('ion-card-content.app-card-content')).not.toBeNull();
+  });
+
+  it('die rot getoente Flaeche ist weg -- sonst waere es ein Kasten IN der Karte', () => {
+    const c = kasten();
+    expect(c.querySelector('.app-reason-box')).toBeNull();
+    expect(c.querySelector('.app-reason-box--danger')).toBeNull();
+  });
+
+  it('das Wort "Abgesagt:" bleibt rot ausgezeichnet (app-reason-box__label)', () => {
+    // Der Label-Stil faerbt nur die Schrift, nicht die Flaeche -- er darf
+    // bleiben und traegt das Rot in die Karte.
+    const label = kasten().querySelector('.app-reason-box__label');
+    expect(label).not.toBeNull();
+    expect(label?.textContent).toBe('Abgesagt:');
+  });
+
+  it('auch ohne Grund steht der Platzhaltersatz IN der Karte, nicht daneben', () => {
+    const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
+    const karte = container.querySelector('ion-card-content.app-card-content');
+    expect(karte).not.toBeNull();
+    expect(karte?.textContent).toContain('Kein Grund zur Absage angegeben.');
+  });
+
+  it('beide Knoepfe stehen IN der Karte', () => {
+    const c = kasten({ onGrundBearbeiten: () => {}, onZuruecknehmen: () => {} });
+    const karte = c.querySelector('ion-card-content.app-card-content');
+    expect(karte?.querySelectorAll('button').length).toBe(2);
+  });
+});
+
+describe('Zeile und dunkle Kachel bekommen KEINE Karte', () => {
+  it('die Zeile in der Liste traegt keine Karten-Auszeichnung', () => {
+    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="zeile" />);
+    expect(container.querySelector('ion-list.app-section-inset')).toBeNull();
+    expect(container.querySelector('ion-card.app-card')).toBeNull();
+    expect(container.querySelector('.app-section-icon--danger')).toBeNull();
+    // Der Inhalt ist trotzdem da -- geprueft wird die Form, nicht die Leere.
+    expect(container.textContent).toContain('Heizung im Gemeindehaus defekt');
+  });
+
+  it('die Kachel mit Farbverlauf (aufDunkel) ebenfalls nicht', () => {
+    const { container } = render(
+      <AbsageBlock event={abgesagtMitGrund} variante="zeile" aufDunkel />
+    );
+    expect(container.querySelector('ion-list.app-section-inset')).toBeNull();
+    expect(container.querySelector('ion-card.app-card')).toBeNull();
+    expect(container.textContent).toContain('Heizung im Gemeindehaus defekt');
+  });
+});
+
+// Die Karte darf keine festen Farbwerte mitbringen: Ein Dunkelmodus
+// faerbt ueber die Tokens um, eine hart notierte Farbe bliebe weiss im
+// schwarzen Umfeld. Geprueft wird der Quelltext OHNE Kommentare -- eine
+// Farbe in der Erklaerung ist erlaubt, im Code nicht.
+describe('keine festen Farbwerte in der neuen Auszeichnung', () => {
+  const quelle = ohneKommentare(
+    readFileSync(resolve(process.cwd(), 'src/components/shared/AbsageBlock.tsx'), 'utf8')
+  );
+
+  it('AbsageBlock.tsx enthaelt keine Hexfarbe', () => {
+    expect(quelle.match(/#[0-9a-fA-F]{3,8}\b/g)).toBeNull();
+  });
+
+  it('und keine benannte oder rgb()-Farbe ausserhalb der bestehenden Kachel-Weisstoene', () => {
+    // rgba(255,255,255,...) gehoert zur Variante 'aufDunkel' und stand
+    // schon vorher da (heller Text auf dem Farbverlauf). Alles andere waere neu.
+    const rgbFunde = (quelle.match(/rgba?\([^)]*\)/g) ?? []).filter(
+      (f) => !f.startsWith('rgba(255,255,255,')
+    );
+    expect(rgbFunde).toEqual([]);
+    expect(quelle).not.toMatch(/(background|color)\s*:\s*['"]?white['"]?/);
+  });
+
+  it('die Karten-Klassen stehen im Code, nicht nur im Kommentar', () => {
+    // Gegenprobe zur Pruefmethode: ohneKommentare() darf die Klassennamen
+    // nicht wegschneiden -- sonst waeren die Pruefungen oben wertlos.
+    expect(quelle).toContain('app-section-inset');
+    expect(quelle).toContain('app-card-content');
   });
 });
 

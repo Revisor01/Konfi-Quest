@@ -1,6 +1,6 @@
 import React from 'react';
-import { IonButton, IonIcon } from '@ionic/react';
-import { ICON_BEARBEITEN, ICON_RUECKGAENGIG } from './icons';
+import { IonButton, IonCard, IonCardContent, IonIcon, IonLabel, IonList, IonListHeader } from '@ionic/react';
+import { ICON_ABSAGE, ICON_BEARBEITEN, ICON_RUECKGAENGIG } from './icons';
 import { absageUrheberZeile, absagegrundUrheberZeile, AbsageAngabe } from '../../utils/anwesenheitUrheber';
 import { istAbgesagt } from './eventFormatting';
 
@@ -20,10 +20,26 @@ import { istAbgesagt } from './eventFormatting';
 // nachgebaut wurde. Deshalb steht er jetzt einmal hier.
 //
 // WAS DIE VARIANTEN UNTERSCHEIDET: nur der Rahmen, nicht der Inhalt.
-// 'kasten' ist der rote Kasten der Detailansichten, 'zeile' die kompakte
+// 'kasten' ist der Abschnitt der Detailansichten, 'zeile' die kompakte
 // Form fuer Listeneintraege und Dashboard-Kacheln, wo kein Platz fuer einen
 // Kasten ist. Beide zeigen dieselben drei Aussagen in derselben Reihenfolge:
 // Grund, wer abgesagt hat, wer den Grund zuletzt geaendert hat.
+//
+// DIE KARTE (16.09.2026, Simons Befund): Der Kasten war vorher eine rot
+// getoente Flaeche, die frei zwischen den Abschnitten schwebte -- die
+// Nachbarn (Details, Beschreibung, Abmeldungen, Material) stehen alle im
+// gleichen Muster: IonList.app-section-inset > IonListHeader mit rundem
+// Abschnitts-Icon > IonCard.app-card > IonCardContent.app-card-content.
+// Das Vorbild ist UnregistrationsSection in admin/views/EventDetailSections.tsx:
+// weisse Karte, roter Kopf-Kreis, der Grund darin. Genau so sitzt der
+// Absageblock jetzt auch.
+//
+// WIE VIEL ROT BLEIBT: der Kreis im Kopf (app-section-icon--danger), das
+// Wort "Abgesagt:" (app-reason-box__label faerbt es rot) und der Knopf
+// "Grund bearbeiten". Die FLAECHE ist weiss wie ueberall -- die rote
+// Tonung (app-reason-box--danger) faellt weg, sonst waere es wieder ein
+// Kasten in der Karte. Erkennbar bleibt die Absage damit dreifach: am Kopf
+// "Absage", am roten Kreis und am roten Label.
 
 interface AbsageBlockProps {
   /**
@@ -129,64 +145,73 @@ const AbsageBlock: React.FC<AbsageBlockProps> = ({
   }
 
   return (
-    <div
-      className="app-reason-box app-reason-box--danger"
-      style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}
-    >
-      {grund ? (
-        <>
-          <span className="app-reason-box__label">Abgesagt:</span> {grund}
-        </>
-      ) : (
-        // Kein Grund ist kein Fehler (er war immer freiwillig, Migration 150)
-        // -- der Satz sagt nur, dass hier einer stehen koennte. Er steht
-        // ausdruecklich in ALLEN drei Rollen: Ohne ihn faellt der Block weg,
-        // und dann ist "kein Grund angegeben" von "alte Absage" nicht zu
-        // unterscheiden.
-        <span style={{ color: 'var(--app-text-secondary)' }}>Kein Grund zur Absage angegeben.</span>
-      )}
-      {urheberZeilen}
-      {/* Kein Rechte-Gate an dieser Stelle. Die Berechtigung sitzt im Backend
-          (requireTeamer + darfTermin, dieselbe wie beim Absagen); wer nicht
-          darf, bekommt 403. Genau deshalb steht der Knopf jetzt auch im Team:
-          Die Erlaubnis war da, nur die Oberflaeche fehlte. */}
-      {onGrundBearbeiten && (
-        <IonButton
-          size="small"
-          fill="clear"
-          color="danger"
-          disabled={bearbeitenDeaktiviert}
-          onClick={onGrundBearbeiten}
-          style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
-        >
-          <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
-          {grund ? 'Grund bearbeiten' : 'Grund nachtragen'}
-        </IonButton>
-      )}
-      {/* ABSAGE ZURUECKNEHMEN (16.09.2026): Die Heizung ist doch rechtzeitig
-          repariert. Steht neben dem Grund und nicht an einer eigenen Stelle,
-          weil beides dasselbe betrifft -- die Absage -- und dieselbe
-          Berechtigung hat (requireTeamer + darfTermin, wie das Absagen
-          selbst). Kein Rechte-Gate hier: Wer nicht darf, bekommt 403.
+    <IonList className="app-section-inset" inset={true}>
+      <IonListHeader>
+        <div className="app-section-icon app-section-icon--danger">
+          <IonIcon icon={ICON_ABSAGE} />
+        </div>
+        <IonLabel>Absage</IonLabel>
+      </IonListHeader>
+      <IonCard className="app-card">
+        <IonCardContent className="app-card-content">
+          <div className="app-absage-block__text">
+            {grund ? (
+              <>
+                <span className="app-reason-box__label">Abgesagt:</span> {grund}
+              </>
+            ) : (
+              // Kein Grund ist kein Fehler (er war immer freiwillig, Migration 150)
+              // -- der Satz sagt nur, dass hier einer stehen koennte. Er steht
+              // ausdruecklich in ALLEN drei Rollen: Ohne ihn faellt der Block weg,
+              // und dann ist "kein Grund angegeben" von "alte Absage" nicht zu
+              // unterscheiden.
+              <span style={{ color: 'var(--app-text-secondary)' }}>Kein Grund zur Absage angegeben.</span>
+            )}
+            {urheberZeilen}
+          </div>
+          {/* Kein Rechte-Gate an dieser Stelle. Die Berechtigung sitzt im Backend
+              (requireTeamer + darfTermin, dieselbe wie beim Absagen); wer nicht
+              darf, bekommt 403. Genau deshalb steht der Knopf jetzt auch im Team:
+              Die Erlaubnis war da, nur die Oberflaeche fehlte. */}
+          {onGrundBearbeiten && (
+            <IonButton
+              size="small"
+              fill="clear"
+              color="danger"
+              disabled={bearbeitenDeaktiviert}
+              onClick={onGrundBearbeiten}
+              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
+            >
+              <IonIcon icon={ICON_BEARBEITEN} className="app-event-detail__icon-gap" />
+              {grund ? 'Grund bearbeiten' : 'Grund nachtragen'}
+            </IonButton>
+          )}
+          {/* ABSAGE ZURUECKNEHMEN (16.09.2026): Die Heizung ist doch rechtzeitig
+              repariert. Steht neben dem Grund und nicht an einer eigenen Stelle,
+              weil beides dasselbe betrifft -- die Absage -- und dieselbe
+              Berechtigung hat (requireTeamer + darfTermin, wie das Absagen
+              selbst). Kein Rechte-Gate hier: Wer nicht darf, bekommt 403.
 
-          Nicht 'danger': Der Knopf hebt eine Absage AUF. In Rot gelesen,
-          zwischen zwei roten Zeilen, sieht er aus wie "noch endgueltiger
-          absagen". Die Rueckfrage stellt der Aufrufer -- sie muss sagen, wie
-          viele Leute dabei einen Push bekommen. */}
-      {onZuruecknehmen && (
-        <IonButton
-          size="small"
-          fill="clear"
-          color="success"
-          disabled={bearbeitenDeaktiviert}
-          onClick={onZuruecknehmen}
-          style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
-        >
-          <IonIcon icon={ICON_RUECKGAENGIG} className="app-event-detail__icon-gap" />
-          Absage zurücknehmen
-        </IonButton>
-      )}
-    </div>
+              Nicht 'danger': Der Knopf hebt eine Absage AUF. In Rot gelesen,
+              neben einer roten Zeile, sieht er aus wie "noch endgueltiger
+              absagen". Die Rueckfrage stellt der Aufrufer -- sie muss sagen, wie
+              viele Leute dabei einen Push bekommen. */}
+          {onZuruecknehmen && (
+            <IonButton
+              size="small"
+              fill="clear"
+              color="success"
+              disabled={bearbeitenDeaktiviert}
+              onClick={onZuruecknehmen}
+              style={{ marginTop: 'var(--app-abstand-mini)', marginLeft: 'calc(-1 * var(--app-abstand-mini))' }}
+            >
+              <IonIcon icon={ICON_RUECKGAENGIG} className="app-event-detail__icon-gap" />
+              Absage zurücknehmen
+            </IonButton>
+          )}
+        </IonCardContent>
+      </IonCard>
+    </IonList>
   );
 };
 

@@ -79,6 +79,10 @@ Versionsüberschrift.
   Passworts — der Vorschlag ist sichtbar, damit er sich weitergeben lässt.
 
 ### Geändert
+- Der Absagegrund steht in der Detailansicht eines Termins jetzt in einer
+  eigenen Karte „Absage" — in derselben weißen Form wie die Details und die
+  Beschreibung darunter. Rot bleiben nur das Zeichen im Kopf und das Wort
+  „Abgesagt:", damit die Absage weiterhin ins Auge fällt.
 - **Abgesagte Termine sehen überall gleich aus.** In allen Listen und auf den
   Startseiten steht ein abgesagter Termin durchgestrichen und grau — bisher
   galt das für Konfis und Leitung, im Team sah er aus wie jeder andere. Der

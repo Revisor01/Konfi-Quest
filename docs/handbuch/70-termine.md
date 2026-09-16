@@ -771,8 +771,8 @@ neu anlegen — Anmeldungen, Warteliste und Chat bleiben, wo sie waren.
 
 Zwei Wege führen dorthin:
 
-- In der **Detailansicht** steht im roten Kasten „Absage zurücknehmen", neben
-  dem Knopf für den Grund. Diesen Weg hat auch das Team.
+- In der **Detailansicht** steht im Abschnitt „Absage" der Knopf „Absage
+  zurücknehmen", neben dem Knopf für den Grund. Diesen Weg hat auch das Team.
 - In der **Terminliste der Leitung** wischst du den abgesagten Termin nach
   links; bei abgesagten Terminen steht dort zusätzlich das Zurücknehmen.
 
@@ -815,8 +815,10 @@ An einem abgesagten Termin gibt es nichts zu verbuchen.
 In allen Listen und auf den Startseiten steht ein abgesagter Termin
 durchgestrichen und grau, mit rotem Zeichen in der Ecke — für Leitung, Team und
 Konfis gleich. In der Detailansicht bleibt der Titel ungestrichen: Dort sagen
-die Überschrift „Abgesagt", die rote Farbe und der Kasten mit dem Grund
-ohnehin schon, woran man ist.
+die Überschrift „Abgesagt", die rote Farbe und der Abschnitt „Absage" mit dem
+Grund ohnehin schon, woran man ist. Dieser Abschnitt steht in einer Karte wie
+die Details und die Beschreibung darunter — nur das Zeichen im Kopf und das
+Wort „Abgesagt:" sind rot.
 
 Konfis sehen einen abgesagten Termin nur, wenn sie dafür angemeldet waren — er
 geht sie ja an. Im Reiter **„Alle"** steht er am Ende der Liste, hinter den

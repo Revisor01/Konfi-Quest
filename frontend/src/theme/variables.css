@@ -534,6 +534,16 @@ ion-item-sliding:last-child {
 .app-reason-box__label {
   font-weight: var(--app-schrift-halbfett);
 }
+/* Absageblock in der Detailansicht (AbsageBlock, Variante 'kasten').
+   Er sitzt seit dem 16.09.2026 in einer weissen app-card wie die
+   Nachbarabschnitte, nicht mehr in einer rot getoenten Flaeche (Simons
+   Befund). Von der alten Reason-Box bleiben nur Schriftgroesse und
+   Zeilenhoehe -- Hintergrund und Polsterung kommen jetzt von der Karte. */
+.app-absage-block__text {
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.4;
+  color: var(--app-text-secondary);
+}
 .app-reason-box--danger .app-reason-box__label { color: var(--app-color-danger); }
 .app-reason-box--warning .app-reason-box__label { color: var(--app-color-warning); }
 .app-reason-box--info .app-reason-box__label { color: var(--app-color-jahrgang); }
