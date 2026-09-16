@@ -8,6 +8,8 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { checkPointTypeEnabled } = require('../../utils/pointTypeGuard');
 const { nachAntwort } = require('../../utils/nachAntwort');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
+const { rueckeNach } = require('../../utils/bookingUtils');
+const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 
 module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   const router = express.Router();
@@ -29,6 +31,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Abgemeldete (status <> 'confirmed') und bereits Verbuchte
   // (attendance_status IS NOT NULL) bleiben in BEIDEN Faellen unangetastet:
   // "Alle verbuchen" darf keine getroffene Entscheidung ueberschreiben.
+  //
+  // Seit Migration 153 (15.09.2026) greift das bei einer von der Leitung
+  // eingetragenen Abmeldung DOPPELT: Sie steht weder auf status='confirmed'
+  // (sondern auf 'excused') noch auf attendance_status IS NULL. Beide
+  // Bedingungen unten schliessen sie aus, jede fuer sich -- so bleibt der
+  // Sammelknopf harmlos, auch wenn eine davon spaeter einmal wandert.
   router.put('/:id/participants/attendance-all', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId } = req.params;
     const rolle = req.body?.rolle === 'teamer' ? 'teamer' : 'konfi';
@@ -235,13 +243,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     let pointsAwarded = false;
     let pointsRemoved = false;
     let removedPointsAmount = 0;
+    // Nachgerueckte aus der Warteliste (Luecke geschlossen 15.09.2026, s.u.).
+    let nachgerueckt = [];
     try {
       await client.query('BEGIN');
 
       // Teilnehmer-Typ über roles.name (event_bookings.user_type wird beim Insert
       // NICHT gesetzt und ist unzuverlaessig).
+      // eb.status und eb.timeslot_id kommen seit dem 15.09.2026 mit: Sie
+      // entscheiden, ob diese Abmeldung einen Platz FREIGIBT (s.u., Nachruecken).
       const eventDataQuery = `
-        SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id, r.name AS participant_role
+        SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id, r.name AS participant_role,
+               eb.status AS booking_status, eb.timeslot_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         JOIN users u ON eb.user_id = u.id
@@ -314,9 +327,58 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       //
       // Die NOTIZ allein aendert die Quelle NICHT: Ein nachgetragener Vermerk
       // macht aus einem QR-Check-in keine Leitungsentscheidung.
+      // DER BUCHUNGSSTATUS ZIEHT MIT (Migration 153, 15.09.2026)
+      //
+      // Bis hierher setzte eine Abmeldung nur attendance_status = 'excused'
+      // und liess status auf 'confirmed' stehen. Daran hingen drei Fehler auf
+      // einmal: Die Erinnerung ging weiter raus, der Platz blieb belegt, die
+      // Warteliste rueckte nicht nach, und in der Teilnehmerliste stand die
+      // abgemeldete Person ganz oben zwischen den Anwesenden. Eine Abmeldung
+      // ist eine Aussage ueber die BUCHUNG, nicht nur ueber die Anwesenheit.
+      //
+      // ZURUECK AUF 'confirmed', wenn die Abmeldung aufgehoben wird: Wer von
+      // 'excused' auf 'present' oder 'absent' gesetzt wird, ist wieder
+      // gebucht. Ohne diesen Rueckweg waere jede Abmeldung endgueltig.
+      //
+      // DER FALL, DER NICHT VERLOREN GEHEN DARF -- 'opted_out':
+      // Eine Konfi, die sich SELBST von einem Pflichttermin abgemeldet hat,
+      // steht auf 'opted_out'. Kommt sie doch, verbucht die Leitung sie auf
+      // 'present' -- der Buchungsstatus muss dabei 'opted_out' BLEIBEN. Die
+      // Selbstabmeldung hat stattgefunden, sie ist die Vorgeschichte des
+      // Eintrags und erklaert, warum ueberhaupt jemand nachtragen musste.
+      // Genau das haelt tests/routes/anwesenheitSelbstabmeldungUndUrheber.js
+      // seit dem 13.09.2026 fest ("der BUCHUNGSSTATUS bleibt opted_out").
+      // Deshalb wird nur zwischen 'confirmed'/'waitlist' und 'excused' hin
+      // und her geschaltet; 'opted_out', 'cancelled' und 'pending' bleiben
+      // unangetastet.
+      //
+      // 'waitlist' -> 'excused' -> 'confirmed' ist der einzige Uebergang, der
+      // etwas verschiebt: Wer auf der Warteliste stand, abgemeldet und dann
+      // doch verbucht wurde, landet auf 'confirmed'. Das ist richtig -- er
+      // war da, also hatte er einen Platz. Der Weg zurueck auf die Warteliste
+      // waere eine Aussage ueber einen Termin, der schon gelaufen ist.
+      //
+      // abgemeldet_durch_absage wird hier auf FALSE gesetzt (Migration 153):
+      // Diese Abmeldung ist eine EINZELentscheidung, kein Nebenprodukt einer
+      // Terminabsage. Wird die Absage eines Termins spaeter zurueckgenommen,
+      // bleibt genau diese Person abgemeldet -- Simons Fall: "manche sind
+      // entschuldigt, dann machen wir es doch. Status bei allen zurueck ausser
+      // bei denen."
       await client.query(
         `UPDATE event_bookings
             SET attendance_status = $1,
+                status = CASE
+                  WHEN status NOT IN ('confirmed', 'waitlist', 'excused') THEN status
+                  WHEN $1 = 'excused' THEN 'excused'
+                  WHEN status = 'excused' THEN 'confirmed'
+                  ELSE status
+                END,
+                abgemeldet_durch_absage = CASE
+                  WHEN status NOT IN ('confirmed', 'waitlist', 'excused') THEN abgemeldet_durch_absage
+                  WHEN $1 = 'excused' THEN FALSE
+                  WHEN status = 'excused' THEN FALSE
+                  ELSE abgemeldet_durch_absage
+                END,
                 excuse_reason = CASE WHEN $1 = 'excused' THEN $3 ELSE NULL END,
                 attendance_note = CASE WHEN $6 THEN $4 ELSE attendance_note END,
                 attendance_set_by = CASE
@@ -406,6 +468,31 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
+      // NACHRUECKEN, WENN DIE LEITUNG ABMELDET (Luecke geschlossen 15.09.2026)
+      //
+      // DER SCHAERFSTE DER SECHS FAELLE: "Die Mutter ruft an, das Kind ist
+      // krank" passiert typischerweise Tage vor dem Termin -- genau dann, wenn
+      // Nachruecken noch etwas bringt. Diese Datei rief bookingUtils bis heute
+      // nicht einmal auf; der Platz verfiel still.
+      //
+      // Die Bedingung haengt am BUCHUNGSstatus, nicht am Anwesenheitsstatus:
+      // Erst seit Migration 153 setzt das UPDATE oben auch status = 'excused',
+      // und erst damit ist der Platz rechnerisch frei (zaehleBuchungen zaehlt
+      // nur 'confirmed'). `rueckeNach` zaehlt selbst nach und befoerdert nur,
+      // wenn wirklich Luft ist -- ein 'excused' auf einer Wartelisten-Buchung
+      // gibt keinen Platz frei und loest deshalb nichts aus.
+      //
+      // Die SEITE folgt der Rolle der abgemeldeten Person: Ein frei gewordener
+      // Konfi-Platz geht nie an einen wartenden Teamer und umgekehrt
+      // (promoteFromWaitlist trennt ueber roleFilter).
+      if (!punkteGesperrt && attendance_status === 'excused' && eventData.booking_status === 'confirmed') {
+        nachgerueckt = await rueckeNach(client, {
+          eventId,
+          timeslotId: isKonfiParticipant ? eventData.timeslot_id : null,
+          seite: isKonfiParticipant ? 'konfi' : 'team'
+        });
+      }
+
       if (!punkteGesperrt) {
         await client.query('COMMIT');
       }
@@ -426,6 +513,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
 
     try {
+      // Wer durch die Abmeldung nachgerueckt ist, erfaehrt es — ueber denselben
+      // Weg wie an allen anderen Nachrueck-Stellen (utils/nachrueckMeldung).
+      await meldeNachrueckern(
+        db,
+        req.user.organization_id,
+        nachgerueckt.map((userId) => ({
+          eventId,
+          userId,
+          seite: isKonfiParticipant ? 'konfi' : 'team'
+        }))
+      );
+
       // Badge-Check NACH COMMIT für alle User (Teamer + Konfis)
       if (attendance_status === 'present') {
         try {

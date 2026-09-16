@@ -117,6 +117,34 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       } else if (booking.status === 'opted_out') {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 400, body: { error: 'Du hast dich von diesem Event abgemeldet', error_type: 'opted_out' } };
+      } else if (booking.status === 'excused') {
+        // ABGEMELDET DURCH DIE LEITUNG (Migration 153, 15.09.2026).
+        //
+        // DARF EINE ABGEMELDETE PERSON EINCHECKEN? NEIN -- und zwar aus
+        // demselben Grund, aus dem eine Selbstabmeldung es nicht darf: Der
+        // Check-in ist kein Anmeldeweg, sondern die Bestaetigung einer
+        // bestehenden Anmeldung. Es gibt hier keine mehr. Waere es erlaubt,
+        // koennte eine krank gemeldete Konfi sich per QR-Code selbst wieder
+        // eintragen und sich Punkte gutschreiben -- die Abmeldung der
+        // Leitung liesse sich also von der abgemeldeten Person aufheben.
+        //
+        // Der Rueckweg bleibt offen, nur nicht hier: Die Leitung setzt die
+        // Person ueber die Teilnehmerliste auf 'present' (anwesenheit.js),
+        // und das holt den Buchungsstatus auf 'confirmed' zurueck. Wer
+        // abgemeldet ist und doch kommt, meldet sich also bei der Leitung --
+        // was in dem Moment ohnehin passiert.
+        //
+        // EIGENER ZWEIG STATT DES not_confirmed-SAMMELFALLS darunter: Dessen
+        // Text ("Deine Anmeldung ist nicht bestaetigt") beschreibt die
+        // Warteliste und waere hier schlicht falsch. Ein eigener error_type
+        // laesst die App ausserdem das Richtige sagen. ADDITIV: Ein neuer
+        // error_type ist ein neuer WERT, kein neues Feld -- ausgelieferte
+        // Fassungen zeigen den error-Text, den sie mitbekommen.
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 400, body: {
+          error: 'Du wurdest von diesem Termin abgemeldet. Melde dich bei der Leitung, wenn du doch da bist.',
+          error_type: 'excused'
+        } };
       } else if (booking.status !== 'confirmed') {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 400, body: { error: 'Deine Anmeldung ist nicht bestätigt', error_type: 'not_confirmed' } };
@@ -282,6 +310,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.get('/:id/attendance-count', rbacVerifier, requireTeamer, async (req, res) => {
     const { id } = req.params;
     try {
+      // "X von Y eingecheckt" waehrend des Check-ins. `total` sind die
+      // ERWARTETEN -- deshalb weiterhin nur status = 'confirmed'.
+      //
+      // Seit Migration 153 (15.09.2026) faellt eine von der Leitung
+      // abgemeldete Person hier automatisch heraus, weil sie auf
+      // status = 'excused' steht. Das ist richtig und der Grund, warum diese
+      // Abfrage NICHT angefasst wird: Wer abgemeldet ist, wird nicht erwartet
+      // und darf die Zahl nicht kuenstlich erhoehen -- sonst stuende am Ende
+      // eines vollstaendig verlaufenen Termins "18 von 20", obwohl alle da
+      // waren, die kommen sollten.
       const { rows: [counts] } = await db.query(
         `SELECT
            COUNT(*) FILTER (WHERE eb.attendance_status = 'present') AS checked_in,
