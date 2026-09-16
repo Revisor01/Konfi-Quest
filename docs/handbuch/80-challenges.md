@@ -326,8 +326,10 @@ Wann er kommt, hängt an der Freigabe-Pflicht:
 An der Anzahl hängt nichts: Wer fünf Beiträge schickt, hat trotzdem genau einen
 Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
 
-Gesammelte Stempel stehen im Challenges-Tab. Die Leitung sieht die Stempel
-einer Person außerdem in deren Detailansicht, gleich hinter den Abzeichen.
+Gesammelte Stempel stehen im Challenges-Tab — bei Konfis, im Team und in der
+Leitung gleichermaßen, denn alle drei machen selbst mit. Die Leitung sieht die
+Stempel einer Person außerdem in deren Detailansicht, gleich hinter den
+Abzeichen.
 
 Neben den erhaltenen stehen dort auch die **noch nicht erhaltenen** — grau, mit
 Name und Symbol. Grau erscheint alles, was es je zu holen gab: laufende

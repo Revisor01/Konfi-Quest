@@ -325,6 +325,14 @@ paths:
         erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am
         Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter
         Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.
+
+        konfi_data.badges enthaelt ausschliesslich Abzeichen mit
+        custom_badges.target_role = 'konfi' aus der EIGENEN Organisation
+        (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art
+        eines Abzeichens nicht, die steht allein in custom_badges.target_role -
+        Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch
+        in der Konfi-Historie. Teamer-Abzeichen liefert GET
+        /api/teamer/badges/v2.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, "Inline-Check role_name === 'teamer'"]

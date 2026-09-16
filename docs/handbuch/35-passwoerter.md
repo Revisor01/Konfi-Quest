@@ -123,6 +123,18 @@ bei Konfis, Teamer:innen und in der Leitung.
 | **Nach 5 Minuten** | nach fünf Minuten im Hintergrund |
 | **Nach 15 Minuten** | nach fünfzehn Minuten im Hintergrund |
 
+**Beim Einschalten fragt die App einmal nach Face ID.** Wählst du eine
+Wartezeit, während die Sperre auf „Aus" steht, kommt sofort die Abfrage —
+dieselbe, die dich später vor der gesperrten App erwartet. Klappt sie, ist die
+Sperre an. Bricht sie ab oder scheitert sie, bleibt die Sperre aus und der
+Eintrag sagt es dir. So merkst du gleich, ob die Sperre auf diesem Gerät
+funktioniert, statt es erst beim nächsten Start herauszufinden.
+
+**Beim Abschalten und beim Ändern der Wartezeit wird nicht erneut gefragt.**
+Wer am Eintrag steht, hat die App ohnehin schon offen; eine zweite Hürde
+schützt dort niemanden — sie würde dich nur aussperren, wenn die Biometrie
+am Gerät einmal nicht mehr mitspielt.
+
 **Niemand bekommt die Sperre ungefragt.** Sie steht auf „Aus", bis du selbst
 etwas anderes wählst. Ist sie eingeschaltet, sperrt die App auch beim Starten —
 egal, welche Wartezeit du gewählt hast.

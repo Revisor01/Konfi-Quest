@@ -112,6 +112,8 @@ Im Einzelnen gilt für einen Admin:
 | Anwesenheit eintragen | — | — | ja | ja |
 | Aktivitäts-Meldungen bestätigen | — | — | ja | ja |
 | Termine, Abzeichen, Kategorien, Level anlegen | — | — | ja | ja |
+| Termine ändern, absagen und löschen | — | — | ja | ja |
+| Personen an einem Termin ein- und austragen | — | — | ja | ja |
 | Challenges anlegen und begleiten | — | — | ja | ja |
 | Konfis und Teamer:innen anlegen | — | — | ja | ja |
 | Material sehen | — | ja | ja | ja |

@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.2.0
 
 ### Hinzugefügt
+- Teamer:innen sehen am Termin, **wer kommt**: die Teilnehmenden mit Jahrgang
+  und Stand der Teilnahme, nach Konfis und Team getrennt. Wer auf einer
+  Freizeit mitfährt, weiß damit vorher, wen er erwartet. Verbucht und geändert
+  wird die Liste weiterhin von der Leitung.
+- Im Challenges-Tab von Team und Leitung stehen jetzt auch die **noch nicht
+  erhaltenen Stempel** grau daneben, und ein Tipp auf einen Stempel zeigt
+  Name, Challenge und Datum — so, wie Konfis es schon kannten.
 - In der Detailansicht der Leitung stehen unter den Abzeichen auch die
   Challenge-Stempel der angesehenen Person, bei Konfis wie bei Teamer:innen.
   Gezählt werden nur eigene, freigegebene Beiträge. Wer nur bestimmte
@@ -40,7 +47,9 @@ Versionsüberschrift.
   selbst oder von der Leitung —, bleibt abgemeldet und bekommt keine
   Nachricht. Punkte werden nicht wiederhergestellt; der Termin steht ja erst
   bevor. Vor dem Zurücknehmen wird gefragt und genannt, wie viele Personen
-  wieder angemeldet werden. Auch Teamer:innen dürfen zurücknehmen.
+  wieder angemeldet werden. Zwei Wege führen dorthin: der Wisch in der
+  Terminliste und ein Knopf ganz unten im Termin — dort, wo bei einem
+  laufenden Termin „Event absagen" steht.
 - Zu jeder Anwesenheit lässt sich eine **Notiz** eintragen, etwa „ging um
   14 Uhr". Sie ändert nichts am Status: Wer anwesend war, bleibt anwesend und
   behält seine Punkte. Notizen lassen sich auch wieder löschen.
@@ -79,6 +88,24 @@ Versionsüberschrift.
   Passworts — der Vorschlag ist sichtbar, damit er sich weitergeben lässt.
 
 ### Geändert
+- **Die eigene Zu- und Absage der Leitung funktioniert wie im Team:** Solange
+  nichts entschieden ist, stehen beide Knöpfe da; danach nur noch der Weg
+  zurück — „Nicht mehr dabei" nach einer Zusage, „Doch dabei" nach einer
+  Absage. Den Grund fragt dasselbe Fenster ab wie bei den Teamer:innen.
+- **Ein abgesagter Termin steht bei den Konfis an seinem Datum**, nicht am
+  Ende der Liste — durchgestrichen und mit rotem Eck. So beantwortet die
+  Liste im Vorbeigehen die Frage, die man wirklich hat: Was ist mit dem
+  Termin am Freitag?
+- **Die App-Sperre fragt beim Einschalten einmal nach Face ID beziehungsweise
+  dem Fingerabdruck.** Klappt es, ist die Sperre an; klappt es nicht, bleibt
+  sie aus und sagt das. So merkt man sofort, ob die Sperre auf diesem Gerät
+  funktioniert, statt es erst beim nächsten Start der App herauszufinden.
+  Beim Abschalten und beim Ändern der Wartezeit wird nicht erneut gefragt.
+- **Termine anlegen, ändern und absagen ist Sache der Leitung.** Das gilt auch
+  fürs Löschen, fürs Ein- und Austragen von Personen und fürs Verbuchen der
+  Anwesenheit. Teamer:innen sagen weiterhin für sich selbst zu oder ab, zeigen
+  den QR-Code zum Einchecken und öffnen den Termin-Chat. Ist ein Termin
+  abgesagt, sehen sie das und den Grund dazu.
 - **Eine Absage meldet wirklich alle ab** — auch, wen du schon als anwesend
   oder abwesend verbucht hattest. Ein abgesagter Termin hat keine Anwesenden;
   Punkte, die dafür schon vergeben waren, werden zurückgenommen. Wer sich vor
@@ -149,10 +176,57 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
-- Teamer:innen können Termine jetzt auch absagen. Sie durften es längst — im
-  Menü fehlte der Weg dorthin.
+- Im Fenster zum **Anlegen und Bearbeiten eines Termins wurden Texte und
+  Knöpfe abgeschnitten**: Die Beschriftungen über den Datumsfeldern — „Event
+  Datum & Uhrzeit", „Endzeit", „Anmeldeschluss" sowie Start- und Endzeit eines
+  Zeitfensters — lagen halb unter den Datumsfeldern und waren an der unteren
+  Kante angeschnitten. Auch der Knopf „Zeitfenster hinzufügen" war unten
+  angeschnitten. Beschriftungen und Knöpfe stehen jetzt vollständig da.
+- Die **Startseite blieb beim ersten Öffnen der App leer** — bei Konfis und im
+  Team. Die Tab-Leiste stand da, der Inhalt fehlte; erst wer einmal auf einen
+  anderen Reiter und zurück tippte, sah seine Startseite. Sie wird jetzt sofort
+  angezeigt.
+- Ein eingetragener Anwesenheitseintrag ließ sich nicht mehr **zurücknehmen**:
+  Wer versehentlich jemanden abgemeldet oder verbucht hatte, konnte den Eintrag
+  nur noch ändern, nicht löschen. Im Menü der Teilnehmerliste steht jetzt
+  „Eintrag zurücksetzen" — die Person gilt danach wieder als nicht verbucht,
+  Grund und Punkte sind zurückgenommen, die Notiz bleibt stehen.
+- Eine Wartende ließ sich auch dann bestätigen, wenn der Termin **voll** war —
+  zwei Personen standen dann auf einem Platz, ohne dass es irgendwo auffiel.
+  Das wird jetzt abgelehnt, mit dem Hinweis, erst die Teilnehmerzahl zu
+  erhöhen.
+- In der **Konfi-Historie** einer Teamer:in standen auch deren Teamer-Abzeichen.
+  Dort gehört nur die eigene Konfi-Zeit hin; die Teamer-Abzeichen stehen
+  weiterhin unter „Badges".
+- Ein abgesagter Termin, zu dem man angemeldet war, verschwand aus dem Reiter
+  **Meine** — ausgerechnet bei der Person, die es angeht. Er steht dort wieder,
+  durchgestrichen, und zählt in den Zahlen darüber mit.
+- Beim Absagen eines Termins oder beim Speichern des Absagegrundes blieb das
+  Fenster stehen, ohne etwas zu sagen, wenn der Server die Änderung ablehnte.
+  Jetzt erscheint die Meldung, und der Text bleibt zum Weiterbearbeiten stehen.
+- Zu einem **abgesagten Termin kann man sich nicht mehr anmelden**. Wer sich
+  von einem Pflichttermin abgemeldet hatte und danach die Absage erlebte, sah
+  weiterhin „Wieder anmelden" — und der Knopf funktionierte auch: Man stand
+  danach angemeldet an einem Termin, der nicht stattfindet. Die Anmelde-Knöpfe
+  verschwinden jetzt, solange die Absage steht, und auch die Leitung trägt
+  dort niemanden mehr ein. Abmelden geht weiter, und beim Zurücknehmen der
+  Absage kommen alle wie gewohnt zurück.
 - In der Absage eines Termins stand „Abgesagt von" doppelt: einmal als
   Überschrift und einmal davor im Namen.
+- Die Rückfrage vor dem Absagen eines Termins zählte Abgemeldete mit. Bei 13
+  eingetragenen Konfis, von denen sich eine selbst abgemeldet hatte und eine
+  von der Leitung abgemeldet worden war, stand dort „13 Konfis angemeldet",
+  während die Zahlen darüber im selben Bild richtig 11 zeigten. Jetzt steht
+  überall dieselbe Zahl: Wer abgemeldet ist, zählt nicht als angemeldet.
+- In der Terminliste einer Serie wurden Teamer:innen und zugeordnete Leitung
+  als Teilnehmende mitgezählt, obwohl daneben „TN" stand und überall sonst nur
+  Konfis gemeint sind. Ein Serientermin mit 19 Konfis und 4 Teamer:innen
+  meldete dort 23.
+- Ein **abgesagter** Termin zeigte in der Konfi-Ansicht „0 frei", „0 dabei"
+  und „Teilnehmer:innen 0 von unbegrenzt". Die Nullen waren zwar richtig — bei
+  einer Absage ist niemand mehr angemeldet —, sagten aber nichts. Jetzt steht
+  dort, um wie viele es ging: „13 abgemeldet". Freie Plätze entfallen; an
+  einem Termin, der ausfällt, ist keiner frei.
 
 - Wird ein Platz frei, rückt jetzt in **jedem** Fall die nächste wartende
   Person nach — auch wenn eine Konfi sich von einem Pflichttermin abmeldet, die
@@ -277,6 +351,10 @@ Versionsüberschrift.
   vollständiger; für Nutzer:innen ändert sich nichts.
 - Neu aufgesetzte Installationen legen ihre Datenbank wieder vollständig an.
   Bestehende Gemeinden waren nicht betroffen.
+- Eine neu aufgesetzte Gemeinde startet jetzt mit demselben Datenbankstand wie
+  die bestehenden. Zuvor wäre sie mit einem veralteten, unvollständigen Stand
+  gestartet und gar nicht erst hochgekommen. Bestehende Gemeinden waren nicht
+  betroffen.
 - Zusätzliche Absicherung beim Zuordnen von Jahrgängen, damit Zuweisungen die
   Grenze der eigenen Gemeinde in keinem Fall überschreiten können.
 - Die stündliche Abzeichen-Prüfung sieht nur noch Personen an, bei denen sich

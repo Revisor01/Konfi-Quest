@@ -327,7 +327,7 @@ deshalb auf **Inhalt**, nicht auf die Existenz der Kategorie.
 
 ---
 
-## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — TEILS BEHOBEN
+## 7. Zwei tote Stellen im Konfi- und Teamer-Profil (12.09.2026) — BEHOBEN
 
 Beim Einbau der Stempel ins Profil aufgefallen, beide am Code nachgesehen.
 Keiner davon ist ein Fehler, den jemand gemeldet hat — aber beide führen dazu,
@@ -380,3 +380,70 @@ verlässt.
 **Zum Gegenprüfen:**
 
     grep -n 'konfi_data' frontend/src/components/teamer/pages/TeamerProfilePage.tsx
+
+---
+
+## 8. Erinnerungen gingen an Abgemeldete (15.09.2026) — BEHOBEN
+
+Wer sich von einem Termin abgemeldet hatte, bekam die Erinnerung trotzdem.
+Die Abmeldung war damit folgenlos für alles, was danach noch verschickt wurde.
+
+**Behoben am 15.09.2026.** Die Erinnerung geht nur noch an die, die
+tatsächlich zugesagt haben.
+
+---
+
+## 9. Warteliste rückte an sechs Stellen nicht nach (15.09.2026) — BEHOBEN
+
+Wurde ein Platz frei, blieb er frei: Die Warteliste rückte nicht
+selbstständig nach. Betroffen waren sechs verschiedene Wege, auf denen ein
+Platz frei werden kann — je nachdem, wie abgemeldet wurde, rückte mal jemand
+nach und mal nicht.
+
+**Behoben am 15.09.2026.** An allen sechs Stellen rückt die Warteliste jetzt
+gleich nach.
+
+---
+
+## 10. Abgesagte Termine fielen aus allen drei Reitern (15.09.2026) — BEHOBEN
+
+Ein abgesagter Termin verschwand vollständig aus der Liste — für Konfis,
+Teamer:innen und Leitung gleichermaßen. Wer angemeldet war, sah nur, dass
+der Termin weg war, nicht dass er abgesagt wurde.
+
+**Behoben am 15.09.2026.** Abgesagte Termine bleiben sichtbar und sind als
+abgesagt gekennzeichnet.
+
+---
+
+## 11. Absage ließ bereits Verbuchte unangetastet (16.09.2026) — GEÄNDERT
+
+Wurde ein Termin abgesagt, blieben bereits verbuchte Punkte und
+Teilnahmen stehen. Simon hat am 16.09.2026 entschieden, dass das nicht so
+bleiben soll.
+
+**Geändert am 16.09.2026** auf Simons Entscheidung.
+
+---
+
+## 12. init-scripts weicht vom Produktionsschema ab (16.09.2026) — IN ARBEIT
+
+Das Schema in `init-scripts/` deckt sich nicht mit dem, was in Produktion
+steht. Das trifft jeden, der die Datenbank frisch aufsetzt: Er bekommt einen
+anderen Stand als den, gegen den die App läuft.
+
+**Stand 16.09.2026: in Arbeit.** Der Abgleich läuft; Einzelheiten stehen
+hier, sobald er abgeschlossen ist.
+
+---
+
+## 13. Teamer-Oberfläche bot 9 von 17 erlaubten Termin-Aktionen nicht an (16.09.2026) — AUFGELÖST
+
+Die Berechtigungen erlaubten Teamer:innen 17 Aktionen an Terminen, die
+Oberfläche bot davon nur 8 an. Die übrigen 9 waren serverseitig offen, aber
+nirgends erreichbar.
+
+**Aufgelöst am 16.09.2026** durch Simons Entscheidung, dass Teamer:innen
+Termine gar nicht verwalten sollen. Damit entfällt die Lücke, statt
+geschlossen zu werden: Die Rechte werden auf das eingeschränkt, was die
+Oberfläche anbietet. Der Umbau läuft.

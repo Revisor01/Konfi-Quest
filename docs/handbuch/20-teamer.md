@@ -71,7 +71,18 @@ Der Reiter **Mitmachen** hat oben zwei Bereiche: **Events** und
 Alle Termine, gefiltert über **Alle**, **Meine** und **Team**. Zu jedem Termin
 siehst du die Details und das hinterlegte
 [Material](70-termine.md#material-an-einem-termin-finden). Reine Konfi-Termine stehen nur
-zur Information da, ohne Anmeldung. Termine anlegen kann die Leitung.
+zur Information da, ohne Anmeldung.
+
+**Die Termine selbst verwaltet die Leitung:** anlegen, ändern, absagen,
+löschen, Personen ein- und austragen und die Anwesenheit verbuchen. Du sagst
+für dich selbst zu oder ab, zeigst den QR-Code zum Einchecken und öffnest den
+Termin-Chat. Ist ein Termin abgesagt, siehst du das und den Grund dazu — ändern
+lässt sich daran nichts.
+
+Unter **„Wer kommt"** steht die Teilnehmerliste: erst die Konfis, dann das
+Team, jeweils mit Jahrgang und dem Stand der Teilnahme (gebucht, Warteliste,
+anwesend, abgemeldet). So weißt du vor einer Freizeit, wen du erwartest. Die
+Liste ist zum Nachsehen da — verbucht und geändert wird sie von der Leitung.
 
 Bei Terminen, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
 du dabei?"** mit **„Ich bin dabei"** oder **„Ich bin nicht dabei"**. Beides
@@ -117,10 +128,13 @@ Browser. Wer welches Material anlegt und bearbeitet, steht im Kapitel
   [Bedingungen für Teamer:innen](60-badges.md#nur-fuer-teamer-innen) gelten,
   steht im Abzeichen-Kapitel
 - **Deine Stempel** — die [Challenge-Stempel](80-challenges.md#den-stempel-vergeben),
-  die du selbst gesammelt hast. Solange du keinen hast, steht der Abschnitt
-  nicht da.
+  die du selbst gesammelt hast. Was es noch zu holen gibt, steht grau daneben.
+  Ein Tipp auf einen Stempel zeigt, wofür er steht und wann du ihn bekommen
+  hast. Gibt es weder erhaltene noch offene Stempel, steht der Abschnitt nicht
+  da.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
-  Punkte und Abzeichen
+  Punkte und Abzeichen. Hier steht nur deine Konfi-Zeit; deine Teamer-Abzeichen
+  stehen unter **Badges**.
 - **Meine Rückblicke** — deine [Jahresrückblicke](95-wrapped.md) als Teamer:in
 
 Wie du dich in der App bewegst, steht im Kapitel

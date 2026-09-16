@@ -46,19 +46,26 @@ Zeitfenster aus. Beim Speichern werden zusätzlich Punkte, Konfi-Plätze,
 Jahrgänge und der Anmeldezeitraum auf null gesetzt. „Konfis, Team gesucht"
 und „Nur Team" schließen sich gegenseitig aus.
 
-### Nachvollziehen, welche Termine das Team sieht und bearbeitet
+### Nachvollziehen, welche Termine das Team sieht
 
-**Teamer:innen sehen, buchen und bearbeiten nur Termine der Jahrgänge, die sie
-betreuen.** Dieselbe Regel wie im
-[Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch nur Konfis der eigenen
-Jahrgänge anschreiben kann. Wer den Jahrgang nicht betreut, findet den Termin
-gar nicht erst in seiner Liste; eine Buchung über einen Umweg lehnt der Server
-ab („Dieser Termin gehört zu einem Jahrgang, dem du nicht zugewiesen bist").
+**Teamer:innen sehen und buchen nur Termine der Jahrgänge, die sie betreuen.**
+Dieselbe Regel wie im [Chat](90-chat.md#wer-wen-anschreiben-darf), wo man auch
+nur Konfis der eigenen Jahrgänge anschreiben kann. Wer den Jahrgang nicht
+betreut, findet den Termin gar nicht erst in seiner Liste; eine Buchung über
+einen Umweg lehnt der Server ab („Dieser Termin gehört zu einem Jahrgang, dem
+du nicht zugewiesen bist").
 
-Das Bearbeiten folgt derselben Grenze: Anlegen — einzeln wie als Serie —,
-Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die Anwesenheit
-verbuchen gehen nur in den eigenen Jahrgängen. Ein Termin lässt sich auch nur
-Jahrgängen zuordnen, die man selbst betreut.
+**Die Terminverwaltung liegt bei der Leitung.** Anlegen — einzeln wie als
+Serie —, Ändern, Absagen, Löschen, Personen eintragen oder entfernen und die
+Anwesenheit verbuchen sind Sache der Admins und Org-Admins. Teamer:innen sagen
+für sich selbst zu oder ab, zeigen den QR-Code zum Einchecken und öffnen den
+Termin-Chat; was am Termin steht, lesen sie mit — einschließlich des Grundes,
+wenn er abgesagt wurde.
+
+Für die Leitung gilt dabei weiterhin die Jahrgangsgrenze: Anlegen, Ändern,
+Absagen, Löschen, Personen eintragen und Verbuchen gehen nur in den eigenen
+Jahrgängen, und ein Termin lässt sich auch nur Jahrgängen zuordnen, die man
+selbst betreut.
 
 Zwei Ausnahmen: Termine mit der Zielgruppe **„Nur Team"** und Termine **ohne
 jeden Jahrgang** sind für alle Teamer:innen der Gemeinde offen — die einen
@@ -131,6 +138,12 @@ Danach steht die Anmeldung auf „abgemeldet", du bekommst einen Push mit Namen,
 Termin und Begründung, und beim Konfi steht „Du hast dich abgemeldet". Über
 den Knopf **„Wieder anmelden"** geht es zurück; die ursprüngliche Begründung
 bleibt gespeichert. Beides geht nur, solange der Termin in der Zukunft liegt.
+
+> **Ist der Termin abgesagt, gibt es kein Zurück.** Dann steht statt des
+> Knopfes „Dieser Termin ist abgesagt" — er findet nicht statt, es gibt also
+> nichts, wozu man sich anmelden könnte. Soll er doch stattfinden,
+> [nimm die Absage zurück](#eine-absage-zuruecknehmen); dabei kommen alle
+> wieder, die nur wegen der Absage abgemeldet waren.
 
 > **Wer abgemeldet ist, kann sich nicht per QR-Code einchecken** — der Scanner
 > meldet „Du hast dich von diesem Event abgemeldet". Wer doch spontan kommt,
@@ -217,6 +230,21 @@ automatisch nach." Ist auch die Warteliste voll, kommt „Event ist voll und
 Warteliste ist auch voll"; ist sie ganz aus, kommt „Das Event ist leider
 bereits ausgebucht".
 
+### Lesen, wen die Teilnehmerzahl meint
+
+**Angemeldet ist, wer weder abgemeldet noch auf der Warteliste steht.** Wer
+sich selbst abgemeldet hat und wen du abgemeldet hast, zählt nicht mit — beide
+geben ihren Platz frei, und beide stehen unter „Abgemeldet". Bei 13
+eingetragenen Konfis, von denen zwei abgemeldet sind, steht überall 11: auf
+den Kacheln, in der Liste, in der Rückfrage vor dem Absagen und in der
+Konfi-Ansicht.
+
+Teamer:innen und zugeordnete Leitung zählen nie in die Konfi-Zahl. Sie haben
+ihr eigenes Kontingent und stehen getrennt daneben.
+
+Bei einem **abgesagten** Termin ist niemand mehr angemeldet — dort steht
+deshalb keine Platz-Zahl, sondern wie viele der Termin erreicht hat.
+
 ### Nachvollziehen, wann jemand nachrückt
 
 **Wird ein belegter Platz frei, rückt nach.** Das gilt für jeden Weg, auf dem
@@ -267,6 +295,22 @@ nicht dabei"**. Jede Antwort lässt sich jederzeit ändern, auch von der Absage
 zurück zur Zusage. Eine Absage bleibt als eigener Eintrag stehen — in der
 Detailansicht siehst du sie als „Abgemeldet" samt Grund. So ist eine Absage
 von „hat noch nicht reagiert" zu unterscheiden.
+
+### Selbst zu- oder absagen
+
+Unter „Bist du dabei?" beantwortest du den Termin für dich selbst — in der
+Leitungsansicht genauso wie im Team. Solange du noch nichts gesagt hast,
+stehen beide Knöpfe nebeneinander: **„Dabei"** und **„Nicht dabei"**. Hast du
+geantwortet, bleibt nur noch der Weg zurück stehen — nach einer Zusage
+**„Nicht mehr dabei"**, nach einer Absage **„Doch dabei"**. Wo du gerade
+stehst, zeigt das Zeichen an der Karte.
+
+Der Abschnitt erscheint nur bei Terminen, die Team-Anmeldungen annehmen, und
+nur solange der Termin weder vergangen noch abgesagt ist. Du zählst dabei in
+dasselbe Kontingent wie die Teamer:innen.
+
+Für den Grund gilt dieselbe Regel wie unten: Sagst du nach einer Zusage ab,
+fragt ein Fenster nach dem Grund, sonst ist er freiwillig.
 
 Für den Grund gilt:
 
@@ -419,6 +463,27 @@ Einchecken kann sie sich danach nicht mehr selbst: Der QR-Scanner meldet „Du
 wurdest von diesem Termin abgemeldet". Steht sie doch vor dir, trägst du sie
 über dasselbe Menü als **Anwesend** ein — damit zählt die Anmeldung wieder,
 und die Punkte gibt es auch.
+
+### Einen falschen Eintrag zurücknehmen
+
+Hast du jemanden versehentlich abgemeldet oder auf der falschen Zeile
+verbucht, tippst du den Eintrag an und wählst **Eintrag zurücksetzen**. Der
+Eintrag ist danach weg: Die Person steht wieder als nicht verbucht in der
+Liste, so wie vor deiner Eingabe.
+
+Was dabei mitgeht: der Abmeldegrund, die Angabe, wer den Eintrag gemacht hat,
+und die Punkte, falls welche vergeben waren. Was **bleibt**: die Notiz. Sie
+gehört nicht zum Status — „Attest liegt vor" stimmt weiter, auch wenn die
+Verbuchung zurückgenommen ist. Willst du sie auch los, leerst du sie über
+**Notiz bearbeiten**.
+
+Der Eintrag steht nur im Menü, wenn überhaupt etwas verbucht ist. Bei einer
+Person, an der noch nichts eingetragen wurde, gibt es nichts zurückzunehmen.
+
+War die Person abgemeldet, zählt sie danach wieder als angemeldet — ihr Platz
+ist also wieder belegt. Ist der Termin inzwischen voll, weil jemand
+[nachgerückt](#nachvollziehen-wann-jemand-nachrueckt) ist, hat er nun eine
+Person mehr als vorgesehen; sieh in dem Fall auf die Teilnehmerzahl.
 
 In der [Anwesenheits-Matrix](30-leitung.md#konfis-und-teamer-innen-verwalten) steht dafür ein
 grauer Punkt, und der Termin zählt nicht in die Pflicht-Summe — so wie bei
@@ -675,6 +740,12 @@ Angemeldeten und alle auf der Warteliste bekommen einen Push, der Termin bleibt
 durchgestrichen in der Liste stehen. Ein bereits abgesagter Termin lässt sich
 nicht nochmal absagen.
 
+**Zu einem abgesagten Termin meldet sich niemand mehr an** — weder Konfis noch
+Team, und auch du trägst dort niemanden mehr ein. Der Termin findet nicht
+statt. Die Anmelde-Knöpfe und „Konfi hinzufügen" verschwinden deshalb, solange
+die Absage steht. Abmelden geht weiter: Wer raus will, kommt raus. Soll wieder
+jemand dazukommen, [nimm zuerst die Absage zurück](#eine-absage-zuruecknehmen).
+
 ### Einen Grund zur Absage angeben
 
 Beim Absagen öffnet sich ein Fenster mit einem Feld für den Grund. Das Feld ist
@@ -740,7 +811,7 @@ Eile nichts eingetragen hat oder sich vertippt, kommt so noch einmal heran.
 
 Der Weg dorthin führt über die **Terminliste**: Wisch den abgesagten Termin
 nach links — dort, wo bei den übrigen „Absagen" steht, liegt bei einem
-abgesagten Termin der Stift. Leitung und Team haben diesen Wisch.
+abgesagten Termin der Stift. Diesen Wisch hat die Leitung.
 
 Im Termin selbst steht der Grund nur zum Lesen. Der Abschnitt „Absage" nennt
 ihn und darunter, wer abgesagt hat; geändert wird er in der Liste.
@@ -770,8 +841,7 @@ eigenen Grund, bleibt es bei der einen Zeile.
 
 Wer bearbeiten darf, richtet sich nach denselben Regeln wie das Absagen: Wer
 den Termin nicht hätte absagen dürfen, ändert auch den Grund nicht. Teamer:innen
-gehören dazu — sie wischen den Termin in ihrer Terminliste genauso an. Konfis
-lesen ihn nur; sie haben den Wisch nicht.
+und Konfis lesen den Grund nur; sie haben den Wisch nicht.
 
 ### Eine Absage zurücknehmen
 
@@ -779,10 +849,13 @@ Die Heizung ist doch rechtzeitig repariert, der Sturm zieht vorbei: Ein
 abgesagter Termin lässt sich wieder aufleben lassen. Du musst ihn dafür nicht
 neu anlegen — Anmeldungen, Warteliste und Chat bleiben, wo sie waren.
 
-Der Weg dorthin führt über die **Terminliste**, denselben Wisch nach links wie
-beim Grund: An einem abgesagten Termin liegen dort zwei Aktionen nebeneinander
-— der grüne Pfeil nimmt die Absage zurück, der Stift daneben öffnet den Grund.
-Leitung und Team haben beide.
+Es gibt zwei Wege dorthin, genau wie beim Absagen. In der **Terminliste** den
+Termin nach links wischen: An einem abgesagten Termin liegen dort zwei
+Aktionen nebeneinander — der grüne Pfeil nimmt die Absage zurück, der Stift
+daneben öffnet den Grund. Oder **im Termin selbst**, ganz unten: Dort, wo bei
+einem laufenden Termin „Event absagen" steht, steht bei einem abgesagten der
+grüne Knopf „Absage zurücknehmen". Beide Wege hat die Leitung, beide fragen
+dasselbe.
 
 Vorher fragt das System nach und nennt dir, **wie viele Personen wieder
 angemeldet werden** — denn genau die bekommen gleich eine Mitteilung.
@@ -813,9 +886,9 @@ statt" — mit dem Hinweis, dass sie wieder angemeldet sind und bitte prüfen
 sollen, ob sie Zeit haben. Wer nicht kann, meldet sich über den Termin ab. Wer
 abgemeldet bleibt, bekommt keine Nachricht: Sie ginge ihn nichts an.
 
-Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen —
-Teamer:innen gehören dazu und wischen den Termin in ihrer Terminliste genauso
-an.
+Wer zurücknehmen darf, richtet sich nach denselben Regeln wie das Absagen: die
+Leitung. Teamer:innen sehen, dass und warum ein Termin abgesagt ist, ändern
+daran aber nichts.
 
 ### Wo ein abgesagter Termin steht
 
@@ -833,8 +906,12 @@ die Details und die Beschreibung darunter — nur das Zeichen im Kopf und das
 Wort „Abgesagt:" sind rot.
 
 Konfis sehen einen abgesagten Termin nur, wenn sie dafür angemeldet waren — er
-geht sie ja an. Im Reiter **„Alle"** steht er am Ende der Liste, hinter den
-Terminen, für die man sich noch anmelden kann.
+geht sie ja an. Er steht in beiden Reitern an seinem Datum: unter **„Alle"**
+zwischen den Terminen, für die man sich noch anmelden kann, und unter
+**„Meine"** bei den eigenen. Beide Male durchgestrichen und mit rotem Zeichen.
+Der Platz im Kalender ist der Punkt: An dem Tag war etwas geplant, und dass
+genau das ausfällt, ist die Nachricht. Am Listenende wäre an seiner Stelle nur
+eine Lücke.
 
 ### Einen Termin löschen
 

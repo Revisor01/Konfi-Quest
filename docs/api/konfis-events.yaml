@@ -199,6 +199,11 @@
 #       antworten mit 403 "Kein Zugriff auf diesen Termin"; die Zuordnung zu
 #       Jahrgängen (jahrgang_ids in POST und PUT) verlangt can_edit und
 #       antwortet sonst 403 "Kein Zugriff auf diesen Jahrgang".
+#       NACHTRAG 16.09.2026: Die Frage stellt sich fuer Teamer:innen so nicht
+#       mehr — die schreibenden Termin-Routen stehen seither hinter
+#       requireAdmin und sind fuer sie ganz zu. Die darfTermin-Pruefung bleibt
+#       und wirkt jetzt fuer die Rolle "admin"; der Befund ist damit doppelt
+#       geschlossen, nicht wieder offen.
 #   P1  BEHOBEN 14.09.2026. GET /api/konfi/activity-requests/:id/photo war
 #       fuer Leitungsrollen nicht jahrgangs-gebunden - jede Leitung sah jedes
 #       offene Nachweisfoto der Organisation. Jetzt darfKonfi (view), wie an
@@ -759,6 +764,15 @@ paths:
         mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE
         Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er
         ankommen muss. Beide nullable.
+        ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis,
+        Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus
+        event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten
+        bewusst NICHT: Aus ihrer Sicht ist beides dasselbe ("diese Person ist
+        nicht dabei"), und wer wen abgemeldet hat, geht sie nichts an. Die
+        Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf
+        'excused', registered_count ist 0 (richtig — niemand nimmt teil), und
+        ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging.
+        Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -772,7 +786,7 @@ paths:
           schema: { type: string, enum: ["true"] }
           description: Gesamte Historie statt 12-Monats-Fenster
       responses:
-        "200": { description: "Array von Events (e.*, registered_count, waitlist_count, teamer_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)" }
+        "200": { description: "Array von Events (e.*, registered_count, waitlist_count, teamer_count, abgemeldet_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
@@ -968,7 +982,24 @@ paths:
     post:
       tags: ["Termine (Konfis)"]
       summary: Opt-out bei Pflicht-Event rueckgaengig machen
-      description: Status opted_out -> confirmed (Begruendung bleibt gespeichert).
+      description: >
+        Status opted_out -> confirmed (Begruendung bleibt gespeichert).
+
+
+        ABGESAGTE TERMINE seit 16.09.2026 mit 400 "Dieser Termin ist
+        abgesagt" (Befund, live am Geraet reproduziert und behoben): Der
+        cancelled-Guard fehlte hier als einzigem Anmelde-Weg. Wer sich von
+        einem Pflichttermin abgemeldet hatte und danach die Absage erlebte,
+        konnte sich ueber diese Route wieder anmelden und stand anschliessend
+        als 'confirmed' an einem Termin, der nicht stattfindet. Simons
+        Entscheidung: Zu einem abgesagten Termin meldet sich niemand an,
+        weder Konfi noch Leitung.
+
+
+        Das Zuruecknehmen der Absage (PUT /api/events/{id}/reaktivieren) ist
+        davon NICHT betroffen: Es stellt die Buchungen mit einem eigenen
+        UPDATE her (utils/bookingUtils.hebeAbsageAbmeldungenAuf) und laeuft
+        nicht ueber diese Route.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -977,7 +1008,7 @@ paths:
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Wieder angemeldet }
-        "400": { description: Kein Pflicht-Event, Event vorbei oder kein Opt-out vorhanden }
+        "400": { description: "Termin abgesagt (seit 16.09.2026), kein Pflicht-Event, Event vorbei oder kein Opt-out vorhanden" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1041,7 +1072,13 @@ paths:
 
   # ===================================================================
   # backend/routes/events/ (seit 28.08.2026 aufgeteilt, Prefix /api/events)
-  # Schreibende Verwaltungs-Routen: requireTeamer (org_admin, admin, teamer).
+  # Schreibende Verwaltungs-Routen: requireAdmin (org_admin, admin).
+  #   GEAENDERT 16.09.2026: vorher requireTeamer (zusaetzlich 'teamer').
+  #   Terminverwaltung ist Leitungssache -- anlegen, aendern, loeschen,
+  #   absagen, Absagegrund, reaktivieren, Serien, Teilnehmerverwaltung,
+  #   Anwesenheit und das Anlegen des Termin-Chats.
+  # Weiterhin requireTeamer (org_admin, admin, teamer):
+  #   POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled.
   # Lese-/Buchungsrouten: nur rbacVerifier (alle Rollen, inkl. Konfi).
   # ===================================================================
   /api/events:
@@ -1070,6 +1107,14 @@ paths:
         cancelled_by und cancelled_by_name (wer abgesagt hat) kommen additiv
         mit — alle nullable. NULL beim Namen heisst "unbekannt": Termine, die
         vor Migration 150 abgesagt wurden, haben keinen Urheber.
+        ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete KONFIS,
+        Selbstabmeldung ('opted_out') und Abmeldung durch die Leitung
+        ('excused') zusammen, aus event_booking_stats
+        (konfi_opted_out + konfi_excused). Konfi-rein wie registered_count
+        daneben; das Team-Kontingent zaehlt nicht mit. NICHT zu verwechseln
+        mit total_participants, das ausdruecklich ALLE Buchungen beider
+        Kontingente meint. Kein vorhandenes Feld wurde entfernt, umbenannt
+        oder im Typ geaendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
@@ -1105,8 +1150,15 @@ paths:
         schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen
         (jahrgang_ids, category_ids) werden abgewiesen.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer, validateCreateEvent]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateEvent]
         org-scope: true
         objekt-pruefung: "jahrgang_ids/category_ids müssen der eigenen Org gehören"
         jahrgangs-bindung: >
@@ -1317,6 +1369,14 @@ paths:
         jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte
         "Ausgebucht" melden, die Liste "Offen"); Teamer stehen getrennt in
         teamer_count/teamer_waitlist_count.
+        BEHOBEN 16.09.2026: series_events[].registered_count zaehlte als
+        letzte Stelle noch ohne Rollenfilter und ohne deleted_at-Filter —
+        Teamer:innen, zugeordnete Leitung und Buchungen geloeschter Konten
+        gingen als Konfis mit. Angezeigt wird die Zahl als "N/max TN", mit
+        demselben Wort wie die konfi-reine Zahl darueber; ein Serientermin mit
+        19 Konfis und 4 Teamer:innen meldete dort 23. Liest jetzt
+        konfi_confirmed aus event_booking_stats wie alle anderen Zaehler.
+        Wert-Aenderung, keine Formaenderung: Feldname und Typ bleiben.
         ADDITIV 15.09.2026: cancelled_reason, cancelled_by und
         cancelled_by_name (Migration 150) — der freiwillige Absagegrund und
         wer abgesagt hat. Alle nullable; NULL beim Namen heisst "unbekannt"
@@ -1395,8 +1455,15 @@ paths:
         Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben
         abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer, validateUpdateEvent]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateEvent]
         org-scope: true
         objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprüft"
         jahrgangs-bindung: >
@@ -1457,8 +1524,15 @@ paths:
         auf der Terminliste. Beim ABSAGEN (PUT /{id}/cancel) traegt der Push
         seit dem 15.09.2026 sehr wohl eine event_id.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer, validateEventId]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin, validateEventId]
         org-scope: true
         objekt-pruefung: "Event org-gescopt"
         jahrgangs-bindung: >
@@ -1506,6 +1580,14 @@ paths:
         auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem
         abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier
         bisher, obwohl die Doku ihn beschrieb.
+
+
+        Seit 16.09.2026 gilt der cancelled-Guard auch auf dem TEAMER-PFAD
+        (400 "Dieser Termin ist abgesagt"). Er stand bis dahin nur im
+        Konfi-Zweig von bucheTermin und sitzt jetzt vor der Rollenweiche.
+        Betroffen war vor allem die "Meinungsaenderung": Eine abgesagte
+        Teamer-Buchung (opted_out) wird bei erneuter Zusage aktualisiert
+        statt mit 409 abgewiesen — dieser Sonderweg lief am Riegel vorbei.
 
 
         Die Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht
@@ -1602,9 +1684,26 @@ paths:
         Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm
         einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen.
         Die Antwortform ist unveraendert.
+
+
+        ABGESAGTE TERMINE seit 16.09.2026 mit 400 "Dieser Termin ist
+        abgesagt" (Simons Entscheidung: "Nein, gar nicht" — zu einem
+        abgesagten Termin meldet sich niemand an, auch die Leitung traegt dort
+        niemanden ein). Wer wieder Leute eintragen will, nimmt zuerst die
+        Absage zurueck (PUT /api/events/{id}/reaktivieren); dabei kommen die
+        durch die Absage Abgemeldeten ohnehin von selbst zurueck. Das
+        ENTFERNEN einer Buchung (DELETE /{id}/bookings/{bookingId}) bleibt am
+        abgesagten Termin moeglich.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event UND Ziel-User müssen zur eigenen Org gehören"
         jahrgangs-bindung: >
@@ -1647,8 +1746,15 @@ paths:
         Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges
         Nachruecken aus der passenden Warteliste.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst)"
         jahrgangs-bindung: >
@@ -1700,8 +1806,15 @@ paths:
         month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events,
         inkl. Auto-Enrollment bei Pflicht-Serien.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "jahrgang_ids/category_ids org-geprüft"
       requestBody:
@@ -1737,9 +1850,44 @@ paths:
         Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste
         (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt
         die Person aus. An einem abgesagten Termin rueckt niemand nach.
+
+
+        ABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed'
+        wird mit 400 "Dieser Termin ist abgesagt" abgelehnt — sie ist eine
+        Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen:
+        Das ist keine Anmeldung, sondern das Gegenteil, und der damit
+        verbundene Punkteentzug muss auch an einem abgesagten Termin
+        moeglich bleiben.
+
+
+        BEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte
+        KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel
+        das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg
+        "herabstufen, dann wieder bestaetigen" den Termin still ueber (beim
+        Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu).
+        Ist das Kontingent voll, antwortet die Route jetzt 400 "Der Termin ist
+        voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben."
+        Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster,
+        ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL)
+        aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft.
+        Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.
+
+
+        GEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim
+        Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist'
+        stand. Der Verdacht, sie werde auch bei einer Befoerderung aus
+        'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt
+        das jetzt fest.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Buchung muss zu Event der eigenen Org gehören (403 sonst)"
         jahrgangs-bindung: >
@@ -1799,8 +1947,15 @@ paths:
         bleibt sie vom Selbst-Check-in ('qr') und vom Altbestand (NULL)
         unterscheidbar. Am Request aendert sich weiterhin nichts.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event-Org muss der eigenen Org entsprechen (403)"
         jahrgangs-bindung: >
@@ -1825,9 +1980,9 @@ paths:
   /api/events/{id}/participants/{participantId}/attendance:
     put:
       tags: ["Termine (Verwaltung)"]
-      summary: Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)
+      summary: Anwesenheit eines Teilnehmers setzen oder zuruecksetzen (vergibt/entzieht Punkte)
       description: >
-        attendance_status present | absent | excused. present: Konfis erhalten
+        attendance_status present | absent | excused | null. present: Konfis erhalten
         einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei
         deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene
         Event-Punkte werden zurückgenommen.
@@ -1852,6 +2007,26 @@ paths:
         geloescht. Kein neues Feld, kein Flag: Der leere String sagt genau
         das, was die Nutzerin tut. Alt-App-Vertrag gewahrt — eine Bedeutung
         bekommt allein der Fall, der bisher nichts bewirken KONNTE.
+        ADDITIV 16.09.2026 — EINTRAG ZURUECKSETZEN: attendance_status darf
+        jetzt auch null sein (ebenso ein leerer String oder ein fehlendes
+        Feld — dieselbe Normalisierung wie bei den Freitexten). Die Buchung
+        ist danach "noch nicht verbucht": attendance_status, excuse_reason,
+        attendance_set_by/_at, checkin_quelle und checked_in_at werden
+        geleert, ein status='excused' faellt auf 'confirmed' zurueck
+        (opted_out/cancelled/pending/waitlist bleiben unangetastet), und
+        vergebene Event-Punkte werden zurueckgenommen. Die attendance_note
+        BLEIBT — sie haengt nicht am Status und wird ueber ihr eigenes leeres
+        Feld geloescht. Kein Nachruecken (es wird kein Platz frei, sondern
+        einer zurueckgenommen) und KEIN Push an die Person: Die drei Pushes
+        melden ein Ergebnis, eine Ruecknahme meldet nichts.
+        KEIN vierter Status, sondern NULL — derselbe Zustand, in dem jede
+        Buchung anfaengt; sonst muessten alle Abfragen auf
+        "attendance_status IS NULL" einen zweiten Wert zusaetzlich kennen.
+        Antwort-message: "Eintrag zurückgesetzt" bzw. "Eintrag zurückgesetzt
+        und N Punkte entfernt"; Form und Felder der Antwort unveraendert.
+        ALT-APP-VERTRAG: Ausgelieferte Fassungen schicken immer einen der drei
+        Werte — fuer sie aendert sich nichts. Eine Bedeutung bekommt allein
+        der Fall, der bisher 400 lieferte.
         ADDITIV 15.09.2026 (Migration 151): Aendert der Aufruf Status oder
         Grund, setzt die Route zusaetzlich checkin_quelle='manuell' und
         checked_in_at=NOW() — dieselbe Bedingung wie beim Urheber. Damit sind
@@ -1916,8 +2091,15 @@ paths:
         abgesagten Termin rueckt niemand nach. Die Antwortform aendert sich
         nicht.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event + Buchung org-gescopt (404 sonst)"
         jahrgangs-bindung: >
@@ -1974,8 +2156,15 @@ paths:
         hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt
         laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event org-gescopt"
         jahrgangs-bindung: >
@@ -2086,8 +2275,15 @@ paths:
         Ausgelieferte App-Fassungen schicken es mit — es ist NICHT der
         Absagegrund.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event org-gescopt"
         jahrgangs-bindung: >
@@ -2184,8 +2380,15 @@ paths:
         ('events'/'update', action 'cancelled') geht raus — es aktualisiert
         nur, was ohnehin offen auf dem Bildschirm steht.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event org-gescopt; muss cancelled = TRUE sein, sonst 400"
         jahrgangs-bindung: >
@@ -2319,8 +2522,15 @@ paths:
         die Rueckfrage kuendigte sonst mehr an, als dann passiert. Geloeschte
         Konten zaehlen nicht mit; sie bekommen keinen Push.
       x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC, requireTeamer]
+        rollen: [org_admin, admin]
+        x-geaendert: >
+          16.09.2026: von requireTeamer auf requireAdmin umgestellt.
+          Terminverwaltung ist Leitungssache (Entscheidung Simon);
+          Teamer:innen erhalten hier 403 "Keine Berechtigung".
+          Unveraendert fuer das Team: POST /{id}/generate-qr,
+          GET /{id}/attendance-count, GET /cancelled und die eigene
+          Zusage POST /api/teamer/events/{id}/zusage.
+        middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: "Event org-gescopt; muss cancelled = TRUE sein, sonst 400"
         jahrgangs-bindung: >

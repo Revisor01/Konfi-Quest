@@ -333,6 +333,7 @@ components:
         status: { type: string, enum: [draft, scheduled, active, ended], description: "Abgeleitet, nie gespeichert" }
         has_badge: { type: boolean, description: "Abgeleitet aus EXISTS eigener Submission mit moderation_status='approved' — Abzeichen erst nach Freigabe (2026-08-24, gilt fuer alle Rollen)" }
         has_submission: { type: boolean, description: "Schon eingereicht (unabhaengig von der Freigabe)" }
+        earned_at: { type: [string, "null"], format: date-time, description: "Wann der eigene Stempel verdient wurde (fruehester freigegebener eigener Beitrag). ADDITIV seit 2026-09-16, wortgleich zu GET /challenges/konfi — fuers Stempel-Popover in Leitungs- und Teamer-Ansicht" }
         own_submission_count: { type: integer }
     Submission:
       type: object

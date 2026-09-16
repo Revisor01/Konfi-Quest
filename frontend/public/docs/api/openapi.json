@@ -3699,7 +3699,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable.\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt). BEHOBEN 25.08.2026 (Befund 1): registration_status kennt jetzt wie die Admin-Liste den > 0-Guard (max_participants=0 = unbegrenzt, nicht 'closed') und den Wert 'mandatory' für Pflichttermine. ZUSAMMENGELEGT 01.09.2026: registration_status wird nicht mehr je Ansicht in SQL wiederholt, sondern in allen drei Listen (diese, GET /api/events, GET /api/konfi/events/{id}/status) aus utils/terminAnmeldeStatus.js gebildet. Werte und Reihenfolge unveraendert ('cancelled' vor 'mandatory' vor 'upcoming'/'closed' vor 'open'); die Abweichungen vom 25.08. und 27.08. koennen so nicht wieder entstehen. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn der Konfi selbst Teilnehmer des Raums ist (sonst null). Damit bildet der Chat-Einstieg im Termin-Detail genau die Berechtigung ab, die darfRaumOeffnen in chat.js durchsetzt. NEU 15.09.2026: cancelled_reason und cancelled_by_name kommen additiv mit (Migration 150). Der Absagegrund ist ausdruecklich fuer ALLE Teilnehmenden bestimmt — die Konfi-Liste ist der Ort, an dem er ankommen muss. Beide nullable. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete Konfis, Selbstabmeldung und Abmeldung durch die Leitung zusammen, aus event_booking_stats. Die Konfi-Sicht trennt die beiden Abmelde-Arten bewusst NICHT: Aus ihrer Sicht ist beides dasselbe (\"diese Person ist nicht dabei\"), und wer wen abgemeldet hat, geht sie nichts an. Die Ansicht braucht die Zahl fuer abgesagte Termine: Dort stehen alle auf 'excused', registered_count ist 0 (richtig — niemand nimmt teil), und ohne diese Zahl liesse sich nicht erkennen, um wie viele es ging. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3727,7 +3727,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array von Events (e.*, registered_count, waitlist_count, teamer_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)"
+            "description": "Array von Events (e.*, registered_count, waitlist_count, teamer_count, abgemeldet_count, registration_status, is_registered, can_register, waitlist_position, categories[], chat_room_id)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4054,7 +4054,7 @@
           "Termine (Konfis)"
         ],
         "summary": "Opt-out bei Pflicht-Event rueckgaengig machen",
-        "description": "Status opted_out -> confirmed (Begruendung bleibt gespeichert).",
+        "description": "Status opted_out -> confirmed (Begruendung bleibt gespeichert).\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Befund, live am Geraet reproduziert und behoben): Der cancelled-Guard fehlte hier als einzigem Anmelde-Weg. Wer sich von einem Pflichttermin abgemeldet hatte und danach die Absage erlebte, konnte sich ueber diese Route wieder anmelden und stand anschliessend als 'confirmed' an einem Termin, der nicht stattfindet. Simons Entscheidung: Zu einem abgesagten Termin meldet sich niemand an, weder Konfi noch Leitung.\n\nDas Zuruecknehmen der Absage (PUT /api/events/{id}/reaktivieren) ist davon NICHT betroffen: Es stellt die Buchungen mit einem eigenen UPDATE her (utils/bookingUtils.hebeAbsageAbmeldungenAuf) und laeuft nicht ueber diese Route.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4075,8 +4075,7 @@
             "description": "Wieder angemeldet"
           },
           "400": {
-            "description": "Kein Pflicht-Event",
-            "Event vorbei oder kein Opt-out vorhanden": null
+            "description": "Termin abgesagt (seit 16.09.2026), kein Pflicht-Event, Event vorbei oder kein Opt-out vorhanden"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4225,7 +4224,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
-        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026, Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine und teamer_only-Events immer); ohne jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit. GEAENDERT 08.09.2026: teamer_needed zaehlt NICHT mehr als eigener Sichtbarkeitsgrund. Ein Termin mit \"Teamer:innen gesucht\" an einem fremden Jahrgang liesse sich seit derselben Aenderung ohnehin nicht mehr buchen (403 aus darfTeamerAnDiesenTermin) -- sichtbar bliebe ein Termin, der beim Antippen abgewiesen wird. org_admin sieht alles. Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste. NEU 15.09.2026: cancelled_reason (freiwilliger Absagegrund), cancelled_by und cancelled_by_name (wer abgesagt hat) kommen additiv mit — alle nullable. NULL beim Namen heisst \"unbekannt\": Termine, die vor Migration 150 abgesagt wurden, haben keinen Urheber.\n",
+        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: teamer UND admin (admin seit 01.09.2026, Simons Regel vom 31.08.) sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine und teamer_only-Events immer); ohne jede Zuweisung kommt der Header X-Kein-Jahrgang-Zugewiesen mit. GEAENDERT 08.09.2026: teamer_needed zaehlt NICHT mehr als eigener Sichtbarkeitsgrund. Ein Termin mit \"Teamer:innen gesucht\" an einem fremden Jahrgang liesse sich seit derselben Aenderung ohnehin nicht mehr buchen (403 aus darfTeamerAnDiesenTermin) -- sichtbar bliebe ein Termin, der beim Antippen abgewiesen wird. org_admin sieht alles. Konfis sehen keine teamer_only-Events. NEU 27.08.2026: chat_room_id liefert den Event-Chatraum, aber NUR wenn die abrufende Person Teilnehmer des Raums ist (sonst null) — dieselbe Regel wie in der Konfi-Liste. NEU 15.09.2026: cancelled_reason (freiwilliger Absagegrund), cancelled_by und cancelled_by_name (wer abgesagt hat) kommen additiv mit — alle nullable. NULL beim Namen heisst \"unbekannt\": Termine, die vor Migration 150 abgesagt wurden, haben keinen Urheber. ADDITIV 16.09.2026: abgemeldet_count (integer) — abgemeldete KONFIS, Selbstabmeldung ('opted_out') und Abmeldung durch die Leitung ('excused') zusammen, aus event_booking_stats (konfi_opted_out + konfi_excused). Konfi-rein wie registered_count daneben; das Team-Kontingent zaehlt nicht mit. NICHT zu verwechseln mit total_participants, das ausdruecklich ALLE Buchungen beider Kontingente meint. Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4275,12 +4274,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer",
+            "requireAdmin",
             "validateCreateEvent"
           ],
           "org-scope": true,
@@ -4675,7 +4674,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. ADDITIV 15.09.2026: cancelled_reason, cancelled_by und cancelled_by_name (Migration 150) — der freiwillige Absagegrund und wer abgesagt hat. Alle nullable; NULL beim Namen heisst \"unbekannt\" (Termine, die vor der Migration abgesagt wurden). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und teamer_registration_status — beide berechnet mit denselben Helfern wie GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined und zeigte deshalb \"Geschlossen\" an offenen Terminen (sichtbar vor allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein vorhandenes Feld aendert Form oder Typ. ADDITIV 12.09.2026 (Migration 147): participants[]-Eintraege tragen zusaetzlich excuse_reason und attendance_note (beide text, nullbar), und attendance_status kann jetzt auch 'excused' sein. Ausgelieferte Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht — sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 148): participants[]-Eintraege tragen zusaetzlich attendance_set_by (integer, nullbar), attendance_set_at (date-time, nullbar) und attendance_set_by_name (string, nullbar) — wer die Anwesenheit zuletzt gesetzt hat und wann. NULL heisst UNBEKANNT, nicht \"niemand\": Buchungen von vor der Migration und Selbst-Check-ins per QR-Code tragen keinen Urheber. Der Name kommt ueber einen LEFT JOIN auf users — eine Buchung ohne Urheber bleibt in der Liste. Kein vorhandenes Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 149): dazu note_set_by (integer, nullbar), note_set_at (date-time, nullbar) und note_set_by_name (string, nullbar) — wer die NOTIZ (attendance_note) zuletzt geschrieben hat. attendance_set_by/_at gelten seither fuer den STATUS samt excuse_reason; Name, Typ und Nullbarkeit dieser Felder bleiben unveraendert, nur ihre Bedeutung verengt sich von \"alles\" auf \"Status samt Grund\". Hintergrund: Schreibt A den Grund und B spaeter die Notiz, ueberschrieb B mit einem gemeinsamen Paar den Urheber des Grundes — die Anzeige nannte dann die falsche Person. Auch der zweite Name kommt ueber einen LEFT JOIN: eine Buchung ohne Notiz (der Normalfall) bleibt in der Liste, note_set_by_name ist dann null. ADDITIV 15.09.2026 (Migration 151): dazu checkin_quelle (string, nullbar: 'qr' | 'manuell') und checked_in_at (date-time, nullbar) — WOHER die Anwesenheit kam und wann. Ergaenzt die Urheber-Felder, ersetzt sie nicht: Beim Selbst-Check-in bleibt attendance_set_by bewusst null (ein Selbst-Check-in ist keine Leitungsentscheidung und traegt keinen Namen), sodass er vorher im selben null stand wie der Altbestand. Die Quelle trennt beides; die Anzeige macht aus 'qr' die Zeile \"Eingecheckt per QR-Code, 15.09.\". NULL heisst weiterhin UNBEKANNT — Buchungen von vor der Migration, kein Backfill. Kein vorhandenes Feld aendert Form oder Typ.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants. BEHOBEN 25.08.2026 (Befund 2): registered_count/pending_count zählen jetzt konfi-rein wie die Liste (vorher inkl. Teamer - Detail konnte \"Ausgebucht\" melden, die Liste \"Offen\"); Teamer stehen getrennt in teamer_count/teamer_waitlist_count. BEHOBEN 16.09.2026: series_events[].registered_count zaehlte als letzte Stelle noch ohne Rollenfilter und ohne deleted_at-Filter — Teamer:innen, zugeordnete Leitung und Buchungen geloeschter Konten gingen als Konfis mit. Angezeigt wird die Zahl als \"N/max TN\", mit demselben Wort wie die konfi-reine Zahl darueber; ein Serientermin mit 19 Konfis und 4 Teamer:innen meldete dort 23. Liest jetzt konfi_confirmed aus event_booking_stats wie alle anderen Zaehler. Wert-Aenderung, keine Formaenderung: Feldname und Typ bleiben. ADDITIV 15.09.2026: cancelled_reason, cancelled_by und cancelled_by_name (Migration 150) — der freiwillige Absagegrund und wer abgesagt hat. Alle nullable; NULL beim Namen heisst \"unbekannt\" (Termine, die vor der Migration abgesagt wurden). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. ADDITIV 01.09.2026: participants[]-Eintraege tragen zusaetzlich absage_nach_zusage (boolean, Migration 141) — hat diese Absage eine vorherige Zusage zurueckgenommen? Gesetzt nur vom Teamer-Zusage-Weg (POST /api/teamer/events/{id}/zusage). Kein vorhandenes Feld wurde entfernt, umbenannt oder im Typ geaendert. BEHOBEN 06.09.2026: Die Antwort traegt jetzt registration_status und teamer_registration_status — beide berechnet mit denselben Helfern wie GET /api/events (utils/terminAnmeldeStatus.js). Vorher lieferte nur die Liste den Status; die Leitungs-Detailansicht las ihn hier als undefined und zeigte deshalb \"Geschlossen\" an offenen Terminen (sichtbar vor allem ohne Anmeldefrist und ohne Kapazitaet). ADDITIV — kein vorhandenes Feld aendert Form oder Typ. ADDITIV 12.09.2026 (Migration 147): participants[]-Eintraege tragen zusaetzlich excuse_reason und attendance_note (beide text, nullbar), und attendance_status kann jetzt auch 'excused' sein. Ausgelieferte Apps lesen die neuen Felder nicht und kennen den neuen Wert nicht — sie zeigen ihn wie einen unbekannten Status, kein Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 148): participants[]-Eintraege tragen zusaetzlich attendance_set_by (integer, nullbar), attendance_set_at (date-time, nullbar) und attendance_set_by_name (string, nullbar) — wer die Anwesenheit zuletzt gesetzt hat und wann. NULL heisst UNBEKANNT, nicht \"niemand\": Buchungen von vor der Migration und Selbst-Check-ins per QR-Code tragen keinen Urheber. Der Name kommt ueber einen LEFT JOIN auf users — eine Buchung ohne Urheber bleibt in der Liste. Kein vorhandenes Feld aendert Form oder Typ. ADDITIV 13.09.2026 (Migration 149): dazu note_set_by (integer, nullbar), note_set_at (date-time, nullbar) und note_set_by_name (string, nullbar) — wer die NOTIZ (attendance_note) zuletzt geschrieben hat. attendance_set_by/_at gelten seither fuer den STATUS samt excuse_reason; Name, Typ und Nullbarkeit dieser Felder bleiben unveraendert, nur ihre Bedeutung verengt sich von \"alles\" auf \"Status samt Grund\". Hintergrund: Schreibt A den Grund und B spaeter die Notiz, ueberschrieb B mit einem gemeinsamen Paar den Urheber des Grundes — die Anzeige nannte dann die falsche Person. Auch der zweite Name kommt ueber einen LEFT JOIN: eine Buchung ohne Notiz (der Normalfall) bleibt in der Liste, note_set_by_name ist dann null. ADDITIV 15.09.2026 (Migration 151): dazu checkin_quelle (string, nullbar: 'qr' | 'manuell') und checked_in_at (date-time, nullbar) — WOHER die Anwesenheit kam und wann. Ergaenzt die Urheber-Felder, ersetzt sie nicht: Beim Selbst-Check-in bleibt attendance_set_by bewusst null (ein Selbst-Check-in ist keine Leitungsentscheidung und traegt keinen Namen), sodass er vorher im selben null stand wie der Altbestand. Die Quelle trennt beides; die Anzeige macht aus 'qr' die Zeile \"Eingecheckt per QR-Code, 15.09.\". NULL heisst weiterhin UNBEKANNT — Buchungen von vor der Migration, kein Backfill. Kein vorhandenes Feld aendert Form oder Typ.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4719,12 +4718,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer",
+            "requireAdmin",
             "validateUpdateEvent"
           ],
           "org-scope": true,
@@ -4778,12 +4777,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer",
+            "requireAdmin",
             "validateEventId"
           ],
           "org-scope": true,
@@ -4836,7 +4835,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
-        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n\nJAHRGANGSGRENZE seit 08.09.2026 (utils/bookingUtils.js, darfTeamerAnDiesenTermin): Der Teamer-Pfad lehnt einen Termin mit 403 ab, dessen Jahrgang der Aufrufer nicht betreut -- dieselbe Regel wie im Chat. Ausgenommen sind teamer_only (haengt an keinem Jahrgang), Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Dieselbe Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege zur selben Buchung fuehren. GET /api/events blendet solche Termine seit derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).\n\nNEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung (status opted_out aus POST /api/teamer/events/{id}/zusage) wird reaktiviert statt mit 409 abgewiesen — \"Ich bin doch dabei\" nach einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und absage_nach_zusage geleert), alle Kapazitaetsregeln gelten unveraendert. Fuer Konfis bleibt der 409: Ein Pflicht-Opt-out wird ausschliesslich ueber POST /api/konfi/events/{id}/opt-in zurueckgenommen.\n",
+        "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n\nSeit 01.09.2026 teilt sich diese Route den Buchungskern mit POST /api/konfi/events/{id}/register (utils/bookingUtils.bucheTermin). Die Antwortform bleibt unveraendert (201 mit id, message, status; error_code konfirmation_already_booked weiterhin nur hier). Neu greift auf dem Konfi-Pfad der cancelled-Guard: Eine Anmeldung zu einem abgesagten Termin wird mit 400 abgelehnt — dieser Guard fehlte hier bisher, obwohl die Doku ihn beschrieb.\n\nSeit 16.09.2026 gilt der cancelled-Guard auch auf dem TEAMER-PFAD (400 \"Dieser Termin ist abgesagt\"). Er stand bis dahin nur im Konfi-Zweig von bucheTermin und sitzt jetzt vor der Rollenweiche. Betroffen war vor allem die \"Meinungsaenderung\": Eine abgesagte Teamer-Buchung (opted_out) wird bei erneuter Zusage aktualisiert statt mit 409 abgewiesen — dieser Sonderweg lief am Riegel vorbei.\n\nDie Kapazitaet zaehlt ab jetzt einheitlich nach der Sicht event_booking_stats (Migration 136): Konfi-Kontingent = ausschliesslich Konfis, Team-Kontingent = Teamer:innen UND zugeordnete Leitung, geloeschte Konten nie.\n\nJAHRGANGSGRENZE seit 08.09.2026 (utils/bookingUtils.js, darfTeamerAnDiesenTermin): Der Teamer-Pfad lehnt einen Termin mit 403 ab, dessen Jahrgang der Aufrufer nicht betreut -- dieselbe Regel wie im Chat. Ausgenommen sind teamer_only (haengt an keinem Jahrgang), Termine ohne jede Jahrgangs-Zuordnung sowie org_admin/super_admin. Dieselbe Pruefung sitzt in POST /api/teamer/events/{id}/zusage, weil beide Wege zur selben Buchung fuehren. GET /api/events blendet solche Termine seit derselben Aenderung auch aus der Liste aus (routes/events/lesen.js).\n\nNEU 01.09.2026 (Teamer-Pfad): Eine ABGESAGTE eigene Buchung (status opted_out aus POST /api/teamer/events/{id}/zusage) wird reaktiviert statt mit 409 abgewiesen — \"Ich bin doch dabei\" nach einer Absage. Die Zeile wird aktualisiert (Grund, Absage-Datum und absage_nach_zusage geleert), alle Kapazitaetsregeln gelten unveraendert. Fuer Konfis bleibt der 409: Ein Pflicht-Opt-out wird ausschliesslich ueber POST /api/konfi/events/{id}/opt-in zurueckgenommen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4939,16 +4938,16 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer manuell hinzufuegen (Leitung)",
-        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen. Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern einer existiert — angelegt wird dabei keiner. GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz. Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen. Die Antwortform ist unveraendert.\n",
+        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Team-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen. Wer hinzugefuegt wird, kommt zugleich in den Chat zum Termin, sofern einer existiert — angelegt wird dabei keiner. GEAENDERT 31.08.2026: Die Rollenweiche trennt nach Konfi / Nicht-Konfi statt nach Teamer / Nicht-Teamer. Damit laesst sich auch die Leitung (admin, org_admin) einem Termin zuordnen — bewusst pro Termin, wie eine Teamer:in, um in den Chat zum Termin zu kommen. Sie zaehlt gegen das TEAM-Kontingent (teamer_max_participants) und belegt keinen Konfi-Platz. Vorher wurde eine so uebergebene Leitung als Konfi verbucht: Sie nahm einen Konfi-Platz und wurde an teamer_only-Terminen mit 400 abgewiesen. Die Antwortform ist unveraendert.\n\nABGESAGTE TERMINE seit 16.09.2026 mit 400 \"Dieser Termin ist abgesagt\" (Simons Entscheidung: \"Nein, gar nicht\" — zu einem abgesagten Termin meldet sich niemand an, auch die Leitung traegt dort niemanden ein). Wer wieder Leute eintragen will, nimmt zuerst die Absage zurueck (PUT /api/events/{id}/reaktivieren); dabei kommen die durch die Absage Abgemeldeten ohnehin von selbst zurueck. Das ENTFERNEN einer Buchung (DELETE /{id}/bookings/{bookingId}) bleibt am abgesagten Termin moeglich.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören",
@@ -5029,12 +5028,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst)",
@@ -5117,12 +5116,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "jahrgang_ids/category_ids org-geprüft"
@@ -5185,16 +5184,16 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Teilnehmer zwischen bestaetigt und Warteliste verschieben",
-        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person. BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n",
+        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person. BEHOBEN 15.09.2026: Die Degradierung gibt einen bestaetigten Platz frei — dort rueckt jetzt die naechste wartende Person derselben Kontingent-Seite nach (Push, war_auf_warteliste, Termin-Chat). Die gerade Herabgestufte kann sich dabei nicht selbst zurueckholen. Die Befoerderung VON HAND setzt jetzt ebenfalls war_auf_warteliste (Migration 145) — sie folgt bewusst nicht FIFO, die Leitung waehlt die Person aus. An einem abgesagten Termin rueckt niemand nach.\n\nABGESAGTE TERMINE seit 16.09.2026: Die Befoerderung auf 'confirmed' wird mit 400 \"Dieser Termin ist abgesagt\" abgelehnt — sie ist eine Anmeldung wie jede andere. Der Weg auf die WARTELISTE bleibt offen: Das ist keine Anmeldung, sondern das Gegenteil, und der damit verbundene Punkteentzug muss auch an einem abgesagten Termin moeglich bleiben.\n\nBEHOBEN 16.09.2026 — KAPAZITAET: Die Befoerderung auf 'confirmed' hatte KEINE Kapazitaetspruefung. Solange nichts automatisch nachrueckte, fiel das nicht auf; seit dem Nachruecken vom 15.09. buchte der Weg \"herabstufen, dann wieder bestaetigen\" den Termin still ueber (beim Herabstufen rueckt Y nach, beim Bestaetigen kommt X ungeprueft dazu). Ist das Kontingent voll, antwortet die Route jetzt 400 \"Der Termin ist voll. Erhöhe die Teilnehmerzahl, um weitere Plätze zu vergeben.\" Gezaehlt wird pro Kontingent-Seite (Konfi/Team) und ggf. pro Zeitfenster, ueber denselben Helfer wie das Nachruecken. Ohne Obergrenze (0/NULL) aendert sich nichts. Der Weg auf die Warteliste bleibt ungeprueft. Bewusstes Ueberbuchen laeuft ueber das Erhoehen der Teilnehmerzahl.\n\nGEPRUEFT 16.09.2026 — war_auf_warteliste: Die Spalte wird beim Bestaetigen nur gesetzt, wenn die Buchung wirklich auf 'waitlist' stand. Der Verdacht, sie werde auch bei einer Befoerderung aus 'excused' gesetzt, hat sich am Code NICHT bestaetigt; ein Test haelt das jetzt fest.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Buchung muss zu Event der eigenen Org gehören (403 sonst)",
@@ -5270,12 +5269,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event-Org muss der eigenen Org entsprechen (403)",
@@ -5311,17 +5310,17 @@
         "tags": [
           "Termine (Verwaltung)"
         ],
-        "summary": "Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)",
-        "description": "attendance_status present | absent | excused. present: Konfis erhalten einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte werden zurückgenommen. ADDITIV 12.09.2026 (Migration 147): 'excused' ist die von der Leitung nachgetragene Abmeldung — jemand wurde ausserhalb der App abgemeldet. Punkte verhalten sich wie bei 'absent' (keine Vergabe, Abzug bereits vergebener); der Unterschied liegt in der Dokumentation. Bewusst KEIN Push an die Konfi, die Abmeldung kam von den Eltern. Dazu zwei optionale Freitexte, je auf 500 Zeichen gekuerzt, leer -> NULL: excuse_reason (Grund; gehoert zu 'excused' und wird beim Wechsel auf einen anderen Status geleert) und attendance_note (freie Notiz, unabhaengig vom Status, z. B. \"ging um 14 Uhr\"; bleibt stehen, solange nichts Neues geschickt wird). Kein bestehendes Feld aendert Form oder Typ — ausgelieferte Apps schicken weiterhin nur present/absent. GEAENDERT 13.09.2026 — NOTIZ LOESCHEN: Frueher stand im UPDATE \"attendance_note = COALESCE(...)\"; damit kam NULL nie durch und eine Notiz liess sich setzen und aendern, aber nicht entfernen. Jetzt gelten drei Faelle: attendance_note FEHLT -> Notiz bleibt unveraendert (so schicken ausgelieferte App-Fassungen, ihr Verhalten ist unveraendert); attendance_note hat Text -> Notiz wird gesetzt; attendance_note ist LEER (\"\" oder nur Leerzeichen) -> Notiz wird geloescht. Kein neues Feld, kein Flag: Der leere String sagt genau das, was die Nutzerin tut. Alt-App-Vertrag gewahrt — eine Bedeutung bekommt allein der Fall, der bisher nichts bewirken KONNTE. ADDITIV 15.09.2026 (Migration 151): Aendert der Aufruf Status oder Grund, setzt die Route zusaetzlich checkin_quelle='manuell' und checked_in_at=NOW() — dieselbe Bedingung wie beim Urheber. Damit sind die drei Faelle unterscheidbar: 'manuell' (Leitung), 'qr' (Selbst-Check-in, POST /api/events/qr-checkin) und NULL (unbekannt, Altbestand). Ein manueller Eintrag nach einem QR-Check-in UEBERSCHREIBT die Quelle — es gilt, was zuletzt gesetzt wurde, sonst widersprechen sich die beiden Zeilen in der Anzeige. Eine reine NOTIZ-Aenderung laesst die Quelle in Ruhe: Ein Vermerk macht aus einem Selbst-Check-in keine Leitungsentscheidung. KEIN Buchungsstatus-Check (festgehalten 13.09.2026): Die Route setzt die Anwesenheit auch bei status='opted_out'. Das ist gewollt — die Leitung muss eine Selbstabmeldung nachtraeglich verbuchen koennen (\"hatte sich abgemeldet, kam dann doch\"). Der Buchungsstatus bleibt dabei 'opted_out' und wird NICHT umgeschrieben; die Abmeldung ist die Vorgeschichte des Eintrags. Anzeigen richten sich nach dem Anwesenheits-Status, sobald einer gesetzt ist. GEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT: attendance_status='excused' setzt zusaetzlich status='excused', ein Wechsel auf 'present'/'absent' holt ihn von 'excused' zurueck auf 'confirmed'. Grund: Am Buchungsstatus haengen Erinnerungen, Kapazitaet, Nachruecken und die Sortierung der Teilnehmerliste — solange er auf 'confirmed' stand, war die Abmeldung fuer all das unsichtbar (die abgemeldete Person bekam Erinnerungen, belegte einen Platz, die Warteliste rueckte nicht nach, und sie stand in der Liste ganz oben). Umgeschaltet wird NUR zwischen 'confirmed'/'waitlist' und 'excused'; 'opted_out' (siehe oben), 'cancelled' und 'pending' bleiben unangetastet. 'waitlist' -> 'excused' -> zurueck landet auf 'confirmed': Wer da war, hatte einen Platz. Zugleich wird abgemeldet_durch_absage=FALSE gesetzt — diese Abmeldung ist eine Einzelentscheidung und ueberlebt das Zuruecknehmen einer Terminabsage (dort steht TRUE, siehe PUT /api/events/{id}/cancel). ANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt, keines wechselt den Typ — booking_status traegt lediglich einen WERT mehr. Ausgelieferte Fassungen (2.1.1) stuerzen daran nachgemessen nicht ab (alle Fundstellen haben Fallbacks); sie zeigen die Person als \"Gebucht\" und zaehlen sie an sieben Stellen nicht mit. Bei den zum Umstellungszeitpunkt sechs betroffenen Bestandsbuchungen bewusst hingenommen (Entscheidung Simon, 15.09.2026). ADDITIV 13.09.2026 (Migration 148): Jedes Schreiben haelt Urheber und Zeitpunkt fest. Festgehalten wird der aktuelle Stand, keine Historie. Am Request aendert sich nichts. GEAENDERT 13.09.2026 (Migration 149) — ZWEI URHEBER-PAARE: Bis dahin setzte JEDES Schreiben attendance_set_by/_at neu, auch wenn nur die Notiz geaendert wurde. Schrieb A den Grund und B spaeter die Notiz, ueberschrieb B damit A, und die Anzeige behauptete, B habe auch den Grund aufgenommen. Seither gilt attendance_set_by/_at fuer STATUS samt excuse_reason und note_set_by/_at fuer attendance_note. Geschrieben wird, was sich TATSAECHLICH geaendert hat (Vergleich mit dem Bestand per IS DISTINCT FROM), nicht, was mitgeschickt wurde — die Route verlangt attendance_status bei jedem Aufruf, \"kam mit\" heisst also nicht \"wurde geaendert\". Aendert ein Aufruf beides, werden beide Paare gesetzt; aendert er nichts, bleibt jeder Urheber stehen. Wird die Notiz geloescht, faellt ihr Paar auf NULL zurueck. Am Request aendert sich nichts. BEHOBEN 15.09.2026 — NACHRUECKEN: Eine Abmeldung durch die Leitung gibt den Platz frei (der Buchungsstatus zieht seit Migration 153 auf 'excused' mit). Die naechste wartende Person derselben Kontingent-Seite rueckt jetzt nach, bekommt einen Push, traegt war_auf_warteliste und kommt in den Termin-Chat. Bis dahin rief diese Route bookingUtils gar nicht auf und der Platz verfiel. An einem abgesagten Termin rueckt niemand nach. Die Antwortform aendert sich nicht.\n",
+        "summary": "Anwesenheit eines Teilnehmers setzen oder zuruecksetzen (vergibt/entzieht Punkte)",
+        "description": "attendance_status present | absent | excused | null. present: Konfis erhalten einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte werden zurückgenommen. ADDITIV 12.09.2026 (Migration 147): 'excused' ist die von der Leitung nachgetragene Abmeldung — jemand wurde ausserhalb der App abgemeldet. Punkte verhalten sich wie bei 'absent' (keine Vergabe, Abzug bereits vergebener); der Unterschied liegt in der Dokumentation. Bewusst KEIN Push an die Konfi, die Abmeldung kam von den Eltern. Dazu zwei optionale Freitexte, je auf 500 Zeichen gekuerzt, leer -> NULL: excuse_reason (Grund; gehoert zu 'excused' und wird beim Wechsel auf einen anderen Status geleert) und attendance_note (freie Notiz, unabhaengig vom Status, z. B. \"ging um 14 Uhr\"; bleibt stehen, solange nichts Neues geschickt wird). Kein bestehendes Feld aendert Form oder Typ — ausgelieferte Apps schicken weiterhin nur present/absent. GEAENDERT 13.09.2026 — NOTIZ LOESCHEN: Frueher stand im UPDATE \"attendance_note = COALESCE(...)\"; damit kam NULL nie durch und eine Notiz liess sich setzen und aendern, aber nicht entfernen. Jetzt gelten drei Faelle: attendance_note FEHLT -> Notiz bleibt unveraendert (so schicken ausgelieferte App-Fassungen, ihr Verhalten ist unveraendert); attendance_note hat Text -> Notiz wird gesetzt; attendance_note ist LEER (\"\" oder nur Leerzeichen) -> Notiz wird geloescht. Kein neues Feld, kein Flag: Der leere String sagt genau das, was die Nutzerin tut. Alt-App-Vertrag gewahrt — eine Bedeutung bekommt allein der Fall, der bisher nichts bewirken KONNTE. ADDITIV 16.09.2026 — EINTRAG ZURUECKSETZEN: attendance_status darf jetzt auch null sein (ebenso ein leerer String oder ein fehlendes Feld — dieselbe Normalisierung wie bei den Freitexten). Die Buchung ist danach \"noch nicht verbucht\": attendance_status, excuse_reason, attendance_set_by/_at, checkin_quelle und checked_in_at werden geleert, ein status='excused' faellt auf 'confirmed' zurueck (opted_out/cancelled/pending/waitlist bleiben unangetastet), und vergebene Event-Punkte werden zurueckgenommen. Die attendance_note BLEIBT — sie haengt nicht am Status und wird ueber ihr eigenes leeres Feld geloescht. Kein Nachruecken (es wird kein Platz frei, sondern einer zurueckgenommen) und KEIN Push an die Person: Die drei Pushes melden ein Ergebnis, eine Ruecknahme meldet nichts. KEIN vierter Status, sondern NULL — derselbe Zustand, in dem jede Buchung anfaengt; sonst muessten alle Abfragen auf \"attendance_status IS NULL\" einen zweiten Wert zusaetzlich kennen. Antwort-message: \"Eintrag zurückgesetzt\" bzw. \"Eintrag zurückgesetzt und N Punkte entfernt\"; Form und Felder der Antwort unveraendert. ALT-APP-VERTRAG: Ausgelieferte Fassungen schicken immer einen der drei Werte — fuer sie aendert sich nichts. Eine Bedeutung bekommt allein der Fall, der bisher 400 lieferte. ADDITIV 15.09.2026 (Migration 151): Aendert der Aufruf Status oder Grund, setzt die Route zusaetzlich checkin_quelle='manuell' und checked_in_at=NOW() — dieselbe Bedingung wie beim Urheber. Damit sind die drei Faelle unterscheidbar: 'manuell' (Leitung), 'qr' (Selbst-Check-in, POST /api/events/qr-checkin) und NULL (unbekannt, Altbestand). Ein manueller Eintrag nach einem QR-Check-in UEBERSCHREIBT die Quelle — es gilt, was zuletzt gesetzt wurde, sonst widersprechen sich die beiden Zeilen in der Anzeige. Eine reine NOTIZ-Aenderung laesst die Quelle in Ruhe: Ein Vermerk macht aus einem Selbst-Check-in keine Leitungsentscheidung. KEIN Buchungsstatus-Check (festgehalten 13.09.2026): Die Route setzt die Anwesenheit auch bei status='opted_out'. Das ist gewollt — die Leitung muss eine Selbstabmeldung nachtraeglich verbuchen koennen (\"hatte sich abgemeldet, kam dann doch\"). Der Buchungsstatus bleibt dabei 'opted_out' und wird NICHT umgeschrieben; die Abmeldung ist die Vorgeschichte des Eintrags. Anzeigen richten sich nach dem Anwesenheits-Status, sobald einer gesetzt ist. GEAENDERT 15.09.2026 (Migration 153) — DER BUCHUNGSSTATUS ZIEHT MIT: attendance_status='excused' setzt zusaetzlich status='excused', ein Wechsel auf 'present'/'absent' holt ihn von 'excused' zurueck auf 'confirmed'. Grund: Am Buchungsstatus haengen Erinnerungen, Kapazitaet, Nachruecken und die Sortierung der Teilnehmerliste — solange er auf 'confirmed' stand, war die Abmeldung fuer all das unsichtbar (die abgemeldete Person bekam Erinnerungen, belegte einen Platz, die Warteliste rueckte nicht nach, und sie stand in der Liste ganz oben). Umgeschaltet wird NUR zwischen 'confirmed'/'waitlist' und 'excused'; 'opted_out' (siehe oben), 'cancelled' und 'pending' bleiben unangetastet. 'waitlist' -> 'excused' -> zurueck landet auf 'confirmed': Wer da war, hatte einen Platz. Zugleich wird abgemeldet_durch_absage=FALSE gesetzt — diese Abmeldung ist eine Einzelentscheidung und ueberlebt das Zuruecknehmen einer Terminabsage (dort steht TRUE, siehe PUT /api/events/{id}/cancel). ANTWORTFORM UNVERAENDERT: kein Feld entfaellt, keines wird umbenannt, keines wechselt den Typ — booking_status traegt lediglich einen WERT mehr. Ausgelieferte Fassungen (2.1.1) stuerzen daran nachgemessen nicht ab (alle Fundstellen haben Fallbacks); sie zeigen die Person als \"Gebucht\" und zaehlen sie an sieben Stellen nicht mit. Bei den zum Umstellungszeitpunkt sechs betroffenen Bestandsbuchungen bewusst hingenommen (Entscheidung Simon, 15.09.2026). ADDITIV 13.09.2026 (Migration 148): Jedes Schreiben haelt Urheber und Zeitpunkt fest. Festgehalten wird der aktuelle Stand, keine Historie. Am Request aendert sich nichts. GEAENDERT 13.09.2026 (Migration 149) — ZWEI URHEBER-PAARE: Bis dahin setzte JEDES Schreiben attendance_set_by/_at neu, auch wenn nur die Notiz geaendert wurde. Schrieb A den Grund und B spaeter die Notiz, ueberschrieb B damit A, und die Anzeige behauptete, B habe auch den Grund aufgenommen. Seither gilt attendance_set_by/_at fuer STATUS samt excuse_reason und note_set_by/_at fuer attendance_note. Geschrieben wird, was sich TATSAECHLICH geaendert hat (Vergleich mit dem Bestand per IS DISTINCT FROM), nicht, was mitgeschickt wurde — die Route verlangt attendance_status bei jedem Aufruf, \"kam mit\" heisst also nicht \"wurde geaendert\". Aendert ein Aufruf beides, werden beide Paare gesetzt; aendert er nichts, bleibt jeder Urheber stehen. Wird die Notiz geloescht, faellt ihr Paar auf NULL zurueck. Am Request aendert sich nichts. BEHOBEN 15.09.2026 — NACHRUECKEN: Eine Abmeldung durch die Leitung gibt den Platz frei (der Buchungsstatus zieht seit Migration 153 auf 'excused' mit). Die naechste wartende Person derselben Kontingent-Seite rueckt jetzt nach, bekommt einen Push, traegt war_auf_warteliste und kommt in den Termin-Chat. Bis dahin rief diese Route bookingUtils gar nicht auf und der Platz verfiel. An einem abgesagten Termin rueckt niemand nach. Die Antwortform aendert sich nicht.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event + Buchung org-gescopt (404 sonst)",
@@ -5408,12 +5407,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event org-gescopt",
@@ -5457,12 +5456,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event org-gescopt",
@@ -5528,12 +5527,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event org-gescopt; muss cancelled = TRUE sein, sonst 400",
@@ -5594,12 +5593,12 @@
         "x-berechtigung": {
           "rollen": [
             "org_admin",
-            "admin",
-            "teamer"
+            "admin"
           ],
+          "x-geaendert": "16.09.2026: von requireTeamer auf requireAdmin umgestellt. Terminverwaltung ist Leitungssache (Entscheidung Simon); Teamer:innen erhalten hier 403 \"Keine Berechtigung\". Unveraendert fuer das Team: POST /{id}/generate-qr, GET /{id}/attendance-count, GET /cancelled und die eigene Zusage POST /api/teamer/events/{id}/zusage.\n",
           "middleware": [
             "verifyTokenRBAC",
-            "requireTeamer"
+            "requireAdmin"
           ],
           "org-scope": true,
           "objekt-pruefung": "Event org-gescopt; muss cancelled = TRUE sein, sonst 400",
@@ -10164,7 +10163,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
-        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\n",
+        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\nkonfi_data.badges enthaelt ausschliesslich Abzeichen mit custom_badges.target_role = 'konfi' aus der EIGENEN Organisation (BEHOBEN 2026-09-16): Vorher fehlte beides. user_badges kennt die Art eines Abzeichens nicht, die steht allein in custom_badges.target_role - Teamer-Abzeichen (z. B. criteria_type 'teamer_year') landeten dadurch in der Konfi-Historie. Teamer-Abzeichen liefert GET /api/teamer/badges/v2.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -14591,6 +14590,14 @@
           "has_submission": {
             "type": "boolean",
             "description": "Schon eingereicht (unabhaengig von der Freigabe)"
+          },
+          "earned_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Wann der eigene Stempel verdient wurde (fruehester freigegebener eigener Beitrag). ADDITIV seit 2026-09-16, wortgleich zu GET /challenges/konfi — fuers Stempel-Popover in Leitungs- und Teamer-Ansicht"
           },
           "own_submission_count": {
             "type": "integer"
