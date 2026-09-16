@@ -134,14 +134,17 @@ describe('Befund E neu: Grund bearbeiten laeuft ueber den Wisch in beiden Listen
 
   it('die Teamer-Liste bietet ihn ebenfalls an -- an einem abgesagten Termin', () => {
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).toContain('aria-label="Absagegrund bearbeiten"');
-    expect(quelle).toContain('handleAbsagegrundBearbeiten(event)');
+    // Wortgleich zur Leitungsliste: EIN Wisch, dessen Beschriftung am
+    // Zustand des Termins haengt.
+    expect(quelle).toContain("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
+    expect(quelle).toContain('handleTerminAbsagen(event)');
   });
 
   it('das Team ruft dieselbe Route wie die Leitung auf', () => {
     const quelle = code(ANSICHTEN.teamListe);
     expect(quelle).toContain('/absagegrund');
-    expect(quelle).toContain("modus: 'grund' as const");
+    // Der Modus kommt aus dem Termin, wie in AdminEventsPage -- nicht fest.
+    expect(quelle).toContain("get modus() { return istAbgesagt(absageTermin) ? 'grund' as const : 'absagen' as const; }");
   });
 
   it('das Team benutzt DASSELBE Modal, kein zweites', () => {
@@ -178,9 +181,10 @@ describe('Absage zuruecknehmen: der Wisch steht in BEIDEN Listen', () => {
     const quelle = code(ANSICHTEN.teamListe);
     expect(quelle).toContain('aria-label="Absage zurücknehmen"');
     expect(quelle).toContain('handleAbsageZuruecknehmen(event)');
-    // Das Item bekommt IonItemSliding nur, wenn es etwas zu wischen gibt --
-    // sonst federt der Wisch wirkungslos zurueck (Audit 10.08.).
-    expect(quelle).toContain('if (!istAbgesagt(event)) return zeile;');
+    // Nur am abgesagten Termin -- an einem aktiven gibt es nichts
+    // zurueckzunehmen. Der Wisch selbst steht seit dem 16.09.2026 an JEDER
+    // Zeile, weil dort auch "Event absagen" haengt.
+    expect(quelle).toContain('{abgesagt && (');
   });
 
   it('beide Listen rufen dieselbe Route auf', () => {
@@ -209,12 +213,16 @@ describe('Absage zuruecknehmen: der Wisch steht in BEIDEN Listen', () => {
     expect(quelle).toContain('icon={isCancelled ? ICON_BEARBEITEN : ICON_GESPERRT}');
   });
 
-  it('die Teamer-Liste sagt einen Termin NICHT ab -- das bleibt der Leitung', () => {
-    // Im Team ist der Modus des Modals fest 'grund'. Ohne diese Pruefung
-    // koennte der neue Wisch unbemerkt zum Absage-Weg werden.
+  it('die Teamer-Liste bietet ihn genauso -- gleiche Rechte wie die Leitung', () => {
+    // Umgedreht am 16.09.2026 (Simon): "wenn sie das duerfen dann duerfen sie
+    // auch absagen". Bis dahin stand hier die Gegenprobe, dass das Team NICHT
+    // absagt -- der Modus des Modals war fest 'grund'. Das Backend erlaubte
+    // es die ganze Zeit (requireTeamer vor /cancel), nur die Oberflaeche
+    // fehlte.
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).not.toContain("modus: 'absagen'");
-    expect(quelle).not.toContain('aria-label="Event absagen"');
+    expect(quelle).toContain("abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'");
+    expect(quelle).toContain('icon={abgesagt ? ICON_BEARBEITEN : ICON_GESPERRT}');
+    expect(quelle).not.toContain("modus: 'grund' as const");
   });
 });
 
