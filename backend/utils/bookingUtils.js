@@ -154,12 +154,34 @@ const ABSAGE_OHNE_GRUND = 'Termin abgesagt';
  * bleibt checkin_quelle NULL -- es gab keinen Check-in, weder 'qr' noch
  * 'manuell'.
  *
- * NUR UNVERBUCHTE (attendance_status IS NULL): Eine bereits getroffene
- * Entscheidung -- jemand war anwesend, abwesend oder schon abgemeldet -- wird
- * nicht ueberschrieben. Das ist dieselbe Regel wie bei der Sammelverbuchung
- * ("Alle verbuchen" fasst Verbuchte nicht an) und verhindert zugleich, dass
- * Punkte doppelt abgezogen werden: Wessen Punkte schon zurueckgenommen sind,
- * steht nicht mehr auf NULL.
+ * AUCH BEREITS VERBUCHTE WERDEN ABGEMELDET (Entscheidung Simon, 16.09.2026):
+ * "Auch die auf abgemeldet setzen."
+ *
+ * Bis zum 16.09.2026 blieb verschont, wer schon auf 'present' oder 'absent'
+ * stand -- mit der Begruendung, eine getroffene Entscheidung werde nicht
+ * ueberschrieben. Simon hat das am Geraet gesehen und umentschieden: Ein
+ * abgesagter Termin hat keine Anwesenden. Wer als anwesend verbucht war, war
+ * anwesend bei etwas, das nicht stattgefunden hat -- und behielt Punkte fuer
+ * eine Teilnahme, die es nicht gab. Die Punkte werden deshalb mit
+ * zurueckgenommen (Schritt 1 und 2 unten fassen dieselbe Menge).
+ *
+ * WAS DIE AUSWAHL WEITERHIN AUSNIMMT, und warum das kein Widerspruch ist:
+ * `status IN ('confirmed', 'waitlist')`. Diese Bedingung bleibt -- sie traegt
+ * seit Migration 153 die ganze Abgrenzung:
+ *
+ *   - 'opted_out' (Selbstabmeldung von einer Pflicht, Teamer-Absage): eine
+ *     eigene, sichtbare Rueckmeldung. Sie belegt keinen Platz und ist keine
+ *     Anmeldung, die man noch abmelden koennte.
+ *   - 'excused' MIT EIGENEM GRUND (Einzelabmeldung durch die Leitung): steht
+ *     seit Migration 153 ebenfalls auf status = 'excused'
+ *     (routes/events/anwesenheit.js setzt beides gemeinsam, Migration 153 C1
+ *     hat den Bestand nachgezogen). Genau deshalb reicht diese eine Bedingung:
+ *     "krank, Mutter hat angerufen" wird NICHT vom Absagegrund ueberschrieben,
+ *     und abgemeldet_durch_absage bleibt dort FALSE -- Simons Kernfall
+ *     ("manche sind entschuldigt, dann machen wir es doch").
+ *
+ * Wer auf 'present' oder 'absent' steht, hat dagegen status 'confirmed' oder
+ * 'waitlist' -- eine lebende Anmeldung. Die faellt jetzt mit.
  *
  * ABMELDEN IST DIE VOREINSTELLUNG, NICHT DAS ENDE (Simon, 15.09.2026): Die
  * Leitung kann danach einzelne Personen ueber den normalen Weg wieder auf
@@ -189,8 +211,16 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   const abmeldeGrund = grund || ABSAGE_OHNE_GRUND;
 
   // 1. Punkte zuerst LESEN -- fuer genau die Buchungen, die gleich umgestellt
-  //    werden. Nach dem UPDATE waere die Auswahl "war unverbucht" nicht mehr
-  //    zu treffen.
+  //    werden. Nach dem UPDATE waere die Auswahl nicht mehr zu treffen, weil
+  //    `status` dann bei allen auf 'excused' steht.
+  //
+  //    DIESELBE BEDINGUNG WIE DAS UPDATE IN SCHRITT 3 -- das ist die ganze
+  //    Absicherung gegen den doppelten Abzug. Wer schon einzeln abgemeldet
+  //    ist, steht auf status = 'excused', faellt hier heraus und wird unten
+  //    auch nicht angefasst: Seine Punkte sind beim Abmelden zurueckgenommen
+  //    worden, ein zweiter Abzug wuerde den Saldo unter den richtigen Wert
+  //    druecken. Wer auf 'present' steht, faellt seit dem 16.09.2026 in BEIDE
+  //    Mengen -- er wird abgemeldet, und seine Punkte gehen mit.
   const { rows: punkte } = await client.query(
     `SELECT ep.konfi_id, ep.points, ep.point_type
        FROM event_points ep
@@ -199,7 +229,6 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
           SELECT 1 FROM event_bookings eb
            WHERE eb.event_id = ep.event_id AND eb.user_id = ep.konfi_id
              AND eb.status IN ('confirmed', 'waitlist')
-             AND eb.attendance_status IS NULL
         )`,
     [eventId]
   );
@@ -255,11 +284,17 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   //    sind entschuldigt, dann machen wir es doch. Status bei allen zurueck
   //    ausser bei denen."
   //
-  //    Die Auswahl bleibt unveraendert: nur bisher UNVERBUCHTE Buchungen
-  //    ('confirmed'/'waitlist' mit attendance_status IS NULL). Eine bereits
-  //    getroffene Entscheidung wird nicht ueberschrieben -- und eine bereits
-  //    einzeln abgemeldete Person behaelt damit auch ihr
-  //    abgemeldet_durch_absage = FALSE und ueberlebt die Zuruecknahme.
+  //    DIE AUSWAHL GREIFT SEIT DEM 16.09.2026 WEITER (Entscheidung Simon:
+  //    "Auch die auf abgemeldet setzen"). Bis dahin stand hier zusaetzlich
+  //    `attendance_status IS NULL`; wer schon auf 'present' oder 'absent'
+  //    verbucht war, blieb stehen. Ein abgesagter Termin hat aber keine
+  //    Anwesenden -- die Bedingung ist weg, present und absent fallen mit.
+  //
+  //    `status IN ('confirmed','waitlist')` BLEIBT und traegt jetzt die ganze
+  //    Abgrenzung allein: 'opted_out' und 'excused' (Einzelabmeldung mit
+  //    eigenem Grund) stehen nicht drin. Die einzeln abgemeldete Person
+  //    behaelt damit ihren Grund, ihr abgemeldet_durch_absage = FALSE und
+  //    ueberlebt die Zuruecknahme.
   //
   //    status_vor_absage HAELT FEST, WOHIN ES ZURUECKGEHT (Migration 155,
   //    16.09.2026). `status` wird im selben UPDATE ueberschrieben -- danach
@@ -270,16 +305,31 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
   //    die Angemeldeten hinten an. `status` steht rechts vom Komma noch auf
   //    dem ALTEN Wert -- Postgres wertet alle SET-Ausdruecke gegen die Zeile
   //    VOR dem UPDATE aus, die Reihenfolge der Zuweisungen spielt keine Rolle.
+  //
+  //    DIE SPUREN DER ALTEN VERBUCHUNG WERDEN GELOESCHT (16.09.2026), weil die
+  //    Auswahl jetzt auch verbuchte Zeilen fasst: Wer per QR eingecheckt war,
+  //    trug checkin_quelle = 'qr', wer von Hand verbucht wurde
+  //    attendance_set_by. Beides steht in der Teilnehmerliste als eigene Zeile
+  //    ("Selbst eingecheckt" / "Eingetragen von Simon Luthe", siehe
+  //    frontend/src/utils/anwesenheitUrheber.ts). An einer Zeile, die jetzt
+  //    "Abgemeldet: Termin abgesagt" sagt, behauptete das einen Check-in zu
+  //    einem Termin, der nicht stattgefunden hat. Es bleibt bei der Regel von
+  //    Migration 148: Die Absage beurteilt keine Anwesenheit, also traegt sie
+  //    auch keine Urheberin ein -- sie raeumt die alte nur mit ab. Wer
+  //    abgesagt hat, steht in events.cancelled_by.
   const { rowCount } = await client.query(
     `UPDATE event_bookings
         SET attendance_status = 'excused',
             status_vor_absage = status,
             status = 'excused',
             abgemeldet_durch_absage = TRUE,
-            excuse_reason = $2
+            excuse_reason = $2,
+            attendance_set_by = NULL,
+            attendance_set_at = NULL,
+            checkin_quelle = NULL,
+            checked_in_at = NULL
       WHERE event_id = $1
-        AND status IN ('confirmed', 'waitlist')
-        AND attendance_status IS NULL`,
+        AND status IN ('confirmed', 'waitlist')`,
     [eventId, abmeldeGrund]
   );
 
@@ -304,8 +354,15 @@ async function meldeAlleAbBeiAbsage(client, eventId, grund) {
  * Leitung einzeln abgemeldet wurde ('excused' mit abgemeldet_durch_absage =
  * FALSE), bleibt abgemeldet. Die Mutter hat angerufen, das Kind ist krank --
  * daran aendert sich nichts dadurch, dass der Termin nun doch stattfindet.
- * Wer schon auf 'present' oder 'absent' stand, wurde von der Absage ohnehin
- * nie angefasst (meldeAlleAbBeiAbsage waehlt nur attendance_status IS NULL).
+ *
+ * WER VOR DER ABSAGE 'present' ODER 'absent' WAR, KOMMT NICHT DORTHIN ZURUECK
+ * (Folge von Simons Entscheidung vom 16.09.2026, dass die Absage auch
+ * Verbuchte abmeldet): Die Absage hat ihn abgemeldet und seine Punkte
+ * zurueckgenommen, das Zuruecknehmen setzt attendance_status auf NULL. Er
+ * steht danach wieder als unverbucht in der Liste -- die alte Anwesenheit ist
+ * weg, die Punkte auch. Das ist gewollt: Der Termin steht jetzt wieder bevor,
+ * verbucht wird, wenn er gelaufen ist. Es ueberrascht aber, deshalb steht es
+ * auch im Handbuch.
  *
  * JEDE PERSON KEHRT AUF IHREN EIGENEN ALTEN STATUS ZURUECK
  * (status_vor_absage, Migration 155): 'confirmed' bleibt 'confirmed',

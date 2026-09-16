@@ -251,14 +251,20 @@ describe('Absage meldet alle Angemeldeten ab', () => {
     });
   });
 
-  // DER WICHTIGE FALL: Wer bereits abgemeldet ist, darf nicht ein zweites Mal
+  // DER WICHTIGE FALL: Wer bereits ABGEMELDET ist, darf nicht ein zweites Mal
   // angefasst werden -- sonst wuerden die Punkte doppelt abgezogen und der
   // eingetragene Grund ("krank, Mutter hat angerufen") durch den Absagegrund
-  // ueberschrieben.
-  describe('Bereits verbuchte Staende bleiben unangetastet', () => {
+  // ueberschrieben. Die Abgrenzung traegt allein `status`: Eine
+  // Einzelabmeldung steht seit Migration 153 auf status = 'excused', eine
+  // Selbstabmeldung auf 'opted_out'; beide fallen aus der Auswahl.
+  describe('Bereits abgemeldete Staende bleiben unangetastet', () => {
     it('ueberschreibt weder Grund noch Urheber einer bestehenden Abmeldung', async () => {
       const eventId = await termin();
-      const bookingId = await bucht(eventId, USERS.konfi1.id, 'confirmed', 'excused');
+      // status = 'excused' wie nach einer Einzelabmeldung ueber
+      // events/anwesenheit.js (Migration 153): Buchungs- und
+      // Anwesenheitsstatus ziehen dort gemeinsam um. Genau dieser Wert haelt
+      // die Zeile aus der Absage-Auswahl heraus.
+      const bookingId = await bucht(eventId, USERS.konfi1.id, 'excused', 'excused');
       await db.query(
         `UPDATE event_bookings SET excuse_reason = 'krank, Mutter hat angerufen',
                                    attendance_set_by = $2, attendance_set_at = NOW()
@@ -275,7 +281,7 @@ describe('Absage meldet alle Angemeldeten ab', () => {
 
     it('zieht die Punkte einer bereits abgemeldeten Person NICHT erneut ab', async () => {
       const eventId = await termin({ punkte: 5 });
-      await bucht(eventId, USERS.konfi1.id, 'confirmed', 'excused');
+      await bucht(eventId, USERS.konfi1.id, 'excused', 'excused');
       const vorher = await saldo(USERS.konfi1.id);
       // Der Beleg steht noch, der Saldo wurde beim manuellen Abmelden aber
       // schon bereinigt -- genau die Lage, in der ein zweiter Abzug den
@@ -291,17 +297,163 @@ describe('Absage meldet alle Angemeldeten ab', () => {
       expect(await saldo(USERS.konfi1.id)).toBe(vorher);
     });
 
-    it('laesst eine bereits als anwesend verbuchte Person auf present', async () => {
+    it('laesst eine Selbstabmeldung (opted_out) unangetastet', async () => {
+      const eventId = await termin();
+      await bucht(eventId, USERS.konfi1.id, 'opted_out');
+      await db.query(
+        `UPDATE event_bookings SET opt_out_reason = 'Bin im Urlaub'
+          WHERE event_id = $1 AND user_id = $2`,
+        [eventId, USERS.konfi1.id]
+      );
+
+      expect((await absagen(eventId, { cancelled_reason: 'Heizung defekt' })).status).toBe(200);
+
+      const b = await buchung(eventId, USERS.konfi1.id);
+      expect(b.status).toBe('opted_out');
+      expect(b.attendance_status).toBeNull();
+      expect(b.excuse_reason).toBeNull();
+    });
+  });
+
+  // UMENTSCHIEDEN am 16.09.2026. Bis dahin stand hier das Gegenteil: "laesst
+  // eine bereits als anwesend verbuchte Person auf present".
+  //
+  // Simon hat es am Geraet gesehen und entschieden: "Auch die auf abgemeldet
+  // setzen." Ein abgesagter Termin hat keine Anwesenden -- wer als anwesend
+  // verbucht war, war anwesend bei etwas, das nicht stattgefunden hat, und
+  // behielt Punkte fuer eine Teilnahme, die es nicht gab.
+  //
+  // Die Leitung kann danach weiterhin einzelne wieder auf 'present' setzen
+  // (siehe der letzte describe-Block) -- das Abmelden ist die Voreinstellung,
+  // nicht das Ende.
+  describe('Bereits verbuchte Anwesenheit wird MIT abgemeldet', () => {
+    it('setzt present auf excused mit dem Absagegrund und nimmt die Punkte zurueck', async () => {
       const eventId = await termin({ punkte: 5 });
       await bucht(eventId, USERS.konfi1.id, 'confirmed', 'present');
       const vorher = await saldo(USERS.konfi1.id);
       await gibPunkte(eventId, USERS.konfi1.id, 5);
+      // Konkrete Zahl statt "irgendwas hat sich geaendert": Vor der Absage
+      // steht der Saldo genau 5 hoeher.
+      expect(await saldo(USERS.konfi1.id)).toBe(vorher + 5);
+
+      expect((await absagen(eventId, { cancelled_reason: 'Heizung defekt' })).status).toBe(200);
+
+      const b = await buchung(eventId, USERS.konfi1.id);
+      expect(b.attendance_status).toBe('excused');
+      expect(b.status).toBe('excused');
+      expect(b.excuse_reason).toBe('Heizung defekt');
+
+      expect(await saldo(USERS.konfi1.id)).toBe(vorher);
+      const { rows } = await db.query(
+        'SELECT id FROM event_points WHERE event_id = $1 AND konfi_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(0);
+    });
+
+    it('setzt absent auf excused mit dem Absagegrund und nimmt die Punkte zurueck', async () => {
+      // 'absent' bringt normalerweise keine Punkte -- hier stehen sie
+      // trotzdem, weil die Anwesenheit nachtraeglich von 'present' auf
+      // 'absent' korrigiert werden kann. Der Beleg muss auch dann weg.
+      const eventId = await termin({ punkte: 5 });
+      await bucht(eventId, USERS.konfi1.id, 'confirmed', 'absent');
+      const vorher = await saldo(USERS.konfi1.id);
+      await gibPunkte(eventId, USERS.konfi1.id, 5);
+      expect(await saldo(USERS.konfi1.id)).toBe(vorher + 5);
+
+      expect((await absagen(eventId, { cancelled_reason: 'Sturm' })).status).toBe(200);
+
+      const b = await buchung(eventId, USERS.konfi1.id);
+      expect(b.attendance_status).toBe('excused');
+      expect(b.status).toBe('excused');
+      expect(b.excuse_reason).toBe('Sturm');
+      expect(await saldo(USERS.konfi1.id)).toBe(vorher);
+    });
+
+    it('kennzeichnet auch diese Abmeldung als aus der Absage stammend', async () => {
+      const eventId = await termin();
+      await bucht(eventId, USERS.konfi1.id, 'confirmed', 'present');
+
+      expect((await absagen(eventId)).status).toBe(200);
+
+      const { rows: [b] } = await db.query(
+        'SELECT abgemeldet_durch_absage, status_vor_absage FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(b.abgemeldet_durch_absage).toBe(true);
+      // status_vor_absage haelt den BUCHUNGS-status fest, nicht die
+      // Anwesenheit: Wer auf 'present' stand, war gebucht.
+      expect(b.status_vor_absage).toBe('confirmed');
+    });
+
+    it('haelt bei einer verbuchten Wartenden waitlist als status_vor_absage fest', async () => {
+      // Der CHECK aus Migration 155 laesst nur 'confirmed' und 'waitlist' zu.
+      // Genau diese beiden sind auch die einzigen Werte, die die Auswahl
+      // vorfindet -- auch jetzt, wo sie verbuchte Zeilen mitnimmt.
+      const eventId = await termin();
+      await bucht(eventId, USERS.konfi1.id, 'waitlist', 'present');
+
+      expect((await absagen(eventId)).status).toBe(200);
+
+      const { rows: [b] } = await db.query(
+        'SELECT status, status_vor_absage FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(b.status).toBe('excused');
+      expect(b.status_vor_absage).toBe('waitlist');
+    });
+
+    // Wer per QR eingecheckt war, trug checkin_quelle = 'qr'; die
+    // Teilnehmerliste macht daraus die Zeile "Selbst eingecheckt". An einer
+    // Zeile, die jetzt "Abgemeldet: Termin abgesagt" sagt, behauptete das
+    // einen Check-in zu einem Termin, der nicht stattgefunden hat.
+    it('raeumt die Spuren der alten Verbuchung mit ab', async () => {
+      const eventId = await termin();
+      await bucht(eventId, USERS.konfi1.id, 'confirmed', 'present');
+      await db.query(
+        `UPDATE event_bookings
+            SET checkin_quelle = 'qr', checked_in_at = NOW(),
+                attendance_set_by = $2, attendance_set_at = NOW()
+          WHERE event_id = $1 AND user_id = $3`,
+        [eventId, USERS.admin1.id, USERS.konfi1.id]
+      );
 
       expect((await absagen(eventId)).status).toBe(200);
 
       const b = await buchung(eventId, USERS.konfi1.id);
-      expect(b.attendance_status).toBe('present');
-      expect(await saldo(USERS.konfi1.id)).toBe(vorher + 5);
+      expect(b.checkin_quelle).toBeNull();
+      expect(b.attendance_set_by).toBeNull();
+    });
+
+    // Der Fall, den Simon selbst genannt hat: "manche sind entschuldigt, dann
+    // machen wir es doch." Ihr Grund gehoert IHR und darf beim Absagen nicht
+    // vom Absagegrund ueberschrieben werden -- auch nicht, seit die Auswahl
+    // weiter greift. Die Abgrenzung traegt status = 'excused'.
+    it('fasst neben present auch die Einzelabmeldung NICHT an', async () => {
+      const eventId = await termin({ punkte: 5 });
+      await bucht(eventId, USERS.konfi1.id, 'confirmed', 'present');
+      const eigenAbgemeldet = await bucht(eventId, USERS.konfi2.id, 'excused', 'excused');
+      await db.query(
+        `UPDATE event_bookings SET excuse_reason = 'krank, Mutter hat angerufen'
+          WHERE id = $1`,
+        [eigenAbgemeldet]
+      );
+
+      expect((await absagen(eventId, { cancelled_reason: 'Heizung defekt' })).status).toBe(200);
+
+      const anwesend = await buchung(eventId, USERS.konfi1.id);
+      expect(anwesend.attendance_status).toBe('excused');
+      expect(anwesend.excuse_reason).toBe('Heizung defekt');
+
+      const { rows: [eigen] } = await db.query(
+        `SELECT attendance_status, excuse_reason, status, abgemeldet_durch_absage
+           FROM event_bookings WHERE id = $1`,
+        [eigenAbgemeldet]
+      );
+      expect(eigen.attendance_status).toBe('excused');
+      expect(eigen.excuse_reason).toBe('krank, Mutter hat angerufen');
+      expect(eigen.status).toBe('excused');
+      expect(eigen.abgemeldet_durch_absage).toBe(false);
     });
   });
 

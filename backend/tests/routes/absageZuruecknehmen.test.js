@@ -414,7 +414,17 @@ describe('Absage zuruecknehmen: PUT /api/events/:id/reaktivieren', () => {
       expect((await buchung(eventId, KONFI_A)).status).toBe('confirmed');
     });
 
-    it('wer schon auf present oder absent stand, bleibt unangetastet', async () => {
+    // UMENTSCHIEDEN am 16.09.2026. Bis dahin hiess dieser Test "wer schon auf
+    // present oder absent stand, bleibt unangetastet" -- die Absage liess
+    // Verbuchte stehen. Simon hat das umentschieden ("Auch die auf abgemeldet
+    // setzen"), und damit gilt hier die Folge davon:
+    //
+    // WER VOR DER ABSAGE 'present' WAR, KOMMT ALS UNVERBUCHT ZURUECK. Seine
+    // Anwesenheit ist weg, die Punkte auch. Das ueberrascht -- deshalb steht
+    // es ausdruecklich im Handbuch. Fachlich ist es richtig: Der Termin steht
+    // nach dem Zuruecknehmen wieder bevor, verbucht wird, wenn er gelaufen
+    // ist.
+    it('wer vor der Absage present oder absent war, kommt als unverbucht zurueck', async () => {
       const eventId = await termin();
       await buche(eventId, konfiToken);
       await buche(eventId, konfiTokens.A);
@@ -433,25 +443,66 @@ describe('Absage zuruecknehmen: PUT /api/events/:id/reaktivieren', () => {
 
       await absagen(eventId, 'Heizung defekt');
 
-      // Gegenprobe: Die Absage hat die beiden nicht angefasst.
-      expect((await buchung(eventId, USERS.konfi1.id)).attendance_status).toBe('present');
-      expect((await buchung(eventId, KONFI_A)).attendance_status).toBe('absent');
+      // Die Absage hat die beiden MIT abgemeldet -- Ausgangslage fuer das,
+      // was danach zurueckkommt.
+      const nachAbsageAnwesend = await buchung(eventId, USERS.konfi1.id);
+      expect(nachAbsageAnwesend.attendance_status).toBe('excused');
+      expect(nachAbsageAnwesend.status).toBe('excused');
+      expect(nachAbsageAnwesend.abgemeldet_durch_absage).toBe(true);
+      expect(nachAbsageAnwesend.status_vor_absage).toBe('confirmed');
+      expect((await buchung(eventId, KONFI_A)).attendance_status).toBe('excused');
 
       expect((await reaktivieren(eventId)).status).toBe(200);
 
+      // Beide sind wieder angemeldet -- aber unverbucht. Die alte Anwesenheit
+      // ist weg.
       const anwesend = await buchung(eventId, USERS.konfi1.id);
-      expect(anwesend.attendance_status).toBe('present');
       expect(anwesend.status).toBe('confirmed');
+      expect(anwesend.attendance_status).toBeNull();
+      expect(anwesend.excuse_reason).toBeNull();
       expect(anwesend.abgemeldet_durch_absage).toBe(false);
 
       const abwesend = await buchung(eventId, KONFI_A);
-      expect(abwesend.attendance_status).toBe('absent');
       expect(abwesend.status).toBe('confirmed');
-      expect(abwesend.abgemeldet_durch_absage).toBe(false);
+      expect(abwesend.attendance_status).toBeNull();
 
-      // Nur B war durch die Absage abgemeldet und kommt zurueck.
+      // B war nie verbucht und kommt genauso zurueck.
       expect((await buchung(eventId, KONFI_B)).status).toBe('confirmed');
       expect((await buchung(eventId, KONFI_B)).attendance_status).toBeNull();
+    });
+
+    // Die zweite Haelfte derselben Folge, mit Zahlen: Die Punkte der vorher
+    // Anwesenden sind nach dem Zuruecknehmen nicht wieder da. Simon:
+    // "Bleiben weg, neu vergeben."
+    it('die Punkte der vorher Anwesenden kommen beim Zuruecknehmen nicht wieder', async () => {
+      const eventId = await termin({ punkte: 5 });
+      await buche(eventId, konfiToken);
+      const { rows: [vorher] } = await db.query(
+        'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]
+      );
+
+      await request(app)
+        .put(`/api/events/${eventId}/participants/${await buchungsId(eventId, USERS.konfi1.id)}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'present' })
+        .expect(200);
+      const { rows: [mitPunkten] } = await db.query(
+        'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]
+      );
+      expect(mitPunkten.gemeinde_points).toBe(vorher.gemeinde_points + 5);
+
+      await absagen(eventId, 'Heizung defekt');
+      const { rows: [nachAbsage] } = await db.query(
+        'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]
+      );
+      expect(nachAbsage.gemeinde_points).toBe(vorher.gemeinde_points);
+
+      expect((await reaktivieren(eventId)).status).toBe(200);
+
+      const { rows: [nachher] } = await db.query(
+        'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]
+      );
+      expect(nachher.gemeinde_points).toBe(vorher.gemeinde_points);
     });
 
     it('ohne status_vor_absage (Altbestand) faellt es auf confirmed zurueck', async () => {
