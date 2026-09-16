@@ -92,18 +92,26 @@ describe('Die Regeln stehen an EINER Stelle', () => {
   });
 });
 
+// NAMENSWECHSEL AM 17.09.2026: Hier stand ueberall `eigeneTeilnahme?.status`.
+// Der Wert kam aus participants.find(...) -- und gegen Produktion gemessen
+// steht die Leitung dort GAR NICHT drin, weder nach einer Zusage noch nach
+// einer Absage. find() gab immer undefined, und undefined heisst "noch nichts
+// entschieden": Die Leitung sah dauerhaft beide Knoepfe, egal was sie gewaehlt
+// hatte (Simons Befund). Gelesen wird jetzt eventData.booking_status -- dieselbe
+// Quelle wie auf der Teamer-Seite. Die Pruefungen hier bleiben inhaltlich
+// dieselben, nur der Name des geprueften Ausdrucks aendert sich.
 describe('Leitung: eigene Zusage', () => {
   it('zeigt den gruenen Knopf NICHT mehr, wenn schon zugesagt ist', () => {
-    expect(adminBlock).toContain("welcheKnoepfe(eigeneTeilnahme?.status) !== 'absage' && (");
+    expect(adminBlock).toContain("welcheKnoepfe(eigeneZusage) !== 'absage' && (");
   });
 
   it('zeigt den roten Knopf NICHT mehr, wenn schon abgesagt ist', () => {
-    expect(adminBlock).toContain("welcheKnoepfe(eigeneTeilnahme?.status) !== 'zusage' && (");
+    expect(adminBlock).toContain("welcheKnoepfe(eigeneZusage) !== 'zusage' && (");
   });
 
   it('nimmt die Beschriftungen aus der gemeinsamen Stelle', () => {
-    expect(adminBlock).toContain('{zusageBeschriftung(eigeneTeilnahme?.status)}');
-    expect(adminBlock).toContain('{absageBeschriftung(eigeneTeilnahme?.status)}');
+    expect(adminBlock).toContain('{zusageBeschriftung(eigeneZusage)}');
+    expect(adminBlock).toContain('{absageBeschriftung(eigeneZusage)}');
     // Die alten, fest verdrahteten Beschriftungen sind weg.
     expect(adminBlock).not.toContain("'Du bist dabei'");
     expect(adminBlock).not.toContain("'Bin dabei'");
@@ -128,7 +136,7 @@ describe('Leitung: eigene Zusage', () => {
   });
 
   it('gibt dem Modal dieselbe Grund-Pflicht mit wie die Teamer-Seite', () => {
-    expect(adminSeite).toContain('grundPflicht: absageBrauchtGrund(eigeneTeilnahme?.status)');
+    expect(adminSeite).toContain('grundPflicht: absageBrauchtGrund(eigeneZusage)');
     expect(teamerSeite).toContain('absageBrauchtGrund(selectedEvent.booking_status)');
   });
 

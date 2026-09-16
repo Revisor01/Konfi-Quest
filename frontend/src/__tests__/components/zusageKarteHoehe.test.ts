@@ -52,7 +52,7 @@ describe('Die Zusage-Knoepfe der Leitung bleiben auf Nachbar-Hoehe', () => {
   // Der Abschnitt zwischen "Bist du dabei?" und dem Ende der Karte.
   const abschnitt = adminDetail.slice(
     adminDetail.indexOf('Bist du dabei?'),
-    adminDetail.indexOf('{absageBeschriftung(eigeneTeilnahme?.status)}') + 200
+    adminDetail.indexOf('{absageBeschriftung(eigeneZusage)}') + 200
   );
 
   it('setzt kein app-action-button (das waere 48px statt 40px)', () => {
@@ -67,8 +67,8 @@ describe('Die Zusage-Knoepfe der Leitung bleiben auf Nachbar-Hoehe', () => {
     // utils/zusageKnoepfe.ts -- fest verdrahtete Texte gibt es hier nicht
     // mehr. Die Reihe selbst bleibt: eine Zeile, zwei gleich breite Knoepfe.
     expect(abschnitt).toContain('app-button-row app-button-row--in-card');
-    expect(abschnitt).toContain('{zusageBeschriftung(eigeneTeilnahme?.status)}');
-    expect(abschnitt).toContain('{absageBeschriftung(eigeneTeilnahme?.status)}');
+    expect(abschnitt).toContain('{zusageBeschriftung(eigeneZusage)}');
+    expect(abschnitt).toContain('{absageBeschriftung(eigeneZusage)}');
   });
 });
 

@@ -119,8 +119,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Backend: alle ausser Konfis.
   const [zusageLaeuft, setZusageLaeuft] = useState(false);
 
-  /** Eigene Teilnahme am Team-Kontingent, falls vorhanden. */
-  const eigeneTeilnahme = participants.find(p => p.user_id === user?.id);
+  /**
+   * Der eigene Zusage-Stand an diesem Termin.
+   *
+   * AUS eventData.booking_status, NICHT aus der Teilnehmerliste (17.09.2026,
+   * Simons Befund: "Die Logik ist bei Teamer und Admin nicht gleich unter
+   * bist du dabei").
+   *
+   * HIER STAND BIS DAHIN:
+   *   participants.find(p => p.user_id === user?.id)
+   *
+   * Gegen Produktion gemessen: Nach einer Zusage der Leitung ueber
+   * POST /teamer/events/:id/zusage liefert GET /events/:id zwar
+   * booking_status 'confirmed' -- die Leitung steht aber NICHT in
+   * participants, weder nach der Zusage noch nach der Absage (beide Male
+   * leeres Array). find() gab also immer undefined, welcheKnoepfe(undefined)
+   * heisst 'beide', und deshalb standen dauerhaft beide Knoepfe da, egal was
+   * gewaehlt war -- ununterscheidbar von "noch nichts entschieden".
+   *
+   * booking_status ist derselbe Wert, aus dem auch die Teamer-Seite ihre
+   * Knoepfe ableitet (TeamerEventsPage, ZusageKnoepfe). Damit ist die
+   * Entscheidung nicht nur in derselben Funktion, sondern auf derselben
+   * Datengrundlage -- vorher war nur die halbe Angleichung passiert.
+   */
+  const eigeneZusage = eventData?.booking_status;
 
   /** Nimmt dieses Event ueberhaupt Team-Anmeldungen? */
   const nimmtTeamAn = !!(eventData?.teamer_needed || eventData?.teamer_only);
@@ -177,7 +199,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Teilnahme -- zwei verschiedene Dinge am selben Termin.
   const [presentEigeneAbsageModal, dismissEigeneAbsageModal] = useIonModal(TeamerAbsageModal, {
     eventName: eventData?.name || '',
-    grundPflicht: absageBrauchtGrund(eigeneTeilnahme?.status),
+    grundPflicht: absageBrauchtGrund(eigeneZusage),
     onAbsage: (grund: string) => { setzeEigeneZusage(false, grund); },
     dismiss: (data?: string, role?: string) => dismissEigeneAbsageModal(data, role)
   });
@@ -1412,7 +1434,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     Bewusst OHNE app-action-button (48px): die Nachbarknoepfe
                     dieser Seite sind 40px hoch. */}
                 <div className="app-button-row app-button-row--in-card">
-                  {welcheKnoepfe(eigeneTeilnahme?.status) !== 'absage' && (
+                  {welcheKnoepfe(eigeneZusage) !== 'absage' && (
                     <IonButton
                       expand="block"
                       fill="outline"
@@ -1421,10 +1443,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       onClick={() => setzeEigeneZusage(true)}
                     >
                       <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
-                      {zusageBeschriftung(eigeneTeilnahme?.status)}
+                      {zusageBeschriftung(eigeneZusage)}
                     </IonButton>
                   )}
-                  {welcheKnoepfe(eigeneTeilnahme?.status) !== 'zusage' && (
+                  {welcheKnoepfe(eigeneZusage) !== 'zusage' && (
                     <IonButton
                       expand="block"
                       fill="outline"
@@ -1433,7 +1455,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       onClick={oeffneEigeneAbsage}
                     >
                       <IonIcon icon={ICON_ABSAGE} slot="start" />
-                      {absageBeschriftung(eigeneTeilnahme?.status)}
+                      {absageBeschriftung(eigeneZusage)}
                     </IonButton>
                   )}
                 </div>

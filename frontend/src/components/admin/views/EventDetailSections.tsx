@@ -81,6 +81,13 @@ export interface EventData {
   // Eigener Status fuer das TEAMER-Kontingent (Migration 120):
   // registration_status daruber rechnet ausschliesslich mit Konfi-Zahlen.
   teamer_registration_status?: 'none' | 'upcoming' | 'open' | 'waitlist' | 'closed' | 'cancelled';
+  // Der EIGENE Buchungsstatus der angemeldeten Person an diesem Termin
+  // (GET /events/:id, eb_user.status). Das Backend liefert ihn seit jeher --
+  // nur der Typ kannte ihn nicht, und deshalb las die Leitungsansicht ihren
+  // eigenen Zusage-Stand aus der Teilnehmerliste, in der die Leitung gar
+  // nicht steht (17.09.2026). Optional, weil eine Person ohne Buchung hier
+  // nichts stehen hat -- genau das heisst "noch nicht entschieden".
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | 'excused' | null;
   available_spots: number;
   participants: Participant[];
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;

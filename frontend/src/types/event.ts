@@ -70,7 +70,12 @@ export interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   // Booking
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
+  // 'excused' kam mit Migration 153 (15.09.2026) dazu: die Abmeldung DURCH
+  // DIE LEITUNG, im Unterschied zur Selbstabmeldung ('opted_out'). Der Typ
+  // kannte den Wert bis zum 17.09.2026 nicht -- das Backend schrieb ihn
+  // laengst, und TypeScript konnte an keiner Stelle darauf hinweisen, dass
+  // dieser Fall mitbedacht gehoert.
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | 'excused' | null;
   registration_status_detail?: string;
   is_opted_out?: boolean;
   // Attendance ('excused' seit Migration 147: nachgetragene Abmeldung)
