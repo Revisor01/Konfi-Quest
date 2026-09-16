@@ -468,8 +468,47 @@ const TeamerDashboardPage: React.FC = () => {
   const recentVisibleCount = visibleBadges.filter((b) => earnedIds.has(b.id) && isRecent(b)).length;
   const recentSecretCount = secretEarned.filter((b) => isRecent(b)).length;
 
+  // DIE STARTSEITE TAUSCHT IHRE IonPage NICHT AUS (16.09.2026, Simons Befund
+  // "app startet bei teamer und konfi auf weiss").
+  //
+  // Bis hierher stand an dieser Stelle `return <LoadingSpinner fullScreen />`
+  // -- und der bringt seine EIGENE IonPage mit. Die Startseite lieferte damit
+  // nacheinander zwei verschiedene Wurzel-KOMPONENTEN (LoadingSpinner, dann
+  // IonPage). React kann bei einem Wechsel des Komponententyps das DOM-Element
+  // nicht wiederverwenden: Es wirft das alte weg und baut ein neues. Daran
+  // haengt der weisse Start:
+  //
+  //   1. Ladebildschirm -> Element A. Ionic haengt im ref-Callback synchron
+  //      `ion-page-invisible` an (@ionic/react, IonPage.stableMergedRefs).
+  //      Der Wechsel in den Tab laeuft als Uebergang und nimmt die Klasse ab.
+  //   2. Daten da, `loading` faellt -> Element A wird verworfen, Element B
+  //      gebaut. Dessen ref-Callback haengt `ion-page-invisible` ERNEUT an.
+  //      Nur: Die Route hat sich nicht geaendert, es laeuft kein zweiter
+  //      Uebergang, und niemand nimmt die Klasse je wieder ab.
+  //
+  // Ergebnis ist genau das beobachtete Bild: Die Tab-Leiste steht (sie haengt
+  // ausserhalb des Router-Outlets), der Seiteninhalt ist unsichtbar -- weiss.
+  // Wegnavigieren und zurueck loest einen echten Uebergang aus, der die Klasse
+  // abnimmt; deshalb war "danach alles da".
+  //
+  // Deshalb ist die Wurzel jetzt in BEIDEN Zustaenden eine IonPage. React
+  // erkennt denselben Typ an derselben Stelle und behaelt dasselbe
+  // DOM-Element -- kein zweites `ion-page-invisible`. Die Leitungsseiten
+  // machen das schon immer so (AdminCategoriesPage, AdminCertificatesPage) --
+  // deshalb war die Leitung als einzige Rolle nicht betroffen.
   if (loading) {
-    return <LoadingSpinner fullScreen message="Dashboard wird geladen..." />;
+    return (
+      <IonPage>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            <IonTitle>Konfi Quest</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="app-gradient-background" fullscreen>
+          <LoadingSpinner message="Dashboard wird geladen..." />
+        </IonContent>
+      </IonPage>
+    );
   }
 
   return (
