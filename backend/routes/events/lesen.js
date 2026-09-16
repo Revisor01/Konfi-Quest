@@ -26,14 +26,29 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       // GROUP BY über die ganze Breite nötig.
       const query = `
         SELECT e.*,
-                bstats.registered_count,
-                bstats.waitlist_count,
-                bstats.unprocessed_count,
-                bstats.teamer_unprocessed_count,
-                bstats.total_participants,
-                bstats.teamer_count,
-                bstats.teamer_waitlist_count,
-                bstats.abgemeldet_count,
+                -- COALESCE AUF DER AEUSSEREN EBENE (16.09.2026, gegen
+                -- Produktion gemessen).
+                --
+                -- DIE FALLE: Das COALESCE in der LATERAL-Unterabfrage weiter
+                -- unten schuetzt vor einer NULL-SPALTE, nicht vor einer
+                -- FEHLENDEN ZEILE. event_booking_stats entsteht mit GROUP BY
+                -- ueber event_bookings -- ein Termin OHNE jede Buchung hat
+                -- dort keine Zeile. Die Unterabfrage liefert dann nichts,
+                -- das ON true fuellt alle Spalten mit NULL auf, und das
+                -- innere COALESCE wird nie ausgewertet.
+                --
+                -- Nachgewiesen an einem frisch angelegten Termin in
+                -- Produktion: registered_count und abgemeldet_count kamen
+                -- als null zurueck. Dieselbe Falle steckte in routes/konfi.js
+                -- und liess dort "Anmelden (null/4)" auf dem Knopf stehen.
+                COALESCE(bstats.registered_count, 0)         as registered_count,
+                COALESCE(bstats.waitlist_count, 0)           as waitlist_count,
+                COALESCE(bstats.unprocessed_count, 0)        as unprocessed_count,
+                COALESCE(bstats.teamer_unprocessed_count, 0) as teamer_unprocessed_count,
+                COALESCE(bstats.total_participants, 0)       as total_participants,
+                COALESCE(bstats.teamer_count, 0)             as teamer_count,
+                COALESCE(bstats.teamer_waitlist_count, 0)    as teamer_waitlist_count,
+                COALESCE(bstats.abgemeldet_count, 0)         as abgemeldet_count,
                 CASE
                   WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                   ELSE e.max_participants
@@ -48,8 +63,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 event_chat.id as chat_room_id,
                 ${anmeldeStatusSql({
                   kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
-                  bestaetigt: 'bstats.registered_count',
-                  warteliste: 'bstats.waitlist_count'
+                  bestaetigt: 'COALESCE(bstats.registered_count, 0)',
+                  warteliste: 'COALESCE(bstats.waitlist_count, 0)'
                 })} as registration_status,
                 -- Eigener Status fuer das TEAMER-Kontingent (Migration 120).
                 -- registration_status daruber rechnet ausschliesslich mit
@@ -68,12 +83,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                   WHEN NOW() > e.registration_closes_at THEN 'closed'
                   -- 0 heisst unbegrenzt, wie beim Konfi-Kontingent auch.
                   WHEN COALESCE(e.teamer_max_participants, 0) > 0
-                       AND bstats.teamer_count >= e.teamer_max_participants
+                       AND COALESCE(bstats.teamer_count, 0) >= e.teamer_max_participants
                        AND (NOT e.teamer_waitlist_enabled
-                            OR bstats.teamer_waitlist_count >= COALESCE(e.teamer_max_waitlist_size, 0))
+                            OR COALESCE(bstats.teamer_waitlist_count, 0) >= COALESCE(e.teamer_max_waitlist_size, 0))
                     THEN 'closed'
                   WHEN COALESCE(e.teamer_max_participants, 0) > 0
-                       AND bstats.teamer_count >= e.teamer_max_participants
+                       AND COALESCE(bstats.teamer_count, 0) >= e.teamer_max_participants
                     THEN 'waitlist'
                   ELSE 'open'
                 END as teamer_registration_status,
@@ -551,8 +566,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                COALESCE(absage_abm.anzahl, 0) as durch_absage_abgemeldet_count,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
-                 bestaetigt: 'bstats.registered_count',
-                 warteliste: 'bstats.waitlist_count'
+                 bestaetigt: 'COALESCE(bstats.registered_count, 0)',
+                 warteliste: 'COALESCE(bstats.waitlist_count, 0)'
                })} as registration_status,
                -- Zweiter, unabhaengiger Status fuer das TEAMER-Kontingent,
                -- wortgleich zur Liste (oben in dieser Datei). Ohne ihn
@@ -565,12 +580,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                  WHEN NOW() > e.registration_closes_at THEN 'closed'
                  WHEN COALESCE(e.teamer_max_participants, 0) > 0
-                      AND bstats.teamer_count >= e.teamer_max_participants
+                      AND COALESCE(bstats.teamer_count, 0) >= e.teamer_max_participants
                       AND (NOT e.teamer_waitlist_enabled
-                           OR bstats.teamer_waitlist_count >= COALESCE(e.teamer_max_waitlist_size, 0))
+                           OR COALESCE(bstats.teamer_waitlist_count, 0) >= COALESCE(e.teamer_max_waitlist_size, 0))
                    THEN 'closed'
                  WHEN COALESCE(e.teamer_max_participants, 0) > 0
-                      AND bstats.teamer_count >= e.teamer_max_participants
+                      AND COALESCE(bstats.teamer_count, 0) >= e.teamer_max_participants
                    THEN 'waitlist'
                  ELSE 'open'
                END as teamer_registration_status
