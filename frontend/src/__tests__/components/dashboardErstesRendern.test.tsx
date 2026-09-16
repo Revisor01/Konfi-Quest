@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 
@@ -144,19 +144,32 @@ vi.mock('../../contexts/AppContext', () => ({
 import TeamerDashboardPage from '../../components/teamer/pages/TeamerDashboardPage';
 
 describe('Startseite beim ERSTEN Aufbau (Teamer)', () => {
-  beforeEach(() => { gesehenePages.length = 0; });
+  // FESTE UHRZEIT (16.09.2026): Erkannt wird "der Inhalt ist da" an der
+  // Begruessung -- und die haengt an der Stunde. Hier stand zuerst ein
+  // toContain('Guten'), das drei von vier Tageszeiten traf: Ab 22 Uhr sagt
+  // die Seite "Gute Nacht", und der Test fiel jede Nacht, ohne dass am Code
+  // etwas anders war. Mit fester Uhrzeit prueft er immer dasselbe.
+  beforeEach(() => {
+    gesehenePages.length = 0;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-16T10:00:00'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('zeigt nach dem ersten Laden den Inhalt, nicht nur den Ladebildschirm', async () => {
     const { container } = render(<TeamerDashboardPage />);
-    await waitFor(() => {
-      expect(container.textContent).toContain('Guten');
+    await vi.waitFor(() => {
+      expect(container.textContent).toContain('Guten Morgen');
     }, { timeout: 3000 });
   });
 
   it('behaelt beim Umschlag von "laedt" auf "fertig" DASSELBE Wurzel-Element', async () => {
     const { container } = render(<TeamerDashboardPage />);
-    await waitFor(() => {
-      expect(container.textContent).toContain('Guten');
+    await vi.waitFor(() => {
+      expect(container.textContent).toContain('Guten Morgen');
     }, { timeout: 3000 });
     // Genau EIN Wurzel-Element ueber beide Zustaende. Waeren es zwei, haette
     // Ionic dem zweiten `ion-page-invisible` angehaengt, ohne dass ein
