@@ -497,22 +497,43 @@ describe('Teamer: Zusage und Absage', () => {
       expect(res.status).toBe(409);
     });
 
-    it('Gegenprobe: ein Konfi-Opt-out wird NICHT reaktiviert (409 bleibt)', async () => {
-      // Konfis nehmen einen Pflicht-Opt-out ueber POST /konfi/events/:id/
-      // opt-in zurueck (eigener Push an die Leitung) — der Buchungsweg darf
-      // diesen Weg nicht stillschweigend ersetzen.
+    it('auch ein Konfi-Opt-out wird reaktiviert (UMGEDREHT 16.09.2026)', async () => {
+      // BIS ZUM 16.09.2026 stand hier das Gegenteil: "ein Konfi-Opt-out wird
+      // NICHT reaktiviert (409 bleibt)", begruendet damit, dass Konfis einen
+      // Opt-out ueber POST /konfi/events/:id/opt-in zuruecknehmen und der
+      // Buchungsweg diesen Weg nicht stillschweigend ersetzen duerfe.
+      //
+      // Die Begruendung trug nicht: Jenes UPDATE filtert fest auf
+      // status = 'opted_out' und greift bei 'excused' (Migration 153,
+      // 15.09.2026) gar nicht -- eine von der Leitung abgemeldete Konfi hatte
+      // damit ueberhaupt keinen Weg zurueck, auch nicht an einem
+      // Pflichttermin. Die Rueckmeldung "Du bist bereits fuer dieses Event
+      // angemeldet" war zudem sachlich falsch.
+      //
+      // Simons Entscheidung vom 16.09.2026: "Wieder anmelden muss möglich
+      // sein. [...] der Termin [ist] bei ihnen ja wieder wie ein offener
+      // Termin den sie neu haben. [...] Alle anderen Regeln greifen wie
+      // immer." Die Reaktivierung gilt seither fuer beide Abmelde-Arten und
+      // beide Rollen; die uebrigen Pruefungen (Anmeldefenster, Kapazitaet,
+      // Warteliste, Timeslot) laufen unveraendert danach. Geprueft wird das
+      // ausfuehrlich in tests/routes/wiederanmeldenNachAbmeldung.test.js.
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, organization_id, opt_out_reason, opt_out_date)
          VALUES ($1, $2, 'opted_out', $3, 'Pflicht-Abmeldung', NOW())`,
         [EVENTS.gottesdienstEvent.id, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
       const res = await book(generateToken('konfi1'));
-      expect(res.status).toBe(409);
-      const { rows: [k] } = await db.query(
-        'SELECT status FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+      expect(res.status).toBe(201);
+      const { rows } = await db.query(
+        'SELECT status, opt_out_reason, opt_out_date FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [USERS.konfi1.id, EVENTS.gottesdienstEvent.id]
       );
-      expect(k.status).toBe('opted_out');
+      // EINE Zeile, aktualisiert statt neu angelegt (UNIQUE-Index).
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('confirmed');
+      // Die neue Anmeldung ersetzt die Abmeldung, sie ergaenzt sie nicht.
+      expect(rows[0].opt_out_reason).toBeNull();
+      expect(rows[0].opt_out_date).toBeNull();
     });
   });
 

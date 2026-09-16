@@ -874,11 +874,34 @@ async function bucheTermin(client, eingabe) {
   //    pruefungen gelten unveraendert (die opted_out-Zeile belegt keinen
   //    Platz, zaehleBuchungen zaehlt sie nicht).
   //
-  //    Bewusst NUR auf der Team-Seite: Konfis nehmen eine Pflicht-Abmeldung
-  //    ueber POST /konfi/events/:id/opt-in zurueck (eigene Regeln, eigener
-  //    Push an die Leitung) — dieser Weg bleibt fuer sie der einzige.
+  //    ERWEITERT AM 16.09.2026 (Simons Entscheidung): Die Ausnahme gilt jetzt
+  //    fuer BEIDE Abmelde-Arten und fuer BEIDE Rollen. Woertlich: "Wieder
+  //    anmelden muss möglich sein. Wenn die sich abmelden[d] lebst wird der
+  //    Termin bei ihnen ja wie[der] wie ein offener Termin den sie neu haben.
+  //    So soll es sein. Alle anderen Regeln greifen wie immer."
+  //
+  //    Der frueher hier stehende Verweis ("Konfis nehmen eine Abmeldung ueber
+  //    POST /konfi/events/:id/opt-in zurueck") trug nicht: Dessen UPDATE hat
+  //    ein festes `AND status = 'opted_out'` und antwortet bei 'excused' mit
+  //    400 -- selbst an einem Pflichttermin. Es gab also gar keinen Weg
+  //    zurueck. Dass 'excused' hier fehlte, war ein Nebeneffekt, keine
+  //    Entscheidung: Der Kommentar oben stammt vom 01.09.2026, der Status kam
+  //    erst mit Migration 153 am 15.09.2026 dazu und wurde ueberall sonst
+  //    nachgezogen (Kapazitaet, Nachruecken, Erinnerungen, Check-in).
+  //
+  //    KEINE SONDERREGEL DAHINTER: Nach der Reaktivierung laeuft die Buchung
+  //    den normalen Weg -- Anmeldefenster, Konfirmations-Sperre, Kapazitaet,
+  //    Zeitslot-Zwang, Warteliste. Eine abgemeldete Zeile belegt dabei keinen
+  //    Platz (zaehleBuchungen zaehlt nur 'confirmed'/'waitlist'), der Termin
+  //    ist fuer die Betroffene also wieder ein offener Termin.
+  //
+  //    NICHT BERUEHRT: die Check-in-Sperre am Termintag (checkin.js). Wer
+  //    abgemeldet ist, checkt nicht per QR-Code ein -- sonst holte sich eine
+  //    krank gemeldete Konfi die Punkte selbst zurueck. Der Weg zurueck
+  //    fuehrt ueber die Anmeldung, nicht ueber den Check-in.
   const vorhanden = await checkExistingBooking(client, userId, eventId);
-  const reaktivierung = !!vorhanden && vorhanden.status === 'opted_out' && rolle === 'teamer';
+  const reaktivierung = !!vorhanden
+    && (vorhanden.status === 'opted_out' || vorhanden.status === 'excused');
   if (vorhanden && !reaktivierung) {
     return fehler(409, 'Du bist bereits für dieses Event angemeldet');
   }
@@ -911,11 +934,19 @@ async function bucheTermin(client, eingabe) {
       // (gleiches Verhalten wie setzeTeamerZusage bei dabei=true).
       // booking_date auf NOW(): Fuer Warteliste und Nachruecken zaehlt die
       // NEUE Entscheidung, nicht der Zeitpunkt der zurueckgenommenen.
+      //
+      // Die Anwesenheitsfelder kommen seit dem 16.09.2026 mit: Seit die
+      // Reaktivierung auch fuer 'excused' gilt, kann hier eine Zeile stehen,
+      // die die Leitung abgemeldet hat -- mit Stempel, Grund und Urheber.
+      // Bei 'opted_out' sind die Felder ohnehin leer, das UPDATE schadet
+      // dort nicht.
       ({ rows: [neu] } = await client.query(
         `UPDATE event_bookings
             SET status = $3, booking_date = NOW(),
                 opt_out_reason = NULL, opt_out_date = NULL,
-                absage_nach_zusage = false
+                absage_nach_zusage = false,
+                attendance_status = NULL, excuse_reason = NULL,
+                attendance_set_by = NULL, attendance_set_at = NULL
           WHERE id = $4 AND user_id = $2 AND event_id = $1
           RETURNING id`,
         [eventId, userId, ergebnis, vorhanden.id]
@@ -993,11 +1024,45 @@ async function bucheTermin(client, eingabe) {
 
   // organization_id MUSS gesetzt sein, sonst zaehlen die Abzeichen-Abfragen
   // die Buchung nicht (sie filtern auf organization_id).
-  const { rows: [neu] } = await client.query(
-    `INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id)
-     VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id`,
-    [eventId, userId, timeslotId, ergebnis, orgId]
-  );
+  let neu;
+  if (reaktivierung) {
+    // ZURUECK AUS EINER ABMELDUNG: Zeile aktualisieren statt neu anlegen --
+    // der UNIQUE-Index idx_event_bookings_user_event (user_id, event_id)
+    // kennt keinen Statusfilter, ein INSERT liefe auf 23505.
+    //
+    // Die neue Anmeldung ERSETZT die Abmeldung, sie ergaenzt sie nicht:
+    // Abmeldegrund, Anwesenheitsstempel und dessen Urheber fallen weg. Bleibe
+    // etwa excuse_reason stehen, zeigte die Teilnehmerliste "Krank gemeldet"
+    // an einer Person, die wieder angemeldet ist. Dieselbe Regel wie auf der
+    // Team-Seite oben; dort heissen die Felder nur anders (opt_out_reason).
+    //
+    // booking_date auf NOW(): Fuer Warteliste und Nachruecken zaehlt die
+    // NEUE Entscheidung, nicht der Zeitpunkt der zurueckgenommenen.
+    //
+    // timeslot_id wird mitgeschrieben: Wer vorher in einem anderen Zeitfenster
+    // stand, meldet sich jetzt fuer das gewaehlte an.
+    ({ rows: [neu] } = await client.query(
+      `UPDATE event_bookings
+          SET status = $4, timeslot_id = $3, booking_date = NOW(),
+              opt_out_reason = NULL, opt_out_date = NULL,
+              absage_nach_zusage = false,
+              attendance_status = NULL, excuse_reason = NULL,
+              attendance_set_by = NULL, attendance_set_at = NULL
+        WHERE id = $5 AND user_id = $2 AND event_id = $1
+        RETURNING id`,
+      // Kein orgId-Parameter: Die Zeile existiert bereits und traegt ihre
+      // organization_id seit dem urspruenglichen INSERT. Ein ungenutzter
+      // Parameter laesst Postgres ausserdem mit "could not determine data
+      // type" abbrechen.
+      [eventId, userId, timeslotId, ergebnis, vorhanden.id]
+    ));
+  } else {
+    ({ rows: [neu] } = await client.query(
+      `INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id)
+       VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id`,
+      [eventId, userId, timeslotId, ergebnis, orgId]
+    ));
+  }
   await addToEventChat(client, eventId, userId, orgId);
 
   return {
