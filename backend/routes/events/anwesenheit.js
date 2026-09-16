@@ -11,7 +11,15 @@ const { darfTermin } = require('../../utils/jahrgangsZugriff');
 const { rueckeNach } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 
-module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
+//
+// TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
+// "teamer erstellen keine veranstaltungen fertig. das machen admins und org
+// admins. das ist einfach nicht der weg. ich halte das fuer zu komplex. lass
+// es uns rausnehmen. also auch nicht loeschen und absagen"
+//
+// Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
+// Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
   const router = express.Router();
 
   // Bulk-Verbuchung: ALLE angemeldeten (status=confirmed) Konfis ohne
@@ -37,7 +45,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // (sondern auf 'excused') noch auf attendance_status IS NULL. Beide
   // Bedingungen unten schliessen sie aus, jede fuer sich -- so bleibt der
   // Sammelknopf harmlos, auch wenn eine davon spaeter einmal wandert.
-  router.put('/:id/participants/attendance-all', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/participants/attendance-all', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId } = req.params;
     const rolle = req.body?.rolle === 'teamer' ? 'teamer' : 'konfi';
     const client = await db.getClient();

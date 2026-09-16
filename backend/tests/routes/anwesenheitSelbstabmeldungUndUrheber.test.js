@@ -22,7 +22,12 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
   let app;
   let db;
   let adminToken;
-  let teamerToken;
+  // ZWEITE HANDELNDE PERSON: bis zum 16.09.2026 war das eine Teamer:in.
+  // Seit die Anwesenheit hinter requireAdmin steht, bekaeme sie hier 403 --
+  // und diese Tests pruefen nicht die Rolle, sondern WER ZULETZT GEAENDERT
+  // HAT. Deshalb ist "Person B" jetzt ein zweiter Admin (orgAdmin1). Die
+  // Rollen-Matrix zur Anwesenheit steht in rbacTermine.test.js.
+  let zweiterAdminToken;
   let konfiToken;
 
   beforeAll(async () => {
@@ -34,7 +39,7 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
     await truncateAll(db);
     await seed(db);
     adminToken = generateToken('admin1');
-    teamerToken = generateToken('teamer1');
+    zweiterAdminToken = generateToken('orgAdmin1');
     konfiToken = generateToken('konfi1');
     await db.query(
       'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
@@ -243,11 +248,11 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
 
       await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
-        .set('Authorization', `Bearer ${teamerToken}`)
+        .set('Authorization', `Bearer ${zweiterAdminToken}`)
         .send({ attendance_status: 'present' });
 
       const b = await buchung(bookingId);
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
+      expect(b.attendance_set_by).toBe(USERS.orgAdmin1.id);
       expect(b.attendance_status).toBe('present');
     });
 
@@ -271,12 +276,12 @@ describe('Selbstabmeldung nachtraeglich verbuchen und Urheber mitschreiben', () 
 
       await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
-        .set('Authorization', `Bearer ${teamerToken}`)
+        .set('Authorization', `Bearer ${zweiterAdminToken}`)
         .send({ attendance_status: 'present', attendance_note: 'ging um 14 Uhr' });
 
       const b = await buchung(bookingId);
       expect(b.attendance_set_by).toBe(USERS.admin1.id);
-      expect(b.note_set_by).toBe(USERS.teamer1.id);
+      expect(b.note_set_by).toBe(USERS.orgAdmin1.id);
       expect(b.attendance_note).toBe('ging um 14 Uhr');
     });
 

@@ -8,11 +8,19 @@ const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { validateTeamerQuota } = require('./validierung');
 
-module.exports = (db, rbacVerifier, { requireTeamer }) => {
+//
+// TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
+// "teamer erstellen keine veranstaltungen fertig. das machen admins und org
+// admins. das ist einfach nicht der weg. ich halte das fuer zu komplex. lass
+// es uns rausnehmen. also auch nicht loeschen und absagen"
+//
+// Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
+// Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
   // Create series events
-  router.post('/series', rbacVerifier, requireTeamer, async (req, res) => {
+  router.post('/series', rbacVerifier, requireAdmin, async (req, res) => {
     // WICHTIG: Diese Liste muss mit POST / (Einzel-Event, verwaltung.js) synchron bleiben.
     // Fehlende Felder wurden hier früher stillschweigend auf den Spalten-
     // Default gesetzt — eine Serie kam damit ohne Teamer-Kontingent, ohne

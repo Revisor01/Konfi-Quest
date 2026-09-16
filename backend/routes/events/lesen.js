@@ -151,8 +151,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
           -- Wie viele beim Zuruecknehmen der Absage wieder angemeldet wuerden
           -- (16.09.2026), ADDITIV -- fuer die Rueckfrage vor dem
           -- Zuruecknehmen. Auch in DIESER Liste, nicht nur in
-          -- GET /events/cancelled: Die Team-Ansicht nimmt ihren Termin von
-          -- hier, und sie darf ebenso zuruecknehmen (requireTeamer).
+          -- GET /events/cancelled: Die Leitungsansicht nimmt ihren Termin
+          -- von hier. Das Feld BLEIBT stehen, auch seit das Zuruecknehmen
+          -- am selben Tag auf requireAdmin umgestellt wurde -- ein einmal
+          -- geliefertes Feld wegzunehmen bricht ausgelieferte App-Fassungen.
           -- Begruendung, warum nicht aus konfi_excused/teamer_excused: dort.
           SELECT COUNT(*)::int as anzahl
           FROM event_bookings eb

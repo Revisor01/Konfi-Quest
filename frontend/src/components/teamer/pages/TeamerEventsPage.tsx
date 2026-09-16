@@ -2,13 +2,11 @@ import { FARBEN } from '../../../theme/colors';
 import {
   ICON_ABSAGE,
   ICON_ANHANG,
-  ICON_BEARBEITEN,
   ICON_CHAT,
   ICON_DATEI_GEFUELLT,
   ICON_ENTSPERRT,
   ICON_FILTER,
   ICON_GEMEINDE_GEFUELLT,
-  ICON_GESPERRT,
   ICON_GOTTESDIENST_GEFUELLT,
   ICON_GRUPPE_GEFUELLT,
   ICON_HINZUFUEGEN_GEFUELLT,
@@ -22,7 +20,6 @@ import {
   ICON_ORT_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_QRCODE,
-  ICON_RUECKGAENGIG,
   ICON_SCANNEN,
   ICON_SCHUTZ_GEFUELLT,
   ICON_SUCHE_GEFUELLT,
@@ -35,10 +32,10 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
-import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { hatAbgesagt, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonItemSliding, IonItemOption, IonItemOptions, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
@@ -74,12 +71,16 @@ import QRDisplayModal from '../../shared/QRDisplayModal';
 import RequestsView from '../../konfi/views/RequestsView';
 import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
 import TeamerAbsageModal from '../modals/TeamerAbsageModal';
-// Dasselbe Modal wie bei der Leitung, im Modus 'grund' -- siehe die
-// Begruendung an presentAbsagegrundModal weiter unten.
-import TerminAbsagenModal from '../../admin/modals/TerminAbsagenModal';
+// TerminAbsagenModal (Leitungsansicht) wird hier NICHT mehr eingebunden --
+// siehe den Block "TERMINVERWALTUNG IST LEITUNGSSACHE" weiter unten.
 import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
-import { Event } from '../../../types/event';
+import { Event, Participant } from '../../../types/event';
+// EINE Quelle fuer "wie heisst und wie faerbt sich eine Zeile der
+// Teilnehmerliste" -- dieselbe, aus der schon beide Leitungs-Listen lesen
+// (utils/teilnahmeStatus.ts). Die Teamer-Liste rechnet das nicht noch einmal
+// nach; sonst hiesse dieselbe Abmeldung hier anders als dort.
+import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 // Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
@@ -106,15 +107,12 @@ const TeamerEventsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  // Der Termin, dessen Absagegrund gerade bearbeitet wird (16.09.2026). Eigener
-  // Zustand neben selectedEvent, weil der Wisch aus der LISTE kommt -- dort ist
-  // kein Termin geoeffnet, und das Modal braucht trotzdem Namen, Datum und den
-  // bisherigen Grund.
-  const [absageTermin, setAbsageTermin] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
+  /** Teilnehmerliste aus GET /events/:id -- nur zum Lesen, siehe Effekt unten. */
+  const [eventTeilnehmer, setEventTeilnehmer] = useState<Participant[]>([]);
   const materialIdRef = useRef<number | null>(null);
 
   // Query-Parameter ?segment=antraege auswerten — kommt vom Redirect der alten
@@ -298,6 +296,35 @@ const TeamerEventsPage: React.FC = () => {
     }
   }, [selectedEvent?.id]);
 
+  // Teilnehmerliste fuer ausgewaehlten Termin laden (16.09.2026, Simons Befund:
+  // "teamer sehen die tn liste nicht!").
+  //
+  // WARUM SIE GEFEHLT HAT: Diese Ansicht las ihren Termin ausschliesslich aus
+  // der LISTE (GET /events). Die traegt nur Zahlen (registered_count,
+  // teamer_count) -- die Namen stehen allein in der Detailantwort
+  // GET /events/:id, und die hat diese Seite nie abgerufen. Am Backend lag es
+  // nicht: routes/events/lesen.js liefert `participants: istKonfi ? [] :
+  // participants` -- Teamer:innen bekommen die Liste also seit jeher, es hat
+  // sie nur niemand angezeigt.
+  //
+  // NUR LESEND (Simons Entscheidung vom selben Tag): Terminverwaltung ist
+  // Leitungssache. Wer auf der Freizeit steht, muss wissen, wer kommt -- aber
+  // verbuchen, abmelden, nachrutschen lassen und entfernen bleibt bei der
+  // Leitung. Die Zeilen hier sind deshalb bewusst KEINE IonItemSliding und
+  // tragen keinen onClick: kein Action-Sheet, keine Wisch-Aktion, kein
+  // Knopf. Die Sperre steht zusaetzlich im Backend (PUT
+  // /events/:id/participants/... verlangt requireAdmin), eine Sperre nur in
+  // der Oberflaeche waere keine.
+  useEffect(() => {
+    if (selectedEvent) {
+      api.get(`/events/${selectedEvent.id}`)
+        .then(res => setEventTeilnehmer(res.data?.participants || []))
+        .catch(() => setEventTeilnehmer([]));
+    } else {
+      setEventTeilnehmer([]);
+    }
+  }, [selectedEvent?.id]);
+
   // Zeitslots (samt Belegung + Warteliste) für ausgewaehltes Timeslot-Event laden
   useEffect(() => {
     if (selectedEvent?.has_timeslots) {
@@ -451,17 +478,11 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Nimmt DIESE Absage eine Zusage zurueck? Dann verlangt das Backend einen
-  // Grund (confirmed ODER waitlist — die Aussage "Ich bin dabei" zaehlt,
-  // nicht der zugeteilte Platz). 'pending' ist ein Alt-Status mit derselben
-  // Bedeutung wie waitlist und wird gleich behandelt.
-  const absageBrauchtGrund = (event: Event): boolean =>
-    event.booking_status === 'confirmed' ||
-    event.booking_status === 'waitlist' ||
-    event.booking_status === 'pending';
-
+  // Grund. Die Regel steht in utils/zusageKnoepfe.ts -- dieselbe Stelle, aus
+  // der sich auch die Leitungssicht bedient.
   const [presentAbsageModal, dismissAbsageModal] = useIonModal(TeamerAbsageModal, {
     eventName: selectedEvent?.name || '',
-    grundPflicht: selectedEvent ? absageBrauchtGrund(selectedEvent) : false,
+    grundPflicht: selectedEvent ? absageBrauchtGrund(selectedEvent.booking_status) : false,
     onAbsage: (reason: string) => {
       if (selectedEvent) handleZusage(selectedEvent, false, reason);
     },
@@ -472,130 +493,30 @@ const TeamerEventsPage: React.FC = () => {
     presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
-  // TERMIN ABSAGEN UND ABSAGEGRUND PFLEGEN, AUCH IM TEAM (16.09.2026)
+  // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simons Entscheidung)
   //
-  // Simons Regel: "Teamer duerfen die Events erstellen, wenn sie das duerfen,
-  // dann duerfen sie auch absagen." Also dieselben Rechte wie die Leitung.
+  // Woertlich: "teamer erstellen keine veranstaltungen fertig. das machen
+  // admins und org admins. das ist einfach nicht der weg. ich halte das fuer
+  // zu komplex. lass es uns rausnehmen. also auch nicht loeschen und absagen"
   //
-  // Das Backend sagt dasselbe und sagte es schon vorher: PUT /events/:id/cancel,
-  // PUT /events/:id/absagegrund und PUT /events/:id/reaktivieren stehen alle
-  // hinter requireTeamer (org_admin, admin, teamer) plus Jahrgangsbindung ueber
-  // darfTermin(). Die Berechtigung war da, nur die Oberflaeche fehlte -- und
-  // eine Berechtigung ohne Oberflaeche ist keine.
+  // HIER STAND BIS ZUM SELBEN TAG das Gegenteil: ein eingebundenes
+  // TerminAbsagenModal, handleTerminAbsagen(), handleAbsageZuruecknehmen(),
+  // ein "Event absagen"-Knopf in der Detailansicht und drei Wisch-Aktionen an
+  // der Liste. Das war am Vormittag gebaut worden und ist am Nachmittag wieder
+  // herausgenommen worden -- keine Fehlkorrektur, sondern eine geaenderte
+  // Anforderung.
   //
-  // DASSELBE MODAL WIE BEI DER LEITUNG, kein zweites: TerminAbsagenModal zeigt
-  // dasselbe Textfeld mit denselben 500 Zeichen, derselben Normalisierung und
-  // denselben Hinweisen. Ein eigenes Modal waere eine Kopie, die beim naechsten
-  // Textwechsel auseinanderliefe.
+  // GESPERRT IST ES IN BEIDEN EBENEN: Das Backend laesst POST /events,
+  // PUT /events/:id, DELETE /events/:id, PUT /events/:id/cancel,
+  // /absagegrund und /reaktivieren seither nur noch mit requireAdmin durch
+  // (org_admin, admin) und antwortet einer Teamer:in mit 403. Eine Sperre nur
+  // in der Oberflaeche waere keine.
   //
-  // DER MODUS HAENGT AM TERMIN, NICHT AN DER ROLLE (wie in AdminEventsPage):
-  // Ein abgesagter Termin bedeutet "Grund bearbeiten", ein aktiver "absagen".
-  // /cancel lehnt einen bereits abgesagten Termin mit 400 ab und muss das fuer
-  // ausgelieferte App-Fassungen auch weiterhin tun -- deshalb die eigene Route
-  // fuer den Grund (Migration 152).
-  const [presentAbsagegrundModal, dismissAbsagegrundModal] = useIonModal(TerminAbsagenModal, {
-    get terminName() { return absageTermin?.name ?? ''; },
-    get terminDatum() {
-      if (!absageTermin) return '';
-      return new Date(absageTermin.event_date).toLocaleDateString('de-DE', {
-        weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-      });
-    },
-    // registered_count IST bereits die Konfi-Zahl: Das Backend filtert
-    // Teamer:innen heraus und zaehlt sie getrennt in teamer_count.
-    get konfiAnzahl() { return absageTermin?.registered_count || 0; },
-    get modus() { return istAbgesagt(absageTermin) ? 'grund' as const : 'absagen' as const; },
-    get grundVorgabe() { return absageTermin?.cancelled_reason ?? ''; },
-    onSave: async (grund: string) => {
-      const termin = absageTermin;
-      if (!termin) return;
-      if (istAbgesagt(termin)) {
-        await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
-        setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
-      } else {
-        await api.put(`/events/${termin.id}/cancel`, {
-          // notification_message bleibt mitgeschickt: Die Route nimmt es
-          // weiterhin entgegen -- der Vertrag bleibt unangetastet.
-          notification_message: 'Das Event wurde leider abgesagt.',
-          // Leerer Grund => das Backend macht NULL daraus.
-          cancelled_reason: grund
-        });
-        setSuccess(`Event "${termin.name}" wurde abgesagt`);
-      }
-      // Eine geoeffnete Detailansicht haelt ihren eigenen Stand -- ohne dieses
-      // Nachziehen stuende der alte Grund noch da, bis man den Termin
-      // schliesst und neu oeffnet. Nur, wenn es derselbe Termin ist: Der Wisch
-      // aus der Liste darf keinen fremden Termin in die Detailansicht setzen.
-      const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
-      if (aktualisiert) {
-        setAbsageTermin(aktualisiert);
-        setSelectedEvent(vorher => (vorher && vorher.id === termin.id ? aktualisiert : vorher));
-      }
-      await refresh();
-    },
-    dismiss: () => dismissAbsagegrundModal()
-  });
-
-  // Aus der LISTE gewischt oder aus dem Detail-Kopf (16.09.2026): Der Termin
-  // kommt als Parameter, nicht aus selectedEvent -- in der Liste ist keiner
-  // geoeffnet, und ein Wisch darf keinen fremden Termin in die Detailansicht
-  // setzen.
-  const handleTerminAbsagen = (termin: Event) => {
-    if (!termin) return;
-    if (!isOnline) {
-      setError('Absagen nicht möglich — du bist offline');
-      return;
-    }
-    setAbsageTermin(termin);
-    presentAbsagegrundModal({ presentingElement: presentingElement || pageRef.current || undefined });
-  };
-
-  // ABSAGE ZURUECKNEHMEN (16.09.2026) -- wortgleich zur Leitungsansicht.
-  //
-  // Die Rueckfrage nennt die Zahl: Das Zuruecknehmen meldet Leute wieder an,
-  // ohne sie zu fragen, und schickt allen einen Push. Wer sich vorher selbst
-  // abgemeldet hatte oder einzeln abgemeldet wurde, bleibt abgemeldet und
-  // bekommt keine Nachricht -- deshalb zaehlt die Zahl nur die
-  // Rueckkehrenden.
-  const handleAbsageZuruecknehmen = (termin: Event) => {
-    if (!termin) return;
-    if (!isOnline) {
-      setError('Zurücknehmen nicht möglich — du bist offline');
-      return;
-    }
-    const anzahl = termin.durch_absage_abgemeldet_count ?? 0;
-    const wenText = anzahl === 1
-      ? '1 Person wird wieder angemeldet und bekommt eine Mitteilung.'
-      : `${anzahl} Personen werden wieder angemeldet und bekommen eine Mitteilung.`;
-    presentAlert({
-      header: 'Absage zurücknehmen?',
-      message: anzahl > 0
-        ? `"${termin.name}" findet dann wieder statt. ${wenText} Wer sich vorher selbst abgemeldet hatte oder abgemeldet wurde, bleibt abgemeldet. Punkte werden nicht wiederhergestellt.`
-        : `"${termin.name}" findet dann wieder statt. Es ist niemand wieder anzumelden, also geht auch keine Mitteilung raus.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Zurücknehmen',
-          handler: async () => {
-            try {
-              await api.put(`/events/${termin.id}/reaktivieren`);
-              setSuccess(`"${termin.name}" findet wieder statt`);
-              // Wie beim Absagegrund: Eine geoeffnete Detailansicht haelt
-              // ihren eigenen Stand und zeigte sonst weiter "Abgesagt" --
-              // aber nur, wenn es derselbe Termin ist.
-              const aktualisiert = (await api.get('/events')).data.find((e: Event) => e.id === termin.id);
-              if (aktualisiert) {
-                setSelectedEvent(vorher => (vorher && vorher.id === termin.id ? aktualisiert : vorher));
-              }
-              await refresh();
-            } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Zurücknehmen der Absage'));
-            }
-          }
-        }
-      ]
-    });
-  };
+  // WAS DEM TEAM BLEIBT: die eigene Zu- und Absage der TEILNAHME (oeffneAbsage
+  // oben, POST /teamer/events/:id/zusage), der QR-Code zum Einchecken, der
+  // Termin-Chat und alles Lesende. Ein abgesagter Termin ist weiterhin als
+  // solcher zu SEHEN -- der AbsageBlock steht unveraendert im Detail und an
+  // der Zeile, samt Grund. Nur aendern laesst er sich hier nicht mehr.
 
   /**
    * Die Zusage/Absage-Knoepfe. EINE Stelle fuer alle vier Faelle, in denen
@@ -616,6 +537,10 @@ const TeamerEventsPage: React.FC = () => {
    *
    * Immer fill="outline". Der eigene Stand steht im Eck-Zeichen der Karte und
    * in den Eckdaten, nicht in einem gefuellten Knopf.
+   *
+   * Welcher Zustand welche Knoepfe zeigt und wie sie heissen, entscheidet
+   * utils/zusageKnoepfe.ts -- dieselbe Stelle bedient die Leitungssicht
+   * (admin/views/EventDetailView.tsx), damit beide nicht auseinanderlaufen.
    */
   const ZusageKnoepfe: React.FC<{
     event: Event;
@@ -624,7 +549,10 @@ const TeamerEventsPage: React.FC = () => {
     /** Kein Platz mehr frei: Zusagen geht nicht, absagen schon. */
     zusageMoeglich?: boolean;
   }> = ({ event, zusageText, zusageMoeglich = true }) => {
-    const abgesagt = event.booking_status === 'opted_out';
+    // is_registered statt hatZugesagt(booking_status): Die Listen-Route
+    // setzt das Flag, und es deckt auch Buchungen ab, die ueber den
+    // regulaeren Weg (/events/:id/book) entstanden sind.
+    const abgesagt = hatAbgesagt(event.booking_status);
     const zugesagt = event.is_registered;
 
     const zusageKnopf = (
@@ -641,7 +569,7 @@ const TeamerEventsPage: React.FC = () => {
           ? 'Wird verarbeitet...'
           : !isOnline
             ? 'Du bist offline'
-            : abgesagt ? 'Doch dabei' : (zusageText || 'Dabei')}
+            : zusageBeschriftung(abgesagt ? 'opted_out' : null, zusageText)}
       </IonButton>
     );
 
@@ -657,7 +585,7 @@ const TeamerEventsPage: React.FC = () => {
         <IonIcon icon={ICON_ABSAGE} slot="start" />
         {bookingLoading
           ? 'Wird verarbeitet...'
-          : zugesagt ? 'Nicht mehr dabei' : 'Nicht dabei'}
+          : absageBeschriftung(zugesagt ? 'confirmed' : null)}
       </IonButton>
     );
 
@@ -976,11 +904,10 @@ const TeamerEventsPage: React.FC = () => {
               NICHT zu verwechseln mit "Abgesagt von dir" weiter oben: Das
               meint die eigene Teilnahme, hier geht es um den TERMIN. */}
           {/* NUR AUSKUNFT, KEINE KNOEPFE (16.09.2026, Simons Entscheidung):
-              wortgleich zur Leitungsansicht. Grund bearbeiten und Absage
-              zuruecknehmen laufen ueber den Wisch an der Zeile in der
-              Terminliste -- auch im Team, denn beide Routen stehen hinter
-              requireTeamer (PUT /events/:id/absagegrund und
-              /events/:id/reaktivieren). Wer absagen darf, darf beides. */}
+              Das Team soll SEHEN, dass und warum ein Termin abgesagt ist --
+              aendern darf es daran nichts. Absagen, Absagegrund und
+              Zuruecknehmen sind Leitungssache und stehen im Backend hinter
+              requireAdmin. Der Block bleibt deshalb genau hier stehen. */}
           <AbsageBlock
             event={selectedEvent}
             variante="kasten"
@@ -1368,37 +1295,83 @@ const TeamerEventsPage: React.FC = () => {
             </IonCard>
           </IonList>
 
-          {/* TERMIN ABSAGEN (16.09.2026) -- wortgleich zur Leitungsansicht
-              (admin/views/EventDetailSections.tsx, EventActionsSection):
-              gleicher Text, gleiches Icon, gleiche Farbe, offline gesperrt
-              mit demselben Hinweis. Nur an einem NICHT abgesagten Termin:
-              /cancel antwortet bei einem bereits abgesagten mit 400. Der
-              Grund und die Ruecknahme bleiben wie bei der Leitung allein am
-              Wisch in der Liste -- so gibt es fuer jede der beiden Aktionen
-              genau einen Ort. */}
-          {!istAbgesagt(selectedEvent) && (
-            <IonList className="app-section-inset" inset={true}>
-              <IonCard className="app-card">
-                <IonCardContent className="app-card-content">
-                  <div className="app-event-detail__add-button-wrapper">
-                    <IonButton
-                      expand="block"
-                      fill="outline"
-                      color="danger"
-                      disabled={!isOnline}
-                      aria-label="Event absagen"
-                      onClick={() => handleTerminAbsagen(selectedEvent)}
+          {/* Teilnehmerliste — NUR LESEND (16.09.2026).
+              Simon am Geraet: "teamer sehen die tn liste nicht!". Wer auf der
+              Freizeit steht, muss wissen, wer kommt. Verbuchen bleibt bei der
+              Leitung -- deshalb steht hier bewusst kein IonItemSliding, kein
+              onClick und kein Knopf, nur die Zeile. */}
+          {eventTeilnehmer.length > 0 && (() => {
+            const konfis = eventTeilnehmer.filter(p => p.role_name === 'konfi');
+            const team = eventTeilnehmer.filter(p => p.role_name !== 'konfi');
+
+            const Zeile = (p: Participant) => {
+              const darstellung = teilnahmeDarstellung(p);
+              return (
+                <div
+                  key={p.id}
+                  className={`app-list-item ${listItemKlasse(darstellung)}`}
+                  style={{ marginBottom: 'var(--app-abstand-eng)' }}
+                >
+                  <div className="app-corner-badges">
+                    <div
+                      className={`app-corner-badge ${eckBadgeKlasse(darstellung)}`}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                      title={darstellung.statusText}
                     >
-                      <IonIcon icon={ICON_GESPERRT} className="app-event-detail__icon-gap" />
-                      {!isOnline
-                        ? <><IonIcon icon={ICON_OFFLINE} style={{ marginRight: 'var(--app-abstand-mini)' }} /> Du bist offline</>
-                        : 'Event absagen'}
-                    </IonButton>
+                      <IonIcon icon={getStatusIcon(darstellung.statusText) || ICON_GRUPPE_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
+                    </div>
                   </div>
-                </IonCardContent>
-              </IonCard>
-            </IonList>
-          )}
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className={`app-icon-circle ${iconKreisKlasse(darstellung)}`}>
+                        <IonIcon icon={darstellung.istAbgemeldet ? ICON_ABSAGE : ICON_GRUPPE_GEFUELLT} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">{p.participant_name}</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">{darstellung.statusText}</span>
+                          {p.jahrgang_name && (
+                            <span className="app-list-item__meta-item">{p.jahrgang_name}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <IonList className="app-section-inset" inset={true}>
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--events">
+                    <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
+                  </div>
+                  <IonLabel>Wer kommt ({eventTeilnehmer.length})</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
+                  <IonCardContent className="app-card-content">
+                    {konfis.length > 0 && (
+                      <>
+                        <div className="app-list-item__meta" style={{ marginBottom: 'var(--app-abstand-eng)' }}>
+                          Konfis ({konfis.length})
+                        </div>
+                        {konfis.map(Zeile)}
+                      </>
+                    )}
+                    {team.length > 0 && (
+                      <>
+                        <div className="app-list-item__meta" style={{ marginTop: konfis.length > 0 ? 'var(--app-abstand-basis)' : 0, marginBottom: 'var(--app-abstand-eng)' }}>
+                          Team ({team.length})
+                        </div>
+                        {team.map(Zeile)}
+                      </>
+                    )}
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            );
+          })()}
 
           {/* Material — die id ist das Sprungziel des Material-Hinweises in
               den Eckdaten (01.09.2026): bei mehreren Materialien scrollt der
@@ -1843,44 +1816,12 @@ const TeamerEventsPage: React.FC = () => {
                     </IonItem>
                 );
 
-                const abgesagt = istAbgesagt(event);
-
-                return (
-                  <IonItemSliding key={event.id}>
-                    {zeile}
-                    <IonItemOptions side="end" className="app-swipe-actions">
-                      {/* Zuruecknehmen zuerst und gruen -- sie ist die
-                          aufbauende Aktion. In Rot, neben einer roten Zeile,
-                          liest sie sich wie "noch endgueltiger absagen".
-                          Reihenfolge und Farben wie in der Leitungsliste
-                          (admin/EventsView.tsx). */}
-                      {abgesagt && (
-                        <IonItemOption
-                          onClick={() => { closeOpenSlidingItems(); handleAbsageZuruecknehmen(event); }}
-                          aria-label="Absage zurücknehmen"
-                          className="app-swipe-action"
-                        >
-                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
-                            <IonIcon icon={ICON_RUECKGAENGIG} />
-                          </div>
-                        </IonItemOption>
-                      )}
-                      {/* Bei einem ABGESAGTEN Termin fuehrt derselbe Wisch zum
-                          Absagegrund -- absagen laesst er sich ja nicht mehr,
-                          /cancel antwortet dann mit 400. Wortgleich zur
-                          Leitungsliste. */}
-                      <IonItemOption
-                        onClick={() => { closeOpenSlidingItems(); handleTerminAbsagen(event); }}
-                        aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}
-                        className="app-swipe-action"
-                      >
-                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                          <IonIcon icon={abgesagt ? ICON_BEARBEITEN : ICON_GESPERRT} />
-                        </div>
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
-                );
+                // KEIN WISCH AN DER TEAM-ZEILE (16.09.2026, Simons
+                // Entscheidung): Absagen, Absagegrund und Zuruecknehmen sind
+                // Leitungssache und im Backend mit requireAdmin gesperrt. Ein
+                // Wisch, der nur in ein 403 laeuft, waere schlimmer als keiner.
+                // Die Zeile ist wieder ein schlichtes IonItem.
+                return zeile;
               })}
             </ListSection>
 

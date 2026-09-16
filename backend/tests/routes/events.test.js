@@ -1808,9 +1808,39 @@ describe('Events Routes', () => {
         [miniEventId, USERS.konfi2.id]
       );
       waitlistBookingId = rows[0].id;
+
+      // KAPAZITAET ANHEBEN, NACHDEM DIE WARTELISTE STEHT (16.09.2026).
+      //
+      // Der eine Platz oben ist ein MITTEL, keine Aussage: Ohne ihn entsteht
+      // gar keine Warteliste, denn konfi2 waere sofort bestaetigt worden.
+      // Sobald konfi2 wartet, hat der Termin seinen Zweck erfuellt.
+      //
+      // Bliebe die Kapazitaet bei 1, pruefte dieses describe etwas anderes als
+      // seinen Gegenstand: Das Befoerdern von Hand lehnt seit der
+      // Kapazitaetspruefung einen vollen Termin mit 400 ab ("Der Termin ist
+      // voll. Erhoehe die Teilnehmerzahl ..."). Die Tests hier fragen aber,
+      // ob das Befoerdern funktioniert -- nicht, ob die Obergrenze haelt. Die
+      // haelt in einer eigenen Suite: tests/routes/bestaetigenKapazitaet.test.js
+      // ("lehnt das Bestaetigen ab, statt still zu ueberbuchen").
+      //
+      // NICHT die Erwartung auf 400 aufweichen: 200 ist richtig. Der Termin
+      // hat nach dem Anheben einen freien Platz, und genau dann muss das
+      // Befoerdern durchgehen.
+      await db.query(
+        'UPDATE events SET max_participants = 5 WHERE id = $1',
+        [miniEventId]
+      );
     });
 
     it('Admin bestaetigt von Warteliste -> 200 + DB-Status confirmed (Push/Live-Update kippen nicht)', async () => {
+      // PLATZ SCHAFFEN (16.09.2026): Der Termin hat genau EINEN Platz, und
+      // der ist von konfi1 belegt. Bis heute liess sich die Wartende trotzdem
+      // bestaetigen -- die Route prueft die Kapazitaet seit dem 16.09.
+      // (siehe tests/routes/bestaetigenKapazitaet.test.js). Dieser Test meint
+      // aber nicht das Ueberbuchen, sondern nur, dass Push und Live-Update den
+      // Vorgang nicht kippen. Also bekommt er einen zweiten Platz.
+      await db.query('UPDATE events SET max_participants = 2 WHERE id = $1', [miniEventId]);
+
       const res = await request(app)
         .put(`/api/events/${miniEventId}/participants/${waitlistBookingId}/status`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -3590,12 +3620,25 @@ describe('Events Routes', () => {
       expect(fsSync.existsSync(filePath)).toBe(false);
     });
 
-    it('Teamer:in darf löschen (bewusste Designentscheidung, 26.08.2026)', async () => {
+    it('Verbotener Fall: Teamer:in darf NICHT mehr löschen (16.09.2026)', async () => {
+      // UMGEDREHT, KEINE AUFWEICHUNG: Bis zum 16.09.2026 hiess dieser Test
+      // "Teamer:in darf löschen (bewusste Designentscheidung, 26.08.2026)".
+      // Simon woertlich: "teamer erstellen keine veranstaltungen fertig. das
+      // machen admins und org admins. [...] also auch nicht loeschen und
+      // absagen". DELETE /events/:id steht seither hinter requireAdmin.
+      //
+      // Die vollstaendige 403/200-Matrix zu allen umgestellten Routen liegt
+      // in rbacTermine.test.js.
       const res = await request(app)
         .delete(`/api/events/${EVENTS.gottesdienstEvent.id}`)
         .set('Authorization', `Bearer ${teamerToken}`);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Keine Berechtigung');
+      // Und der Termin steht wirklich noch -- sonst haette die Route ihn
+      // geloescht und danach 403 geantwortet.
+      const { rows } = await db.query('SELECT id FROM events WHERE id = $1', [EVENTS.gottesdienstEvent.id]);
+      expect(rows.length).toBe(1);
     });
 
     it('Verbotener Fall: Konfi darf nicht löschen', async () => {

@@ -671,10 +671,17 @@ describe('Absagegrund aendern: PUT /api/events/:id/absagegrund', () => {
       expect((await termin(event.id)).cancelled_reason).toBe('Alter Grund');
     });
 
-    it('ERLAUBT: eine Teamerin bei einem reinen TEAM-Termin — 200', async () => {
-      // Der erlaubte Gegenpart: requireTeamer laesst Teamer:innen durch, und
-      // darfTermin sperrt reine Team-Termine bewusst nicht. Ohne diesen Test
-      // liesse sich die Sperre oben auch durch ein pauschales 403 erfuellen.
+    it('VERBOTEN: eine Teamerin auch bei einem reinen TEAM-Termin — 403 (16.09.2026)', async () => {
+      // UMGEDREHT, KEINE AUFWEICHUNG: Bis zum 16.09.2026 stand hier der
+      // erlaubte Gegenpart ("requireTeamer laesst Teamer:innen durch").
+      // Simon woertlich: "teamer erstellen keine veranstaltungen fertig. das
+      // machen admins und org admins. [...] also auch nicht loeschen und
+      // absagen". Auch der reine TEAM-Termin macht da keine Ausnahme -- der
+      // Grund steht bei allen Teilnehmenden auf dem Bildschirm.
+      //
+      // Der erlaubte Gegenpart, ohne den sich die Sperre oben auch durch ein
+      // pauschales 403 erfuellen liesse, steht jetzt direkt darunter mit
+      // einem ADMIN-Token.
       const { rows: [event] } = await db.query(
         `INSERT INTO events (name, description, event_date, location, organization_id,
                              max_participants, teamer_only, cancelled, cancelled_at, cancelled_reason)
@@ -686,6 +693,29 @@ describe('Absagegrund aendern: PUT /api/events/:id/absagegrund', () => {
       const res = await request(app)
         .put(`/api/events/${event.id}/absagegrund`)
         .set('Authorization', `Bearer ${generateToken('teamer1')}`)
+        .send({ cancelled_reason: 'Neuer Grund' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Keine Berechtigung');
+      expect((await termin(event.id)).cancelled_reason).toBe('Alter Grund');
+    });
+
+    it('ERLAUBT: ein Admin bei demselben reinen TEAM-Termin — 200', async () => {
+      // Der erlaubte Gegenpart zum Test darueber: darfTermin sperrt reine
+      // Team-Termine bewusst nicht, es scheitert allein an der Rolle. Ohne
+      // diesen Test liesse sich das 403 oben auch durch eine Route erfuellen,
+      // die gar niemanden mehr durchlaesst.
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, description, event_date, location, organization_id,
+                             max_participants, teamer_only, cancelled, cancelled_at, cancelled_reason)
+         VALUES ('Teamrunde', 'Beschreibung', NOW() + INTERVAL '7 days', 'Ort', 1, 20,
+                 TRUE, TRUE, NOW(), 'Alter Grund')
+         RETURNING id`
+      );
+
+      const res = await request(app)
+        .put(`/api/events/${event.id}/absagegrund`)
+        .set('Authorization', `Bearer ${generateToken('admin1')}`)
         .send({ cancelled_reason: 'Neuer Grund' });
 
       expect(res.status).toBe(200);

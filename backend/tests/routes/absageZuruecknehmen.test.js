@@ -662,12 +662,42 @@ describe('Absage zuruecknehmen: PUT /api/events/:id/reaktivieren', () => {
 
   // --------------------------------------------------------------
   describe('Berechtigung', () => {
-    it('ERLAUBT: eine Teamer:in darf zuruecknehmen — sie darf auch absagen', async () => {
+    it('VERBOTEN: eine Teamer:in darf weder absagen noch zuruecknehmen (16.09.2026)', async () => {
+      // UMGEDREHT, KEINE AUFWEICHUNG: Bis zum 16.09.2026 stand hier
+      // "ERLAUBT: eine Teamer:in darf zuruecknehmen — sie darf auch absagen".
+      // Simon woertlich: "teamer erstellen keine veranstaltungen fertig. das
+      // machen admins und org admins. [...] also auch nicht loeschen und
+      // absagen". Beide Routen stehen seither hinter requireAdmin.
+      //
+      // Geprueft werden BEIDE Wege: Schon das Absagen scheitert, und auch das
+      // Zuruecknehmen eines von der Leitung abgesagten Termins.
       const eventId = await termin();
       await buche(eventId, konfiToken);
-      await absagen(eventId, 'Heizung defekt', teamerToken);
 
+      const absage = await request(app)
+        .put(`/api/events/${eventId}/cancel`)
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ cancelled_reason: 'Heizung defekt' });
+      expect(absage.status).toBe(403);
+      expect((await eventZeile(eventId)).cancelled).toBe(false);
+
+      // Jetzt sagt die Leitung ab -- zurueckholen darf das Team trotzdem nicht.
+      await absagen(eventId, 'Heizung defekt');
       const res = await reaktivieren(eventId, teamerToken);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Keine Berechtigung');
+      expect((await eventZeile(eventId)).cancelled).toBe(true);
+    });
+
+    it('ERLAUBT: ein Admin darf zuruecknehmen', async () => {
+      // Der erlaubte Gegenpart -- ohne ihn liesse sich das 403 oben auch
+      // durch eine Route erfuellen, die gar niemanden mehr durchlaesst.
+      const eventId = await termin();
+      await buche(eventId, konfiToken);
+      await absagen(eventId, 'Heizung defekt');
+
+      const res = await reaktivieren(eventId, adminToken);
 
       expect(res.status).toBe(200);
       expect((await eventZeile(eventId)).cancelled).toBe(false);

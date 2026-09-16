@@ -25,6 +25,7 @@ import {
 } from '../../shared/icons';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { useApp } from '../../../contexts/AppContext';
+import { fehlerText } from '../../../utils/fehler';
 
 // TERMIN ABSAGEN, MIT GRUND (15.09.2026)
 //
@@ -99,7 +100,7 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
   onSave,
   dismiss,
 }) => {
-  const { isOnline } = useApp();
+  const { isOnline, setError } = useApp();
   const istGrundModus = modus === 'grund';
   // Vorgabe nur als Startwert: Wer tippt, soll nicht bei jedem Rendern
   // zurueckgesetzt werden. Das Modal wird pro Oeffnen neu aufgebaut, deshalb
@@ -107,10 +108,38 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
   const [grundText, setGrundText] = useState(grundVorgabe);
   const { isSubmitting, guard } = useActionGuard();
 
+  // FEHLER VOM SERVER ZEIGEN, STATT STILL STEHENZUBLEIBEN (16.09.2026)
+  //
+  // Bis hierher lief onSave() ohne try/catch. useActionGuard raeumt in einem
+  // `finally` auf und reicht den Fehler weiter; handleSave haengt als async
+  // onClick am Knopf, und React faengt so eine Rejection nicht ab. Lehnte der
+  // Server ab, lief `dismiss()` nie: Das Fenster blieb offen, OHNE Meldung,
+  // und die Rejection blieb unbehandelt (einen globalen
+  // unhandledrejection-Handler gibt es nicht). Man tippte auf Speichern und
+  // es passierte sichtbar nichts.
+  //
+  // Sichtbar wurde das erst, als die Termin-Routen auf requireAdmin
+  // umgestellt wurden: Eine Teamer:in mit einer ausgelieferten App-Fassung
+  // (Builds 195-197 zeigen ihr den Wisch "Absagegrund bearbeiten" an einem
+  // abgesagten Termin) bekommt seither 403. Die Leitungsansicht traegt
+  // denselben Fehler -- dort faellt er nur nicht auf, weil ein Admin dieses
+  // 403 nie sieht. Der Fix sitzt deshalb HIER, im gemeinsamen Modal, und
+  // wirkt fuer beide Rollen und auch fuer alte Apps (das Modal wird
+  // mitdeployt).
+  //
+  // Muster wie in ChangeRoleTitleModal: try/catch INNERHALB des guard,
+  // setError(fehlerText(...)), und geschlossen wird nur im Erfolgsfall --
+  // wer den Fehler liest, soll seinen Text noch dastehen haben.
   const handleSave = async () => {
     await guard(async () => {
-      await onSave(grundText.trim());
-      dismiss();
+      try {
+        await onSave(grundText.trim());
+        dismiss();
+      } catch (err) {
+        setError(fehlerText(err, istGrundModus
+          ? 'Fehler beim Speichern des Absagegrundes'
+          : 'Fehler beim Absagen des Termins'));
+      }
     });
   };
 

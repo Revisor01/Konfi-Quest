@@ -6,17 +6,25 @@ const express = require('express');
 const { formatUhrzeit } = require('../../utils/zeitformat');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
-const { rueckeNach, takeBackEventPoints } = require('../../utils/bookingUtils');
+const { rueckeNach, takeBackEventPoints, freiePlaetze } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
 
-module.exports = (db, rbacVerifier, { requireTeamer }) => {
+//
+// TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
+// "teamer erstellen keine veranstaltungen fertig. das machen admins und org
+// admins. das ist einfach nicht der weg. ich halte das fuer zu komplex. lass
+// es uns rausnehmen. also auch nicht loeschen und absagen"
+//
+// Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
+// Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
   // Add participant to event (Admin only) - mit Transaktion gegen Race Conditions
-  router.post('/:id/participants', rbacVerifier, requireTeamer, async (req, res) => {
+  router.post('/:id/participants', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
     const { user_id, status = 'auto', timeslot_id = null } = req.body;
 
@@ -220,7 +228,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   });
   
   // Delete event booking (Admin only)
-  router.delete('/:id/bookings/:bookingId', rbacVerifier, requireTeamer, async (req, res) => {
+  router.delete('/:id/bookings/:bookingId', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId, bookingId } = req.params;
     
     try {
@@ -369,7 +377,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   });
 
   // Promote/Demote participant between confirmed and waitlist
-  router.put('/:id/participants/:participantId/status', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/participants/:participantId/status', rbacVerifier, requireAdmin, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { status } = req.body;
     
@@ -409,12 +417,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         // Kontingent (Konfi/Team) und ggf. dem richtigen Zeitfenster.
         const { rows: [booking] } = await client.query(
           `SELECT eb.status, eb.attendance_status, eb.user_id, eb.timeslot_id,
-                  e.organization_id, e.name AS event_name, e.event_date,
+                  e.organization_id, e.name AS event_name, e.event_date, e.cancelled,
+                  e.max_participants, e.teamer_max_participants,
+                  ts.max_participants AS timeslot_max,
                   COALESCE(r.name, '') <> 'konfi' AS ist_team
              FROM event_bookings eb
              JOIN events e ON eb.event_id = e.id
              JOIN users u ON eb.user_id = u.id
              LEFT JOIN roles r ON u.role_id = r.id
+             LEFT JOIN event_timeslots ts ON eb.timeslot_id = ts.id
             WHERE eb.id = $1 AND eb.event_id = $2 FOR UPDATE OF eb`,
           [participantId, eventId]
         );

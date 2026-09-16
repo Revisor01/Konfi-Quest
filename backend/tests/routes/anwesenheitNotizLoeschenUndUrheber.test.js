@@ -23,7 +23,12 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
   let app;
   let db;
   let adminToken;
-  let teamerToken;
+  // ZWEITE HANDELNDE PERSON: bis zum 16.09.2026 war das eine Teamer:in.
+  // Seit die Anwesenheit hinter requireAdmin steht, bekaeme sie hier 403 --
+  // und diese Tests pruefen nicht die Rolle, sondern WER ZULETZT GEAENDERT
+  // HAT. Deshalb ist "Person B" jetzt ein zweiter Admin (orgAdmin1). Die
+  // Rollen-Matrix zur Anwesenheit steht in rbacTermine.test.js.
+  let zweiterAdminToken;
 
   beforeAll(async () => {
     db = getTestPool();
@@ -34,7 +39,7 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
     await truncateAll(db);
     await seed(db);
     adminToken = generateToken('admin1');
-    teamerToken = generateToken('teamer1');
+    zweiterAdminToken = generateToken('orgAdmin1');
     await db.query(
       'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
       [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
@@ -237,19 +242,19 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
         attendance_status: 'excused',
         excuse_reason: 'krank, Mutter hat angerufen'
       });
-      // B (teamer1) traegt spaeter nur eine Notiz nach -- mit demselben
+      // B (orgAdmin1) traegt spaeter nur eine Notiz nach -- mit demselben
       // Status, weil die Route ihn verlangt, und mit demselben Grund, damit
       // er nicht verloren geht.
-      await setze(eventId, bookingId, teamerToken, {
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'excused',
         excuse_reason: 'krank, Mutter hat angerufen',
         attendance_note: 'Attest liegt vor'
       });
 
       const b = await buchung(bookingId);
-      expect(b.note_set_by).toBe(USERS.teamer1.id);
+      expect(b.note_set_by).toBe(USERS.orgAdmin1.id);
       // Hier faellt der Test ohne Migration 149: attendance_set_by stuende
-      // auf teamer1, und die Zeile behauptete, er habe den Grund aufgenommen.
+      // auf B, und die Zeile behauptete, er habe den Grund aufgenommen.
       expect(b.attendance_set_by).toBe(USERS.admin1.id);
       expect(b.excuse_reason).toBe('krank, Mutter hat angerufen');
       expect(b.attendance_note).toBe('Attest liegt vor');
@@ -263,10 +268,10 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
         attendance_note: 'ging um 14 Uhr'
       });
       // B setzt nur den Status -- ohne das Notiz-Feld, wie eine alte App.
-      await setze(eventId, bookingId, teamerToken, { attendance_status: 'absent' });
+      await setze(eventId, bookingId, zweiterAdminToken, { attendance_status: 'absent' });
 
       const b = await buchung(bookingId);
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
+      expect(b.attendance_set_by).toBe(USERS.orgAdmin1.id);
       expect(b.note_set_by).toBe(USERS.admin1.id);
       expect(b.attendance_note).toBe('ging um 14 Uhr');
     });
@@ -306,8 +311,8 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
       });
       const vorher = await buchung(bookingId);
 
-      // teamer1 schickt exakt denselben Stand noch einmal.
-      await setze(eventId, bookingId, teamerToken, {
+      // B schickt exakt denselben Stand noch einmal.
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'present',
         attendance_note: 'ging um 14 Uhr'
       });
@@ -326,14 +331,14 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
         attendance_note: 'ging um 14 Uhr'
       });
 
-      await setze(eventId, bookingId, teamerToken, {
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'absent',
         attendance_note: 'doch nicht da gewesen'
       });
 
       const b = await buchung(bookingId);
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
-      expect(b.note_set_by).toBe(USERS.teamer1.id);
+      expect(b.attendance_set_by).toBe(USERS.orgAdmin1.id);
+      expect(b.note_set_by).toBe(USERS.orgAdmin1.id);
     });
 
     it('aendert sich nur der Grund, zaehlt das als Statusaenderung', async () => {
@@ -346,14 +351,14 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
         excuse_reason: 'krank'
       });
 
-      await setze(eventId, bookingId, teamerToken, {
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'excused',
         excuse_reason: 'krank, Mutter hat angerufen'
       });
 
       const b = await buchung(bookingId);
       expect(b.excuse_reason).toBe('krank, Mutter hat angerufen');
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
+      expect(b.attendance_set_by).toBe(USERS.orgAdmin1.id);
     });
 
     it('das Notiz-Paar bleibt unberuehrt, wenn das Feld gar nicht mitkommt', async () => {
@@ -367,7 +372,7 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
       });
       const vorher = await buchung(bookingId);
 
-      await setze(eventId, bookingId, teamerToken, { attendance_status: 'present' });
+      await setze(eventId, bookingId, zweiterAdminToken, { attendance_status: 'present' });
 
       const nachher = await buchung(bookingId);
       expect(nachher.note_set_by).toBe(USERS.admin1.id);
@@ -385,7 +390,7 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
         attendance_status: 'excused',
         excuse_reason: 'krank'
       });
-      await setze(eventId, bookingId, teamerToken, {
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'excused',
         excuse_reason: 'krank',
         attendance_note: 'Attest liegt vor'
@@ -398,7 +403,7 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
       expect(res.status).toBe(200);
       const p = res.body.participants.find(x => x.id === bookingId);
       expect(p.attendance_set_by_name).toBe(USERS.admin1.display_name);
-      expect(p.note_set_by_name).toBe(USERS.teamer1.display_name);
+      expect(p.note_set_by_name).toBe(USERS.orgAdmin1.display_name);
       expect(p.note_set_at).not.toBeNull();
     });
 
@@ -456,7 +461,7 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
       // "Alle verbuchen" fasst nur unverbuchte Zeilen an -- eine Zeile mit
       // Notiz ist bereits verbucht und bleibt unberuehrt.
       const { eventId, bookingId } = await setupEvent();
-      await setze(eventId, bookingId, teamerToken, {
+      await setze(eventId, bookingId, zweiterAdminToken, {
         attendance_status: 'present',
         attendance_note: 'ging um 14 Uhr'
       });
@@ -468,8 +473,8 @@ describe('Notiz loeschen und getrennte Urheber fuer Status und Notiz', () => {
 
       const b = await buchung(bookingId);
       expect(b.attendance_note).toBe('ging um 14 Uhr');
-      expect(b.note_set_by).toBe(USERS.teamer1.id);
-      expect(b.attendance_set_by).toBe(USERS.teamer1.id);
+      expect(b.note_set_by).toBe(USERS.orgAdmin1.id);
+      expect(b.attendance_set_by).toBe(USERS.orgAdmin1.id);
     });
   });
 });

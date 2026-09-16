@@ -1,5 +1,17 @@
 // Events routes
-// Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
+//
+// WER DARF WAS (Stand 16.09.2026):
+//   Termin anlegen, aendern, loeschen, absagen, Absagegrund, reaktivieren,
+//   Serien, Teilnehmerverwaltung, Anwesenheit  -> requireAdmin
+//     (org_admin, admin). Teamer:innen bekommen hier 403.
+//   QR-Code erzeugen und Check-in-Zaehler, Liste der abgesagten Termine
+//                                              -> requireTeamer
+//   Lesen, eigene Buchung, eigene Zu-/Absage   -> jede:r Angemeldete
+//
+// Vorher stand hier "Teamer darf alles". Simon woertlich: "teamer erstellen
+// keine veranstaltungen fertig. das machen admins und org admins. das ist
+// einfach nicht der weg. ich halte das fuer zu komplex. lass es uns
+// rausnehmen. also auch nicht loeschen und absagen"
 //
 // Aufteilung am 28.08.2026: Die frühere routes/events.js war auf über 3300
 // Zeilen gewachsen und ist hier entlang der Zuständigkeiten aufgeteilt.

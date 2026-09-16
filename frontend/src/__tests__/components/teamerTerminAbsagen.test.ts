@@ -1,15 +1,28 @@
-// Teamer:innen sagen Termine ab wie die Leitung (16.09.2026)
+// Teamer:innen verwalten KEINE Termine (16.09.2026)
 //
-// Simons Regel, woertlich: "teamer duerfen nichts absagen, duerfen die events
-// erstellen, wenn sie das duerfen dann duerfen sie auch absagen" -- auf
-// Rueckfrage: "Dieselben Rechte wie die Leitung" und "Ja, gleiche
-// Wisch-Aktionen wie Leitung".
+// Simons Entscheidung, woertlich: "teamer erstellen keine veranstaltungen
+// fertig. das machen admins und org admins. das ist einfach nicht der weg. ich
+// halte das fuer zu komplex. lass es uns rausnehmen. also auch nicht loeschen
+// und absagen" -- auf Rueckfrage: Gesperrt wird in BEIDEN Ebenen, Oberflaeche
+// UND Backend.
 //
-// Das Backend erlaubte es laengst: PUT /events/:id/cancel
-// (routes/events/verwaltung.js:1008), PUT /events/:id/absagegrund (:1195) und
-// PUT /events/:id/reaktivieren (:1390) stehen alle hinter requireTeamer
-// (middleware/rbac.js:274 -- org_admin, admin, teamer) plus Jahrgangsbindung
-// ueber darfTermin(). Gefehlt hat nur die Oberflaeche.
+// DIESE DATEI PRUEFTE AM VORMITTAG DAS GEGENTEIL. Am selben Tag war die
+// Teamer-Absage gebaut worden (Modal, Detail-Knopf, drei Wisch-Aktionen, 17
+// Tests). Das ist keine Fehlkorrektur, sondern eine geaenderte Anforderung:
+// Die Aktionen sind wieder heraus, und die Datei sichert jetzt ihre
+// ABWESENHEIT. Eine Datei, die die Abwesenheit absichert, ist mehr wert als
+// keine Datei -- sonst waechst dieselbe Oberflaeche beim naechsten Mal wieder
+// nach, ohne dass es jemand merkt.
+//
+// Die zweite Ebene liegt im Backend: POST /events, PUT /events/:id,
+// DELETE /events/:id, PUT /events/:id/cancel, /absagegrund und /reaktivieren
+// stehen seither hinter requireAdmin (org_admin, admin) statt requireTeamer.
+// Die 403/200-Gegenprobe dazu steht in backend/tests/routes/rbacTermine.test.js.
+//
+// WAS DEM TEAM BLEIBT und hier ausdruecklich geprueft wird: die eigene Zu- und
+// Absage der TEILNAHME, der QR-Code zum Einchecken, der Termin-Chat und alles
+// Lesende -- darunter der AbsageBlock, denn ein abgesagter Termin muss
+// weiterhin als solcher zu sehen sein, samt Grund.
 //
 // Geprueft wird die Quelle, nicht das gerenderte Bauteil -- dasselbe Muster
 // und dieselbe Begruendung wie in teamerAbsageGrund.test.ts: Die Seite haengt
@@ -18,9 +31,10 @@
 //
 // KEIN TEST DARF AM KOMMENTAR ANSCHLAGEN: Im Repo ist mehrfach passiert, dass
 // eine Pruefung auf eine Zeichenkette ansprang, die nur in einem Kommentar
-// stand. Deshalb laeuft jede Pruefung ueber ohneKommentare() aus
-// abgesagteTermineAnsichten.test.ts -- genau in dieser Datei steht auch die
-// Gegenprobe zu dieser Hilfsfunktion.
+// stand. Das faellt hier besonders ins Gewicht, weil oberhalb in der Seite ein
+// langer Kommentar steht, der genau die entfernten Namen nennt. Deshalb laeuft
+// jede Pruefung ueber ohneKommentare() aus abgesagteTermineAnsichten.test.ts --
+// genau in jener Datei steht auch die Gegenprobe zu dieser Hilfsfunktion.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -34,125 +48,130 @@ const TEAM_LISTE = 'src/components/teamer/pages/TeamerEventsPage.tsx';
 const LEITUNG_LISTE = 'src/components/admin/EventsView.tsx';
 const KONFI_LISTE = 'src/components/konfi/views/EventsView.tsx';
 
-describe('Teamer-Liste: die Wisch-Aktionen der Leitung', () => {
+describe('die Teamer-Liste hat keine Wisch-Aktionen mehr', () => {
   const quelle = code(TEAM_LISTE);
 
-  it('der nicht abgesagte Termin traegt "Event absagen", der abgesagte "Absagegrund bearbeiten"', () => {
-    // EIN Wisch fuer beide Faelle, wie in der Leitungsliste: Das aria-label
-    // haengt am Zustand des Termins. Zwei getrennte Optionen waeren eine
-    // Kopie, die auseinanderlaeuft.
-    expect(quelle).toContain("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
-    // Das Icon wechselt mit: Stift beim Bearbeiten, Verbotszeichen beim
-    // Absagen -- gleiche Zuordnung wie bei der Leitung.
-    expect(quelle).toContain('icon={abgesagt ? ICON_BEARBEITEN : ICON_GESPERRT}');
+  it('kein Wisch heisst "Event absagen" oder "Absagegrund bearbeiten"', () => {
+    expect(quelle).not.toContain("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
+    expect(quelle).not.toContain('Absagegrund bearbeiten');
+    expect(quelle).not.toContain('Event absagen');
   });
 
-  it('"Absage zuruecknehmen" steht NUR am abgesagten Termin und ist gruen', () => {
-    const zuruecknehmen = /\{abgesagt && \(\s*<IonItemOption[\s\S]{0,400}?aria-label="Absage zurücknehmen"[\s\S]{0,300}?app-icon-circle--success/;
-    expect(zuruecknehmen.test(quelle)).toBe(true);
+  it('"Absage zuruecknehmen" gibt es nicht', () => {
+    expect(quelle).not.toContain('Absage zurücknehmen');
   });
 
-  it('die Reihenfolge ist wie bei der Leitung: erst zuruecknehmen, dann absagen/Grund', () => {
-    const posZuruecknehmen = quelle.indexOf('aria-label="Absage zurücknehmen"');
-    const posAbsagen = quelle.indexOf("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
-    expect(posZuruecknehmen).toBeGreaterThan(-1);
-    expect(posAbsagen).toBeGreaterThan(-1);
-    expect(posZuruecknehmen).toBeLessThan(posAbsagen);
+  it('die Zeile ist wieder ein schlichtes IonItem, ohne IonItemSliding', () => {
+    // Ein Wisch, der nur in ein 403 laeuft, waere schlimmer als gar keiner:
+    // Er verspricht eine Aktion, die es nicht gibt.
+    expect(quelle).not.toContain('IonItemSliding');
+    expect(quelle).not.toContain('IonItemOption');
   });
 
-  it('der Wisch haengt nicht mehr davon ab, ob der Termin abgesagt ist', () => {
-    // Bis zum 16.09.2026 stand hier ein early return, der IonItemSliding nur
-    // an abgesagten Terminen baute. Damit gab es am aktiven Termin gar keinen
-    // Wisch -- und ohne Wisch kein Absagen.
-    expect(quelle).not.toContain('if (!istAbgesagt(event)) return zeile;');
-  });
-
-  it('die Absage-Farbe ist warning, wie in der Leitungsliste', () => {
-    const leitung = code(LEITUNG_LISTE);
-    // Beide Listen faerben denselben Wisch gleich. Waere die eine rot und die
-    // andere gelb, hiesse derselbe Griff zweierlei.
-    for (const q of [quelle, leitung]) {
-      expect(q).toContain('app-icon-circle--warning');
-      expect(q).toContain('app-icon-circle--success');
-    }
+  it('die Seite bindet die Wisch-Hilfsfunktion nicht mehr ein', () => {
+    // closeOpenSlidingItems wurde ausschliesslich von den Wisch-Aktionen
+    // gerufen. Bleibt der Import stehen, waechst der Wisch leicht wieder nach.
+    expect(quelle).not.toContain('closeOpenSlidingItems');
   });
 });
 
-describe('der Modus des Modals haengt am Termin, nicht an der Rolle', () => {
+describe('die Teamer-Seite ruft keine Verwaltungs-Route mehr auf', () => {
   const quelle = code(TEAM_LISTE);
 
-  it('modus kommt aus istAbgesagt(absageTermin)', () => {
-    expect(quelle).toContain("get modus() { return istAbgesagt(absageTermin) ? 'grund' as const : 'absagen' as const; }");
+  it.each([
+    ['/cancel', 'api.put(`/events/${termin.id}/cancel`'],
+    ['/absagegrund', 'api.put(`/events/${termin.id}/absagegrund`'],
+    ['/reaktivieren', 'api.put(`/events/${termin.id}/reaktivieren`'],
+  ])('kein Aufruf von %s', (_name, aufruf) => {
+    expect(quelle).not.toContain(aufruf);
   });
 
-  it('modus ist NICHT mehr fest auf grund verdrahtet', () => {
-    // Genau die Zeile, die das Absagen aus der Teamer-Ansicht heraushielt.
-    expect(quelle).not.toContain("modus: 'grund' as const");
+  it('auch nicht unter anderem Namen -- keine der drei Pfad-Endungen kommt vor', () => {
+    // Die Pruefung oben haengt am genauen Variablennamen. Diese hier faellt
+    // auch, wenn jemand denselben Aufruf mit `event.id` statt `termin.id`
+    // schreibt.
+    expect(quelle).not.toMatch(/\/events\/\$\{[^}]+\}\/cancel/);
+    expect(quelle).not.toMatch(/\/events\/\$\{[^}]+\}\/absagegrund/);
+    expect(quelle).not.toMatch(/\/events\/\$\{[^}]+\}\/reaktivieren/);
   });
 
-  it('der aktive Termin geht auf /cancel, der abgesagte auf /absagegrund', () => {
-    // /cancel lehnt einen bereits abgesagten Termin mit 400 ab und muss das
-    // fuer ausgelieferte App-Fassungen weiterhin tun -- deshalb zwei Routen.
-    expect(quelle).toContain('api.put(`/events/${termin.id}/absagegrund`');
-    expect(quelle).toContain('api.put(`/events/${termin.id}/cancel`');
-    // Die Weiche steht im onSave und fragt den Termin, nicht die Rolle.
-    expect(/onSave: async \(grund: string\) => \{[\s\S]{0,400}?if \(istAbgesagt\(termin\)\) \{/.test(quelle)).toBe(true);
-  });
-});
-
-describe('die Handler nehmen den Termin als Parameter', () => {
-  const quelle = code(TEAM_LISTE);
-
-  it('handleTerminAbsagen und handleAbsageZuruecknehmen bekommen den Termin uebergeben', () => {
-    // Sonst setzt ein Wisch aus der LISTE einen fremden Termin in die
-    // Detailansicht -- in der Liste ist keiner geoeffnet.
-    expect(quelle).toContain('const handleTerminAbsagen = (termin: Event) => {');
-    expect(quelle).toContain('const handleAbsageZuruecknehmen = (termin: Event) => {');
-  });
-
-  it('das Modal liest den Termin aus absageTermin, nicht aus selectedEvent', () => {
-    expect(quelle).toContain('get terminName() { return absageTermin?.name ?? \'\'; }');
-    expect(quelle).toContain('get grundVorgabe() { return absageTermin?.cancelled_reason ?? \'\'; }');
-  });
-
-  it('die Detailansicht wird nur nachgezogen, wenn es derselbe Termin ist', () => {
-    expect(quelle).toContain('setSelectedEvent(vorher => (vorher && vorher.id === termin.id ? aktualisiert : vorher))');
-  });
-});
-
-describe('Teamer-Detailansicht: derselbe Absagen-Knopf wie bei der Leitung', () => {
-  const quelle = code(TEAM_LISTE);
-  const leitungAktionen = code('src/components/admin/views/EventDetailSections.tsx');
-
-  it('der Knopf heisst "Event absagen" und steht auch bei der Leitung so da', () => {
-    expect(quelle).toContain("'Event absagen'");
-    expect(leitungAktionen).toContain("'Event absagen'");
-  });
-
-  it('er erscheint nur am nicht abgesagten Termin', () => {
-    // Die Leitung blendet ihn ueber `if (!eventData || isCancelled) return null`
-    // aus; hier ueber die Bedingung im JSX. Beide Male: kein zweites Absagen.
-    expect(quelle).toContain('{!istAbgesagt(selectedEvent) && (');
-    expect(leitungAktionen).toContain('if (!eventData || isCancelled) return null;');
-  });
-
-  it('er ist offline gesperrt und sagt es', () => {
-    expect(/aria-label="Event absagen"[\s\S]{0,200}?onClick=\{\(\) => handleTerminAbsagen\(selectedEvent\)\}/.test(quelle)).toBe(true);
-    expect(quelle).toContain('disabled={!isOnline}');
-    expect(quelle).toContain('Du bist offline');
-  });
-
-  it('LOESCHEN gibt es in der Teamer-Ansicht nicht', () => {
-    // Absichtlich: Ein geloeschter Termin nimmt Chat, Anmeldungen und
-    // ausgedruckte QR-Codes mit. Das Backend erlaubt es (DELETE /events/:id
-    // steht ebenfalls hinter requireTeamer), die Oberflaeche bietet es nicht.
+  it('kein Anlegen, Aendern oder Loeschen von Terminen', () => {
     expect(quelle).not.toContain('api.delete(`/events/');
-    expect(quelle).not.toContain("aria-label=\"Event löschen\"");
+    expect(quelle).not.toMatch(/api\.post\(\s*['"`]\/events['"`]/);
+    expect(quelle).not.toMatch(/api\.put\(\s*`\/events\/\$\{[^}]+\}`/);
+  });
+
+  it('kein Anlegen eines Termin-Chats -- das ist ebenfalls Verwaltung', () => {
+    // POST /events/:id/chat steht seit dem 16.09.2026 hinter requireAdmin.
+    // Den Chat OEFFNEN bleibt dem Team (siehe unten) -- dafuer braucht es
+    // keine Route, nur die chat_room_id.
+    expect(quelle).not.toMatch(/api\.post\(`\/events\/\$\{[^}]+\}\/chat`\)/);
+  });
+});
+
+describe('das Absage-Modal der Leitung ist nicht mehr eingebunden', () => {
+  const quelle = code(TEAM_LISTE);
+
+  it('TerminAbsagenModal wird nicht importiert', () => {
+    expect(quelle).not.toContain("import TerminAbsagenModal from '../../admin/modals/TerminAbsagenModal'");
+    expect(quelle).not.toContain('TerminAbsagenModal');
+  });
+
+  it('die Handler und ihr Zustand sind weg', () => {
+    expect(quelle).not.toContain('handleTerminAbsagen');
+    expect(quelle).not.toContain('handleAbsageZuruecknehmen');
+    expect(quelle).not.toContain('presentAbsagegrundModal');
+    expect(quelle).not.toContain('absageTermin');
+  });
+
+  it('der Detail-Knopf "Event absagen" ist weg', () => {
+    // Er stand zwischen den Eckdaten und dem Material-Abschnitt.
+    expect(quelle).not.toContain('{!istAbgesagt(selectedEvent) && (');
+  });
+});
+
+describe('was dem Team bleibt', () => {
+  const quelle = code(TEAM_LISTE);
+
+  it('die eigene Zu- und Absage der TEILNAHME laeuft weiter ueber die Zusage-Route', () => {
+    // Nicht zu verwechseln mit dem Absagen des TERMINS: Hier sagt eine Person
+    // fuer sich selbst zu oder ab.
+    expect(quelle).toContain('api.post(`/teamer/events/${event.id}/zusage`');
+    expect(quelle).toContain('onClick={oeffneAbsage}');
+    expect(quelle).toContain("import TeamerAbsageModal from '../modals/TeamerAbsageModal'");
+  });
+
+  it('der QR-Code zum Einchecken bleibt', () => {
+    expect(quelle).toContain('aria-label="QR-Code zum Einchecken anzeigen"');
+    expect(quelle).toContain('presentQRDisplayModal');
+  });
+
+  it('der Termin-Chat laesst sich weiter OEFFNEN', () => {
+    // Oeffnen heisst: in den Raum springen, dessen id schon in der Antwort
+    // steht. Kein Anlegen, keine Verwaltungs-Route.
+    expect(quelle).toContain('aria-label="Event-Chat öffnen"');
+    expect(quelle).toContain('router.push(`/teamer/chat/room/${selectedEvent.chat_room_id}`');
+  });
+
+  it('ein abgesagter Termin ist weiterhin als abgesagt zu SEHEN, samt Grund', () => {
+    // Sehen ja, aendern nein. Der AbsageBlock steht im Detail als Kasten und
+    // an der Listenzeile als Zeile -- unveraendert.
+    expect(quelle).toContain('<AbsageBlock');
+    expect(quelle).toContain('variante="kasten"');
+    expect(quelle).toContain('variante="zeile"');
+  });
+
+  it('der Block ist reine Auskunft -- er bekommt keine Knoepfe durchgereicht', () => {
+    expect(quelle).not.toContain('onGrundBearbeiten={');
+    expect(quelle).not.toContain('onZuruecknehmen={');
   });
 });
 
 describe('die anderen beiden Listen bleiben, wie sie waren', () => {
   it('die Leitungsliste bietet weiterhin absagen, Grund und loeschen', () => {
+    // Die Rechte sind NICHT weggefallen, sie sind nur auf die Leitung
+    // zusammengezogen. Waere hier auch nichts mehr, haette die Umstellung die
+    // Aktion ganz beseitigt statt sie zu verschieben.
     const leitung = code(LEITUNG_LISTE);
     expect(leitung).toContain("aria-label={isCancelled ? 'Absagegrund bearbeiten' : 'Event absagen'}");
     expect(leitung).toContain('aria-label="Absage zurücknehmen"');

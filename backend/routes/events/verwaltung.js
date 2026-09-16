@@ -1,7 +1,26 @@
 // Termine: Anlegen, Bearbeiten, Löschen, Absagen und Chat-Anlage/-Abgleich
-// (alles Leitungs-/Teamer-Aufgaben rund um den Termin selbst).
+// (Leitungsaufgaben rund um den Termin selbst).
 // Herausgelöst aus der früheren routes/events.js (Aufteilung am 28.08.2026),
 // die API-Pfade sind unverändert.
+//
+// TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
+// "teamer erstellen keine veranstaltungen fertig. das machen admins und org
+// admins. das ist einfach nicht der weg. ich halte das fuer zu komplex. lass
+// es uns rausnehmen. also auch nicht loeschen und absagen"
+//
+// Deshalb steht vor jeder schreibenden Route hier requireAdmin (org_admin,
+// admin) statt des frueheren requireTeamer (das zusaetzlich 'teamer' zuliess).
+// GESPERRT WIRD IN BEIDEN EBENEN: Die Oberflaeche zeigt den Teamer:innen
+// diese Aktionen nicht mehr, und das Backend lehnt sie mit 403 ab — eine
+// Sperre nur in der Oberflaeche ist keine.
+//
+// Am selben Tag war die Teamer-Absage kurzzeitig gebaut worden (Oberflaeche
+// und Tests); das ist keine Fehlkorrektur, sondern eine geaenderte
+// Anforderung.
+//
+// WAS DEM TEAM BLEIBT: die eigene Zu- und Absage der Teilnahme
+// (POST /teamer/events/:id/zusage), der QR-Code zum Einchecken
+// (events/checkin.js) und der Termin-Chat. Alles Lesende ohnehin.
 const express = require('express');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../../middleware/validation');
@@ -15,7 +34,7 @@ const { validateTeamerQuota } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
 
-module.exports = (db, rbacVerifier, { requireTeamer }) => {
+module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
   // Validierungsregeln
@@ -49,7 +68,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   ];
 
   // Create new event
-  router.post('/', rbacVerifier, requireTeamer, validateCreateEvent, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateEvent, async (req, res) => {
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
@@ -286,7 +305,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   });
   
   // Update event
-  router.put('/:id', rbacVerifier, requireTeamer, validateUpdateEvent, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateEvent, async (req, res) => {
     const { id } = req.params;
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
@@ -700,7 +719,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   });
 
   // Delete event
-  router.delete('/:id', rbacVerifier, requireTeamer, validateEventId, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, validateEventId, async (req, res) => {
     const { id } = req.params;
     
     const client = await db.getClient();
@@ -938,8 +957,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
     }, 'DELETE /events/:id');
   });
 
-  // Create group chat for event
-  router.post('/:id/chat', rbacVerifier, requireTeamer, async (req, res) => {
+  // Chat zum Termin ANLEGEN. Das ist Terminverwaltung und steht seit dem
+  // 16.09.2026 hinter requireAdmin (vorher requireTeamer). Den Chat OEFFNEN
+  // ist etwas anderes und bleibt dem Team: Dafuer braucht es keine Route hier,
+  // sondern nur die chat_room_id aus GET /events — die Oberflaeche springt
+  // damit direkt in den Raum.
+  router.post('/:id/chat', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
     
     const client = await db.getClient();
@@ -972,8 +995,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id) VALUES ($1, 'group', $2, $3, $4) RETURNING id", [chatName, eventId, req.user.id, req.user.organization_id]);
       chatRoomId = newChat.id;
 
-      // user_type des Erstellers aus dem Token — hartes 'admin' machte den Raum
-      // für Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
+      // user_type des Erstellers aus dem Token — hartes 'admin' machte den
+      // Raum unsichtbar, sobald ein anderer user_type ihn anlegt. Seit dem
+      // 16.09.2026 legt nur noch die Leitung Event-Chats an (requireAdmin);
+      // die Zeile bleibt trotzdem am Token statt an einem festen Wert.
       await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [chatRoomId, req.user.id, req.user.type]);
 
       // Alle Gebuchten aufnehmen — dieselbe Regel wie beim Anmelden, damit sich
@@ -1005,7 +1030,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   });
 
   // Cancel event (Admin only)
-  router.put('/:id/cancel', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/cancel', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
     // notification_message BLEIBT (Alt-App-Vertrag): Ausgelieferte
     // App-Fassungen schicken das Feld mit und lesen es aus der Antwort zurueck.
@@ -1188,11 +1213,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   // ueberhaupt eine Bedeutung hat, gehoert nicht in eine Route, die
   // hauptsaechlich fuer die anderen da ist.
   //
-  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireTeamer + darfTermin auf
-  // can_view-Stufe. Wer den Termin nicht haette absagen duerfen, aendert auch
-  // den Grund nicht -- der Grund ist Teil der Absage, und er steht bei allen
+  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireAdmin (16.09.2026, vorher
+  // requireTeamer) + darfTermin auf can_view-Stufe. Wer den Termin nicht
+  // haette absagen duerfen, aendert auch den Grund nicht -- der Grund ist Teil der Absage, und er steht bei allen
   // Teilnehmenden auf dem Bildschirm.
-  router.put('/:id/absagegrund', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/absagegrund', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
     const { cancelled_reason } = req.body;
 
@@ -1383,11 +1408,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
   // Nachrueck-Wege laufen darueber. Die Plaetze der hier wiederhergestellten
   // Buchungen sind seit der Absage also unberuehrt geblieben.
   //
-  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireTeamer + darfTermin auf
-  // can_view-Stufe. Wer absagen darf, darf auch zuruecknehmen -- es ist
+  // BERECHTIGUNG IDENTISCH ZUR ABSAGE: requireAdmin (16.09.2026, vorher
+  // requireTeamer) + darfTermin auf can_view-Stufe. Wer absagen darf, darf
+  // auch zuruecknehmen -- es ist
   // derselbe Vorgang, nur andersherum, und er erreicht dieselben Leute mit
   // einem Push.
-  router.put('/:id/reaktivieren', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id/reaktivieren', rbacVerifier, requireAdmin, async (req, res) => {
     const eventId = req.params.id;
 
     const client = await db.getClient();

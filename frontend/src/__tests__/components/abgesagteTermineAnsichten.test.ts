@@ -132,24 +132,22 @@ describe('Befund E neu: Grund bearbeiten laeuft ueber den Wisch in beiden Listen
     expect(quelle).toContain("aria-label={isCancelled ? 'Absagegrund bearbeiten' : 'Event absagen'}");
   });
 
-  it('die Teamer-Liste bietet ihn ebenfalls an -- an einem abgesagten Termin', () => {
+  it('die Teamer-Liste bietet ihn NICHT an -- Termine verwaltet die Leitung', () => {
     const quelle = code(ANSICHTEN.teamListe);
-    // Wortgleich zur Leitungsliste: EIN Wisch, dessen Beschriftung am
-    // Zustand des Termins haengt.
-    expect(quelle).toContain("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
-    expect(quelle).toContain('handleTerminAbsagen(event)');
+    expect(quelle).not.toContain("aria-label={abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'}");
+    expect(quelle).not.toContain('handleTerminAbsagen');
   });
 
-  it('das Team ruft dieselbe Route wie die Leitung auf', () => {
+  it('das Team ruft die Verwaltungs-Routen gar nicht mehr auf', () => {
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).toContain('/absagegrund');
-    // Der Modus kommt aus dem Termin, wie in AdminEventsPage -- nicht fest.
-    expect(quelle).toContain("get modus() { return istAbgesagt(absageTermin) ? 'grund' as const : 'absagen' as const; }");
+    expect(quelle).not.toContain('/absagegrund');
+    expect(quelle).not.toContain('/reaktivieren');
+    expect(quelle).not.toMatch(/\/events\/\$\{[^}]+\}\/cancel/);
   });
 
-  it('das Team benutzt DASSELBE Modal, kein zweites', () => {
+  it('das Team bindet das Absage-Modal der Leitung nicht mehr ein', () => {
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).toContain("import TerminAbsagenModal from '../../admin/modals/TerminAbsagenModal'");
+    expect(quelle).not.toContain('TerminAbsagenModal');
   });
 
   it('keine Detailansicht reicht noch einen Knopf an den AbsageBlock durch', () => {
@@ -177,27 +175,27 @@ describe('Absage zuruecknehmen: der Wisch steht in BEIDEN Listen', () => {
     expect(quelle).toContain('{onZuruecknehmen && isCancelled && (');
   });
 
-  it('die Teamer-Liste bietet ihn ebenfalls an, ebenfalls nur an abgesagten', () => {
+  it('die Teamer-Liste bietet ihn NICHT an -- sie hat gar keinen Wisch mehr', () => {
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).toContain('aria-label="Absage zurücknehmen"');
-    expect(quelle).toContain('handleAbsageZuruecknehmen(event)');
-    // Nur am abgesagten Termin -- an einem aktiven gibt es nichts
-    // zurueckzunehmen. Der Wisch selbst steht seit dem 16.09.2026 an JEDER
-    // Zeile, weil dort auch "Event absagen" haengt.
-    expect(quelle).toContain('{abgesagt && (');
+    expect(quelle).not.toContain('Absage zurücknehmen');
+    expect(quelle).not.toContain('handleAbsageZuruecknehmen');
+    expect(quelle).not.toContain('IonItemSliding');
   });
 
-  it('beide Listen rufen dieselbe Route auf', () => {
-    expect(code('src/components/admin/pages/AdminEventsPage.tsx')).toContain('/reaktivieren');
-    expect(code(ANSICHTEN.teamListe)).toContain('/reaktivieren');
+  it('nur noch die Leitung ruft die Route auf', () => {
+    // Seit dem 16.09.2026 steht der Aufruf im gemeinsamen Helfer, den beide
+    // Leitungs-Wege benutzen (Wisch in der Liste, Knopf im Termin) -- nicht
+    // mehr in der Listen-Seite selbst.
+    expect(code('src/utils/absageZuruecknehmen.ts')).toContain('/reaktivieren');
+    expect(code('src/components/admin/pages/AdminEventsPage.tsx')).toContain('absageZuruecknehmenFragen');
+    expect(code(ANSICHTEN.teamListe)).not.toContain('/reaktivieren');
+    expect(code(ANSICHTEN.teamListe)).not.toContain('absageZuruecknehmenFragen');
   });
 
-  it('beide faerben die Ruecknahme gruen und das Bearbeiten warnfarben', () => {
-    for (const pfad of [ANSICHTEN.leitungListe, ANSICHTEN.teamListe]) {
-      const quelle = code(pfad);
-      expect(quelle).toContain('app-icon-circle--lg app-icon-circle--success');
-      expect(quelle).toContain('app-icon-circle--lg app-icon-circle--warning');
-    }
+  it('die Leitungsliste faerbt die Ruecknahme gruen und das Bearbeiten warnfarben', () => {
+    const quelle = code(ANSICHTEN.leitungListe);
+    expect(quelle).toContain('app-icon-circle--lg app-icon-circle--success');
+    expect(quelle).toContain('app-icon-circle--lg app-icon-circle--warning');
   });
 
   it('keine Detailansicht ruft die Route noch selbst auf', () => {
@@ -213,16 +211,16 @@ describe('Absage zuruecknehmen: der Wisch steht in BEIDEN Listen', () => {
     expect(quelle).toContain('icon={isCancelled ? ICON_BEARBEITEN : ICON_GESPERRT}');
   });
 
-  it('die Teamer-Liste bietet ihn genauso -- gleiche Rechte wie die Leitung', () => {
-    // Umgedreht am 16.09.2026 (Simon): "wenn sie das duerfen dann duerfen sie
-    // auch absagen". Bis dahin stand hier die Gegenprobe, dass das Team NICHT
-    // absagt -- der Modus des Modals war fest 'grund'. Das Backend erlaubte
-    // es die ganze Zeit (requireTeamer vor /cancel), nur die Oberflaeche
-    // fehlte.
+  it('die Teamer-Liste bietet ihn nicht -- Termine verwaltet nur die Leitung', () => {
+    // Zweimal umgedreht am 16.09.2026. Vormittags hiess es "wenn sie das
+    // duerfen dann duerfen sie auch absagen"; nachmittags: "teamer erstellen
+    // keine veranstaltungen fertig. das machen admins und org admins. [...]
+    // also auch nicht loeschen und absagen". Diesmal zieht das Backend mit:
+    // /cancel steht hinter requireAdmin, eine Teamer:in bekommt 403.
     const quelle = code(ANSICHTEN.teamListe);
-    expect(quelle).toContain("abgesagt ? 'Absagegrund bearbeiten' : 'Event absagen'");
-    expect(quelle).toContain('icon={abgesagt ? ICON_BEARBEITEN : ICON_GESPERRT}');
-    expect(quelle).not.toContain("modus: 'grund' as const");
+    expect(quelle).not.toContain("'Absagegrund bearbeiten'");
+    expect(quelle).not.toContain("'Event absagen'");
+    expect(quelle).not.toContain('ICON_GESPERRT');
   });
 });
 

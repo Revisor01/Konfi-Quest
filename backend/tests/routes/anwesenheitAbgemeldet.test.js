@@ -349,15 +349,32 @@ describe('Anwesenheit: abgemeldet (excused), Grund und Notiz', () => {
   });
 
   describe('Berechtigungen', () => {
-    it('Teamer:innen duerfen abmelden (erlaubter Fall)', async () => {
+    it('Admins duerfen abmelden (erlaubter Fall)', async () => {
+      const { eventId, bookingId } = await setupEvent();
+      const res = await request(app)
+        .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'excused', excuse_reason: 'krank' });
+
+      expect(res.status).toBe(200);
+      expect((await buchung(bookingId)).attendance_status).toBe('excused');
+    });
+
+    it('Teamer:innen duerfen es NICHT mehr (verbotener Fall, 16.09.2026)', async () => {
+      // UMGEDREHT, KEINE AUFWEICHUNG: Bis zum 16.09.2026 stand hier
+      // "Teamer:innen duerfen abmelden (erlaubter Fall)". Die Anwesenheit
+      // gehoert zur Terminverwaltung, und die ist Leitungssache -- Simon
+      // woertlich: "teamer erstellen keine veranstaltungen fertig. das machen
+      // admins und org admins."
       const { eventId, bookingId } = await setupEvent();
       const res = await request(app)
         .put(`/api/events/${eventId}/participants/${bookingId}/attendance`)
         .set('Authorization', `Bearer ${teamerToken}`)
         .send({ attendance_status: 'excused', excuse_reason: 'krank' });
 
-      expect(res.status).toBe(200);
-      expect((await buchung(bookingId)).attendance_status).toBe('excused');
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Keine Berechtigung');
+      expect((await buchung(bookingId)).attendance_status).toBeNull();
     });
 
     it('Konfis duerfen es nicht (verbotener Fall)', async () => {

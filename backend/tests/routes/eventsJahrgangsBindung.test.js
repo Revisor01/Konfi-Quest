@@ -256,18 +256,39 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
   });
 
   describe('PUT /api/events/:id/participants/attendance-all', () => {
-    it('VERBOTEN: Teamer verbucht keine Anwesenheit im fremden Jahrgang — 403', async () => {
+    // AUF ADMIN UMGESTELLT (16.09.2026): Diese beiden Faelle liefen bis dahin
+    // mit teamerMitJgToken. Seit die Anwesenheit hinter requireAdmin steht,
+    // wuerde eine Teamer:in hier IMMER 403 bekommen -- der "VERBOTEN"-Test
+    // waere tautologisch geworden (gruen aus dem falschen Grund) und der
+    // "ERLAUBT"-Test waere gefallen. Diese Datei prueft die JAHRGANGSGRENZE,
+    // nicht die Rolle; mit dem Admin-Token tut sie das wieder, wie alle
+    // Schwesterfaelle darueber. Die Rollen-Matrix steht in rbacTermine.test.js.
+    it('VERBOTEN: Admin verbucht keine Anwesenheit im fremden Jahrgang — 403', async () => {
       const id = await terminAnlegen({ jahrgangId: JG_B });
 
       const res = await request(app)
         .put(`/api/events/${id}/participants/attendance-all`)
-        .set('Authorization', `Bearer ${teamerMitJgToken}`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
         .send({ status: 'present' });
 
       expect(res.status).toBe(403);
     });
 
-    it('ERLAUBT: Teamer verbucht im eigenen Jahrgang', async () => {
+    it('ERLAUBT: Admin verbucht im eigenen Jahrgang', async () => {
+      const id = await terminAnlegen({ jahrgangId: JG_A });
+
+      const res = await request(app)
+        .put(`/api/events/${id}/participants/attendance-all`)
+        .set('Authorization', `Bearer ${adminMitJgToken}`)
+        .send({ status: 'present' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('eine Teamer:in scheitert schon an der Rolle -- sogar im EIGENEN Jahrgang', async () => {
+      // Der Beleg dafuer, dass die Umstellung oben noetig war und nicht nur
+      // bequem: teamerMitJgToken hat can_edit auf JG_A, die Jahrgangsgrenze
+      // waere also offen. Es scheitert allein an requireAdmin.
       const id = await terminAnlegen({ jahrgangId: JG_A });
 
       const res = await request(app)
@@ -275,7 +296,8 @@ describe('Jahrgangs-Bindung der Termin-Schreibrouten', () => {
         .set('Authorization', `Bearer ${teamerMitJgToken}`)
         .send({ status: 'present' });
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Keine Berechtigung');
     });
   });
 
