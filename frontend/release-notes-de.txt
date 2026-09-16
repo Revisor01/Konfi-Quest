@@ -1,7 +1,11 @@
-Neu: Die App lässt sich mit Fingerabdruck sperren. Im Profil wählst du, nach welcher Zeit im Hintergrund die Abfrage kommt – sofort, nach 1, 5 oder 15 Minuten. Angemeldet bleibst du dabei.
+Die Startseite ist beim ersten Öffnen nicht mehr leer.
 
-Die Anwesenheit kennt einen dritten Eintrag: Abgemeldet, mit Grund und Notiz. Challenge-Stempel stehen im Profil neben den Abzeichen.
+Team: Ihr seht am Termin, wer kommt. Termine anlegen und absagen bleibt bei der Leitung.
 
-Die App startet schneller, große Anhänge brechen bei langsamer Verbindung nicht mehr ab.
+Wer abgemeldet wurde, kann sich wieder anmelden. Ein falscher Anwesenheitseintrag lässt sich zurücknehmen.
 
-Termine, Profile und Nachweisfotos bleiben auf die eigenen Jahrgänge beschränkt.
+Wer von der Leitung angemeldet wird, bekommt eine Mitteilung.
+
+Termine mit Warteliste stehen wieder unter "Meine", abgesagte an ihrem Datum.
+
+Behoben: abgeschnittene Texte im Termin-Fenster, falsche Teilnehmerzahlen, Löschen ging nicht.
