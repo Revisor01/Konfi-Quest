@@ -9,6 +9,15 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 let zustandsWechsel: ((e: { isActive: boolean }) => void) | null = null;
 const mockEntfernen = vi.fn();
 
+// Die Sperre kann nur nativ greifen. Der Vorgabewert hier ist deshalb "nativ" —
+// sonst pruefte die halbe Datei den Browserfall, in dem es gar nichts zu
+// sperren gibt.
+const mockIstNativ = vi.fn(() => true);
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { isNativePlatform: () => mockIstNativ(), getPlatform: () => 'ios' }
+}));
+
 vi.mock('@capacitor/app', () => ({
   App: {
     addListener: vi.fn(async (_name: string, cb: (e: { isActive: boolean }) => void) => {
@@ -39,11 +48,12 @@ vi.mock('../../services/appSperre', async () => {
 import { useAppSperre } from '../../hooks/useAppSperre';
 
 const Pruefling: React.FC = () => {
-  const { gesperrt, verdeckt, entsperren } = useAppSperre();
+  const { gesperrt, startGeklaert, verdeckt, entsperren } = useAppSperre();
   return (
     <div>
       <span data-testid="zustand">{gesperrt ? 'gesperrt' : 'offen'}</span>
       <span data-testid="abdeckung">{verdeckt ? 'verdeckt' : 'sichtbar'}</span>
+      <span data-testid="start">{startGeklaert ? 'geklaert' : 'offen'}</span>
       <button onClick={entsperren}>entsperren</button>
     </div>
   );
@@ -51,6 +61,7 @@ const Pruefling: React.FC = () => {
 
 const zustand = () => screen.getByTestId('zustand').textContent;
 const abdeckung = () => screen.getByTestId('abdeckung').textContent;
+const start = () => screen.getByTestId('start').textContent;
 
 /** Nur wegwechseln, ohne zurueckzukommen — der Moment der Momentaufnahme. */
 const wegwechseln = async () => {
@@ -73,6 +84,7 @@ beforeEach(() => {
   mockVerfuegbar.mockResolvedValue(true);
   mockLesen.mockResolvedValue('aus');
   mockLaeuftAusflug.mockReturnValue(false);
+  mockIstNativ.mockReturnValue(true);
 });
 
 describe('Kaltstart', () => {
@@ -103,6 +115,151 @@ describe('Kaltstart', () => {
     expect(zustand()).toBe('offen');
     // Die Einstellung wird dann gar nicht erst gelesen.
     expect(mockLesen).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Simons Befund 15.09.2026 (echtes Geraet, Build 194): "Aber er flickert kurz,
+// wenn die App aus dem ganz aus Zustand kommt. Vermutlich weil er sonst die
+// Grafik zeigt."
+//
+// WAS DIESE TESTS PRUEFEN — und warum sie den ZWISCHENZUSTAND pruefen muessen:
+// Die Einstellung wird beim Start asynchron gelesen (Biometrie-Bruecke, dann
+// Preferences). Vorher stand `gesperrt` auf false, und false heisst fuer die
+// Oberflaeche: Inhalt zeigen. Erst nach der Antwort sprang der Sperrbildschirm
+// davor — das Aufblitzen. Ein Test, der nur das ENDERGEBNIS prueft, war schon
+// vorher gruen und hat den Fehler nicht gesehen. Geprueft wird deshalb der
+// Zustand VOR der Antwort des Plugins.
+// ---------------------------------------------------------------------------
+describe('Kaltstart: kein Aufblitzen, bevor die Sperre bekannt ist', () => {
+  /**
+   * Antworten, die erst auf Zuruf kommen. Damit laesst sich der Zustand
+   * einfrieren, den es auf dem Geraet nur Millisekunden lang gibt.
+   */
+  const anHaltepunkt = () => {
+    let freigeben!: (wert: boolean) => void;
+    const versprechen = new Promise<boolean>((r) => { freigeben = r; });
+    mockVerfuegbar.mockReturnValue(versprechen);
+    return freigeben;
+  };
+
+  it('sagt VOR der Antwort des Plugins NICHT, dass nicht gesperrt ist', async () => {
+    // DER KERN. `startGeklaert` ist das Signal an die Oberflaeche, ob sie
+    // ueberhaupt schon etwas rendern darf. Solange es offen steht, zeigt
+    // App.tsx den Ladebildschirm statt des Inhalts.
+    const freigeben = anHaltepunkt();
+    mockLesen.mockResolvedValue('sofort');
+
+    render(<Pruefling />);
+
+    // Das Plugin hat noch nicht geantwortet: Die Frage ist offen, und genau
+    // deshalb darf `gesperrt === false` hier nicht als "zeig den Inhalt"
+    // gelesen werden.
+    expect(start()).toBe('offen');
+
+    await act(async () => { freigeben(true); });
+    await waitFor(() => expect(start()).toBe('geklaert'));
+    expect(zustand()).toBe('gesperrt');
+  });
+
+  it('gibt erst frei, wenn feststeht, dass die Sperre gesperrt hat', async () => {
+    // Die Reihenfolge ist die eigentliche Regel: Wenn `startGeklaert` faellt,
+    // MUSS `gesperrt` schon stehen. Faellt es einen Tick zu frueh, rendert die
+    // Oberflaeche genau einmal den Inhalt — das Aufblitzen.
+    mockLesen.mockResolvedValue('15min');
+    const gesehen: string[] = [];
+
+    const Beobachter: React.FC = () => {
+      const { gesperrt, startGeklaert } = useAppSperre();
+      gesehen.push(`${startGeklaert ? 'geklaert' : 'offen'}/${gesperrt ? 'gesperrt' : 'offen'}`);
+      return <span data-testid="start">{startGeklaert ? 'geklaert' : 'offen'}</span>;
+    };
+
+    render(<Beobachter />);
+    await waitFor(() => expect(start()).toBe('geklaert'));
+
+    // Kein einziges Bild darf "freigegeben, aber nicht gesperrt" gewesen sein.
+    expect(gesehen).not.toContain('geklaert/offen');
+    // Und am Ende steht beides.
+    expect(gesehen[gesehen.length - 1]).toBe('geklaert/gesperrt');
+  });
+
+  it('haelt die App bei einem langsamen Plugin weiter zurueck', async () => {
+    // Auf echter Hardware ist die Bruecke spuerbar langsamer als im
+    // Simulator. Je laenger sie braucht, desto wichtiger ist, dass in dieser
+    // Zeit nichts gerendert wird.
+    const freigeben = anHaltepunkt();
+    mockLesen.mockResolvedValue('5min');
+    render(<Pruefling />);
+
+    // Mehrere Ticks vergehen lassen — die Antwort bleibt aus.
+    for (let i = 0; i < 5; i++) {
+      await act(async () => { await Promise.resolve(); });
+    }
+    expect(start()).toBe('offen');
+
+    await act(async () => { freigeben(true); });
+    await waitFor(() => expect(zustand()).toBe('gesperrt'));
+    expect(start()).toBe('geklaert');
+  });
+
+  it('gibt bei ausgeschalteter Sperre frei, ohne je zu sperren', async () => {
+    // Der erlaubte Fall, und die andere Fehlerrichtung: Die Voreinstellung ist
+    // 'aus'. Diese Mehrheit darf KEINE Abdeckung und KEINEN Sperrbildschirm
+    // aufblitzen sehen — nur den Ladebildschirm, den der Start ohnehin zeigt,
+    // und danach die App.
+    mockLesen.mockResolvedValue('aus');
+    const gesehen: string[] = [];
+
+    const Beobachter: React.FC = () => {
+      const { gesperrt, startGeklaert, verdeckt } = useAppSperre();
+      gesehen.push(`${gesperrt ? 'gesperrt' : 'offen'}/${verdeckt ? 'verdeckt' : 'sichtbar'}`);
+      return <span data-testid="start">{startGeklaert ? 'geklaert' : 'offen'}</span>;
+    };
+
+    render(<Beobachter />);
+    await waitFor(() => expect(start()).toBe('geklaert'));
+
+    // In KEINEM Bild stand je eine Sperre oder eine Abdeckung.
+    expect(gesehen.every((b) => b === 'offen/sichtbar')).toBe(true);
+  });
+
+  it('gibt ohne Biometrie am Geraet frei, genau wie bei "aus"', async () => {
+    mockVerfuegbar.mockResolvedValue(false);
+    mockLesen.mockResolvedValue('sofort');
+    render(<Pruefling />);
+
+    await waitFor(() => expect(start()).toBe('geklaert'));
+    expect(zustand()).toBe('offen');
+    expect(abdeckung()).toBe('sichtbar');
+  });
+
+  it('gibt im Browser SOFORT frei, ohne einen einzigen Tick zu warten', async () => {
+    // Ohne native Plattform kann die Sperre nie greifen. Dort auch nur einen
+    // Tick zu warten waere eine Verzoegerung ohne jeden Gegenwert.
+    mockIstNativ.mockReturnValue(false);
+    mockVerfuegbar.mockResolvedValue(false);
+
+    render(<Pruefling />);
+
+    // Direkt nach dem ersten Rendern, ohne await dazwischen.
+    expect(start()).toBe('geklaert');
+  });
+
+  it('gibt auch dann frei, wenn das Biometrie-Plugin wirft', async () => {
+    // Ein streikendes Plugin darf die App nicht dauerhaft im Ladebildschirm
+    // festhalten — das waere schlimmer als das Flackern, das hier behoben wird.
+    // mockImplementation statt mockRejectedValue: Letzteres legt das
+    // abgelehnte Versprechen schon beim Einrichten an, und bis der Hook es
+    // abholt, meldet Node es als unbehandelt.
+    mockVerfuegbar.mockImplementation(() =>
+      Promise.reject(new Error('Plugin nicht verfuegbar'))
+    );
+
+    render(<Pruefling />);
+
+    await waitFor(() => expect(start()).toBe('geklaert'));
+    expect(zustand()).toBe('offen');
   });
 });
 
@@ -313,6 +470,44 @@ describe('Abdeckung im App-Umschalter', () => {
 
     await wegwechseln();
     expect(abdeckung()).toBe('verdeckt');
+  });
+});
+
+describe('Rueckkehr aus dem Hintergrund hat dieselbe Luecke NICHT', () => {
+  it('sperrt im selben Bild wie die Rueckkehr, ohne Zwischenzustand', async () => {
+    // Nachgeprueft, weil die Frage beim Kaltstart-Befund mitgestellt wurde:
+    // Beim Zurueckkommen ist die Einstellung laengst geladen und liegt in
+    // einem Ref. `mussSperren` ist eine reine Rechnung ohne await — `gesperrt`
+    // kippt deshalb im selben Ereignis. Es gibt hier kein Bild dazwischen, in
+    // dem die App schon vorne und noch nicht gesperrt waere.
+    mockLesen.mockResolvedValue('sofort');
+    const gesehen: string[] = [];
+
+    const Beobachter: React.FC = () => {
+      const { gesperrt, entsperren } = useAppSperre();
+      gesehen.push(gesperrt ? 'gesperrt' : 'offen');
+      return <button onClick={entsperren}>entsperren</button>;
+    };
+
+    render(<Beobachter />);
+    await waitFor(() => expect(gesehen[gesehen.length - 1]).toBe('gesperrt'));
+    await act(async () => { screen.getByText('entsperren').click(); });
+
+    // Erst weg. Dieser Schritt rendert noch einmal (die Abdeckung kippt) und
+    // gehoert NICHT zur gemessenen Strecke — gemessen wird ab der Rueckkehr.
+    const los = Date.now();
+    vi.spyOn(Date, 'now').mockReturnValue(los);
+    await act(async () => { zustandsWechsel?.({ isActive: false }); });
+
+    gesehen.length = 0;
+    vi.spyOn(Date, 'now').mockReturnValue(los + 10_000);
+    await act(async () => { zustandsWechsel?.({ isActive: true }); });
+    vi.spyOn(Date, 'now').mockRestore();
+
+    // Kein einziges Bild NACH der Rueckkehr zeigte die App offen: Der
+    // Sperrbildschirm steht ab dem ersten Bild.
+    expect(gesehen.length).toBeGreaterThan(0);
+    expect(gesehen).not.toContain('offen');
   });
 });
 

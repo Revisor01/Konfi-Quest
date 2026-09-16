@@ -153,6 +153,58 @@ describe('Die Abdeckung kippt beim Wegwechseln, nicht bei der Rueckkehr', () => 
   });
 });
 
+// ---------------------------------------------------------------------------
+// Simons Befund 15.09.2026 (echtes Geraet, Build 194): "Aber er flickert kurz,
+// wenn die App aus dem ganz aus Zustand kommt. Vermutlich weil er sonst die
+// Grafik zeigt."
+//
+// Der Lebenszyklus steht in __tests__/hooks/useAppSperre.test.tsx. Hier steht
+// die STRUKTURELLE Bedingung: dass App.tsx die Entscheidung VOR dem Rendern
+// faellt und in der Wartezeit das Neutrale zeigt, nicht das Logo.
+// ---------------------------------------------------------------------------
+describe('Kaltstart: die Entscheidung faellt vor dem Rendern', () => {
+  it('haelt den Inhalt zurueck, solange die Sperre unbekannt ist', () => {
+    // Dieselbe Ordnung wie beim Seitenbaum daneben (useSeitenBereit): Die
+    // Frage "warten oder rendern" wird beantwortet, BEVOR der Baum steht.
+    // Stuende `startGeklaert` nicht in dieser Bedingung, rendert die App den
+    // Inhalt, bevor sie weiss, ob sie gesperrt ist — genau das Aufblitzen.
+    expect(app).toContain('if (!seitenBereit || !startGeklaert)');
+  });
+
+  it('zeigt in der Wartezeit den Ladebildschirm, nicht die Abdeckung', () => {
+    // Die andere Fehlerrichtung: Die Sperre steht in der Voreinstellung auf
+    // 'aus'. Wuerde in der Wartezeit die Abdeckung stehen, saehe diese
+    // Mehrheit ein Logo aufblitzen, das gleich wieder verschwindet — ein
+    // Aufblitzen gegen ein anderes getauscht.
+    const zweig = app.slice(app.indexOf('if (!seitenBereit || !startGeklaert)'));
+    const bis = zweig.slice(0, zweig.indexOf('</IonApp>'));
+    expect(bis, 'Ladebildschirm fehlt im Wartezweig').toContain('<AppLaedt />');
+  });
+
+  it('holt startGeklaert aus dem Hook', () => {
+    expect(app).toContain('startGeklaert');
+    expect(hook).toContain('startGeklaert');
+  });
+
+  it('entscheidet den Startwert synchron an der Plattform, nicht in einem Effekt', () => {
+    // Ein Effekt liefe erst NACH dem ersten Rendern — und genau dieses eine
+    // Bild ist das Aufblitzen. Der Wert muss beim ersten Rendern schon stehen.
+    // Und er haengt an der Plattform: Im Browser kann die Sperre nie greifen,
+    // dort darf kein einziger Tick verloren gehen.
+    expect(hook).toContain('useState(() => !Capacitor.isNativePlatform())');
+  });
+
+  it('gibt in JEDEM Ausgang wieder frei', () => {
+    // Ohne `finally` haette ein werfendes Biometrie-Plugin die App dauerhaft
+    // im Ladebildschirm festgehalten — ein Startproblem waere schlimmer als
+    // das Flackern, das hier behoben wird.
+    const start = hook.indexOf('setStartGeklaert(true)');
+    expect(start, 'setStartGeklaert fehlt').toBeGreaterThan(-1);
+    const davor = hook.slice(0, start);
+    expect(davor.lastIndexOf('finally')).toBeGreaterThan(davor.lastIndexOf('catch'));
+  });
+});
+
 describe('Android: FLAG_SECURE nur bei eingeschalteter Sperre', () => {
   // Die Entscheidung: FLAG_SECURE verbietet JEDE Bildschirmaufnahme in der
   // ganzen App. Dauerhaft gesetzt wuerde es auch die grosse Mehrheit treffen,

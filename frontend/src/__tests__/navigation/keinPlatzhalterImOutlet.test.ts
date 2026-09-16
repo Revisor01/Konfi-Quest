@@ -54,8 +54,11 @@ describe('IonRouterOutlet: kein Platzhalter zwischen Outlet und Seite', () => {
     const hook = lies('src/navigation/useSeitenBereit.ts');
     expect(hook).toMatch(/ladeRolleVor\(rolle\)/);
     expect(hook).not.toMatch(/setTimeout\(\(\)\s*=>\s*\{\s*void ladeRolleVor/);
-    // Und der Router wartet, bis sie da sind.
-    expect(app).toMatch(/if\s*\(\s*!seitenBereit\s*\)/);
+    // Und der Router wartet, bis sie da sind. Die Bedingung fuehrt
+    // `!seitenBereit` an und traegt seit dem 15.09.2026 zusaetzlich die
+    // App-Sperre (`!startGeklaert`) — geprueft wird der Anfang, nicht die
+    // vollstaendige Schreibweise.
+    expect(app).toMatch(/if\s*\(\s*!seitenBereit\b/);
   });
 });
 
@@ -77,12 +80,17 @@ describe('MainTabs rendert nie null (weisse Seite beim Kaltstart)', () => {
   // (siehe keinTauschImOutlet.test.ts). Die Aussage bleibt unveraendert:
   // bei fehlendem Seitenbaum wird NIE null gerendert.
   it('rendert bei fehlendem Seitenbaum einen Ladezustand statt null', () => {
-    const block = app.slice(
-      app.indexOf('if (!seitenBereit)'),
-      app.indexOf('return (', app.indexOf('if (!seitenBereit)'))
-    );
+    // Die Stelle wird GESUCHT, nicht als feste Zeichenkette erwartet: Die
+    // Bedingung traegt seit dem 15.09.2026 zusaetzlich `!startGeklaert`, und
+    // ein indexOf auf die alte Schreibweise lieferte -1 — der Block begaenne
+    // dann am Dateianfang und der Test prueefte still die falsche Stelle.
+    const ausstieg = app.search(/if\s*\(\s*!seitenBereit\b/);
+    expect(ausstieg, 'Ausstieg fehlt').toBeGreaterThan(-1);
+    // Bis zum Ende dieses Zweigs, nicht nur bis zu seinem `return (` — der
+    // Ladebildschirm steht eine Zeile DAHINTER.
+    const block = app.slice(ausstieg, app.indexOf('</IonApp>', ausstieg));
     expect(block).not.toMatch(/return null/);
-    expect(app).toContain('<AppLaedt />');
+    expect(block, 'Ladebildschirm fehlt im Ausstieg').toContain('<AppLaedt />');
   });
 
   it('MainTabs selbst steigt nicht mehr mit einem Ladezustand aus', () => {

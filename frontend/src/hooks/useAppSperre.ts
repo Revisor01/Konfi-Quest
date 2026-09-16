@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import {
@@ -25,6 +26,35 @@ import {
 export interface AppSperrZustand {
   /** true, solange der Sperrbildschirm die App verdecken muss. */
   gesperrt: boolean;
+  /**
+   * false, solange beim Start noch nicht feststeht, ob gesperrt werden muss.
+   *
+   * WOFUER (Simons Befund 15.09.2026, echtes Geraet): "Er flickert kurz, wenn
+   * die App aus dem ganz aus Zustand kommt." Die Einstellung wird beim Start
+   * ASYNCHRON gelesen — erst die Verfuegbarkeit der Biometrie ueber die
+   * Capacitor-Bruecke, dann der gespeicherte Wert. Bis beides zurueck ist,
+   * stand `gesperrt` auf false, und das heisst: Inhalt. Erst danach sprang der
+   * Sperrbildschirm davor. Genau dieses Aufblitzen war zu sehen.
+   *
+   * DIE REGEL LAUTET DESHALB: Vor der ersten Antwort wird gar nicht erst
+   * entschieden, sondern gewartet — dieselbe Ordnung wie beim Seitenbaum in
+   * navigation/useSeitenBereit.ts ("warten oder rendern" faellt VOR dem
+   * Rendern, nicht danach als Austausch).
+   *
+   * WARUM NICHT EINFACH `gesperrt` AUF true STARTEN: Das waere die andere
+   * Fehlerrichtung. Die Sperre steht in der Voreinstellung auf 'aus' — die
+   * grosse Mehrheit bekaeme beim Start einen Sperrbildschirm zu sehen, den sie
+   * nie bestellt hat und der gleich darauf wieder verschwindet. Ein
+   * Aufblitzen weniger, ein anderes dafuer. Deshalb ein eigener Zustand, der
+   * nur sagt "noch nicht bekannt", und die Oberflaeche zeigt solange den
+   * neutralen Ladebildschirm, den sie beim Kaltstart ohnehin zeigt.
+   *
+   * IM BROWSER GIBT ES NICHTS ZU KLAEREN: Ohne native Plattform kann die
+   * Sperre nie greifen (sperreVerfuegbar() prueft das als Erstes). Der Wert
+   * startet dort deshalb sofort auf true — kein Warten, wo nichts zu warten
+   * ist.
+   */
+  startGeklaert: boolean;
   /**
    * true, solange die App im Hintergrund ist UND die Sperre eingeschaltet ist.
    *
@@ -54,6 +84,10 @@ export interface AppSperrZustand {
 export const useAppSperre = (): AppSperrZustand => {
   const [gesperrt, setGesperrt] = useState(false);
   const [verdeckt, setVerdeckt] = useState(false);
+  // Siehe AppSperrZustand.startGeklaert. Synchron beim ersten Rendern
+  // entschieden, nicht in einem Effekt: Ein Effekt liefe erst NACH dem ersten
+  // Rendern — und genau dieses eine Bild ist das Aufblitzen.
+  const [startGeklaert, setStartGeklaert] = useState(() => !Capacitor.isNativePlatform());
 
   // Refs statt State: der appStateChange-Listener wird EINMAL angemeldet und
   // liest hier immer den aktuellen Stand. Als State im Dependency-Array müsste
@@ -66,24 +100,41 @@ export const useAppSperre = (): AppSperrZustand => {
   useEffect(() => {
     let abgemeldet = false;
     (async () => {
-      // Erst Verfügbarkeit: wer die Biometrie am Gerät nachträglich entfernt
-      // hat, darf nicht vor einem Sperrbildschirm stehen, den er nicht mehr
-      // öffnen kann. Der Abmelden-Knopf wäre dann der einzige Weg — er ist da,
-      // aber niemanden ohne Not dorthin zwingen.
-      const verfuegbar = await sperreVerfuegbar();
-      if (abgemeldet) return;
-      if (!verfuegbar) {
+      try {
+        // Erst Verfügbarkeit: wer die Biometrie am Gerät nachträglich entfernt
+        // hat, darf nicht vor einem Sperrbildschirm stehen, den er nicht mehr
+        // öffnen kann. Der Abmelden-Knopf wäre dann der einzige Weg — er ist da,
+        // aber niemanden ohne Not dorthin zwingen.
+        const verfuegbar = await sperreVerfuegbar();
+        if (abgemeldet) return;
+        if (!verfuegbar) {
+          verzoegerungRef.current = 'aus';
+          return;
+        }
+
+        const gelesen = await sperreLesen();
+        if (abgemeldet) return;
+        verzoegerungRef.current = gelesen;
+
+        // Kaltstart: eingeschaltet heißt gesperrt, unabhängig von der Wartezeit.
+        // Eine App, die frisch startet, war beliebig lange aus.
+        if (mussBeimStartSperren(gelesen)) setGesperrt(true);
+      } catch {
+        // Kein Hard-Fail, dieselbe Linie wie in services/appSperre.ts und
+        // services/biometrics.ts: Ohne verlaessliche Auskunft gilt 'aus'.
+        // Ungefangen waere es eine unbehandelte Ablehnung im Start —
+        // schlimmstenfalls eine Fehlerseite statt der App.
         verzoegerungRef.current = 'aus';
-        return;
+      } finally {
+        // IN JEDEM AUSGANG, und deshalb in einem `finally`: Solange dieser
+        // Merker nicht faellt, zeigt die App den Ladebildschirm. Bliebe er bei
+        // einem geworfenen Fehler stehen, haette ein streikendes
+        // Biometrie-Plugin die App dauerhaft unerreichbar gemacht — ein
+        // Startproblem waere schlimmer als das Flackern, das hier behoben wird.
+        // Nach dem Abmelden (abgemeldet) wird NICHT mehr gesetzt: die
+        // Komponente ist weg, ein setState darauf ist nur Rauschen.
+        if (!abgemeldet) setStartGeklaert(true);
       }
-
-      const gelesen = await sperreLesen();
-      if (abgemeldet) return;
-      verzoegerungRef.current = gelesen;
-
-      // Kaltstart: eingeschaltet heißt gesperrt, unabhängig von der Wartezeit.
-      // Eine App, die frisch startet, war beliebig lange aus.
-      if (mussBeimStartSperren(gelesen)) setGesperrt(true);
     })();
     return () => { abgemeldet = true; };
   }, []);
@@ -167,7 +218,7 @@ export const useAppSperre = (): AppSperrZustand => {
     setVerdeckt(false);
   }, []);
 
-  return { gesperrt, verdeckt, entsperren };
+  return { gesperrt, startGeklaert, verdeckt, entsperren };
 };
 
 export default useAppSperre;

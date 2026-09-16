@@ -57,15 +57,23 @@ describe('MainTabs tauscht seinen Baum nicht innerhalb des Outlets', () => {
 describe('Der Ladezustand liegt oberhalb des Routers', () => {
   const ohneKommentare = app.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
+  // Der Ausstieg haengt seit dem 15.09.2026 an ZWEI Bedingungen: am
+  // Seitenbaum und daran, ob die App-Sperre schon geklaert ist (Simons
+  // Flacker-Befund, siehe components/appAbdeckung.test.ts). Geprueft wird
+  // deshalb, dass `!seitenBereit` die Bedingung anfuehrt — nicht mehr, dass
+  // es allein darin steht. Die Regel dieses Tests ist die REIHENFOLGE
+  // (Ausstieg vor dem Router), nicht die genaue Schreibweise der Zeile.
+  const AUSSTIEG = /if\s*\(\s*!seitenBereit\b/;
+
   it('App.tsx entscheidet vor dem Router, ob der Baum bereit ist', () => {
     expect(ohneKommentare).toContain('useSeitenBereit');
-    expect(ohneKommentare).toMatch(/if\s*\(\s*!seitenBereit\s*\)/);
+    expect(ohneKommentare).toMatch(AUSSTIEG);
   });
 
   it('der frueh gerenderte Ladebildschirm steht VOR dem IonReactRouter', () => {
     // Die Reihenfolge im Quelltext ist hier die Aussage: Der Ausstieg muss
     // vor der Stelle stehen, an der der angemeldete Router montiert wird.
-    const ausstieg = ohneKommentare.indexOf('if (!seitenBereit)');
+    const ausstieg = ohneKommentare.search(AUSSTIEG);
     const router = ohneKommentare.indexOf('<IonReactRouter key={orgVersion}>');
     expect(ausstieg, 'Ausstieg fehlt').toBeGreaterThan(-1);
     expect(router, 'angemeldeter Router fehlt').toBeGreaterThan(-1);

@@ -87,7 +87,7 @@ const AppContent: React.FC = () => {
   // mitbekommen, wenn gerade niemand angemeldet ist), der Sperrbildschirm
   // erscheint aber nur ueber der angemeldeten App — auf der Anmeldeseite gibt
   // es nichts zu verdecken, und ein Schloss vor dem Login waere eine Sackgasse.
-  const { gesperrt, verdeckt, entsperren } = useAppSperre();
+  const { gesperrt, startGeklaert, verdeckt, entsperren } = useAppSperre();
 
   // Seitenbaum der Rolle vorladen. Das Ergebnis entscheidet unten, ob der
   // Router schon montiert werden darf — siehe die Begruendung dort.
@@ -191,7 +191,23 @@ const AppContent: React.FC = () => {
   // Jetzt wird der Router erst montiert, wenn der Baum endgueltig ist. Das
   // Outlet sieht dadurch nie einen Tausch. Bis dahin steht ein Ladebildschirm
   // AUSSERHALB jedes Outlets -- er ist keine Seite und kann keine verdraengen.
-  if (!seitenBereit) {
+  //
+  // UND DASSELBE FUER DIE SPERRE (Simons Befund 15.09.2026, echtes Geraet:
+  // "Aber er flickert kurz, wenn die App aus dem ganz aus Zustand kommt."):
+  // Die Sperr-Einstellung wird beim Start asynchron gelesen. Bis die Antwort
+  // da war, stand `gesperrt` auf false — also wurde der fertige Baum
+  // gerendert, und der Sperrbildschirm sprang erst danach davor. Der Inhalt
+  // blitzte auf, bevor die App wusste, dass sie gesperrt ist.
+  //
+  // `startGeklaert` beantwortet genau diese Frage, und sie wird hier
+  // beantwortet: VOR dem Rendern, wie beim Seitenbaum daneben. Bis dahin
+  // steht derselbe neutrale Ladebildschirm, den der Kaltstart ohnehin zeigt —
+  // bewusst NICHT die Abdeckung mit dem Logo: Wer die Sperre auf 'aus' hat
+  // (die Voreinstellung), saehe sonst ein Logo aufblitzen, das gleich wieder
+  // verschwindet. Ein Aufblitzen gegen ein anderes zu tauschen waere kein
+  // Gewinn. Im Browser steht `startGeklaert` sofort auf true und diese
+  // Bedingung kostet dort nichts.
+  if (!seitenBereit || !startGeklaert) {
     return (
       <IonApp>
         <AppLaedt />
