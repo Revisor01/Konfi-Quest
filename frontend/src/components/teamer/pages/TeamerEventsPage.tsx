@@ -63,7 +63,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, istAbgesagt, titelDekoration, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -369,8 +369,17 @@ const TeamerEventsPage: React.FC = () => {
   const safeEvents = events || [];
 
   // Gefilterte Events per Segment
+  //
+  // zaehltAlsMeiner() statt einer eigenen Regel: Die Regel, wer unter "Meine"
+  // gehoert, stand hier, in KonfiEventsPage und in der Konfi-EventsView in drei
+  // Varianten nebeneinander — und genau dadurch fehlte an jeder Stelle etwas
+  // anderes. Hier war es gleich doppelt: `is_registered` setzt das Backend nur
+  // bei status = 'confirmed', also fielen sowohl ein Wartelistenplatz
+  // ('waitlist') als auch die eigene Absage ('opted_out') aus dem Reiter
+  // heraus. Die Kartendarstellung weiter unten kannte beide Zustaende laengst
+  // und faerbte sie ein — nur der Filter davor nicht.
   const meineEvents = useMemo(() =>
-    sortEvents(safeEvents.filter(e => e.is_registered)),
+    sortEvents(safeEvents.filter(zaehltAlsMeiner)),
   [safeEvents]);
 
   // "Alle" heisst alle — auch reine Team-Termine. Vorher filterte
@@ -420,7 +429,7 @@ const TeamerEventsPage: React.FC = () => {
     if (activeTab === 'team') {
       const gesucht = safeEvents.filter(e => e.teamer_needed && !e.teamer_only).length;
       const nurTeam = safeEvents.filter(e => e.teamer_only).length;
-      const meineImTeam = teamEvents.filter(e => e.is_registered).length;
+      const meineImTeam = teamEvents.filter(zaehltAlsMeiner).length;
       return [
         { value: gesucht, label: 'Team gesucht' },
         { value: nurTeam, label: 'Nur Team' },
@@ -431,7 +440,7 @@ const TeamerEventsPage: React.FC = () => {
     return [
       { value: alleEvents.length, label: 'Gesamt' },
       { value: alleEvents.filter(isFuture).length, label: 'Anstehend' },
-      { value: alleEvents.filter(e => e.is_registered).length, label: 'Meine' }
+      { value: alleEvents.filter(zaehltAlsMeiner).length, label: 'Meine' }
     ];
   }, [activeTab, safeEvents, meineEvents, alleEvents, teamEvents]);
 
