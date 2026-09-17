@@ -1201,7 +1201,17 @@ paths:
                 type: { type: string, default: event }
                 max_participants: { type: integer, description: "Konfi-Plaetze; Pflicht ausser bei mandatory/teamer_only" }
                 registration_opens_at: { type: string, format: date-time }
-                registration_closes_at: { type: string, format: date-time }
+                registration_closes_at:
+                  type: string
+                  format: date-time
+                  description: >
+                    SEIT 17.09.2026 geprueft: Liegt event_date in der ZUKUNFT
+                    und registration_closes_at in der Vergangenheit, antwortet
+                    die Route mit 400 — der Termin waere ab dem Anlegen
+                    geschlossen (registration_status='closed'). Bei einem
+                    event_date in der Vergangenheit (nachtraeglich eingetragene
+                    Termine) bleibt ein vergangener Anmeldeschluss erlaubt;
+                    null (kein Anmeldefenster) ebenso.
                 has_timeslots: { type: boolean }
                 timeslots: { type: array, items: { type: object, properties: { start_time: { type: string }, end_time: { type: string }, max_participants: { type: integer } } } }
                 waitlist_enabled: { type: boolean, default: true }
@@ -1219,7 +1229,7 @@ paths:
                 teamer_max_waitlist_size: { type: integer, default: 10 }
       responses:
         "201": { description: "id + message" }
-        "400": { description: Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig) }
+        "400": { description: "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Kein Zugriff auf diesen Jahrgang (seit 14.09.2026, wenn jahrgang_ids einen fremden Jahrgang nennt)" }
         "409": { description: Unique-Konflikt }
@@ -1498,7 +1508,7 @@ paths:
             schema: { type: object, description: "Gleiche Felder wie POST /api/events" }
       responses:
         "200": { description: "message, promoted_count, promoted_teamer_count" }
-        "400": { description: Validierungs-/Regel-Fehler }
+        "400": { description: "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Kein Zugriff auf diesen Termin oder auf diesen Jahrgang (seit 14.09.2026)" }
         "404": { $ref: '#/components/responses/NotFound' }

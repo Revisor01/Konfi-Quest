@@ -87,7 +87,7 @@ an; sie gruppieren Termine und sind die Grundlage für Kategorie-Abzeichen.
 |---|---|
 | Endzeit | eine Stunde nach Beginn |
 | Anmeldung ab | sofort (kein Startzeitpunkt) |
-| Anmeldeschluss | 24 Stunden vor Beginn |
+| Anmeldeschluss | 24 Stunden vor Beginn, bei kurzfristigen Terminen früher |
 | Max. Teilnehmer:innen | 5 (einstellbar 1 bis 50) |
 | Punkte | 1, Typ Gemeinde |
 | Warteliste | an, 3 Plätze |
@@ -194,6 +194,20 @@ Vor der Öffnung sehen die Konfis den Termin zwar, bekommen beim Versuch aber
 „Anmeldung noch nicht geöffnet"; in der Liste steht „Bald". Nach dem
 Anmeldeschluss kommt „Anmeldung bereits geschlossen", in der Liste steht
 „Geschlossen".
+
+### Kurzfristige Termine
+
+Der Anmeldeschluss wird mit 24 Stunden vor Beginn vorgeschlagen. Liegt der
+Termin näher — du trägst am Nachmittag etwas für den Abend ein —, rückt der
+Vorschlag nach und landet zwischen jetzt und Beginn, statt in der
+Vergangenheit. So bleibt immer ein Fenster offen, in dem sich jemand anmelden
+kann. Du kannst ihn wie jeden anderen Wert danach frei setzen.
+
+Trägst du bei einem Termin, der noch bevorsteht, von Hand einen bereits
+abgelaufenen Anmeldeschluss ein, sagt das Speichern es und der Termin wird
+nicht angelegt — er wäre von Anfang an geschlossen. Bei Terminen, die du
+nachträglich einträgst oder korrigierst, ist ein Anmeldeschluss in der
+Vergangenheit dagegen richtig und bleibt erlaubt.
 
 ### Den „Anmeldung möglich"-Push einordnen
 

@@ -176,6 +176,24 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Sagte eine Teamer:in im Termin zu oder ab, **änderte sich in der App nichts**:
+  Die Liste „Wer kommt" zeigte weiter den alten Stand, erst ein Neuladen half.
+  Im Browser war es sofort zu sehen. Jetzt steht der neue Stand direkt da —
+  beim Zusagen wie beim Absagen und auch beim Herunterziehen der Seite.
+- Eine **Zusage wurde nicht bestätigt**: Wer „Dabei" antippte, bekam keine
+  Rückmeldung; nur ein Wartelistenplatz meldete sich. Jetzt kommt in beiden
+  Fällen eine Meldung.
+- Zusage und Absage einer Teamer:in nehmen denselben Weg. Vorher lief die
+  Zusage anders als die Absage, und die Leitung konnte nicht erkennen, dass
+  eine Absage eine vorherige Zusage zurückgenommen hatte.
+- Ein kurzfristig eingetragener Termin war **sofort geschlossen**: Der
+  voreingestellte Anmeldeschluss lag 24 Stunden vor Beginn und damit bei allem,
+  was noch heute stattfindet, in der Vergangenheit — niemand konnte sich
+  anmelden, und nichts wies darauf hin. Der Vorschlag rückt jetzt nach, wenn
+  der Termin näher liegt, und bleibt immer zwischen jetzt und Beginn. Ist bei
+  einem noch kommenden Termin trotzdem ein abgelaufener Schluss eingetragen,
+  sagt das Speichern es und der Termin wird nicht angelegt. Termine, die
+  nachträglich eingetragen oder korrigiert werden, sind davon nicht betroffen.
 - Ein Termin mit Anmeldungen ließ sich **nicht löschen**: Die Rückfrage, ob die
   Anmeldungen wirklich verloren gehen sollen, erschien nie. Der Dialog
   verschwand, der Termin blieb stehen. Jetzt kommt die Rückfrage und nennt, was

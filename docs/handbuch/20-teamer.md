@@ -94,6 +94,11 @@ lässt es sich jederzeit. Es gibt ein eigenes
 [Kontingent für das Team](70-termine.md#das-teamer-kontingent-verwalten), getrennt von den
 Plätzen der Konfis.
 
+Nach jeder Zu- oder Absage bestätigt die App, was gespeichert wurde, und die
+Liste **„Wer kommt"** zeigt den neuen Stand. Ist das Team-Kontingent voll und
+eine Warteliste offen, sagt die Meldung, dass du auf der Warteliste stehst und
+automatisch nachrückst, sobald ein Platz frei wird.
+
 Ist ein Termin **abgesagt**, steht statt der Knöpfe der Hinweis, dass er nicht
 stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Termin,
 an dem du nicht teilgenommen hast, entfällt der Abschnitt ganz.

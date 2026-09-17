@@ -4344,7 +4344,8 @@
                   },
                   "registration_closes_at": {
                     "type": "string",
-                    "format": "date-time"
+                    "format": "date-time",
+                    "description": "SEIT 17.09.2026 geprueft: Liegt event_date in der ZUKUNFT und registration_closes_at in der Vergangenheit, antwortet die Route mit 400 — der Termin waere ab dem Anlegen geschlossen (registration_status='closed'). Bei einem event_date in der Vergangenheit (nachtraeglich eingetragene Termine) bleibt ein vergangener Anmeldeschluss erlaubt; null (kein Anmeldefenster) ebenso.\n"
                   },
                   "has_timeslots": {
                     "type": "boolean"
@@ -4429,9 +4430,7 @@
             "description": "id + message"
           },
           "400": {
-            "description": "Validierungs-/Regel-Fehler (fehlende Felder",
-            "fremde IDs": null,
-            "Kontingent ungueltig)": null
+            "description": "Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig; seit 17.09.2026 auch: Anmeldeschluss abgelaufen, waehrend der Termin noch bevorsteht)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4752,7 +4751,7 @@
             "description": "message, promoted_count, promoted_teamer_count"
           },
           "400": {
-            "description": "Validierungs-/Regel-Fehler"
+            "description": "Validierungs-/Regel-Fehler; seit 17.09.2026 auch: registration_closes_at liegt in der Vergangenheit, waehrend event_date noch bevorsteht (bei vergangenem event_date weiterhin erlaubt)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
