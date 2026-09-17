@@ -33,6 +33,9 @@ interface EventsViewProps {
   onCancelEvent?: (event: Event) => void;
   // Absage zuruecknehmen (16.09.2026) -- nur an abgesagten Terminen sichtbar.
   onZuruecknehmen?: (event: Event) => void;
+  // Termin kopieren (17.09.2026). Oeffnet das Anlege-Formular vorbefuellt;
+  // angelegt wird erst beim Speichern.
+  onKopieren?: (event: Event) => void;
   activeTab?: 'aktuell' | 'verbuchen' | 'vergangen';
   onTabChange?: (tab: 'aktuell' | 'verbuchen' | 'vergangen') => void;
   eventCounts?: {
@@ -60,6 +63,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   onDeleteEvent,
   onCancelEvent,
   onZuruecknehmen,
+  onKopieren,
   activeTab = 'aktuell',
   onTabChange,
   eventCounts,
@@ -471,7 +475,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </IonItem>
 
-                {(onDeleteEvent || onCancelEvent || onZuruecknehmen) && (
+                {(onDeleteEvent || onCancelEvent || onZuruecknehmen || onKopieren) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     {/* ABSAGE ZURUECKNEHMEN (16.09.2026): nur an abgesagten
                         Terminen, und dort als ERSTE Aktion — sie ist die
@@ -487,6 +491,24 @@ const EventsView: React.FC<EventsViewProps> = ({
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
                           <IonIcon icon={ICON_RUECKGAENGIG} />
+                        </div>
+                      </IonItemOption>
+                    )}
+                    {/* KOPIEREN (17.09.2026): Oeffnet das Anlege-Formular mit
+                        den Werten dieses Termins. Es wird nichts angelegt --
+                        deshalb steht die Aktion neutral zwischen den
+                        abbauenden und braucht keine Rueckfrage. Auch an
+                        abgesagten Terminen sinnvoll: Die Kopie ist nicht
+                        abgesagt, so laesst sich ein ausgefallener Termin
+                        nachholen. */}
+                    {onKopieren && (
+                      <IonItemOption
+                        onClick={() => { closeOpenSlidingItems(); onKopieren(event); }}
+                        aria-label="Termin kopieren"
+                        className="app-swipe-action"
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
+                          <IonIcon icon={ICON_KOPIEREN_GEFUELLT} />
                         </div>
                       </IonItemOption>
                     )}

@@ -1,6 +1,7 @@
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
+import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
@@ -22,7 +23,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
-import { Event } from '../../../types/event';
+import { Event, Timeslot } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine, istAbgesagt } from '../../shared';
 
@@ -138,6 +139,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [searchText, setSearchText] = useState('');
 
   const [editEvent, setEditEvent] = useState<Event | null>(null);
+  // Zeitfenster einer Kopie. Das Modal kann sie bei einer Kopie nicht selbst
+  // nachladen -- die hat keine id (siehe kopiereTermin).
+  const [kopierteTimeslots, setKopierteTimeslots] = useState<Timeslot[]>([]);
 
   // --- Aktivitäten-State ---
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
@@ -149,14 +153,17 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
     event: editEvent,
+    vorbelegteTimeslots: kopierteTimeslots,
     onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
     onClose: () => {
       dismissEventModalHook();
       setEditEvent(null);
+      setKopierteTimeslots([]);
     },
     onSuccess: () => {
       dismissEventModalHook();
       setEditEvent(null);
+      setKopierteTimeslots([]);
       refreshEvents();
       refreshCancelled();
     }
@@ -615,6 +622,44 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
+  /**
+   * TERMIN KOPIEREN (Simon, 17.09.2026)
+   *
+   *   "kopieren eröffnet ein modal mit allem voreingetragen."
+   *   "es wird ja nur das modal vorausgefüllt und man kann es dann direkt anlegen."
+   *
+   * Es wird NICHTS angelegt -- das Modal oeffnet sich wie beim Neuanlegen, nur
+   * vorbefuellt. Die Regel, was mitkommt und was nicht, steht in
+   * utils/terminVorbelegung.ts (kopiereTermin).
+   *
+   * Die Zeitfenster holt dieser Handler vorher ab: Die Terminliste liefert sie
+   * nicht mit, und das Modal kann sie bei einer Kopie nicht nachladen (id 0).
+   * Scheitert das Laden, wird trotzdem kopiert -- ohne Zeitfenster, mit
+   * Hinweis. Ein stummer Verlust waere schlimmer als ein Hinweis.
+   */
+  const handleKopiereEvent = async (event: Event) => {
+    if (offlineBlockiert(isOnline, setError)) return;
+
+    let timeslots: Timeslot[] = [];
+    if (event.has_timeslots) {
+      try {
+        const res = await api.get(`/events/${event.id}/timeslots`);
+        timeslots = res.data || [];
+      } catch (err) {
+        setError('Die Zeitfenster konnten nicht geladen werden — die Kopie hat keine.');
+      }
+    }
+
+    const { event: vorlage, timeslots: kopierteSlots } = kopiereTermin(event, timeslots);
+    setKopierteTimeslots(kopierteSlots);
+    setEditEvent(vorlage);
+    presentEventModalHook({
+      presentingElement: presentingElement,
+      canDismiss: eventModalCanDismiss,
+      backdropDismiss: false
+    });
+  };
+
   const handleAddEventClick = () => {
     presentEventModal('single');
   };
@@ -766,6 +811,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             // Wer absagen darf, darf auch zuruecknehmen -- dieselbe
             // Berechtigung im Backend (requireTeamer + darfTermin).
             onZuruecknehmen={canCancel ? handleAbsageZuruecknehmen : undefined}
+            onKopieren={canCreate ? handleKopiereEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{

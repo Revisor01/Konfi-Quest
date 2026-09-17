@@ -85,13 +85,40 @@ an; sie gruppieren Termine und sind die Grundlage für Kategorie-Abzeichen.
 
 | Feld | Voreinstellung |
 |---|---|
-| Endzeit | eine Stunde nach Beginn |
+| Endzeit | zwei Stunden nach Beginn |
 | Anmeldung ab | sofort (kein Startzeitpunkt) |
 | Anmeldeschluss | 24 Stunden vor Beginn, bei kurzfristigen Terminen früher |
 | Max. Teilnehmer:innen | 5 (einstellbar 1 bis 50) |
 | Punkte | 1, Typ Gemeinde |
 | Warteliste | an, 3 Plätze |
 | Check-in-Fenster | 30 Minuten |
+
+## Einen Termin kopieren
+
+Wiederholt sich ein Termin, ohne eine Serie zu sein — die Freizeit im nächsten
+Jahr, der Jugendgottesdienst im neuen Halbjahr —, kopierst du ihn, statt alles
+neu einzutippen. In der Terminliste wischst du den Termin nach links und tippst
+auf das Kopieren-Symbol; in der Detailansicht steht es oben neben dem Stift.
+
+**Es wird dabei nichts angelegt.** Das Formular öffnet sich wie bei einem neuen
+Termin, nur mit allen Werten des Originals darin. Du änderst, was du ändern
+willst, und speicherst. Willst du doch nicht, schließt du das Fenster — dann ist
+nichts passiert.
+
+Mit kommen Titel, Beschreibung, Ort, Mitbringsel, Punkte, Kategorien, Jahrgänge,
+Plätze und Wartelisten, das Teamer-Kontingent, Pflicht- und
+Konfirmations-Kennzeichen, das Check-in-Fenster und die Zeitfenster.
+
+Nicht mit kommen **Material und Chat** — die hängen am ursprünglichen Termin und
+werden für den neuen frisch angelegt. Ebenso wenig die Anmeldungen, die
+Anwesenheit und die vergebenen Punkte: Die gehören zu dem Termin, der
+stattgefunden hat. Die Kopie eines abgesagten Termins ist nicht abgesagt — so
+holst du einen ausgefallenen Termin nach.
+
+Das **Datum** steht auf heute, gerechnet wie bei einem neuen Termin; der
+Anmeldeschluss folgt daraus (siehe [Kurzfristige Termine](#kurzfristige-termine))
+und kann deshalb nicht in der Vergangenheit liegen. Die **Dauer** bleibt: Aus
+einem Wochenende wird wieder ein Wochenende, auch wenn du das Datum verschiebst.
 
 ## Ein Pflicht-Event einrichten
 

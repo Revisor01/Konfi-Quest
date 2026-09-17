@@ -3,6 +3,7 @@ import {
   ICON_ABSAGE,
   ICON_ANTWORTEN,
   ICON_BEARBEITEN,
+  ICON_KOPIEREN_GEFUELLT,
   ICON_CHAT,
   ICON_ENTFERNEN_GEFUELLT,
   ICON_GESPERRT,
@@ -19,6 +20,7 @@ import {
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
+import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -50,7 +52,7 @@ import {
   TimeslotsSection
 } from './EventDetailSections';
 import type { Participant, Unregistration, EventData } from './EventDetailSections';
-import type { EventMaterial } from '../../../types/event';
+import type { EventMaterial, Timeslot, Event as VollerEvent } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
@@ -153,18 +155,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     && !istAbgesagt(eventData) && !istVergangen(eventData);
 
   /**
-   * Darf die Leitung hier ueberhaupt noch jemanden eintragen?
+   * Darf hier ueberhaupt noch jemand eingetragen werden?
    *
-   * An einem ABGESAGTEN Termin nicht (Simons Entscheidung, 16.09.2026:
-   * "Nein, gar nicht" — zu einem abgesagten Termin kann sich niemand
-   * anmelden, weder Konfi noch Leitung). Wer wieder Leute eintragen will,
-   * nimmt zuerst die Absage zurueck; dabei kommen die vorher Abgemeldeten
-   * ohnehin von selbst zurueck.
+   * ZWEI GRUENDE, WARUM NICHT:
+   *
+   * 1. An einem ABGESAGTEN Termin (Simons Entscheidung, 16.09.2026:
+   *    "Nein, gar nicht" — zu einem abgesagten Termin kann sich niemand
+   *    anmelden, weder Konfi noch Leitung). Wer wieder Leute eintragen will,
+   *    nimmt zuerst die Absage zurueck; dabei kommen die vorher Abgemeldeten
+   *    ohnehin von selbst zurueck.
+   *
+   * 2. Als Teamer:in (17.09.2026). Teilnehmerverwaltung haengt im Backend an
+   *    requireAdmin. Diese Ansicht steht auch dem Team offen, bot aber
+   *    "Konfi hinzufuegen", "Team hinzufuegen" und "Leitung hinzufuegen" an —
+   *    das Auswahl-Fenster lud sogar sauber und brach erst beim Speichern mit
+   *    403 ab, also nach getaner Arbeit.
    *
    * istAbgesagt() statt eventData.cancelled von Hand: Es prueft beide Felder,
    * weil die Listen- und die Detail-Route verschiedene liefern.
    */
-  const darfEintragen = !istAbgesagt(eventData);
+  const darfEintragen = !istAbgesagt(eventData) && darfTermineVerwalten(user);
+
+  /**
+   * Darf diese Person den Termin verwalten — absagen, Anwesenheit verbuchen,
+   * Teilnehmende verschieben oder entfernen? Im Backend alles requireAdmin.
+   * Anders als darfEintragen gilt das auch an abgesagten Terminen: Die Absage
+   * zuruecknehmen ist ja gerade dort die Aufgabe.
+   */
+  const darfVerwalten = darfTermineVerwalten(user);
 
   const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
     if (!eventData || zusageLaeuft) return;
@@ -233,6 +251,56 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     },
     dismiss: () => dismissEventModalHook()
   });
+
+  // KOPIEREN (17.09.2026) braucht ein EIGENES Modal: Das Hook oben ist fest an
+  // eventData gebunden und wuerde diesen Termin BEARBEITEN. Die Kopie ist eine
+  // Neuanlage (id 0), deshalb ein zweiter Einstieg mit der Vorlage.
+  const [kopierVorlage, setKopierVorlage] = useState<VollerEvent | null>(null);
+  const [kopierteTimeslots, setKopierteTimeslots] = useState<Timeslot[]>([]);
+
+  const [presentKopierModal, dismissKopierModal] = useIonModal(EventModal, {
+    event: kopierVorlage,
+    vorbelegteTimeslots: kopierteTimeslots,
+    onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
+    onClose: () => { dismissKopierModal(); setKopierVorlage(null); setKopierteTimeslots([]); },
+    onSuccess: () => {
+      dismissKopierModal();
+      setKopierVorlage(null);
+      setKopierteTimeslots([]);
+      // Nach dem Anlegen zur Terminliste: Der kopierte Termin ist ein anderer
+      // als der hier offene, ihn hier anzuzeigen waere irrefuehrend.
+      router.push('/admin/events', 'back');
+    },
+    dismiss: () => { dismissKopierModal(); setKopierVorlage(null); setKopierteTimeslots([]); }
+  });
+
+  /**
+   * Termin kopieren: oeffnet das Anlege-Formular vorbefuellt. Angelegt wird
+   * nichts, bis gespeichert wird. Regel siehe utils/terminVorbelegung.ts.
+   */
+  const handleKopieren = async () => {
+    if (!eventData) return;
+    if (offlineBlockiert(isOnline, setError)) return;
+
+    let slots: Timeslot[] = [];
+    if (eventData.has_timeslots) {
+      try {
+        const res = await api.get(`/events/${eventData.id}/timeslots`);
+        slots = res.data || [];
+      } catch (err) {
+        setError('Die Zeitfenster konnten nicht geladen werden — die Kopie hat keine.');
+      }
+    }
+
+    const { event: vorlage, timeslots: neueSlots } = kopiereTermin(eventData as unknown as VollerEvent, slots);
+    setKopierteTimeslots(neueSlots);
+    setKopierVorlage(vorlage);
+    presentKopierModal({
+      presentingElement: presentingElement || undefined,
+      canDismiss: eventModalCanDismiss,
+      backdropDismiss: false
+    });
+  };
 
   // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten
   // Änderungen erst nachfragen, sonst direkt schliessen lassen.
@@ -764,6 +832,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const showAttendanceActionSheet = (participant: Participant) => {
+    // Anwesenheit verbuchen ist Leitungssache (requireAdmin). Der Riegel sitzt
+    // hier UND am Zeilen-Tipp: Die Zeitfenster-Liste ruft dieselbe Funktion
+    // ueber ein Prop auf, dort gaebe es sonst einen zweiten Weg herein.
+    if (!darfVerwalten) return;
     if (offlineBlockiert(isOnline, setError)) return;
     const buttons: ActionSheetButton[] = [];
     if (participant.attendance_status !== 'present') {
@@ -817,6 +889,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const showWaitlistActionSheet = (participant: Participant) => {
+    if (!darfVerwalten) return;
     if (offlineBlockiert(isOnline, setError)) return;
     presentActionSheet({
       header: participant.participant_name,
@@ -1079,7 +1152,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       >
         <IonItem
           className="app-item-transparent"
-          button detail={false} lines="none"
+          // Ohne Verwaltungsrecht ist die Zeile reine Anzeige: kein `button`,
+          // damit kein Tipp ins Leere geht (17.09.2026).
+          button={darfVerwalten} detail={false} lines="none"
           onClick={() => {
             // 'opted_out' oeffnet DASSELBE Anwesenheits-Menue wie 'confirmed'
             // (Simon, 13.09.2026): "Ich als Admin will eine Selbstabmeldung
@@ -1200,7 +1275,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             </div>
           </div>
         </IonItem>
-        {(participant.role_name !== 'konfi' || !eventData?.mandatory) && (
+        {darfVerwalten && (participant.role_name !== 'konfi' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
           {participant.role_name === 'konfi' && participant.status === 'confirmed' && (
             <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
@@ -1253,15 +1328,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           )}
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton aria-label="Event-Chat öffnen" onClick={handleChatButtonClick}>
-              <IonIcon icon={ICON_CHAT} />
-            </IonButton>
+            {/* Einen BESTEHENDEN Chat oeffnen darf auch das Team — das ist
+                reine Navigation. Ihn ANZULEGEN ist requireAdmin
+                (verwaltung.js). Gibt es noch keinen, fuehrte der Knopf
+                Teamer:innen deshalb ueber eine Rueckfrage in einen 403;
+                dann steht er jetzt gar nicht erst da (17.09.2026). */}
+            {(eventData?.chat_room_id || darfVerwalten) && (
+              <IonButton aria-label="Event-Chat öffnen" onClick={handleChatButtonClick}>
+                <IonIcon icon={ICON_CHAT} />
+              </IonButton>
+            )}
             <IonButton aria-label="QR-Code anzeigen" onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={ICON_QRCODE} />
             </IonButton>
-            {/* Bearbeiten nur fuer die Leitung (16.09.2026) — der QR-Knopf
-                daneben bleibt, der haengt am Backend an requireTeamer. */}
-            {darfTermineVerwalten(user) && (
+            {/* Bearbeiten und Kopieren nur fuer die Leitung (16./17.09.2026)
+                — der QR-Knopf daneben bleibt, der haengt am Backend an
+                requireTeamer. */}
+            {darfVerwalten && (
+              <IonButton aria-label="Termin kopieren" onClick={handleKopieren}>
+                <IonIcon icon={ICON_KOPIEREN_GEFUELLT} />
+              </IonButton>
+            )}
+            {darfVerwalten && (
               <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
                 <IonIcon icon={ICON_BEARBEITEN} />
               </IonButton>
@@ -1485,6 +1573,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             handleDemoteParticipant={handleDemoteParticipant}
             handleRemoveParticipant={handleRemoveParticipant}
             showWaitlistActionSheet={showWaitlistActionSheet}
+            darfVerwalten={darfVerwalten}
           />
         )}
 
@@ -1606,7 +1695,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       // Button nur, wenn es unverbuchte Angemeldete gibt (Konfis mit
                       // Status bestätigt, aber ohne Anwesenheits-Status).
                       const unprocessed = confirmedParticipants.filter(p => !p.attendance_status).length;
-                      if (unprocessed === 0) return null;
+                      if (unprocessed === 0 || !darfVerwalten) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
@@ -1648,7 +1737,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       // im "Verbuchen"-Reiter stehen -- pending_bookings_count
                       // zaehlt beide Rollen (events.js:270-274).
                       const unprocessedTeamer = teamerConfirmed.filter(p => !p.attendance_status).length;
-                      if (unprocessedTeamer === 0) return null;
+                      if (unprocessedTeamer === 0 || !darfVerwalten) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
@@ -1716,7 +1805,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             am abgesagten "Absage zurücknehmen" (Simons Symmetrie-Wunsch
             16.09.2026). Der Wisch in der Terminliste bleibt daneben
             bestehen — zwei Wege, wie beim Absagen auch. */}
-        {eventData && (
+        {eventData && darfVerwalten && (
           <EventActionsSection
             eventData={eventData}
             isCancelled={!!isCancelled}

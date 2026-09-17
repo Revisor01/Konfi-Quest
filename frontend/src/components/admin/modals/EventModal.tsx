@@ -26,6 +26,9 @@ import { trackHandlung } from '../../../services/analytics';
 
 interface EventModalProps {
   event?: Event | null;
+  // Zeitfenster einer Kopie. Ein bestehender Termin laedt seine selbst nach;
+  // eine Kopie hat keine id, unter der das ginge (siehe useEffect unten).
+  vorbelegteTimeslots?: Timeslot[];
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
@@ -34,48 +37,14 @@ interface EventModalProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-/**
- * Vorschlag fuer den Anmeldeschluss zu einem Termin (Befund Simon, 17.09.2026).
- *
- * DER FEHLER, DEN DAS BEHEBT: Hier stand `beginn - 24 Stunden`, fest. Bei
- * jedem Termin, der in weniger als 24 Stunden beginnt — "heute Abend noch
- * eine Konfistunde eintragen", der Normalfall bei kurzfristigen Terminen —
- * landete der Anmeldeschluss damit in der VERGANGENHEIT. Das Backend nahm
- * das kommentarlos an, und der Termin war in der Sekunde seiner Entstehung
- * geschlossen: `registration_status: 'closed'`, niemand konnte sich anmelden.
- * Gewarnt hat nichts.
- *
- * DIE ENTSCHEIDUNG — kuerzere Frist statt gar keiner:
- * Naheliegend waere, in so einem Fall gar keinen Schluss zu setzen (leeres
- * Feld = Anmeldung bis zum Beginn offen). Dagegen spricht, dass der
- * Anmeldeschluss eine Aussage ueber die Planung ist: Wer Material besorgt
- * oder Fahrten einteilt, will vorher wissen, wer kommt. Ein leeres Feld
- * nimmt diese Aussage stillschweigend zurueck, und die Leitung merkt es
- * nicht.
- *
- * Deshalb: Die 24 Stunden bleiben, solange sie in der Zukunft liegen.
- * Andernfalls rueckt der Schluss auf die Mitte zwischen jetzt und Beginn —
- * so bleibt immer ein Anmeldefenster offen, und der Schluss liegt trotzdem
- * spuerbar vor dem Termin. Bei sehr kurzem Vorlauf (unter zehn Minuten)
- * greift stattdessen der Beginn selbst: Bis dahin kann sich anmelden, wer
- * noch mitkommt. Ein Schluss VOR dem Aufruf dieser Funktion kommt in keinem
- * Fall mehr heraus.
- */
-export const anmeldeschlussVorschlag = (beginn: Date, jetzt: Date = new Date()): Date => {
-  const vierundzwanzigStundenDavor = new Date(beginn.getTime() - 24 * 60 * 60 * 1000);
-  if (vierundzwanzigStundenDavor > jetzt) return vierundzwanzigStundenDavor;
+// anmeldeschlussVorschlag ist am 17.09.2026 nach utils/terminVorbelegung.ts
+// gewandert: "Termin kopieren" braucht dieselbe Regel, und zwei Kopien waeren
+// genau der Fehler, der im Backend gerade erst behoben wurde. Der Re-Export
+// haelt den bisherigen Importpfad gueltig.
+import { anmeldeschlussVorschlag, toIonDatetimeISO, neuerTerminBeginn, endeNachDatumswechsel } from '../../../utils/terminVorbelegung';
+export { anmeldeschlussVorschlag };
 
-  // Beginn liegt selbst in der Vergangenheit (nachgetragener Termin): Dann
-  // ist ein Schluss davor richtig — das Backend laesst das ausdruecklich zu.
-  if (beginn <= jetzt) return vierundzwanzigStundenDavor;
-
-  const vorlaufMs = beginn.getTime() - jetzt.getTime();
-  const ZEHN_MINUTEN = 10 * 60 * 1000;
-  if (vorlaufMs <= ZEHN_MINUTEN) return new Date(beginn);
-  return new Date(jetzt.getTime() + Math.floor(vorlaufMs / 2));
-};
-
-const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
+const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onClose, onSuccess, dismiss, onDirtyChange }) => {
   const { setSuccess, setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
@@ -152,18 +121,18 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       if (event.teamer_only) setTeamerAccess('teamer_only');
       else if (event.teamer_needed) setTeamerAccess('teamer_needed');
       else setTeamerAccess('normal');
-      if (event.has_timeslots) loadTimeslots(event.id);
+      // Zeitfenster: Ein bestehender Termin laedt sie nach. Eine Kopie (und die
+      // Serien-Vorlage) hat id 0 -- dort gaebe es /events/0/timeslots, also
+      // einen Fehlgriff, und die Zeitfenster blieben stillschweigend leer.
+      // Deshalb bringt die Kopie sie ueber vorbelegteTimeslots selbst mit.
+      if (event.has_timeslots) {
+        if (event.id > 0) loadTimeslots(event.id);
+        else setTimeslots(vorbelegteTimeslots ?? []);
+      } else {
+        setTimeslots([]);
+      }
     } else {
-      const roundToHalfHour = (date: Date) => {
-        const rounded = new Date(date);
-        const minutes = rounded.getMinutes();
-        if (minutes < 30) rounded.setMinutes(0, 0, 0);
-        else rounded.setMinutes(30, 0, 0);
-        return rounded;
-      };
-      const eventStart = new Date();
-      eventStart.setMinutes(eventStart.getMinutes() + 30);
-      const roundedEventStart = roundToHalfHour(eventStart);
+      const roundedEventStart = neuerTerminBeginn();
       const eventEnd = new Date(roundedEventStart);
       eventEnd.setHours(eventEnd.getHours() + 2);
       // Hier stand `beginn - 1 Stunde`. Der voreingestellte Beginn ist aber
@@ -173,10 +142,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // anmelden kann. Jetzt ueber denselben Vorschlag wie beim Aendern des
       // Datums (siehe anmeldeschlussVorschlag).
       const regCloses = anmeldeschlussVorschlag(roundedEventStart);
-      const toIonDatetimeISO = (date: Date) => {
-        const pad = (num: number) => num.toString().padStart(2, '0');
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-      };
       setFormData({
         name: '', description: '', event_date: toIonDatetimeISO(roundedEventStart),
         event_end_time: toIonDatetimeISO(eventEnd), location: '', points: 1,
@@ -225,10 +190,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       participants = timeslots[0].max_participants;
     }
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-    const toIonDatetimeISO = (date: Date) => {
-      const pad = (num: number) => num.toString().padStart(2, '0');
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-    };
     setTimeslots([...timeslots, { start_time: toIonDatetimeISO(startTime), end_time: toIonDatetimeISO(endTime), max_participants: participants }]);
   };
 
@@ -631,11 +592,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           onIonChange={(e) => {
             const selectedDate = e.detail.value as string;
             const eventDate = new Date(selectedDate);
-            const toIonDatetimeISO = (date: Date) => {
-              const pad = (num: number) => num.toString().padStart(2, '0');
-              return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-            };
-            const endDate = new Date(eventDate); endDate.setHours(endDate.getHours() + 1);
+            // Das Ende wandert MIT, die Dauer bleibt (Befund 17.09.2026).
+            // Vorher stand hier fest "+1 Stunde" — eine Freizeit von Freitag
+            // bis Sonntag wurde damit zum Ein-Stunden-Termin, sobald jemand
+            // das Datum verschob.
+            const endDate = endeNachDatumswechsel(eventDate, formData.event_date, formData.event_end_time);
             const regCloses = anmeldeschlussVorschlag(eventDate);
             // Anmeldezeiten NUR beim Neuanlegen mitziehen. Beim Bearbeiten
             // wuerde ein Dreh am Datums-Wheel sonst still die vom Admin

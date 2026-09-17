@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.2.0
 
 ### Hinzugefügt
+- Termine lassen sich **kopieren**: In der Terminliste nach links wischen oder
+  in der Detailansicht oben auf das Kopieren-Symbol tippen. Das Formular öffnet
+  sich mit allen Werten des Originals — angelegt wird erst beim Speichern.
+  Material und Chat kommen nicht mit, ebenso wenig Anmeldungen, Anwesenheit und
+  vergebene Punkte. Das Datum steht auf heute, der Anmeldeschluss wird daraus
+  neu berechnet, und die Dauer bleibt erhalten. Die Kopie eines abgesagten
+  Termins ist nicht abgesagt — so lässt sich ein ausgefallener Termin nachholen.
 - Teamer:innen sehen am Termin, **wer kommt**: die Teilnehmenden mit Jahrgang
   und Stand der Teilnahme, nach Konfis und Team getrennt. Wer auf einer
   Freizeit mitfährt, weiß damit vorher, wen er erwartet. Verbucht und geändert
@@ -176,6 +183,9 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Beim Verschieben eines Termins auf ein anderes Datum wurde die **Dauer auf
+  eine Stunde zurückgesetzt**. Aus einer Freizeit über ein ganzes Wochenende
+  wurde so ein Ein-Stunden-Termin. Das Ende wandert jetzt mit dem Beginn mit.
 - Beim Anlegen einer **Terminserie** wurde ein Anmeldeschluss, der schon
   abgelaufen war, kommentarlos übernommen — der erste Termin der Reihe war
   damit von Anfang an geschlossen. Serien werden jetzt genauso geprüft wie
