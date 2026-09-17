@@ -18,6 +18,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { fehlerText } from '../../../utils/fehler';
+import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -1258,9 +1259,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             <IonButton aria-label="QR-Code anzeigen" onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={ICON_QRCODE} />
             </IonButton>
-            <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
-              <IonIcon icon={ICON_BEARBEITEN} />
-            </IonButton>
+            {/* Bearbeiten nur fuer die Leitung (16.09.2026) — der QR-Knopf
+                daneben bleibt, der haengt am Backend an requireTeamer. */}
+            {darfTermineVerwalten(user) && (
+              <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
+                <IonIcon icon={ICON_BEARBEITEN} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>

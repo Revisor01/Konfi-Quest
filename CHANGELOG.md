@@ -176,6 +176,16 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Beim Anlegen einer **Terminserie** wurde ein Anmeldeschluss, der schon
+  abgelaufen war, kommentarlos übernommen — der erste Termin der Reihe war
+  damit von Anfang an geschlossen. Serien werden jetzt genauso geprüft wie
+  einzelne Termine. Reihen nachzutragen, die in der Vergangenheit liegen,
+  bleibt möglich.
+- Teamer:innen wurden Knöpfe zum **Anlegen, Absagen, Löschen und Bearbeiten**
+  von Terminen angezeigt, die beim Antippen mit einer Fehlermeldung endeten —
+  Terminverwaltung ist Leitungssache. Die Knöpfe sind dort jetzt nicht mehr
+  zu sehen. Termine ansehen, die eigene Zu- und Absage und der QR-Check-in
+  bleiben unverändert.
 - Ist ein Termin **abgesagt**, steht der Hinweis darauf im Team jetzt in
   derselben ruhigen Darstellung wie bei den Konfis, statt in Rot. Die rote
   Kennzeichnung des Termins selbst — in der Liste und am Eck — bleibt.

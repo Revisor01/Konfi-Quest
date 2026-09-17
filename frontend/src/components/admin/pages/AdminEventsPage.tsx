@@ -1,5 +1,6 @@
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
+import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
@@ -664,8 +665,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
-  // Rollen-basierte Berechtigungen (org_admin, admin UND teamer dürfen Events verwalten)
-  const canManageEvents = ['org_admin', 'admin', 'teamer'].includes(user?.role_name || '');
+  // Terminverwaltung ist Leitungssache (16.09.2026). Die Regel steht in
+  // utils/terminRechte.ts und spiegelt requireAdmin im Backend — vorher zaehlte
+  // die Oberflaeche hier 'teamer' mit und bot Knoepfe an, die mit 403 endeten.
+  const canManageEvents = darfTermineVerwalten(user);
   const canCreate = canManageEvents;
   const canEdit = canManageEvents;
   const canDelete = canManageEvents;
