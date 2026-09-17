@@ -660,7 +660,30 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         LEFT JOIN event_timeslots et ON eb.timeslot_id = et.id
-        WHERE eb.event_id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
+        -- ORG-FILTER AN DER BUCHUNG, NICHT AN DER PERSON (17.09.2026).
+        --
+        -- Hier stand u.organization_id = $2 -- die HEIMAT-Organisation aus
+        -- der users-Tabelle. Wer per Org-Wechsel arbeitet (Multi-Org,
+        -- X-Active-Organization), traegt dort eine ANDERE Org als die aktive
+        -- und fiel damit aus der Teilnehmerliste des eigenen Termins heraus.
+        --
+        -- Simons Befund, gegen Produktion nachgemessen: Benutzer mit
+        -- Heimat-Org 1, aktiv in Org 4, sagt zu -> gespeichert als
+        -- 'confirmed', aber die Detailansicht lieferte booking_status null
+        -- und zeigte ihn nicht in der Liste. Die Terminliste dagegen las
+        -- richtig, weil sie den eigenen Stand direkt von der Buchung nimmt
+        -- (eb_user). Dieselbe Buchung, zwei Antworten.
+        --
+        -- Und weil booking_status weiter unten aus GENAU DIESEM Array
+        -- abgeleitet wird, hingen beide Symptome an derselben Zeile: Der
+        -- Zusage-Knopf blieb auf "noch nichts entschieden" stehen.
+        --
+        -- eb.organization_id ist der richtige Anker: Die Buchung selbst
+        -- traegt die Organisation (eigene Spalte mit Index und
+        -- Fremdschluessel). Der Riegel BLEIBT damit bestehen -- er sitzt nur
+        -- an der richtigen Zeile. Ein Termin zeigt weiterhin ausschliesslich
+        -- Buchungen seiner eigenen Gemeinde.
+        WHERE eb.event_id = $1 AND eb.organization_id = $2 AND u.deleted_at IS NULL
         ORDER BY
           -- Abgemeldete stehen UNTEN (Simon, 15.09.2026: "die Person rueckt
           -- unten in die Liste der Abgemeldeten"). Seit Migration 153 traegt
