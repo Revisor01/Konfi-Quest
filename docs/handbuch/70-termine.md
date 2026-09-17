@@ -103,7 +103,8 @@ auf das Kopieren-Symbol; in der Detailansicht steht es oben neben dem Stift.
 **Es wird dabei nichts angelegt.** Das Formular öffnet sich wie bei einem neuen
 Termin, nur mit allen Werten des Originals darin. Du änderst, was du ändern
 willst, und speicherst. Willst du doch nicht, schließt du das Fenster — dann ist
-nichts passiert.
+nichts passiert. Nach dem Speichern landest du in der Terminliste, in der der
+neue Termin sofort steht.
 
 Mit kommen Titel, Beschreibung, Ort, Mitbringsel, Punkte, Kategorien, Jahrgänge,
 Plätze und Wartelisten, das Teamer-Kontingent, Pflicht- und

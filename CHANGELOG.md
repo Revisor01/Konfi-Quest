@@ -17,6 +17,8 @@ Versionsüberschrift.
   vergebene Punkte. Das Datum steht auf heute, der Anmeldeschluss wird daraus
   neu berechnet, und die Dauer bleibt erhalten. Die Kopie eines abgesagten
   Termins ist nicht abgesagt — so lässt sich ein ausgefallener Termin nachholen.
+  Nach dem Speichern geht es zurück zur Terminliste, in der der neue Termin
+  sofort steht.
 - Teamer:innen sehen am Termin, **wer kommt**: die Teilnehmenden mit Jahrgang
   und Stand der Teilnahme, nach Konfis und Team getrennt. Wer auf einer
   Freizeit mitfährt, weiß damit vorher, wen er erwartet. Verbucht und geändert

@@ -262,16 +262,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     event: kopierVorlage,
     vorbelegteTimeslots: kopierteTimeslots,
     onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
-    onClose: () => { dismissKopierModal(); setKopierVorlage(null); setKopierteTimeslots([]); },
+    onClose: () => dismissKopierModal(),
     onSuccess: () => {
       dismissKopierModal();
-      setKopierVorlage(null);
-      setKopierteTimeslots([]);
-      // Nach dem Anlegen zur Terminliste: Der kopierte Termin ist ein anderer
-      // als der hier offene, ihn hier anzuzeigen waere irrefuehrend.
-      router.push('/admin/events', 'back');
+      // Zurueck zur Terminliste — derselbe Weg wie nach dem Bearbeiten. Der
+      // kopierte Termin ist ein anderer als der hier offene, ihn hier
+      // anzuzeigen waere irrefuehrend. onBack() statt router.push: Nur
+      // darueber laedt die Liste neu (Befund Simon, 17.09.2026 -- der neue
+      // Termin stand sonst nicht da).
+      onBack();
     },
-    dismiss: () => { dismissKopierModal(); setKopierVorlage(null); setKopierteTimeslots([]); }
+    dismiss: () => dismissKopierModal()
   });
 
   /**
@@ -292,6 +293,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
     }
 
+    // Vorlage und Zeitfenster werden HIER gesetzt und bewusst nirgends
+    // zurueckgenommen: Wer sie beim Schliessen leert, laesst das Modal noch
+    // einmal rendern -- mit event=null landet es im "neuer Termin"-Zweig,
+    // fuellt das Formular frisch und ist damit wieder "dirty". canDismiss
+    // fragte dann nach dem Verwerfen, obwohl gerade gespeichert wurde
+    // (Befund Simon, 17.09.2026). Beim naechsten Kopieren werden beide
+    // ohnehin ueberschrieben.
     const { event: vorlage, timeslots: neueSlots } = kopiereTermin(eventData as unknown as VollerEvent, slots);
     setKopierteTimeslots(neueSlots);
     setKopierVorlage(vorlage);

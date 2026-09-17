@@ -12,6 +12,8 @@
 // wird hereingereicht, damit der Test nicht von der Laufzeit abhaengt.
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import {
   kopiereTermin,
   neuerTerminBeginn,
@@ -306,5 +308,75 @@ describe('Dauer beim Verschieben des Datums', () => {
   it('unlesbare Zeitangaben fallen auf die eine Stunde zurueck', () => {
     const ende = endeNachDatumswechsel(neuerBeginn, 'kein Datum', 'auch nicht');
     expect(ende.getTime() - neuerBeginn.getTime()).toBe(60 * 60 * 1000);
+  });
+});
+
+// Speichern einer Kopie darf nicht nach "Verwerfen?" fragen (Befund Simon, 17.09.2026)
+//
+//   "Ich klicke auf kopieren alles ist richtig da ich drücke auf speichern,
+//    Modal Schließer sich und fragt mich ob ich die Änderungen verwerfen will.
+//    Als hätte ich das Modal fälschlich geschlossen. [...] Event ist da. Nur die
+//    Meldung ist falsch und die Liste aktualisiert dann nicht sofort."
+//
+// ZWEI FEHLER IN EINEM HANDGRIFF:
+//
+// 1. DIE RUECKFRAGE. EventModal meldet beim Speichern synchron
+//    onDirtyChange(false) und schliesst dann. Mein onSuccess setzte aber
+//    setKopierVorlage(null) -- das Modal rendert daraufhin neu, faellt mit
+//    event=null in den "neuer Termin"-Zweig, fuellt das Formular frisch und
+//    setzt isDirty WIEDER auf true. canDismiss sah also einen dreckigen
+//    Stand und fragte nach, obwohl gerade gespeichert wurde.
+//    Die Vorlage darf erst weg, wenn das Modal zu ist.
+//
+// 2. DIE LISTE. Das Bearbeiten-Modal ruft onBack(), und darueber laedt die
+//    Terminliste neu. Meine Kopie nahm stattdessen router.push(...) und
+//    umging damit genau diesen Weg -- der neue Termin stand nicht da.
+describe('Nach dem Speichern einer Kopie', () => {
+  const lies = (pfad: string) =>
+    readFileSync(resolve(process.cwd(), pfad), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  const detail = lies('src/components/admin/views/EventDetailView.tsx');
+  const seite = lies('src/components/admin/pages/AdminEventsPage.tsx');
+
+  /** Der onSuccess-Block des Kopier-Modals. */
+  const kopierErfolg = (quelle: string) => {
+    const start = quelle.indexOf('presentKopierModal');
+    const block = quelle.slice(start, start + 1400);
+    const s = block.indexOf('onSuccess:');
+    return block.slice(s, block.indexOf('dismiss:', s));
+  };
+
+  it('Detailansicht: die Vorlage wird NICHT im selben Zug geleert', () => {
+    // setKopierVorlage(null) im onSuccess laesst das Modal neu rendern und
+    // macht es wieder "dirty" -- genau das loest die falsche Rueckfrage aus.
+    expect(kopierErfolg(detail)).not.toContain('setKopierVorlage(null)');
+  });
+
+  it('Detailansicht: zurueck zur Liste ueber onBack, nicht per router.push', () => {
+    const erfolg = kopierErfolg(detail);
+    expect(erfolg).toContain('onBack()');
+    expect(erfolg).not.toContain("router.push('/admin/events'");
+  });
+
+  it('Terminliste: dieselbe Falle -- editEvent bleibt beim Schliessen stehen', () => {
+    // Dort haengt das Modal an editEvent; bei einer Kopie steht die Vorlage
+    // drin. setEditEvent(null) beim Schliessen loest denselben Neu-Render aus.
+    const start = seite.indexOf('useIonModal(EventModal');
+    const block = seite.slice(start, start + 1200);
+    const erfolg = block.slice(block.indexOf('onSuccess:'));
+    expect(erfolg).toContain('refreshEvents()');
+    expect(erfolg).not.toContain('setEditEvent(null)');
+    expect(erfolg).not.toContain('setKopierteTimeslots([])');
+  });
+
+  it('Terminliste: "Neuer Termin" erbt keine Zeitfenster einer vorherigen Kopie', () => {
+    // Weil beim Schliessen nichts mehr aufgeraeumt wird, muss es beim OEFFNEN
+    // passieren -- sonst braechte ein neuer Termin direkt nach einem Kopieren
+    // dessen Zeitfenster mit.
+    const start = seite.indexOf('const presentEventModal =');
+    const block = seite.slice(start, start + 400);
+    expect(block).toContain('setKopierteTimeslots([])');
   });
 });

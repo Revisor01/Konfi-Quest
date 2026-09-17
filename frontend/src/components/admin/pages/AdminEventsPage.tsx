@@ -155,15 +155,16 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     event: editEvent,
     vorbelegteTimeslots: kopierteTimeslots,
     onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
-    onClose: () => {
-      dismissEventModalHook();
-      setEditEvent(null);
-      setKopierteTimeslots([]);
-    },
+    // editEvent/kopierteTimeslots werden hier NICHT zurueckgesetzt (Befund
+    // Simon, 17.09.2026): Bei einer Kopie steht in editEvent die Vorlage. Wird
+    // sie beim Schliessen geleert, rendert das Modal noch einmal, faellt mit
+    // event=null in den "neuer Termin"-Zweig, fuellt das Formular frisch und
+    // ist damit wieder "dirty" -- canDismiss fragte dann nach dem Verwerfen,
+    // obwohl gerade gespeichert wurde. Beim naechsten Oeffnen wird beides
+    // ohnehin neu gesetzt (presentEventModal bzw. handleKopiereEvent).
+    onClose: () => dismissEventModalHook(),
     onSuccess: () => {
       dismissEventModalHook();
-      setEditEvent(null);
-      setKopierteTimeslots([]);
       refreshEvents();
       refreshCancelled();
     }
@@ -599,6 +600,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   const presentEventModal = (eventType: 'single' | 'series' = 'single') => {
+    // Zeitfenster einer vorherigen Kopie verwerfen: Sie werden beim Schliessen
+    // bewusst nicht zurueckgesetzt (siehe Kommentar am Modal-Hook), sonst
+    // brachte "Neuer Termin" direkt nach einem Kopieren dessen Zeitfenster mit.
+    setKopierteTimeslots([]);
     if (eventType === 'series') {
       // For series, we need to create a proper "new event" object with is_series flag
       setEditEvent({
