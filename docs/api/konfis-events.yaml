@@ -1863,6 +1863,16 @@ paths:
         Erzeugt eine Serie ("Name #n") mit Intervall day | week | 2weeks |
         month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events,
         inkl. Auto-Enrollment bei Pflicht-Serien.
+
+
+        BEHOBEN 17.09.2026 — ANMELDESCHLUSS: Der Riegel gegen einen bereits
+        abgelaufenen Anmeldeschluss (siehe POST /api/events) fehlte hier.
+        Ueber "Serie anlegen" liess sich damit genau der Widerspruch bauen,
+        den die Einzelroute abweist: Termin kommt noch, Anmeldung war nie
+        offen. Geprueft wird der ERSTE Termin — die Folgetermine erben den
+        zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die
+        Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel
+        liegt jetzt gemeinsam in routes/events/validierung.js.
       x-berechtigung:
         rollen: [org_admin, admin]
         x-geaendert: >

@@ -733,6 +733,12 @@ für den Anmeldeschluss. Der Abstand wird als echte Zeitspanne gerechnet, nicht
 als Tag im Kalender — eine Serie darf also über einen Monats- oder
 Jahreswechsel laufen.
 
+Der Anmeldeschluss des **ersten** Termins wird dabei so geprüft wie bei einem
+Einzeltermin: Steht er in der Vergangenheit, während der Termin noch bevorsteht,
+lässt sich die Serie nicht anlegen. Die Folgetermine erben den Abstand und
+rücken damit ohnehin mit, deshalb genügt der Blick auf den ersten. Eine Reihe,
+die komplett in der Vergangenheit liegt, kannst du weiterhin nachtragen.
+
 > **Brauchst du es anders** — etwa eine Anmeldung, die für alle Termine
 > gleichzeitig öffnet — geht das nicht über die Serie. Dann legst du die
 > Termine einzeln an oder passt die Anmeldezeiten hinterher an.

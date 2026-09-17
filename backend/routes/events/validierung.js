@@ -1,7 +1,9 @@
 // Gemeinsame Validierung für Termin-Routen.
 // Herausgelöst aus der früheren routes/events.js (Aufteilung am 28.08.2026):
 // validateTeamerQuota wird sowohl beim Einzel-Event (verwaltung.js) als auch
-// bei Serien (serien.js) gebraucht.
+// bei Serien (serien.js) gebraucht. Dasselbe gilt seit dem 17.09.2026 für
+// pruefeAnmeldeschluss — die Regel lag zuerst nur in verwaltung.js, und die
+// Serien-Route kam deshalb ohne sie aus.
 
 /**
  * Validiert die Felder des Teamer-Kontingents.
@@ -24,4 +26,40 @@ function validateTeamerQuota(teamerMaxParticipants, teamerMaxWaitlistSize) {
   return null;
 }
 
-module.exports = { validateTeamerQuota };
+/**
+ * Ein Anmeldeschluss, der schon abgelaufen ist, waehrend der Termin noch
+ * bevorsteht (Befund Simon, 17.09.2026).
+ *
+ * DER FALL: Ein Termin beginnt in drei Stunden, der Anmeldeschluss steht auf
+ * "24 Stunden vor Beginn" — also gestern. Der Termin entsteht und ist in
+ * derselben Sekunde geschlossen (registration_status = 'closed'). Niemand
+ * kann sich anmelden, und nichts hat davor gewarnt.
+ *
+ * WARUM KEINE PAUSCHALE SPERRE AUF "SCHLUSS IN DER VERGANGENHEIT":
+ * Wer einen Termin von letzter Woche nachtraegt oder einen alten Termin
+ * korrigiert, hat zwangslaeufig beides in der Vergangenheit — Termin und
+ * Schluss. Das ist voellig legitim und muss moeglich bleiben. Verboten ist
+ * nur der Widerspruch: Der Termin kommt noch, die Anmeldung war nie offen.
+ *
+ * Deshalb haengt die Pruefung am TERMINDATUM, nicht am Schluss allein.
+ *
+ * BEI SERIEN gilt sie fuer den ERSTEN Termin. Die Folgetermine erben den
+ * zeitlichen Abstand zum Beginn (serien.js), ihr Schluss wandert also
+ * zwangslaeufig mit in die Zukunft.
+ *
+ * @returns {string|null} Fehlermeldung oder null, wenn alles stimmig ist
+ */
+function pruefeAnmeldeschluss(registrationClosesAt, eventDate, jetzt = new Date()) {
+  if (!registrationClosesAt) return null;          // kein Fenster = nichts zu pruefen
+  const schluss = new Date(registrationClosesAt);
+  if (Number.isNaN(schluss.getTime())) return null; // Formatfehler faengt express-validator
+  if (schluss >= jetzt) return null;                // Schluss liegt in der Zukunft
+
+  const beginn = new Date(eventDate);
+  // Vergangener Termin -> nachtraegliche Pflege, erlaubt.
+  if (!Number.isNaN(beginn.getTime()) && beginn < jetzt) return null;
+
+  return 'Der Anmeldeschluss liegt in der Vergangenheit — so wäre die Anmeldung von Anfang an geschlossen.';
+}
+
+module.exports = { validateTeamerQuota, pruefeAnmeldeschluss };

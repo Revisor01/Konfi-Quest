@@ -6,7 +6,7 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { formatDatum } = require('../../utils/zeitformat');
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
-const { validateTeamerQuota } = require('./validierung');
+const { validateTeamerQuota, pruefeAnmeldeschluss } = require('./validierung');
 
 //
 // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
@@ -49,6 +49,15 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // Pflicht-Events benoetigen mindestens einen Jahrgang (wie POST /)
     if (mandatory && (!jahrgang_ids || jahrgang_ids.length === 0)) {
       return res.status(400).json({ error: 'Pflicht-Events benötigen mindestens einen Jahrgang' });
+    }
+
+    // Anmeldeschluss-Riegel wie in POST / und PUT /:id (17.09.2026).
+    // Geprueft wird der ERSTE Termin: Die Folgetermine erben weiter unten
+    // denselben zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit
+    // in die Zukunft. Steht der erste Termin stimmig, stehen alle stimmig.
+    const seriesSchlussFehler = pruefeAnmeldeschluss(registration_closes_at, event_date);
+    if (seriesSchlussFehler) {
+      return res.status(400).json({ error: seriesSchlussFehler });
     }
 
     // DIESELBEN Zwangsregeln wie POST / — vorher wendete die Serien-Route

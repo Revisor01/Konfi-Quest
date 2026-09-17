@@ -198,6 +198,93 @@ describe('Anmeldeschluss darf beim Anlegen nicht schon abgelaufen sein', () => {
     expect(new Date(rows[0].registration_closes_at).getTime()).toBeGreaterThan(Date.now());
   });
 
+  // SERIEN GEHEN DENSELBEN WEG — oder gingen ihn bis zum 17.09.2026 nicht.
+  //
+  // Der Riegel sass nur in POST / und PUT /:id. POST /series hat
+  // pruefeAnmeldeschluss nie aufgerufen, also liess sich ueber "Serie
+  // anlegen" genau der Widerspruch bauen, den die Einzelroute abweist.
+  //
+  // Nur der ERSTE Termin der Serie ist betroffen: Die Folgetermine erben den
+  // zeitlichen ABSTAND zum Beginn (serien.js), ihr Schluss wandert also mit
+  // in die Zukunft. Genau deshalb prueft der Riegel hier auch nur den ersten
+  // Termin — eine Serie, die naechste Woche anfaengt, ist voellig in Ordnung.
+  it('VERBOTEN in der Serie: erster Termin in 3 Stunden, Anmeldeschluss gestern — 400, keine Serie angelegt', async () => {
+    const res = await request(app)
+      .post('/api/events/series')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        ...grundtermin,
+        name: 'Serie mit totem Anmeldefenster',
+        event_date: inStunden(3),
+        event_end_time: inStunden(5),
+        registration_closes_at: inStunden(-21),
+        series_count: 4,
+        series_interval: 'week',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      'Der Anmeldeschluss liegt in der Vergangenheit — so wäre die Anmeldung von Anfang an geschlossen.'
+    );
+
+    // Nichts angelegt — auch nicht die Folgetermine, deren Schluss fuer sich
+    // genommen in Ordnung waere. Die Serie entsteht ganz oder gar nicht.
+    const { rows } = await db.query(
+      "SELECT id FROM events WHERE name LIKE 'Serie mit totem Anmeldefenster%'"
+    );
+    expect(rows.length).toBe(0);
+  });
+
+  it('ERLAUBT in der Serie: erster Termin naechste Woche, Schluss einen Tag davor — vier Termine entstehen', async () => {
+    const res = await request(app)
+      .post('/api/events/series')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        ...grundtermin,
+        name: 'Konfistunde',
+        event_date: inStunden(24 * 7),
+        event_end_time: inStunden(24 * 7 + 2),
+        registration_closes_at: inStunden(24 * 6),
+        series_count: 4,
+        series_interval: 'week',
+      });
+
+    expect(res.status).toBe(201);
+
+    const { rows } = await db.query(
+      "SELECT registration_closes_at, event_date FROM events WHERE name LIKE 'Konfistunde #%' ORDER BY event_date"
+    );
+    expect(rows.length).toBe(4);
+    // Jeder Schluss liegt vor seinem Termin und in der Zukunft.
+    for (const r of rows) {
+      expect(new Date(r.registration_closes_at).getTime())
+        .toBeLessThan(new Date(r.event_date).getTime());
+      expect(new Date(r.registration_closes_at).getTime()).toBeGreaterThan(Date.now());
+    }
+  });
+
+  it('ERLAUBT in der Serie: vergangener erster Termin mit vergangenem Schluss (Nachtragen)', async () => {
+    const res = await request(app)
+      .post('/api/events/series')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        ...grundtermin,
+        name: 'Nachgetragene Reihe',
+        event_date: inStunden(-24 * 7),
+        event_end_time: inStunden(-24 * 7 + 2),
+        registration_closes_at: inStunden(-24 * 8),
+        series_count: 3,
+        series_interval: 'week',
+      });
+
+    expect(res.status).toBe(201);
+
+    const { rows } = await db.query(
+      "SELECT id FROM events WHERE name LIKE 'Nachgetragene Reihe #%'"
+    );
+    expect(rows.length).toBe(3);
+  });
+
   it('ERLAUBT beim Bearbeiten: ein VERGANGENER Termin bekommt einen Schluss in der Vergangenheit', async () => {
     const angelegt = await request(app)
       .post('/api/events')
