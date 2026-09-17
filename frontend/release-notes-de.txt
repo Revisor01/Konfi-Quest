@@ -1,11 +1,11 @@
 Die Startseite ist beim ersten Öffnen nicht mehr leer.
 
-Team: Ihr seht am Termin, wer kommt. Termine anlegen und absagen macht die Leitung.
+Team: Ihr seht am Termin, wer kommt. Zu- und Absage wirken sofort.
 
-Wer abgemeldet wurde, kann sich wieder anmelden. Falsche Anwesenheitseinträge lassen sich zurücknehmen.
+Wer abgemeldet wurde, kann sich wieder anmelden. Falsche Einträge lassen sich zurücknehmen.
 
 Wer von der Leitung angemeldet wird, bekommt eine Mitteilung.
 
 Termine mit Warteliste stehen wieder unter "Meine", abgesagte an ihrem Datum.
 
-Behoben: abgeschnittene Texte im Termin-Fenster, falsche Teilnehmerzahlen, Löschen ging nicht.
+Behoben: abgeschnittene Texte im Termin-Fenster, falsche Teilnehmerzahlen, Löschen ging nicht, Anmeldeschluss bei kurzfristigen Terminen.
