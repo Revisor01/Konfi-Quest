@@ -49,14 +49,22 @@ describe('H2: Die Teamer-Buchung braucht eine Verbindung', () => {
   });
 
   it('sagt offline, warum es nicht geht', () => {
-    expect(quelle).toContain('Für die Buchung brauchst du eine Verbindung');
+    // Seit dem 17.09.2026 nimmt die Zusage dieselbe Route wie die Absage
+    // (POST /teamer/events/:id/zusage). Der Riegel ist deshalb kein
+    // eigener Offline-Zweig mehr, sondern der deaktivierte Knopf -- der
+    // Test darunter prueft ihn. Die Begruendung steht jetzt dort, wo der
+    // alte handleBook stand.
+    expect(quelle).toContain('OFFLINE ZUSAGEN GEHT WEITERHIN NICHT');
+    expect(quelle).toContain('Du bist offline');
   });
 
   it('deaktiviert den Zusage-Knopf offline', () => {
     // Seit dem 05.09.2026 gibt es EINEN Zusage-Knopf in der Komponente
     // ZusageKnoepfe -- er bedient Anmeldung wie Warteliste (die Beschriftung
     // kommt per zusageText). Vorher standen dafuer zwei Kopien im JSX.
-    const knoepfe = [...quelle.matchAll(/onClick=\{\(\) => handleBook\(event\)\}\s*\n\s*disabled=\{([^}]*)\}/g)];
+    // Seit dem 17.09.2026 ruft er handleZusage(event, true) -- dieselbe
+    // Route wie die Absage, damit beide Richtungen dieselbe Semantik haben.
+    const knoepfe = [...quelle.matchAll(/onClick=\{\(\) => handleZusage\(event, true\)\}\s*\n\s*disabled=\{([^}]*)\}/g)];
     expect(knoepfe.length).toBe(1);
     expect(knoepfe[0][1]).toContain('!isOnline');
   });

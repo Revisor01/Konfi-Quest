@@ -315,11 +315,42 @@ const TeamerEventsPage: React.FC = () => {
   // Knopf. Die Sperre steht zusaetzlich im Backend (PUT
   // /events/:id/participants/... verlangt requireAdmin), eine Sperre nur in
   // der Oberflaeche waere keine.
+  //
+  // EINE STELLE FUER BEIDES (17.09.2026, Simons Befund: "wenn ich mich als
+  // teamer abmelde [...] wird nicht live im termin sofort aktualisiert
+  // [...] muss erst refresh machen. beim admin im browser ist es sofort
+  // da."):
+  //
+  // Der Effekt unten haengt an `[selectedEvent?.id]`. Nach einer Zu-/Absage
+  // tauschte die Seite nur das Event-OBJEKT aus -- die id blieb dieselbe,
+  // der Effekt feuerte nicht, und die Teilnehmerliste blieb auf dem alten
+  // Stand stehen. Nachgeladen wurde ausserdem nur die LISTE (GET /events),
+  // und die traegt gar keine `participants`.
+  //
+  // Deshalb dieselbe Antwort fuer BEIDES: `ladeTerminDetail` setzt Termin
+  // UND Teilnehmerliste aus GET /events/:id -- genau wie `loadEventData()`
+  // der Leitungsansicht (admin/views/EventDetailView.tsx), die den Befund
+  // nie hatte.
+  //
+  // `stand` sorgt dafuer, dass die Zahlen der LISTE nicht verloren gehen:
+  // Die Detailantwort kennt einige Felder der Listenantwort nicht
+  // (teamer_registration_status etwa), deshalb wird sie ueber den
+  // vorhandenen Stand gelegt und ersetzt ihn nicht.
+  const ladeTerminDetail = async (eventId: number) => {
+    try {
+      const res = await api.get(`/events/${eventId}`);
+      setEventTeilnehmer(res.data?.participants || []);
+      setSelectedEvent(stand => (stand && stand.id === eventId
+        ? { ...stand, ...res.data }
+        : stand));
+    } catch {
+      setEventTeilnehmer([]);
+    }
+  };
+
   useEffect(() => {
     if (selectedEvent) {
-      api.get(`/events/${selectedEvent.id}`)
-        .then(res => setEventTeilnehmer(res.data?.participants || []))
-        .catch(() => setEventTeilnehmer([]));
+      void ladeTerminDetail(selectedEvent.id);
     } else {
       setEventTeilnehmer([]);
     }
@@ -459,10 +490,19 @@ const TeamerEventsPage: React.FC = () => {
     const body = reason && reason.trim() ? { dabei, reason: reason.trim() } : { dabei };
     try {
       if (networkMonitor.isOnline) {
-        await api.post(`/teamer/events/${event.id}/zusage`, body);
-        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
-        if (updated) setSelectedEvent(updated);
-        setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
+        const res = await api.post(`/teamer/events/${event.id}/zusage`, body);
+        // Termin UND Teilnehmerliste frisch aus der Detailantwort -- die
+        // Liste (GET /events) traegt keine `participants`, und ein blosser
+        // Objekttausch liess den Lade-Effekt kalt (Begruendung oben bei
+        // ladeTerminDetail).
+        await ladeTerminDetail(event.id);
+        // Die Warteliste braucht eine eigene Rueckmeldung: Zugesagt hat man,
+        // aber einen Platz hat man noch nicht.
+        if (dabei && res.data?.status === 'waitlist') {
+          setSuccess('Du stehst auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.');
+        } else {
+          setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
+        }
       } else {
         await writeQueue.enqueue({
           method: 'POST',
@@ -570,7 +610,7 @@ const TeamerEventsPage: React.FC = () => {
         expand="block"
         fill="outline"
         color="success"
-        onClick={() => handleBook(event)}
+        onClick={() => handleZusage(event, true)}
         disabled={bookingLoading || !isOnline || !zusageMoeglich}
       >
         <IonIcon icon={bookingLoading || isOnline ? ICON_ZUSAGE_GEFUELLT : ICON_OFFLINE} slot="start" />
@@ -690,51 +730,40 @@ const TeamerEventsPage: React.FC = () => {
     return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut };
   };
 
-  // Buchung/Storno
-  const handleBook = async (event: Event) => {
-    setBookingLoading(true);
-    try {
-      if (networkMonitor.isOnline) {
-        const res = await api.post(`/events/${event.id}/book`);
-        // Bei voller Buchung kann der Status confirmed ODER waitlist sein -
-        // für die Warteliste braucht der Teamer eine sichtbare Rueckmeldung.
-        if (res.data?.status === 'waitlist') {
-          setSuccess('Du stehst auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.');
-        }
-        await refresh();
-        // Update selectedEvent
-        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
-        if (updated) setSelectedEvent(updated);
-      } else {
-        // Buchung braucht das Netz (Befund H2, Offline-Bericht 27.08.2026).
-        //
-        // Bis hierher wurde sie in die Warteschlange gelegt und die Antwort
-        // des Servers verworfen. Genau darin steckt aber, ob der Platz
-        // sicher ist oder nur die Warteliste: Der Online-Zweig oben liest
-        // `res.data.status === 'waitlist'` aus und sagt es. Nachgereicht
-        // erfuhr das niemand — die App bestaetigte "wird gesendet", und wer
-        // spaeter auf der Warteliste stand, merkte es nicht.
-        //
-        // Die Konfi-Anmeldung loest das seit jeher so: Der Knopf ist offline
-        // deaktiviert (`EventDetailView.tsx`, `disabled={!isOnline}`). Hier
-        // jetzt genauso, statt eine Zusage zu geben, die der Server erst
-        // spaeter einschraenken koennte.
-        setError('Für die Buchung brauchst du eine Verbindung — sonst wüsstest du nicht, ob du einen Platz oder die Warteliste bekommst.');
-      }
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Buchung'));
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
-  // KEIN handleUnbook (DELETE /events/:id/book) mehr (01.09.2026): Der
-  // Loesch-Weg protokollierte nichts — wer nach einer Zusage abserang, war
-  // fuer die Leitung nicht von "hat nie reagiert" zu unterscheiden, und der
-  // Pflicht-Grund liess sich gar nicht erst abgeben. Jede Absage laeuft
-  // jetzt ueber die Zusage-Route (oeffneAbsage -> handleZusage dabei=false),
-  // die den Zustand als 'opted_out' samt Grund stehen laesst. Die
-  // DELETE-Route selbst bleibt im Backend — Store-Apps rufen sie noch.
+  // KEIN handleBook (POST /events/:id/book) und kein handleUnbook
+  // (DELETE /events/:id/book) mehr. BEIDE RICHTUNGEN NEHMEN DIESELBE ROUTE:
+  // POST /teamer/events/:id/zusage (handleZusage, dabei=true/false).
+  //
+  // Der Loesch-Weg fiel am 01.09.2026 weg: Er protokollierte nichts — wer
+  // nach einer Zusage absprang, war fuer die Leitung nicht von "hat nie
+  // reagiert" zu unterscheiden, und der Pflicht-Grund liess sich gar nicht
+  // erst abgeben.
+  //
+  // Der Buchungs-Weg fiel am 17.09.2026 nach: Bis dahin lief die ZUSAGE
+  // weiter ueber /book, waehrend die Absage schon die Zusage-Route nahm.
+  // Der Kommentar hier behauptete bereits, beides laufe ueber eine Route --
+  // das stimmte nur fuer die Absage. Folge: Der Uebergang
+  // 'opted_out' -> 'confirmed' kam ueber einen anderen Kern (bucheTermin)
+  // als der Gegenweg, und `absage_nach_zusage` wurde nur auf einem der
+  // beiden Wege gepflegt.
+  //
+  // GEPRUEFT, dass die Zusage-Route alles kann, was /book konnte
+  // (backend/utils/bookingUtils.js): Kontingent und Warteliste rechnet
+  // setzeTeamerZusage mit denselben Bausteinen wie bucheTermin
+  // (zaehleBuchungen/determineBookingStatus auf der Team-Seite), die
+  // Jahrgangsgrenze prueft sie ebenso (darfTeamerAnDiesenTermin), einen
+  // abgesagten Termin sperrt sie ebenso. Ein Anmeldefenster gilt fuer das
+  // Team auf KEINEM der beiden Wege, Zeitfenster hat eine Teamer-Buchung
+  // nie. Die Antwort traegt wie /book ein `status` ('confirmed' oder
+  // 'waitlist') — daran haengt die Wartelisten-Meldung.
+  //
+  // OFFLINE ZUSAGEN GEHT WEITERHIN NICHT (Befund H2, 27.08.2026): Der
+  // gruene Knopf ist ohne Verbindung deaktiviert. Sonst bestaetigte die App
+  // "wird gesendet", und wer spaeter auf der Warteliste landet, erfuehre es
+  // nicht. Die ABSAGE darf in die Warteschlange — dort gibt es keinen Platz
+  // zu verlieren.
+  //
+  // Die DELETE-Route selbst bleibt im Backend — Store-Apps rufen sie noch.
 
   // Status-Farben für SectionHeader — globale Tokens
   // Darf sich ein Teamer zu diesem Event überhaupt anmelden? Nur bei
@@ -859,10 +888,16 @@ const TeamerEventsPage: React.FC = () => {
             </IonToolbar>
           </IonHeader>
 
+          {/* HERUNTERZIEHEN HOLT DEN TERMIN, NICHT DIE LISTE (17.09.2026).
+              Hier stand vorher `safeEvents.find(...)` -- gelesen aus der
+              Render-Closure, also aus dem Stand VOR `await refresh()`. Das
+              Herunterziehen schrieb damit genau den alten Wert zurueck, den
+              es auffrischen sollte. Jetzt dieselbe Quelle wie ueberall
+              sonst auf dieser Seite: die Detailantwort, samt
+              Teilnehmerliste. */}
           <IonRefresher slot="fixed" onIonRefresh={async (e) => {
             await refresh();
-            const updated = safeEvents.find(ev => ev.id === selectedEvent.id);
-            if (updated) setSelectedEvent(updated);
+            await ladeTerminDetail(selectedEvent.id);
             e.detail.complete();
           }} onIonPull={triggerPullHaptic}>
             <IonRefresherContent />

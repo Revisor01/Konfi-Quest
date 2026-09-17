@@ -39,7 +39,10 @@ const ohneKommentare = quelle
 describe('Teamer-Teilnehmerliste', () => {
   // ---- ERLAUBTER FALL: SEHEN ------------------------------------------
   it('holt die Teilnehmerliste aus der Detailantwort', () => {
-    expect(ohneKommentare).toMatch(/api\.get\(`\/events\/\$\{selectedEvent\.id\}`\)/);
+    // Seit dem 17.09.2026 holt ladeTerminDetail(eventId) die Detailantwort
+    // -- eine Stelle fuer Oeffnen, Zu-/Absage und Herunterziehen.
+    expect(ohneKommentare).toMatch(/api\.get\(`\/events\/\$\{eventId\}`\)/);
+    expect(ohneKommentare).toMatch(/ladeTerminDetail\(selectedEvent\.id\)/);
     expect(ohneKommentare).toMatch(/participants/);
     expect(ohneKommentare).toMatch(/setEventTeilnehmer/);
   });
