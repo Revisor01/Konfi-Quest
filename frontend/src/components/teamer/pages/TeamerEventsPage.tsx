@@ -35,7 +35,7 @@ import { fehlerText } from '../../../utils/fehler';
 import { hatAbgesagt, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, IonButton, IonList, IonListHeader, IonCard, IonCardContent, IonItem, IonItemGroup, IonInput, IonButtons, IonNote, useIonModal, useIonAlert, useIonViewWillEnter } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
 
 // useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
@@ -1273,10 +1273,25 @@ const TeamerEventsPage: React.FC = () => {
               // (bucheTermin), die Oberflaeche bot sie trotzdem an. Der
               // Commit, der genau diesen Riegel brachte, fasste nur admin/
               // und konfi/ an.
-              <div className="app-status-box app-status-box--danger">
-                <IonIcon icon={ICON_ABSAGE} />
+              // GRAU, NICHT ROT (17.09.2026, Simons Entscheidung): "ich will
+              // sie nur grau auf dem button bis du dabei? an allen anderen
+              // stellen nicht."
+              //
+              // Wort- und formgleich zur Konfi-Ansicht
+              // (konfi/views/EventDetailView.tsx) -- dort stand dieser Hinweis
+              // von Anfang an als graue IonNote, hier als rote Statusbox. Das
+              // war der Unterschied, den Simon gesehen hat; eine frueherere
+              // Pruefung hatte ihn nicht gefunden, weil sie nur Listenfarbe
+              // und Titel verglich.
+              //
+              // NUR HIER: Der Termin bleibt in der LISTE rot, in beiden
+              // Rollen, ebenso das rote Eck-Badge und die gemeinsame Legende.
+              // Rot heisst dort "Absage" als Zustand des Termins; hier steht
+              // ein Hinweis an der Stelle, wo sonst ein Knopf waere.
+              <IonNote color="medium" style={{ display: 'block', textAlign: 'center', fontSize: 'var(--app-text-betont)' }}>
+                <IonIcon icon={ICON_ABSAGE} style={{ verticalAlign: 'middle', marginRight: 'var(--app-abstand-kompakt)' }} />
                 Dieser Termin ist abgesagt
-              </div>
+              </IonNote>
             ) : isPast ? (
                   selectedEvent.is_registered ? (
                     <div style={{ textAlign: 'center' }}>

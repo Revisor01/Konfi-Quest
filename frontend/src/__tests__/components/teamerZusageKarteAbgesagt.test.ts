@@ -67,8 +67,19 @@ describe('Die Teamer-Seite kennt abgesagte Termine', () => {
     const hinweis = code.indexOf('Dieser Termin ist abgesagt');
     expect(bedingung).toBeGreaterThan(-1);
     expect(hinweis).toBeGreaterThan(bedingung);
-    // Zwischen Bedingung und Hinweis darf kein weiterer Zweig liegen.
-    expect(hinweis - bedingung).toBeLessThan(1500);
+    // Zwischen Bedingung und Hinweis darf KEIN WEITERER ZWEIG liegen -- der
+    // Hinweis muss im ersten stehen.
+    //
+    // Geprueft wird das an der Sache, nicht an der Zeichenzahl (17.09.2026):
+    // Hier stand ein Abstand von unter 1500 Zeichen, und schon ein laengerer
+    // Begruendungskommentar liess den Test fallen, obwohl die Struktur
+    // stimmte. Kommentare duerfen wachsen; ein zweiter Fragezeichen-Operator
+    // darf nicht dazwischenrutschen.
+    // Ab HINTER dem Fragezeichen der Bedingung schneiden -- sonst zaehlt
+    // man ihr eigenes mit.
+    const nachFrage = code.indexOf('?', bedingung) + 1;
+    const dazwischen = code.slice(nachFrage, hinweis).replace(/\/\/[^\n]*/g, '');
+    expect(dazwischen).not.toContain('?');
   });
 
   it('bietet dort KEINE Zusage mehr an', () => {

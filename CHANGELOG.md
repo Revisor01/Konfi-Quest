@@ -176,6 +176,9 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Ist ein Termin **abgesagt**, steht der Hinweis darauf im Team jetzt in
+  derselben ruhigen Darstellung wie bei den Konfis, statt in Rot. Die rote
+  Kennzeichnung des Termins selbst — in der Liste und am Eck — bleibt.
 - Sagte eine Teamer:in im Termin zu oder ab, **änderte sich in der App nichts**:
   Die Liste „Wer kommt" zeigte weiter den alten Stand, erst ein Neuladen half.
   Im Browser war es sofort zu sehen. Jetzt steht der neue Stand direkt da —

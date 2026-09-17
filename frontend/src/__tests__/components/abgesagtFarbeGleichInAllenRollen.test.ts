@@ -99,3 +99,50 @@ describe('Das Graue an einem abgesagten Termin ist der Titel -- in Konfi UND Tea
     }
   });
 });
+
+// ====================================================================
+// NACHTRAG 17.09.2026: Simons Befund war doch berechtigt -- nur an einer
+// anderen Stelle, als der Test oben geprueft hat.
+//
+// Auf die Rueckfrage, ob abgesagte Termine ueberall grau werden sollen,
+// antwortete er: "nein. ich will sie nur grau auf dem button bis du dabei?
+// an allen anderen stellen nicht."
+//
+// Gemeint ist der HINWEIS IN DER KARTE "Bist du dabei?", der an einem
+// abgesagten Termin statt der Knoepfe steht. Und dort gab es den Unterschied
+// wirklich:
+//   Konfi  -> <IonNote color="medium">   (grau)
+//   Team   -> app-status-box--danger     (rot)
+//
+// Der Test oben hat diese Stelle nicht erfasst -- er sah nur Listenfarbe und
+// Titel. Beides bleibt unveraendert rot bzw. grau; geaendert wird
+// ausschliesslich der Karten-Hinweis.
+// ====================================================================
+describe('Der Hinweis in der Karte "Bist du dabei?" ist grau -- in beiden Rollen', () => {
+  const KONFI = 'src/components/konfi/views/EventDetailView.tsx';
+  const TEAM = 'src/components/teamer/pages/TeamerEventsPage.tsx';
+
+  it('die Konfi-Ansicht nutzt IonNote color="medium"', () => {
+    expect(lies(KONFI)).toContain('<IonNote color="medium"');
+  });
+
+  it('die Teamer-Ansicht nutzt jetzt dieselbe Darstellung', () => {
+    expect(lies(TEAM)).toContain('<IonNote color="medium"');
+  });
+
+  it('und NICHT mehr die rote Statusbox fuer diesen Hinweis', () => {
+    const quelle = lies(TEAM);
+    const hinweis = quelle.indexOf('Dieser Termin ist abgesagt');
+    expect(hinweis).toBeGreaterThan(-1);
+    // Die 300 Zeichen vor dem Hinweistext duerfen kein --danger tragen.
+    const davor = quelle.slice(Math.max(0, hinweis - 300), hinweis);
+    expect(davor).not.toContain('app-status-box--danger');
+  });
+
+  it('die Listenfarbe bleibt in BEIDEN Rollen rot -- nur der Hinweis wird grau', () => {
+    // Simons Vorgabe: "an allen anderen stellen nicht."
+    expect(lies('src/components/konfi/views/EventsView.tsx'))
+      .toContain('if (isCancelled) statusColor = C.danger');
+    expect(lies(TEAM)).toContain('if (istAbgesagt(event)) return danger');
+  });
+});
