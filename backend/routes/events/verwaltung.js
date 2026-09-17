@@ -34,6 +34,38 @@ const { validateTeamerQuota } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
 
+/**
+ * Ein Anmeldeschluss, der schon abgelaufen ist, waehrend der Termin noch
+ * bevorsteht (Befund Simon, 17.09.2026).
+ *
+ * DER FALL: Ein Termin beginnt in drei Stunden, der Anmeldeschluss steht auf
+ * "24 Stunden vor Beginn" — also gestern. Der Termin entsteht und ist in
+ * derselben Sekunde geschlossen (registration_status = 'closed'). Niemand
+ * kann sich anmelden, und nichts hat davor gewarnt.
+ *
+ * WARUM KEINE PAUSCHALE SPERRE AUF "SCHLUSS IN DER VERGANGENHEIT":
+ * Wer einen Termin von letzter Woche nachtraegt oder einen alten Termin
+ * korrigiert, hat zwangslaeufig beides in der Vergangenheit — Termin und
+ * Schluss. Das ist voellig legitim und muss moeglich bleiben. Verboten ist
+ * nur der Widerspruch: Der Termin kommt noch, die Anmeldung war nie offen.
+ *
+ * Deshalb haengt die Pruefung am TERMINDATUM, nicht am Schluss allein.
+ *
+ * @returns {string|null} Fehlermeldung oder null, wenn alles stimmig ist
+ */
+function pruefeAnmeldeschluss(registrationClosesAt, eventDate, jetzt = new Date()) {
+  if (!registrationClosesAt) return null;          // kein Fenster = nichts zu pruefen
+  const schluss = new Date(registrationClosesAt);
+  if (Number.isNaN(schluss.getTime())) return null; // Formatfehler faengt express-validator
+  if (schluss >= jetzt) return null;                // Schluss liegt in der Zukunft
+
+  const beginn = new Date(eventDate);
+  // Vergangener Termin -> nachtraegliche Pflege, erlaubt.
+  if (!Number.isNaN(beginn.getTime()) && beginn < jetzt) return null;
+
+  return 'Der Anmeldeschluss liegt in der Vergangenheit — so wäre die Anmeldung von Anfang an geschlossen.';
+}
+
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
@@ -91,6 +123,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
     // checkin_window validieren (5-120, Default 30)
     const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
+
+    // Anmeldeschluss darf an einem noch kommenden Termin nicht schon
+    // abgelaufen sein (Begruendung bei pruefeAnmeldeschluss oben).
+    const schlussFehler = pruefeAnmeldeschluss(registration_closes_at, event_date);
+    if (schlussFehler) {
+      return res.status(400).json({ error: schlussFehler });
+    }
 
     // max_participants ist die KONFI-Teilnehmerzahl. Bei Pflicht-Events (ganzer
     // Jahrgang) und bei reinen Teamer-Events (keine Konfi-Teilnahme) gibt es
@@ -329,6 +368,14 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
     // checkin_window validieren (5-120, Default 30)
     const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
+
+    // Wie beim Anlegen: an einem noch kommenden Termin darf der
+    // Anmeldeschluss nicht in die Vergangenheit gesetzt werden. Bei einem
+    // vergangenen Termin bleibt die nachtraegliche Pflege moeglich.
+    const schlussFehlerUpdate = pruefeAnmeldeschluss(registration_closes_at, event_date);
+    if (schlussFehlerUpdate) {
+      return res.status(400).json({ error: schlussFehlerUpdate });
+    }
 
     // Guards für Pflicht-Events
     // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
