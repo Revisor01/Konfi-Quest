@@ -44,7 +44,9 @@ describe('Alle bestätigen: auch für Teamer:innen', () => {
   });
 
   it('der Knopf verschwindet, wenn nichts mehr offen ist', () => {
-    expect(quelle).toMatch(/unprocessedTeamer === 0\)\s*return null/);
+    // Seit dem 17.09.2026 steht daneben die Rechte-Bedingung (Verbuchen ist
+    // Leitungssache). Die Aussage bleibt: Bei null offenen Punkten kein Knopf.
+    expect(quelle).toMatch(/unprocessedTeamer === 0[^)]*\)\s*return null/);
   });
 
   it('die Konfi-Sektion hat ihren Knopf unveraendert behalten', () => {

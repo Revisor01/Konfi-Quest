@@ -772,6 +772,14 @@ interface TimeslotsSectionProps {
   handleDemoteParticipant: (participant: Participant) => void;
   handleRemoveParticipant: (participant: Participant) => void;
   showWaitlistActionSheet?: (participant: Participant) => void;
+  /**
+   * Darf diese Person Teilnehmende verwalten (17.09.2026)? Die Liste hier ist
+   * ein ZWEITER Renderpfad neben EventDetailView -- Zeilen-Tipp und Swipe sind
+   * hier noch einmal ausgeschrieben. Ohne dieses Prop blieben sie fuer
+   * Teamer:innen sichtbar, obwohl das Backend mit 403 antwortet.
+   * Fehlt es, wird verwaltet wie bisher (true).
+   */
+  darfVerwalten?: boolean;
 }
 
 export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
@@ -782,7 +790,8 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
   showAttendanceActionSheet,
   handleDemoteParticipant,
   handleRemoveParticipant,
-  showWaitlistActionSheet
+  showWaitlistActionSheet,
+  darfVerwalten = true
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -864,7 +873,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                     const listItemClass = listItemKlasse(darstellung);
                     return (
                       <IonItemSliding key={participant.id} className="app-event-detail__sliding-item">
-                        <IonItem className="app-item-transparent" button detail={false} lines="none"
+                        <IonItem className="app-item-transparent" button={darfVerwalten} detail={false} lines="none"
                           onClick={() => showAttendanceActionSheet(participant)}>
                           <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
                             <div className="app-corner-badges">
@@ -944,7 +953,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                             </div>
                           </div>
                         </IonItem>
-                        {!eventMandatory && (
+                        {darfVerwalten && !eventMandatory && (
                         <IonItemOptions className="app-swipe-actions" side="end">
                           <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
