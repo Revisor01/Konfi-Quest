@@ -217,15 +217,19 @@ describe('Wieder anmelden, nachdem die Leitung abgemeldet hat', () => {
 
   describe('Alle anderen Regeln greifen unveraendert', () => {
     it('nach Anmeldeschluss kommt sie NICHT mehr hinein', async () => {
+      // DER TERMIN WIRD MIT OFFENEM FENSTER ANGELEGT (nachgezogen 17.09.2026):
+      // Hier stand ein Anmeldeschluss von gestern schon im Anlegen-Aufruf.
+      // Seit demselben Tag lehnt die Route genau das ab -- ein Termin in der
+      // Zukunft mit bereits abgelaufenem Anmeldeschluss waere von Anfang an
+      // geschlossen (Simons Befund "das Endstadium muss in der Zukunft
+      // liegen"). Der Test brauchte den Parameter ohnehin nie: Er dreht den
+      // Schluss zwei Zeilen weiter per Datenbank auf gestern. Geprueft wird
+      // unveraendert dasselbe -- nach Anmeldeschluss kommt niemand mehr
+      // hinein, auch nicht zurueck.
       const gestern = new Date();
       gestern.setDate(gestern.getDate() - 1);
-      const eventId = await termin({ registration_closes_at: gestern.toISOString() });
+      const eventId = await termin();
 
-      // Anmelden, solange das Fenster noch offen ist: dafuer den Schluss
-      // kurz in die Zukunft legen, buchen, dann wieder zurueckdrehen.
-      const morgen = new Date();
-      morgen.setDate(morgen.getDate() + 1);
-      await db.query('UPDATE events SET registration_closes_at = $1 WHERE id = $2', [morgen, eventId]);
       expect((await anmelden(eventId, konfiToken)).status).toBe(201);
       await abmeldenDurchLeitung(eventId, USERS.konfi1.id);
       await db.query('UPDATE events SET registration_closes_at = $1 WHERE id = $2', [gestern, eventId]);
