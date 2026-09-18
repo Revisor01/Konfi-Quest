@@ -1688,6 +1688,14 @@ ion-modal.wrapped-modal-fullscreen {
   color: #fff;
 }
 
+/* Emoji statt Ionicon (18.09.2026), wie in .selt-abzeichen-emoji: Dieselbe
+   Groesse wie das Icon daneben, damit die Reihe gleichmaessig bleibt. Keine
+   Farbe setzen -- Emoji bringen ihre eigene mit. */
+.w-abzeichen-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
 /* Die Bilanz auf der Abschluss-Seite. */
 .w-bilanz {
   display: flex;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { getIconFromIoniconsName, istEmojiIcon, ICON_MAP, ICON_CHOICES } from '../../utils/badgeIcons';
+import { getIconFromIoniconsName, getIconFromString, istEmojiIcon, ICON_MAP, ICON_CHOICES } from '../../utils/badgeIcons';
 
 // Aufloesung gespeicherter Icon-Namen (14.09.2026).
 //
@@ -167,5 +167,49 @@ describe('Die Auswahl fuer Badges und Stempel', () => {
                        'book', 'sunny', 'calendar', 'home', 'flag', 'medkit']) {
       expect(ICON_CHOICES[alt], alt).toBeDefined();
     }
+  });
+});
+
+// Emoji-Abzeichen im Jahresrückblick (Befund 18.09.2026)
+//
+// DER CHANGELOG VERSPRICHT ZU VIEL: "Abzeichen, für die ein Emoji gewählt
+// wurde, zeigen im Rückblick das Emoji statt einer Trophäe." Beim Faktencheck
+// der Änderungsanzeige kam heraus, dass das nur für EINE der beiden
+// Abzeichen-Seiten gilt. SeltenstesAbzeichenSlide prüft mit istEmojiIcon und
+// rendert das Zeichen als Text; BadgesSlide — ausgerechnet die Seite, auf der
+// die gesammelten Abzeichen stehen — ruft getIconFromString auf, das Emojis
+// gar nicht kennt und auf die Trophäe zurückfällt.
+//
+// Geprüft wird die Verdrahtung: Wer Abzeichen-Symbole rendert, muss den
+// Emoji-Fall behandeln. Ein reiner Aufruf von getIconFromString reicht nicht.
+describe('Emoji-Abzeichen im Rückblick', () => {
+  const lies = (pfad: string) =>
+    readFileSync(resolve(process.cwd(), pfad), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('getIconFromString kann keine Emojis — das ist der Grund für den Fehler', () => {
+    // Kein Vorwurf an die Funktion: Sie liefert Ionicon-Namen. Der Test hält
+    // fest, WARUM die Seiten den Emoji-Fall selbst behandeln müssen.
+    expect(getIconFromString('🎸')).toBe(getIconFromString('gibt-es-nicht'));
+  });
+
+  it('istEmojiIcon erkennt Emoji und lässt Ionicon-Namen in Ruhe', () => {
+    expect(istEmojiIcon('🎸')).toBe(true);
+    expect(istEmojiIcon('⭐')).toBe(true);
+    expect(istEmojiIcon('musical-notes')).toBe(false);
+    expect(istEmojiIcon('sunny-outline')).toBe(false);
+    expect(istEmojiIcon('')).toBe(false);
+    expect(istEmojiIcon(null)).toBe(false);
+  });
+
+  it('BadgesSlide behandelt den Emoji-Fall — nicht nur die Seltenstes-Seite', () => {
+    const badgesSlide = lies('src/components/wrapped/slides/BadgesSlide.tsx');
+    expect(badgesSlide).toContain('istEmojiIcon');
+  });
+
+  it('SeltenstesAbzeichenSlide behandelt ihn weiterhin', () => {
+    const seltenstes = lies('src/components/wrapped/slides/SeltenstesAbzeichenSlide.tsx');
+    expect(seltenstes).toContain('istEmojiIcon');
   });
 });

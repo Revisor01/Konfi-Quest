@@ -393,7 +393,8 @@ Versionsüberschrift.
   ist. Bisher galt dieselbe knappe Wartezeit wie für alles andere — ein großes
   PDF im Gemeindehaus scheiterte damit zuverlässig.
 - Abzeichen, für die ein Emoji gewählt wurde, zeigen im Rückblick endlich
-  dieses Emoji statt einer Trophäe.
+  dieses Emoji statt einer Trophäe — auf allen Seiten, auch dort, wo die
+  gesammelten Abzeichen nebeneinanderstehen.
 - Videos im Chat geben ihren Speicher wieder frei, wenn man vorbeiscrollt,
   bevor sie geladen sind.
 - Die Anwesenheitsanzeige mit QR-Code hört auf, im Hintergrund weiterzuzählen,
