@@ -242,9 +242,11 @@ describe('Änderungsanzeige 2.2.0', () => {
   });
 
   it.each(WALKTHROUGHS_220)('%s bleibt kurz genug zum Lesen', (_name, slides) => {
-    // Höchstens 4-6 Punkte je Rolle, lieber weniger. Fünf Folien sind die
-    // Grenze, ab der man wegtippt.
-    expect(slides.length).toBeLessThanOrEqual(5);
+    // Höchstens 4-6 Punkte je Rolle, lieber weniger. Sechs Folien sind die
+    // Grenze, ab der man wegtippt. Auf sechs angehoben (18.09.2026), weil
+    // die Anzeige seither ALLES seit 2.0 abdeckt -- auf einem der beiden
+    // Systeme ist 2.1 nie erschienen.
+    expect(slides.length).toBeLessThanOrEqual(6);
     // 520 Zeichen waren zu viel (Simon, 18.09.2026, wörtlich: "Die sind im
     // Admin-Onboarding ganz schön lang, und die Leute sind faul zu lesen").
     // Eine Folie hatte fast 400 Zeichen. 300 sind etwa vier Zeilen auf dem
@@ -306,8 +308,11 @@ describe('Änderungsanzeige 2.2.0', () => {
     // Dateien aus dem Chat nur noch einmal laden.
     expect(text).toMatch(/nur noch einmal|zweiten Antippen/);
     expect(text).toContain('schneller');
-    // Abzeichen mit Emoji im Rückblick.
-    expect(text).toContain('Emoji');
+    // KEIN Emoji und kein Rückblick mehr (Simon, 18.09.2026: "der gesamte
+    // emoji kram kommt raus. kein verweis auf den rückblick"). Der
+    // Emoji-Fehler ist behoben, aber er taugt nicht als Nachricht an Konfis.
+    expect(text).not.toContain('Emoji');
+    expect(text).not.toContain('Rückblick');
     // Was die Leitung tut, gehört nicht in die Konfi-Fassung.
     expect(text).not.toContain('Abgemeldet');
     expect(text).not.toContain('95 Symbole');
@@ -344,23 +349,23 @@ describe('Änderungsanzeige 2.2.0', () => {
   });
 
   it('Leitungs-Folien nennen die Jahrgangsgrenzen als Grenze, nicht als Fehler', () => {
+    // Simons Fassung vom 18.09.2026: Die Folie heisst "Mehr Klarheit bei
+    // Rechten" und sagt die Regel über die KONFIS, nicht über Serientermine
+    // -- sie gilt in allen Bereichen gleich, nicht nur bei Terminen.
     const text = text220(admin220);
     expect(text).toContain('Jahrgäng');
     // Eine leere Liste ist kein Fehler -- dieselbe Zusage wie in 2.1.1.
     expect(text).toContain('kein Fehler');
-    // Allgemeine und Team-Termine bleiben offen; ohne diesen Satz klänge die
-    // Grenze schärfer, als sie ist.
-    expect(text).toMatch(/Team-Termine bleiben für alle offen/);
     expect(text).toContain('95 Symbole');
     expect(text).toContain('Abgemeldet');
   });
 
-  it('nur die Leitung bekommt die Folie zu den Jahrgangsgrenzen', () => {
-    // Konfis und Teamer:innen legen keine Termine an -- die Grenze betrifft
-    // sie nicht, und ein Hinweis darauf wäre nur Lärm.
-    expect(text220(admin220)).toContain('Serientermine');
-    expect(text220(konfi220)).not.toContain('Serientermine');
-    expect(text220(teamer220)).not.toContain('Serientermine');
+  it('nur die Leitung bekommt die Folie zu den Rechten', () => {
+    // Konfis und Teamer:innen verwalten nichts -- die Grenze betrifft sie
+    // nicht, und ein Hinweis darauf wäre nur Lärm.
+    expect(text220(admin220)).toContain('Klarheit bei Rechten');
+    expect(text220(konfi220)).not.toContain('Klarheit bei Rechten');
+    expect(text220(teamer220)).not.toContain('Klarheit bei Rechten');
   });
 
   // FAKTENCHECK GEGEN DEN CODE (18.09.2026). Fünf Aussagen waren schlicht
