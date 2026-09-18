@@ -7,7 +7,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased] - 2.2.0
+## [2.2.0] - 2026-09-18
+
+iOS-Build 206 · Android versionCode 113
 
 ### Hinzugefügt
 - Termine lassen sich **kopieren**: In der Terminliste nach links wischen oder
