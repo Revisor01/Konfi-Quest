@@ -162,6 +162,49 @@ describe('Update-Walkthrough 2.1.1', () => {
     expect(text).toMatch(/Das Team bleibt davon ausgenommen/);
   });
 
+  // FAKTENCHECK GEGEN DEN CODE (18.09.2026). Fünf Aussagen waren schlicht
+  // falsch — sie beschrieben Ansichten, die es für diese Rolle nicht gibt,
+  // oder versprachen Vollständigkeit, wo der Code bewusst unterscheidet.
+  // Jede Korrektur bekommt hier ihren Wächter.
+
+  it('Konfi-Folien behaupten keine Stempel IM PROFIL', () => {
+    // Simon, 14.09.2026, wörtlich im Code (konfi/views/ProfileView.tsx):
+    // "Das ist doch unter Challenges. Das finden Teamer, Admins und Konfis
+    // unter Challenges, nie in ihrem Profil." Im Profil steht nur die ZAHL.
+    const text = text220(konfi220);
+    expect(text).not.toMatch(/Stempel im Profil/);
+    expect(text).not.toMatch(/Hinter deinen Abzeichen/);
+    expect(text).toContain('Unter Challenges');
+  });
+
+  it('Team-Folien behaupten keine Urheber-Zeile — die sieht nur die Leitung', () => {
+    // Die Teamer-Teilnehmerliste (TeamerEventsPage) zeigt Name, Status und
+    // Jahrgang. Kein urheberZeile, kein checkinZeile, kein Grund, keine
+    // Notiz. Eine Folie darüber schickt Leute auf die Suche nach etwas,
+    // das es dort nicht gibt.
+    const text = text220(teamer220);
+    expect(text).not.toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
+    expect(text).not.toMatch(/steht klein, wer/);
+  });
+
+  it('Team-Folien versprechen keine Konfi-Stempel — dorthin führt keine Route', () => {
+    // ChallengeStempelSektion hängt an admin/views/KonfiDetailView; das Team
+    // hat darauf keinen Weg (rollenBaeume.ts).
+    expect(text220(teamer220)).not.toMatch(/bei den Konfis, die du ansiehst/);
+  });
+
+  it('die Reaktivierung verspricht nichts für ALLE', () => {
+    // verwaltung.js: Der Push geht NUR an die wieder Angemeldeten
+    // (Entscheidung Simon, 16.09.2026). Wer vorher selbst oder einzeln
+    // abgemeldet war, bleibt abgemeldet und bekommt nichts. Und wer auf der
+    // Warteliste stand, kommt auf die Warteliste zurück, nicht "angemeldet".
+    expect(text220(konfi220)).not.toMatch(/automatisch wieder angemeldet/);
+    expect(text220(admin220)).not.toMatch(/alle bekommen Bescheid/);
+    // Der Chat war bei einer Absage nie weg — ihn "zurückkommen" zu lassen
+    // behauptet einen Verlust, den es nicht gab.
+    expect(text220(admin220)).not.toMatch(/und Chat kommen zurück/);
+  });
+
   it('keine Folie verspricht Punkte für Challenges', () => {
     // Challenges sind bewusst ohne Punkte und ohne Zähler (Migration 118).
     for (const [name, slides] of WALKTHROUGHS_211) {
@@ -202,9 +245,24 @@ describe('Änderungsanzeige 2.2.0', () => {
     // Höchstens 4-6 Punkte je Rolle, lieber weniger. Fünf Folien sind die
     // Grenze, ab der man wegtippt.
     expect(slides.length).toBeLessThanOrEqual(5);
+    // 520 Zeichen waren zu viel (Simon, 18.09.2026, wörtlich: "Die sind im
+    // Admin-Onboarding ganz schön lang, und die Leute sind faul zu lesen").
+    // Eine Folie hatte fast 400 Zeichen. 300 sind etwa vier Zeilen auf dem
+    // Handy -- was darüber hinausgeht, wird weggetippt statt gelesen.
     for (const s of slides) {
-      expect(s.text.length).toBeLessThanOrEqual(520);
+      expect(s.text.length, `zu lang: "${s.title}"`).toBeLessThanOrEqual(300);
     }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s sagt NICHT, dass beim QR-Check-in die Zeile fehlt', (_name, slides) => {
+    // BEFUND SIMON 18.09.2026: Der Text behauptete "Beim Check-in per QR-Code
+    // fehlt die Zeile: dort war niemand aus dem Team." Das war der Stand VOR
+    // Migration 151 (15.09.2026). Seither erzeugt checkinZeile() sehr wohl
+    // eine Zeile -- "Eingecheckt per QR-Code, 15.09." Ohne Zeile ist nur der
+    // Altbestand von davor.
+    const text = text220(slides);
+    expect(text).not.toMatch(/QR-Code fehlt die Zeile/);
+    expect(text).not.toMatch(/Check-in per QR-Code und bei älteren Einträgen fehlt/);
   });
 
   it.each(WALKTHROUGHS_220)('%s enthält keine Unicode-Emojis', (_name, slides) => {
@@ -241,7 +299,10 @@ describe('Änderungsanzeige 2.2.0', () => {
 
   it('Konfi-Folien nennen Stempel und Tempo, nicht die Arbeit der Leitung', () => {
     const text = text220(konfi220);
-    expect(text).toContain('Challenge-Stempel');
+    // "Challenge-Stempel" hiess es, solange der Text sie im Profil verortete.
+    // Seit dem Faktencheck (18.09.2026) stehen sie da, wo sie wirklich sind:
+    // unter Challenges. Das Wort allein bleibt Pflicht.
+    expect(text).toContain('Stempel');
     // Dateien aus dem Chat nur noch einmal laden.
     expect(text).toMatch(/nur noch einmal|zweiten Antippen/);
     expect(text).toContain('schneller');
@@ -253,19 +314,33 @@ describe('Änderungsanzeige 2.2.0', () => {
     expect(text).not.toContain('Jahrgäng');
   });
 
-  it('Teamer-Folien nennen Abmeldung, Notiz und wer eingetragen hat', () => {
+  it('Teamer-Folien nennen die Abmeldung als das, was das Team davon sieht', () => {
+    // FAKTENCHECK 18.09.2026: Die alte Fassung verlangte "Notiz", den Grund
+    // in der Teilnehmerliste und die Urheber-Zeile. Nichts davon sieht das
+    // Team -- TeamerEventsPage zeigt Name, Status und Jahrgang. Die
+    // Erwartung war nicht zu streng, sondern schlicht falsch; geprüft wird
+    // jetzt, was dort tatsächlich ankommt.
     const text = text220(teamer220);
     expect(text).toContain('Abgemeldet');
-    expect(text).toContain('Notiz');
-    // Der Grund landet in der Teilnehmerliste, damit das Team ihn sieht.
     expect(text).toContain('Teilnehmerliste');
-    // Wer eingetragen hat -- der Punkt, wegen dem man bei Rückfragen weiß,
-    // wen man fragt.
-    expect(text).toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
-    // Punkte gibt es bei einer Abmeldung keine, schon vergebene gehen zurück.
-    expect(text).toMatch(/Punkte gibt es dabei keine|zurückgenommen/);
     // Die Symbolauswahl legt die Leitung an, nicht das Team.
     expect(text).not.toContain('95 Symbole');
+  });
+
+  it('Leitungs-Folien nennen "Termin kopieren" — die grösste Erleichterung', () => {
+    // Simon, 18.09.2026: "die Funktion zum Kopieren von Terminen bei Admins
+    // sollte auf jeden Fall in die Version 2.2 mit rein". Sie fehlte ganz.
+    const text = text220(admin220);
+    expect(text).toContain('kopieren');
+    // Der wichtigste Satz dazu: Es wird nichts angelegt, bis gespeichert wird.
+    expect(text).toMatch(/erst beim Speichern/);
+    // Und was NICHT mitkommt -- sonst sucht jemand den Chat in der Kopie.
+    expect(text).toContain('Material');
+  });
+
+  it('nur die Leitung bekommt "Termin kopieren" — Konfis und Team legen keine an', () => {
+    expect(text220(konfi220)).not.toContain('kopieren');
+    expect(text220(teamer220)).not.toContain('kopieren');
   });
 
   it('Leitungs-Folien nennen die Jahrgangsgrenzen als Grenze, nicht als Fehler', () => {
@@ -286,6 +361,49 @@ describe('Änderungsanzeige 2.2.0', () => {
     expect(text220(admin220)).toContain('Serientermine');
     expect(text220(konfi220)).not.toContain('Serientermine');
     expect(text220(teamer220)).not.toContain('Serientermine');
+  });
+
+  // FAKTENCHECK GEGEN DEN CODE (18.09.2026). Fünf Aussagen waren schlicht
+  // falsch — sie beschrieben Ansichten, die es für diese Rolle nicht gibt,
+  // oder versprachen Vollständigkeit, wo der Code bewusst unterscheidet.
+  // Jede Korrektur bekommt hier ihren Wächter.
+
+  it('Konfi-Folien behaupten keine Stempel IM PROFIL', () => {
+    // Simon, 14.09.2026, wörtlich im Code (konfi/views/ProfileView.tsx):
+    // "Das ist doch unter Challenges. Das finden Teamer, Admins und Konfis
+    // unter Challenges, nie in ihrem Profil." Im Profil steht nur die ZAHL.
+    const text = text220(konfi220);
+    expect(text).not.toMatch(/Stempel im Profil/);
+    expect(text).not.toMatch(/Hinter deinen Abzeichen/);
+    expect(text).toContain('Unter Challenges');
+  });
+
+  it('Team-Folien behaupten keine Urheber-Zeile — die sieht nur die Leitung', () => {
+    // Die Teamer-Teilnehmerliste (TeamerEventsPage) zeigt Name, Status und
+    // Jahrgang. Kein urheberZeile, kein checkinZeile, kein Grund, keine
+    // Notiz. Eine Folie darüber schickt Leute auf die Suche nach etwas,
+    // das es dort nicht gibt.
+    const text = text220(teamer220);
+    expect(text).not.toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
+    expect(text).not.toMatch(/steht klein, wer/);
+  });
+
+  it('Team-Folien versprechen keine Konfi-Stempel — dorthin führt keine Route', () => {
+    // ChallengeStempelSektion hängt an admin/views/KonfiDetailView; das Team
+    // hat darauf keinen Weg (rollenBaeume.ts).
+    expect(text220(teamer220)).not.toMatch(/bei den Konfis, die du ansiehst/);
+  });
+
+  it('die Reaktivierung verspricht nichts für ALLE', () => {
+    // verwaltung.js: Der Push geht NUR an die wieder Angemeldeten
+    // (Entscheidung Simon, 16.09.2026). Wer vorher selbst oder einzeln
+    // abgemeldet war, bleibt abgemeldet und bekommt nichts. Und wer auf der
+    // Warteliste stand, kommt auf die Warteliste zurück, nicht "angemeldet".
+    expect(text220(konfi220)).not.toMatch(/automatisch wieder angemeldet/);
+    expect(text220(admin220)).not.toMatch(/alle bekommen Bescheid/);
+    // Der Chat war bei einer Absage nie weg — ihn "zurückkommen" zu lassen
+    // behauptet einen Verlust, den es nicht gab.
+    expect(text220(admin220)).not.toMatch(/und Chat kommen zurück/);
   });
 
   it('keine Folie verspricht Punkte für Challenges', () => {

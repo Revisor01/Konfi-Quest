@@ -1,11 +1,9 @@
-Die Startseite ist beim ersten Öffnen nicht mehr leer.
+Push-Nachrichten kommen wieder an — für Chat und Termine. Wer betroffen war, bekommt sie ab dem nächsten Start.
 
-Team: Ihr seht am Termin, wer kommt. Zu- und Absage wirken sofort.
+Termine kopieren statt neu tippen. Absagen mit Grund, und die Absage lässt sich zurücknehmen: alle Anmeldungen kommen zurück.
 
-Wer abgemeldet wurde, kann sich wieder anmelden. Falsche Einträge lassen sich zurücknehmen.
+Anwesenheit kennt jetzt „Abgemeldet" mit Grund und Notiz. Das Team sieht, wer kommt.
 
-Wer von der Leitung angemeldet wird, bekommt eine Mitteilung.
+App-Sperre mit Fingerabdruck.
 
-Termine mit Warteliste stehen wieder unter "Meine", abgesagte an ihrem Datum.
-
-Behoben: abgeschnittene Texte im Termin-Fenster, falsche Teilnehmerzahlen, Löschen ging nicht, Anmeldeschluss bei kurzfristigen Terminen.
+Dazu alles aus 2.1: Jahresrückblick fürs Team, Offline-Verbesserungen, schnellerer Start.
