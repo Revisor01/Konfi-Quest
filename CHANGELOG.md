@@ -185,6 +185,10 @@ Versionsüberschrift.
   bisher als blasser Text daneben.
 
 ### Behoben
+- Im Challenges-Tab von Team und Leitung standen **Stempel aus Entwürfen und
+  aus geplanten Challenges** in der Reihe der noch zu holenden — als ließen
+  sie sich schon jetzt erreichen. Angezeigt werden jetzt nur Stempel aus
+  laufenden und vergangenen Challenges, so wie Konfis es ohnehin sahen.
 - Beim Verschieben eines Termins auf ein anderes Datum wurde die **Dauer auf
   eine Stunde zurückgesetzt**. Aus einer Freizeit über ein ganzes Wochenende
   wurde so ein Ein-Stunden-Termin. Das Ende wandert jetzt mit dem Beginn mit.

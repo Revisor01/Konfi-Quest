@@ -92,3 +92,75 @@ describe('Stempel stehen an einer Stelle', () => {
     expect(sektion).toMatch(/verdient:\s*false/);
   });
 });
+
+// Stempel nur fuer laufende oder vergangene Challenges (Befund Simon, 18.09.2026)
+//
+//   "er zeigt mir, zumindest im admin, challenge stempel an, die noch auf
+//    entwurf oder geplant stehen. dass man die erreichen koennte. stempel
+//    duerfen nur fuer laufende oder vergangene angezeigt werden. ob erreicht
+//    oder nicht."
+//
+// WARUM NUR IM ADMIN: Die Konfi-Ansicht bekommt ihre Liste aus
+// GET /challenges/konfi, und das SQL filtert dort `is_draft = false AND
+// starts_at <= NOW()`. Die Leitungs- und Team-Ansicht leitet die Stempel
+// dagegen im Frontend aus GET /challenges/admin ab -- und das liefert
+// absichtlich JEDE Challenge, damit sich Entwuerfe bearbeiten lassen. Die
+// Ableitung hatte die Rechnung uebernommen, aber nicht die Vorbedingung.
+//
+// Geprueft wird die Regel selbst, mit fester Zeit statt Date.now().
+import { gehoertInsStempelraster } from '../../components/shared/ChallengesPage';
+
+describe('Stempelraster zeigt nur laufende und vergangene Challenges', () => {
+  // Fester Bezugspunkt: 18.09.2026, 12:00.
+  const JETZT = new Date(2026, 8, 18, 12, 0).getTime();
+  const tage = (n: number) => new Date(JETZT + n * 24 * 60 * 60 * 1000).toISOString();
+
+  const challenge = (ueber: Record<string, unknown>) =>
+    ({ is_draft: false, starts_at: tage(-7), ends_at: tage(7), ...ueber }) as never;
+
+  it('VERBOTEN: ein Entwurf gehoert nicht ins Raster', () => {
+    expect(gehoertInsStempelraster(challenge({ is_draft: true }), JETZT)).toBe(false);
+  });
+
+  it('VERBOTEN: eine geplante Challenge, die erst naechste Woche beginnt', () => {
+    expect(gehoertInsStempelraster(
+      challenge({ starts_at: tage(7), ends_at: tage(14) }), JETZT
+    )).toBe(false);
+  });
+
+  it('VERBOTEN: ein Entwurf bleibt es auch, wenn sein Zeitraum laeuft', () => {
+    // is_draft schlaegt das Datum -- so rechnet auch deriveStatus im Backend.
+    expect(gehoertInsStempelraster(
+      challenge({ is_draft: true, starts_at: tage(-1), ends_at: tage(1) }), JETZT
+    )).toBe(false);
+  });
+
+  it('ERLAUBT: eine laufende Challenge', () => {
+    expect(gehoertInsStempelraster(challenge({}), JETZT)).toBe(true);
+  });
+
+  it('ERLAUBT: eine vergangene Challenge', () => {
+    // Auch abgelaufene Stempel bleiben sichtbar -- "ob erreicht oder nicht".
+    expect(gehoertInsStempelraster(
+      challenge({ starts_at: tage(-30), ends_at: tage(-14) }), JETZT
+    )).toBe(true);
+  });
+
+  it('ERLAUBT: eine Challenge, die gerade eben begonnen hat', () => {
+    expect(gehoertInsStempelraster(
+      challenge({ starts_at: new Date(JETZT - 1000).toISOString() }), JETZT
+    )).toBe(true);
+  });
+
+  it('die Regel gilt fuer ERHALTENE Stempel genauso wie fuer offene', () => {
+    // Beide Ableitungen in ChallengesPage muessen sie anwenden. Sonst
+    // verschwaende ein Entwurf zwar aus der grauen Reihe, ein
+    // versehentlich schon vergebener Stempel bliebe aber farbig stehen.
+    const quelle = readFileSync(
+      resolve(process.cwd(), 'src/components/shared/ChallengesPage.tsx'),
+      'utf8'
+    ).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    expect(quelle).toMatch(/c\.has_badge && gehoertInsStempelraster\(c\)/);
+    expect(quelle).toMatch(/!c\.has_badge && !!c\.badge_name && gehoertInsStempelraster\(c\)/);
+  });
+});

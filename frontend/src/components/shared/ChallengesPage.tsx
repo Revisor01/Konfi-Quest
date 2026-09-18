@@ -22,7 +22,7 @@ import { useOfflineQuery } from '../../hooks/useOfflineQuery';
 import { useChallengeDelete } from '../../hooks/useChallengeDelete';
 import { CACHE_TTL } from '../../services/offlineCache';
 import LoadingSpinner from '../common/LoadingSpinner';
-import ChallengesManageView from '../admin/views/ChallengesManageView';
+import ChallengesManageView, { getChallengeStatus } from '../admin/views/ChallengesManageView';
 import ChallengeManageModal from '../admin/modals/ChallengeManageModal';
 import ChallengeLeitungModal from '../admin/modals/ChallengeLeitungModal';
 import { triggerPullHaptic } from '../../utils/haptics';
@@ -46,6 +46,35 @@ interface ChallengesPageProps {
   // Eigene Modal-Seiten-ID je Rolle (useModalPage verwaltet den Stapel).
   modalPageId: string;
 }
+
+/**
+ * Gehoert diese Challenge ueberhaupt ins Stempelraster? (Befund Simon,
+ * 18.09.2026, woertlich: "er zeigt mir, zumindest im admin, challenge
+ * stempel an, die noch auf entwurf oder geplant stehen. dass man die
+ * erreichen koennte. stempel duerfen nur fuer laufende oder vergangene
+ * angezeigt werden. ob erreicht oder nicht.")
+ *
+ * WIE DER FEHLER ENTSTAND: Die Ableitung darunter hat die Rechnung aus
+ * GET /challenges/konfi uebernommen (`has_badge` -> erhalten, sonst mit
+ * badge_name -> offen), aber nicht deren VORBEDINGUNG. Dort steht im SQL
+ * `is_draft = false AND starts_at <= NOW()`; die Konfi-Ansicht bekommt also
+ * nie einen Entwurf zu sehen. GET /challenges/admin liefert dagegen
+ * absichtlich JEDE Challenge der Gemeinde -- die Verwaltung muss Entwuerfe
+ * bearbeiten koennen. Dieselbe Datei zeigte eine Challenge damit oben
+ * korrekt im Reiter "Geplant" und unten gleichzeitig als Stempel, den es zu
+ * holen gaebe.
+ *
+ * 'active' | 'ended' ist genau das Gegenstueck zum SQL-WHERE: 'draft' und
+ * 'scheduled' sind die einzigen anderen Werte (siehe deriveStatus im
+ * Backend bzw. getChallengeStatus nebenan).
+ */
+export const gehoertInsStempelraster = (
+  c: Pick<AdminChallenge, 'is_draft' | 'starts_at' | 'ends_at'>,
+  jetzt: number = Date.now()
+): boolean => {
+  const status = getChallengeStatus(c as AdminChallenge, jetzt);
+  return status === 'active' || status === 'ended';
+};
 
 const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }) => {
   const { refreshAllCounts } = useBadge();
@@ -77,7 +106,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   // braucht es keinen zweiten Endpunkt für die Teilnehmer-Sicht.
   const marks = useMemo(
     () => (Array.isArray(challenges) ? challenges : [])
-      .filter((c) => c.has_badge)
+      .filter((c) => c.has_badge && gehoertInsStempelraster(c))
       .map((c) => ({
         challenge_id: c.id,
         badge_icon: c.badge_icon,
@@ -109,7 +138,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }
   // und Leitungs-Detailansicht (admin/views/KonfiDetailView.tsx) lesen.
   const offeneStempel = useMemo(
     () => (Array.isArray(challenges) ? challenges : [])
-      .filter((c) => !c.has_badge && !!c.badge_name)
+      .filter((c) => !c.has_badge && !!c.badge_name && gehoertInsStempelraster(c))
       .map((c) => ({
         challenge_id: c.id,
         badge_icon: c.badge_icon,
