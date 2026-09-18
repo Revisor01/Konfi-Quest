@@ -13,7 +13,7 @@ import { SLIDES as teamerUpdate } from '../../components/teamer/modals/TeamerUpd
 import { SLIDES as adminOnboarding } from '../../components/admin/modals/AdminOnboardingModal';
 import { SLIDES as adminUpdate } from '../../components/admin/modals/AdminUpdateWalkthroughModal';
 
-type Slide = { title: string; text: string };
+type Slide = { title: string; text: string; color?: string };
 
 const ALLE_TOUREN: [string, Slide[]][] = [
   ['Konfi-Onboarding', konfiOnboarding],
@@ -207,6 +207,46 @@ describe('Update-Walkthrough 2.1.1', () => {
     // Der Chat war bei einer Absage nie weg — ihn "zurückkommen" zu lassen
     // behauptet einen Verlust, den es nicht gab.
     expect(text220(admin220)).not.toMatch(/und Chat kommen zurück/);
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nutzt nur die drei Farben der Aenderungsanzeige', (_name, slides) => {
+    // FARBREGEL (Simon, 18.09.2026): Rot fuer Termine und Anwesenheit,
+    // Indigo fuer Challenges, und als SYSTEMFARBE das helle Blau
+    // --app-color-users (#667eea) -- dasselbe, das der Profilkopf der
+    // Leitung traegt.
+    //
+    // Vorher war die Zuordnung zufaellig: Dieselbe Folie hatte je nach Rolle
+    // eine andere Farbe, und es kamen Beere, Orange und Violett vor. Der
+    // Test haelt die drei erlaubten fest -- wer eine vierte einfuehrt, soll
+    // das bewusst tun.
+    const erlaubt = [
+      'var(--app-color-events)',      // Termine, Anwesenheit
+      'var(--app-color-users)',       // Systemfunktionen
+      'var(--app-color-challenges)',  // Challenges, Stempel
+    ];
+    for (const s of slides) {
+      expect(erlaubt, `unerwartete Farbe bei "${s.title}": ${s.color}`).toContain(s.color);
+    }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nutzt NICHT das kraeftige Jahrgangs-Blau als Systemfarbe', (_name, slides) => {
+    // --app-color-jahrgang (#007aff) meint die Jahrgaenge, nicht die
+    // Systemfunktionen. Bis zum 18.09.2026 stand es faelschlich in den
+    // Sperre- und Offline-Folien.
+    for (const s of slides) {
+      expect(s.color).not.toBe('var(--app-color-jahrgang)');
+    }
+  });
+
+  it('die App-Sperre hat in ALLEN drei Rollen dieselbe Farbe', () => {
+    // Sie war bei Konfis blau und bei Team und Leitung orange -- dieselbe
+    // Funktion, drei Anstriche.
+    const sperrFarben = WALKTHROUGHS_220.map(([, slides]) => {
+      const folie = slides.find((s) => s.title.includes('abschließen') || s.title.includes('Sperre'));
+      return folie?.color;
+    });
+    expect(new Set(sperrFarben).size).toBe(1);
+    expect(sperrFarben[0]).toBe('var(--app-color-users)');
   });
 
   it('keine Folie verspricht Punkte für Challenges', () => {
@@ -417,6 +457,46 @@ describe('Änderungsanzeige 2.2.0', () => {
     // Der Chat war bei einer Absage nie weg — ihn "zurückkommen" zu lassen
     // behauptet einen Verlust, den es nicht gab.
     expect(text220(admin220)).not.toMatch(/und Chat kommen zurück/);
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nutzt nur die drei Farben der Aenderungsanzeige', (_name, slides) => {
+    // FARBREGEL (Simon, 18.09.2026): Rot fuer Termine und Anwesenheit,
+    // Indigo fuer Challenges, und als SYSTEMFARBE das helle Blau
+    // --app-color-users (#667eea) -- dasselbe, das der Profilkopf der
+    // Leitung traegt.
+    //
+    // Vorher war die Zuordnung zufaellig: Dieselbe Folie hatte je nach Rolle
+    // eine andere Farbe, und es kamen Beere, Orange und Violett vor. Der
+    // Test haelt die drei erlaubten fest -- wer eine vierte einfuehrt, soll
+    // das bewusst tun.
+    const erlaubt = [
+      'var(--app-color-events)',      // Termine, Anwesenheit
+      'var(--app-color-users)',       // Systemfunktionen
+      'var(--app-color-challenges)',  // Challenges, Stempel
+    ];
+    for (const s of slides) {
+      expect(erlaubt, `unerwartete Farbe bei "${s.title}": ${s.color}`).toContain(s.color);
+    }
+  });
+
+  it.each(WALKTHROUGHS_220)('%s nutzt NICHT das kraeftige Jahrgangs-Blau als Systemfarbe', (_name, slides) => {
+    // --app-color-jahrgang (#007aff) meint die Jahrgaenge, nicht die
+    // Systemfunktionen. Bis zum 18.09.2026 stand es faelschlich in den
+    // Sperre- und Offline-Folien.
+    for (const s of slides) {
+      expect(s.color).not.toBe('var(--app-color-jahrgang)');
+    }
+  });
+
+  it('die App-Sperre hat in ALLEN drei Rollen dieselbe Farbe', () => {
+    // Sie war bei Konfis blau und bei Team und Leitung orange -- dieselbe
+    // Funktion, drei Anstriche.
+    const sperrFarben = WALKTHROUGHS_220.map(([, slides]) => {
+      const folie = slides.find((s) => s.title.includes('abschließen') || s.title.includes('Sperre'));
+      return folie?.color;
+    });
+    expect(new Set(sperrFarben).size).toBe(1);
+    expect(sperrFarben[0]).toBe('var(--app-color-users)');
   });
 
   it('keine Folie verspricht Punkte für Challenges', () => {

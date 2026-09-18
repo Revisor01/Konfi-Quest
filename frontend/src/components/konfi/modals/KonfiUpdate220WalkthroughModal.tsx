@@ -18,9 +18,13 @@ interface Props {
 // erschienen, dort steht noch 2.0. Deshalb decken alle drei Fassungen 2.0
 // bis 2.2 ab -- die 2.1-Punkte stehen mit drin.
 //
-// FARBEN (Simon, 18.09.2026): Rot fuer Termine und Anwesenheit, BLAU als
-// Systemfarbe (App-Sperre, Tempo, Rechte), Indigo fuer Challenges. Beere und
-// Orange kommen in der Aenderungsanzeige nicht mehr vor.
+// FARBEN (Simon, 18.09.2026): Rot (--app-color-events) fuer Termine und
+// Anwesenheit, Indigo (--app-color-challenges) fuer Challenges, und als
+// SYSTEMFARBE das helle Blau --app-color-users (#667eea) -- dasselbe, das
+// der Profilkopf der Leitung traegt. Es steht fuer App-Sperre, Offline,
+// Tempo und Rechte. Nicht --app-color-jahrgang (#007aff): Das ist kraeftiger
+// und meint die Jahrgaenge, nicht die Systemfunktionen. Beere, Orange und
+// Violett kommen in der Aenderungsanzeige nicht mehr vor.
 //
 // KURZ HALTEN: "Die Leute sind faul zu lesen." Keine Folie ueber 300 Zeichen,
 // hoechstens fuenf Folien -- der Test haelt beides fest.
@@ -43,22 +47,22 @@ export const SLIDES: OnboardingSlide[] = [
   },
   {
     icon: ICON_FINGERABDRUCK,
-    color: 'var(--app-color-jahrgang)',
-    rgb: '--app-color-jahrgang-rgb',
+    color: 'var(--app-color-users)',
+    rgb: '--app-color-users-rgb',
     title: 'Die App abschließen',
     text: 'Du kannst die App mit Face ID, Touch ID oder deinem Fingerabdruck sperren. Im Profil stellst du ein, nach welcher Zeit gefragt wird. Angemeldet bleibst du dabei, und von Haus aus ist die Sperre aus.',
   },
   {
     icon: ICON_OFFLINE,
-    color: 'var(--app-color-jahrgang)',
-    rgb: '--app-color-jahrgang-rgb',
+    color: 'var(--app-color-users)',
+    rgb: '--app-color-users-rgb',
     title: 'Ohne Netz geht nichts verloren',
     text: 'Was du ohne Verbindung einträgst, steht unten als Hinweis und wird gesendet, sobald du wieder Netz hast. Was endgültig nicht ankam, bleibt sichtbar, bis du es gelesen hast — statt nach vier Sekunden zu verschwinden.',
   },
   {
     icon: ICON_TACHO,
-    color: 'var(--app-color-jahrgang)',
-    rgb: '--app-color-jahrgang-rgb',
+    color: 'var(--app-color-users)',
+    rgb: '--app-color-users-rgb',
     title: 'Schneller und sparsamer',
     text: 'Die App startet schneller. Beim Senden und Öffnen von Dateien im Chat siehst du jetzt, wie weit sie sind. Und einmal geladen, sind sie beim zweiten Antippen sofort da — auch ohne Netz.',
   },
