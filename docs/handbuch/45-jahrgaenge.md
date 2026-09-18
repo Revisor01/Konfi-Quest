@@ -187,10 +187,12 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Bereich | Ohne passende Zuweisung |
 |---|---|
 | Konfi-Liste | die Liste bleibt **komplett leer** |
+| Konfi-Profil ansehen | kein Zugriff; Teamer:innen bleiben dagegen für die ganze Leitung sichtbar |
 | Jahrgangs-Liste (Admin) | zeigt nur die eigenen Jahrgänge |
 | Konfi anlegen oder verschieben (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |
 | Konfi löschen, befördern, Passwort zurücksetzen (Admin) | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
 | Punkte vergeben und zurücknehmen | abgewiesen mit „Kein Zugriff auf diesen Konfi“ |
+| Nachweisfotos zu Aktivitäten | nur für Verantwortliche der betreffenden Jahrgänge sichtbar |
 | Termine | jahrgangsgebundene Termine sind unsichtbar und nicht buchbar |
 | Material | jahrgangsgebundenes Material ist unsichtbar (Material ohne Jahrgang und „für alle“ bleibt) |
 | Anwesenheits- und Spruchlisten (Admin) | abgewiesen mit „Kein Zugriff auf diesen Jahrgang“ |

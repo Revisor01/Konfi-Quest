@@ -972,6 +972,11 @@ Der Platz im Kalender ist der Punkt: An dem Tag war etwas geplant, und dass
 genau das ausfällt, ist die Nachricht. Am Listenende wäre an seiner Stelle nur
 eine Lücke.
 
+In der Leitungssicht ist es umgekehrt: Dort stehen abgesagte Termine im Reiter
+**„Alle"** am Ende der Liste. Wer plant, arbeitet die kommenden Termine der
+Reihe nach ab; ein abgesagter dazwischen unterbricht diese Reihe, ohne dass es
+an ihm etwas zu tun gäbe.
+
 ### Einen Termin löschen
 
 **Löschen** ist endgültig. Gelöscht werden der Termin selbst, alle Anmeldungen,

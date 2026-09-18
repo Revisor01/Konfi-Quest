@@ -11,10 +11,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Plattform-iOS%20%C2%B7%20Android%20%C2%B7%20Web-blue" alt="Plattform">
-  <img src="https://img.shields.io/badge/Version-2.1.1-green" alt="Version">
+  <img src="https://img.shields.io/github/v/release/Revisor01/Konfi-Quest?label=Version&color=green&sort=semver" alt="Version">
   <img src="https://img.shields.io/badge/Ionic-9-3880ff?logo=ionic" alt="Ionic">
   <img src="https://img.shields.io/badge/React-19-61dafb?logo=react" alt="React">
-  <img src="https://img.shields.io/badge/Tests-4095-blue" alt="Tests">
   <img src="https://img.shields.io/github/license/Revisor01/Konfi-Quest" alt="Lizenz">
 </p>
 
@@ -91,6 +90,13 @@ Konfi Quest lässt sich für die eigene Gemeinde nutzen. Schreib einfach an
 Weitere Ansichten für alle drei Rollen liegen in
 [docs/screenshots/](docs/screenshots/).
 
+## Versionen
+
+Was sich wann geändert hat, steht in [CHANGELOG.md](CHANGELOG.md) — nach
+[Keep a Changelog](https://keepachangelog.com/de/1.1.0/), aus Sicht der
+Nutzer:innen geschrieben. Die [Releases](https://github.com/Revisor01/Konfi-Quest/releases)
+fassen jede Version zusammen.
+
 ## Selbst betreiben
 
 ```bash
@@ -111,16 +117,6 @@ ohne sie läuft alles andere weiter.
 
 Die Mitarbeit am Projekt beschreibt [CLAUDE.md](CLAUDE.md) — vor allem die
 Regel, dass ausgelieferte App-Versionen niemals brechen dürfen.
-
-## Versionen
-
-Die vollständige Liste steht in [CHANGELOG.md](CHANGELOG.md).
-
-| Version | Datum | Schwerpunkt |
-|---------|-------|-------------|
-| **2.1.1** | 2026-09-11 | Fortschritt beim Senden und Laden von Dateien, einzeln einstellbare Benachrichtigungen, Rückblick fürs Team |
-| **2.1.0** | 2026-08-29 | Konfispruch im Wortlaut, Ausstehendes ohne Netz sichtbar, Zustellung nach langer Pause |
-| **2.0.0** | 2026-08-27 | Challenges, kürzere Ladezeiten, iOS 16.4 als Mindestversion |
 
 ## Aufbau
 
