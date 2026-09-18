@@ -7,6 +7,18 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.3.0
+
+### Geändert
+- Auf **Tablets und aufgeklappten Foldables** lässt sich die App jetzt drehen
+  und im Querformat benutzen. Auf Telefonen bleibt es beim Hochformat.
+
+### Sonstiges
+- Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
+  Platz auf dem Gerät und entspricht den Anforderungen von Google Play.
+- Ein nicht mehr benutztes Kamera-Modul ist aus der App geflogen; die
+  Fotoauswahl lief ohnehin längst über die Dateiauswahl des Systems.
+
 ## [2.2.0] - 2026-09-18
 
 iOS-Build 206 · Android versionCode 113

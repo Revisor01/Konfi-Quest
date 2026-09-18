@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ausrichtung der App, nach Bildschirmbreite getrennt (19.09.2026).
+
+  TELEFONE: Hochformat, wie bisher (Simons Ansage: "Das mit quer auf gross
+  machen wir nicht. Will ich nicht auf phones."). Die App ist fuer eine Hand
+  gebaut; quer gedreht waere sie auf einem Telefon unbrauchbar.
+
+  GROSSE DISPLAYS (values-sw600dp, ab 600dp kleinste Breite -- Tablets und
+  aufgeklappte Foldables): frei drehbar. Ab Android 16 ignoriert das System
+  die Sperre auf solchen Geraeten ohnehin, die Play Console weist darauf hin.
+  Sie dort stehen zu lassen, aendert nichts am Verhalten und erzeugt nur die
+  Meldung.
+-->
+<resources>
+    <string name="app_orientation" translatable="false">portrait</string>
+</resources>
