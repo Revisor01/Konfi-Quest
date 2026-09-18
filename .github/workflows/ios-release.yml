@@ -77,6 +77,23 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Gegen das richtige Backend bauen
+        # SIMONS ANSAGE (18.09.2026): "wir duerfen nicht mehr gegen das test
+        # backend arbeiten, es muss das richtige backend sein". Bis hierher
+        # haette ein versehentlich gefuelltes Eingabefeld eine Fassung in den
+        # Store geschickt, die auf test-api zeigt -- und das faellt erst auf,
+        # wenn niemand mehr seine Daten sieht. Die Eingabe bleibt fuer
+        # TestFlight-Sonderfaelle erhalten, kostet aber jetzt eine bewusste
+        # Entscheidung statt eines Versehens.
+        run: |
+          if [ -n "${{ inputs.api_url }}" ]; then
+            echo "VITE_API_URL ist gesetzt: ${{ inputs.api_url }}"
+            echo "Ein Store-Build muss gegen die Produktion laufen (Feld LEER lassen)."
+            echo "Nur fuer bewusste Testflights: diesen Schritt im Workflow anpassen."
+            exit 1
+          fi
+          echo "API-Basis leer -> Produktion (https://konfi-quest.de/api). Richtig so."
+
       - name: Web-Build + Capacitor-Sync
         working-directory: frontend
         # VITE_API_URL lenkt API UND Socket um (services/api.ts,

@@ -131,3 +131,66 @@ describe('entscheideNeuerungen', () => {
     });
   });
 });
+
+// Die tatsaechliche Ausgangslage vor dem 2.2-Release (18.09.2026)
+//
+// SIMONS FRAGE: "pruef noch einmal ob die funktion fuer den neue version
+// hinweis funktioniert fuer android und ios".
+//
+// Die beiden Plattformen stehen NICHT auf demselben Stand: Auf iOS ist 2.1.1
+// erschienen, auf Android nie -- dort laeuft noch 2.0. Beide Wege muessen den
+// Hinweis zeigen, und keiner darf ihn doppelt zeigen.
+//
+// Die installierte Version kommt aus App.getInfo(): auf iOS
+// CFBundleShortVersionString, auf Android versionName. Beide werden aus
+// frontend/version.json gespeist (apply-version.sh bzw. build.gradle) und
+// standen am 18.09.2026 nachgemessen auf '2.2.0'.
+describe('Aenderungsanzeige beim 2.2-Release, beide Plattformen', () => {
+  it('iOS: Sprung von 2.1.1 auf 2.2.0 zeigt den Hinweis', () => {
+    const e = entscheideNeuerungen('2.2.0', '2.1', false);
+    expect(e.art).toBe('zeigen');
+    expect(e.merkeVersion).toBe('2.2');
+  });
+
+  it('Android: Sprung von 2.0 auf 2.2.0 zeigt ihn genauso', () => {
+    // Zwei Minor-Schritte auf einmal -- der Vergleich zaehlt nicht die
+    // Schritte, sondern fragt nur "neuer als gesehen?".
+    const e = entscheideNeuerungen('2.2.0', '2.0', false);
+    expect(e.art).toBe('zeigen');
+    expect(e.merkeVersion).toBe('2.2');
+  });
+
+  it('Bestandsgeraet ohne Merker sieht ihn ebenfalls', () => {
+    // Wer von einer Fassung vor dem Merker kommt, ist genau die Zielgruppe.
+    const e = entscheideNeuerungen('2.2.0', null, false);
+    expect(e.art).toBe('zeigen');
+    expect(e.merkeVersion).toBe('2.2');
+  });
+
+  it('nach dem Wegtippen kommt er nicht wieder', () => {
+    expect(entscheideNeuerungen('2.2.0', '2.2', false).art).toBe('still');
+  });
+
+  it('TestFlight-Builds derselben Version zeigen ihn nur einmal', () => {
+    // 203 -> 204 ist dieselbe Minor-Version. Wer den Hinweis bei jedem Build
+    // wegwischt, wischt ihn auch weg, wenn wirklich etwas drinsteht.
+    expect(entscheideNeuerungen('2.2.0', '2.2', false).art).toBe('still');
+  });
+
+  it('Neuinstallation bekommt ihn nicht, merkt sich aber den Stand', () => {
+    const e = entscheideNeuerungen('2.2.0', null, true);
+    expect(e.art).toBe('still');
+    expect(e.merkeVersion).toBe('2.2');
+  });
+
+  it('ohne lesbare Version passiert gar nichts', () => {
+    // App.getInfo() kann fehlschlagen. Dann lieber keine Anzeige als eine
+    // auf Basis von Datenmuell -- und vor allem nichts vermerken, sonst
+    // faellt der Hinweis beim naechsten Start endgueltig aus.
+    for (const kaputt of [null, undefined, '', 'unbekannt']) {
+      const e = entscheideNeuerungen(kaputt, '2.1', false);
+      expect(e.art).toBe('still');
+      expect(e.merkeVersion).toBe(null);
+    }
+  });
+});
