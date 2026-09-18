@@ -14,9 +14,23 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- Hochformat, und zwar ueberall (Simon, 19.09.2026: "Will ich nicht
+             auf phones"). Die App ist fuer eine Hand gebaut.
+
+             WARUM NICHT NACH GERAETEGROESSE GETRENNT: Der Versuch, hier eine
+             Ressource aus values/ und values-sw600dp/ zu lesen, scheitert an
+             Android selbst. Lint sagt: "Resources referenced from the manifest
+             cannot vary by configuration [...] This value will not be used."
+             Das Manifest wird beim Installieren aufgeloest, nicht zur
+             Laufzeit; die Tablet-Fassung waere nie gezogen worden, und wir
+             haetten etwas ausgeliefert, das nur so aussieht, als taete es was.
+
+             Ab Android 16 ignorieren grosse Displays die Sperre ohnehin,
+             genau darauf weist die Play Console hin. Auf Telefonen bleibt sie
+             wirksam, und das ist der Zweck. -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:screenOrientation="@string/app_orientation"
+            android:screenOrientation="portrait"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"

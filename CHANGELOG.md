@@ -9,10 +9,6 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
-### Geändert
-- Auf **Tablets und aufgeklappten Foldables** lässt sich die App jetzt drehen
-  und im Querformat benutzen. Auf Telefonen bleibt es beim Hochformat.
-
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
   Platz auf dem Gerät und entspricht den Anforderungen von Google Play.

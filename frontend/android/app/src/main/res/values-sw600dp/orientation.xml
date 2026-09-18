@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Grosse Displays (Tablets, aufgeklappte Foldables): frei drehbar.
-     Begruendung siehe values/orientation.xml. -->
-<resources>
-    <string name="app_orientation" translatable="false">unspecified</string>
-</resources>
