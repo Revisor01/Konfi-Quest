@@ -46,8 +46,15 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // minifyEnabled seit 19.09.2026 an: Die Play Console meldete
+            // "DEX-Codeoptimierung unter dem Grenzwert" (Verschleierung 2 %,
+            // Frist Februar 2027). Die Regeln, die Capacitor und Firebase vor
+            // R8 schuetzen, stehen in proguard-rules.pro -- ohne sie findet
+            // die Bruecke ihre Plugins nicht mehr, und zwar erst auf dem
+            // Geraet, nicht beim Bauen.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (project.hasProperty('KONFI_KEYSTORE_PATH')) {
                 signingConfig signingConfigs.release
             }

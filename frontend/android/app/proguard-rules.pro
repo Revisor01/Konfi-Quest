@@ -19,3 +19,75 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ---------------------------------------------------------------------------
+# Regeln fuer minifyEnabled true (19.09.2026)
+#
+# ANLASS: Die Play Console meldete "DEX-Codeoptimierung unter dem Grenzwert",
+# Verschleierung 2 Prozent, Frist Februar 2027. Ursache war minifyEnabled
+# false -- es wurde schlicht nichts optimiert.
+#
+# WARUM DIESE REGELN NOETIG SIND: Capacitor findet seine Plugins ueber
+# Reflection. Der Bruecken-Code sucht Klassen und Methoden zur Laufzeit
+# anhand ihrer NAMEN; benennt R8 sie um, findet er sie nicht mehr. Der
+# Fehler zeigt sich nicht beim Bauen, sondern erst auf dem Geraet -- und
+# dort als "Plugin tut nichts", nicht als Absturz mit Hinweis.
+#
+# Nach jeder Aenderung an den Plugins gehoert ein Geraetetest dazu: Push,
+# Kamera, QR-Scanner, Dateien oeffnen, Face ID.
+# ---------------------------------------------------------------------------
+
+# Capacitor-Bruecke und alle Plugins. @CapacitorPlugin-Annotation und die
+# ueber JS aufgerufenen Methoden muessen ihre Namen behalten.
+-keep public class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin public class * {
+    @com.getcapacitor.PluginMethod public <methods>;
+}
+-keep public class * extends com.getcapacitor.Plugin { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod <methods>;
+}
+
+# Plugins dieser App (Stand 19.09.2026): app, camera, device, file-opener,
+# file-viewer, filesystem, haptics, keyboard, network, preferences,
+# push-notifications, share, status-bar, native-biometric.
+-keep class com.capacitorjs.plugins.** { *; }
+-keep class io.capawesome.** { *; }
+-keep class ee.forgr.** { *; }
+-keep class com.capacitorcommunity.** { *; }
+
+# Firebase Cloud Messaging -- ohne das kommen keine Push-Nachrichten mehr an.
+# Genau dieser Ausfall hat im September 2026 schon einmal Wochen gekostet.
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# Cordova-Plugins laufen ueber dieselbe Reflection-Bruecke.
+-keep class org.apache.cordova.** { *; }
+
+# WebView-Bruecke: Methoden mit @JavascriptInterface werden aus dem Web
+# heraus per Namen gerufen.
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Klassen, die aus JSON gelesen werden, brauchen ihre Feldnamen.
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# AndroidX und Material -- Views werden aus XML ueber ihren Namen erzeugt.
+-keep public class * extends android.view.View {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+# Zeilennummern in Absturzberichten erhalten -- ohne das sind die Berichte
+# aus der Play Console nicht lesbar.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Annotationen, die zur Laufzeit gelesen werden (Capacitor tut genau das).
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
