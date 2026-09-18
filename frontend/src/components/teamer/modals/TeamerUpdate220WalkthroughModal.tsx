@@ -31,7 +31,7 @@ export const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Abgemeldet und Notizen',
-    text: 'Die Leitung kann jemanden abmelden, etwa nach dem Anruf der Eltern. In eurer Teilnehmerliste steht dann "Abgemeldet" statt abwesend — der Unterschied zwischen krank gemeldet und einfach nicht da. Zusätzlich kann die Leitung Notizen zu einzelnen hinzufügen.',
+    text: 'Die Leitung kann jemanden abmelden, etwa nach dem Anruf der Eltern. In eurer Teilnehmerliste steht dann "Abgemeldet" mit dem Grund. Auch Notizen wie "geht um 14 Uhr" seht ihr dort — wer vor Ort ist, weiß Bescheid.',
   },
   {
     icon: ICON_TERMIN_GEFUELLT,

@@ -81,6 +81,7 @@ import { Event, Participant } from '../../../types/event';
 // (utils/teilnahmeStatus.ts). Die Teamer-Liste rechnet das nicht noch einmal
 // nach; sonst hiesse dieselbe Abmeldung hier anders als dort.
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
+import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 // Kein eigener ActivityRequest mehr: Die Seite reicht die Antraege an
@@ -1431,6 +1432,46 @@ const TeamerEventsPage: React.FC = () => {
                             <span className="app-list-item__meta-item">{p.jahrgang_name}</span>
                           )}
                         </div>
+                        {/* GRUND UND NOTIZ AUCH FUERS TEAM (Simon, 18.09.2026,
+                            woertlich: "Die Teamer sollen Abmeldung Grund und
+                            Notizen sehen. Wenn ich schreibe geht 14 Uhr statt
+                            15 Uhr muessen das alle sehen.")
+
+                            Bis hierher standen hier nur Name, Status und
+                            Jahrgang. Eine Notiz erreichte damit ausgerechnet
+                            die Leute NICHT, die am Termin vor Ort sind.
+
+                            Dieselben Hilfsfunktionen und derselbe Aufbau wie
+                            in der Leitungsansicht (admin/views/
+                            EventDetailView) -- eine Regel, ein Ort. Nur
+                            LESEN: Verbucht wird weiter von der Leitung
+                            (requireAdmin), deshalb gibt es hier keine
+                            Knoepfe. */}
+                        {darstellung.istAbgemeldet && p.excuse_reason && (
+                          <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            <strong>Abgemeldet: </strong>{p.excuse_reason}
+                          </div>
+                        )}
+                        {urheberZeile(p) && (
+                          <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            {urheberZeile(p)}
+                          </div>
+                        )}
+                        {checkinZeile(p) && (
+                          <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            {checkinZeile(p)}
+                          </div>
+                        )}
+                        {p.attendance_note && (
+                          <div style={{ color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            <strong>Notiz: </strong>{p.attendance_note}
+                          </div>
+                        )}
+                        {notizUrheberZeile(p) && (
+                          <div style={{ color: 'var(--app-text-tertiary)', fontSize: 'var(--app-text-hinweis)', marginTop: 'var(--app-abstand-winzig)' }}>
+                            {notizUrheberZeile(p)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

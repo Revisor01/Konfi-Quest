@@ -21,7 +21,9 @@ Versionsüberschrift.
   sofort steht.
 - Teamer:innen sehen am Termin, **wer kommt**: die Teilnehmenden mit Jahrgang
   und Stand der Teilnahme, nach Konfis und Team getrennt. Wer auf einer
-  Freizeit mitfährt, weiß damit vorher, wen er erwartet. Verbucht und geändert
+  Freizeit mitfährt, weiß damit vorher, wen er erwartet. Bei Abgemeldeten
+  steht der **Grund** dabei, dazu **Notizen** wie „geht um 14 Uhr" und wer sie
+  eingetragen hat — wer vor Ort ist, muss das wissen. Verbucht und geändert
   wird die Liste weiterhin von der Leitung.
 - Im Challenges-Tab von Team und Leitung stehen jetzt auch die **noch nicht
   erhaltenen Stempel** grau daneben, und ein Tipp auf einen Stempel zeigt

@@ -86,6 +86,10 @@ Team, jeweils mit Jahrgang und dem Stand der Teilnahme (gebucht, Warteliste,
 anwesend, abgemeldet). So weißt du vor einer Freizeit, wen du erwartest. Die
 Liste ist zum Nachsehen da — verbucht und geändert wird sie von der Leitung.
 
+Ist jemand abgemeldet, steht der **Grund** darunter. Ebenso **Notizen** wie
+„geht um 14 Uhr" und, klein darunter, wer den Eintrag gemacht hat. Wer beim
+Termin vor Ort ist, soll das wissen, ohne nachfragen zu müssen.
+
 Bei Terminen, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
 du dabei?"** mit **„Dabei"** oder **„Nicht dabei"**. Solange du nichts gewählt
 hast, stehen beide Knöpfe da; danach nur noch der Weg zurück — nach einer

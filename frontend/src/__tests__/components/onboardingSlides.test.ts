@@ -177,14 +177,18 @@ describe('Update-Walkthrough 2.1.1', () => {
     expect(text).toContain('Unter Challenges');
   });
 
-  it('Team-Folien behaupten keine Urheber-Zeile — die sieht nur die Leitung', () => {
-    // Die Teamer-Teilnehmerliste (TeamerEventsPage) zeigt Name, Status und
-    // Jahrgang. Kein urheberZeile, kein checkinZeile, kein Grund, keine
-    // Notiz. Eine Folie darüber schickt Leute auf die Suche nach etwas,
-    // das es dort nicht gibt.
+  it('Team-Folien nennen Grund und Notiz — seit 18.09.2026 sieht das Team sie', () => {
+    // Bis zum 18.09.2026 stand hier das Gegenteil: Die Teamer-Liste zeigte
+    // nur Name, Status und Jahrgang, und eine Folie darüber hätte Leute auf
+    // die Suche nach etwas geschickt, das es dort nicht gibt.
+    //
+    // Simon hat das zur Funktionslücke erklärt statt zum Textproblem:
+    // "Die Teamer sollen Abmeldung Grund und Notizen sehen. Wenn ich
+    // schreibe geht 14 Uhr statt 15 Uhr müssen das alle sehen." Seither
+    // zeigt TeamerEventsPage beides, und die Folie darf es sagen.
     const text = text220(teamer220);
-    expect(text).not.toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
-    expect(text).not.toMatch(/steht klein, wer/);
+    expect(text).toContain('Grund');
+    expect(text).toContain('Notizen');
   });
 
   it('Team-Folien versprechen keine Konfi-Stempel — dorthin führt keine Route', () => {
@@ -383,14 +387,18 @@ describe('Änderungsanzeige 2.2.0', () => {
     expect(text).toContain('Unter Challenges');
   });
 
-  it('Team-Folien behaupten keine Urheber-Zeile — die sieht nur die Leitung', () => {
-    // Die Teamer-Teilnehmerliste (TeamerEventsPage) zeigt Name, Status und
-    // Jahrgang. Kein urheberZeile, kein checkinZeile, kein Grund, keine
-    // Notiz. Eine Folie darüber schickt Leute auf die Suche nach etwas,
-    // das es dort nicht gibt.
+  it('Team-Folien nennen Grund und Notiz — seit 18.09.2026 sieht das Team sie', () => {
+    // Bis zum 18.09.2026 stand hier das Gegenteil: Die Teamer-Liste zeigte
+    // nur Name, Status und Jahrgang, und eine Folie darüber hätte Leute auf
+    // die Suche nach etwas geschickt, das es dort nicht gibt.
+    //
+    // Simon hat das zur Funktionslücke erklärt statt zum Textproblem:
+    // "Die Teamer sollen Abmeldung Grund und Notizen sehen. Wenn ich
+    // schreibe geht 14 Uhr statt 15 Uhr müssen das alle sehen." Seither
+    // zeigt TeamerEventsPage beides, und die Folie darf es sagen.
     const text = text220(teamer220);
-    expect(text).not.toMatch(/wer die Anwesenheit zuletzt eingetragen hat/);
-    expect(text).not.toMatch(/steht klein, wer/);
+    expect(text).toContain('Grund');
+    expect(text).toContain('Notizen');
   });
 
   it('Team-Folien versprechen keine Konfi-Stempel — dorthin führt keine Route', () => {
