@@ -157,9 +157,14 @@ const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ row
             26 ms Server. Die Gesamtzeit steht daneben — sie sagt, wie schnell
             es sich fuer die Konfis anfuehlt. */}
         <div style={{ display: 'flex', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-winzig)', fontSize: 'var(--app-text-meta)', color: METRIK_AMPEL.blass }}>
-          {r.netzAvgMs !== undefined && r.netzAvgMs > 0 && (
+          {/* Immer anzeigen, auch bei 0 ms: Sonst stand die Zeile nur bei
+              Uploads da und es sah aus, als fehle bei den uebrigen Routen
+              etwas (Simon, 21.09.2026). 0 ms ist eine Aussage — die Antwort
+              ging in einem Rutsch raus. */}
+          {r.netzAvgMs !== undefined && (
             <span title="Warten auf die Verbindung des Geraets — nicht vom Server beeinflussbar">
-              + {r.netzAvgMs}ms Leitung (gesamt Ø {r.avgMs}ms)
+              {r.netzAvgMs > 0 ? `+ ${r.netzAvgMs}ms Leitung` : 'Leitung ohne Verzögerung'}
+              {' '}(gesamt Ø {r.avgMs}ms)
             </span>
           )}
           {r.cacheQuote !== undefined && r.cacheQuote > 0 && (
