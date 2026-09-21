@@ -45,16 +45,27 @@ function trimBuckets(nowSec) {
   }
 }
 
-function record(method, normPath, statusCode, durationMs, rawUrl) {
+function record(method, normPath, statusCode, durationMs, rawUrl, serverMs) {
   const key = `${method} ${normPath}`;
   let s = stats.get(key);
   if (!s) {
-    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [], notModified: 0 };
+    s = { count: 0, errors: 0, totalMs: 0, maxMs: 0, samples: [], notModified: 0,
+          serverTotalMs: 0, serverMaxMs: 0, serverSamples: [] };
     stats.set(key, s);
   }
+  // Aeltere Eintraege aus einem laufenden Prozess kennen die Server-Felder
+  // noch nicht — nachruesten statt NaN zu summieren.
+  if (s.serverSamples === undefined) {
+    s.serverTotalMs = 0; s.serverMaxMs = 0; s.serverSamples = [];
+  }
+  const srvMs = typeof serverMs === 'number' ? serverMs : durationMs;
   s.count += 1;
   s.totalMs += durationMs;
   if (durationMs > s.maxMs) s.maxMs = durationMs;
+  s.serverTotalMs += srvMs;
+  if (srvMs > s.serverMaxMs) s.serverMaxMs = srvMs;
+  s.serverSamples.push(srvMs);
+  if (s.serverSamples.length > MAX_SAMPLES) s.serverSamples.shift();
   // 304 = der Client hatte die Daten schon, es ging nur die Rueckfrage ueber
   // die Leitung. Ein hoher Anteil ist GUT: Er bedeutet wenig uebertragene
   // Bytes. Gemessen am 31.08.2026 lagen 79 % der Startanfragen bei 304.
@@ -128,6 +139,31 @@ function apmMiddleware(req, res, next) {
   if (inFlight > maxInFlight) maxInFlight = inFlight;
   let done = false;
 
+  /*
+   * Serverzeit vs. Leitungszeit.
+   *
+   * Die Uhr oben laeuft ab Middleware-Eintritt — also BEVOR der Body
+   * empfangen ist. Bei einem Foto-Upload ueber Mobilfunk steckt darin
+   * minutenlanges Warten auf das Geraet. Gemessen am 21.09.2026 stand in
+   * worst_p95_ms 56 315 ms fuer POST /api/konfi/upload-photo, waehrend
+   * dieselbe Route mit kleinem Bild in 133-208 ms antwortete.
+   *
+   * Nachgestellt mit echter Leitungsverzoegerung (400 kB in 8 Haeppchen,
+   * je 150 ms Pause): Gesamt 1269 ms, davon 1221 ms Warten auf die Leitung
+   * und 26 ms Serverarbeit. Die alte Zahl ist also zu 96 % Netz.
+   *
+   * Ein frueherer Anlauf (31.08.2026) wurde wieder entfernt, weil er von
+   * Middleware-Eintritt bis res.end mass und damit dasselbe Warten enthielt;
+   * seine Tests liefen im Loopback, wo es kein Warten gibt, und waren
+   * deshalb gruen. Hier wird stattdessen der Moment festgehalten, in dem der
+   * Body VOLLSTAENDIG gelesen ist ('end' auf dem Request-Stream) — ab da
+   * arbeitet wirklich der Server.
+   */
+  let bodyFertig = null;
+  if (req.readable) {
+    req.once('end', () => { bodyFertig = process.hrtime.bigint(); });
+  }
+
   // res.end() laeuft, wenn der Handler die Antwort fertig geschrieben hat —
   // VOR der Auslieferung. Der Abstand zu res.on('finish') ist die Zeit auf
   // der Leitung. Ohne diese Trennung schreibt das APM Wartezeit des Geraets
@@ -137,9 +173,14 @@ function apmMiddleware(req, res, next) {
     if (done) return;
     done = true;
     inFlight -= 1;
-    const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+    const ende = process.hrtime.bigint();
+    const durationMs = Number(ende - start) / 1e6;
+    // Ab vollstaendig gelesenem Body bis zur fertigen Antwort: das ist die
+    // Zeit, auf die der Server Einfluss hat. Ohne 'end' (z. B. GET ohne Body,
+    // vom Parser schon geschluckt) ist beides gleich.
+    const serverMs = bodyFertig ? Number(ende - bodyFertig) / 1e6 : durationMs;
     const rawUrl = req.originalUrl || req.url;
-    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, rawUrl);
+    record(req.method, normalizePath(rawUrl), res.statusCode, durationMs, rawUrl, serverMs);
     if (durationMs > SLOW_MS) {
       console.warn(`[APM] LANGSAM ${Math.round(durationMs)}ms ${req.method} ${rawUrl} -> ${res.statusCode}`);
     }
@@ -155,6 +196,11 @@ function routeRows() {
   for (const [route, s] of stats.entries()) {
     const sorted = [...s.samples].sort((a, b) => a - b);
     const avgMs = s.count ? Math.round(s.totalMs / s.count) : 0;
+    // Serverzeit: ohne Warten auf die Leitung. Das ist der Wert, an dem sich
+    // eine Aenderung am Code ablesen laesst.
+    const srvSorted = [...(s.serverSamples || [])].sort((a, b) => a - b);
+    const serverAvgMs = s.count ? Math.round((s.serverTotalMs || 0) / s.count) : 0;
+    const serverP95Ms = srvSorted.length ? Math.round(percentile(srvSorted, 95)) : 0;
     routes.push({
       route,
       count: s.count,
@@ -163,6 +209,12 @@ function routeRows() {
       avgMs,
       p95Ms: Math.round(percentile(sorted, 95)),
       maxMs: Math.round(s.maxMs),
+      serverAvgMs,
+      serverP95Ms,
+      serverMaxMs: Math.round(s.serverMaxMs || 0),
+      // Wie viel der Gesamtzeit ging auf die Leitung? Hoch = das Geraet war
+      // langsam, nicht der Server.
+      netzAvgMs: Math.max(0, avgMs - serverAvgMs),
       // Cache-Quote: Anteil der Anfragen, die mit 304 beantwortet wurden.
       notModified: s.notModified || 0,
       cacheQuote: s.count ? Math.round(((s.notModified || 0) / s.count) * 100) : 0,
@@ -252,13 +304,19 @@ function mergeSnapshots(snaps) {
   const routeMap = new Map();
   const addRoutes = (rows) => {
     for (const r of rows) {
-      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, notModified: 0 };
+      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, notModified: 0,
+                                           sumServerAvg: 0, serverP95Ms: 0, serverMaxMs: 0 };
       e.count += r.count;
       e.errors += r.errors;
       e.sumAvg += r.avgMs * r.count;      // gewichteter Mittelwert ueber count
       e.p95Ms = Math.max(e.p95Ms, r.p95Ms);
       e.maxMs = Math.max(e.maxMs, r.maxMs);
       e.notModified += r.notModified || 0;
+      // Serverzeit ueber beide Replicas mitfuehren, sonst faellt sie beim
+      // Zusammenfassen weg und die Uebersicht zeigt wieder nur Gesamtzeiten.
+      e.sumServerAvg += (r.serverAvgMs || 0) * r.count;
+      e.serverP95Ms = Math.max(e.serverP95Ms, r.serverP95Ms || 0);
+      e.serverMaxMs = Math.max(e.serverMaxMs, r.serverMaxMs || 0);
       routeMap.set(r.route, e);
     }
   };
@@ -273,6 +331,10 @@ function mergeSnapshots(snaps) {
       avgMs,
       p95Ms: e.p95Ms,
       maxMs: e.maxMs,
+      serverAvgMs: e.count ? Math.round(e.sumServerAvg / e.count) : 0,
+      serverP95Ms: e.serverP95Ms,
+      serverMaxMs: e.serverMaxMs,
+      netzAvgMs: Math.max(0, avgMs - (e.count ? Math.round(e.sumServerAvg / e.count) : 0)),
       notModified: e.notModified,
       cacheQuote: e.count ? Math.round((e.notModified / e.count) * 100) : 0,
     };
@@ -328,10 +390,24 @@ function persistSummary() {
   let totalErrors = 0;
   let worstP95 = 0;
   let worstRoute = null;
+  /*
+   * Bewertet wird die SERVERZEIT, nicht die Gesamtzeit.
+   *
+   * Bis zum 21.09.2026 stand hier r.p95Ms — inklusive Warten auf die
+   * Leitung. In der Verlaufstabelle stand deshalb einen Tag lang
+   * "56 315 ms POST /api/konfi/upload-photo", waehrend dieselbe Route
+   * gemessen in 133-208 ms antwortete: Ein einzelnes grosses Foto ueber
+   * Mobilfunk hatte den Wert gesetzt, und das rollierende Fenster von 200
+   * Stichproben haelt ihn bei einer selten genutzten Route tagelang fest.
+   *
+   * Eine Kennzahl, die die Netzverbindung der Konfis misst, sagt nichts
+   * darueber, ob der Server schnell ist. Die Gesamtzeit bleibt je Route in
+   * p95Ms erhalten — fuer die Frage "wie schnell fuehlt es sich an".
+   */
   for (const r of routes) {
     totalCount += r.count;
     totalErrors += r.errors;
-    if (r.p95Ms > worstP95) { worstP95 = r.p95Ms; worstRoute = r.route; }
+    if (r.serverP95Ms > worstP95) { worstP95 = r.serverP95Ms; worstRoute = r.route; }
   }
   return {
     totalRequests: totalCount,

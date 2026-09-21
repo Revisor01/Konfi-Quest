@@ -9,6 +9,13 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
+### Behoben
+- Die Auslastungsanzeige misst jetzt die Zeit, die der Server wirklich
+  braucht. Vorher zählte sie das Warten auf langsame Mobilfunkverbindungen
+  mit — ein einzelner Foto-Upload ließ die Anzeige tagelang bei 56 Sekunden
+  stehen, obwohl dieselbe Seite in Millisekunden antwortete. Was auf der
+  Leitung lag, steht jetzt getrennt daneben.
+
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
   Platz auf dem Gerät und entspricht den Anforderungen von Google Play.

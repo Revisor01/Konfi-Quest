@@ -41,6 +41,12 @@ interface RouteRow {
   avgMs: number;
   p95Ms: number;
   maxMs: number;
+  // Serverzeit: ab vollstaendig empfangenem Body bis zur fertigen Antwort.
+  // Ohne das Warten auf die Verbindung des Geraets.
+  serverAvgMs?: number;
+  serverP95Ms?: number;
+  serverMaxMs?: number;
+  netzAvgMs?: number;
   notModified?: number;
   cacheQuote?: number;
 }
@@ -129,25 +135,33 @@ const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ row
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
           <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-emphasis)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{r.route}</span>
           {mode === 'slow'
-            ? <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: msColor(r.p95Ms), flexShrink: 0 }}>{r.p95Ms}ms</span>
+            ? <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: msColor(r.serverP95Ms ?? r.p95Ms), flexShrink: 0 }}>{r.serverP95Ms ?? r.p95Ms}ms</span>
             : <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-chat)', flexShrink: 0 }}>{r.count}×</span>}
         </div>
         {/* Erste Zeile: was der SERVER gebraucht hat — die einzige Zahl, an
             der eine Backend-Aenderung etwas dreht. */}
         <div style={{ display: 'flex', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
           <span>{r.count}× Aufrufe</span>
-          <span>Ø {r.avgMs}ms</span>
-          <span>p95 {r.p95Ms}ms</span>
-          <span>max {r.maxMs}ms</span>
+          <span>Ø {r.serverAvgMs ?? r.avgMs}ms</span>
+          <span>p95 {r.serverP95Ms ?? r.p95Ms}ms</span>
+          <span>max {r.serverMaxMs ?? r.maxMs}ms</span>
           {r.errors > 0 && <span style={{ color: 'var(--app-color-danger)', fontWeight: 'var(--app-schrift-halbfett)'}}>{r.errors} Fehler</span>}
         </div>
-        {/* Die Zeiten laufen bis zur AUSLIEFERUNG beim Client und enthalten
-            damit die Verbindung des Geraets. Eine Trennung Server/Leitung
-            gab es hier kurzzeitig — sie war falsch gemessen (von
-            Middleware-Eintritt bis res.end, also inklusive Warten auf den
-            Client) und zeigte bei 20 von 20 Routen zweimal dieselbe Zahl.
-            Lieber eine ehrliche Zahl als zwei, von denen eine luegt. */}
+        {/* Zweite Zeile: was auf der Leitung lag.
+            Ein erster Anlauf (31.08.2026) wurde entfernt, weil er von
+            Middleware-Eintritt bis res.end mass und damit dasselbe Warten
+            enthielt — bei 20 von 20 Routen stand zweimal dieselbe Zahl.
+            Seit dem 21.09.2026 wird der Moment genommen, in dem der Body
+            VOLLSTAENDIG gelesen ist; nachgestellt mit echter Verzoegerung
+            (400 kB in Haeppchen): 1269 ms gesamt, davon 1221 ms Leitung und
+            26 ms Server. Die Gesamtzeit steht daneben — sie sagt, wie schnell
+            es sich fuer die Konfis anfuehlt. */}
         <div style={{ display: 'flex', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-winzig)', fontSize: 'var(--app-text-meta)', color: METRIK_AMPEL.blass }}>
+          {r.netzAvgMs !== undefined && r.netzAvgMs > 0 && (
+            <span title="Warten auf die Verbindung des Geraets — nicht vom Server beeinflussbar">
+              + {r.netzAvgMs}ms Leitung (gesamt Ø {r.avgMs}ms)
+            </span>
+          )}
           {r.cacheQuote !== undefined && r.cacheQuote > 0 && (
             <span style={{ color: r.cacheQuote >= 50 ? METRIK_AMPEL.gut : METRIK_AMPEL.blass }}>
               {r.cacheQuote}% aus dem Cache

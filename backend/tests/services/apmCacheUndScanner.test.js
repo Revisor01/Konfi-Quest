@@ -155,3 +155,110 @@ describe('APM: Scanner-Anfragen und 404', () => {
     expect(s.totalErrors).toBe(1);
   });
 });
+
+// Serverzeit getrennt von der Leitungszeit.
+//
+// Hintergrund: Bis zum 21.09.2026 stand im Verlauf einen Tag lang
+// "56 315 ms POST /api/konfi/upload-photo", waehrend dieselbe Route mit
+// kleinem Bild in 133-208 ms antwortete. Ein einzelnes grosses Foto ueber
+// Mobilfunk hatte den Wert gesetzt; gemessen wurde ab Middleware-Eintritt,
+// also inklusive Warten auf das Geraet.
+//
+// WICHTIG fuer diesen Test: Ein frueherer Anlauf (31.08.2026) wurde wieder
+// entfernt, weil seine Tests im Loopback liefen, wo nichts zu warten ist —
+// sie waren gruen, obwohl die Trennung in Produktion nichts brachte. Deshalb
+// wird hier mit einem rohen Socket in Haeppchen gesendet, mit echten Pausen.
+describe('APM: Serverzeit ohne Leitungszeit', () => {
+  let apm;
+  beforeEach(() => { apm = frischesApm(); });
+
+  it('rechnet das Warten auf einen langsamen Upload NICHT dem Server zu', async () => {
+    const net = require('net');
+    const app = express();
+    app.use(apm.apmMiddleware);
+    // Body vollstaendig lesen, dann antworten — wie multer es tut.
+    app.post('/api/upload', (req, res) => {
+      req.resume();
+      req.on('end', () => res.json({ ok: true }));
+    });
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    const daten = Buffer.alloc(40000, 7);
+
+    await new Promise((fertig) => {
+      const s = net.connect(port, '127.0.0.1', async () => {
+        s.write(`POST /api/upload HTTP/1.1\r\nHost: x\r\nContent-Type: application/octet-stream\r\nContent-Length: ${daten.length}\r\nConnection: close\r\n\r\n`);
+        for (let i = 0; i < 4; i++) {
+          s.write(daten.subarray(i * 10000, (i + 1) * 10000));
+          await new Promise((r) => setTimeout(r, 120));   // echtes Warten
+        }
+      });
+      s.on('data', () => {});
+      s.on('close', fertig);
+    });
+    srv.close();
+
+    const route = apm.snapshot().routesSlowest.find((r) => r.route === 'POST /api/upload');
+
+    // Die Gesamtzeit enthaelt die vier Pausen (rund 480 ms).
+    expect(route.p95Ms).toBeGreaterThan(300);
+    // Die Serverzeit NICHT — der Handler antwortet sofort, wenn der Body da ist.
+    expect(route.serverP95Ms).toBeLessThan(100);
+    // Und die Differenz wird als Leitungszeit ausgewiesen.
+    expect(route.netzAvgMs).toBeGreaterThan(200);
+  });
+
+  it('bewertet die schlechteste Route nach Serverzeit, nicht nach Gesamtzeit', async () => {
+    const net = require('net');
+    const app = express();
+    app.use(apm.apmMiddleware);
+    app.post('/api/langsame-leitung', (req, res) => {
+      req.resume();
+      req.on('end', () => res.json({ ok: true }));       // Server: schnell
+    });
+    app.get('/api/langsamer-server', (req, res) => {
+      setTimeout(() => res.json({ ok: true }), 150);     // Server: langsam
+    });
+
+    const srv = app.listen(0);
+    const port = srv.address().port;
+    const daten = Buffer.alloc(30000, 7);
+
+    await new Promise((fertig) => {
+      const s = net.connect(port, '127.0.0.1', async () => {
+        s.write(`POST /api/langsame-leitung HTTP/1.1\r\nHost: x\r\nContent-Type: application/octet-stream\r\nContent-Length: ${daten.length}\r\nConnection: close\r\n\r\n`);
+        for (let i = 0; i < 3; i++) {
+          s.write(daten.subarray(i * 10000, (i + 1) * 10000));
+          await new Promise((r) => setTimeout(r, 150));
+        }
+      });
+      s.on('data', () => {});
+      s.on('close', fertig);
+    });
+    await fetch(`http://127.0.0.1:${port}/api/langsamer-server`).then((r) => r.text());
+    srv.close();
+
+    // Der persistierte Wert (geht in apm_snapshots und in die Uebersicht)
+    // muss auf die Route mit der langsamen SERVERARBEIT zeigen.
+    //
+    // Die Schwellen sind bewusst eng: Ein erster Anlauf pruefte nur
+    // "worstP95Ms < 450" und blieb auch mit der ALTEN Berechnung gruen — der
+    // Upload kam dort auf 317 ms Gesamtzeit und lag damit unter der Grenze.
+    // Gegenprobe (Fehler wieder einbauen, Test muss fallen) deckte das auf.
+    // Deshalb wird jetzt die Route selbst geprueft UND der Wert gegen die
+    // Serverzeit dieser Route, nicht gegen eine grosszuegige Obergrenze.
+    const p = apm.persistSummary();
+    const langsam = apm.snapshot().routesSlowest.find((r) => r.route === 'GET /api/langsamer-server');
+    const upload = apm.snapshot().routesSlowest.find((r) => r.route === 'POST /api/langsame-leitung');
+
+    // Der Upload hat die hoehere GESAMTzeit ...
+    expect(upload.p95Ms).toBeGreaterThan(langsam.p95Ms);
+    // ... aber die deutlich niedrigere SERVERzeit.
+    expect(upload.serverP95Ms).toBeLessThan(langsam.serverP95Ms);
+
+    // Bewertet werden muss deshalb die Route mit der langsamen Serverarbeit.
+    expect(p.worstRoute).toBe('GET /api/langsamer-server');
+    expect(p.worstP95Ms).toBe(langsam.serverP95Ms);
+  });
+});
