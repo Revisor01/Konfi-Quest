@@ -14,7 +14,8 @@
   <img src="https://img.shields.io/github/v/release/Revisor01/Konfi-Quest?label=Version&color=green&sort=semver" alt="Version">
   <img src="https://img.shields.io/badge/Ionic-9-3880ff?logo=ionic" alt="Ionic">
   <img src="https://img.shields.io/badge/React-19-61dafb?logo=react" alt="React">
-  <img src="https://img.shields.io/github/license/Revisor01/Konfi-Quest" alt="Lizenz">
+  <img src="https://img.shields.io/badge/Quelle-offen%20einsehbar-2ea44f" alt="Quelle offen einsehbar">
+  <img src="https://img.shields.io/badge/Nutzung-nur%20mit%20Erlaubnis-orange" alt="Nutzung nur mit Erlaubnis">
 </p>
 
 ## Worum es geht
@@ -157,22 +158,22 @@ Fehlermeldungen und Vorschläge sind willkommen — gern als
 
 ## Lizenz
 
-Konfi Quest steht unter der
-[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0),
-ergänzt um eine Zusatzbedingung zur Veröffentlichung von Änderungen. Der
-vollständige Text steht in [LICENSE](LICENSE).
+**Quelloffen zur Einsicht — Nutzung nur mit schriftlicher Erlaubnis.**
+Der vollständige Text steht in [LICENSE](LICENSE).
 
-- **Erlaubt:** Kirchengemeinden, Kirchenkreise und andere gemeinnützige
-  Einrichtungen dürfen Konfi Quest nutzen, selbst hosten, anpassen und
-  weitergeben. Ebenso private Nutzung, Forschung und Lehre.
-- **Nicht erlaubt:** jede kommerzielle Nutzung, insbesondere Weiterverkauf oder
-  der entgeltliche Betrieb als Dienstleistung.
-- **Pflicht bei Änderungen:** Wer den Code verändert und die veränderte Fassung
-  Dritten bereitstellt — auch als gehosteten Dienst —, muss den Quelltext der
-  Änderungen öffentlich und unentgeltlich zugänglich machen, unter denselben
-  Bedingungen.
+Der Quelltext ist öffentlich einsehbar, und das bleibt so. Eine App, die
+mit den Daten von Jugendlichen umgeht, muss nachprüfbar sein: Jede und
+jeder soll nachlesen können, was gespeichert wird und wie es gesichert ist.
 
-Für kommerzielle Nutzung oder abweichende Vereinbarungen: einfach anfragen.
+- **Ohne Weiteres erlaubt:** lesen, herunterladen, studieren, zu Lern- und
+  Prüfzwecken auf eigenen Geräten ausführen, Sicherheitslücken melden,
+  darüber berichten.
+- **Braucht eine Vereinbarung:** der Betrieb für echte Nutzer:innen, die
+  Weitergabe an Dritte, die Verwendung von Teilen des Codes in anderer
+  Software — unabhängig davon, ob damit Geld verdient wird.
+
+Sie möchten Konfi Quest in Ihrer Gemeinde einsetzen? Schreiben Sie mir,
+das lässt sich regeln.
 
 ## Kontakt
 

@@ -9,6 +9,10 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
+### Geändert
+- Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
+  einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
+
 ### Behoben
 - Die Auslastungsanzeige misst jetzt die Zeit, die der Server wirklich
   braucht. Vorher zählte sie das Warten auf langsame Mobilfunkverbindungen
