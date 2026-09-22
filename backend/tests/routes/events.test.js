@@ -4154,4 +4154,97 @@ describe('Events Routes', () => {
       expect(res.body.participants).toEqual([]);
     });
   });
+
+  // ----------------------------------------------------------------
+  // Der Token in den SERIENTERMINEN (22.09.2026)
+  // ----------------------------------------------------------------
+  //
+  // Der Filter in GET /events/:id nahm den Token nur vom Haupttermin, und
+  // nur fuer Konfis. Die Serienabfrage holte daneben `SELECT e.*` — damit lag
+  // der qr_token JEDES weiteren Serientermins in derselben Antwort, fuer
+  // alle Rollen. Genau der Weg, den der Filter in der Liste (Audit
+  // 22.08.2026) schliessen sollte: Ein Konfi mit Zugriff auf einen
+  // Serientermin konnte sich per POST /events/qr-checkin fuer die anderen
+  // Termine derselben Serie von zu Hause als anwesend eintragen.
+  //
+  // Die Serienliste im Frontend zeigt Name, Datum und die beiden Zahlen —
+  // der Token gehoert dort in KEINER Rolle hin, auch nicht fuer die Leitung
+  // (die holt ihn ueber das Detail des jeweiligen Termins).
+  describe('GET /events/:id — Serientermine enthalten keinen qr_token', () => {
+    // Zwei Termine derselben Serie; der erste ist ihr eigener Anker
+    // (series_id ist ein Fremdschluessel auf events).
+    const serieMitToken = async () => {
+      const anker = EVENTS.gottesdienstEvent.id;
+      const zweiter = EVENTS.pflichtEvent.id;
+      await db.query(
+        'UPDATE events SET is_series = TRUE, series_id = $1 WHERE id IN ($1, $2)',
+        [anker, zweiter]
+      );
+      await db.query('UPDATE events SET qr_token = $1 WHERE id = $2',
+        ['serien-token-geheim', zweiter]);
+      return { anker, zweiter };
+    };
+
+    it('Konfi sieht in series_events keinen qr_token', async () => {
+      const { anker } = await serieMitToken();
+
+      const res = await request(app)
+        .get(`/api/events/${anker}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.series_events.length).toBeGreaterThan(0);
+      for (const termin of res.body.series_events) {
+        expect(termin.qr_token).toBeUndefined();
+      }
+    });
+
+    it('Auch die Leitung sieht in series_events keinen qr_token', async () => {
+      const { anker } = await serieMitToken();
+
+      const res = await request(app)
+        .get(`/api/events/${anker}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.series_events.length).toBeGreaterThan(0);
+      for (const termin of res.body.series_events) {
+        expect(termin.qr_token).toBeUndefined();
+      }
+    });
+
+    // Gegenprobe zum Filter: Der Token des HAUPTtermins bleibt fuer die
+    // Leitung erhalten — sie zeigt damit den QR-Code an. Faellt dieser Test,
+    // wurde zu viel entfernt.
+    it('Der Token des Haupttermins bleibt fuer die Leitung erhalten', async () => {
+      const { anker } = await serieMitToken();
+      await db.query('UPDATE events SET qr_token = $1 WHERE id = $2',
+        ['haupttermin-token', anker]);
+
+      const res = await request(app)
+        .get(`/api/events/${anker}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.qr_token).toBe('haupttermin-token');
+    });
+
+    // Die Serienliste muss weiter anzeigbar bleiben: Name, Datum und die
+    // beiden Zahlen sind das, was die Ansicht liest.
+    it('Die Serienliste behaelt die Felder, die die Ansicht braucht', async () => {
+      const { anker, zweiter } = await serieMitToken();
+
+      const res = await request(app)
+        .get(`/api/events/${anker}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const termin = res.body.series_events.find(e => e.id === zweiter);
+      expect(termin).toBeTruthy();
+      expect(termin.name).toBe(EVENTS.pflichtEvent.name);
+      expect(termin.event_date).toBeTruthy();
+      expect(Number(termin.registered_count)).toBe(0);
+      expect(termin.max_participants).not.toBeUndefined();
+    });
+  });
 });

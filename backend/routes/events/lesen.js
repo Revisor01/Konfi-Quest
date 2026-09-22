@@ -724,8 +724,23 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         //
         // Das ist derselbe Fehler, den Migration 128 fuer fuenf Endpunkte
         // behoben hat; diese Stelle wurde damals uebersehen.
+        // Nur die Felder, die die Serienliste anzeigt (22.09.2026).
+        //
+        // Vorher stand hier `SELECT e.*`. Damit lag der qr_token JEDES
+        // weiteren Serientermins in der Antwort — fuer alle Rollen. Der
+        // Filter weiter unten nimmt den Token nur vom Haupttermin, und nur
+        // fuer Konfis; die Serientermine gingen daran vorbei. Das ist
+        // derselbe Weg, den die Liste seit dem Audit vom 22.08.2026
+        // schliesst: Mit dem Token trägt sich ein Konfi per
+        // POST /events/qr-checkin von zu Hause als anwesend ein und bekommt
+        // Punkte gutgeschrieben — hier fuer die ganze Serie auf einmal.
+        //
+        // Angezeigt werden in der Serienliste Name, Datum und die beiden
+        // Zahlen (EventDetailSections.tsx, SeriesEventsSection). Mehr braucht
+        // die Ansicht nicht; wer hier ein Feld ergaenzt, ergaenzt es bewusst.
         const seriesQuery = `
-          SELECT e.*, COALESCE(ebs.konfi_confirmed, 0) as registered_count
+          SELECT e.id, e.name, e.event_date, e.max_participants,
+                 COALESCE(ebs.konfi_confirmed, 0) as registered_count
           FROM events e
           LEFT JOIN event_booking_stats ebs ON ebs.event_id = e.id
           WHERE e.series_id = $1 AND e.organization_id = $2 AND e.id != $3

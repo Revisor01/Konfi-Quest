@@ -1449,11 +1449,26 @@ paths:
         Zeile "Eingecheckt per QR-Code, 15.09.". NULL heisst weiterhin
         UNBEKANNT — Buchungen von vor der Migration, kein Backfill. Kein
         vorhandenes Feld aendert Form oder Typ.
+        BEHOBEN 22.09.2026 (Sicherheit): series_events[] trug den qr_token
+        JEDES weiteren Serientermins — fuer ALLE Rollen. Der Filter oben nimmt
+        den Token nur vom Haupttermin und nur fuer Konfis; die Serientermine
+        gingen daran vorbei (SELECT e.*). Das ist derselbe Weg, den die Liste
+        seit dem Audit vom 22.08.2026 schliesst: Mit dem Token traegt sich ein
+        Konfi per POST /api/events/qr-checkin von zu Hause als anwesend ein —
+        hier fuer die ganze Serie auf einmal.
+        series_events[] liefert jetzt nur noch die Felder, die die Serienliste
+        anzeigt: id, name, event_date, max_participants, registered_count.
+        FORMAENDERUNG, bewusst: Weggefallen sind ausschliesslich Felder, die
+        keine Ansicht liest (geprueft gegen frontend/src). Konfi- und
+        Teamer-Ansicht werten series_events[] gar nicht aus, nur die
+        Leitungsansicht (EventDetailSections.tsx, SeriesEventsSection) — und
+        die liest genau diese fuenf. Name, Typ und Bedeutung der verbliebenen
+        Felder sind unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; Konfi-Response ohne qr_token/participants/unregistrations"
+        objekt-pruefung: "Event org-gescopt; Konfi-Response ohne qr_token/participants/unregistrations; series_events[] ohne qr_token fuer alle Rollen"
         hinweis: "Teamer: KEIN Jahrgang-Check - Teilnehmer-Klarnamen und Opt-out-Gruende aller Org-Events einsehbar (siehe Analyse Punkt 2)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:

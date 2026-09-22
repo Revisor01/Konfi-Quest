@@ -719,6 +719,10 @@ geöffneten Termin über das QR-Symbol. Sind vor Ort nur Teamer:innen, reicht
 das also. Der Code wird beim ersten Anzeigen erzeugt, bleibt danach gleich und
 läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.
 
+Jeder Termin hat seinen eigenen Code, auch innerhalb einer Serie. Du holst ihn
+dir im jeweiligen Termin — die Liste „Weitere Termine dieser Serie" führt nur
+Namen, Datum und Plätze, keine Codes.
+
 ## Eine Serie anlegen
 
 Statt zwölf Konfi-Stunden einzeln anzulegen, legst du eine Serie an. Der
