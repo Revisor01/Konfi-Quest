@@ -179,6 +179,77 @@ describe('APM: Verbesserungs-Potenzial je Route', () => {
     expect(x.p50Ms).toBeLessThanOrEqual(x.p95Ms);
     expect(x.serverP50Ms).toBeLessThanOrEqual(x.serverP95Ms);
   });
+
+  /*
+   * Die Reihenfolge von routesSlowest (22.09.2026).
+   *
+   * Sie sortierte nach p95Ms — der GESAMTzeit inklusive Warten auf die
+   * Leitung — und schnitt dann auf 20 ab. Damit entschied die Mobilfunk-
+   * verbindung des Geraets darueber, welche Routen ueberhaupt in der
+   * Ansicht landen: Eine Route mit dicker Antwort auf langsamer Leitung
+   * verdraengte eine, die den Server wirklich beschaeftigt.
+   *
+   * Gemessen an Produktion (22.09.2026) stand GET /api/events/:id dadurch
+   * an 9,5 % aller Messpunkte als "langsamste Route" — bei einem Median von
+   * 17 ms Serverzeit. Die Umstellung auf Serverzeit vom 21.09.2026 hatte
+   * persistSummary() erreicht, diese Sortierung aber nicht.
+   */
+  it('sortiert routesSlowest nach SERVERzeit, nicht nach Gesamtzeit', async () => {
+    // Zwei Routen: eine mit echter Serverarbeit, eine, die nur eine dicke
+    // Antwort schreibt. Im Loopback ist das Schreiben billig — deshalb wird
+    // hier NICHT die Leitung nachgestellt (siehe Kopf der Nachbardatei),
+    // sondern direkt geprueft, nach welchem Feld die Reihenfolge entsteht.
+    const s = await messe(apm, {
+      '/api/serverarbeit': (req, res) => setTimeout(() => res.json({ ok: true }), 120),
+      '/api/flott': (req, res) => res.json({ ok: true }),
+    }, ['/api/serverarbeit', '/api/flott', '/api/flott']);
+
+    // Die Reihenfolge muss der Serverzeit folgen.
+    const nachServerzeit = [...s.routesSlowest]
+      .sort((a, b) => b.serverP95Ms - a.serverP95Ms)
+      .map((r) => r.route);
+    expect(s.routesSlowest.map((r) => r.route)).toEqual(nachServerzeit);
+    expect(s.routesSlowest[0].route).toBe('GET /api/serverarbeit');
+  });
+
+  /*
+   * Wie viele Stichproben steckt hinter dem p95? (22.09.2026)
+   *
+   * Bei wenigen Aufrufen IST der p95 der langsamste Einzelwert — er sagt
+   * dann nichts ueber die Route, sondern nur, dass es einmal langsam war.
+   * Gemessen an Produktion: bei 10 von 12 Routen war p95 exakt gleich max,
+   * bei Stichproben von 1 bis 38 Aufrufen. Das Fenster (MAX_SAMPLES) wird
+   * nur nach Laenge getrimmt, nie nach Alter — ein Ausreisser bleibt darin
+   * stehen, bis ihn genug neue Aufrufe herausschieben.
+   *
+   * Damit die Ansicht das kennzeichnen kann, wird die Zahl der Stichproben
+   * mit ausgewiesen, aus denen p50/p95 gebildet sind.
+   */
+  it('weist aus, auf wie vielen Stichproben p50 und p95 beruhen', async () => {
+    const s = await messe(apm, { '/api/x': (req, res) => res.json({ ok: true }) },
+      Array(7).fill('/api/x'));
+    const x = s.routesBusiest.find((r) => r.route === 'GET /api/x');
+    expect(x.stichproben).toBe(7);
+  });
+
+  it('bei wenigen Stichproben ist p95 der langsamste Wert — das muss ablesbar sein', async () => {
+    // Drei Aufrufe, einer davon deutlich langsamer. Der p95 IST dieser eine.
+    const s = await messe(apm, {
+      '/api/meist-flott': (req, res) => {
+        const n = (globalThis.__apmTestZaehler = (globalThis.__apmTestZaehler || 0) + 1);
+        if (n === 2) return setTimeout(() => res.json({ ok: true }), 150);
+        return res.json({ ok: true });
+      },
+    }, ['/api/meist-flott', '/api/meist-flott', '/api/meist-flott']);
+    delete globalThis.__apmTestZaehler;
+
+    const x = s.routesBusiest.find((r) => r.route === 'GET /api/meist-flott');
+    expect(x.stichproben).toBe(3);
+    // Der Beleg: bei dieser Stichprobenzahl fallen p95 und Maximum zusammen.
+    expect(x.serverP95Ms).toBe(x.serverMaxMs);
+    // Und der Median bleibt klein — die typische Anfrage war schnell.
+    expect(x.serverP50Ms).toBeLessThan(x.serverP95Ms);
+  });
 });
 
 describe('APM: Fehler-Gruppen', () => {

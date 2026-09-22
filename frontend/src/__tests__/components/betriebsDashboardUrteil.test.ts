@@ -267,6 +267,39 @@ describe('Betriebs-Dashboard: Routenliste', () => {
     expect(z.p95).toBe(3000);
   });
 
+  /*
+   * Ein p95 aus wenigen Messwerten (22.09.2026).
+   *
+   * Gemessen an Produktion fielen p95 und Maximum bei 10 von 12 Routen
+   * zusammen — bei Stichproben von 1 bis 38 Aufrufen. "p95 1179 ms" war in
+   * Wahrheit: einer von 33 Aufrufen dauerte so lange. Die Ansicht muss das
+   * kennzeichnen, sonst liest es sich wie ein Merkmal der Route.
+   */
+  it('markiert einen p95 aus zu wenigen Messwerten als duenn', () => {
+    const [z] = routenListe([[zeile('GET /selten', 3, 300, { stichproben: 3 })]], 'langsam');
+    expect(z.p95Duenn).toBe(true);
+  });
+
+  it('markiert einen p95 aus genug Messwerten NICHT als duenn', () => {
+    const [z] = routenListe([[zeile('GET /oft', 500, 300, { stichproben: 200 })]], 'langsam');
+    expect(z.p95Duenn).toBe(false);
+  });
+
+  it('die Grenze liegt bei 20 Messwerten — darunter duenn, darauf nicht', () => {
+    const [knappDrunter] = routenListe([[zeile('GET /a', 19, 300, { stichproben: 19 })]], 'langsam');
+    const [genau] = routenListe([[zeile('GET /b', 20, 300, { stichproben: 20 })]], 'langsam');
+    expect(knappDrunter.p95Duenn).toBe(true);
+    expect(genau.p95Duenn).toBe(false);
+  });
+
+  it('behauptet nichts, wenn das Backend die Stichprobenzahl nicht liefert', () => {
+    // Aeltere Backends kennen das Feld nicht. Dann darf die Ansicht keine
+    // Warnung erfinden.
+    const [z] = routenListe([[zeile('GET /alt', 3, 300)]], 'langsam');
+    expect(z.stichproben).toBeUndefined();
+    expect(z.p95Duenn).toBe(false);
+  });
+
   it('führt dieselbe Route aus mehreren Backend-Listen nur einmal auf', () => {
     // routesPotenzial, routesSlowest und routesBusiest ueberschneiden sich.
     const a = zeile('GET /doppelt', 100, 300);

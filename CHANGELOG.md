@@ -29,6 +29,12 @@ Versionsüberschrift.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 
+### Entfernt
+- Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
+  Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die
+  Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
+  unter „Fehler".
+
 ### Behoben
 - Mehrtägige Termine zeigen in den Details jetzt beide Tage. Eine Freizeit von
   Freitagabend bis Sonntagmittag stand vorher als „Freitag · 16:30 – 12:30" da,
@@ -41,6 +47,16 @@ Versionsüberschrift.
 - Laufen mehrere Server-Instanzen, wurden Seiten, die gleichzeitig zu den
   langsamsten und zu den häufigsten zählten, doppelt gezählt. Die
   Aufrufzahlen im Betriebs-Überblick waren dadurch zu hoch.
+- Die Liste der langsamsten Seiten geht jetzt nach der Zeit, die der Server
+  wirklich braucht. Vorher entschied die Verbindung des Geräts mit, welche
+  Seiten überhaupt in der Liste auftauchten — eine Seite mit viel Inhalt
+  stand dort oben, obwohl der Server sie in Millisekunden beantwortet.
+- Beruht der langsame Rand einer Seite auf zu wenigen Aufrufen, steht das
+  jetzt dabei. Bisher las sich ein einzelner Ausreißer wie eine dauerhafte
+  Eigenschaft der Seite.
+- Der Check-in-Code weiterer Termine einer Reihe war in den Termindetails
+  enthalten. Damit ließ sich die Anwesenheit für die ganze Reihe eintragen,
+  ohne vor Ort zu sein.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart

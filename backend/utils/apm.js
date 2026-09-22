@@ -383,6 +383,15 @@ function routeRows() {
       // Route grundsaetzlich langsam ist oder nur gelegentlich ausreisst.
       p50Ms: Math.round(percentile(sorted, 50)),
       serverP50Ms: srvSorted.length ? Math.round(percentile(srvSorted, 50)) : 0,
+      // Auf wie vielen Stichproben beruhen p50 und p95? (22.09.2026)
+      //
+      // Bei wenigen Aufrufen IST der p95 der langsamste Einzelwert. Gemessen
+      // an Produktion: bei 10 von 12 Routen war p95 exakt gleich max, bei
+      // Stichproben von 1 bis 38. Die Zahl 1179 ms fuer badges/v2 kam von
+      // EINEM Aufruf unter 33 — das Fenster wird nur nach Laenge getrimmt,
+      // nie nach Alter, der Ausreisser bleibt also stehen. Ohne diese Zahl
+      // liest sich so ein p95 wie eine Eigenschaft der Route.
+      stichproben: srvSorted.length,
       // Anfragen ueber 1 s (Gesamtzeit) — das, was auf dem Geraet als Warten
       // ankommt.
       langsam: s.langsam || 0,
@@ -449,7 +458,24 @@ const REPLICA_ID = process.env.HOSTNAME || 'single';
 // Vollstaendiges Aggregat DIESER Replica (in-memory). Bei mehreren Replicas mergen
 // mergeSnapshots() die Einzel-Snapshots zu einem Gesamtbild.
 function snapshot() {
-  const routes = routeRows().sort((a, b) => b.p95Ms - a.p95Ms);
+  /*
+   * Sortiert wird nach SERVERzeit (22.09.2026).
+   *
+   * Bis dahin stand hier b.p95Ms — die Gesamtzeit inklusive Warten auf die
+   * Leitung. Weil die Liste danach auf 20 Routen abgeschnitten wird,
+   * entschied damit die Mobilfunkverbindung des Geraets, welche Routen
+   * ueberhaupt in der Ansicht auftauchen: Eine Route mit dicker Antwort auf
+   * langsamer Leitung verdraengte eine, die wirklich den Server beschaeftigt.
+   *
+   * Gemessen an Produktion: GET /api/events/:id stand dadurch an 9,5 % aller
+   * Messpunkte (373 von 3907, 14 Tage) als "langsamste Route" — bei einem
+   * Median von 17 ms Serverzeit. Die Umstellung vom 21.09.2026 hatte
+   * persistSummary() erreicht, diese Sortierung aber nicht.
+   *
+   * Die Gesamtzeit bleibt je Route in p95Ms erhalten, fuer die Frage "wie
+   * schnell fuehlt es sich auf dem Geraet an".
+   */
+  const routes = routeRows().sort((a, b) => b.serverP95Ms - a.serverP95Ms);
   let totalCount = 0;
   let totalErrors = 0;
   let totalNotModified = 0;
@@ -515,7 +541,7 @@ function mergeSnapshots(snaps) {
       const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0, notModified: 0,
                                            sumServerAvg: 0, serverP95Ms: 0, serverMaxMs: 0,
                                            p50Ms: 0, serverP50Ms: 0, langsam: 0, serverZeitGesamtMs: 0,
-                                           apdexGewicht: 0, apdexSumme: 0 };
+                                           stichproben: 0, apdexGewicht: 0, apdexSumme: 0 };
       e.count += r.count;
       e.errors += r.errors;
       e.sumAvg += r.avgMs * r.count;      // gewichteter Mittelwert ueber count
@@ -529,6 +555,9 @@ function mergeSnapshots(snaps) {
       e.p50Ms = Math.max(e.p50Ms, r.p50Ms || 0);
       e.serverP50Ms = Math.max(e.serverP50Ms, r.serverP50Ms || 0);
       e.langsam += r.langsam || 0;
+      // Stichproben addieren sich ueber Replicas sauber: Jede Replica hat
+      // ihre eigenen Messwerte, zusammen sind es entsprechend mehr.
+      e.stichproben += r.stichproben || 0;
       // Serverzeit ist eine Summe und addiert sich ueber Replicas sauber.
       e.serverZeitGesamtMs += r.serverZeitGesamtMs || 0;
       if (typeof r.apdex === 'number') { e.apdexSumme += r.apdex * r.count; e.apdexGewicht += r.count; }
@@ -571,6 +600,7 @@ function mergeSnapshots(snaps) {
       langsam: e.langsam,
       langsamQuote: e.count ? Math.round((e.langsam / e.count) * 100) : 0,
       serverZeitGesamtMs: e.serverZeitGesamtMs,
+      stichproben: e.stichproben,
       apdex: e.apdexGewicht ? +(e.apdexSumme / e.apdexGewicht).toFixed(3) : null,
     };
   });
@@ -645,7 +675,10 @@ function mergeSnapshots(snaps) {
     inFlight: valid.reduce((s, x) => s + x.inFlight, 0),
     maxInFlight: valid.reduce((s, x) => s + x.maxInFlight, 0),
     rps: +valid.reduce((s, x) => s + x.rps, 0).toFixed(2),
-    routesSlowest: [...routes].sort((a, b) => b.p95Ms - a.p95Ms).slice(0, 20),
+    // Nach SERVERzeit, wie in snapshot() — sonst greift die Korrektur vom
+    // 22.09.2026 nur im Ein-Container-Betrieb und die Ansicht zeigte bei
+    // mehreren Replicas weiter die Leitungszeit als Reihenfolge.
+    routesSlowest: [...routes].sort((a, b) => b.serverP95Ms - a.serverP95Ms).slice(0, 20),
     routesBusiest: [...routes].sort((a, b) => b.count - a.count).slice(0, 20),
     recentErrors,
     timeline: timelineMerged,

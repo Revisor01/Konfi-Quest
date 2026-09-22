@@ -1,4 +1,4 @@
-import { FARBEN, METRIK_AMPEL } from '../../../theme/colors';
+import { METRIK_AMPEL } from '../../../theme/colors';
 import {
   ICON_AKTION,
   ICON_AKTUALISIEREN,
@@ -8,7 +8,6 @@ import {
   ICON_PULS,
   ICON_STATISTIK,
   ICON_STUFEN,
-  ICON_UHRZEIT,
   ICON_WARTEND,
   ICON_WARNUNG,
   ICON_ZURUECK,
@@ -183,29 +182,18 @@ const Anteilsbalken: React.FC<{ teile: { wert: number; farbe: string; name: stri
   );
 };
 
-// Verlaufs-Chart (Anfragen pro Minute, Fehler rot ueberlagert) — reines SVG.
-const TimelineChart: React.FC<{ data: TimelinePoint[] }> = ({ data }) => {
-  if (data.length === 0) return <div style={{ color: 'var(--app-text-system)', textAlign: 'center', padding: 'var(--app-abstand-gross)', fontSize: 'var(--app-text-sekundaer)' }}>Noch keine Verlaufsdaten (sammelt sich live).</div>;
-  const W = 320, H = 90, pad = 4;
-  const max = Math.max(1, ...data.map(d => d.requests));
-  const bw = (W - pad * 2) / data.length;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }} preserveAspectRatio="none">
-      {data.map((d, i) => {
-        const h = (d.requests / max) * (H - 16);
-        const eh = (d.errors / max) * (H - 16);
-        const x = pad + i * bw;
-        return (
-          <g key={i}>
-            <rect x={x} y={H - h} width={Math.max(1, bw - 1)} height={h} fill={FARBEN.chat} opacity={0.75} rx={1} />
-            {d.errors > 0 && <rect x={x} y={H - eh} width={Math.max(1, bw - 1)} height={eh} fill={FARBEN.danger} rx={1} />}
-          </g>
-        );
-      })}
-      <text x={pad} y={10} fontSize="8" fill={FARBEN.textSystem}>höchstens {max} Anfragen/Min</text>
-    </svg>
-  );
-};
+/*
+ * Hier stand bis zum 22.09.2026 ein Balkendiagramm "Anfragen pro Minute
+ * (letzte 30 Min)". Es ist entfernt, nicht verschoben: 30 Balken ohne Achse,
+ * ohne Zeitmarken und ohne ablesbare Werte beantworten keine Frage, die sich
+ * hier stellt. Die Aufrufzahlen stehen als Zahl in den Kennzahlen und in
+ * Umami, die Fehler mit Zeitstempel im Tab "Fehler".
+ *
+ * Das Feld `timeline` der API bleibt: `gesamtzustand()` in
+ * utils/betriebsKennzahlen.ts zaehlt daraus die Fehler der letzten zehn
+ * Minuten fuer das Urteil oben. Ausgelieferte Apps lesen die Antwort
+ * ausserdem mit — die Form aendert sich deshalb nicht.
+ */
 
 /*
  * Die Routenliste — eine Liste, zwei Sortierungen.
@@ -245,7 +233,16 @@ const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
             hier stehen Durchschnitt und p95 zum Vergleich. */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
           <span title="Gesamte Serverzeit dieser Route, geteilt durch die Aufrufe">Ø {Math.round(r.schnittMs)} ms</span>
-          <span title="95 von 100 Anfragen waren schneller">p95 {r.p95} ms</span>
+          {/* Bei wenigen Messwerten IST der p95 der langsamste Einzelwert.
+              Dann steht er hier abgeschwaecht da, statt wie ein Merkmal der
+              Route zu wirken (22.09.2026). */}
+          {r.p95Duenn ? (
+            <span title={`Nur ${r.stichproben} Messwerte — bei so wenigen ist der p95 der langsamste einzelne Aufruf, kein Merkmal der Route.`} style={{ color: 'var(--app-text-system)' }}>
+              langsamster {r.p95} ms <span style={{ opacity: 0.7 }}>({r.stichproben} Messwerte)</span>
+            </span>
+          ) : (
+            <span title="95 von 100 Anfragen waren schneller">p95 {r.p95} ms</span>
+          )}
           <span>höchstens {r.serverMaxMs ?? r.maxMs} ms</span>
           <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} % der Serverzeit</span>
           {r.errors > 0 && <span style={{ color: 'var(--app-color-danger)', fontWeight: 'var(--app-schrift-halbfett)' }}>{r.errors} Fehler</span>}
@@ -567,10 +564,6 @@ const AdminMetricsPage: React.FC = () => {
                   </Karte>
                 )}
 
-                {/* Live-Verlauf */}
-                <Karte icon={ICON_UHRZEIT} titel="Anfragen pro Minute (letzte 30 Min)" hinweis="Rot markiert die Minuten mit Fehlern.">
-                  <TimelineChart data={snap.timeline} />
-                </Karte>
               </>
             )}
 
@@ -591,6 +584,9 @@ const AdminMetricsPage: React.FC = () => {
                   „Langsamste“ sortiert nach der Zeit pro Anfrage, nicht nach der einzelnen
                   schlimmsten. Alle Zeiten sind Serverzeiten, also ohne Warten auf die
                   Verbindung des Geräts — nur daran ändert eine Änderung am Server etwas.
+                  Steht statt „p95“ die Angabe „langsamster“, gab es zu wenige Aufrufe für
+                  einen belastbaren Rand: Dann ist die Zahl ein einzelner Ausreißer und
+                  kein Merkmal der Route.
                 </div>
               </>
             )}

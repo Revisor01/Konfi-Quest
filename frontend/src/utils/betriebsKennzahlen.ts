@@ -101,9 +101,27 @@ export interface RoutenRohzeile {
   cacheQuote?: number;
   langsam?: number;
   langsamQuote?: number;
+  /**
+   * Auf wie vielen Messwerten p50 und p95 beruhen. Unter etwa 20 ist ein p95
+   * der langsamste Einzelwert und sagt nichts ueber die Route — gemessen an
+   * Produktion (22.09.2026) fielen p95 und Maximum bei 10 von 12 Routen
+   * zusammen.
+   */
+  stichproben?: number;
 }
 
 export type RoutenSortierung = 'langsam' | 'haeufig';
+
+/*
+ * Ab wie vielen Messwerten sagt ein p95 etwas aus?
+ *
+ * Bei n Messwerten ist der 95. Perzentil-Wert erst ab n = 20 nicht mehr
+ * zwangslaeufig das Maximum. Darunter bedeutet "p95 = 1179 ms" nur: einer
+ * dieser wenigen Aufrufe dauerte so lange. Gemessen an Produktion am
+ * 22.09.2026 fielen p95 und Maximum bei 10 von 12 Routen zusammen, bei
+ * Stichproben zwischen 1 und 38 Aufrufen.
+ */
+export const P95_MINDESTPROBEN = 20;
 
 export interface RoutenZeile extends RoutenRohzeile {
   /** Median der Serverzeit — die typische Anfrage. */
@@ -114,6 +132,12 @@ export interface RoutenZeile extends RoutenRohzeile {
   p95: number;
   /** Anteil dieser Route an der gesamten Serverzeit aller Routen, in Prozent. */
   anteilProzent: number;
+  /**
+   * Beruht der p95 auf so wenigen Messwerten, dass er der langsamste
+   * Einzelwert ist? Dann ist er kein Merkmal der Route, sondern die Aussage
+   * "einmal war es langsam".
+   */
+  p95Duenn: boolean;
 }
 
 /*
@@ -143,6 +167,10 @@ export function routenListe(
       schnittMs,
       p95: r.serverP95Ms ?? r.p95Ms,
       anteilProzent: gesamtzeit > 0 ? Math.round(((r.serverZeitGesamtMs ?? 0) / gesamtzeit) * 100) : 0,
+      // Unter P95_MINDESTPROBEN Messwerten ist der p95 rechnerisch der
+      // langsamste Einzelwert. Das aelteste Backend kennt das Feld nicht —
+      // dann wird nichts behauptet (false).
+      p95Duenn: r.stichproben !== undefined && r.stichproben < P95_MINDESTPROBEN,
     };
   });
 
