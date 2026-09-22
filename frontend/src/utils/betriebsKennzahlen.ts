@@ -50,7 +50,7 @@ export function gesamtzustand(snap: BetriebsSnapshot): { stufe: 'gut' | 'auffael
     return { stufe: 'stoerung', titel: 'Störung', satz: `In den letzten Minuten gab es ${fehlerimVerlauf} Fehler. Unter „Fehler“ steht, welche.` };
   }
   if (apdexWert !== null && apdexWert !== undefined && apdexWert < 0.7) {
-    return { stufe: 'stoerung', titel: 'Spürbar langsam', satz: 'Die Anfragen dauern im Schnitt zu lange. Unter „Aufwand“ steht, wo die Zeit hingeht.' };
+    return { stufe: 'stoerung', titel: 'Spürbar langsam', satz: 'Die Anfragen dauern im Schnitt zu lange. Unter „Routen“ steht, wo die Zeit hingeht.' };
   }
   if (snap.totalErrors > 0) {
     return { stufe: 'auffaellig', titel: 'Läuft, mit Fehlern in der Vergangenheit', satz: `Seit dem Start ${snap.totalErrors} Serverfehler, aber gerade keine neuen.` };
@@ -62,6 +62,97 @@ export function gesamtzustand(snap: BetriebsSnapshot): { stufe: 'gut' | 'auffael
     return { stufe: 'auffaellig', titel: 'Läuft, Warten beim Laden', satz: `${snap.ueber1s!.quote} % der Anfragen dauern über eine Sekunde — meist die Verbindung, nicht der Server.` };
   }
   return { stufe: 'gut', titel: 'Alles läuft', satz: 'Keine Serverfehler, die Antwortzeiten sind im Rahmen.' };
+}
+
+/*
+ * Die Routenliste: eine Liste, zwei Sortierungen.
+ *
+ * Vorher waren das zwei Reiter ("Aufwand" nach Gesamtzeit, "Routen" nach p95).
+ * Simon (22.09.2026): "Wir haben Aufwand und die Routen. Ich verstehe nicht,
+ * warum du das gegeneinander trennst." Zu Recht — es ist dieselbe Liste.
+ *
+ * Die GESAMTE Serverzeit einer Route ist als Einzelzahl wertlos: Sie waechst
+ * mit der Laufzeit und sagt ohne die Aufrufzahl nichts ("2,3 s" kann drei
+ * langsame oder tausend schnelle Anfragen heissen). Sie bleibt trotzdem
+ * erhalten, aber nur als ANTEIL an der gesamten Serverzeit — die Frage
+ * "welche Route macht die meiste Arbeit" beantwortet der Prozentwert, nicht
+ * die Millisekundensumme.
+ *
+ * Sortiert wird nach der Zeit PRO ANFRAGE (Gesamtzeit geteilt durch die
+ * Aufrufe, also dem Durchschnitt). Angezeigt wird gross der Median: Er sagt,
+ * wie sich die Route normalerweise verhaelt. Liegen Median und Durchschnitt
+ * weit auseinander, zieht ein Ausreisser den Durchschnitt hoch — genau das
+ * soll man auf einen Blick sehen.
+ */
+export interface RoutenRohzeile {
+  route: string;
+  count: number;
+  errors: number;
+  avgMs: number;
+  p95Ms: number;
+  maxMs: number;
+  serverAvgMs?: number;
+  serverP95Ms?: number;
+  serverMaxMs?: number;
+  p50Ms?: number;
+  serverP50Ms?: number;
+  serverZeitGesamtMs?: number;
+  netzAvgMs?: number;
+  cacheQuote?: number;
+  langsam?: number;
+  langsamQuote?: number;
+}
+
+export type RoutenSortierung = 'langsam' | 'haeufig';
+
+export interface RoutenZeile extends RoutenRohzeile {
+  /** Median der Serverzeit — die typische Anfrage. */
+  mitteMs: number;
+  /** Durchschnitt der Serverzeit: Gesamtzeit geteilt durch die Aufrufe. */
+  schnittMs: number;
+  /** p95 der Serverzeit — der schlechte Rand. */
+  p95: number;
+  /** Anteil dieser Route an der gesamten Serverzeit aller Routen, in Prozent. */
+  anteilProzent: number;
+}
+
+/*
+ * Mehrere Listen (langsamste, haeufigste, nach Gesamtzeit) kommen aus dem
+ * Backend getrennt an und ueberschneiden sich. Zusammengefuehrt wird nach
+ * Routenname; der erste Treffer gewinnt, die Zahlen sind identisch.
+ */
+export function routenListe(
+  quellen: (RoutenRohzeile[] | undefined)[],
+  sortierung: RoutenSortierung,
+  grenze = 20,
+): RoutenZeile[] {
+  const proRoute = new Map<string, RoutenRohzeile>();
+  for (const liste of quellen) {
+    for (const r of liste ?? []) {
+      if (!proRoute.has(r.route)) proRoute.set(r.route, r);
+    }
+  }
+  const roh = [...proRoute.values()];
+  const gesamtzeit = roh.reduce((s, r) => s + (r.serverZeitGesamtMs ?? 0), 0);
+
+  const zeilen: RoutenZeile[] = roh.map(r => {
+    const schnittMs = r.serverAvgMs ?? r.avgMs;
+    return {
+      ...r,
+      mitteMs: r.serverP50Ms ?? r.p50Ms ?? schnittMs,
+      schnittMs,
+      p95: r.serverP95Ms ?? r.p95Ms,
+      anteilProzent: gesamtzeit > 0 ? Math.round(((r.serverZeitGesamtMs ?? 0) / gesamtzeit) * 100) : 0,
+    };
+  });
+
+  // Zweites Kriterium verhindert, dass gleich schnelle Routen bei jedem
+  // Neuladen die Plaetze tauschen.
+  zeilen.sort((a, b) => sortierung === 'haeufig'
+    ? (b.count - a.count) || (b.schnittMs - a.schnittMs) || a.route.localeCompare(b.route)
+    : (b.schnittMs - a.schnittMs) || (b.count - a.count) || a.route.localeCompare(b.route));
+
+  return zeilen.slice(0, grenze);
 }
 
 export interface HistorieDelta { at: string; requests: number; errors: number; worstP95: number; worstRoute: string | null }

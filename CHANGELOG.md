@@ -17,9 +17,11 @@ Versionsüberschrift.
 - Ein Vergleich mit den Vortagen zeigt, was heute anders ist — bei Anfragen,
   Fehlern und der langsamsten Stelle. Der angebrochene Tag wird dafür auf die
   Stunde hochgerechnet, sonst sähe jeder Vormittag nach Einbruch aus.
-- Eine neue Ansicht „Aufwand" sortiert die Seiten danach, wo die Zeit
-  tatsächlich hingeht — Aufrufe mal Dauer statt der einzelnen langsamsten
-  Anfrage — und nennt je Zeile, was eine Verbesserung am Tag einbrächte.
+- Die Ansicht „Routen" zeigt je Seite groß die typische Antwortzeit, daneben
+  Durchschnitt und den langsamen Rand. So ist auf einen Blick zu sehen, ob
+  eine Seite grundsätzlich langsam ist oder nur gelegentlich ausreißt. Dazu
+  die Aufrufzahl und der Anteil an der gesamten Arbeit des Servers. Sortiert
+  wird wahlweise nach Zeit pro Aufruf oder nach Häufigkeit.
 - Fehler stehen jetzt zusammengefasst statt als Rohliste: was, wie oft, seit
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 

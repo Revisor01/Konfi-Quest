@@ -11,7 +11,6 @@ import {
   ICON_UHRZEIT,
   ICON_WARTEND,
   ICON_WARNUNG,
-  ICON_WERKZEUG,
   ICON_ZURUECK,
 } from '../../shared/icons';
 import { fehlerStatus } from '../../../utils/fehler';
@@ -38,9 +37,12 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import {
   apdexStufe,
   gesamtzustand,
+  routenListe,
   tagesbilanz,
   vergleichHeuteGegenVortage,
   type BetriebsSnapshot,
+  type RoutenSortierung,
+  type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
 
 interface RouteRow {
@@ -205,26 +207,47 @@ const TimelineChart: React.FC<{ data: TimelinePoint[] }> = ({ data }) => {
   );
 };
 
-const RouteTable: React.FC<{ rows: RouteRow[]; mode: 'slow' | 'busy' }> = ({ rows, mode }) => (
+/*
+ * Die Routenliste — eine Liste, zwei Sortierungen.
+ *
+ * Gross steht der MEDIAN: die typische Anfrage, unempfindlich gegen einzelne
+ * Ausreisser. Durchschnitt und p95 stehen klein daneben; liegen Median und
+ * Durchschnitt weit auseinander, zieht ein Ausreisser den Schnitt hoch.
+ *
+ * Was hier bewusst NICHT steht: die gesamte Serverzeit der Route als nackte
+ * Millisekundensumme. Sie waechst mit der Laufzeit und sagt ohne die
+ * Aufrufzahl nichts (Simon, 22.09.2026). Ihr Zweck bleibt als Anteil in
+ * Prozent erhalten — "diese Route macht 40 % der Arbeit aus".
+ */
+const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
   <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
-    {rows.length === 0 && <div style={{ padding: 'var(--app-abstand-basis)', color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)' }}>Keine Daten.</div>}
-    {rows.map((r, i) => (
+    {zeilen.length === 0 && <div style={{ padding: 'var(--app-abstand-basis)', color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)' }}>Keine Daten.</div>}
+    {zeilen.map((r, i) => (
       <div key={r.route} style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
           <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-emphasis)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{r.route}</span>
-          {mode === 'slow'
-            ? <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: msColor(r.serverP95Ms ?? r.p95Ms), flexShrink: 0 }}>{r.serverP95Ms ?? r.p95Ms} ms</span>
-            : <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-color-chat)', flexShrink: 0 }}>{fmtZahl(r.count)}×</span>}
+          <span style={{ textAlign: 'right', flexShrink: 0 }}>
+            <span style={{ display: 'block', fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-gross)', color: msColor(r.mitteMs), lineHeight: 1.1 }} title="Median: die Hälfte aller Anfragen war schneller">
+              {r.mitteMs} ms
+            </span>
+            <span style={{ display: 'block', fontSize: 'var(--app-text-meta)', color: 'var(--app-color-chat)', fontWeight: 'var(--app-schrift-halbfett)' }}>
+              {fmtZahl(r.count)}× aufgerufen
+            </span>
+          </span>
+        </div>
+        {/* Anteil an der gesamten Serverzeit — die Gesamtsumme selbst waere
+            als Zahl wertlos, der Anteil beantwortet "wo geht die Zeit hin". */}
+        <div style={{ height: '6px', background: 'var(--app-border-soft)', borderRadius: 'var(--app-radius-fein)', overflow: 'hidden', margin: 'var(--app-abstand-kompakt) 0' }}>
+          <div style={{ width: `${r.anteilProzent}%`, height: '100%', background: msColor(r.mitteMs), borderRadius: 'var(--app-radius-fein)' }} />
         </div>
         {/* Erste Zeile: was der SERVER gebraucht hat — die einzige Zahl, an
-            der eine Backend-Aenderung etwas dreht. Der Median steht vor dem
-            p95: Er sagt, wie die Route sich normalerweise verhaelt, das p95
-            nur, wie der schlechte Rand aussieht. */}
+            der eine Backend-Aenderung etwas dreht. Der Median steht oben,
+            hier stehen Durchschnitt und p95 zum Vergleich. */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
-          <span>{fmtZahl(r.count)}× aufgerufen</span>
-          {r.serverP50Ms !== undefined && <span title="Die Hälfte aller Anfragen war schneller">Mitte {r.serverP50Ms} ms</span>}
-          <span title="95 von 100 Anfragen waren schneller">p95 {r.serverP95Ms ?? r.p95Ms} ms</span>
+          <span title="Gesamte Serverzeit dieser Route, geteilt durch die Aufrufe">Ø {Math.round(r.schnittMs)} ms</span>
+          <span title="95 von 100 Anfragen waren schneller">p95 {r.p95} ms</span>
           <span>höchstens {r.serverMaxMs ?? r.maxMs} ms</span>
+          <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} % der Serverzeit</span>
           {r.errors > 0 && <span style={{ color: 'var(--app-color-danger)', fontWeight: 'var(--app-schrift-halbfett)' }}>{r.errors} Fehler</span>}
         </div>
         {/* Zweite Zeile: was auf der Leitung lag.
@@ -267,9 +290,10 @@ const AdminMetricsPage: React.FC = () => {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<HistorySnap[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'ueberblick' | 'aufwand' | 'fehler' | 'routen' | 'verlauf'>('ueberblick');
+  const [tab, setTab] = useState<'ueberblick' | 'fehler' | 'routen' | 'verlauf'>('ueberblick');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [routenSicht, setRoutenSicht] = useState<'slow' | 'busy'>('slow');
+  // Standard: die langsamsten zuerst, gemessen an der Zeit pro Anfrage.
+  const [routenSicht, setRoutenSicht] = useState<RoutenSortierung>('langsam');
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -339,6 +363,18 @@ const AdminMetricsPage: React.FC = () => {
    */
   const veraenderung = useMemo(() => vergleichHeuteGegenVortage(tage), [tage]);
 
+  /*
+   * Eine Liste statt zweier Reiter: Die drei Listen aus dem Backend
+   * (langsamste, haeufigste, nach Gesamtzeit) ueberschneiden sich und werden
+   * hier zusammengefuehrt. Sortiert wird im Browser — sonst haengt die
+   * Reihenfolge an der Sortierung des Backends und der Umschalter waere eine
+   * Luege.
+   */
+  const routenZeilen = useMemo(() => routenListe(
+    [snap?.routesPotenzial, snap?.routesSlowest, snap?.routesBusiest],
+    routenSicht,
+  ), [snap, routenSicht]);
+
   const zustand = snap ? gesamtzustand(snap) : null;
   const zustandsFarbe = zustand?.stufe === 'gut' ? METRIK_AMPEL.gut : zustand?.stufe === 'auffaellig' ? METRIK_AMPEL.maessig : METRIK_AMPEL.kritisch;
   const apdexInfo = apdexStufe(snap?.apdex?.wert);
@@ -392,7 +428,6 @@ const AdminMetricsPage: React.FC = () => {
             {/* Tabs */}
             <IonSegment scrollable value={tab} onIonChange={(e) => setTab(e.detail.value as typeof tab)} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
               <IonSegmentButton value="ueberblick"><IonLabel>Überblick</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="aufwand"><IonLabel>Aufwand</IonLabel></IonSegmentButton>
               <IonSegmentButton value="fehler"><IonLabel>Fehler{(snap.fehlerGruppen?.length ?? 0) > 0 ? ` (${snap.fehlerGruppen!.length})` : ''}</IonLabel></IonSegmentButton>
               <IonSegmentButton value="routen"><IonLabel>Routen</IonLabel></IonSegmentButton>
               <IonSegmentButton value="verlauf"><IonLabel>Verlauf</IonLabel></IonSegmentButton>
@@ -539,22 +574,23 @@ const AdminMetricsPage: React.FC = () => {
               </>
             )}
 
-            {/* 4. Wo lohnt sich Arbeit? */}
-            {tab === 'aufwand' && <AufwandListe rows={snap.routesPotenzial ?? []} uptimeSeconds={snap.uptimeSeconds} />}
-
-            {/* 5. Fehler: was, wie oft, seit wann */}
+            {/* 4. Fehler: was, wie oft, seit wann */}
             {tab === 'fehler' && <FehlerListe gruppen={snap.fehlerGruppen ?? []} letzte={snap.recentErrors} />}
 
+            {/* 5. Wo geht die Zeit hin? Eine Liste, zwei Sortierungen. */}
             {tab === 'routen' && (
               <>
-                <IonSegment value={routenSicht} onIonChange={(e) => setRoutenSicht(e.detail.value as 'slow' | 'busy')} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
-                  <IonSegmentButton value="slow"><IonLabel>Langsamste</IonLabel></IonSegmentButton>
-                  <IonSegmentButton value="busy"><IonLabel>Häufigste</IonLabel></IonSegmentButton>
+                <IonSegment value={routenSicht} onIonChange={(e) => setRoutenSicht(e.detail.value as RoutenSortierung)} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
+                  <IonSegmentButton value="langsam"><IonLabel>Langsamste</IonLabel></IonSegmentButton>
+                  <IonSegmentButton value="haeufig"><IonLabel>Häufigste</IonLabel></IonSegmentButton>
                 </IonSegment>
-                <RouteTable rows={routenSicht === 'slow' ? snap.routesSlowest : snap.routesBusiest} mode={routenSicht} />
+                <RoutenListe zeilen={routenZeilen} />
                 <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-eng)', lineHeight: 1.4 }}>
-                  Alle Zeiten oben sind Serverzeiten, also ohne Warten auf die Verbindung des Geräts.
-                  Nur daran ändert eine Änderung am Server etwas.
+                  Groß steht der Median — die typische Anfrage. Steht der Durchschnitt
+                  deutlich darüber, sind es einzelne Ausreißer, nicht die Route selbst.
+                  „Langsamste“ sortiert nach der Zeit pro Anfrage, nicht nach der einzelnen
+                  schlimmsten. Alle Zeiten sind Serverzeiten, also ohne Warten auf die
+                  Verbindung des Geräts — nur daran ändert eine Änderung am Server etwas.
                 </div>
               </>
             )}
@@ -591,79 +627,6 @@ const Vergleich: React.FC<{ name: string; jetzt: string; vorher: string; delta: 
         )}
       </div>
     </div>
-  );
-};
-
-/*
- * Wo lohnt sich Arbeit?
- *
- * Sortiert nach der GESAMTEN Serverzeit einer Route (Anzahl x Dauer), nicht
- * nach dem p95. Eine Route mit 800 ms p95 und drei Aufrufen kostet zwei
- * Sekunden am Tag; eine mit 70 ms und 4000 Aufrufen kostet fuenf Minuten.
- * Nach p95 stuende die erste oben — und die Arbeit daran waere vertan.
- *
- * Danebengestellt wird, was eine Verbesserung auf 100 ms brächte: Das ist
- * die Zahl, aus der sich eine Entscheidung ableiten laesst.
- */
-const ZIEL_MS = 100;
-const AufwandListe: React.FC<{ rows: RouteRow[]; uptimeSeconds: number }> = ({ rows, uptimeSeconds }) => {
-  const mitPotenzial = rows
-    .map(r => {
-      const gesamt = r.serverZeitGesamtMs ?? 0;
-      const schnitt = r.serverAvgMs ?? r.avgMs;
-      // Nur der Anteil ueber dem Ziel ist einsparbar; unter dem Ziel gibt es
-      // nichts zu holen.
-      const einsparbar = schnitt > ZIEL_MS ? (schnitt - ZIEL_MS) * r.count : 0;
-      return { ...r, gesamt, schnitt, einsparbar };
-    })
-    .filter(r => r.gesamt > 0);
-  const summe = mitPotenzial.reduce((s, r) => s + r.gesamt, 0);
-  // Auf einen Tag hochgerechnet, damit "8 s" nicht nach nichts aussieht,
-  // wenn der Server erst 20 Minuten läuft.
-  const proTag = (ms: number) => uptimeSeconds > 0 ? (ms / uptimeSeconds) * 86400 : 0;
-
-  if (mitPotenzial.length === 0) {
-    return <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-gross)', textAlign: 'center', color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)', boxShadow: 'var(--app-schatten-fein)' }}>
-      Noch keine Daten. Die Liste füllt sich mit den ersten Anfragen.
-    </div>;
-  }
-
-  return (
-    <>
-      <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
-        <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)', lineHeight: 1.4, display: 'flex', gap: 'var(--app-abstand-kompakt)' }}>
-          <IonIcon icon={ICON_WERKZEUG} style={{ color: 'var(--app-color-wrapped)', flexShrink: 0, marginTop: 'var(--app-abstand-winzig)' }} />
-          <span>Sortiert nach gesamter Serverzeit (Aufrufe × Dauer) — nicht nach der
-          langsamsten einzelnen Anfrage. Oben steht, wo die Zeit tatsächlich hingeht.</span>
-        </div>
-        {mitPotenzial.slice(0, 12).map((r, i) => (
-          <div key={r.route} style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
-              <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-emphasis)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{r.route}</span>
-              <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-emphasis)', flexShrink: 0 }}>{fmtDauer(r.gesamt)}</span>
-            </div>
-            {/* Anteil an der gesamten Serverzeit als Balken */}
-            <div style={{ height: '6px', background: 'var(--app-border-soft)', borderRadius: 'var(--app-radius-fein)', overflow: 'hidden', margin: 'var(--app-abstand-kompakt) 0' }}>
-              <div style={{ width: `${summe > 0 ? (r.gesamt / summe) * 100 : 0}%`, height: '100%', background: msColor(r.schnitt), borderRadius: 'var(--app-radius-fein)' }} />
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
-              <span>{fmtZahl(r.count)}× à {Math.round(r.schnitt)} ms</span>
-              <span>{summe > 0 ? Math.round((r.gesamt / summe) * 100) : 0} % der Serverzeit</span>
-              {r.einsparbar > 0
-                ? <span style={{ color: METRIK_AMPEL.gut, fontWeight: 'var(--app-schrift-halbfett)' }}>
-                  auf {ZIEL_MS} ms gebracht: {fmtDauer(proTag(r.einsparbar))} am Tag gespart
-                </span>
-                : <span style={{ color: METRIK_AMPEL.blass }}>schon unter {ZIEL_MS} ms — nichts zu holen</span>}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-eng)', lineHeight: 1.4 }}>
-        Die Ersparnis ist auf einen vollen Tag hochgerechnet, gemessen an der
-        bisherigen Laufzeit. Eine Route, die schon unter {ZIEL_MS} ms liegt, ist
-        kein lohnendes Ziel — auch wenn sie oben in der Liste steht.
-      </div>
-    </>
   );
 };
 

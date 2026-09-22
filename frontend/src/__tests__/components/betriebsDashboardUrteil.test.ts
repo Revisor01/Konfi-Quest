@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   apdexStufe,
   gesamtzustand,
+  routenListe,
   tagesbilanz,
   vergleichHeuteGegenVortage,
+  type RoutenRohzeile,
 } from '../../utils/betriebsKennzahlen';
 
 // ---------------------------------------------------------------------------
@@ -191,5 +193,107 @@ describe('Betriebs-Dashboard: heute gegen die Vortage', () => {
     const v = vergleichHeuteGegenVortage([tag('20.09.', 2400, 0, 200), tag('21.09.', 600, 3, 200)], 6);
     expect(v!.fehler.delta).toBeNull();
     expect(v!.fehler.heute).toBe(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// EINE LISTE, ZWEI SORTIERUNGEN.
+//
+// Simon (22.09.2026): "Wir haben Aufwand und die Routen. Ich verstehe nicht,
+// warum du das gegeneinander trennst." Und zur Gesamtserverzeit: "Die gesamte
+// Serverzeit muss ja auf die Anzahl der Anfragen gerechnet werden."
+//
+// Geprueft wird deshalb: dass die Zeit PRO ANFRAGE sortiert (nicht die Summe,
+// nicht das p95), dass die Summe nur noch als Anteil erscheint, und dass die
+// drei Backend-Listen ohne Dubletten zusammenfinden.
+// ---------------------------------------------------------------------------
+
+describe('Betriebs-Dashboard: Routenliste', () => {
+  const zeile = (route: string, count: number, serverAvgMs: number, extra: Partial<RoutenRohzeile> = {}): RoutenRohzeile => ({
+    route,
+    count,
+    errors: 0,
+    avgMs: serverAvgMs,
+    p95Ms: serverAvgMs * 2,
+    maxMs: serverAvgMs * 3,
+    serverAvgMs,
+    serverP95Ms: serverAvgMs * 2,
+    serverMaxMs: serverAvgMs * 3,
+    serverP50Ms: serverAvgMs,
+    serverZeitGesamtMs: serverAvgMs * count,
+    ...extra,
+  });
+
+  it('sortiert nach der Zeit pro Anfrage, nicht nach der gesamten Serverzeit', () => {
+    // /viel kostet insgesamt am meisten (3000 Aufrufe à 60 ms = 180 s),
+    // ist pro Anfrage aber die schnellste Route. Oben gehoert /selten.
+    const zeilen = routenListe([[
+      zeile('GET /viel', 3000, 60),
+      zeile('GET /selten', 3, 900),
+      zeile('GET /mittel', 100, 300),
+    ]], 'langsam');
+    expect(zeilen.map(z => z.route)).toEqual(['GET /selten', 'GET /mittel', 'GET /viel']);
+  });
+
+  it('sortiert umschaltbar nach der Aufrufzahl', () => {
+    const zeilen = routenListe([[
+      zeile('GET /viel', 3000, 60),
+      zeile('GET /selten', 3, 900),
+      zeile('GET /mittel', 100, 300),
+    ]], 'haeufig');
+    expect(zeilen.map(z => z.route)).toEqual(['GET /viel', 'GET /mittel', 'GET /selten']);
+  });
+
+  it('rechnet die gesamte Serverzeit in einen Anteil um', () => {
+    // 180000 ms + 2700 ms + 30000 ms = 212700 ms gesamt.
+    const zeilen = routenListe([[
+      zeile('GET /viel', 3000, 60),
+      zeile('GET /selten', 3, 900),
+      zeile('GET /mittel', 100, 300),
+    ]], 'haeufig');
+    const anteile = Object.fromEntries(zeilen.map(z => [z.route, z.anteilProzent]));
+    expect(anteile['GET /viel']).toBe(85);
+    expect(anteile['GET /mittel']).toBe(14);
+    expect(anteile['GET /selten']).toBe(1);
+    expect(zeilen.reduce((s, z) => s + z.anteilProzent, 0)).toBe(100);
+  });
+
+  it('nennt Median und Durchschnitt getrennt, damit Ausreißer sichtbar werden', () => {
+    // Typisch 40 ms, im Schnitt 400 ms: Ein einzelner Ausreisser zieht den
+    // Schnitt hoch, die Route selbst ist schnell. Genau das soll man sehen.
+    const [z] = routenListe([[zeile('GET /wackelig', 50, 400, { serverP50Ms: 40, serverP95Ms: 3000 })]], 'langsam');
+    expect(z.mitteMs).toBe(40);
+    expect(z.schnittMs).toBe(400);
+    expect(z.p95).toBe(3000);
+  });
+
+  it('führt dieselbe Route aus mehreren Backend-Listen nur einmal auf', () => {
+    // routesPotenzial, routesSlowest und routesBusiest ueberschneiden sich.
+    const a = zeile('GET /doppelt', 100, 300);
+    const zeilen = routenListe([[a], [a], [a, zeile('GET /anderes', 10, 50)]], 'haeufig');
+    expect(zeilen.map(z => z.route)).toEqual(['GET /doppelt', 'GET /anderes']);
+    // Und der Anteil darf sich durch die Dubletten nicht verschieben.
+    expect(zeilen[0].anteilProzent).toBe(98);
+  });
+
+  it('kommt ohne Serverzeiten aus und fällt auf die Gesamtzeit zurück', () => {
+    // Aeltere Replicas liefern serverAvgMs/serverP50Ms noch nicht mit.
+    const zeilen = routenListe([[
+      { route: 'GET /alt', count: 10, errors: 0, avgMs: 120, p95Ms: 300, maxMs: 500 },
+    ]], 'langsam');
+    expect(zeilen[0].mitteMs).toBe(120);
+    expect(zeilen[0].schnittMs).toBe(120);
+    expect(zeilen[0].p95).toBe(300);
+    expect(zeilen[0].anteilProzent).toBe(0);
+  });
+
+  it('liefert für leere Listen nichts und stürzt nicht ab', () => {
+    expect(routenListe([undefined, []], 'langsam')).toEqual([]);
+  });
+
+  it('begrenzt die Liste auf die angegebene Zahl von Zeilen', () => {
+    const viele = Array.from({ length: 30 }, (_, i) => zeile(`GET /r${i}`, 10, i + 1));
+    expect(routenListe([viele], 'langsam')).toHaveLength(20);
+    expect(routenListe([viele], 'langsam', 5)).toHaveLength(5);
   });
 });
