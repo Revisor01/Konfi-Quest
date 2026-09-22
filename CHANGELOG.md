@@ -28,6 +28,9 @@ Versionsüberschrift.
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 
 ### Behoben
+- Mehrtägige Termine zeigen in den Details jetzt beide Tage. Eine Freizeit von
+  Freitagabend bis Sonntagmittag stand vorher als „Freitag · 16:30 – 12:30" da,
+  als ob sie am selben Tag endete.
 - Die Auslastungsanzeige misst jetzt die Zeit, die der Server wirklich
   braucht. Vorher zählte sie das Warten auf langsame Mobilfunkverbindungen
   mit — ein einzelner Foto-Upload ließ die Anzeige tagelang bei 56 Sekunden

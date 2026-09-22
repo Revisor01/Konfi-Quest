@@ -63,7 +63,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -974,10 +974,7 @@ const TeamerEventsPage: React.FC = () => {
                   <div>
                     <div className="app-info-row__label">Datum</div>
                     <div className="app-info-row__value">
-                      {formatDateLong(selectedEvent.event_date)}
-                      {' \u00B7 '}
-                      {formatTime(selectedEvent.event_date)}
-                      {selectedEvent.event_end_time && ` \u2013 ${formatTime(selectedEvent.event_end_time)}`}
+                      {zeitraumText(selectedEvent)}
                     </div>
                   </div>
                 </div>

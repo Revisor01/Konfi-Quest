@@ -58,7 +58,7 @@ import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventDateLong as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event } from '../../../types/event';
@@ -720,10 +720,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <div>
                   <div className="app-info-row__label">Datum</div>
                   <div className="app-info-row__value">
-                    {formatDate(eventData.event_date)}
-                    {' · '}
-                    {formatTime(eventData.event_date)}
-                    {eventData.event_end_time && ` – ${formatTime(eventData.event_end_time)}`}
+                    {zeitraumText(eventData)}
                   </div>
                 </div>
               </div>

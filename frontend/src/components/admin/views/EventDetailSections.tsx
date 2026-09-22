@@ -40,6 +40,7 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
+import { zeitraumText } from '../../shared/eventFormatting';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { urheberZeile, notizUrheberZeile, checkinZeile } from '../../../utils/anwesenheitUrheber';
 import { teilnahmeDarstellung, listItemKlasse, iconKreisKlasse, eckBadgeKlasse } from '../../../utils/teilnahmeStatus';
@@ -177,10 +178,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           <div>
             <div className="app-info-row__label">Datum</div>
             <div className="app-info-row__value">
-              {formatDate(eventData.event_date || '')}
-              {' · '}
-              {formatTime(eventData.event_date || '')}
-              {eventData.event_end_time && ` – ${formatTime(eventData.event_end_time)}`}
+              {zeitraumText({ event_date: eventData.event_date || '', event_end_time: eventData.event_end_time })}
             </div>
           </div>
         </div>

@@ -308,3 +308,40 @@ export const vergangeneTermine = <T extends ReiterTermin>(offen: T[], abgesagt: 
   const abgesagtVorbei = abgesagt.filter(e => eventEnde(e) < jetzt);
   return [...verbucht, ...abgesagtVorbei].sort(nachDatumAbsteigend);
 };
+
+/**
+ * Der Zeitraum eines Termins als ein Satz.
+ *
+ * Bis zum 22.09.2026 baute jede Rolle diese Zeile selbst, und alle drei
+ * machten denselben Fehler: Sie haengten die Endzeit an den STARTTAG, ohne
+ * zu pruefen, ob das Ende auf einem anderen Tag liegt. Die Teamerfreizeit
+ * (20.11. 16:30 bis 22.11. 12:30) stand deshalb als
+ * "Freitag, 20. November 2026 · 16:30 – 12:30" da — ein Termin, der zu
+ * enden schien, bevor er beginnt. Im Bearbeiten-Fenster stimmte es.
+ *
+ * Ein Tag:      Freitag, 20. November 2026 · 16:30 – 21:00
+ * Mehrere Tage: Freitag, 20. November 2026, 16:30 – Sonntag, 22. November 2026, 12:30
+ */
+export const zeitraumText = (event: {
+  event_date: string;
+  event_end_time?: string | null;
+}): string => {
+  const beginn = event.event_date;
+  const ende = event.event_end_time;
+  if (!beginn) return '';
+
+  const beginnTag = formatEventDateLong(beginn);
+  const beginnZeit = formatEventTime(beginn);
+
+  if (!ende) return `${beginnTag} · ${beginnZeit}`;
+
+  const endeTag = formatEventDateLong(ende);
+  const endeZeit = formatEventTime(ende);
+
+  // Verglichen wird der TAG, nicht die Uhrzeit: Eine Uebernachtung von
+  // 19:00 bis 09:00 laeuft ueber zwei Tage, auch wenn die Endzeit kleiner
+  // aussieht als die Startzeit.
+  if (beginnTag === endeTag) return `${beginnTag} · ${beginnZeit} – ${endeZeit}`;
+
+  return `${beginnTag}, ${beginnZeit} – ${endeTag}, ${endeZeit}`;
+};
