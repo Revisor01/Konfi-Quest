@@ -29,6 +29,10 @@ Versionsüberschrift.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 
+### Sonstiges
+- Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
+  Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
+
 ### Entfernt
 - Das Balkendiagramm „Anfragen pro Minute" in der Auslastungsanzeige ist weg.
   Es hatte weder Skala noch Zeitmarken und keine ablesbaren Werte. Die

@@ -17,7 +17,6 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import type { BadgeUebersicht } from '../../../types/dashboard';
 import type { ChallengeMark } from '../../../types/challenges';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
@@ -96,7 +95,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   const [presentAlert] = useIonAlert();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
-  const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
   // Die eigenen Challenge-Stempel (marks). Schlanker Zusatzabruf — faellt er
   // aus, bleibt die Kachel bei 0 und der Stempel-Abschnitt aus, statt das
   // Profil zu stoeren.
@@ -132,23 +130,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     }
   }, [wrappedModalData]);
   
-  // Load badges for accurate count
-  React.useEffect(() => {
-    const loadBadges = async () => {
-      try {
-        const response = await api.get('/konfi/badges/v2');
-        const uebersicht = response.data as BadgeUebersicht;
-        // GET /konfi/badges fuehrt den Status als `earned`; `is_earned` gibt es
-        // nur in der Anzeige-Form der Abzeichen-Seite.
-        const badges = [...(uebersicht.available || []), ...(uebersicht.earned || [])];
-        const earnedCount = badges.filter((badge) => badge.earned).length;
-        setEarnedBadgesCount(earnedCount);
-      } catch (err) {
- console.warn('Could not load badges for count:', err);
-      }
-    };
-    loadBadges();
-  }, []);
+  // Die Zahl der Abzeichen steht in profile.badge_count — kein eigener Abruf
+  // noetig (22.09.2026).
+  //
+  // Hier stand ein rohes api.get('/konfi/badges/v2'), an der
+  // Zwischenspeicherung vorbei. Die Route fuehrt elf Datenbankabfragen aus und
+  // liefert die vollstaendige Abzeichenuebersicht; gebraucht wurde davon EINE
+  // Zahl, die das Profil ohnehin schon mitbringt (im Backend ein einzelnes
+  // COUNT(*) ueber user_badges, routes/konfi.js).
+  //
+  // Gegen Produktion geprueft, bevor umgestellt wurde: beide Wege lieferten
+  // dieselbe Zahl (24 gegen 24). Die Kachel liest sie jetzt direkt aus dem
+  // Profil, siehe unten.
 
   // Challenge-Stempel laden — sie speisen NUR die Zahl in der Kachel
   // "CHALLENGES". Die Stempel selbst stehen unter Challenges, nicht im
@@ -306,7 +299,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         // Punkte-Übersicht weiter unten. Hier zählt der Ueberblick.
         stats={[
           { value: profile.total_points || 0, label: 'PUNKTE' },
-          { value: earnedBadgesCount, label: 'BADGES' },
+          { value: profile.badge_count, label: 'BADGES' },
           { value: challengeMarks.length, label: 'CHALLENGES' }
         ]}
       />
