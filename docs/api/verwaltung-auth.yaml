@@ -1480,8 +1480,41 @@ paths:
         parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS
         gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem
         Gesamtbild inklusive Lastverteilung gemergt.
+
+        ERWEITERT (22.09.2026) — rein additiv, alle bisherigen Felder bleiben
+        mit unveränderten Namen und Typen erhalten. Neu sind:
+
+        * `apdex` — {wert, zufrieden, toleriert, frustriert, schwelleMs,
+          toleriertBisMs}. Eine Zahl zwischen 0 und 1 für "waren die Anfragen
+          schnell genug", gemessen an der SERVERZEIT (ohne Warten auf die
+          Leitung). Schwelle 500 ms, frustriert ab 2000 ms; 5xx zählen immer
+          als frustriert. Ohne Anfragen ist `wert` null, nicht 0.
+        * `ueber1s` — {anzahl, quote, schwelleMs}. Anfragen, deren GESAMTZEIT
+          inklusive Leitung über einer Sekunde lag: das gefühlte Warten.
+        * `statusKlassen` — {erfolg, ausDemCache, umleitung, nichtGefunden,
+          abgelehnt, serverfehler}. Die Summe entspricht totalRequests.
+        * `nutzer` — {fensterMinuten, aktiv, betroffen, schluessel,
+          betroffeneSchluessel}. Verschiedene angemeldete Konten der letzten
+          60 Minuten; `betroffen` sind die mit Warten über 1 s oder einem
+          Serverfehler. Gespeichert werden gekürzte Hashes, keine Konto-IDs;
+          sie stehen in der Antwort, damit über mehrere Replicas die
+          Vereinigung statt der Summe gebildet werden kann.
+        * `routesPotenzial` — dieselben Route-Zeilen, sortiert nach GESAMTER
+          Serverzeit (Aufrufe × Dauer) statt nach p95.
+        * `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit
+          anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte
+          Laufzeit, während recentErrors nach 50 Einträgen überläuft.
+
+        Die Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben
+        zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage),
+        `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.
+
+        BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
+        Route, die sowohl in routesSlowest als auch in routesBusiest stand,
+        doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen
+        Stand nachgemessen.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial und fehlerGruppen" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
@@ -1501,7 +1534,8 @@ paths:
       description: >
         Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
         /metrics für die Peer-Aggregation genutzt, ist aber auch direkt
-        aufrufbar.
+        aufrufbar. Enthält dieselben Felder wie /metrics (siehe dort, inkl.
+        der Erweiterung vom 22.09.2026), nur ohne replicas.
       responses:
         "200": { description: "APM-Snapshot dieser Replica" }
         "401": { $ref: "#/components/responses/Unauthorized" }

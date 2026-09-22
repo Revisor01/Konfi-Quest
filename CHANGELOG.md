@@ -9,6 +9,20 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.3.0
 
+### Hinzugefügt
+- Die Auslastungsanzeige ist ein Betriebs-Überblick geworden. Ganz oben steht
+  in einem Satz, ob gerade alles läuft. Darunter: wie viele Anfragen zügig
+  genug waren, wie viele Menschen in der letzten Stunde unterwegs waren und
+  wie viele davon warten mussten oder einen Fehler bekamen.
+- Ein Vergleich mit den Vortagen zeigt, was heute anders ist — bei Anfragen,
+  Fehlern und der langsamsten Stelle. Der angebrochene Tag wird dafür auf die
+  Stunde hochgerechnet, sonst sähe jeder Vormittag nach Einbruch aus.
+- Eine neue Ansicht „Aufwand" sortiert die Seiten danach, wo die Zeit
+  tatsächlich hingeht — Aufrufe mal Dauer statt der einzelnen langsamsten
+  Anfrage — und nennt je Zeile, was eine Verbesserung am Tag einbrächte.
+- Fehler stehen jetzt zusammengefasst statt als Rohliste: was, wie oft, seit
+  wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
+
 ### Geändert
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
@@ -19,6 +33,9 @@ Versionsüberschrift.
   mit — ein einzelner Foto-Upload ließ die Anzeige tagelang bei 56 Sekunden
   stehen, obwohl dieselbe Seite in Millisekunden antwortete. Was auf der
   Leitung lag, steht jetzt getrennt daneben.
+- Laufen mehrere Server-Instanzen, wurden Seiten, die gleichzeitig zu den
+  langsamsten und zu den häufigsten zählten, doppelt gezählt. Die
+  Aufrufzahlen im Betriebs-Überblick waren dadurch zu hoch.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
