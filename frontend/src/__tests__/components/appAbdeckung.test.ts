@@ -71,10 +71,25 @@ describe('Die Abdeckung wiederholt den weissen-Startbildschirm-Fehler nicht', ()
       .map((z, i) => ({ z: z.trim(), nr: i }))
       .filter((e) => e.z === '{verdeckt && <AppAbdeckung />}');
 
-    // App.tsx hat drei Ausstiege (Anmeldeseite, Ladezustand, angemeldete App).
-    // In JEDEM muss die Abdeckung stehen — sonst bliebe genau dort Inhalt im
-    // Umschalter lesbar.
-    expect(einbindungen.length, 'Abdeckung fehlt in mindestens einem Ausstieg').toBe(3);
+    // GENAU EINMAL — und das deckt seit Maltes Befund (23.09.2026) MEHR ab als
+    // die frueheren drei Einbindungen, nicht weniger.
+    //
+    // Vorher hatte App.tsx drei Ausstiege (Anmeldeseite, Ladezustand,
+    // angemeldete App) und in jedem stand die Abdeckung einmal. Dieser Test
+    // verlangte deshalb drei. Genau diese Bauweise war aber die Ursache des
+    // Befunds: Der Sperrbildschirm stand ebenfalls in mehreren Ausstiegen, an
+    // unterschiedlicher POSITION unter <IonApp> — React gleicht Kinder nach
+    // Position ab und montierte ihn beim Zweigwechsel neu. Sein Effekt beim
+    // Einblenden fragte die Biometrie dadurch zweimal, und auf Android
+    // verdraengte die zweite Abfrage die erste ("Nicht erkannt", obwohl
+    // niemand abgebrochen hatte). Die Begruendung steht in App.tsx und in
+    // __tests__/components/appSperreErsterVersuch.test.tsx.
+    //
+    // Jetzt wechselt nur der INHALT den Zweig, die Huelle <IonApp> steht fest.
+    // Die eine Abdeckung darin gilt fuer JEDEN Zustand — auch fuer die
+    // Anmeldeseite und den Ladezustand. Kein Ausstieg bleibt unbedeckt; es
+    // gibt nur keine getrennten Ausstiege mehr.
+    expect(einbindungen.length, 'Abdeckung muss genau einmal eingehaengt sein').toBe(1);
 
     // Die Abdeckung ist ein direktes Kind von <IonApp>: Die naechste
     // nicht-leere Zeile darunter schliesst die App, nicht ein Outlet. Stuende
@@ -86,6 +101,22 @@ describe('Die Abdeckung wiederholt den weissen-Startbildschirm-Fehler nicht', ()
         .filter((z) => z !== '');
       expect(danach[0], 'Abdeckung steht nicht direkt unter <IonApp>').toBe('</IonApp>');
     }
+  });
+
+  it('deckt JEDEN Zustand ab, weil die Huelle nicht mehr wechselt', () => {
+    // Die Ersetzung fuer die frueheren "drei Einbindungen": Geprueft wird die
+    // Eigenschaft, die sie sichern sollten — dass kein Zustand ohne Abdeckung
+    // rendert. Das ist jetzt strukturell gegeben, statt dreimal abgeschrieben:
+    // Es gibt genau ein <IonApp>, und die Abdeckung haengt darin.
+    const quelle = lies('src/App.tsx');
+    const ionApps = quelle.match(/<IonApp>/g) ?? [];
+    expect(ionApps, 'nur eine IonApp-Huelle, sonst wandern die Kinder wieder')
+      .toHaveLength(1);
+
+    // Und nur EIN Rueckgabe-JSX mit dieser Huelle: Zwei Ausstiege mit eigener
+    // IonApp waeren der Weg zurueck zu wandernden Kindern.
+    const abschluesse = quelle.match(/<\/IonApp>/g) ?? [];
+    expect(abschluesse).toHaveLength(1);
   });
 
   it('liegt ueber dem Sperrbildschirm, nicht darunter', () => {

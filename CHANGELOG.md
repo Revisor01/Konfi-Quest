@@ -46,6 +46,11 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Die App-Sperre fragte beim Öffnen zweimal gleichzeitig nach dem
+  Fingerabdruck. Auf Android brach die erste Abfrage dadurch ab und meldete
+  „Nicht erkannt", obwohl niemand abgebrochen hatte — erst der zweite Versuch
+  von Hand ging durch. Jetzt wird genau einmal gefragt, und das Entsperren
+  klappt beim ersten Mal.
 - Android-Geräte bekamen keine Mitteilungen mehr, sobald die App einmal
   aktualisiert oder neu angemeldet wurde — dauerhaft und ohne Hinweis. Die App
   konnte sich beim Mitteilungsdienst nicht erneut eintragen, weil das System

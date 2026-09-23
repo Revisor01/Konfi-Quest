@@ -157,6 +157,11 @@ Auf dem Sperrbildschirm steht **„Konfi Quest ist gesperrt"**, darunter der
 Knopf **„Mit Face ID entsperren"** — je nach Gerät heißt er „Touch ID" oder
 „Fingerabdruck". Ganz unten sitzt klein der Knopf **„Abmelden"**.
 
+**Die Abfrage kommt von selbst.** Sobald der Sperrbildschirm erscheint, fragt
+die App einmal nach Face ID, Touch ID oder Fingerabdruck — du musst den Knopf
+nicht erst antippen. Gefragt wird genau einmal; der Knopf ist für den zweiten
+Versuch da, wenn die erste Abfrage nicht geklappt hat.
+
 Das Symbol auf dem Knopf richtet sich nach dem Gerät: ein Gesicht bei Face ID
 und bei der Gesichtserkennung auf Android, ein Finger bei Touch ID und beim
 Fingerabdruck. Kann die App nicht sicher erkennen, womit dein Gerät entsperrt,

@@ -235,6 +235,59 @@ export const mussBeimStartSperren = (verzoegerung: SperrVerzoegerung): boolean =
 export type EntsperrAusgang = 'ok' | 'abgebrochen' | 'fehler';
 
 /**
+ * Die gerade laufende Abfrage, oder null.
+ *
+ * WOFÜR (Maltes Befund 23.09.2026, Android, App 2.3.0/118): "Der erste Login
+ * der automatisch das Android Fingerabdruck hoch holt hat aber in 2 von 2
+ * Versuchen fehlgeschlagen (Tippe nochmal um es erneut zu versuchen oder so),
+ * wenn ich nach dem Fehlschlag händisch jeweils dann mit Biometrie entsperren
+ * gedrückt habe ... ging's durch."
+ *
+ * Die Ursache lag in App.tsx: Der Sperrbildschirm stand in zwei
+ * Rückgabezweigen an unterschiedlicher Stelle und wurde beim Zweigwechsel neu
+ * montiert — sein Effekt beim Einblenden fragte die Biometrie deshalb zweimal.
+ * Das ist dort behoben (ein einziger Einhängepunkt).
+ *
+ * WARUM HIER TROTZDEM EINE ZWEITE EBENE: Auf Android ist eine zweite,
+ * gleichzeitige Abfrage nicht bloß doppelt, sie ist SCHÄDLICH. Der Prompt läuft
+ * in einer eigenen Activity; ein zweiter Start verdrängt den ersten, und
+ * AndroidX beendet ihn mit ERROR_CANCELED ("another pending operation prevents
+ * it"). Das Plugin bildet das auf SYSTEM_CANCEL ab, und wir zählen SYSTEM_CANCEL
+ * zu den Abbruch-Codes — die Person sieht "Nicht erkannt", ohne abgebrochen zu
+ * haben. Ein Aufrufer, der das versehentlich auslöst, darf die Sperre nicht
+ * unbedienbar machen. Deshalb liegt der Schutz an der Stelle, an der ALLE
+ * Aufrufer vorbeikommen, nicht nur in der einen Komponente.
+ *
+ * DAS WEICHT DIE SPERRE NICHT AUF: Der zweite Aufruf bekommt das Ergebnis der
+ * laufenden Abfrage — also 'ok' nur dann, wenn die Biometrie tatsächlich
+ * gelungen ist. Es entsteht kein Weg, der ohne erfolgreiche Prüfung 'ok'
+ * liefert, und es wird keine Prüfung übersprungen: Nach dem Ende ist der Merker
+ * wieder leer, jeder neue Versuch fragt das Gerät erneut.
+ *
+ * KANN DER MERKER HÄNGEN BLEIBEN? Nein. Er wird in einem `finally` geleert, das
+ * auch bei einem geworfenen Fehler läuft — und `verifyIdentity()` antwortet
+ * immer, mit Erfolg oder mit einem Fehlercode. Die eine Lage, in der er stehen
+ * bliebe, wäre ein Versprechen, das nie erfüllt wird; das gibt es auf dem Gerät
+ * nicht (der Prompt hat ein eigenes Zeitlimit und meldet ERROR_TIMEOUT).
+ */
+let laufendeAbfrage: Promise<EntsperrAusgang> | null = null;
+
+/**
+ * NUR FÜR TESTS: setzt den Merker der laufenden Abfrage zurück.
+ *
+ * Er liegt auf Modulebene und überlebt deshalb das Aufräumen zwischen zwei
+ * Testfällen. Ein Test, der eine Abfrage absichtlich offen lässt (um den
+ * Wettlauf nachzustellen), würde sonst alle folgenden blockieren — und die
+ * würden grün aussehen, weil gar nichts mehr beim Gerät ankommt.
+ *
+ * Im Betrieb wird das nicht gebraucht und auch nirgends aufgerufen: dort leert
+ * das `finally` in sperreOeffnen den Merker.
+ */
+export const _abfrageMerkerZuruecksetzenFuerTests = (): void => {
+  laufendeAbfrage = null;
+};
+
+/**
  * Fragt die Biometrie ab. Reine Ja/Nein-Prüfung, ohne jeden Bezug zu
  * gespeicherten Token (siehe Kopfkommentar).
  *
@@ -254,31 +307,48 @@ export type EntsperrAusgang = 'ok' | 'abgebrochen' | 'fehler';
  * Es gibt hier bewusst KEINEN Wiederholungs-Automatismus: scheitert die
  * Abfrage, bleibt der Sperrbildschirm stehen und die Person entscheidet selbst,
  * ob sie es noch einmal versucht oder sich abmeldet.
+ *
+ * Läuft schon eine Abfrage, wird KEINE zweite gestartet — siehe
+ * `laufendeAbfrage`. Der Aufrufer bekommt das Ergebnis der laufenden.
  */
 export const sperreOeffnen = async (): Promise<EntsperrAusgang> => {
   if (!Capacitor.isNativePlatform()) return 'fehler';
 
-  ausflugStarten();
-  try {
-    await NativeBiometric.verifyIdentity({
-      reason: 'Konfi Quest entsperren',
-      title: 'Konfi Quest entsperren',
-      subtitle: 'Bestätige, dass du es bist',
-      negativeButtonText: 'Abbrechen',
-      useFallback: true,
-      fallbackTitle: 'Code eingeben',
-      maxAttempts: 3
-    });
-    return 'ok';
-  } catch (fehler) {
-    if (istAbbruch(fehler)) return 'abgebrochen';
-    // Nur die grobe Tatsache ins Log — kein Token, keine Kennung, kein Name.
-    console.warn('App-Sperre: Entsperren fehlgeschlagen');
-    return 'fehler';
-  } finally {
-    // Nach der Abfrage kommt die App aus dem Hintergrund zurück. Der Merker
-    // darf erst danach fallen, sonst schnappt die Sperre im selben Atemzug
-    // wieder zu. Ein Tick reicht: der appStateChange-Rückweg läuft vorher.
-    setTimeout(ausflugBeenden, 0);
-  }
+  // Kein zweiter Prompt neben einem offenen. Auf Android würde er den offenen
+  // verdrängen und beide Versuche scheitern lassen.
+  if (laufendeAbfrage) return laufendeAbfrage;
+
+  const abfrage = (async (): Promise<EntsperrAusgang> => {
+    ausflugStarten();
+    try {
+      await NativeBiometric.verifyIdentity({
+        reason: 'Konfi Quest entsperren',
+        title: 'Konfi Quest entsperren',
+        subtitle: 'Bestätige, dass du es bist',
+        negativeButtonText: 'Abbrechen',
+        useFallback: true,
+        fallbackTitle: 'Code eingeben',
+        maxAttempts: 3
+      });
+      return 'ok';
+    } catch (fehler) {
+      if (istAbbruch(fehler)) return 'abgebrochen';
+      // Nur die grobe Tatsache ins Log — kein Token, keine Kennung, kein Name.
+      console.warn('App-Sperre: Entsperren fehlgeschlagen');
+      return 'fehler';
+    } finally {
+      // Der Merker fällt SOFORT, nicht erst einen Tick später: Sonst käme ein
+      // Antippen direkt nach einem Fehlversuch noch an die alte, längst
+      // beantwortete Abfrage und der Knopf wäre scheinbar tot.
+      laufendeAbfrage = null;
+      // Nach der Abfrage kommt die App aus dem Hintergrund zurück. Der
+      // Ausflug-Merker darf erst danach fallen, sonst schnappt die Sperre im
+      // selben Atemzug wieder zu. Ein Tick reicht: der appStateChange-Rückweg
+      // läuft vorher.
+      setTimeout(ausflugBeenden, 0);
+    }
+  })();
+
+  laufendeAbfrage = abfrage;
+  return abfrage;
 };
