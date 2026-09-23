@@ -906,8 +906,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   router.get('/rooms/:roomId/messages', verifyTokenRBAC, async (req, res) => {
     try {
       const roomId = req.params.roomId;
-      const limit = parseInt(req.query.limit) || 50;
-      const offset = parseInt(req.query.offset) || 0;
+      /*
+       * Obergrenze fuer limit (24.09.2026).
+       *
+       * Bis hierhin ging `parseInt(req.query.limit) || 50` ungeprueft als
+       * LIMIT $2 in die Abfrage. Ein Aufruf mit ?limit=100000 laedt
+       * entsprechend viele Zeilen in den Heap eines 512-MB-Containers — und
+       * darunter werden fuer JEDE geladene Nachricht noch Reaktionen und
+       * Umfrage-Stimmen nachgeholt.
+       *
+       * Die 200 sind nicht neu erfunden: Der after-Zweig derselben Route
+       * (LIMIT 200, weiter unten) hatte sie schon. Es war ein unvollstaendig
+       * ausgerolltes Muster.
+       *
+       * Die Grenze liegt bewusst UEBER dem, was ausgelieferte Fassungen
+       * anfragen: Die App schickt limit=100 (ChatRoom.tsx, zwei Stellen).
+       * Keine Fassung auf einem Geraet bekommt dadurch eine kuerzere Antwort
+       * als bisher — genau das waere der Fehler, den eine Deckelung machen
+       * kann.
+       *
+       * Unsinnige Werte fallen auf die Vorgabe zurueck, nicht auf 1: LIMIT -5
+       * wirft in PostgreSQL und kam vorher als 500 zurueck. Wer "-5" schickt,
+       * meint keine einzelne Nachricht — er meint nichts Bestimmtes, und dann
+       * ist der Normalfall die richtige Antwort.
+       */
+      const MAX_NACHRICHTEN = 200;
+      const gewuenscht = parseInt(req.query.limit, 10);
+      const limit = Number.isInteger(gewuenscht) && gewuenscht > 0
+        ? Math.min(MAX_NACHRICHTEN, gewuenscht)
+        : 50;
+      const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
       const userId = req.user.id;
       const userType = req.user.type;
       const organizationId = req.user.organization_id;

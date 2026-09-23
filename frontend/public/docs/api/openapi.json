@@ -7695,7 +7695,7 @@
           "Chat"
         ],
         "summary": "Nachrichten eines Raums laden",
-        "description": "Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder inkrementell per ?after=messageId (bis 200 neue Nachrichten). Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes.\n",
+        "description": "Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder inkrementell per ?after=messageId (bis 200 neue Nachrichten). Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes. limit ist auf 200 gedeckelt — derselbe Wert wie im after-Zweig.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -7712,9 +7712,11 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 50
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
             },
-            "description": "Anzahl Nachrichten pro Seite"
+            "description": "Anzahl Nachrichten pro Seite. Hoehere Werte werden auf 200 gedeckelt, unbrauchbare (0, negativ, nicht-numerisch) auf die Vorgabe 50 (Deckelung 24.09.2026)"
           },
           {
             "name": "offset",
@@ -7722,7 +7724,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0
+              "default": 0,
+              "minimum": 0
             },
             "description": "Anzahl zu überspringender Nachrichten (Blättern)"
           },
