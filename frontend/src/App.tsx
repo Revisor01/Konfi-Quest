@@ -146,9 +146,48 @@ const AppContent: React.FC = () => {
   //   };
   // }, [user, refreshFromAPI]);
 
-  if (!user) {
-    return (
-      <IonApp>
+  // ---------------------------------------------------------------------------
+  // EIN EINZIGER EINHAENGEPUNKT fuer Sperrbildschirm und Abdeckung.
+  //
+  // WARUM (Maltes Befund 23.09.2026, Android, App 2.3.0/118: "Der erste Login
+  // der automatisch das Android Fingerabdruck hoch holt hat aber in 2 von 2
+  // Versuchen fehlgeschlagen ... wenn ich nach dem Fehlschlag haendisch
+  // jeweils dann mit Biometrie entsperren gedrueckt habe ... ging's durch."):
+  //
+  // Vorher stand der Sperrbildschirm in JEDEM Rueckgabezweig einmal — im
+  // Ladezweig an zweiter Stelle hinter dem Ladebildschirm, im fertigen Zweig an
+  // vierter hinter Router, Toasts und Vorgangsleiste. React gleicht Kinder nach
+  // POSITION ab: verschiebt sich die Stelle, wird die Komponente nicht
+  // abgeglichen, sondern NEU MONTIERT. Nachgemessen in
+  // __tests__/components/appSperreErsterVersuch.test.tsx: gleiche Position ->
+  // eine Montage, verschobene Position -> zwei.
+  //
+  // Beim Kaltstart mit eingeschalteter Sperre passiert genau das. `gesperrt`
+  // steht fruehestens (useAppSperre braucht zwei Aufrufe ueber die
+  // Capacitor-Bruecke), `seitenBereit` spaeter (useSeitenBereit wartet auf
+  // dynamische Importe). Der Sperrbildschirm erscheint also erst im Ladezweig
+  // und wandert dann in den fertigen — und sein Effekt beim Einblenden, der die
+  // Biometrie von selbst abfragt, lief ein ZWEITES Mal.
+  //
+  // WARUM DAS AUF ANDROID WEHTUT UND AUF iOS NICHT:
+  // Auf Android laeuft die Abfrage in einer eigenen Activity (AuthActivity im
+  // Plugin), die beim zweiten Aufruf ein zweites Mal gestartet wird. Der
+  // AndroidX-Prompt beantwortet genau das mit ERROR_CANCELED — seine Doku sagt
+  // dazu wortwoertlich "another pending operation prevents it". Das Plugin
+  // bildet ERROR_CANCELED auf seinen Code 15 ab, und services/biometrics.ts
+  // zaehlt 15 (SYSTEM_CANCEL) zu den Abbruch-Codes: Der Sperrbildschirm zeigte
+  // daraufhin "Nicht erkannt. Tippe noch einmal." — obwohl niemand abgebrochen
+  // hatte. Der haendische Versuch danach war der einzige laufende und ging
+  // durch, genau Maltes Bild.
+  // Auf iOS haengt der Prompt an der laufenden Activity, dort fiel es nicht auf.
+  //
+  // Nur der INHALT wechselt jetzt den Zweig, die Huelle steht fest. Damit
+  // wandert der Sperrbildschirm nie mehr, wird nie mehr neu montiert und fragt
+  // genau einmal.
+  // ---------------------------------------------------------------------------
+  const inhalt = (() => {
+    if (!user) {
+      return (
         <IonReactRouter>
           <IonRouterOutlet>
             <Route path="/login" element={<LoginView />} />
@@ -164,14 +203,37 @@ const AppContent: React.FC = () => {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </IonRouterOutlet>
         </IonReactRouter>
-        {/* Auch hier: Auf der Anmeldeseite kann ein eingetippter Benutzername
-            stehen, und nach dem Abmelden ist die letzte Ansicht unter Umstaenden
-            noch im Vorschaubild. Die Abdeckung liegt deshalb ueber JEDEM
-            Zustand, nicht nur ueber der angemeldeten App. */}
-        {verdeckt && <AppAbdeckung />}
-      </IonApp>
+      );
+    }
+
+    // Angemeldet, aber noch nicht bereit: Ladebildschirm. Die Begruendung, WARUM
+    // hier gewartet wird statt zu rendern, steht unten ausfuehrlich.
+    if (!seitenBereit || !startGeklaert) return <AppLaedt />;
+
+    return (
+      <>
+        {/* key NUR aus orgVersion (Simons Befund 04.09.2026, zweiter Teil:
+            "Teamer und Konfi Dashboard zeigen eine weisse Seite beim ersten
+            Laden"). Mit der Benutzer-ID im Schluessel montierte der ganze
+            Baum bei JEDEM Anmelden neu -- MainTabs setzte seinen
+            seitenBereit-Zustand zurueck und der IonRouterOutlet bekam beim
+            ersten Rendern einen Platzhalter statt einer fertigen Seite.
+            Genau das Muster aus Build 153/154 (siehe
+            keinPlatzhalterImOutlet.test.ts): Ionic registriert die Seite beim
+            Einhaengen und bemerkt den spaeteren Tausch nicht -- weisse Seite.
+            Die Rolle wird stattdessen in MainTabs selbst behandelt (dort haengt
+            der Baum an `rolle`, nicht an der Montage). */}
+        <IonReactRouter key={orgVersion}>
+          <IonRouterOutlet>
+            {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
+            <Route path="/*" element={<MainTabs />} />
+          </IonRouterOutlet>
+        </IonReactRouter>
+        <GlobalToasts />
+        <WartendeVorgaengeLeiste />
+      </>
     );
-  }
+  })();
 
   // Die Render-Logik wird jetzt super einfach:
   // key={orgVersion}: Bei einem Org-Wechsel (Multi-Org-Switcher) wird orgVersion
@@ -207,47 +269,19 @@ const AppContent: React.FC = () => {
   // verschwindet. Ein Aufblitzen gegen ein anderes zu tauschen waere kein
   // Gewinn. Im Browser steht `startGeklaert` sofort auf true und diese
   // Bedingung kostet dort nichts.
-  if (!seitenBereit || !startGeklaert) {
-    return (
-      <IonApp>
-        <AppLaedt />
-        {gesperrt && (
-          <AppSperrbildschirm
-            onEntsperrt={entsperren}
-            onAbmelden={async () => { entsperren(); await signOut(); }}
-          />
-        )}
-        {verdeckt && <AppAbdeckung />}
-      </IonApp>
-    );
-  }
-
   return (
     <IonApp>
-      {/* key NUR aus orgVersion (Simons Befund 04.09.2026, zweiter Teil:
-          "Teamer und Konfi Dashboard zeigen eine weisse Seite beim ersten
-          Laden"). Mit der Benutzer-ID im Schluessel montierte der ganze
-          Baum bei JEDEM Anmelden neu -- MainTabs setzte seinen
-          seitenBereit-Zustand zurueck und der IonRouterOutlet bekam beim
-          ersten Rendern einen Platzhalter statt einer fertigen Seite.
-          Genau das Muster aus Build 153/154 (siehe
-          keinPlatzhalterImOutlet.test.ts): Ionic registriert die Seite beim
-          Einhaengen und bemerkt den spaeteren Tausch nicht -- weisse Seite.
-          Die Rolle wird stattdessen in MainTabs selbst behandelt (dort haengt
-          der Baum an `rolle`, nicht an der Montage). */}
-      <IonReactRouter key={orgVersion}>
-        <IonRouterOutlet>
-          {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
-          <Route path="/*" element={<MainTabs />} />
-        </IonRouterOutlet>
-      </IonReactRouter>
-      <GlobalToasts />
-      <WartendeVorgaengeLeiste />
+      {inhalt}
       {/* Der Sperrbildschirm liegt OBEN DRAUF, statt den Baum zu ersetzen.
           Ein Austausch wuerde MainTabs bei jedem Sperren neu montieren — genau
           das Muster, das in dieser App schon zu weissen Seiten gefuehrt hat
           (siehe Kommentar zum orgVersion-Schluessel oben). Verdeckt wird
-          vollstaendig und deckend, es scheint nichts durch. */}
+          vollstaendig und deckend, es scheint nichts durch.
+
+          Er steht hier GENAU EINMAL, ausserhalb der Zweigwahl — die Begruendung
+          steht oben bei `inhalt` (Maltes Befund 23.09.2026). Wer ihn zurueck in
+          die Zweige schiebt, holt die doppelte Abfrage zurueck;
+          __tests__/components/appSperreErsterVersuch.test.tsx bewacht das. */}
       {gesperrt && (
         <AppSperrbildschirm
           onEntsperrt={entsperren}
@@ -263,7 +297,11 @@ const AppContent: React.FC = () => {
       {/* Die Abdeckung steht ZULETZT und damit ueber dem Sperrbildschirm.
           Beim Wegwechseln kann beides gleichzeitig anstehen — dann gehoert
           ins Vorschaubild die neutrale Flaeche, nicht der bedienbare
-          Sperrbildschirm. */}
+          Sperrbildschirm.
+
+          Sie liegt ueber JEDEM Zustand, auch ueber der Anmeldeseite: Dort kann
+          ein eingetippter Benutzername stehen, und nach dem Abmelden ist die
+          letzte Ansicht unter Umstaenden noch im Vorschaubild. */}
       {verdeckt && <AppAbdeckung />}
     </IonApp>
   );
