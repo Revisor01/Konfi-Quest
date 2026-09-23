@@ -18,7 +18,7 @@ import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
 import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt } from '../services/analytics';
 import { fehlerArt } from '../utils/fehler';
-import { buildPushTargetUrl, resolveOrgForPush, PushUserType } from '../utils/pushNavigation';
+import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -1018,16 +1018,29 @@ useEffect(() => {
           const notificationData = action.notification.data as Record<string, unknown> | undefined;
           const notificationType = action.notification.data?.type;
 
-          // Use timeout to ensure navigation happens after app is fully loaded
-          setTimeout(async () => {
+          // KEIN setTimeout mehr (Maltes Befund 23.09.2026, Android: "Da
+          // oeffnet sich die App fuer ganz kurz und stuerzt direkt ab").
+          //
+          // Hier stand ein `setTimeout(..., 100)` mit der Begruendung, die
+          // Navigation solle erst laufen, "wenn die App fertig geladen ist".
+          // Die Wartezeit hat das aber nie zugesichert: 100 ms sind kein
+          // Zustand, sondern eine Hoffnung — und am Ende stand ein harter
+          // Reload, der die gerade hochfahrende Activity abgeraeumt hat.
+          //
+          // Die Frage "ist der Router schon da?" beantwortet jetzt der
+          // Empfaenger selbst: pushZielMelden legt das Ziel ab und feuert;
+          // PushZielNavigation holt es beim Montieren nach, falls es zu
+          // frueh kam. Damit ist die Wartezeit nicht nur unnoetig, sie waere
+          // schaedlich — sie verzoegert die Navigation sichtbar und laesst
+          // den Nutzer auf der zuletzt geoeffneten Seite stehen.
+          void (async () => {
             // Multi-Org: Der Push trägt die Organisation seines Inhalts. Weicht
             // sie von der gerade aktiven Org ab, ERST über den bestehenden
-            // switchOrg-Flow wechseln und den Abschluss abwarten — der harte
-            // Reload unten würde die asynchronen Preferences-Writes sonst
-            // abschneiden. Frische Werte über die tokenStore-Getter, nicht aus
-            // dem Effect-Closure ([user]-Dependency -> stale). Fehlt die Org im
-            // Payload oder schlägt der Wechsel fehl, bleibt alles beim heutigen
-            // Verhalten (direkt navigieren).
+            // switchOrg-Flow wechseln und den Abschluss abwarten. Frische Werte
+            // über die tokenStore-Getter, nicht aus dem Effect-Closure
+            // ([user]-Dependency -> stale). Fehlt die Org im Payload oder
+            // schlägt der Wechsel fehl, bleibt alles beim heutigen Verhalten
+            // (direkt navigieren).
             const currentType = (getUser()?.type || user?.type || 'konfi') as PushUserType;
             const effectiveType = await resolveOrgForPush(notificationData, currentType, {
               getActiveOrgId,
@@ -1036,12 +1049,11 @@ useEffect(() => {
             });
             const targetUrl = buildPushTargetUrl(notificationType, notificationData, effectiveType);
 
-            if (targetUrl) {
-              // Hard navigation (intentional): App kommt aus Background/Killed-State,
-              // React Router State kann veraltet sein. Full Reload sichert frische Daten.
-              window.location.href = targetUrl;
-            }
-          }, 100);
+            // Ziel an den Router uebergeben (siehe PUSH_ZIEL_EVENT in
+            // utils/pushNavigation und navigation/PushZielNavigation). Der
+            // frueher hier stehende Reload war die Absturzursache.
+            pushZielMelden(targetUrl);
+          })();
         });
 
         // Jetzt: Registrierung

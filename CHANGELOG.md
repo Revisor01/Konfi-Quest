@@ -46,6 +46,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Das Antippen einer Mitteilung stürzte die App auf Android ab: Sie öffnete
+  sich kurz und war wieder weg, auch aus dem Hintergrund heraus — erst nach
+  vollständigem Schließen ließ sie sich wieder starten. Der Tipp führt jetzt
+  direkt zum gemeinten Termin, Chat oder Abzeichen, ohne die App neu zu laden.
 - Android-Geräte bekamen keine Mitteilungen mehr, sobald die App einmal
   aktualisiert oder neu angemeldet wurde — dauerhaft und ohne Hinweis. Die App
   konnte sich beim Mitteilungsdienst nicht erneut eintragen, weil das System
