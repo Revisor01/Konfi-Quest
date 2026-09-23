@@ -471,9 +471,18 @@ describe('Ein Platz wird frei — jemand rueckt nach', () => {
       const warteKonfi = await neuerKonfi('warte_a');
       const warteTeamer = await neuerTeamer('wartet_team');
       await bucht(eventId, kandidatin, 'confirmed');
-      // Der Teamer wartet LAENGER — ohne Rollentrennung bekaeme er den Platz.
-      await bucht(eventId, warteTeamer, 'waitlist', new Date(Date.now() - 900_000).toISOString());
-      await bucht(eventId, warteKonfi, 'waitlist');
+      // BEIDE Wartezeiten explizit setzen (23.09.2026).
+      //
+      // Vorher bekam nur der Teamer einen Zeitstempel, der Konfi lief auf
+      // NOW(). Das Nachruecken sortiert nach created_at ASC
+      // (utils/bookingUtils.js) — landen beide Buchungen in derselben
+      // Millisekunde, ist die Reihenfolge nicht mehr bestimmt und es rueckt
+      // der Falsche nach. Der Test fiel dadurch in etwa jedem vierten Lauf
+      // mit "expected [] to include <id>", lokal wie in der CI, und blockierte
+      // dort still den Deploy.
+      const warteBasis = Date.now();
+      await bucht(eventId, warteTeamer, 'waitlist', new Date(warteBasis - 900_000).toISOString());
+      await bucht(eventId, warteKonfi, 'waitlist', new Date(warteBasis - 60_000).toISOString());
 
       const res = await request(app)
         .post(`/api/admin/konfis/${kandidatin}/promote-teamer`)
