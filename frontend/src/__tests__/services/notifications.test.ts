@@ -57,12 +57,50 @@ describe('removeAllDelivered', () => {
 });
 
 describe('removeDeliveredById', () => {
-  it('entfernt genau die Notification mit der id', async () => {
+  /*
+   * DER ABSTURZ, DEN DIESE TESTS ABSICHERN (Android Vitals, 23.09.2026):
+   * 4 betroffene Nutzende, 16 Abstuerze in 28 Tagen, vier Geraete, alle im
+   * Vordergrund. Das Android-Plugin liest `notif.getInteger("id")` und ruft
+   * damit `notificationManager.cancel(id)`. Bei einer nicht-numerischen id ist
+   * das null, das Entpacken wirft eine NullPointerException — NATIV, im
+   * Bridge-Thread. Das try/catch im Service faengt das nicht, also darf eine
+   * nicht-numerische id den Aufruf gar nicht erreichen.
+   *
+   * Der frueher hier stehende Test erwartete genau das Gegenteil
+   * (`notifications: [{ id: 'abc' }]`) und hat den Absturz mit abgesichert.
+   * Die Erwartung war nachweislich falsch, nicht bloss streng.
+   */
+  it('entfernt genau die Notification mit der id — als ZAHL', async () => {
     removeDeliveredNotifications.mockResolvedValue(undefined);
-    await removeDeliveredById('abc');
+    await removeDeliveredById('42');
     expect(removeDeliveredNotifications).toHaveBeenCalledWith({
-      notifications: [{ id: 'abc' }],
+      notifications: [{ id: 42 }],
     });
+  });
+
+  it('nimmt eine id auch als Zahl an', async () => {
+    removeDeliveredNotifications.mockResolvedValue(undefined);
+    await removeDeliveredById(7);
+    expect(removeDeliveredNotifications).toHaveBeenCalledWith({
+      notifications: [{ id: 7 }],
+    });
+  });
+
+  it('ruft das Plugin NICHT mit einer nicht-numerischen id — der verbotene Fall', async () => {
+    await removeDeliveredById('abc');
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
+  });
+
+  it('laesst auch eine halb-numerische id nicht durch', async () => {
+    // Number('12abc') ist NaN — parseInt waere 12 gewesen und haette die
+    // falsche Mitteilung entfernt.
+    await removeDeliveredById('12abc');
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
+  });
+
+  it('laesst eine Kommazahl nicht durch', async () => {
+    await removeDeliveredById('1.5');
+    expect(removeDeliveredNotifications).not.toHaveBeenCalled();
   });
 
   it('ist no-op ohne id', async () => {

@@ -122,15 +122,58 @@ export const removeAllDelivered = async (): Promise<void> => {
   }
 };
 
-// Genau EINE zugestellte Notification anhand ihrer id entfernen.
-export const removeDeliveredById = async (id: string): Promise<void> => {
-  if (!Capacitor.isNativePlatform() || !id) return;
+/*
+ * Genau EINE zugestellte Notification anhand ihrer id entfernen.
+ *
+ * DIE ID MUSS EINE ZAHL SEIN — sonst stuerzt die App ab (Android Vitals,
+ * gemessen 23.09.2026: 4 betroffene Nutzende, 16 Abstuerze in 28 Tagen, alle
+ * im Vordergrund, vier verschiedene Geraete, Android 16):
+ *
+ *   java.lang.NullPointerException: Attempt to invoke virtual method
+ *   'int java.lang.Integer.intValue()' on a null object reference
+ *     at PushNotificationsPlugin.removeDeliveredNotifications (…:170)
+ *
+ * Hier stand der Kommentar "restliche Felder werden vom Plugin ignoriert" —
+ * das war falsch, und zwar gerade fuer die id. Das Plugin macht (Quelle:
+ * capacitor-plugins/push-notifications, Android):
+ *
+ *   Integer id = notif.getInteger("id");
+ *   if (tag == null) { notificationManager.cancel(id); }
+ *
+ * `getInteger` liefert null, sobald der Wert keine Zahl ist. Das folgende
+ * `cancel(id)` erwartet ein primitives int, entpackt die null — und wirft.
+ * Der Absturz passiert NATIV, im Bridge-Thread: Das try/catch hier unten
+ * faengt ihn NICHT. Die Notification-ids von FCM sind auf Android Zahlen,
+ * koennen aber als String ankommen; alles andere (etwa APNs-Kennungen, oder
+ * eine leere Angabe) darf diesen Aufruf nie erreichen.
+ *
+ * Deshalb: nur numerische ids weitergeben, und zwar als Zahl. Ist die id
+ * keine, wird NICHT aufgeraeumt — eine liegenbleibende Mitteilung im
+ * Mitteilungszentrum ist ungleich harmloser als eine abstuerzende App.
+ */
+export const removeDeliveredById = async (id: string | number): Promise<void> => {
+  if (!Capacitor.isNativePlatform() || id === '' || id === null || id === undefined) return;
+
+  // Number() statt parseInt: "12abc" darf NICHT als 12 durchgehen, sonst
+  // loeschen wir eine fremde Mitteilung. Number('') waere 0 — deshalb steht
+  // die Leerpruefung oben.
+  const nummer = Number(id);
+  if (!Number.isInteger(nummer)) {
+    // Kein Fehlerfall fuer die Nutzenden, nur nichts zu tun. Als Warnung, weil
+    // es bedeutet, dass eine Mitteilung stehen bleibt.
+    console.warn('notifications: id ist keine Zahl, kein Aufraeumen:', id);
+    return;
+  }
+
   try {
     await PushNotifications.removeDeliveredNotifications({
-      // Nur die id ist relevant; restliche Felder werden vom Plugin ignoriert.
-      notifications: [{ id } as PushNotificationSchema],
+      // `as` bleibt noetig: Das Schema verlangt Felder, die das Plugin beim
+      // Entfernen nicht liest — die id liest es sehr wohl (siehe oben).
+      notifications: [{ id: nummer } as unknown as PushNotificationSchema],
     });
   } catch (error) {
+    // Faengt nur JS-seitige Fehler; der native NPE oben ist damit NICHT
+    // abgedeckt und deshalb vorher ausgeschlossen.
     console.warn('notifications: removeDeliveredById fehlgeschlagen:', error);
   }
 };

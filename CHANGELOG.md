@@ -46,6 +46,9 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Beim Antippen einer Mitteilung stürzte die App auf Android ab, während sie
+  die angetippte Mitteilung aus dem Mitteilungszentrum entfernte. Das Aufräumen
+  lässt die App jetzt nicht mehr abstürzen.
 - Das Antippen einer Mitteilung stürzte die App auf Android ab: Sie öffnete
   sich kurz und war wieder weg, auch aus dem Hintergrund heraus — erst nach
   vollständigem Schließen ließ sie sich wieder starten. Der Tipp führt jetzt
