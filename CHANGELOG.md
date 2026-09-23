@@ -55,6 +55,10 @@ Versionsüberschrift.
 - Wer sich abgemeldet und wieder angemeldet hat, bekam ebenfalls keine
   Mitteilungen mehr. Beim Abmelden wird das Gerät abgemeldet, die App hielt
   sich aber weiter für eingetragen.
+- Ein kurzer Aussetzer beim Eintragen für Mitteilungen ließ das Gerät bis zur
+  nächsten Anmeldung ohne Mitteilungen — etwa bei wackligem Netz oder direkt
+  nach dem Flugmodus. Die App versucht es jetzt mehrmals mit wachsendem
+  Abstand, im Hintergrund, ohne die Anmeldung aufzuhalten.
 - Mehrtägige Termine zeigen in den Details jetzt beide Tage. Eine Freizeit von
   Freitagabend bis Sonntagmittag stand vorher als „Freitag · 16:30 – 12:30" da,
   als ob sie am selben Tag endete.
