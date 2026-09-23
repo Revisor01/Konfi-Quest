@@ -129,6 +129,10 @@ Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles
 erlaubt ist, hilft fast immer dasselbe: **die App einmal ganz schließen und neu
 öffnen.** Beim Öffnen meldet sie sich beim Benachrichtigungsdienst neu an.
 
+Im Profil steht unter **„Mitteilungen prüfen"**, ob die App überhaupt
+Mitteilungen senden darf und welche Fassung gerade läuft. Ein Tippen darauf
+zeigt beides im Klartext — das ist die schnellste Antwort auf „woran liegt es".
+
 Führt das nicht weiter, in dieser Reihenfolge weiterprobieren:
 
 1. In den Einstellungen des Geräts prüfen, ob Konfi Quest Benachrichtigungen

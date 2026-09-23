@@ -50,6 +50,8 @@ vi.mock('@capacitor/app', () => ({
   App: {
     addListener: (...a: unknown[]) => appListener(...a),
     fireRestoredResult: vi.fn(),
+    // Seit 23.09.2026 schickt die App ihre Fassung mit (Migration 156).
+    getInfo: vi.fn().mockResolvedValue({ version: '2.3.0', build: '117' }),
   },
 }));
 
@@ -175,6 +177,16 @@ const aktivierungsRueckruf = (): ((z: { isActive: boolean }) => void) | null => 
 };
 
 describe('Push-Token: Nachfassen statt stillem Verlust', () => {
+  /*
+   * Nur die REGISTRIERUNGEN zaehlen, nicht jeden POST.
+   *
+   * Seit dem 23.09.2026 meldet die App eine erfolglose Token-Beschaffung an
+   * /notifications/push-diagnose — das ist gewollt und darf die Pruefungen hier
+   * nicht verfaelschen.
+   */
+  const registrierungen = () =>
+    apiPost.mock.calls.filter((c) => c[0] === '/notifications/device-token');
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -204,20 +216,31 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
     // Android liefert den Token, bevor die Geraete-ID da ist.
     await act(async () => { melden!({ value: 'fcm-token-abc' }); });
 
-    // Vorher ging der Token hier verloren. Jetzt: noch kein POST, aber auch
-    // nicht aufgegeben.
-    expect(apiPost).not.toHaveBeenCalled();
+    // Vorher ging der Token hier verloren. Jetzt: noch keine REGISTRIERUNG,
+    // aber auch nicht aufgegeben.
+    //
+    // Geprueft wird gezielt der device-token-Aufruf, nicht "kein POST
+    // ueberhaupt": Seit dem 23.09.2026 meldet die App eine erfolglose
+    // Token-Beschaffung an /notifications/push-diagnose. Diese Meldung ist
+    // gewollt — sie war die Antwort auf eine Fehlersuche, bei der genau diese
+    // Stille nicht zu deuten war.
+    expect(registrierungen()).toHaveLength(0);
 
     // Die Geraete-ID trifft ein, der Nachfass-Versuch laeuft.
     geraeteId = 'geraet-1';
     await act(async () => { await vi.advanceTimersByTimeAsync(600); });
 
-    expect(apiPost).toHaveBeenCalledTimes(1);
-    expect(apiPost).toHaveBeenCalledWith('/notifications/device-token', {
-      token: 'fcm-token-abc',
-      platform: 'android',
-      device_id: 'geraet-1',
-    });
+    // Genau EINE Registrierung — die Diagnose-Meldung an
+    // /notifications/push-diagnose zaehlt hier nicht mit (23.09.2026).
+    expect(registrierungen()).toHaveLength(1);
+    expect(apiPost).toHaveBeenCalledWith('/notifications/device-token',
+      expect.objectContaining({
+        token: 'fcm-token-abc',
+        platform: 'android',
+        device_id: 'geraet-1',
+        app_version: '2.3.0',
+        app_build: '117',
+      }));
   });
 
   it('gibt den Token nach mehreren vergeblichen Anlaeufen nicht verloren, sondern merkt ihn', async () => {

@@ -61,10 +61,90 @@ describe('Notifications Routes', () => {
       expect(rows[0].platform).toBe('ios');
     });
 
+    /*
+     * DIE APP-FASSUNG WIRD MITGESCHRIEBEN (23.09.2026, Migration 156).
+     *
+     * Anlass: Eine Fehlersuche zu fehlenden Push-Nachrichten auf Android kostete
+     * einen Abend, weil nicht feststellbar war, ob auf dem Geraet die
+     * korrigierte Fassung lief oder noch die alte. "Fix greift nicht" und "Fix
+     * ist nicht auf dem Geraet" sehen serverseitig identisch aus.
+     */
+    it('schreibt app_version und app_build mit', async () => {
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'tok-mit-fassung', platform: 'android', device_id: 'dev-f1',
+                app_version: '2.3.0', app_build: '117' })
+        .expect(200);
+
+      const { rows } = await db.query(
+        'SELECT app_version, app_build FROM push_tokens WHERE token = $1', ['tok-mit-fassung']);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].app_version).toBe('2.3.0');
+      expect(rows[0].app_build).toBe('117');
+    });
+
+    it('nimmt Registrierungen OHNE Fassungsangabe weiter an', async () => {
+      // Ausgelieferte App-Versionen kennen die Felder nicht. NULL heisst
+      // "unbekannt", nicht "Fehler" — sonst braeche der Push fuer alle, die
+      // noch nicht aktualisiert haben.
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'tok-ohne-fassung', platform: 'android', device_id: 'dev-f2' })
+        .expect(200);
+
+      const { rows } = await db.query(
+        'SELECT app_version, app_build FROM push_tokens WHERE token = $1', ['tok-ohne-fassung']);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].app_version).toBeNull();
+      expect(rows[0].app_build).toBeNull();
+    });
+
+    it('behaelt eine bekannte Fassung, wenn eine aeltere App ohne Angabe nachregistriert', async () => {
+      // COALESCE im Upsert: Eine Registrierung ohne Angabe darf eine bereits
+      // bekannte Fassung nicht auf NULL zuruecksetzen.
+      const senden = (extra) => request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'tok-coalesce', platform: 'android', device_id: 'dev-f3', ...extra })
+        .expect(200);
+
+      await senden({ app_version: '2.3.0', app_build: '117' });
+      await senden({}); // aeltere Fassung meldet sich erneut
+
+      const { rows } = await db.query(
+        'SELECT app_version, app_build FROM push_tokens WHERE device_id = $1', ['dev-f3']);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].app_version).toBe('2.3.0');
+      expect(rows[0].app_build).toBe('117');
+    });
+
     it('Ohne Auth-Token -> 401', async () => {
       const res = await request(app)
         .post('/api/notifications/device-token')
         .send({ token: 'fcm-test-token', platform: 'ios' });
+
+      expect(res.status).toBe(401);
+    });
+
+    // Die Meldestelle fuer den Fall, dass GAR KEIN Token zustande kommt —
+    // genau die Stille, die am 23.09.2026 nicht zu deuten war.
+    it('nimmt eine Push-Diagnose an', async () => {
+      const res = await request(app)
+        .post('/api/notifications/push-diagnose')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ grund: 'kein-token-nach-anmeldung', berechtigung: 'granted',
+                plattform: 'android', app_version: '2.3.0', app_build: '117' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('Push-Diagnose ohne Anmeldung -> 401', async () => {
+      const res = await request(app)
+        .post('/api/notifications/push-diagnose')
+        .send({ grund: 'irgendwas' });
 
       expect(res.status).toBe(401);
     });

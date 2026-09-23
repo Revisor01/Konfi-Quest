@@ -9,6 +9,11 @@ module.exports = (db, verifyTokenRBAC) => {
   const validateDeviceToken = [
     body('token').notEmpty().withMessage('Push-Token ist erforderlich'),
     body('platform').isIn(['ios', 'android', 'web']).withMessage('Ungültige Plattform'),
+    // App-Fassung (23.09.2026, Migration 156): OPTIONAL, weil ausgelieferte
+    // Versionen die Felder nicht kennen. Laenge begrenzt, damit hier nichts
+    // Beliebiges in der Datenbank landet.
+    body('app_version').optional({ nullable: true }).isString().isLength({ max: 32 }),
+    body('app_build').optional({ nullable: true }).isString().isLength({ max: 32 }),
     handleValidationErrors
   ];
 
@@ -285,9 +290,31 @@ module.exports = (db, verifyTokenRBAC) => {
 
   // Speichert oder aktualisiert einen Geräte-Token für Push-Benachrichtigungen
   router.post('/device-token', verifyTokenRBAC, validateDeviceToken, async (req, res) => {
-    const { token, platform, device_id } = req.body;
+    const { token, platform, device_id, app_version, app_build } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
+
+    /*
+     * JEDE Registrierung wird protokolliert (23.09.2026).
+     *
+     * Vorher loggte diese Route NUR Fehler. Ein erfolgreicher POST hinterliess
+     * keine Spur, und "die App hat sich nie gemeldet" war von "die App hat
+     * sich gemeldet und es lief" nicht zu unterscheiden. Bei der Fehlersuche
+     * am 23.09.2026 hat genau das Stunden gekostet: drei Anmeldungen eines
+     * Testers, kein Eintrag, und keine Moeglichkeit zu sagen, ob die App
+     * ueberhaupt fragt.
+     *
+     * Absichtlich OHNE den Token selbst -- der ist ein Zugangsschluessel zum
+     * Zustellen von Nachrichten und gehoert in kein Protokoll. Die letzten
+     * sechs Zeichen genuegen, um zwei Registrierungen zu unterscheiden.
+     */
+    console.log(
+      '[PUSH] Registrierung: user=%s (%s) platform=%s app=%s/%s geraet=%s token=…%s',
+      userId, userType, platform,
+      app_version || 'unbekannt', app_build || '?',
+      (device_id || 'ohne').slice(0, 12),
+      String(token).slice(-6)
+    );
 
     if (!token || !platform) {
       return res.status(400).json({ error: 'Token und Plattform erforderlich' });
@@ -310,14 +337,21 @@ module.exports = (db, verifyTokenRBAC) => {
 
       // Upsert: Token speichern oder aktualisieren
       await db.query(`
-        INSERT INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
+        INSERT INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at,
+                                 app_version, app_build)
+        VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)
         ON CONFLICT (user_id, platform, device_id)
         DO UPDATE SET
           token = EXCLUDED.token,
           user_type = EXCLUDED.user_type,
-          updated_at = NOW()`,
-        [userId, userType, token, platform, finalDeviceId]
+          updated_at = NOW(),
+          -- COALESCE, nicht blind ueberschreiben: Meldet sich eine aeltere
+          -- App-Fassung ohne die Felder, soll die zuletzt BEKANNTE Angabe
+          -- stehen bleiben statt durch NULL ersetzt zu werden.
+          app_version = COALESCE(EXCLUDED.app_version, push_tokens.app_version),
+          app_build = COALESCE(EXCLUDED.app_build, push_tokens.app_build)`,
+        [userId, userType, token, platform, finalDeviceId,
+         app_version || null, app_build || null]
       );
 
 
@@ -330,6 +364,36 @@ module.exports = (db, verifyTokenRBAC) => {
       }
       res.status(500).json({ error: 'Datenbankfehler' });
     }
+  });
+
+  /*
+   * Die App meldet, WARUM keine Registrierung zustande kam (23.09.2026).
+   *
+   * Der eigentliche Grund, aus dem die Android-Fehlersuche so zaeh war: Wenn
+   * gar kein Token entsteht, gibt es auch keinen POST /device-token — und
+   * damit serverseitig KEINE Spur. "Die App fragt nicht" und "die App fragt,
+   * bekommt aber nichts" sahen identisch aus, naemlich wie Stille.
+   *
+   * Diese Route nimmt genau diese Stille auf. Sie speichert nichts, sie
+   * protokolliert nur: Damit lassen sich die Faelle unterscheiden, ohne dass
+   * jemand ein Geraet an den Rechner haengen muss.
+   *
+   * Absichtlich anspruchslos: kein Schema, keine Pflichtfelder ausser dem
+   * Grund. Was die App schickt, landet im Protokoll — sie soll melden koennen,
+   * auch wenn sie selbst nicht weiss, was schiefgeht.
+   */
+  router.post('/push-diagnose', verifyTokenRBAC, async (req, res) => {
+    const { grund, berechtigung, plattform, app_version, app_build, hinweis } = req.body || {};
+    console.log(
+      '[PUSH-DIAGNOSE] user=%s (%s) grund=%s berechtigung=%s plattform=%s app=%s/%s %s',
+      req.user.id, req.user.type,
+      grund || 'ohne-angabe',
+      berechtigung || '?',
+      plattform || '?',
+      app_version || 'unbekannt', app_build || '?',
+      hinweis ? `hinweis=${String(hinweis).slice(0, 200)}` : ''
+    );
+    res.json({ success: true });
   });
 
   // Entfernt einen Geräte-Token beim Logout

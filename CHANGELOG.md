@@ -29,6 +29,12 @@ Versionsüberschrift.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 
+### Hinzugefügt
+- Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App
+  erlaubt sind und welche Fassung läuft. Kommt einmal nichts an, lässt sich das
+  vorlesen statt zu raten — und wenn die Erlaubnis fehlt, steht dort, wo man sie
+  einschaltet.
+
 ### Sonstiges
 - Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
   Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.

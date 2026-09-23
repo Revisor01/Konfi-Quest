@@ -25,6 +25,7 @@ import { SectionHeader } from '../../shared';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
+import PushDiagnose from '../../shared/PushDiagnose';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -609,6 +610,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   Blendet sich selbst aus, wenn das Geraet keine eingerichtete
                   Biometrie hat. */}
               <AppSperreSchalter variante="purple" />
+
+              {/* Mitteilungen pruefen — zum Vorlesen bei Fehlersuche
+                  (23.09.2026, siehe PushDiagnose.tsx). */}
+              <PushDiagnose variante="purple" />
 
               {/* Medien-Cache leeren */}
               <div

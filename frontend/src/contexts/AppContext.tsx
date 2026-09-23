@@ -50,6 +50,55 @@ const FCM = registerPlugin<FCMPlugin>('FCM');
  * beiden Plattformen. Die optionale Web-Abhaengigkeit `firebase` wird NICHT
  * mitinstalliert — auf den Geraeten laeuft das native SDK.
  */
+/*
+ * Fassung der laufenden App — fuer das Protokoll auf dem Server (23.09.2026).
+ *
+ * Ohne diese Angabe war bei der Android-Fehlersuche nicht zu unterscheiden, ob
+ * ein Fix nicht wirkt oder auf dem Geraet noch die alte Fassung laeuft. Beides
+ * sah serverseitig gleich aus. Einmal ermittelt und gemerkt: App.getInfo() ist
+ * ein Bruecken-Aufruf, der sich zur Laufzeit nicht aendert.
+ */
+let appFassung: { version: string | null; build: string | null } | null = null;
+
+const fassungHolen = async (): Promise<{ version: string | null; build: string | null }> => {
+  if (appFassung) return appFassung;
+  try {
+    const info = await App.getInfo();
+    appFassung = { version: info.version || null, build: info.build || null };
+  } catch {
+    // Im Browser gibt es getInfo nicht — dann bleibt die Angabe leer, und der
+    // Server schreibt "unbekannt". Kein Grund, die Registrierung zu stoppen.
+    appFassung = { version: null, build: null };
+  }
+  return appFassung;
+};
+
+/*
+ * Dem Server melden, wenn KEIN Token zustande kommt.
+ *
+ * Das ist die Gegenprobe zur Registrierung: Kommt kein Token, gibt es ohne
+ * diese Meldung serverseitig gar keine Spur — genau daran scheiterte die
+ * Fehlersuche am 23.09.2026. Bewusst "best effort": Schlaegt die Meldung fehl,
+ * darf das den Push-Weg nicht zusaetzlich stoeren.
+ */
+const pushDiagnoseMelden = async (grund: string, hinweis?: string) => {
+  try {
+    const fassung = await fassungHolen();
+    let berechtigung = '?';
+    try {
+      berechtigung = (await PushNotifications.checkPermissions()).receive;
+    } catch { /* ignorieren */ }
+    await api.post('/notifications/push-diagnose', {
+      grund,
+      berechtigung,
+      plattform: Capacitor.getPlatform(),
+      app_version: fassung.version,
+      app_build: fassung.build,
+      ...(hinweis ? { hinweis: String(hinweis).slice(0, 200) } : {}),
+    });
+  } catch { /* stille Meldung, best effort */ }
+};
+
 const tokenAktivHolen = async (): Promise<string | null> => {
   if (!Capacitor.isNativePlatform()) return null;
   try {
@@ -57,7 +106,10 @@ const tokenAktivHolen = async (): Promise<string | null> => {
     return token || null;
   } catch (err) {
     // Kein harter Fehler: Der 'registration'-Weg bleibt daneben bestehen.
+    // Aber MELDEN — sonst bleibt es bei der stillen Ratlosigkeit vom
+    // 23.09.2026.
     console.warn('Token konnte nicht aktiv abgefragt werden:', err);
+    pushDiagnoseMelden('getToken-fehler', err instanceof Error ? err.message : String(err));
     return null;
   }
 };
@@ -148,10 +200,15 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
   }
 
   try {
+    const fassung = await fassungHolen();
     await api.post('/notifications/device-token', {
       token,
       platform: Capacitor.getPlatform(),
-      device_id: deviceId
+      device_id: deviceId,
+      // Damit im Protokoll steht, WELCHE Fassung sich gemeldet hat
+      // (Migration 156). Aeltere Server ignorieren die Felder.
+      app_version: fassung.version,
+      app_build: fassung.build
     });
 
     fcmTokenSent = token; // Markiere Token als gesendet
@@ -312,7 +369,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // der einzige Weg nach einem Update: 'registration' feuert dort bei
     // unveraenderter Installation nicht wieder (siehe tokenAktivHolen).
     if (!bekannt) {
-      tokenAktivHolen().then((t) => { if (t) sendTokenToServer(t); });
+      tokenAktivHolen().then((t) => {
+        if (t) sendTokenToServer(t);
+        // Kein Token trotz aktiver Abfrage: Das ist der Fall, der am
+        // 23.09.2026 voellig stumm blieb. Jetzt steht er im Protokoll.
+        else pushDiagnoseMelden('kein-token-nach-anmeldung');
+      });
       return;
     }
     const token = bekannt;

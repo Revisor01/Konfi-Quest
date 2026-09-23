@@ -50,6 +50,8 @@ vi.mock('@capacitor/app', () => ({
   App: {
     addListener: (...a: unknown[]) => appListener(...a),
     fireRestoredResult: vi.fn(),
+    // Seit 23.09.2026 schickt die App ihre Fassung mit (Migration 156).
+    getInfo: vi.fn().mockResolvedValue({ version: '2.3.0', build: '117' }),
   },
 }));
 
@@ -219,10 +221,15 @@ describe('Push-Token: aktiver Abruf, wenn Android nichts meldet', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(300); });
 
     expect(getTokenMock).toHaveBeenCalled();
-    expect(apiPost).toHaveBeenCalledWith('/notifications/device-token', {
-      token: 'fcm-token-aktiv-geholt',
-      platform: 'android',
-      device_id: 'geraet-1',
-    });
+    // Die App schickt seit dem 23.09.2026 ihre Fassung mit (Migration 156) —
+    // deshalb auf die Felder pruefen, die zaehlen, statt auf das ganze Objekt.
+    expect(apiPost).toHaveBeenCalledWith('/notifications/device-token',
+      expect.objectContaining({
+        token: 'fcm-token-aktiv-geholt',
+        platform: 'android',
+        device_id: 'geraet-1',
+        app_version: '2.3.0',
+        app_build: '117',
+      }));
   });
 });

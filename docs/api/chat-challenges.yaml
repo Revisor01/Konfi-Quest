@@ -1737,6 +1737,42 @@ paths:
         org-scope: true
         objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert — Rolle admin seit 01.09.2026 auf zugewiesene Jahrgaenge begrenzt (Zaehler und Listen zaehlen gleich)"
 
+  /api/notifications/push-diagnose:
+    post:
+      tags: ["Benachrichtigungen"]
+      summary: Meldet, warum KEINE Push-Registrierung zustande kam
+      description: >
+        NEU 23.09.2026. Speichert nichts, protokolliert nur.
+        Hintergrund: Kommt auf dem Geraet gar kein Push-Token zustande, gibt es
+        auch keinen POST /device-token — und damit serverseitig keine Spur. "Die
+        App fragt nicht" und "die App fragt, bekommt aber nichts" sahen identisch
+        aus, naemlich wie Stille. Genau daran scheiterte eine Fehlersuche zu
+        fehlenden Android-Push-Nachrichten: drei Anmeldungen eines Testers, kein
+        Eintrag, kein Fehler.
+        Absichtlich ohne Schema-Zwang ausser dem Grund: Die App soll melden
+        koennen, auch wenn sie selbst nicht weiss, was schiefgeht.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                grund: { type: string, description: "z.B. kein-token-nach-anmeldung, getToken-fehler" }
+                berechtigung: { type: string, description: "granted | denied | prompt" }
+                plattform: { type: string }
+                app_version: { type: string }
+                app_build: { type: string }
+                hinweis: { type: string, description: "Freitext, auf 200 Zeichen gekuerzt" }
+      responses:
+        '200': { description: Aufgenommen }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Meldet nur ueber das eigene Geraet; nichts wird gespeichert"
+
   /api/notifications/preferences:
     get:
       tags: ["Benachrichtigungen"]
@@ -1786,6 +1822,11 @@ paths:
         Upsert auf (user_id, platform, device_id). Ein Token existiert
         global genau einmal: Vorkommen bei anderen Usern/Geraeten werden
         vorher gelöscht (Account-Wechsel, Neuinstallation).
+        ADDITIV 23.09.2026: app_version und app_build (Migration 156). Anlass war
+        eine Fehlersuche, bei der nicht feststellbar war, ob auf einem Geraet die
+        korrigierte Fassung lief oder noch die alte — beides sah serverseitig
+        identisch aus. Jede Registrierung wird seither auch protokolliert
+        (ohne den Token selbst, nur dessen letzte sechs Zeichen).
       requestBody:
         required: true
         content:
@@ -1797,6 +1838,8 @@ paths:
                 token: { type: string }
                 platform: { type: string, enum: [ios, android, web] }
                 device_id: { type: string, description: Optional, wird sonst generiert }
+                app_version: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Marketing-Version der App, z.B. 2.3.0. Optional; ausgelieferte Fassungen schicken es nicht, dann bleibt die Spalte NULL (= unbekannt). Eine Registrierung OHNE die Angabe ueberschreibt eine bereits bekannte Fassung nicht (COALESCE im Upsert)." }
+                app_build: { type: string, maxLength: 32, nullable: true, description: "ADDITIV 23.09.2026 (Migration 156) - Build-Nummer als Text, z.B. 117 (Android versionCode) oder 211 (iOS). Text, weil beide Plattformen unterschiedlich zaehlen." }
       responses:
         '200': { description: Gespeichert }
         '400': { description: Token/Plattform fehlt oder ungueltig }
