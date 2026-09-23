@@ -58,6 +58,17 @@
 
 # Firebase Cloud Messaging -- ohne das kommen keine Push-Nachrichten mehr an.
 # Genau dieser Ausfall hat im September 2026 schon einmal Wochen gekostet.
+#
+# Deckt AUCH die Absturzdiagnose (Crashlytics) ab: Deren Klassen liegen
+# unter com.google.firebase.crashlytics.**, das Capacitor-Plugin unter
+# io.capawesome.** (Regel weiter oben). Hier steht deshalb bewusst KEINE
+# zusaetzliche Zeile — zwei Regeln fuer dieselben Klassen wuerden nur
+# suggerieren, es waeren verschiedene.
+#
+# Was die Lesbarkeit der Berichte sichert, ist NICHT eine keep-Regel, sondern
+# der Upload der Mapping-Datei (siehe firebaseCrashlytics-Block in
+# app/build.gradle) zusammen mit -keepattributes SourceFile,LineNumberTable
+# weiter unten.
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**

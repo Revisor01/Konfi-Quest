@@ -122,6 +122,7 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
+				F8CR4A5100000001000CR451 /* Crashlytics dSYM hochladen */,
 			);
 			buildRules = (
 			);
@@ -220,6 +221,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F8CR4A5100000001000CR451 /* Crashlytics dSYM hochladen */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Crashlytics dSYM hochladen";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Debug-Symbole (dSYM) zu Crashlytics hochladen.\n#\n# WARUM: Ohne dSYM zeigt ein iOS-Absturzbericht nur Speicheradressen statt\n# Funktionsnamen -- unlesbar, genau wie ein Android-Bericht ohne\n# Mapping-Datei. Diese Phase MUSS die LETZTE sein, sonst liegt das dSYM beim\n# Lauf noch nicht vollstaendig vor.\n#\n# Das Skript stammt aus dem FirebaseCrashlytics-Pod (CocoaPods-Weg; dieses\n# Projekt nutzt CocoaPods, nicht SwiftPM).\n#\n# Fehlt der Pod (z.B. weil 'pod install' nach einem cap sync nicht gelaufen\n# ist), wird hier NICHT still weitergebaut: Ein Release ohne dSYM-Upload\n# liefert Berichte, mit denen niemand arbeiten kann. Nur im Simulator/Debug\n# ohne dSYM ist das Ueberspringen in Ordnung.\nif [ ! -f \"${PODS_ROOT}/FirebaseCrashlytics/run\" ]; then\n  if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    echo \"error: FirebaseCrashlytics-Pod fehlt -- 'pod install' in ios/App ausfuehren. Ohne dSYM-Upload sind die Absturzberichte unlesbar.\" >&2\n    exit 1\n  fi\n  echo \"FirebaseCrashlytics-Pod fehlt, dSYM-Upload uebersprungen (${CONFIGURATION}).\"\n  exit 0\nfi\n\"${PODS_ROOT}/FirebaseCrashlytics/run\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

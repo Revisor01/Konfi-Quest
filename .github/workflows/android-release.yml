@@ -78,6 +78,26 @@ jobs:
 
       - name: Signiertes AAB bauen
         working-directory: frontend/android
+        # ABSTURZDIAGNOSE: Die R8-Mapping-Datei wird hier MIT hochgeladen, ohne
+        # eigenen Schritt und ohne zusaetzliches Geheimnis.
+        #
+        # Warum das genuegt (am Plugin-JAR 3.0.8 nachgesehen, nicht geraten):
+        # Das Crashlytics-Gradle-Plugin legt je Variante einen Task
+        # `uploadCrashlyticsMappingFile<Variante>` an und haengt ihn per
+        # `finalizedBy` an `minify<Variante>WithR8`. Da der Release-Bau seit
+        # 19.09.2026 mit minifyEnabled true laeuft, laeuft dieser Task als Teil
+        # von bundleRelease automatisch mit.
+        #
+        # Die Berechtigung kommt aus der google-services.json, die
+        # prepare-android.sh oben wiederherstellt und verifiziert — deshalb
+        # braucht der Upload KEIN Dienstkonto und kein weiteres GitHub-Secret.
+        #
+        # Ein fehlgeschlagener Upload bricht den Bau NICHT ab: Das Plugin
+        # meldet ihn als Warnung. Das ist hier die richtige Abwaegung — ein
+        # Release ohne Mapping ist aergerlich (Berichte zeigen a.b.c), ein
+        # blockierter Release ist schlimmer. Dass das Plugin ueberhaupt
+        # angewendet WIRD und der Upload eingeschaltet ist, prueft dagegen
+        # prepare-android.sh hart ab; genau das ist der stille Fehlerfall.
         env:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}

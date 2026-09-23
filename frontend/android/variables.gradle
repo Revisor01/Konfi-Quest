@@ -13,4 +13,8 @@ ext {
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
+    // Firebase-Crashlytics-SDK (Absturzdiagnose). Der Wert steht hier, damit
+    // er zusammen mit den uebrigen Fassungen an EINER Stelle sichtbar ist;
+    // das Plugin faellt sonst auf seine eigene Voreinstellung zurueck.
+    firebaseCrashlyticsVersion = '20.0.3'
 }
