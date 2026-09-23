@@ -225,6 +225,7 @@
             </ul>
             <p>Der Hostingdienstleister hat als Auftragsverarbeiter technisch Zugriff auf die Daten und ist vertraglich zur Einhaltung des DSG-EKD verpflichtet.</p>
             <p>Beim Versand von Push-Benachrichtigungen werden das Push-Token und der Inhalt der Benachrichtigung an den Dienst Firebase Cloud Messaging von Google übermittelt (siehe Abschnitt&nbsp;9).</p>
+            <p>Stürzt die App ab, werden technische Angaben zum Absturz an den Dienst Firebase Crashlytics von Google übermittelt (siehe Abschnitt&nbsp;9b).</p>
             <p>Eine Weitergabe an sonstige Dritte erfolgt nicht, es sei denn, eine gesetzliche Verpflichtung besteht.</p>
         </div>
 
@@ -258,6 +259,22 @@
             <p>Von der Arbeit mit der App halten wir fest, <em>welche Art</em> von Handlung stattgefunden hat — etwa dass Punkte vergeben, eine Anwesenheit eingetragen, ein Beitrag durchgesehen, ein Termin angelegt oder Material bereitgestellt wurde. Dazu kommt eine grobe Einordnung der Handlung, zum Beispiel ob ein Termin einzeln oder als Serie angelegt wurde. <strong>Wer</strong> etwas getan hat, <strong>für wen</strong> und <strong>mit welchem Inhalt</strong>, wird dabei nicht übertragen — auch keine Anzahlen und keine Punktwerte. Bei einer Fehlermeldung vermerken wir zusätzlich die Art des Fehlers (etwa Zeitüberschreitung oder fehlende Verbindung) und die Stelle der App, an der er auftrat.</p>
             <p>Ausdrücklich <strong>nicht</strong> erfasst werden: Name, Benutzername oder Nutzerkennung, Jahrgang, Gemeinde, Inhalte von Beiträgen, Fotos oder Chat-Nachrichten sowie Eingaben aus Formularen. Eine Zuordnung zu einer bestimmten Person ist nicht möglich, und es findet keine geräteübergreifende Wiedererkennung statt. Die Angaben werden ausschließlich zusammengefasst ausgewertet, um Fehler zu finden und die App verständlicher zu machen.</p>
             <p>Rechtsgrundlage ist unser berechtigtes Interesse an einer bedarfsgerechten Gestaltung und der Verbesserung unseres Angebots (§ 6 Nr. 8 DSG-EKD).</p>
+        </div>
+
+        <div class="section">
+            <h2>9b. Absturzberichte in der App (Firebase Crashlytics)</h2>
+            <p>Damit wir Fehler finden und beheben können, die zum Absturz der App führen, setzen wir in der App (iOS und Android) den Dienst <strong>Firebase Crashlytics</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland ein. Ein Bericht wird ausschließlich dann erzeugt, wenn die App abstürzt oder einen Fehler abfängt, der die Bedienung unterbricht — nicht im laufenden Betrieb.</p>
+            <p>Übermittelt werden dabei:</p>
+            <ul>
+                <li>technische Angaben zum Absturz: die Fehlermeldung und die Stelle im Programm, an der er auftrat (Stapelverlauf),</li>
+                <li>Angaben zum Gerät und zum Betriebssystem: Modell, Betriebssystemfassung, verfügbarer Speicher, ob das Gerät verändert wurde (&#8222;Jailbreak&#8220;/&#8222;Root&#8220;),</li>
+                <li>die Fassung der App und die Plattform (iOS oder Android),</li>
+                <li>die Rolle in grober Einteilung (Konfirmand:in, Teamer:in oder Leitung) sowie die Nummer der Gemeinde, damit wir erkennen, wen ein Fehler betrifft,</li>
+                <li>eine von Google vergebene, zufällige Installationskennung des Geräts sowie Zeitpunkt und Dauer der abgestürzten Sitzung.</li>
+            </ul>
+            <p>Ausdrücklich <strong>nicht</strong> übermittelt werden: Name, Benutzername oder Nutzerkennung, E-Mail-Adresse, Jahrgang, der Name der Gemeinde, Inhalte von Beiträgen, Fotos oder Chat-Nachrichten sowie Eingaben aus Formularen. Wir setzen bewusst <strong>keine eigene Nutzer- oder Gerätekennung</strong>, über die sich Berichte einer Person zuordnen ließen.</p>
+            <p>Dabei kann es zu einer Übermittlung von Daten an Server der Google LLC in den USA kommen. Für diese Übermittlung in ein Drittland stützen wir uns auf die von der EU-Kommission erlassenen Standardvertragsklauseln. Es besteht das Risiko, dass US-Behörden unter bestimmten Voraussetzungen auf diese Daten zugreifen können.</p>
+            <p>Rechtsgrundlage ist unser berechtigtes Interesse an einem stabilen und sicheren Betrieb der App (§ 6 Nr. 8 DSG-EKD). Absturzberichte werden bei Firebase Crashlytics nach 90 Tagen gelöscht.</p>
         </div>
 
         <div class="section">

@@ -86,7 +86,39 @@ try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
+        // Crashlytics haengt an DERSELBEN google-services.json und muss NACH
+        // dem google-services-Plugin angewendet werden. Bewusst in demselben
+        // if-Zweig: Ohne Config gibt es kein Firebase-Projekt, in das
+        // Mapping-Datei und Berichte gehoeren koennten.
+        //
+        // Dass dieser Zweig ueberhaupt erreicht wird, prueft
+        // scripts/prepare-android.sh HART ab — genau weil ein Fehlschlag hier
+        // STILL bleibt (siehe die Begruendung dort und der Push-Totalausfall
+        // 1.5.0). Beim Crashlytics-Ausfall waere es noch leiser: Die App
+        // laeuft, stuerzt aber unbemerkt ab.
+        apply plugin: 'com.google.firebase.crashlytics'
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// Mapping-Datei fuer die Absturzdiagnose hochladen.
+//
+// WARUM DAS NOETIG IST: Seit 19.09.2026 laeuft der Release-Bau mit
+// minifyEnabled true, R8 benennt also alle Klassen um. Ein Absturzbericht
+// zeigt dann `a.b.c.d()` statt des echten Namens. Das Crashlytics-Plugin
+// laedt die Mapping-Datei nur hoch, wenn das hier eingeschaltet ist — die
+// Voreinstellung fuer `mappingFileUploadEnabled` haengt vom Build-Typ ab und
+// ist bei einem Release mit Verschleierung genau das, was man braucht.
+//
+// Nur fuer release: Ein Debug-Bau wird nicht verschleiert und braucht es
+// nicht; der Upload kostet dort nur Bauzeit.
+android {
+    buildTypes {
+        release {
+            firebaseCrashlytics {
+                mappingFileUploadEnabled true
+            }
+        }
+    }
 }

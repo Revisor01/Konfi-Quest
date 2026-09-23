@@ -36,6 +36,10 @@ Versionsüberschrift.
   einschaltet.
 
 ### Sonstiges
+- Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
+  gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
+  in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,
+  steht in der Datenschutzerklärung.
 - Das Konfi-Profil lädt die Abzeichen nicht mehr ein zweites Mal, nur um die
   Zahl in der Kachel anzuzeigen. Sie stand ohnehin schon in den Profildaten.
 

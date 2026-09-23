@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { migrateToPreferences } from './services/migrateStorage';
 import { initTokenStore } from './services/tokenStore';
+import { globaleFehlerkanaeleAnhaengen } from './services/absturzdiagnose';
 import { tempDateienAufraeumen } from './utils/nativeFileViewer';
 
 // KEINE Messung an dieser Stelle — und das ist Absicht.
@@ -21,6 +22,20 @@ import { tempDateienAufraeumen } from './utils/nativeFileViewer';
 // Die Werbeseiten brauchen von hier nichts: sie sind statisches HTML und
 // laden ihr Script selbst. Die native App misst weiterhin ueber
 // analytics.ts, das zur Laufzeit ohnehin nur in Produktion sendet.
+
+// Globale Fehlerkanaele ALS ERSTES anhaengen — vor dem Vorbereiten und vor dem
+// ersten render().
+//
+// DIE LUECKE: Das Projekt hatte weder einen `unhandledrejection`- noch einen
+// `window.onerror`-Handler. Eine abgelehnte Promise ohne catch verschwand
+// damit vollstaendig — kein Eintrag, keine Meldung. Genau die weisse Seite
+// beim Start (04.09.2026) war so ein Fall: Das Log endete, und niemand
+// erfuhr, woran.
+//
+// Hier oben, weil die beiden Schritte darunter (Migration, Token-Store) selbst
+// Kandidaten fuer eine unbehandelte Ablehnung sind. Der Aufruf ist im Browser
+// harmlos: die Handler werden gesetzt, melden dort aber nichts (no-op).
+globaleFehlerkanaeleAnhaengen();
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

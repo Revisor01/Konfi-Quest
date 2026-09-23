@@ -105,10 +105,12 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           npx cap sync ios
-          # Firebase-Config aus der versionierten Master-Kopie wiederherstellen
-          # (ios/App/App/GoogleService-Info.plist ist gitignored — gleiche
-          # Fehlerklasse wie der Android-Push-Ausfall 1.5.0)
-          cp config/GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
+          # Firebase-Config wiederherstellen UND verifizieren. Das nackte `cp`,
+          # das hier bis 24.09.2026 stand, kopierte ohne jede Pruefung — die
+          # Fehlerklasse des Android-Push-Ausfalls 1.5.0 war auf der iOS-Seite
+          # also weiterhin offen. Das Skript bricht hart ab, wenn Config,
+          # Crashlytics-Pod oder die dSYM-Upload-Phase fehlen.
+          ./scripts/prepare-ios.sh
           ./scripts/apply-version.sh
 
       - name: Signing-Keychain einrichten
@@ -148,6 +150,48 @@ jobs:
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
+
+      - name: Absturz-Symbole (dSYM) nachreichen
+        working-directory: frontend/ios/App
+        # ABSTURZDIAGNOSE, zweiter Weg. Die Build-Phase im Xcode-Projekt
+        # ("Crashlytics dSYM hochladen") laeuft schon beim `archive` und
+        # erledigt das im Normalfall. Dieser Schritt ist die Gegenprobe
+        # darauf, und zwar aus einem konkreten Grund:
+        #
+        #   - Die Build-Phase laeuft VOR dem Export. Der Export setzt hier
+        #     stripSwiftSymbols=true, und was danach an Symbolen im IPA fehlt,
+        #     ist dem Upload von vorher gleichgueltig — aber wenn die Phase aus
+        #     irgendeinem Grund uebersprungen wurde (Pods nicht installiert,
+        #     Sandboxing), faellt das NIE auf. Ein iOS-Absturzbericht ohne dSYM
+        #     zeigt nur Speicheradressen.
+        #   - Das Archiv enthaelt die dSYMs ohnehin; sie noch einmal aus dem
+        #     Archiv zu schicken kostet Sekunden und ist unschaedlich
+        #     (Crashlytics nimmt dieselbe UUID zweimal widerspruchslos an).
+        #
+        # KEIN zusaetzliches GitHub-Secret: upload-symbols zieht seine
+        # Berechtigung aus der GoogleService-Info.plist, die prepare-ios.sh
+        # oben wiederhergestellt und gegen Projekt und Bundle verifiziert hat.
+        #
+        # `continue-on-error`: Ein fehlgeschlagener Symbol-Upload darf das
+        # Release NICHT aufhalten. Fehlende Symbole sind aergerlich, ein
+        # blockierter Release ist schlimmer — dieselbe Abwaegung wie auf der
+        # Android-Seite. Dass Pod und Build-Phase ueberhaupt vorhanden sind,
+        # prueft prepare-ios.sh dagegen hart ab; das ist der stille Fehlerfall.
+        continue-on-error: true
+        run: |
+          UPLOAD="Pods/FirebaseCrashlytics/upload-symbols"
+          if [ ! -x "$UPLOAD" ]; then
+            echo "upload-symbols nicht gefunden ($UPLOAD) — uebersprungen."
+            exit 0
+          fi
+          DSYMS="build/App.xcarchive/dSYMs"
+          if [ ! -d "$DSYMS" ]; then
+            echo "Keine dSYMs im Archiv ($DSYMS) — uebersprungen."
+            exit 0
+          fi
+          echo "Gefundene dSYMs:"
+          ls -1 "$DSYMS"
+          "$UPLOAD" -gsp App/GoogleService-Info.plist -p ios "$DSYMS"
 
       - name: IPA exportieren
         working-directory: frontend/ios/App

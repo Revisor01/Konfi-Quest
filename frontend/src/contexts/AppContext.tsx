@@ -17,6 +17,8 @@ import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
 import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt } from '../services/analytics';
+import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
+import { ermittleAppVersion } from '../utils/appVersion';
 import { fehlerArt } from '../utils/fehler';
 import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
 
@@ -383,11 +385,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const art = diagnose && 'fehler' in diagnose ? fehlerArt(diagnose.fehler) : undefined;
     const ort = diagnose?.ort;
 
-    trackFehler(
-      anonym,
-      art && istGueltigeArt(art) ? art : undefined,
-      ort && istGueltigerOrt(ort) ? ort : undefined
-    );
+    const gepruefteArt = art && istGueltigeArt(art) ? art : undefined;
+    const geprueftesOrt = ort && istGueltigerOrt(ort) ? ort : undefined;
+
+    trackFehler(anonym, gepruefteArt, geprueftesOrt);
+
+    // Dieselbe entschaerfte Angabe zusaetzlich als WEGMARKE ins
+    // Absturzprotokoll. Bewusst `wegmarke` und NICHT `fehlerMelden`:
+    //
+    // Diese Meldungen sind abgefangene, oft erwartbare Fehler — "keine
+    // Verbindung", "Sitzung abgelaufen". Als einzelne Berichte waeren sie
+    // Rauschen und wuerden bei vielen tausend Nutzenden die Drosselung
+    // verbrauchen, die fuer die ECHTEN Abstuerze gebraucht wird. Als Wegmarke
+    // kosten sie nichts und stehen genau dort, wo sie zaehlen: in den letzten
+    // Zeilen VOR einem Absturz. Ein Absturz nach drei "keine Verbindung" ist
+    // eine andere Geschichte als einer aus dem Stand.
+    //
+    // Es geht derselbe gepruefte Inhalt raus wie an die Nutzungsmessung —
+    // keine Zeichenkette mehr, kein Fehlerobjekt.
+    void wegmarke(`fehler ${geprueftesOrt ?? 'ohne-ort'} ${gepruefteArt ?? 'ohne-art'}: ${anonym}`);
   }, []);
 
   // Rolle für die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
@@ -485,6 +501,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [orgVersion, setOrgVersion] = useState(0);
 
   // Badge sync through state updates only (no custom events)
+
+  // Merkmale fuer die Absturzdiagnose mitfuehren (Rolle, Organisation als
+  // Zahl, Plattform, Fassung des Web-Teils).
+  //
+  // WARUM DAS GEBRAUCHT WIRD: Bei vielen tausend Nutzenden ueber viele
+  // Gemeinden ist die erste Frage bei einem Absturz "wen trifft es" — eine
+  // Rolle oder eine besondere Datenlage einer Gemeinde. Ohne diese Merkmale
+  // steht in Crashlytics nur ein Stapelverlauf ohne Kontext.
+  //
+  // WAS BEWUSST NICHT MITGEHT: keine Nutzer-ID, kein Name, kein Jahrgang,
+  // kein Gemeindename und auch KEINE device_id — die Begruendung steht
+  // vollstaendig in services/absturzdiagnose.ts. Die Organisation geht als
+  // ZAHL, nie als Name.
+  //
+  // Haengt an denselben Werten wie die Nutzungsmessung, plus der aktiven
+  // Organisation: So stimmen die Merkmale nach Login, Logout UND
+  // Organisationswechsel ohne weiteres Zutun.
+  useEffect(() => {
+    void (async () => {
+      const fassung = await ermittleAppVersion();
+      await diagnoseMerkmaleSetzen({
+        rolle: user?.role_name ?? null,
+        organisationId: activeOrgId ?? user?.organization_id ?? null,
+        appFassung: fassung,
+      });
+    })();
+  }, [user?.role_name, user?.organization_id, activeOrgId]);
 
   // Device ID einmalig bei App-Start persistieren
   useEffect(() => {
