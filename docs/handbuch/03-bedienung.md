@@ -129,6 +129,11 @@ Kommen keine Nachrichten mehr an, obwohl in den Einstellungen des Geräts alles
 erlaubt ist, hilft fast immer dasselbe: **die App einmal ganz schließen und neu
 öffnen.** Beim Öffnen meldet sie sich beim Benachrichtigungsdienst neu an.
 
+Klappt das Anmelden beim Dienst nicht sofort — etwa bei wackligem Netz oder
+direkt nach dem Flugmodus —, versucht die App es von selbst noch zweimal mit
+etwas Abstand. Wer gerade erst geöffnet hat, wartet deshalb am besten ein paar
+Sekunden, bevor er weitersucht.
+
 Im Profil steht unter **„Mitteilungen prüfen"**, ob die App überhaupt
 Mitteilungen senden darf und welche Fassung gerade läuft. Ein Tippen darauf
 zeigt beides im Klartext — das ist die schnellste Antwort auf „woran liegt es".

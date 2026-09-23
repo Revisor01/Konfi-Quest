@@ -99,19 +99,92 @@ const pushDiagnoseMelden = async (grund: string, hinweis?: string) => {
   } catch { /* stille Meldung, best effort */ }
 };
 
+/*
+ * Wartezeiten zwischen den Versuchen, den Token zu holen — 1s, dann 3s
+ * (23.09.2026).
+ *
+ * WARUM DREI VERSUCHE UND GENAU DIESE ABSTAENDE: Die App startet in diesem
+ * Moment gerade. Wer laenger wartet, hilft niemandem — die Nutzerin ist dann
+ * schon in der App unterwegs, und die Wiederholung soll ein kurzer Aussetzer
+ * ueberbruecken, keine Dauerkampagne werden. Nach 4 Sekunden Gesamtwartezeit
+ * ist der dritte Versuch durch; das deckt die Faelle ab, die es abzudecken
+ * gibt (Mobilfunk greift wieder, Flugmodus gerade aus, kurzer Aussetzer bei
+ * Firebase) und ist immer noch innerhalb der Zeit, in der die App ohnehin
+ * ihre Startdaten laedt. Die Abstaende wachsen, damit ein Geraet ohne Netz
+ * nicht dreimal in derselben Sekunde gegen die Wand laeuft.
+ *
+ * Mehr Versuche brachten nichts: Bleibt der Fehler nach vier Sekunden
+ * bestehen, ist er nicht transient, und der naechste App-Start fasst ohnehin
+ * neu nach (der Merker `letzterBekannterFcmToken` ist dann leer).
+ */
+const TOKEN_ABRUF_WARTEZEITEN_MS = [1000, 3000];
+
+/*
+ * Den Token aktiv holen, mit Wiederholung bei wachsendem Abstand.
+ *
+ * DIE LUECKE VORHER: Genau EIN Versuch. Scheiterte der, blieb das Geraet bis
+ * zur naechsten Anmeldung ohne Token — still. In den Server-Protokollen ist
+ * bei einem Nutzer belegt, dass mehrere Anmeldungen noetig waren, bis
+ * ueberhaupt ein Token entstand.
+ *
+ * DAUERHAFT ODER TRANSIENT — EHRLICH GESAGT NICHT ZU UNTERSCHEIDEN:
+ * Auf Android lautet der gemeldete Fehler `java.io.IOException:
+ * FIS_AUTH_ERROR`. Das Firebase-SDK faltet darin mehrere Ursachen zusammen:
+ * eine falsch gesetzte Anwendungseinschraenkung am API-Schluessel (dauerhaft,
+ * nur in der Firebase-Konsole zu beheben) sieht genauso aus wie ein Aussetzer
+ * des Installations-Dienstes oder ein abgerissenes Netz (transient). Der
+ * Fehlertext traegt weder Statuscode noch Grund. Eine Unterscheidung am Text
+ * waere also eine Behauptung, die nicht traegt — deshalb wird in BEIDEN
+ * Faellen wiederholt. Drei Versuche in vier Sekunden kosten bei einem
+ * dauerhaften Fehler wenig; ein stilles Geraet ohne Push kostet mehr.
+ *
+ * AUFRAEUMEN NUR VOR DEM LETZTEN VERSUCH: `deleteToken()` verwirft den lokal
+ * gespeicherten Token und zwingt Firebase, einen neuen zu beschaffen. Das
+ * loest einen verdorbenen lokalen Zustand — kann aber bei einem bloss
+ * abgerissenen Netz einen voellig gueltigen Token wegwerfen. Deshalb erst
+ * vor dem LETZTEN Versuch, wenn die harmlosen Erklaerungen durch sind.
+ *
+ * GEMELDET WIRD EINMAL, am Ende, mit der Zahl der Versuche. Drei Meldungen
+ * fuer einen Vorgang machen das Protokoll unlesbar und den Zaehler falsch.
+ */
 const tokenAktivHolen = async (): Promise<string | null> => {
   if (!Capacitor.isNativePlatform()) return null;
-  try {
-    const { token } = await FirebaseMessaging.getToken();
-    return token || null;
-  } catch (err) {
-    // Kein harter Fehler: Der 'registration'-Weg bleibt daneben bestehen.
-    // Aber MELDEN — sonst bleibt es bei der stillen Ratlosigkeit vom
-    // 23.09.2026.
-    console.warn('Token konnte nicht aktiv abgefragt werden:', err);
-    pushDiagnoseMelden('getToken-fehler', err instanceof Error ? err.message : String(err));
-    return null;
+
+  const gesamtVersuche = TOKEN_ABRUF_WARTEZEITEN_MS.length + 1;
+  let letzterFehler: unknown = null;
+
+  for (let versuch = 1; versuch <= gesamtVersuche; versuch++) {
+    if (versuch > 1) {
+      await new Promise<void>((weiter) =>
+        setTimeout(weiter, TOKEN_ABRUF_WARTEZEITEN_MS[versuch - 2])
+      );
+      // Vor dem LETZTEN Versuch den lokalen Zustand raeumen (Begruendung oben).
+      if (versuch === gesamtVersuche) {
+        try {
+          await FirebaseMessaging.deleteToken();
+        } catch { /* Raeumen ist eine Zugabe, kein Grund aufzuhoeren */ }
+      }
+    }
+
+    try {
+      const { token } = await FirebaseMessaging.getToken();
+      if (token) return token;
+      // Kein Fehler, aber auch kein Token: genauso behandeln wie einen Fehler,
+      // sonst bleibt der leere Fall ohne zweiten Anlauf.
+      letzterFehler = new Error('leere Antwort');
+    } catch (err) {
+      letzterFehler = err;
+      // Kein harter Fehler: Der 'registration'-Weg bleibt daneben bestehen.
+      console.warn(`Token konnte nicht aktiv abgefragt werden (Versuch ${versuch}/${gesamtVersuche}):`, err);
+    }
   }
+
+  // MELDEN — sonst bleibt es bei der stillen Ratlosigkeit vom 23.09.2026.
+  // Der Server kuerzt `hinweis` auf 200 Zeichen, deshalb die Zahl der Versuche
+  // nach VORNE: Sie ueberlebt jede Kuerzung.
+  const text = letzterFehler instanceof Error ? letzterFehler.message : String(letzterFehler);
+  pushDiagnoseMelden('getToken-fehler', `versuche=${gesamtVersuche} ${text}`);
+  return null;
 };
 
 // ANTI-SPAM: Verhindere mehrfache Push-Registrierung (Global Scope)
@@ -369,12 +442,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // der einzige Weg nach einem Update: 'registration' feuert dort bei
     // unveraenderter Installation nicht wieder (siehe tokenAktivHolen).
     if (!bekannt) {
-      tokenAktivHolen().then((t) => {
-        if (t) sendTokenToServer(t);
-        // Kein Token trotz aktiver Abfrage: Das ist der Fall, der am
-        // 23.09.2026 voellig stumm blieb. Jetzt steht er im Protokoll.
-        else pushDiagnoseMelden('kein-token-nach-anmeldung');
-      });
+      // Nebenher, ohne den Anmeldeweg aufzuhalten: tokenAktivHolen wiederholt
+      // bei einem Fehler bis zu vier Sekunden lang.
+      tokenAktivHolen()
+        .then((t) => {
+          if (t) return sendTokenToServer(t);
+          // Kein Token trotz aktiver Abfrage: Das ist der Fall, der am
+          // 23.09.2026 voellig stumm blieb. Jetzt steht er im Protokoll.
+          return pushDiagnoseMelden('kein-token-nach-anmeldung');
+        })
+        .catch((err) => console.warn('Aktiver Token-Abruf gescheitert:', err));
       return;
     }
     const token = bekannt;
@@ -906,8 +983,16 @@ useEffect(() => {
               // passierte hier bisher nichts (23.09.2026, siehe
               // tokenAktivHolen). sendTokenToServer faengt ueberfluessige POSTs
               // selbst ab.
-              const aktiv = await tokenAktivHolen();
-              if (aktiv) await sendTokenToServer(aktiv);
+              //
+              // BEWUSST NICHT abgewartet: tokenAktivHolen wiederholt bei einem
+              // Fehler bis zu vier Sekunden lang. Das darf den restlichen
+              // Aktivierungsweg (Socket, Badges, Aufraeumen) nicht hinhalten.
+              // Das .catch() ersetzt das umgebende try/catch, das durch das
+              // Nicht-Abwarten nicht mehr greift — sonst waere eine
+              // unbehandelte Promise-Ablehnung moeglich.
+              tokenAktivHolen()
+                .then((aktiv) => { if (aktiv) return sendTokenToServer(aktiv); })
+                .catch((err) => console.warn('Token refresh failed:', err));
             } catch (err) {
               console.warn('Token refresh failed:', err);
             }
