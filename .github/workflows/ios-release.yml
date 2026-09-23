@@ -136,6 +136,64 @@ jobs:
           echo "$ASC_KEY_P8_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
           chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 
+      - name: Provisioning-Profil laden und installieren
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        # Das App-Store-Profil muss als DATEI auf dem Runner liegen, sonst
+        # findet Xcode es nicht ("No profile for team ... matching ...") — ein
+        # Profil in App Store Connect allein genuegt nicht.
+        #
+        # Geholt wird es ueber die ASC-API mit dem Schluessel, der schon fuer
+        # den Upload da ist. Bewusst KEIN neues GitHub-Secret mit dem Profil
+        # als base64: Ein Profil laeuft ab (ein Jahr) und muesste dann von Hand
+        # erneuert werden — ein Geheimnis, das lautlos verfaellt, ist eine
+        # Falle. Die API liefert immer den gueltigen Stand.
+        run: |
+          set -euo pipefail
+          # cryptography fuer die ES256-Signatur des ASC-Tokens. Auf den
+          # macOS-Runnern ist es nicht zugesichert, deshalb hier sicherstellen
+          # (still, falls schon vorhanden).
+          python3 -m pip install --quiet --disable-pip-version-check cryptography 2>/dev/null || \
+            python3 -m pip install --quiet --break-system-packages cryptography
+          python3 - <<'PYEOF'
+          import base64, json, os, time, urllib.request, pathlib
+          kid = os.environ['ASC_KEY_ID']; iss = os.environ['ASC_ISSUER_ID']
+          p8 = pathlib.Path.home() / '.appstoreconnect/private_keys' / f'AuthKey_{kid}.p8'
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec, utils as asym
+          def b64(d): return base64.urlsafe_b64encode(d).rstrip(b'=')
+          now = int(time.time())
+          hdr = b64(json.dumps({"alg":"ES256","kid":kid,"typ":"JWT"}).encode())
+          clm = b64(json.dumps({"iss":iss,"iat":now,"exp":now+600,"aud":"appstoreconnect-v1"}).encode())
+          si = hdr + b'.' + clm
+          key = serialization.load_pem_private_key(p8.read_bytes(), password=None)
+          der = key.sign(si, ec.ECDSA(hashes.SHA256()))
+          r, sv = asym.decode_dss_signature(der)
+          jwt = (si + b'.' + b64(r.to_bytes(32,'big') + sv.to_bytes(32,'big'))).decode()
+
+          req = urllib.request.Request(
+              'https://api.appstoreconnect.apple.com/v1/profiles?limit=200'
+              '&fields[profiles]=name,profileType,profileState,profileContent',
+              headers={'Authorization': f'Bearer {jwt}'})
+          data = json.load(urllib.request.urlopen(req, timeout=30))
+
+          ZIEL = 'Konfi Quest AppStore CI'
+          treffer = [x for x in data.get('data', [])
+                     if x['attributes'].get('name') == ZIEL]
+          if not treffer:
+              raise SystemExit(f'FEHLER: Profil "{ZIEL}" nicht in App Store Connect gefunden.')
+          a = treffer[0]['attributes']
+          if a.get('profileState') != 'ACTIVE':
+              raise SystemExit(f'FEHLER: Profil "{ZIEL}" ist {a.get("profileState")}, nicht ACTIVE.')
+
+          ziel_dir = pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles'
+          ziel_dir.mkdir(parents=True, exist_ok=True)
+          out = ziel_dir / f'{ZIEL}.mobileprovision'
+          out.write_bytes(base64.b64decode(a['profileContent']))
+          print(f'Profil installiert: {out} ({out.stat().st_size} Bytes)')
+          PYEOF
+
       - name: Archiv bauen
         working-directory: frontend/ios/App
         env:
@@ -161,17 +219,27 @@ jobs:
           # soll — ohne sie versuchte Xcode Development-Signierung und wollte
           # sich dafuer neue Anmeldedaten besorgen.
           #
-          # Deshalb hier ausdruecklich: manuell signieren, mit der
-          # Distribution-Identitaet, ohne Profilverwaltung durch Xcode. Fehlt
-          # etwas, bricht der Build mit klarer Meldung ab, statt still Muell im
-          # Konto anzulegen.
+          # WARUM DIE OPTION TROTZDEM HIER STEHT: Ein erster Versuch setzte
+          # stattdessen CODE_SIGN_STYLE=Manual samt Profilnamen auf die
+          # Kommandozeile. Das schlug fehl, denn Einstellungen auf der
+          # xcodebuild-Zeile gelten fuer JEDES Ziel im Workspace — also auch
+          # fuer jeden Pod, und Bibliotheken nehmen kein Profil:
+          # "FirebaseSessions does not support provisioning profiles" (und so
+          # weiter fuer 14 weitere Pods).
+          #
+          # Was das Anlegen neuer Zertifikate wirklich verhindert, ist der
+          # Schritt davor: Das App-Store-Profil liegt jetzt VOR dem Build als
+          # Datei auf dem Runner, und das Distribution-Zertifikat steckt im
+          # Keychain. Xcode findet damit alles vor und muss nichts erzeugen —
+          # die Option erlaubt ihm nur noch, Vorhandenes zu benutzen.
+          #
+          # Gegenprobe nach dem naechsten Lauf: Die Zahl der Zertifikate im
+          # Konto muss bei 3 bleiben (gemessen 24.09.2026, nach dem Aufraeumen
+          # von 12 auf 3).
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="Konfi Quest AppStore CI" \
-            DEVELOPMENT_TEAM=J459G9CJT5 \
+            -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
@@ -232,8 +300,11 @@ jobs:
           <dict>
             <key>destination</key><string>export</string>
             <key>method</key><string>app-store-connect</string>
-            <!-- manual + festes Profil: siehe Begruendung beim Archivieren.
-                 "automatic" liess Xcode Anmeldedaten selbst anlegen. -->
+            <!-- manual + festes Profil: Anders als auf der xcodebuild-Zeile
+                 gilt das hier NUR fuer das App-Ziel, nicht fuer die Pods —
+                 der Export verarbeitet nur das Archiv der App. Das Profil
+                 liegt seit dem Schritt "Provisioning-Profil laden und
+                 installieren" als Datei auf dem Runner. -->
             <key>signingStyle</key><string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
