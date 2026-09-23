@@ -16,6 +16,31 @@ const MAX_ERRORS = 50;         // rollierendes Fenster letzter Fehler
 const HISTORY_SECONDS = 1800;  // Sekunden-Buckets (30 min) fuer Live-Verlauf
 
 /*
+ * Obergrenze fuer die Zahl der Route-Schluessel — zweite Verteidigungslinie
+ * hinter normalizePath (24.09.2026).
+ *
+ * Die erste Linie ist normalizePath: Wer alle Platzhalter setzt, kommt nie in
+ * die Naehe der Grenze. Gezaehlt am 24.09.2026: 240 Routen-Deklarationen im
+ * Backend, rund 141 Schluessel im laufenden Betrieb. 600 laesst also Luft fuer
+ * neue Routen und schlaegt trotzdem an, bevor ein vergessener Platzhalter den
+ * Container fuellt.
+ *
+ * Verworfen werden die SELTENSTEN Schluessel, nicht die aeltesten. Der
+ * Unterschied ist der ganze Sinn der Grenze: Ein durchgerutschter Pfad mit
+ * freiem Text erzeugt viele Schluessel mit je einem oder zwei Aufrufen,
+ * waehrend die echten Routen hohe Zaehler tragen. Nach Alter zu raeumen wuerde
+ * genau umgekehrt wirken — die langgedienten echten Routen fielen zuerst raus
+ * und der Schwall bliebe stehen.
+ *
+ * Verloren gehen dabei die Messwerte der wenigst genutzten Schluessel. Das ist
+ * die vertretbare Seite: Eine Route mit zwei Aufrufen hat ohnehin kein
+ * belastbares p95 (siehe `stichproben` in routeRows), und die Summen im
+ * Snapshot — totalRequests, Apdex, statusKlassen, Fehler-Gruppen, Verlauf —
+ * haengen nicht an `stats` und bleiben vollstaendig.
+ */
+const MAX_ROUTE_KEYS = 600;
+
+/*
  * Apdex — "wie viele Anfragen waren schnell genug".
  *
  * Statt einer nackten Millisekunden-Zahl teilt Apdex jede Anfrage in drei
@@ -48,6 +73,11 @@ const NUTZER_FENSTER_MINUTEN = 60;
 const stats = new Map();
 const startedAt = Date.now();
 
+// Wie viele Route-Schluessel die Obergrenze schon verworfen hat. Steht im
+// Snapshot, damit ein Ausschlag sichtbar ist statt still zu bleiben: Solange
+// normalizePath vollstaendig ist, bleibt die Zahl 0.
+let verworfeneSchluessel = 0;
+
 // In-flight (parallele) Requests jetzt + beobachtetes Maximum.
 let inFlight = 0;
 let maxInFlight = 0;
@@ -62,8 +92,15 @@ const recentErrors = [];
  * Route, die im Minutentakt 500 wirft, ist es nach einer halben Stunde voll
  * mit demselben Fehler, und "seit wann geht das so" ist nicht mehr zu sehen.
  * Die Gruppen zaehlen dagegen ueber die gesamte Laufzeit und merken sich
- * das erste und das letzte Auftreten. Die Zahl der Gruppen ist durch die
- * Zahl der Routen begrenzt, nicht durch die Zahl der Fehler.
+ * das erste und das letzte Auftreten.
+ *
+ * Die Zahl der Gruppen haengt an normalizePath, nicht an der Zahl der Fehler:
+ * Solange jede Route auf genau einen Schluessel abbildet, ist sie durch die
+ * Zahl der Routen (mal Statuscode) begrenzt. Das gilt NICHT von selbst — bis
+ * zum 24.09.2026 blieben Name, Einladungscode und Dateiname unveraendert im
+ * Schluessel stehen, und die Namenspruefung beim Registrieren haette allein
+ * beliebig viele Gruppen erzeugen koennen. Wer einen Pfad mit freiem Text
+ * ergaenzt, muss ihn dort mit aufnehmen.
  */
 const fehlerGruppen = new Map();
 
@@ -135,13 +172,65 @@ function nutzerFenster() {
   };
 }
 
-// Normalisiert den Pfad, damit IDs nicht zu tausenden Einzel-Routen explodieren:
-// /api/admin/konfis/42 -> /api/admin/konfis/:id
+/*
+ * Normalisiert den Pfad, damit IDs nicht zu tausenden Einzel-Routen explodieren:
+ * /api/admin/konfis/42 -> /api/admin/konfis/:id
+ *
+ * Nicht nur Zahlen und UUIDs muessen raus (24.09.2026). Drei Pfadarten tragen
+ * FREIEN TEXT oder einen Zufallsnamen, und jede Variante waere sonst ein
+ * eigener, nie aufgeraeumter Schluessel in `stats`:
+ *
+ *   /api/auth/check-username/<Name>   Die Namenspruefung beim Registrieren
+ *       feuert mit 300 ms Verzoegerung bei jedem Tastendruck — aus EINER
+ *       Anmeldung werden mehrere Schluessel ("emi", "emil", "emilia", ...).
+ *   /api/auth/validate-invite/<Code>  8 Hexzeichen je Einladung.
+ *   /api/{chat,material,challenges}/files/<Name>  64 Hexzeichen je Datei.
+ *
+ * Die Reihenfolge zaehlt: Alle Muster mit Text greifen VOR der Zahlen-Regel,
+ * sonst zerlegt \/\d+ einen Namen wie "emilia2011" in Fragmente. Die
+ * Loeschroute DELETE /material/files/17 nimmt dagegen eine Datensatz-ID und
+ * faellt weiter unter :id — der Dateinamen-Zweig verlangt deshalb Hexzeichen
+ * und mindestens acht davon.
+ *
+ * Aus demselben Grund steht auch die UUID-Regel jetzt VOR der Zahlen-Regel.
+ * Andersherum war sie wirkungslos, sobald eine UUID mit einer Ziffer beginnt:
+ * \/\d+ ersetzte die fuehrenden Ziffern durch :id, danach passte das
+ * UUID-Muster nicht mehr. Aus
+ * /api/events/550e8400-e29b-41d4-a716-446655440000 wurde
+ * /api/events/:ide8400-e29b-41d4-a716-446655440000 — ein eigener Schluessel je
+ * UUID, also genau die Explosion, die die Regel verhindern sollte. Nur UUIDs
+ * mit fuehrendem Buchstaben (6 von 16 moeglichen Anfangszeichen) wurden
+ * korrekt zusammengefasst.
+ */
 function normalizePath(path) {
   return path
     .split('?')[0]
-    .replace(/\/\d+/g, '/:id')
-    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:uuid');
+    .replace(/(\/api\/auth\/check-username)\/[^/]+/i, '$1/:name')
+    .replace(/(\/api\/auth\/validate-invite)\/[^/]+/i, '$1/:code')
+    .replace(/(\/files)\/[0-9a-f]{8,}/i, '$1/:datei')
+    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:uuid')
+    .replace(/\/\d+/g, '/:id');
+}
+
+/*
+ * Haelt `stats` unter MAX_ROUTE_KEYS: Verworfen wird das seltenste Viertel
+ * (Begruendung bei der Konstante). In einem Schwung ein Viertel statt jedes
+ * Mal einen einzelnen Schluessel — sonst laeuft bei jeder Anfrage oberhalb der
+ * Grenze ein Sortierdurchlauf ueber 600 Eintraege.
+ *
+ * `schonen` ist der Schluessel der laufenden Anfrage. Er steht zu diesem
+ * Zeitpunkt noch bei count 0 und waere damit der erste, den die Sortierung
+ * wegwirft — die Messung, die das Raeumen ausgeloest hat, waere verloren.
+ */
+function trimStats(schonen) {
+  const nachAnzahl = [...stats.entries()]
+    .filter(([k]) => k !== schonen)
+    .sort((a, b) => a[1].count - b[1].count);
+  const wegwerfen = Math.ceil(MAX_ROUTE_KEYS / 4);
+  for (let i = 0; i < wegwerfen && i < nachAnzahl.length; i++) {
+    stats.delete(nachAnzahl[i][0]);
+    verworfeneSchluessel += 1;
+  }
 }
 
 function trimBuckets(nowSec) {
@@ -159,6 +248,9 @@ function record(method, normPath, statusCode, durationMs, rawUrl, serverMs, user
           serverTotalMs: 0, serverMaxMs: 0, serverSamples: [],
           langsam: 0, zufrieden: 0, toleriert: 0, frustriert: 0 };
     stats.set(key, s);
+    // Nur beim NEUEN Schluessel pruefen — bei einer bekannten Route kann die
+    // Zahl nicht wachsen.
+    if (stats.size > MAX_ROUTE_KEYS) trimStats(key);
   }
   // Aeltere Eintraege aus einem laufenden Prozess kennen die Server-Felder
   // noch nicht — nachruesten statt NaN zu summieren.
@@ -521,6 +613,11 @@ function snapshot() {
     // Wo lohnt sich Arbeit: Routen nach GESAMTER Serverzeit, nicht nach p95.
     routesPotenzial: [...routes].sort((a, b) => b.serverZeitGesamtMs - a.serverZeitGesamtMs).slice(0, 20),
     fehlerGruppen: [...fehlerGruppen.values()].sort((a, b) => b.anzahl - a.anzahl).slice(0, 20),
+    // Zahl der beobachteten Route-Schluessel und wie viele die Obergrenze
+    // verworfen hat. Erwartet wird verworfen: 0 — steht dort etwas anderes,
+    // fehlt in normalizePath ein Platzhalter (Feld ist neu hinzugekommen,
+    // aeltere App-Fassungen lesen es einfach nicht).
+    routeSchluessel: { anzahl: stats.size, grenze: MAX_ROUTE_KEYS, verworfen: verworfeneSchluessel },
   };
 }
 
@@ -703,6 +800,15 @@ function mergeSnapshots(snaps) {
     },
     routesPotenzial: [...routes].sort((a, b) => b.serverZeitGesamtMs - a.serverZeitGesamtMs).slice(0, 20),
     fehlerGruppen: [...gruppenMap.values()].sort((a, b) => b.anzahl - a.anzahl).slice(0, 20),
+    // Route-Schluessel ueber die Replicas: `anzahl` ist das MAXIMUM, nicht die
+    // Summe — jede Replica sieht im Wesentlichen dieselben Routen, addiert
+    // stuende dort das Doppelte. `verworfen` addiert sich dagegen, denn jede
+    // Replica raeumt fuer sich.
+    routeSchluessel: {
+      anzahl: Math.max(...valid.map(x => (x.routeSchluessel || {}).anzahl || 0)),
+      grenze: MAX_ROUTE_KEYS,
+      verworfen: valid.reduce((s, x) => s + ((x.routeSchluessel || {}).verworfen || 0), 0),
+    },
     // Lastverteilung: Anteil der Requests pro Replica.
     replicas: valid.map(x => ({
       replica: x.replica,
@@ -748,4 +854,24 @@ function persistSummary() {
   };
 }
 
-module.exports = { apmMiddleware, snapshot, mergeSnapshots, persistSummary, REPLICA_ID };
+// normalizePath ist mit exportiert, damit die Platzhalter pruefbar sind: Ein
+// vergessener Platzhalter faellt sonst erst im Livebetrieb am Speicher auf.
+// routeSchluessel() liefert die Schluessel samt Zaehler — die Listen im
+// Snapshot sind auf 20 Eintraege gekuerzt und taugen dafuer nicht.
+function routeSchluessel() {
+  return [...stats.entries()].map(([route, s]) => ({ route, count: s.count }));
+}
+
+// Leert die Route-Schluessel samt Verworfen-Zaehler. Nur fuer Tests: `stats`
+// ist Modul-Zustand und ueberlebt sonst von einem Test in den naechsten —
+// dieselbe Falle wie bei chatSyncCache.clear(). Im Betrieb wird das nie
+// gerufen; der Verlauf soll gerade ueber die ganze Laufzeit reichen.
+function _statsLeeren() {
+  stats.clear();
+  verworfeneSchluessel = 0;
+}
+
+module.exports = {
+  apmMiddleware, snapshot, mergeSnapshots, persistSummary,
+  normalizePath, routeSchluessel, _statsLeeren, MAX_ROUTE_KEYS, REPLICA_ID,
+};
