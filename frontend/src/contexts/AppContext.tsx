@@ -38,12 +38,34 @@ let fcmTokenSent: string | null = null;
 let fcmTokenLastSent: number = 0;
 let pendingFcmToken: string | null = null;
 
+/*
+ * Der LETZTE von Firebase gemeldete Token — unabhaengig davon, ob er schon
+ * gesendet wurde (23.09.2026).
+ *
+ * `pendingFcmToken` haelt nur FEHLGESCHLAGENE Sendungen, `fcmTokenSent` nur
+ * erfolgreiche, und beide werden beim Abmelden geraeumt. Damit gab es nach
+ * einer Anmeldung keinen Weg, einen bereits bekannten Token erneut zu senden:
+ * Auf Android feuert 'registration' pro Installation praktisch nur EINMAL,
+ * weil FCM bei unveraenderter Installation denselben Token liefert. Wer sich
+ * abmeldete und wieder anmeldete, hatte serverseitig keinen Token mehr — und
+ * die App keinen Anlass, einen zu schicken.
+ *
+ * Dieser Merker ueberlebt das Abmelden bewusst: Er ist kein Zustand der
+ * Sitzung, sondern eine Eigenschaft der Installation.
+ */
+let letzterBekannterFcmToken: string | null = null;
+
 // 12 Stunden — Sendefenster für einen UNVERAENDERTEN Token.
 const TOKEN_RESEND_WINDOW_MS = 12 * 60 * 60 * 1000;
 
 // Funktion, um Duplikate zu vermeiden
 const sendTokenToServer = async (token: string, retryCount = 0) => {
   const now = Date.now();
+
+  // Den Token merken, bevor irgendeine Sperre greift: Nach einer Anmeldung
+  // braucht es ihn, und Firebase meldet ihn auf Android pro Installation
+  // praktisch nur einmal (siehe letzterBekannterFcmToken oben).
+  letzterBekannterFcmToken = token;
 
   // ANTI-SPAM (In-Memory-Zusatzschutz): gleicher Token in den letzten 10s -> raus.
   // Faengt schnelle Doppel-Feuerungen innerhalb einer Session ab.
@@ -220,22 +242,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
-  // Account-Wechsel-Erkennung für den FCM-Token: Nach Logout+Login mit einem
-  // ANDEREN Account hängt der Token serverseitig noch am alten User (das
-  // 12h-Sendefenster verhindert den erneuten POST). Bei einem Wechsel innerhalb
-  // der Session das Fenster aufheben und den bekannten Token sofort für den
-  // neuen User registrieren — der Server hängt ihn dabei um (DELETE fremder
-  // Bindungen in POST /device-token).
+  /*
+   * Bei JEDER Anmeldung den bekannten Token registrieren (23.09.2026).
+   *
+   * Vorher stand hier nur die Erkennung eines Account-WECHSELS: `prev !== null
+   * && prev !== user.id`. Damit waren zwei Faelle nicht abgedeckt, die in der
+   * Praxis genau die haeufigen sind:
+   *
+   *   1. Abmelden und mit DEMSELBEN Konto wieder anmelden. Der Logout loescht
+   *      den Token serverseitig, `prev === user.id` liess den Nachfass-Weg
+   *      aber ausfallen — dauerhaft kein Push, ohne Fehler irgendwo.
+   *   2. App-Start mit bestehender Sitzung ("bin schon eingeloggt"), wenn
+   *      serverseitig kein Token steht. `prev === null` schloss das aus.
+   *
+   * Beides trifft Android haerter als iOS: Dort feuert 'registration' pro
+   * Installation praktisch nur EINMAL (FCM liefert bei unveraenderter
+   * Installation denselben Token), und MainActivity reicht nichts nach.
+   * Gemessen an Produktion: seit dem 19.09.2026 kein einziger neuer
+   * Android-Token bei 52 neuen iOS-Token.
+   *
+   * Jetzt: Sobald eine Nutzer-ID vorliegt UND ein Token bekannt ist, wird er
+   * gesendet. `sendTokenToServer` faengt ueberfluessige POSTs selbst ab (10s-
+   * Sperre und 12h-Fenster bei UNVERAENDERTEM Token) — bei einem Wechsel
+   * hebt der Code hier das Fenster zusaetzlich auf, weil der Server den Token
+   * dann umhaengen muss.
+   */
   const prevPushUserIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (!user?.id) return; // Logout: vorherige ID absichtlich behalten
     const prev = prevPushUserIdRef.current;
     prevPushUserIdRef.current = user.id;
-    if (prev !== null && prev !== user.id && fcmTokenSent) {
-      const t = fcmTokenSent;
-      fcmTokenSent = null; // In-Memory-Sperre aufheben
-      setPushTokenTimestamp(0).finally(() => sendTokenToServer(t));
+
+    const token = fcmTokenSent || pendingFcmToken || letzterBekannterFcmToken;
+    if (!token) return; // Noch kein Token von Firebase — der Listener holt ihn.
+
+    const kontoWechsel = prev !== null && prev !== user.id;
+    if (kontoWechsel) {
+      // Der Token haengt serverseitig noch am alten Konto: Sperren aufheben,
+      // damit der POST wirklich rausgeht (der Server haengt ihn dann um).
+      fcmTokenSent = null;
+      setPushTokenTimestamp(0).finally(() => sendTokenToServer(token));
+      return;
     }
+
+    // Erstanmeldung, Wiederanmeldung mit demselben Konto oder App-Start mit
+    // bestehender Sitzung. Ohne Aufheben der Sperren: Steht der Token
+    // serverseitig schon, greift das 12h-Fenster und es passiert nichts —
+    // genau richtig. Fehlt er, geht der POST raus.
+    sendTokenToServer(token);
   }, [user?.id]);
 
   // Multi-Org Switcher state
@@ -494,6 +548,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try { await clearAuth(); } catch { /* ignore */ }
       try { await offlineCache.clearAll(); } catch { /* ignore */ }
     }
+    /*
+     * Push-Sperren raeumen (23.09.2026, Fall Malte, Android).
+     *
+     * Der Logout loescht den Token serverseitig (auth.ts, DELETE
+     * /device-token) — die App hielt sich danach aber weiter fuer registriert:
+     *
+     *   pushAlreadyRegistered   liess requestPushPermissions sofort aussteigen
+     *   fcmTokenSent            liess die 12h-Sperre in sendTokenToServer greifen
+     *   pushTokenTimestamp      dasselbe, und ueberlebt App-Neustarts
+     *   prevPushUserIdRef       liess den Nachfass-Weg bei Wiederanmeldung mit
+     *                           DEMSELBEN Konto ausfallen (prev === user.id)
+     *
+     * Wer sich abmeldete und wieder anmeldete, bekam deshalb dauerhaft keinen
+     * Push — ohne Fehler irgendwo. Gemessen an Produktion: zwei Anmeldungen um
+     * 14:27 und 14:37 Uhr, kein einziger POST /device-token in den Logs, kein
+     * Token in der Datenbank.
+     *
+     * Der Zeitstempel wird NICHT bloss vergessen, sondern auf 0 geschrieben:
+     * Er liegt in Preferences und ueberlebt sonst den Neustart der App.
+     */
+    pushAlreadyRegistered = false;
+    pushRegistrationInProgress = false;
+    fcmTokenSent = null;
+    fcmTokenLastSent = 0;
+    pendingFcmToken = null;
+    prevPushUserIdRef.current = null;
+    try { await setPushTokenTimestamp(0); } catch { /* best-effort */ }
+
     // Garantierter Schritt: React-State leeren -> Login-Route. Nie ausgelassen.
     setOrganizations([]);
     setUser(null);

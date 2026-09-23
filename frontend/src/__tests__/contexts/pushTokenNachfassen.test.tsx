@@ -116,6 +116,13 @@ vi.mock('../../services/offlineCache', () => ({
   },
 }));
 
+const performLogoutMock = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../services/auth', () => ({
+  // AppContext importiert `logout as performLogout` — der Export heisst logout.
+  logout: (...a: unknown[]) => performLogoutMock(...a),
+  clearAuth: vi.fn().mockResolvedValue(undefined),
+}));
+
 const apiPost = vi.fn().mockResolvedValue({ data: {} });
 vi.mock('../../services/api', () => ({
   default: {
@@ -135,6 +142,17 @@ const Verbraucher: React.FC = () => {
   React.useEffect(() => {
     if (!ctx.user) ctx.setUser(NUTZER);
   }, [ctx]);
+  return <span data-testid="fertig">{ctx.user?.display_name || 'keiner'}</span>;
+};
+
+/**
+ * Wie oben, gibt aber setUser/signOut nach aussen, damit ein Test den
+ * Ab- und Wiederanmelde-Weg nachstellen kann. Meldet NICHT von selbst an.
+ */
+let steuerung: { setUser: (u: BaseUser | null) => void; signOut: () => Promise<void> } | null = null;
+const SteuerbarerVerbraucher: React.FC = () => {
+  const ctx = useApp();
+  steuerung = { setUser: ctx.setUser as (u: BaseUser | null) => void, signOut: ctx.signOut };
   return <span data-testid="fertig">{ctx.user?.display_name || 'keiner'}</span>;
 };
 
@@ -269,6 +287,111 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
     // iOS reicht den Token ohnehin ueber das AppDelegate nach — hier darf das
     // Fenster greifen, sonst entstuenden ueberfluessige Registrierungen.
     expect(pushRegister.mock.calls.length).toBe(beimStart);
+  });
+
+  /*
+   * ABMELDEN UND WIEDER ANMELDEN (23.09.2026, Fall Malte, Android).
+   *
+   * Der Logout loescht den Token serverseitig (auth.ts, DELETE /device-token),
+   * raeumte aber keine der App-internen Sperren: `pushAlreadyRegistered` blieb
+   * true, `fcmTokenSent` behielt den Token, und `prevPushUserIdRef` behielt die
+   * alte ID. Beim Wiederanmelden mit DEMSELBEN Konto griff deshalb weder
+   * requestPushPermissions (steigt bei pushAlreadyRegistered sofort aus) noch
+   * der Nachfass-Weg beim Nutzerwechsel (prev === user.id).
+   *
+   * Ergebnis: Der Server hatte den Token geloescht, die App hielt sich fuer
+   * registriert. Gemessen an Produktion: zwei Anmeldungen um 14:27 und 14:37
+   * Uhr, kein einziger POST /device-token in den Logs, kein Token in der
+   * Datenbank.
+   */
+  it('registriert nach Abmelden und Wiederanmelden mit DEMSELBEN Konto erneut', async () => {
+    await act(async () => {
+      render(<AppProvider><SteuerbarerVerbraucher /></AppProvider>);
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    // Anmelden und einen Token registrieren.
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await Promise.resolve(); });
+    const melden = registrierungsListener();
+    await act(async () => { melden!({ value: 'fcm-token-malte' }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+    expect(apiPost).toHaveBeenCalledTimes(1);
+
+    // Abmelden — der Server verwirft den Token dabei.
+    await act(async () => { await steuerung!.signOut(); });
+    await act(async () => { await Promise.resolve(); });
+
+    // Wieder anmelden, gleiches Konto, gleicher FCM-Token (unveraenderte
+    // Installation liefert denselben).
+    apiPost.mockClear();
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000); });
+
+    // Vorher: kein POST, dauerhaft kein Push. Jetzt muss der Token erneut raus.
+    expect(apiPost).toHaveBeenCalledWith(
+      '/notifications/device-token',
+      expect.objectContaining({ token: 'fcm-token-malte', platform: 'android' })
+    );
+  });
+
+  it('haelt den persistierten Zeitstempel nicht gegen eine Anmeldung', async () => {
+    // Der Zeitstempel ueberlebt App-Neustarts (Preferences). Nach einem Logout
+    // darf er die neue Anmeldung NICHT sperren — sonst haengt die
+    // Registrierung bis zu zwoelf Stunden.
+    pushZeitstempel = Date.now();
+
+    await act(async () => {
+      render(<AppProvider><SteuerbarerVerbraucher /></AppProvider>);
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await Promise.resolve(); });
+    const melden = registrierungsListener();
+    await act(async () => { melden!({ value: 'fcm-token-frisch' }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+
+    await act(async () => { await steuerung!.signOut(); });
+    apiPost.mockClear();
+
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000); });
+
+    expect(apiPost).toHaveBeenCalledWith(
+      '/notifications/device-token',
+      expect.objectContaining({ token: 'fcm-token-frisch' })
+    );
+  });
+
+  /*
+   * Die Kehrseite des Fixes: Der Effect feuert jetzt bei JEDER Anmeldung.
+   * Wenn der Token serverseitig schon steht, darf daraus KEIN zusaetzlicher
+   * POST entstehen — sonst schickt jeder App-Start eine Registrierung, und das
+   * war der Grund, aus dem das 12h-Fenster ueberhaupt eingebaut wurde.
+   */
+  it('schickt bei App-Start mit bestehender Sitzung keinen zweiten POST, wenn der Token schon steht', async () => {
+    await act(async () => {
+      render(<AppProvider><SteuerbarerVerbraucher /></AppProvider>);
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await Promise.resolve(); });
+    const melden = registrierungsListener();
+    await act(async () => { melden!({ value: 'fcm-token-stabil' }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+    expect(apiPost).toHaveBeenCalledTimes(1);
+
+    // Zeitstempel frisch (wie nach erfolgreichem Send) und derselbe Nutzer
+    // wird erneut gesetzt — z.B. durch ein Profil-Neuladen.
+    pushZeitstempel = Date.now();
+    apiPost.mockClear();
+    await act(async () => { steuerung!.setUser({ ...NUTZER } as BaseUser); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000); });
+
+    // Das 12h-Fenster greift: kein weiterer POST.
+    expect(apiPost).not.toHaveBeenCalled();
   });
 
   it('merkt den Zeitstempel erst, wenn der Token wirklich angekommen ist', async () => {

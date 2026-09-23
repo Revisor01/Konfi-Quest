@@ -133,7 +133,7 @@ Führt das nicht weiter, in dieser Reihenfolge weiterprobieren:
 
 1. In den Einstellungen des Geräts prüfen, ob Konfi Quest Benachrichtigungen
    senden darf — und ob der Energiesparmodus die App im Hintergrund bremst.
-2. Ab- und wieder anmelden.
+2. Ab- und wieder anmelden. Die App trägt das Gerät dabei neu ein.
 3. Die App neu installieren.
 
 > Benachrichtigungen brauchen Internet. Was während einer Funklücke passiert
