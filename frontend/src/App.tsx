@@ -22,6 +22,7 @@ import AppSperrbildschirm from './components/common/AppSperrbildschirm';
 import AppAbdeckung from './components/common/AppAbdeckung';
 import { useAppSperre } from './hooks/useAppSperre';
 import { useSeitenBereit } from './navigation/useSeitenBereit';
+import PushZielNavigation from './navigation/PushZielNavigation';
 
 /**
  * Ladebildschirm VOR dem Router — bewusst KEINE IonPage.
@@ -224,6 +225,14 @@ const AppContent: React.FC = () => {
             Die Rolle wird stattdessen in MainTabs selbst behandelt (dort haengt
             der Baum an `rolle`, nicht an der Montage). */}
         <IonReactRouter key={orgVersion}>
+          {/* Navigiert auf das Ziel eines angetippten Pushes. Steht hier, weil
+              useIonRouter den Router-Kontext braucht — und NEBEN dem Outlet,
+              nicht darin: Es ist keine Seite und darf im Seiten-Stack nichts
+              verdraengen. Rendert null. Der frueher in AppContext stehende
+              harte Reload war Maltes Absturz beim Antippen (23.09.2026).
+              Nur im angemeldeten Zweig: Push-Ziele sind immer Seiten hinter
+              der Anmeldung, und der Login-Router daneben hat keine davon. */}
+          <PushZielNavigation />
           <IonRouterOutlet>
             {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
             <Route path="/*" element={<MainTabs />} />

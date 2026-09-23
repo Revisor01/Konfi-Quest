@@ -4,13 +4,55 @@
 // die Organisation des INHALTS. Ist die App beim Antippen auf eine andere
 // Organisation geschaltet, wird VOR der Navigation über den bestehenden
 // switchOrg-Flow gewechselt und erst nach abgeschlossenem Wechsel navigiert
-// (window.location.href schneidet im nativen WebView sonst die asynchronen
-// Preferences-Writes ab).
+// (ein harter Reload würde im nativen WebView die asynchronen
+// Preferences-Writes abschneiden — und reisst beim Start die App ab, siehe
+// PUSH_ZIEL_EVENT weiter unten).
 //
 // Wichtig (String vs. Number): FCM-data-Werte sind IMMER Strings, die Org im
 // Client eine Number — verglichen wird deshalb auf beiden Seiten per String().
 
 export type PushUserType = 'admin' | 'teamer' | 'konfi' | 'user';
+
+/**
+ * Ereignis, mit dem das Ziel eines angetippten Pushes an den Router uebergeben
+ * wird. Der Tap-Handler liegt in AppContext und hat dort keinen Router-Zugriff;
+ * navigation/PushZielNavigation lauscht innerhalb des Routers darauf.
+ *
+ * WARUM NICHT window.location.href (Maltes Befund 23.09.2026, Android):
+ * "Da oeffnet sich die App fuer ganz kurz und stuerzt direkt ab." Eine
+ * Zuweisung an location.href baut die App im nativen WebView vollstaendig neu
+ * auf (capacitor://localhost) — und zwar genau, waehrend Android die Activity
+ * hochfaehrt. Derselbe harte Reload war in App.tsx schon einmal die Ursache
+ * ('auth:relogin-required': "konnte beim Wiederaufbau crashen"), und der
+ * Kopfkommentar oben warnt selbst davor, weil er ausserdem die asynchronen
+ * Preferences-Writes abschneidet.
+ */
+export const PUSH_ZIEL_EVENT = 'push:navigate';
+
+/*
+ * Merker fuer das Ziel: Ein Org-Wechsel vor der Navigation erhoeht orgVersion
+ * und montiert damit den gesamten Router-Subtree neu (siehe App.tsx). Das
+ * Ereignis kann deshalb in der Luecke zwischen Abbau und Aufbau landen, in der
+ * niemand lauscht. Die neu montierte Komponente holt das Ziel dann hier ab.
+ *
+ * Das Ziel wird nur EINMAL herausgegeben — bliebe es stehen, sprang die App
+ * bei jedem weiteren Montieren des Routers zurueck auf das alte Push-Ziel.
+ */
+let wartendesZiel: string | null = null;
+
+/** Ziel eines angetippten Pushes an den Router uebergeben. Leeres Ziel = nichts tun. */
+export const pushZielMelden = (ziel: string): void => {
+  if (!ziel) return;
+  wartendesZiel = ziel;
+  window.dispatchEvent(new CustomEvent(PUSH_ZIEL_EVENT, { detail: { ziel } }));
+};
+
+/** Wartendes Ziel holen und dabei verbrauchen. Nichts da -> null. */
+export const pushZielAbholen = (): string | null => {
+  const ziel = wartendesZiel;
+  wartendesZiel = null;
+  return ziel;
+};
 
 export interface PushOrgSwitchDeps {
   // tokenStore-Getter (frisch, KEINE Closure-Werte — der Push-Effect in

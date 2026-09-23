@@ -46,6 +46,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Das Antippen einer Mitteilung stürzte die App auf Android ab: Sie öffnete
+  sich kurz und war wieder weg, auch aus dem Hintergrund heraus — erst nach
+  vollständigem Schließen ließ sie sich wieder starten. Der Tipp führt jetzt
+  direkt zum gemeinten Termin, Chat oder Abzeichen, ohne die App neu zu laden.
 - Die App-Sperre fragte beim Öffnen zweimal gleichzeitig nach dem
   Fingerabdruck. Auf Android brach die erste Abfrage dadurch ab und meldete
   „Nicht erkannt", obwohl niemand abgebrochen hatte — erst der zweite Versuch
