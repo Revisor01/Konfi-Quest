@@ -40,11 +40,15 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
-- Wer sich abgemeldet und wieder angemeldet hat, bekam danach keine
-  Mitteilungen mehr — dauerhaft und ohne Hinweis. Beim Abmelden wird das Gerät
-  abgemeldet, die App hielt sich aber weiter für angemeldet und trug sich nie
-  wieder ein. Betroffen waren vor allem Android-Geräte. Jetzt trägt sich die
-  App bei jeder Anmeldung neu ein, auch beim Start mit bestehender Sitzung.
+- Android-Geräte bekamen keine Mitteilungen mehr, sobald die App einmal
+  aktualisiert oder neu angemeldet wurde — dauerhaft und ohne Hinweis. Die App
+  konnte sich beim Mitteilungsdienst nicht erneut eintragen, weil das System
+  die dafür nötige Kennung nur einmal je Installation herausgibt. Sie fragt
+  sie jetzt aktiv ab, bei jeder Anmeldung und bei jedem Öffnen. Wer betroffen
+  war, bekommt Mitteilungen wieder, sobald die App einmal geöffnet wird.
+- Wer sich abgemeldet und wieder angemeldet hat, bekam ebenfalls keine
+  Mitteilungen mehr. Beim Abmelden wird das Gerät abgemeldet, die App hielt
+  sich aber weiter für eingetragen.
 - Mehrtägige Termine zeigen in den Details jetzt beide Tage. Eine Freizeit von
   Freitagabend bis Sonntagmittag stand vorher als „Freitag · 16:30 – 12:30" da,
   als ob sie am selben Tag endete.

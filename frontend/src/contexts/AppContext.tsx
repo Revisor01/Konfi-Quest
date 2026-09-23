@@ -8,6 +8,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { ensureSocketConnected, reconnectWithToken } from '../services/websocket';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { removeDeliveredById, removeAllDelivered, benachrichtigungskanaeleAnlegen } from '../services/notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
@@ -28,6 +29,38 @@ interface FCMPlugin {
 
 // Typsichere Bridge zum nativen FCM-Plugin (registriert via AppDelegate.swift)
 const FCM = registerPlugin<FCMPlugin>('FCM');
+
+/*
+ * Den Token AKTIV abfragen — der fehlende Weg auf Android (23.09.2026).
+ *
+ * Bis hierher gab es auf Android genau EINEN Weg zum Token: register()
+ * aufrufen und darauf warten, dass das System 'registration' feuert. Dieses
+ * Ereignis feuert bei UNVERAENDERTER Installation aber nicht wieder — FCM
+ * liefert denselben Token und meldet ihn nur einmal pro Installation.
+ * MainActivity ist eine reine BridgeActivity und reicht nichts nach; das
+ * FCM-Plugin oben haengt an AppDelegate.swift und ist damit iOS-only.
+ *
+ * Folge: Nach einem App-Update (Installation bleibt, Prozess ist neu, alle
+ * Merker leer) kam auf Android kein Token mehr zustande. Nachgemessen an
+ * Produktion: Ein Tester meldete sich um 18:25 und 18:30 Uhr an — in den
+ * Server-Logs kein einziger POST /device-token, kein Fehler, nichts. Die
+ * Berechtigung stand auf 'granted'.
+ *
+ * FirebaseMessaging.getToken() fragt direkt bei Firebase, ohne Ereignis, auf
+ * beiden Plattformen. Die optionale Web-Abhaengigkeit `firebase` wird NICHT
+ * mitinstalliert — auf den Geraeten laeuft das native SDK.
+ */
+const tokenAktivHolen = async (): Promise<string | null> => {
+  if (!Capacitor.isNativePlatform()) return null;
+  try {
+    const { token } = await FirebaseMessaging.getToken();
+    return token || null;
+  } catch (err) {
+    // Kein harter Fehler: Der 'registration'-Weg bleibt daneben bestehen.
+    console.warn('Token konnte nicht aktiv abgefragt werden:', err);
+    return null;
+  }
+};
 
 // ANTI-SPAM: Verhindere mehrfache Push-Registrierung (Global Scope)
 let pushRegistrationInProgress = false;
@@ -273,8 +306,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const prev = prevPushUserIdRef.current;
     prevPushUserIdRef.current = user.id;
 
-    const token = fcmTokenSent || pendingFcmToken || letzterBekannterFcmToken;
-    if (!token) return; // Noch kein Token von Firebase — der Listener holt ihn.
+    const bekannt = fcmTokenSent || pendingFcmToken || letzterBekannterFcmToken;
+
+    // Ist kein Token bekannt, AKTIV bei Firebase fragen. Auf Android ist das
+    // der einzige Weg nach einem Update: 'registration' feuert dort bei
+    // unveraenderter Installation nicht wieder (siehe tokenAktivHolen).
+    if (!bekannt) {
+      tokenAktivHolen().then((t) => { if (t) sendTokenToServer(t); });
+      return;
+    }
+    const token = bekannt;
 
     const kontoWechsel = prev !== null && prev !== user.id;
     if (kontoWechsel) {
@@ -797,6 +838,14 @@ useEffect(() => {
               // dass der Token ankam. Ein Token, der es nie zum Server schaffte,
               // sperrte so den naechsten Anlauf fuer zwoelf Stunden.
               await PushNotifications.register();
+
+              // Und den Token AKTIV holen: register() feuert 'registration' auf
+              // Android bei unveraenderter Installation nicht wieder, dann
+              // passierte hier bisher nichts (23.09.2026, siehe
+              // tokenAktivHolen). sendTokenToServer faengt ueberfluessige POSTs
+              // selbst ab.
+              const aktiv = await tokenAktivHolen();
+              if (aktiv) await sendTokenToServer(aktiv);
             } catch (err) {
               console.warn('Token refresh failed:', err);
             }

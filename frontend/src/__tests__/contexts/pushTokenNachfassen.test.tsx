@@ -65,6 +65,12 @@ vi.mock('@capacitor/push-notifications', () => ({
   },
 }));
 
+let aktiverToken: string | null = null;
+const getTokenMock = vi.fn(async () => ({ token: aktiverToken }));
+vi.mock('@capacitor-firebase/messaging', () => ({
+  FirebaseMessaging: { getToken: (...a: unknown[]) => getTokenMock(...a) },
+}));
+
 vi.mock('@capawesome/capacitor-background-task', () => ({
   BackgroundTask: { beforeExit: vi.fn(), finish: vi.fn() },
 }));
@@ -176,6 +182,7 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
     istNativ = true;
     geraeteId = 'geraet-1';
     pushZeitstempel = 0;
+    aktiverToken = null;
   });
 
   afterEach(() => {
@@ -392,6 +399,97 @@ describe('Push-Token: Nachfassen statt stillem Verlust', () => {
 
     // Das 12h-Fenster greift: kein weiterer POST.
     expect(apiPost).not.toHaveBeenCalled();
+  });
+
+  /*
+   * UPDATE OHNE AB- UND ANMELDEN (23.09.2026).
+   *
+   * Der haeufigste Fall in der Praxis: Jemand ist angemeldet, installiert die
+   * neue Fassung darueber und meldet sich NICHT neu an. Dann gilt:
+   *
+   *   - Der Prozess startet neu, alle In-Memory-Merker sind leer
+   *     (fcmTokenSent, pendingFcmToken, letzterBekannterFcmToken)
+   *   - Der persistierte Zeitstempel ueberlebt das Update (Preferences)
+   *   - Serverseitig steht der Token noch — er wurde nie geloescht
+   *
+   * Der Token kommt trotzdem an, sobald Firebase ihn meldet: `fcmTokenSent` ist
+   * nach dem Neustart null, und die 12h-Sperre verlangt `fcmTokenSent === token`
+   * — sie greift also nicht.
+   *
+   * WICHTIG, damit dieser Test nicht falsch gelesen wird: Er belegt KEINE
+   * Wirkung des Fixes vom 23.09.2026. Gegenprobe gelaufen — mit dem alten
+   * Verhalten (nur Konto-WECHSEL loest aus) bleibt er ebenfalls gruen. Dieser
+   * Weg war nie kaputt. Der Test haelt ihn fest, weil der Fix die
+   * Anmelde-Logik anfasst und dabei nichts an diesem haeufigsten Fall brechen
+   * darf: eingeloggt bleiben, neue Fassung darueber installieren.
+   */
+  it('registriert nach einem Update ohne Ab- und Anmelden, trotz frischem Zeitstempel', async () => {
+    // Wie nach einem Update: Zeitstempel aus der alten Fassung ist frisch,
+    // der Prozess aber neu. Die Modul-Merker raeumt der signOut unten — das
+    // Modul selbst wird NUR EINMAL importiert, seine Merker ueberleben sonst
+    // von Test zu Test.
+    pushZeitstempel = Date.now();
+
+    await act(async () => {
+      render(<AppProvider><SteuerbarerVerbraucher /></AppProvider>);
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    // Sitzung besteht weiter — kein Anmeldevorgang, der Nutzer ist einfach da.
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await Promise.resolve(); });
+
+    // Firebase meldet den Token nach dem Start.
+    const melden = registrierungsListener();
+    expect(melden).not.toBeNull();
+    await act(async () => { melden!({ value: 'fcm-token-nach-update' }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+
+    expect(apiPost).toHaveBeenCalledWith(
+      '/notifications/device-token',
+      expect.objectContaining({ token: 'fcm-token-nach-update', platform: 'android' })
+    );
+  });
+
+  /*
+   * ANMELDEN, WENN 'registration' SCHWEIGT (23.09.2026, Fall Malte, Android).
+   *
+   * Der eigentliche Kern des Android-Problems: Es gab genau EINEN Weg zum
+   * Token — register() aufrufen und auf das Ereignis 'registration' warten.
+   * Bei unveraenderter Installation feuert das nicht wieder, weil FCM
+   * denselben Token liefert und ihn nur einmal meldet. MainActivity reicht
+   * nichts nach, und das FCM-Plugin haengt an AppDelegate.swift (iOS-only).
+   *
+   * Nachgemessen an Produktion: Zwei Anmeldungen um 18:25 und 18:30 Uhr, in
+   * den Server-Logs KEIN einziger POST /device-token und kein Fehler. Die
+   * Benachrichtigungs-Berechtigung stand auf 'granted' (per Screenshot
+   * bestaetigt) — es war kein Geraeteproblem, sondern unser fehlender Weg.
+   *
+   * Hier feuert der Listener bewusst NICHT. Der Token muss trotzdem ankommen,
+   * weil er aktiv bei Firebase abgefragt wird.
+   */
+  it('fragt nicht aktiv nach, wenn der Token schon bekannt ist', async () => {
+    // Sonst entstuende bei jedem Anmelden ein zusaetzlicher Plugin-Aufruf.
+    aktiverToken = 'sollte-nicht-gebraucht-werden';
+
+    await act(async () => {
+      render(<AppProvider><SteuerbarerVerbraucher /></AppProvider>);
+    });
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { steuerung!.setUser(NUTZER); });
+    await act(async () => { await Promise.resolve(); });
+
+    const melden = registrierungsListener();
+    await act(async () => { melden!({ value: 'fcm-token-per-ereignis' }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    getTokenMock.mockClear();
+
+    // Erneutes Setzen desselben Nutzers: Der Token ist bekannt, also kein
+    // aktiver Abruf.
+    await act(async () => { steuerung!.setUser({ ...NUTZER } as BaseUser); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+
+    expect(getTokenMock).not.toHaveBeenCalled();
   });
 
   it('merkt den Zeitstempel erst, wenn der Token wirklich angekommen ist', async () => {

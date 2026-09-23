@@ -32,9 +32,50 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
+  resolve: {
+    alias: {
+      /*
+       * `firebase/messaging` gibt es bei uns absichtlich NICHT (23.09.2026).
+       *
+       * @capacitor-firebase/messaging brauchen wir nur fuer den aktiven
+       * Token-Abruf auf den GERAETEN — dort laeuft das native SDK. Sein
+       * Web-Fallback (dist/esm/web.js) importiert `firebase/messaging` aber
+       * statisch, und der Build zieht diesen Zweig mit hinein: fuenf
+       * MISSING_EXPORT-Fehler, obwohl der Code nie ausgefuehrt wird.
+       *
+       * Statt das 37 MB schwere `firebase`-Paket aufzunehmen, zeigt der Alias
+       * auf einen leeren Ersatz. Im Browser gibt es damit keine Push-Nachrichten
+       * — die gab es dort ohnehin nie (Capacitor.isNativePlatform() sperrt
+       * jeden Push-Weg in AppContext).
+       */
+      'firebase/messaging': fileURLToPath(
+        new URL('./src/stubs/firebase-messaging-leer.ts', import.meta.url),
+      ),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    alias: {
+      /*
+       * Im Testlauf zusaetzlich auf die ESM-Fassung des Plugins zeigen.
+       *
+       * Vitest greift sonst zu dist/plugin.cjs.js, und die hat
+       * `require('firebase/messaging')` UNBEDINGT am Dateianfang — der Alias
+       * oben auf den leeren Ersatz greift bei einem CJS-require nicht. Alle
+       * Tests, die AppContext importieren, brachen damit an "Cannot find
+       * module 'firebase/messaging'" (23.09.2026).
+       *
+       * Die ESM-Fassung laedt den Web-Zweig nur dynamisch, sodass der Alias
+       * oben greift, wenn er ueberhaupt gebraucht wird.
+       */
+      '@capacitor-firebase/messaging': fileURLToPath(
+        new URL(
+          './node_modules/@capacitor-firebase/messaging/dist/esm/index.js',
+          import.meta.url,
+        ),
+      ),
+    },
   }
 })
