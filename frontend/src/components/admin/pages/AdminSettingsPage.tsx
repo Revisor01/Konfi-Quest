@@ -49,7 +49,6 @@ import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughM
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
-import PushDiagnose from '../../shared/PushDiagnose';
 import AbsturzTest from '../../shared/AbsturzTest';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
@@ -526,16 +525,14 @@ const AdminSettingsPage: React.FC = () => {
         )}
 
 
-        {/* Diagnose fuer die Fehlersuche am Geraet (24.09.2026).
-            Beide Anzeigen hingen bisher NUR in der Konfi-Ansicht
-            (konfi/views/ProfileView) — Leitung und Team sahen sie nie, obwohl
-            gerade sie beim Melden von Fehlern helfen. Simons Rueckmeldung zu
-            Build 214: "ich sehe keinen Crash Button", weil sein Profil diese
-            Seite hier ist, nicht ProfileView.
-            AbsturzTest blendet sich selbst aus (nur super_admin, nur in der
-            App), PushDiagnose zeigt sich immer. */}
+        {/* Absturzmeldung pruefen (24.09.2026). Blendet sich selbst aus:
+            nur super_admin, nur in der App.
+            Die frueher danebenstehende Push-Diagnose ("Mitteilungen pruefen")
+            ist weg — Simons Ansage: "Du kannst sie ganz weg. Bei Teamer Admin
+            Konfi einfach bei allen." Sie hatte keine Rollenpruefung und zeigte
+            Konfis Push-Zustand und Token-Auszuege, mit denen sie nichts
+            anfangen koennen. */}
         <div className="app-segment-wrapper">
-          <PushDiagnose variante="teamer" />
           <AbsturzTest variante="danger" />
         </div>
 

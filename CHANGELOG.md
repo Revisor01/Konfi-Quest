@@ -60,6 +60,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Die Hinweise im Profil („Was ist neu", „Events und Aktivitäten") zeigen
+  rechts keinen Pfeil mehr.
+- „Mitteilungen prüfen" ist aus dem Profil verschwunden. Die Anzeige war für
+  die Fehlersuche gedacht und half niemandem sonst weiter.
 - Die Symbole oben rechts stehen auf iPhones wieder in einer zusammenhängenden
   Leiste statt als einzelne Punkte.
 - Der Umschalter zwischen Konfis und Team hat auf iPhones die milchige

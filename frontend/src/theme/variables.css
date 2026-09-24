@@ -362,7 +362,20 @@ ion-list-header ion-label {
 }
 
 /* App Card Styling - zentrale Klasse für alle Cards */
-ion-card.app-card {
+/*
+ * `:not(.ios-theme-disabled)` ist kein Zierrat, sondern noetig (24.09.2026):
+ * ionic-theme-ios27 setzt `ion-card.ios:not(.ios-theme-disabled,.ios26-disabled)
+ * { margin: 16px }`. Ohne dieselbe Schaerfe verliert `margin: 0` hier gegen die
+ * Theme-Regel, und alle Karten bekommen links und rechts den doppelten Abstand
+ * — Simons Befund am Geraet. ionic-theme-ios26 hatte diese Regel noch nicht,
+ * der Abstand kam also mit dem Theme-Wechsel.
+ *
+ * Die vier Anmelde-Karten (.app-auth-card) stehen bewusst NICHT hier: Sie
+ * haben `max-width: 420px` und werden allein durch den Aussenabstand mittig
+ * gehalten. `margin: 0` wuerde sie nach links kleben. Ihr Abstand ist weiter
+ * unten eigens gesetzt.
+ */
+ion-card.app-card:not(.ios-theme-disabled) {
   --background: white;
   box-shadow: none;
   overflow: hidden;
@@ -2432,6 +2445,11 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-card {
   width: 100%;
   max-width: 420px;
+  /* Mittig halten (24.09.2026): ionic-theme-ios27 setzt auf ion-card.ios
+     `margin: 16px`. Bisher zentrierte Ionics eigener Aussenabstand die Karte;
+     mit einer festen Zahl links und rechts saesse sie bei max-width aussermittig.
+     `auto` macht die Zentrierung ausdruecklich, unabhaengig vom Theme. */
+  margin-inline: auto;
   border-radius: var(--app-radius-gross);
   overflow: hidden;
   /* Solider App-Card-Stil (keine Glasoptik) — passend zum Rest der App */
@@ -3446,11 +3464,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   font-size: var(--app-text-hinweis);
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.3;
-}
-.app-whatsnew__chevron {
-  flex-shrink: 0;
-  font-size: var(--app-text-gross);
-  color: rgba(255, 255, 255, 0.75);
 }
 /* X der Neuigkeiten-Karte auf der Startseite (UpdateHinweisKarte) */
 .app-whatsnew__close {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_FUNKELN, ICON_SCHLIESSEN, ICON_WEITER } from './icons';
+import { ICON_FUNKELN, ICON_SCHLIESSEN } from './icons';
 
 interface UpdateHinweisKarteProps {
   // Öffnet den "Was ist neu"-Walkthrough. Der Aufrufer markiert den Hinweis
@@ -50,9 +50,7 @@ const UpdateHinweisKarte: React.FC<UpdateHinweisKarteProps> = ({ onOpen, onDismi
       >
         <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />
       </button>
-    ) : (
-      <IonIcon icon={ICON_WEITER} className="app-whatsnew__chevron" aria-hidden="true" />
-    )}
+    ) : null}
   </div>
 );
 

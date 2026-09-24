@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_FUNKELN, ICON_SCHLIESSEN, ICON_WEITER } from './icons';
+import { ICON_FUNKELN, ICON_SCHLIESSEN } from './icons';
 
 interface MitmachenHinweisKarteProps {
   /** Öffnet die Erklärung zum Mitmachen-Tab. */
@@ -55,9 +55,7 @@ const MitmachenHinweisKarte: React.FC<MitmachenHinweisKarteProps> = ({ onOpen, o
       >
         <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />
       </button>
-    ) : (
-      <IonIcon icon={ICON_WEITER} className="app-whatsnew__chevron" aria-hidden="true" />
-    )}
+    ) : null}
   </div>
 );
 
