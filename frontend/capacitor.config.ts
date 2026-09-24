@@ -27,6 +27,45 @@ const config: CapacitorConfig = {
   // eingetragene Adresse wuerde in einem Store-Build auf eine tote IP im
   // Heimnetz zeigen -- die App zeigte dann bei jeder Nutzerin eine weisse Seite.
   // cleartext erlaubt dabei http:// (der Vite-Server spricht kein TLS).
+  // NUR diese Plugins nativ einbinden (24.09.2026).
+  //
+  // WARUM DIE LISTE NOETIG IST: @rdlabo/ionic-theme-ios27 deklariert sich in
+  // seiner package.json als Capacitor-Plugin ("capacitor": {"ios": {"src":
+  // "ios"}}) — das ist der experimentelle "Native UI Shell". Es liefert dafuer
+  // aber nur ein Package.swift, KEINE podspec. In einem CocoaPods-Projekt wie
+  // diesem bricht `npx cap sync ios` deshalb ab:
+  //
+  //   [!] No podspec found for `RdlaboIonicThemeIos27`
+  //
+  // Genau daran ist iOS-Build 220 gescheitert. Laut Theme-Doku braeuchte der
+  // native Teil eine Umstellung auf SPM (`npx cap spm-migration-assistant`) —
+  // ein grosser Eingriff fuer eine Funktion, die dort ausdruecklich als
+  // experimentell steht und die wir nicht nutzen. Wir wollen vom Theme nur
+  // CSS und die Web-Effekte, und die kommen ueber den normalen Import.
+  //
+  // `includePlugins` ist eine POSITIVLISTE: Was hier nicht steht, wird nicht
+  // nativ eingebunden. Das hat einen zweiten Nutzen — ein neues Plugin faellt
+  // beim ersten Bau auf, statt still zu fehlen. Wer eines hinzufuegt, traegt
+  // es hier ein.
+  includePlugins: [
+    '@capacitor-community/file-opener',
+    '@capacitor-firebase/crashlytics',
+    '@capacitor-firebase/messaging',
+    '@capacitor/app',
+    '@capacitor/device',
+    '@capacitor/file-viewer',
+    '@capacitor/filesystem',
+    '@capacitor/haptics',
+    '@capacitor/keyboard',
+    '@capacitor/network',
+    '@capacitor/preferences',
+    '@capacitor/push-notifications',
+    '@capacitor/share',
+    '@capacitor/status-bar',
+    '@capawesome/capacitor-background-task',
+    '@capawesome/capacitor-badge',
+    '@capgo/capacitor-native-biometric',
+  ],
   server: {
     androidScheme: 'https',
     ...(process.env.CAP_LIVE_URL
