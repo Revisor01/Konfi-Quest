@@ -702,10 +702,11 @@ paths:
         Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder
         inkrementell per ?after=messageId (bis 200 neue Nachrichten).
         Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes.
+        limit ist auf 200 gedeckelt — derselbe Wert wie im after-Zweig.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
-        - { name: limit, in: query, required: false, schema: { type: integer, default: 50 }, description: "Anzahl Nachrichten pro Seite" }
-        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 }, description: "Anzahl zu überspringender Nachrichten (Blättern)" }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 50, minimum: 1, maximum: 200 }, description: "Anzahl Nachrichten pro Seite. Hoehere Werte werden auf 200 gedeckelt, unbrauchbare (0, negativ, nicht-numerisch) auf die Vorgabe 50 (Deckelung 24.09.2026)" }
+        - { name: offset, in: query, required: false, schema: { type: integer, default: 0, minimum: 0 }, description: "Anzahl zu überspringender Nachrichten (Blättern)" }
         - { name: after, in: query, required: false, schema: { type: integer }, description: Nur Nachrichten mit id > after (Live-Nachladen) }
       responses:
         '200':

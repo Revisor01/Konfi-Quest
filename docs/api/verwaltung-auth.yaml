@@ -1509,12 +1509,29 @@ paths:
         zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage),
         `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.
 
+        ERWEITERT (24.09.2026) — ebenfalls rein additiv:
+
+        * `routeSchluessel` — {anzahl, grenze, verworfen}. Wie viele
+          Route-Schlüssel gemessen werden und wie viele die Obergrenze
+          verworfen hat. `verworfen` gehört bei 0 zu stehen; ein Ausschlag
+          heißt, dass ein Pfad mit freiem Text oder einem Zufallsnamen nicht
+          auf einen Platzhalter abgebildet wird. Über mehrere Replicas ist
+          `anzahl` das Maximum (alle sehen dieselben Routen), `verworfen` die
+          Summe (jede räumt für sich).
+
         BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
         Route, die sowohl in routesSlowest als auch in routesBusiest stand,
         doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen
         Stand nachgemessen.
+
+        BEHOBEN (24.09.2026): Die Normalisierung der Pfade fasste drei
+        Pfadarten nicht zusammen — die Namensprüfung beim Registrieren, den
+        Einladungscode und die Dateinamen in Chat, Material und Challenges.
+        Jede Variante war ein eigener, nie aufgeräumter Schlüssel. Ebenfalls
+        behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst,
+        weil die Ziffern-Regel vor der UUID-Regel lief.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial und fehlerGruppen" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen und routeSchluessel" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
