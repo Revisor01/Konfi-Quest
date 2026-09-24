@@ -1,5 +1,9 @@
-const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
-const { appIconSummeOderNull } = require('../utils/appIconBadge');
+// Nicht destrukturieren: Die Tests haengen ihre Attrappen per vi.spyOn an das
+// Modul-Objekt (siehe tests/services/pushService.test.js). Wer die Funktionen
+// beim Require herausziehen wuerde, haette die echte Fassung in der Hand und
+// wuerde an FCM senden.
+const firebase = require('../push/firebase');
+const { appIconSummeOderNull, appIconSummenFuerAlle } = require('../utils/appIconBadge');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
 const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 
@@ -57,6 +61,187 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
  */
 
 class PushService {
+  // ====================================================================
+  // GRENZEN FUER DEN VERSAND AN VIELE (24.09.2026)
+  //
+  // Anlass: Der EKD-weite Rollout hebt die Nutzerzahl von 138 auf ueber
+  // 15.000. Bis hierher lief sendToMultipleUsers als unbegrenztes
+  // Promise.all ueber ALLE Empfaenger -- der Kommentar dort nannte die
+  // urspruengliche Auslegung selbst ("bei 5 Admins"). Eine Ankuendigung an
+  // eine grosse Gemeinde haette damit Tausende Ketten gleichzeitig eroeffnet,
+  // jede mit eigenen Abfragen, gegen 20 Pool-Plaetze (database.js). Was
+  // darueber hinaus anstand, lief in den Verbindungs-Timeout von 5 Sekunden
+  // -- und zwar auch fuer die normale API im selben Prozess.
+  //
+  // DIE ZAHLEN SIND UEBERNOMMEN, NICHT NEU ERFUNDEN: backgroundService.js
+  // drosselt seinen Abzeichen-Lauf seit dem 14.09.2026 mit genau diesen
+  // Werten (ABZEICHEN_BLOCK = 50, ABZEICHEN_PAUSE_MS = 50) und begruendet sie
+  // dort gemessen. Der Zweck ist hier derselbe: die Pool-Verbindung
+  // zwischendurch freigeben, damit ein grosser Lauf nicht dauerhaft einen von
+  // 20 Plaetzen belegt. Ein zweites, abweichendes Muster fuer dieselbe
+  // Aufgabe waere nur eine weitere Stelle, die man beim Nachstellen vergisst.
+  static EMPFAENGER_BLOCK = 50;
+  static EMPFAENGER_PAUSE_MS = 50;
+
+  // ====================================================================
+  // WARUM HIER KEIN SAMMELVERSAND (sendEach) STEHT -- gemessen, 24.09.2026
+  //
+  // firebase-admin 14.3.0 hat `sendEach()`: mehrere Nachrichten in einem
+  // Aufruf, hoechstens 500 je Aufruf (hart geprueft in
+  // lib/messaging/messaging.js, FCM_MAX_BATCH_SIZE), mit Teilergebnissen je
+  // Token. Gebaut und dann wieder ausgebaut, weil die Messung dagegen steht.
+  //
+  // `sendEach` fasst die Geraete EINER Person zusammen -- nicht die
+  // Empfaenger. Gemessen in Produktion am 24.09.2026: 60 von 69 Konten mit
+  // Push haben genau EIN Geraet, 8 haben zwei, ein einzelnes Konto hat sechs;
+  // im Schnitt 1,19. Ein Sammelversand buendelte also bei 87 % der Empfaenger
+  // eine einzige Nachricht. Der Gewinn waere nahe null, der Preis eine zweite
+  // Stelle, die das FCM-Paket zusammenbaut (Kanal, apns-Header, badge) und die
+  // beim naechsten Feld an einer Payload auseinanderlaufen kann -- genau die
+  // Art Doppelung, die dieses Verzeichnis sonst vermeidet.
+  //
+  // WANN ES SICH LOHNEN WUERDE: Wenn `sendEach` die Nachrichten VERSCHIEDENER
+  // Empfaenger buendelte. Das geht nicht, solange jede Person ihre eigene
+  // Badge-Zahl im apns-Paket traegt -- die Zahl ist je Person verschieden, das
+  // Paket also auch. Ein Sammelversand ueber Empfaenger hinweg braeuchte
+  // Gruppen gleicher Badge-Zahl; bei 15.000 Empfaengern mit je eigener Zahl
+  // waeren das wieder nahezu 15.000 Pakete.
+
+  // ====================================================================
+  // WIEDERHOLEN BEI ZEITWEILIGEN FEHLERN (24.09.2026)
+  //
+  // Bis hierher war jeder FCM-Fehler endgueltig: Bei quota-exceeded und
+  // server-unavailable wurde der Fehlerzaehler erhoeht und die Nachricht war
+  // weg. Das sind aber genau die zwei Faelle, in denen ein zweiter Versuch
+  // Aussicht auf Erfolg hat -- FCM sagt damit "gerade nicht", nicht "nie".
+  // Und beide treten ausgerechnet dann auf, wenn viel auf einmal rausgeht.
+  //
+  // WARUM NUR DIESE ZWEI: Ein ungueltiger oder abgemeldeter Token bleibt
+  // ungueltig, egal wie oft man fragt -- Wiederholen kostet dort nur Zeit und
+  // verzoegert das Aufraeumen. Ein Argumentfehler (invalid-argument) wird
+  // beim zweiten Mal genauso falsch sein. Deshalb steht hier eine
+  // ausdrueckliche Liste und kein "alles ausser den fatalen": Ein
+  // unbekannter, neuer Fehlercode koennte dauerhaft sein, und blindes
+  // Wiederholen vervielfacht bei 15.000 Empfaengern die Last, statt sie zu
+  // daempfen.
+  static ZEITWEILIGE_FEHLER = [
+    'messaging/quota-exceeded',
+    'messaging/server-unavailable',
+    // Interner Serverfehler bei FCM -- dieselbe Lage wie server-unavailable.
+    'messaging/internal-error',
+  ];
+
+  // Dauerhafte Fehler: Token sofort loeschen, nicht wiederholen.
+  static FATALE_FEHLER = [
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token'
+  ];
+
+  // Drei Versuche, Abstand verdoppelt sich (200 ms, 400 ms). Kurz gehalten:
+  // Der Versand haengt an einer Anfrage oder einem Cron-Lauf, und ein Push,
+  // der eine Minute spaeter kommt, ist fuer eine Chat-Nachricht nichts mehr
+  // wert. Wachsender Abstand statt gleichbleibender, weil quota-exceeded
+  // gerade heisst, dass zu viel gleichzeitig laeuft -- sofort im selben Takt
+  // nachzufassen wuerde die Lage verschaerfen.
+  static WIEDERHOLUNG_VERSUCHE = 3;
+  static WIEDERHOLUNG_PAUSE_MS = 200;
+
+  static istZeitweilig(errorCode) {
+    return this.ZEITWEILIGE_FEHLER.includes(errorCode);
+  }
+
+  static istFatal(errorCode) {
+    return this.FATALE_FEHLER.includes(errorCode);
+  }
+
+  static schlafen(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  /**
+   * Einen Push an EIN Geraet, bei zeitweiligen Fehlern wiederholt.
+   *
+   * Bricht beim ersten Erfolg ab und ebenso bei jedem Fehler, der nicht
+   * ausdruecklich als zeitweilig gilt -- bei einem ungueltigen Token waere
+   * jeder weitere Versuch verlorene Zeit, die das Aufraeumen verzoegert.
+   *
+   * @returns {Promise<object>} das letzte Ergebnis von Firebase
+   */
+  static async sendeMitWiederholung(senden) {
+    let result;
+    for (let versuch = 1; versuch <= this.WIEDERHOLUNG_VERSUCHE; versuch++) {
+      if (versuch > 1) {
+        // Wachsender Abstand: 200 ms, dann 400 ms.
+        await this.schlafen(this.WIEDERHOLUNG_PAUSE_MS * Math.pow(2, versuch - 2));
+      }
+      result = await senden();
+      if (result.success || !this.istZeitweilig(result.errorCode)) break;
+    }
+    return result;
+  }
+
+  /**
+   * Das Ergebnis eines Geraets in der Datenbank nachfuehren: erreichbar
+   * vermerken, ungueltigen Token loeschen, sonst Fehlerzaehler hochsetzen.
+   *
+   * Steht als eigene Methode, weil zwei Versandwege (sendToUser,
+   * sendChatNotification) genau dieselbe Behandlung brauchen und sie vorher
+   * zweimal Zeile fuer Zeile im Code stand.
+   *
+   * @returns {Promise<boolean>} true, wenn der Push ankam
+   */
+  static async verarbeiteErgebnis(db, token, result) {
+    if (result.success) {
+      // Erfolgreiche Zustellung frischt `updated_at` auf (Befund 28.08.2026).
+      // Die Bereinigung wirft Tokens weg, die 30 Tage nicht aktualisiert
+      // wurden — und aktualisiert wurden sie bis dahin NUR, wenn jemand die
+      // App oeffnete. Wer ueber die Ferien pausierte, verlor stillschweigend
+      // die Zustellung und merkte es nicht, obwohl sein Geraet die ganze Zeit
+      // erreichbar war. Ein angekommener Push ist der bessere Beleg dafuer
+      // als ein App-Start.
+      await this.markiereTokenErreichbar(db, token);
+      return true;
+    }
+
+    if (this.istFatal(result.errorCode)) {
+      // Fatale Errors: Token sofort löschen
+      await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+      console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+    } else {
+      // Sonstige Errors: Counter erhöhen
+      await db.query(
+        'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+        [token.id]
+      );
+      console.error('Push failed for token:', result.error);
+    }
+    return false;
+  }
+
+  /**
+   * Alle Geraete einer Person beliefern.
+   *
+   * Geraete PARALLEL (Performance-Audit 10.08.): Sie sind voneinander
+   * unabhaengig, ihre DB-Updates betreffen jeweils nur die eigene Zeile. Das
+   * bleibt unbegrenzt, und zwar begruendet: Gemessen in Produktion am
+   * 24.09.2026 hat kein Konto mehr als sechs Geraete (60 von 69 haben eins).
+   * Die Zahl, die aus dem Ruder laufen kann, ist die der EMPFAENGER -- die
+   * drosselt sendToMultipleUsers.
+   *
+   * @returns {Promise<{erfolge: number, fehler: number}>}
+   */
+  static async sendeAnGeraete(db, tokens, payload) {
+    const ergebnisse = await Promise.all(tokens.map(async (token) => {
+      const result = await this.sendeMitWiederholung(
+        () => firebase.sendFirebasePushNotification(token.token, payload)
+      );
+      return this.verarbeiteErgebnis(db, token, result);
+    }));
+
+    const erfolge = ergebnisse.filter(Boolean).length;
+    return { erfolge, fehler: ergebnisse.length - erfolge };
+  }
+
   /**
    * Helper: Holt alle Push-Tokens für einen User
    */
@@ -90,6 +275,53 @@ class PushService {
     `;
     const { rows: tokens } = await db.query(query, [userId]);
     return tokens || [];
+  }
+
+  /**
+   * Wie getTokensForUser, aber fuer viele Empfaenger in EINER Abfrage
+   * (24.09.2026).
+   *
+   * Nach dem Umbau der Badge-Rechnung war das die groesste verbliebene Abfrage
+   * je Kopf: bei 15.000 Empfaengern 15.000 Token-Abfragen, jede mit
+   * Unterabfrage. Die Bedingungen sind Zeichen fuer Zeichen dieselben wie oben
+   * -- Master-Schalter, gesperrte und geloeschte Konten, MAX(id) je
+   * device_id/platform, DISTINCT ON (token). Wer die eine aendert, aendert die
+   * andere mit; getrennt bleiben sie nur, weil der Einzelweg von rund vierzig
+   * Aufrufstellen gebraucht wird.
+   *
+   * DISTINCT ON (pt.user_id, pt.token): Die Eindeutigkeit gilt je PERSON, nicht
+   * global. Zwei Konten duerfen denselben Token tragen (Alt-Daten, geteiltes
+   * Geraet) -- global entdoppelt wuerde einem davon die Nachricht fehlen.
+   *
+   * @returns {Promise<Map<number, Array<object>>>} je userId die Token-Zeilen
+   */
+  static async getTokensForUsers(db, userIds) {
+    const jeUser = new Map();
+    const eindeutige = [...new Set(userIds)];
+    if (eindeutige.length === 0) return jeUser;
+    for (const id of eindeutige) jeUser.set(id, []);
+
+    const { rows } = await db.query(
+      `SELECT DISTINCT ON (pt.user_id, pt.token) pt.* FROM push_tokens pt
+         JOIN users u ON pt.user_id = u.id
+        WHERE pt.user_id = ANY($1::bigint[])
+          AND u.push_enabled = true
+          AND u.is_active = true
+          AND u.deleted_at IS NULL
+          AND pt.id IN (
+            SELECT MAX(id) FROM push_tokens
+             WHERE user_id = ANY($1::bigint[])
+             GROUP BY user_id, device_id, platform
+          )
+        ORDER BY pt.user_id, pt.token, pt.id DESC`,
+      [eindeutige]
+    );
+
+    for (const zeile of rows) {
+      const liste = jeUser.get(zeile.user_id);
+      if (liste) liste.push(zeile);
+    }
+    return jeUser;
   }
 
   /**
@@ -235,6 +467,147 @@ class PushService {
     return hatWert ? summe : null;
   }
 
+  /**
+   * Die Zahl fuers App-Icon fuer VIELE Empfaenger in wenigen Abfragen
+   * (24.09.2026).
+   *
+   * WARUM ES DIESE VARIANTE BRAUCHT: `berechneBadge` ruft je Kopf
+   * `appIconSummeOderNull`, und das ist ein Bulk-Aufruf mit einem Array aus
+   * EINEM Element. Der Docstring von `appIconSummenFuerAlle` sagt den Preis
+   * selbst: einzeln gerechnet waeren es "bei 1000 Konfis rund 7000 Abfragen je
+   * Takt. Hier sind es sechs." Der Versand an viele ging aber genau den
+   * einzelnen Weg -- gemessen am 24.09.2026 gegen die Test-Datenbank: 7
+   * Abfragen bei einem Empfaenger, 21 bei drei, 40 bei fuenf gemischten
+   * Rollen. Streng linear.
+   *
+   * Der Aufbau folgt bewusst backgroundService.updateAllUserBadges: dort wird
+   * dasselbe Problem seit dem 14.09.2026 richtig geloest -- Rollen und
+   * Jahrgaenge fuer alle auf einmal laden, je Organisation einmal rechnen, die
+   * Teilsummen addieren. Das ist also ein unvollstaendig ausgerolltes Muster,
+   * kein neues Verfahren.
+   *
+   * WARUM JE ORGANISATION EINMAL: `appIconSummenFuerAlle` schluesselt nach
+   * `id_type`. Bei einer Person in mehreren Organisationen kaeme sonst nur die
+   * letzte an. Die Summe ueber alle Organisationen ist Absicht (Befund
+   * 28.08.2026): Das Icon beantwortet "wie viel liegt fuer mich an?", und die
+   * gerade geoeffnete Organisation steht nur im Token des Clients.
+   *
+   * Die Primaer-Organisation kommt mit zurueck: Sie steht in derselben
+   * Abfrage, und sendToUser braucht sie fuer den organization_id-Rueckfall im
+   * Payload. Holte er sie weiter selbst (resolveRecipientOrgId), waere das die
+   * naechste Abfrage je Kopf -- gemessen am 24.09.2026 genau eine je
+   * Empfaenger, die hier schlicht entfaellt.
+   *
+   * @returns {Promise<{badges: Map<number, number|null>, orgs: Map<number, string>}>}
+   *   badges: je userId die Zahl (fehlt der Eintrag, liess sie sich nicht
+   *   ermitteln). orgs: je userId die Primaer-Org als String.
+   */
+  static async berechneBadgesFuerAlle(db, userIds) {
+    const badges = new Map();
+    const orgs = new Map();
+    const eindeutige = [...new Set(userIds)];
+    if (eindeutige.length === 0) return { badges, orgs };
+
+    try {
+      // Rolle und Primaer-Org fuer alle auf einmal (vorher: eine Abfrage je
+      // Kopf in ladeEmpfaengerFuerBadge).
+      const { rows: personen } = await db.query(
+        `SELECT u.id, u.organization_id, r.name AS role_name
+           FROM users u
+           JOIN roles r ON u.role_id = r.id
+          WHERE u.id = ANY($1::bigint[]) AND u.deleted_at IS NULL`,
+        [eindeutige]
+      );
+      if (personen.length === 0) return { badges, orgs };
+
+      // Primaer-Org gleich mitnehmen -- als String, weil FCM-data immer String
+      // ist (dieselbe Regel wie in resolveRecipientOrgId).
+      for (const p of personen) {
+        if (p.organization_id != null) orgs.set(p.id, String(p.organization_id));
+      }
+
+      // Weitere Organisationen fuer alle auf einmal (vorher: eine Abfrage je
+      // Kopf in ladeOrganisationenFuerBadge).
+      const { rows: mitgliedschaften } = await db.query(
+        'SELECT user_id, organization_id FROM user_organizations WHERE user_id = ANY($1::bigint[])',
+        [eindeutige]
+      );
+      const orgsJeUser = new Map();
+      for (const m of mitgliedschaften) {
+        if (!orgsJeUser.has(m.user_id)) orgsJeUser.set(m.user_id, new Set());
+        orgsJeUser.get(m.user_id).add(m.organization_id);
+      }
+
+      // Jahrgaenge fuer alle auf einmal -- gebraucht von Teamer:innen UND der
+      // Rolle 'admin' (beide sind gebunden, siehe ladeEmpfaengerFuerBadge).
+      const gebundene = personen
+        .filter((p) => p.role_name === 'teamer' || p.role_name === 'admin')
+        .map((p) => p.id);
+      const jahrgaengeJeUser = new Map();
+      if (gebundene.length > 0) {
+        const { rows } = await db.query(
+          `SELECT user_id, jahrgang_id AS id, can_view
+             FROM user_jahrgang_assignments WHERE user_id = ANY($1::bigint[])`,
+          [gebundene]
+        );
+        for (const r of rows) {
+          if (!jahrgaengeJeUser.has(r.user_id)) jahrgaengeJeUser.set(r.user_id, []);
+          jahrgaengeJeUser.get(r.user_id).push({ id: r.id, can_view: r.can_view });
+        }
+      }
+
+      // Je Person ein Eintrag pro Organisation -- wie in backgroundService.
+      const empfaenger = [];
+      for (const p of personen) {
+        const orgs = new Set(orgsJeUser.get(p.id) || []);
+        if (p.organization_id != null) orgs.add(p.organization_id);
+        if (orgs.size === 0) orgs.add(p.organization_id ?? null);
+        // user_type wie im Token: konfi bleibt konfi, teamer bleibt teamer,
+        // alle Leitungsrollen zaehlen als 'admin' (identisch zu
+        // ladeEmpfaengerFuerBadge -- die Zuordnung darf nicht auseinanderlaufen).
+        const type = p.role_name === 'konfi'
+          ? 'konfi'
+          : (p.role_name === 'teamer' ? 'teamer' : 'admin');
+        for (const orgId of orgs) {
+          empfaenger.push({
+            id: p.id,
+            type,
+            role_name: p.role_name,
+            organization_id: orgId,
+            assigned_jahrgaenge: jahrgaengeJeUser.get(p.id) || []
+          });
+        }
+      }
+
+      const nachOrg = new Map();
+      for (const e of empfaenger) {
+        if (!nachOrg.has(e.organization_id)) nachOrg.set(e.organization_id, []);
+        nachOrg.get(e.organization_id).push(e);
+      }
+
+      const summen = new Map();
+      for (const [, liste] of nachOrg) {
+        const teil = await appIconSummenFuerAlle(db, liste);
+        for (const [schluessel, wert] of teil) {
+          if (wert == null) continue;
+          summen.set(schluessel, (summen.get(schluessel) || 0) + wert);
+        }
+      }
+
+      for (const e of empfaenger) {
+        const wert = summen.get(`${e.id}_${e.type}`);
+        if (wert != null) badges.set(e.id, wert);
+      }
+      return { badges, orgs };
+    } catch (err) {
+      // Fehlertolerant wie der Einzelweg: Ohne Zahl geht der Push trotzdem
+      // raus (der Aufrufer faellt dann auf 1 zurueck). Eine Nachricht darf
+      // nicht daran scheitern, dass eine Zahl fehlt.
+      console.error('berechneBadgesFuerAlle error:', err.message);
+      return { badges, orgs };
+    }
+  }
+
   // Alle Organisationen, in denen die Person Mitglied ist. Die Primaer-Org ist
   // immer dabei, auch wenn user_organizations sie (noch) nicht fuehrt.
   static async ladeOrganisationenFuerBadge(db, userId, primaerOrgId) {
@@ -254,10 +627,20 @@ class PushService {
 
   /**
    * Helper: Sendet Push an einen User
+   *
+   * @param {object} [vorberechnet] Optional, nur vom Versand an viele belegt:
+   *   { badge, orgId, tokens } -- die schon fuer ALLE Empfaenger gemeinsam
+   *   ermittelten Werte. Ohne den Parameter holt die Methode sie wie bisher
+   *   selbst; alle bestehenden Aufrufstellen bleiben unveraendert gueltig.
    */
-  static async sendToUser(db, userId, notification) {
+  static async sendToUser(db, userId, notification, vorberechnet = null) {
     try {
-      const tokens = await this.getTokensForUser(db, userId);
+      // Beim Versand an viele stehen die Tokens schon aus der gemeinsamen
+      // Abfrage bereit -- das war nach der Badge-Rechnung die groesste
+      // verbliebene Abfrage je Kopf.
+      const tokens = (vorberechnet && vorberechnet.tokens)
+        ? vorberechnet.tokens
+        : await this.getTokensForUser(db, userId);
 
       if (tokens.length === 0) {
  console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
@@ -275,7 +658,12 @@ class PushService {
       if (data.organization_id != null && data.organization_id !== '') {
         data.organization_id = String(data.organization_id);
       } else {
-        const recipientOrgId = await this.resolveRecipientOrgId(db, userId);
+        // Beim Versand an viele steht die Primaer-Org schon aus der
+        // gemeinsamen Abfrage bereit -- dann nicht erneut nachsehen. Das war
+        // die letzte Abfrage, die noch je Kopf lief.
+        const recipientOrgId = (vorberechnet && 'orgId' in vorberechnet)
+          ? vorberechnet.orgId
+          : await this.resolveRecipientOrgId(db, userId);
         if (recipientOrgId) data.organization_id = recipientOrgId;
       }
 
@@ -283,58 +671,43 @@ class PushService {
       // Client. Vorher stand hier hart 1 -- egal, wie viel offen war. Ein
       // ausdruecklich uebergebener Wert hat weiterhin Vorrang; kommt keiner
       // und schlaegt die Zaehlung fehl, bleibt es beim bisherigen 1.
+      // Beim Versand an viele ist die Zahl schon fuer ALLE zusammen gerechnet
+      // (berechneBadgesFuerAlle). Dann NICHT erneut rechnen -- genau das war
+      // der Befund: eine Bulk-Abfrage je Kopf statt einer fuer alle.
       const berechneterBadge = notification.badge != null
         ? notification.badge
-        : await this.berechneBadge(db, userId);
+        : (vorberechnet && 'badge' in vorberechnet
+          ? vorberechnet.badge
+          : await this.berechneBadge(db, userId));
 
-      // Tokens PARALLEL abarbeiten (Performance-Audit 10.08.): vorher lief je
-      // Token ein FCM-Roundtrip nacheinander — bei mehreren Geraeten summierte
-      // sich das auf. Die Tokens sind voneinander unabhaengig, ihre DB-Updates
-      // betreffen jeweils nur die eigene Zeile.
-      const results = await Promise.all(tokens.map(async (token) => {
-        const result = await sendFirebasePushNotification(token.token, {
-          title: notification.title,
-          body: notification.body,
-          badge: berechneterBadge != null ? berechneterBadge : 1,
-          sound: 'default',
-          data: data
-        });
+      // Alle Geraete dieser Person in EINEM FCM-Aufruf (sendEach) statt je
+      // Geraet einzeln, mit Wiederholung bei zeitweiligen Fehlern. Die
+      // Fehlerbehandlung PRO TOKEN bleibt erhalten -- daran haengt das
+      // Aufraeumen ungueltiger Tokens.
+      const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
+        title: notification.title,
+        body: notification.body,
+        badge: berechneterBadge != null ? berechneterBadge : 1,
+        sound: 'default',
+        data: data
+      });
 
-        if (result.success) {
-          // Erfolgreiche Zustellung frischt `updated_at` auf (Befund
-          // 28.08.2026). Die Bereinigung wirft Tokens weg, die 30 Tage nicht
-          // aktualisiert wurden — und aktualisiert wurden sie bis dahin NUR,
-          // wenn jemand die App oeffnete. Wer ueber die Ferien pausierte,
-          // verlor stillschweigend die Zustellung und merkte es nicht, obwohl
-          // sein Geraet die ganze Zeit erreichbar war. Ein angekommener Push
-          // ist der bessere Beleg dafuer als ein App-Start.
-          await this.markiereTokenErreichbar(db, token);
-          return true;
-        }
-
-        // Fatale Errors: Token sofort löschen
-        const fatalCodes = [
-          'messaging/registration-token-not-registered',
-          'messaging/invalid-registration-token'
-        ];
-        if (fatalCodes.includes(result.errorCode)) {
-          await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-          console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
-        } else {
-          // Sonstige Errors: Counter erhöhen
-          await db.query(
-            'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-            [token.id]
-          );
-          console.error('Push failed for token:', result.error);
-        }
-        return false;
-      }));
-
-      const successCount = results.filter(Boolean).length;
-      const errorCount = results.length - successCount;
-
-      return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
+      // `success` sagt jetzt die Wahrheit (24.09.2026). Vorher stand hier hart
+      // `success: true`, auch wenn KEIN einziger Push zugestellt wurde -- ein
+      // Versand, der nichts erreicht hat, sah wie ein Erfolg aus.
+      //
+      // Teilerfolg bleibt Erfolg: Kam wenigstens ein Geraet durch, hat die
+      // Nachricht ihr Ziel erreicht; die Fehlerzahl steht daneben. Nur wenn
+      // alles scheitert, ist es kein Erfolg.
+      //
+      // WER LIEST DAS (geprueft am 24.09.2026): Keine HTTP-Route und kein
+      // Frontend lesen diese Form -- sie ist kein API-Vertrag gegenueber den
+      // Apps im Store. Die einzige Stelle im Produktionscode, die ueberhaupt
+      // etwas auswertet, ist backgroundService.js beim Jahrgangs-Loesch-
+      // Hinweis (`pushRes.success === false`), und die bekommt dort das ARRAY
+      // aus sendToMultipleUsers -- der Wert hier erreicht sie gar nicht. Die
+      // Felder success/sent/errors/total behalten Name und Typ.
+      return { success: erfolge > 0, sent: erfolge, errors: fehler, total: tokens.length };
     } catch (error) {
  console.error('PushService.sendToUser error:', error);
       return { success: false, error: error.message };
@@ -343,17 +716,77 @@ class PushService {
 
   /**
    * Helper: Sendet Push an mehrere User (z.B. alle Admins)
+   *
+   * ANTWORTFORM: ein ARRAY mit einem Eintrag je Empfaenger, in der
+   * Reihenfolge der uebergebenen userIds -- unveraendert. Daraus darf kein
+   * Objekt werden: Rund zwanzig Meldungen reichen diesen Wert durch, und aus
+   * einem Array ein Objekt zu machen war genau der Fehler vom 29.08.2026.
+   *
+   * ZWEI AENDERUNGEN AM WEG DORTHIN (24.09.2026):
+   *
+   * 1. Die Zahl fuers App-Icon wird EINMAL fuer alle gerechnet. Vorher rief
+   *    jede Kette `berechneBadge` fuer sich und damit die Bulk-Funktion mit
+   *    einem Array aus einem Element -- gemessen 7 Abfragen je Kopf.
+   *
+   * 2. Bloecke statt eines unbegrenzten Promise.all ueber ALLE Empfaenger.
+   *    Der frueherige Kommentar hier nannte die Auslegung selbst: "bei 5
+   *    Admins". Bei 15.000 Empfaengern eroeffnete das 15.000 Ketten
+   *    gleichzeitig gegen 20 Pool-Plaetze; was darueber hinausging, lief in
+   *    den Verbindungs-Timeout -- auch die normale API im selben Prozess.
+   *    Innerhalb eines Blocks bleibt es parallel, das war nie das Problem.
    */
   static async sendToMultipleUsers(db, userIds, notification) {
-    // Empfaenger PARALLEL (Performance-Audit 10.08.): vorher wurde jeder User
-    // nacheinander abgearbeitet, und in sendToUser wiederum jedes Geraet — bei
-    // 5 Admins mit je 2 Geraeten also 10 FCM-Roundtrips in Reihe.
-    return Promise.all(
-      userIds.map(async (userId) => {
-        const result = await this.sendToUser(db, userId, notification);
-        return { userId, ...result };
-      })
-    );
+    if (!userIds || userIds.length === 0) return [];
+
+    // Braucht der Payload den Organisations-Rueckfall? Traegt er schon eine
+    // Content-Org, nicht. Steht ausserdem eine feste Badge-Zahl im Aufruf,
+    // ist ueberhaupt nichts vorzubereiten.
+    const braucheOrgs = !(notification.data && notification.data.organization_id != null
+      && notification.data.organization_id !== '');
+    const braucheVorarbeit = notification.badge == null || braucheOrgs;
+
+    const ergebnisse = [];
+    for (let i = 0; i < userIds.length; i += this.EMPFAENGER_BLOCK) {
+      const block = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
+
+      // Badge-Zahl, Organisationen und Tokens JE BLOCK in wenigen Abfragen --
+      // statt je Kopf, aber auch nicht fuer alle Empfaenger auf einmal. Bei
+      // 15.000 Empfaengern waere ein Zug ueber alle ein Ergebnis mit 15.000
+      // Zeilen im Speicher, bevor der erste Push raus ist; genau die Spitze,
+      // die die Drosselung vermeiden soll. So kostet ein Block eine feste,
+      // kleine Zahl von Abfragen, unabhaengig davon, wie viele Bloecke folgen.
+      const { badges, orgs } = braucheVorarbeit
+        ? await this.berechneBadgesFuerAlle(db, block)
+        : { badges: new Map(), orgs: new Map() };
+      const tokensJeUser = await this.getTokensForUsers(db, block);
+
+      const teil = await Promise.all(
+        block.map(async (userId) => {
+          // `badge: null` heisst hier "fuer diese Person nicht ermittelbar" --
+          // sendToUser faellt dann wie bisher auf 1 zurueck. Wichtig ist, dass
+          // der Schluessel gesetzt IST: sonst wuerde dort erneut gerechnet und
+          // wir haetten die Abfrage je Kopf wieder. Dasselbe gilt fuer orgId.
+          const vorberechnet = {
+            badge: badges.has(userId) ? badges.get(userId) : null,
+            orgId: orgs.has(userId) ? orgs.get(userId) : null,
+            tokens: tokensJeUser.get(userId) || [],
+          };
+          const result = await this.sendToUser(db, userId, notification, vorberechnet);
+          return { userId, ...result };
+        })
+      );
+      ergebnisse.push(...teil);
+
+      // Nach jedem Block kurz pausieren -- aber nicht nach dem letzten, sonst
+      // verzoegert jede Meldung an eine Handvoll Leute ohne Grund. Die Pause
+      // gibt die Pool-Verbindung frei, damit die API daneben weiter antwortet
+      // (dieselbe Begruendung wie backgroundService.ABZEICHEN_PAUSE_MS).
+      if (i + this.EMPFAENGER_BLOCK < userIds.length) {
+        await this.schlafen(this.EMPFAENGER_PAUSE_MS);
+      }
+    }
+
+    return ergebnisse;
   }
 
   /**
@@ -423,9 +856,6 @@ class PushService {
         return { success: false, message: 'No tokens found' };
       }
 
-      let successCount = 0;
-      let errorCount = 0;
-
       // App-Icon-Zahl (Befund B2b): Hier stand bisher die CHAT-Unread-Zahl
       // allein (der Aufrufer in chat.js reicht sie als notificationData.badge
       // herein). Sie ueberschrieb damit Antraege, Termine, Freigaben und
@@ -440,52 +870,31 @@ class PushService {
         ? gesamtBadge
         : (notificationData.badge || 1);
 
-      // An alle Devices senden
-      for (const token of tokens) {
-        const result = await sendFirebasePushNotification(token.token, {
-          title: notificationData.title || 'Neue Nachricht',
-          body: notificationData.body,
-          badge: badgeWert,
-          sound: 'default',
-          data: {
-            type: 'chat',
-            roomId: notificationData.roomId?.toString() || '',
-            messageId: notificationData.messageId?.toString() || '',
-            sender_id: notificationData.data?.sender_id?.toString() || '',
-            sender_name: notificationData.data?.sender_name || '',
-            room_name: notificationData.data?.room_name || '',
-            organization_id: chatOrgId
-          }
-        });
-
-        if (result.success) {
-          successCount++;
-          await this.markiereTokenErreichbar(db, token);
-        } else {
-          // Fatale Errors: Token sofort löschen
-          const fatalCodes = [
-            'messaging/registration-token-not-registered',
-            'messaging/invalid-registration-token'
-          ];
-          if (fatalCodes.includes(result.errorCode)) {
-            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
-          } else {
-            // Sonstige Errors: Counter erhöhen
-            await db.query(
-              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-              [token.id]
-            );
-            console.error('Push failed for token:', result.error);
-          }
-          errorCount++;
+      // An alle Geraete in EINEM FCM-Aufruf, mit Wiederholung bei
+      // zeitweiligen Fehlern -- dieselbe Behandlung wie in sendToUser. Vorher
+      // lief hier ein Roundtrip je Geraet nacheinander, ohne Wiederholung.
+      const { erfolge, fehler } = await this.sendeAnGeraete(db, tokens, {
+        title: notificationData.title || 'Neue Nachricht',
+        body: notificationData.body,
+        badge: badgeWert,
+        sound: 'default',
+        data: {
+          type: 'chat',
+          roomId: notificationData.roomId?.toString() || '',
+          messageId: notificationData.messageId?.toString() || '',
+          sender_id: notificationData.data?.sender_id?.toString() || '',
+          sender_name: notificationData.data?.sender_name || '',
+          room_name: notificationData.data?.room_name || '',
+          organization_id: chatOrgId
         }
-      }
+      });
 
+      // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
+      // sendToUser: Kam nichts durch, ist es kein Erfolg.
       return {
-        success: true,
-        sent: successCount,
-        errors: errorCount,
+        success: erfolge > 0,
+        sent: erfolge,
+        errors: fehler,
         total: tokens.length
       };
 
@@ -535,7 +944,14 @@ class PushService {
       let errorCount = 0;
 
       for (const token of tokens) {
-        const result = await sendFirebaseSilentPush(token.token, badgeCount);
+        // Wiederholen bei zeitweiligen Fehlern, wie beim sichtbaren Push
+        // (24.09.2026). Der stille Push traegt die Zahl am App-Icon nach;
+        // faellt er wegen quota-exceeded aus, steht dort bis zum naechsten
+        // Ereignis eine veraltete Zahl.
+        //
+        const result = await this.sendeMitWiederholung(
+          () => firebase.sendFirebaseSilentPush(token.token, badgeCount)
+        );
 
         if (result.success) {
           successCount++;
@@ -546,11 +962,7 @@ class PushService {
             );
           }
         } else {
-          const fatalCodes = [
-            'messaging/registration-token-not-registered',
-            'messaging/invalid-registration-token'
-          ];
-          if (fatalCodes.includes(result.errorCode)) {
+          if (this.istFatal(result.errorCode)) {
             await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
             console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
           } else {
@@ -568,7 +980,9 @@ class PushService {
       // Gesamtzahl aber nicht — er zaehlt nur den Chat. Ohne diesen Rueckgabe-
       // wert vergliche er Aepfel mit Birnen und feuerte entweder dauernd oder
       // gar nicht mehr.
-      return { success: true, sent: successCount, errors: errorCount, total: tokens.length, badge: badgeCount };
+      // `success` nach dem tatsaechlichen Versand (24.09.2026), wie in
+      // sendToUser und sendChatNotification.
+      return { success: successCount > 0, sent: successCount, errors: errorCount, total: tokens.length, badge: badgeCount };
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);
