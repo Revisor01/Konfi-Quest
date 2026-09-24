@@ -464,7 +464,6 @@ const AdminSettingsPage: React.FC = () => {
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Punkteziele und Konfisprüche verwalten</span></div>
                     </div>
                     </div>
-                  </div>
                   <IonButton
                     fill="clear"
                     onClick={(e) => { e.stopPropagation(); openInfo(INFOS.jahrgaenge); }}
@@ -473,6 +472,7 @@ const AdminSettingsPage: React.FC = () => {
                   >
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
+                  </div>
                 </div>
 
                 <div
@@ -545,10 +545,10 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-list-item__content">
                     <div className="app-list-item__title">Jahresrückblick</div>
                     <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
-                  </div>
                   <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                   </IonButton>
+                  </div>
                 </div>
 
                 <div
