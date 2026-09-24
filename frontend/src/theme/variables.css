@@ -3957,3 +3957,45 @@ ion-segment.md ion-segment-button {
   justify-content: center;
   background: var(--ion-background-color, var(--app-weiss));
 }
+
+
+/* ---------------------------------------------------------------------------
+   iOS-Toolbar: Knopfgruppe bleibt EINE Leiste, keine Einzelknoepfe
+   ---------------------------------------------------------------------------
+   Das Theme @rdlabo/ionic-theme-ios26 hat ab 9.3.0 eine Regel bekommen, die
+   eine Gruppe aus mehreren Knoepfen oben rechts auseinanderzieht. Im Paket
+   steht dazu woertlich:
+
+     // Keep ion-buttons as layout only and render each plain action independently.
+     ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2)) {
+       gap: 12px; ... }
+
+   Sie greift, sobald ZWEI oder mehr button-clear in derselben ion-buttons-
+   Gruppe stehen (nth-of-type(2)). Bis 9.1.0 gab es diese Regel nicht; dort
+   wurde die Gruppe als eine zusammenhaengende Glasleiste gezeichnet.
+
+   In Konfi Quest sieht das Auseinanderziehen schlecht aus (Simons Befund
+   24.09.2026 am Geraet, iOS): Aus einer Leiste werden mehrere lose Kreise.
+   Dass Apple es so macht, ist NICHT belegt — in iOS 26 kommt beides vor, und
+   das Theme trifft hier eine eigene Entscheidung, keine Vorgabe.
+
+   Deshalb nehmen wir nur diese eine Regel zurueck: `gap` weg, Innenabstaende
+   wieder wie beim Einzelknopf. Alles andere aus 9.3.x bleibt (Tab-Leiste,
+   Segmente, Uebergaenge, Rechts-nach-links).
+
+   !important, weil die Theme-Regel ueber :has() und :nth-of-type() eine hohe
+   Gewichtung hat und das Theme-CSS global nach dieser Datei geladen wird.
+
+   WANN DAS WIEDER RAUS KANN: Wenn das Theme die Darstellung zurueckdreht oder
+   einen Schalter dafuer anbietet. Bis dahin ist dies der punktuelle Ausweg,
+   den das Paket selbst vorsieht (alle seine Regeln sind mit
+   :not(.ios-theme-disabled, .ios26-disabled) geschrieben).
+   --------------------------------------------------------------------------- */
+ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2)) {
+  gap: 0 !important;
+}
+ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
+  > ion-button.button-clear {
+  --padding-start: 4px !important;
+  --padding-end: 4px !important;
+}
