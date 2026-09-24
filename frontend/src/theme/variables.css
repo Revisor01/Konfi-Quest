@@ -1689,11 +1689,27 @@ ion-card-content.app-card-content {
    Die App hat KEIN eigenes Dark-Theme (Ionic-Dark-Palettes in App.tsx alle
    auskommentiert). Im System-Dark-Mode setzt Ionic --ion-toolbar-background aber
    trotzdem dunkel -> dunkler/schwarzer Header. Wir nageln NUR diese eine
-   Variable auf die hellen iOS-Standardwerte (#f7f7f7) fest. Bewusst MINIMAL:
-   kein --background-Override, kein ::part, damit Safe-Area + Standardverhalten
-   der Toolbar unangetastet bleiben. */
+   Variable auf die hellen iOS-Standardwerte fest.
+
+   DURCHSICHTIG STATT DECKEND (Simons Befund 24.09.2026, iOS): Hier stand
+   `#f7f7f7`, also eine voll deckende Farbe — und damit war der Glas-Effekt des
+   iOS-26-Themes ueberall tot, in der Navigationsleiste wie bei den Knoepfen.
+   Kein `backdrop-filter` kann durch eine deckende Flaeche hindurchsehen.
+   Simons Worte: "bisher hat es alles keinen Glas Effekt. Weder in der navi noch
+   die Buttons. Alles sieht richtig aus aber es fehlt dieser Glas Effekt."
+
+   Derselbe Farbton, nur mit Alpha: Der Zweck der Regel (kein schwarzer Header
+   im System-Dark-Mode) bleibt erhalten, der Hintergrund scheint aber durch.
+   0.72 ist der Wert, den das Theme selbst fuer seine Glasflaechen nutzt
+   (--ios26-glass-background-rgb mit 0.72, siehe ion-button.scss im Paket) —
+   damit passt die Leiste zum Rest statt daneben zu liegen.
+
+   Bewusst weiter MINIMAL: kein --background-Override, kein ::part, damit
+   Safe-Area und Standardverhalten der Toolbar unangetastet bleiben. Den
+   backdrop-filter setzt das Theme selbst; wir nehmen ihm nur nicht mehr die
+   Sicht. */
 :root {
-  --ion-toolbar-background: #f7f7f7;
+  --ion-toolbar-background: rgba(247, 247, 247, 0.72);
   --ion-toolbar-color: var(--app-schwarz);
 }
 
@@ -3960,7 +3976,7 @@ ion-segment.md ion-segment-button {
 
 
 /* ---------------------------------------------------------------------------
-   iOS-Toolbar: Knopfgruppe bleibt EINE Leiste, keine Einzelknoepfe
+   iOS-Toolbar: Knopfgruppe bleibt EINE Leiste, keine Einzelpunkte
    ---------------------------------------------------------------------------
    Das Theme @rdlabo/ionic-theme-ios26 hat ab 9.3.0 eine Regel bekommen, die
    eine Gruppe aus mehreren Knoepfen oben rechts auseinanderzieht. Im Paket
@@ -3971,31 +3987,53 @@ ion-segment.md ion-segment-button {
        gap: 12px; ... }
 
    Sie greift, sobald ZWEI oder mehr button-clear in derselben ion-buttons-
-   Gruppe stehen (nth-of-type(2)). Bis 9.1.0 gab es diese Regel nicht; dort
-   wurde die Gruppe als eine zusammenhaengende Glasleiste gezeichnet.
+   Gruppe stehen. Bis 9.1.0 wurde die Gruppe als eine Glasleiste gezeichnet.
 
-   In Konfi Quest sieht das Auseinanderziehen schlecht aus (Simons Befund
-   24.09.2026 am Geraet, iOS): Aus einer Leiste werden mehrere lose Kreise.
-   Dass Apple es so macht, ist NICHT belegt — in iOS 26 kommt beides vor, und
-   das Theme trifft hier eine eigene Entscheidung, keine Vorgabe.
+   ERSTER VERSUCH WAR HALB FALSCH (24.09.2026): Ich hatte nur `gap: 0` gesetzt
+   und die Innenabstaende verkleinert. Simons Rueckmeldung: "immer noch
+   einzelne Punkte nur ohne Padding, das geht nicht." Richtig — der Abstand war
+   nur das Symptom. Das Theme gibt JEDEM Knopf seine eigene Glasflaeche
+   (Hintergrund, Rand, Schatten); ohne Abstand kleben die Flaechen dann
+   aneinander, statt eine Leiste zu bilden.
 
-   Deshalb nehmen wir nur diese eine Regel zurueck: `gap` weg, Innenabstaende
-   wieder wie beim Einzelknopf. Alles andere aus 9.3.x bleibt (Tab-Leiste,
-   Segmente, Uebergaenge, Rechts-nach-links).
+   Deshalb jetzt: Die Glasflaeche kommt an die GRUPPE, die einzelnen Knoepfe
+   werden durchsichtig. Das ist die Darstellung aus 9.1.0, mit den Werten des
+   Themes (22px Radius, dieselben Glasvariablen), damit sie zum Rest passt.
 
-   !important, weil die Theme-Regel ueber :has() und :nth-of-type() eine hohe
-   Gewichtung hat und das Theme-CSS global nach dieser Datei geladen wird.
+   Dass Apple die Einzelpunkte so macht, ist NICHT belegt — in iOS 26 kommt
+   beides vor, das Theme trifft hier eine eigene Entscheidung.
+
+   NICHT AM GERAET GEPRUEFT: Ich starte keinen Simulator. Ob es jetzt stimmt,
+   zeigt der naechste Build.
 
    WANN DAS WIEDER RAUS KANN: Wenn das Theme die Darstellung zurueckdreht oder
-   einen Schalter dafuer anbietet. Bis dahin ist dies der punktuelle Ausweg,
-   den das Paket selbst vorsieht (alle seine Regeln sind mit
+   einen Schalter anbietet (alle seine Regeln sind mit
    :not(.ios-theme-disabled, .ios26-disabled) geschrieben).
    --------------------------------------------------------------------------- */
 ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2)) {
   gap: 0 !important;
+  /* Die Leiste selbst: eine Glasflaeche fuer die ganze Gruppe. */
+  background: rgba(var(--ios26-glass-background-rgb, 255, 255, 255), 0.72) !important;
+  border-radius: 22px !important;
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
+/* Die einzelnen Knoepfe darin: durchsichtig, kein eigener Rand, kein Schatten. */
 ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
   > ion-button.button-clear {
-  --padding-start: 4px !important;
-  --padding-end: 4px !important;
+  --background: transparent !important;
+  --background-hover: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.06);
+  --border-width: 0 !important;
+  --box-shadow: none !important;
+  --border-radius: 0 !important;
+  --padding-start: 12px !important;
+  --padding-end: 12px !important;
+  margin: 0 !important;
+}
+ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
+  > ion-button.button-clear::part(native) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }

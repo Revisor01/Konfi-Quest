@@ -33,7 +33,6 @@ vi.mock('../../services/biometrics', () => ({
 }));
 
 import {
-  KARENZ_MS,
   mussSperren,
   mussBeimStartSperren,
   sperreLesen,
@@ -106,22 +105,43 @@ describe('Wann gesperrt wird', () => {
   });
 });
 
-describe('Kurzer Hintergrundwechsel (Karenzzeit)', () => {
-  it('die Karenz betraegt 2 Sekunden', () => {
-    expect(KARENZ_MS).toBe(2000);
+describe("'sofort' sperrt ohne Karenzzeit", () => {
+  /*
+   * Hier standen 2 Sekunden Karenz, und die haben genau den Fall verschluckt,
+   * fuer den die Einstellung gemacht ist. Simons Befund am Geraet (24.09.2026,
+   * iOS): "Die App ist, wenn man sie aus dem App switcher holt, nicht gelockt,
+   * obwohl es auf sofort steht. Also lock nur beim ersten oeffnen. Das ist
+   * falsch."
+   *
+   * Wer die App aus dem Umschalter zurueckholt, ist meist unter zwei Sekunden
+   * weg — die Sperre griff also nur beim Kaltstart und sonst nie. Die alte
+   * Erwartung war nachweislich falsch, nicht bloss streng; sie ist deshalb
+   * ersetzt und nicht aufgeweicht.
+   *
+   * Systemdialoge (Foto, Teilen, Face ID) deckt allein der Ausflug-Merker ab:
+   * Dort wird gar kein Zeitstempel gesetzt, und ohne Zeitstempel sperrt
+   * mussSperren nie (siehe Test weiter oben).
+   */
+  it('sperrt auch bei einem sehr kurzen Wechsel', () => {
+    expect(mussSperren('sofort', 0, 0)).toBe(true);
+    expect(mussSperren('sofort', 0, 1)).toBe(true);
+    expect(mussSperren('sofort', 0, 500)).toBe(true);
+    expect(mussSperren('sofort', 0, 1999)).toBe(true);
   });
 
-  it('"sofort" sperrt NICHT bei einem Wechsel unterhalb der Karenz', () => {
-    // Teilen-Blatt, Fotoauswahl, Face-ID-Fenster: auf und wieder zu.
-    expect(mussSperren('sofort', 0, 0)).toBe(false);
-    expect(mussSperren('sofort', 0, 500)).toBe(false);
-    expect(mussSperren('sofort', 0, 1999)).toBe(false);
-  });
-
-  it('"sofort" sperrt ab der Karenzgrenze', () => {
+  it('sperrt weiterhin bei laengerer Abwesenheit', () => {
     expect(mussSperren('sofort', 0, 2000)).toBe(true);
-    expect(mussSperren('sofort', 0, 2001)).toBe(true);
     expect(mussSperren('sofort', 0, 30_000)).toBe(true);
+  });
+
+  it('sperrt NICHT ohne Zeitstempel — der Ausflug-Merker bleibt wirksam', () => {
+    // Das ist die Absicherung fuer Systemdialoge: kein Zeitstempel, keine Sperre.
+    expect(mussSperren('sofort', null, 5_000)).toBe(false);
+  });
+
+  it('die Wartezeiten bleiben unveraendert', () => {
+    expect(mussSperren('1min', 0, 59_999)).toBe(false);
+    expect(mussSperren('1min', 0, 60_000)).toBe(true);
   });
 });
 

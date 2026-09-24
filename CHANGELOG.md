@@ -57,6 +57,12 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Steht die App-Sperre auf „Sofort", sperrt die App jetzt auch, wenn man sie
+  aus der App-Übersicht zurückholt. Bisher fragte sie nur beim ersten Öffnen
+  nach Face ID oder Fingerabdruck.
+- Die Leiste oben rechts zeigt ihre Symbole wieder als zusammenhängende Fläche
+  statt als einzelne Punkte, und der milchige Glaseffekt ist in der
+  Navigationsleiste und auf den Knöpfen wieder da.
 - Mitteilungen an eine ganze Gemeinde oder einen ganzen Jahrgang kommen
   zuverlässig an. Bisher konnte bei vielen Empfängerinnen und Empfängern
   gleichzeitig die Zahl am App-Symbol fehlen, und bei einzelnen kam die

@@ -26,7 +26,6 @@ import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import PushDiagnose from '../../shared/PushDiagnose';
-import AbsturzTest from '../../shared/AbsturzTest';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -616,12 +615,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   (23.09.2026, siehe PushDiagnose.tsx). */}
               <PushDiagnose variante="purple" />
 
-              {/* Absturzmeldung pruefen. Blendet sich selbst aus: nur in der
-                  App und nur fuer super_admin (Begruendung in AbsturzTest.tsx).
-                  Steht hier neben der Mitteilungs-Pruefung, weil beides
-                  dieselbe Frage beantwortet — kommt beim Server an, was das
-                  Geraet melden soll? */}
-              <AbsturzTest variante="danger" />
 
               {/* Medien-Cache leeren */}
               <div

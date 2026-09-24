@@ -49,6 +49,8 @@ import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughM
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
+import PushDiagnose from '../../shared/PushDiagnose';
+import AbsturzTest from '../../shared/AbsturzTest';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
@@ -523,6 +525,19 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
+
+        {/* Diagnose fuer die Fehlersuche am Geraet (24.09.2026).
+            Beide Anzeigen hingen bisher NUR in der Konfi-Ansicht
+            (konfi/views/ProfileView) — Leitung und Team sahen sie nie, obwohl
+            gerade sie beim Melden von Fehlern helfen. Simons Rueckmeldung zu
+            Build 214: "ich sehe keinen Crash Button", weil sein Profil diese
+            Seite hier ist, nicht ProfileView.
+            AbsturzTest blendet sich selbst aus (nur super_admin, nur in der
+            App), PushDiagnose zeigt sich immer. */}
+        <div className="app-segment-wrapper">
+          <PushDiagnose variante="teamer" />
+          <AbsturzTest variante="danger" />
+        </div>
 
         <div className="app-segment-wrapper">
           <IonButton

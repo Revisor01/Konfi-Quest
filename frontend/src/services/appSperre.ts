@@ -110,18 +110,22 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  *      Fälle ab, in denen jemand minutenlang in der Fotoauswahl blättert.
  *      Die Entsperr-Abfrage selbst setzt diesen Merker ebenfalls.
  *
- *   2. KARENZZEIT von 2 Sekunden als Netz darunter.
- *      Sie fängt die Abläufe ab, die niemand angemeldet hat — und das werden
- *      immer welche sein, weil jeder neue Dialog daran denken müsste. Ein
- *      Hintergrundwechsel unter 2 Sekunden ist kein Verlassen der App, sondern
- *      ein Systemfenster, das aufgeht und wieder zugeht.
- *      2 Sekunden sind bewusst knapp: lang genug für das Flackern beim Öffnen
- *      eines Systemdialogs, zu kurz, um daraus ein Schlupfloch zu machen —
- *      in zwei Sekunden legt niemand ein Handy weg und gibt es weiter.
- *      Sie gilt NUR für 'sofort'; bei 1/5/15 Minuten deckt die eingestellte
- *      Wartezeit das ohnehin ab.
+ *   2. KEINE KARENZZEIT mehr bei 'sofort' (Simons Befund 24.09.2026, iOS).
+ *      Hier standen 2 Sekunden als Netz unter dem Ausflug-Merker. Die haben
+ *      aber genau den Fall verschluckt, für den die Einstellung gemacht ist:
+ *      "Die App ist, wenn man sie aus dem App switcher holt, nicht gelockt,
+ *      obwohl es auf sofort steht." Wer die App aus dem Umschalter zurückholt,
+ *      ist meist unter zwei Sekunden weg — die Sperre griff also nur beim
+ *      Kaltstart (dort entscheidet mussBeimStartSperren) und sonst nie.
+ *      'Sofort' heißt jetzt sofort: JEDER echte Hintergrundwechsel sperrt.
+ *
+ *      Die Systemdialoge deckt allein der Ausflug-Merker ab (Punkt 1). Das ist
+ *      bewusst die schwächere Absicherung, aber die richtige Abwägung: Eine
+ *      Sperre, die den Umschalter durchlässt, ist keine Sperre. Kommt ein neuer
+ *      Dialog dazu, der den Merker nicht setzt, sperrt die App einmal zu oft —
+ *      ärgerlich, aber harmlos. Der umgekehrte Fehler ist ein Sicherheitsleck.
+ *      Bei 1/5/15 Minuten deckt die eingestellte Wartezeit das ohnehin ab.
  */
-export const KARENZ_MS = 2000;
 
 /** Einstellung lesen. Voreinstellung ist 'aus' — ein Update darf niemandem eine Sperre vorsetzen. */
 export const sperreLesen = async (): Promise<SperrVerzoegerung> => {
@@ -222,7 +226,8 @@ export const mussSperren = (
   // nicht — eine verstellte Uhr darf niemanden aussperren.
   if (!Number.isFinite(abwesend) || abwesend < 0) return false;
 
-  if (verzoegerung === 'sofort') return abwesend >= KARENZ_MS;
+  // 'sofort' ohne Karenzzeit: jeder echte Hintergrundwechsel sperrt (siehe oben).
+  if (verzoegerung === 'sofort') return true;
   return abwesend >= VERZOEGERUNG_MS[verzoegerung];
 };
 
