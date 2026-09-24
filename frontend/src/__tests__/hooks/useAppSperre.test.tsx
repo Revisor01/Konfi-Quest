@@ -288,15 +288,30 @@ describe('Hintergrundwechsel', () => {
     expect(zustand()).toBe('gesperrt');
   });
 
-  it('ein kurzer Wechsel unterhalb der Karenz sperrt bei "sofort" NICHT', async () => {
+  it('auch ein sehr kurzer Wechsel sperrt bei "sofort"', async () => {
+    // Bis a187f6d3 stand hier das Gegenteil: Eine Karenzzeit von 2000 ms liess
+    // kurze Wechsel durch, und dieser Test sicherte das ab.
+    //
+    // Simons Befund am Geraet (Build 214): "Wer die App aus dem Umschalter
+    // zurueckholt, ist meist darunter — die Sperre griff also nur beim
+    // Kaltstart." Deshalb ist KARENZ_MS ersatzlos weg, 'sofort' heisst jetzt
+    // sofort (appSperre.ts).
+    //
+    // Der Service-Test wurde damals nachgezogen (appSperre.test.ts: "'sofort'
+    // sperrt ohne Karenzzeit", erwartet mussSperren('sofort', 0, 1999) ===
+    // true), dieser Hook-Test nicht — er fiel danach in jedem CI-Lauf und
+    // blockierte still den Deploy.
+    //
+    // Was den kurzen Ausflug weiterhin schuetzt, ist nicht die Zeit, sondern
+    // der angemeldete Ausflug (ausflugStarten) — der Test darunter prueft das.
     mockLesen.mockResolvedValue('sofort');
     render(<Pruefling />);
     await waitFor(() => expect(zustand()).toBe('gesperrt'));
     await act(async () => { screen.getByText('entsperren').click(); });
 
-    // Teilen-Blatt geht auf und wieder zu: 800 ms.
+    // Echter Hintergrundwechsel (kein angemeldeter Ausflug), nur 800 ms.
     await ausflugUeber(800);
-    expect(zustand()).toBe('offen');
+    expect(zustand()).toBe('gesperrt');
   });
 
   it('ein echter Wechsel sperrt bei "sofort" sehr wohl', async () => {

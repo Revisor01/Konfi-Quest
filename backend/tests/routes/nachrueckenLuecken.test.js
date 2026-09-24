@@ -152,11 +152,42 @@ describe('Ein Platz wird frei — jemand rueckt nach', () => {
   };
 
   /** Die vier Beweise fuer ein sauberes Nachruecken. */
+  /**
+   * Wartet, bis der Push an `userId` abgesetzt ist — hoechstens `timeoutMs`.
+   *
+   * WARUM POLLEN STATT SOFORT PRUEFEN (24.09.2026): Die Routen melden den
+   * Nachrueckenden NACH `res.json()` (konfi-management.js: erst die Antwort,
+   * dann `await meldeNachrueckern`). supertest hat die Antwort also schon,
+   * waehrend der Handler noch am Versenden ist. Wer direkt danach `pushSpy`
+   * liest, trifft mal die fertige Liste und mal eine leere.
+   *
+   * Genau daran fiel `L5` sporadisch mit "expected [] to include <id>" —
+   * zuletzt im CI-Lauf zu fa84bd13, waehrend derselbe Test im Lauf davor
+   * gruen war. Ein roter Backend-Test ueberspringt den Deploy still, der
+   * Wackler hat also mehr gekostet als nur einen roten Haken.
+   *
+   * Die Reparatur vom 23.09.2026 (feste Zeitstempel, siehe L5) zielte auf die
+   * REIHENFOLGE der Wartenden und war richtig — sie konnte diesen Fall aber
+   * nicht treffen: Hier ist die Liste leer, nicht falsch sortiert.
+   *
+   * Dasselbe Muster steht schon in events.test.js (`waitForCall`).
+   */
+  async function wartetAufPush(userId, timeoutMs = 2000) {
+    const start = Date.now();
+    while (
+      !pushSpy.mock.calls.map(c => c[1]).includes(userId) &&
+      Date.now() - start < timeoutMs
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+
   async function istNachgerueckt(eventId, userId) {
     const b = await buchung(eventId, userId);
     expect(b.status).toBe('confirmed');
     expect(b.war_auf_warteliste).toBe(true);
     expect(await imChat(eventId, userId)).toBe(1);
+    await wartetAufPush(userId);
     expect(pushSpy.mock.calls.map(c => c[1])).toContain(userId);
   }
 
