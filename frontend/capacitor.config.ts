@@ -8,8 +8,22 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   // androidScheme https: WebView laeuft auf https://localhost statt http://localhost,
   // sonst blockt Android HTTPS-Calls zur API als Mixed-Content ("Keine Verbindung").
+  //
+  // CAP_LIVE_URL laedt die Oberflaeche zur Laufzeit vom Vite-Server statt aus dem
+  // mitgelieferten Buendel -- Aenderungen am CSS sind dann sofort auf dem Geraet
+  // zu sehen, ohne neu zu bauen. NUR fuer die Entwicklung:
+  //
+  //   CAP_LIVE_URL=http://192.168.178.62:5173 npx cap sync ios
+  //
+  // Ohne die Variable bleibt der Block unveraendert. Das ist Absicht: Eine fest
+  // eingetragene Adresse wuerde in einem Store-Build auf eine tote IP im
+  // Heimnetz zeigen -- die App zeigte dann bei jeder Nutzerin eine weisse Seite.
+  // cleartext erlaubt dabei http:// (der Vite-Server spricht kein TLS).
   server: {
     androidScheme: 'https',
+    ...(process.env.CAP_LIVE_URL
+      ? { url: process.env.CAP_LIVE_URL, cleartext: true }
+      : {}),
   },
   plugins: {
     Keyboard: {

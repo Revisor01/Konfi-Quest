@@ -60,6 +60,10 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Die Symbole oben rechts stehen auf iPhones wieder in einer zusammenhängenden
+  Leiste statt als einzelne Punkte.
+- Der Umschalter zwischen Konfis und Team hat auf iPhones die milchige
+  Glasfläche, die auch die Navigationsleiste unten verwendet.
 - Eine Mitteilung zu einem Termin führt beim Antippen zum Termin selbst statt
   nur zur Terminliste. Das gilt jetzt auch für Anmeldung, Abmeldung,
   Nachrücken von der Warteliste, bestätigte Teilnahme und Erinnerungen — und

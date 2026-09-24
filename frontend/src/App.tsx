@@ -4,6 +4,7 @@ import { IonApp, IonRouterOutlet, IonSpinner, setupIonicReact, isPlatform, useIo
 import { IonReactRouter } from '@ionic/react-router';
 // iOS26 Theme Animationen
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios26';
+import { segmentGlasAnschalten } from './utils/segmentGlas';
 // Material Design 3 Animationen
 import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
@@ -82,6 +83,11 @@ setupIonicReact({
 
 const AppContent: React.FC = () => {
   const { user, setUser, orgVersion, signOut } = useApp();
+
+  // Glas-Effekt fuer alle Segmente anschalten (Begruendung in segmentGlas.ts).
+  // Einmal fuer die ganze App: Der Beobachter dort faengt auch Segmente, die
+  // erst spaeter in einem Modal auftauchen.
+  useEffect(() => segmentGlasAnschalten(), []);
 
   // App-Sperre: Face ID / Fingerabdruck vor der bereits angemeldeten App.
   // Der Hook laeuft immer mit (er muss den Hintergrundwechsel auch dann
