@@ -83,40 +83,6 @@ export default defineConfig({
           import.meta.url,
         ),
       ),
-      /*
-       * Endungsloser ESM-Import im Theme-Hilfspaket (24.09.2026).
-       *
-       * @rdlabo/ionic-theme-ios26 zieht ab 9.3.0 seine Hilfsfunktionen aus
-       * @rdlabo/ionic-theme-utils. Dessen dist/index.js macht:
-       *
-       *   export { ... } from './transition/ios.transition';
-       *
-       * OHNE Dateiendung — bei `"type": "module"` ist das ungueltig, Node
-       * verlangt dort die vollstaendige Endung. Die Datei ios.transition.js
-       * liegt da, wird aber nicht gefunden:
-       *   Cannot find module '.../dist/transition/ios.transition'
-       * Im Testlauf brach damit App.test.tsx ab (0 Tests, Datei laedt nicht).
-       *
-       * Das ist ein Fehler des Pakets, nicht unserer Einrichtung. Der Alias
-       * ergaenzt die Endung, bis es dort behoben ist. Er trifft genau diesen
-       * einen Pfad — nichts anderes im Projekt importiert ios.transition.
-       */
-      '@rdlabo/ionic-theme-utils': fileURLToPath(
-        new URL(
-          './src/stubs/ionic-theme-utils-neu.ts',
-          import.meta.url,
-        ),
-      ),
-      // Zweite Haelfte desselben Behelfs: Der Ersatz oben braucht einen Weg
-      // zur echten Datei, und ein Zugriff per Paketname scheitert am
-      // `exports`-Feld von ionic-theme-ios26. Deshalb dieser eigene Name auf
-      // den absoluten Pfad.
-      'ionic-theme-utils-ios-transition': fileURLToPath(
-        new URL(
-          './node_modules/@rdlabo/ionic-theme-ios26/node_modules/@rdlabo/ionic-theme-utils/dist/transition/ios.transition.js',
-          import.meta.url,
-        ),
-      ),
     },
   }
 })

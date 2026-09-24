@@ -39,7 +39,7 @@
     "@capgo/capacitor-native-biometric": "^8.6.7",
     "@ionic/react": "^9.0.1",
     "@ionic/react-router": "^9.0.1",
-    "@rdlabo/ionic-theme-ios26": "^9.3.4",
+    "@rdlabo/ionic-theme-ios26": "^9.4.0",
     "@rdlabo/ionic-theme-md3": "^9.0.1",
     "@types/qrcode": "^1.5.6",
     "axios": "^1.19.0",
