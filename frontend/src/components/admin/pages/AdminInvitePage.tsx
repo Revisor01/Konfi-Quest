@@ -464,7 +464,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         boxShadow: 'var(--app-schatten-schwebend)'
                       }}
                     />
-                    <p className="app-settings-item__subtitle" style={{ fontSize: 'var(--app-text-basis)', margin: '0 0 var(--app-abstand-eng) 0' }}>
+                    <p className="app-list-item__subtitle" style={{ fontSize: 'var(--app-text-basis)', margin: '0 0 var(--app-abstand-eng) 0' }}>
                       Konfis scannen diesen Code, um sich selbst zu registrieren.
                     </p>
                     <div style={{

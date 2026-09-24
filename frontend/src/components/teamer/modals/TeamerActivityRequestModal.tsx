@@ -327,7 +327,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                       </div>
                     ) : (
                       <IonLabel>
-                        <h3 className="app-settings-item__subtitle" style={{ margin: '0' }}>
+                        <h3 className="app-list-item__subtitle" style={{ margin: '0' }}>
                           Aktivität auswählen
                         </h3>
                       </IonLabel>

@@ -251,11 +251,11 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                         />
                       </div>
                       <IonLabel>
-                        <h3 className="app-settings-item__subtitle" style={{ margin: '0 0 var(--app-abstand-mini) 0' }}>
+                        <h3 className="app-list-item__subtitle" style={{ margin: '0 0 var(--app-abstand-mini) 0' }}>
                           Icon *
                         </h3>
                         {formData.icon && LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS] && (
-                          <p className="app-settings-item__title" style={{ margin: '0' }}>
+                          <p className="app-list-item__title" style={{ margin: '0' }}>
                             {LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS].name} ({LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS].category})
                           </p>
                         )}
@@ -272,7 +272,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                         return acc;
                       }, []).map((group) => (
                         <div key={group.category} style={{ marginBottom: 'var(--app-abstand-basis)' }}>
-                          <span className="app-settings-item__subtitle" style={{ fontWeight: 'var(--app-schrift-halbfett)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
+                          <span className="app-list-item__subtitle" style={{ fontWeight: 'var(--app-schrift-halbfett)', marginBottom: 'var(--app-abstand-eng)', display: 'block' }}>
                             {group.category}
                           </span>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 'var(--app-abstand-eng)' }}>

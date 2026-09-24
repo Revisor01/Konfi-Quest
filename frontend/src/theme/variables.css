@@ -1368,17 +1368,6 @@ ion-item {
   align-items: center;
   gap: var(--app-abstand-mittel);
 }
-.app-settings-item__title {
-  font-weight: var(--app-schrift-mittel);
-  font-size: var(--app-text-betont);
-  margin: 0;
-  color: var(--app-text-primary);
-}
-.app-settings-item__subtitle {
-  font-size: var(--app-text-klein);
-  color: var(--app-text-system);
-  margin: var(--app-abstand-winzig) 0 0 0;
-}
 
 /* === Schalter mit Erklärungstext (Muster aus "Challenge erstellen") ===
    Ionic schneidet Texte in ion-label standardmäßig einzeilig mit "…" ab.

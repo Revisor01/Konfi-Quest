@@ -245,20 +245,24 @@ const AdminSettingsPage: React.FC = () => {
             <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div
-                className="app-list-item app-list-item--users app-settings-item"
+                className="app-list-item app-list-item--users"
                 onClick={() => router.push('/admin/profile')}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={ICON_PERSON_GEFUELLT} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Profil</h2>
-                  <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
+                  </div>
+                  <div className="app-list-item__content">
+                  <div className="app-list-item__title">Profil</div>
+                  <div className="app-list-item__meta"><span className="app-list-item__meta-item">Passwort und E-Mail ändern</span></div>
+                  </div>
+                  </div>
                 </div>
               </div>
 
               <div
-                className="app-list-item app-list-item--users app-settings-item"
+                className="app-list-item app-list-item--users"
                 onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
                 style={{
                   cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
@@ -276,26 +280,34 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={ICON_BENACHRICHTIGUNG} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Benachrichtigungen</h2>
-                  <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
+                  </div>
+                  <div className="app-list-item__content">
+                  <div className="app-list-item__title">Benachrichtigungen</div>
+                  <div className="app-list-item__meta"><span className="app-list-item__meta-item">Chat-Nachrichten und Updates</span></div>
+                  </div>
+                  </div>
                 </div>
               </div>
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
               <div
-                className="app-list-item app-list-item--users app-settings-item"
+                className="app-list-item app-list-item--users"
                 onClick={() => setShowOnboarding(true)}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={ICON_KOMPASS} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">App-Tour ansehen</h2>
-                  <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
+                  </div>
+                  <div className="app-list-item__content">
+                  <div className="app-list-item__title">App-Tour ansehen</div>
+                  <div className="app-list-item__meta"><span className="app-list-item__meta-item">Kurze Einführung durch die App</span></div>
+                  </div>
+                  </div>
                 </div>
               </div>
                 </div>
@@ -316,53 +328,65 @@ const AdminSettingsPage: React.FC = () => {
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
-                  className="app-list-item app-list-item--users app-settings-item"
+                  className="app-list-item app-list-item--users"
                   onClick={() => router.push('/admin/users')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Benutzer:innen</h2>
-                    <p className="app-settings-item__subtitle">Admins, Team und Rollen verwalten</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Benutzer:innen</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Admins, Team und Rollen verwalten</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 {user?.role_name === 'org_admin' && (
                   <div
-                    className="app-list-item app-list-item--users app-settings-item"
+                    className="app-list-item app-list-item--users"
                     onClick={() => router.push('/admin/settings/dashboard')}
                   >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                       <IonIcon icon={ICON_APPS} />
-                    </div>
-                    <div className="app-flex-fill">
-                      <h2 className="app-settings-item__title">Dashboard</h2>
-                      <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Team</p>
-                    </div>
-                    <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                      </div>
+                      <div className="app-list-item__content">
+                      <div className="app-list-item__title">Dashboard</div>
+                      <div className="app-list-item__meta"><span className="app-list-item__meta-item">Sichtbare Bereiche für Konfis und Team</span></div>
+                      </div>
+                      </div>
+                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                    </IonButton>
+                      </IonButton>
+                    </div>
                   </div>
                 )}
 
                 <div
-                  className="app-list-item app-list-item--users app-settings-item"
+                  className="app-list-item app-list-item--users"
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={ICON_QRCODE_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Konfis einladen</h2>
-                    <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Konfis einladen</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">QR-Code für Selbstregistrierung</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
                 </div>
               </IonCardContent>
@@ -387,47 +411,59 @@ const AdminSettingsPage: React.FC = () => {
               <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
-                  className="app-list-item app-list-item--activities app-settings-item"
+                  className="app-list-item app-list-item--activities"
                   onClick={() => router.push('/admin/activities')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={ICON_AKTION_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Aktivitäten</h2>
-                    <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Aktivitäten</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Aktivitäten und Punkte verwalten</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--badges app-settings-item"
+                  className="app-list-item app-list-item--badges"
                   onClick={() => router.push('/admin/badges')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Badges</h2>
-                    <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Badges</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Auszeichnungen und Erfolge verwalten</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--jahrgang app-settings-item"
+                  className="app-list-item app-list-item--jahrgang"
                   onClick={() => router.push('/admin/settings/jahrgaenge')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={ICON_JAHRGANG_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Jahrgänge</h2>
-                    <p className="app-settings-item__subtitle">Punkteziele und Konfisprüche verwalten</p>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Jahrgänge</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Punkteziele und Konfisprüche verwalten</span></div>
+                    </div>
+                    </div>
                   </div>
                   <IonButton
                     fill="clear"
@@ -440,63 +476,75 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--categories app-settings-item"
+                  className="app-list-item app-list-item--categories"
                   onClick={() => router.push('/admin/settings/categories')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                     <IonIcon icon={ICON_KATEGORIE_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Kategorien</h2>
-                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Kategorien</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Kategorien für Aktivitäten und Events</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--level app-settings-item"
+                  className="app-list-item app-list-item--level"
                   onClick={() => router.push('/admin/settings/levels')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={ICON_POKAL_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Level</h2>
-                    <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Level</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Punkte-Level und Belohnungen</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--material app-settings-item"
+                  className="app-list-item app-list-item--material"
                   onClick={() => router.push('/admin/material')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
                     <IonIcon icon={ICON_DATEI_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Material</h2>
-                    <p className="app-settings-item__subtitle">Materialien und Dokumente verwalten</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Material</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Materialien und Dokumente verwalten</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--wrapped app-settings-item"
+                  className="app-list-item app-list-item--wrapped"
                   onClick={() => router.push('/admin/wrapped')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
                     <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
                   </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Jahresrückblick</h2>
-                    <p className="app-settings-item__subtitle">Ausgaben anlegen, benennen und freigeben</p>
+                  <div className="app-list-item__content">
+                    <div className="app-list-item__title">Jahresrückblick</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
                   </div>
                   <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
@@ -504,19 +552,23 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--teamer app-settings-item"
+                  className="app-list-item app-list-item--teamer"
                   onClick={() => router.push('/admin/settings/certificates')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
                     <IonIcon icon={ICON_ABZEICHEN_GEFUELLT} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Zertifikate</h2>
-                    <p className="app-settings-item__subtitle">Zertifikate fürs Team verwalten</p>
-                  </div>
-                  <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Zertifikate</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Zertifikate fürs Team verwalten</span></div>
+                    </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                    </IonButton>
+                  </div>
                 </div>
                 </div>
               </IonCardContent>
