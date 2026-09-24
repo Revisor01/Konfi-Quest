@@ -153,7 +153,7 @@ const MainTabs: React.FC = () => {
     if (bereich) trackBereich(bereich);
   }, [location.pathname, user?.id]);
 
-  // iOS26 Tab-Bar Liquid-Glass-Animation (rdlabo registerTabBarEffect)
+  // iOS-Tab-Leiste: gleitendes Glas beim Wechsel (rdlabo registerTabBarEffect)
   useEffect(() => {
     if (!isPlatform('ios')) return;
     if (!user) return;
@@ -163,7 +163,7 @@ const MainTabs: React.FC = () => {
 
     const setup = async () => {
       try {
-        const mod = await import('@rdlabo/ionic-theme-ios26');
+        const mod = await import('@rdlabo/ionic-theme-ios27');
         if (cancelled) return;
         const register = mod.registerTabBarEffect;
         if (typeof register !== 'function') return;

@@ -1,5 +1,5 @@
 import { isPlatform } from '@ionic/react';
-import { registerSegmentEffect } from '@rdlabo/ionic-theme-ios26';
+import { registerSegmentEffect } from '@rdlabo/ionic-theme-ios27';
 
 /**
  * Schaltet den Glas-Effekt des iOS-Themes fuer alle Segmente an (24.09.2026).
@@ -36,8 +36,33 @@ export function segmentGlasAnschalten(): () => void {
     // Linse darueber ("The optional moving glass"). Nur die Funktion zu rufen
     // liess die Flaeche flach — der erste Anlauf hier hatte genau das.
     el.classList.add('segment-style-glass');
-    const effekt = registerSegmentEffect(el);
-    if (effekt) effekte.set(el, effekt);
+
+    // Auf die .ios-Klasse warten, bevor die Linse registriert wird.
+    //
+    // WARUM: registerSegmentEffect steigt still aus, solange das Element sie
+    // nicht traegt (im Paket nachgesehen: `if (!segment.classList.contains(
+    // 'ios') || ...) return undefined`). Ionic vergibt sie erst beim
+    // Hydrieren. Der Fehlschlag faellt kaum auf, weil `.segment-style-glass`
+    // oben trotzdem gesetzt ist — die Glasflaeche ist dann da, nur die
+    // bewegliche Linse fehlt.
+    //
+    // `whenDefined` wartet auf die Komponentendefinition, das anschliessende
+    // requestAnimationFrame auf einen Rahmen, in dem Ionic die Mode-Klasse
+    // gesetzt hat. MainTabs.tsx loest dasselbe fuer die Tab-Leiste mit einer
+    // Wiederholschleife.
+    const registrieren = () => {
+      if (effekte.has(el) || !el.isConnected || !el.classList.contains('ios')) return;
+      const effekt = registerSegmentEffect(el);
+      if (effekt) effekte.set(el, effekt);
+    };
+    if (el.classList.contains('ios')) {
+      registrieren();
+    } else {
+      customElements
+        .whenDefined('ion-segment')
+        .then(() => requestAnimationFrame(registrieren))
+        .catch(() => {});
+    }
   };
 
   const abmelden = (el: Element) => {

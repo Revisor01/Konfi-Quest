@@ -26,10 +26,15 @@ http://ionicframework.com/docs/theming/ */
 /* Abstands-, Radius- und Schatten-Skalen (05.09.2026, Konsolidierung der Inline-Styles) */
 @import './abstaende.css';
 
-/* iOS26 Theme - kann durch Entfernen dieser Imports deaktiviert werden */
-@import '@rdlabo/ionic-theme-ios26/dist/css/default-variables.css';
-@import '@rdlabo/ionic-theme-ios26/dist/css/ionic-theme-ios26.css';
-@import '@rdlabo/ionic-theme-ios26/dist/css/md-remove-ios-class-effect.css';
+/* iOS-Theme (ios27) - kann durch Entfernen dieser Imports deaktiviert werden.
+   Den Dark-Mode-Stylesheet des Themes NICHT einzeln dazunehmen: Er gehoert
+   zusammen mit den Ionic-Dark-Paletten in App.tsx, die bewusst abgeschaltet
+   sind. Einzeln ergaebe das eine halb umgestellte Oberflaeche.
+   md-ion-list-inset.css fehlt absichtlich - laut Doku darf es nicht dazu,
+   solange MD3 geladen wird (das bringt seine eigenen Inset-Listen mit). */
+@import '@rdlabo/ionic-theme-ios27/dist/css/default-variables.css';
+@import '@rdlabo/ionic-theme-ios27/dist/css/ionic-theme-ios27.css';
+@import '@rdlabo/ionic-theme-ios27/dist/css/md-remove-ios-class-effect.css';
 
 /* Material Design 3 Theme - für Android */
 @import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
@@ -4021,86 +4026,25 @@ ion-segment.md ion-segment-button {
    --------------------------------------------------------------------------- */
 
 /* ---------------------------------------------------------------------------
-   iOS-Toolbar: Knopfgruppe — bewusst OHNE eigene Regeln (24.09.2026)
+   iOS-Toolbar: Knopfgruppe — seit dem Wechsel auf ios27 ohne eigene Regeln
    ---------------------------------------------------------------------------
-   Hier standen Regeln, die die Knoepfe durchsichtig machten und den Abstand
-   auf 0 zogen, plus (zuletzt) eine Glasflaeche an der Gruppe. Simons Urteil
-   am Geraet: "die buttons oben setzen sich nach wie vor als einzel buttons
-   ab. ich lehne diese loesung ab. da ist ja nur ein bg hinter."
+   Hier stand ein Eigenbau, der die fuenf Glas-Eigenschaften abschaltete, die
+   ionic-theme-ios26 JEDEM Knopf einzeln gab, und die Flaeche stattdessen an
+   die Gruppe haengte. Simons Befund war: "die buttons oben setzen sich nach
+   wie vor als einzel buttons ab" — und Apple gibt ihm recht (WWDC25 Session
+   284: "the system automatically separates them into visual groups… Each
+   group shares a glass background"; HIG Toolbars: "Borders… aren't necessary
+   because the section provides a visible container").
 
-   Er hat recht: Das Theme gibt JEDEM Knopf seine eigene Glasflaeche ueber
-   `::part(native)` (border-radius 22px, eigener backdrop-filter, Rand-Verlauf,
-   Schatten). Die frueheren Regeln haben davon nur background, border und
-   box-shadow abgeschaltet — Radius und Blur blieben stehen und zeichneten
-   weiter sichtbare Einzelflaechen. Eine Flaeche DAHINTER zu legen macht daraus
-   keine Leiste, sondern nur einen Hintergrund hinter Einzelknoepfen.
+   @rdlabo/ionic-theme-ios27 macht es von sich aus richtig. Im CSS
+   nachgemessen: Die Glasregel haengt dort an der GRUPPE, ohne
+   nth-of-type(2)-Sonderfall:
 
-   Deshalb jetzt gar nichts: erst ansehen, was das Theme allein macht.
+     ion-buttons.ios:not(...):not(:has(ion-back-button, ...)) {
+       backdrop-filter: blur(2px) saturate(360%);
+       background-color: rgba(var(--ios-theme-glass-background-rgb), ...); }
 
-   SACHSTAND fuer einen naechsten Anlauf:
-   - Apple dokumentiert die geteilte Flaeche ausdruecklich (WWDC25 Session 284:
-     "the system automatically separates them into visual groups… Each group
-     shares a glass background"; HIG Toolbars: "Borders… aren't necessary
-     because the section provides a visible container").
-   - Die Theme-Regel ab 9.3.0 ("Keep ion-buttons as layout only and render each
-     plain action independently") widerspricht dem — und der Theme-Autor hat
-     sie in der iOS-27-Linie bereits entfernt.
-   - Im Projekt gibt es 11 Gruppen mit 2+ Knoepfen, ALLE nur mit Symbolen.
-     Apples Sonderfall (Text-Knopf bekommt eine eigene Flaeche) tritt hier
-     nirgends auf.
+   Deshalb ist der Eigenbau weg. Simons Frage dazu war die richtige:
+   "Eigentlich muesste es doch gehen, wenn wir da nur Original-Code
+   verwenden?" — ja, im passenden Paket.
    --------------------------------------------------------------------------- */
-
-/* GEMESSEN am Geraet (24.09.2026), nicht geraten: Die Theme-Regel GREIFT
-   (Diagnose: slot=end, knoepfe=2, clear=2, back=nein, regelGreift=JA). Das
-   Theme zeichnet die Einzelflaechen also absichtlich. Es sind FUENF
-   Eigenschaften auf ::part(native) — der frühere Versuch schaltete nur drei
-   davon ab (background, border, box-shadow), weshalb border-radius und der
-   eigene backdrop-filter weiter sichtbare Kapseln zeichneten. Genau das war
-   Simons Befund: "da ist ja nur ein bg hinter".
-
-   Deshalb hier: alle fuenf abschalten, Flaeche an die GRUPPE. */
-ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2)) {
-  gap: 0 !important;
-  background: rgba(
-    var(--ios-theme-glass-background-rgb, var(--ios26-glass-background-rgb)),
-    0.55
-  );
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 22px;
-  box-shadow:
-    inset 0 0 0 0.5px
-      rgba(
-        var(--ios-theme-glass-border-color-rgb, var(--ios26-glass-border-color-rgb)),
-        0.8
-      ),
-    0 2px 8px -2px
-      rgba(
-        var(--ios-theme-glass-box-shadow-color-rgb, var(--ios26-glass-box-shadow-color-rgb)),
-        0.68
-      );
-  overflow: hidden;
-}
-/* Die Einzelflaechen vollstaendig abschalten — alle fuenf Eigenschaften. */
-ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
-  > ion-button.button-clear::part(native) {
-  background: transparent !important;
-  background-image: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  min-height: 44px;
-}
-ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
-  > ion-button.button-clear {
-  --background: transparent !important;
-  --background-hover: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.06);
-  --border-width: 0 !important;
-  --box-shadow: none !important;
-  --border-radius: 0 !important;
-  --padding-start: 14px !important;
-  --padding-end: 14px !important;
-  margin: 0 !important;
-}
