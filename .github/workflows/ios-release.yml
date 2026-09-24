@@ -234,12 +234,11 @@ jobs:
           # die Option erlaubt ihm nur noch, Vorhandenes zu benutzen.
           #
           # Gegenprobe nach dem naechsten Lauf: Die Zahl der Zertifikate im
-          # Konto muss bei 3 bleiben (gemessen 24.09.2026, nach dem Aufraeumen
-          # von 12 auf 3).
+          # Konto darf NICHT steigen. Beim zweiten Anlauf stand die Option hier
+          # entgegen diesem Kommentar noch drin — deshalb stieg sie von 3 auf 5.
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive archive \
-            -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
@@ -318,17 +317,40 @@ jobs:
           </dict>
           </plist>
           EOF
-          # -allowProvisioningUpdates bleibt HIER, mit Absicht: Der Export
-          # braucht das App-Store-Profil als Datei auf dem Runner, und die
-          # holt Xcode darueber. Anders als beim Archivieren legt er dabei
-          # KEIN Zertifikat an — das Profil ist vorhanden ("Konfi Quest
-          # AppStore CI", am 24.09.2026 einmalig angelegt und an das
-          # Distribution-Zertifikat gebunden), es wird nur geladen. Genau
-          # deshalb steht oben signingStyle=manual mit festem Profilnamen:
-          # Xcode darf nachsehen, aber nichts erfinden.
+          # KEIN -allowProvisioningUpdates, an KEINER der beiden Stellen
+          # (24.09.2026, dritter Anlauf — die beiden vorigen haben es nicht
+          # behoben).
+          #
+          # Die Option laesst Xcode fehlende Anmeldedaten selbst ueber die
+          # ASC-API anlegen. Auf einem CI-Runner ist der Keychain bei jedem Lauf
+          # leer, also entstand pro Build ein NEUES Development-Zertifikat.
+          # Gemessen: 12 Zertifikate im Konto, 10 davon "Created via API".
+          # Das Limit ist KONTOWEIT und blockiert damit auch jedes andere
+          # Projekt und die Arbeit am Mac.
+          #
+          # WARUM DER ZWEITE ANLAUF NICHT REICHTE: Ich hatte die Option nur beim
+          # Archivieren entfernt und hier "mit Absicht" stehen lassen — der
+          # Export brauche das Profil als Datei. Das war falsch: Der Export
+          # zieht dann ebenfalls Anmeldedaten nach und legt sein eigenes
+          # Zertifikat an. Genau das erklaert die Messung "3 -> 5 nach einem
+          # Build": zwei neue, nicht eines. Den Hinweis darauf hat die
+          # Moin-Kark-Sitzung geliefert, die dasselbe Problem an ihrem Projekt
+          # gemessen hat (dort 6 Zertifikate, 4 "Created via API").
+          #
+          # Gebraucht wird die Option an beiden Stellen nicht: Das
+          # Distribution-Zertifikat liegt im Keychain (Schritt
+          # "Signing-Keychain einrichten"), das App-Store-Profil liegt als Datei
+          # auf dem Runner (Schritt "Provisioning-Profil laden und
+          # installieren"), und die Signiereinstellungen stehen in der
+          # Release-Konfiguration des Xcode-Projekts. Xcode findet alles vor und
+          # muss nichts erzeugen. Fehlt doch etwas, bricht der Build mit klarer
+          # Meldung ab, statt still Muell im Konto anzulegen — das ist das
+          # bessere Verhalten.
+          #
+          # Gegenprobe nach dem naechsten Lauf: Die Zahl der Zertifikate im
+          # Konto darf NICHT steigen.
           xcodebuild -exportArchive -archivePath build/App.xcarchive \
             -exportPath build/export -exportOptionsPlist ExportOptions-ci.plist \
-            -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -10
