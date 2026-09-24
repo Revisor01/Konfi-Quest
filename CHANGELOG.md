@@ -50,6 +50,12 @@ Versionsüberschrift.
   unter „Fehler".
 
 ### Behoben
+- Mitteilungen an eine ganze Gemeinde oder einen ganzen Jahrgang kommen
+  zuverlässig an. Bisher konnte bei vielen Empfängerinnen und Empfängern
+  gleichzeitig die Zahl am App-Symbol fehlen, und bei einzelnen kam die
+  Mitteilung gar nicht — je größer die Gruppe, desto häufiger.
+- Klemmt der Mitteilungsdienst kurz, wird die Nachricht erneut zugestellt
+  statt verworfen.
 - Beim Antippen einer Mitteilung stürzte die App auf Android ab, während sie
   die angetippte Mitteilung aus dem Mitteilungszentrum entfernte. Das Aufräumen
   lässt die App jetzt nicht mehr abstürzen.
