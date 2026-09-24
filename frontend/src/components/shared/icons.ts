@@ -100,7 +100,6 @@ export {
   chevronDownOutline as ICON_AUFKLAPPEN,
   chevronUp as ICON_ZUKLAPPEN,
   chevronForward as ICON_WEITER_GEFUELLT,
-  chevronForwardOutline as ICON_WEITER,
   close as ICON_SCHLIESSEN_GEFUELLT,
   closeOutline as ICON_SCHLIESSEN,
   create as ICON_BEARBEITEN_GEFUELLT,

@@ -81,7 +81,12 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // der Karte "Naechstes Badge" im Konfi-Profil, und die rendert nie --
     // GET /konfi/profile liefert das Feld next_badge nicht (siehe
     // docs/offene-befunde.md 7.1). Mit der toten Karte faellt auch das Icon.
-    expect(namen.length).toBe(188);
+    // 24.09.2026: 188 -> 187. ICON_WEITER ist entfallen: Der Umriss-Pfeil hing
+    // allein an den Hinweiskarten, und die zeigen seit "Pfeile aus den
+    // Hinweiskarten" keinen Pfeil mehr. Die gefuellte Fassung
+    // (ICON_WEITER_GEFUELLT) bleibt -- sie traegt die "Alle ... anzeigen"-Zeilen
+    // auf beiden Dashboards.
+    expect(namen.length).toBe(187);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {
