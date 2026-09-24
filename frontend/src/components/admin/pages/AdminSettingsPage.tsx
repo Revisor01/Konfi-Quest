@@ -539,15 +539,19 @@ const AdminSettingsPage: React.FC = () => {
                   className="app-list-item app-list-item--wrapped"
                   onClick={() => router.push('/admin/wrapped')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
-                    <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
-                  </div>
-                  <div className="app-list-item__content">
-                    <div className="app-list-item__title">Jahresrückblick</div>
-                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
-                  <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
-                    <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
-                  </IonButton>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'var(--app-color-wrapped)' }}>
+                        <IonIcon icon={ICON_FUNKELN} style={{ color: 'white' }} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Jahresrückblick</div>
+                        <div className="app-list-item__meta"><span className="app-list-item__meta-item">Ausgaben anlegen, benennen und freigeben</span></div>
+                      </div>
+                    </div>
+                    <IonButton fill="clear" aria-label="Info zum Jahresrückblick" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.wrapped); }} style={{ '--color': 'var(--app-color-wrapped)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                      <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
+                    </IonButton>
                   </div>
                 </div>
 
