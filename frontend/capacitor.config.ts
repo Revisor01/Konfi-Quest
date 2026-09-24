@@ -13,7 +13,15 @@ const config: CapacitorConfig = {
   // mitgelieferten Buendel -- Aenderungen am CSS sind dann sofort auf dem Geraet
   // zu sehen, ohne neu zu bauen. NUR fuer die Entwicklung:
   //
-  //   CAP_LIVE_URL=http://192.168.178.62:5173 npx cap sync ios
+  //   CAP_LIVE_URL=http://$(scutil --get LocalHostName).local:5173 npx cap sync ios
+  //
+  // BESSER DER NAME ALS DIE IP: Am 24.09.2026 hat die Adresse dreimal
+  // gewechselt (WLAN -> Hotspot -> USB-Hotspot), und jedes Mal musste die App
+  // neu gebaut werden, weil sie eine tote IP suchte. Der Bonjour-Name des Macs
+  // (`scutil --get LocalHostName` + ".local") bleibt dabei gleich. In
+  // vite.config.ts ist ".local" deshalb als erlaubter Host eingetragen --
+  // ohne das antwortet Vite mit 403, und am Geraet sieht das aus wie ein
+  // weisser Bildschirm.
   //
   // Ohne die Variable bleibt der Block unveraendert. Das ist Absicht: Eine fest
   // eingetragene Adresse wuerde in einem Store-Build auf eine tote IP im

@@ -31,6 +31,13 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    // Der Bonjour-Name des Entwicklungsrechners muss hier stehen, sonst
+    // antwortet Vite mit 403 (Host-Pruefung) -- am Geraet sieht das aus wie
+    // ein weisser Bildschirm. Der Name ist der stabile Weg fuer CAP_LIVE_URL:
+    // Die IP wechselt bei jedem Netzwechsel (WLAN/Hotspot/USB) und macht dann
+    // jedes Mal einen Neubau noetig, der Name bleibt gleich.
+    // Eigenen Namen ermitteln: `scutil --get LocalHostName`.
+    allowedHosts: ['.local'],
   },
   resolve: {
     alias: {
