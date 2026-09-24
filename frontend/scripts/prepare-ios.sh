@@ -86,4 +86,14 @@ grep -q 'DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"' "$PBXPROJ" \
   || fail "Keine Release-Konfiguration mit DEBUG_INFORMATION_FORMAT=dwarf-with-dsym — es entstehen keine dSYM-Dateien."
 
 echo "OK: Firebase-Config fuer '$EXPECTED_PROJECT_ID' / '$EXPECTED_BUNDLE_ID' verifiziert. iOS-Push ist build-seitig abgesichert."
+# Der Swift-Import von Crashlytics (24.09.2026). Der Pod allein genuegt NICHT:
+# Auf Apple-Plattformen registriert sich Crashlytics erst, wenn das Framework
+# geladen wird — und geladen wird es nur, wenn es importiert ist. Ohne den
+# Import blieb die Firebase-Konsole bei "SDK hinzufuegen" stehen, obwohl die App
+# lief und Push-Token registrierte. Das ist derselbe stille Ausfall wie beim
+# fehlenden google-services.json auf Android, nur eine Ebene hoeher.
+APPDELEGATE="$FRONTEND_DIR/ios/App/App/AppDelegate.swift"
+grep -q "^import FirebaseCrashlytics" "$APPDELEGATE" \
+  || fail "AppDelegate.swift importiert FirebaseCrashlytics nicht — ohne den Import meldet sich die App nie bei Crashlytics."
+
 echo "OK: Crashlytics-Pod und dSYM-Upload vorhanden. Absturzdiagnose ist build-seitig abgesichert."

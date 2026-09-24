@@ -1,6 +1,17 @@
 import UIKit
 import Capacitor
 import FirebaseCore
+// Crashlytics MUSS hier importiert werden, auch wenn dieser Code es nicht
+// direkt aufruft (24.09.2026). Das Plugin @capacitor-firebase/crashlytics
+// bringt den Pod mit, aber auf Apple-Plattformen registriert sich Crashlytics
+// erst, wenn das Framework tatsaechlich geladen ist — und geladen wird es nur,
+// wenn es irgendwo importiert wird. Ohne diese Zeile blieb die Firebase-Konsole
+// bei "SDK hinzufuegen" stehen, obwohl die App lief und ihren Push-Token
+// registrierte: Firebase hatte von der iOS-App noch nie gehoert.
+// Auf Android passiert dasselbe automatisch ueber das Gradle-Plugin, deshalb
+// stand dort "warte auf App" statt "SDK hinzufuegen" — derselbe Fehler, zwei
+// verschiedene Meldungen.
+import FirebaseCrashlytics
 import FirebaseMessaging
 import UserNotifications
 
@@ -37,6 +48,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Firebase konfigurieren
         FirebaseApp.configure()
+
+        // Diagnose in die Geraete-Logs (24.09.2026, Simons Ansage: "Im Zweifel
+        // auch da debugs in die Logs damit wir endlich voran kommen").
+        // Ohne diese Zeilen war von aussen nicht zu unterscheiden, ob Firebase
+        // gar nicht startet, ob Crashlytics fehlt oder ob nur noch kein Absturz
+        // passiert ist. Genau diese Stille hat bei der Android-Fehlersuche am
+        // 23.09. einen Abend gekostet.
+        // Bewusst ohne Schluessel und ohne Token — nur die Tatsachen.
+        if let app = FirebaseApp.app() {
+            print("[FIREBASE] gestartet: projekt=\(app.options.projectID ?? "?") " +
+                  "app=\(app.options.googleAppID) bundle=\(Bundle.main.bundleIdentifier ?? "?")")
+            let absturzdienst = Crashlytics.crashlytics()
+            print("[FIREBASE] Crashlytics geladen, Sammeln aktiv=" +
+                  "\(absturzdienst.isCrashlyticsCollectionEnabled())")
+            if absturzdienst.didCrashDuringPreviousExecution() {
+                print("[FIREBASE] Der vorige Start endete mit einem Absturz — " +
+                      "der Bericht geht jetzt raus.")
+            }
+        } else {
+            print("[FIREBASE] FEHLER: FirebaseApp.app() ist nil — die " +
+                  "Konfiguration wurde nicht geladen (GoogleService-Info.plist?).")
+        }
 
         // Explizit Auto-Init aktivieren (manuelles Token-Management)
         Messaging.messaging().isAutoInitEnabled = true

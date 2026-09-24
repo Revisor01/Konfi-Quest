@@ -909,11 +909,33 @@ ion-list[inset] ion-list-header {
 
 
 
-/* iOS 26 TabBar: Verstärkter Blur-Effekt (näher am nativen iOS 26 Look) */
-/* Die Library setzt blur(2px) saturate(360%) -- wir erhöhen für realistischeren Glass-Effekt */
-ion-tab-bar.ios:not(.ios26-disabled) {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+/* === iOS-Tab-Leiste: den Blur des Themes durchlassen (24.09.2026) ===
+   Simons Befund am Geraet: "Es ist auch in der navi nicht da!" — der
+   Glaseffekt fehlte unten genauso wie oben.
+
+   URSACHE, im Theme-CSS nachgemessen: Das Theme legt seinen Blur auf ein
+   Pseudoelement HINTER der Leiste:
+
+     ion-tab-bar.ios:not(...)::before {
+       content:""; position:absolute; inset:0; z-index:-1;
+       backdrop-filter: blur(20px) saturate(180%); }
+
+   `z-index: -1` heisst: Es liegt unter der Leiste. Solange die Leiste selbst
+   einen deckenden Hintergrund hat — und Ionic setzt per Voreinstellung einen —,
+   ist davon nichts zu sehen. Dasselbe Muster wie bei der Toolbar oben, wo
+   `--ion-toolbar-background: #f7f7f7` alles verdeckte.
+
+   Deshalb hier nur eines: den Hintergrund der Leiste durchsichtig machen. Der
+   Blur kommt vom Theme, nicht von uns (die frueher hier stehende eigene
+   backdrop-filter-Regel ist weg — sie lag auf dem falschen Element und wirkte
+   ohnehin nicht).
+
+   0.72 ist derselbe Alpha-Wert wie bei der Toolbar, damit oben und unten
+   gleich aussehen.
+
+   NICHT AM GERAET GEPRUEFT: kein Simulatorstart. Ob es stimmt, zeigt der Build. */
+:root {
+  --ion-tab-bar-background: rgba(247, 247, 247, 0.72);
 }
 
 /* Android (MD): Tab-Bar muss die System-Gesten-/Navigationsleiste respektieren.
@@ -3976,38 +3998,30 @@ ion-segment.md ion-segment-button {
 
 
 /* ---------------------------------------------------------------------------
-   iOS-Kopfleiste: echter Glaseffekt (Simons Befund 24.09.2026)
+   iOS-Kopfleiste: Glas macht das Theme, nicht wir (24.09.2026)
    ---------------------------------------------------------------------------
-   "Du hast einfach Farbe hinter die Buttons gelegt die setzen sich aber ab.
-   Ist Scheisse Glas Effekt also mit so eine verschwimmen zoomen ist nicht da."
+   Hier standen zwei Eigenbauten — eine Blur-Regel auf .header-background und
+   eine Farbflaeche hinter der Knopfgruppe. Beide sind weg, auf Simons Ansage:
+   "Hat das theme Glas Effekt oder nicht, wenn nicht lassen wir es, bauen wir
+   nicht selber."
 
-   Richtig. Mein erster Versuch war eine halbdurchsichtige Flaeche — getoente
-   Farbe, kein Glas. Was fehlte, ist das VERSCHWIMMEN des Hintergrunds.
+   Gemessen im Theme-CSS: Es hat 33 Blur-Regeln, bis blur(20px) saturate(180%)
+   — fuer Tab-Leiste, Meldungen, Aktionsblaetter, Popover und Segmente mit
+   .segment-style-glass. Beim Header setzt es aber ausdruecklich
+   `backdrop-filter: none`. Das ist eine der fuenf bewussten Ausnahmen des
+   Theme-Autors, kein Fehler.
 
-   URSACHE, nachgemessen im Theme-CSS: Das Theme schaltet den Blur ausdruecklich
-   ab. In ionic-theme-ios26.css steht
+   Was hier bleiben MUSS, ist weiter unten: --ion-toolbar-background
+   durchsichtig statt deckend (#f7f7f7). Ohne das kann das Theme an keiner
+   Stelle wirken, auch dort nicht, wo es Glas machen will.
 
-     ion-header.ios...header-translucent .header-background { backdrop-filter: none }
-
-   und der einzige backdrop-filter im ganzen Theme ist `blur(2px)` — praktisch
-   unsichtbar. Mein Kommentar behauptete "den backdrop-filter setzt das Theme
-   selbst"; das hatte ich nie geprueft, und es stimmt nicht.
-
-   Der Blur muss auf `.header-background` liegen, nicht auf ion-toolbar: Das ist
-   das Element, das Ionic bei `translucent` hinter die Leiste legt und das den
-   Inhalt darunter sieht. Werte wie bei der Tab-Leiste oben in dieser Datei
-   (blur 20px, saturate 180%), damit oben und unten gleich aussehen.
-
-   NICHT AM GERAET GEPRUEFT: Ich starte keinen Simulator. Ob es jetzt stimmt,
-   zeigt der naechste Build.
+   Wenn oben Glas gewuenscht ist, gehoert das ins Theme oder in eine Anfrage
+   dorthin — nicht in eine eigene Regel, die bei der naechsten Theme-Fassung
+   danebenliegt.
    --------------------------------------------------------------------------- */
-ion-header.ios:not(.ios-theme-disabled, .ios26-disabled) .header-background {
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-}
 
 /* ---------------------------------------------------------------------------
-   iOS-Toolbar: Knopfgruppe bleibt EINE Leiste, keine Einzelpunkte
+   iOS-Toolbar: Knopfgruppe bleibt EINE Leiste, keine Einzelpunkte, keine Einzelpunkte
    ---------------------------------------------------------------------------
    Das Theme @rdlabo/ionic-theme-ios26 hat ab 9.3.0 eine Regel bekommen, die
    eine Gruppe aus mehreren Knoepfen oben rechts auseinanderzieht. Im Paket
@@ -4042,15 +4056,9 @@ ion-header.ios:not(.ios-theme-disabled, .ios26-disabled) .header-background {
    :not(.ios-theme-disabled, .ios26-disabled) geschrieben).
    --------------------------------------------------------------------------- */
 ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2)) {
+  /* Nur der Abstand: Das Theme zieht die Gruppe ab 9.3.0 auseinander
+     (gap: 12px). Kein eigener Hintergrund, kein eigener Blur — siehe oben. */
   gap: 0 !important;
-  /* Eine Glasflaeche fuer die ganze Gruppe — mit Verschwimmen, nicht nur
-     getoenter Farbe. Der Hintergrundwert ist bewusst schwach (0.4): Er gibt der
-     Leiste Kontrast, das Verschwimmen macht den Effekt. */
-  background: rgba(255, 255, 255, 0.4) !important;
-  border-radius: 22px !important;
-  overflow: hidden;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
 }
 /* Die einzelnen Knoepfe darin: durchsichtig, kein eigener Rand, kein Schatten. */
 ion-toolbar.ios ion-buttons:has(> ion-button.button-clear:nth-of-type(2))
