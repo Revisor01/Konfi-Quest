@@ -8,7 +8,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { heuteBerlin } = require('../utils/zeitformat');
 const { beantworteTageslosung } = require('../services/losungService');
-const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
+const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach } = require('../utils/bookingUtils');
@@ -779,21 +779,26 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
   });
 
   // Upload photo for activity request (AES-256-GCM verschlüsselt at-rest)
-  // memoryStorage liefert req.file.buffer; wir validieren die Magic Bytes auf
-  // dem Buffer, verschluesseln und schreiben dann erst auf die Platte.
+  //
+  // diskStorage liefert req.file.path (eine Temporaerdatei im Zwischenlager),
+  // KEIN req.file.buffer mehr. Fuer die Magic-Bytes-Pruefung reichen die ersten
+  // Bytes; danach wird stromweise verschluesselt. So liegt auch ein grosses
+  // Foto nie komplett im Arbeitsspeicher. Das Aufraeumen der Temporaerdatei
+  // macht die zentrale Middleware in createApp.js — auch im Fehlerfall.
   router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), async (req, res) => {
     if (req.user.type !== 'konfi' && req.user.type !== 'teamer') {
       return res.status(403).json({ error: 'Konfi- oder Teamer-Zugriff erforderlich' });
     }
 
     try {
-      if (!req.file || !req.file.buffer) {
+      if (!req.file || !req.file.path) {
         return res.status(400).json({ error: 'Kein Foto hochgeladen' });
       }
 
-      // Magic-Bytes-Prüfung direkt auf dem Buffer (nur echte Bilder zulassen)
+      // Magic-Bytes-Prüfung auf den Kopfbytes (nur echte Bilder zulassen).
+      // Sie greift damit weiterhin VOR dem endgueltigen Ablegen.
       const { fileTypeFromBuffer } = await import('file-type');
-      const detected = await fileTypeFromBuffer(req.file.buffer);
+      const detected = await fileTypeFromBuffer(await leseKopfBytes(req.file.path));
       if (!detected || !detected.mime.startsWith('image/')) {
         return res.status(415).json({ error: 'Dateityp konnte nicht als Bild verifiziert werden' });
       }
@@ -809,8 +814,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Verschluesselt schreiben (Zielverzeichnis bei Bedarf anlegen)
       await fs.promises.mkdir(requestsDir, { recursive: true });
-      const encrypted = encryptBuffer(req.file.buffer);
-      await fs.promises.writeFile(photoPath, encrypted);
+      await encryptFileToFile(req.file.path, photoPath);
 
       res.json({
         filename: filename,
@@ -897,18 +901,20 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
 
-      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden
-      const fileBuffer = await fs.promises.readFile(photoPath);
-      let imageBuffer;
+      // Stromweise entschluesseln und senden (frueher: ganze Datei in den
+      // Arbeitsspeicher). Alte Klartext-Dateien reicht decryptFileToStream
+      // unveraendert durch, genau wie decryptBuffer es tat.
+      res.setHeader('Content-Type', 'image/jpeg');
       try {
-        imageBuffer = decryptBuffer(fileBuffer);
+        await decryptFileToStream(photoPath, res);
       } catch (decErr) {
         console.error('Error decrypting photo:', decErr);
-        return res.status(500).json({ error: 'Foto konnte nicht entschlüsselt werden' });
+        // Kopf ist bei einem Stromfehler schon draussen -> nur noch abbrechen.
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Foto konnte nicht entschlüsselt werden' });
+        }
+        res.destroy();
       }
-
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.send(imageBuffer);
     } catch (err) {
  console.error('Error serving photo:', err);
       res.status(500).json({ error: 'Serverfehler' });

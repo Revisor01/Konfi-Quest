@@ -99,6 +99,15 @@ services:
     deploy:
       resources:
         limits:
+          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
+          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
+          # 24.09.2026 stromweise ueber die Platte statt komplett durch den
+          # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
+          # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
+          # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
+          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
+          # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
+          # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
           memory: 512M
           cpus: '0.5'
     security_opt:
@@ -149,6 +158,15 @@ services:
     deploy:
       resources:
         limits:
+          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
+          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
+          # 24.09.2026 stromweise ueber die Platte statt komplett durch den
+          # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
+          # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
+          # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
+          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
+          # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
+          # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
           memory: 512M
           cpus: '0.5'
     security_opt:
@@ -215,6 +233,15 @@ services:
     deploy:
       resources:
         limits:
+          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
+          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
+          # 24.09.2026 stromweise ueber die Platte statt komplett durch den
+          # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
+          # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
+          # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
+          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
+          # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
+          # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
           memory: 512M
           cpus: '0.5'
     security_opt:

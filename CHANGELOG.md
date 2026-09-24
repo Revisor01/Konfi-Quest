@@ -28,6 +28,10 @@ Versionsüberschrift.
 ### Geändert
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
+- Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
+  Videoclips gehen beim Hochladen und Abrufen nicht mehr durch den
+  Arbeitsspeicher. Mehrere gleichzeitige Uploads bringen den Server damit nicht
+  mehr an seine Grenze — auch nicht, wenn viele Gemeinden zusammenkommen.
 
 ### Hinzugefügt
 - Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App

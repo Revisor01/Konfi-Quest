@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
+const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -840,7 +840,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
       }
 
-      // Magic-Bytes-Validierung auf den Buffern (echte Dateitypen erzwingen).
+      // Magic-Bytes-Validierung auf den Kopfbytes der Temporaerdateien (echte
+      // Dateitypen erzwingen). diskStorage liefert file.path statt file.buffer;
+      // zehn Dateien a 20 MB lagen sonst gleichzeitig im Arbeitsspeicher.
+      // Geprueft wird weiterhin ALLES, bevor die ERSTE Datei abgelegt wird.
       const { fileTypeFromBuffer } = await import('file-type');
       const textMimes = ['text/plain', 'text/csv'];
       const allowedPrefixes = [
@@ -851,11 +854,11 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         'application/zip', 'application/x-cfb'
       ];
       for (const file of req.files) {
-        if (!file.buffer) {
+        if (!file.path) {
           return res.status(400).json({ error: 'Datei konnte nicht gelesen werden' });
         }
         if (textMimes.includes(file.mimetype)) { continue; }
-        const detected = await fileTypeFromBuffer(file.buffer);
+        const detected = await fileTypeFromBuffer(await leseKopfBytes(file.path));
         if (!detected || !allowedPrefixes.some(p => detected.mime.startsWith(p))) {
           return res.status(415).json({ error: `Dateityp nicht verifizierbar: ${file.originalname}` });
         }
@@ -870,7 +873,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         // Zufaelliger Hex-Dateiname; verschlüsselt schreiben
         const storedName = crypto.randomBytes(32).toString('hex');
         const storedPath = path.join(materialDir, storedName);
-        await fs.promises.writeFile(storedPath, encryptBuffer(file.buffer));
+        await encryptFileToFile(file.path, storedPath);
 
         const { rows: [inserted] } = await db.query(
           `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
@@ -933,16 +936,17 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileRecord.original_name)}"`);
 
-      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
-      const fileBuffer = await fs.promises.readFile(filePath);
-      let dataBuffer;
+      // Stromweise entschluesseln und senden (frueher: ganze Datei in den
+      // Arbeitsspeicher).
       try {
-        dataBuffer = decryptBuffer(fileBuffer);
+        await decryptFileToStream(filePath, res);
       } catch (decErr) {
         console.error('Error decrypting material file:', decErr);
-        return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+        }
+        res.destroy();
       }
-      res.send(dataBuffer);
     } catch (err) {
       console.error('Fehler beim Herunterladen der Datei:', err.message);
       res.status(500).json({ error: 'Fehler beim Herunterladen der Datei' });

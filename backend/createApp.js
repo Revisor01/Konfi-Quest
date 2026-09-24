@@ -146,19 +146,53 @@ function createApp(db, options = {}) {
   const chatDir = path.join(uploadsDir, 'chat');
   const materialDir = path.join(uploadsDir, 'material');
   const challengesDir = path.join(uploadsDir, 'challenges');
+  // Zwischenlager fuer angenommene, noch nicht verschluesselte Uploads.
+  // Liegt IM Upload-Verzeichnis, damit es dasselbe gemountete Volume nutzt
+  // und nicht das Container-Dateisystem fuellt.
+  const tmpDir = path.join(uploadsDir, 'tmp');
 
   // Upload-Verzeichnisse erstellen
-  [uploadsDir, requestsDir, chatDir, materialDir, challengesDir].forEach(dir => {
+  [uploadsDir, requestsDir, chatDir, materialDir, challengesDir, tmpDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
   });
 
+  // Reste aus einem harten Abbruch (OOM-Kill, SIGKILL) beim Start wegraeumen.
+  // Beim normalen Beenden raeumt die Middleware unten auf; ein gekillter
+  // Prozess kommt dazu nicht mehr, und ohne diesen Lauf wuechse das
+  // Zwischenlager ueber Deploys hinweg still an.
+  try {
+    for (const name of fs.readdirSync(tmpDir)) {
+      try { fs.unlinkSync(path.join(tmpDir, name)); } catch { /* parallele Replica war schneller */ }
+    }
+  } catch { /* Verzeichnis nicht lesbar — kein Grund, den Start zu verhindern */ }
+
+  // Zwischenlager-Speicher fuer ALLE Upload-Routen.
+  //
+  // Vorher: multer.memoryStorage(). Eine angenommene Datei lag komplett im
+  // Heap — bei 50 MB Challenge-Limit und 512 MB Container-Grenze reichten
+  // rechnerisch neun gleichzeitige Uploads fuer einen OOM-Kill durch Docker.
+  // Der Rate-Limiter bremst die RATE (100 je 15 min), nicht die
+  // GLEICHZEITIGKEIT.
+  //
+  // Jetzt: diskStorage. Die Datei landet unter uploads/tmp/, die Route liest
+  // nur die ersten Bytes fuer die Magic-Bytes-Pruefung und verschluesselt
+  // danach stromweise (photoCrypto.encryptFileToFile) an ihren Platz. Im Heap
+  // liegen nie mehr als 64 KiB je Upload.
+  //
+  // WICHTIG: Im Route-Handler gibt es deshalb kein req.file.buffer mehr,
+  // sondern req.file.path. Das Aufraeumen der Temporaerdatei macht die
+  // Middleware weiter unten — auch im Fehlerfall und bei abgebrochenen
+  // Uploads.
+  const zwischenlager = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, tmpDir),
+    filename: (req, file, cb) => cb(null, require('crypto').randomBytes(24).toString('hex')),
+  });
+
   // Chat Upload Config (verschluesselte Dateinamen)
-  // memoryStorage: Chat-Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (chat.js) verschlüsselt auf die Platte geschrieben.
   const chatUpload = multer({
-    storage: multer.memoryStorage(),
+    storage: zwischenlager,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
@@ -184,10 +218,8 @@ function createApp(db, options = {}) {
   });
 
   // Material Upload Config (20MB Limit)
-  // memoryStorage: Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (material.js) verschlüsselt auf die Platte geschrieben.
   const materialUpload = multer({
-    storage: multer.memoryStorage(),
+    storage: zwischenlager,
     limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
@@ -218,11 +250,8 @@ function createApp(db, options = {}) {
   });
 
   // Request Upload Config (nur Bilder, 5MB)
-  // memoryStorage: Foto landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (konfi.js /upload-photo) verschlüsselt auf die Platte
-  // geschrieben. Der Dateiname wird dort nach erfolgreicher Validierung erzeugt.
   const requestUpload = multer({
-    storage: multer.memoryStorage(),
+    storage: zwischenlager,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       if (file.mimetype.startsWith('image/')) {
@@ -235,11 +264,8 @@ function createApp(db, options = {}) {
 
   // Challenge Upload Config (50MB Limit — Konfis reichen auch Sprachaufnahmen
   // und kurze Videoclips ein, nicht nur Fotos).
-  // memoryStorage: Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (challenges.js) nach der Magic-Bytes-Prüfung verschlüsselt
-  // auf die Platte geschrieben.
   const challengeUpload = multer({
-    storage: multer.memoryStorage(),
+    storage: zwischenlager,
     limits: { fileSize: CHALLENGE_UPLOAD_LIMIT },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
@@ -254,6 +280,39 @@ function createApp(db, options = {}) {
         cb(null, false);
       }
     }
+  });
+
+  // Zwischenlager aufraeumen — ausnahmslos.
+  //
+  // Ein diskStorage ohne Aufraeumen tauscht ein Speicherleck gegen ein
+  // Plattenleck. Diese Middleware haengt sich an 'close' des Response-Objekts:
+  // das feuert bei Erfolg, bei jedem Fehler UND wenn der Client die Verbindung
+  // abbricht (abgebrochener Upload) — anders als 'finish', das nur bei
+  // vollstaendig gesendeter Antwort feuert.
+  //
+  // Verschoben wird nie: die Routen verschluesseln die Datei an ihren Platz und
+  // lassen das Original hier liegen. Ein Loeschen ist damit immer richtig, und
+  // ein ENOENT (Route hat schon selbst aufgeraeumt) ist kein Fehler.
+  app.use((req, res, next) => {
+    res.on('close', () => {
+      const dateien = [];
+      if (req.file) dateien.push(req.file);
+      if (Array.isArray(req.files)) dateien.push(...req.files);
+      else if (req.files && typeof req.files === 'object') {
+        for (const liste of Object.values(req.files)) {
+          if (Array.isArray(liste)) dateien.push(...liste);
+        }
+      }
+      for (const datei of dateien) {
+        if (!datei || !datei.path) continue;
+        fs.unlink(datei.path, (err) => {
+          if (err && err.code !== 'ENOENT') {
+            console.error('Zwischenlager-Datei nicht geloescht:', datei.path, err.message);
+          }
+        });
+      }
+    });
+    next();
   });
 
   // ====================================================================
@@ -354,12 +413,31 @@ function createApp(db, options = {}) {
     res.status(dbOk ? 200 : 503).json(body);
   });
 
+  // Zustand des Datenbank-Pools als ZUSATZFELD im Metrik-Schnappschuss.
+  //
+  // Warum hier und nicht in /api/health: Der Gesundheitspfad ist oeffentlich
+  // erreichbar und Traefik prueft ihn alle 5 Sekunden. Pool-Innereien gehoeren
+  // nicht nach draussen, und der Aufruf darf nicht teurer werden.
+  //
+  // wartend > 0 ist die Zahl, auf die es ankommt: Anfragen stehen an, weil
+  // alle Pool-Plaetze belegt sind. Ein Konfi-Dashboard belegt allein zehn
+  // (neun parallele Abfragen plus die aeussere Verbindung).
+  const schnappschussMitPool = () => {
+    const snap = apmSnapshot();
+    // db ist normalerweise das Singleton aus database.js; wer createApp mit
+    // einem eigenen Objekt aufruft, bekommt das Feld schlicht nicht.
+    const pool = typeof db.poolZustand === 'function' ? db.poolZustand() : null;
+    // NUR HINZUFUEGEN, nichts umbenennen oder weglassen: aeltere
+    // Oberflaechen-Fassungen lesen dieselbe Antwort weiter.
+    return pool ? { ...snap, dbPool: pool } : snap;
+  };
+
   // Roh-Snapshot NUR dieser Replica (für die Peer-Aggregation; auch direkt nutzbar).
   app.get('/api/metrics/local', rbacVerifier, (req, res) => {
     if (!req.user?.is_super_admin) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
-    res.json(apmSnapshot());
+    res.json(schnappschussMitPool());
   });
 
   // Metrics-Endpoint — APM-Aggregate (langsamste/meistgenutzte Routen, parallele
@@ -377,7 +455,7 @@ function createApp(db, options = {}) {
     const peers = (process.env.METRICS_PEERS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (peers.length === 0) {
       // Single-Replica: lokaler Snapshot, einheitliches Format (mit replicas-Feld).
-      return res.json(apmMerge([apmSnapshot()]));
+      return res.json(apmMerge([schnappschussMitPool()]));
     }
     const auth = req.headers.authorization || '';
     const fetchPeer = async (base) => {

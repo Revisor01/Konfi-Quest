@@ -31,7 +31,7 @@ const { formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
+const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { deleteChallengeFile } = require('../utils/photoStorage');
 const PushService = require('../services/pushService');
@@ -359,12 +359,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   }
 
-  // Datei aus dem Upload-Buffer verschlüsselt ablegen. Gibt den Hex-Dateinamen
-  // zurück (die Abruf-Route akzeptiert nur [a-f0-9]+).
-  async function storeUploadedFile(buffer) {
+  // Verschluesselt die Temporaerdatei des Uploads stromweise an ihren Platz und
+  // gibt den Hex-Dateinamen zurück (die Abruf-Route akzeptiert nur [a-f0-9]+).
+  // Nimmt einen PFAD, keinen Buffer: eine 50-MB-Einreichung laege sonst
+  // komplett im Arbeitsspeicher (512-MB-Grenze je Container).
+  async function storeUploadedFile(quellPfad) {
     const filename = crypto.randomBytes(32).toString('hex');
     await fs.promises.mkdir(challengeDir, { recursive: true });
-    await fs.promises.writeFile(path.join(challengeDir, filename), encryptBuffer(buffer));
+    await encryptFileToFile(quellPfad, path.join(challengeDir, filename));
     return filename;
   }
 
@@ -765,11 +767,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         let filePath = null;
         let fileName = null;
         if (req.file) {
-          if (!req.file.buffer) {
+          if (!req.file.path) {
             return res.status(400).json({ error: 'Datei konnte nicht gelesen werden' });
           }
+          // Die Magic-Bytes-Pruefung braucht nur die Kopfbytes — sie greift
+          // damit weiterhin VOR dem endgueltigen Ablegen.
           const { fileTypeFromBuffer } = await import('file-type');
-          const detected = await fileTypeFromBuffer(req.file.buffer);
+          const detected = await fileTypeFromBuffer(await leseKopfBytes(req.file.path));
           const expectedPrefix = media_type === 'photo' ? 'image/'
             : media_type === 'audio' ? 'audio/'
               : 'video/';
@@ -780,7 +784,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           if (!detected || (!detected.mime.startsWith(expectedPrefix) && !audioFallback)) {
             return res.status(415).json({ error: 'Dateityp konnte nicht verifiziert werden' });
           }
-          filePath = await storeUploadedFile(req.file.buffer);
+          filePath = await storeUploadedFile(req.file.path);
           fileName = req.file.originalname;
         }
 
@@ -1086,15 +1090,17 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
       }
 
-      const fileBuffer = await fs.promises.readFile(filePath);
-      let mediaBuffer;
+      // Stromweise entschluesseln (frueher: 50-MB-Video komplett in den
+      // Arbeitsspeicher, einmal als Ciphertext und einmal als Klartext).
       try {
-        mediaBuffer = decryptBuffer(fileBuffer);
+        await decryptFileToStream(filePath, res);
       } catch (decErr) {
         console.error('Error decrypting challenge file:', decErr);
-        return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+        }
+        res.destroy();
       }
-      res.send(mediaBuffer);
     } catch (error) {
       console.error('Error serving challenge file:', error);
       res.status(500).json({ error: 'Serverfehler' });
