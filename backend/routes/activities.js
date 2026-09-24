@@ -6,7 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { heuteBerlin } = require('../utils/zeitformat');
-const { decryptBuffer } = require('../utils/photoCrypto');
+const { decryptFileToStream } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
@@ -894,19 +894,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
 
-      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
+      // Stromweise entschluesseln und senden (frueher: ganze Datei in den
+      // Arbeitsspeicher).
       // Admins sehen das Foto unabhaengig vom Status (auch verbucht/abgelehnt).
-      const fileBuffer = await fs.promises.readFile(photoPath);
-      let imageBuffer;
+      res.setHeader('Content-Type', 'image/jpeg');
       try {
-        imageBuffer = decryptBuffer(fileBuffer);
+        await decryptFileToStream(photoPath, res);
       } catch (decErr) {
         console.error('Error decrypting activity request photo:', decErr);
-        return res.status(500).json({ error: 'Foto konnte nicht entschlüsselt werden' });
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Foto konnte nicht entschlüsselt werden' });
+        }
+        res.destroy();
       }
-
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.send(imageBuffer);
     } catch (err) {
  console.error('Error serving activity request photo:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Fotos' });

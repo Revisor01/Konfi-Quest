@@ -28,6 +28,10 @@ Versionsüberschrift.
 ### Geändert
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
+- Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und
+  Videoclips gehen beim Hochladen und Abrufen nicht mehr durch den
+  Arbeitsspeicher. Mehrere gleichzeitige Uploads bringen den Server damit nicht
+  mehr an seine Grenze — auch nicht, wenn viele Gemeinden zusammenkommen.
 
 ### Hinzugefügt
 - Im Profil steht unter „Mitteilungen prüfen", ob Mitteilungen für die App
@@ -36,6 +40,9 @@ Versionsüberschrift.
   einschaltet.
 
 ### Sonstiges
+- Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
+  ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
+  wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,

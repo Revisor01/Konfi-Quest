@@ -9,7 +9,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const { chatPushText } = require('../utils/pushText');
-const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
+const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
 const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
@@ -1113,16 +1113,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       let filePath = null, fileName = null, fileSize = null;
       let actualMessageType = message_type;
       if (req.file) {
-        if (!req.file.buffer) {
+        if (!req.file.path) {
           return res.status(400).json({ error: 'Datei konnte nicht gelesen werden' });
         }
 
-        // Magic-Bytes-Prüfung direkt auf dem Buffer (echte Dateitypen erzwingen).
+        // Magic-Bytes-Prüfung auf den Kopfbytes der Temporaerdatei (echte
+        // Dateitypen erzwingen) — sie greift damit weiterhin VOR dem
+        // endgueltigen Ablegen.
         // Text-Formate (txt/csv) haben keine Magic Bytes -> Header vertrauen.
         const textMimes = ['text/plain', 'text/csv'];
         if (!textMimes.includes(req.file.mimetype)) {
           const { fileTypeFromBuffer } = await import('file-type');
-          const detected = await fileTypeFromBuffer(req.file.buffer);
+          const detected = await fileTypeFromBuffer(await leseKopfBytes(req.file.path));
           const allowedPrefixes = [
             'image/', 'video/', 'audio/', 'application/pdf',
             'application/vnd.openxmlformats', 'application/msword',
@@ -1140,8 +1142,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         const chatDir = path.join(uploadsDir, 'chat');
         const chatFilePath = path.join(chatDir, filename);
         await fs.promises.mkdir(chatDir, { recursive: true });
-        const encrypted = encryptBuffer(req.file.buffer);
-        await fs.promises.writeFile(chatFilePath, encrypted);
+        await encryptFileToFile(req.file.path, chatFilePath);
 
         filePath = filename;
         fileName = req.file.originalname;
@@ -1873,18 +1874,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           }
         }
 
-        // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
-        // Alte Klartext-Dateien werden vom decryptBuffer unverändert
+        // Stromweise entschluesseln und senden (frueher: ganze Datei in den
+        // Arbeitsspeicher). Alte Klartext-Dateien werden unveraendert
         // durchgereicht (Abwaertskompatibilitaet bis zur Migration).
-        const fileBuffer = await fs.promises.readFile(filePath);
-        let mediaBuffer;
         try {
-          mediaBuffer = decryptBuffer(fileBuffer);
+          await decryptFileToStream(filePath, res);
         } catch (decErr) {
           console.error('Error decrypting chat file:', decErr);
-          return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+          if (!res.headersSent) {
+            return res.status(500).json({ error: 'Datei konnte nicht entschlüsselt werden' });
+          }
+          res.destroy();
         }
-        res.send(mediaBuffer);
       } else {
         res.status(404).json({ error: 'Datei nicht auf dem Server gefunden' });
       }

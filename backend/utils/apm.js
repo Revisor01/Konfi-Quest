@@ -809,13 +809,24 @@ function mergeSnapshots(snaps) {
       grenze: MAX_ROUTE_KEYS,
       verworfen: valid.reduce((s, x) => s + ((x.routeSchluessel || {}).verworfen || 0), 0),
     },
-    // Lastverteilung: Anteil der Requests pro Replica.
+    // Lastverteilung: Anteil der Requests pro Replica — plus deren
+    // Datenbank-Pool. Jede Replica hat ihren EIGENEN Pool; eine Summe waere
+    // irrefuehrend, weil nicht sie, sondern der einzelne volle Pool blockiert.
     replicas: valid.map(x => ({
       replica: x.replica,
       requests: x.totalRequests,
       inFlight: x.inFlight,
       share: totalRequests ? +(x.totalRequests / totalRequests).toFixed(3) : 0,
+      dbPool: x.dbPool || null,
     })),
+    // Nur zusaetzlich, nichts weggelassen: die Summe ueber alle Replicas als
+    // schnelle Antwort auf "stehen gerade Anfragen an?".
+    dbPool: valid.some(x => x.dbPool) ? {
+      gesamt: valid.reduce((s, x) => s + ((x.dbPool || {}).gesamt || 0), 0),
+      frei: valid.reduce((s, x) => s + ((x.dbPool || {}).frei || 0), 0),
+      wartend: valid.reduce((s, x) => s + ((x.dbPool || {}).wartend || 0), 0),
+      max: valid.reduce((s, x) => s + ((x.dbPool || {}).max || 0), 0),
+    } : null,
   };
 }
 
