@@ -325,6 +325,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                         onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                         placeholder="Jahrgang wählen"
                         interface="popover"
+                        interfaceOptions={{ arrow: false }}
                       >
                         {hasEventJahrgaenge ? (
                           <>
@@ -353,6 +354,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                         onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
                         placeholder="Zeitslot wählen"
                         interface="popover"
+                        interfaceOptions={{ arrow: false }}
                       >
                         <IonSelectOption value={null}>Zeitslot wählen...</IonSelectOption>
                         {eventData.timeslots.map((timeslot) => {

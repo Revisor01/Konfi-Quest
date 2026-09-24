@@ -364,6 +364,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                     <IonRange
                       min={1} max={5} step={1}
+                  /* Rastermarken: Bei 1-5 Punkten sind die Stufen abzaehlbar,
+                     das trifft man schneller als per Ziehen. `ticks` zeigt sie,
+                     `snaps` laesst den Regler einrasten — Ionic zeichnet die
+                     Marken nur, wenn beides gesetzt ist. Bei den groesseren
+                     Reglern (Level 1-40, Abzeichen 1-26) bewusst NICHT: Dort
+                     stuenden die Marken zu dicht. */
+                  ticks={true} snaps={true}
                       pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.points}
                       onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}

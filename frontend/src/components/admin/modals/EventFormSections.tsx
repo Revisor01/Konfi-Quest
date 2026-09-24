@@ -143,7 +143,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             }}
             disabled={loading}
             interface="popover"
-            interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+            interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
           >
             <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
             <IonSelectOption value="teamer_needed">Konfis, Team gesucht</IonSelectOption>
@@ -293,7 +293,14 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
                   <span className="app-range-row__min">1</span>
                   <IonRange
                     className="app-range app-range--events"
-                    min={1} max={50} step={1}
+                    /* Bis 30 statt 50 mit Rastermarken (24.09.2026, Simons Vorgabe).
+                       WICHTIG, gemessen in Produktion: 6 von 186 Terminen haben mehr
+                       als 30 Plaetze, der hoechste 50. Der Regler muss deshalb
+                       mitwachsen, sonst faellt so ein Termin beim naechsten Speichern
+                       still auf 30 — und das merkt erst, wer sich nicht anmelden kann.
+                       Dasselbe Muster nutzt der Teamer-Regler weiter unten. */
+                    min={1} max={Math.max(30, formData.max_participants)} step={1}
+                    ticks={formData.max_participants <= 30} snaps={true}
                     pin={true} pinFormatter={(value: number) => `${value}`}
                     value={formData.max_participants}
                     onIonChange={(e) => setFormData({ ...formData, max_participants: e.detail.value as number })}
@@ -326,6 +333,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
                       <IonRange
                         className="app-range app-range--events"
                         min={1} max={10} step={1}
+                        ticks={true} snaps={true}
                         pin={true} pinFormatter={(value: number) => `${value}`}
                         value={formData.max_waitlist_size}
                         onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
@@ -350,6 +358,13 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
                 <IonRange
                   className="app-range app-range--events"
                   min={1} max={5} step={1}
+                  /* Rastermarken: Bei 1-5 Punkten sind die Stufen abzaehlbar,
+                     das trifft man schneller als per Ziehen. `ticks` zeigt sie,
+                     `snaps` laesst den Regler einrasten — Ionic zeichnet die
+                     Marken nur, wenn beides gesetzt ist. Bei den groesseren
+                     Reglern (Level 1-40, Abzeichen 1-26) bewusst NICHT: Dort
+                     stuenden die Marken zu dicht. */
+                  ticks={true} snaps={true}
                   pin={true} pinFormatter={(value: number) => `${value}`}
                   value={formData.points}
                   onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
@@ -552,6 +567,7 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
               <IonRange
                 className="app-range app-range--events"
                 min={1} max={25} step={1}
+                ticks={true} snaps={true}
                 pin={true} pinFormatter={(value: number) => `${value}`}
                 value={Math.min(formData.teamer_max_participants, 25)}
                 onIonChange={(e) => setFormData({ ...formData, teamer_max_participants: e.detail.value as number })}
@@ -582,6 +598,7 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
                 <IonRange
                   className="app-range app-range--events"
                   min={1} max={10} step={1}
+                  ticks={true} snaps={true}
                   pin={true} pinFormatter={(value: number) => `${value}`}
                   value={formData.teamer_max_waitlist_size}
                   onIonChange={(e) => setFormData({ ...formData, teamer_max_waitlist_size: e.detail.value as number })}
@@ -656,6 +673,7 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                   <IonRange
                     className="app-range app-range--events"
                     min={2} max={maxCount} step={1}
+                    ticks={true} snaps={true}
                     pin={true} pinFormatter={(value: number) => `${value}`}
                     value={Math.min(formData.series_count, maxCount)}
                     onIonChange={(e) => setFormData({ ...formData, series_count: e.detail.value as number })}
@@ -681,7 +699,7 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                   placeholder="Intervall wählen"
                   disabled={loading}
                   interface="popover"
-                  interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+                  interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
                 >
                   <IonSelectOption value="day">Täglich</IonSelectOption>
                   <IonSelectOption value="week">Wöchentlich</IonSelectOption>

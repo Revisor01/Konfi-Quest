@@ -507,6 +507,7 @@ const AdminWrappedPage: React.FC = () => {
                       <IonSelect
                         placeholder="Jahrgang"
                         interface="popover"
+                        interfaceOptions={{ arrow: false }}
                         style={{ width: '100%' }}
                         value={neuerJahrgang}
                         onIonChange={(e) => setNeuerJahrgang(e.detail.value)}

@@ -554,7 +554,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
                         <span className="app-range-row__min">1</span>
                         <IonRange
                           className="app-range app-range--events"
-                          min={1} max={10} step={1}
+                          /* 1-20 (24.09.2026, Simons Vorgabe). In Produktion
+                             gemessen: 6 Zeitfenster, hoechster Wert 4 — keins
+                             ueber 20, ein Schutz fuer Bestandswerte ist hier
+                             also nicht noetig (anders als beim Teilnehmer-Regler). */
+                          min={1} max={20} step={1}
+                          ticks={true} snaps={true}
                           pin={true} pinFormatter={(value: number) => `${value}`}
                           value={timeslot.max_participants}
                           onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.value as number)}

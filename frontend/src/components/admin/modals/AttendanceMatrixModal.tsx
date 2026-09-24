@@ -279,6 +279,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                 value={jahrgangId}
                 onIonChange={(e) => setJahrgangId(e.detail.value)}
                 interface="popover"
+                interfaceOptions={{ arrow: false }}
                 placeholder="Jahrgang"
                 style={{ width: '100%' }}
               >

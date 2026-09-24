@@ -270,6 +270,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 value={selectedJahrgang}
                 onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
                 interface="popover"
+                interfaceOptions={{ arrow: false }}
                 placeholder="Jahrgang"
                 style={{ width: '100%' }}
               >
@@ -288,6 +289,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 value={sortBy}
                 onIonChange={(e) => setSortBy(e.detail.value)}
                 interface="popover"
+                interfaceOptions={{ arrow: false }}
                 placeholder="Sortierung"
                 style={{ width: '100%' }}
               >

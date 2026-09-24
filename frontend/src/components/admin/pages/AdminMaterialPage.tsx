@@ -282,6 +282,7 @@ const AdminMaterialPage: React.FC = () => {
                         setActiveJahrgangId(wert === 'alle' || wert === 'global' ? undefined : wert);
                       }}
                       interface="popover"
+                      interfaceOptions={{ arrow: false }}
                       placeholder="Jahrgang"
                       style={{ width: '100%' }}
                     >

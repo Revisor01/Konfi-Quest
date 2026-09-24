@@ -654,6 +654,7 @@ const TeamerMaterialPage: React.FC = () => {
                       value={activeJahrgangId ?? 'alle'}
                       onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
                       interface="popover"
+                      interfaceOptions={{ arrow: false }}
                       placeholder="Jahrgang"
                       style={{ width: '100%' }}
                     >

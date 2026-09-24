@@ -1182,6 +1182,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       value={memberRole}
                       onIonChange={(e) => setMemberRole(e.detail.value)}
                       interface="popover"
+                      interfaceOptions={{ arrow: false }}
                       slot="end"
                     >
                       {MEMBER_ROLE_OPTIONS.map(r => (
@@ -1279,7 +1280,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonSelect
                       value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
                       interface="popover"
-                      interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+                      interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
                       placeholder="Tarif wählen"
                       onIonChange={(e) => {
                         const val = e.detail.value;
@@ -1364,7 +1365,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonSelect
                       value={isCustomTrialDate ? -1 : (trialEndsAt ? -2 : 0)}
                       interface="popover"
-                      interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+                      interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
                       placeholder="Zeitraum wählen"
                       onIonChange={(e) => {
                         const days = e.detail.value as number;

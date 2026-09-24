@@ -143,6 +143,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
               value={selectedFilter}
               onIonChange={(e) => setSelectedFilter(e.detail.value)}
               interface="popover"
+              interfaceOptions={{ arrow: false }}
               placeholder="Status"
               style={{ width: '100%' }}
             >

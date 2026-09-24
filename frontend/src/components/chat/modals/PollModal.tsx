@@ -308,6 +308,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                     value={expirationHours}
                     onIonChange={(e) => setExpirationHours(e.detail.value)}
                     interface="popover"
+                    interfaceOptions={{ arrow: false }}
                     label="Ablaufzeit"
                     labelPlacement="start"
                   >

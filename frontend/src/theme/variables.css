@@ -1023,29 +1023,40 @@ ion-content::part(background)::after {
   content: none !important;
 }
 
-/* Solideres Popover Styling für IonSelect */
-ion-popover {
+/* Popover: auf iOS macht das Theme den Look, sonst unsere Werte (24.09.2026)
+ *
+ * Hier stand ein durchgaengig weisses Popover mit hartem Rand und eigenem
+ * Schatten. Auf iOS uebermalte das den Glas-Look des Themes
+ * (`backdrop-filter: blur(20px) saturate(180%)` auf ::part(content), dazu ein
+ * geschwungener Pfeil) — dasselbe Muster wie zuvor bei ion-card.
+ *
+ * Deshalb greifen die eigenen Werte jetzt nur noch dort, wo das Theme NICHT
+ * zustaendig ist: auf Android und im Browser ohne iOS-Modus.
+ */
+ion-popover:not(.ios) {
   --background: var(--app-weiss);
   --backdrop-opacity: 0.3;
   --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
-ion-popover::part(backdrop) {
+ion-popover:not(.ios)::part(backdrop) {
   background: rgba(0, 0, 0, 0.4);
 }
 
-ion-popover::part(content) {
+ion-popover:not(.ios)::part(content) {
   border-radius: var(--app-radius-weich);
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: var(--app-weiss);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-ion-popover ion-list {
+/* Auch hier nur ausserhalb des iOS-Themes: Ein weisser Listenhintergrund
+   deckt das Glas von innen wieder zu. */
+ion-popover:not(.ios) ion-list {
   background: var(--app-weiss);
 }
 
-ion-popover ion-item {
+ion-popover:not(.ios) ion-item {
   --background: var(--app-weiss);
 }
 

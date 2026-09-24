@@ -13,7 +13,13 @@ const config: CapacitorConfig = {
   // mitgelieferten Buendel -- Aenderungen am CSS sind dann sofort auf dem Geraet
   // zu sehen, ohne neu zu bauen. NUR fuer die Entwicklung:
   //
-  //   CAP_LIVE_URL=http://$(scutil --get LocalHostName).local:5173 npx cap sync ios
+  //   CAP_LIVE_URL="http://$(scutil --get LocalHostName | tr 'A-Z' 'a-z').local:5173" \
+  //     npx cap sync ios
+  //
+  // KLEINSCHREIBUNG IST PFLICHT (24.09.2026): Bonjour loest den Namen
+  // kleingeschrieben auf, Capacitor vergleicht den geladenen Host aber strikt
+  // mit dieser Adresse. Steht hier "MacBook-Air-...", haelt die App die eigene
+  // Seite fuer fremd und oeffnet sie in Safari, statt sie selbst zu laden.
   //
   // BESSER DER NAME ALS DIE IP: Am 24.09.2026 hat die Adresse dreimal
   // gewechselt (WLAN -> Hotspot -> USB-Hotspot), und jedes Mal musste die App

@@ -59,7 +59,14 @@ Versionsüberschrift.
   Aufrufzahlen stehen als Zahl in den Kennzahlen, die Fehler mit Zeitpunkt
   unter „Fehler".
 
+### Geändert
+- Die Regler für Punkte, Plätze und Wiederholungen zeigen jetzt Rastermarken
+  und rasten darauf ein. Die Höchstwerte für Teilnehmende und Zeitfenster sind
+  auf ein alltagstaugliches Maß gesetzt; bestehende Termine mit mehr Plätzen
+  behalten ihre Zahl.
+
 ### Behoben
+- Auswahllisten öffnen sich ohne den kleinen Zipfel am Rand.
 - Die Hinweise im Profil („Was ist neu", „Events und Aktivitäten") zeigen
   rechts keinen Pfeil mehr.
 - „Mitteilungen prüfen" ist aus dem Profil verschwunden. Die Anzeige war für

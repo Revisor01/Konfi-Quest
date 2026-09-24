@@ -308,6 +308,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         }}
                         placeholder="Jahrgang wählen"
                         interface="popover"
+                        interfaceOptions={{ arrow: false }}
                       >
                         {(jahrgaenge || []).map((jahrgang) => (
                           <IonSelectOption key={jahrgang.id} value={jahrgang.id}>

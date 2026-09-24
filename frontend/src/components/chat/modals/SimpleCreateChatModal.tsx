@@ -456,6 +456,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     onIonChange={(e) => setSelectedRole(e.detail.value!)}
                     placeholder="Alle Rollen"
                     interface="popover"
+                    interfaceOptions={{ arrow: false }}
                     style={{ width: '100%' }}
                   >
                     <IonSelectOption value="alle">Alle</IonSelectOption>
@@ -477,6 +478,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                     placeholder="Alle Jahrgänge"
                     interface="popover"
+                    interfaceOptions={{ arrow: false }}
                     style={{ width: '100%' }}
                   >
                     <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>

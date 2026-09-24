@@ -204,6 +204,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 value={selectedJahrgang}
                 onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
                 interface="popover"
+                interfaceOptions={{ arrow: false }}
                 placeholder="Jahrgang"
                 style={{ width: '100%' }}
               >
