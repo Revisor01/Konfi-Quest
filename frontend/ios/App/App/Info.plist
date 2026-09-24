@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.3.0</string>
 	<key>CFBundleVersion</key>
-	<string>213</string>
+	<string>214</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
