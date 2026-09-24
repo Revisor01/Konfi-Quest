@@ -1509,12 +1509,24 @@ paths:
         zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage),
         `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.
 
+        ERWEITERT (24.09.2026) — ebenfalls rein additiv:
+
+        * `dbPool` — {gesamt, frei, wartend, max}. Zustand des
+          Datenbank-Verbindungspools. `wartend` ist die Zahl, auf die es
+          ankommt: Anfragen stehen an, weil alle Plaetze belegt sind. Ein
+          Konfi-Dashboard-Aufruf belegt allein zehn Plaetze (neun parallele
+          Abfragen plus die aeussere Verbindung). Bei mehreren Replicas ist
+          `dbPool` die Summe und `replicas[].dbPool` der Zustand je Replica —
+          jede hat ihren EIGENEN Pool, und es blockiert der einzelne volle,
+          nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der
+          Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.
+
         BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
         Route, die sowohl in routesSlowest als auch in routesBusiest stand,
         doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen
         Stand nachgemessen.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial und fehlerGruppen" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial und fehlerGruppen" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
@@ -1535,7 +1547,8 @@ paths:
         Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
         /metrics für die Peer-Aggregation genutzt, ist aber auch direkt
         aufrufbar. Enthält dieselben Felder wie /metrics (siehe dort, inkl.
-        der Erweiterung vom 22.09.2026), nur ohne replicas.
+        der Erweiterungen vom 22.09.2026 und 24.09.2026), nur ohne replicas.
+        `dbPool` ist hier der Zustand genau dieser Replica.
       responses:
         "200": { description: "APM-Snapshot dieser Replica" }
         "401": { $ref: "#/components/responses/Unauthorized" }

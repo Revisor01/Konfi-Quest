@@ -40,6 +40,9 @@ Versionsüberschrift.
   einschaltet.
 
 ### Sonstiges
+- Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
+  ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
+  wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
 - Stürzt die App ab, wird das jetzt automatisch gemeldet, damit die Ursache
   gefunden werden kann. Übertragen werden nur technische Angaben und die Rolle
   in grober Einteilung — kein Name, keine Kennung. Was dabei an Google geht,

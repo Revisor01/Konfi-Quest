@@ -43,6 +43,15 @@ function getTestPool() {
     query: (text, params) => pool.query(text, params),
     getClient: () => pool.connect(),
     end: () => pool.end(),
+    // Wie database.js: Zustand des Verbindungspools. Ohne diese Zeile faellt
+    // die Metrik-Route im Test in den Notweg und dbPool fehlt — dann wuerde der
+    // Test etwas anderes pruefen als die Produktion tut.
+    poolZustand: () => ({
+      gesamt: pool.totalCount,
+      frei: pool.idleCount,
+      wartend: pool.waitingCount,
+      max: pool.options.max,
+    }),
   };
 }
 
