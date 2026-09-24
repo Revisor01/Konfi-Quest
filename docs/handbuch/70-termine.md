@@ -247,6 +247,22 @@ Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin
 abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder
 ein Push. Pflicht-Events haben ihren eigenen Push beim Anlegen.
 
+### Aus einer Mitteilung zum Termin springen
+
+Tippst du eine Mitteilung zu einem Termin an, öffnet die App den Termin selbst —
+nicht die Terminliste. Das gilt für alle Termin-Mitteilungen: Anmeldung,
+Abmeldung, Nachrücken von der Warteliste, bestätigte Teilnahme, Erinnerung,
+Änderung und Absage. Auch die Meldung an die Leitung, dass sich eine Teamerin
+oder ein Teamer an- oder abgemeldet hat, führt direkt zum Termin.
+
+Zwei Ausnahmen:
+
+- **Teamer:innen** landen auf ihrer Terminliste. Ihre Ansicht hat keine eigene
+  Detailseite je Termin.
+- Ist der Termin **gelöscht**, bleibt es bei der Liste — die Mitteilung trägt
+  dann keine Kennung mit, damit niemand auf einer Seite landet, die es nicht
+  mehr gibt.
+
 ### Wissen, bis wann Konfis sich abmelden können
 
 **Zwei Tage vor dem Termin ist Schluss.** Danach ist der Abmelden-Knopf

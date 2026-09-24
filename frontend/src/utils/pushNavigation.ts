@@ -148,12 +148,27 @@ export const buildPushTargetUrl = (
       return `${routePrefix}/events`;
     }
 
+    // Anmeldung, Abmeldung, Nachruecken, Teilnahme, Erinnerung: zum Termin.
+    //
+    // Simons Befund am Geraet (24.09.2026): "Der Push leitet mich nur zur
+    // allgemeinen Events-Liste und nicht ins Event." Auf beiden Wegen --
+    // Teamer meldet sich an (Push an die Leitung), Konfi wird ueber das Web
+    // hinzugefuegt (Push an den Konfi).
+    //
+    // Die Kennung kam in all diesen Pushes immer schon mit; sie wurde hier
+    // nur nie gelesen. event_changed und event_cancelled machen es laengst
+    // so -- das Muster war da, nur nicht ueberall ausgerollt.
     case 'event_registered':
     case 'event_unregistered':
     case 'waitlist_promotion':
     case 'event_attendance':
-    case 'event_reminder':
+    case 'event_reminder': {
+      const evId = data?.event_id || data?.eventId;
+      if (evId && (userType === 'konfi' || userType === 'admin')) {
+        return `${routePrefix}/events/${evId}`;
+      }
       return `${routePrefix}/events`;
+    }
 
     // Zuruecknahme der Absage (16.09.2026): dasselbe Ziel wie die Absage.
     // Der Push sagt "prüf bitte, ob du Zeit hast, und melde dich sonst ab" —
@@ -230,11 +245,23 @@ export const buildPushTargetUrl = (
     }
 
     case 'teamer_event_booking':
-    case 'teamer_event_cancellation':
-      // Meldungen an die Leitung ueber Teamer-Buchungen: zur Terminliste
-      // der Leitung. Andere Rollen bekommen diese Pushes nicht, fallen aber
-      // sauber auf ihre eigene Liste zurueck.
+    case 'teamer_event_cancellation': {
+      // Meldungen an die Leitung ueber Teamer-Buchungen: zum Termin, wenn die
+      // Kennung mitkommt -- dort steht, WER sich an-/abgemeldet hat, und bei
+      // einer Absage der Grund. Auf der Liste steht davon nichts.
+      //
+      // ACHTUNG, Stolperstelle: Diese beiden Pushes tragen die Kennung als
+      // `eventId` (camelCase, pushService.js:2261), waehrend die Konfi-Pushes
+      // `event_id` senden. Deshalb hier wie ueberall beide lesen.
+      //
+      // Andere Rollen bekommen diese Pushes nicht, fallen aber sauber auf ihre
+      // eigene Liste zurueck.
+      const evId = data?.event_id || data?.eventId;
+      if (evId && (userType === 'konfi' || userType === 'admin')) {
+        return `${routePrefix}/events/${evId}`;
+      }
       return `${routePrefix}/events`;
+    }
 
     case 'challenge_badge_earned':
       // Stempel aus einer Challenge -> Abzeichen-Seite der Rolle.

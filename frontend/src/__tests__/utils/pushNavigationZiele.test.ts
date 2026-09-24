@@ -94,6 +94,50 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_reactivated', {}, 'konfi')).toBe('/konfi/events');
   });
 
+  // --- Anmeldung, Teilnahme, Erinnerung: zum Termin statt zur Liste ---
+  //
+  // Simons Befund am Geraet (24.09.2026), zwei Wege, dasselbe Bild:
+  //   "Wenn ich mich mit meinem Teamer bei einem Konfi-Treffen anmelde,
+  //    kriege ich den Push auf dem Admin, der leitet mich aber nur zur
+  //    allgemeinen Events-Liste und nicht ins Event."
+  //   "Konfi via Web zum Ereignis hinzufuegen -> Push kommt, Klick aber
+  //    auch wieder nur in die Ereignisliste."
+  //
+  // Das Backend sendet die Kennung in ALLEN diesen Pushes mit (pushService.js:
+  // event_id bei den Konfi-/Teamer-Meldungen, eventId bei den Meldungen an die
+  // Leitung). Die Weiche hat sie bei diesen Typen nur nie gelesen und hart die
+  // Liste zurueckgegeben -- waehrend event_changed und event_cancelled es
+  // laengst richtig machen. Dasselbe Muster, nur nicht ueberall ausgerollt.
+  //
+  // Teamer:innen bleiben ueberall auf der Liste: /teamer/events/:id gibt es
+  // nicht (rollenBaeume.ts:232-244). Ein Link dorthin faellt in den Catch-all
+  // und landet auf /teamer/dashboard -- schlechter als die Liste.
+  it('Anmeldebestaetigung fuehrt zum Termin', () => {
+    expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'admin')).toBe('/admin/events/7');
+    expect(buildPushTargetUrl('event_registered', { event_id: 7 }, 'teamer')).toBe('/teamer/events');
+  });
+
+  it('Abmeldung, Nachrueckung, Teilnahme und Erinnerung fuehren zum Termin', () => {
+    expect(buildPushTargetUrl('event_unregistered', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('waitlist_promotion', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('event_attendance', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+    expect(buildPushTargetUrl('event_reminder', { event_id: 7 }, 'konfi')).toBe('/konfi/events/7');
+  });
+
+  it('Ohne Kennung bleibt es bei der Liste', () => {
+    expect(buildPushTargetUrl('event_registered', {}, 'konfi')).toBe('/konfi/events');
+    expect(buildPushTargetUrl('event_attendance', {}, 'admin')).toBe('/admin/events');
+  });
+
+  // Die Meldungen an die Leitung tragen die Kennung als `eventId` (camelCase,
+  // pushService.js:2261) statt als `event_id`. Die Weiche muss beide lesen --
+  // sonst faellt genau Simons erster Fall durch.
+  it('Teamer-Buchung fuehrt die Leitung zum Termin, auch mit camelCase-Kennung', () => {
+    expect(buildPushTargetUrl('teamer_event_booking', { eventId: '7' }, 'admin')).toBe('/admin/events/7');
+    expect(buildPushTargetUrl('teamer_event_cancellation', { eventId: '7' }, 'admin')).toBe('/admin/events/7');
+  });
+
   it('Zertifikat fuehrt ins Profil', () => {
     expect(buildPushTargetUrl('certificate', {}, 'teamer')).toBe('/teamer/profile');
   });
