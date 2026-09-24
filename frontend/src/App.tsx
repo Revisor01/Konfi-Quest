@@ -196,6 +196,12 @@ const AppContent: React.FC = () => {
     if (!user) {
       return (
         <IonReactRouter>
+          {/* Auch hier, nicht nur im angemeldeten Zweig: Ein App-Link auf
+              /register?code=... oder /reset-password?token=... wird gerade von
+              denen angetippt, die noch nicht angemeldet sind (utils/deepLinks).
+              Das Ziel kommt ueber denselben Merker wie ein Push-Ziel; ohne
+              diese Komponente holte es im Login-Router niemand ab. */}
+          <PushZielNavigation />
           <IonRouterOutlet>
             <Route path="/login" element={<LoginView />} />
             <Route path="/register" element={<KonfiRegisterPage />} />
@@ -236,8 +242,9 @@ const AppContent: React.FC = () => {
               nicht darin: Es ist keine Seite und darf im Seiten-Stack nichts
               verdraengen. Rendert null. Der frueher in AppContext stehende
               harte Reload war Maltes Absturz beim Antippen (23.09.2026).
-              Nur im angemeldeten Zweig: Push-Ziele sind immer Seiten hinter
-              der Anmeldung, und der Login-Router daneben hat keine davon. */}
+              Der Login-Router oben hat dieselbe Komponente: Ueber den Merker
+              kommen auch App-Links an (Einladung, Passwort-Reset), und die
+              zielen auf Seiten VOR der Anmeldung. */}
           <PushZielNavigation />
           <IonRouterOutlet>
             {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}

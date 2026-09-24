@@ -42,6 +42,39 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links (24.09.2026): Links auf konfi-quest.de oeffnen die
+                 App statt des Browsers. Android prueft dafuer beim Installieren
+                 https://konfi-quest.de/.well-known/assetlinks.json (liegt in
+                 frontend/public/.well-known) gegen den Signaturschluessel;
+                 nur mit autoVerify entfaellt die Nachfrage "Oeffnen mit".
+
+                 NUR https und NUR die Pfade, die die App auch hat: Die
+                 Einladung (/register?code=...) aus QR-Code und Elternbrief,
+                 der Link aus der Passwort-vergessen-Mail (/reset-password)
+                 und /login von der Werbeseite. Werbeseite, Datenschutz,
+                 Impressum, Handbuch und API-Doku bleiben im Browser, denn die
+                 App hat dafuer keine Seite und wuerde nur ins Leere springen.
+
+                 KEIN www.konfi-quest.de: Der Server leitet www per 301 auf
+                 konfi-quest.de um, auch fuer die assetlinks.json. Android
+                 verlangt fuer die Pruefung aber 200 ohne Umleitung; ein
+                 unpruefbarer Host liesse vor Android 12 die Pruefung ALLER
+                 Hosts scheitern. Und kein Code der App erzeugt www-Links.
+
+                 Die Pfadliste spiegelt utils/deepLinks.ts; der Test in
+                 __tests__/navigation/appLinksAndroid.test.ts haelt beide
+                 in Deckung. Wer hier einen Pfad ergaenzt, ergaenzt ihn dort. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="konfi-quest.de" />
+                <data android:pathPrefix="/login" />
+                <data android:pathPrefix="/register" />
+                <data android:pathPrefix="/reset-password" />
+            </intent-filter>
+
         </activity>
 
         <provider

@@ -21,6 +21,7 @@ import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
 import { ermittleAppVersion } from '../utils/appVersion';
 import { fehlerArt } from '../utils/fehler';
 import { buildPushTargetUrl, resolveOrgForPush, pushZielMelden, PushUserType } from '../utils/pushNavigation';
+import { deepLinksAnschliessen } from '../utils/deepLinks';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -1111,6 +1112,27 @@ useEffect(() => {
       }
     };
   }, [user]);
+
+  // App Links: Ein Link auf konfi-quest.de (Einladung, Passwort-Reset, Login)
+  // oeffnet die App, Android liefert die Adresse ueber 'appUrlOpen'. Bewusst
+  // OHNE [user]-Abhaengigkeit und ausserhalb des Push-Effekts: Die Einladung
+  // wird gerade von denen angetippt, die noch NICHT angemeldet sind. Das Ziel
+  // geht ueber pushZielMelden an den Router (siehe utils/deepLinks.ts).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let abbauen: (() => void) | null = null;
+    let abgebaut = false;
+    deepLinksAnschliessen()
+      .then((f) => {
+        if (abgebaut) f();
+        else abbauen = f;
+      })
+      .catch((err) => console.warn('App-Link-Lauscher nicht angeschlossen:', err));
+    return () => {
+      abgebaut = true;
+      abbauen?.();
+    };
+  }, []);
 
   // Push notifications setup and listeners
   useEffect(() => {

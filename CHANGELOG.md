@@ -10,6 +10,10 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Android: Einladungslinks, der Link aus der Passwort-vergessen-Mail und der
+  Anmelde-Link der Webseite öffnen direkt die App, wenn sie installiert ist —
+  ohne Nachfrage und ohne Umweg über den Browser. Webseite, Datenschutz und
+  Handbuch bleiben im Browser.
 - Die Auslastungsanzeige ist ein Betriebs-Überblick geworden. Ganz oben steht
   in einem Satz, ob gerade alles läuft. Darunter: wie viele Anfragen zügig
   genug waren, wie viele Menschen in der letzten Stunde unterwegs waren und
