@@ -1252,7 +1252,7 @@ class PushService {
   /**
    * Event-Abmeldung bestätigt - Push an Konfi
    */
-  static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
+  static async sendEventUnregisteredToKonfi(db, konfiId, eventName, eventId = null) {
     try {
 
       const notification = {
@@ -1260,7 +1260,8 @@ class PushService {
         body: `Du hast dich von "${eventName}" abgemeldet.`,
         data: {
           type: 'event_unregistered',
-          event_name: eventName
+          event_name: eventName,
+          ...(eventId != null ? { event_id: String(eventId) } : {})
         }
       };
 
@@ -1407,7 +1408,7 @@ class PushService {
   /**
    * Event-Erinnerung - Push an Konfi (1 Tag oder 1 Stunde vorher)
    */
-  static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType, organizationId = null) {
+  static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType, organizationId = null, eventId = null) {
     try {
 
       const isOneDay = reminderType === '1_day';
@@ -1420,6 +1421,7 @@ class PushService {
           type: 'event_reminder',
           reminder_type: reminderType,
           event_name: eventName,
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
           ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
@@ -2140,7 +2142,7 @@ class PushService {
   /**
    * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an alle Admins der Organisation
    */
-  static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason) {
+  static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason, eventId = null) {
     try {
       const { rows: admins } = await db.query(
         `SELECT u.id FROM users u
@@ -2161,6 +2163,7 @@ class PushService {
         data: {
           type: 'event_opt_out',
           event_name: eventName,
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
           konfi_name: konfiName,
           reason: reason,
           organization_id: String(organizationId)
@@ -2177,7 +2180,7 @@ class PushService {
   /**
    * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an alle Admins der Organisation
    */
-  static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName) {
+  static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName, eventId = null) {
     try {
       const { rows: admins } = await db.query(
         `SELECT u.id FROM users u
@@ -2198,6 +2201,7 @@ class PushService {
         data: {
           type: 'event_opt_in',
           event_name: eventName,
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
           konfi_name: konfiName,
           organization_id: String(organizationId)
         }

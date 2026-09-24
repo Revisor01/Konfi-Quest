@@ -244,13 +244,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const userType = req.user.type === 'teamer' ? 'teamer' : 'konfi';
         if (pointsAwarded) {
           try { await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
-          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
           // userType statt hart 'konfi': beim QR-Check-in koennen sich auch
           // Teamer:innen einchecken. Zwei Zeilen weiter wurde userType
           // bereits richtig verwendet, hier nicht.
           liveUpdate.sendToUser(userType, userId, 'dashboard', 'update', { points: event.points });
         } else {
-          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
         }
         liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'checkin' });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });

@@ -158,7 +158,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
             if (gotPoints) {
               await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id);
             }
-            await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, null, req.user.organization_id);
+            await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, eventId, req.user.organization_id);
           } catch (pushErr) {
             console.error('Push notification failed (bulk attendance):', pushErr);
           }
@@ -625,15 +625,15 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
         if (attendance_status === 'present') {
           if (isKonfiParticipant && pointsAwarded) {
             try { await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
             liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
           } else if (isKonfiParticipant) {
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         } else if (attendance_status === 'absent') {
           if (isKonfiParticipant) {
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
             if (pointsRemoved) {
               liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
             }
@@ -650,7 +650,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
           // klaenge nach unentschuldigtem Fehlen. Siehe
           // pushService.sendEventAttendanceToKonfi.
           if (isKonfiParticipant) {
-            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'excused', 0, null, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'excused', 0, eventId, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
             if (pointsRemoved) {
               liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
             }

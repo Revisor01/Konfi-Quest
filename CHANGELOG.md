@@ -69,10 +69,9 @@ Versionsüberschrift.
 - Der Umschalter zwischen Konfis und Team hat auf iPhones die milchige
   Glasfläche, die auch die Navigationsleiste unten verwendet.
 - Eine Mitteilung zu einem Termin führt beim Antippen zum Termin selbst statt
-  nur zur Terminliste. Das gilt jetzt auch für Anmeldung, Abmeldung,
-  Nachrücken von der Warteliste, bestätigte Teilnahme und Erinnerungen — und
-  für die Meldung an die Leitung, wenn sich eine Teamerin oder ein Teamer an-
-  oder abmeldet.
+  nur zur Terminliste. Das gilt für Anmeldung, Abmeldung, Nachrücken von der
+  Warteliste, bestätigte Teilnahme und Erinnerungen — und für die Meldungen an
+  die Leitung, wenn sich jemand an- oder abmeldet.
 - Steht die App-Sperre auf „Sofort", sperrt die App jetzt auch, wenn man sie
   aus der App-Übersicht zurückholt. Bisher fragte sie nur beim ersten Öffnen
   nach Face ID oder Fingerabdruck.

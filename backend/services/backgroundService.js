@@ -699,7 +699,8 @@ class BackgroundService {
             event.event_date,
             eventTime,
             '1_day',
-            event.organization_id
+            event.organization_id,
+            event.id
           );
 
           // Erinnerung als gesendet markieren
@@ -745,7 +746,8 @@ class BackgroundService {
             event.event_date,
             eventTime,
             '1_hour',
-            event.organization_id
+            event.organization_id,
+            event.id
           );
 
           await db.query(

@@ -1795,7 +1795,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Push-Notification an Konfi senden
       try {
-        await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name);
+        await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
       } catch (pushErr) {
  console.error('Error sending event unregistration push to konfi:', pushErr);
       }
@@ -1933,7 +1933,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Push an Admins (fire-and-forget)
       try {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptOutToAdmins(db, req.user.organization_id, konfiName, event.name, reason.trim());
+        await PushService.sendEventOptOutToAdmins(db, req.user.organization_id, konfiName, event.name, reason.trim(), eventId);
       } catch (pushErr) {
         console.error('Opt-out push error:', pushErr);
       }
@@ -2015,7 +2015,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Push an Admins (fire-and-forget)
       try {
         const konfiName = req.user.display_name || req.user.username;
-        await PushService.sendEventOptInToAdmins(db, req.user.organization_id, konfiName, event.name);
+        await PushService.sendEventOptInToAdmins(db, req.user.organization_id, konfiName, event.name, eventId);
       } catch (pushErr) {
         console.error('Opt-in push error:', pushErr);
       }
