@@ -951,21 +951,49 @@ ion-list[inset] ion-list-header {
    0.72 ist derselbe Alpha-Wert wie bei der Toolbar, damit oben und unten
    gleich aussehen.
 
-   NICHT AM GERAET GEPRUEFT: kein Simulatorstart. Ob es stimmt, zeigt der Build. */
-:root {
+   NUR iOS (25.09.2026): Bis hierhin stand der Wert auf `:root` und galt damit
+   auch auf Android. Dort gibt es aber keinen Blur — das Theme legt ihn nur
+   auf `ion-tab-bar.ios` — und eine Leiste mit 72 % Deckkraft ohne Blur ist
+   schlicht durchsichtig. Simons Befund am Samsung: Hinter „Chat" stand
+   „Deni Hagge", hinter „Mehr" das „4/20" der Liste. Der Inhalt liegt dort mit
+   Absicht hinter der Leiste (Ionics `fullscreen`-Inhalt reicht in `ion-tabs`
+   bis unter die Tab-Leiste, damit iOS dahinter durchschimmern kann); auf
+   Android muss die Leiste ihn deshalb verdecken. */
+ion-tab-bar.ios {
   --ion-tab-bar-background: rgba(247, 247, 247, 0.72);
 }
 
-/* Android (MD): Tab-Bar muss die System-Gesten-/Navigationsleiste respektieren.
-   Ab Capacitor 8 ist Edge-to-Edge aktiv und env(safe-area-inset-bottom) liefert
-   den ECHTEN Inset der Gesten-/Navigationsleiste (z.B. 63px). Der frueher noetige
-   Mindest-Fallback max(env, 24px) wuerde nun zum echten Inset NOCH den alten
-   Mindestwert verrechnen und doppelten Abstand erzeugen — daher nur noch der
-   reine env-Wert (mit 0px-Fallback fuer Geraete ganz ohne Gesten-Bar).
-   !important gegen das global geladene iOS26-Theme-CSS. */
+/* Android (MD): Tab-Leiste ueber der System-Gesten-/Navigationsleiste.
+
+   Ionic macht das von sich aus richtig: Der MD-Host hat `height: 56px`,
+   `padding-bottom: var(--ion-safe-area-bottom)` und `box-sizing: content-box`.
+   Der Inset kommt bei Capacitor 8 vom System-Bars-Plugin, das ihn als
+   `--safe-area-inset-bottom` in die Seite schreibt; Ionic liest genau diese
+   Variable (`--ion-safe-area-bottom: var(--safe-area-inset-bottom,
+   env(safe-area-inset-bottom))`). Sie stimmt auf jedem WebView — auch auf
+   denen unter Version 140, in denen `env()` laut Capacitor-Doku falsche Werte
+   liefert.
+
+   DOPPELT GEZAEHLT (Simons Befund am Samsung, 25.09.2026): Hier stand
+   `height: calc(56px + <Inset>)` UND `padding-bottom: <Inset>` bei
+   content-box — der Inset also zweimal. Gemessen am Bildschirmfoto: Leiste
+   400 px von 2424 px = 152 dp bei 2,625 dpr, statt 56 + 48 = 104 dp bei
+   3-Tasten-Navigation. Die Reiter standen mittig in den 104 dp Inhaltsflaeche,
+   also 24 dp zu hoch, und die Zaehler (`top: 4px` am Reiter) schwebten 40 dp
+   ueber den Symbolen. Aufgefallen ist das erst jetzt, weil `env()` im WebView
+   bis Version 139 schlicht 0 lieferte — ab 140 reicht Capacitor die Insets
+   bei `viewport-fit=cover` durch, und beide Summanden wurden echt.
+
+   Deshalb NUR noch die Hoehe des Inhalts (56px, gegen die 62px des
+   MD3-Themes) und die Insets ueber Ionics Variablen — kein Inset in der
+   Hoehe. Die Gesamthoehe bleibt 56px + Inset; darauf verlaesst sich
+   .app-wartende-leiste weiter unten. */
 ion-tab-bar.md {
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-  height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+  /* Deckend. Ionics Voreinstellung, hier ausdruecklich: Der iOS-Glaswert
+     oben darf nie wieder bis hierher durchsickern. */
+  --background: var(--ion-background-color, #fff);
+  height: 56px !important;
+  padding-bottom: var(--ion-safe-area-bottom, 0px) !important;
   box-sizing: content-box !important;
   /* Auch SEITLICH einruecken. Mit viewport-fit=cover (index.html) reicht die
      Seite bis unter die Systembereiche; ohne diese beiden Zeilen ragten der
@@ -973,8 +1001,8 @@ ion-tab-bar.md {
      gemeldet von Android-Nutzer:innen, bestaetigt am 24.08.2026: Im Projekt
      wurde safe-area-inset-left/right an keiner einzigen Stelle beruecksichtigt.
      Betrifft vor allem Geraete mit seitlicher Aussparung und das Querformat. */
-  padding-left: env(safe-area-inset-left, 0px) !important;
-  padding-right: env(safe-area-inset-right, 0px) !important;
+  padding-left: var(--ion-safe-area-left, 0px) !important;
+  padding-right: var(--ion-safe-area-right, 0px) !important;
 }
 
 /* Aeussere Tab-Buttons leicht einruecken, damit lange Labels (Aktivitäten)
@@ -3515,8 +3543,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      IonFab (Zeile 1566). Links ist in allen drei Baeumen frei. */
   left: 16px;
   /* Ueber der Tab-Leiste: 56px Hoehe plus der Sicherheitsabstand unten.
-     Derselbe Wert wie in ion-tab-bar.md weiter oben. */
-  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
+     Derselbe Wert und dieselbe Inset-Variable wie in ion-tab-bar.md weiter
+     oben — eine Quelle, sonst laufen die beiden auseinander. */
+  bottom: calc(56px + var(--ion-safe-area-bottom, 0px) + 12px);
   z-index: 20;
 
   display: flex;

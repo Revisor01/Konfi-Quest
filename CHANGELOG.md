@@ -139,6 +139,10 @@ Versionsüberschrift.
 - Der Check-in-Code weiterer Termine einer Reihe war in den Termindetails
   enthalten. Damit ließ sich die Anwesenheit für die ganze Reihe eintragen,
   ohne vor Ort zu sein.
+- Android: Die Reiterleiste unten ist wieder deckend und so hoch wie
+  vorgesehen. Bisher war sie durchsichtig und doppelt so hoch — die Liste
+  schien hinter den Beschriftungen durch, und die Zähler an den Reitern
+  schwebten weit über ihren Symbolen.
 
 ### Sonstiges
 - Die Android-Fassung wird beim Bauen verkleinert und verschleiert. Das spart
