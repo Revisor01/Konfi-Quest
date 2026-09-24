@@ -38,6 +38,25 @@
 	<string>Diese App benötigt Zugriff auf das Mikrofon, um Videos mit Ton aufzunehmen und Sprachaufnahmen für Challenge-Beiträge zu erstellen.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf die Fotobibliothek, um Bilder und Videos für Chat-Nachrichten und Challenge-Beiträge auszuwählen.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

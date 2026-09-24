@@ -40,6 +40,9 @@ Versionsüberschrift.
   einschaltet.
 
 ### Sonstiges
+- Die iPhone-App ist auf das Startverfahren umgestellt, das neuere
+  iOS-Fassungen verlangen. Für die Bedienung ändert sich nichts — ohne die
+  Umstellung ließe sich die App künftig aber nicht mehr öffnen.
 - Der Server bricht eine Datenbankabfrage ab, die nicht mehr antwortet, statt
   ihren Platz dauerhaft zu belegen. In der Auslastungsanzeige steht jetzt auch,
   wie viele Anfragen gerade auf eine freie Datenbankverbindung warten.
