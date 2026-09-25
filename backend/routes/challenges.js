@@ -96,14 +96,11 @@ const CONTENT_TYPES = {
 // visibility='private' ist NIE oeffentlich. 'hidden' schlägt alles.
 //
 // SQL-Fragment für Queries, die challenges als "c" und challenge_submissions
-// als "cs" aliasieren.
-const PUBLIC_SUBMISSION_SQL = `(
-  cs.moderation_status = 'approved'
-  AND (
-    c.visibility = 'public'
-    OR (c.visibility = 'konfi_choice' AND cs.konfi_consent IN ('publish', 'anonymous'))
-  )
-)`;
+// als "cs" aliasieren. Seit 24.09.2026 in utils/challengeSichtbarkeit.js,
+// weil auch der Neuigkeiten-Zaehler (utils/challengeNeuigkeiten.js) es
+// braucht und der ueber pushService geladen wird, bevor diese Datei fertig
+// ist. Hier weiterhin re-exportiert (siehe module.exports unten).
+const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
 
 // JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
 // Erwartet { moderation_status, konfi_consent } und { visibility }.
@@ -668,6 +665,64 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         });
       } catch (err) {
         console.error('Database error in GET /challenges/konfi/:id:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
+
+  // POST /konfi/:id/mark-read — Challenge als geoeffnet/gelesen markieren.
+  //
+  // Das Gegenstueck zu POST /chat/rooms/:roomId/mark-read: Die Detailansicht
+  // ruft es beim Oeffnen, und der Neuigkeiten-Zaehler
+  // (utils/challengeNeuigkeiten.js) rechnet ab diesem Zeitpunkt -- neue
+  // Challenge, neue Galerie-Beitraege, Moderation eigener Beitraege. Ohne
+  // diese Route bliebe die rote Zahl am Eintrag stehen, egal wie oft man
+  // hineinsieht.
+  //
+  // Zugriffsregeln wie GET /konfi/:id: Entwuerfe und ungestartete Challenges
+  // gibt es fuer Teilnehmende nicht (404), 'nur_team' ist fuer Konfis
+  // unsichtbar (404, damit die Existenz nicht durchsickert), sonst
+  // participantMayAccess (403). Wer eine Challenge nicht oeffnen darf, kann
+  // sie auch nicht als gelesen markieren.
+  //
+  // Team-Rollen duerfen den Aufruf ebenfalls machen (harmlos, gleiche
+  // Detailansicht), gezaehlt wird fuer sie aber nichts -- ihr Reiter zaehlt
+  // Freigaben.
+  router.post('/konfi/:id/mark-read',
+    rbacVerifier,
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const role = req.user.role_name;
+        if (role !== 'konfi' && !TEAM_ROLES.includes(role)) {
+          return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
+        }
+        const challengeId = parseInt(req.params.id, 10);
+
+        const challenge = await loadChallenge(challengeId, req.user.organization_id);
+        if (!challenge || challenge.is_draft || new Date(challenge.starts_at) > new Date()) {
+          return res.status(404).json({ error: 'Challenge nicht gefunden' });
+        }
+        if (role === 'konfi' && challenge.audience === 'nur_team') {
+          return res.status(404).json({ error: 'Challenge nicht gefunden' });
+        }
+        const access = await participantMayAccess(req, challenge);
+        if (!access.allowed) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
+        }
+
+        await db.query(
+          `INSERT INTO challenge_read_status (challenge_id, user_id, user_type, last_read_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (challenge_id, user_id, user_type)
+           DO UPDATE SET last_read_at = NOW()`,
+          [challengeId, req.user.id, req.user.type]
+        );
+
+        res.json({ message: 'Challenge als gelesen markiert' });
+      } catch (err) {
+        console.error('Database error in POST /challenges/konfi/:id/mark-read:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
       }
     }

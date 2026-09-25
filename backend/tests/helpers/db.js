@@ -77,6 +77,7 @@ const TRUNCATE_LOCK_ID = 4711;
 // user_badges (nur die alten Sequenz-Namen leben dort als Altlast weiter).
 const TRUNCATE_SQL = `TRUNCATE
     chat_poll_votes, chat_polls, chat_read_status,
+    challenge_read_status,
     chat_message_reactions,
     chat_messages, chat_participants, chat_rooms,
     event_points, event_bookings, event_timeslots,

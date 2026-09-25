@@ -212,7 +212,11 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // Fingerabdrucks. Entscheidend ist nicht die Zahl selbst, sondern dass
     // sie NICHT an der Personenzahl haengt: Der alte Weg haette hier
     // zusaetzlich rund 27 Abfragen je Person gebraucht.
-    expect(z.stand()).toBe(26);
+    // 24.09.2026: 26 -> 28. Der Neuigkeiten-Zaehler fuer Challenges kam als
+    // sechster Baustein in die App-Icon-Summe; die laeuft hier je Organisation
+    // einmal, macht bei zwei Organisationen zwei Abfragen mehr. Konstant, nicht
+    // je Person -- die Aussage des Tests bleibt unberuehrt (siehe oben).
+    expect(z.stand()).toBe(28);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {

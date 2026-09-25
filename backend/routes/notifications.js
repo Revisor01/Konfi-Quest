@@ -1,6 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { challengeNeuigkeitenJeChallenge } = require('../utils/challengeNeuigkeiten');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -227,12 +228,23 @@ module.exports = (db, verifyTokenRBAC) => {
         );
       }
 
-      const [chatRes, requestsRes, eventsRes, challengesRes, badgesRes] = await Promise.all([
+      // Challenge-Neuigkeiten (24.09.2026, Simon: "genau wie beim Chat"):
+      // je Challenge, was seit dem letzten Oeffnen dazukam -- neue Challenge,
+      // fremde Galerie-Beitraege, Moderation eigener Beitraege. Nur fuer
+      // Konfis; die Leitung hat am selben Reiter ihre Freigaben (oben).
+      // Die Regel steht EINMAL in utils/challengeNeuigkeiten.js, dieselbe
+      // Fassung speist die App-Icon-Summe fuer Pushes (Paritaet B2b).
+      const neuigkeitenPromise = (userType === 'konfi')
+        ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
+        : Promise.resolve([]);
+
+      const [chatRes, requestsRes, eventsRes, challengesRes, badgesRes, neuigkeiten] = await Promise.all([
         db.query(chatQuery, [userId, userType, organizationId]),
         requestsPromise,
         eventsPromise,
         challengesPromise,
-        badgesPromise
+        badgesPromise,
+        neuigkeitenPromise
       ]);
 
       const byRoom = {};
@@ -243,12 +255,24 @@ module.exports = (db, verifyTokenRBAC) => {
         total += unread;
       });
 
+      // Wie chat.byRoom: Zahl je Challenge fuer den Listeneintrag, Summe
+      // fuer Reiter und App-Icon.
+      const byChallenge = {};
+      let neuigkeitenTotal = 0;
+      neuigkeiten.forEach((r) => {
+        byChallenge[r.challenge_id] = r.c;
+        neuigkeitenTotal += r.c;
+      });
+
       res.json({
         chat: { total, byRoom },
         pendingRequests: requestsRes.rows[0]?.c || 0,
         pendingEvents: eventsRes.rows[0]?.c || 0,
         pendingChallenges: challengesRes.rows[0]?.c || 0,
-        newBadges: badgesRes.rows[0]?.c || 0
+        newBadges: badgesRes.rows[0]?.c || 0,
+        // NEU 24.09.2026, additiv (Alt-App-Vertrag: kein bestehendes Feld
+        // aendert Form oder Typ; aeltere Apps ignorieren das Feld).
+        challengeUpdates: { total: neuigkeitenTotal, byChallenge }
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);

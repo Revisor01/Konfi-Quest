@@ -18,9 +18,10 @@
 // BadgeContext.totalBadgeCount uebereinstimmen -- dieselbe Aufteilung je
 // Rolle, dieselben Bestandteile. Aendert sich eine Seite, gehoert die andere
 // nachgezogen; ein Test haelt die Zusammensetzung fest.
+const { challengeNeuigkeitenJeChallenge } = require('./challengeNeuigkeiten');
 
 /**
- * Die fuenf Bausteine der Summe -- jeder als EINE Abfrage ueber viele
+ * Die sechs Bausteine der Summe -- jeder als EINE Abfrage ueber viele
  * Personen (`= ANY($1)`), nicht als Abfrage pro Person.
  *
  * Genau hier liegt der Grund fuer den Zuschnitt: Einzel- und Bulk-Weg teilen
@@ -291,7 +292,11 @@ async function appIconSummenFuerAlle(db, empfaenger) {
   const mitAbzeichen = empfaenger.filter((p) => p.type === 'konfi' || p.type === 'teamer');
   const leitungsOrgs = [...new Set(leitungOrgWeit.map((p) => p.organization_id))];
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen] = await Promise.all([
+  // Challenge-Neuigkeiten gibt es nur fuer Konfis (24.09.2026): Die Leitung
+  // hat am selben Reiter ihre Freigaben, beides in einer Zahl waere unlesbar.
+  const konfis = empfaenger.filter((p) => p.type === 'konfi');
+
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten] = await Promise.all([
     chatZaehler(db, empfaenger),
     antragZaehlerProOrg(db, leitungsOrgs),
     terminZaehlerProOrg(db, leitungsOrgs),
@@ -301,7 +306,10 @@ async function appIconSummenFuerAlle(db, empfaenger) {
     teamerFreigabeZaehler(db, [...teamer, ...leitungGebunden]),
     antragZaehlerGebunden(db, leitungGebunden),
     terminZaehlerGebunden(db, leitungGebunden),
-    abzeichenZaehler(db, mitAbzeichen)
+    abzeichenZaehler(db, mitAbzeichen),
+    // Dieselbe SQL-Fassung wie badge-counts.challengeUpdates -- die Zeilen
+    // kommen je Challenge, hier werden sie je Person aufsummiert.
+    challengeNeuigkeitenJeChallenge(db, konfis)
   ]);
 
   const addiere = (userId, userType, wert) => {
@@ -314,6 +322,7 @@ async function appIconSummenFuerAlle(db, empfaenger) {
   for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.c);
   for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.c);
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.c);
+  for (const r of neuigkeiten) addiere(r.user_id, r.user_type, r.c);
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
@@ -339,11 +348,14 @@ async function appIconSummenFuerAlle(db, empfaenger) {
  *              Teamer-Antraege, Termine ohne Jahrgang/Teamer-Termine und
  *              nur_team-Freigaben zaehlen immer)
  *   teamer     Chat + Freigaben + ungesehene Abzeichen
- *   konfi      Chat + ungesehene Abzeichen
+ *   konfi      Chat + ungesehene Abzeichen + Challenge-Neuigkeiten
+ *              (seit 24.09.2026: neue Challenge, fremde Galerie-Beitraege,
+ *              Moderation eigener Beitraege -- je seit dem letzten Oeffnen,
+ *              nur laufende Challenges des eigenen Jahrgangs)
  *
  * Fuer super_admin gilt der Konfi-Zweig (org-fremde Rolle, hat weder
- * Antraege noch Abzeichen) -- der Client schliesst sie ueber isAdmin
- * ebenfalls aus.
+ * Antraege noch Abzeichen noch Challenge-Neuigkeiten) -- der Client
+ * schliesst sie ueber isAdmin ebenfalls aus.
  *
  * Der Einzelfall ist bewusst nur ein Bulk-Aufruf mit einem Element: So kann
  * es keine zweite, abweichende Fassung der Regeln geben.

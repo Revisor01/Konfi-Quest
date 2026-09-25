@@ -253,15 +253,13 @@ Tippst du eine Mitteilung zu einem Termin an, öffnet die App den Termin selbst 
 nicht die Terminliste. Das gilt für alle Termin-Mitteilungen: Anmeldung,
 Abmeldung, Nachrücken von der Warteliste, bestätigte Teilnahme, Erinnerung,
 Änderung und Absage. Auch die Meldung an die Leitung, dass sich eine Teamerin
-oder ein Teamer an- oder abgemeldet hat, führt direkt zum Termin.
+oder ein Teamer an- oder abgemeldet hat, führt direkt zum Termin. Für Konfis,
+Teamer:innen und Leitung gleichermaßen; bei Teamer:innen öffnet sich der Termin
+in der Terminliste, der Zurück-Pfeil führt zur Liste.
 
-Zwei Ausnahmen:
-
-- **Teamer:innen** landen auf ihrer Terminliste. Ihre Ansicht hat keine eigene
-  Detailseite je Termin.
-- Ist der Termin **gelöscht**, bleibt es bei der Liste — die Mitteilung trägt
-  dann keine Kennung mit, damit niemand auf einer Seite landet, die es nicht
-  mehr gibt.
+Eine Ausnahme: Ist der Termin **gelöscht**, bleibt es bei der Liste — die
+Mitteilung trägt dann keine Kennung mit, damit niemand auf einer Seite landet,
+die es nicht mehr gibt.
 
 Ein Termin aus einem Jahrgang, dem du nicht zugewiesen bist, geht auch über
 eine Mitteilung oder einen Link nicht auf: Was in deiner Terminliste fehlt,

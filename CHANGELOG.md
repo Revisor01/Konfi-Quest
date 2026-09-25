@@ -70,6 +70,17 @@ Versionsüberschrift.
   behalten ihre Zahl.
 
 ### Behoben
+- Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
+  einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
+  Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum
+  jemand fehlt. Der Server weist andere Einträge ab und sagt, um wen es geht.
+  Bisher stand das Team ungefiltert in der Liste, und ein Konfi aus einem
+  fremden Jahrgang ließ sich über die Schnittstelle trotzdem eintragen. Termine
+  ohne Jahrgang und „Nur Team"-Termine bleiben für alle offen; die
+  Gemeindeleitung ist ausgenommen.
+- Auch Teamer:innen kommen aus einer Termin-Mitteilung direkt zum Termin
+  statt nur zur Terminliste. Bisher landeten sie auf der Liste; ein Link auf
+  einen einzelnen Termin führte sogar zur Startseite.
 - Ein zweiter Link auf einen anderen Termin öffnet bei Teamer:innen jetzt
   auch den zweiten Termin. Bisher wirkte nur der erste Link nach dem Start.
 - Ein Termin aus einem fremden Jahrgang lässt sich von Teamer:innen und
@@ -79,14 +90,6 @@ Versionsüberschrift.
   ihm nicht zugewiesen ist, liest jetzt den Grund und den Weg hinaus („Nicht
   deinem Jahrgang zugeordnet") — statt einer allgemeinen Fehlermeldung über
   einer leeren Seite oder einer stummen Terminliste.
-- Beim Eintragen von Hand bietet die Auswahl nur noch Personen an, die zu
-  einem Jahrgang des Termins gehören — bei Konfis wie beim Team und der
-  Leitung. Ein Hinweis nennt die Jahrgänge des Termins, damit klar ist, warum
-  jemand fehlt. Der Server weist andere Einträge ab und sagt, um wen es geht.
-  Bisher stand das Team ungefiltert in der Liste, und ein Konfi aus einem
-  fremden Jahrgang ließ sich über die Schnittstelle trotzdem eintragen. Termine
-  ohne Jahrgang und „Nur Team"-Termine bleiben für alle offen; die
-  Gemeindeleitung ist ausgenommen.
 - Auswahllisten öffnen sich ohne den kleinen Zipfel am Rand.
 - Die Hinweise im Profil („Was ist neu", „Events und Aktivitäten") zeigen
   rechts keinen Pfeil mehr.

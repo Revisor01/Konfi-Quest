@@ -129,7 +129,13 @@ describe('PushService unter Last', () => {
         { title: 'Neues Event!', body: 'Melde dich an', data: { type: 'new_event' } }
       );
 
-      expect(zaehler).toBeLessThanOrEqual(20);
+      // 24.09.2026: 20 -> 22. Der Neuigkeiten-Zaehler fuer Challenges kam als
+      // sechster Baustein dazu (utils/challengeNeuigkeiten). Er bringt zwei
+      // KONSTANTE Abfragen mit -- nicht eine je Kopf. Die Aussage dieses Tests
+      // bleibt damit unberuehrt: Der Aufwand waechst nicht linear je Empfaenger.
+      // Genau das prueft der naechste Test ("je zusaetzlichem Empfaenger kommt
+      // genau 1 Abfrage dazu") unabhaengig von dieser absoluten Zahl.
+      expect(zaehler).toBeLessThanOrEqual(22);
     });
 
     it('die Token-Abfrage laeuft EINMAL fuer alle, nicht je Empfaenger', async () => {
