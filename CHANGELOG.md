@@ -10,9 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
-- Leitung und Team sehen an der einzelnen Challenge eine rote Zahl, sobald
-  dort Beiträge auf Freigabe warten — wie im Chat und am Reiter. Sie zählt nur,
-  was die Person auch freigeben darf; Konfis behalten dort ihre Neuigkeiten.
+- Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
+  Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
+  immer im Gleichklang mit der Zahl am Reiter.
 - Konfis sehen jetzt, wo es bei den Challenges etwas Neues gibt — wie im Chat:
   eine rote Zahl am Reiter, am App-Symbol und an der einzelnen Challenge. Sie
   zählt, was seit dem letzten Öffnen dazukam: eine neue Challenge, neue

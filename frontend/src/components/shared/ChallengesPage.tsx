@@ -77,8 +77,9 @@ export const gehoertInsStempelraster = (
 };
 
 const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId }) => {
-  // pendingChallengesByChallenge: offene Freigaben je Challenge fuer die
-  // Kugel am Listeneintrag (25.09.2026) -- dieselbe Quelle wie der Reiter.
+  // pendingChallengesByChallenge: offene Freigaben je Challenge fuer das
+  // orange Eck-Badge am Listeneintrag (25.09.2026) -- dieselbe Quelle wie
+  // der Reiter, statt pending_count aus der nur bei Aktion neu geladenen Liste.
   const { refreshAllCounts, pendingChallengesByChallenge } = useBadge();
   const { pageRef, presentingElement } = useModalPage(modalPageId);
 

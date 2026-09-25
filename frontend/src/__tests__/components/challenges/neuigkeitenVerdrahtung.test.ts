@@ -54,7 +54,12 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
   it('eine Kugel fuer Chat und Challenges statt zweier Abschriften', () => {
     expect(chatListe).toContain("import ZaehlerKugel from '../shared/ZaehlerKugel'");
     expect(challengeListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
-    expect(leitungsListe).toContain("import ZaehlerKugel from '../../shared/ZaehlerKugel'");
+    // Die Leitungs-Liste traegt KEINE Kugel: Freigaben stehen dort als
+    // oranges Eck-Badge mit Uhr (Simon, 25.09.2026: "fuer Freigaben ja,
+    // sonst nur der rote Badge") -- die Kugel bleibt Neuem vorbehalten.
+    expect(leitungsListe).not.toContain("from '../../shared/ZaehlerKugel'");
+    expect(leitungsListe).not.toContain('<ZaehlerKugel');
+    expect(leitungsListe).toContain('wartenAufFreigabe(pending)');
     // Die alte Inline-Kugel der Chat-Liste ist weg -- sonst gaebe es wieder
     // zwei Fassungen, die auseinanderlaufen.
     expect(chatListe).not.toContain("'9+'");

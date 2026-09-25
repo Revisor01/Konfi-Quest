@@ -105,10 +105,8 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
       '--app-freiraum-aktion-l': '70px',
       '--app-freiraum-aktion-xl': '80px',
       '--app-freiraum-aktion-xxl': '100px',
+      '--app-freiraum-aktion-xxl-plus': '110px',
       '--app-freiraum-aktion-xxxl': '120px',
-      // aktion-xxl-plus (110px) entfiel am 25.09.2026: Der Freigaben-Zaehler
-      // der Challenge-Verwaltung sitzt als Kugel am Symbol, nicht mehr als
-      // Eck-Badge rechts neben dem Titel.
       // kopf-s (50px) und kopf-xxl (90px) entfielen am 05.09.2026 mit dem
       // Angleichen der Rollen-Unterschiede -- niemand nutzte sie mehr.
       '--app-freiraum-kopf-m': '60px',
