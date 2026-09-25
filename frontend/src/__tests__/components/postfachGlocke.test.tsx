@@ -159,16 +159,23 @@ describe('PostfachGlocke', () => {
 
 // Wo die Zahl steht -- als Vertrag mit den gemessenen Massen (25.09.2026).
 //
-// Simons Befund am Geraet: "der blaue Indikator ist oben abgeschnitten."
-// Gemessen war es keine Stapelreihenfolge, sondern die Glas-Pille des
-// ios27-Themes um die Knoepfe rechts (ion-buttons, border-radius 25px,
-// overflow hidden): Pille 46px hoch, Kappe also ein Halbkreis mit Radius
-// 23; die Zahl (18px) mit top 2 / right 0 ragte mit der rechten oberen
-// Ecke hinaus (4,9 % der Flaeche). jsdom rechnet kein Layout, deshalb
-// prueft der Test die CSS-Werte gegen dieselbe Geometrie: Der Mittelpunkt
-// der Zahl muss innerhalb von (Radius - halbe Zahl) um den Kappenmittelpunkt
-// liegen. Wer right oder top wieder Richtung 0 schiebt, faellt hier durch.
-describe('Zahl an der Glocke: liegt in der Glas-Pille des iOS-Themes', () => {
+// Zwei Befunde von Simon am Geraet, am selben Tag:
+//  1. "der blaue Indikator ist oben abgeschnitten." -- Die Glas-Pille des
+//     ios27-Themes um die Knoepfe rechts (ion-buttons, border-radius 25px,
+//     overflow hidden) beschneidet: Pille 46px hoch, Kappe ein Halbkreis
+//     mit Radius 23. Die Zahl (18px, Radius 9) ist nur dann ganz sichtbar,
+//     wenn ihr rechtes Kappenzentrum hoechstens 14px (23 - 9) vom
+//     Kappenmittelpunkt der Pille entfernt liegt.
+//  2. Mit top 4 / right 4 (Abstand 9,9): "liegt jetzt zu sehr auf dem Icon.
+//     Es muss ueber das Icon gehen." -- Der Symbolmittelpunkt IST der
+//     Kappenmittelpunkt; ganz ueber dem Symbol geht also nicht. Das Beste
+//     ist die Ecke: so weit nach oben rechts, wie der 14px-Kreis erlaubt.
+//
+// jsdom rechnet kein Layout, deshalb prueft der Test die CSS-Werte gegen
+// dieselbe Geometrie. Vertrag: Abstand zwischen 13 (an der Ecke) und 14
+// (nicht angeschnitten). Wer Richtung 0/0 schiebt, faellt an 14; wer
+// zurueck Richtung 4/4 geht, faellt an 13.
+describe('Zahl an der Glocke: an der Ecke des Symbols, ganz in der Glas-Pille', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
   const block = css.match(/\.app-postfach-glocke__zahl \{([^}]*)\}/)?.[1] ?? '';
   const wert = (name: string): number => {
@@ -185,30 +192,40 @@ describe('Zahl an der Glocke: liegt in der Glas-Pille des iOS-Themes', () => {
   const INNER_EINZUG = 3;
   const ZAHL = 18;
 
-  it('die Werte sind die gemessenen: top 4px, right 4px, 18px gross', () => {
-    expect(wert('top')).toBe(4);
-    expect(wert('right')).toBe(4);
+  // Abstand des rechten Kappenzentrums der Zahl vom Kappenmittelpunkt der
+  // Pille, beide Achsen von der Pillenkante aus gerechnet. Bei mehr als
+  // einer Ziffer wird die Zahl nach links breiter -- das rechte Zentrum
+  // bleibt.
+  const abstand = (top: number, right: number): number => {
+    const dx = PILLE_RADIUS - (INNER_EINZUG + right + ZAHL / 2);
+    const dy = PILLE_RADIUS - (INNER_EINZUG + top + ZAHL / 2);
+    return Math.hypot(dx, dy);
+  };
+  const SICHTBAR = PILLE_RADIUS - ZAHL / 2; // 14: alles darueber wird angeschnitten
+  const AN_DER_ECKE = 13;                   // darunter liegt sie wieder auf dem Symbol
+
+  it('die Werte sind die gemessenen: top 1px, right 2px, 18px gross', () => {
+    expect(wert('top')).toBe(1);
+    expect(wert('right')).toBe(2);
     expect(wert('height')).toBe(ZAHL);
     expect(wert('min-width')).toBe(ZAHL);
   });
 
-  it('der Mittelpunkt der Zahl liegt mit Luft innerhalb der Kappe', () => {
-    const top = wert('top');
-    const right = wert('right');
-    // Abstand des Zahl-Mittelpunkts vom Kappenmittelpunkt, beide Achsen von
-    // der Pillenkante aus gerechnet.
-    const dx = PILLE_RADIUS - (INNER_EINZUG + right + ZAHL / 2);
-    const dy = PILLE_RADIUS - (INNER_EINZUG + top + ZAHL / 2);
-    const abstand = Math.hypot(dx, dy);
-    const erlaubt = PILLE_RADIUS - ZAHL / 2; // 14
-    expect(abstand).toBeCloseTo(9.9, 1);
-    expect(abstand).toBeLessThanOrEqual(erlaubt - 4); // mindestens 4px Luft
+  it('ganz sichtbar UND an der Ecke: Abstand 13,45 -- zwischen 13 und 14', () => {
+    const a = abstand(wert('top'), wert('right'));
+    expect(a).toBeCloseTo(13.45, 1);
+    expect(a).toBeLessThanOrEqual(SICHTBAR);
+    expect(a).toBeGreaterThanOrEqual(AN_DER_ECKE);
   });
 
-  it('die alten Werte (top 2, right 0) haetten die Kappe getroffen -- Gegenprobe der Formel', () => {
-    const dx = PILLE_RADIUS - (INNER_EINZUG + 0 + ZAHL / 2);
-    const dy = PILLE_RADIUS - (INNER_EINZUG + 2 + ZAHL / 2);
-    expect(Math.hypot(dx, dy)).toBeGreaterThan(PILLE_RADIUS - ZAHL / 2);
+  it('Gegenprobe der Formel: 2/0 und 1/1 schneiden an, 4/4 liegt auf dem Symbol', () => {
+    // Der Ausgangszustand (Simon: "oben abgeschnitten") und der naechste
+    // ganze Pixel Richtung Ecke.
+    expect(abstand(2, 0)).toBeGreaterThan(SICHTBAR);
+    expect(abstand(1, 1)).toBeGreaterThan(SICHTBAR);
+    // Der erste Versuch (Simon: "zu sehr auf dem Icon").
+    expect(abstand(4, 4)).toBeCloseTo(9.9, 1);
+    expect(abstand(4, 4)).toBeLessThan(AN_DER_ECKE);
   });
 
   it('Android hebt die Zahl an, weil .button-inner dort 12px tiefer beginnt', () => {

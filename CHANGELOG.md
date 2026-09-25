@@ -133,6 +133,16 @@ Versionsüberschrift.
 ### Behoben
 - Hat eine Gemeinde noch keine Level, trägt das Symbol im leeren Zustand jetzt
   die Level-Farbe wie der Rest der Seite — nicht mehr das Violett der Konfis.
+- Die Sprechblase, die beim Antippen eines Abzeichens, Stempels oder Levels
+  aufgeht, passt wieder zu ihrem Inhalt. Auf dem iPhone ragte der weiße
+  Inhalt über die Glasblase hinaus, und der Pfeil zeigte neben die Kachel.
+- In der Level-Sprechblase bricht die Zeile mit den nötigen Punkten nicht mehr
+  mitten im Satz um.
+- Die rote Zahl am Symbol eines Chat-Raums oder einer Challenge sitzt jetzt am
+  Rand des Symbols statt darauf.
+- iOS: Die Zahl an der Glocke oben rechts sitzt auf der oberen rechten Ecke
+  des Symbols — so weit außen, wie es die runde Knopf-Pille zulässt, ohne sie
+  anzuschneiden.
 - Wer mehrere Gemeinden betreut, bekommt die Mitteilungen an die Leitung jetzt
   aus allen — neue Anträge, Ab- und Anmeldungen, Challenge-Beiträge, Buchungen
   des Teams, Registrierungen, Lösch-Warnungen für Jahrgänge. Bisher kamen sie

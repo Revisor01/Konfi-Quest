@@ -2679,12 +2679,29 @@ ion-button.app-modal-submit-btn--bonus {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* === Badge Popover auto-width === */
+/* === Abzeichen-, Stempel- und Level-Popover: FESTE Breite ===
+   Nicht `--width: auto` (25.09.2026, Simon am iPhone: "Popover ueber Badges
+   und Challenges sind kaputt" -- die weisse Flaeche ragte ueber die
+   Glas-Sprechblase hinaus, der Pfeil sass neben der Kachel).
+
+   Gemessen im Browser (Ionic 9.0.3, ios27-Theme, 393px breit): Die
+   Popover-Animation liest Breite und Hoehe des Inhalts per
+   getBoundingClientRect() BEVOR sie `left` setzt -- Ionics eigene wie die
+   des Themes, das daraus zusaetzlich die Glas-Sprechblase als SVG mit
+   festen Massen zeichnet. Mit `--width: auto` steht der Inhalt in dem
+   Moment noch an seiner statischen Position (mittig, 196,5px Platz nach
+   rechts), also greift `min-width`: gemessen 200 x 223px. Nach dem Setzen
+   von `left` waechst er auf 320 x 175px. Ergebnis: Sprechblase 200 breit
+   und 223 hoch, weisser Inhalt 320 breit, Pfeil 19px neben der Kachelmitte.
+   Ionic warnt davor im eigenen Stylesheet (select-popover-rich-content:
+   "Intrinsic values return 0 at that point").
+
+   Feste Breite: vorher wie nachher 320px, Sprechblase 320 x 175 --
+   deckungsgleich. Vertrag im Test: popoverBreite.test.ts. */
 .badge-popover-auto-width,
 .badge-detail-popover {
-  --width: auto;
+  --width: min(320px, 85vw);
   --max-width: min(320px, 85vw);
-  --min-width: 200px;
 }
 
 .app-auth-invite-info {
@@ -3597,10 +3614,25 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
      mit top: 2px / right: 0 bei x 356-374, y 63-81 -- ihre rechte obere
      Ecke lag ausserhalb des Halbkreises: 4,9 % der Flaeche weg, die Ecke
      sichtbar abgeschnitten. Die Pille braucht ihr overflow: hidden fuer
-     den Glaslook, also rueckt die ZAHL nach innen: Mit top: 4px / right: 4px
-     liegt ihr Mittelpunkt 9,9px vom Kappenmittelpunkt entfernt, erlaubt
-     sind 14px (23 - 9) -- 4px Luft, 100 % sichtbar, und sie sitzt auf der
-     rechten oberen Ecke der Glocke (Symbol 22x22px bei x 343-365, y 70-92).
+     den Glaslook (Theme-Mixin theme-buttons), also muss die ZAHL in den
+     Halbkreis: Ihr rechtes Kappenzentrum (Radius 9) darf hoechstens
+     14px (23 - 9) vom Kappenmittelpunkt der Pille (x 354, y 81) entfernt
+     sein. Der Symbolmittelpunkt ist derselbe Punkt (Symbol 22x22px bei
+     x 343-365, y 70-92) -- die Zahl kann also nie ganz ueber dem Symbol
+     stehen, hoechstens so weit zur Ecke, wie der Kreis erlaubt.
+
+     top: 4px / right: 4px (erster Versuch) lag bei 9,9px: 100 % sichtbar,
+     aber 13x13px auf dem Symbol -- Simon: "liegt jetzt zu sehr auf dem
+     Icon. Es muss ueber das Icon gehen." Gemessene Kandidaten:
+       top 1 / right 2   Abstand 13,45  100 % sichtbar  Oberkante 7,8px
+                         ueber dem Symbol, 6,8px rechts darueber hinaus,
+                         Ueberdeckung 11x10px            <- gewaehlt
+       top 1 / right 1   Abstand 14,14  99,8 %          Haarlinie weg
+       top 0 / right 2   Abstand 14,21  99,7 %          Haarlinie weg
+       top 0 / right 3   Abstand 13,6   100 %           Oberkante 8,8px,
+                         aber nur 5,8px nach rechts
+     Zweistellig ("23", "99+") wird die Zahl nach LINKS breiter; das rechte
+     Kappenzentrum bleibt bei right: 2px dasselbe -- gemessen 100 %.
 
      Android (MD3-Theme): keine Pille (overflow visible, kein Radius), der
      Knopf ist 48x48px, aber .button-inner nur 24px hoch und mittig (y 75-99
@@ -3618,8 +3650,8 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
 }
 .app-postfach-glocke__zahl {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 1px;
+  right: 2px;
   min-width: 18px;
   height: 18px;
   padding: 0 var(--app-abstand-mini);

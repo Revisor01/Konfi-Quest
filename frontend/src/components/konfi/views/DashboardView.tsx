@@ -369,7 +369,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     presentLevelPopover({
       event: e.nativeEvent,
       side: 'top',
-      alignment: 'center'
+      alignment: 'center',
+      // Dieselbe feste Breite wie der Abzeichen-Popover derselben Seite
+      // (25.09.2026, Simon: "bei Leveln muss es nur spaeter umbrechen in der
+      // Sub-Zeile"). Ohne Klasse ist der Popover 200px breit, die Textspalte
+      // neben dem 48px-Symbol 116px -- "30 Punkte erforderlich" (134px)
+      // brach nach "Punkte" um. Mit 320px ist die Spalte 236px breit.
+      cssClass: 'badge-detail-popover'
     });
   };
 
