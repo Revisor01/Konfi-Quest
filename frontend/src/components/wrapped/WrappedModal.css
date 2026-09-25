@@ -26,8 +26,6 @@
   /* Grosse Wortmarke ("DEIN KONFI-JAHR", Bebas, 76px) */
   --w-schlagzeile: clamp(52px, 16vw, 76px);
   --w-schlagzeile-lh: 0.88;
-  /* Mittlere Zahl (40px) */
-  --w-zahl-klein: clamp(32px, 10vw, 40px);
   /* Fliesstext und Labels */
   --w-text: 17px;
   --w-label: 12px;

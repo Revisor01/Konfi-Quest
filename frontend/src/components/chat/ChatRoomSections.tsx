@@ -151,7 +151,7 @@ export const ReplyPreview = React.memo<ReplyPreviewProps>(({ replyToMessage, onC
       fill="clear"
       size="small"
       onClick={onClear}
-      style={{ '--padding-start': '4px', '--padding-end': '4px' }}
+      style={{ '--padding-start': 'var(--app-abstand-mini)', '--padding-end': 'var(--app-abstand-mini)' }}
     >
       <IonIcon icon={ICON_ABSAGE} style={{ fontSize: 'var(--app-text-untertitel)', color: 'var(--app-text-system)' }} />
     </IonButton>
@@ -228,7 +228,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
       fill="clear"
       size="small"
       onClick={onClear}
-      style={{ '--padding-start': '6px', '--padding-end': '6px' }}
+      style={{ '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)' }}
     >
       <IonIcon icon={ICON_ABSAGE} style={{ fontSize: 'var(--app-text-titel-gross)', color: 'var(--app-text-system)' }} />
     </IonButton>
@@ -306,10 +306,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
     <IonToolbar style={{
       '--background': 'transparent',
       '--min-height': 'auto',
-      '--padding-start': '12px',
-      '--padding-end': '12px',
-      '--padding-top': '8px',
-      '--padding-bottom': '8px'
+      '--padding-start': 'var(--app-abstand-mittel)',
+      '--padding-end': 'var(--app-abstand-mittel)',
+      '--padding-top': 'var(--app-abstand-eng)',
+      '--padding-bottom': 'var(--app-abstand-eng)'
     }}>
       {/* Flex-Container für Input und Buttons - vertikal zentriert */}
       <div style={{
@@ -323,8 +323,8 @@ export const MessageInput = React.memo<MessageInputProps>(({
           size="small"
           onClick={() => fileInputRef.current?.click()}
           style={{
-            '--padding-start': '4px',
-            '--padding-end': '4px',
+            '--padding-start': 'var(--app-abstand-mini)',
+            '--padding-end': 'var(--app-abstand-mini)',
             '--color': 'var(--app-color-chat)',
             '--height': '38px',
             '--min-height': '38px',
@@ -360,10 +360,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
             style={{
               '--background': 'transparent',
               '--border-radius': '0',
-              '--padding-start': '14px',
-              '--padding-end': '14px',
-              '--padding-top': '10px',
-              '--padding-bottom': '10px',
+              '--padding-start': 'var(--app-abstand-mittelweit)',
+              '--padding-end': 'var(--app-abstand-mittelweit)',
+              '--padding-top': 'var(--app-abstand-schmal)',
+              '--padding-bottom': 'var(--app-abstand-schmal)',
               '--box-shadow': 'none',
               margin: '0',
               '--color': 'var(--app-text-emphasis)',
@@ -409,6 +409,8 @@ export const MessageInput = React.memo<MessageInputProps>(({
             '--background-hover': 'var(--app-color-chat-dunkel)',
             '--height': '38px',
             '--min-height': '38px',
+            // 19px = halbe Hoehe (38px) -> exakt rund. Bewusst ausserhalb der Radius-Skala,
+            // im Test als Ausnahme gefuehrt; ein Skalenwert waere hier sichtbar.
             '--border-radius': '19px',
             '--padding-start': '0',
             '--padding-end': '0',

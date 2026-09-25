@@ -623,7 +623,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           size="small"
                           onClick={(e) => { e.stopPropagation(); removeFile(); }}
                           aria-label="Bild entfernen"
-                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
+                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': 'var(--app-radius-klein)' }}
                         >
                           <IonIcon icon={ICON_LOESCHEN_GEFUELLT} slot="icon-only" />
                         </IonButton>
@@ -688,7 +688,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           size="small"
                           onClick={(e) => { e.stopPropagation(); removeFile(); }}
                           aria-label="Video entfernen"
-                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
+                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': 'var(--app-radius-klein)' }}
                         >
                           <IonIcon icon={ICON_LOESCHEN_GEFUELLT} slot="icon-only" />
                         </IonButton>

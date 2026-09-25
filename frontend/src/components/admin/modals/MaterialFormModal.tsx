@@ -485,7 +485,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup>
                 <IonAccordion value="events" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
-                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': 'var(--app-abstand-basis)' }}>
                     <IonLabel>
                       <h3 style={{ fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0' }}>
                         Events
@@ -542,7 +542,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
                 </IonAccordion>
 
                 <IonAccordion value="jahrgaenge" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
-                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': 'var(--app-abstand-basis)' }}>
                     <IonLabel>
                       <h3 style={{ fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0' }}>
                         Jahrgänge

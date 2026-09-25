@@ -26,7 +26,11 @@ function dateienUnter(verzeichnis: string, endung = '.tsx'): string[] {
 }
 
 function ohneKommentare(quelle: string): string {
-  return quelle.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // Blockkommentare behalten ihre Zeilenumbrueche, damit die gemeldeten
+  // Zeilennummern der CSS-Pruefungen stimmen (vorher um Hunderte verschoben).
+  return quelle
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ''))
+    .replace(/^\s*\/\/.*$/gm, '');
 }
 
 // Bewusste Ausnahmen (jeweils im Code kommentiert):
@@ -36,14 +40,31 @@ function ohneKommentare(quelle: string): string {
 // - WeiterSoSlide: dasselbe Mass. Sie steht an DERSELBEN Stelle der
 //   Dramaturgie (der Blick nach vorn) und muss deshalb denselben Abstand
 //   halten -- ein anderer Wert waere an genau dieser Stelle sichtbar.
+// - ChatRoomSections: Senden-Knopf 38px hoch, Radius 19px = halbe Hoehe,
+//   also exakt rund. Kein Skalenwert trifft das; 16 oder 20 waeren sichtbar.
 const AUSGENOMMENE_DATEIEN = ['ShareCard.tsx'];
 const AUSGENOMMENE_FUNDE = [
   { datei: 'WerdeTeamerSlide.tsx', fund: 'marginTop: 22' },
   { datei: 'WeiterSoSlide.tsx', fund: 'marginTop: 22' },
+  { datei: 'ChatRoomSections.tsx', fund: "--border-radius: '19px'" },
+  // UEBERGANGSWEISE (25.09.2026): 22 Info-Knoepfe mit 6px. Die Datei war bei
+  // der Umstellung in fremder Bearbeitung und blieb deshalb roh. Beim naechsten
+  // Anfassen auf var(--app-abstand-kompakt) umstellen und diese zwei Zeilen
+  // streichen -- sie sind kein Freibrief, sondern ein offener Posten.
+  { datei: 'AdminSettingsPage.tsx', fund: "--padding-start: '6px'" },
+  { datei: 'AdminSettingsPage.tsx', fund: "--padding-end: '6px'" },
 ];
 
 const ABSTAND_PROPS =
   '(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap|borderRadius)';
+
+// Ionic-Teilvariablen, die Komponenten per style={{ '--padding-start': ... }}
+// setzen. Bis 25.09.2026 schloss der Lookbehind (?<![-'"\w]) sie aus, weil vor
+// dem Namen ein Anfuehrungszeichen steht -- so wuchsen 61 rohe px-Werte
+// ungeprueft heran. Der Name wird MIT Anfuehrungszeichen gematcht, damit der
+// Lookbehind fuer die React-Props unveraendert bleibt.
+const IONIC_TEILVARIABLEN =
+  "'--(?:padding|margin|inner-padding)-(?:start|end|top|bottom)'|'--border-radius'";
 
 /** Reine px-Wertliteral-Grammatik: nur px-Zahlen, 0, auto, Prozente. */
 const ROHWERT = /^(?:\d+px|0|auto|\d+%)(?: (?:\d+px|0|auto|\d+%))*$/;
@@ -53,10 +74,15 @@ function roheFunde(quelle: string): string[] {
   const funde: string[] = [];
   const rein = ohneKommentare(quelle);
   // Zeichenketten-Werte, auch in Ternaries: prop: cond ? '16px' : '12px'
-  const proAusdruck = new RegExp(`(?<![-'"\\w])(${ABSTAND_PROPS})\\s*:\\s*([^,}\\n]+)`, 'g');
+  const proAusdruck = new RegExp(
+    `(?<![-'"\\w])(${ABSTAND_PROPS}|${IONIC_TEILVARIABLEN})\\s*:\\s*([^,}\\n]+)`,
+    'g'
+  );
   for (const [, prop, ausdruck] of rein.matchAll(proAusdruck)) {
     for (const [, literal] of ausdruck.matchAll(/'([^']*)'/g)) {
-      if (ROHWERT.test(literal) && literal.includes('px')) funde.push(`${prop}: '${literal}'`);
+      if (ROHWERT.test(literal) && literal.includes('px')) {
+        funde.push(`${prop.replace(/'/g, '')}: '${literal}'`);
+      }
     }
   }
   // Numerische Werte (React deutet Zahlen als px); nacktes margin:/padding:
@@ -147,7 +173,7 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
     expect(lies('src/theme/variables.css')).toContain("@import './abstaende.css';");
   });
 
-  it('keine Komponente setzt rohe px-Abstaende oder -Radien inline', () => {
+  it('keine Komponente setzt rohe px-Abstaende oder -Radien inline (auch nicht in Ionic-Teilvariablen)', () => {
     const verstoesse: string[] = [];
     for (const datei of dateienUnter('src/components')) {
       if (AUSGENOMMENE_DATEIEN.some((a) => datei.endsWith(a))) continue;
@@ -213,6 +239,31 @@ describe('Design-Tokens: Abstaende, Radien, Schatten (05.09.2026)', () => {
 });
 
 describe('Komponenten-Stylesheets haengen an der Abstands-Skala', () => {
+  // 25.09.2026: In variables.css standen zwoelf Ionic-Teilvariablen mit rohen
+  // px-Werten (--padding-start: 10px, --border-radius: 12px, ...). Die
+  // Pruefung oben greift nur fuer padding/margin/gap als Eigenschaft, nicht
+  // fuer die gleichnamigen Ionic-Variablen -- deshalb hier eigens.
+  it('Ionic-Teilvariablen in variables.css und Komponenten-CSS tragen Tokens statt px', () => {
+    const dateien = [
+      'src/theme/variables.css',
+      ...dateienUnter('src/components', '.css').filter(d => !d.includes('/wrapped/')),
+    ];
+    const funde: string[] = [];
+    for (const datei of dateien) {
+      const zeilen = ohneKommentare(lies(datei)).split('\n');
+      zeilen.forEach((zeile, i) => {
+        const m = zeile.match(
+          /^\s*(--(?:padding|margin|inner-padding)-(?:start|end|top|bottom)|--border-radius):\s*(.+);/
+        );
+        if (!m) return;
+        const ohneVar = m[2].replace(/var\([^)]*\)/g, '');
+        if (/(?<![\d.])[1-9]\d*px/.test(ohneVar)) funde.push(`${datei}:${i + 1}: ${zeile.trim()}`);
+      });
+    }
+    expect(funde).toEqual([]);
+  });
+
+
   // Bestandsaufnahme 25.09.2026: In den .css-Dateien unter components/ stand
   // genau ein roher px-Abstand ausserhalb des Wrapped (FileViewerModal:
   // "+ 12px" in einem calc). Der Wrapped bleibt aussen vor -- seine

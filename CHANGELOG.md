@@ -304,6 +304,8 @@ Versionsüberschrift.
   Platz auf dem Gerät und entspricht den Anforderungen von Google Play.
 - Ein nicht mehr benutztes Kamera-Modul ist aus der App geflogen; die
   Fotoauswahl lief ohnehin längst über die Dateiauswahl des Systems.
+- Innenabstände und Eckradien der Ionic-Bedienelemente hängen jetzt ebenfalls an
+  der gemeinsamen Abstands-Skala; ein Test wacht darüber. Nichts sieht anders aus.
 
 ## [2.2.0] - 2026-09-18
 

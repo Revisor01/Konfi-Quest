@@ -182,7 +182,7 @@ const ForgotPasswordPage: React.FC = () => {
                       expand="full"
                       fill="outline"
                       onClick={() => handleSubmit()}
-                      style={{ marginBottom: 'var(--app-abstand-mittel)', '--border-radius': '8px', height: '36px', fontSize: 'var(--app-text-sekundaer)' }}
+                      style={{ marginBottom: 'var(--app-abstand-mittel)', '--border-radius': 'var(--app-radius-klein)', height: '36px', fontSize: 'var(--app-text-sekundaer)' }}
                     >
                       <IonIcon icon={ICON_AKTUALISIEREN} slot="start" />
                       Erneut versuchen

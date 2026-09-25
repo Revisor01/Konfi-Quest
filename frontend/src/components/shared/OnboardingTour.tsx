@@ -182,7 +182,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
               '--color': slides[index].color,
               '--ripple-color': slides[index].color,
               '--box-shadow': '0 6px 18px rgba(0,0,0,0.18)',
-              '--border-radius': '14px',
+              '--border-radius': 'var(--app-radius-weich)',
               height: '52px', fontWeight: 'var(--app-schrift-fett)'
             }}
           >

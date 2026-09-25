@@ -355,7 +355,6 @@ ion-list-header ion-label {
   --app-text-emphasis: #1a1a1a; /* kraeftige Titel/Werte (Chat, Legenden) */
   --app-text-body: #4a4a4a; /* Fliesstext in Legenden-Karten */
   --app-text-ios: #3c3c43; /* iOS-Sekundaerton (Beschreibungen) */
-  --app-text-faint: #b0b0b5; /* blasse Nebenwerte (Metrikseite) */
 
   /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
   /* Kartengrund (25.09.2026): Bis hierher stand `white` 4x im Stylesheet und
@@ -1709,7 +1708,7 @@ ion-item-option.app-swipe-action {
    * das über die CSS-Variablen --padding-* gesteuert wird. Bei zwei Buttons
    * nebeneinander wuerde sich rechtes + linkes Padding verdoppeln, daher
    * NUR links Abstand (10px), rechts 0 -> exakt 10px zwischen den Icons. */
-  --padding-start: 10px;
+  --padding-start: var(--app-abstand-schmal);
   --padding-end: 0;
   --padding-top: 0;
   --padding-bottom: 0;
@@ -1891,7 +1890,7 @@ ion-list.app-list-inner {
 /* === Action-Button (48px, abgerundet, fett) === */
 ion-button.app-action-button {
   height: 48px;
-  --border-radius: 12px;
+  --border-radius: var(--app-radius-karte);
   font-weight: var(--app-schrift-halbfett);
 }
 
@@ -2304,7 +2303,7 @@ ion-toggle.app-toggle--events {
   background: var(--ion-background-color, #f4f5f8);
 }
 .app-modal-footer ion-button {
-  --border-radius: 12px;
+  --border-radius: var(--app-radius-karte);
   font-weight: var(--app-schrift-halbfett);
 }
 
@@ -2314,14 +2313,14 @@ ion-button.app-modal-close-btn {
   --background: var(--app-surface-soft);
   --background-hover: var(--app-color-silber-hell);
   --color: var(--app-color-neutral);
-  --border-radius: 8px;
+  --border-radius: var(--app-radius-klein);
 }
 
 /* === Modal Submit Button === */
 /* Basis-Submit-Button (Farbe wird per Variante gesetzt) */
 ion-button.app-modal-submit-btn {
   --color: white;
-  --border-radius: 8px;
+  --border-radius: var(--app-radius-klein);
 }
 /* Farb-Varianten passend zu Domain-Farben */
 ion-button.app-modal-submit-btn--events {
@@ -2625,8 +2624,8 @@ ion-button.app-modal-submit-btn--bonus {
   --placeholder-opacity: 1;
   --highlight-color-focused: transparent;
   --inner-border-width: 0;
-  --padding-start: 14px;
-  --padding-end: 14px;
+  --padding-start: var(--app-abstand-mittelweit);
+  --padding-end: var(--app-abstand-mittelweit);
   background: var(--app-surface-muted);
   border: 1px solid var(--app-color-silber-hell);
   border-radius: var(--app-radius-weich);
@@ -2672,7 +2671,7 @@ ion-button.app-modal-submit-btn--bonus {
   --background-hover: var(--app-gradient-wrapped-hover);
   --background-activated: linear-gradient(135deg, var(--app-color-wrapped-dunkel) 0%, var(--app-color-konfis-dunkel) 100%);
   --color: var(--app-weiss);
-  --border-radius: 16px;
+  --border-radius: var(--app-radius-gross);
   --box-shadow: 0 10px 28px rgba(var(--app-color-requests-rgb), 0.4);
   height: 52px;
   font-family: var(--app-schriftart-marke);
@@ -2884,7 +2883,7 @@ ion-button.app-modal-submit-btn--bonus {
   --background: transparent;
   --color: var(--app-color-wrapped);
   --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
-  --border-radius: 10px;
+  --border-radius: var(--app-radius-knopf);
   --border-width: 1px;
   --border-style: solid;
   height: 38px;
@@ -2898,7 +2897,7 @@ ion-button.app-modal-submit-btn--bonus {
   --background: transparent;
   --color: var(--app-color-wrapped);
   --border-color: rgba(var(--app-color-wrapped-rgb), 0.4);
-  --border-radius: 12px;
+  --border-radius: var(--app-radius-karte);
   --border-width: 1px;
   --border-style: solid;
   height: 44px;
@@ -3601,7 +3600,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     --app-text-emphasis: #f2f2f7;
     --app-text-body: #c7c7cc;
     --app-text-ios: #ebebf5;
-    --app-text-faint: #636366;
     --app-text-dunkelgrau: #e5e7eb;
     --app-text-mittelgrau: #b0b0b5;
 
@@ -3632,8 +3630,8 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
    Name kompakt + bei Bedarf abgeschnitten, damit der Seitentitel Platz behaelt.
    ============================================ */
 .app-org-switcher-btn {
-  --padding-start: 6px;
-  --padding-end: 6px;
+  --padding-start: var(--app-abstand-kompakt);
+  --padding-end: var(--app-abstand-kompakt);
 }
 .app-org-switcher-btn::part(native) {
   text-transform: none;

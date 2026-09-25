@@ -303,7 +303,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup ref={accordionGroupRef}>
                 <IonAccordion value="activity-picker" toggleIcon={ICON_AUFKLAPPEN} toggleIconSlot="end">
-                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px', '--inner-padding-end': '12px' }}>
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': 'var(--app-abstand-basis)', '--inner-padding-end': 'var(--app-abstand-mittel)' }}>
                     {selectedActivity ? (
                       // Gewaehlt: schlichte Header-Zeile (Icon + Name + Kategorie,
                       // Punkte dezent als Chip) — KEINE Card-im-Header-Optik, die

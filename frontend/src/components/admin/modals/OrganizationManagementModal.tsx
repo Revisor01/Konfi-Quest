@@ -1075,7 +1075,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <div style={{ marginTop: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)', background: 'rgba(var(--app-color-users-rgb), 0.05)', borderRadius: 'var(--app-radius-karte)', border: '1px dashed var(--app-color-users)' }}>
                     <h4 style={{ margin: '0 0 var(--app-abstand-mittel) 0', fontSize: 'var(--app-text-betont)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-primary)' }}>Neuen Administrator hinzufügen</h4>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': '10px', marginBottom: 'var(--app-abstand-eng)' }}>
+                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Name *</IonLabel>
                         <IonInput
                           value={newAdminData.display_name}
@@ -1084,7 +1084,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           disabled={addingAdmin}
                         />
                       </IonItem>
-                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': '10px', marginBottom: 'var(--app-abstand-eng)' }}>
+                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Login-Benutzername *</IonLabel>
                         <IonInput
                           value={newAdminData.username}
@@ -1093,7 +1093,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           disabled={addingAdmin}
                         />
                       </IonItem>
-                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': '10px', marginBottom: 'var(--app-abstand-eng)' }}>
+                      <IonItem style={{ '--background': 'var(--app-surface-card)', '--border-radius': 'var(--app-radius-knopf)', marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonLabel position="stacked">Passwort *</IonLabel>
                         <IonInput
                           type="password"
@@ -1210,7 +1210,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         detail={false}
                         lines="none"
                         onClick={() => memberAddingId === null && handleAddMember(u.id)}
-                        style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.05)', '--border-radius': '10px' }}
+                        style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.05)', '--border-radius': 'var(--app-radius-knopf)' }}
                       >
                         <IonLabel>
                           <h3 style={{ margin: 0 }}>{u.display_name}</h3>

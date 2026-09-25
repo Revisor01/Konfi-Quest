@@ -457,7 +457,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       '--color': selectedAction === 'approve' ? 'white' : 'var(--app-color-success-strong)',
                       '--background': selectedAction === 'approve' ? 'var(--app-color-success-strong)' : 'transparent',
                       '--border-width': '2px',
-                      '--border-radius': '12px',
+                      '--border-radius': 'var(--app-radius-karte)',
                       fontWeight: 'var(--app-schrift-halbfett)'
                     }}
                   >
@@ -475,7 +475,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       '--color': selectedAction === 'reject' ? 'white' : 'var(--app-color-danger)',
                       '--background': selectedAction === 'reject' ? 'var(--app-color-danger)' : 'transparent',
                       '--border-width': '2px',
-                      '--border-radius': '12px',
+                      '--border-radius': 'var(--app-radius-karte)',
                       fontWeight: 'var(--app-schrift-halbfett)'
                     }}
                   >
@@ -501,8 +501,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         background: 'var(--app-surface-muted)',
                         borderRadius: 'var(--app-radius-klein)',
                         padding: 'var(--app-abstand-eng)',
-                        '--padding-start': '12px',
-                        '--padding-end': '12px'
+                        '--padding-start': 'var(--app-abstand-mittel)',
+                        '--padding-end': 'var(--app-abstand-mittel)'
                       }}
                     />
                   </div>
