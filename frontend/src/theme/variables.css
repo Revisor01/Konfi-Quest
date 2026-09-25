@@ -27,16 +27,21 @@ http://ionicframework.com/docs/theming/ */
 @import './abstaende.css';
 
 /* iOS-Theme (ios27) - kann durch Entfernen dieser Imports deaktiviert werden.
-   Den Dark-Mode-Stylesheet des Themes NICHT einzeln dazunehmen: Er gehoert
-   zusammen mit den Ionic-Dark-Paletten in App.tsx, die bewusst abgeschaltet
-   sind. Einzeln ergaebe das eine halb umgestellte Oberflaeche.
+   Reihenfolge laut README des Themes: Variablen, Theme, MD-Bereinigung,
+   dann die Dunkel-Variante. Die Variante muss zu Ionics Palette in App.tsx
+   passen: dort liegt dark.system.css, hier -dark-system.css -- beide folgen
+   der Systemeinstellung des Geraets (Dunkelmodus seit 25.09.2026).
    md-ion-list-inset.css fehlt absichtlich - laut Doku darf es nicht dazu,
    solange MD3 geladen wird (das bringt seine eigenen Inset-Listen mit). */
 @import '@rdlabo/ionic-theme-ios27/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-ios27/dist/css/ionic-theme-ios27.css';
 @import '@rdlabo/ionic-theme-ios27/dist/css/md-remove-ios-class-effect.css';
+@import '@rdlabo/ionic-theme-ios27/dist/css/ionic-theme-ios27-dark-system.css';
 
-/* Material Design 3 Theme - für Android */
+/* Material Design 3 Theme - für Android. Das MD3-Theme bringt KEINE eigene
+   Dunkel-Datei mit (dist/css hat keine, geprueft 25.09.2026, Version 9.1.1):
+   Es liest Ionics Stufen --ion-background-color-step-*, und die stellt
+   Ionics dark.system.css um. */
 @import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css';
 
@@ -347,6 +352,14 @@ ion-list-header ion-label {
   --app-text-faint: #b0b0b5; /* blasse Nebenwerte (Metrikseite) */
 
   /* Flaechen und Linien — vorher lose Hexwerte in den Komponenten */
+  /* Kartengrund (25.09.2026): Bis hierher stand `white` 4x im Stylesheet und
+     22x als Inline-Style in Komponenten -- im Dunkelmodus leuchtende
+     Flaechen. Wer wirklich Weiss in beiden Modi will (QR-Code, Text auf
+     Farbe), nimmt --app-weiss; wer eine Karte will, nimmt dieses Token. */
+  --app-surface-card: #ffffff;
+  /* Glas-Grund von Toolbar und iOS-Tab-Leiste (RGB-Form fuer die 72 %
+     Deckkraft); dunkel derselbe Ton wie der Kartengrund. */
+  --app-glasleiste-rgb: 247, 247, 247;
   --app-surface-soft: #f8f9fa; /* heller Kartengrund (fremde Chat-Blase, Icon-Raster) */
   --app-surface-muted: #f5f5f5; /* Platzhalterflaechen, Kommentar-Kaesten */
   --app-surface-dim: #f0f0f0; /* Ladeflaechen, helle Trennlinien */
@@ -376,7 +389,7 @@ ion-list-header ion-label {
  * unten eigens gesetzt.
  */
 ion-card.app-card:not(.ios-theme-disabled) {
-  --background: white;
+  --background: var(--app-surface-card);
   box-shadow: none;
   overflow: hidden;
   margin: 0;
@@ -423,7 +436,7 @@ ion-card.app-card ion-item ion-label h2 {
   border-left-style: solid;
   border-radius: var(--app-radius-knopf);
   padding: var(--app-abstand-mittel) var(--app-abstand-basis);
-  background: white;
+  background: var(--app-surface-card);
   margin-bottom: var(--app-abstand-eng);
   overflow: hidden;
   position: relative;
@@ -432,7 +445,7 @@ ion-card.app-card ion-item ion-label h2 {
 
 /* IonItem mit app-list-item - Klick-Feedback auf ganze Zeile */
 ion-item.app-list-item {
-  --background: white;
+  --background: var(--app-surface-card);
   --background-activated: rgba(0, 0, 0, 0.08);
   --background-focused: rgba(0, 0, 0, 0.06);
   --background-hover: rgba(0, 0, 0, 0.04);
@@ -623,10 +636,10 @@ ion-item-sliding:last-child {
   flex-direction: row;
   z-index: 10;
 }
-/* Trenner zwischen Badges (2px weiß) */
+/* Trenner zwischen Badges (2px, Kartengrund) */
 .app-corner-badges__separator {
   width: 2px;
-  background: white;
+  background: var(--app-surface-card);
   align-self: stretch;
 }
 /* Einzelner Badge (ohne Positionierung — Container uebernimmt) */
@@ -1033,7 +1046,7 @@ ion-list[inset] ion-list-header {
    bis unter die Tab-Leiste, damit iOS dahinter durchschimmern kann); auf
    Android muss die Leiste ihn deshalb verdecken. */
 ion-tab-bar.ios {
-  --ion-tab-bar-background: rgba(247, 247, 247, 0.72);
+  --ion-tab-bar-background: rgba(var(--app-glasleiste-rgb), 0.72);
 }
 
 /* Android (MD): Tab-Leiste ueber der System-Gesten-/Navigationsleiste.
@@ -1849,17 +1862,17 @@ ion-card-content.app-card-content {
    backdrop-filter setzt das Theme selbst; wir nehmen ihm nur nicht mehr die
    Sicht. */
 :root {
-  --ion-toolbar-background: rgba(247, 247, 247, 0.72);
+  --ion-toolbar-background: rgba(var(--app-glasleiste-rgb), 0.72);
   --ion-toolbar-color: var(--app-schwarz);
 }
 
 /* === Condense-Toolbar (transparenter Large-Title Header) === */
 ion-toolbar.app-condense-toolbar {
   --background: transparent;
-  --color: black;
+  --color: var(--ion-text-color, #000);
 }
 ion-toolbar.app-condense-toolbar ion-title {
-  color: black;
+  color: var(--ion-text-color, #000);
 }
 
 /* === Innere IonList (transparent, kein Padding) === */
@@ -3433,17 +3446,175 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   color: var(--app-text-mittelgrau);
 }
 
-/* Dark Mode Support - DISABLED
-@media (prefers-color-scheme: dark) {
-  body {
-    --background: #1a1a1a;
-  }
+/* ===================================================================
+   DUNKELMODUS (25.09.2026) -- folgt der Systemeinstellung des Geraets.
 
-  .app-gradient-background {
-    --background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+   Die EINE Stelle fuer alle dunklen Entsprechungen der Farbtokens. Die
+   Grundlage (Ionic-Palette, Theme-Glas, Listen, Tabs) kommt aus
+   @ionic/react/css/palettes/dark.system.css (App.tsx) und
+   ionic-theme-ios27-dark-system.css (Imports oben). Hier stehen nur
+   unsere eigenen Tokens.
+
+   Regeln beim Umsetzen:
+   - Nicht invertieren. Kraeftige Bereichsfarben eine Stufe heller und
+     etwas weniger gesaettigt, sonst leuchten sie auf Schwarz; die
+     -dunkel-Partner ruecken auf den alten Grundton nach, damit Verlaeufe
+     mit weissem Text lesbar bleiben.
+   - Text auf Kartengrund (#1c1c1e) mindestens 4,5:1 -- der Test
+     dunkelmodus.test.ts rechnet das nach.
+   - Jede -rgb-Form traegt exakt das Tripel ihres Hexwerts (Test).
+   - Tokens OHNE dunkle Entsprechung stehen in der Ausnahmeliste des Tests,
+     mit Begruendung: Metallfarben, Anmelde- und Wrapped-Akzente (schon fuer
+     dunklen Grund gestaltet), Rollen-Verlaeufe (weisser Text darauf).
+   - Die Kopfbereiche (SectionHeader) ziehen ihre Verlaeufe aus theme/colors.ts
+     (JS), nicht aus diesen Tokens -- sie bleiben in beiden Modi gleich.
+
+   Nicht hier: die Zaehler- und Glockenregeln, die haben eigene Abschnitte.
+   =================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Bereichsfarben: eine Stufe heller, Partner auf den alten Grundton */
+    --app-color-events: #ef4444;
+    --app-color-events-rgb: 239, 68, 68;
+    --app-color-events-dunkel: #dc2626;
+    --app-color-activities: #10b981;
+    --app-color-activities-rgb: 16, 185, 129;
+    --app-color-activities-dunkel: #059669;
+    --app-color-konfis: #8b5cf6;
+    --app-color-konfis-rgb: 139, 92, 246;
+    --app-color-konfis-dunkel: #6d28d9;
+    --app-color-teamer: #ec4899;
+    --app-color-teamer-rgb: 236, 72, 153;
+    --app-color-teamer-dunkel: #be185d;
+    --app-color-teamer-mittel: #db2777;
+    --app-color-challenges: #818cf8;
+    --app-color-challenges-rgb: 129, 140, 248;
+    --app-color-challenges-dunkel: #6366f1;
+    --app-color-users: #7f95f0;
+    --app-color-users-rgb: 127, 149, 240;
+    --app-color-users-dunkel: #667eea;
+    --app-color-users-hover: #8fa3f2;
+    --app-color-badges: #fbbf24;
+    --app-color-badges-rgb: 251, 191, 36;
+    --app-color-badges-dunkel: #f59e0b;
+    --app-color-wrapped: #a78bfa;
+    --app-color-wrapped-rgb: 167, 139, 250;
+    --app-color-wrapped-dunkel: #7c3aed;
+    --app-color-wrapped-dunkel-rgb: 124, 58, 237;
+    --app-color-wrapped-hell: #c4b5fd;
+    --app-color-bonus: #fb923c;
+    --app-color-bonus-rgb: 251, 146, 60;
+    --app-color-bonus-hover: #f97316;
+    --app-color-group: #fb923c;
+    --app-color-group-rgb: 251, 146, 60;
+    --app-color-jahrgang: #0a84ff;
+    --app-color-jahrgang-rgb: 10, 132, 255;
+    --app-color-jahrgang-dunkel: #007aff;
+    --app-color-categories: #38bdf8;
+    --app-color-categories-rgb: 56, 189, 248;
+    --app-color-categories-dunkel: #0ea5e9;
+    --app-color-material: #f59e0b;
+    --app-color-material-rgb: 245, 158, 11;
+    --app-color-material-dunkel: #d97706;
+    --app-color-chat: #22d3ee;
+    --app-color-chat-rgb: 34, 211, 238;
+    --app-color-chat-dunkel: #06b6d4;
+    --app-color-level: #f472b6;
+    --app-color-level-rgb: 244, 114, 182;
+    --app-color-level-dunkel: #ec4899;
+    --app-color-zertifikate: #f472b6;
+    --app-color-zertifikate-rgb: 244, 114, 182;
+    /* Aliasse (purple = konfis, organizations = users, requests = konfis) */
+    --app-color-purple: #8b5cf6;
+    --app-color-purple-rgb: 139, 92, 246;
+    --app-color-organizations: #7f95f0;
+    --app-color-organizations-rgb: 127, 149, 240;
+    --app-color-requests: #8b5cf6;
+    --app-color-requests-rgb: 139, 92, 246;
+    --app-color-trophy: #ff9f0a;
+    --app-color-trophy-rgb: 255, 159, 10;
+
+    /* Punkte-Typen */
+    --app-color-gottesdienst: #60a5fa;
+    --app-color-gottesdienst-rgb: 96, 165, 250;
+    --app-color-gottesdienst-mittel: #3b82f6;
+    --app-color-gottesdienst-mittel-rgb: 59, 130, 246;
+    --app-color-gottesdienst-dunkel: #2563eb;
+    --app-color-gottesdienst-dunkel-rgb: 37, 99, 235;
+    --app-color-gemeinde: #34d399;
+    --app-color-gemeinde-rgb: 52, 211, 153;
+
+    /* Status: die dunklen Systemtoene von iOS, wo es sie gibt */
+    --app-color-success: #30d158;
+    --app-color-success-rgb: 48, 209, 88;
+    --app-color-success-strong: #10b981;
+    --app-color-success-strong-rgb: 16, 185, 129;
+    --app-color-success-fresh: #34d399;
+    --app-color-success-fresh-rgb: 52, 211, 153;
+    --app-color-success-frisch: #4ade80;
+    --app-color-success-klassisch: #34c759;
+    --app-color-success-klassisch-rgb: 52, 199, 89;
+    --app-color-success-tief: #a7f3d0;
+    --app-color-warning: #ff9f0a;
+    --app-color-warning-rgb: 255, 159, 10;
+    --app-color-danger: #ff453a;
+    --app-color-danger-rgb: 255, 69, 58;
+    --app-color-danger-hell: #f87171;
+    --app-color-info: #0a84ff;
+    --app-color-info-rgb: 10, 132, 255;
+    --app-color-neutral: #9ca3af;
+    --app-color-neutral-rgb: 156, 163, 175;
+    --app-color-neutral-hell: #8b939e;
+    --app-color-neutral-hell-rgb: 139, 147, 158;
+
+    /* Statusflaechen: dunkel getoente Flaeche, kraeftiger Rand, heller Text */
+    --app-flaeche-fehler: #3b1516;
+    --app-rand-fehler: #7f1d1d;
+    --app-text-fehler: #fca5a5;
+    --app-flaeche-erfolg: #0f2e23;
+    --app-rand-erfolg: #065f46;
+    --app-flaeche-warnung: #3a2607;
+    --app-rand-warnung: #92400e;
+    --app-text-warnung: #fcd34d;
+    --app-flaeche-hinweis: #0c2a3d;
+    --app-rand-hinweis: #075985;
+    --app-text-hinweis-dunkel: #7dd3fc;
+    --app-flaeche-gedaempft: #1c1c1e;
+
+    /* Text: iOS-Grautoene fuer dunklen Grund */
+    --app-text-primary: #e5e5ea;
+    --app-text-secondary: #aeaeb2;
+    --app-text-tertiary: #8e8e93;
+    --app-text-muted: #7c7c82;
+    --app-text-system: #98989d;
+    --app-text-system-rgb: 152, 152, 157;
+    --app-text-emphasis: #f2f2f7;
+    --app-text-body: #c7c7cc;
+    --app-text-ios: #ebebf5;
+    --app-text-faint: #636366;
+    --app-text-dunkelgrau: #e5e7eb;
+    --app-text-mittelgrau: #b0b0b5;
+
+    /* Flaechen und Linien: Kartengrund ueber Ionics Schwarz (iOS) bzw.
+       #121212 (Android), darueber zwei Stufen fuer Platzhalter und Raender */
+    --app-surface-card: #1c1c1e;
+    --app-surface-soft: #1c1c1e;
+    --app-surface-muted: #2c2c2e;
+    --app-surface-dim: #3a3a3c;
+    --app-border: #3a3a3c;
+    --app-border-soft: #2c2c2e;
+    --app-border-strong: #48484a;
+
+    /* Verlaeufe, die helle Flaechen sind */
+    --app-gradient-seite-hell: linear-gradient(135deg, #121212 0%, #1f1f22 100%);
+    --app-gradient-badge-gesperrt: linear-gradient(145deg, #48484a 0%, #3a3a3c 100%);
+
+    /* Ionic-Leisten: Glas-Grund auf Kartengrund-Ton, Titel hell. Die
+       Deckkraft steht in den Regeln der Leisten, hier nur der Ton. */
+    --app-glasleiste-rgb: 28, 28, 30;
+    --ion-toolbar-color: var(--app-weiss);
   }
 }
-*/
 
 /* ============================================
    Org-Switcher Button (Multi-Org, oben links im Header)

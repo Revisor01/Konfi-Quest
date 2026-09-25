@@ -874,7 +874,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               gap: 'var(--app-abstand-winzig)',
               marginTop: 'var(--app-abstand-eng)',
               padding: 'var(--app-abstand-kompakt) var(--app-abstand-schmal)',
-              backgroundColor: 'white',
+              backgroundColor: 'var(--app-surface-card)',
               borderRadius: 'var(--app-radius-gross)',
               boxShadow: 'var(--app-schatten-schwebend-stark)',
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'

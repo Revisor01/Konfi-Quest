@@ -153,7 +153,13 @@ describe('Farben kommen aus Tokens', () => {
     // einige Tokens wiederholt. Laufen die Werte auseinander, gewinnt je
     // nach Reihenfolge mal der eine, mal der andere — genau die Sorte
     // stiller Drift, die diese Konsolidierung beenden soll.
-    const css = lies('src/theme/variables.css');
+    // Der Dunkelmodus-Block (@media prefers-color-scheme: dark) definiert
+    // dieselben Tokens ABSICHTLICH anders -- das ist keine Drift, sondern
+    // der Sinn des Blocks. Er wird hier ausgeblendet; dass er zu den hellen
+    // Tokens passt, prueft dunkelmodus.test.ts.
+    const css = lies('src/theme/variables.css').replace(
+      /@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n\}\n/g, ''
+    );
     const werte = new Map<string, Set<string>>();
     // Nur die App-Farbfamilien; klassen-gebundene Ionic-Properties
     // (z.B. --ion-color-base je Utility-Klasse) duerfen abweichen.

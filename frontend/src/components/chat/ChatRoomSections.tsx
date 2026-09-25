@@ -336,7 +336,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
 
         <div style={{
           flex: 1,
-          backgroundColor: 'white',
+          backgroundColor: 'var(--app-surface-card)',
           borderRadius: 'var(--app-radius-gross)',
           border: '1.5px solid rgba(var(--app-color-chat-rgb), 0.3)',
           overflow: 'hidden',

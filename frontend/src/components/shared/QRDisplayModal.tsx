@@ -129,7 +129,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--background': 'white' }}>
+      <IonContent style={{ '--background': 'var(--app-surface-card)' }}>
         <div className="qr-display-container" style={{
           display: 'flex',
           flexDirection: 'column',
@@ -180,7 +180,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
                     border: '2px solid var(--app-border)',
                     borderRadius: 'var(--app-radius-karte)',
                     padding: 'var(--app-abstand-basis)',
-                    backgroundColor: 'white'
+                    backgroundColor: 'var(--app-weiss)' /* QR braucht echtes Weiss, auch im Dunkelmodus */
                   }}
                 />
               )}

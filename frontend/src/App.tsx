@@ -55,14 +55,15 @@ import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
 /**
- * Ionic Dark Mode - DISABLED
+ * Dunkelmodus (25.09.2026): folgt der Systemeinstellung des Geraets.
  * -----------------------------------------------------
- * Dark Mode ist deaktiviert bis zur vollständigen Implementierung
+ * Ionics System-Palette stellt Hintergrund, Text und die ion-color-Stufen
+ * um. Die passende Variante des iOS-Themes (-dark-system) liegt in
+ * theme/variables.css bei den Theme-Imports, die dunklen Werte unserer
+ * eigenen Farbtokens stehen dort in EINEM @media-Block. Die Palette muss
+ * VOR variables.css geladen werden, damit unsere Werte gewinnen.
  */
-
-/* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
-/* import '@ionic/react/css/palettes/dark.system.css'; */
+import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';

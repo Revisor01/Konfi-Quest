@@ -114,6 +114,22 @@ Bereichen: *Konto* (das eigene Profil), *Verwaltung* (Benutzer:innen,
 Einladungen) und *Inhalt* (Aktivitäten, Abzeichen, Jahrgänge, Kategorien,
 Level, Material, Jahresrückblick, Zertifikate).
 
+## Im Dunkelmodus arbeiten
+
+Die App richtet sich nach dem Handy: Steht das Gerät auf Dunkel, werden
+Hintergründe, Karten, Listen und Texte dunkel. Die Farben der Bereiche —
+Rot für Termine, Violett für Konfis, Türkis für den Chat — bleiben
+erkennbar, nur etwas heller, damit sie auf dunklem Grund nicht leuchten.
+
+Einen eigenen Schalter gibt es in der App nicht. Umgeschaltet wird in den
+Systemeinstellungen des Handys (iOS: *Anzeige & Helligkeit*, Android:
+*Display*), und die App folgt sofort. Wer das Handy automatisch nach
+Tageszeit wechseln lässt, bekommt auch die App nach Tageszeit.
+
+Zwei Dinge bleiben absichtlich hell: der QR-Code, damit ihn jede Kamera
+liest, und die Bilder des Jahresrückblicks, die ihre eigenen Hintergründe
+mitbringen.
+
 ## Nachlesen, was sich geändert hat
 
 Nach einem Update meldet sich beim ersten Öffnen **einmal** eine kurze

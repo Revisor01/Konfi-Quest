@@ -178,7 +178,7 @@ const CertPopoverContent: React.FC<{
   const statusColor = cert.status === 'valid' ? 'var(--app-color-success-strong)' : cert.status === 'expired' ? 'var(--app-color-danger)' : 'var(--app-color-neutral-hell)';
 
   return (
-    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'white', minWidth: '200px' }}>
+    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'var(--app-surface-card)', minWidth: '200px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-schmal)', marginBottom: 'var(--app-abstand-schmal)' }}>
         <div style={{
           width: '40px', height: '40px', borderRadius: 'var(--app-radius-kreis)',

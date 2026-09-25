@@ -314,7 +314,7 @@ const PostfachModal: React.FC = () => {
                 Modal ausserhalb des Routers ergab das kein Weiss, auf den
                 Seiten schon. Welche Variable im Modal abweicht, liess sich
                 im CSS nicht belegen -- deshalb hier fest, nicht geraten. */}
-            <IonCard className="app-card" data-testid="postfach-karte" style={{ '--background': 'white' } as React.CSSProperties}>
+            <IonCard className="app-card" data-testid="postfach-karte" style={{ '--background': 'var(--app-surface-card)' } as React.CSSProperties}>
               <IonCardContent style={{ padding: listeLeer ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
                 {laedt && listeLeer && (
                   <div className="app-postfach__laedt">

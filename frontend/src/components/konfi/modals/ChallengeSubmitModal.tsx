@@ -679,7 +679,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           controls
                           style={{
                             width: '100%', maxHeight: '280px',
-                            borderRadius: 'var(--app-radius-knopf)', display: 'block', background: 'black'
+                            borderRadius: 'var(--app-radius-knopf)', display: 'block', background: 'var(--app-schwarz)'
                           }}
                         />
                         <IonButton

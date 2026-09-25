@@ -345,13 +345,16 @@ describe('PostfachModal', () => {
       }
     });
 
-    it('die Karte der Mitteilungen ist ausdruecklich weiss -- auf dem Geraet war sie es nicht', async () => {
+    it('die Karte der Mitteilungen traegt ausdruecklich den Kartengrund -- auf dem Geraet war sie es nicht', async () => {
+      // Bis 25.09.2026 stand hier `white`; seit dem Dunkelmodus ist der
+      // Kartengrund ein Token (hell weiss, dunkel #1c1c1e), siehe
+      // dunkelmodus.test.ts.
       mockGet.mockResolvedValue(antwort([eintrag(1)]));
       render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 1');
       const karte = screen.getByTestId('postfach-karte') as HTMLElement;
-      expect(karte.style.getPropertyValue('--background')).toBe('white');
+      expect(karte.style.getPropertyValue('--background')).toBe('var(--app-surface-card)');
     });
 
     it('vor der Anmeldung gibt es keinen Outlet -- dann ohne presentingElement, ohne Absturz', async () => {

@@ -134,7 +134,7 @@ const statusColor = (s: number) => s >= 500 ? METRIK_AMPEL.kritisch : s >= 400 ?
 
 // Kleines KPI-Kaestchen
 const Kpi: React.FC<{ icon: string; label: string; value: string; color: string; sub?: string }> = ({ icon, label, value, color, sub }) => (
-  <div style={{ flex: '1 1 140px', background: 'white', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittelweit)', boxShadow: 'var(--app-schatten-fein)', minWidth: 0 }}>
+  <div style={{ flex: '1 1 140px', background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittelweit)', boxShadow: 'var(--app-schatten-fein)', minWidth: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)', color: 'var(--app-text-system)', fontSize: 'var(--app-text-klein)', fontWeight: 'var(--app-schrift-halbfett)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
       <IonIcon icon={icon} style={{ color, fontSize: 'var(--app-text-standard)' }} />
       {label}
@@ -146,7 +146,7 @@ const Kpi: React.FC<{ icon: string; label: string; value: string; color: string;
 
 // Karte mit Titelzeile — das wiederkehrende Gehaeuse auf dieser Seite.
 const Karte: React.FC<{ icon: string; titel: string; farbe?: string; hinweis?: string; children: React.ReactNode }> = ({ icon, titel, farbe, hinweis, children }) => (
-  <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)' }}>
+  <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)' }}>
     <div style={{ fontSize: 'var(--app-text-hinweis)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-secondary)', marginBottom: 'var(--app-abstand-kompakt)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)' }}>
       <IonIcon icon={icon} style={{ color: farbe || 'var(--app-color-chat)' }} /> {titel}
     </div>
@@ -204,7 +204,7 @@ const Anteilsbalken: React.FC<{ teile: { wert: number; farbe: string; name: stri
  * Prozent erhalten — "diese Route macht 40 % der Arbeit aus".
  */
 const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
-  <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
+  <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
     {zeilen.length === 0 && <div style={{ padding: 'var(--app-abstand-basis)', color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)' }}>Keine Daten.</div>}
     {zeilen.map((r, i) => (
       <div key={r.route} style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none' }}>
@@ -397,7 +397,7 @@ const AdminMetricsPage: React.FC = () => {
           <div style={{ padding: 'var(--app-abstand-mittel) var(--app-abstand-basis) var(--app-abstand-extraweit)' }}>
 
             {/* 1. Läuft gerade alles? — das Urteil zuerst, die Zahlen danach. */}
-            <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)', borderLeft: `4px solid ${zustandsFarbe}` }}>
+            <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)', borderLeft: `4px solid ${zustandsFarbe}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: 'var(--app-radius-kreis)', background: zustandsFarbe, flexShrink: 0 }} />
                 <span style={{ fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-emphasis)' }}>{zustand.titel}</span>
@@ -620,7 +620,7 @@ const Vergleich: React.FC<{ name: string; jetzt: string; vorher: string; delta: 
 const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = ({ gruppen, letzte }) => {
   if (gruppen.length === 0) {
     return (
-      <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-weit)', textAlign: 'center', color: METRIK_AMPEL.gut, fontSize: 'var(--app-text-basis)', boxShadow: 'var(--app-schatten-fein)' }}>
+      <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-weit)', textAlign: 'center', color: METRIK_AMPEL.gut, fontSize: 'var(--app-text-basis)', boxShadow: 'var(--app-schatten-fein)' }}>
         <IonIcon icon={ICON_PULS} style={{ fontSize: 'var(--app-anzeige-zahl)' }} /><div>Kein Fehler seit dem letzten Neustart.</div>
       </div>
     );
@@ -628,7 +628,7 @@ const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = (
   const bezeichnung = (s: number) => s >= 500 ? 'Serverfehler' : s === 404 ? 'nicht gefunden' : s === 403 ? 'abgelehnt' : s === 401 ? 'nicht angemeldet' : 'abgewiesen';
   return (
     <>
-      <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
+      <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
         <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)', lineHeight: 1.4 }}>
           Zusammengefasst nach Route und Art. Nur Serverfehler (500er) sind
           eine Störung — der Rest sagt meist, dass eine App etwas anfragt, das
@@ -653,7 +653,7 @@ const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = (
       </div>
 
       {letzte.length > 0 && (
-        <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)', marginTop: 'var(--app-abstand-basis)' }}>
+        <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)', marginTop: 'var(--app-abstand-basis)' }}>
           <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)' }}>
             Die letzten Einzelfälle
           </div>
@@ -678,7 +678,7 @@ const VerlaufListe: React.FC<{
   deltas: { at: string; requests: number; errors: number; worstP95: number; worstRoute: string | null }[];
 }> = ({ tage, deltas }) => (
   <>
-    <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)', marginBottom: 'var(--app-abstand-basis)' }}>
+    <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)', marginBottom: 'var(--app-abstand-basis)' }}>
       <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)' }}>
         Je Tag (letzte 14 Tage) — übersteht Neustarts und Aktualisierungen
       </div>
@@ -703,7 +703,7 @@ const VerlaufListe: React.FC<{
       ))}
     </div>
 
-    <div style={{ background: 'white', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
+    <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
       <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)' }}>
         In Fünf-Minuten-Schritten
       </div>

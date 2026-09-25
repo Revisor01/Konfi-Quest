@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import config from '../../../capacitor.config';
 
@@ -13,18 +13,20 @@ import config from '../../../capacitor.config';
  *
  * Gelesen in der Capacitor-8-Quelle (SystemBars.java): Mit style DEFAULT
  * richtet das eingebaute Plugin die Symbolfarbe nach dem THEMA DES TELEFONS
- * (getStyleForTheme: Nachtmodus -> DARK -> weisse Symbole). Die App ist aber
- * immer hell -- weiss auf hell ist unsichtbar. LIGHT heisst "helle Leiste",
- * also dunkle Symbole, unabhaengig vom Telefon.
+ * (getStyleForTheme: Nachtmodus -> DARK -> weisse Symbole). Solange die App
+ * immer hell war, war das weiss auf hell -- unsichtbar; damals stand hier
+ * deshalb fest LIGHT.
  *
- * Die zweite Pruefung koppelt beides: Solange die App keinen Dunkelmodus
- * hat, ist LIGHT richtig. Wer einen einbaut, faellt hier -- und muss die
- * Leisten dann mit dem Thema mitfuehren (SystemBars.setStyle zur Laufzeit),
+ * Seit demselben Tag folgt die App dem Systemmodus (theme/variables.css,
+ * @media prefers-color-scheme: dark). Damit ist DEFAULT richtig: Telefon
+ * dunkel -> App dunkel -> weisse Symbole auf dunkler App. Die dritte
+ * Pruefung koppelt beides weiterhin, nur andersherum: Wer den Dunkelmodus
+ * wieder abschaltet, faellt hier und muss die Leisten auf LIGHT festnageln,
  * statt dass Malte sie wieder nicht sieht.
  */
 describe('Systemleisten auf Android (SystemBars)', () => {
-  it('die Symbole der Leisten sind fest dunkel (style LIGHT), nicht nach dem Telefon-Thema', () => {
-    expect(config.plugins?.SystemBars?.style).toBe('LIGHT');
+  it('die Symbole der Leisten folgen dem Telefon-Thema (style DEFAULT), wie die App selbst', () => {
+    expect(config.plugins?.SystemBars?.style).toBe('DEFAULT');
   });
 
   it('die Insets bleiben als CSS-Variablen (Voreinstellung css, nicht abgeschaltet)', () => {
@@ -32,15 +34,15 @@ describe('Systemleisten auf Android (SystemBars)', () => {
     expect(config.plugins?.SystemBars?.hidden).not.toBe(true);
   });
 
-  it('die App hat keinen Dunkelmodus -- deshalb darf die Farbe fest sein', () => {
-    const ordner = join(process.cwd(), 'src/theme');
-    const aktiveDunkelRegeln = readdirSync(ordner)
-      .filter((f) => f.endsWith('.css'))
-      .flatMap((f) => {
-        const ohneKommentare = readFileSync(join(ordner, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-        return ohneKommentare.match(/prefers-color-scheme:\s*dark/g)?.map(() => f) ?? [];
-      });
-    expect(aktiveDunkelRegeln).toEqual([]);
-    expect(readFileSync(join(ordner, 'variables.css'), 'utf8')).toMatch(/Dark Mode Support - DISABLED/);
+  it('die App hat einen Dunkelmodus nach Systemeinstellung -- nur deshalb darf die Farbe dem Telefon folgen', () => {
+    const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    const aktiveDunkelBloecke = css.match(/@media \(prefers-color-scheme: dark\)/g) ?? [];
+    expect(aktiveDunkelBloecke).toHaveLength(1);
+    // Und Ionics Palette dazu -- die Variante muss "system" sein, sonst
+    // schaltet die App nicht mit dem Telefon.
+    const app = readFileSync(join(process.cwd(), 'src/App.tsx'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(app).toMatch(/^import '@ionic\/react\/css\/palettes\/dark\.system\.css';/m);
+    expect(app).not.toMatch(/palettes\/dark\.(always|class)\.css/);
   });
 });

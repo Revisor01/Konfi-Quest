@@ -43,7 +43,7 @@ export const LevelPopoverContent: React.FC<{
   const isReached = data.isReached;
 
   return (
-    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'white' }}>
+    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'var(--app-surface-card)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
         <div style={{
           width: '48px',

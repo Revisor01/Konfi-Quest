@@ -74,7 +74,10 @@ describe('Android-Tab-Leiste: Inset einfach, Hintergrund deckend', () => {
       // Auf :root gilt der Wert auch fuer Android — dort gibt es keinen Blur,
       // und 72 % Deckkraft ohne Blur heisst: die Liste scheint durch.
       expect(glasRegeln[0].selektor).toBe('ion-tab-bar.ios');
-      expect(glasRegeln[0].regeln).toMatch(/rgba\(247, 247, 247, 0\.72\)/);
+      // Der Ton kommt seit dem Dunkelmodus (25.09.2026) aus einem Token,
+      // damit er im Dunkeln mitgeht; hell ist er unveraendert 247/247/247.
+      expect(glasRegeln[0].regeln).toMatch(/rgba\(var\(--app-glasleiste-rgb\), 0\.72\)/);
+      expect(css).toMatch(/^\s*--app-glasleiste-rgb: 247, 247, 247;/m);
     });
   });
 });

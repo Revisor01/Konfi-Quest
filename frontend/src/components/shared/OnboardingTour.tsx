@@ -175,7 +175,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
             expand="block"
             onClick={next}
             style={{
-              '--background': 'white',
+              '--background': 'var(--app-weiss)', /* weisser Knopf auf Farbflaeche, in beiden Modi */
               '--background-activated': 'rgba(255,255,255,0.85)',
               '--background-focused': 'rgba(255,255,255,0.9)',
               '--background-hover': 'white',

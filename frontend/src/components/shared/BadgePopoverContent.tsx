@@ -153,7 +153,7 @@ const BadgePopoverContent: React.FC<{
   const zeitfenster = daten.showProgress ? getTimeWindowHint(badge) : null;
 
   return (
-    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'white', maxWidth: '100%', overflow: 'hidden' }}>
+    <div style={{ padding: 'var(--app-abstand-mittel)', background: 'var(--app-surface-card)', maxWidth: '100%', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
         <div style={{
           width: '48px',

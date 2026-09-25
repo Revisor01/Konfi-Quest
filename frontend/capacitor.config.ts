@@ -87,21 +87,18 @@ const config: CapacitorConfig = {
     //
     // URSACHE, aus der Capacitor-8-Quelle (SystemBars.java, getStyleForTheme):
     // Das eingebaute SystemBars-Plugin richtet die Farbe der Leisten-Symbole
-    // mit der Voreinstellung DEFAULT nach dem THEMA DES TELEFONS -- nicht nach
-    // der App. Telefon dunkel -> weisse Symbole. Die App hat aber keinen
-    // Dunkelmodus (der Block in theme/variables.css ist abgeschaltet), sie
-    // bleibt hell. Seit Capacitor 8 liegt die Oberflaeche randlos unter den
-    // durchsichtigen Leisten -- weisse Symbole auf heller App: unsichtbar.
-    // Im Chatraum ist der Inhalt nicht randlos (Eingabe-Fusszeile, f40e3687),
-    // dort liegt eine andere Flaeche unter der Leiste -- deshalb "leicht
-    // sichtbar". Maltes Beobachtung ist genau das.
+    // mit der Voreinstellung DEFAULT nach dem THEMA DES TELEFONS. Telefon
+    // dunkel -> weisse Symbole. Solange die App immer hell war, stand hier
+    // deshalb fest LIGHT (dunkle Symbole).
     //
-    // LIGHT heisst "helle Leisten": dunkle Symbole, passend zur hellen App,
-    // unabhaengig vom Telefon. Die Option gilt laut Capacitor NUR fuer
-    // Android; iOS bleibt unberuehrt. Bekommt die App einen Dunkelmodus,
-    // muss das hier mitgehen -- der Test systemBars.test.ts koppelt beides.
+    // Seit die App dem Systemmodus folgt (Dunkelmodus, 25.09.2026), ist
+    // DEFAULT wieder richtig: Telefon dunkel -> App dunkel -> weisse Symbole;
+    // Telefon hell -> App hell -> dunkle Symbole. Kein Laufzeitaufruf noetig,
+    // beide Seiten lesen dieselbe Einstellung. Der Test systemBars.test.ts
+    // koppelt beides: Wer den Dunkelmodus wieder abschaltet, muss hier
+    // zurueck auf LIGHT.
     SystemBars: {
-      style: 'LIGHT',
+      style: 'DEFAULT',
     },
     Keyboard: {
       // 'ionic' (Ionic passt Padding an). 'native' wurde am 04.07. probiert

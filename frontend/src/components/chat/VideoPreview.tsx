@@ -212,7 +212,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
           minHeight: '120px',
           display: 'block',
           borderRadius: 'var(--app-radius-karte)',
-          backgroundColor: 'black',
+          backgroundColor: 'var(--app-schwarz)',
           cursor: 'pointer',
           objectFit: 'cover',
           border: '1px solid rgba(255,255,255,0.1)'

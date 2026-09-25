@@ -10,6 +10,10 @@ Versionsüberschrift.
 ## [Unreleased] - 2.3.0
 
 ### Hinzugefügt
+- Die App folgt dem Dunkelmodus des Handys: Steht das Gerät auf Dunkel,
+  werden Hintergründe, Karten, Listen und Texte dunkel, die Bereichsfarben
+  bleiben erkennbar. Umschalten geht in den Systemeinstellungen, nicht in
+  der App.
 - Wer mehrere Gemeinden betreut, sieht in der Gemeinde-Auswahl oben links an
   jeder Gemeinde eine rote Zahl, wenn dort etwas offen ist — Anträge, Termine,
   Beiträge, Chats, je nach eigener Rolle in dieser Gemeinde. So ist klar, wo
