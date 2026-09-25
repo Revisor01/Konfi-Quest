@@ -10,17 +10,13 @@ import {
   ICON_STUFEN,
   ICON_WARTEND,
   ICON_WARNUNG,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
   IonButton,
   IonIcon,
   IonRefresher,
@@ -378,21 +374,13 @@ const AdminMetricsPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}><IonIcon icon={ICON_ZURUECK} /></IonButton>
-          </IonButtons>
-          <IonTitle>Betrieb</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Daten neu laden" onClick={() => load(true)}><IonIcon icon={ICON_AKTUALISIEREN} /></IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Betrieb"
+        onZurueck={() => window.history.back()}
+        rechts={<IonButton aria-label="Daten neu laden" onClick={() => load(true)}><IonIcon icon={ICON_AKTUALISIEREN} /></IonButton>}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar"><IonTitle size="large">Betrieb</IonTitle></IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Betrieb" />
         <IonRefresher slot="fixed" onIonRefresh={async (e) => { await load(true); e.detail.complete(); }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>

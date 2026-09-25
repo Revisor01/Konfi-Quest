@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardContent,
@@ -12,11 +9,11 @@ import {
   IonList,
   IonListHeader,
   IonButton,
-  IonButtons,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import {
   ICON_ABMELDEN_GEFUELLT,
   ICON_ABZEICHEN_GEFUELLT,
@@ -204,27 +201,21 @@ const AdminSettingsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>Mehr</IonTitle>
-          {user?.is_super_admin && (
-            <IonButtons slot="end">
-              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
-                <IonIcon slot="icon-only" icon={ICON_ORGANISATION_GEFUELLT} />
-              </IonButton>
-              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
-                <IonIcon slot="icon-only" icon={ICON_PULS} />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Mehr"
+        rechts={user?.is_super_admin ? (
+          <>
+            <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
+              <IonIcon slot="icon-only" icon={ICON_ORGANISATION_GEFUELLT} />
+            </IonButton>
+            <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
+              <IonIcon slot="icon-only" icon={ICON_PULS} />
+            </IonButton>
+          </>
+        ) : undefined}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Mehr</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Mehr" />
 
         {/* Die beiden Neuerungs-Banner. Hier dauerhaft, ohne X — sie sind der
             feste Weg zu den Erklaerungen (Nutzerhinweis 23.08.2026). */}

@@ -2,13 +2,9 @@ import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonButtons,
   IonButton,
   IonIcon,
   useIonModal,
@@ -30,7 +26,7 @@ import KonfiModal from '../modals/KonfiModal';
 import UserManagementModal from '../modals/UserManagementModal';
 import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { OrgSwitcherButton } from '../../shared';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 import AdminUpdate220WalkthroughModal from '../modals/AdminUpdate220WalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
@@ -370,35 +366,28 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <OrgSwitcherButton />
-          <IonTitle>Konfirmand:innen</IonTitle>
-          <IonButtons slot="end">
-            {['org_admin', 'admin'].includes(user?.role_name || '') && (
-              <>
-                <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
-                  <IonIcon icon={ICON_CHECKBOX} />
-                </IonButton>
-                <IonButton
-                  aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
-                  onClick={() => viewMode === 'teamer'
-                    ? presentTeamerModalHook({ presentingElement: presentingElement })
-                    : presentKonfiModal()}
-                >
-                  <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-                </IonButton>
-              </>
-            )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      {/* Der Gemeinde-Umschalter stand bis 25.09.2026 NUR hier; jetzt bringt
+          ihn die gemeinsame Kopfzeile auf jede Seite mit (Audit-Befund C3). */}
+      <AppKopfzeile
+        titel="Konfirmand:innen"
+        rechts={['org_admin', 'admin'].includes(user?.role_name || '') ? (
+          <>
+            <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+              <IonIcon icon={ICON_CHECKBOX} />
+            </IonButton>
+            <IonButton
+              aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
+              onClick={() => viewMode === 'teamer'
+                ? presentTeamerModalHook({ presentingElement: presentingElement })
+                : presentKonfiModal()}
+            >
+              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+            </IonButton>
+          </>
+        ) : undefined}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Konfirmand:innen</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Konfirmand:innen" />
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAll();

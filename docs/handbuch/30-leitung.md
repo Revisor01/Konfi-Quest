@@ -7,6 +7,13 @@ farbe: "#047857"
 Ein Rundgang durch die App aus Sicht der Leitung. Unten stehen fünf Reiter —
 **Konfis**, **Chat**, **Mitmachen**, **Challenges** und **Mehr**.
 
+Oben trägt jede Seite dieselbe Kopfzeile: rechts die **Glocke** mit dem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen), links — wer
+mehrere Gemeinden betreut — der **Name der Gemeinde**, in der du gerade
+arbeitest (siehe [In mehreren Gemeinden
+mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Dazwischen der
+Titel, daneben die Knöpfe der jeweiligen Seite, etwa das Plus zum Anlegen.
+
 Die Leitung hat zwei Stufen: **Admins** kümmern sich um den laufenden Betrieb,
 **Org-Admins** zusätzlich um Benutzer:innen, Jahrgangs-Zuweisungen und die
 Einstellungen der Gemeinde. Der Unterschied steht im Kapitel

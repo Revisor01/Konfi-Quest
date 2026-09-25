@@ -5,8 +5,8 @@ import {
   ICON_KATEGORIE_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_SCHLIESSEN,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -299,11 +299,7 @@ const AdminCategoriesPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Kategorien</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Kategorien" onZurueck={() => window.history.back()} />
         <IonContent>
           <LoadingSpinner fullScreen message="Kategorien werden geladen..." />
         </IonContent>
@@ -313,30 +309,18 @@ const AdminCategoriesPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Kategorien</IonTitle>
-          {canCreate && (
-            <IonButtons slot="end">
-              <IonButton aria-label="Neue Kategorie anlegen" onClick={openCreateModal}>
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Kategorien"
+        onZurueck={() => window.history.back()}
+        rechts={canCreate ? (
+          <IonButton aria-label="Neue Kategorie anlegen" onClick={openCreateModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        ) : undefined}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Kategorien</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Kategorien" />
         
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />

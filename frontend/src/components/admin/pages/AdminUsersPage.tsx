@@ -1,15 +1,12 @@
-import { ICON_HINZUFUEGEN_GEFUELLT, ICON_ZURUECK } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonButtons,
   IonButton,
   IonIcon,
   useIonModal,
@@ -101,29 +98,17 @@ const AdminUsersPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-            <IonIcon icon={ICON_ZURUECK} />
+      <AppKopfzeile
+        titel="Benutzer:innen"
+        onZurueck={() => window.history.back()}
+        rechts={user?.role_name === 'org_admin' ? (
+          <IonButton aria-label="Neue Benutzer:in anlegen" onClick={presentUserModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
           </IonButton>
-        </IonButtons>
-          <IonTitle>Benutzer:innen</IonTitle>
-          <IonButtons slot="end">
-            {user?.role_name === 'org_admin' && (
-              <IonButton aria-label="Neue Benutzer:in anlegen" onClick={presentUserModal}>
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+        ) : undefined}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Benutzer:innen</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Benutzer:innen" />
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshUsers();

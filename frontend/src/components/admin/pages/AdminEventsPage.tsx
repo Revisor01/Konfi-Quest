@@ -4,8 +4,9 @@ import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppLocation } from '../../../navigation/useAppLocation';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonButtons, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
+import { IonPage, IonContent, IonRefresher, IonRefresherContent, IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonModal, useIonActionSheet, useIonAlert, useIonRouter } from '@ionic/react';
 import type { ActionSheetButton } from '@ionic/react';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
@@ -753,26 +754,16 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonTitle>{pageTitle}</IonTitle>
-          <IonButtons slot="end">
-            {!isAntraege && canCreate && (
-              <IonButton aria-label="Neues Event anlegen" onClick={handleAddEventClick}>
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel={pageTitle}
+        rechts={!isAntraege && canCreate ? (
+          <IonButton aria-label="Neues Event anlegen" onClick={handleAddEventClick}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        ) : undefined}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">
-              {pageTitle}
-            </IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel={pageTitle} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           if (isAntraege) {

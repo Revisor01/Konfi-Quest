@@ -10,9 +10,9 @@ import {
   ICON_SICHTBAR_GEFUELLT,
   ICON_TERMIN,
   ICON_TERMIN_GEFUELLT,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem,
@@ -243,32 +243,22 @@ const AdminWrappedPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          {/* Zurueck-Knopf und grosser Titel beim Hochscrollen fehlten hier
-              als einziger Admin-Seite (Simons Hinweis 03.09.2026) -- die
-              Seite hing ohne Rueckweg da. Gleicher Aufbau wie
-              AdminMaterialPage und die uebrigen Seiten. */}
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Jahresrückblick</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Neuen Rückblick anlegen" onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
-              <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      {/* Zurueck-Knopf und grosser Titel beim Hochscrollen fehlten hier
+          als einziger Admin-Seite (Simons Hinweis 03.09.2026) -- die
+          Seite hing ohne Rueckweg da. Gleicher Aufbau wie
+          AdminMaterialPage und die uebrigen Seiten. */}
+      <AppKopfzeile
+        titel="Jahresrückblick"
+        onZurueck={() => window.history.back()}
+        rechts={(
+          <IonButton aria-label="Neuen Rückblick anlegen" onClick={() => setModalOffen(true)} disabled={!istLeitung && segment === 'teamer'}>
+            <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
+          </IonButton>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Jahresrückblick</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Jahresrückblick" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => { await laden(); e.detail.complete(); }}>
           <IonRefresherContent />

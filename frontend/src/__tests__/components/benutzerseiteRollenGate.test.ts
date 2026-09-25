@@ -43,7 +43,11 @@ describe('Benutzerseite: Rollen-Gate auch in der Liste (Rollen-Bericht 16)', () 
 
   it('der Anlegen-Knopf bleibt gegatet', () => {
     // Gegenprobe: Die schon vorhandene Haelfte der Absicherung darf beim
-    // Nachziehen der anderen nicht verloren gehen.
-    expect(seite).toContain("user?.role_name === 'org_admin' && (");
+    // Nachziehen der anderen nicht verloren gehen. Seit der gemeinsamen
+    // Kopfzeile (25.09.2026) haengt der Knopf als `rechts`-Prop an
+    // AppKopfzeile; das Gate steht als Bedingung davor -- ohne org_admin
+    // wird undefined uebergeben und kein Knopf gerendert.
+    expect(seite).toContain("rechts={user?.role_name === 'org_admin' ? (");
+    expect(seite).toContain('aria-label="Neue Benutzer:in anlegen"');
   });
 });

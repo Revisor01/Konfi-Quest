@@ -148,10 +148,17 @@ eigener Rolle — in der einen Org-Admin, in der anderen vielleicht nur
 Teamer:in. Eine zweite Mitgliedschaft richtet nicht die Gemeinde selbst ein,
 sondern der Betrieb von Konfi Quest.
 
-Oben links in der Leitungsansicht steht dann der Name der Gemeinde, in der man
-gerade arbeitet. Ein Tippen darauf öffnet die Liste aller eigenen Gemeinden;
-die aktive ist mit einem Haken markiert. Nach dem Wechsel laden alle Ansichten
-frisch in der gewählten Gemeinde.
+Oben links in der Kopfzeile steht dann auf **jeder Seite** der Name der
+Gemeinde, in der man gerade arbeitet — in der Konfi-Liste ebenso wie in der
+Termin-Detailansicht, unter „Mehr" oder in der Materialverwaltung. Ein Tippen
+darauf öffnet die Liste aller eigenen Gemeinden; die aktive ist mit einem Haken
+markiert. Nach dem Wechsel laden alle Ansichten frisch in der gewählten
+Gemeinde. Wer nur einer Gemeinde angehört, sieht den Namen nicht.
+
+Weil der Umschalter überall steht, gibt es auch immer einen Rückweg: Ein
+angetippter Push oder eine Mitteilung aus dem
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die
+Gemeinde, aus der sie stammt — von dort geht es an derselben Stelle zurück.
 
 Im [Chat](90-chat.md#wer-wen-anschreiben-darf) steht die Person in der
 Team-Kontaktliste jeder ihrer Gemeinden — mit der Rolle, die sie dort hat.

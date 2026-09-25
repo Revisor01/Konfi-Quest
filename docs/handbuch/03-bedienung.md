@@ -57,10 +57,6 @@ Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
 auch tut.
 
-> Die Glocke steht vorerst in der Konfi- und in der Team-Ansicht. Die Leitung
-> sieht bis zur Umstellung ihrer Seiten weiter den runden Knopf unten links,
-> sobald etwas gesendet wird; er öffnet dasselbe Postfach.
-
 ### Das eigene Profil
 
 **Konfis und Teamer:innen** tippen dafür oben rechts auf das Personen-Symbol.

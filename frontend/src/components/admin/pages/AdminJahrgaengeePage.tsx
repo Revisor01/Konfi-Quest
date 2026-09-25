@@ -11,9 +11,9 @@ import {
   ICON_LOESCHEN_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_SCHLIESSEN,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerDaten, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -594,30 +594,18 @@ const AdminJahrgaengeePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Jahrgänge</IonTitle>
-          {canCreate && (
-            <IonButtons slot="end">
-              <IonButton aria-label="Neuen Jahrgang anlegen" onClick={openCreateModal}>
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Jahrgänge"
+        onZurueck={() => window.history.back()}
+        rechts={canCreate ? (
+          <IonButton aria-label="Neuen Jahrgang anlegen" onClick={openCreateModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        ) : undefined}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Jahrgänge</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Jahrgänge" />
         
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />

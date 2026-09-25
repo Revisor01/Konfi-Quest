@@ -10,17 +10,13 @@ import {
   ICON_TERMIN,
   ICON_TERMIN_GEFUELLT,
   ICON_WELT,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
   IonButton,
   IonInput,
   IonLabel,
@@ -200,28 +196,18 @@ const AdminMaterialPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Material verwalten</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Neues Material anlegen" onClick={openCreateModal}>
-              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Material verwalten"
+        onZurueck={() => window.history.back()}
+        rechts={(
+          <IonButton aria-label="Neues Material anlegen" onClick={openCreateModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Material verwalten</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Material verwalten" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshMaterial();

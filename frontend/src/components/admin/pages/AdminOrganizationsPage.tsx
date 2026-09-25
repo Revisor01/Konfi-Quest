@@ -1,15 +1,12 @@
-import { ICON_HINZUFUEGEN_GEFUELLT, ICON_ZURUECK } from '../../shared/icons';
+import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonButtons,
   IonButton,
   IonIcon,
   useIonModal,
@@ -125,27 +122,17 @@ const AdminOrganizationsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Organisationen</IonTitle>
-          <IonButtons slot="end">
-            <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
-              <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Organisationen"
+        onZurueck={() => window.history.back()}
+        rechts={(
+          <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        )}
+      />
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Organisationen</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Organisationen" />
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadOrganizations();
           e.detail.complete();

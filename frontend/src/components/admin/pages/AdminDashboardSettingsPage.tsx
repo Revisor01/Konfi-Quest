@@ -1,14 +1,10 @@
-import { ICON_APPS, ICON_ZURUECK } from '../../shared/icons';
+import { ICON_APPS } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import React, { useState } from 'react';
 import { FARBEN } from '../../../theme/colors';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
-  IonButton,
   IonIcon,
   IonCard,
   IonCardContent,
@@ -240,11 +236,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Dashboard</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} />
         <IonContent>
           <LoadingSpinner fullScreen message="Einstellungen werden geladen..." />
         </IonContent>
@@ -254,23 +246,10 @@ const AdminDashboardSettingsPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Dashboard</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Dashboard</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Dashboard" />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshSettings();

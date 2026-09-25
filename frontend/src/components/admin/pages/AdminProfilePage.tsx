@@ -6,14 +6,11 @@ import {
   ICON_MAIL,
   ICON_SCHLUESSEL,
   ICON_TERMIN,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import React from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardContent,
@@ -21,7 +18,6 @@ import {
   IonLabel,
   IonIcon,
   IonButton,
-  IonButtons,
   IonList,
   IonListHeader,
   IonRefresher,
@@ -123,23 +119,10 @@ const AdminProfilePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-            <IonIcon icon={ICON_ZURUECK} />
-          </IonButton>
-        </IonButtons>
-          <IonTitle>Admin-Profil</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile titel="Admin-Profil" onZurueck={() => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Admin-Profil</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Admin-Profil" />
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshProfile().then(() => e.detail.complete());

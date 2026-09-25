@@ -6,8 +6,8 @@ import {
   ICON_HINZUFUEGEN_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_SCHLIESSEN,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -345,11 +345,7 @@ const AdminCertificatesPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Zertifikate</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Zertifikate" onZurueck={() => window.history.back()} />
         <IonContent>
           <LoadingSpinner fullScreen message="Zertifikate werden geladen..." />
         </IonContent>
@@ -359,30 +355,18 @@ const AdminCertificatesPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={ICON_ZURUECK} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Zertifikate</IonTitle>
-          {isAdmin && (
-            <IonButtons slot="end">
-              <IonButton aria-label="Neues Zertifikat anlegen" onClick={openCreateModal}>
-                <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+      <AppKopfzeile
+        titel="Zertifikate"
+        onZurueck={() => window.history.back()}
+        rechts={isAdmin ? (
+          <IonButton aria-label="Neues Zertifikat anlegen" onClick={openCreateModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
+          </IonButton>
+        ) : undefined}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Zertifikate</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel="Zertifikate" />
 
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />

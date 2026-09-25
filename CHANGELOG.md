@@ -18,7 +18,7 @@ Versionsüberschrift.
   Mitteilungen aller Gemeinden an einem Ort, jede mit ihrem Gemeindenamen.
 - Die Zahl an der Glocke zählt zusammen, was ungelesen ist und was noch aus
   einer Funklücke gesendet wird; ein endgültig gescheiterter Vorgang färbt sie
-  rot. Vorerst bei Konfis und im Team — die Leitung folgt.
+  rot.
 - Die Zahl mit Uhr an der einzelnen Challenge, die Leitung und Team offene
   Freigaben anzeigt, geht jetzt sofort mit — auch ohne Neuladen der Liste und
   immer im Gleichklang mit der Zahl am Reiter.
@@ -47,10 +47,14 @@ Versionsüberschrift.
   wann und wann zuletzt. Die Einzelfälle stehen weiterhin darunter.
 
 ### Geändert
-- Bei Konfis und im Team ist der runde Knopf unten links verschwunden, der
-  anzeigte, dass noch etwas gesendet wird: Die Warteschlange steht jetzt im
-  Postfach hinter der Glocke oben rechts. Bei den Anträgen bleibt die Karte
-  „Wird gesendet…" mit den einzelnen Vorgängen.
+- Der runde Knopf unten links ist verschwunden, der anzeigte, dass noch etwas
+  gesendet wird: Die Warteschlange steht jetzt im Postfach hinter der Glocke
+  oben rechts. Bei den Anträgen bleibt die Karte „Wird gesendet…" mit den
+  einzelnen Vorgängen.
+- Für die Leitung steht der Gemeinde-Umschalter oben links jetzt auf jeder
+  Seite, nicht mehr nur in der Konfi-Liste. Wer über einen Push oder das
+  Postfach in eine andere Gemeinde gewechselt ist, sieht überall, wo er gerade
+  arbeitet, und kommt von jeder Seite zurück.
 - Die Nutzungsbedingungen sind neu gefasst: Der Quelltext bleibt öffentlich
   einsehbar, der Betrieb braucht künftig eine schriftliche Vereinbarung.
 - Große Dateien laufen zuverlässiger durch: Fotos, Sprachaufnahmen und

@@ -86,6 +86,13 @@ vi.mock('../../components/shared/QRDisplayModal', () => ({ default: () => null }
 vi.mock('../../components/teamer/pages/TeamerMaterialDetailPage', () => ({ default: () => null }));
 vi.mock('../../components/teamer/modals/TeamerAbsageModal', () => ({ default: () => null }));
 
+// Die gemeinsame Kopfzeile (AppKopfzeile, 25.09.2026) rendert hier ECHT, weil
+// der Test den Zurueck-Knopf drueckt. Nur ihre beiden Mitbringsel -- Glocke
+// und Gemeinde-Umschalter -- haengen an Warteschlange und Router und werden
+// ausgeblendet.
+vi.mock('../../components/shared/PostfachGlocke', () => ({ default: () => null }));
+vi.mock('../../components/shared/OrgSwitcherButton', () => ({ default: () => null }));
+
 vi.mock('@ionic/react', async () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(React.Fragment, null, children);

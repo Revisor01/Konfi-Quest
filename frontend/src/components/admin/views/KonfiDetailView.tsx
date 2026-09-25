@@ -4,8 +4,8 @@ import {
   ICON_SCHLIESSEN_GEFUELLT,
   ICON_SCHLUESSEL_GEFUELLT,
   ICON_UHRZEIT,
-  ICON_ZURUECK,
 } from '../../shared/icons';
+import AppKopfzeile from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -729,18 +729,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton aria-label="Zurück" onClick={onBack}>
-                  <IonIcon icon={ICON_ZURUECK} />
-                </IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>{isTeamer ? 'Teamer:in Details' : 'Konfi Details'}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile
+          titel={isTeamer ? 'Teamer:in Details' : 'Konfi Details'}
+          onZurueck={hideBackButton ? undefined : onBack}
+        />
         <IonContent fullscreen>
           <LoadingSpinner message={isTeamer ? 'Teamer:in wird geladen...' : 'Konfi wird geladen...'} />
         </IonContent>
@@ -750,17 +742,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          {!hideBackButton && (
-            <IonButtons slot="start">
-              <IonButton aria-label="Zurück" onClick={onBack}>
-                <IonIcon icon={ICON_ZURUECK} />
-              </IonButton>
-            </IonButtons>
-          )}
-          <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
-          <IonButtons slot="end">
+      <AppKopfzeile
+        titel={currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}
+        onZurueck={hideBackButton ? undefined : onBack}
+        rechts={(
+          <>
             {/* Bearbeiten nur bei Konfis: Teamer:innen haben keinen einzelnen
                 Jahrgang, ihre Stammdaten liegen in der Benutzerverwaltung. */}
             {!isTeamer && (
@@ -784,9 +770,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={ICON_SCHLUESSEL_GEFUELLT} />
             </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+          </>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonRefresher

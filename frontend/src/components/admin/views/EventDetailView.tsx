@@ -16,17 +16,17 @@ import {
   ICON_RUECKGAENGIG,
   ICON_TERMIN_GEFUELLT,
   ICON_TEXTDOKUMENT,
-  ICON_ZURUECK,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
+import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import { kopiereTermin } from '../../../utils/terminVorbelegung';
 import { welcheKnoepfe, zusageBeschriftung, absageBeschriftung, absageBrauchtGrund } from '../../../utils/zusageKnoepfe';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonButtons, IonButton, IonIcon, IonCard, IonCardContent,
+  IonPage, IonContent,
+  IonButton, IonIcon, IonCard, IonCardContent,
   IonItem, IonLabel, IonList, IonListHeader,
   IonRefresher, IonRefresherContent, useIonModal,
   IonItemSliding, IonItemOptions, IonItemOption,
@@ -1329,16 +1329,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (loading) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={ICON_ZURUECK} /></IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>Event Details</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Event Details" onZurueck={hideBackButton ? undefined : onBack} />
         <IonContent fullscreen>
           <LoadingSpinner message="Event wird geladen..." />
         </IonContent>
@@ -1353,16 +1344,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   if (jahrgangFehlt) {
     return (
       <IonPage ref={pageRef}>
-        <IonHeader translucent={true}>
-          <IonToolbar>
-            {!hideBackButton && (
-              <IonButtons slot="start">
-                <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={ICON_ZURUECK} /></IonButton>
-              </IonButtons>
-            )}
-            <IonTitle>Termin</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeile titel="Termin" onZurueck={hideBackButton ? undefined : onBack} />
         <IonContent className="app-gradient-background" fullscreen>
           <EmptyState
             icon={ICON_JAHRGANG}
@@ -1377,15 +1359,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          {!hideBackButton && (
-            <IonButtons slot="start">
-              <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={ICON_ZURUECK} /></IonButton>
-            </IonButtons>
-          )}
-          <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
-          <IonButtons slot="end">
+      <AppKopfzeile
+        titel={eventData?.name || 'Event Details'}
+        onZurueck={hideBackButton ? undefined : onBack}
+        rechts={(
+          <>
             {/* Einen BESTEHENDEN Chat oeffnen darf auch das Team — das ist
                 reine Navigation. Ihn ANZULEGEN ist requireAdmin
                 (verwaltung.js). Gibt es noch keinen, fuehrte der Knopf
@@ -1412,16 +1390,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <IonIcon icon={ICON_BEARBEITEN} />
               </IonButton>
             )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+          </>
+        )}
+      />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">{eventData?.name || 'Event Details'}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <AppKopfzeileGross titel={eventData?.name || 'Event Details'} />
 
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />
