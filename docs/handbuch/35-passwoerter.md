@@ -286,8 +286,11 @@ abgelaufener Code verschwindet aus der Liste und lässt sich nicht wiederbeleben
 („Abgelaufene Codes können nicht verlängert werden"); dann erzeugst du einen
 neuen.
 
-In der Liste steht zu jedem Code, zu welchem Jahrgang er gehört, wie lange er
-noch gilt („Noch 5 Tage gültig") und wie viele Konfis ihn schon benutzt haben.
+In der Liste steht zu jedem Code, zu welchem Jahrgang er gehört und wie viele
+Konfis ihn schon benutzt haben. Wie lange er noch gilt, zeigt die Marke in der
+Ecke: die Zahl der Resttage mit einer Uhr, am letzten Tag ein oranges
+Warnzeichen („Läuft heute ab" — verlängern geht noch), abgelaufen ein rotes.
+Wer mit dem Finger darauf bleibt, liest den Satz.
 Tippst du einen Eintrag an, erscheint sein QR-Code wieder. Die beiden Aktionen
 — verlängern und löschen — holst du dir mit der
 [Wischgeste](03-bedienung.md#etwas-loeschen-nach-links-wischen).

@@ -8,10 +8,10 @@ import {
   ICON_GRUPPE_GEFUELLT,
   ICON_JAHRGANG_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
+  ICON_ORGANISATION_GEFUELLT,
   ICON_PERSON,
   ICON_PERSON_GEFUELLT,
   ICON_SCHILD_GEFUELLT,
-  ICON_SCHLUESSEL_GEFUELLT,
   ICON_SUCHE_GEFUELLT,
   ICON_UHRZEIT_GEFUELLT,
 } from '../shared/icons';
@@ -186,7 +186,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         {filteredAndSortedUsers.map((user, index) => {
               const roleColor = getRoleColor(user.role_name);
               const rolleText = user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in';
-              const rolleIcon = user.role_name === 'org_admin' ? ICON_SCHLUESSEL_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;
+              const rolleIcon = user.role_name === 'org_admin' ? ICON_ORGANISATION_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;
 
               return (
               <IonItemSliding
@@ -214,9 +214,14 @@ const UsersView: React.FC<UsersViewProps> = ({
                   >
                     {/* Eselsohr-Style Corner Badge */}
                     {/* Rolle als Symbol statt Wort (Eck-Badges zeigen in der
-                        Regel Symbole, Simon 25.09.2026): Schluessel = Org-Admin,
-                        Schild = Admin, Person = Teamer:in. Das Wort steht in
-                        title/aria-label. */}
+                        Regel Symbole, Simon 25.09.2026): Gebaeude = Org-Admin,
+                        Schild = Admin, Person = Teamer:in. Das Gebaeude ist in
+                        der App das Zeichen fuer die Gemeinde (Gemeinde-Auswahl,
+                        Gemeinde-Einstellungen, Postfach) -- der Org-Admin ist
+                        die Rolle, die fuer die ganze Gemeinde zustaendig ist.
+                        Der Schluessel davor (bis 26.09.2026) sagte nur
+                        "Zugang" und steht in der App fuer Passwoerter. Das
+                        Wort steht in title/aria-label. */}
                     <div className="app-corner-badges">
                       <div
                         className="app-corner-badge"

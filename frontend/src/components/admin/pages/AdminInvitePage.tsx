@@ -382,24 +382,30 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                             >
                               {/* Gueltigkeit: Zahl der Resttage plus Uhr statt
                                   "Noch 5 Tage gültig" -- wie die offenen Freigaben
-                                  in der Challenge-Liste. Abgelaufen: rotes
-                                  Warnzeichen wie in der Konfi-Detailansicht. Der
-                                  ganze Satz steht in title/aria-label. */}
+                                  in der Challenge-Liste. Am letzten Tag stand hier
+                                  eine "0" plus Uhr -- die irritiert (Simon,
+                                  26.09.2026). Ab dem letzten Tag deshalb das
+                                  Warnzeichen ohne Zahl: orange, solange der Code
+                                  heute noch gilt (wie "wartet noch" bei der
+                                  Glocke), rot, wenn er abgelaufen ist (wie in der
+                                  Konfi-Detailansicht). Der ganze Satz steht in
+                                  title/aria-label. */}
                               <div className="app-corner-badges">
                                 {(() => {
                                   const resttage = tageBis(new Date(invite.expires_at));
                                   const satz = formatExpiryDate(invite.expires_at);
                                   const abgelaufen = resttage < 0;
+                                  const letzterTag = resttage === 0;
                                   return (
                                     <div
                                       className="app-corner-badge"
-                                      style={{ backgroundColor: abgelaufen ? 'var(--app-color-danger)' : 'var(--app-color-success-strong)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                                      style={{ backgroundColor: abgelaufen ? 'var(--app-color-danger)' : letzterTag ? 'var(--app-color-warning)' : 'var(--app-color-success-strong)', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mini)', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                                       title={satz}
                                       role="img"
                                       aria-label={satz}
                                     >
-                                      {!abgelaufen && resttage}
-                                      <IonIcon icon={abgelaufen ? ICON_WARNHINWEIS_GEFUELLT : ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
+                                      {resttage > 0 && resttage}
+                                      <IonIcon icon={abgelaufen || letzterTag ? ICON_WARNHINWEIS_GEFUELLT : ICON_UHRZEIT} aria-hidden="true" style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
                                     </div>
                                   );
                                 })()}

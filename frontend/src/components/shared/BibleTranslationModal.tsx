@@ -74,6 +74,8 @@ const BibleTranslationModal: React.FC<BibleTranslationModalProps> = ({
                           className="app-corner-badge"
                           style={{ backgroundColor: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                           title="Ausgewählt"
+                          role="img"
+                          aria-label="Ausgewählt"
                         >
                           <IonIcon icon={ICON_HAKEN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)' }} />
                         </div>

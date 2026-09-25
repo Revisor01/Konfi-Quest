@@ -672,6 +672,10 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                       title={event.booking_status === 'confirmed' ? 'Anwesend'
                         : event.booking_status === 'absent' ? 'Abwesend'
                         : 'Ausstehend'}
+                      role="img"
+                      aria-label={event.booking_status === 'confirmed' ? 'Anwesend'
+                        : event.booking_status === 'absent' ? 'Abwesend'
+                        : 'Ausstehend'}
                     >
                       <IonIcon
                         icon={event.booking_status === 'confirmed' ? ICON_ZUSAGE_GEFUELLT
@@ -950,6 +954,8 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                           className="app-corner-badge"
                           style={{ backgroundColor: 'var(--app-color-danger)', padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                           title="Abgelaufen"
+                          role="img"
+                          aria-label="Abgelaufen"
                         >
                           <IonIcon
                             icon={ICON_WARNHINWEIS_GEFUELLT}
@@ -1179,6 +1185,8 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                           className="app-corner-badge"
                           style={{ backgroundColor: typeBadgeColor, padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
                           title={typeBadgeLabel}
+                          role="img"
+                          aria-label={typeBadgeLabel}
                         >
                           <IonIcon
                             icon={entry.source_type === 'bonus' ? ICON_BONUS : ICON_TERMIN}
