@@ -26,7 +26,8 @@
 
 /**
  * Push-Arten, die einen Postfach-Eintrag bekommen (Simon, 25.09.2026:
- * "Alles so rein").
+ * "Alles so rein"). wrapped und certificate standen bis zum selben Tag
+ * abends als "nicht entschieden" draussen -- Simon will beide drin.
  */
 const POSTFACH_ARTEN = new Set([
   // ---- Konfis (und Teamer:innen, wo sie dieselben Wege gehen) ----
@@ -51,7 +52,12 @@ const POSTFACH_ARTEN = new Set([
   'challenge_submission',        // Beitrag wartet auf Freigabe
   'jahrgang_deletion_warning',   // Warnung vor der Jahrgangs-Loeschung
   'event_opt_out',               // Konfi hat sich von einem Pflichttermin abgemeldet
-  'event_opt_in'                 // ... und wieder angemeldet
+  'event_opt_in',                // ... und wieder angemeldet
+  // ---- Nachtraeglich entschieden (Simon, 25.09.2026: beide rein) ----
+  // wrapped traegt seit dem 25.09.2026 zusaetzlich ausgabe_id, damit das
+  // Antippen den JEWEILIGEN Rueckblick oeffnet (pushNavigation, ?rueckblick=).
+  'wrapped',                     // Jahresrueckblick freigegeben (Konfi und Team)
+  'certificate'                  // Zertifikat fuer Teamer:innen
 ]);
 
 /**
@@ -68,10 +74,7 @@ const NICHT_IM_POSTFACH = Object.freeze({
   // Die drei Push-Gegenstuecke der alten Schreibstellen (siehe Kopf):
   badge_earned: 'schreibt badges.js selbst (mit badge_icon in data)',
   new_activity_request: 'schreiben konfi.js und teamer.js selbst',
-  activity_request_status: 'schreibt activities.js selbst, als activity_request_decision',
-  // Ohne Entscheidung von Simon, deshalb draussen (Stand 25.09.2026):
-  wrapped: 'nicht entschieden',
-  certificate: 'nicht entschieden'
+  activity_request_status: 'schreibt activities.js selbst, als activity_request_decision'
 });
 
 /**

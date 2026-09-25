@@ -35,6 +35,8 @@ import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import KonfiUpdate220WalkthroughModal from '../modals/KonfiUpdate220WalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
+import { useAppLocation } from '../../../navigation/useAppLocation';
+import { PUNKTE_PARAMETER, RUECKBLICK_PARAMETER, waehleRueckblick } from '../../../utils/pushNavigation';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 
@@ -275,6 +277,44 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     } : undefined
   });
 
+  // Modale per Adresse oeffnen (25.09.2026): Push und Postfach fuehren
+  // Punkte-Meldungen auf /konfi/profile?punkte=1 und den Rueckblick auf
+  // /konfi/profile?rueckblick=<ausgabe_id> -- die Uebersicht und der
+  // Rueckblick sind Modale ohne eigene Route (pushNavigation, Kopfkommentar).
+  // Dasselbe Muster wie ?eventId= in TeamerEventsPage: einmal je Wert
+  // reagieren, damit ein Neu-Montieren des Profils das Modal nicht erneut
+  // aufreisst; ohne Parameter wird der Merker geloescht, damit der naechste
+  // Tap wieder wirkt.
+  const { search } = useAppLocation();
+  const punkteParameter = new URLSearchParams(search).get(PUNKTE_PARAMETER);
+  const rueckblickParameter = new URLSearchParams(search).get(RUECKBLICK_PARAMETER);
+  const [punkteGeoeffnetFuer, setPunkteGeoeffnetFuer] = useState<string | null>(null);
+  const [rueckblickGeoeffnetFuer, setRueckblickGeoeffnetFuer] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!punkteParameter) {
+      setPunkteGeoeffnetFuer(null);
+      return;
+    }
+    if (punkteParameter === punkteGeoeffnetFuer) return;
+    setPunkteGeoeffnetFuer(punkteParameter);
+    presentPointsModal({
+      presentingElement: pageRef?.current || presentingElement || undefined
+    });
+  }, [punkteParameter, punkteGeoeffnetFuer]);
+
+  React.useEffect(() => {
+    if (!rueckblickParameter) {
+      setRueckblickGeoeffnetFuer(null);
+      return;
+    }
+    // Erst, wenn die Liste da ist -- vorher gibt es nichts zu oeffnen.
+    if (wrappedHistory.length === 0 || rueckblickParameter === rueckblickGeoeffnetFuer) return;
+    const eintrag = waehleRueckblick(wrappedHistory, rueckblickParameter);
+    if (!eintrag) return;
+    setRueckblickGeoeffnetFuer(rueckblickParameter);
+    openWrapped(eintrag);
+  }, [rueckblickParameter, rueckblickGeoeffnetFuer, wrappedHistory, openWrapped]);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unbekannt';

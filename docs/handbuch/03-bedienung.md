@@ -39,14 +39,15 @@ du als Push verpasst hast, ebenfalls — und wer kein Push-Gerät hat oder
 Mitteilungen abgeschaltet hat, findet hier trotzdem alles.
 
 Als Konfi landen hier deine Punkte (aus einem Termin, als Bonus oder für eine
-zugewiesene Aktivität), Level-Aufstiege, Abzeichen und Stempel, deine
-eingereichten Anträge samt Entscheidung, deine Anmeldungen und Abmeldungen,
-das Nachrücken von der Warteliste, abgesagte, geänderte und wieder
-stattfindende Termine und ausgeblendete Beiträge. Als Teamer:in oder Leitung
-zusätzlich: neue Anträge, Abmeldungen von Konfis, Buchungen und Absagen des
-Teams, Termine, die auf Verbuchung warten, neue Registrierungen, Beiträge zur
-Freigabe, Ab- und Wieder-Anmeldungen von Pflichtterminen und die Warnung vor
-dem Löschen eines Jahrgangs.
+zugewiesene Aktivität), Level-Aufstiege, Abzeichen und Stempel, dein
+freigegebener Jahresrückblick, deine eingereichten Anträge samt Entscheidung,
+deine Anmeldungen und Abmeldungen, das Nachrücken von der Warteliste,
+abgesagte, geänderte und wieder stattfindende Termine und ausgeblendete
+Beiträge. Als Teamer:in oder Leitung zusätzlich: neue Anträge, Abmeldungen
+von Konfis, Buchungen und Absagen des Teams, Termine, die auf Verbuchung
+warten, neue Registrierungen, Beiträge zur Freigabe, Ab- und
+Wieder-Anmeldungen von Pflichtterminen, die Warnung vor dem Löschen eines
+Jahrgangs, der Team-Rückblick und ein neues Zertifikat.
 
 **Nicht** im Postfach stehen die Erinnerung „morgen"/„gleich" vor einem Termin
 (sie wäre sofort veraltet), neue Termine (sie stehen in der Terminliste),
@@ -68,10 +69,14 @@ weg, bevor das Symbol auf null geht. „Termine warten auf Verbuchung" kommt
 täglich; die neue Mitteilung ersetzt die vom Vortag, solange die noch
 ungelesen ist.
 
-Im Postfach steht Ungelesenes fett und mit „Neu" in der Ecke. **Antippen**
+Im Postfach steht Ungelesenes fett und mit einem geschlossenen Umschlag in
+der Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
-Abzeichen, in die Antragsliste, an den Termin, zur Challenge, auf das
-Dashboard mit den Punkten. **„Alle gelesen"** räumt auf einmal auf.
+Abzeichen, in die Antragsliste, an den Termin, bei einem Stempel zu den
+Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
+Termin, als Bonus oder für eine eingetragene Aktivität — öffnen die
+Punkte-Übersicht im Profil; der Jahresrückblick öffnet genau die Ausgabe, um
+die es geht. **„Alle gelesen"** räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
 werden Mitteilungen nachts entfernt. Das Kreuz oben links schließt das
 Postfach.

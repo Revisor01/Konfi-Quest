@@ -369,18 +369,56 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       expect(await anzahl()).toBe(0);
     });
 
-    it('wrapped und certificate: kein Eintrag (nicht entschieden)', async () => {
-      await PushService.sendWrappedReleased(db, [USERS.konfi1.id], 'konfi', ORG1);
+    // wrapped und certificate standen bis zum 25.09.2026 abends als "nicht
+    // entschieden" draussen. Simon will beide drin -- und der Rueckblick
+    // traegt jetzt die Kennung der Ausgabe, damit das Antippen den
+    // jeweiligen oeffnet (pushNavigation: ?rueckblick=<ausgabe_id>).
+    it('wrapped: Eintrag je Empfaenger:in, mit wrappedType und ausgabe_id', async () => {
+      await PushService.sendWrappedReleased(db, [USERS.konfi1.id, USERS.konfi2.id], 'konfi', ORG1, 42);
+
+      const [m] = await postfach(USERS.konfi1.id);
+      expect(m).toMatchObject({
+        type: 'wrapped',
+        title: 'Deine Konfi-Zeit Wrapped ist da!',
+        organization_id: ORG1,
+        read_at: null
+      });
+      expect(m.data).toMatchObject({ type: 'wrapped', wrappedType: 'konfi', ausgabe_id: '42', organization_id: String(ORG1) });
+      expect((await postfach(USERS.konfi2.id))).toHaveLength(1);
+      expect(await anzahl()).toBe(2);
+    });
+
+    it('wrapped ohne Ausgabe: Eintrag ohne ausgabe_id (die App oeffnet dann den neuesten)', async () => {
+      await PushService.sendWrappedReleased(db, [USERS.teamer1.id], 'teamer', ORG1);
+
+      const [m] = await postfach(USERS.teamer1.id);
+      expect(m.type).toBe('wrapped');
+      expect(m.title).toBe('Dein Team-Jahr Wrapped ist da!');
+      expect(m.data).toEqual({ type: 'wrapped', wrappedType: 'teamer', organization_id: String(ORG1) });
+    });
+
+    it('certificate: Zertifikat fuer die Teamer:in, mit Organisation', async () => {
       await PushService.sendCertificateToTeamer(db, USERS.teamer1.id, 'Jugendleiter', ORG1);
-      expect(await anzahl()).toBe(0);
+
+      const [m] = await postfach(USERS.teamer1.id);
+      expect(m).toMatchObject({
+        type: 'certificate',
+        title: 'Neues Zertifikat',
+        message: 'Du hast das Zertifikat "Jugendleiter" erhalten.',
+        organization_id: ORG1,
+        read_at: null
+      });
+      expect(await anzahl()).toBe(1);
     });
 
     it('Positiv- und Ausschlussliste sind disjunkt und decken die Push-Registry ab', () => {
       for (const art of Object.keys(NICHT_IM_POSTFACH)) {
         expect(POSTFACH_ARTEN.has(art)).toBe(false);
       }
-      expect(POSTFACH_ARTEN.size).toBe(21);
-      expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(11);
+      expect(POSTFACH_ARTEN.has('wrapped')).toBe(true);
+      expect(POSTFACH_ARTEN.has('certificate')).toBe(true);
+      expect(POSTFACH_ARTEN.size).toBe(23);
+      expect(Object.keys(NICHT_IM_POSTFACH)).toHaveLength(9);
     });
   });
 

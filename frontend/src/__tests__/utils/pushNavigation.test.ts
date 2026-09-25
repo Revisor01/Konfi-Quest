@@ -106,9 +106,11 @@ describe('buildPushTargetUrl', () => {
     expect(buildPushTargetUrl('new_konfi_registration', {}, 'admin')).toBe('/admin/konfis');
   });
 
-  it('wrapped: Dashboard', () => {
-    expect(buildPushTargetUrl('wrapped', {}, 'konfi')).toBe('/konfi/dashboard');
-    expect(buildPushTargetUrl('wrapped', {}, 'teamer')).toBe('/teamer/dashboard');
+  it('wrapped: ins Profil zum Rueckblick (seit 25.09.2026), Leitung bleibt auf dem Dashboard', () => {
+    // Ohne Ausgabe-Kennung (aeltere Eintraege): der neueste Rueckblick.
+    expect(buildPushTargetUrl('wrapped', {}, 'konfi')).toBe('/konfi/profile?rueckblick=neuester');
+    expect(buildPushTargetUrl('wrapped', {}, 'teamer')).toBe('/teamer/profile?rueckblick=neuester');
+    expect(buildPushTargetUrl('wrapped', {}, 'admin')).toBe('/admin/dashboard');
   });
 
   it('unbekannter Typ: leerer String (keine Navigation)', () => {

@@ -2344,22 +2344,37 @@ class PushService {
 
   /**
    * Jahresrueckblick freigegeben - Push an Konfis oder Teamer:innen.
-   * Wird an zwei Stellen gebraucht: bei der Freigabe von Hand und im Cron.
+   * Wird an drei Stellen gebraucht: bei der Freigabe von Hand (Konfi und
+   * Team) und im Cron.
+   *
+   * ausgabe_id (seit 25.09.2026, additiv): die Kennung der freigegebenen
+   * Ausgabe (wrapped_ausgaben.id). Damit oeffnet das Antippen -- aus dem
+   * Push wie aus dem Postfach -- genau DIESEN Rueckblick im Profil
+   * (pushNavigation: /<rolle>/profile?rueckblick=<id>), nicht irgendeinen.
+   * Ohne Kennung (aeltere Eintraege, Aufruf ohne Ausgabe) oeffnet die App
+   * den neuesten. ALT-APP-VERTRAG: Store-Apps 2.2.x kennen das Feld nicht
+   * und ignorieren es; sie landen wie bisher auf dem Dashboard.
+   *
    * @param {'konfi'|'teamer'} wrappedType
+   * @param {number|string|null} [ausgabeId]
    */
-  static async sendWrappedReleased(db, userIds, wrappedType, organizationId) {
+  static async sendWrappedReleased(db, userIds, wrappedType, organizationId, ausgabeId = null) {
     try {
       if (!userIds || userIds.length === 0) return { success: true, sent: 0 };
 
       const istKonfi = wrappedType === 'konfi';
+      const data = {
+        type: 'wrapped',
+        wrappedType,
+        organization_id: String(organizationId)
+      };
+      if (ausgabeId !== null && ausgabeId !== undefined) {
+        data.ausgabe_id = String(ausgabeId);
+      }
       return await this.sendToMultipleUsers(db, userIds, {
         title: istKonfi ? 'Deine Konfi-Zeit Wrapped ist da!' : 'Dein Team-Jahr Wrapped ist da!',
         body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-        data: {
-          type: 'wrapped',
-          wrappedType,
-          organization_id: String(organizationId)
-        }
+        data
       });
     } catch (error) {
       console.error('sendWrappedReleased error:', error);

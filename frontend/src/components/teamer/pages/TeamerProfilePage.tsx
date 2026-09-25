@@ -53,6 +53,8 @@ import TeamerUpdate220WalkthroughModal from '../modals/TeamerUpdate220Walkthroug
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { useAppLocation } from '../../../navigation/useAppLocation';
+import { RUECKBLICK_PARAMETER, waehleRueckblick } from '../../../utils/pushNavigation';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
@@ -219,6 +221,27 @@ const TeamerProfilePage: React.FC = () => {
       presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
     }
   }, [wrappedModalData]);
+
+  // Rueckblick per Adresse oeffnen (25.09.2026): Der Wrapped-Push fuehrt
+  // Teamer:innen auf /teamer/profile?rueckblick=<ausgabe_id>, weil das
+  // Modal keine eigene Route hat (pushNavigation, Kopfkommentar). Einmal je
+  // Wert, wie ?eventId= in TeamerEventsPage; gleiche Logik wie im
+  // Konfi-Profil (ProfileView).
+  const { search } = useAppLocation();
+  const rueckblickParameter = new URLSearchParams(search).get(RUECKBLICK_PARAMETER);
+  const [rueckblickGeoeffnetFuer, setRueckblickGeoeffnetFuer] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!rueckblickParameter) {
+      setRueckblickGeoeffnetFuer(null);
+      return;
+    }
+    if (wrappedHistory.length === 0 || rueckblickParameter === rueckblickGeoeffnetFuer) return;
+    const eintrag = waehleRueckblick(wrappedHistory, rueckblickParameter);
+    if (!eintrag) return;
+    setRueckblickGeoeffnetFuer(rueckblickParameter);
+    setWrappedModalData(eintrag);
+  }, [rueckblickParameter, rueckblickGeoeffnetFuer, wrappedHistory]);
 
   // Logout
   const handleLogout = () => {

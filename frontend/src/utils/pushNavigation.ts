@@ -13,6 +13,56 @@
 
 export type PushUserType = 'admin' | 'teamer' | 'konfi' | 'user';
 
+/*
+ * ZIELE, DIE KEINE ROUTE SIND (25.09.2026)
+ *
+ * Die Punkte-Uebersicht und der Jahresrueckblick sind Modale, keine Seiten:
+ * PointsHistoryModal und WrappedModal werden per useIonModal aus dem Profil
+ * geoeffnet. Ein Push oder Postfach-Eintrag kann aber nur eine Adresse
+ * nennen. Der Weg ist derselbe wie beim Teamer-Termindetail (57d7149d,
+ * rollenBaeume.ts: /teamer/events/:id -> /teamer/events?eventId=): eine
+ * vorhandene Seite mit einem Parameter, den sie liest und daraufhin ihr
+ * Modal oeffnet. Kein zweites Modal, keine zweite Seite.
+ *
+ * Die Parameternamen stehen hier als Konstanten, damit Weiche und Zielseite
+ * (ProfileView, TeamerProfilePage) dieselbe Schreibweise benutzen -- ein
+ * Tippfehler auf einer Seite liesse den Tap sonst still auf dem Profil enden.
+ *
+ * ALT-APP-VERTRAG: Store-Apps 2.2.x bauen ihre Ziele mit IHRER Weiche und
+ * kennen diese Parameter nicht. Sie bekommen dieselben Payloads (data nur
+ * additiv erweitert) und landen wie bisher auf Dashboard bzw. Abzeichen.
+ */
+
+/** Profil-Parameter, der die Punkte-Uebersicht oeffnet: /konfi/profile?punkte=1 */
+export const PUNKTE_PARAMETER = 'punkte';
+/** Profil-Parameter mit der Ausgabe-Kennung des Rueckblicks: ?rueckblick=<ausgabe_id> */
+export const RUECKBLICK_PARAMETER = 'rueckblick';
+/** Wert fuer "den neuesten Rueckblick", wenn der Push keine Ausgabe-Kennung traegt. */
+export const RUECKBLICK_NEUESTER = 'neuester';
+
+/**
+ * Den Rueckblick zum Parameter aus der Liste "Meine Rückblicke" waehlen.
+ * Die Liste kommt von GET /wrapped/history, neueste Ausgabe zuerst.
+ *
+ * - Kennung einer Ausgabe -> genau dieser Eintrag (Vergleich per String,
+ *   die Kennung kommt aus der Adresse als String, ausgabe_id als Zahl).
+ * - RUECKBLICK_NEUESTER, leer oder unbekannte Kennung -> der erste Eintrag.
+ *   Ein Push "ist da!" fuer eine Ausgabe, die die Liste (noch) nicht kennt,
+ *   soll nicht ins Leere laufen, sondern das Neueste zeigen.
+ * - Leere Liste -> null; die Seite tut dann nichts.
+ */
+export const waehleRueckblick = <T extends { ausgabe_id?: number | null }>(
+  liste: readonly T[],
+  kennung: string | null
+): T | null => {
+  if (liste.length === 0) return null;
+  if (kennung && kennung !== RUECKBLICK_NEUESTER) {
+    const treffer = liste.find((e) => e.ausgabe_id != null && String(e.ausgabe_id) === kennung);
+    if (treffer) return treffer;
+  }
+  return liste[0];
+};
+
 /**
  * Ereignis, mit dem das Ziel eines angetippten Pushes an den Router uebergeben
  * wird. Der Tap-Handler liegt in AppContext und hat dort keinen Router-Zugriff;
@@ -176,7 +226,6 @@ export const buildPushTargetUrl = (
     case 'event_registered':
     case 'event_unregistered':
     case 'waitlist_promotion':
-    case 'event_attendance':
     case 'event_reminder': {
       const evId = data?.event_id || data?.eventId;
       if (evId) {
@@ -211,9 +260,35 @@ export const buildPushTargetUrl = (
     }
 
     case 'level_up':
+      // Level-Aufstieg: Startseite (Simon, 25.09.2026: "Level ist richtig
+      // mit Startseite"). Dort steht der Fortschrittsbalken zum Level.
+      return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
+
+    // Punkte verbucht -- aus einem Termin, als Bonus oder als zugewiesene
+    // Aktivitaet: zur Punkte-Uebersicht (Simon, 25.09.2026: "Verbuchen und
+    // Bonus muss die Punkte Übersicht aufrufen").
+    //
+    // activity_assigned IST eine Verbuchung, keine blosse Zuweisung:
+    // POST /activities/assign-activity (activities.js) schreibt die
+    // user_activities-Zeile UND addiert die Punkte auf konfi_profiles in
+    // derselben Transaktion, danach Abzeichen- und Level-Pruefung. Der Push
+    // sagt es selbst ("+3 Punkte!"). Deshalb dasselbe Ziel wie Bonus und
+    // Termin-Punkte, nicht die Aktivitaetenliste.
+    //
+    // event_attendance fuehrte bis zum 25.09.2026 zum Termin. Der Push
+    // meldet aber die Punkte ("Du erhältst +2 Punkte!"), und die stehen in
+    // der Uebersicht -- am Termin steht nur der Haken.
+    //
+    // Die Uebersicht ist ein Modal im Konfi-Profil, deshalb der Parameter
+    // (siehe PUNKTE_PARAMETER oben). Teamer:innen haben keine Punkte
+    // (assign-activity vergibt bei target_role 'teamer' keine) und keine
+    // solche Uebersicht -- fuer sie bleibt die Startseite. Die Leitung
+    // bekommt diese Pushes nicht; faellt sie doch hinein, ist die
+    // Konfi-Liste das Naechstbeste (dort stehen die Punkte je Konfi).
+    case 'event_attendance':
     case 'activity_assigned':
     case 'bonus_points':
-      // Dashboard (Punkte/Level)
+      if (userType === 'konfi') return `/konfi/profile?${PUNKTE_PARAMETER}=1`;
       return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
 
     case 'event_unregistration': {
@@ -246,10 +321,26 @@ export const buildPushTargetUrl = (
       // Neuer Beitrag -> Moderation in der Leitungs-Ansicht.
       return userType === 'konfi' ? '/konfi/challenges' : `${routePrefix}/challenges`;
 
-    case 'wrapped':
-      // Bestandsluecke: Das Wrapped-Modal liegt auf dem Dashboard —
-      // ohne diesen Fall lief der Tap ins Leere (default-Zweig).
+    case 'wrapped': {
+      // Der JEWEILIGE Rueckblick (Simon, 25.09.2026: "Rückblick zeigt das
+      // jeweilige wrapped"). Bis dahin nur das Dashboard -- dort liegt zwar
+      // ein Wrapped-Modal, aber immer das aktuelle, und nur beim Konfi.
+      //
+      // "Meine Rückblicke" steht im Profil beider Rollen (ProfileView,
+      // TeamerProfilePage) und listet alle Ausgaben. Der Push traegt seit
+      // dem 25.09.2026 die ausgabe_id (additiv, pushService); das Profil
+      // oeffnet damit genau diese Ausgabe. Aeltere Eintraege ohne Kennung
+      // oeffnen den neuesten -- besser als die Liste, denn der Push sagt
+      // "ist da!", nicht "such ihn dir".
+      //
+      // Die Leitung hat keinen eigenen Rueckblick und bekommt den Push
+      // nicht; sie bleibt auf ihrer Startseite.
+      if (userType === 'konfi' || userType === 'teamer') {
+        const ausgabe = data?.ausgabe_id ? String(data.ausgabe_id) : RUECKBLICK_NEUESTER;
+        return `${routePrefix}/profile?${RUECKBLICK_PARAMETER}=${encodeURIComponent(ausgabe)}`;
+      }
       return `${routePrefix}/dashboard`;
+    }
 
     // ------------------------------------------------------------------
     // Ab hier: die zehn Typen, die bis zum 27.08.2026 im default-Zweig
@@ -291,8 +382,12 @@ export const buildPushTargetUrl = (
     }
 
     case 'challenge_badge_earned':
-      // Stempel aus einer Challenge -> Abzeichen-Seite der Rolle.
-      return `${routePrefix}/badges`;
+      // Stempel aus einer Challenge -> Challenge-Seite der Rolle. Dort ist
+      // der Abschnitt "Deine Stempel" (Simon, 25.09.2026: "Challenge Stempel
+      // muss auf die Challenge Seite da sind die Stempel"). Bis dahin fuehrte
+      // der Tap zu den Abzeichen -- Stempel sind aber keine Abzeichen und
+      // stehen dort nicht (Challenges 2.0: Abzeichen ohne Badge-System).
+      return `${routePrefix}/challenges`;
 
     case 'challenge_submission_hidden':
       // Eigener Beitrag ausgeblendet -> Challenge-Bereich, dort steht die

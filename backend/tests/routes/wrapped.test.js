@@ -314,6 +314,9 @@ describe('Wrapped Routes', () => {
       expect(res.body.errors).toBe(0);
       expect(res.body.benachrichtigt).toBe(true);
       expect(spy).toHaveBeenCalledTimes(1);
+      // Der Push traegt die Kennung der Team-Ausgabe (seit 25.09.2026).
+      expect(spy.mock.calls[0][4]).toBe(res.body.ausgabe_id);
+      expect(typeof res.body.ausgabe_id).toBe('number');
       expect(await ausgabenAnzahl()).toBe(1);
       expect(await snapshotAnzahl()).toBe(1);
 
@@ -1312,10 +1315,16 @@ describe('Wrapped Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.benachrichtigt).toBe(true);
       expect(spy).toHaveBeenCalledTimes(1);
-      // An beide Konfis des Jahrgangs, als Konfi-Wrapped.
-      const [, userIds, typ] = spy.mock.calls[0];
+      // An beide Konfis des Jahrgangs, als Konfi-Wrapped -- und mit der
+      // Kennung der eben angelegten Ausgabe (seit 25.09.2026): Damit oeffnet
+      // das Antippen genau diesen Rueckblick (pushNavigation, ?rueckblick=).
+      const [, userIds, typ, , ausgabeId] = spy.mock.calls[0];
       expect([...userIds].sort((a, b) => a - b)).toEqual([USERS.konfi1.id, USERS.konfi2.id]);
       expect(typ).toBe('konfi');
+      const { rows: [ausgabe] } = await db.query(
+        "SELECT id FROM wrapped_ausgaben WHERE wrapped_type = 'konfi' ORDER BY id DESC LIMIT 1"
+      );
+      expect(ausgabeId).toBe(ausgabe.id);
 
       spy.mockRestore();
     });

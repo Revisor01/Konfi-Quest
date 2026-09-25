@@ -2435,7 +2435,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // erfahren.
         try {
           const konfiIds = konfis.map(k => k.user_id);
-          await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
+          await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id, ausgabe.id);
         } catch (pushErr) {
           console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
         }
@@ -2635,7 +2635,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Push-Notification an alle Teamer:innen
         try {
           const teamerIds = teamers.map(t => t.user_id);
-          await PushService.sendWrappedReleased(db, teamerIds, 'teamer', req.user.organization_id);
+          await PushService.sendWrappedReleased(db, teamerIds, 'teamer', req.user.organization_id, teamerAusgabe.id);
         } catch (pushErr) {
           console.error('Push-Notification für Teamer-Wrapped fehlgeschlagen:', pushErr);
         }
@@ -3260,7 +3260,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Push (fire-and-forget)
       try {
         const teamerIds = teamers.map(t => t.user_id);
-        await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId);
+        await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId, ausgabe.id);
       } catch (pushErr) {
         console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
       }
